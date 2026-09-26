@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  footerTarget,
-  type ConnectedIntegrations,
-  type FooterTarget,
-  type Overlay,
-} from './overlayState';
+import { footerTarget, type ConnectedIntegrations, type FooterTarget } from './overlayState';
+import type { StudioPlace } from '../../../store';
 
 const NONE_CONNECTED: ConnectedIntegrations = {
   github: false,
@@ -18,12 +14,12 @@ const NONE_CONNECTED: ConnectedIntegrations = {
 
 const GITHUB_CONNECTED: ConnectedIntegrations = { ...NONE_CONNECTED, github: true };
 
-const inboxOn = (provider: 'github' | 'linear'): Overlay => ({
+const inboxOn = (provider: 'github' | 'linear'): StudioPlace => ({
   kind: 'inbox',
   focus: { provider, kind: null, recordKey: null, sessionId: null },
 });
 
-const CASES: ReadonlyArray<readonly [string, Overlay | null, FooterTarget]> = [
+const CASES: ReadonlyArray<readonly [string, StudioPlace | null, FooterTarget]> = [
   ['nothing open', null, null],
   ['app settings', { kind: 'settings', focus: { scope: 'app' } }, 'settings'],
   ['workspace settings', { kind: 'settings', focus: { scope: 'workspace' } }, 'settings'],

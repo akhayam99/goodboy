@@ -36,7 +36,7 @@ export const ArtifactExportStatus = ({ status }: Props) => {
       aria-live={hasFailed ? 'assertive' : 'polite'}
       title={note ?? undefined}
       className={cn(
-        'min-w-0 max-w-48 truncate text-2xs',
+        'min-w-0 max-w-48 truncate text-secondary',
         hasFailed ? 'text-danger' : 'text-muted-foreground',
       )}
     >

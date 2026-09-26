@@ -1256,8 +1256,8 @@ export const seedActivityRunScene = () => {
     loadSessionEvents: async () => undefined,
     loadSessionAnsweredQuestions: async () => undefined,
     loadSessionDismissedQuestions: async () => undefined,
-    setActiveLens: () => undefined,
+    navigate: () => undefined,
     loadConsumptionsForPlan: async () => undefined,
-    selectAgent: async () => undefined,
+    loadAgentTranscript: async () => undefined,
   });
 };

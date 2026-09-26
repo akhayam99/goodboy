@@ -28,6 +28,7 @@ type Props = {
   readonly sessionEffort: EffortLevel | null;
   readonly costUsd: number;
   readonly menu: ReactNode;
+  readonly isRevealed?: boolean;
 };
 
 export const TimelineRunStreamRow = ({
@@ -46,6 +47,7 @@ export const TimelineRunStreamRow = ({
   sessionEffort,
   costUsd,
   menu,
+  isRevealed = false,
 }: Props) => {
   const source = useContext(WorkTimeContext);
   const time =
@@ -71,6 +73,7 @@ export const TimelineRunStreamRow = ({
       meta={<TimelineRunMeta progress={runStepProgress({ entry })} time={time} costUsd={costUsd} />}
       progress={time?.progress ?? null}
       stateNote={time?.note ?? null}
+      isRevealed={isRevealed}
       menu={menu}
       lanes={lanes}
       runLane={runLane}

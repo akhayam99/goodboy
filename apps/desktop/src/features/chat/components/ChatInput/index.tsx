@@ -504,7 +504,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           >
             <div
               className={cn(
-                'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-xs font-medium text-primary ring-1 transition-transform duration-150',
+                'flex items-center gap-2 rounded-full border border-border-soft bg-background px-4 py-1.5 text-label font-medium text-primary ring-1 transition-transform duration-150',
                 tintClasses('primary').ring,
                 isDragging ? 'scale-100' : 'scale-95',
               )}
@@ -557,7 +557,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
               autoGrow
               rows={1}
               maxRows={12}
-              className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-sm text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
+              className="resize-none border-0 bg-transparent px-3 py-2 pr-12 text-body text-foreground shadow-none placeholder:text-faint-foreground focus-visible:border-0 focus-visible:shadow-none focus-visible:ring-0"
             />
             {isRunning && value.trim().length === 0 && attachments.length === 0 ? (
               <Tooltip content="Cancel turn">
@@ -628,7 +628,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 disabled={isBlocked}
                 title="Run a project script"
                 aria-label="Run a project script"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-sm text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md font-mono text-body text-muted-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 $
               </button>
@@ -638,7 +638,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 <CostBadge
                   value={sessionCost}
                   title={`Session spend: ${formatUsd(sessionCost)} (excludes summarizer)`}
-                  className="text-xs text-muted-foreground"
+                  className="text-label text-muted-foreground"
                 />
               )}
               <ProviderUsagePill provider={routing.effectiveProvider} />
@@ -677,13 +677,13 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                 <>
                   <Button variant="ghost" size="sm" onClick={() => void onSend()}>
                     Queue{' '}
-                    <KbdPill aria-hidden className="h-4 min-w-4 text-2xs">
+                    <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
                       ↵
                     </KbdPill>
                   </Button>
                   <Button variant="primary" size="sm" onClick={() => void onSendNow()}>
                     Send now{' '}
-                    <KbdPill aria-hidden className="h-4 min-w-4 text-2xs">
+                    <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
                       ⌘↵
                     </KbdPill>
                   </Button>
@@ -693,7 +693,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
           </div>
         </div>
         {showsDeliveryChoice ? (
-          <p className="px-1 text-2xs text-faint-foreground">
+          <p className="px-1 text-secondary text-faint-foreground">
             Queue waits for this turn to end. Send now stops the turn, keeps what it wrote, and
             continues with your message.
           </p>

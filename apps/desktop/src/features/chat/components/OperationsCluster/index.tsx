@@ -112,7 +112,7 @@ const OperationsClusterView = ({
           badge={
             <span
               className={cn(
-                'shrink-0 rounded-full px-1.5 text-2xs tabular-nums text-muted-foreground',
+                'shrink-0 rounded-full px-1.5 text-secondary tabular-nums text-muted-foreground',
                 operationsTint.bg,
               )}
             >
@@ -142,7 +142,7 @@ const OperationsClusterView = ({
                 ]}
               />
             ) : summary.length > 0 ? (
-              <span className="truncate text-2xs text-faint-foreground">{summary}</span>
+              <span className="truncate text-secondary text-faint-foreground">{summary}</span>
             ) : undefined
           }
           meta={running == null && duration != null ? duration : undefined}

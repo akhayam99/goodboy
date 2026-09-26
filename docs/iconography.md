@@ -72,7 +72,7 @@ file names it. Size is `control` in the lens switcher. `lensDestinations` in
 | Explore                     | `explore`      | `FolderSearch`          | info    | always                                     |
 | Scripts                     | `scripts`      | `ListVideo`             | info    | with a branch                              |
 | Terminal                    | `terminal`     | `SquareTerminal`        | neutral | with a branch                              |
-| Code host                   | `pr`           | `GitPullRequest`        | primary | with a branch, when the host is not GitHub |
+| Pull request                | `pr`           | `GitPullRequest`        | primary | with a branch, when the host is not GitHub |
 | Linear, GitLab, Jira, Slack | brand concepts | `@goodboy/ui` brand set | primary | with a branch, when that tool is connected |
 
 Goal (`goal`, `Target`), Decisions (`decisions`, `CheckCheck`) and Session

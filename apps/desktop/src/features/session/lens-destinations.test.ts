@@ -6,13 +6,7 @@ const LENS_SHORTCUT_IDS = (Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>).
   id.startsWith('lens.'),
 );
 
-const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>([
-  'lens.back',
-  'lens.forward',
-  'lens.goal',
-  'lens.decisions',
-  'lens.summary',
-]);
+const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>(['lens.goal', 'lens.decisions', 'lens.summary']);
 
 const NO_CONNECTED_TOOLS: ConnectedLensTools = {
   linear: false,

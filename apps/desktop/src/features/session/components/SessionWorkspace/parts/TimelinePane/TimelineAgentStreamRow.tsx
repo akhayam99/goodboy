@@ -32,6 +32,7 @@ type Props = {
   readonly sessionProvider: ProviderId | null;
   readonly sessionEffort: EffortLevel | null;
   readonly costUsd: number;
+  readonly isRevealed?: boolean;
 };
 
 export const TimelineAgentStreamRow = ({
@@ -51,6 +52,7 @@ export const TimelineAgentStreamRow = ({
   sessionProvider,
   sessionEffort,
   costUsd,
+  isRevealed = false,
 }: Props) => {
   const work = useAgentRowWork({
     agent: entry.agent,
@@ -74,6 +76,7 @@ export const TimelineAgentStreamRow = ({
       meta={<TimelineAgentMeta work={work} costUsd={costUsd} />}
       progress={work.time?.progress ?? null}
       stateNote={work.time?.note ?? null}
+      isRevealed={isRevealed}
       lanes={lanes}
       runLane={runLane}
     />

@@ -1,66 +1,10 @@
-import type { ReactNode } from 'react';
-import { cn, Divider, type Tone } from '@goodboy/ui';
-import type { LucideIcon } from 'lucide-react';
-import { useStudioOverlay } from '../../hooks/useStudioOverlay';
-import { OverlayHeader } from '@goodboy/ui';
+import { DetachedStudio } from './DetachedStudio';
+import { FramedStudio } from './FramedStudio';
+import { useStudioFrame } from './studioFrameContext';
+import type { StudioShellProps } from './types';
 
-type Props = {
-  readonly icon?: LucideIcon;
-  readonly tone?: Tone;
-  readonly glyph?: ReactNode;
-  readonly title: string;
-  readonly subtitle?: string;
-  readonly closeLabel: string;
-  readonly headerAccessory?: ReactNode;
-  readonly onClose: () => void;
-  readonly isEscapeEnabled?: boolean;
-  readonly variant?: 'fullscreen' | 'slot' | 'viewport';
-  readonly children: (requestClose: () => void) => ReactNode;
-};
-
-export const StudioShell = ({
-  icon: Icon,
-  tone,
-  glyph,
-  title,
-  subtitle,
-  closeLabel,
-  headerAccessory,
-  onClose,
-  isEscapeEnabled = true,
-  variant = 'fullscreen',
-  children,
-}: Props) => {
-  const { closing, requestClose } = useStudioOverlay({ onClose, isEscapeEnabled });
-
-  return (
-    <div
-      {...(variant === 'slot' ? {} : { 'data-studio-overlay': '' })}
-      className={cn(
-        variant === 'slot'
-          ? 'relative h-full w-full flex flex-col bg-background'
-          : variant === 'viewport'
-            ? 'fixed inset-0 z-studio flex flex-col bg-background'
-            : 'relative flex h-full w-full min-h-0 flex-col bg-background',
-        closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
-      )}
-    >
-      <OverlayHeader
-        {...(variant === 'slot' && { heightClassName: 'h-[var(--chat-header-h)]' })}
-        icon={Icon}
-        {...(tone != null && { tone })}
-        glyph={glyph}
-        title={title}
-        {...(subtitle !== undefined && { subtitle })}
-        onClose={requestClose}
-        closeLabel={closeLabel}
-        variant={variant === 'slot' ? 'compact' : 'fullscreen'}
-      >
-        {headerAccessory}
-      </OverlayHeader>
-      <Divider />
-
-      <div className="flex min-h-0 flex-1">{children(requestClose)}</div>
-    </div>
-  );
+export const StudioShell = (props: StudioShellProps) => {
+  const frame = useStudioFrame();
+  const isFramed = frame !== null && (props.variant ?? 'fullscreen') === 'fullscreen';
+  return isFramed ? <FramedStudio {...props} frame={frame} /> : <DetachedStudio {...props} />;
 };

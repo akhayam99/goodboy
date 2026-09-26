@@ -68,6 +68,8 @@ const SCRIPTS_SESSION_ID = 'mock-scripts-session-settlement' as SessionId;
 const LEDGER_PROJECT_ID = 'mock-scripts-project-ledger-core' as ProjectId;
 const RELAY_PROJECT_ID = 'mock-scripts-project-notify-relay' as ProjectId;
 const PAYMENTS_PROJECT_ID = 'mock-scripts-project-payments-api' as ProjectId;
+const NORTHWIND_PROJECT_ID = 'mock-scripts-project-northwind-storefront' as ProjectId;
+const LEDGER_MOUNT_ID = 'mock-scripts-mount-ledger' as MountId;
 
 const SCRIPTS_NOW = scriptsClock.iso({ at: '2026-09-16T11:24:00.000Z' });
 const SCRIPTS_EARLIER = scriptsClock.iso({ at: '2026-09-16T09:05:00.000Z' });
@@ -75,6 +77,7 @@ const SCRIPTS_EARLIER = scriptsClock.iso({ at: '2026-09-16T09:05:00.000Z' });
 const LEDGER_WORKTREE = '/mock/harborline/ledger-core-settlement';
 const RELAY_WORKTREE = '/mock/harborline/notify-relay-settlement';
 const PAYMENTS_WORKTREE = '/mock/harborline/payments-api-settlement';
+const NORTHWIND_WORKTREE = '/mock/northwind/storefront-settlement';
 
 const SCRIPTS_WORKSPACE: Workspace = {
   id: SCRIPTS_WORKSPACE_ID,
@@ -119,6 +122,11 @@ const SCRIPTS_PROJECTS: ReadonlyArray<Project> = [
     name: 'payments-api',
     rootPath: '/mock/harborline/payments-api',
   }),
+  makeProject({
+    id: NORTHWIND_PROJECT_ID,
+    name: 'northwind-storefront',
+    rootPath: '/mock/northwind/storefront',
+  }),
 ];
 
 type MountSeed = Readonly<{
@@ -157,7 +165,16 @@ const makeScriptsMount = ({
 
 const SCRIPTS_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   makeScriptsMount({
-    mountId: 'mock-scripts-mount-ledger',
+    mountId: 'mock-scripts-mount-northwind',
+    projectId: NORTHWIND_PROJECT_ID,
+    mountName: 'northwind-storefront',
+    worktreePath: NORTHWIND_WORKTREE,
+    repoRoot: '/mock/northwind/storefront',
+    branch: 'nw/fix-settlement-replay',
+    parallelIndex: 3,
+  }),
+  makeScriptsMount({
+    mountId: LEDGER_MOUNT_ID,
     projectId: LEDGER_PROJECT_ID,
     mountName: 'ledger-core',
     worktreePath: LEDGER_WORKTREE,
@@ -289,24 +306,54 @@ const USER_SCRIPTS: ReadonlyArray<ProjectScript> = [
   }),
 ];
 
+const manifestScript = ({
+  name,
+  manager,
+  body,
+}: {
+  readonly name: string;
+  readonly manager: string;
+  readonly body: string;
+}): { name: string; command: string; body: string } => ({
+  name,
+  command: manager === 'composer' ? `composer run-script ${name}` : `${manager} run ${name}`,
+  body,
+});
+
 const LEDGER_ROOT_GROUP: ScriptGroup = {
   source: 'package-json',
   packageName: 'ledger-core',
   relDir: '',
   manager: 'pnpm',
   scripts: [
-    { name: 'dev', command: 'vite --host --port 4310' },
-    { name: 'build', command: 'tsc -b && vite build' },
-    { name: 'test', command: 'vitest run' },
-    { name: 'test:watch', command: 'vitest --ui' },
-    { name: 'typecheck', command: 'tsc --noEmit' },
-    { name: 'lint', command: 'biome check .' },
-    { name: 'format', command: 'prettier --write .' },
-    { name: 'db:migrate', command: 'node ./tools/migrate.mjs --to latest' },
-    { name: 'db:seed', command: 'node ./tools/seed.mjs --accounts 400' },
-    { name: 'codegen', command: 'openapi-typescript ./openapi.yaml -o ./src/api/schema.ts' },
-    { name: 'clean', command: 'rm -rf dist .turbo node_modules/.cache' },
-    { name: 'docs', command: 'typedoc --out docs/api src/index.ts' },
+    manifestScript({ name: 'dev', manager: 'pnpm', body: 'vite --host --port 4310' }),
+    manifestScript({ name: 'build', manager: 'pnpm', body: 'tsc -b && vite build' }),
+    manifestScript({ name: 'test', manager: 'pnpm', body: 'vitest run' }),
+    manifestScript({ name: 'test:watch', manager: 'pnpm', body: 'vitest --ui' }),
+    manifestScript({ name: 'typecheck', manager: 'pnpm', body: 'tsc --noEmit' }),
+    manifestScript({ name: 'lint', manager: 'pnpm', body: 'biome check .' }),
+    manifestScript({ name: 'format', manager: 'pnpm', body: 'prettier --write .' }),
+    manifestScript({
+      name: 'db:migrate',
+      manager: 'pnpm',
+      body: 'node ./tools/migrate.mjs --to latest',
+    }),
+    manifestScript({
+      name: 'db:seed',
+      manager: 'pnpm',
+      body: 'node ./tools/seed.mjs --accounts 400',
+    }),
+    manifestScript({
+      name: 'codegen',
+      manager: 'pnpm',
+      body: 'openapi-typescript ./openapi.yaml -o ./src/api/schema.ts',
+    }),
+    manifestScript({
+      name: 'clean',
+      manager: 'pnpm',
+      body: 'rm -rf dist .turbo node_modules/.cache',
+    }),
+    manifestScript({ name: 'docs', manager: 'pnpm', body: 'typedoc --out docs/api src/index.ts' }),
   ],
 };
 
@@ -316,10 +363,14 @@ const POSTINGS_GROUP: ScriptGroup = {
   relDir: 'packages/postings',
   manager: 'pnpm',
   scripts: [
-    { name: 'build', command: 'tsup src/index.ts --dts' },
-    { name: 'test', command: 'vitest run --coverage' },
-    { name: 'typecheck', command: 'tsc --noEmit' },
-    { name: 'bench', command: 'node ./bench/rounding.mjs --iterations 50000' },
+    manifestScript({ name: 'build', manager: 'pnpm', body: 'tsup src/index.ts --dts' }),
+    manifestScript({ name: 'test', manager: 'pnpm', body: 'vitest run --coverage' }),
+    manifestScript({ name: 'typecheck', manager: 'pnpm', body: 'tsc --noEmit' }),
+    manifestScript({
+      name: 'bench',
+      manager: 'pnpm',
+      body: 'node ./bench/rounding.mjs --iterations 50000',
+    }),
   ],
 };
 
@@ -329,10 +380,14 @@ const RELAY_GROUP: ScriptGroup = {
   relDir: '',
   manager: 'pnpm',
   scripts: [
-    { name: 'dev', command: 'tsx watch src/server.ts' },
-    { name: 'test', command: 'vitest run' },
-    { name: 'typecheck', command: 'tsc --noEmit' },
-    { name: 'deploy:staging', command: 'node ./tools/deploy.mjs --env staging' },
+    manifestScript({ name: 'dev', manager: 'pnpm', body: 'tsx watch src/server.ts' }),
+    manifestScript({ name: 'test', manager: 'pnpm', body: 'vitest run' }),
+    manifestScript({ name: 'typecheck', manager: 'pnpm', body: 'tsc --noEmit' }),
+    manifestScript({
+      name: 'deploy:staging',
+      manager: 'pnpm',
+      body: 'node ./tools/deploy.mjs --env staging',
+    }),
   ],
 };
 
@@ -342,11 +397,76 @@ const PAYMENTS_GROUP: ScriptGroup = {
   relDir: '',
   manager: 'composer',
   scripts: [
-    { name: 'test', command: 'vendor/bin/phpunit --testsuite unit' },
-    { name: 'lint', command: 'vendor/bin/php-cs-fixer fix --dry-run' },
-    { name: 'migrate', command: 'php artisan migrate --force' },
+    manifestScript({
+      name: 'test',
+      manager: 'composer',
+      body: 'vendor/bin/phpunit --testsuite unit',
+    }),
+    manifestScript({
+      name: 'lint',
+      manager: 'composer',
+      body: 'vendor/bin/php-cs-fixer fix --dry-run',
+    }),
+    manifestScript({ name: 'migrate', manager: 'composer', body: 'php artisan migrate --force' }),
   ],
 };
+
+type NorthwindPackageSeed = Readonly<{
+  packageName: string;
+  relDir: string;
+  scripts: ReadonlyArray<{ readonly name: string; readonly body: string }>;
+}>;
+
+const makeNorthwindGroup = ({
+  packageName,
+  relDir,
+  scripts,
+}: NorthwindPackageSeed): ScriptGroup => ({
+  source: 'package-json',
+  packageName,
+  relDir,
+  manager: 'yarn',
+  scripts: scripts.map(({ name, body }) => manifestScript({ name, manager: 'yarn', body })),
+});
+
+const NORTHWIND_GROUPS: ReadonlyArray<ScriptGroup> = [
+  makeNorthwindGroup({
+    packageName: 'northwind-storefront',
+    relDir: '',
+    scripts: [
+      { name: 'dev', body: 'turbo run dev --parallel' },
+      { name: 'build', body: 'turbo run build' },
+      { name: 'lint', body: 'eslint . --cache' },
+    ],
+  }),
+  makeNorthwindGroup({
+    packageName: '@northwind/api',
+    relDir: 'apps/api',
+    scripts: [
+      { name: 'dev', body: 'tsx watch src/server.ts' },
+      { name: 'test', body: 'vitest run --reporter=dot' },
+      { name: 'db:migrate', body: 'prisma migrate deploy' },
+    ],
+  }),
+  makeNorthwindGroup({
+    packageName: '@northwind/web',
+    relDir: 'apps/web',
+    scripts: [
+      { name: 'dev', body: 'vite --host --port 3000' },
+      { name: 'build', body: 'vite build' },
+      { name: 'test', body: 'vitest run' },
+    ],
+  }),
+  makeNorthwindGroup({
+    packageName: '@acme/ui',
+    relDir: 'packages/ui',
+    scripts: [
+      { name: 'dev', body: 'storybook dev -p 6006' },
+      { name: 'build', body: 'tsup src/index.ts --dts' },
+      { name: 'storybook', body: 'storybook build' },
+    ],
+  }),
+];
 
 const DRIFT_OUTPUT = [
   '> ledger-core@2.14.0 test',
@@ -437,7 +557,7 @@ const seedScriptsScene = (): void => {
     sessions: [SCRIPTS_SESSION],
     currentSessionId: SCRIPTS_SESSION_ID,
     sessionProjectMounts: { [SCRIPTS_SESSION_ID]: SCRIPTS_MOUNTS },
-    sessionActiveMount: { [SCRIPTS_SESSION_ID]: SCRIPTS_MOUNTS[0]?.mountId ?? null },
+    sessionActiveMount: { [SCRIPTS_SESSION_ID]: LEDGER_MOUNT_ID },
     sessionActiveProject: { [SCRIPTS_SESSION_ID]: LEDGER_PROJECT_ID },
     projectScripts: { [SCRIPTS_WORKSPACE_ID]: USER_SCRIPTS },
     scriptRuns: { [SCRIPTS_SESSION_ID]: SCRIPT_RUNS },
@@ -446,10 +566,12 @@ const seedScriptsScene = (): void => {
         [LEDGER_WORKTREE]: [LEDGER_ROOT_GROUP, POSTINGS_GROUP],
         [RELAY_WORKTREE]: [RELAY_GROUP],
         [PAYMENTS_WORKTREE]: [PAYMENTS_GROUP],
+        [NORTHWIND_WORKTREE]: NORTHWIND_GROUPS,
       },
     },
     discoveredScriptScans: {
       [SCRIPTS_SESSION_ID]: {
+        [NORTHWIND_WORKTREE]: READY_SCAN,
         [LEDGER_WORKTREE]: READY_SCAN,
         [RELAY_WORKTREE]: READY_SCAN,
         [PAYMENTS_WORKTREE]: READY_SCAN,
@@ -465,7 +587,7 @@ const seedScriptsScene = (): void => {
     refreshDiscoveredScripts: async () => undefined,
     runDiscoveredScript: async () => STUB_RUN_RESULT,
     setScriptsLensScope: noop,
-    setActiveLens: noop,
+    navigate: () => undefined,
   });
 };
 

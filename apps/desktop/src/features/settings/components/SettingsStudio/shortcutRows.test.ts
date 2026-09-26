@@ -23,7 +23,7 @@ describe('shortcutRows', () => {
   it('keeps the integration digits as named rows, since each opens a different lens', () => {
     const labels = shortcutRows({ group: 'views' }).map((row) => row.label);
 
-    expect(labels).toContain('Code host');
+    expect(labels).toContain('Pull request');
     expect(labels).toContain('Linear');
     expect(labels).toContain('Slack threads');
   });

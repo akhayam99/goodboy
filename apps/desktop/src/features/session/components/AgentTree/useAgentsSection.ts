@@ -12,7 +12,13 @@ import type {
   TurnState,
   WorkflowRunId,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useSessionOpenQuestions,
+  agentPlace,
+  sessionPlace,
+} from '../../../../store';
 import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
 import { resolveWorkflowAdvance, type WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { viewWorkflowAdvance } from '../../../workflows/workflowAdvanceView';
@@ -104,7 +110,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     }),
   );
   const selectedAgentId = useAppStore((s) => s.selectedAgentId[task.id] ?? null);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
   const detachWorkflowFromSession = useAppStore((s) => s.detachWorkflowFromSession);
@@ -112,7 +118,6 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const discardWorkflow = useAppStore((s) => s.discardWorkflow);
   const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
   const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
   const workflowNameByRunId = useMemo(() => {
     const map = new Map<string, string>();
     for (const { run, workflow } of attachedRuns) {
@@ -209,7 +214,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
       window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
       return;
     }
-    void selectAgent(task.id, sid);
+    navigate({ to: agentPlace({ sessionId: task.id, agentId: sid }) });
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };
 
@@ -217,7 +222,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     if (question != null) {
       focusQuestion(question.id);
     }
-    setActiveLens(task.id, 'questions');
+    navigate({ to: sessionPlace({ sessionId: task.id, lens: 'questions' }) });
   };
 
   const onStartStepAgent = async ({ agent, model, isConfirmed = false }: StartStepAgentParams) => {
@@ -252,7 +257,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
 
   const onStartWorkflowRun = async (sessionId: SessionId, workflowRunId: WorkflowRunId) => {
     await startWorkflowRun(sessionId, workflowRunId);
-    setActiveLens(sessionId, 'workflows');
+    navigate({ to: sessionPlace({ sessionId, lens: 'workflows' }) });
   };
 
   const visibleWorkflowRuns =

@@ -1085,9 +1085,7 @@ fn is_builtin_step_row(conn: &rusqlite::Connection, id: &str) -> Result<bool, Ph
         return Ok(true);
     }
     let mut stmt = conn.prepare("SELECT workspace_id FROM step_library WHERE id = ?1 LIMIT 1")?;
-    let mut rows = stmt.query_map(rusqlite::params![id], |row| {
-        row.get::<_, Option<String>>(0)
-    })?;
+    let mut rows = stmt.query_map(rusqlite::params![id], |row| row.get::<_, Option<String>>(0))?;
     match rows.next() {
         Some(row) => Ok(row.map_err(PhaseError::Db)?.is_none()),
         None => Ok(false),
@@ -1592,26 +1590,6 @@ fn write_agent_status(
     }
 }
 
-// Persists the agent role kind (planner/scout/implementer/...) so the
-// chip survives an app restart. agentKindOverride in the store mirrors
-// this column; both are kept in sync via this command.
-#[tauri::command]
-pub async fn agent_set_kind(
-    state: State<'_, Db>,
-    id: String,
-    kind: Option<String>,
-) -> Result<(), PhaseError> {
-    let conn = state.0.lock().map_err(|_| PhaseError::Poisoned)?;
-    let affected = conn.execute(
-        "UPDATE agents SET kind = ?2 WHERE id = ?1",
-        rusqlite::params![id, kind],
-    )?;
-    if affected == 0 {
-        return Err(PhaseError::RunNotFound(id));
-    }
-    Ok(())
-}
-
 // Persists the agent-level verbosity override. NULL = inherit from workspace.
 #[tauri::command]
 pub async fn agent_set_verbosity(
@@ -2074,7 +2052,8 @@ mod tests {
     fn validates_bounded_routing_objects() {
         let lock = r#"{"version":1,"pick":{"provider":"codex","model":"gpt-5.6","effort":"high"},"origin":"user"}"#.to_string();
         let decision = r#"{"version":1,"proposal":null,"selected":{"provider":"codex","model":"gpt-5.6","effort":"high"},"source":"step_lock","reason":"Chosen","adjustment":"none","executed":null}"#.to_string();
-        let profile = r#"{"taskType":"implementation","difficulty":"heavy","basis":"agent"}"#.to_string();
+        let profile =
+            r#"{"taskType":"implementation","difficulty":"heavy","basis":"agent"}"#.to_string();
         assert!(validate_routing_values(Some(&lock), Some(&decision), Some(&profile)).is_ok());
 
         let oversized = format!(

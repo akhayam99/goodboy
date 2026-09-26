@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STORAGE_KEYS } from './storage-keys';
-import { bootstrapTheme, resolveTheme, useThemeStore } from './theme';
+import { bootstrapTheme, resolveTheme, useThemeStore, withViewTransition } from './theme';
 
 type Listener = () => void;
 
@@ -86,5 +86,86 @@ describe('theme store', () => {
 
     expect(useThemeStore.getState()).toMatchObject({ preference: 'dark', theme: 'dark' });
     expect(localStorage.getItem(STORAGE_KEYS.theme)).toBe('dark');
+  });
+
+  it('follows another window switching the theme', () => {
+    mockSystem({ isLight: false });
+    stop = bootstrapTheme();
+
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: STORAGE_KEYS.theme, newValue: 'light' }),
+    );
+
+    expect(useThemeStore.getState()).toMatchObject({ preference: 'light', theme: 'light' });
+    expect(isLightApplied()).toBe(true);
+  });
+
+  it('ignores a storage event for an unrelated key', () => {
+    mockSystem({ isLight: false });
+    stop = bootstrapTheme();
+
+    window.dispatchEvent(new StorageEvent('storage', { key: 'unrelated', newValue: 'light' }));
+
+    expect(useThemeStore.getState().theme).toBe('dark');
+  });
+
+  it('stops listening once the caller tears it down', () => {
+    mockSystem({ isLight: false });
+    const teardown = bootstrapTheme();
+    teardown();
+
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: STORAGE_KEYS.theme, newValue: 'light' }),
+    );
+
+    expect(useThemeStore.getState().theme).toBe('dark');
+  });
+});
+
+type MutableDocument = { startViewTransition?: unknown };
+
+const setStartViewTransition = (value: unknown): void => {
+  (document as unknown as MutableDocument).startViewTransition = value;
+};
+
+describe('withViewTransition', () => {
+  afterEach(() => {
+    setStartViewTransition(undefined);
+  });
+
+  it('runs the update directly when the browser has no View Transition API', () => {
+    setStartViewTransition(undefined);
+    const update = vi.fn();
+
+    withViewTransition(update);
+
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs the update through startViewTransition when available', () => {
+    const startViewTransition = vi.fn((callback: () => void) => {
+      callback();
+      return {};
+    });
+    vi.stubGlobal('matchMedia', () => ({ matches: false }));
+    setStartViewTransition(startViewTransition);
+    const update = vi.fn();
+
+    withViewTransition(update);
+
+    expect(startViewTransition).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips the view transition and runs the update directly under reduced motion', () => {
+    const startViewTransition = vi.fn();
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    setStartViewTransition(startViewTransition);
+    const update = vi.fn();
+
+    withViewTransition(update);
+
+    expect(startViewTransition).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledTimes(1);
   });
 });

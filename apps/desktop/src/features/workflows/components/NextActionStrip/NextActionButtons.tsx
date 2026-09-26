@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button, ConfirmPopover } from '@goodboy/ui';
 import type { OpenQuestion, SessionId, WorkflowRunId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace, sessionPlace } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { NextAction } from '../../resolveNextAction';
 
@@ -17,9 +17,8 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
   const [isChecking, setIsChecking] = useState(false);
   const recoverStuckStep = useAppStore((state) => state.recoverStuckStep);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
-  const selectAgent = useAppStore((state) => state.selectAgent);
+  const navigate = useAppStore((state) => state.navigate);
   const requestOpenQuestionScroll = useAppStore((state) => state.requestOpenQuestionScroll);
-  const setActiveLens = useAppStore((state) => state.setActiveLens);
 
   const guard = async ({
     run,
@@ -43,10 +42,10 @@ export const NextActionButtons = ({ sessionId, workflowRunId, action }: Props) =
 
   const answer = ({ question }: { readonly question: OpenQuestion }) => {
     if (question.createdByAgentId == null) {
-      setActiveLens(sessionId, 'questions');
+      navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) });
       return;
     }
-    void selectAgent(sessionId, question.createdByAgentId);
+    navigate({ to: agentPlace({ sessionId, agentId: question.createdByAgentId }) });
     requestOpenQuestionScroll({ agentId: question.createdByAgentId, questionId: question.id });
     window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
   };

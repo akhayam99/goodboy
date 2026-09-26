@@ -68,7 +68,7 @@ export const LocalImage = ({ url, alt, imageClassName, onOpen }: Props) => {
 
   return (
     <span className="flex min-w-0 items-start gap-2 rounded-md border border-dashed border-border-soft px-3 py-2">
-      <span className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground">
+      <span className="flex min-w-0 flex-1 flex-col gap-1 text-label text-muted-foreground">
         {alt !== '' && alt !== url ? <span className="text-foreground">{alt}</span> : null}
         <span>
           {state.kind === 'failed' ? 'Could not load local image.' : 'Local image. Click to load.'}

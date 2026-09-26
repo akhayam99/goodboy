@@ -37,6 +37,7 @@ mod remote_image;
 mod repo;
 mod scratch_dir;
 mod scripts;
+mod scroller_style;
 mod secrets;
 mod sentry;
 mod session_dir;
@@ -188,6 +189,7 @@ pub fn run() {
             editor::open_file_in_workspace,
             editor::open_url,
             remote_image::fetch_remote_image,
+            remote_image::load_tool_image,
             local_image::local_image_read,
             releases::releases_list,
             explore::explore_list,
@@ -346,7 +348,6 @@ pub fn run() {
             workflows::workflow_node_routing_update,
             workflows::agent_update_status,
             workflows::agent_set_provider_session_id,
-            workflows::agent_set_kind,
             workflows::agent_set_verbosity,
             workflows::agent_mark_viewed,
             workflows::agent_set_done,
@@ -361,6 +362,7 @@ pub fn run() {
             settings_overrides::get_workspace_overrides,
             settings_overrides::set_workspace_overrides,
             settings_overrides::get_session_overrides,
+            scroller_style::system_scroller_style,
             config_export::export_config_to_file,
             config_export::import_config_from_file,
             github::gh_status,

@@ -96,7 +96,7 @@ export const SlackThreadDetail = ({
       resolveError: null,
       emptyDescription: 'The messages in this thread show up here.',
       footnote: null,
-      composerNote: 'Sent as plain text by the connected bot, not by you.',
+      composerNote: 'Sent as plain text, posted as you in Slack.',
       renderMessageFooter: (message) => {
         const original = byTs.get(message.id);
         if (original == null) {

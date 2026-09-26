@@ -2,7 +2,7 @@ import { ExternalLink, TriangleAlert } from 'lucide-react';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
 export const GhMissingNotice = () => (
-  <p className="flex items-center gap-1.5 text-xs text-warning">
+  <p className="flex items-center gap-1.5 text-label text-warning">
     <TriangleAlert size={ICON_SIZE.row} aria-hidden className="shrink-0" />
     <span>
       The GitHub CLI is not installed.{' '}

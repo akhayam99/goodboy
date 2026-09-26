@@ -51,13 +51,13 @@ export const AnswerSubmitButton = ({
           {showsStepper && <ProgressPips index={stepIndex} total={stepCount} />}
           <span
             aria-live="polite"
-            className="text-2xs font-medium tabular-nums text-muted-foreground"
+            className="text-secondary font-medium tabular-nums text-muted-foreground"
           >
             {readyLabel({ answerCount, totalCount })}
           </span>
         </div>
         {recap.length > 0 && (
-          <p className="min-w-0 truncate text-3xs text-muted-foreground">{recap}</p>
+          <p className="min-w-0 truncate text-meta text-muted-foreground">{recap}</p>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -67,7 +67,7 @@ export const AnswerSubmitButton = ({
             onClick={onBack}
             disabled={!canGoBack}
             className={cn(
-              'inline-flex items-center rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground',
+              'inline-flex items-center rounded-md px-2 py-1 text-secondary font-medium text-muted-foreground',
               'transition-[color,background-color] duration-150',
               'hover:bg-hover hover:text-foreground',
               'disabled:pointer-events-none disabled:opacity-40',
@@ -82,7 +82,7 @@ export const AnswerSubmitButton = ({
             type="button"
             onClick={onClick}
             className={cn(
-              'inline-flex shrink-0 items-center rounded-md border border-border px-2.5 py-1 text-2xs font-semibold text-foreground',
+              'inline-flex shrink-0 items-center rounded-md border border-border px-2.5 py-1 text-secondary font-semibold text-foreground',
               'transition-[color,background-color,border-color] duration-150',
               'hover:bg-hover active:scale-[0.98]',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
@@ -96,7 +96,7 @@ export const AnswerSubmitButton = ({
             onClick={onClick}
             disabled={disabled}
             className={cn(
-              'group inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-2xs font-semibold',
+              'group inline-flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-secondary font-semibold',
               'bg-primary text-on-tone shadow-inset-primary',
               'transition-[filter,transform,box-shadow] duration-150 motion-safe:will-change-transform',
               'hover:brightness-105 active:scale-[0.98]',

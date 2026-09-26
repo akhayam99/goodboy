@@ -6,7 +6,7 @@ import { Tooltip } from '@goodboy/ui';
 export const CompletedBody = () => (
   <>
     <div className="flex items-center justify-between">
-      <span className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-eyebrow text-success">
+      <span className="inline-flex items-center gap-1 text-eyebrow text-success">
         <CONCEPT_ICONS.decisions size={11} aria-hidden />
         Setup complete
       </span>

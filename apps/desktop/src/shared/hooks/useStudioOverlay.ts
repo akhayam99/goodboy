@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEscapeLayer } from '@goodboy/ui';
 
-const EXIT_MS = 200;
+export const STUDIO_EXIT_MS = 200;
 
 type Params = {
   readonly onClose: () => void;
@@ -16,26 +17,16 @@ export const useStudioOverlay = ({ onClose, isEscapeEnabled = true }: Params): S
   const [closing, setClosing] = useState(false);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  const isEscapeEnabledRef = useRef(isEscapeEnabled);
-  isEscapeEnabledRef.current = isEscapeEnabled;
 
   const requestClose = useCallback(() => setClosing(true), []);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isEscapeEnabledRef.current) {
-        requestClose();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [requestClose]);
+  useEscapeLayer(requestClose, isEscapeEnabled && !closing);
 
   useEffect(() => {
     if (!closing) {
       return;
     }
-    const t = setTimeout(() => onCloseRef.current(), EXIT_MS);
+    const t = setTimeout(() => onCloseRef.current(), STUDIO_EXIT_MS);
     return () => clearTimeout(t);
   }, [closing]);
 

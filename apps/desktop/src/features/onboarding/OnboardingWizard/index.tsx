@@ -305,7 +305,7 @@ export const OnboardingWizard = () => {
             <button
               type="button"
               onClick={dismiss}
-              className="rounded-md px-2 py-1 text-xs font-medium text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              className="rounded-md px-2 py-1 text-label font-medium text-faint-foreground transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               Skip setup
             </button>
@@ -342,7 +342,7 @@ export const OnboardingWizard = () => {
               />
             </div>
             {stepError !== null ? (
-              <p role="alert" className="text-center text-xs text-danger">
+              <p role="alert" className="text-center text-label text-danger">
                 {stepError}
               </p>
             ) : null}
@@ -371,7 +371,7 @@ export const OnboardingWizard = () => {
               {cta !== null && cta.hint !== null && (
                 <p
                   className={cn(
-                    'text-xs text-muted-foreground',
+                    'text-label text-muted-foreground',
                     isFirstStep ? 'text-center' : 'text-right',
                   )}
                 >

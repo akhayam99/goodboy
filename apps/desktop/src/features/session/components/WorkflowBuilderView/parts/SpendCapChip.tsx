@@ -65,7 +65,7 @@ export const SpendCapChip = ({
       }
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="text-2xs text-muted-foreground">Cap this run before it starts.</span>
+        <span className="text-secondary text-muted-foreground">Cap this run before it starts.</span>
         <Switch
           label={
             <>

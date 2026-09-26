@@ -40,7 +40,7 @@ export const DetectedRepoList = ({ repos, busy, known = {}, onConfirm, onDismiss
 
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-3 text-left">
-      <p className="text-xs text-muted-foreground">
+      <p className="text-label text-muted-foreground">
         {repos.length === 1
           ? '1 repository found in this folder'
           : `${repos.length} repositories found in this folder`}
@@ -64,15 +64,11 @@ export const DetectedRepoList = ({ repos, busy, known = {}, onConfirm, onDismiss
                         aria-hidden
                         className="shrink-0 text-muted-foreground"
                       />
-                      <span className="truncate text-sm font-medium text-foreground">
-                        {repo.name}
-                      </span>
-                      <span className="truncate font-mono text-xs text-faint-foreground">
-                        {repo.path}
-                      </span>
+                      <span className="truncate text-row text-foreground">{repo.name}</span>
+                      <span className="truncate text-code text-faint-foreground">{repo.path}</span>
                     </span>
                     {knownEntry !== undefined ? (
-                      <span className="block truncate text-xs text-primary">
+                      <span className="block truncate text-label text-primary">
                         {knownLabel({ entry: knownEntry })}
                       </span>
                     ) : null}

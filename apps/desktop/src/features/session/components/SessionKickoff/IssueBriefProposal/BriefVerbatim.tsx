@@ -25,7 +25,7 @@ export const BriefVerbatim = ({ source, verbatimGoal, onUseIssueText, onDismiss 
       lines={4}
       className="text-xs leading-relaxed text-muted-foreground"
     />
-    <p className="text-2xs text-faint-foreground">
+    <p className="text-secondary text-faint-foreground">
       No model is free to write a brief, so this is the {source.noun} text as it is.
     </p>
     <footer className="flex items-center gap-1.5">

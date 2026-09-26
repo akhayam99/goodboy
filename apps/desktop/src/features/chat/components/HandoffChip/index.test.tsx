@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 
@@ -19,9 +20,8 @@ const { extractHandoffMock, showToast, state } = vi.hoisted(() => ({
     agentTurnState: {} as Record<string, unknown>,
     spawnAgent: vi.fn(async () => 'agent-impl' as AgentId),
     acceptSessionNudgeHandoff: vi.fn(async () => 'agent-accepted' as AgentId),
-    selectAgent: vi.fn(async () => undefined),
-    setCurrentSession: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
+    loadAgentTranscript: vi.fn(async () => undefined),
   },
 }));
 
@@ -29,7 +29,8 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/core')>();
   return { ...actual, extractHandoff: extractHandoffMock };
 });
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
@@ -52,9 +53,7 @@ beforeEach(() => {
   state.agentTurnState = {};
   state.spawnAgent = vi.fn(async () => 'agent-impl' as AgentId);
   state.acceptSessionNudgeHandoff = vi.fn(async () => 'agent-accepted' as AgentId);
-  state.selectAgent = vi.fn(async () => undefined);
-  state.setCurrentSession = vi.fn(async () => undefined);
-  state.setActiveLens = vi.fn();
+  state.navigate = vi.fn();
 });
 afterEach(cleanup);
 
@@ -155,13 +154,16 @@ describe('HandoffChip', () => {
     await waitFor(() => expect(state.acceptSessionNudgeHandoff).toHaveBeenCalledWith('sess-1'));
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
     expect(state.spawnAgent).not.toHaveBeenCalled();
-    expect(state.selectAgent).not.toHaveBeenCalled();
+    expect(state.navigate).not.toHaveBeenCalled();
     const opts = showToast.mock.calls[0]![0];
     expect(opts?.action?.label).toBe('Open the agent');
 
     opts?.action?.onClick();
 
-    await waitFor(() => expect(state.selectAgent).toHaveBeenCalledWith('sess-1', 'agent-accepted'));
-    expect(state.setActiveLens).toHaveBeenCalledWith('sess-1', 'agents');
+    await waitFor(() =>
+      expect(state.navigate).toHaveBeenCalledWith({
+        to: { at: 'agent', sessionId: 'sess-1', agentId: 'agent-accepted' },
+      }),
+    );
   });
 });

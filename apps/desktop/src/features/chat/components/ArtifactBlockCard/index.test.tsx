@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { AgentId, SessionId } from '@goodboy/types';
 
@@ -8,12 +9,13 @@ const { state } = vi.hoisted(() => ({
   state: {
     sessionArtifacts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     setFocusedArtifactId: vi.fn(),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
     setScriptsLensScope: vi.fn(),
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
     getState: () => state,
@@ -38,7 +40,7 @@ const artifactOf = (overrides: Record<string, unknown>) => ({
 beforeEach(() => {
   state.sessionArtifacts = {};
   state.setFocusedArtifactId = vi.fn();
-  state.setActiveLens = vi.fn();
+  state.navigate = vi.fn();
   state.setScriptsLensScope = vi.fn();
 });
 
@@ -68,7 +70,9 @@ describe('ArtifactBlockCard', () => {
 
     fireEvent.click(chip);
     expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'artifact-1');
-    expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'plans');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }),
+    });
   });
 
   it('opens the revised artifact from the block the revision wrote', () => {
@@ -113,7 +117,9 @@ describe('ArtifactBlockCard', () => {
 
     fireEvent.click(screen.getByTestId('artifact-block-chip'));
     expect(state.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
-    expect(state.setActiveLens).toHaveBeenCalledWith(SESSION_ID, 'plans');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'plans' }),
+    });
   });
 
   it('leaves a block still arriving as a row with nothing to press', () => {

@@ -39,7 +39,7 @@ export const BulkRemoveBar = ({
   if (selected === null) {
     if (suggested.length === 0) {
       return (
-        <p className="px-2 text-2xs text-faint-foreground">
+        <p className="px-2 text-secondary text-faint-foreground">
           No clean folder has been idle for over {suggestAfterDays} days.
         </p>
       );
@@ -51,7 +51,7 @@ export const BulkRemoveBar = ({
           Remove {suggested.length} safe {suggested.length === 1 ? 'folder' : 'folders'} ·{' '}
           {formatBytes({ bytes: bytesOf({ folders: suggested }) })}
         </Button>
-        <span className="text-2xs text-faint-foreground">
+        <span className="text-secondary text-faint-foreground">
           Only clean folders idle for over {suggestAfterDays} days. Folders with changes are
           skipped.
         </span>

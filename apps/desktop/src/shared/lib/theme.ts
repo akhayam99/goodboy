@@ -69,20 +69,45 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 }));
 
+const isThemePreference = (value: string | null): value is ThemePreference =>
+  value === 'light' || value === 'dark' || value === 'system';
+
 export const bootstrapTheme = (): (() => void) => {
   const preference = readStoredPreference();
   useThemeStore.setState({ preference, theme: resolveAndApply({ preference }) });
   const query = lightQuery();
-  if (query === null) {
-    return () => undefined;
-  }
-  const onChange = () => {
+  const onSystemChange = () => {
     const current = useThemeStore.getState().preference;
     if (current !== 'system') {
       return;
     }
     useThemeStore.setState({ theme: resolveAndApply({ preference: current }) });
   };
-  query.addEventListener('change', onChange);
-  return () => query.removeEventListener('change', onChange);
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== STORAGE_KEY || !isThemePreference(event.newValue)) {
+      return;
+    }
+    useThemeStore.setState({
+      preference: event.newValue,
+      theme: resolveAndApply({ preference: event.newValue }),
+    });
+  };
+  window.addEventListener('storage', onStorage);
+  query?.addEventListener('change', onSystemChange);
+  return () => {
+    window.removeEventListener('storage', onStorage);
+    query?.removeEventListener('change', onSystemChange);
+  };
+};
+
+const reducedMotion = (): boolean =>
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+export const withViewTransition = (update: () => void): void => {
+  if (reducedMotion() || typeof document.startViewTransition !== 'function') {
+    update();
+    return;
+  }
+  document.startViewTransition(update);
 };

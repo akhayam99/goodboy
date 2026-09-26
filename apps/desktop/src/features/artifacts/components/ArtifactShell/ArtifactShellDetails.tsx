@@ -1,6 +1,6 @@
 import { MetaRow, SectionHeader } from '@goodboy/ui';
 import type { Agent, ArtifactId, SessionArtifact, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { useAppStore, agentPlace } from '../../../../store';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
 import { ARTIFACT_KIND_MARKER_LABEL } from '../../artifactPresentation';
 import { ArtifactBuiltFrom } from '../ArtifactStudio/ArtifactBuiltFrom';
@@ -20,7 +20,7 @@ type Props = {
 
 export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }: Props) => {
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const creator = agents.find((agent) => agent.id === artifact.agentId) ?? null;
   const openArtifact = (artifactId: ArtifactId) => setFocusedArtifactId(sessionId, artifactId);
   const savedCopy = useArtifactSavedCopy({ sessionId, artifact });
@@ -38,7 +38,7 @@ export const ArtifactShellDetails = ({ sessionId, artifact, agents, artifacts }:
                 key="creator"
                 type="button"
                 data-testid="artifact-details-creator"
-                onClick={() => void selectAgent(sessionId, creator.id)}
+                onClick={() => navigate({ to: agentPlace({ sessionId, agentId: creator.id }) })}
                 className="min-w-0 truncate text-foreground underline-offset-2 hover:underline"
               >
                 {creator.name}

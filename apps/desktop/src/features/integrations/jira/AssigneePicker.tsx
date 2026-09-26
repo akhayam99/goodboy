@@ -31,7 +31,7 @@ type FilterParams = {
 const UNASSIGN_ROW_ID = 'unassign';
 
 const MENU_ROW =
-  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
+  'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-label text-foreground transition-colors hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50';
 
 const filterAssignees = ({ users, query }: FilterParams): ReadonlyArray<JiraUser> => {
   const needle = query.trim().toLowerCase();
@@ -83,13 +83,12 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           title="Change who owns this issue in Jira"
           disabled={busyId != null}
           onClick={toggle}
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-sm text-2xs text-muted-foreground hover:text-foreground disabled:cursor-not-allowed',
-            busyId != null && 'animate-border-pulse',
-          )}
+          className="inline-flex items-center gap-1.5 rounded-sm text-secondary text-muted-foreground hover:text-foreground disabled:cursor-not-allowed"
         >
           <UserRound size={ICON_SIZE.row} aria-hidden />
-          {assignee?.displayName ?? 'Unassigned'}
+          <span className={cn(busyId != null && 'text-shimmer')}>
+            {assignee?.displayName ?? 'Unassigned'}
+          </span>
         </button>
       }
     >
@@ -100,7 +99,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           aria-label="Filter assignable people"
           placeholder="Filter by name"
           onChange={(event) => setQuery(event.target.value)}
-          className="h-7 text-xs"
+          className="h-7 text-label"
         />
       </div>
       <Divider />
@@ -134,19 +133,21 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
           </button>
         ))}
         {isLoading && (
-          <p role="status" className="px-2 py-1.5 text-2xs text-muted-foreground">
+          <p role="status" className="px-2 py-1.5 text-secondary text-muted-foreground">
             Reading who can take this issue
           </p>
         )}
         {!isLoading && error == null && filtered.length === 0 && (
-          <p className="px-2 py-1.5 text-2xs text-muted-foreground">No one matches that name</p>
+          <p className="px-2 py-1.5 text-secondary text-muted-foreground">
+            No one matches that name
+          </p>
         )}
       </ScrollFade>
       {error != null && (
         <>
           <Divider />
           <div className="flex items-center justify-between gap-2 p-1">
-            <p role="alert" className="min-w-0 text-2xs text-danger">
+            <p role="alert" className="min-w-0 text-secondary text-danger">
               {error}
             </p>
             <Button size="sm" variant="ghost" onClick={reload}>
@@ -158,7 +159,7 @@ export const AssigneePicker = ({ issueKey, workspaceId, assignee, onAssign }: Pr
       {assignError != null && (
         <>
           <Divider />
-          <p role="alert" className="px-2 py-1.5 text-2xs text-danger">
+          <p role="alert" className="px-2 py-1.5 text-secondary text-danger">
             {assignError}
           </p>
         </>

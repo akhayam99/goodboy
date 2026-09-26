@@ -57,12 +57,12 @@ export const InboxRow = ({ record, selected, onSelect }: Props) => {
       <span aria-hidden className="pointer-events-none relative flex">
         <IntegrationGlyph provider={record.provider} size="xs" useBrandColor />
       </span>
-      <span className="pointer-events-none relative truncate font-mono text-2xs tabular-nums text-faint-foreground">
+      <span className="pointer-events-none relative truncate font-mono text-secondary tabular-nums text-faint-foreground">
         {record.identifier}
       </span>
       <span
         className={cn(
-          'pointer-events-none relative truncate text-xs',
+          'pointer-events-none relative truncate text-label',
           record.state === 'done' ? 'text-muted-foreground' : 'text-foreground',
         )}
       >
@@ -81,7 +81,7 @@ export const InboxRow = ({ record, selected, onSelect }: Props) => {
           dateTime={record.updatedAt}
           title={formatAbsoluteDateTime({ iso: record.updatedAt })}
           className={cn(
-            'pointer-events-none text-3xs tabular-nums text-faint-foreground',
+            'pointer-events-none text-meta text-faint-foreground',
             canOpen && 'group-hover:hidden',
             canOpen && selected && 'hidden',
           )}

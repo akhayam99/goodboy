@@ -21,7 +21,7 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
         aria-label={`Detach details for ${projectName}`}
         aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-fit items-center gap-1 rounded-md px-1 py-0.5 text-2xs font-medium text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+        className="flex w-fit items-center gap-1 rounded-md px-1 py-0.5 text-secondary font-medium text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
       >
         <Chevron size={10} aria-hidden />
         Details
@@ -29,14 +29,14 @@ export const DetachDetails = ({ projectName, details, isBusy, onKeepFiles }: Pro
       {isOpen ? (
         <div className="flex min-w-0 flex-col gap-2">
           {details.totals.length === 0 ? null : (
-            <ul className="flex min-w-0 flex-col gap-0.5 text-2xs text-foreground">
+            <ul className="flex min-w-0 flex-col gap-0.5 text-secondary text-foreground">
               {details.totals.map((detail) => (
                 <li key={detail}>{detail}</li>
               ))}
             </ul>
           )}
           {details.worktrees.length === 0 ? null : (
-            <ul className="flex min-w-0 flex-col gap-1 border-t border-border pt-2 text-2xs text-muted-foreground">
+            <ul className="flex min-w-0 flex-col gap-1 border-t border-border pt-2 text-secondary text-muted-foreground">
               {details.worktrees.map((detail) => (
                 <li key={detail} className="break-words">
                   {detail}

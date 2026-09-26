@@ -135,18 +135,21 @@ export const QuestionCard = ({
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               {question.isBlocking && (
                 <span
-                  className={cn('rounded-md px-1.5 py-0.5 text-2xs font-medium', warningTint.solid)}
+                  className={cn(
+                    'rounded-md px-1.5 py-0.5 text-secondary font-medium',
+                    warningTint.solid,
+                  )}
                 >
                   Blocking
                 </span>
               )}
               {question.ownedByStepOrdinal != null && (
-                <span className="text-3xs text-muted-foreground">
+                <span className="text-meta text-muted-foreground">
                   step {question.ownedByStepOrdinal}
                 </span>
               )}
               {askedByName !== null && (
-                <span className="min-w-0 truncate text-3xs text-muted-foreground">
+                <span className="min-w-0 truncate text-meta text-muted-foreground">
                   asked by {askedByName}
                 </span>
               )}

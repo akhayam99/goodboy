@@ -81,10 +81,10 @@ export const ApiProviderDetail = ({ info }: Props) => {
             )}
           </span>
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-row text-foreground">
               {isRuntimeReady ? 'OpenCode detected' : 'OpenCode is required'}
             </span>
-            <span className="text-2xs text-muted-foreground">
+            <span className="text-secondary text-muted-foreground">
               {isRuntimeReady
                 ? `${info.binary}${info.version !== null ? ` ${info.version}` : ''}`
                 : 'Install OpenCode, then detect the runtime again.'}
@@ -94,7 +94,7 @@ export const ApiProviderDetail = ({ info }: Props) => {
             type="button"
             disabled={isRefreshing}
             onClick={() => void onRefresh()}
-            className="rounded-md border px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-50"
+            className="rounded-md border px-2.5 py-1.5 text-label font-medium text-muted-foreground hover:bg-hover hover:text-foreground disabled:opacity-50"
           >
             Detect
           </button>

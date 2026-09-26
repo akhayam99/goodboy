@@ -130,7 +130,7 @@ export const SegmentedTabs = <T extends string>({
             style={activeStyle}
             className={cn(
               'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-              isMedium ? 'px-3 py-2 text-sm font-semibold' : 'px-2.5 py-1 text-xs',
+              isMedium ? 'px-3 py-2 text-heading' : 'px-2.5 py-1 text-label',
               isActive
                 ? 'bg-selected font-semibold text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -144,7 +144,7 @@ export const SegmentedTabs = <T extends string>({
                   {mark}
                   <span className="truncate">{option.label}</span>
                 </span>
-                <span className="block truncate text-2xs font-normal text-muted-foreground">
+                <span className="block truncate text-secondary font-normal text-muted-foreground">
                   {option.hint}
                 </span>
               </span>
@@ -158,7 +158,7 @@ export const SegmentedTabs = <T extends string>({
             )}
             {option.badge != null ? (
               typeof option.badge === 'string' ? (
-                <span className="rounded-md bg-fill px-1.5 py-0.5 text-2xs font-bold uppercase tracking-eyebrow text-muted-foreground">
+                <span className="rounded-md bg-fill px-1.5 py-0.5 text-eyebrow text-muted-foreground">
                   {option.badge}
                 </span>
               ) : (

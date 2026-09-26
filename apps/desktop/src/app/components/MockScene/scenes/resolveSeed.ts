@@ -691,8 +691,16 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
     sessionResolvePublications: { [SESSION_ID]: [PUBLICATION] },
     sessionResolveUncapturedWork: { [SESSION_ID]: null },
     resolveQueueView: {
-      [SESSION_ID]: { ...EMPTY_RESOLVE_QUEUE_VIEW, expandedThreadId },
+      [SESSION_ID]: EMPTY_RESOLVE_QUEUE_VIEW,
     },
+    drawer:
+      expandedThreadId === null
+        ? null
+        : {
+            kind: 'conversation',
+            sessionId: SESSION_ID,
+            payload: { threadId: expandedThreadId, tab: 'comment' },
+          },
     sessionGithub: {
       [SESSION_ID]: {
         ...EMPTY_GITHUB,

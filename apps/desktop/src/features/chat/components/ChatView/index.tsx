@@ -24,6 +24,7 @@ import { Button, cn, Divider, ScrollFade, Tooltip, tintClasses } from '@goodboy/
 import { PANE_RHYTHM } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
+  agentPlace,
   useAppStore,
   useSessionAnsweredQuestions,
   useSessionLoading,
@@ -54,6 +55,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 type Props = {
   readonly session: Session;
   readonly isActive?: boolean;
+  readonly agentId?: AgentId | null;
 };
 
 type RetrySource = {
@@ -105,10 +107,9 @@ const buildRetryOverride = ({
   };
 };
 
-export const ChatView = ({ session, isActive = true }: Props) => {
-  const selectedAgentId = useAppStore(
-    (s) => s.selectedAgentId[session.id] ?? null,
-  ) as AgentId | null;
+export const ChatView = ({ session, isActive = true, agentId }: Props) => {
+  const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
+  const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
   const sendTurn = useAppStore((s) => s.sendTurn);
   const { showToast } = useToast();
   const events = useTranscript(selectedAgentId);
@@ -126,7 +127,8 @@ export const ChatView = ({ session, isActive = true }: Props) => {
   const transcriptCached = useAppStore((s) =>
     selectedAgentId ? s.transcripts[selectedAgentId] !== undefined : true,
   );
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const loadAgentTranscript = useAppStore((s) => s.loadAgentTranscript);
+  const navigate = useAppStore((s) => s.navigate);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
   const markAgentViewed = useAppStore((s) => s.markAgentViewed);
   const selectedAgentLastFinishedAt = useAppStore((s) =>
@@ -146,8 +148,8 @@ export const ChatView = ({ session, isActive = true }: Props) => {
     if (!isActive || !selectedAgentId || transcriptCached) {
       return;
     }
-    void selectAgent(session.id, selectedAgentId);
-  }, [isActive, selectedAgentId, transcriptCached, selectAgent, session.id]);
+    void loadAgentTranscript(session.id, selectedAgentId);
+  }, [isActive, selectedAgentId, transcriptCached, loadAgentTranscript, session.id]);
 
   useEffect(() => {
     if (!isActive) {
@@ -425,11 +427,7 @@ export const ChatView = ({ session, isActive = true }: Props) => {
   return (
     <div className="flex h-full flex-col">
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
-        <ScrollFade
-          className="flex-1"
-          fadeSize="h-12"
-          viewportClassName="px-6 pb-4 pt-6 [scrollbar-gutter:stable]"
-        >
+        <ScrollFade className="flex-1" fadeSize="h-12" viewportClassName="px-6 pb-4 pt-6">
           {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
             <TranscriptSkeleton />
           ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 && isProviderDisconnected ? (
@@ -503,7 +501,7 @@ export const ChatView = ({ session, isActive = true }: Props) => {
             size="sm"
             className={cn(tintClasses('warning').borderSoft, 'px-3')}
             onClick={() => {
-              void selectAgent(session.id, otherAgentId);
+              navigate({ to: agentPlace({ sessionId: session.id, agentId: otherAgentId }) });
               requestOpenQuestionScroll({
                 agentId: otherAgentId,
                 questionId: otherAgentQuestion.id,
@@ -520,7 +518,7 @@ export const ChatView = ({ session, isActive = true }: Props) => {
       {isEnded ? (
         <>
           <Divider />
-          <div className="px-4 py-3 text-xs text-muted-foreground">
+          <div className="px-4 py-3 text-label text-muted-foreground">
             Session ended. No more turns run here, and the branch is kept.
           </div>
         </>

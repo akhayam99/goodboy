@@ -39,7 +39,7 @@ export const PlanChip = ({ assistantText, sessionId }: Props) => {
       data-testid="plan-chip"
       tone={CONCEPT_TONE.plans}
       variant="pill"
-      className={`inline-flex w-fit items-center gap-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${accent.text}`}
+      className={`inline-flex w-fit items-center gap-1.5 text-label font-medium transition-opacity hover:opacity-80 ${accent.text}`}
     >
       <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden />
       <span>{plan.title}</span>

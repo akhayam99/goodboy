@@ -35,7 +35,7 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
     <TranscriptDisclosure
       tone="warning"
       open={open}
-      bodyClassName="gap-2 text-xs text-foreground"
+      bodyClassName="gap-2 text-label text-foreground"
       header={
         <TranscriptRowHeader
           tone="warning"
@@ -63,7 +63,9 @@ export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = nu
         >
           Retry capture
         </Button>
-        {repaired ? <span className="text-2xs text-muted-foreground">repair requested</span> : null}
+        {repaired ? (
+          <span className="text-secondary text-muted-foreground">repair requested</span>
+        ) : null}
       </div>
     </TranscriptDisclosure>
   );

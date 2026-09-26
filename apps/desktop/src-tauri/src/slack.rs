@@ -703,6 +703,16 @@ fn permalink_of(envelope: &Value) -> Result<String, SlackError> {
         })
 }
 
+fn reject_bot_token(token: &str) -> Result<(), SlackError> {
+    if token.starts_with("xoxb-") {
+        return Err(SlackError::Auth(
+            "this is a bot token. goodboy needs the user token, the one that starts with xoxp-"
+                .to_string(),
+        ));
+    }
+    Ok(())
+}
+
 async fn validate_connection(base: &str, token: &str) -> Result<SlackConnection, SlackError> {
     let envelope = send_call(token, slack_call(base, &SlackCallSpec::AuthTest)).await?;
     let raw: SlackAuthTestRaw =
@@ -843,6 +853,7 @@ pub async fn slack_validate_connection(
 ) -> Result<SlackConnection, SlackError> {
     let bot_token =
         integration_credentials::secret_to_verify(PROVIDER, &credential_id, bot_token, &cache.0)?;
+    reject_bot_token(&bot_token)?;
     validate_connection(API_BASE, &bot_token).await
 }
 
@@ -1308,6 +1319,20 @@ mod tests {
             Some(SlackError::Http { status: 500, .. })
         ));
         assert!(error_for_status(200, None, "{}").is_none());
+    }
+
+    #[test]
+    fn reject_bot_token_names_the_bot_prefix_and_asks_for_the_user_token() {
+        let error = reject_bot_token("xoxb-secret").expect_err("a bot token is rejected");
+        assert!(matches!(
+            error,
+            SlackError::Auth(ref message) if message.contains("bot token") && message.contains("xoxp-")
+        ));
+    }
+
+    #[test]
+    fn reject_bot_token_accepts_a_user_token() {
+        assert!(reject_bot_token("xoxp-secret").is_ok());
     }
 
     #[test]

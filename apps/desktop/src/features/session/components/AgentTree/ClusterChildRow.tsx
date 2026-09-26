@@ -64,7 +64,7 @@ export const ClusterChildRow = ({
       onMouseEnter={hoverMarkViewed.onMouseEnter}
       onMouseLeave={hoverMarkViewed.onMouseLeave}
       className={cn(
-        'flex w-full items-center gap-2 rounded-sm border-l-2 border-transparent px-2 py-1 text-2xs font-medium transition-colors',
+        'flex w-full items-center gap-2 rounded-sm border-l-2 border-transparent px-2 py-1 text-secondary font-medium transition-colors',
         hasUnread && !isSelected && cn(tintClasses('warning').border),
         isSelected
           ? 'bg-elevated text-foreground'
@@ -81,7 +81,7 @@ export const ClusterChildRow = ({
           className={cn(
             'shrink-0 rounded-sm',
             tintClasses('warning').bg,
-            'px-1 py-0.5 text-2xs font-normal text-warning',
+            'px-1 py-0.5 text-secondary font-normal text-warning',
           )}
           title={`This subagent failed to start and is on attempt ${startAttempt}`}
         >
@@ -91,13 +91,13 @@ export const ClusterChildRow = ({
       {visibleDomains.map((domain, domainIndex) => (
         <span
           key={`${domain}-${domainIndex}`}
-          className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-2xs font-normal text-muted-foreground"
+          className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-secondary font-normal text-muted-foreground"
         >
           {domain}
         </span>
       ))}
       {hiddenDomainCount > 0 ? (
-        <span className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-2xs font-normal text-muted-foreground">
+        <span className="shrink-0 rounded-sm bg-muted px-1 py-0.5 text-secondary font-normal text-muted-foreground">
           +{hiddenDomainCount}
         </span>
       ) : null}

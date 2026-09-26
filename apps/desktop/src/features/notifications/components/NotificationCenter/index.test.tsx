@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { Notification } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -25,19 +26,18 @@ const { state } = vi.hoisted(() => ({
     providers: [] as ReadonlyArray<{ readonly id: string; readonly connection: string }>,
     currentWorkspaceId: 'ws-1' as string | null,
     currentSessionId: null as string | null,
-    setCurrentSession: vi.fn(async () => undefined),
+    navigate: vi.fn(),
     setCurrentWorkspace: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
-    selectAgent: vi.fn(async () => undefined),
+    loadAgentTranscript: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
     workspaces: [] as ReadonlyArray<{ readonly id: string; readonly name: string }>,
   },
 }));
 
-vi.mock('../../../../store', () => {
+vi.mock('../../../../store', async () => {
   const useAppStore = <T,>(selector: (storeState: typeof state) => T) => selector(state);
   useAppStore.getState = () => state;
-  return { useAppStore };
+  return { ...(await import('../../../../store/slices/navigation/place')), useAppStore };
 });
 
 import { NotificationCenter } from './index';
@@ -89,8 +89,7 @@ beforeEach(() => {
   state.markNotificationsRead.mockClear();
   state.dismissNotification.mockClear();
   state.markNotificationRead.mockClear();
-  state.setCurrentSession.mockClear();
-  state.selectAgent.mockClear();
+  state.navigate.mockClear();
   state.reportError.mockClear();
   state.workspaces = [];
 });
@@ -220,7 +219,9 @@ describe('NotificationCenter', () => {
 
   it('reports a notification it could not open', async () => {
     state.sessions = [{ id: 'session-1', goal: 'Ship grouping' }];
-    state.setCurrentSession.mockRejectedValueOnce(new Error('session gone'));
+    state.navigate.mockImplementationOnce(() => {
+      throw new Error('session gone');
+    });
     state.notifications = [
       buildNotification({
         id: 'n1',
@@ -306,6 +307,8 @@ describe('NotificationCenter', () => {
       fireEvent.click(screen.getByRole('button', { name: 'open session' }));
     });
 
-    expect(state.setCurrentSession).toHaveBeenCalledWith('session-1');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId }),
+    });
   });
 });

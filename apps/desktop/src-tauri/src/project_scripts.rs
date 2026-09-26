@@ -20,6 +20,7 @@ pub enum ScriptSource {
 pub struct DiscoveredScript {
     name: String,
     command: String,
+    body: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -56,15 +57,38 @@ fn fallback_package_name(path: &Path) -> String {
         .to_string()
 }
 
+fn script_body(value: &Value) -> Option<String> {
+    match value {
+        Value::String(body) => Some(body.clone()),
+        Value::Array(items) => {
+            let joined = items
+                .iter()
+                .filter_map(Value::as_str)
+                .collect::<Vec<_>>()
+                .join(" && ");
+            if joined.is_empty() {
+                None
+            } else {
+                Some(joined)
+            }
+        }
+        _ => None,
+    }
+}
+
 fn package_scripts(value: &Value, manager: &str) -> Vec<DiscoveredScript> {
     let Some(scripts) = value.get("scripts").and_then(Value::as_object) else {
         return Vec::new();
     };
     scripts
-        .keys()
-        .map(|name| DiscoveredScript {
-            name: name.clone(),
-            command: format!("{manager} run {name}"),
+        .iter()
+        .filter_map(|(name, entry)| {
+            let body = script_body(entry)?;
+            Some(DiscoveredScript {
+                name: name.clone(),
+                command: format!("{manager} run {name}"),
+                body,
+            })
         })
         .collect()
 }
@@ -74,10 +98,14 @@ fn composer_scripts(value: &Value) -> Vec<DiscoveredScript> {
         return Vec::new();
     };
     scripts
-        .keys()
-        .map(|name| DiscoveredScript {
-            name: name.clone(),
-            command: format!("composer run-script {name}"),
+        .iter()
+        .filter_map(|(name, entry)| {
+            let body = script_body(entry)?;
+            Some(DiscoveredScript {
+                name: name.clone(),
+                command: format!("composer run-script {name}"),
+                body,
+            })
         })
         .collect()
 }
@@ -383,6 +411,7 @@ mod tests {
         assert_eq!(groups[0].rel_dir, "");
         assert_eq!(groups[0].manager, "npm");
         assert_eq!(groups[0].scripts[0].command, "npm run build");
+        assert_eq!(groups[0].scripts[0].body, "vite build");
     }
 
     #[test]
@@ -409,6 +438,46 @@ mod tests {
         assert_eq!(groups[1].rel_dir, "packages/api");
         assert_eq!(groups[2].rel_dir, "packages/web");
         assert!(groups.iter().all(|group| group.manager == "pnpm"));
+    }
+
+    #[test]
+    fn keeps_same_named_scripts_apart_per_package() {
+        let dir = TestDir::new("same-name");
+        dir.write(
+            "package.json",
+            r#"{"name":"northwind","workspaces":["apps/web","apps/api"],"scripts":{"dev":"turbo dev"}}"#,
+        );
+        dir.write("yarn.lock", "");
+        dir.write(
+            "apps/api/package.json",
+            r#"{"name":"@northwind/api","scripts":{"dev":"tsx watch src/server.ts"}}"#,
+        );
+        dir.write(
+            "apps/web/package.json",
+            r#"{"name":"@northwind/web","scripts":{"dev":"vite"}}"#,
+        );
+
+        let groups = scan(&dir.0).unwrap();
+
+        let summary = groups
+            .iter()
+            .map(|group| {
+                (
+                    group.package_name.as_str(),
+                    group.rel_dir.as_str(),
+                    group.scripts[0].name.as_str(),
+                    group.scripts[0].command.as_str(),
+                )
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            summary,
+            vec![
+                ("northwind", "", "dev", "yarn run dev"),
+                ("@northwind/api", "apps/api", "dev", "yarn run dev"),
+                ("@northwind/web", "apps/web", "dev", "yarn run dev"),
+            ]
+        );
     }
 
     #[test]
@@ -449,6 +518,29 @@ mod tests {
         assert_eq!(groups[1].source, ScriptSource::Composer);
         assert_eq!(groups[1].scripts.len(), 2);
         assert_eq!(groups[1].scripts[1].command, "composer run-script test");
+        assert_eq!(groups[1].scripts[1].body, "phpunit");
+    }
+
+    #[test]
+    fn joins_a_composer_array_body_and_ignores_a_non_string_script() {
+        let dir = TestDir::new("composer-array");
+        dir.write(
+            "package.json",
+            r#"{"name":"web","scripts":{"build":"vite build","bad":123}}"#,
+        );
+        dir.write(
+            "composer.json",
+            r#"{"name":"acme/server","scripts":{"post-install-cmd":["@php artisan cache:clear","@php artisan migrate"]}}"#,
+        );
+
+        let groups = scan(&dir.0).unwrap();
+
+        assert_eq!(groups[0].scripts.len(), 1);
+        assert_eq!(groups[0].scripts[0].name, "build");
+        assert_eq!(
+            groups[1].scripts[0].body,
+            "@php artisan cache:clear && @php artisan migrate"
+        );
     }
 
     #[test]

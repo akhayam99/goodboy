@@ -32,7 +32,7 @@ export const FacetRow = ({
       selected={isSelected}
       ariaCurrent={isSelected ? 'true' : undefined}
       onClick={onClick}
-      className={cn('items-center gap-2 text-xs', PANE_RHYTHM.navRail.row)}
+      className={cn('items-center gap-2 text-label', PANE_RHYTHM.navRail.row)}
     >
       {Icon != null ? (
         <Icon
@@ -51,9 +51,7 @@ export const FacetRow = ({
       <span className={cn('min-w-0 flex-1 truncate', isEmpty && 'text-faint-foreground')}>
         {label}
       </span>
-      {trailing ?? (
-        <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">{count}</span>
-      )}
+      {trailing ?? <span className="shrink-0 text-meta text-faint-foreground">{count}</span>}
     </SelectableRow>
   );
 };

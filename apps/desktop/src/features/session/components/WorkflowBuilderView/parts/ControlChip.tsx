@@ -27,7 +27,7 @@ export const ControlChip = ({
     aria-expanded={isOpen}
     aria-label={`${label}: ${value}`}
     className={cn(
-      'inline-flex h-7 max-w-72 items-center gap-1.5 rounded-md border bg-subtle px-2.5 text-xs transition-colors hover:bg-hover',
+      'inline-flex h-7 max-w-72 items-center gap-1.5 rounded-md border bg-subtle px-2.5 text-label transition-colors hover:bg-hover',
       isInvalid ? tintClasses('danger').borderSoft : 'border-border-soft hover:border-border',
       disabled && 'cursor-not-allowed opacity-60',
     )}

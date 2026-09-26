@@ -14,7 +14,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AUTO_DEFAULTS, resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
+import { resolveModelArgs, resolveStoredModelSelection } from '@goodboy/core';
 import {
   isWorkflowRoutingDecision,
   isWorkflowTaskProfile,
@@ -463,7 +463,7 @@ function makeStore(initial: Record<string, unknown>) {
     agentEffortOverride: {},
     phaseTemplates: {},
     workspaceOverrides: {},
-    providers: [],
+    providers: CONNECTED_PROVIDERS,
     providerCooldowns: {},
     selectedAgentId: PARENT,
     sendTurn,
@@ -498,7 +498,6 @@ function makeStore(initial: Record<string, unknown>) {
 
 afterEach(() => {
   hoisted.insertArgs.length = 0;
-  vi.unstubAllEnvs();
   vi.clearAllMocks();
   hoisted.invokeAgentList.mockResolvedValue([]);
   hoisted.invokeListConsumptionsForPlan.mockResolvedValue([]);
@@ -507,7 +506,6 @@ afterEach(() => {
 
 describe('fanOutClusters', () => {
   it('flips the container to running and inserts one implementer child per cluster', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container();
     const { get, set } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
 
@@ -524,7 +522,6 @@ describe('fanOutClusters', () => {
   });
 
   it('materializes every cluster child through one parent-scoped batch', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container();
     const { get, set } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
 
@@ -537,7 +534,6 @@ describe('fanOutClusters', () => {
   });
 
   it('leaves no children and starts nothing when the batch fails', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container();
     const { get, set, sendTurn, state } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
     hoisted.invokeAgentInsertBatch.mockRejectedValueOnce(new Error('database is locked'));
@@ -554,7 +550,6 @@ describe('fanOutClusters', () => {
   });
 
   it('does not start a second batch for a parent the backend already materialized', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container();
     const { get, set, sendTurn } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
     hoisted.invokeAgentInsertBatch.mockResolvedValueOnce({ inserted: false, agents: [] });
@@ -567,7 +562,6 @@ describe('fanOutClusters', () => {
   });
 
   it('assigns ordinals continuing past the highest existing run ordinal', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ ordinal: 4 });
     const { get, set } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
 
@@ -578,7 +572,6 @@ describe('fanOutClusters', () => {
   });
 
   it('propagates the container workflowRunId to every child', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({ workflowRunId: 'wf-1' as WorkflowRunId });
     const { get, set } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
 
@@ -590,7 +583,6 @@ describe('fanOutClusters', () => {
   });
 
   it('omits workflowRunId for an ad-hoc container that has none', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container();
     const { get, set } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
 
@@ -602,7 +594,6 @@ describe('fanOutClusters', () => {
   });
 
   it('a container pin does not cascade onto its cluster children', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container({
       providerOverride: 'anthropic',
       modelOverride: 'opus-5',
@@ -622,27 +613,12 @@ describe('fanOutClusters', () => {
 
     expect(hoisted.insertArgs).toHaveLength(2);
     for (const args of hoisted.insertArgs) {
-      expect(args.modelOverride).toBe(AUTO_DEFAULTS.anthropic.implementer[0]?.key);
+      expect(args.modelOverride).not.toBe('opus-5');
       expect(args.routingLock).toBeUndefined();
     }
   });
 
-  it('falls back to the implementer role routing when the container pins nothing', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
-    const c = container();
-    const { get, set } = makeStore({
-      sessionPhaseRuns: { [SID]: [c] },
-      providers: CONNECTED_PROVIDERS,
-    });
-
-    await fanOutClusters(set, get, SID, c, clusters, 'goal');
-
-    expect(hoisted.insertArgs[0]?.modelOverride).toBe(AUTO_DEFAULTS.anthropic.implementer[0]?.key);
-    expect(hoisted.insertArgs[0]?.effort).toBe(AUTO_DEFAULTS.anthropic.implementer[0]?.effort);
-  });
-
   it('mixed-complexity clusters persist distinct choices and execute sequentially', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const c = container();
     const { get, set, sendTurn } = makeStore({
       sessionPhaseRuns: { [SID]: [c] },
@@ -667,7 +643,6 @@ describe('fanOutClusters', () => {
   });
 
   it('resume uses stored child routing rather than parent routing', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const c = container({
       status: 'running',
       providerOverride: 'anthropic',
@@ -715,7 +690,6 @@ describe('fanOutClusters', () => {
   });
 
   it('kicks off only the first child and seeds its turn state to idle', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container();
     const { get, set, sendTurn, state } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
 
@@ -730,7 +704,6 @@ describe('fanOutClusters', () => {
   });
 
   it('puts the part checks and touched paths in the kickoff', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     const c = container();
     const { get, set, sendTurn } = makeStore({ sessionPhaseRuns: { [SID]: [c] } });
     const checked: ReadonlyArray<ImplementationCluster> = [
@@ -765,7 +738,6 @@ describe('fanOutClusters', () => {
 
 describe('cluster child routing lifecycle', () => {
   it('legacy children use their own profile', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const c = container({
       providerOverride: 'anthropic',
       modelOverride: 'opus-5',
@@ -804,42 +776,7 @@ describe('cluster child routing lifecycle', () => {
     }
   });
 
-  it('flag-off children keep the configured default for the same two texts', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
-    const c = container({
-      providerOverride: 'anthropic',
-      modelOverride: 'opus-5',
-      effort: 'high',
-    });
-    const { get, set } = makeStore({
-      sessionPhaseRuns: { [SID]: [c] },
-      providers: CONNECTED_PROVIDERS,
-    });
-
-    await fanOutClusters(set, get, SID, c, legacyClusters, 'goal');
-
-    expect(hoisted.insertArgs).toHaveLength(2);
-    for (const args of hoisted.insertArgs) {
-      expect(args.modelOverride).toBe(AUTO_DEFAULTS.anthropic.implementer[0]?.key);
-      expect(args.effort).toBe(AUTO_DEFAULTS.anthropic.implementer[0]?.effort);
-      expect((args.routingDecision as WorkflowRoutingDecision).source).toBe('kind_default');
-      expect(args.routingLock).toBeUndefined();
-    }
-    expect(hoisted.insertArgs[0]?.taskProfile).toEqual({
-      taskType: 'general',
-      difficulty: 'light',
-      basis: 'heuristic',
-    });
-    expect(hoisted.insertArgs[1]?.taskProfile).toEqual({
-      taskType: 'general',
-      difficulty: 'heavy',
-      basis: 'heuristic',
-    });
-    expect(hoisted.insertArgs[0]?.modelOverride).toBe(hoisted.insertArgs[1]?.modelOverride);
-  });
-
   it('routing survives database reopen and reaches execution', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const c = container();
     const first = makeStore({
       sessionPhaseRuns: { [SID]: [c] },
@@ -898,7 +835,6 @@ describe('cluster child routing lifecycle', () => {
   });
 
   it('availability changes before activation: an automatic child recovers', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const running = container({ status: 'running' });
     const child = childAgent({
       id: 'child-1',
@@ -949,7 +885,6 @@ describe('cluster child routing lifecycle', () => {
   });
 
   it('availability changes before activation: a locked child blocks', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const running = container({ status: 'running' });
     const child = childAgent({
       id: 'child-1',
@@ -990,7 +925,6 @@ describe('cluster child routing lifecycle', () => {
   });
 
   it('availability changes before activation: a hard budget spawns nothing', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'true');
     const c = container();
     const { state, get, set, sendTurn, emitNotification } = makeStore({
       sessionPhaseRuns: { [SID]: [c] },
@@ -1893,7 +1827,6 @@ describe('cluster child start retry', () => {
   });
 
   it('retries a transient start failure with backoff, then fails the child after the cap', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     vi.useFakeTimers();
     withUniqueChildIds('retry-a');
     const c = container({ id: 'container-a' as AgentId });
@@ -1933,7 +1866,6 @@ describe('cluster child start retry', () => {
   });
 
   it('stops retrying a child once its workflow run is discarded', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     vi.useFakeTimers();
     withUniqueChildIds('retry-discard');
     const c = container({
@@ -1961,7 +1893,6 @@ describe('cluster child start retry', () => {
   });
 
   it('does not retry a deterministic start failure', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     vi.useFakeTimers();
     withUniqueChildIds('retry-b');
     const c = container({ id: 'container-b' as AgentId });
@@ -1982,7 +1913,6 @@ describe('cluster child start retry', () => {
   });
 
   it('never retries a turn that already produced work, so a long run is not replayed', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     vi.useFakeTimers();
     withUniqueChildIds('retry-c');
     const c = container({ id: 'container-c' as AgentId });
@@ -2004,7 +1934,6 @@ describe('cluster child start retry', () => {
   });
 
   it('records the attempt number in the store so the stepper can show it', async () => {
-    vi.stubEnv('VITE_WORKFLOW_CHILD_MODEL_SELECTION', 'false');
     vi.useFakeTimers();
     withUniqueChildIds('retry-d');
     const c = container({ id: 'container-d' as AgentId });

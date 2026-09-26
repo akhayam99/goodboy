@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '../cn';
-import { Divider } from './Divider';
+import { SHEET_CLASSES } from '../sheet';
 
 const RAIL_WIDTH_CLASSES = {
   narrow: 'w-64',
@@ -17,14 +17,18 @@ type Props = {
 };
 
 export const StudioRailLayout = ({ rail, detail, railLabel, railWidth }: Props) => (
-  <div className="flex h-full min-h-0 flex-1">
+  <div data-studio-rail="" className="flex h-full min-h-0 flex-1 bg-chrome">
     <aside
       aria-label={railLabel}
       className={cn('flex min-h-0 shrink-0 flex-col', RAIL_WIDTH_CLASSES[railWidth])}
     >
       {rail}
     </aside>
-    <Divider orientation="vertical" />
-    <div className="min-h-0 min-w-0 flex-1">{detail}</div>
+    <div
+      data-sheet="wrapped"
+      className={cn('min-h-0 min-w-0 flex-1 overflow-hidden bg-background', SHEET_CLASSES.wrapped)}
+    >
+      {detail}
+    </div>
   </div>
 );

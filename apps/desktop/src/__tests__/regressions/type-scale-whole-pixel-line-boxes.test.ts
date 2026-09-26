@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
+import { TYPE_ROLES } from '@goodboy/ui';
 
 const STYLES = join(__dirname, '..', '..', 'styles.css');
 
@@ -14,36 +15,75 @@ const readTokenPx = ({ token }: { token: string }): number => {
   return Number(match[1]);
 };
 
-const hasToken = ({ token }: { token: string }): boolean => new RegExp(`${token}:`).test(css);
+const utilityBlock = ({ name }: { name: string }): string | null => {
+  const match = new RegExp(`@utility ${name} \\{([^}]*)\\}`).exec(css);
+  return match === null ? null : String(match[1]);
+};
 
-const rootFontSizePx = (): number => {
-  const match = /#root\s*\{[^}]*font-size:\s*(\d+(?:\.\d+)?)px/.exec(css);
+const blockPx = ({ block, property }: { block: string; property: string }): number => {
+  const match = new RegExp(`(?:^|\\s)${property}:\\s*(\\d+(?:\\.\\d+)?)px;`).exec(block);
   if (match === null) {
-    throw new Error('styles.css must declare the root font size in px');
+    throw new Error(`the utility must declare ${property} in px`);
   }
   return Number(match[1]);
 };
 
-const ROOT_PX = rootFontSizePx();
+const selectorFontPx = ({ selector }: { selector: RegExp }): number => {
+  const match = new RegExp(`${selector.source}\\s*\\{[^}]*font-size:\\s*(\\d+(?:\\.\\d+)?)px`).exec(
+    css,
+  );
+  if (match === null) {
+    throw new Error(`styles.css must declare a px font size for ${selector.source}`);
+  }
+  return Number(match[1]);
+};
+
+const themeBlock = (): string => {
+  const match = /@theme \{([\s\S]*?)\n\}/.exec(css);
+  if (match === null) {
+    throw new Error('styles.css must declare an @theme block');
+  }
+  return String(match[1]);
+};
+
 const SPACING_PX = readTokenPx({ token: '--spacing' });
 
 const isWhole = (value: number): boolean => Number.isInteger(value);
 
-const leadingPx = ({ step }: { step: number }): number => step * SPACING_PX;
+const GRADES = ['3xs', '2xs', 'xs', 'sm', 'base', 'lg', 'xl', '2xl'] as const;
 
-const PINNED_GRADES = ['3xs', '2xs', 'sm', '2xl'] as const;
+type RoleBox = { readonly size: number; readonly lineHeight: number };
 
-const UNPINNED_GRADES = ['xs', 'base', 'lg', 'xl'] as const;
+const roleBox = ({ role }: { role: string }): RoleBox => {
+  const block = utilityBlock({ name: `text-${role}` });
+  if (block !== null) {
+    const sizeToken = /font-size:\s*var\((--text-[a-z0-9]+)\)/.exec(block);
+    return {
+      size:
+        sizeToken === null
+          ? blockPx({ block, property: 'font-size' })
+          : readTokenPx({ token: String(sizeToken[1]) }),
+      lineHeight: blockPx({ block, property: 'line-height' }),
+    };
+  }
+  return {
+    size: readTokenPx({ token: `--text-${role}` }),
+    lineHeight: readTokenPx({ token: `--text-${role}--line-height` }),
+  };
+};
 
-const CORRECTED_ROW_LEADING_STEPS = [4, 5] as const;
-
-describe('type scale line boxes on the corrected surfaces', () => {
-  it('reads a 15px root, the size the pinned line boxes were chosen against', () => {
-    expect(ROOT_PX).toBe(15);
+describe('type scale line boxes', () => {
+  it('keeps the html root at 15px, the base every remaining rem resolves against', () => {
+    expect(selectorFontPx({ selector: /\nhtml/ })).toBe(15);
   });
 
-  it('keeps every pinned line box a whole pixel and taller than its glyph', () => {
-    for (const grade of PINNED_GRADES) {
+  it('sets unclassed text to the body role, 14px on a 20px line', () => {
+    expect(selectorFontPx({ selector: /body,\s*#root/ })).toBe(14);
+    expect(css).toMatch(/body,\s*#root\s*\{[^}]*line-height:\s*20px/);
+  });
+
+  it('pins every grade to a whole-pixel line box taller than its glyph', () => {
+    for (const grade of GRADES) {
       const size = readTokenPx({ token: `--text-${grade}` });
       const lineHeight = readTokenPx({ token: `--text-${grade}--line-height` });
 
@@ -52,31 +92,30 @@ describe('type scale line boxes on the corrected surfaces', () => {
     }
   });
 
-  it('leaves text-xs unpinned, which is why a repeated row pairs its own leading', () => {
-    expect(hasToken({ token: '--text-xs--line-height' })).toBe(false);
-    expect(readTokenPx({ token: '--text-xs' }) * 1.55).not.toBe(
-      Math.round(readTokenPx({ token: '--text-xs' }) * 1.55),
-    );
+  it.each(TYPE_ROLES)('resolves the %s role to a whole-pixel line box', (role) => {
+    const { size, lineHeight } = roleBox({ role });
+
+    expect(isWhole(size)).toBe(true);
+    expect(isWhole(lineHeight)).toBe(true);
+    expect(lineHeight).toBeGreaterThan(size);
   });
 
-  it('names every unpinned grade, so a row reaching for one knows to pair a leading', () => {
-    for (const grade of UNPINNED_GRADES) {
-      expect(hasToken({ token: `--text-${grade}--line-height` })).toBe(false);
-    }
+  it('weighs only display, title, heading and row above regular', () => {
+    const weighted = [...css.matchAll(/--text-([a-z]+)--font-weight:\s*(\d+);/g)].map((match) => [
+      String(match[1]),
+      Number(match[2]),
+    ]);
+
+    expect(Object.fromEntries(weighted)).toEqual({
+      display: 600,
+      title: 600,
+      heading: 600,
+      row: 500,
+    });
   });
 
-  it('resolves the leading a corrected row pairs to a whole pixel', () => {
-    for (const step of CORRECTED_ROW_LEADING_STEPS) {
-      const box = leadingPx({ step });
-
-      expect(isWhole(box)).toBe(true);
-      expect(box).toBeGreaterThan(readTokenPx({ token: '--text-xs' }));
-    }
-  });
-
-  it('matches the paired leading to the pinned box of the grade above it', () => {
-    expect(leadingPx({ step: 4 })).toBe(readTokenPx({ token: '--text-2xs--line-height' }));
-    expect(leadingPx({ step: 5 })).toBe(readTokenPx({ token: '--text-sm--line-height' }));
+  it('declares no rem inside the theme', () => {
+    expect(themeBlock()).not.toMatch(/\d(?:\.\d+)?rem\b/);
   });
 
   it('declares the spacing base in px, so a leading utility never follows the root', () => {

@@ -69,7 +69,7 @@ export const ScriptEditor = ({
             onChange={onProjectChange}
           />
         ) : (
-          <span className="shrink-0 text-xs text-muted-foreground">{projectName}</span>
+          <span className="shrink-0 text-label text-muted-foreground">{projectName}</span>
         )}
       </div>
       <Textarea
@@ -77,7 +77,7 @@ export const ScriptEditor = ({
         onChange={(event) => onBodyChange(event.target.value)}
         aria-label="Script body"
         placeholder={'#!/usr/bin/env bash\nset -euo pipefail\npnpm test'}
-        className="w-full font-mono text-xs"
+        className="w-full text-code"
         autoGrow
         minRows={4}
         maxRows={24}
@@ -87,11 +87,11 @@ export const ScriptEditor = ({
       />
       <footer className="flex flex-wrap items-center gap-2">
         {error === null ? (
-          <p className="min-w-0 flex-1 text-2xs text-faint-foreground">
+          <p className="min-w-0 flex-1 text-secondary text-faint-foreground">
             Saved scripts run in any branch of {projectName}, in every session of this workspace.
           </p>
         ) : (
-          <p role="alert" className="flex min-w-0 flex-1 items-center gap-1 text-xs text-danger">
+          <p role="alert" className="flex min-w-0 flex-1 items-center gap-1 text-label text-danger">
             <AlertTriangle size={ICON_SIZE.row} aria-hidden />
             {error}
           </p>

@@ -17,40 +17,40 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     class="flex flex-col gap-1.5"
   >
     <span
-      class="text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
+      class="text-eyebrow text-faint-foreground"
     >
       fresh session
     </span>
     <h2
-      class="text-base font-semibold text-foreground"
+      class="text-title text-foreground"
     >
       Populate the context
     </h2>
     <p
-      class="text-sm leading-relaxed text-muted-foreground"
+      class="text-prose text-muted-foreground"
     >
       What you type becomes the shared brief every new agent starts from.
     </p>
   </div>
   <ul
-    class="flex flex-wrap items-center justify-center gap-1.5 text-2xs text-faint-foreground"
+    class="flex flex-wrap items-center justify-center gap-1.5 text-secondary text-faint-foreground"
   >
     <li
-      class="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs"
+      class="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-secondary"
     >
       <span>
         what to build
       </span>
     </li>
     <li
-      class="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs"
+      class="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-secondary"
     >
       <span>
         constraints and non-goals
       </span>
     </li>
     <li
-      class="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs"
+      class="inline-flex items-center gap-1 rounded-full border border-border-soft bg-background px-2 py-0.5 text-secondary"
     >
       <span>
         the first agent
@@ -58,7 +58,7 @@ exports[`snapshot, empty states > ChatEmptyState: fresh session, set-up-a-workfl
     </li>
   </ul>
   <button
-    class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-fill text-foreground hover:bg-hover border-border h-7 px-2.5 text-xs"
+    class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-fill text-foreground hover:bg-hover border-border h-7 px-2.5 text-label"
     type="button"
   >
     <svg
@@ -130,12 +130,12 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
       class="flex flex-col gap-3"
     >
       <h2
-        class="text-2xl font-semibold tracking-tight text-foreground"
+        class="text-display text-foreground"
       >
         Welcome to Goodboy
       </h2>
       <p
-        class="max-w-md text-sm leading-relaxed text-muted-foreground"
+        class="max-w-md text-prose text-muted-foreground"
       >
         Start from a project folder, or create a workspace and add the projects it works on.
       </p>
@@ -144,7 +144,7 @@ exports[`snapshot, empty states > NoWorkspaceScreen: no workspace, add-workspace
       class=""
     >
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-8 px-3 text-sm"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-8 px-3 text-body"
         type="button"
       >
         Add workspace
@@ -232,7 +232,7 @@ exports[`snapshot, empty states > QuickActionsPopover: no skills / empty items 1
       class="flex min-w-0 flex-1 flex-col gap-1"
     >
       <span
-        class="text-xs font-medium text-foreground"
+        class="text-label font-medium text-foreground"
       >
         no skills. create one in settings
       </span>
@@ -252,7 +252,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
       class="flex items-center justify-between gap-2"
     >
       <span
-        class="text-2xs font-semibold uppercase tracking-eyebrow text-muted-foreground flex items-center gap-1.5"
+        class="text-eyebrow text-muted-foreground flex items-center gap-1.5"
       >
         <svg
           aria-hidden="true"
@@ -277,7 +277,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
         class="flex items-center gap-2"
       >
         <button
-          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-label"
           type="button"
         >
           Rescan
@@ -285,7 +285,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
       </div>
     </div>
     <p
-      class="text-2xs text-faint-foreground"
+      class="text-secondary text-faint-foreground"
     >
       Reusable prompt fragments agents can opt into.
     </p>
@@ -318,7 +318,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
       class="flex flex-col gap-1"
     >
       <span
-        class="text-sm font-medium text-foreground"
+        class="text-row text-foreground"
       >
         No skills yet
       </span>
@@ -332,7 +332,7 @@ exports[`snapshot, empty states > SkillsPanel: no skills 1`] = `
       class=""
     >
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-7 px-2.5 text-label"
         type="button"
       >
         New skill
@@ -358,19 +358,19 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
       class="flex flex-col items-center gap-0.5"
     >
       <span
-        class="text-lg font-bold tracking-tight"
+        class="text-title"
       >
         Goodboy
       </span>
       <span
-        class="text-xs tracking-tight text-faint-foreground"
+        class="text-label tracking-tight text-faint-foreground"
       >
         workspace orchestrator for coding agents
       </span>
     </div>
   </div>
   <div
-    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-xs border-danger/40"
+    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label border-danger/40"
     role="alert"
   >
     <div
@@ -391,7 +391,7 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
       class="flex items-center gap-2"
     >
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-label"
         type="button"
       >
         Report on GitHub
@@ -417,19 +417,19 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
       class="flex flex-col items-center gap-0.5"
     >
       <span
-        class="text-lg font-bold tracking-tight"
+        class="text-title"
       >
         Goodboy
       </span>
       <span
-        class="text-xs tracking-tight text-faint-foreground"
+        class="text-label tracking-tight text-faint-foreground"
       >
         workspace orchestrator for coding agents
       </span>
     </div>
   </div>
   <div
-    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-xs border-danger/40"
+    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label border-danger/40"
     role="alert"
   >
     <div
@@ -450,7 +450,7 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
       class="flex items-center gap-2"
     >
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-label"
         type="button"
       >
         Report on GitHub
@@ -463,7 +463,7 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
 exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
 <div
   aria-label="Delete session?"
-  class="flex min-w-0 flex-col gap-2 text-2xs rounded-lg border p-2.5 border-danger/40 bg-danger/10"
+  class="flex min-w-0 flex-col gap-2 text-secondary rounded-lg border p-2.5 border-danger/40 bg-danger/10"
   data-surface="card"
   role="group"
 >
@@ -533,7 +533,7 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
     class="flex min-w-0 flex-wrap items-center gap-2 justify-between"
   >
     <button
-      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-xs"
+      class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-label"
       type="button"
     >
       <svg
@@ -569,14 +569,14 @@ exports[`snapshot, error states > DeleteSessionConfirm: error state 1`] = `
       class="flex items-center gap-2"
     >
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-fill text-foreground hover:bg-hover border-border h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-fill text-foreground hover:bg-hover border-border h-7 px-2.5 text-label"
         data-confirm-cancel="true"
         type="button"
       >
         Cancel
       </button>
       <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-danger text-on-tone hover:bg-danger/90 h-7 px-2.5 text-xs"
+        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-danger text-on-tone hover:bg-danger/90 h-7 px-2.5 text-label"
         type="button"
       >
         Delete
@@ -627,7 +627,7 @@ exports[`snapshot, error states > SessionOverviewLoading: retryable failure afte
         class="flex flex-col gap-1"
       >
         <span
-          class="text-sm font-medium text-foreground"
+          class="text-row text-foreground"
         >
           This session did not load
         </span>
@@ -641,7 +641,7 @@ exports[`snapshot, error states > SessionOverviewLoading: retryable failure afte
         class=""
       >
         <button
-          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-8 px-3 text-sm"
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring bg-primary text-on-tone hover:bg-primary/90 h-8 px-3 text-body"
           type="button"
         >
           <svg
@@ -908,12 +908,12 @@ exports[`snapshot, error states > TranscriptCard: turn error item 1`] = `
       class="flex min-w-0 flex-col items-start gap-1"
     >
       <p
-        class="w-full break-words font-semibold text-foreground text-xs leading-4"
+        class="w-full break-words font-semibold text-foreground text-label"
       >
         The turn stopped
       </p>
       <div
-        class="w-full break-words text-xs leading-4 text-muted-foreground"
+        class="w-full break-words text-label text-muted-foreground"
       >
         provider failed to respond
       </div>

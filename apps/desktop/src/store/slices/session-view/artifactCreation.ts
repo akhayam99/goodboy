@@ -1,5 +1,6 @@
 import type { IsoDateTime } from '@goodboy/types';
 import { defaultArtifactDraft } from '../artifactDrafts/defaultArtifactDraft';
+import { sessionPlace } from '../navigation/place';
 import type {
   CloseArtifactCreationParams,
   GetFn,
@@ -28,7 +29,7 @@ export const openArtifactCreation = (set: SetFn, get: GetFn) => {
         },
       });
     }
-    get().setActiveLens(sessionId, 'plans');
+    get().navigate({ to: sessionPlace({ sessionId, lens: 'plans' }) });
     set((s) => ({
       focusedArtifactId: { ...s.focusedArtifactId, [sessionId]: null },
       artifactCreation: { ...s.artifactCreation, [sessionId]: { kind, note } },

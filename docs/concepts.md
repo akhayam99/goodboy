@@ -198,17 +198,26 @@ refuses it instead of saving a blank entry.
 
 The header counts the rows that wait on you ("2 need you") and jumps to the
 first one. **Filter** opens one panel with every kind of row at once, in three
-groups: Work (agents, workflows, questions, suggestions), Outputs (artifacts
+groups: Work (agents, workflows, questions, resolvers), Outputs (artifacts
 with plans, reports and wireframes, pull requests, issues) and Session log
-(branches and worktrees, resolver, decisions, session events). Each row shows
-how many of its kind the session holds. Presets set the whole filter in one
-click: **Everything**, **Work**, and **Needs you**, which shows only what
-waits on you whatever the filter hides and lasts until you leave it. The
-filter shows once the feed holds more than one kind of row. **Start agent**
-is the one primary, and its menu starts a workflow, a report or a wireframe.
-When the activity column is narrower than 28rem, the needs-you chip keeps
-its count, Filter keeps its icon and the Suggested next strip keeps its
-title and action.
+(branches and worktrees, decisions, session events). Each row shows how many
+of its kind the session holds, and how many of those rows the filter is
+hiding when the toggle is off. Suggestions live outside the filter: the
+Suggested next strip never disappears behind a preset. Presets set the whole
+filter in one click: **Everything**, **Work**, and **Needs you**, which shows
+only what waits on you whatever the filter hides and lasts until you leave
+it. A saved filter that matches the old Work preset migrates onto the new
+one, resolvers included. The trigger counts hidden rows, not hidden kinds
+("Work · 12 hidden"), and flashes briefly when a new row lands out of sight.
+A row your own action just caused (starting an agent, a resolve, a workflow,
+or acting on a suggestion) never hides behind the active filter: it stays
+visible, tagged "Shown because you started it", until you leave the session;
+the next visit it follows the filter like every other row. The filter shows
+once the feed holds more than one kind of row. **Start agent** is the one
+primary, and its menu starts a workflow, a report or a wireframe. When the
+activity column is narrower than 28rem, the needs-you chip keeps its count,
+Filter keeps its icon and the Suggested next strip keeps its title and
+action.
 
 ## Agents
 

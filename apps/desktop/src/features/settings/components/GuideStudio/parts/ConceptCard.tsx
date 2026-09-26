@@ -26,7 +26,7 @@ export const ConceptCard = ({ icon, tone, label, body, onClick }: Props) => (
     >
       {icon}
     </span>
-    <span className="text-sm font-semibold text-foreground">{label}</span>
+    <span className="text-heading text-foreground">{label}</span>
     <span className="text-xs leading-relaxed text-muted-foreground">{body}</span>
   </button>
 );

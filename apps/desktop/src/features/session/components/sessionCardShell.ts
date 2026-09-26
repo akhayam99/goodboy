@@ -1,43 +1,40 @@
-import { cn, tintClasses } from '@goodboy/ui';
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import type { SessionAttentionReason, SessionStage } from '@goodboy/types';
-import { ATTENTION_REASON_META } from '../session-stage';
+import { ATTENTION_REASON_META, STAGE_TONE } from '../session-stage';
 
-type Params = {
+export type SessionTone = {
+  readonly tone: Tone;
+  readonly isBreathing: boolean;
+};
+
+type ToneParams = {
   readonly stage: SessionStage;
   readonly attention?: SessionAttentionReason | null;
+};
+
+export const sessionTone = ({ stage, attention = null }: ToneParams): SessionTone => {
+  if (stage === 'attention' && attention !== null) {
+    return { tone: ATTENTION_REASON_META[attention].tone, isBreathing: false };
+  }
+  return { tone: STAGE_TONE[stage], isBreathing: stage === 'running' };
+};
+
+type ShellParams = {
   readonly selected?: boolean;
   readonly active?: boolean;
   readonly dimmed?: boolean;
 };
 
-type RailParams = Pick<Params, 'stage' | 'attention'>;
-
-export const sessionRail = ({ stage, attention = null }: RailParams): string | null => {
-  if (stage === 'running') {
-    return 'border-l-info/40 spin-rail spin-border-info';
-  }
-  if (stage === 'attention') {
-    return tintClasses(attention === null ? 'warning' : ATTENTION_REASON_META[attention].tone).rail;
-  }
-  return null;
-};
-
-type RestBorderParams = Pick<Params, 'stage' | 'attention' | 'selected'>;
-
-const restBorder = ({ stage, attention = null, selected }: RestBorderParams): string => {
+const restBorder = ({ selected }: Pick<ShellParams, 'selected'>): string => {
   if (selected === true) {
     return cn('border-primary', tintClasses('primary').bgSoft);
   }
-  const rail = sessionRail({ stage, attention });
-  if (rail === null) {
-    return 'border-border-soft hover:border-border';
-  }
-  return cn('border-border-soft', rail);
+  return 'border-border-soft hover:border-border';
 };
 
-export const sessionCardShell = ({ stage, attention, selected, active, dimmed }: Params): string =>
+export const sessionCardShell = ({ selected, active, dimmed }: ShellParams): string =>
   cn(
-    'rounded-lg border border-l-2 bg-elevated text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-    active === true ? 'border-border shadow-sm' : restBorder({ stage, attention, selected }),
+    'relative rounded-lg border bg-elevated text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+    active === true ? 'border-border shadow-sm' : restBorder({ selected }),
     dimmed === true && 'opacity-50',
   );

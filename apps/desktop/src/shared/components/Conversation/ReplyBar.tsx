@@ -21,7 +21,7 @@ export const ReplyBar = ({ target, onClear }: Props) => {
   return (
     <div
       data-slot="reply-bar"
-      className="flex min-w-0 items-center gap-1.5 rounded-t-lg bg-muted py-1 pl-2.5 pr-1 text-2xs text-muted-foreground"
+      className="flex min-w-0 items-center gap-1.5 rounded-t-lg bg-muted py-1 pl-2.5 pr-1 text-secondary text-muted-foreground"
     >
       <Icon size={12} aria-hidden className="shrink-0" />
       <span className="shrink-0">

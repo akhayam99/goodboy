@@ -140,7 +140,7 @@ export const TranscriptRows = ({
       if (dayChanged) {
         out.push(
           <li key={`day-${day}-${idx}`} className="flex justify-center">
-            <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-2xs uppercase tracking-eyebrow text-muted-foreground">
+            <span className="rounded-full border border-border-soft bg-background px-2 py-0.5 text-secondary uppercase tracking-eyebrow text-muted-foreground">
               {formatDayLabel(at)}
             </span>
           </li>,

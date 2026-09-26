@@ -116,18 +116,18 @@ export const AxesSection = ({
       )}
       {cliGate !== null && <CliGateLine gate={cliGate} />}
       {axes.requiresMaxMode && (
-        <p role="status" aria-label="Max Mode" className="text-2xs text-warning">
+        <p role="status" aria-label="Max Mode" className="text-secondary text-warning">
           Runs in Max Mode. Cursor bills Max Mode requests at a higher rate.
         </p>
       )}
       {hasMaxModeAdvisory && axes.requiresMaxMode === false && (
-        <p role="status" aria-label="Max Mode rejected" className="text-2xs text-warning">
+        <p role="status" aria-label="Max Mode rejected" className="text-secondary text-warning">
           Cursor rejected Max Mode for this model. Check that Max Mode is available on your account,
           then retry.
         </p>
       )}
       {notice != null && (
-        <p role="status" className="text-2xs text-warning">
+        <p role="status" className="text-secondary text-warning">
           Effort adjusted from {EFFORT_LABEL[notice.requested]} to {EFFORT_LABEL[notice.applied]}.
         </p>
       )}

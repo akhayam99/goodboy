@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { InboxRecord } from '../../types';
 
@@ -7,8 +8,7 @@ const h = vi.hoisted(() => ({
   createSession: vi.fn(async () => ({ session: { goal: 'Fix launch' } })),
   showToast: vi.fn(),
   unlinkSessionExternalTask: vi.fn(async () => undefined),
-  setCurrentSession: vi.fn(async () => undefined),
-  setActiveLens: vi.fn(),
+  navigate: vi.fn(),
   requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
   reportError: vi.fn(async () => undefined),
 }));
@@ -16,20 +16,19 @@ const h = vi.hoisted(() => ({
 type StoreState = {
   readonly createSession: typeof h.createSession;
   readonly unlinkSessionExternalTask: typeof h.unlinkSessionExternalTask;
-  readonly setCurrentSession: typeof h.setCurrentSession;
-  readonly setActiveLens: typeof h.setActiveLens;
+  readonly navigate: typeof h.navigate;
   readonly requestIssueBrief: typeof h.requestIssueBrief;
   readonly reportError: typeof h.reportError;
   readonly issueBriefs: Readonly<Record<string, never>>;
 };
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (state: StoreState) => T) =>
     selector({
       createSession: h.createSession,
       unlinkSessionExternalTask: h.unlinkSessionExternalTask,
-      setCurrentSession: h.setCurrentSession,
-      setActiveLens: h.setActiveLens,
+      navigate: h.navigate,
       requestIssueBrief: h.requestIssueBrief,
       reportError: h.reportError,
       issueBriefs: {},
@@ -179,7 +178,7 @@ afterEach(() => {
   cleanup();
   h.createSession.mockClear();
   h.unlinkSessionExternalTask.mockClear();
-  h.setCurrentSession.mockClear();
+  h.navigate.mockClear();
 });
 
 describe('useRecordFrame', () => {
@@ -243,7 +242,11 @@ describe('useRecordFrame', () => {
 
     rerender(<Harness record={LINKED_SENTRY_RECORD} onLaunched={onLaunched} launchRequest={1} />);
 
-    await waitFor(() => expect(h.setCurrentSession).toHaveBeenCalledWith(SENTRY_SESSION_ID));
+    await waitFor(() =>
+      expect(h.navigate).toHaveBeenCalledWith({
+        to: sessionPlace({ sessionId: SENTRY_SESSION_ID }),
+      }),
+    );
     await waitFor(() => expect(onLaunched).toHaveBeenCalledOnce());
   });
 

@@ -251,7 +251,7 @@ export const DiffFile = ({
       />
       {collapsed ? (
         isHeavy && viewedState !== 'viewed' ? (
-          <div className="flex items-center gap-2 px-3 py-2 text-2xs text-muted-foreground">
+          <div className="flex items-center gap-2 px-3 py-2 text-secondary text-muted-foreground">
             <span>{file.binary ? 'Binary file' : 'Generated file, hidden by default'}</span>
             {file.binary ? null : (
               <Button variant="ghost" size="sm" onClick={() => setCollapsed(false)}>
@@ -314,7 +314,7 @@ export const DiffFile = ({
             </div>
           )}
           {remaining > 0 ? (
-            <div className="flex items-center justify-center gap-2 py-1 text-2xs text-muted-foreground">
+            <div className="flex items-center justify-center gap-2 py-1 text-secondary text-muted-foreground">
               <span className="tabular-nums">
                 {Math.min(visibleLines, totalLines)} of {totalLines} lines
               </span>

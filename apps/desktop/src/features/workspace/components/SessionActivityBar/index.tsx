@@ -8,7 +8,7 @@ import {
   KbdPill,
   PANE_RHYTHM,
   cn,
-  ScrollArea,
+  ScrollFade,
   tintClasses,
 } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
@@ -141,13 +141,13 @@ export const SessionActivityBar = ({
             size="sm"
             onClick={() => window.dispatchEvent(new CustomEvent('goodboy:new-session'))}
             aria-label="Create new session"
-            className="group relative min-w-0 flex-1 justify-center gap-1.5 px-2 text-xs"
+            className="group relative min-w-0 flex-1 justify-center gap-1.5 px-2 text-label"
           >
             <Plus size={ICON_SIZE.row} aria-hidden />
             New
             <KbdPill
               aria-hidden
-              className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-3xs opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
+              className="pointer-events-none absolute right-2 top-1/2 h-4 min-w-4 -translate-y-1/2 px-1 text-meta opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
             >
               {shortcutGlyphs('session.new')}
             </KbdPill>
@@ -172,7 +172,7 @@ export const SessionActivityBar = ({
         </div>
       </div>
 
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollFade className="min-h-0 flex-1">
         <div
           ref={listRef}
           onPointerDown={lasso.onPointerDown}
@@ -211,7 +211,10 @@ export const SessionActivityBar = ({
                       tone={groupPresentation?.tone ?? 'neutral'}
                     />
                     {group.sessions.length > 0 ? (
-                      <span aria-hidden className="text-2xs tabular-nums text-faint-foreground">
+                      <span
+                        aria-hidden
+                        className="text-secondary tabular-nums text-faint-foreground"
+                      >
                         {group.sessions.length}
                       </span>
                     ) : null}
@@ -261,7 +264,7 @@ export const SessionActivityBar = ({
             />
           ) : null}
         </div>
-      </ScrollArea>
+      </ScrollFade>
 
       {selectedSessions.length > 0 ? (
         <div className="shrink-0 p-2">

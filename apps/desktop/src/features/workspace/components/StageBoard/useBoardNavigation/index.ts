@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../../store';
+import { agentPlace, sessionPlace, useAppStore, type LensKind } from '../../../../../store';
 import { openInEditor } from '../../../../../shared/lib/editor';
 import { markStepComplete } from '../../../../onboarding/onboarding-store';
 import { openReview } from '../../../../review/openReview';
@@ -15,36 +15,34 @@ export type BoardNavigation = {
   readonly openGithub: (session: Session) => void;
 };
 
+type OpenLensParams = {
+  readonly session: Session;
+  readonly lens: LensKind | null;
+};
+
 export const useBoardNavigation = (): BoardNavigation => {
-  const setCurrentSession = useAppStore((s) => s.setCurrentSession);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
 
   return useMemo<BoardNavigation>(() => {
+    const openLens = ({ session, lens }: OpenLensParams): void => {
+      navigate({ to: sessionPlace({ sessionId: session.id as SessionId, lens }) });
+    };
+
     const selectCard = (session: Session): void => {
-      const id = session.id as SessionId;
-      void setCurrentSession(id).then(() => {
-        setActiveLens(id, null);
-      });
+      openLens({ session, lens: null });
       markStepComplete('session');
     };
 
     const openAgent = (session: Session): void => {
       const id = session.id as SessionId;
-      void setCurrentSession(id).then(() => {
-        const agent = (useAppStore.getState().sessionPhaseRuns[id] ?? [])[0];
-        if (agent) {
-          void selectAgent(id, agent.id);
-        }
-        window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      const agent = (useAppStore.getState().sessionPhaseRuns[id] ?? [])[0];
+      navigate({
+        to:
+          agent === undefined
+            ? sessionPlace({ sessionId: id })
+            : agentPlace({ sessionId: id, agentId: agent.id }),
       });
-    };
-
-    const openTerminal = (session: Session): void => {
-      const id = session.id as SessionId;
-      void setCurrentSession(id).then(() => {
-        setActiveLens(id, 'terminal');
-      });
+      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
     };
 
     const openIDE = (session: Session): void => {
@@ -54,35 +52,19 @@ export const useBoardNavigation = (): BoardNavigation => {
       }
     };
 
-    const openQuestions = (session: Session): void => {
-      const id = session.id as SessionId;
-      void setCurrentSession(id).then(() => {
-        setActiveLens(id, 'questions');
-      });
-    };
-
-    const openWorkflows = (session: Session): void => {
-      const id = session.id as SessionId;
-      void setCurrentSession(id).then(() => {
-        setActiveLens(id, 'workflows');
-      });
-    };
-
     const openGithub = (session: Session): void => {
-      const id = session.id as SessionId;
-      void setCurrentSession(id).then(() => {
-        void openReview({ sessionId: id });
-      });
+      openLens({ session, lens: null });
+      void openReview({ sessionId: session.id as SessionId });
     };
 
     return {
       selectCard,
       openAgent,
-      openTerminal,
+      openTerminal: (session) => openLens({ session, lens: 'terminal' }),
       openIDE,
-      openQuestions,
-      openWorkflows,
+      openQuestions: (session) => openLens({ session, lens: 'questions' }),
+      openWorkflows: (session) => openLens({ session, lens: 'workflows' }),
       openGithub,
     };
-  }, [setCurrentSession, setActiveLens, selectAgent]);
+  }, [navigate]);
 };

@@ -151,10 +151,57 @@ type SummarizerQueueEntry = {
 
 type SummarizerTaskQueue = {
   inFlight: boolean;
-  queued: SummarizerQueueEntry | null;
+  queued: ReadonlyArray<SummarizerQueueEntry>;
 };
 
 export const summarizerQueues = new Map<SessionId, SummarizerTaskQueue>();
+
+const MAX_MERGED_TURN_CHARS = 20_000;
+
+const omittedTurnsNote = (count: number): string =>
+  `[${count} earlier turn${count === 1 ? '' : 's'} omitted, over budget]`;
+
+export const mergeQueuedSummarizerEntries = (
+  entries: ReadonlyArray<SummarizerQueueEntry>,
+): SummarizerQueueEntry => {
+  const latest = entries[entries.length - 1]!;
+  if (entries.length === 1) {
+    return latest;
+  }
+
+  const kept: SummarizerQueueEntry[] = [];
+  let usedChars = 0;
+  let breakIndex = -1;
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const entry = entries[index]!;
+    const size = entry.turnInput.length + entry.turnOutput.length;
+    if (kept.length > 0 && usedChars + size > MAX_MERGED_TURN_CHARS) {
+      breakIndex = index;
+      break;
+    }
+    kept.unshift(entry);
+    usedChars += size;
+  }
+
+  const omitted = breakIndex >= 0 ? breakIndex + 1 : 0;
+  const note = omitted > 0 ? [omittedTurnsNote(omitted)] : [];
+  const turnInput = [
+    ...note,
+    ...kept.map((entry, index) => `Turn ${index + 1}:\n${entry.turnInput}`),
+  ].join('\n\n---\n\n');
+  const turnOutput = [
+    ...note,
+    ...kept.map((entry, index) => `Turn ${index + 1}:\n${entry.turnOutput}`),
+  ].join('\n\n---\n\n');
+
+  return {
+    turnInput,
+    turnOutput,
+    workingDir: latest.workingDir,
+    oversizeRetried: false,
+    ...(latest.taskModelOverride != null && { taskModelOverride: latest.taskModelOverride }),
+  };
+};
 
 type Params = {
   readonly set: SetFn;
@@ -196,20 +243,21 @@ const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
     if (queue == null) {
       return;
     }
-    const next = queue.queued;
-    if (next == null) {
+    const pending = queue.queued;
+    if (pending.length === 0) {
       summarizerQueues.delete(sessionId);
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
     }
-    queue.queued = null;
+    queue.queued = [];
+    const next = mergeQueuedSummarizerEntries(pending);
     scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry: next }) });
   });
 };
 
 const reenqueueSummarizer = ({ set, get, sessionId, entry }: Params): void => {
   const queue = summarizerQueues.get(sessionId);
-  if (queue?.queued != null) {
+  if (queue != null && queue.queued.length > 0) {
     return;
   }
   enqueueSummarizerEntry({ set, get, sessionId, entry });
@@ -218,17 +266,17 @@ const reenqueueSummarizer = ({ set, get, sessionId, entry }: Params): void => {
 const enqueueSummarizerEntry = ({ set, get, sessionId, entry }: Params): void => {
   let queue = summarizerQueues.get(sessionId);
   if (!queue) {
-    queue = { inFlight: false, queued: null };
+    queue = { inFlight: false, queued: [] };
     summarizerQueues.set(sessionId, queue);
   }
 
   if (queue.inFlight) {
-    queue.queued = entry;
+    queue.queued = [...queue.queued, entry];
     return;
   }
 
   queue.inFlight = true;
-  queue.queued = null;
+  queue.queued = [];
   scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry }) });
 };
 

@@ -60,11 +60,6 @@ file holds those explanations. Everything below has been "fixed" at least once a
   a ref instead of adding a provider parameter to `onModel`. This matters for
   more than passing UI state when the consumer persists the pair, as
   `step_def_upsert` does into the SQLite `step_library` table.
-- `LinkedPrChip` reads `[data-studio-overlay]` from the DOM to tell whether a
-  fullscreen studio is open. That decides navigation inside the session. It
-  checks the DOM because that state is split in two: the `sessionStudio` union
-  in the store, and the shell that renders every studio. Do not tidy it up
-  without first moving fullscreen-studio state into one place.
 
 ## Hand-maintained lists the compiler does not check
 

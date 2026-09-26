@@ -7,7 +7,7 @@ type Props = {
 export const ArtifactColumns = ({ isSelecting }: Props) => (
   <div
     aria-hidden
-    className="flex h-6 items-center gap-2.5 px-2 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
+    className="flex h-6 items-center gap-2.5 px-2 text-eyebrow text-faint-foreground"
   >
     {isSelecting ? <span className={ARTIFACT_COLUMN.check} /> : null}
     <span className={ARTIFACT_COLUMN.node} />

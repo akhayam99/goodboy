@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { Session, SessionId } from '@goodboy/types';
 
@@ -13,8 +14,7 @@ const { hooks, store } = vi.hoisted(() => ({
     workspace: { id: 'ws-1', name: 'Harborline' } as { id: string; name: string } | null,
   },
   store: {
-    setCurrentSession: vi.fn(async () => undefined),
-    setActiveLens: vi.fn(),
+    navigate: vi.fn(),
     cancelScript: vi.fn(async () => undefined),
     scriptRuns: {} as Record<string, Record<string, unknown>>,
     sessions: [] as ReadonlyArray<Session>,
@@ -23,7 +23,8 @@ const { hooks, store } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useCurrentWorkspace: () => hooks.workspace,
   useSessions: () => store.sessions,
@@ -56,8 +57,7 @@ beforeEach(() => {
   store.scriptRuns = {};
   store.sessions = [];
   store.projectScripts = {};
-  store.setCurrentSession.mockClear();
-  store.setActiveLens.mockClear();
+  store.navigate.mockClear();
   store.cancelScript.mockClear();
 });
 
@@ -123,7 +123,7 @@ describe('NowChip', () => {
       fireEvent.click(within(panel).getByText('Pick the retry backoff for notify-relay'));
     });
 
-    expect(store.setCurrentSession).toHaveBeenCalledWith(NEEDS.id);
+    expect(store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: NEEDS.id }) });
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
   });
 

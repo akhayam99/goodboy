@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { FieldRow, SectionSurface, Select } from '@goodboy/ui';
+import { FieldRow, Band, Listbox, type ListboxOption } from '@goodboy/ui';
+import { Monitor, Moon, Sun } from 'lucide-react';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_EDITOR_BINARY,
@@ -9,11 +10,11 @@ import { useThemeStore, type ThemePreference } from '../../../../shared/lib/them
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { UpdatesSection } from './UpdatesSection';
 
-const THEME_OPTIONS = [
-  { value: 'dark', label: 'Dark' },
-  { value: 'light', label: 'Light' },
-  { value: 'system', label: 'Match system' },
-] as const satisfies ReadonlyArray<{ readonly value: ThemePreference; readonly label: string }>;
+const THEME_OPTIONS: ReadonlyArray<ListboxOption<ThemePreference>> = [
+  { value: 'system', label: 'Match system', leading: <Monitor size={ICON_SIZE.row} /> },
+  { value: 'light', label: 'Light', leading: <Sun size={ICON_SIZE.row} /> },
+  { value: 'dark', label: 'Dark', leading: <Moon size={ICON_SIZE.row} /> },
+];
 
 export const AppGeneralSection = () => {
   const preference = useThemeStore((s) => s.preference);
@@ -54,7 +55,8 @@ export const AppGeneralSection = () => {
     <div className="flex flex-col gap-4">
       <UpdatesSection />
 
-      <SectionSurface
+      <Band
+        inset="content"
         label="Appearance"
         hint="How the app looks on this computer."
         icon={<CONCEPT_ICONS.appearance size={ICON_SIZE.row} aria-hidden />}
@@ -62,29 +64,19 @@ export const AppGeneralSection = () => {
       >
         <div className="flex flex-col">
           <FieldRow label="Theme" help="Applies to every window.">
-            <Select
+            <Listbox
               size="sm"
               value={preference}
-              onChange={(e) => {
-                const next = THEME_OPTIONS.find((option) => option.value === e.target.value);
-                if (next === undefined) {
-                  return;
-                }
-                setPreference(next.value);
-              }}
-              aria-label="Theme"
-            >
-              {THEME_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
+              options={THEME_OPTIONS}
+              onChange={setPreference}
+              ariaLabel="Theme"
+            />
           </FieldRow>
         </div>
-      </SectionSurface>
+      </Band>
 
-      <SectionSurface
+      <Band
+        inset="content"
         label="Editor"
         hint="How session worktrees open."
         icon={<CONCEPT_ICONS.editor size={ICON_SIZE.row} aria-hidden />}
@@ -92,21 +84,19 @@ export const AppGeneralSection = () => {
       >
         <div className="flex flex-col">
           <FieldRow label="Default editor" help="Opens session worktrees.">
-            <Select
+            <Listbox
               size="sm"
               value={editorBinary}
-              onChange={(e) => void onChangeEditor(e.target.value)}
-              aria-label="Default editor"
-            >
-              {editorOptions.map((editor) => (
-                <option key={editor.binary} value={editor.binary}>
-                  {editor.label}
-                </option>
-              ))}
-            </Select>
+              options={editorOptions.map((editor) => ({
+                value: editor.binary,
+                label: editor.label,
+              }))}
+              onChange={(binary) => void onChangeEditor(binary)}
+              ariaLabel="Default editor"
+            />
           </FieldRow>
         </div>
-      </SectionSurface>
+      </Band>
     </div>
   );
 };

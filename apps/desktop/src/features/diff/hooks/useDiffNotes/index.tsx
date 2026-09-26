@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import type { AgentId, DiffComment, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useDiffComments } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useDiffComments, agentPlace } from '../../../../store';
 import { useAskAgent } from '../useAskAgent';
 import type { DiffComments, DiffThread } from '../../components/DiffView/types';
 
@@ -48,13 +48,13 @@ export const noteThread = ({ note, agentName, onViewAgent }: ThreadParams): Diff
           <button
             type="button"
             onClick={() => onViewAgent(consumedBy)}
-            className="inline-flex w-fit items-center gap-0.5 rounded-sm text-2xs text-info hover:underline"
+            className="inline-flex w-fit items-center gap-0.5 rounded-sm text-secondary text-info hover:underline"
           >
             Picked up by {agentName}
             <ArrowUpRight size={10} aria-hidden />
           </button>
         ) : (
-          <span className="text-2xs text-muted-foreground">Picked up by a removed agent</span>
+          <span className="text-secondary text-muted-foreground">Picked up by a removed agent</span>
         )
       ) : undefined,
   };
@@ -67,15 +67,13 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
   const resolveDiffComment = useAppStore((s) => s.resolveDiffComment);
   const reopenDiffComment = useAppStore((s) => s.reopenDiffComment);
   const deleteDiffComment = useAppStore((s) => s.deleteDiffComment);
-  const selectAgent = useAppStore((s) => s.selectAgent);
-  const setActiveLens = useAppStore((s) => s.setActiveLens);
+  const navigate = useAppStore((s) => s.navigate);
   const askAgent = useAskAgent({ sessionId });
 
   const comments = useMemo<DiffComments>(() => {
     const names = new Map(phaseRuns.map((run) => [run.id, run.name] as const));
     const onViewAgent = (agentId: AgentId) => {
-      setActiveLens(sessionId, 'review');
-      void selectAgent(sessionId, agentId);
+      navigate({ to: agentPlace({ sessionId, agentId }) });
     };
     return {
       threads: notes.map((note) =>
@@ -103,9 +101,8 @@ export const useDiffNotes = ({ sessionId }: Params): DiffNotes => {
     phaseRuns,
     reopenDiffComment,
     resolveDiffComment,
-    selectAgent,
+    navigate,
     sessionId,
-    setActiveLens,
   ]);
 
   const openNotes = useMemo(() => notes.filter((note) => note.status === 'open'), [notes]);

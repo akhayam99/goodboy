@@ -54,7 +54,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
           badge={
             item.degraded === true && (
               <span
-                className={`shrink-0 rounded-md px-1 py-px text-2xs font-medium ${warningTint.bg} ${warningTint.text}`}
+                className={`shrink-0 rounded-md px-1 py-px text-secondary font-medium ${warningTint.bg} ${warningTint.text}`}
               >
                 partial brief
               </span>
@@ -101,7 +101,7 @@ export const PhaseTransitionCard = ({ item }: Props) => {
         />
       ) : null}
       <Eyebrow label="carried forward" />
-      <div className="overflow-x-auto text-xs text-foreground">
+      <div className="overflow-x-auto text-label text-foreground">
         <Markdown text={context} />
       </div>
     </TranscriptDisclosure>

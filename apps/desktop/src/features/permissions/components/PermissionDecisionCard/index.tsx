@@ -24,19 +24,19 @@ export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
   const isOnceAllow = item.decision === 'allow' && item.scope === 'once';
 
   return (
-    <TranscriptShell tone="neutral" variant="boxed" className="flex flex-col gap-1.5 text-xs">
+    <TranscriptShell tone="neutral" variant="boxed" className="flex flex-col gap-1.5 text-label">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-elevated px-1.5 py-0.5 text-2xs font-medium text-muted-foreground">
+        <span className="rounded-md bg-elevated px-1.5 py-0.5 text-secondary font-medium text-muted-foreground">
           Permission decision
         </span>
         <code className="font-mono text-foreground">{item.toolName}</code>
         <span className={cn('font-semibold', DECISION_TONE[item.decision])}>{item.decision}</span>
         {item.ruleId !== null && (
-          <span className="rounded-md bg-fill px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
+          <span className="rounded-md bg-fill px-1.5 py-0.5 font-mono text-secondary text-muted-foreground">
             {item.ruleId}
           </span>
         )}
-        <span className="ml-auto text-2xs text-muted-foreground">{timestamp}</span>
+        <span className="ml-auto text-secondary text-muted-foreground">{timestamp}</span>
       </div>
       {canRetry && (
         <div className="flex flex-wrap items-center gap-2">

@@ -19,9 +19,9 @@ export const PlanParts = ({ rows, hasRun, splitSentence, onOpenPart }: Props) =>
         <h2>
           <Eyebrow label="Parts" />
         </h2>
-        <span className="text-2xs tabular-nums text-faint-foreground">{rows.length}</span>
+        <span className="text-secondary tabular-nums text-faint-foreground">{rows.length}</span>
       </div>
-      {hasRun ? null : <p className="text-xs leading-4 text-muted-foreground">{splitSentence}</p>}
+      {hasRun ? null : <p className="text-label text-muted-foreground">{splitSentence}</p>}
       <ol className="flex min-w-0 flex-col">
         {rows.map((row) => (
           <li key={row.index} className="min-w-0">

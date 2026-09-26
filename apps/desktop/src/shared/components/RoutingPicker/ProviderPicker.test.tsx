@@ -3,67 +3,55 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
-import { tooltipTextOf } from '../../../__tests__/helpers/tooltip';
 import { ProviderPicker } from './ProviderPicker';
 
 const connectedProviders = ['anthropic', 'cursor'] as ReadonlyArray<ProviderId>;
 
 afterEach(cleanup);
 
-describe('ProviderPicker', () => {
-  it('shows only the provider dimension', () => {
-    render(
-      <ProviderPicker
-        connectedProviders={connectedProviders}
-        provider="anthropic"
-        disabled={false}
-        onProvider={vi.fn()}
-        ariaLabel="Default provider"
-      />,
-    );
+const renderPicker = ({ onProvider = vi.fn() }: { onProvider?: (id: ProviderId) => void }) =>
+  render(
+    <ProviderPicker
+      connectedProviders={connectedProviders}
+      provider="anthropic"
+      disabled={false}
+      onProvider={onProvider}
+      ariaLabel="Default provider"
+    />,
+  );
 
-    expect(screen.getByRole('button', { name: 'Default provider: Claude' }).textContent).toContain(
-      'Claude',
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'Default provider: Claude' }));
-    expect(screen.getByText('Provider')).toBeDefined();
+const trigger = () => screen.getByRole('combobox', { name: 'Default provider' });
+
+describe('ProviderPicker', () => {
+  it('shows the current provider and only the provider dimension', () => {
+    renderPicker({});
+
+    expect(trigger().textContent).toContain('Claude');
+    fireEvent.click(trigger());
+    expect(screen.getByRole('listbox', { name: 'Default provider' })).toBeDefined();
     expect(screen.queryByText('Models')).toBeNull();
     expect(screen.queryByText('Tuning')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Add provider' })).toBeNull();
   });
 
   it('selects a connected provider and closes the picker', () => {
     const onProvider = vi.fn();
-    render(
-      <ProviderPicker
-        connectedProviders={connectedProviders}
-        provider="anthropic"
-        disabled={false}
-        onProvider={onProvider}
-        ariaLabel="Default provider"
-      />,
-    );
+    renderPicker({ onProvider });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Default provider: Claude' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cursor' }));
+    fireEvent.click(trigger());
+    fireEvent.click(screen.getByRole('option', { name: 'Cursor' }));
     expect(onProvider).toHaveBeenCalledWith('cursor');
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('listbox')).toBeNull();
   });
 
-  it('keeps disconnected providers visible and unavailable', () => {
-    render(
-      <ProviderPicker
-        connectedProviders={connectedProviders}
-        provider="anthropic"
-        disabled={false}
-        onProvider={vi.fn()}
-        ariaLabel="Default provider"
-      />,
-    );
+  it('keeps disconnected providers visible and says why they are blocked', () => {
+    const onProvider = vi.fn();
+    renderPicker({ onProvider });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Default provider: Claude' }));
-    const codex = screen.getByRole('button', { name: 'Codex' });
-    expect(codex.hasAttribute('disabled')).toBe(true);
-    expect(tooltipTextOf({ element: codex })).toBe('Codex is not connected');
+    fireEvent.click(trigger());
+    const codex = screen.getByRole('option', { name: /^Codex/ });
+    expect(codex.getAttribute('aria-disabled')).toBe('true');
+    expect(codex.textContent).toContain('Codex is not connected');
+    fireEvent.click(codex);
+    expect(onProvider).not.toHaveBeenCalled();
   });
 });

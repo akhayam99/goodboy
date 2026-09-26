@@ -1,9 +1,6 @@
 import type { Workflow } from '@goodboy/types';
+import { isPresetWorkflow } from './isPresetWorkflow';
 
 export const isImportableWorkflow = (workflow: Workflow): boolean => {
-  return (
-    workflow.deletedAt == null &&
-    workflow.isPreset !== false &&
-    (workflow.origin == null || workflow.origin === 'custom')
-  );
+  return isPresetWorkflow(workflow) && (workflow.origin == null || workflow.origin === 'custom');
 };

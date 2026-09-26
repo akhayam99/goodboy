@@ -70,17 +70,7 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
   return (
     <>
       <AppShell
-        topBar={
-          <AppTopBar
-            sidebar={{
-              hasSidebar: arrangement.leftSlot !== 'none',
-              isCollapsed: arrangement.leftSlot === 'rail',
-              onToggle: noop,
-            }}
-            onOpenSpend={overlays.openSpend}
-            onOpenScript={noop}
-          />
-        }
+        topBar={<AppTopBar onOpenSpend={overlays.openSpend} onOpenScript={noop} />}
         footer={
           <AppFooter
             scope={arrangement.footer}

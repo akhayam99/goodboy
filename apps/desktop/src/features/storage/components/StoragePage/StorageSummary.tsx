@@ -78,22 +78,17 @@ export const StorageSummary = () => {
   return (
     <section aria-label="Storage summary" className="@container flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-        <span className="text-2xl font-semibold tabular-nums text-foreground">
+        <span className="text-display tabular-nums text-foreground">
           {formatBytes({ bytes: total })}
         </span>
-        <span
-          className={cn(
-            'flex items-center gap-1 text-sm font-semibold',
-            tintClasses('primary').text,
-          )}
-        >
+        <span className={cn('flex items-center gap-1 text-heading', tintClasses('primary').text)}>
           <CircleCheck size={ICON_SIZE.row} aria-hidden />
           {formatBytes({ bytes: summary.canGo.bytes })} can go
         </span>
         {free === null ? null : (
           <span
             className={cn(
-              'ml-auto flex items-center gap-1.5 text-xs',
+              'ml-auto flex items-center gap-1.5 text-label',
               isLowDisk ? tintClasses('warning').text : 'text-muted-foreground',
             )}
           >

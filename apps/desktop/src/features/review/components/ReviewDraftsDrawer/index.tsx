@@ -52,7 +52,7 @@ export const ReviewDraftsDrawer = ({ sessionId, onClose }: Props) => {
         <div className="flex flex-col gap-4">
           {groups.map((group) => (
             <div key={group.path} className="flex flex-col gap-1.5">
-              <span className="truncate font-mono text-2xs text-muted-foreground">
+              <span className="truncate font-mono text-secondary text-muted-foreground">
                 {group.path}
               </span>
               {group.items.map((draft) => (

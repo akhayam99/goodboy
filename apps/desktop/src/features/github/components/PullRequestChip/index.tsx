@@ -50,7 +50,7 @@ export const PullRequestChip = ({
       <span
         title={meta.label}
         className={cn(
-          'inline-flex items-center gap-1 text-2xs font-medium',
+          'inline-flex items-center gap-1 text-secondary font-medium',
           meta.textClass,
           className,
         )}

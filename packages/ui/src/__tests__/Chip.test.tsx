@@ -48,8 +48,8 @@ describe('Chip', () => {
       </>,
     );
 
-    expect(classesOf('tiny')).toContain('text-3xs');
-    expect(classesOf('small')).toContain('text-2xs');
+    expect(classesOf('tiny')).toContain('text-meta');
+    expect(classesOf('small')).toContain('text-secondary');
   });
 
   it('never shouts its label', () => {

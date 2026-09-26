@@ -876,64 +876,6 @@ describe('durable resolve store', () => {
     expect(rows.find((row) => row.threadId === 'PRRT_1')?.state).toBe('fixed');
     expect(rows.find((row) => row.threadId === 'PRRT_2')?.state).toBe('working');
   });
-
-  it('cancels a queued attempt and gives its threads their previous state back', async () => {
-    const live = createHarness();
-    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
-    await live.actions.persistResolveTurn({
-      sessionId: SESSION_ID,
-      agent,
-      assistantText: ASSISTANT_TEXT,
-    });
-    const attemptId = await live.actions.recordResolveAttempt({
-      sessionId: SESSION_ID,
-      agent,
-      provider: 'anthropic',
-      model: 'model',
-      effort: null,
-      instructions: 'retry both',
-      phase: 'queued',
-      mountTarget: MOUNT_TARGET,
-    });
-
-    expect(
-      (await listResolveThreads({ db, sessionId: SESSION_ID })).every(
-        (row) => row.state === 'working',
-      ),
-    ).toBe(true);
-
-    await live.actions.cancelResolveAttempt({ sessionId: SESSION_ID, attemptId });
-
-    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
-    expect(rows.find((row) => row.threadId === 'PRRT_1')).toMatchObject({
-      state: 'fixed',
-      activeAttemptId: null,
-    });
-    expect(rows.find((row) => row.threadId === 'PRRT_2')?.state).toBe('answered');
-  });
-
-  it('refuses to cancel an attempt that is already running', async () => {
-    const live = createHarness();
-    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
-    const attemptId = await live.actions.recordResolveAttempt({
-      sessionId: SESSION_ID,
-      agent,
-      provider: 'anthropic',
-      model: 'model',
-      effort: null,
-      instructions: null,
-      phase: 'running',
-      mountTarget: MOUNT_TARGET,
-    });
-
-    await live.actions.cancelResolveAttempt({ sessionId: SESSION_ID, attemptId });
-
-    expect(
-      (await listResolveThreads({ db, sessionId: SESSION_ID })).every(
-        (row) => row.state === 'working',
-      ),
-    ).toBe(true);
-  });
 });
 
 type RemoteThreadParams = {

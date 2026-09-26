@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { MetaRow, SectionHeader, Skeleton, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore, useSessionOpenQuestions } from '../../../../store';
+import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
 import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
@@ -26,7 +26,7 @@ const SKELETON_WIDTHS = ['w-2/3', 'w-full', 'w-5/6', 'w-3/4'] as const;
 
 export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
   const stopArtifactGeneration = useAppStore((s) => s.stopArtifactGeneration);
-  const selectAgent = useAppStore((s) => s.selectAgent);
+  const navigate = useAppStore((s) => s.navigate);
   const sessionQuestions = useSessionOpenQuestions(sessionId);
   const questions = useMemo(
     () =>
@@ -58,7 +58,10 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
                   onClick: () =>
                     void stopArtifactGeneration({ sessionId, agentId: generation.agentId }),
                 },
-                openAgent: { onClick: () => void selectAgent(sessionId, generation.agentId) },
+                openAgent: {
+                  onClick: () =>
+                    navigate({ to: agentPlace({ sessionId, agentId: generation.agentId }) }),
+                },
               }}
             />
           }

@@ -25,6 +25,7 @@ const COUNTS = Object.fromEntries(
 
 type OpenParams = {
   readonly filter?: ActivityFilter;
+  readonly hiddenRows?: number;
   readonly preset?: ActivityPreset | null;
   readonly onToggle?: ComponentProps<typeof ActivityFilterPanel>['onToggle'];
   readonly onPreset?: ComponentProps<typeof ActivityFilterPanel>['onPreset'];
@@ -32,6 +33,7 @@ type OpenParams = {
 
 const open = ({
   filter = DEFAULT_ACTIVITY_FILTER,
+  hiddenRows = 0,
   preset,
   onToggle = vi.fn(),
   onPreset = vi.fn(),
@@ -40,6 +42,7 @@ const open = ({
     <ActivityFilterPanel
       filter={filter}
       hidden={hiddenActivityToggles({ filter })}
+      hiddenRows={hiddenRows}
       preset={preset === undefined ? activityFilterPresetOf({ filter }) : preset}
       counts={COUNTS}
       visibleCount={68}
@@ -104,19 +107,36 @@ describe('ActivityFilterPanel', () => {
     }
   });
 
-  it('names what is hidden on the trigger and in the footer', () => {
+  it('names what is hidden in the footer by toggle', () => {
     const panel = open({
       filter: { ...DEFAULT_ACTIVITY_FILTER, wireframes: false, resolver: false, session: false },
+      hiddenRows: 12,
     });
 
-    expect(screen.getByRole('button', { name: 'Filter the activity feed' }).textContent).toBe(
-      'Filter3 hidden',
-    );
     expect(
-      within(panel).getByText('Wireframes, Resolver, and Session events are hidden'),
+      within(panel).getByText('Resolvers, Wireframes, and Session events are hidden'),
     ).toBeDefined();
     expect(within(panel).getByRole('tab', { name: 'Custom' }).getAttribute('aria-selected')).toBe(
       'true',
+    );
+  });
+
+  it('counts hidden rows on the trigger, not hidden toggles', () => {
+    open({
+      filter: { ...DEFAULT_ACTIVITY_FILTER, wireframes: false, resolver: false, session: false },
+      hiddenRows: 12,
+    });
+
+    expect(screen.getByRole('button', { name: 'Filter the activity feed' }).textContent).toBe(
+      'Filter12 hidden',
+    );
+  });
+
+  it('names the active preset next to the row count on the trigger', () => {
+    open({ filter: ACTIVITY_FILTER_PRESETS.work, hiddenRows: 12 });
+
+    expect(screen.getByRole('button', { name: 'Filter the activity feed' }).textContent).toBe(
+      'FilterWork · 12 hidden',
     );
   });
 

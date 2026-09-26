@@ -1,4 +1,4 @@
-import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GetFn, SetFn } from './types';
 
@@ -26,6 +26,8 @@ import { squashSessionCommits } from './squashSessionCommits';
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const PROJECT_ID = 'project-1' as ProjectId;
+const MOUNT_ID = 'mount-1' as MountId;
+const OTHER_MOUNT_ID = 'mount-2' as MountId;
 
 const setFn = () => (() => undefined) as unknown as SetFn;
 
@@ -38,6 +40,7 @@ const getFn = (worktrees: Record<string, ReadonlyArray<string>>): GetFn =>
     sessionProjectMounts: {
       [SESSION_ID]: [
         {
+          mountId: MOUNT_ID,
           projectId: PROJECT_ID,
           mountName: 'repo',
           worktreePath: worktrees[SESSION_ID]?.[0] ?? '',
@@ -60,6 +63,7 @@ describe('local history rewrites', () => {
     const get = getFn({ [SESSION_ID]: ['/tmp/wt', '/tmp/wt-2'] });
 
     const head = await amendSessionCommit(setFn(), get)(SESSION_ID, {
+      mountId: MOUNT_ID,
       sha: 'abc',
       message: 'reworded',
     });
@@ -75,7 +79,11 @@ describe('local history rewrites', () => {
   it('squashes on the primary worktree of the session', async () => {
     const get = getFn({ [SESSION_ID]: ['/tmp/wt'] });
 
-    await squashSessionCommits(setFn(), get)(SESSION_ID, { sha: 'abc', message: 'one commit' });
+    await squashSessionCommits(setFn(), get)(SESSION_ID, {
+      mountId: MOUNT_ID,
+      sha: 'abc',
+      message: 'one commit',
+    });
 
     expect(h.squashLocalCommits).toHaveBeenCalledWith({
       worktreePath: '/tmp/wt',
@@ -84,14 +92,61 @@ describe('local history rewrites', () => {
     });
   });
 
+  it('amends on the worktree shown, not on the active one', async () => {
+    const base = getFn({ [SESSION_ID]: ['/tmp/wt-a'] })();
+    const get = (() => ({
+      ...base,
+      sessionProjectMounts: {
+        [SESSION_ID]: [
+          {
+            mountId: MOUNT_ID,
+            projectId: PROJECT_ID,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt-a',
+            repoRoot: '/tmp/repo',
+            branch: 'ak/task',
+          },
+          {
+            mountId: OTHER_MOUNT_ID,
+            projectId: PROJECT_ID,
+            mountName: 'repo',
+            worktreePath: '/tmp/wt-b',
+            repoRoot: '/tmp/repo',
+            branch: 'ak/other',
+          },
+        ],
+      },
+    })) as unknown as GetFn;
+
+    await amendSessionCommit(setFn(), get)(SESSION_ID, {
+      mountId: OTHER_MOUNT_ID,
+      sha: 'abc',
+      message: 'reworded',
+    });
+
+    expect(h.amendLocalCommit).toHaveBeenCalledWith({
+      worktreePath: '/tmp/wt-b',
+      sha: 'abc',
+      message: 'reworded',
+    });
+  });
+
   it('refuses to rewrite a session without a worktree', async () => {
     const get = getFn({});
 
     await expect(
-      amendSessionCommit(setFn(), get)(SESSION_ID, { sha: 'abc', message: 'reworded' }),
+      amendSessionCommit(setFn(), get)(SESSION_ID, {
+        mountId: MOUNT_ID,
+        sha: 'abc',
+        message: 'reworded',
+      }),
     ).rejects.toThrow('no worktree');
     await expect(
-      squashSessionCommits(setFn(), get)(SESSION_ID, { sha: 'abc', message: 'one commit' }),
+      squashSessionCommits(setFn(), get)(SESSION_ID, {
+        mountId: MOUNT_ID,
+        sha: 'abc',
+        message: 'one commit',
+      }),
     ).rejects.toThrow('no worktree');
     expect(h.amendLocalCommit).not.toHaveBeenCalled();
     expect(h.squashLocalCommits).not.toHaveBeenCalled();
@@ -115,6 +170,7 @@ describe('local history rewrites', () => {
       sessionProjectMounts: {
         [SESSION_ID]: [
           {
+            mountId: MOUNT_ID,
             projectId: PROJECT_ID,
             mountName: 'repo',
             worktreePath: '/tmp/wt',
@@ -132,7 +188,11 @@ describe('local history rewrites', () => {
     }) as unknown as SetFn;
     const get = (() => state) as unknown as GetFn;
 
-    await amendSessionCommit(set, get)(SESSION_ID, { sha: 'old1234567', message: 'reworded' });
+    await amendSessionCommit(set, get)(SESSION_ID, {
+      mountId: MOUNT_ID,
+      sha: 'old1234567',
+      message: 'reworded',
+    });
 
     expect(state.updateResolveThread).toHaveBeenCalledTimes(1);
     expect(state.updateResolveThread).toHaveBeenCalledWith({

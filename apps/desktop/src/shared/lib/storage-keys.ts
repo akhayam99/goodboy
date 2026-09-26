@@ -11,7 +11,6 @@ export const STORAGE_KEYS = {
 } as const;
 
 export const STORAGE_PREFIXES = {
-  workSurfaceView: `${PREFIX}work-surface-view:`,
   diffReviewed: `${PREFIX}diff-reviewed:`,
   sessionView: `${PREFIX}session-view:`,
   sessionFilters: `${PREFIX}session-filters:`,

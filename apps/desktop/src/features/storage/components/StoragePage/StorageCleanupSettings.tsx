@@ -1,7 +1,7 @@
-import { useState, type ChangeEvent } from 'react';
+import { useState } from 'react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { Plus } from 'lucide-react';
-import { Button, Eyebrow, Select } from '@goodboy/ui';
+import { Button, Eyebrow, Listbox } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import {
   STORAGE_SUGGEST_AFTER_KEY,
@@ -20,8 +20,8 @@ export const StorageCleanupSettings = () => {
     settings: rawDays === undefined ? {} : { [STORAGE_SUGGEST_AFTER_KEY]: rawDays },
   });
 
-  const onDays = ({ target }: ChangeEvent<HTMLSelectElement>) =>
-    void saveSetting(STORAGE_SUGGEST_AFTER_KEY, target.value).catch((error: unknown) =>
+  const onDays = (next: string) =>
+    void saveSetting(STORAGE_SUGGEST_AFTER_KEY, next).catch((error: unknown) =>
       reportError({ title: "Couldn't save the cleanup setting", error }),
     );
 
@@ -43,25 +43,28 @@ export const StorageCleanupSettings = () => {
   return (
     <section aria-label="Cleanup" className="flex flex-col gap-1">
       <Eyebrow label="Cleanup" />
-      <div className="flex min-h-10 items-center gap-3 px-2 text-sm">
+      <div className="flex min-h-10 items-center gap-3 px-2 text-body">
         <label htmlFor="storage-suggest-after" className="flex min-w-0 flex-1 flex-col">
           <span className="text-foreground">Suggest cleanup after</span>
-          <span className="text-2xs text-faint-foreground">
+          <span className="text-secondary text-faint-foreground">
             Clean folders idle longer than this are preselected and counted in &quot;can go&quot;.
           </span>
         </label>
-        <Select id="storage-suggest-after" size="sm" value={String(days)} onChange={onDays}>
-          {SUGGEST_AFTER_OPTIONS.map((option) => (
-            <option key={option} value={String(option)}>
-              {option} days
-            </option>
-          ))}
-        </Select>
+        <Listbox
+          id="storage-suggest-after"
+          size="sm"
+          value={String(days)}
+          options={SUGGEST_AFTER_OPTIONS.map((option) => ({
+            value: String(option),
+            label: `${option} days`,
+          }))}
+          onChange={onDays}
+        />
       </div>
-      <div className="flex min-h-10 items-center gap-3 px-2 text-sm">
+      <div className="flex min-h-10 items-center gap-3 px-2 text-body">
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-foreground">Scan another repository</span>
-          <span className="text-2xs text-faint-foreground">
+          <span className="text-secondary text-faint-foreground">
             For a repository Goodboy used in a workspace you removed.
           </span>
         </div>

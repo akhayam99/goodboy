@@ -46,7 +46,7 @@ export const WireframeContactSheet = ({
         <h3>
           <Eyebrow label="Screens" />
         </h3>
-        <span className="tabular-nums text-2xs text-muted-foreground">
+        <span className="tabular-nums text-secondary text-muted-foreground">
           {document.screens.length}
         </span>
       </div>
@@ -65,13 +65,15 @@ export const WireframeContactSheet = ({
                 className="flex min-w-0 items-center gap-2"
                 style={{ width: plates[screen.viewport] }}
               >
-                <span className="shrink-0 tabular-nums text-2xs text-muted-foreground">
+                <span className="shrink-0 tabular-nums text-secondary text-muted-foreground">
                   {index + 1}
                 </span>
-                <span className="truncate text-2xs font-medium text-foreground">
+                <span className="truncate text-secondary font-medium text-foreground">
                   {screen.title}
                 </span>
-                <span className="shrink-0 text-2xs text-muted-foreground">{screen.viewport}</span>
+                <span className="shrink-0 text-secondary text-muted-foreground">
+                  {screen.viewport}
+                </span>
                 {interaction === null ? null : (
                   <Button
                     variant="ghost"
@@ -100,7 +102,7 @@ export const WireframeContactSheet = ({
               />
               {screen.note === undefined ? null : (
                 <span
-                  className="text-2xs italic text-muted-foreground"
+                  className="text-secondary italic text-muted-foreground"
                   style={{ width: plates[screen.viewport] }}
                 >
                   {screen.note}

@@ -75,7 +75,7 @@ export const EfficiencyPanel = ({
           <div className="flex flex-col gap-2">
             {cache?.map((entry) => (
               <div key={entry.provider} className="flex flex-col gap-1">
-                <div className="flex items-center gap-3 text-xs">
+                <div className="flex items-center gap-3 text-label">
                   <span className="min-w-0 flex-1 capitalize">{entry.provider}</span>
                   <span className="font-mono tabular-nums">
                     {Math.round(entry.hitRatio * 100)}%
@@ -112,7 +112,7 @@ export const EfficiencyPanel = ({
         <StudioWidget label="right-size nudges" hint="outcomes after a routing suggestion">
           <div className="flex flex-col gap-1">
             {nudgeData?.map((entry) => (
-              <div key={entry.outcome ?? 'pending'} className="flex items-center gap-3 text-xs">
+              <div key={entry.outcome ?? 'pending'} className="flex items-center gap-3 text-label">
                 <span className="min-w-0 flex-1 capitalize">{entry.outcome ?? 'pending'}</span>
                 <span className="font-mono tabular-nums">{entry.count}</span>
               </div>

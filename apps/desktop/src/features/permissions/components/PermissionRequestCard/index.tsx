@@ -190,27 +190,27 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
       tone="warning"
       variant="boxed"
       emphasis
-      className="flex flex-col gap-2 text-xs"
+      className="flex flex-col gap-2 text-label"
     >
       <div className="flex flex-wrap items-center gap-2">
         <Hand size={ICON_SIZE.control} aria-hidden className={warningTint.icon} />
-        <span className="text-sm font-semibold text-foreground">
+        <span className="text-heading text-foreground">
           {providerLabel === null ? 'The agent' : providerLabel} wants to run{' '}
           {item.toolName === 'Bash' ? 'a command' : `${item.toolName}`}
         </span>
         {resolved ? (
-          <span className={`ml-auto text-2xs ${resolvedTint.text}`}>resolved</span>
+          <span className={`ml-auto text-secondary ${resolvedTint.text}`}>resolved</span>
         ) : (
-          <span className="ml-auto text-2xs text-muted-foreground">{timestamp}</span>
+          <span className="ml-auto text-secondary text-muted-foreground">{timestamp}</span>
         )}
       </div>
       {commandText !== null ? (
-        <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 font-mono text-2xs text-foreground">
+        <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 text-code text-foreground">
           {commandText}
         </code>
       ) : (
         inputPreview !== null && (
-          <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 font-mono text-2xs text-muted-foreground">
+          <code className="min-w-0 break-words rounded-md bg-elevated px-2 py-1 text-code text-muted-foreground">
             {inputPreview}
           </code>
         )
@@ -267,7 +267,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={handleAllowSession}
-                  className="flex w-full items-center px-2.5 py-1.5 text-left text-xs text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className="flex w-full items-center px-2.5 py-1.5 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
                 >
                   Allow all commands in this session
                 </button>
@@ -276,7 +276,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={() => setOverflowView('confirmGlobal')}
-                  className="flex w-full items-center px-2.5 py-1.5 text-left text-xs text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className="flex w-full items-center px-2.5 py-1.5 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
                 >
                   {rule.label} everywhere
                 </button>
@@ -285,7 +285,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   role="menuitem"
                   disabled={busy}
                   onClick={() => setOverflowView('denyReason')}
-                  className="flex w-full items-center px-2.5 py-1.5 text-left text-xs text-foreground motion-safe:transition-colors hover:bg-hover"
+                  className="flex w-full items-center px-2.5 py-1.5 text-left text-label text-foreground motion-safe:transition-colors hover:bg-hover"
                 >
                   Deny and tell {providerLabel ?? 'the agent'} why…
                 </button>
@@ -313,7 +313,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
                   minRows={2}
                   maxRows={4}
                   autoGrow
-                  className="w-full rounded-md border border-border bg-elevated px-2 py-1.5 text-xs text-foreground"
+                  className="w-full rounded-md border border-border bg-elevated px-2 py-1.5 text-label text-foreground"
                 />
                 <div className="flex justify-end gap-2">
                   <Button variant="ghost" size="sm" disabled={busy} onClick={closeOverflow}>

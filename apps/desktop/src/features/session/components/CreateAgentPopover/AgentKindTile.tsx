@@ -24,7 +24,7 @@ export const AgentKindTile = ({ kind, isActive, onSelect }: Props) => {
       )}
     >
       <AgentAvatar kind={kind} size="md" />
-      <span className="truncate text-xs font-medium">{meta.label}</span>
+      <span className="truncate text-label font-medium">{meta.label}</span>
     </button>
   );
 };

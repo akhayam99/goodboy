@@ -29,7 +29,7 @@ export const SessionRowMeta = ({ item }: Props) => {
       <span
         data-testid="session-row-actionable"
         className={cn(
-          'inline-flex shrink-0 items-center gap-1 text-3xs font-medium tabular-nums',
+          'inline-flex shrink-0 items-center gap-1 text-meta font-medium',
           tintClasses(isQuestions ? 'warning' : 'draft').icon,
         )}
       >
@@ -48,7 +48,7 @@ export const SessionRowMeta = ({ item }: Props) => {
       <span className="inline-flex min-w-0 shrink-0 items-center gap-1">
         <ExternalTaskChip task={item.task} variant="compact" identifierClassName={NARROW_HIDDEN} />
         {item.more > 0 ? (
-          <span className="text-3xs tabular-nums text-faint-foreground">
+          <span className="text-meta text-faint-foreground">
             <span aria-hidden>+{item.more}</span>
             <span className="sr-only">
               {plural({ count: item.more, one: 'more task', many: 'more tasks' })}
@@ -60,7 +60,7 @@ export const SessionRowMeta = ({ item }: Props) => {
   }
 
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 text-3xs tabular-nums text-faint-foreground">
+    <span className="inline-flex shrink-0 items-center gap-1 text-meta text-faint-foreground">
       <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
       <span aria-hidden>{item.count}</span>
       <span className="sr-only">{plural({ count: item.count, one: 'agent', many: 'agents' })}</span>

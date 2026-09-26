@@ -14,7 +14,7 @@ export const NoConnectedProviders = ({ onNavigate }: Props) => {
 
   return (
     <div className="flex items-center gap-2 px-2.5 py-2">
-      <p className="flex-1 text-xs text-muted-foreground">No providers connected</p>
+      <p className="flex-1 text-label text-muted-foreground">No providers connected</p>
       <Button size="sm" onClick={openProviderStudio}>
         Open providers
       </Button>

@@ -27,7 +27,7 @@ export const BlockEditor = ({ value, label, minRows = 3, onChange, onCommit, onC
         onCommit();
       }
     }}
-    className="font-mono text-sm"
+    className="font-mono text-body"
     autoGrow
     minRows={minRows}
     maxRows={24}

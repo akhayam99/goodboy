@@ -10,7 +10,7 @@ import type {
   SessionProjectMount,
 } from '@goodboy/types';
 import { buildSessionScripts } from './buildSessionScripts';
-import type { ScriptGroup } from './scripts';
+import { discoveredScriptCwd, type ScriptGroup } from './scripts';
 
 const LEDGER = 'project-ledger' as ProjectId;
 const CREATED_AT = '2026-09-01T00:00:00.000Z' as IsoDateTime;
@@ -58,7 +58,7 @@ const MANIFEST: ReadonlyArray<ScriptGroup> = [
     packageName: 'acme/ledger',
     relDir: '',
     manager: 'composer',
-    scripts: [{ name: 'test', command: 'composer run-script test' }],
+    scripts: [{ name: 'test', command: 'composer run-script test', body: 'phpunit' }],
   },
   {
     source: 'package-json',
@@ -66,15 +66,15 @@ const MANIFEST: ReadonlyArray<ScriptGroup> = [
     relDir: '',
     manager: 'pnpm',
     scripts: [
-      { name: 'lint', command: 'pnpm run lint' },
-      { name: 'test', command: 'pnpm run test' },
-      { name: 'dev', command: 'pnpm run dev' },
+      { name: 'lint', command: 'pnpm run lint', body: 'eslint .' },
+      { name: 'test', command: 'pnpm run test', body: 'vitest run' },
+      { name: 'dev', command: 'pnpm run dev', body: 'vite' },
     ],
   },
 ];
 
 describe('buildSessionScripts', () => {
-  it('lists saved scripts first, then manifest scripts by category', () => {
+  it('lists saved scripts first, then each manifest by category', () => {
     const [group] = buildSessionScripts({
       mounts: [mount('m1', LEDGER, '/wt/ledger')],
       projects: PROJECTS,
@@ -83,19 +83,73 @@ describe('buildSessionScripts', () => {
     });
 
     expect(group?.projectName).toBe('ledger-core');
+    expect(group?.packageCount).toBe(2);
     expect(group?.scripts.map((script) => [script.source, script.name])).toEqual([
       ['saved', 'Replay a'],
       ['saved', 'Replay b'],
       ['package-json', 'dev'],
       ['package-json', 'test'],
-      ['composer', 'test'],
       ['package-json', 'lint'],
+      ['composer', 'test'],
     ]);
     expect(group?.scripts[0]).toMatchObject({
       kind: 'saved',
-      command: 'node ./tools/a.js',
+      body: 'node ./tools/a.js',
+      invocation: 'node ./tools/a.js',
       savedId: 'a',
     });
+  });
+
+  it('keeps a script name shared by two workspace packages apart, root package first', () => {
+    const [group] = buildSessionScripts({
+      mounts: [mount('m1', LEDGER, '/wt/northwind/')],
+      projects: PROJECTS,
+      saved: [],
+      discovered: {
+        '/wt/northwind/': [
+          {
+            source: 'package-json',
+            packageName: 'northwind',
+            relDir: '',
+            manager: 'yarn',
+            scripts: [{ name: 'dev', command: 'yarn run dev', body: 'turbo run dev' }],
+          },
+          {
+            source: 'package-json',
+            packageName: '@northwind/web',
+            relDir: 'apps/web',
+            manager: 'yarn',
+            scripts: [
+              { name: 'test', command: 'yarn run test', body: 'vitest run' },
+              { name: 'dev', command: 'yarn run dev', body: 'vite --port 3000' },
+            ],
+          },
+          {
+            source: 'package-json',
+            packageName: '@acme/api',
+            relDir: 'apps/api',
+            manager: 'yarn',
+            scripts: [{ name: 'dev', command: 'yarn run dev', body: 'tsx watch src/server.ts' }],
+          },
+        ],
+      },
+    });
+
+    const scripts = group?.scripts ?? [];
+    expect(group?.packageCount).toBe(3);
+    expect(
+      scripts.map((script) => [
+        script.packageName,
+        script.name,
+        discoveredScriptCwd({ worktreePath: '/wt/northwind/', relDir: script.relDir }),
+      ]),
+    ).toEqual([
+      ['northwind', 'dev', '/wt/northwind/'],
+      ['@acme/api', 'dev', '/wt/northwind/apps/api'],
+      ['@northwind/web', 'dev', '/wt/northwind/apps/web'],
+      ['@northwind/web', 'test', '/wt/northwind/apps/web'],
+    ]);
+    expect(new Set(scripts.map((script) => script.key)).size).toBe(4);
   });
 
   it('gives each mount of the same project its own group with the saved scripts in both', () => {

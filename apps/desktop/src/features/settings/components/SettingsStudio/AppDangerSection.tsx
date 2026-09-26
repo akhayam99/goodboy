@@ -32,7 +32,7 @@ export const AppDangerSection = () => {
       actions={
         wipeState === 'done' ? (
           <span className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">Local data wiped.</span>
+            <span className="text-label text-muted-foreground">Local data wiped.</span>
             <Button variant="secondary" size="sm" onClick={() => void relaunchApp()}>
               <RotateCcw size={ICON_SIZE.row} aria-hidden />
               Restart now

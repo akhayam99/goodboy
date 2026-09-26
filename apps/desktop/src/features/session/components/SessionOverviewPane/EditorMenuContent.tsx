@@ -13,10 +13,7 @@ export const EditorMenuContent = ({ items, onClose }: Props) => (
       }
       if (item.kind === 'header') {
         return (
-          <div
-            key={item.key}
-            className="px-2.5 pb-0.5 pt-1.5 text-2xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
-          >
+          <div key={item.key} className="px-2.5 pb-0.5 pt-1.5 text-eyebrow text-faint-foreground">
             {item.label}
           </div>
         );
@@ -56,7 +53,7 @@ export const EditorMenuContent = ({ items, onClose }: Props) => (
           ) : null}
           <span className="flex-1 truncate">{item.label}</span>
           {item.hint != null && item.hint !== '' ? (
-            <kbd className="font-mono text-2xs text-faint-foreground">{item.hint}</kbd>
+            <kbd className="font-mono text-secondary text-faint-foreground">{item.hint}</kbd>
           ) : null}
         </button>
       );

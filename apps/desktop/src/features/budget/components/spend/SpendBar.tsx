@@ -16,16 +16,16 @@ export const SpendBar = ({ label, valueLabel, pct, metaLabel, icon, onClick }: P
   const body = (
     <>
       <div className="flex items-center gap-2">
-        <span className="flex min-w-0 items-center gap-1.5 truncate text-sm capitalize text-foreground">
+        <span className="flex min-w-0 items-center gap-1.5 truncate text-body capitalize text-foreground">
           {icon}
           {label}
         </span>
         {metaLabel !== undefined ? (
-          <span className="ml-auto shrink-0 text-2xs text-faint-foreground">{metaLabel}</span>
+          <span className="ml-auto shrink-0 text-secondary text-faint-foreground">{metaLabel}</span>
         ) : null}
         <span
           className={cn(
-            'shrink-0 font-mono text-xs tabular-nums text-muted-foreground',
+            'shrink-0 text-code tabular-nums text-muted-foreground',
             metaLabel === undefined && 'ml-auto',
           )}
         >

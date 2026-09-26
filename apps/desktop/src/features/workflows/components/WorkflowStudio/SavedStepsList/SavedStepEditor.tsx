@@ -88,7 +88,7 @@ export const SavedStepEditor = ({
       ) : (
         <div className="flex items-center justify-end gap-1">
           {error === null ? null : (
-            <p role="alert" className="min-w-0 flex-1 truncate text-2xs text-danger">
+            <p role="alert" className="min-w-0 flex-1 truncate text-secondary text-danger">
               {error}
             </p>
           )}

@@ -97,9 +97,7 @@ const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
 
 const WORKSPACE_OVERRIDES: OverrideSettings = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: {

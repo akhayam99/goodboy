@@ -9,7 +9,7 @@ export const DismissedQuestionUndo = ({ onUndo }: Props) => {
     <TranscriptShell
       tone="neutral"
       variant="leftBorder"
-      className="flex items-center justify-between gap-2 text-xs text-muted-foreground"
+      className="flex items-center justify-between gap-2 text-label text-muted-foreground"
     >
       <span>Dismissed -</span>
       <button

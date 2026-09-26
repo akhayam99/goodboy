@@ -2,7 +2,6 @@ import { clearAgentAttachments } from './clearAgentAttachments';
 import { clearAgentDone } from './clearAgentDone';
 import { clearAgentDraft } from './clearAgentDraft';
 import { deleteAgent } from './deleteAgent';
-import { deselectAgent } from './deselectAgent';
 import { forceCloseResolver } from './forceCloseResolver';
 import { markAgentSeen } from './markAgentSeen';
 import { markAgentViewed } from './markAgentViewed';
@@ -13,20 +12,18 @@ import { setAgentAttachments } from './setAgentAttachments';
 import { setAgentDraft } from './setAgentDraft';
 import { setAgentDone } from './setAgentDone';
 import { setAgentEffortOverride } from './setAgentEffortOverride';
-import { setAgentKind } from './setAgentKind';
 import { spawnAgent } from './spawnAgent';
 import type { GetFn, SetFn } from './types';
 
 export const createAgentsSlice = (set: SetFn, get: GetFn) => {
   return {
-    setAgentKind: setAgentKind(set, get),
     setAgentEffortOverride: setAgentEffortOverride(set),
     setAgentDraft: setAgentDraft(set),
     clearAgentDraft: clearAgentDraft(set),
     setAgentAttachments: setAgentAttachments(set),
     clearAgentAttachments: clearAgentAttachments(set),
     selectAgent: selectAgent(set, get),
-    deselectAgent: deselectAgent(set),
+    loadAgentTranscript: selectAgent(set, get),
     markAgentViewed: markAgentViewed(set, get),
     markAgentSeen: markAgentSeen(set, get),
     markAllAgentsSeen: markAllAgentsSeen(set, get),

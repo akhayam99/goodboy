@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session, SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 
 const { state, currentWorkspace, activityBar } = vi.hoisted(() => ({
   state: {
     archivedSessions: {} as Record<string, ReadonlyArray<unknown>>,
-    setCurrentSession: vi.fn(),
+    navigate: vi.fn(),
     loadArchivedSessions: vi.fn(),
     projects: [] as ReadonlyArray<never>,
   },
@@ -17,7 +18,8 @@ const { state, currentWorkspace, activityBar } = vi.hoisted(() => ({
   activityBar: { onSelectSession: vi.fn() as (id: SessionId) => void },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
   useCurrentWorkspace: () => currentWorkspace,
   useHasUnreadElsewhere: () => false,
@@ -34,7 +36,7 @@ vi.mock('../../../workspace/components/SessionActivityBar', () => ({
 
 afterEach(() => {
   cleanup();
-  state.setCurrentSession.mockClear();
+  state.navigate.mockClear();
 });
 
 import { SessionNavSidebar } from './index';
@@ -50,17 +52,14 @@ describe('SessionNavSidebar', () => {
     expect(screen.queryByRole('button', { name: 'ship the nav' })).toBeNull();
   });
 
-  it('keeps the board CTA reachable', () => {
-    render(<SessionNavSidebar session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: /back to board/i }));
-    expect(state.setCurrentSession).toHaveBeenCalledWith(null);
-  });
+  it('opens on the collapse control, with Board gone to the top bar', () => {
+    const onToggle = vi.fn();
+    render(<SessionNavSidebar session={session} onToggleSidebar={onToggle} />);
 
-  it('opens on the board row, leaving the collapse control and identity to the top bar', () => {
-    render(<SessionNavSidebar session={session} />);
-
+    fireEvent.click(screen.getByRole('button', { name: /^Hide sessions/ }));
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: /board/i })).toBeNull();
     expect(screen.queryByText('Sessions')).toBeNull();
-    expect(screen.queryByRole('button', { name: /hide sessions|session sidebar/i })).toBeNull();
     expect(screen.queryByLabelText(/switch workspace/i)).toBeNull();
     expect(screen.queryByLabelText('Preferences')).toBeNull();
   });
@@ -70,7 +69,9 @@ describe('SessionNavSidebar', () => {
     render(<SessionNavSidebar session={session} onNavigate={onNavigate} />);
 
     activityBar.onSelectSession('session-2' as SessionId);
-    expect(state.setCurrentSession).toHaveBeenCalledWith('session-2');
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-2' as SessionId }),
+    });
     expect(onNavigate).toHaveBeenCalledOnce();
   });
 });

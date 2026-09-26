@@ -65,9 +65,10 @@ export const AppBackupSection = () => {
             size="sm"
             onClick={() => void onExport()}
             disabled={exportState === 'busy'}
-            className={exportState === 'busy' ? 'animate-border-pulse' : undefined}
           >
-            {EXPORT_LABEL[exportState]}
+            <span className={exportState === 'busy' ? 'text-shimmer' : undefined}>
+              {EXPORT_LABEL[exportState]}
+            </span>
           </Button>
           <Button variant="secondary" size="sm" onClick={() => void onImport()}>
             Import

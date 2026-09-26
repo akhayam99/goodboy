@@ -36,6 +36,7 @@ vi.mock('@goodboy/core', async () => {
 vi.mock('../../../github/github', () => ({ tauriGhRunner: {} }));
 
 import { ConvertWorkspaceDialog } from './index';
+import { chooseListboxValue } from '../../../../__tests__/helpers/listbox';
 
 const workspace = {
   id: 'ws-1',
@@ -78,8 +79,10 @@ describe('ConvertWorkspaceDialog', () => {
     render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
-    await waitFor(() => screen.getByRole('option', { name: 'acme/widgets' }));
-    fireEvent.change(screen.getByLabelText('Repository'), { target: { value: 'acme/widgets' } });
+    await waitFor(() =>
+      expect(screen.getByLabelText<HTMLButtonElement>('Repository').disabled).toBe(false),
+    );
+    chooseListboxValue({ trigger: screen.getByLabelText('Repository'), value: 'acme/widgets' });
     fireEvent.click(screen.getByRole('button', { name: 'Convert to dev project' }));
 
     await waitFor(() =>
@@ -126,8 +129,10 @@ describe('ConvertWorkspaceDialog', () => {
     render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Link existing' }));
-    await waitFor(() => screen.getByRole('option', { name: 'acme/widgets' }));
-    fireEvent.change(screen.getByLabelText('Repository'), { target: { value: 'acme/widgets' } });
+    await waitFor(() =>
+      expect(screen.getByLabelText<HTMLButtonElement>('Repository').disabled).toBe(false),
+    );
+    chooseListboxValue({ trigger: screen.getByLabelText('Repository'), value: 'acme/widgets' });
     fireEvent.click(screen.getByRole('tab', { name: 'GitLab' }));
 
     expect(
