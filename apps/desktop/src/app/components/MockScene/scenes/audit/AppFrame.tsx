@@ -55,7 +55,7 @@ export const AppFrame = ({ view, isRailCollapsed }: Props) => {
     arrangement.leftSlot === 'none' ? undefined : arrangement.leftSlot === 'rail' ? (
       <CollapsedRail />
     ) : (
-      <SessionNavSidebar session={currentSession} />
+      <SessionNavSidebar currentSessionId={currentSession.id} />
     );
 
   const main =

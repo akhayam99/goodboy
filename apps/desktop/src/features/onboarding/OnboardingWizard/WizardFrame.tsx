@@ -216,11 +216,7 @@ export const WizardFrame = ({
       return;
     }
     runStepAction(async () => {
-      await startFirstScout({
-        workspaceId: workspace.id,
-        projectId: projects[0]?.id ?? null,
-        prompt,
-      });
+      await startFirstScout({ workspaceId: workspace.id, prompt });
       close();
       return 'stay';
     });

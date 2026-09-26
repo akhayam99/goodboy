@@ -1,16 +1,13 @@
-import type { ReactNode } from 'react';
-import { cn, Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
+import { Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { sessionTitle } from '../../sessionTitle';
-import { isUntitledSessionTitle } from '../../../../store/slices/sessions/untitledTitle';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
-import { SessionActionsMenu } from './SessionActionsMenu';
 import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
-import { ContextDigest } from './ContextDigest';
+import { GoalTeaser } from './GoalTeaser';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { AttentionChips } from './AttentionChips';
 import { ProjectMountRows } from './ProjectMountRows';
@@ -20,18 +17,9 @@ import { ArchivedRestore } from './ArchivedRestore';
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
-  readonly goal: ReactNode;
-  readonly titleAction?: ReactNode;
-  readonly isEmpty?: boolean;
 };
 
-export const HeaderBand = ({
-  session,
-  onSelectLens,
-  goal,
-  titleAction = null,
-  isEmpty = false,
-}: Props) => {
+export const HeaderBand = ({ session, onSelectLens }: Props) => {
   const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
@@ -42,7 +30,9 @@ export const HeaderBand = ({
   });
 
   const titleText = sessionTitle({ session });
-  const isPlaceholderTitle = !session.titleUserEdited && isUntitledSessionTitle(session.goal);
+  const isNamedByGoodboy = useAppStore(
+    (s) => s.goodboyNamedSessionId === sessionId && !session.titleUserEdited,
+  );
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
@@ -81,44 +71,34 @@ export const HeaderBand = ({
                   rename.start();
                 }}
                 title={inlineMarkdownText({ text: titleText })}
-                className={cn(
-                  'line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-title focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-                  isPlaceholderTitle ? 'text-faint-foreground' : 'text-foreground',
-                )}
+                className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-title text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
-                <InlineMarkdown text={titleText} />
+                <span key={titleText} className="motion-safe:animate-fade-in">
+                  <InlineMarkdown text={titleText} />
+                </span>
               </h1>
             </Tooltip>
           )}
+          {isNamedByGoodboy && !rename.editing ? (
+            <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
+          ) : null}
           <div className="flex shrink-0 items-center gap-1">
-            {isEmpty ? (
-              <SessionActionsMenu session={session} />
-            ) : (
-              <>
-                {titleAction}
-                <SessionDestructiveActions session={session} />
-              </>
-            )}
+            <SessionDestructiveActions session={session} />
           </div>
         </div>
+        <GoalTeaser session={session} />
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
             {isArchived ? <ArchivedRestore session={session} /> : null}
-            {isEmpty ? null : <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />}
+            <ContextChip sessionId={sessionId} />
             <AttentionChips sessionId={sessionId} onSelectLens={onSelectLens} />
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
-            {isEmpty ? null : (
-              <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
-            )}
+            <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
             <SessionCostChip sessionId={sessionId} />
           </div>
         </div>
-      </div>
-      <div className="flex min-w-0 flex-col gap-2">
-        {goal}
-        <ContextDigest sessionId={sessionId} onSelectLens={onSelectLens} />
       </div>
       <ProjectMountRows session={session} onSelectLens={onSelectLens} />
     </div>

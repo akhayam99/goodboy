@@ -251,7 +251,9 @@ export const ShellScene = () => {
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
-          arrangement.leftSlot === 'sessions' ? <SessionNavSidebar session={SESSION} /> : undefined
+          arrangement.leftSlot === 'sessions' ? (
+            <SessionNavSidebar currentSessionId={SESSION.id} />
+          ) : undefined
         }
         footer={
           <AppFooter

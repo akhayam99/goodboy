@@ -14,7 +14,9 @@ import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/ty
 import { useAppStore } from '../../../../store/store';
 import { useRunSpendUsd } from '../../../../store/selectors';
 import { OrchestratorAction } from '../OrchestratorStrip/OrchestratorAction';
-import { SpendLimitFields, parseSpendLimit } from './SpendLimitFields';
+import { SpendLimitFields } from '../../../budget/components/SpendLimitFields';
+import { parseSpendLimit } from '../../../budget/parseSpendLimit';
+import { behaviorOfRunMode, runModeOfBehavior } from '../../../budget/spendLimitBehavior';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -106,11 +108,11 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
         <div className="flex flex-col gap-2 px-3 py-3">
           <SpendLimitFields
             amount={amount}
-            mode={mode}
+            behavior={behaviorOfRunMode({ mode })}
             inputId="run-spend-limit-amount"
             invalid={isInvalid}
             onAmount={setAmount}
-            onMode={setMode}
+            onBehavior={(behavior) => setMode(runModeOfBehavior({ behavior }))}
           />
           <p className="text-2xs leading-relaxed text-muted-foreground">
             {isInvalid

@@ -41,10 +41,6 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/WorkflowsPane.tsx'],
   },
-  ContextPane: {
-    kind: 'shell',
-    files: ['features/session/components/SessionWorkspace/parts/ContextPane/index.tsx'],
-  },
   IntegrationPane: {
     kind: 'shell',
     files: ['features/session/components/SessionWorkspace/parts/IntegrationPane/index.tsx'],

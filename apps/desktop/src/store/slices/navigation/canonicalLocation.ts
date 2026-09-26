@@ -4,6 +4,8 @@ import { agentHomeFor } from './agentHomeFor';
 import { resolverPagePlace, sessionPlace } from './place';
 import { resolverThread } from './resolverThread';
 import { resolveActiveMountPath } from '../worktrees/resolveActiveMountPath';
+import { CONTEXT_LENS_TAB } from './contextLensTab';
+import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
 import type { CanonicalPlace, Place, PlaceRequest } from './types';
 
 type GithubParams = {
@@ -52,7 +54,7 @@ type PlaceParams = {
 };
 
 const canonicalPlace = ({ state, request }: PlaceParams): Place => {
-  if (request.at === 'board') {
+  if (request.at === 'board' || request.at === 'session-draft') {
     return request;
   }
   const { view, sessionId } = request;
@@ -85,7 +87,36 @@ const canonicalPlace = ({ state, request }: PlaceParams): Place => {
   return request;
 };
 
-export const canonicalLocation = ({ state, request }: Params): CanonicalPlace =>
-  request.at === 'agent'
-    ? canonicalAgent({ state, request })
-    : { place: canonicalPlace({ state, request }), drawer: null };
+const canonicalContext = ({ state, request }: PlaceParams): CanonicalPlace | null => {
+  if (request.at !== 'session' || request.view.lens === null) {
+    return null;
+  }
+  const tab = CONTEXT_LENS_TAB[request.view.lens];
+  if (tab === undefined) {
+    return null;
+  }
+  const { sessionId } = request;
+  return {
+    place: sessionPlace({ sessionId }),
+    drawer: {
+      kind: 'context',
+      sessionId,
+      payload: {
+        tab: tab ?? state.contextDrawerTab?.[sessionId] ?? DEFAULT_CONTEXT_TAB,
+        view: 'current',
+      },
+    },
+  };
+};
+
+export const canonicalLocation = ({ state, request }: Params): CanonicalPlace => {
+  if (request.at === 'agent') {
+    return canonicalAgent({ state, request });
+  }
+  return (
+    canonicalContext({ state, request }) ?? {
+      place: canonicalPlace({ state, request }),
+      drawer: null,
+    }
+  );
+};

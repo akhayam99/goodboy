@@ -103,6 +103,8 @@ import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
+import type { SessionDraftState } from './slices/sessionDraft/state';
+import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
@@ -253,6 +255,8 @@ type AppSliceState = ArtifactsState &
   ChangelogState &
   SlackThreadsSliceState &
   BugReportDraftState &
+  SessionDraftState &
+  ContextDrawerSliceState &
   DrawerSliceState &
   NavigationSliceState;
 
@@ -274,7 +278,6 @@ export type AppState = AppSliceState & {
   readonly sessions: ReadonlyArray<Session>;
   readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
   readonly currentSessionId: SessionId | null;
-  readonly pendingKickoffFocusSessionId: SessionId | null;
   readonly settings: Readonly<Record<string, string>>;
   readonly sessionSummary: TelemetrySummary | null;
   readonly providerStatus: ProviderStatus | null;

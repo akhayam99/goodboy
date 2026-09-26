@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { Session, SessionId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 
 const { store } = vi.hoisted(() => ({
   store: {
@@ -17,9 +17,10 @@ const { store } = vi.hoisted(() => ({
         deletedAt?: string;
       }>
     >,
+    sessionDrafts: {},
     loadPhaseTemplates: vi.fn(async () => undefined),
-    attachWorkflowToSession: vi.fn(async () => undefined),
-    reportError: vi.fn(async () => undefined),
+    patchSessionDraft: vi.fn(),
+    startSessionFromDraft: vi.fn(async () => undefined),
   },
 }));
 
@@ -29,19 +30,17 @@ vi.mock('../../../../store', () => ({
 
 import { WorkflowStart } from './WorkflowStart';
 
-const SESSION_ID = 'sess-1' as SessionId;
-const session = { id: SESSION_ID, workspaceId: 'ws-1', goal: '' } as unknown as Session;
+const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 
 beforeEach(() => {
   store.phaseTemplates = {};
   store.loadPhaseTemplates.mockClear();
-  store.attachWorkflowToSession.mockClear();
-  store.reportError.mockClear();
+  store.patchSessionDraft.mockClear();
+  store.startSessionFromDraft.mockClear();
 });
 afterEach(cleanup);
 
-const renderStart = () =>
-  render(<WorkflowStart session={session} onOpenWorkflowBuilder={vi.fn()} />);
+const renderStart = () => render(<WorkflowStart workspaceId={WORKSPACE_ID} />);
 
 describe('WorkflowStart', () => {
   it('groups built in and custom presets under their own eyebrow', () => {

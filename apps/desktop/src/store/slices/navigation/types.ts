@@ -32,6 +32,7 @@ export type SessionView = {
 
 export type Place =
   | { readonly at: 'board' }
+  | { readonly at: 'session-draft' }
   | { readonly at: 'session'; readonly sessionId: SessionId; readonly view: SessionView };
 
 export type PlaceRequest =

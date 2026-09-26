@@ -218,6 +218,8 @@ const baseState = (): State => {
     ],
     providerCooldowns: {},
     budgetAlerts: [],
+    sessionBudgets: {},
+    loadSessionBudget: vi.fn(async () => undefined),
     phaseTemplates: { [WORKSPACE_ID]: [template] },
     sessionWorkflows: { [SESSION_ID]: [template] },
     sessionPhaseRuns: { [SESSION_ID]: [completedAgent()] },
@@ -2000,7 +2002,7 @@ describe('orchestrateNextStep', () => {
 
   it('refuses to start a step while the budget cap is reached', async () => {
     const state = baseState();
-    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
+    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID, capUsd: 10 }];
     const { set, get } = harness(state);
 
     await orchestrateNextStep(set, get)(SESSION_ID, WORKFLOW_RUN_ID);
@@ -2008,7 +2010,7 @@ describe('orchestrateNextStep', () => {
     expect(decideSpy).not.toHaveBeenCalled();
     expect(updateStopSpy).toHaveBeenCalledWith({}, WORKFLOW_RUN_ID, {
       kind: 'budget',
-      message: expect.stringContaining('budget cap'),
+      message: 'Paused at the $10.00 spend limit for this session.',
     });
     const paused = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(paused.orchestrationStop?.kind).toBe('budget');

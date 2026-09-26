@@ -424,12 +424,15 @@ code starts, Goodboy materializes those projects.
 Agents in the same session do **not** see each other's chats. What they share
 is the **session record** on the **Overview**:
 
-- The goal, the decisions and the session summary, in that order
+- The goal, the decisions and the summary, in that order, in the **Context**
+  drawer (the overview keeps one `Goal` line under the title when the goal
+  says more than the title). The summary reads as State, Next and Learned.
 - What the session produces, as sections of the same page: workflows, agents,
   review, questions, diff and plans
 
-Goodboy updates the goal, decisions and summary after every turn. You can
-edit them yourself too.
+Goodboy updates the decisions and the summary when the summarizer runs after a
+turn, and writes the goal when the session starts. You can edit all three
+yourself too.
 
 Each of those sections is a **lens**, a view of the session. You open it from
 rows and chips on the **Overview**. It opens in place or in a side panel, and
@@ -631,15 +634,15 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the session kickoff, or opening Launch session on an
+Picking an issue in the new session draft, or opening Launch session on an
 inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
 of one to three sentences and up to five "done when" criteria, in the issue's
 language. It reads the issue text, not its comments, and answers in checked
 JSON, so a reply with a preamble fails instead of leaking into the goal. The
-brief is only a proposal. In the overview you pick Use brief, Edit, Use issue
-text or Dismiss, and a failure stays inline in the card with Retry. The brief
-renames the session only when you have not renamed it yourself, and the goal it
-writes lands in the goal history, so the previous goal can be restored. In the
+brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
+text or Dismiss, and a failure stays inline in the card with Retry. The first
+three start the session with the brief's title and goal and link the issue;
+nothing exists before that. In the
 Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
@@ -730,8 +733,8 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
   total per session
 - **Session events**: when a session starts, resets, hits a limit, changes
   provider or ends
-- **Budgets**: a monthly cap per provider and a soft cap per session, with an
-  alert before you reach them
+- **Budgets**: a monthly budget per provider and a spend limit per session that
+  pauses workflows or only warns, with an alert before you reach them
 
 Caps steer where work goes. They never lock you out. When every provider is
 over its cap, the message box tells you. You can still send the turn on the

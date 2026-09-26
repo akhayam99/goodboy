@@ -6,7 +6,12 @@ const LENS_SHORTCUT_IDS = (Object.keys(SHORTCUTS) as ReadonlyArray<ShortcutId>).
   id.startsWith('lens.'),
 );
 
-const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>(['lens.goal', 'lens.decisions', 'lens.summary']);
+const REGION_ONLY_SHORTCUTS = new Set<ShortcutId>([
+  'lens.context',
+  'lens.goal',
+  'lens.decisions',
+  'lens.summary',
+]);
 
 const NO_CONNECTED_TOOLS: ConnectedLensTools = {
   linear: false,
@@ -66,10 +71,10 @@ describe('lensDestinations', () => {
     }
   });
 
-  it('lists one Context entry', () => {
+  it('lists no Context page, since Context is a drawer', () => {
     const offered = lenses();
 
-    expect(offered.filter((lens) => lens === 'context')).toHaveLength(1);
+    expect(offered).not.toContain('context');
     expect(offered).not.toContain('goal');
     expect(offered).not.toContain('decisions');
     expect(offered).not.toContain('last_output_summary');

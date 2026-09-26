@@ -205,36 +205,22 @@ describe('TimelinePane under a full filter', () => {
 });
 
 describe('TimelinePane on an empty session', () => {
-  const onKickoffShownChange = vi.fn();
-
   const renderEmptySession = () => {
     storeState.sessionEvents = { 'session-1': [] };
     return render(
       <TimelinePane
         session={SESSION}
         actions={<OverviewActions sessionId={SESSION.id} onOpenWorkflowBuilder={() => undefined} />}
-        kickoff={<section aria-label="Kickoff" />}
-        onKickoffShownChange={onKickoffShownChange}
       />,
     );
   };
 
-  it('shows the kickoff alone and tells the page the session is empty', () => {
-    onKickoffShownChange.mockClear();
+  it('keeps the actions and the empty hint, with no kickoff', () => {
     renderEmptySession();
 
-    expect(screen.getByRole('region', { name: 'Kickoff' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Start agent' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Mark all seen' })).toBeNull();
-    expect(onKickoffShownChange).toHaveBeenLastCalledWith(true);
-  });
-
-  it('tells the page the session is no longer empty once a row lands', () => {
-    onKickoffShownChange.mockClear();
-    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
-    renderEmptySession();
-
-    expect(onKickoffShownChange).toHaveBeenLastCalledWith(false);
+    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
+    expect(screen.getByText(/Nothing yet/)).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
   });
 
   it('folds every other way to start into the menu of one Start agent split', () => {
@@ -259,35 +245,10 @@ describe('TimelinePane on an empty session', () => {
   });
 });
 
-describe('TimelinePane kickoff', () => {
-  it('hands the empty session to the kickoff once events are known', () => {
-    storeState.sessionEvents = { 'session-1': [] };
-
-    render(
-      <TimelinePane
-        session={SESSION}
-
-        actions={null}
-        kickoff={<div data-testid="kickoff" />}
-      />,
-    );
-
-    expect(screen.getByTestId('kickoff')).toBeDefined();
-    expect(screen.queryByText(/Nothing yet/)).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Filter' })).toBeNull();
-  });
-
+describe('TimelinePane loading', () => {
   it('holds a timeline skeleton until the session events resolve', () => {
-    render(
-      <TimelinePane
-        session={SESSION}
+    render(<TimelinePane session={SESSION} actions={null} />);
 
-        actions={null}
-        kickoff={<div data-testid="kickoff" />}
-      />,
-    );
-
-    expect(screen.queryByTestId('kickoff')).toBeNull();
     expect(screen.queryByText(/Nothing yet/)).toBeNull();
     expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
   });
@@ -308,23 +269,6 @@ describe('TimelinePane kickoff', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(screen.getByRole('status', { name: 'Loading the timeline' })).not.toBeNull();
-  });
-
-  it('steps aside as soon as the timeline holds any activity', () => {
-    storeState.sessionEvents = { 'session-1': [] };
-    storeState.sessionWorktreeRecords = { 'session-1': [WORKTREE] };
-
-    render(
-      <TimelinePane
-        session={SESSION}
-
-        actions={null}
-        kickoff={<div data-testid="kickoff" />}
-      />,
-    );
-
-    expect(screen.queryByTestId('kickoff')).toBeNull();
-    expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
   });
 });
 

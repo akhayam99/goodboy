@@ -108,6 +108,7 @@ export {
   type SessionConfigUpdate,
   type ArchivedSessionRef,
 } from './queries/session';
+export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
 export {
   attachWorkflowToSession,
   detachWorkflowFromSession,

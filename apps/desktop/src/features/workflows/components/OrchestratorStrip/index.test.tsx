@@ -145,6 +145,7 @@ beforeEach(() => {
     sessionOpenQuestions: {},
     orchestratorReadingHints: {},
     budgetAlerts: [],
+    sessionBudgets: {},
     sessionTelemetry: {},
     sessionPhaseRuns: {},
     agentRunHistory: {},
@@ -313,12 +314,12 @@ describe('OrchestratorStrip state ladder', () => {
       runOverride: run({
         orchestrationStop: {
           kind: 'budget',
-          message: 'the budget cap is reached, raise it in Budget to keep this run going',
+          message: 'Paused at the $12.00 spend limit for this run.',
         },
       }),
     });
 
-    expect(sentence()).toContain('Paused · budget cap reached');
+    expect(sentence()).toBe('Paused at the $12.00 spend limit for this run.');
     expect(screen.queryByTestId('orchestrator-retry')).toBeNull();
     fireEvent.click(screen.getByTestId('run-spend-limit-trigger'));
 
@@ -330,7 +331,7 @@ describe('OrchestratorStrip state ladder', () => {
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'any other wording' } }),
     });
 
-    expect(sentence()).toContain('Paused · budget cap reached');
+    expect(sentence()).toBe('Paused at the spend limit');
     expect(screen.getByTestId('run-spend-limit-trigger').textContent).toContain(
       'Raise the spend limit',
     );
@@ -724,7 +725,7 @@ describe('OrchestratorStrip hints and money', () => {
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
 
-    expect(screen.getByTestId('orchestrator-review-budget')).toBeDefined();
+    expect(screen.getByTestId('orchestrator-raise-session-limit')).toBeDefined();
     expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
   });
 
@@ -735,19 +736,33 @@ describe('OrchestratorStrip hints and money', () => {
     expect(screen.getByTestId('orchestrator-strip').textContent).not.toContain('Spend limit');
   });
 
-  it('sends a session budget pause to the session spend scope, not to the run limit', () => {
+  it('sends a session limit pause to the session limit editor, not to the run limit', () => {
     storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
     renderStrip({
       runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
     });
     const opened = vi.fn();
-    window.addEventListener('goodboy:open-impact-studio', opened);
-    fireEvent.click(screen.getByTestId('orchestrator-review-budget'));
-    window.removeEventListener('goodboy:open-impact-studio', opened);
+    window.addEventListener('goodboy:edit-session-spend-limit', opened);
+    fireEvent.click(screen.getByTestId('orchestrator-raise-session-limit'));
+    window.removeEventListener('goodboy:edit-session-spend-limit', opened);
 
     expect(opened).toHaveBeenCalledTimes(1);
+    expect((opened.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ sessionId: SESSION_ID });
     expect(screen.queryByTestId('run-spend-limit-trigger')).toBeNull();
     expect(screen.queryByTestId('orchestrator-budget')).toBeNull();
+  });
+
+  it('keeps the run limit on offer when the session limit only warns', () => {
+    storeState['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
+    storeState['sessionBudgets'] = {
+      [SESSION_ID]: { sessionId: SESSION_ID, softCapUsd: 5, onExceed: 'warn' },
+    };
+    renderStrip({
+      runOverride: run({ orchestrationStop: { kind: 'budget', message: 'cap reached' } }),
+    });
+
+    expect(screen.queryByTestId('orchestrator-raise-session-limit')).toBeNull();
+    expect(screen.getByTestId('run-spend-limit-trigger')).toBeDefined();
   });
 
   it('saves a spend limit for the run from the budget pause', () => {
@@ -757,7 +772,7 @@ describe('OrchestratorStrip hints and money', () => {
 
     fireEvent.click(screen.getByTestId('run-spend-limit-trigger'));
     fireEvent.change(screen.getByTestId('spend-limit-amount'), { target: { value: '8' } });
-    fireEvent.click(screen.getByRole('tab', { name: /notify/i }));
+    fireEvent.click(screen.getByRole('tab', { name: /Only warn me/ }));
     fireEvent.click(screen.getByTestId('run-spend-limit-save'));
 
     expect(storeState['setWorkflowRunSpendLimit']).toHaveBeenCalledWith(

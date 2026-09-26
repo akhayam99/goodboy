@@ -101,6 +101,7 @@ export const storySpies = {
   invokeBudgetAlertDismiss: vi.fn(async () => undefined),
   invokeSessionBudgetGet,
   invokeSessionBudgetSet: vi.fn(async () => undefined),
+  invokeSessionBudgetClear: vi.fn(async () => undefined),
   invokeSkillList: vi.fn(async () => [] as ReadonlyArray<Skill>),
   invokeSkillUpsert: vi.fn(async () => undefined),
   invokeSkillDelete: vi.fn(async () => undefined),
@@ -550,6 +551,7 @@ export const budgetModuleMock = () => ({
   invokeBudgetAlertDismiss: storySpies.invokeBudgetAlertDismiss,
   invokeSessionBudgetGet: storySpies.invokeSessionBudgetGet,
   invokeSessionBudgetSet: storySpies.invokeSessionBudgetSet,
+  invokeSessionBudgetClear: storySpies.invokeSessionBudgetClear,
   invokeCheckProviderBudget: vi.fn(async () => undefined),
 });
 

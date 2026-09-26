@@ -15,6 +15,7 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
     agentKindOverride: {} as Record<string, string>,
     openWorkspace: vi.fn(async () => undefined),
     navigate: vi.fn(),
+    toggleContextDrawer: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
     setScriptsLensScope: vi.fn(),
     runScript: vi.fn(async () => ({ exitCode: 0 })),
@@ -137,7 +138,6 @@ describe('CommandPalette', () => {
   });
 
   it.each([
-    ['Open Context', 'context'],
     ['Open Agents', 'agents'],
     ['Open Questions', 'questions'],
     ['Open Terminal', 'terminal'],
@@ -152,13 +152,16 @@ describe('CommandPalette', () => {
     });
   });
 
-  it('offers Context as one destination, without its parts', () => {
+  it('offers Show context as one action that opens the drawer, without its parts', () => {
     hooks.currentSession = { id: 'session-1' };
-    render(<CommandPalette onClose={vi.fn()} initialQuery="Open Context" />);
+    render(<CommandPalette onClose={vi.fn()} initialQuery="context" />);
 
-    expect(screen.getByText('Open Context')).toBeDefined();
+    expect(screen.queryByText('Open Context')).toBeNull();
     expect(screen.queryByText('Open Context: Goal')).toBeNull();
-    expect(screen.queryByText('Open Context: Decisions')).toBeNull();
+    fireEvent.mouseDown(screen.getByText('Show context'));
+
+    expect(state.toggleContextDrawer).toHaveBeenCalledWith({ sessionId: 'session-1' });
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('keeps the session pages in the empty palette behind a wall of sessions', () => {

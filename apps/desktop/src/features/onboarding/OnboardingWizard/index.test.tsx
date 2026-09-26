@@ -466,7 +466,6 @@ describe('OnboardingWizard', () => {
       await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
       expect(firstSession.startFirstScout).toHaveBeenCalledWith({
         workspaceId: WORKSPACE.id,
-        projectId: 'project-1',
         prompt: 'Explain how ledger-core is organized',
       });
     });

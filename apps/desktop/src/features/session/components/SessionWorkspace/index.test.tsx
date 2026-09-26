@@ -222,11 +222,6 @@ vi.mock('../SessionTrail/SessionCrumbs', () => ({
 }));
 vi.mock('./parts/SessionStudioLayer', () => ({ SessionStudioLayer: () => null }));
 vi.mock('./parts/QuestionsPane', () => ({ QuestionsPane: () => null }));
-vi.mock('./parts/ContextPane', () => ({
-  ContextPane: ({ initialRegion }: { initialRegion?: string }) => (
-    <div data-testid="context-pane" data-region={initialRegion ?? 'context'} />
-  ),
-}));
 vi.mock('./parts/PrPane', () => ({ PrPane: () => <div data-testid="code-host-pane" /> }));
 vi.mock('./parts/FilesPane', () => ({ FilesPane: () => null }));
 vi.mock('./parts/IntegrationPane', () => ({
@@ -969,26 +964,15 @@ describe('SessionWorkspace integration lenses', () => {
 });
 
 describe('SessionWorkspace context routing', () => {
-  it.each([
-    ['context', 'context'],
-    ['decisions', 'decisions'],
-    ['last_output_summary', 'last_output_summary'],
-  ] as const)('routes %s to the Context pane at %s', (lens, region) => {
-    store.activeLens = { [SESSION_ID]: lens };
-    store.selectedAgentId = {};
+  it.each(['context', 'goal', 'decisions', 'last_output_summary'] as const)(
+    'shows the Overview for the old %s page, never a Context page',
+    (lens) => {
+      store.activeLens = { [SESSION_ID]: lens };
+      store.selectedAgentId = {};
 
-    render(<SessionWorkspace session={session} isActive />);
+      render(<SessionWorkspace session={session} isActive />);
 
-    expect(screen.getByTestId('context-pane').dataset.region).toBe(region);
-  });
-
-  it('routes goal to the Overview', () => {
-    store.activeLens = { [SESSION_ID]: 'goal' };
-    store.selectedAgentId = {};
-
-    render(<SessionWorkspace session={session} isActive />);
-
-    expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
-    expect(screen.queryByTestId('context-pane')).toBeNull();
-  });
+      expect(screen.getByRole('region', { name: 'Session overview' })).toBeDefined();
+    },
+  );
 });

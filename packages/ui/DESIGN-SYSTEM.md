@@ -679,7 +679,11 @@ There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 `icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
 its own header row passes `HeaderBand` (also an `h1`) through the custom
-`header` slot. `scroll="body"` keeps the header fixed above a scrolling body,
+`header` slot. The session overview's `HeaderBand` holds the title, then one
+`Goal` line (an 11px faint label, the goal in muted text on one line with an
+ellipsis) only when the goal says more than the title, or `Add a goal` when
+there is none, then the chips, `Context` first. Goal, decisions and summary
+live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
 transcript), and `dock` pins a row to the bottom of the same column. Studio
 chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
@@ -712,7 +716,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. `SplitButton` joins the primary half, which its owner renders through `primary({ className })` so a popover can anchor to it, with a chevron half that opens the less frequent starts as a menu. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon. `OverflowMenu` and `SplitButton` render items through the same `MenuItems`.
-- The empty session follows the same rule. It asks one question with a single-select list of rows (glyph, title, one line), and only the selected row's primary shows. Rarer starts sit in a quiet `More ways to start` menu, and an item that cannot work yet is left out, never shown disabled. A grid of tiles is not an action zone.
+- The new session draft follows the same rule. It asks one question with a single-select list of rows (glyph, title, one line), and only the selected row's primary shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is not an action zone.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
 
@@ -843,7 +847,7 @@ Lenses always use `inline`. Only a surface's own main empty state gets the
 large size and an `h2`. An empty lens leaves `headingLevel` unset, so it adds
 nothing to the document outline.
 
-The empty Activity of a new session is the kickoff. It asks "How do you want to
+The new session draft is the kickoff. It asks "How do you want to
 start?" and answers with a single-select list of three rows, each a concept
 glyph, a title and one line: Pick up a task, Run a workflow, Not sure yet. The
 selected row reveals its fields and its one primary under the list. Arrow keys
@@ -906,8 +910,8 @@ never mounts and unmounts its panel by hand.
   rail it sits inside the `spin-border` ring, or on the arc, so the pair reads
   as one running state, not two claims. The bar for another lasting-state
   animation is high.
-- `cost-chip-pulse`: the spend meter just ticked. One 1100ms halo, paired with
-  the digit roll.
+- `cost-tick`: the spend chip's amount just changed. The figure rises 6px into
+  place in 160ms; with reduced motion it changes in place.
 - `text-shimmer`: a label whose action is in flight, such as a handoff while
   its agent starts. It replaces a spinner next to the label.
 - `update-sweep`: a new version arrived. One 1.2s light sweep across the

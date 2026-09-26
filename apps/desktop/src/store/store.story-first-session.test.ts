@@ -91,28 +91,59 @@ const primeMount = () => {
 };
 
 describe('story: a first-run user opens their workspace and starts a session', () => {
-  it('New session lands on the board with nothing mounted', async () => {
-    const { session } = await useAppStore
-      .getState()
-      .createUntitledSession({ workspaceId: WORKSPACE_ID });
+  it('New session opens a draft and writes nothing', () => {
+    useAppStore.getState().openSessionDraft();
+
+    const state = useAppStore.getState();
+    expect(state.sessions).toEqual([]);
+    expect(state.currentSessionId).toBeNull();
+    expect(state.openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
+    expect(storySpies.createWorktree).not.toHaveBeenCalled();
+    expect(storySpies.createSessionDir).not.toHaveBeenCalled();
+    expect(recordedEventKinds()).toEqual([]);
+  });
+
+  it('Start creates the session with nothing mounted', async () => {
+    useAppStore.getState().openSessionDraft();
+    const session = await useAppStore.getState().startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'task',
+        candidate: {
+          provider: 'linear',
+          externalId: 'issue-214',
+          identifier: 'NW-214',
+          title: 'Invoices credited twice',
+          url: 'https://linear.app/northwind/issue/NW-214',
+          goal: 'Stop crediting an invoice twice.',
+          body: '',
+          branchSlug: 'invoices-credited-twice',
+        },
+        title: 'Invoices credited twice',
+        goal: 'Stop crediting an invoice twice.',
+      },
+    });
 
     const state = useAppStore.getState();
     expect(state.sessions.map((candidate) => candidate.id)).toContain(session.id);
-    expect(session.goal).toBe('Untitled session');
     expect(state.currentSessionId).toBe(session.id);
-    expect(state.pendingKickoffFocusSessionId).toBe(session.id);
-
+    expect(state.openSessionDraftWorkspaceId).toBeNull();
+    expect(session.goal).toBe('Invoices credited twice');
+    expect(state.sessionSlots[session.id]).toEqual([
+      { key: 'goal', value: 'Stop crediting an invoice twice.', enabled: true },
+    ]);
+    expect(state.sessionExternalTasks[session.id]?.map((task) => task.identifier)).toEqual([
+      'NW-214',
+    ]);
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(storySpies.createSessionDir).not.toHaveBeenCalled();
     expect(state.sessionWorktrees[session.id]).toEqual([]);
     expect(state.sessionProjectMounts[session.id]).toEqual([]);
-    expect(recordedEventKinds()).toEqual([]);
   });
 
   it('the first read turn runs from the scratch standpoint, mounting nothing', async () => {
     const { session } = await useAppStore
       .getState()
-      .createUntitledSession({ workspaceId: WORKSPACE_ID });
+      .createSession({ workspaceId: WORKSPACE_ID, goal: 'Look around', omitGoalSlot: true });
     const agent = buildStoryAgent({ id: 'agent-first' as AgentId, sessionId: session.id });
     useAppStore.setState({
       sessionPhaseRuns: { [session.id]: [agent] },
@@ -134,7 +165,7 @@ describe('story: a first-run user opens their workspace and starts a session', (
   it('a second read turn still creates no worktree', async () => {
     const { session } = await useAppStore
       .getState()
-      .createUntitledSession({ workspaceId: WORKSPACE_ID });
+      .createSession({ workspaceId: WORKSPACE_ID, goal: 'Look around', omitGoalSlot: true });
     const agent = buildStoryAgent({ id: 'agent-again' as AgentId, sessionId: session.id });
     useAppStore.setState({
       sessionPhaseRuns: { [session.id]: [agent] },

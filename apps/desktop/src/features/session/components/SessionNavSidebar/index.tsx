@@ -11,14 +11,14 @@ import { SessionActivityBar } from '../../../workspace/components/SessionActivit
 import { SidebarToggleButton } from './parts/SidebarToggleButton';
 
 type Props = {
-  readonly session: Session;
+  readonly currentSessionId: SessionId | null;
   readonly onNavigate?: () => void;
   readonly isCollapsed?: boolean;
   readonly onToggleSidebar?: () => void;
 };
 
 export const SessionNavSidebar = ({
-  session,
+  currentSessionId,
   onNavigate,
   isCollapsed = false,
   onToggleSidebar,
@@ -60,7 +60,7 @@ export const SessionNavSidebar = ({
               workspaceId={currentWorkspace.id}
               sessions={sessions}
               archivedSessions={archivedSessions}
-              currentSessionId={session.id}
+              currentSessionId={currentSessionId}
               onSelectSession={onSelectSession}
               onArchivedTabOpen={onArchivedTabOpen}
             />

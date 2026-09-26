@@ -1,5 +1,6 @@
 import type { Session } from '@goodboy/types';
-import { UNTITLED_BASE } from '../../store/slices/sessions/untitledTitle';
+
+export const UNTITLED_BASE = 'Untitled session';
 
 type Params = {
   readonly session: Pick<Session, 'goal'> | null | undefined;

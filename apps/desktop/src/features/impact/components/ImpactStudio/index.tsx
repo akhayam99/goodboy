@@ -162,13 +162,9 @@ export const ImpactStudio = ({
             goal={inlineMarkdownText({ text: selectedSession.goal })}
             isCurrent={selectedSession.isCurrent}
             turns={spend.turns.filter((turn) => turn.sessionId === selectedSession.sessionId)}
-            softCapUsd={spend.softCapUsd(selectedSession.sessionId)}
             telemetryResult={spend.data.telemetry}
             budgetResult={spend.data.sessionBudgets}
             isLoading={spend.data.loading.telemetry || spend.data.loading.sessionBudgets}
-            onSaveCap={(capUsd) =>
-              spend.saveSessionCap({ sessionId: selectedSession.sessionId, capUsd })
-            }
             onOpened={requestClose}
             onRetryTelemetry={() => spend.data.retry('telemetry')}
             onRetryBudget={() => spend.data.retry('sessionBudgets')}
