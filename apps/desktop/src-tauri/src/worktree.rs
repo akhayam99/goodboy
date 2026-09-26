@@ -1495,7 +1495,7 @@ fn worktree_detach_assessment_blocking(
     })
 }
 
-fn exclude_file_path(repo_path: &Path) -> Option<PathBuf> {
+pub(crate) fn exclude_file_path(repo_path: &Path) -> Option<PathBuf> {
     let raw = git(repo_path, &["rev-parse", "--git-common-dir"]).ok()?;
     let trimmed = raw.trim();
     if trimmed.is_empty() {

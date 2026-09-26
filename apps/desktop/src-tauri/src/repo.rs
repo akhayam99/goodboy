@@ -6,7 +6,7 @@ use thiserror::Error;
 
 const CONVERSION_IGNORE_ENTRIES: [&str; 2] = ["/.goodboy", "/sessions/"];
 
-const IGNORE_PROBE_PATHS: [&str; 3] = [".goodboy", ".goodboy/worktrees/probe", "sessions/probe"];
+const IGNORE_PROBE_PATHS: [&str; 2] = [".goodboy/worktrees/probe", "sessions/probe"];
 
 const INITIAL_COMMIT_MESSAGE: &str = "chore: track this project with git";
 const FALLBACK_AUTHOR_NAME: &str = "Goodboy";
@@ -406,11 +406,11 @@ fn scaffold_repo(root: &Path, remote_url: Option<&str>) -> Result<(), RepoInitEr
 }
 
 fn adopt_repo(root: &Path, remote_url: Option<&str>) -> Result<InitializedRepo, RepoInitError> {
-    let snapshot = GitignoreSnapshot::capture(root);
-    if let Err(err) = apply_ignore_entries(root) {
-        return Err(undo_ignore(root, &snapshot, err));
-    }
     if !has_commit(root) {
+        let snapshot = GitignoreSnapshot::capture(root);
+        if let Err(err) = apply_ignore_entries(root) {
+            return Err(undo_ignore(root, &snapshot, err));
+        }
         run_git(root, &["symbolic-ref", "HEAD", "refs/heads/main"])?;
         commit_ignore_file(root)?;
     }
@@ -432,7 +432,9 @@ fn adopt_repo(root: &Path, remote_url: Option<&str>) -> Result<InitializedRepo, 
 }
 
 fn apply_ignore_entries(root: &Path) -> Result<(), RepoInitError> {
-    write_ignore_entries(root)?;
+    let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("/"));
+    let skip_goodboy = crate::goodboy_ignore::probe_ignored(root, &home);
+    write_ignore_entries(root, skip_goodboy)?;
     for probe in IGNORE_PROBE_PATHS {
         if !is_path_ignored(root, probe)? {
             return Err(RepoInitError::IgnoreNotApplied(probe.to_string()));
@@ -441,11 +443,14 @@ fn apply_ignore_entries(root: &Path) -> Result<(), RepoInitError> {
     Ok(())
 }
 
-fn write_ignore_entries(root: &Path) -> Result<(), RepoInitError> {
+fn write_ignore_entries(root: &Path, skip_goodboy: bool) -> Result<(), RepoInitError> {
     let path = root.join(".gitignore");
     let mut next = std::fs::read_to_string(&path).unwrap_or_default();
     let mut added = false;
     for entry in CONVERSION_IGNORE_ENTRIES {
+        if skip_goodboy && entry == "/.goodboy" {
+            continue;
+        }
         if next.lines().any(|line| line.trim() == entry) {
             continue;
         }
@@ -681,9 +686,10 @@ mod tests {
 
         let ignore = std::fs::read_to_string(root.join(".gitignore")).unwrap();
         let lines: Vec<&str> = ignore.lines().collect();
-        assert_eq!(lines, vec!["node_modules", "/.goodboy", "/sessions/"]);
+        assert!(lines.contains(&"node_modules"));
+        assert!(lines.contains(&"/sessions/"));
         assert!(git_ignores(&root, "sessions/plan-1/.goodboy"));
-        assert!(git_ignores(&root, ".goodboy"));
+        assert!(git_ignores(&root, ".goodboy/worktrees/probe"));
         assert!(!git_ignores(&root, "src/app/sessions/page.ts"));
         std::fs::remove_dir_all(root).unwrap();
     }
@@ -700,7 +706,7 @@ mod tests {
         assert_eq!(git_output(&root, &["ls-files"]), ".gitignore");
         assert_eq!(git_output(&root, &["rev-list", "--count", "HEAD"]), "1");
         assert!(git_output(&root, &["remote"]).is_empty());
-        assert!(git_ignores(&root, ".goodboy"));
+        assert!(git_ignores(&root, ".goodboy/worktrees/probe"));
         std::fs::remove_dir_all(root).unwrap();
     }
 

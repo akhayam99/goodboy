@@ -17,6 +17,7 @@ mod external_terminal;
 mod file_versions;
 mod github;
 mod gitlab;
+mod goodboy_ignore;
 mod integration_credentials;
 mod jira;
 mod linear;
@@ -227,6 +228,8 @@ pub fn run() {
             worktree::worktree_detach_assessment,
             worktree::worktree_directory_size,
             worktree::worktree_tidy_goodboy,
+            goodboy_ignore::goodboy_ignore_status,
+            goodboy_ignore::goodboy_ignore_apply,
             worktree::worktree_orphans,
             worktree::worktree_folder_remove,
             storage::worktree_folder_facts,
