@@ -275,4 +275,31 @@ describe('decisionsDelta', () => {
       removed: 1,
     });
   });
+
+  it('does not count a reformulation as an add and a remove', () => {
+    expect(
+      decisionsDelta({
+        previous: '- Key idempotency on the provider event id',
+        next: '- Use the provider event id as the idempotency key',
+      }),
+    ).toEqual({ added: 0, removed: 0 });
+  });
+
+  it('does not count a light rewording of the same decision', () => {
+    expect(
+      decisionsDelta({
+        previous: '- ship the migration behind a flag',
+        next: '- ship the migration behind a feature flag',
+      }),
+    ).toEqual({ added: 0, removed: 0 });
+  });
+
+  it('still counts a genuinely unrelated replacement inside a bigger rewrite', () => {
+    expect(
+      decisionsDelta({
+        previous: '- keep sqlite\n- ship the trace',
+        next: '- keep sqlite\n- drop the legacy webhook retry',
+      }),
+    ).toEqual({ added: 1, removed: 1 });
+  });
 });
