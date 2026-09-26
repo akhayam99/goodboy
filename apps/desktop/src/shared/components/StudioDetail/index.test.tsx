@@ -1,11 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { resolveDetailFields } from '../../detail-fields';
-import type { DetailFieldRegistry } from '../../detail-fields/types';
 import { StudioWidget } from '@goodboy/ui';
 import { HeaderBand } from '@goodboy/ui';
 import { RailBlock } from '@goodboy/ui';
-import { DetailProperties } from './DetailProperties';
 import { StudioDetailTabs } from '@goodboy/ui';
 
 beforeEach(() => {
@@ -15,48 +12,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   localStorage.clear();
-});
-
-type Entity = {
-  readonly state: string;
-  readonly author: string;
-  readonly milestone: string | null;
-};
-
-const PROPERTY_ENTITY: Entity = { state: 'open', author: 'ada', milestone: null };
-
-const PROPERTY_REGISTRY: DetailFieldRegistry<Entity> = [
-  { kind: 'field', key: 'state', label: 'State', render: ({ entity }) => entity.state },
-  { kind: 'field', key: 'author', label: 'Author', render: ({ entity }) => entity.author },
-  {
-    kind: 'field',
-    key: 'milestone',
-    label: 'Milestone',
-    render: ({ entity }) => entity.milestone,
-  },
-];
-
-describe('DetailProperties', () => {
-  it('renders the properties once, in one aligned grid of columns', () => {
-    render(
-      <DetailProperties
-        entries={resolveDetailFields({ registry: PROPERTY_REGISTRY, entity: PROPERTY_ENTITY })}
-      />,
-    );
-
-    const panels = screen.getAllByTestId('detail-properties');
-    expect(panels).toHaveLength(1);
-
-    const panel = panels[0] as HTMLElement;
-    expect(panel.tagName).toBe('DL');
-    expect(panel.className).toContain('grid');
-    expect(panel.className).toContain('auto-fill');
-    expect(
-      within(panel)
-        .getAllByRole('term')
-        .map((term) => term.textContent),
-    ).toEqual(['State', 'Author']);
-  });
 });
 
 describe('StudioDetailTabs', () => {

@@ -641,7 +641,6 @@
     "packages/ui/src/components/Markdown/index.tsx": 10,
     "packages/ui/src/components/Markdown/InlineMarkdown.tsx": 1,
     "packages/ui/src/components/MenuItems.tsx": 1,
-    "packages/ui/src/components/MetaItem.tsx": 1,
     "packages/ui/src/components/Notice/index.tsx": 1,
     "packages/ui/src/components/OverlayHeader.tsx": 2,
     "packages/ui/src/components/RemoteImage/index.tsx": 1,
@@ -791,8 +790,7 @@
     "packages/ui/src/components/Dialog.tsx": 1,
     "packages/ui/src/components/ErrorBoundary.tsx": 1,
     "packages/ui/src/components/Eyebrow.tsx": 1,
-    "packages/ui/src/components/Markdown/index.tsx": 5,
-    "packages/ui/src/components/MetaItem.tsx": 1
+    "packages/ui/src/components/Markdown/index.tsx": 5
   },
   "raw-scroller": {
     "apps/desktop/src/app/components/AppFooter/index.tsx": 1,

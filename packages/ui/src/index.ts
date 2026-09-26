@@ -58,7 +58,6 @@ export type { ErrorReportOutcome, ErrorReportRequest } from './components/ErrorB
 export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
 export { HeaderBand } from './components/HeaderBand';
-export { MetaItem } from './components/MetaItem';
 export { Notice } from './components/Notice';
 export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverlayHeader } from './components/OverlayHeader';
