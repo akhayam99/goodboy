@@ -364,7 +364,7 @@ describe('MrDetailPanel', () => {
 
     expect(screen.getByText('ak/mr-dashboard → main')).toBeDefined();
     expect(screen.queryByText('Source branch')).toBeNull();
-    expect(screen.getByRole('list', { name: 'Facts' }).querySelector('time')).not.toBeNull();
+    expect(screen.getByRole('list', { name: 'Properties' }).querySelector('time')).not.toBeNull();
     expect(screen.getByText('No description.')).toBeDefined();
   });
 

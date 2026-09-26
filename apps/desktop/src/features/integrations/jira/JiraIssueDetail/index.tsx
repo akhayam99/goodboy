@@ -1,6 +1,6 @@
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
@@ -109,7 +109,7 @@ export const JiraIssueDetail = ({
               <StateBadge tone={tone}>{live.status}</StateBadge>
             )
           }
-          facts={<RecordFacts facts={withPicker} />}
+          facts={<RecordProperties facts={withPicker} />}
           externalRef={{ url: live.url, label: 'issue' }}
           frame={frame}
         />

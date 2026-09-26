@@ -17,7 +17,7 @@ export const PropertyRow = ({ fact }: Props) => {
     </span>
   );
   return (
-    <div data-fact-slot={fact.slot} className="flex min-h-7 min-w-0 items-center gap-3 py-1">
+    <div className="flex min-h-7 min-w-0 items-center gap-3 py-1">
       <span className="w-[84px] shrink-0 text-meta text-faint-foreground">{fact.label}</span>
       {fact.hint == null ? value : <Tooltip content={fact.hint}>{value}</Tooltip>}
     </div>

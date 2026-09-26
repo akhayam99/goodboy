@@ -12,7 +12,7 @@ export const RecordProperties = ({ facts }: Props) => {
   return (
     <ul aria-label="Properties" data-slot="record-properties" className="flex min-w-0 flex-col">
       {facts.map((fact) => (
-        <li key={`${fact.slot}-${fact.key}`} className="min-w-0">
+        <li key={`${fact.slot}-${fact.key}`} data-fact-slot={fact.slot} className="min-w-0">
           <PropertyRow fact={fact} />
         </li>
       ))}

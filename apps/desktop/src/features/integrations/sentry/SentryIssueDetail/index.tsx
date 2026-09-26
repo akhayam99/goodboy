@@ -1,6 +1,6 @@
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordSection } from '../../../../shared/components/StudioDetail/RecordSections/types';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
@@ -124,7 +124,7 @@ export const SentryIssueDetail = ({
           title={view.title}
           state={<StateBadge>{stateWord({ value: view.status ?? 'unresolved' })}</StateBadge>}
           facts={
-            <RecordFacts facts={resolveFacts({ registry: sentryIssueFields, entity: view })} />
+            <RecordProperties facts={resolveFacts({ registry: sentryIssueFields, entity: view })} />
           }
           frame={frame}
           externalRef={

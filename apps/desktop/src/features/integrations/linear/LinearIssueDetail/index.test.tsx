@@ -155,7 +155,7 @@ describe('LinearIssueDetail', () => {
   it('renders the facts in the canonical slot order, once', () => {
     render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
 
-    const facts = screen.getByRole('list', { name: 'Facts' });
+    const facts = screen.getByRole('list', { name: 'Properties' });
     expect(
       within(facts)
         .getAllByRole('listitem')

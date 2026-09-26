@@ -19,9 +19,7 @@ describe('RecordProperties', () => {
     );
 
     const items = within(screen.getByRole('list', { name: 'Properties' })).getAllByRole('listitem');
-    expect(
-      items.map((item) => item.querySelector('[data-fact-slot]')?.getAttribute('data-fact-slot')),
-    ).toEqual(['weight', 'place']);
+    expect(items.map((item) => item.getAttribute('data-fact-slot'))).toEqual(['weight', 'place']);
     expect(screen.getByText('Priority')).toBeTruthy();
     expect(screen.getByText('High')).toBeTruthy();
     expect(screen.getByText('Team')).toBeTruthy();

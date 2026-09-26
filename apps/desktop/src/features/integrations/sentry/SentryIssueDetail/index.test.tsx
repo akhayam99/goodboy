@@ -57,7 +57,7 @@ describe('SentryIssueDetail', () => {
     expect(screen.getByText(/production/)).toBeDefined();
     expect(screen.queryByText('GET /api/items')).toBeNull();
 
-    const facts = screen.getByRole('list', { name: 'Facts' });
+    const facts = screen.getByRole('list', { name: 'Properties' });
     expect(
       within(facts)
         .getAllByRole('listitem')
@@ -82,7 +82,7 @@ describe('SentryIssueDetail', () => {
 
     expect(screen.getByText('128 events · 9 users')).toBeDefined();
     expect(screen.queryByText('First seen')).toBeNull();
-    expect(screen.getByRole('list', { name: 'Facts' }).textContent).not.toContain(
+    expect(screen.getByRole('list', { name: 'Properties' }).textContent).not.toContain(
       formatAbsoluteDateTime({ iso: LAST_SEEN }),
     );
   });

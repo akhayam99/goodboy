@@ -1,6 +1,6 @@
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../../shared/components/StudioDetail/RecordSections';
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
@@ -61,7 +61,9 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
           title={issue.title}
           state={<StateBadge>{issue.state.name}</StateBadge>}
           facts={
-            <RecordFacts facts={resolveFacts({ registry: linearIssueFields, entity: issue })} />
+            <RecordProperties
+              facts={resolveFacts({ registry: linearIssueFields, entity: issue })}
+            />
           }
           externalRef={{ url: issue.url, label: 'issue' }}
           frame={frame}

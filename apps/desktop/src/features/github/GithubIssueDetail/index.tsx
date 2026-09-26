@@ -1,6 +1,6 @@
 import { PaneShell } from '../../../shared/components/PaneShell';
 import { RecordHeader } from '../../../shared/components/StudioDetail/RecordHeader';
-import { RecordFacts } from '../../../shared/components/StudioDetail/RecordFacts';
+import { RecordProperties } from '../../../shared/components/StudioDetail/RecordProperties';
 import { RecordSections } from '../../../shared/components/StudioDetail/RecordSections';
 import type { RecordSection } from '../../../shared/components/StudioDetail/RecordSections/types';
 import type { RecordFrame } from '../../../shared/components/StudioDetail/RecordActions/types';
@@ -88,7 +88,7 @@ export const GithubIssueDetail = ({ issue, frame = null, editContext }: Props) =
           identifier={`#${issue.number}`}
           title={issue.title}
           state={<StateBadge>{stateWord({ value: issue.state })}</StateBadge>}
-          facts={<RecordFacts facts={facts} />}
+          facts={<RecordProperties facts={facts} />}
           externalRef={{ url: issue.url, label: 'issue' }}
           frame={frame}
         />
