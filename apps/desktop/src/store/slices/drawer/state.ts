@@ -34,6 +34,10 @@ export type DrawerContent =
       readonly payload: Readonly<Record<string, never>>;
     }
   | {
+      readonly kind: 'conversation';
+      readonly payload: { readonly threadId: string };
+    }
+  | {
       readonly kind: 'file-diff';
       readonly payload: { readonly source: FileDiffSource; readonly path: string | null };
     };

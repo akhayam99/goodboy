@@ -112,11 +112,11 @@ equal flexible outer columns around the command center. Page breadcrumbs stay
 in the content column of the pane that owns them and do not set the top bar's
 size.
 
-The right drawer is a grid column too: `rhandle` and `right` after `main`,
-`0px 0px` while closed, `6px` and the saved width while open. The same
-`grid-template-columns` transition moves the main area in 200ms, so the content
+The right drawer is not a grid column: `DrawerColumn` sits inside the `main`
+area beside the page, 0px wide while closed and the saved width plus two 8px
+insets while open. Its width transition moves the page in 220ms, so the content
 column slides and stays centred. When pushing would leave the column under
-560px, the drawer moves onto the `main` area instead as an overlay.
+560px, the drawer lies over the page instead.
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
 The top bar's left padding is `--titlebar-inset`. It defaults to 12px in

@@ -10,6 +10,7 @@ type SliceState = ReturnType<typeof createSessionViewSlice>;
 const navigate = vi.fn((params: { readonly to: unknown }) => {
   void params;
 });
+const back = vi.fn();
 
 const buildSlice = (): { readonly actions: SliceState; readonly getState: () => SliceState } => {
   let state = {} as SliceState;
@@ -28,12 +29,14 @@ const buildSlice = (): { readonly actions: SliceState; readonly getState: () => 
     sessionPhaseRuns: {},
     diffMountPath: {},
     navigate,
+    back,
   } as unknown as SliceState;
   return { actions, getState: get };
 };
 
 beforeEach(() => {
   navigate.mockClear();
+  back.mockClear();
   const store: Record<string, string> = {};
   vi.stubGlobal('localStorage', {
     getItem: (key: string) => store[key] ?? null,
@@ -62,7 +65,6 @@ describe('the round trip between the resolve queue and the diff', () => {
 
     const state = getState();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
-      expandedThreadId: 't-parser',
       order: ['t-retry', 't-parser', 't-client'],
       scrollTop: 240,
       detailScrollTop: 0,
@@ -105,12 +107,9 @@ describe('the round trip between the resolve queue and the diff', () => {
     actions.returnFromResolveDiff({ sessionId: SESSION_ID });
 
     const state = getState();
-    expect(navigate).toHaveBeenLastCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
-    });
+    expect(back).toHaveBeenCalledOnce();
     expect(state.resolveDiffReturn[SESSION_ID]).toBeNull();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
-      expandedThreadId: 't-parser',
       order: ['t-retry', 't-parser'],
       scrollTop: 120,
       detailScrollTop: 0,
@@ -160,7 +159,6 @@ describe('the round trip between the resolve queue and the agent', () => {
       threadId: 't-parser',
       prNumber: 264,
       view: {
-        expandedThreadId: 't-parser',
         order: ['t-parser', 't-client'],
         scrollTop: 90,
         detailScrollTop: 0,
@@ -186,18 +184,15 @@ describe('the round trip between the resolve queue and the agent', () => {
     });
     actions.setResolveQueueView({
       sessionId: SESSION_ID,
-      patch: { isCompletedShown: false, expandedThreadId: null, scrollTop: 0 },
+      patch: { isCompletedShown: false, scrollTop: 0 },
     });
 
     actions.returnFromResolveAgent({ sessionId: SESSION_ID });
 
     const state = getState();
-    expect(navigate).toHaveBeenLastCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
-    });
+    expect(back).toHaveBeenCalledOnce();
     expect(state.resolveAgentReturn[SESSION_ID]).toBeNull();
     expect(state.resolveQueueView[SESSION_ID]).toEqual({
-      expandedThreadId: 't-parser',
       order: ['t-parser'],
       scrollTop: 40,
       detailScrollTop: 0,

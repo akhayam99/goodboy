@@ -1,6 +1,6 @@
 import type { AgentId, SessionId } from '@goodboy/types';
 import { EMPTY_RESOLVE_QUEUE_VIEW, type GetFn, type ResolveQueueView, type SetFn } from './types';
-import { agentPlace, sessionPlace } from '../navigation/place';
+import { agentPlace } from '../navigation/place';
 
 type ViewParams = {
   readonly sessionId: SessionId;
@@ -51,7 +51,6 @@ export const openResolveDiff = (set: SetFn, get: GetFn) => {
         ...s.resolveQueueView,
         [sessionId]: {
           ...(s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW),
-          expandedThreadId: threadId,
           order,
           scrollTop,
         },
@@ -65,20 +64,14 @@ export const openResolveDiff = (set: SetFn, get: GetFn) => {
 export const returnFromResolveDiff = (set: SetFn, get: GetFn) => {
   return ({ sessionId }: ReturnParams): void => {
     set((s) => ({ resolveDiffReturn: { ...s.resolveDiffReturn, [sessionId]: null } }));
-    get().navigate({ to: sessionPlace({ sessionId, lens: 'review' }) });
+    get().back();
   };
 };
 
-export const openResolvePublication = (set: SetFn) => {
+export const openResolvePublication = (set: SetFn, get: GetFn) => {
   return ({ sessionId, threadId, reconcile }: PublicationParams): void => {
+    get().closeDrawer();
     set((s) => ({
-      resolveQueueView: {
-        ...s.resolveQueueView,
-        [sessionId]: {
-          ...(s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW),
-          expandedThreadId: null,
-        },
-      },
       resolvePublicationReturn: {
         ...s.resolvePublicationReturn,
         [sessionId]: {
@@ -91,24 +84,16 @@ export const openResolvePublication = (set: SetFn) => {
   };
 };
 
-export const returnFromResolvePublication = (set: SetFn) => {
+export const returnFromResolvePublication = (set: SetFn, get: GetFn) => {
   return ({ sessionId }: ReturnParams): void => {
-    set((s) => {
-      const target = s.resolvePublicationReturn[sessionId] ?? null;
-      if (target === null) {
-        return s;
-      }
-      return {
-        resolveQueueView: {
-          ...s.resolveQueueView,
-          [sessionId]: {
-            ...(s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW),
-            expandedThreadId: target.threadId,
-          },
-        },
-        resolvePublicationReturn: { ...s.resolvePublicationReturn, [sessionId]: null },
-      };
-    });
+    const target = get().resolvePublicationReturn[sessionId] ?? null;
+    if (target === null) {
+      return;
+    }
+    set((s) => ({
+      resolvePublicationReturn: { ...s.resolvePublicationReturn, [sessionId]: null },
+    }));
+    get().openDrawer({ kind: 'conversation', sessionId, payload: { threadId: target.threadId } });
   };
 };
 
@@ -121,10 +106,7 @@ export const openResolveAgent = (set: SetFn, get: GetFn) => {
           agentId,
           threadId,
           prNumber,
-          view: {
-            ...(s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW),
-            expandedThreadId: threadId,
-          },
+          view: s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW,
         },
       },
     }));
@@ -142,6 +124,6 @@ export const returnFromResolveAgent = (set: SetFn, get: GetFn) => {
       resolveQueueView: { ...s.resolveQueueView, [sessionId]: origin.view },
       resolveAgentReturn: { ...s.resolveAgentReturn, [sessionId]: null },
     }));
-    get().navigate({ to: sessionPlace({ sessionId, lens: 'review' }) });
+    get().back();
   };
 };

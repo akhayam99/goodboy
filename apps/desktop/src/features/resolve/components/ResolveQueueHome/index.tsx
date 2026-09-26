@@ -9,7 +9,8 @@ import {
   type ReactNode,
   type UIEvent,
 } from 'react';
-import { Button, DrawerFrame, ErrorStrip, SectionHeader, Skeleton, cn } from '@goodboy/ui';
+import { createPortal } from 'react-dom';
+import { Button, DrawerFrame, ErrorStrip, SectionHeader, Skeleton } from '@goodboy/ui';
 import { MessageSquare } from 'lucide-react';
 import { openUrl } from '../../../../shared/lib/editor';
 import type {
@@ -58,6 +59,7 @@ import {
   resolveNewLabel,
 } from '../../resolveQueueCopy';
 import { ResolveWithPopover } from '../ResolveWithPopover';
+import { useConversationSlot } from '../ConversationDrawerSlot/slotNode';
 import { ResolveItemContainer } from '../ResolveItemView/ResolveItemContainer';
 import { ResolveSelectionBar } from '../ResolveSelectionBar';
 import { ConversationTree } from '../ConversationTree';
@@ -101,21 +103,6 @@ type FocusRowParams = {
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const SKELETON_ROWS = [0, 1, 2];
 
-type TextEntryParams = Readonly<{
-  target: EventTarget | null;
-}>;
-
-const isTextEntry = ({ target }: TextEntryParams): boolean => {
-  if (!(target instanceof HTMLElement)) {
-    return false;
-  }
-  if (target.isContentEditable) {
-    return true;
-  }
-  const tag = target.tagName.toLowerCase();
-  return tag === 'input' || tag === 'textarea';
-};
-
 const scrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
   let current = node?.parentElement ?? null;
   while (current !== null) {
@@ -141,6 +128,14 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
   const checks = useAppStore((s) => s.sessionGithub[sessionId]?.detail?.checks ?? EMPTY_CHECKS);
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
   const view = useAppStore((s) => s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW);
+  const expandedThreadId = useAppStore((s) =>
+    s.drawer?.kind === 'conversation' && s.drawer.sessionId === sessionId
+      ? s.drawer.payload.threadId
+      : null,
+  );
+  const openDrawer = useAppStore((s) => s.openDrawer);
+  const closeDrawer = useAppStore((s) => s.closeDrawer);
+  const conversationSlot = useConversationSlot();
   const publicationPreview = useAppStore((s) => s.activePublicationPreview[sessionId] ?? null);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const takeUpResolveQueueItem = useAppStore((s) => s.takeUpResolveQueueItem);
@@ -211,8 +206,8 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     [publicationPreview],
   );
   const selectedRow = useMemo(
-    () => rows.find((row) => row.thread.threadId === view.expandedThreadId) ?? null,
-    [rows, view.expandedThreadId],
+    () => rows.find((row) => row.thread.threadId === expandedThreadId) ?? null,
+    [rows, expandedThreadId],
   );
 
   useEffect(() => {
@@ -239,10 +234,14 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
         consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
       }
       const target = rows.find((row) => row.thread.threadId === threadId) ?? null;
+      if (threadId === null) {
+        closeDrawer();
+      } else {
+        openDrawer({ kind: 'conversation', sessionId, payload: { threadId } });
+      }
       setResolveQueueView({
         sessionId,
         patch: {
-          expandedThreadId: threadId,
           order: listed.map((row) => row.thread.threadId),
           ...(target?.status === 'later' && { isDeferredShown: true }),
           ...(target?.status === 'resolved' && {
@@ -251,12 +250,21 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
         },
       });
     },
-    [consumeReviewTarget, listed, reviewTarget, rows, sessionId, setResolveQueueView],
+    [
+      closeDrawer,
+      consumeReviewTarget,
+      listed,
+      openDrawer,
+      reviewTarget,
+      rows,
+      sessionId,
+      setResolveQueueView,
+    ],
   );
 
   const targetThreadId =
     reviewTarget === null ? null : reviewThreadId({ destination: reviewTarget.destination });
-  const selectedThreadId = view.expandedThreadId;
+  const selectedThreadId = expandedThreadId;
 
   useEffect(() => {
     if (reviewTarget === null) {
@@ -264,7 +272,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     }
     if (reviewTarget.status === 'unavailable' || reviewTarget.status === 'failed') {
       if (selectedThreadId !== null) {
-        setResolveQueueView({ sessionId, patch: { expandedThreadId: null } });
+        closeDrawer();
       }
       return;
     }
@@ -277,6 +285,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     onSelect(targetThreadId);
     consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
   }, [
+    closeDrawer,
     consumeReviewTarget,
     reviewTarget,
     rows,
@@ -442,14 +451,14 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
         return;
       }
       event.preventDefault();
-      if (rowThreadId === view.expandedThreadId) {
+      if (rowThreadId === expandedThreadId) {
         focusPanel();
         return;
       }
       pendingPanelThreadIdRef.current = rowThreadId;
       onSelect(rowThreadId);
     },
-    [focusPanel, focusRow, listed, onSelect, view.expandedThreadId],
+    [focusPanel, focusRow, listed, onSelect, expandedThreadId],
   );
 
   useEffect(() => {
@@ -493,7 +502,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
         threadId === null
           ? threadIdAfterDecision({
               rows: listed,
-              selectedThreadId: view.expandedThreadId,
+              selectedThreadId: expandedThreadId,
               excludedThreadIds,
               eligibleThreadIds: rows.map((row) => row.thread.threadId),
             })
@@ -503,36 +512,17 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
       }
       onSelect(next);
     },
-    [listed, onSelect, rows, view.expandedThreadId],
+    [listed, onSelect, rows, expandedThreadId],
   );
 
   const closeDetail = useCallback((): void => {
-    const threadId = view.expandedThreadId;
+    const threadId = expandedThreadId;
     if (threadId === null) {
       return;
     }
     onSelect(null);
     requestAnimationFrame(() => focusRow({ threadId }));
-  }, [focusRow, onSelect, view.expandedThreadId]);
-
-  useEffect(() => {
-    if (view.expandedThreadId === null) {
-      return;
-    }
-    const onKeyDown = (event: globalThis.KeyboardEvent): void => {
-      if (event.key !== 'Escape' || event.defaultPrevented) {
-        return;
-      }
-      if (isTextEntry({ target: event.target })) {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      closeDetail();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [closeDetail, view.expandedThreadId]);
+  }, [focusRow, onSelect, expandedThreadId]);
 
   const openRow = useCallback(
     (row: QueueRow): void => {
@@ -653,7 +643,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
       rows={treeRows}
       label={label}
       now={now}
-      selectedThreadId={view.expandedThreadId}
+      selectedThreadId={expandedThreadId}
       checkedThreadIds={checkedThreadIds}
       heldBack={heldBack}
       isCheckable={(row) => row.status !== 'resolved' && row.status !== 'working'}
@@ -671,170 +661,171 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     />
   );
 
-  return (
-    <div
-      className={cn(
-        'isolate grid h-full min-h-0 min-w-0 overflow-hidden',
-        selectedRow === null
-          ? 'grid-cols-[minmax(0,1fr)]'
-          : 'grid-cols-[minmax(0,1fr)_clamp(340px,33vw,560px)]',
-      )}
-    >
-      <div className="col-start-1 row-start-1 min-h-0 min-w-0">
-        {queuePane({
-          meta: counter,
-          actions:
-            newThreads.length === 0 ? null : (
-              <ResolveWithPopover
-                sessionId={sessionId}
-                threads={newThreads}
-                label={resolveNewLabel({ count: newThreads.length })}
-                isDisabled={isRunLive}
-                disabledReason={RESOLVE_RUN_IN_PROGRESS}
-              />
-            ),
-          children: (
-            <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
-              {checkedThreadIds.size > 0 && (
-                <ResolveSelectionBar
-                  sessionId={sessionId}
-                  rows={rows}
-                  checkedThreadIds={checkedThreadIds}
-                  threads={checkedThreads}
-                  isRunLive={isRunLive}
-                  onClear={clearChecked}
-                />
-              )}
-              {errorPlacement === 'inline' && refreshError !== null && (
-                <ErrorStrip
-                  label={RESOLVE_QUEUE_REFRESH_LABEL}
-                  error={new Error(refreshError)}
-                  onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
-                />
-              )}
-              {reviewTarget?.status === 'pending' && (
-                <p role="status" className="text-2xs text-muted-foreground">
-                  {reviewTargetPending({ hasThread: targetThreadId !== null })}
-                </p>
-              )}
-              {targetError !== null && (
-                <ErrorStrip
-                  label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
-                  error={new Error(targetError)}
-                  onRetry={onRetryTarget}
-                />
-              )}
-              {isLoading && (
-                <div className="flex flex-col gap-4">
-                  {SKELETON_ROWS.map((key) => (
-                    <div key={key} className="flex flex-col gap-2 px-3 py-2">
-                      <Skeleton className="h-5 w-full" />
-                      <Skeleton className="h-5 w-3/4" />
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3.5 w-48" />
-                    </div>
-                  ))}
-                </div>
-              )}
-              {!isLoading && isReadTrusted && listed.length === 0 && <NothingWaitingState />}
-              {!isLoading &&
-                listed.length > 0 &&
-                renderTree({ rows: openRows, label: OPEN_CONVERSATIONS_LABEL })}
-              <ResolveQueueFooter
-                resolved={resolvedRows}
-                later={laterRows}
-                renderRows={renderTree}
-                isDeferredShown={view.isDeferredShown}
-                isResolvedShown={view.isCompletedShown}
-                onDeferredShownChange={(isDeferredShown) =>
-                  setResolveQueueView({ sessionId, patch: { isDeferredShown } })
-                }
-                onResolvedShownChange={(isCompletedShown) =>
-                  setResolveQueueView({ sessionId, patch: { isCompletedShown } })
-                }
-              />
-            </div>
+  const queue = (
+    <div className="h-full min-h-0 min-w-0">
+      {queuePane({
+        meta: counter,
+        actions:
+          newThreads.length === 0 ? null : (
+            <ResolveWithPopover
+              sessionId={sessionId}
+              threads={newThreads}
+              label={resolveNewLabel({ count: newThreads.length })}
+              isDisabled={isRunLive}
+              disabledReason={RESOLVE_RUN_IN_PROGRESS}
+            />
           ),
-        })}
-      </div>
-      {selectedRow !== null && (
-        <aside
-          aria-label={CONVERSATION_DRAWER_LABEL}
-          className="col-start-2 row-start-1 flex min-h-0 min-w-0 flex-col border-l border-border bg-background"
-        >
-          <DrawerFrame
-            title={
-              selectedRow.reviewerNote === null
-                ? CONVERSATION_DRAWER_LABEL
-                : firstSentence({ text: selectedRow.reviewerNote.body })
-            }
-            icon={MessageSquare}
-            iconClassName="text-faint-foreground"
-            closeLabel={`Close ${CONVERSATION_DRAWER_LABEL.toLowerCase()}`}
-            onClose={closeDetail}
-            scroll="self"
-          >
-            <section
-              ref={detailRef}
-              aria-label="Resolve comment detail"
-              onScrollCapture={onDetailScroll}
-              className="flex h-full min-h-0 min-w-0 flex-col"
-            >
-              <ResolveItemContainer
-                key={selectedRow.thread.threadId}
+        children: (
+          <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
+            {checkedThreadIds.size > 0 && (
+              <ResolveSelectionBar
                 sessionId={sessionId}
-                prNumber={github.pr.number}
-                row={selectedRow}
-                allRows={rows}
-                worktreePath={repo?.worktreePath ?? null}
-                onSelect={onAdvanceFromPanel}
-                onRequestAttempt={onAskForChanges}
-                onOpenInDiff={onOpenInDiff}
-                onBack={closeDetail}
-                onPrevious={() => {
-                  const threadId = threadIdAtStep({
-                    rows: listed,
-                    selectedThreadId: selectedRow.thread.threadId,
-                    delta: -1,
-                  });
-                  if (threadId !== null) {
-                    pendingPanelThreadIdRef.current = threadId;
-                    onSelect(threadId);
-                  }
-                }}
-                onNext={() => {
-                  const threadId = threadIdAtStep({
-                    rows: listed,
-                    selectedThreadId: selectedRow.thread.threadId,
-                    delta: 1,
-                  });
-                  if (threadId !== null) {
-                    pendingPanelThreadIdRef.current = threadId;
-                    onSelect(threadId);
-                  }
-                }}
-                canPrevious={
-                  threadIdAtStep({
-                    rows: listed,
-                    selectedThreadId: selectedRow.thread.threadId,
-                    delta: -1,
-                  }) !== null
-                }
-                canNext={
-                  threadIdAtStep({
-                    rows: listed,
-                    selectedThreadId: selectedRow.thread.threadId,
-                    delta: 1,
-                  }) !== null
-                }
-                onReviewPublication={({ threadId, reconcile }) =>
-                  openResolvePublication({ sessionId, threadId, reconcile })
-                }
+                rows={rows}
+                checkedThreadIds={checkedThreadIds}
+                threads={checkedThreads}
+                isRunLive={isRunLive}
+                onClear={clearChecked}
               />
-            </section>
-          </DrawerFrame>
-        </aside>
-      )}
+            )}
+            {errorPlacement === 'inline' && refreshError !== null && (
+              <ErrorStrip
+                label={RESOLVE_QUEUE_REFRESH_LABEL}
+                error={new Error(refreshError)}
+                onRetry={() => void refreshSessionPrDetail(sessionId, { force: true })}
+              />
+            )}
+            {reviewTarget?.status === 'pending' && (
+              <p role="status" className="text-2xs text-muted-foreground">
+                {reviewTargetPending({ hasThread: targetThreadId !== null })}
+              </p>
+            )}
+            {targetError !== null && (
+              <ErrorStrip
+                label={reviewTargetErrorLabel({ hasThread: targetThreadId !== null })}
+                error={new Error(targetError)}
+                onRetry={onRetryTarget}
+              />
+            )}
+            {isLoading && (
+              <div className="flex flex-col gap-4">
+                {SKELETON_ROWS.map((key) => (
+                  <div key={key} className="flex flex-col gap-2 px-3 py-2">
+                    <Skeleton className="h-5 w-full" />
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3.5 w-48" />
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isLoading && isReadTrusted && listed.length === 0 && <NothingWaitingState />}
+            {!isLoading &&
+              listed.length > 0 &&
+              renderTree({ rows: openRows, label: OPEN_CONVERSATIONS_LABEL })}
+            <ResolveQueueFooter
+              resolved={resolvedRows}
+              later={laterRows}
+              renderRows={renderTree}
+              isDeferredShown={view.isDeferredShown}
+              isResolvedShown={view.isCompletedShown}
+              onDeferredShownChange={(isDeferredShown) =>
+                setResolveQueueView({ sessionId, patch: { isDeferredShown } })
+              }
+              onResolvedShownChange={(isCompletedShown) =>
+                setResolveQueueView({ sessionId, patch: { isCompletedShown } })
+              }
+            />
+          </div>
+        ),
+      })}
     </div>
+  );
+  const conversation =
+    selectedRow === null ? null : (
+      <aside
+        aria-label={CONVERSATION_DRAWER_LABEL}
+        className="flex h-full min-h-0 min-w-0 flex-col"
+      >
+        <DrawerFrame
+          title={
+            selectedRow.reviewerNote === null
+              ? CONVERSATION_DRAWER_LABEL
+              : firstSentence({ text: selectedRow.reviewerNote.body })
+          }
+          icon={MessageSquare}
+          iconClassName="text-faint-foreground"
+          closeLabel={`Close ${CONVERSATION_DRAWER_LABEL.toLowerCase()}`}
+          onClose={closeDetail}
+          scroll="self"
+        >
+          <section
+            ref={detailRef}
+            aria-label="Resolve comment detail"
+            onScrollCapture={onDetailScroll}
+            className="flex h-full min-h-0 min-w-0 flex-col"
+          >
+            <ResolveItemContainer
+              key={selectedRow.thread.threadId}
+              sessionId={sessionId}
+              prNumber={github.pr.number}
+              row={selectedRow}
+              allRows={rows}
+              worktreePath={repo?.worktreePath ?? null}
+              onSelect={onAdvanceFromPanel}
+              onRequestAttempt={onAskForChanges}
+              onOpenInDiff={onOpenInDiff}
+              onBack={closeDetail}
+              onPrevious={() => {
+                const threadId = threadIdAtStep({
+                  rows: listed,
+                  selectedThreadId: selectedRow.thread.threadId,
+                  delta: -1,
+                });
+                if (threadId !== null) {
+                  pendingPanelThreadIdRef.current = threadId;
+                  onSelect(threadId);
+                }
+              }}
+              onNext={() => {
+                const threadId = threadIdAtStep({
+                  rows: listed,
+                  selectedThreadId: selectedRow.thread.threadId,
+                  delta: 1,
+                });
+                if (threadId !== null) {
+                  pendingPanelThreadIdRef.current = threadId;
+                  onSelect(threadId);
+                }
+              }}
+              canPrevious={
+                threadIdAtStep({
+                  rows: listed,
+                  selectedThreadId: selectedRow.thread.threadId,
+                  delta: -1,
+                }) !== null
+              }
+              canNext={
+                threadIdAtStep({
+                  rows: listed,
+                  selectedThreadId: selectedRow.thread.threadId,
+                  delta: 1,
+                }) !== null
+              }
+              onReviewPublication={({ threadId, reconcile }) =>
+                openResolvePublication({ sessionId, threadId, reconcile })
+              }
+            />
+          </section>
+        </DrawerFrame>
+      </aside>
+    );
+
+  return (
+    <>
+      {queue}
+      {conversation !== null && conversationSlot !== null
+        ? createPortal(conversation, conversationSlot)
+        : conversation}
+    </>
   );
 };

@@ -80,7 +80,6 @@ export type FocusedExternalTask = {
 };
 
 export type ResolveQueueView = {
-  readonly expandedThreadId: string | null;
   readonly order: ReadonlyArray<string>;
   readonly scrollTop: number;
   readonly detailScrollTop: number;
@@ -110,7 +109,6 @@ export type ResolveDiffReturn = {
 };
 
 export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
-  expandedThreadId: null,
   order: [],
   scrollTop: 0,
   detailScrollTop: 0,

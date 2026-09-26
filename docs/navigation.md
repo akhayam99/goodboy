@@ -93,8 +93,9 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
 
 - **A `Location` is where you are plus how the page was.** Its `place` is the
   board or a session view: lens, open agent, session studio and one target
-  (artifact, run, issue, diff focus, terminal mount). Its `focus` is the page
-  state: selection, scroll and revealed rows. `locationKey` prints the text
+  (artifact, run, issue, diff focus, terminal mount). Its `studio` is the app
+  studio open over that place, if any. Its `focus` is the page state: the open
+  drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/review`,
   `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`.
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
@@ -674,20 +675,27 @@ the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
 
 ## The right drawer
 
-The drawer is a column of the window grid (`AppShell`, areas
-`left lhandle main rhandle right`), never a split nested inside a pane. It opens
-at 400px, resizes from 340 to 560px, and keeps one saved width
-(`goodboy:right-drawer-width:v1`, clamped on read). Closed, its tracks are
-`0px 0px` and it is `inert`. When the main area minus the drawer and the two
-gutters would leave the content column under 560px, it lies over the right of
-the main area with `shadow-xl` and no scrim, and the main stays interactive.
-It never touches the sidebar preference.
+Every drawer is one primitive, `DrawerColumn` from `@goodboy/ui`, never a
+split nested inside a pane. `AppShell` puts one beside the main area, and a
+studio body puts one beside its list. It opens at 400px, resizes from 340 to
+560px from a handle on its left edge, and keeps one saved width
+(`goodboy:right-drawer-width:v1`, clamped on read) for every drawer. It is a
+floating card: 8px from the top, right and bottom edges and from the column,
+radius 10 (`rounded-frame`), `bg-subtle`, a hairline border. When the main
+area minus the drawer and the two gutters would leave the content column
+under 560px, the card lies over the right of the main area with a shadow and
+no scrim, and the main stays interactive; pushing, it has no shadow. Closed,
+its track is 0px wide and `inert`. Opening pushes the track open in 220ms while
+the card slides 12px in; over the page it slides 16px in 200ms; a new kind in
+an open drawer fades its content in 120ms. It never touches the sidebar
+preference.
 
 One drawer at a time, per window. The `drawer` store slice holds
-`{ kind, sessionId, payload, lens }`: `openDrawer`, `closeDrawer` and
-`toggleDrawer` (pressing the trigger again closes it). It closes when the lens
-or the session changes, with Escape, and with its X; focus then returns to the
-trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
+`{ kind, sessionId, payload }`: `openDrawer`, `closeDrawer` and `toggleDrawer`
+(pressing the trigger again closes it). **The open drawer is part of the
+history entry's focus.** A forward move (crumb, sidebar, palette, a child such
+as an agent) arrives with it closed; Back and Forward bring it back as it was;
+Escape and its X close it in place. Focus then returns to the trigger. `app/components/DrawerHost` turns a `kind` into its content, framed
 by `DrawerFrame` from `@goodboy/ui`: a 44px header (icon, title, count, at most
 one action, close), one divider, a `ScrollFade` body and an optional dock. A
 body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
@@ -701,10 +709,16 @@ artifact changes. While it is open, Escape closes the drawer before it takes the
 artifact back to the list.
 
 A studio covers the whole window grid, so it cannot use that column. The inbox
-studio keeps the same contract inside itself (`InboxStudioLayout`): the record
-opens in a right column with the same width constants and the same saved width,
-resizes with the same handle, pushes the list while the list keeps 560px and
-lies over it otherwise. Escape closes the record before the studio.
+record opens in the same `DrawerColumn` inside the studio body
+(`InboxStudioLayout`), with the same width, card and motion. Escape closes the
+record before the studio.
+
+`conversation` (payload `{ threadId }`) is a Review conversation. The queue
+stays the page and the conversation opens in the shell drawer: `DrawerHost`
+renders `ConversationDrawerSlot`, and `ResolveQueueHome` portals the panel
+into it, so the panel keeps the queue's order and keys. Back from the Diff or
+from the resolver's page finds the conversation open again, because it was in
+the entry.
 
 `scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
 `ScriptRunDrawer` reads the run from `scriptRuns`, where the one

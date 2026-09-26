@@ -21,6 +21,9 @@ const h = vi.hoisted(() => {
     sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
     providers: [{ id: 'anthropic', connection: 'connected' }] as ReadonlyArray<unknown>,
     resolveQueueView: {} as Record<string, unknown>,
+    drawer: null as unknown,
+    openDrawer: vi.fn(),
+    closeDrawer: vi.fn(),
     activePublicationPreview: {} as Record<string, unknown>,
     reviewTargets: {} as Record<string, unknown>,
     loadResolveSession: vi.fn(async () => undefined),
@@ -80,7 +83,7 @@ vi.mock('../ResolveItemView/ResolveItemContainer', () => ({
   ),
 }));
 
-import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
+import { ConversationDrawerSlot } from '../ConversationDrawerSlot';
 import { ResolveQueueHome } from './index';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -182,8 +185,15 @@ const seed = () => {
   h.state.sessionResolveAttempts = {};
   h.state.sessionResolvePublications = {};
   h.state.resolveQueueView = {};
+  h.state.drawer = null;
   h.state.reviewTargets = {};
 };
+
+const conversationOn = (threadId: string) => ({
+  kind: 'conversation' as const,
+  sessionId: SESSION_ID,
+  payload: { threadId },
+});
 
 beforeEach(() => {
   seed();
@@ -202,9 +212,10 @@ describe('the resolve queue home', () => {
     h.state.reviewTargets = { [SESSION_ID]: targetOf({}) };
     render(<ResolveQueueHome session={SESSION} />);
 
+    expect(h.state.openDrawer).toHaveBeenCalledWith(conversationOn('PRRT_1'));
     expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      patch: { expandedThreadId: 'PRRT_1', order: ['PRRT_1'] },
+      patch: { order: ['PRRT_1'] },
     });
     expect(h.state.consumeReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -259,9 +270,7 @@ describe('the resolve queue home', () => {
   });
 
   it('drops the open comment when a target settles on an error', () => {
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     h.state.reviewTargets = {
       [SESSION_ID]: targetOf({
         status: 'unavailable',
@@ -277,10 +286,7 @@ describe('the resolve queue home', () => {
     render(<ResolveQueueHome session={SESSION} />);
 
     expect(screen.getByText(/That comment is already closed/)).toBeDefined();
-    expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      patch: { expandedThreadId: null },
-    });
+    expect(h.state.closeDrawer).toHaveBeenCalled();
   });
 
   it('states a failed pull request navigation that names no comment', () => {
@@ -325,13 +331,7 @@ describe('the resolve queue home', () => {
         error: null,
       },
     ];
-    h.state.resolveQueueView = {
-      [SESSION_ID]: {
-        expandedThreadId: 'PRRT_1',
-        order: [],
-        scrollTop: 0,
-      },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     h.state.reviewTargets = { [SESSION_ID]: targetOf({}) };
     render(<ResolveQueueHome session={SESSION} />);
 
@@ -401,13 +401,7 @@ describe('walking the queue from the keyboard', () => {
 
   it('leaves a control inside a row alone, so its own key handling still runs', () => {
     twoRows();
-    h.state.resolveQueueView = {
-      [SESSION_ID]: {
-        expandedThreadId: 'PRRT_1',
-        order: [],
-        scrollTop: 0,
-      },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     render(<ResolveQueueHome session={SESSION} />);
 
     const overlay = rowFor('PRRT_2');
@@ -435,14 +429,13 @@ describe('walking the queue from the keyboard', () => {
 
     fireEvent.keyDown(rowFor('PRRT_2'), { key: 'Enter' });
 
+    expect(h.state.openDrawer).toHaveBeenCalledWith(conversationOn('PRRT_2'));
     expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      patch: { expandedThreadId: 'PRRT_2', order: ['PRRT_1', 'PRRT_2'] },
+      patch: { order: ['PRRT_1', 'PRRT_2'] },
     });
 
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_2');
     rerender(<ResolveQueueHome session={SESSION} />);
 
     expect(document.activeElement).toBe(
@@ -452,9 +445,7 @@ describe('walking the queue from the keyboard', () => {
 
   it('carries the focus into the comment the decision moved on to', () => {
     twoRows();
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     const { rerender } = render(<ResolveQueueHome session={SESSION} />);
 
     const approve = within(screen.getByTestId('resolve-item')).getByRole('button', {
@@ -463,9 +454,7 @@ describe('walking the queue from the keyboard', () => {
     approve.focus();
     fireEvent.click(approve);
 
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_2');
     rerender(<ResolveQueueHome session={SESSION} />);
 
     expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_2');
@@ -476,16 +465,12 @@ describe('walking the queue from the keyboard', () => {
 
   it('moves focus into a comment opened with the mouse', () => {
     twoRows();
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     const { rerender } = render(<ResolveQueueHome session={SESSION} />);
 
     fireEvent.click(rowFor('PRRT_2'));
 
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_2', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_2');
     rerender(<ResolveQueueHome session={SESSION} />);
 
     expect(screen.getByTestId('resolve-item-thread').textContent).toBe('PRRT_2');
@@ -517,9 +502,7 @@ describe('walking the queue from the keyboard', () => {
 
   it('hands Escape back to the reply field the maintainer is typing in', () => {
     twoRows();
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     render(<ResolveQueueHome session={SESSION} />);
 
     const field = screen.getByLabelText('Reply to reviewer');
@@ -531,28 +514,25 @@ describe('walking the queue from the keyboard', () => {
 
   it('closes the panel on unhandled Escape', () => {
     twoRows();
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     render(<ResolveQueueHome session={SESSION} />);
 
     const approve = within(screen.getByTestId('resolve-item')).getByRole('button', {
       name: 'Approve fix',
     });
     approve.focus();
-    fireEvent.keyDown(approve, { key: 'Escape' });
+    fireEvent.keyDown(approve, { key: 'Escape', code: 'Escape' });
 
+    expect(h.state.closeDrawer).toHaveBeenCalled();
     expect(h.state.setResolveQueueView).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      patch: { expandedThreadId: null, order: ['PRRT_1', 'PRRT_2'] },
+      patch: { order: ['PRRT_1', 'PRRT_2'] },
     });
   });
 
   it('keeps Enter on the open row going straight to the panel', () => {
     twoRows();
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { expandedThreadId: 'PRRT_1', order: [], scrollTop: 0 },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     render(<ResolveQueueHome session={SESSION} />);
 
     fireEvent.keyDown(rowFor('PRRT_1'), { key: 'Enter' });
@@ -710,9 +690,7 @@ describe('the shape of the queue surface', () => {
 
   it('opens a comment in a drawer next to the list, which stays usable', () => {
     twoRows();
-    h.state.resolveQueueView = {
-      [SESSION_ID]: { ...EMPTY_RESOLVE_QUEUE_VIEW, expandedThreadId: 'PRRT_1' },
-    };
+    h.state.drawer = conversationOn('PRRT_1');
     render(<ResolveQueueHome session={SESSION} />);
 
     const drawer = screen.getByRole('complementary', { name: 'Conversation' });
@@ -720,6 +698,21 @@ describe('the shape of the queue surface', () => {
     const list = screen.getByRole('group', { name: 'Open conversations' });
     expect(list.closest('[inert]')).toBeNull();
     expect(within(list).getAllByRole('listitem')).toHaveLength(2);
+  });
+
+  it('draws the conversation in the shell drawer slot once the drawer hosts one', () => {
+    twoRows();
+    h.state.drawer = conversationOn('PRRT_1');
+    render(
+      <>
+        <ResolveQueueHome session={SESSION} />
+        <ConversationDrawerSlot />
+      </>,
+    );
+
+    const drawer = screen.getByRole('complementary', { name: 'Conversation' });
+    expect(drawer.closest('[data-conversation-slot]')).not.toBeNull();
+    expect(within(drawer).getByTestId('resolve-item-thread').textContent).toBe('PRRT_1');
   });
 
   it('approves every selected proposal in one press and counts the rest', async () => {
