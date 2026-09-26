@@ -373,6 +373,7 @@ pub(crate) fn reset_database(conn: &Connection) -> Result<(), DbError> {
 #[tauri::command(async)]
 pub fn db_wipe(app: tauri::AppHandle, state: State<'_, Db>) -> Result<(), DbError> {
     crate::stop_running_work(&app);
+    crate::query_bridge::shutdown();
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     reset_database(&conn)
 }
