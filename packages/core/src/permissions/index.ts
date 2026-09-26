@@ -8,3 +8,11 @@ export {
   type ModeSupportLevel,
 } from './modeSupport';
 export { PermissionAuditRecorder, type AuditRecorderDeps, type AuditQuery } from './audit';
+export {
+  commandPrefix,
+  isFilePathTool,
+  oncePatternText,
+  prefixRuleFor,
+  type ActionTarget,
+  type PrefixRule,
+} from './permissionActionPatterns';

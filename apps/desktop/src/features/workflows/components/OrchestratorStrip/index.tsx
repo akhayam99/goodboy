@@ -175,6 +175,7 @@ export const OrchestratorStrip = ({
       case 'waiting':
       case 'automatic':
       case 'needs-answer':
+      case 'needs-approval':
       case 'step-failed':
         return null;
       default: {

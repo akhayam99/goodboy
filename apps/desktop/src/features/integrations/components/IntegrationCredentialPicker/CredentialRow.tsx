@@ -13,12 +13,12 @@ type Props = {
 
 const usageLabel = ({ usedBy }: { readonly usedBy: number }): string => {
   if (usedBy === 0) {
-    return 'Not used by any project';
+    return 'Not used by any workspace';
   }
   if (usedBy === 1) {
-    return 'Used by 1 project';
+    return 'Used by 1 workspace';
   }
-  return `Used by ${usedBy} projects`;
+  return `Used by ${usedBy} workspaces`;
 };
 
 export const CredentialRow = ({

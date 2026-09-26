@@ -232,6 +232,11 @@ export { TASKS } from './settings/tasks';
 export { DEFAULT_GROUPS, type DefaultGroups, type DefaultsGroup } from './settings/defaultGroups';
 export { parseStreamJsonLine, type ParseContext } from './providers/claude/parser';
 export { parseCodexRateLimits } from './providers/limits/parseCodexRateLimits';
+export {
+  claudeUsageResultTextOf,
+  parseClaudeUsageProbeOutput,
+  parseClaudeUsageText,
+} from './providers/limits/parseClaudeUsageText';
 export { mergeProviderLimits } from './providers/limits/mergeProviderLimits';
 export { sortLimitWindows } from './providers/limits/sortLimitWindows';
 export { LIMITS_STALE_MS, LIMITS_WARNING_FRACTION } from './providers/limits/constants';
@@ -472,6 +477,12 @@ export {
   PermissionAuditRecorder,
   type AuditRecorderDeps,
   type AuditQuery,
+  commandPrefix,
+  isFilePathTool,
+  oncePatternText,
+  prefixRuleFor,
+  type ActionTarget,
+  type PrefixRule,
 } from './permissions';
 
 export { resolveSettings, type ResolveSettingsInput } from './settings/resolver';
