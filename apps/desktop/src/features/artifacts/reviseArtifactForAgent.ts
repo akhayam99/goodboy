@@ -55,5 +55,6 @@ export const reviseArtifactForAgent = async ({
     sourceFormat,
     sourceText,
     metadata,
+    note: { author: 'agent' },
   });
 };

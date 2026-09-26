@@ -9,6 +9,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import {
+  type ArtifactRevisionNote,
   deleteArtifact as dbDeleteArtifact,
   getArtifactBySourceTurn as dbGetArtifactBySourceTurn,
   insertArtifact as dbInsertArtifact,
@@ -70,6 +71,7 @@ export type UpdateArtifactSourceArgs = {
   readonly sourceFormat: ArtifactSourceFormat;
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
+  readonly note?: ArtifactRevisionNote;
 };
 
 export const listArtifactsForSession = async (
@@ -88,6 +90,7 @@ export const updateArtifactSource = async (
       sourceFormat: args.sourceFormat,
       sourceText: args.sourceText,
       metadata: args.metadata,
+      ...(args.note === undefined ? {} : { note: args.note }),
     },
   });
 

@@ -108,15 +108,9 @@ describe('artifact queries', () => {
     ).rejects.toThrow('Invalid wireframe artifact metadata');
   });
 
-  it('bumps the revision and drops stale renditions on source updates', async () => {
+  it('bumps the revision and keeps the previous one on source updates', async () => {
     const db = await seed();
     await insertReport(db, 'report-1');
-    await db.execute(
-      `INSERT INTO artifact_renditions (
-         artifact_id, revision, format, renderer_version, bytes, created_at
-       ) VALUES (?, 1, 'pdf', 'v1', ?, ?)`,
-      ['report-1', Uint8Array.from([1, 2, 3]), Date.now()],
-    );
     const updated = await updateArtifactSource({
       db,
       input: {
@@ -129,11 +123,11 @@ describe('artifact queries', () => {
     });
     expect(updated.revision).toBe(2);
     expect(updated.title).toBe('Session report v2');
-    const stale = await db.select<{ readonly revision: number }>(
-      'SELECT revision FROM artifact_renditions WHERE artifact_id = ?',
+    const kept = await db.select<{ readonly revision: number }>(
+      'SELECT revision FROM artifact_revisions WHERE artifact_id = ? ORDER BY revision',
       ['report-1'],
     );
-    expect(stale).toEqual([]);
+    expect(kept).toEqual([{ revision: 1 }, { revision: 2 }]);
   });
 
   it('discards, restores and removes', async () => {
