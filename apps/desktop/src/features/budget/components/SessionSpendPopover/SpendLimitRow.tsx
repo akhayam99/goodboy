@@ -25,7 +25,7 @@ export const SpendLimitRow = ({
   return (
     <section aria-label="Spend limit" className="flex flex-col gap-2">
       <div className="flex min-h-7 items-center justify-between gap-2">
-        <span className="text-label font-medium text-foreground">Spend limit</span>
+        <span className="text-row text-foreground">Spend limit</span>
         {isEditing ? null : (
           <Button variant="ghost" size="sm" onClick={() => onEditingChange(true)}>
             {limit === null ? 'Set limit' : 'Edit'}

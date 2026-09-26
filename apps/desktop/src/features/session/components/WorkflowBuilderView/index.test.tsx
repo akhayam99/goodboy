@@ -873,13 +873,13 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     fireEvent.click(screen.getByRole('tab', { name: /orchestrated/i }));
     openSpendCap();
     expect(screen.queryByLabelText('Spend limit in dollars')).toBeNull();
-    expect(screen.queryByRole('tab', { name: /notify/i })).toBeNull();
-    expect(screen.queryByRole('tab', { name: /pause/i })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Only warn me/ })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Pause workflows/ })).toBeNull();
 
     fireEvent.click(screen.getByRole('switch', { name: /spend limit/i }));
     expect(screen.getByLabelText('Spend limit in dollars')).toBeDefined();
-    expect(screen.queryByRole('tab', { name: /notify/i })).toBeNull();
-    expect(screen.queryByRole('tab', { name: /pause/i })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Only warn me/ })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /Pause workflows/ })).toBeNull();
 
     fireEvent.change(guidanceField(), {
       target: { value: 'Inspect each result and stop after tests pass.' },
@@ -887,9 +887,9 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     fireEvent.change(screen.getByLabelText('Spend limit in dollars'), {
       target: { value: '15' },
     });
-    expect(screen.getByRole('tab', { name: /notify/i })).toBeDefined();
-    expect(screen.getByRole('tab', { name: /pause/i })).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: /notify/i }));
+    expect(screen.getByRole('tab', { name: /Only warn me/ })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /Pause workflows/ })).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: /Only warn me/ }));
     fireEvent.click(startBtn());
 
     await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());

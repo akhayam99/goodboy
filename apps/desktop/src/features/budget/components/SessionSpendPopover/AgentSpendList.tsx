@@ -16,7 +16,7 @@ export const AgentSpendList = ({ agents }: Props) => {
 
   return (
     <section aria-label="By agent" className="flex flex-col gap-2">
-      <span className="text-label font-medium text-foreground">By agent</span>
+      <span className="text-row text-foreground">By agent</span>
       {agents.length === 0 ? (
         <p className="text-secondary text-muted-foreground">No agent has spent anything yet.</p>
       ) : (

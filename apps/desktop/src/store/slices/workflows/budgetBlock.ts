@@ -9,6 +9,8 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
+const NO_BUDGETS: Readonly<Record<SessionId, SessionBudget>> = {};
+
 type MessageParams = {
   readonly limitUsd: number;
 };
@@ -42,12 +44,9 @@ export const sessionBudgetBlockAfterLoad = async ({
   sessionId,
 }: EnsureParams): Promise<BudgetAlert | null> => {
   const before = get();
-  const pending = sessionBudgetBlock({
-    alerts: before.budgetAlerts ?? [],
-    budgets: before.sessionBudgets,
-    sessionId,
-  });
-  if (pending === null || before.sessionBudgets[sessionId] !== undefined) {
+  const budgets = before.sessionBudgets ?? NO_BUDGETS;
+  const pending = sessionBudgetBlock({ alerts: before.budgetAlerts ?? [], budgets, sessionId });
+  if (pending === null || budgets[sessionId] !== undefined) {
     return pending;
   }
   await get()
@@ -56,7 +55,7 @@ export const sessionBudgetBlockAfterLoad = async ({
   const after = get();
   return sessionBudgetBlock({
     alerts: after.budgetAlerts ?? [],
-    budgets: after.sessionBudgets,
+    budgets: after.sessionBudgets ?? NO_BUDGETS,
     sessionId,
   });
 };

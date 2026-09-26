@@ -104,7 +104,7 @@ describe('isBudgetBlocked', () => {
 
   it('says the limit that paused the session', () => {
     expect(budgetBlockMessage({ limitUsd: 10 })).toBe(
-      'Paused at the $10 spend limit for this session.',
+      'Paused at the $10.00 spend limit for this session.',
     );
   });
 

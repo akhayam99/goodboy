@@ -43,10 +43,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'chrome',
   },
   'apps/desktop/src/features/budget/components/spend/CapEditor.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/budget/components/spend/SessionBudgetContent.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/chat/components/ChatInput/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/chat/components/ChatView/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/companion/components/CompanionStudio/index.tsx': {
@@ -119,10 +115,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectSyncControl.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionOverviewPane/SessionCostChip.tsx': {
-    count: 2,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterPanel/index.tsx':
