@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-
-export type TrailSegmentView = {
-  readonly isIconOnly: boolean;
-};
+import type { CrumbMenuModel } from './crumbMenuTypes';
 
 export type TrailSegmentModel = {
   readonly id: string;
@@ -13,6 +10,6 @@ export type TrailSegmentModel = {
   readonly glyph?: ReactNode;
   readonly accessory?: ReactNode;
   readonly onSelect?: () => void;
-  readonly render?: (view: TrailSegmentView) => ReactNode;
+  readonly menu?: CrumbMenuModel | null;
   readonly isPinned?: boolean;
 };

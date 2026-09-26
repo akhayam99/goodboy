@@ -192,7 +192,7 @@ export const SHORTCUTS = {
   'lens.plans': { combo: 'cmd+alt+KeyP', label: 'Artifacts', plane: 'lens', group: 'views' },
   'lens.scripts': { combo: 'cmd+alt+KeyS', label: 'Scripts', plane: 'lens', group: 'views' },
   'lens.terminal': { combo: 'cmd+alt+KeyT', label: 'Terminal', plane: 'lens', group: 'views' },
-  'lens.pr': { combo: 'cmd+alt+Digit1', label: 'Code host', plane: 'lens', group: 'views' },
+  'lens.pr': { combo: 'cmd+alt+Digit1', label: 'Pull request', plane: 'lens', group: 'views' },
   'lens.linear': { combo: 'cmd+alt+Digit2', label: 'Linear', plane: 'lens', group: 'views' },
   'lens.gitlab_issues': {
     combo: 'cmd+alt+Digit4',

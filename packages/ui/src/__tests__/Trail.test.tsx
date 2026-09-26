@@ -25,25 +25,19 @@ describe('Trail', () => {
     expect(onOverview).toHaveBeenCalledTimes(1);
   });
 
-  it('draws one chevron between segments and hands a segment its own render', () => {
+  it('draws one chevron between segments', () => {
     const { container } = render(
       <Trail
         lead={<span data-testid="lead" />}
         segments={[
           { id: 'overview', label: 'Overview', icon: Circle },
-          {
-            id: 'pages',
-            label: 'Pages',
-            icon: Circle,
-            render: () => <button type="button">Switch</button>,
-          },
+          { id: 'pages', label: 'Pages', icon: Circle },
           { id: 'run', label: 'Ship a fix', icon: Circle },
         ]}
       />,
     );
 
     expect(screen.getByTestId('lead')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Switch' })).toBeDefined();
     expect(container.querySelectorAll('[data-trail-segment]')).toHaveLength(3);
     expect(container.querySelectorAll('[data-trail-segment] > svg')).toHaveLength(2);
   });

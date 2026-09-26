@@ -31,6 +31,14 @@ export type { DrawerColumnProps } from './components/DrawerColumn';
 export { DrawerFrame } from './components/DrawerFrame';
 export { Trail } from './components/Trail';
 export type { TrailSegmentModel } from './components/Trail/types';
+export type {
+  CrumbLead,
+  CrumbMenuAction,
+  CrumbMenuGroup,
+  CrumbMenuModel,
+  CrumbMenuRow,
+  CrumbState,
+} from './components/Trail/crumbMenuTypes';
 export type { DrawerFrameProps } from './components/DrawerFrame';
 export type { AppShellProps } from './components/AppShell';
 export { Button } from './components/Button';

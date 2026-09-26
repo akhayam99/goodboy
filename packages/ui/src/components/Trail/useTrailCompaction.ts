@@ -54,7 +54,7 @@ export const useTrailCompaction = ({ segments, navRef, leadRef }: Params): Compa
   const states = compactTrail({
     fullWidths,
     iconWidths: segments.map((segment) =>
-      segment.render != null ? SWITCHER_ICON_WIDTH : ICON_WIDTH,
+      segment.menu != null ? SWITCHER_ICON_WIDTH : ICON_WIDTH,
     ),
     pinned: segments.map((segment) => segment.isPinned === true),
     separatorWidth: SEPARATOR_WIDTH,

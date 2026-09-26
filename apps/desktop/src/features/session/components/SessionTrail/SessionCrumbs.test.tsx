@@ -50,6 +50,7 @@ vi.mock('../../../../store', async () => ({
   }),
   useCurrentSession: () => h.currentSession,
   useSessionStageInfo: () => h.stage,
+  useSessionPlans: () => [],
   useSessionOpenQuestions: (id: SessionId) =>
     (h.state.sessionOpenQuestions as Record<string, ReadonlyArray<unknown>>)[id] ?? [],
 }));
@@ -160,8 +161,25 @@ const resetState = () => {
     agentTurnState: {},
     sessionBranches: { [SESSION_ID]: 'ak/feat-one' },
     sessionGithub: {},
-    phaseTemplates: { 'workspace-1': [{ id: 'workflow-1', name: 'refactor', steps: [] }] },
+    phaseTemplates: {
+      'workspace-1': [
+        {
+          id: 'workflow-1',
+          name: 'refactor',
+          steps: [
+            { id: 'step-1', name: 'workflow step', ordinal: 0 },
+            { id: 'step-2', name: 'workflow review', ordinal: 1 },
+          ],
+        },
+      ],
+    },
     sessionWorkflows: { [SESSION_ID]: [] },
+    focusedWorkflowRunId: {},
+    focusedArtifactId: {},
+    sessionArtifacts: {},
+    sessionProjectMounts: {},
+    sessionPlans: {},
+    cancelCurrentTurn: vi.fn(),
     navigate: h.navigate,
     setScriptsLensScope: h.setScriptsLensScope,
     setFocusedArtifactId: h.setFocusedArtifactId,
@@ -296,26 +314,31 @@ describe('SessionCrumbs', () => {
   it('turns the last crumb into a sibling switcher when peers exist in the same home', () => {
     renderCrumbs();
     const last = screen.getByRole('button', { name: /scout one/ });
-    expect(last.getAttribute('title')).toBe('scout one. Switch agent.');
+    expect(last.getAttribute('aria-haspopup')).toBe('menu');
 
     fireEvent.click(last);
     const menu = screen.getByRole('menu', { name: 'Switch agent' });
     expect(menu.textContent).toContain('implement two');
     expect(menu.textContent).not.toContain('workflow step');
 
-    fireEvent.click(screen.getByRole('menuitem', { name: /implement two/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /implement two/ }));
     expect(h.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId: SESSION_ID, agentId: implementer.id },
     });
   });
 
-  it('seals the last crumb when the selected agent has no peers in its home lens', () => {
+  it('keeps the menu on the last crumb even when the agent has no peer, with its own row', () => {
     h.state.sessionPhaseRuns = { [SESSION_ID]: [scout] };
     renderCrumbs();
 
-    expect(screen.queryByRole('button', { name: /scout one/ })).toBeNull();
-    const scoutSpan = screen.getByText('scout one');
-    expect(scoutSpan.getAttribute('aria-current')).toBe('page');
+    expect(screen.getByText('scout one').getAttribute('aria-current')).toBe('page');
+    fireEvent.click(screen.getByRole('button', { name: /scout one/ }));
+    const rows = within(screen.getByRole('menu', { name: 'Switch agent' })).getAllByRole(
+      'menuitemradio',
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('menuitem', { name: 'Start agent' })).toBeDefined();
   });
 
   it('gives the lens crumb the destination switcher when no agent is selected', () => {
@@ -327,8 +350,8 @@ describe('SessionCrumbs', () => {
     renderCrumbs();
 
     const last = screen.getByRole('button', { name: /Agents/ });
-    expect(last.getAttribute('title')).toBe('Agents. Switch page.');
-    expect(last.getAttribute('aria-current')).toBe('page');
+    expect(last.getAttribute('aria-haspopup')).toBe('menu');
+    expect(screen.getByText('Agents').getAttribute('aria-current')).toBe('page');
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
@@ -345,11 +368,13 @@ describe('SessionCrumbs', () => {
     expect(menu.textContent).toContain('Artifacts');
     expect(menu.textContent).toContain('Review');
     expect(menu.textContent).toContain('Scripts');
-    expect(within(menu).getByRole('menuitem', { name: /Agents/ }).className).toContain(
-      'bg-background',
-    );
+    expect(
+      within(menu)
+        .getByRole('menuitemradio', { name: /Agents/ })
+        .getAttribute('aria-checked'),
+    ).toBe('true');
 
-    fireEvent.click(within(menu).getByRole('menuitem', { name: /Review/ }));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Review/ }));
     expect(h.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
     });
@@ -366,11 +391,11 @@ describe('SessionCrumbs', () => {
     h.state.selectedAgentId = {};
     renderCrumbs();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Artifacts. Switch page.' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch page: Artifacts' }));
     expect(toPlans).not.toHaveBeenCalled();
 
     const menu = screen.getByRole('menu', { name: 'Switch page' });
-    fireEvent.click(within(menu).getByRole('menuitem', { name: /Questions/ }));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Questions/ }));
     expect(h.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: SESSION_ID, lens: 'questions' }),
     });
@@ -386,9 +411,9 @@ describe('SessionCrumbs', () => {
     h.state.selectedAgentId = {};
     renderCrumbs();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Artifacts. Switch page.' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch page: Artifacts' }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
-    fireEvent.click(within(menu).getByRole('menuitem', { name: /Artifacts/ }));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Artifacts/ }));
 
     expect(h.setFocusedArtifactId).toHaveBeenCalledWith(SESSION_ID, null);
     expect(h.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, null);
@@ -409,8 +434,8 @@ describe('SessionCrumbs', () => {
     fireEvent.click(screen.getByRole('button', { name: /Decisions/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
     const current = within(menu)
-      .getAllByRole('menuitem')
-      .filter((row) => row.getAttribute('aria-current') === 'page');
+      .getAllByRole('menuitemradio')
+      .filter((row) => row.getAttribute('aria-checked') === 'true');
 
     expect(current).toHaveLength(1);
     expect(current[0]?.textContent).toContain('Context');
@@ -429,8 +454,8 @@ describe('SessionCrumbs', () => {
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
     const current = within(menu)
-      .getAllByRole('menuitem')
-      .filter((row) => row.getAttribute('aria-current') === 'page');
+      .getAllByRole('menuitemradio')
+      .filter((row) => row.getAttribute('aria-checked') === 'true');
 
     expect(menu.textContent).not.toContain('Review');
     expect(current).toHaveLength(1);
@@ -447,7 +472,7 @@ describe('SessionCrumbs', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
-    fireEvent.click(within(menu).getByRole('menuitem', { name: /Overview/ }));
+    fireEvent.click(within(menu).getByRole('menuitemradio', { name: /Overview/ }));
 
     expect(h.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: SESSION_ID, lens: null }),
@@ -470,10 +495,12 @@ describe('SessionCrumbs', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
-    expect(within(menu).getByRole('menuitem', { name: /Questions/ }).textContent).toContain('2');
-    expect(within(menu).getByRole('menuitem', { name: /Artifacts/ }).textContent).not.toContain(
+    expect(within(menu).getByRole('menuitemradio', { name: /Questions/ }).textContent).toContain(
       '2',
     );
+    expect(
+      within(menu).getByRole('menuitemradio', { name: /Artifacts/ }).textContent,
+    ).not.toContain('2');
   });
 
   it('leaves answered questions out of the destination count', () => {
@@ -493,10 +520,12 @@ describe('SessionCrumbs', () => {
     fireEvent.click(screen.getByRole('button', { name: /Agents/ }));
     const menu = screen.getByRole('menu', { name: 'Switch page' });
 
-    expect(within(menu).getByRole('menuitem', { name: /Questions/ }).textContent).toContain('1');
-    expect(within(menu).getByRole('menuitem', { name: /Questions/ }).textContent).not.toContain(
-      '2',
+    expect(within(menu).getByRole('menuitemradio', { name: /Questions/ }).textContent).toContain(
+      '1',
     );
+    expect(
+      within(menu).getByRole('menuitemradio', { name: /Questions/ }).textContent,
+    ).not.toContain('2');
   });
 
   it('gives the lone overview crumb the destination switcher', () => {
@@ -529,11 +558,11 @@ describe('SessionCrumbs on a workflow step', () => {
     renderCrumbs();
 
     fireEvent.click(screen.getByRole('button', { name: /workflow step/ }));
-    const menu = screen.getByRole('menu', { name: 'Switch agent' });
+    const menu = screen.getByRole('menu', { name: 'Switch step' });
     expect(menu.textContent).toContain('workflow review');
     expect(menu.textContent).not.toContain('implement two');
 
-    fireEvent.click(screen.getByRole('menuitem', { name: /workflow review/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /workflow review/ }));
     expect(h.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId: SESSION_ID, agentId: laterWorkflowStep.id },
     });
@@ -567,13 +596,13 @@ describe('SessionCrumbs on a cluster child', () => {
     openClusterSurface();
     renderCrumbs();
 
-    fireEvent.click(screen.getByRole('button', { name: 'workflow step. Switch agent.' }));
-    const menu = screen.getByRole('menu', { name: 'Switch agent' });
+    fireEvent.click(screen.getByRole('button', { name: 'Switch step: workflow step' }));
+    const menu = screen.getByRole('menu', { name: 'Switch step' });
     expect(menu.textContent).toContain('workflow review');
     expect(menu.textContent).not.toContain('area beta');
     expect(menu.textContent).not.toContain('implement two');
 
-    fireEvent.click(screen.getByRole('menuitem', { name: /workflow review/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /workflow review/ }));
     expect(h.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId: SESSION_ID, agentId: laterWorkflowStep.id },
     });
@@ -590,7 +619,7 @@ describe('SessionCrumbs on a cluster child', () => {
     expect(menu.textContent).not.toContain('workflow review');
     expect(menu.textContent).not.toContain('implement two');
 
-    fireEvent.click(screen.getByRole('menuitem', { name: /area beta/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /area beta/ }));
     expect(h.navigate).toHaveBeenCalledWith({
       to: { at: 'agent', sessionId: SESSION_ID, agentId: clusterBeta.id },
     });
@@ -634,7 +663,7 @@ const openMenuAt = ({ top }: OpenAtParams): HTMLElement => {
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
   renderCrumbs();
   const trigger = screen.getByRole('button', { name: /scout one/ });
-  const container = trigger.parentElement as HTMLElement;
+  const container = trigger.closest('div.relative') as HTMLElement;
   container.getBoundingClientRect = () =>
     DOMRect.fromRect({ x: 16, y: top, width: 120, height: 20 });
 
@@ -661,7 +690,7 @@ describe('SessionCrumbs switcher popover', () => {
     const menu = screen.getByRole('menu', { name: 'Switch agent' });
 
     expect(menu.style.maxHeight).not.toBe('');
-    const viewport = menu.firstElementChild;
+    const viewport = menu.querySelector('[data-crumb-list]');
     expect(viewport?.className).toContain('overflow-y-auto');
     expect(viewport?.className).toContain('flex-1');
     expect(viewport?.className).not.toContain('max-h');

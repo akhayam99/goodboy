@@ -4,6 +4,7 @@ import { cn } from '../../cn';
 import type { TrailSegmentModel } from './types';
 import { TrailCrumb } from './TrailCrumb';
 import { TrailFold } from './TrailFold';
+import { CrumbMenuTrigger } from './CrumbMenuTrigger';
 import { useTrailCompaction } from './useTrailCompaction';
 
 type Props = {
@@ -56,8 +57,13 @@ export const Trail = ({ segments, lead, className }: Props) => {
               {hasSeparator ? (
                 <ChevronRight size={12} aria-hidden className="shrink-0 text-faint-foreground" />
               ) : null}
-              {segment.render != null ? (
-                segment.render({ isIconOnly })
+              {segment.menu != null ? (
+                <CrumbMenuTrigger
+                  segment={segment}
+                  menu={segment.menu}
+                  isCurrent={isCurrent}
+                  isIconOnly={isIconOnly}
+                />
               ) : (
                 <TrailCrumb
                   segment={segment}

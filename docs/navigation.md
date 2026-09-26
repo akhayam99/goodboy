@@ -287,16 +287,27 @@ one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
   you were, while the trail says where you are.
-- **A crumb with siblings is a switcher.** It is plain text when the agent is
-  alone in its home lens. Otherwise it is a popover that switches the open
-  agent in place.
-- **The depth-one crumb is the session's destination switcher.** It is the
-  lens crumb when the trail has one, or the `Overview` crumb when that crumb is
-  alone. It lists the session's own destinations, grouped by what they are
-  for. A count in that menu follows the rule below: it is the number the
-  destination itself lists, read from the same selector the destination reads.
-  Deeper crumbs never carry the switcher. No second persistent strip, tab bar
-  or rail carries it either.
+- **Segment menus.** Every segment that has siblings carries one `CrumbMenu`
+  (the `Trail` primitive in `@goodboy/ui`), and the rule is one: its menu lists
+  the siblings of what that segment names, plus at most two actions that belong
+  to that thing. The page segment (depth one, or `Overview` when it is alone)
+  lists the session's pages with a count that names what it counts (`3 need
+you`, `2 running`), grouped as pages, Tools and Linked; `Overview` has no menu
+  once it has children. A run lists the session's runs (Running, Finished, a
+  chained run indented under its own with `after ...`); a step lists every step
+  of its run in order, the ones not started switched off; an agent lists the
+  agents of the same home grouped Needs you, Running, Done, newest first; an
+  artifact lists the session's artifacts by kind. Every row has five slots:
+  lead, label with a faint second part, meta, a state that is always a word
+  (from `agentStateWord`, the same reading `isAgentFinished` makes), and a
+  check on the current row, which is there even when it is the only row. The
+  last segment opens its menu from the whole segment and always shows the
+  chevron; an ancestor goes up by its name and shows its chevron on hover.
+  Widths are 300 (pages), 380 (runs, steps, agents, artifacts) and 460
+  (branches); a filter appears from nine rows up. An action that breaks
+  something (Stop this step) confirms inside the menu's action band with
+  `InlineConfirm`; Escape cancels the confirm first, then closes. Shortcuts live
+  in the segment tooltip and the palette, never in the rows.
 - **The workflow case extends the same control**:
   `Overview > Workflows > {Run} > {Step}`. A delegated child names its root and
   parent agents between the run and itself, and an open question it answers

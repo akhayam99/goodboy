@@ -615,6 +615,15 @@ width: the column changes only when the window changes or the right drawer
 opens. `PANE_RHYTHM.hero` (640px) is only for the content of an empty state.
 [docs/styling.md](../../docs/styling.md) owns the column rules.
 
+**Crumb menus.** Every trail segment with siblings opens one `CrumbMenu`: a
+`floating` popover, radius 8, `border-soft`, 4px padding, a 26px heading
+(`Steps · Ship a fix`, count on the right), rows of 30px with five fixed slots
+(20px lead, 12px label with an 11px faint second part, fixed-width tabular
+meta, a state word with its dot or glyph, a 14px check on the current row on
+`overlay-selected`), and an action band on `fill` under the list with at most
+two 28px rows. Widths are 300, 380 and 460. It opens in 120ms (opacity and a
+4px drop) and closes without motion.
+
 ## Action zones
 
 Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action-zones). The slots that carry it:
@@ -769,7 +778,7 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 Seven animations, one meaning each. Transition keyframes (`fade-in`,
 `nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
-`layer-out`, `trail-crumb-in`) move content between states and sit outside the
+`layer-out`, `trail-crumb-in`, `crumb-menu-in`) move content between states and sit outside the
 registry. The `Trail` closes a crumb label with `grid-template-columns` from
 `1fr` to `0fr` (220ms, `cubic-bezier(0.2, 0, 0, 1)`, 40ms cascade), the same
 trick as `Reveal` on the other axis.
