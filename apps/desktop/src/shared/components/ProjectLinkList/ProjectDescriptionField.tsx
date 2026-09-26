@@ -1,6 +1,5 @@
 import { useState, type KeyboardEvent } from 'react';
 import type { Project } from '@goodboy/types';
-import { FOCUS_RING, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 
 type Props = {
@@ -9,24 +8,28 @@ type Props = {
 };
 
 const DESCRIPTION_MAX_LENGTH = 120;
+const COUNTER_THRESHOLD = 20;
+const SAVED_FEEDBACK_MS = 1500;
 
 export const ProjectDescriptionField = ({ project, busy }: Props) => {
   const describeProject = useAppStore((state) => state.describeProject);
   const reportError = useAppStore((state) => state.reportError);
-  const [draft, setDraft] = useState<string | null>(null);
   const description = project.description ?? '';
+  const [draft, setDraft] = useState(description);
+  const [showSaved, setShowSaved] = useState(false);
+  const remaining = DESCRIPTION_MAX_LENGTH - draft.length;
   const label = `Description of ${project.name}`;
 
   const save = async () => {
-    if (draft === null) {
-      return;
-    }
-    setDraft(null);
-    if (draft.trim() === description) {
+    const trimmed = draft.trim();
+    setDraft(trimmed);
+    if (trimmed === description) {
       return;
     }
     try {
-      await describeProject({ projectId: project.id, description: draft });
+      await describeProject({ projectId: project.id, description: trimmed });
+      setShowSaved(true);
+      window.setTimeout(() => setShowSaved(false), SAVED_FEEDBACK_MS);
     } catch (error) {
       void reportError({ title: `Couldn't save the description of ${project.name}`, error });
     }
@@ -41,46 +44,29 @@ export const ProjectDescriptionField = ({ project, busy }: Props) => {
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
-      setDraft(null);
+      setDraft(description);
     }
   };
 
-  if (draft !== null) {
-    return (
+  return (
+    <div className="flex flex-col gap-1">
       <input
         type="text"
         value={draft}
         aria-label={label}
         maxLength={DESCRIPTION_MAX_LENGTH}
         placeholder="Add a one-line description"
-        autoFocus
+        disabled={busy}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => void save()}
         onKeyDown={onKeyDown}
-        className="h-6 min-w-0 flex-1 rounded-sm border border-border-soft bg-transparent px-1.5 text-label text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
+        className="h-8 min-w-0 rounded-md border border-border-soft bg-background px-2 text-row text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
       />
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      aria-label={
-        description === ''
-          ? `Add a description of ${project.name}`
-          : `Edit the description of ${project.name}`
-      }
-      disabled={busy}
-      onClick={() => setDraft(description)}
-      className={cn(
-        'min-w-0 flex-1 truncate rounded-sm px-1 text-left text-label',
-        description === ''
-          ? 'text-faint-foreground hover:text-muted-foreground'
-          : 'text-muted-foreground hover:text-foreground',
-        FOCUS_RING,
-      )}
-    >
-      {description === '' ? 'Add a one-line description' : description}
-    </button>
+      <div className="flex items-center gap-2 text-label text-faint-foreground">
+        <span className="flex-1">Every agent reads this next to the project name.</span>
+        {showSaved ? <span className="text-success">Saved</span> : null}
+        {remaining <= COUNTER_THRESHOLD ? <span>{remaining}</span> : null}
+      </div>
+    </div>
   );
 };

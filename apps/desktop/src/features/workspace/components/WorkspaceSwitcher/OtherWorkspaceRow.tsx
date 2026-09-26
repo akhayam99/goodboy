@@ -1,5 +1,5 @@
 import { AppWindow } from 'lucide-react';
-import { Chip, KbdPill, cn } from '@goodboy/ui';
+import { Chip, KbdPill, Tooltip, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
@@ -62,15 +62,16 @@ export const OtherWorkspaceRow = ({ workspace, highlighted, onOpen, onOpenNewWin
         Open
         <KbdPill>↵</KbdPill>
       </button>
-      <button
-        type="button"
-        onClick={onOpenNewWindow}
-        aria-label="Open in new window"
-        title="Open in new window (⌘↵)"
-        className="hidden shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:block group-hover:block"
-      >
-        <AppWindow size={ICON_SIZE.row} aria-hidden />
-      </button>
+      <Tooltip content="Open in new window (⌘↵)">
+        <button
+          type="button"
+          onClick={onOpenNewWindow}
+          aria-label="Open in new window"
+          className="hidden shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:block group-hover:block"
+        >
+          <AppWindow size={ICON_SIZE.row} aria-hidden />
+        </button>
+      </Tooltip>
     </div>
   );
 };

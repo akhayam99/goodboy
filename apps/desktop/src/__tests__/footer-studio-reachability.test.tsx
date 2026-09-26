@@ -401,13 +401,13 @@ describe('No workspace yet', () => {
 });
 
 describe('Footer to settings and Goodboy chip reachability', () => {
-  it('opens settings on the current workspace from the footer settings launcher', () => {
+  it('opens settings on App even with a workspace open, from the footer settings launcher', () => {
     render(<App />);
 
     expect(screen.queryByTestId('settings-studio')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
 
-    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('workspace');
+    expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('app');
   });
 
   it('opens the shortcuts list from the Goodboy chip', () => {

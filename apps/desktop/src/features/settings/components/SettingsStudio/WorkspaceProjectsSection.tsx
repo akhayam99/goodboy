@@ -5,7 +5,6 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import { GoodboyIgnoreCard } from '../../../workspace/components/GoodboyIgnoreCard';
 import { GoodboyIgnoreField } from './GoodboyIgnoreField';
-import { ProjectBaseBranchInput } from './ProjectBaseBranchInput';
 import { Eyebrow } from '@goodboy/ui';
 
 type Props = {
@@ -29,13 +28,8 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
           </h2>
         )}
         emptyHint="No projects linked yet. Add a repository or a folder."
-        rowAccessory={({ project }) =>
-          project.kind === 'repo' && (
-            <span className="flex items-center gap-2">
-              <ProjectBaseBranchInput project={project} />
-              <GoodboyIgnoreField project={project} />
-            </span>
-          )
+        editorExtra={({ project }) =>
+          project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null
         }
       />
       {hasProjects && (

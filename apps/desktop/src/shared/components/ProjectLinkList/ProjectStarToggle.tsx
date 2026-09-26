@@ -29,7 +29,10 @@ export const ProjectStarToggle = ({ project, busy }: Props) => {
         aria-label={`Starred: ${project.name}`}
         aria-pressed={isStarred}
         disabled={busy}
-        onClick={() => void toggle()}
+        onClick={(event) => {
+          event.stopPropagation();
+          void toggle();
+        }}
         className={cn(
           'inline-flex size-6 items-center justify-center rounded-md hover:bg-hover disabled:opacity-50',
           isStarred ? 'text-warning' : 'text-faint-foreground hover:text-foreground',
