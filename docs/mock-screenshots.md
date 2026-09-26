@@ -234,6 +234,9 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   `image=<name>` on the entry. `changelogImageBudget.test.ts` then checks
   names, complete dark/light pairs, that a `before` has a matching `after`,
   at most 3 images and 1 MB per release, and no orphan file.
-- **Never retroactive.** Do not add pictures to a release that already
-  shipped, and never capture today's app under an old entry's name: the
-  picture would show a screen the release never had.
+- **Retroactive from the release's own code.** A release that already
+  shipped can gain pictures, but never capture today's app under an old
+  entry's name: the picture would show a screen the release never had.
+  Capture `-after-` from a checkout of that release's tag and `-before-`
+  from the previous release's tag. The app loads pictures from `main` first
+  and falls back to the tag, so files committed after the tag still show.

@@ -143,9 +143,13 @@ pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
 - `image=<name>` names a before/after pair in
   `docs/changelog/<version>/<name>-{before,after}-{dark,light}.webp`, captured
   with `scripts/changelog-shots.mjs` from a mock scene's `[data-shot]`
-  element (`docs/mock-screenshots.md`, "Pictures for the changelog"). A New
-  entry only ever gets an `after` pair: no images for versions before the one
-  that first carries a picture. The app renders it as a 16:10 frame with a
+  element (`docs/mock-screenshots.md`, "Pictures for the changelog"). A
+  brand-new screen only ever gets an `after` pair. A release that already
+  shipped can gain pictures later, in the same folder and under the same
+  caps. The app fetches each file from `main` at
+  `docs/changelog/<version>/<file>` first, then from the release tag
+  `v<version>` when `main` fails, so a picture committed after the tag still
+  shows. The app renders it as a 16:10 frame with a
   Before/After switch when both exist, and shows nothing when the picture is
   missing, offline, or unreadable. `scripts/release-notes.mjs` expands it into
   a `<picture>` under the entry when it builds the tagged release's GitHub
