@@ -105,6 +105,9 @@ export const SessionDiffPane = ({
   const emitNotification = useAppStore((s) => s.emitNotification);
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;
+  const diffMount = useAppStore(
+    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath }) ?? null,
+  );
   const mountName = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountName ?? null,
   );
@@ -150,7 +153,7 @@ export const SessionDiffPane = ({
   const ahead = mainDistance === null ? null : distanceAhead({ distance: mainDistance });
   const behind = mainDistance === null ? null : distanceBehind({ distance: mainDistance });
 
-  const branchState = branchStateOf({ status: diff.status });
+  const branchState = branchStateOf({ status: diff.status, mount: diffMount });
   const meta = (
     <span className="flex flex-wrap items-center gap-1.5">
       {mountName !== null ? <span>{mountName}</span> : null}

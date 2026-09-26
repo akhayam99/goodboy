@@ -19,7 +19,6 @@
         "src/features/companion/mobileConfinement.ts": ["exports"],
         "src/features/session/hooks/useWorktreeStatuses/cache.ts": ["exports"],
         "src/features/suggestions/nextStepGates.ts": ["exports"],
-        "src/shared/lib/branchPresence.ts": ["exports"],
         "src/store/slices/artifacts/artifactScoutRun.ts": ["exports"],
         "src/store/slices/open-questions/resolveQuestionDelegate.ts": ["exports"],
         "src/store/slices/project-mounts/mountRecoveryGuard.ts": ["exports"],

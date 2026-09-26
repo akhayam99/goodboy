@@ -335,8 +335,9 @@ activity yet show the plain overview with its actions.
   artifact. An attempt offers no `Resolve again`: a new attempt needs the
   instruction the Review page asks for.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
-  lists the session's branches by repo with one state word each (`Local only`,
-  `Behind main by N`, `On origin`) and `All branches in Overview`. It never
+  lists the session's branches by repo with one state word each, the first
+  that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
+N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
 - **The resolver's page reads Review, the comment, Agent.** The comment segment
   (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones

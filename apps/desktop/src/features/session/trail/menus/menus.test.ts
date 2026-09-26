@@ -256,11 +256,24 @@ describe('artifactMenu', () => {
 
 describe('branchMenu', () => {
   const mount = (repo: string, branch: string, path: string) =>
-    ({ mountName: repo, branch, worktreePath: path }) as unknown as SessionProjectMount;
-  const status = (upstream: string | null, behind: number) =>
     ({
+      mountName: repo,
+      branch,
+      worktreePath: path,
+      repoRoot: `/repos/${repo}`,
+      baseBranch: 'main',
+    }) as unknown as SessionProjectMount;
+  const status = (upstream: string | null, behind: number, ahead = 1) =>
+    ({
+      branch: upstream?.replace('origin/', '') ?? 'local',
       upstream,
-      mainDistance: { kind: 'known', ahead: 1, behind },
+      upstreamDistance:
+        upstream === null
+          ? { kind: 'unknown', reason: 'no-upstream' }
+          : { kind: 'known', ahead: 0, behind: 0 },
+      mainDistance: { kind: 'known', ahead, behind },
+      workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+      inProgress: null,
     }) as unknown as WorktreeStatus;
 
   it('groups the session branches by repo with one state word each', () => {
@@ -294,6 +307,34 @@ describe('branchMenu', () => {
     ]);
     expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
     expect(menu.width).toBe('wide');
+  });
+
+  it('puts merged and gone on origin above every other word', () => {
+    const mounts = [
+      mount('ledger-core', 'fix/ledger-backfill', '/w/merged'),
+      mount('ledger-core', 'fix/ledger-rounding', '/w/gone'),
+    ];
+    const gone = {
+      ...status('origin/fix/ledger-rounding', 3),
+      upstreamDistance: { kind: 'unknown', reason: 'upstream-gone' },
+    } as unknown as WorktreeStatus;
+    const statuses = new Map([
+      ['/w/merged', status('origin/fix/ledger-backfill', 2, 0)],
+      ['/w/gone', gone],
+    ]);
+    const menu = branchMenu({
+      mounts,
+      currentPath: null,
+      statOf: () => null,
+      statusOf: (candidate) => statuses.get(candidate.worktreePath) ?? null,
+      actions: [],
+      onSelect: vi.fn(),
+    });
+
+    expect(rowsOf(menu).map((row) => [row.state?.word, row.state?.tone])).toEqual([
+      ['Merged', 'merged'],
+      ['Gone on origin', 'danger'],
+    ]);
   });
 
   it('keeps the menu with a single branch', () => {

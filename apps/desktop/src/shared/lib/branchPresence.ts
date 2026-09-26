@@ -106,18 +106,19 @@ type PriorityParams = {
   readonly main: MainPresence;
 };
 
-export const branchPriorityWordOf = ({ presence, main }: PriorityParams): string => {
-  if (presence.kind === 'merged') {
-    return 'Merged';
-  }
-  if (presence.kind === 'gone-on-origin') {
-    return 'Gone on origin';
-  }
-  if (presence.kind === 'local-only') {
-    return 'Local only';
+export type BranchPriorityKind = BranchPresenceKind | 'behind-main';
+
+export type BranchPriority = {
+  readonly kind: BranchPriorityKind;
+  readonly word: string;
+};
+
+export const branchPriorityOf = ({ presence, main }: PriorityParams): BranchPriority => {
+  if (presence.kind !== 'on-origin') {
+    return { kind: presence.kind, word: presence.label };
   }
   if (main.kind === 'behind-main') {
-    return main.label;
+    return { kind: 'behind-main', word: main.label };
   }
-  return 'On origin';
+  return { kind: 'on-origin', word: presence.label };
 };

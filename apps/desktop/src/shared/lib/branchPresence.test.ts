@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { WorktreeStatus } from '@goodboy/types';
 import {
   branchPresenceOf,
-  branchPriorityWordOf,
+  branchPriorityOf,
   isBranchMergedOf,
   mainPresenceOf,
 } from './branchPresence';
@@ -116,12 +116,12 @@ describe('mainPresenceOf', () => {
   });
 });
 
-describe('branchPriorityWordOf', () => {
+describe('branchPriorityOf', () => {
   it('orders merged above everything else', () => {
     const presence = branchPresenceOf({ status: statusOf(), isMerged: true });
     const main = mainPresenceOf({ status: statusOf(), isRebasingAgent: false });
 
-    expect(branchPriorityWordOf({ presence, main })).toBe('Merged');
+    expect(branchPriorityOf({ presence, main }).word).toBe('Merged');
   });
 
   it('orders gone on origin above local only and behind main', () => {
@@ -129,7 +129,7 @@ describe('branchPriorityWordOf', () => {
     const presence = branchPresenceOf({ status, isMerged: false });
     const main = mainPresenceOf({ status, isRebasingAgent: false });
 
-    expect(branchPriorityWordOf({ presence, main })).toBe('Gone on origin');
+    expect(branchPriorityOf({ presence, main }).word).toBe('Gone on origin');
   });
 
   it('orders local only above behind main by N', () => {
@@ -141,21 +141,21 @@ describe('branchPriorityWordOf', () => {
     const presence = branchPresenceOf({ status, isMerged: false });
     const main = mainPresenceOf({ status, isRebasingAgent: false });
 
-    expect(branchPriorityWordOf({ presence, main })).toBe('Local only');
+    expect(branchPriorityOf({ presence, main }).word).toBe('Local only');
   });
 
   it('falls back to behind main by N, then on origin', () => {
     const behind = statusOf({ mainDistance: { kind: 'known', ahead: 0, behind: 5 } });
     const presenceBehind = branchPresenceOf({ status: behind, isMerged: false });
     const mainBehind = mainPresenceOf({ status: behind, isRebasingAgent: false });
-    expect(branchPriorityWordOf({ presence: presenceBehind, main: mainBehind })).toBe(
+    expect(branchPriorityOf({ presence: presenceBehind, main: mainBehind }).word).toBe(
       'Behind main by 5',
     );
 
     const upToDate = statusOf();
     const presenceUpToDate = branchPresenceOf({ status: upToDate, isMerged: false });
     const mainUpToDate = mainPresenceOf({ status: upToDate, isRebasingAgent: false });
-    expect(branchPriorityWordOf({ presence: presenceUpToDate, main: mainUpToDate })).toBe(
+    expect(branchPriorityOf({ presence: presenceUpToDate, main: mainUpToDate }).word).toBe(
       'On origin',
     );
   });
