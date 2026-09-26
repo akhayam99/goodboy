@@ -12,6 +12,9 @@ import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { deriveNextSteps, type SuggestionRebaseRequest } from '../deriveNextSteps';
 import { eligibleReviewThreadCount } from '../eligibleThreads';
 import { toMountEvents } from '../../../store/materializationProposals';
+import { useNextStepOutcomes } from '../useNextStepOutcomes';
+import { shouldDemote } from '../nextStepGates';
+import { SUGGESTION_KINDS, type SuggestionKind } from '../types';
 
 type Params = {
   readonly session: Session;
@@ -123,6 +126,17 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     [projects, rebaseMounts, withRebase],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets });
+  const outcomes = useNextStepOutcomes({ sessionId });
+  const demotedKinds = useMemo(() => {
+    const now = () => Date.now();
+    const demoted = new Set<SuggestionKind>();
+    for (const kind of SUGGESTION_KINDS) {
+      if (shouldDemote({ kind, outcomes, now })) {
+        demoted.add(kind);
+      }
+    }
+    return demoted;
+  }, [outcomes]);
 
   return useMemo(() => {
     const consumedPlanIds = new Set<PlanId>();
@@ -205,12 +219,14 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
             };
           })
         : [],
+      demotedKinds,
     });
   }, [
     active,
     advanceByRunId,
     agentsByRunId,
     attachedRuns,
+    demotedKinds,
     effectiveAgents,
     events,
     github,

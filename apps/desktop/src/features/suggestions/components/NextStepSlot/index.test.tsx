@@ -5,12 +5,13 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { Session } from '@goodboy/types';
 import type { SessionSuggestion } from '../../types';
 
-const { suggestionState } = vi.hoisted(() => ({
+const { suggestionState, recordNextStepOutcome } = vi.hoisted(() => ({
   suggestionState: {
     list: [] as ReadonlyArray<SessionSuggestion>,
     onAct: vi.fn(),
     onDismiss: vi.fn(),
   },
+  recordNextStepOutcome: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -34,6 +35,7 @@ vi.mock('../../useSuggestionActions', () => ({
         suggestion.kind === 'mount-project' ? () => suggestionState.onDismiss(suggestion.id) : null,
     }),
 }));
+vi.mock('../../useNextStepOutcomes', () => ({ recordNextStepOutcome }));
 
 import { NextStepSlot } from './index';
 
@@ -42,6 +44,7 @@ afterEach(() => {
   suggestionState.list = [];
   suggestionState.onAct.mockReset();
   suggestionState.onDismiss.mockReset();
+  recordNextStepOutcome.mockReset();
 });
 
 const SESSION = { id: 'session-1', workspaceId: 'ws-1' } as unknown as Session;
@@ -79,6 +82,11 @@ describe('NextStepSlot', () => {
     render(<NextStepSlot session={SESSION} />);
     fireEvent.click(screen.getByRole('button', { name: 'Act on answer-questions:session-1' }));
     expect(suggestionState.onAct).toHaveBeenCalledWith('answer-questions:session-1');
+    expect(recordNextStepOutcome).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      kind: 'answer-questions',
+      outcome: 'accepted',
+    });
   });
 
   it('collapses the rest behind "N more" until expanded', () => {
@@ -103,5 +111,10 @@ describe('NextStepSlot', () => {
     fireEvent.click(screen.getByText('Not now'));
     expect(suggestionState.onDismiss).toHaveBeenCalledWith('mount-project:1');
     expect(screen.queryByText('Add web')).toBeNull();
+    expect(recordNextStepOutcome).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      kind: 'mount-project',
+      outcome: 'dismissed',
+    });
   });
 });

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { useSessionSuggestions } from '../../useSessionSuggestions';
-import { useSuggestionActions } from '../../useSuggestionActions';
+import { useSuggestionActions, type SuggestionActions } from '../../useSuggestionActions';
+import { recordNextStepOutcome } from '../../useNextStepOutcomes';
+import type { SessionSuggestion } from '../../types';
 import { NextStepRow } from './NextStepRow';
 
 type Props = {
@@ -28,17 +30,35 @@ export const NextStepSlot = ({ session }: Props) => {
     return null;
   }
 
-  const onNotNow = (id: string) => {
-    setNotNowIds((current) => new Set([...current, id]));
+  const onNotNow = (suggestion: SessionSuggestion) => {
+    setNotNowIds((current) => new Set([...current, suggestion.id]));
+    void recordNextStepOutcome({ sessionId, kind: suggestion.kind, outcome: 'dismissed' });
+  };
+
+  const trackedActions = (suggestion: SessionSuggestion): SuggestionActions => {
+    const actions = actionsFor({ suggestion });
+    if (actions.primary === null) {
+      return actions;
+    }
+    return {
+      ...actions,
+      primary: {
+        ...actions.primary,
+        onAct: () => {
+          void recordNextStepOutcome({ sessionId, kind: suggestion.kind, outcome: 'accepted' });
+          actions.primary?.onAct();
+        },
+      },
+    };
   };
 
   return (
     <div className="flex flex-col gap-1">
       <NextStepRow
         suggestion={first}
-        actions={actionsFor({ suggestion: first })}
+        actions={trackedActions(first)}
         compact={false}
-        onNotNow={() => onNotNow(first.id)}
+        onNotNow={() => onNotNow(first)}
       />
       {rest.length > 0 && !expanded && (
         <button
@@ -54,9 +74,9 @@ export const NextStepSlot = ({ session }: Props) => {
           <NextStepRow
             key={suggestion.id}
             suggestion={suggestion}
-            actions={actionsFor({ suggestion })}
+            actions={trackedActions(suggestion)}
             compact
-            onNotNow={() => onNotNow(suggestion.id)}
+            onNotNow={() => onNotNow(suggestion)}
           />
         ))}
     </div>

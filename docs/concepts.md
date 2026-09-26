@@ -239,10 +239,12 @@ whether you clicked it on the board or in the session overview.
   whichever has the lower band number.
 - A suggestion you acted on does not come back for the same fingerprint;
   "Not now" is scoped the same way. Three "Not now" on the same kind inside
-  a workspace in 14 days, with no acceptance between them, moves that kind
+  a session in 14 days, with no acceptance between them, moves that kind
   behind everything else instead of leading (`shouldDemote`,
   `nextStepGates.ts`): the only learning this engine does, and it resets
-  the moment one of that kind is accepted.
+  the moment one of that kind is accepted. Every act or dismiss writes a
+  `next:<kind>` row to `nudge_events` (`useNextStepOutcomes`); the demotion
+  window reads the session's own history, not the workspace's.
 - Six suggestion kinds ship today: answer open questions, continue a
   workflow's ready step, fix review conversations, rebase a project, run a
   ready plan, add a proposed project. Eleven more (approve a permission,
