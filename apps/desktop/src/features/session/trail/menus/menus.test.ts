@@ -49,7 +49,9 @@ const stateOf = (candidate: Agent): AgentStateWord =>
 const everyMenuInvariant = (menu: CrumbMenuModel) => {
   const rows = rowsOf(menu);
   expect(rows.every((row) => row.lead != null)).toBe(true);
+  expect(rows.every((row) => row.label.trim() !== '')).toBe(true);
   expect(rows.every((row) => row.state === null || row.state.word !== '')).toBe(true);
+  expect(rows.filter((row) => row.isCurrent).length).toBeLessThanOrEqual(1);
   expect(menu.actions.length).toBeLessThanOrEqual(2);
 };
 
