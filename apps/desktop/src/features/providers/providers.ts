@@ -116,10 +116,13 @@ function connectionFromDetectionAndAuth(
   return 'connected';
 }
 
+const OPENCODE_FREE_MODELS_IDENTITY = 'Free models';
+
 function providerInfoFromStatus(
   id: ProviderId,
   status: ProviderStatus | null,
   auth: AuthState | null,
+  hasCredential: boolean,
 ): ProviderDisplayInfo {
   const base = {
     id,
@@ -146,6 +149,18 @@ function providerInfoFromStatus(
   }
   if (!status.available) {
     return { ...base, connection: 'missing', version: null, error: status.error ?? null };
+  }
+  if (id === 'opencode') {
+    return {
+      ...base,
+      identity: auth?.identity ?? OPENCODE_FREE_MODELS_IDENTITY,
+      connection: 'connected',
+      version: status.version,
+      error: null,
+    };
+  }
+  if (id === 'gemini' && hasCredential) {
+    return { ...base, connection: 'connected', version: status.version, error: null };
   }
   const connection = connectionFromDetectionAndAuth(status.available, status.error, auth);
   return { ...base, connection, version: status.version, error: null };
@@ -204,6 +219,11 @@ export const buildProviderList = (
         hasCredential: credentialProviderIds.has(id),
       });
     }
-    return providerInfoFromStatus(id, statuses[id], auth?.[id] ?? null);
+    return providerInfoFromStatus(
+      id,
+      statuses[id],
+      auth?.[id] ?? null,
+      credentialProviderIds.has(id),
+    );
   });
 };

@@ -109,3 +109,66 @@ describe('undetected providers', () => {
     expect(cursor?.connection).toBe('missing');
   });
 });
+
+describe('OpenCode provider connection', () => {
+  it('counts as connected once installed, with no account needed for the free models', () => {
+    const providers = buildProviderList(statusesFor({ available: true }));
+    const opencode = providers.find((provider) => provider.id === 'opencode');
+    expect(opencode?.connection).toBe('connected');
+    expect(opencode?.identity).toBe('Free models');
+  });
+
+  it('keeps a real signed-in identity when opencode has one', () => {
+    const providers = buildProviderList(statusesFor({ available: true }), {
+      opencode: { state: 'connected', identity: 'jane@example.com' },
+    });
+    const opencode = providers.find((provider) => provider.id === 'opencode');
+    expect(opencode?.connection).toBe('connected');
+    expect(opencode?.identity).toBe('jane@example.com');
+  });
+
+  it('is missing when opencode is not installed', () => {
+    const providers = buildProviderList(statusesFor({ available: false }));
+    const opencode = providers.find((provider) => provider.id === 'opencode');
+    expect(opencode?.connection).toBe('missing');
+  });
+});
+
+describe('Gemini provider connection', () => {
+  it('counts a saved API key as connected even with no Antigravity sign-in', () => {
+    const providers = buildProviderList(
+      {
+        ...statusesFor({ available: true }),
+        gemini: { id: 'gemini', binary: 'agy', available: true, version: '1.0.0', error: null },
+      },
+      { gemini: { state: 'disconnected', identity: null } },
+      new Set<ProviderId>(['gemini']),
+    );
+    const gemini = providers.find((provider) => provider.id === 'gemini');
+    expect(gemini?.connection).toBe('connected');
+  });
+
+  it('stays disconnected with no key and no Antigravity sign-in', () => {
+    const providers = buildProviderList(
+      {
+        ...statusesFor({ available: true }),
+        gemini: { id: 'gemini', binary: 'agy', available: true, version: '1.0.0', error: null },
+      },
+      { gemini: { state: 'disconnected', identity: null } },
+    );
+    const gemini = providers.find((provider) => provider.id === 'gemini');
+    expect(gemini?.connection).toBe('installed_disconnected');
+  });
+
+  it('an Antigravity sign-in alone still counts as connected without a key', () => {
+    const providers = buildProviderList(
+      {
+        ...statusesFor({ available: true }),
+        gemini: { id: 'gemini', binary: 'agy', available: true, version: '1.0.0', error: null },
+      },
+      { gemini: { state: 'connected', identity: 'a@example.com' } },
+    );
+    const gemini = providers.find((provider) => provider.id === 'gemini');
+    expect(gemini?.connection).toBe('connected');
+  });
+});
