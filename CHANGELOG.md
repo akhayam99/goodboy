@@ -12,6 +12,82 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.9.0
+
+Starting a session now walks you through setup, every provider gets one settings page, and Goodboy scans saved scripts for secrets before they ship.
+
+This version updates your data in one direction. To go back to 0.8, restore the backup Goodboy made before updating.
+
+### New
+
+#### Start a session with a guided walkthrough
+<!-- gb area=sessions -->
+
+A new session now opens as a wizard: connect a provider, pick a project and code host, add your first tasks, and start the first agent. The footer's Goodboy chip stays out of the way until that first agent finishes.
+
+Picking up a task, running a workflow, or asking an agent all start the same way, from one draft. A title Goodboy chose for you carries a quiet marker until you rename it.
+
+#### Goodboy warns you before a secret ships
+<!-- gb area=app -->
+
+Saving a script now scans it for tokens and keys, and a new Security findings page under App lists what it found. Dismiss a match that is not a secret, or flag it again if you change your mind.
+
+#### Eleven new things Next can ask you to do
+<!-- gb area=sessions -->
+
+Next now covers approving a change, signing in, unlocking a step, retrying, watching CI, pushing, opening a pull request, marking a plan ready, merging, reviewing, and closing a worktree.
+
+Starting a turn offers three quick choices plus a composer for asking a specific agent by role and model, and a workflow form works the same wherever you run it.
+
+### Improved
+
+#### One page per provider
+<!-- gb area=providers screen=settings/providers -->
+
+Every provider now lives on one page with its usage, models, permissions and account in clearly separated groups. Connecting Linear, Jira or Sentry walks you through numbered steps instead of one bare form, and Sentry can link more than one project per workspace.
+
+Codex reads its usage straight from its own app server, and a free reset is one click from the provider page when Codex offers one.
+
+#### A property list for every linked tool
+<!-- gb area=integrations screen=settings/tools -->
+
+Linear, Jira, Sentry, Slack, GitHub and GitLab items in Review and Inbox now show the same label and value list, with a byline naming who opened it and when instead of scattered facts. Opening one no longer jumps as it loads.
+
+#### Tool calls, turns and the composer, redesigned
+<!-- gb area=sessions -->
+
+A tool call now shows its real state, running, waiting on you, stopped or denied, instead of one generic spinner. Every turn ends with a footer naming its provider, model and cost, with the full breakdown one click away.
+
+The message field grew a single plus menu for attaching files, running a script, starting a workflow or asking another agent, replacing the separate buttons that used to sit around it.
+
+#### Release notes you can search, downloaded ahead of time
+<!-- gb area=app -->
+
+Release notes now ship inside the app and open instantly, searchable by area, instead of loading from the network. An update downloads in the background as soon as Goodboy finds one, and a card tells you what changed once it is ready to restart into.
+
+#### Check on your repos before Goodboy tells you they're fine
+<!-- gb area=sessions -->
+
+The Projects block now fetches every repo when you open it, tells you how many are behind, uncommitted or diverged, and updates all of them at once. A branch says plainly whether it only exists locally, is gone on origin, or is ahead of main, and a session sharing a branch with another one points you to it.
+
+#### A project list that scales past twenty
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Workspace settings now handles a long project list: star the ones you use, rename one inline, and see its actions without opening anything. Storage shows the space each workspace uses and the total on your machine, and a merged branch only counts as safe to delete once no one has picked it back up.
+
+The Settings rail also says what to expect on each page before you open it, instead of scanning first.
+
+#### Keep .goodboy out of git without asking twice
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Goodboy now checks whether git already ignores .goodboy before asking you to hide it, so a project that is already covered by a global or repository rule is left alone. Where it still needs an answer, it asks once per project: existing rule, this Mac, this project, or every project.
+
+### Fixed
+
+- Linear links and the diff pane in Review no longer loop endlessly when a linked pull request or mounted project changes. <!-- gb area=inbox -->
+- The page crumb menu row shows its label again. <!-- gb area=app -->
+- Scroll fade now masks the viewport edge instead of painting a fading overlay on top of it. <!-- gb area=app -->
+
 ## Goodboy v0.8.0
 
 Back works the same way everywhere, every provider honors the permission mode you picked, and every list you pick from behaves alike.

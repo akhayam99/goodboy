@@ -218,6 +218,7 @@ Every agent in a session has its own chat, for when you want to steer it yoursel
 - A **command palette** for sessions, tabs and pages
 - Open the worktree in **VS Code** or **Cursor** when you want to type yourself
 - Pair a **phone** to follow a session away from the desk
+- **Security findings** flags a token or key left in a saved script, so you can pull it out before it gets committed
 
 <br>
 
