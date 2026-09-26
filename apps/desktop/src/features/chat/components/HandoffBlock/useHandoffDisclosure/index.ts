@@ -64,10 +64,13 @@ export const useHandoffDisclosure = ({ agentId, initiallyOpen }: Params): Handof
     setActive((current) => current ?? 'all');
   }, []);
 
-  const toggleChip = useCallback((kind: HandoffSectionKind) => {
-    setOpen(true);
-    setActive((current) => (current === kind ? null : kind));
-  }, []);
+  const toggleChip = useCallback(
+    (kind: HandoffSectionKind) => {
+      setActive((current) => (open && current === kind ? null : kind));
+      setOpen(true);
+    },
+    [open],
+  );
 
   const showAll = useCallback(() => {
     setOpen(true);

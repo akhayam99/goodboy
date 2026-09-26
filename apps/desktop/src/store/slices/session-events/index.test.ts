@@ -302,4 +302,13 @@ describe('decisionsDelta', () => {
       }),
     ).toEqual({ added: 1, removed: 1 });
   });
+
+  it('counts a polarity reversal as a real change, not a reword', () => {
+    expect(
+      decisionsDelta({
+        previous: '- enable caching for reads',
+        next: '- disable caching for reads',
+      }),
+    ).toEqual({ added: 1, removed: 1 });
+  });
 });

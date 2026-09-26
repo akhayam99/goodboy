@@ -30,8 +30,55 @@ const wordsOf = (line: string): ReadonlySet<string> =>
       .filter((word) => word.length > 0),
   );
 
+const POLARITY_MARKERS: ReadonlySet<string> = new Set([
+  'not',
+  'never',
+  'no',
+  'dont',
+  'cant',
+  'wont',
+  'disable',
+  'disabled',
+  'disallow',
+  'disallowed',
+  'stop',
+  'stopped',
+  'remove',
+  'removed',
+  'without',
+  'excluding',
+  'except',
+]);
+
+const polarityMarkersOf = (words: ReadonlySet<string>): ReadonlySet<string> => {
+  const found = new Set<string>();
+  for (const word of words) {
+    if (POLARITY_MARKERS.has(word)) {
+      found.add(word);
+    }
+  }
+  return found;
+};
+
+const hasSamePolarity = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => {
+  const markersA = polarityMarkersOf(a);
+  const markersB = polarityMarkersOf(b);
+  if (markersA.size !== markersB.size) {
+    return false;
+  }
+  for (const marker of markersA) {
+    if (!markersB.has(marker)) {
+      return false;
+    }
+  }
+  return true;
+};
+
 const wordSimilarity = (a: ReadonlySet<string>, b: ReadonlySet<string>): number => {
   if (a.size === 0 || b.size === 0) {
+    return 0;
+  }
+  if (!hasSamePolarity(a, b)) {
     return 0;
   }
   let shared = 0;

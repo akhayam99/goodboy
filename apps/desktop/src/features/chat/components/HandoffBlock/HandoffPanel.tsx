@@ -15,10 +15,9 @@ type Props = {
   readonly onClose: () => void;
 };
 
-const focusChip = (kind: HandoffSectionKind): void => {
-  const chip = document.querySelector<HTMLButtonElement>(
-    `[data-testid="${handoffChipTestId(kind)}"]`,
-  );
+const focusChip = (kind: HandoffSectionKind, fromElement: HTMLElement): void => {
+  const scope = fromElement.closest<HTMLElement>('[data-testid="handoff-block"]') ?? document;
+  const chip = scope.querySelector<HTMLButtonElement>(`[data-testid="${handoffChipTestId(kind)}"]`);
   chip?.focus();
 };
 
@@ -41,7 +40,7 @@ export const HandoffPanel = ({
       }
       event.stopPropagation();
       onClose();
-      focusChip(section.kind);
+      focusChip(section.kind, event.currentTarget);
     }}
     className="flex min-w-0 flex-col gap-2 rounded-md bg-subtle p-3"
   >

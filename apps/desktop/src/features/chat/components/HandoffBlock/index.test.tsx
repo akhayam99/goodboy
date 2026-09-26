@@ -149,6 +149,20 @@ describe('HandoffBlock', () => {
     expect(planChip.getAttribute('aria-pressed')).toBe('false');
   });
 
+  it('reopens the section a collapsed chip names, instead of landing on nothing', () => {
+    renderBlock();
+    const planChip = screen.getByRole('button', { name: 'Plan' });
+    fireEvent.click(planChip);
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse what the agent received' }));
+    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
+
+    fireEvent.click(planChip);
+
+    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+  });
+
   it('keeps only one section open: a second chip replaces the first', () => {
     renderBlock();
 
@@ -169,6 +183,29 @@ describe('HandoffBlock', () => {
 
     expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
     expect(document.activeElement).toBe(planChip);
+  });
+
+  it('Escape in one card returns focus to its own chip, not another cards chip of the same kind', () => {
+    const otherAgent = 'agent-5' as AgentId;
+    state.agentHandoffs = { [AGENT]: handoff(), [otherAgent]: handoff() };
+    render(
+      <>
+        <HandoffBlock item={item()} sessionId={SESSION} agentId={AGENT} workingDir={null} />
+        <HandoffBlock
+          item={item({ key: 'handoff-1', handoffId: otherAgent })}
+          sessionId={SESSION}
+          agentId={otherAgent}
+          workingDir={null}
+        />
+      </>,
+    );
+    const planChips = screen.getAllByRole('button', { name: 'Plan' });
+    fireEvent.click(planChips[1]!);
+
+    fireEvent.keyDown(screen.getByTestId('handoff-section-plan'), { key: 'Escape' });
+
+    expect(document.activeElement).toBe(planChips[1]);
+    expect(document.activeElement).not.toBe(planChips[0]);
   });
 
   it('All shows every section together', () => {
