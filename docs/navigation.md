@@ -332,8 +332,9 @@ activity yet show the plain overview with its actions.
   and `New artifact` (opens the kind picker) on their pages, `Stop this step`
   while a step runs and `Retry step` when it failed or is blocked
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
-  artifact. An attempt offers no `Resolve again`: a new attempt needs the
-  instruction the Review page asks for.
+  artifact. An attempt offers `Resolve again` once no attempt on that comment
+  is queued or running: it starts a new attempt with the Review page's default
+  instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
   that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by

@@ -1,5 +1,5 @@
 import type { ResolveAttempt } from '@goodboy/types';
-import type { CrumbMenuModel, CrumbMenuRow, CrumbState } from '@goodboy/ui';
+import type { CrumbMenuAction, CrumbMenuModel, CrumbMenuRow, CrumbState } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 const ATTEMPT_STATE = {
@@ -16,6 +16,7 @@ type AttemptParams = {
   readonly threadLabel: string;
   readonly currentAgentId: string | null;
   readonly ageOf: (ms: number) => string;
+  readonly actions: ReadonlyArray<CrumbMenuAction>;
   readonly onSelect: (attempt: ResolveAttempt) => void;
 };
 
@@ -24,6 +25,7 @@ export const attemptMenu = ({
   threadLabel,
   currentAgentId,
   ageOf,
+  actions,
   onSelect,
 }: AttemptParams): CrumbMenuModel => {
   const ordered = [...attempts].sort((first, second) => second.createdAt - first.createdAt);
@@ -45,7 +47,7 @@ export const attemptMenu = ({
     count: rows.length,
     triggerLabel: 'Switch attempt',
     groups: [{ id: 'attempts', label: null, rows }],
-    actions: [],
+    actions: actions.slice(0, 2),
     width: 'regular',
     filterPlaceholder: null,
   };

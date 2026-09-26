@@ -20,6 +20,7 @@ import { artifactMenu } from './artifactMenu';
 import { branchMenu } from './branchMenu';
 import { conversationMenu } from './conversationMenu';
 import { attemptMenu } from './attemptMenu';
+import { resolveAgainActions } from './crumbActions';
 import type { ResolveQueueRow } from '../../../resolve/buildResolveQueueRows';
 import type { ResolveAttempt } from '@goodboy/types';
 import type { SessionProjectMount, WorktreeStatus } from '@goodboy/types';
@@ -404,6 +405,7 @@ describe('attemptMenu', () => {
       threadLabel: 'retryPolicy.ts:42',
       currentAgentId: 'agent-2',
       ageOf: () => '18m',
+      actions: [],
       onSelect: vi.fn(),
     });
 
@@ -413,5 +415,19 @@ describe('attemptMenu', () => {
       'Failed',
     ]);
     expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
+  });
+
+  it('offers Resolve again once no attempt on the comment is live', () => {
+    const attempt = (phase: ResolveAttempt['phase']) => ({ phase }) as unknown as ResolveAttempt;
+    const onRun = vi.fn();
+
+    const settled = resolveAgainActions({ attempts: [attempt('finished')], onRun });
+    settled[0]?.onRun();
+
+    expect(settled.map((action) => action.label)).toEqual(['Resolve again']);
+    expect(onRun).toHaveBeenCalledTimes(1);
+    expect(
+      resolveAgainActions({ attempts: [attempt('failed'), attempt('running')], onRun }),
+    ).toEqual([]);
   });
 });

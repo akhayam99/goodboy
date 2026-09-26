@@ -26,6 +26,8 @@ import { attemptMenu } from '../../trail/menus/attemptMenu';
 import { resolverThread } from '../../../../store/slices/navigation/resolverThread';
 import { resolverPagePlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
+import { useResolveAgain } from '../../../resolve/hooks/useResolveAgain';
+import { RESOLVE_ITEM_LABEL } from '../../../resolve/resolveItemCopy';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 import { openUrl } from '../../../../shared/lib/editor';
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
@@ -56,6 +58,7 @@ import { runMenu, type RunEntry } from '../../trail/menus/runMenu';
 import { artifactEntryOf, artifactMenu } from '../../trail/menus/artifactMenu';
 import {
   newArtifactAction,
+  resolveAgainActions,
   retryStepActions,
   savedCopyActions,
 } from '../../trail/menus/crumbActions';
@@ -131,6 +134,7 @@ export const useTrailMenus = ({
   );
   const branchStatuses = useWorktreeStatuses({ targets: branchTargets });
   const queueRows = useResolveQueueRows({ sessionId });
+  const resolveAgain = useResolveAgain({ sessionId, rows: queueRows });
   const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
   const threadId = useAppStore((s) =>
     selectedAgentId === null
@@ -391,14 +395,25 @@ export const useTrailMenus = ({
       ) {
         const nowMs = Date.now();
         const row = queueRows.find((candidate) => candidate.thread.threadId === threadId) ?? null;
+        const threadAttempts = resolveAttempts.filter((attempt) =>
+          attempt.threadIds.includes(threadId),
+        );
         menus.set(
           crumb.id,
           attemptMenu({
-            attempts: resolveAttempts.filter((attempt) => attempt.threadIds.includes(threadId)),
+            attempts: threadAttempts,
             threadLabel:
               row === null ? 'Comment' : (threadLocationOf({ row })?.shortLabel ?? 'Comment'),
             currentAgentId: selected.id,
             ageOf: (ms) => formatRelativeAge({ fromIso: new Date(ms).toISOString(), nowMs }),
+            actions: resolveAgainActions({
+              attempts: threadAttempts,
+              onRun: () =>
+                void resolveAgain({
+                  threadId,
+                  instruction: RESOLVE_ITEM_LABEL.rereadInstruction,
+                }),
+            }),
             onSelect: (attempt) =>
               navigate({
                 to: resolverPagePlace({ sessionId, agentId: attempt.agentId, threadId }),
@@ -534,6 +549,7 @@ export const useTrailMenus = ({
     branchStatuses,
     openMountDiff,
     queueRows,
+    resolveAgain,
     prNumber,
     threadId,
     copy,
