@@ -718,7 +718,12 @@ stays the page and the conversation opens in the shell drawer: `DrawerHost`
 renders `ConversationDrawerSlot`, and `ResolveQueueHome` portals the panel
 into it, so the panel keeps the queue's order and keys. Back from the Diff or
 from the resolver's page finds the conversation open again, because it was in
-the entry.
+the entry. The panel is one column that reads its own width (`@container`),
+never the viewport: a 44px `ResolvePanelHeader` (the state as glyph and word,
+the location in mono, previous and next with `N of M`, `…`, close), then the
+comment, the agent's question, the reply, the change, the checks and the
+resolver's run, and a fixed footer with one primary and one secondary action.
+The list beside it replaces the old Back to conversations button.
 
 `scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
 `ScriptRunDrawer` reads the run from `scriptRuns`, where the one

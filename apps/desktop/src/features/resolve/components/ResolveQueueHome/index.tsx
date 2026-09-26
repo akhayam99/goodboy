@@ -10,8 +10,7 @@ import {
   type UIEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, DrawerFrame, ErrorStrip, SectionHeader, Skeleton } from '@goodboy/ui';
-import { MessageSquare } from 'lucide-react';
+import { Button, ErrorStrip, SectionHeader, Skeleton, useEscapeLayer } from '@goodboy/ui';
 import { openUrl } from '../../../../shared/lib/editor';
 import type {
   PrCheckRun,
@@ -63,7 +62,6 @@ import { useConversationSlot } from '../ConversationDrawerSlot/slotNode';
 import { ResolveItemContainer } from '../ResolveItemView/ResolveItemContainer';
 import { ResolveSelectionBar } from '../ResolveSelectionBar';
 import { ConversationTree } from '../ConversationTree';
-import { firstSentence } from '../ConversationTree/firstSentence';
 import { ResolveQueueFooter } from './ResolveQueueFooter';
 import { threadIdAfterDecision, threadIdAtStep } from './queueTraversal';
 import {
@@ -236,7 +234,8 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
       const target = rows.find((row) => row.thread.threadId === threadId) ?? null;
       if (threadId === null) {
         closeDrawer();
-      } else {
+      }
+      if (threadId !== null) {
         openDrawer({ kind: 'conversation', sessionId, payload: { threadId } });
       }
       setResolveQueueView({
@@ -524,6 +523,8 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     requestAnimationFrame(() => focusRow({ threadId }));
   }, [focusRow, onSelect, expandedThreadId]);
 
+  useEscapeLayer(closeDetail, selectedRow !== null);
+
   const openRow = useCallback(
     (row: QueueRow): void => {
       pendingPanelThreadIdRef.current = row.thread.threadId;
@@ -740,83 +741,77 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
       })}
     </div>
   );
+  const selectedIndex =
+    selectedRow === null
+      ? -1
+      : listed.findIndex((row) => row.thread.threadId === selectedRow.thread.threadId);
   const conversation =
     selectedRow === null ? null : (
       <aside
         aria-label={CONVERSATION_DRAWER_LABEL}
         className="flex h-full min-h-0 min-w-0 flex-col"
       >
-        <DrawerFrame
-          title={
-            selectedRow.reviewerNote === null
-              ? CONVERSATION_DRAWER_LABEL
-              : firstSentence({ text: selectedRow.reviewerNote.body })
-          }
-          icon={MessageSquare}
-          iconClassName="text-faint-foreground"
-          closeLabel={`Close ${CONVERSATION_DRAWER_LABEL.toLowerCase()}`}
-          onClose={closeDetail}
-          scroll="self"
+        <section
+          ref={detailRef}
+          aria-label="Resolve comment detail"
+          onScrollCapture={onDetailScroll}
+          className="flex h-full min-h-0 min-w-0 flex-col"
         >
-          <section
-            ref={detailRef}
-            aria-label="Resolve comment detail"
-            onScrollCapture={onDetailScroll}
-            className="flex h-full min-h-0 min-w-0 flex-col"
-          >
-            <ResolveItemContainer
-              key={selectedRow.thread.threadId}
-              sessionId={sessionId}
-              prNumber={github.pr.number}
-              row={selectedRow}
-              allRows={rows}
-              worktreePath={repo?.worktreePath ?? null}
-              onSelect={onAdvanceFromPanel}
-              onRequestAttempt={onAskForChanges}
-              onOpenInDiff={onOpenInDiff}
-              onBack={closeDetail}
-              onPrevious={() => {
-                const threadId = threadIdAtStep({
-                  rows: listed,
-                  selectedThreadId: selectedRow.thread.threadId,
-                  delta: -1,
-                });
-                if (threadId !== null) {
-                  pendingPanelThreadIdRef.current = threadId;
-                  onSelect(threadId);
-                }
-              }}
-              onNext={() => {
-                const threadId = threadIdAtStep({
-                  rows: listed,
-                  selectedThreadId: selectedRow.thread.threadId,
-                  delta: 1,
-                });
-                if (threadId !== null) {
-                  pendingPanelThreadIdRef.current = threadId;
-                  onSelect(threadId);
-                }
-              }}
-              canPrevious={
-                threadIdAtStep({
-                  rows: listed,
-                  selectedThreadId: selectedRow.thread.threadId,
-                  delta: -1,
-                }) !== null
+          <ResolveItemContainer
+            key={selectedRow.thread.threadId}
+            sessionId={sessionId}
+            prNumber={github.pr.number}
+            row={selectedRow}
+            allRows={rows}
+            worktreePath={repo?.worktreePath ?? null}
+            onSelect={onAdvanceFromPanel}
+            onRequestAttempt={onAskForChanges}
+            onOpenInDiff={onOpenInDiff}
+            onBack={closeDetail}
+            onPrevious={() => {
+              const threadId = threadIdAtStep({
+                rows: listed,
+                selectedThreadId: selectedRow.thread.threadId,
+                delta: -1,
+              });
+              if (threadId !== null) {
+                pendingPanelThreadIdRef.current = threadId;
+                onSelect(threadId);
               }
-              canNext={
-                threadIdAtStep({
-                  rows: listed,
-                  selectedThreadId: selectedRow.thread.threadId,
-                  delta: 1,
-                }) !== null
+            }}
+            onNext={() => {
+              const threadId = threadIdAtStep({
+                rows: listed,
+                selectedThreadId: selectedRow.thread.threadId,
+                delta: 1,
+              });
+              if (threadId !== null) {
+                pendingPanelThreadIdRef.current = threadId;
+                onSelect(threadId);
               }
-              onReviewPublication={({ threadId, reconcile }) =>
-                openResolvePublication({ sessionId, threadId, reconcile })
-              }
-            />
-          </section>
-        </DrawerFrame>
+            }}
+            canPrevious={
+              threadIdAtStep({
+                rows: listed,
+                selectedThreadId: selectedRow.thread.threadId,
+                delta: -1,
+              }) !== null
+            }
+            canNext={
+              threadIdAtStep({
+                rows: listed,
+                selectedThreadId: selectedRow.thread.threadId,
+                delta: 1,
+              }) !== null
+            }
+            position={
+              selectedIndex === -1 ? null : { index: selectedIndex + 1, total: listed.length }
+            }
+            onReviewPublication={({ threadId, reconcile }) =>
+              openResolvePublication({ sessionId, threadId, reconcile })
+            }
+          />
+        </section>
       </aside>
     );
 

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { FileDiff, SessionId } from '@goodboy/types';
 import type { ResolveChecksSummary } from '../../checkReceipts';
 import type { CommentThread } from '../../../github/comment-threads';
@@ -160,7 +160,7 @@ const renderView = (
   return render(
     <ResolveItemView
       sessionId={'session-1' as SessionId}
-      prNumber={12}
+      position={{ index: 1, total: 2 }}
       coveredRows={[COVERED]}
       files={[]}
       isDiffLoading={false}
@@ -210,7 +210,24 @@ describe('the resolve item view', () => {
     renderView();
 
     expect(screen.getByText('This retries forever on a 500.')).toBeDefined();
-    expect(screen.getByText('src/retry.ts:84')).toBeDefined();
+    expect(screen.getAllByText('src/retry.ts:84').length).toBeGreaterThan(0);
+  });
+
+  it('heads the panel with the state, the location, the position and close', () => {
+    renderView();
+
+    const header = screen.getByRole('banner', { name: 'Comment' });
+    expect(within(header).getByText('src/retry.ts:84')).toBeDefined();
+    expect(within(header).getByText('1 of 2')).toBeDefined();
+    expect(within(header).getByRole('button', { name: 'Close conversation' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Back to conversations' })).toBeNull();
+  });
+
+  it('lays the panel out in one column, measured by its container', () => {
+    const { container } = renderView();
+
+    expect(container.innerHTML).not.toMatch(/\bxl:/);
+    expect(container.querySelector('.\\@container')).not.toBeNull();
   });
 
   it('lists the other comments of the shared run without repeating the agent draft', () => {

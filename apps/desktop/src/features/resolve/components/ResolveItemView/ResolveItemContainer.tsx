@@ -23,6 +23,7 @@ import {
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { ResolveItemView } from './index';
 import type { ResolveDecisionMode, ResolveItemDraft } from '../../resolveItemDraft';
+import type { PanelPosition } from '../ResolvePanelHeader';
 
 type RequestAttemptParams = { readonly threadId: string; readonly instruction: string };
 type ReviewPublicationParams = { readonly threadId: string; readonly reconcile: boolean };
@@ -47,6 +48,7 @@ type Props = {
   readonly onNext?: () => void;
   readonly canPrevious?: boolean;
   readonly canNext?: boolean;
+  readonly position?: PanelPosition | null;
   readonly onReviewPublication?: (params: ReviewPublicationParams) => void;
 };
 
@@ -105,6 +107,7 @@ export const ResolveItemContainer = ({
   onNext = () => undefined,
   canPrevious = false,
   canNext = false,
+  position = null,
   onReviewPublication = () => undefined,
 }: Props) => {
   const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? EMPTY_CANDIDATES);
@@ -425,7 +428,7 @@ export const ResolveItemContainer = ({
     <ResolveItemView
       sessionId={sessionId}
       row={row}
-      prNumber={prNumber}
+      position={position}
       coveredRows={coveredRows}
       files={diff.files}
       isDiffLoading={diff.isLoading}

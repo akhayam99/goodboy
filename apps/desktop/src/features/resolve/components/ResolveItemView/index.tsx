@@ -13,7 +13,8 @@ import {
   sharedRunHeading,
 } from '../../resolveQueueCopy';
 import { deliverySupportLine } from '../../resolveDeliverySupport';
-import { ResolveItemHeader } from '../ResolveItemHeader';
+import { ResolvePanelHeader, type PanelPosition } from '../ResolvePanelHeader';
+import { ActionButton } from './ActionButton';
 import type { ResolveItemActionId, ResolveItemActionSet } from '../../resolveItemActions';
 import { ChangeBlock } from './ChangeBlock';
 import { ChecksBlock } from './ChecksBlock';
@@ -29,7 +30,7 @@ import { ResolveAgentActivity } from '../ResolveAgentActivity';
 type Props = {
   readonly sessionId: SessionId;
   readonly row: ResolveQueueRow;
-  readonly prNumber: number;
+  readonly position: PanelPosition | null;
   readonly coveredRows: ReadonlyArray<ResolveQueueRow>;
   readonly files: ReadonlyArray<FileDiff>;
   readonly isDiffLoading: boolean;
@@ -112,7 +113,7 @@ const COMMIT_LABEL = ({ mode, isAnswering }: Omit<FooterParams, 'isReplyBlank'>)
 export const ResolveItemView = ({
   sessionId,
   row,
-  prNumber,
+  position,
   coveredRows,
   files,
   isDiffLoading,
@@ -158,7 +159,6 @@ export const ResolveItemView = ({
   const isAnswering = row.status === 'needs_you';
   const fieldId = `resolve-item-${row.thread.threadId}`;
   const nextStep = RESOLVE_QUEUE_NEXT_STEP[row.status];
-  const isEditing = mode !== 'read';
   const footerNote = FOOTER_NOTE({ mode, isAnswering, isReplyBlank });
   const commitLabel =
     mode === 'resolve'
@@ -171,25 +171,22 @@ export const ResolveItemView = ({
   return (
     <div
       data-testid={fieldId}
-      className="flex h-full min-h-0 min-w-0 flex-col bg-background text-foreground"
+      className="flex h-full min-h-0 min-w-0 flex-col bg-subtle text-foreground"
     >
-      <ResolveItemHeader
-        title={RESOLVE_ITEM_LABEL.comment}
-        location={row.reviewerNote?.location ?? null}
-        prNumber={prNumber}
+      <ResolvePanelHeader
         status={row.status}
-        nextStep={nextStep}
-        actions={actions}
-        isEditing={isEditing}
+        location={row.reviewerNote?.location ?? null}
+        position={position}
+        overflow={actions.overflow}
         canPrevious={canPrevious}
         canNext={canNext}
-        onBack={onBack}
         onPrevious={onPrevious}
         onNext={onNext}
         onAction={onAction}
+        onClose={onBack}
       />
-      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-5 py-4" fadeFrom="background">
-        <div className="grid min-w-0 grid-cols-1 justify-start gap-6 xl:grid-cols-[minmax(0,68ch)_19rem]">
+      <ScrollFade className="min-h-0 flex-1" viewportClassName="px-4 py-4" fadeFrom="subtle">
+        <div className="@container flex min-w-0 max-w-[68ch] flex-col gap-6">
           <div className="flex min-w-0 flex-col gap-5">
             <ReviewerCommentBlock commentThread={row.commentThread} onOpenUrl={onOpenUrl} />
             {question != null && question !== '' && (
@@ -220,9 +217,9 @@ export const ResolveItemView = ({
             {note !== null && <p className="text-2xs text-warning">{note}</p>}
             {error !== null && <p className="text-2xs text-danger">{error}</p>}
           </div>
-          <aside
+          <section
             aria-label={RESOLVE_ITEM_LABEL.aboutThisComment}
-            className="flex min-w-0 max-w-[68ch] flex-col gap-5 xl:max-w-none xl:border-l xl:border-border-soft xl:pl-6"
+            className="flex min-w-0 flex-col gap-5"
           >
             {shownSha !== null && <ResolveCommitLine sha={shownSha} onOpenCommit={onOpenCommit} />}
             {(candidateSha !== null || files.length > 0 || isDiffLoading || diffError !== null) && (
@@ -277,13 +274,29 @@ export const ResolveItemView = ({
                 </ul>
               </div>
             )}
-          </aside>
+          </section>
         </div>
       </ScrollFade>
+      {mode === 'read' && (actions.primary !== null || actions.secondary !== null) && (
+        <>
+          <Divider />
+          <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
+            <p className="min-w-0 text-2xs text-muted-foreground">{nextStep ?? ''}</p>
+            <div className="flex items-center gap-2">
+              {actions.secondary !== null && (
+                <ActionButton action={actions.secondary} isPrimary={false} onAction={onAction} />
+              )}
+              {actions.primary !== null && (
+                <ActionButton action={actions.primary} isPrimary onAction={onAction} />
+              )}
+            </div>
+          </div>
+        </>
+      )}
       {mode !== 'read' && (
         <>
           <Divider />
-          <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-3">
+          <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
             <p
               className={cn(
                 'min-w-0 text-2xs',
