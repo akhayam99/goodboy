@@ -1,25 +1,18 @@
-import type { ReleaseNote } from '../../../features/changelog/changelog';
 import { STORAGE_KEYS } from '../../../shared/lib/storage-keys';
 
-export type ChangelogCache = {
+export type ChangelogDatesCache = {
   readonly fetchedAt: string;
-  readonly releases: ReadonlyArray<ReleaseNote>;
+  readonly dates: Readonly<Record<string, string>>;
 };
 
-const isReleaseNote = (value: unknown): value is ReleaseNote => {
+const isDatesRecord = (value: unknown): value is Record<string, string> => {
   if (typeof value !== 'object' || value === null) {
     return false;
   }
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.version === 'string' &&
-    typeof candidate.publishedAt === 'string' &&
-    typeof candidate.body === 'string' &&
-    typeof candidate.htmlUrl === 'string'
-  );
+  return Object.values(value).every((entry) => typeof entry === 'string');
 };
 
-export const readChangelogCache = (): ChangelogCache | null => {
+export const readChangelogDatesCache = (): ChangelogDatesCache | null => {
   if (typeof localStorage === 'undefined') {
     return null;
   }
@@ -33,22 +26,21 @@ export const readChangelogCache = (): ChangelogCache | null => {
       return null;
     }
     const candidate = parsed as Record<string, unknown>;
-    if (typeof candidate.fetchedAt !== 'string' || !Array.isArray(candidate.releases)) {
+    if (typeof candidate.fetchedAt !== 'string' || !isDatesRecord(candidate.dates)) {
       return null;
     }
-    const releases = candidate.releases.filter(isReleaseNote);
-    return { fetchedAt: candidate.fetchedAt, releases };
+    return { fetchedAt: candidate.fetchedAt, dates: candidate.dates };
   } catch {
     return null;
   }
 };
 
-export const writeChangelogCache = ({ fetchedAt, releases }: ChangelogCache): void => {
+export const writeChangelogDatesCache = ({ fetchedAt, dates }: ChangelogDatesCache): void => {
   if (typeof localStorage === 'undefined') {
     return;
   }
   try {
-    localStorage.setItem(STORAGE_KEYS.changelogCache, JSON.stringify({ fetchedAt, releases }));
+    localStorage.setItem(STORAGE_KEYS.changelogCache, JSON.stringify({ fetchedAt, dates }));
   } catch {
     return;
   }

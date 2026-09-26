@@ -342,8 +342,8 @@ type AppActions = {
   checkForUpdates(): Promise<void>;
   installUpdate(): Promise<void>;
   relaunchApp(): Promise<void>;
-  loadChangelog(): Promise<void>;
-  reloadChangelog(): Promise<void>;
+  loadChangelogDates(): Promise<void>;
+  reloadChangelogDates(): Promise<void>;
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
   focusChangelogRelease(params: FocusChangelogReleaseParams): void;

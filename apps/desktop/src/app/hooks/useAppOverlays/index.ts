@@ -3,6 +3,8 @@ import type { Session, SessionId, Workspace } from '@goodboy/types';
 import type { IntegrationGlyphProvider } from '../../../features/integrations/components/IntegrationGlyph';
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import { markStepComplete } from '../../../features/onboarding/onboarding-store';
+import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
+import { resolveChangelogScreenOverlay } from '../../../features/changelog/resolveChangelogScreenOverlay';
 import { useSessionById } from '../../../store';
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
@@ -100,6 +102,12 @@ export const useAppOverlays = ({
 
   const openChangelog = useCallback(() => open({ overlay: { kind: 'changelog' } }), [open]);
 
+  const onOpenChangelogScreen = useCallback(
+    ({ screen }: { readonly screen: ChangelogScreen }) =>
+      open({ overlay: resolveChangelogScreenOverlay({ screen }) }),
+    [open],
+  );
+
   const openWorkflows = useCallback(() => open({ overlay: { kind: 'workflow' } }), [open]);
 
   const openProviders = useCallback(
@@ -164,6 +172,7 @@ export const useAppOverlays = ({
           overlay,
           close,
           onSettingsScopeChange: changeSettingsScope,
+          onOpenChangelogScreen,
           currentWorkspace,
           workspaceProjectRoot,
           offerWorkspaceRepo,
@@ -173,6 +182,7 @@ export const useAppOverlays = ({
     overlay,
     close,
     onSettingsScopeChange: changeSettingsScope,
+    onOpenChangelogScreen,
     currentWorkspace,
     isWorkspaceLauncherBranch,
     deleteOpen,

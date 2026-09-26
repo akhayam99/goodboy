@@ -43,9 +43,6 @@ export const GoodboyMenu = ({
           {version === null ? 'Goodboy' : `Goodboy ${version}`}
         </span>
         <span className="text-2xs text-faint-foreground">beta</span>
-        <Button variant="ghost" size="sm" onClick={onOpenChangelog} className="ml-auto">
-          Release notes
-        </Button>
       </header>
       <Divider />
       <div className="flex flex-col gap-2 py-2">

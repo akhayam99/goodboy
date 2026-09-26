@@ -5,6 +5,7 @@ import { ConvertWorkspaceDialog } from '../../../features/workspace/components/C
 import { WorkspaceLauncher } from '../../../features/workspace/components/WorkspaceLauncher';
 import type { SettingsScopeChange } from '../../../features/settings/components/SettingsStudio/types';
 import { OnboardingWizard } from '../../../features/onboarding/OnboardingWizard';
+import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import { isAppScopeOverlay, type Overlay } from '../../hooks/useAppOverlays/overlayState';
 import { AppScopeOverlays } from './AppScopeOverlays';
 
@@ -63,6 +64,7 @@ type Props = {
   readonly overlay: Overlay | null;
   readonly close: () => void;
   readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
+  readonly onOpenChangelogScreen: (params: { readonly screen: ChangelogScreen }) => void;
   readonly currentWorkspace: Workspace | null;
   readonly isWorkspaceLauncherBranch: boolean;
   readonly deleteOpen: boolean;
@@ -80,6 +82,7 @@ type StudioParams = {
   readonly overlay: Overlay;
   readonly close: () => void;
   readonly onSettingsScopeChange: (params: SettingsScopeChange) => void;
+  readonly onOpenChangelogScreen: (params: { readonly screen: ChangelogScreen }) => void;
   readonly currentWorkspace: Workspace | null;
   readonly workspaceProjectRoot: string | null;
   readonly offerWorkspaceRepo: () => void;
@@ -89,6 +92,7 @@ const renderStudio = ({
   overlay,
   close,
   onSettingsScopeChange,
+  onOpenChangelogScreen,
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
@@ -142,7 +146,9 @@ const renderStudio = ({
         />
       );
     case 'changelog':
-      return currentWorkspace === null ? null : <ChangelogStudio onClose={close} />;
+      return currentWorkspace === null ? null : (
+        <ChangelogStudio onClose={close} onOpenScreen={onOpenChangelogScreen} />
+      );
     case 'notifications':
       return currentWorkspace === null ? null : <NotificationsStudio onClose={close} />;
     default: {
@@ -156,6 +162,7 @@ export const AppStudio = ({
   overlay,
   close,
   onSettingsScopeChange,
+  onOpenChangelogScreen,
   currentWorkspace,
   workspaceProjectRoot,
   offerWorkspaceRepo,
@@ -169,6 +176,7 @@ export const AppStudio = ({
         overlay,
         close,
         onSettingsScopeChange,
+        onOpenChangelogScreen,
         currentWorkspace,
         workspaceProjectRoot,
         offerWorkspaceRepo,
@@ -181,6 +189,7 @@ export const AppOverlayRouter = ({
   overlay,
   close,
   onSettingsScopeChange,
+  onOpenChangelogScreen,
   currentWorkspace,
   isWorkspaceLauncherBranch,
   deleteOpen,
@@ -200,6 +209,7 @@ export const AppOverlayRouter = ({
           overlay={overlay}
           close={close}
           onSettingsScopeChange={onSettingsScopeChange}
+          onOpenChangelogScreen={onOpenChangelogScreen}
           currentWorkspace={currentWorkspace}
           workspaceProjectRoot={null}
           offerWorkspaceRepo={offerWorkspaceRepo}

@@ -77,4 +77,11 @@ describe('ReleaseNoticeBridge', () => {
     expect(screen.queryByText('Updated to 0.3.14')).toBeNull();
     expect(markChangelogSeen).not.toHaveBeenCalled();
   });
+
+  it('offers "What\'s new since" when the gap spans more than one release', () => {
+    installed.version = '0.7.0';
+    seed({ seen: 'v0.5.3' });
+    mount();
+    expect(screen.getByRole('button', { name: "What's new since 0.5.3" })).toBeDefined();
+  });
 });

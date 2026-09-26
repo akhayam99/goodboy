@@ -1,14 +1,14 @@
 import { focusChangelogRelease } from './focusChangelogRelease';
 import { hydrateChangelogSeen } from './hydrateChangelogSeen';
-import { loadChangelog } from './loadChangelog';
+import { loadChangelogDates } from './loadChangelogDates';
 import { markChangelogSeen } from './markChangelogSeen';
-import { reloadChangelog } from './reloadChangelog';
+import { reloadChangelogDates } from './reloadChangelogDates';
 import type { GetFn, SetFn } from './types';
 
 export const createChangelogSlice = (set: SetFn, get: GetFn) => {
   return {
-    loadChangelog: loadChangelog(set, get),
-    reloadChangelog: reloadChangelog(set, get),
+    loadChangelogDates: loadChangelogDates(set, get),
+    reloadChangelogDates: reloadChangelogDates(set, get),
     hydrateChangelogSeen: hydrateChangelogSeen(set, get),
     markChangelogSeen: markChangelogSeen(set, get),
     focusChangelogRelease: focusChangelogRelease(set, get),

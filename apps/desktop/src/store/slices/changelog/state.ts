@@ -1,24 +1,25 @@
-import type { ReleaseNote } from '../../../features/changelog/changelog';
+import { CHANGELOG_RELEASES } from '../../../features/changelog/changelogSource';
+import type { ReleaseEntry } from '../../../features/changelog/parseChangelog';
 
-export type ChangelogStatus = 'idle' | 'loading' | 'ready' | 'error';
+export type ChangelogDatesStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export const SETTING_CHANGELOG_SEEN = 'changelog.lastSeenVersion';
 
 export type ChangelogState = {
-  readonly changelogReleases: ReadonlyArray<ReleaseNote>;
-  readonly changelogStatus: ChangelogStatus;
-  readonly changelogError: string | null;
-  readonly changelogFetchedAt: string | null;
+  readonly changelogReleases: ReadonlyArray<ReleaseEntry>;
+  readonly changelogDates: Readonly<Record<string, string>>;
+  readonly changelogDatesStatus: ChangelogDatesStatus;
+  readonly changelogDatesFetchedAt: string | null;
   readonly changelogSeenVersion: string | null;
   readonly changelogSeenHydrated: boolean;
   readonly changelogFocusVersion: string | null;
 };
 
 export const initialChangelogState: ChangelogState = {
-  changelogReleases: [],
-  changelogStatus: 'idle',
-  changelogError: null,
-  changelogFetchedAt: null,
+  changelogReleases: CHANGELOG_RELEASES,
+  changelogDates: {},
+  changelogDatesStatus: 'idle',
+  changelogDatesFetchedAt: null,
   changelogSeenVersion: null,
   changelogSeenHydrated: false,
   changelogFocusVersion: null,
