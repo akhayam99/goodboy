@@ -800,7 +800,17 @@ Every diff in the app is one `DiffView` (`features/diff`): the Diff lens, Write
 review, the Bitbucket pull request changes and the `file-diff` drawer. Only the
 comment behavior changes: a note for the agents in the Diff lens, a review
 draft in Write review, none in Bitbucket and the drawer. There is no file
-sidebar. The toolbar row holds `N files` (the file jump, also `T`: filter,
+sidebar.
+
+The Diff lens shows one branch. The trail carries the choice (see Segment
+menus); there are no worktree tabs. The header speaks only for that branch:
+meta `repo · N commits · state word`, one primary chosen from the branch state
+(`Rebase on main` when it is behind main, `Push branch` when it is local only
+with commits, none otherwise), the history rewrite menu and `⋯` (Refresh, Open
+all in editor, Copy branch name, Copy patch). Every rewrite takes the shown
+mount's `mountId`, never the active mount. `Branch vs main` sits in the file
+toolbar under the title, with `N files +N -M`, because it decides which files
+you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
 saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
 previous and next file. Each file has a sticky header (status letter, path,

@@ -548,11 +548,11 @@ type AppActions = {
   reconcileSessionBranch(input: ReconcileSessionBranchInput): Promise<void>;
   amendSessionCommit(
     sessionId: SessionId,
-    args: { sha: string; message: string },
+    args: { mountId: MountId; sha: string; message: string },
   ): Promise<RewrittenHead>;
   squashSessionCommits(
     sessionId: SessionId,
-    args: { sha: string; message: string },
+    args: { mountId: MountId; sha: string; message: string },
   ): Promise<RewrittenHead>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   renameWorkflowRun(
