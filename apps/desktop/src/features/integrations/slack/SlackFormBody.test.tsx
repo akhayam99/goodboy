@@ -19,6 +19,7 @@ const { state } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../store', () => ({
+  EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
