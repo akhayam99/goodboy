@@ -2,6 +2,7 @@ import { ChevronRight, Ellipsis } from 'lucide-react';
 import { cn } from '../../cn';
 import { useDropdown } from '../../useDropdown';
 import { AnchoredPopover } from '../AnchoredPopover';
+import { Tooltip } from '../Tooltip';
 import type { TrailSegmentModel } from './types';
 import { TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS } from './trailClasses';
 
@@ -30,16 +31,18 @@ export const TrailFold = ({ segments }: Props) => {
         ariaLabel="Folded crumbs"
         anchorClassName="flex min-w-0 items-center"
         trigger={
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label="Show folded crumbs"
-            aria-haspopup="menu"
-            aria-expanded={open}
-            className={cn(TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS)}
-          >
-            <Ellipsis size={12} aria-hidden />
-          </button>
+          <Tooltip content="Show folded crumbs" anchorClassName="flex shrink-0">
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label="Show folded crumbs"
+              aria-haspopup="menu"
+              aria-expanded={open}
+              className={cn(TRAIL_CRUMB_CLASS, TRAIL_LINK_CLASS)}
+            >
+              <Ellipsis size={12} aria-hidden />
+            </button>
+          </Tooltip>
         }
       >
         <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-1">
