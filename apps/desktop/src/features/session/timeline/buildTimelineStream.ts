@@ -1,4 +1,10 @@
-import type { Agent, OpenQuestion, SessionEventKind } from '@goodboy/types';
+import type {
+  Agent,
+  OpenQuestion,
+  SessionDecisionChange,
+  SessionEventKind,
+  SessionEventPayload,
+} from '@goodboy/types';
 import { isAgentSettled, isAgentStatusHalted } from '@goodboy/core';
 import type { WorkflowAdvanceState } from '../../workflows/advanceGate';
 import { isWorkflowRunComplete } from '../../workflows/isWorkflowRunComplete';
@@ -165,7 +171,39 @@ const compareNewestFirst = ({
 const isDecisionChangeRow = ({ draft }: { readonly draft: DraftRow }): boolean =>
   draft.groupId == null &&
   draft.entry.kind === 'event' &&
-  draft.entry.event.kind === 'decisions_changed';
+  draft.entry.event.kind === 'decisions_changed' &&
+  draft.entry.event.payload?.consolidatedAfter === undefined;
+
+const DECISION_COUNT_KEYS = [
+  'added',
+  'removed',
+  'replaced',
+  'withdrawn',
+  'merged',
+  'restored',
+] as const;
+
+type DecisionCountKey = (typeof DECISION_COUNT_KEYS)[number];
+
+type DecisionTotals = Partial<Record<DecisionCountKey, number>>;
+
+const addDecisionTotals = ({
+  totals,
+  payload,
+}: {
+  readonly totals: DecisionTotals;
+  readonly payload: SessionEventPayload | null;
+}): DecisionTotals =>
+  Object.fromEntries(
+    DECISION_COUNT_KEYS.flatMap((key) => {
+      const current = totals[key];
+      const next = payload?.[key];
+      if (current === undefined && next === undefined) {
+        return [];
+      }
+      return [[key, (current ?? 0) + (next ?? 0)]];
+    }),
+  );
 
 type MergeDecisionRowsParams = {
   readonly drafts: ReadonlyArray<DraftRow>;
@@ -188,8 +226,8 @@ const mergeConsecutiveDecisionRows = ({
       continue;
     }
 
-    let added = 0;
-    let removed = 0;
+    let totals: DecisionTotals = {};
+    let changes: ReadonlyArray<SessionDecisionChange> = [];
     let runIndex = index;
     const newestDayKey = newest.at === null ? null : dayKeyOf({ at: newest.at });
     while (runIndex < drafts.length) {
@@ -201,8 +239,8 @@ const mergeConsecutiveDecisionRows = ({
       if (runIndex > index && draftDayKey !== newestDayKey) {
         break;
       }
-      added += draft.entry.event.payload?.added ?? 0;
-      removed += draft.entry.event.payload?.removed ?? 0;
+      totals = addDecisionTotals({ totals, payload: draft.entry.event.payload });
+      changes = [...changes, ...(draft.entry.event.payload?.decisionChanges ?? [])];
       runIndex += 1;
     }
 
@@ -220,8 +258,8 @@ const mergeConsecutiveDecisionRows = ({
           ...newest.entry.event,
           payload: {
             ...newest.entry.event.payload,
-            added,
-            removed,
+            ...totals,
+            ...(changes.length > 0 && { decisionChanges: changes }),
           },
         },
       },

@@ -18,6 +18,7 @@ import type {
   ReportArtifact,
   Session,
   SessionArtifact,
+  SessionDecision,
   SessionEvent,
   SessionEventId,
   SessionExternalTask,
@@ -194,10 +195,11 @@ const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
   {
     key: 'decisions',
     value: [
-      "- Key the idempotency check on Stripe's event id, not a hash of the payload, because the payload changes between retries but the event id never does",
-      '- Write the dedupe check inside the same transaction as the credit, because a crash between the check and the commit would still double credit',
-      '- Backfill runs read only for its first pass, because three years of settled events is too much to trust to one migration',
-      '- Keep the retry state store on payments-api, not web-console, so web-console stays a read only view instead of a second source of truth',
+      '- D7 Show the stuck-delivery banner after the third failed retry, not the first',
+      '- D6 Keep the retry state store on payments-api, so web-console stays a read only view',
+      '- D4 Backfill runs read only for its first pass',
+      '- D2 Write the dedupe check inside the same transaction as the credit',
+      "- D1 Key idempotency on Stripe's event id; the payload changes between retries",
     ].join('\n'),
     enabled: true,
   },
@@ -222,6 +224,99 @@ const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
 
 const at = ({ day, time }: { readonly day: string; readonly time: string }): IsoDateTime =>
   clock.iso({ at: `${day}T${time}.000Z` });
+
+const decision = (
+  row: Pick<SessionDecision, 'number' | 'text'> & Partial<SessionDecision>,
+): SessionDecision => ({
+  id: `mock-run-decision-${row.number}`,
+  sessionId: SESSION_ID,
+  status: 'active',
+  replacedBy: null,
+  author: 'agent',
+  agentId: PLANNER_AGENT_ID,
+  turnOrdinal: 2,
+  reason: null,
+  closedBy: null,
+  closedByAgentId: null,
+  previousText: null,
+  rewordedAt: null,
+  createdAt: at({ day: DAY_ONE, time: '10:20:00' }),
+  updatedAt: at({ day: DAY_ONE, time: '10:20:00' }),
+  ...row,
+});
+
+const DECISIONS_SEEN_AT = at({ day: DAY_TWO, time: '09:00:00' });
+
+const DECISIONS: ReadonlyArray<SessionDecision> = [
+  decision({
+    number: 1,
+    text: "Key idempotency on Stripe's event id; the payload changes between retries",
+    agentId: SCOUT_EVENTS_AGENT_ID,
+    turnOrdinal: 1,
+    previousText: "Use Stripe's event.id as the key because the payload differs per retry",
+    rewordedAt: at({ day: DAY_TWO, time: '10:00:00' }),
+  }),
+  decision({
+    number: 2,
+    text: 'Write the dedupe check inside the same transaction as the credit',
+    agentId: DEDUPE_AGENT_ID,
+    turnOrdinal: 4,
+  }),
+  decision({
+    number: 3,
+    text: 'Detect duplicates by hashing the payload',
+    agentId: SCOUT_AGENT_ID,
+    turnOrdinal: 1,
+    status: 'replaced',
+    replacedBy: 1,
+    closedBy: 'summarizer',
+  }),
+  decision({
+    number: 4,
+    text: 'Backfill runs read only for its first pass',
+    author: 'user',
+    agentId: null,
+    turnOrdinal: null,
+  }),
+  decision({
+    number: 5,
+    text: 'Show the banner after the first failed retry',
+    author: 'user',
+    agentId: null,
+    turnOrdinal: null,
+    status: 'replaced',
+    replacedBy: 7,
+    reason: 'You answered: three retries, one is normal provider noise',
+    closedBy: 'agent',
+    closedByAgentId: TESTER_AGENT_ID,
+    updatedAt: at({ day: DAY_TWO, time: '09:40:00' }),
+  }),
+  decision({
+    number: 6,
+    text: 'Keep the retry state store on payments-api, so web-console stays a read only view',
+    agentId: PLANNER_AGENT_ID,
+    turnOrdinal: 6,
+  }),
+  decision({
+    number: 7,
+    text: 'Show the stuck-delivery banner after the third failed retry, not the first',
+    agentId: TESTER_AGENT_ID,
+    turnOrdinal: 14,
+    createdAt: at({ day: DAY_TWO, time: '09:40:00' }),
+    updatedAt: at({ day: DAY_TWO, time: '09:40:00' }),
+  }),
+  decision({
+    number: 8,
+    text: 'Add a retry counter column to invoices',
+    agentId: KEY_COLUMN_AGENT_ID,
+    turnOrdinal: 3,
+    status: 'withdrawn',
+    reason: 'The ledger already keeps retry state; a second copy would drift',
+    closedBy: 'agent',
+    closedByAgentId: BACKFILL_AGENT_ID,
+    updatedAt: at({ day: DAY_TWO, time: '09:10:00' }),
+  }),
+];
 
 const WORKFLOW_STEPS: ReadonlyArray<Step> = [
   {
@@ -1113,6 +1208,9 @@ export const seedActivityRunScene = () => {
     },
     sessionSlots: { [SESSION_ID]: CONTEXT_SLOTS },
     sessionSlotsLoad: { [SESSION_ID]: 'loaded' },
+    sessionDecisions: { [SESSION_ID]: DECISIONS },
+    sessionDecisionsBaseline: { [SESSION_ID]: DECISIONS_SEEN_AT },
+    sessionContextSeenAt: { [SESSION_ID]: DECISIONS_SEEN_AT },
     sessionLoading: {
       [SESSION_ID]: {
         agents: false,

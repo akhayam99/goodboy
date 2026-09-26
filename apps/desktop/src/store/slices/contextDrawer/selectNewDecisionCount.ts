@@ -6,13 +6,16 @@ type Params = {
   readonly sessionId: SessionId;
 };
 
-const addedOf = (payload: unknown): number => {
-  if (typeof payload !== 'object' || payload === null || !('added' in payload)) {
+const countOf = (payload: unknown, key: 'added' | 'replaced'): number => {
+  if (typeof payload !== 'object' || payload === null || !(key in payload)) {
     return 0;
   }
-  const added: unknown = payload.added;
-  return typeof added === 'number' && added > 0 ? added : 0;
+  const value: unknown = (payload as Readonly<Record<string, unknown>>)[key];
+  return typeof value === 'number' && value > 0 ? value : 0;
 };
+
+const newOf = (payload: unknown): number =>
+  countOf(payload, 'added') + countOf(payload, 'replaced');
 
 export const selectNewDecisionCount = ({ state, sessionId }: Params): number => {
   const seenAt = state.sessionContextSeenAt[sessionId];
@@ -27,6 +30,6 @@ export const selectNewDecisionCount = ({ state, sessionId }: Params): number => 
     if (seenAt !== null && event.createdAt <= seenAt) {
       return count;
     }
-    return count + addedOf(event.payload);
+    return count + newOf(event.payload);
   }, 0);
 };

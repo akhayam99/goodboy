@@ -843,13 +843,27 @@ on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U op
 Decisions and Summary. The first open shows Summary, later ones the last tab
 used in that session. The chip says `2 new` when decisions were added since the
 Decisions tab was last shown (`sessions.context_seen_at`, counted from the
-`added` of `decisions_changed` events), and opens on Decisions then; it shows
+`added` and `replaced` of `decisions_changed` events; withdrawals never count),
+and opens on Decisions then; it shows
 a pulsing dot while the summarizer writes and a danger glyph when it failed,
 with Retry in the drawer's status line. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary` resolve in
 `canonicalLocation` to the overview with this drawer open on the matching tab.
 The drawer header has one action, **Copy as brief**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
+
+The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)):
+active decisions newest first, each with its number, at most two lines of
+text, and who settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
+`replaces 5`). A row added or replaced since the previous look carries `New`
+until the next open (`sessionDecisionsBaseline`, the `context_seen_at` before
+this one). A row the summarizer reworded says `Reworded by Goodboy` with
+**Show previous**. On hover a row offers edit (a reword of yours) and
+Withdraw, with no confirm because the bottom group, **Replaced and withdrawn**,
+offers Restore; its rows are struck through, point at the decision that
+replaced them (`→ 7` scrolls there and highlights it), and quote the reason.
+The dock adds a decision of yours on Enter. While the summarizer writes, rows
+stay readable and every edit waits.
 
 The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
 or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;

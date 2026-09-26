@@ -26,6 +26,7 @@ type HarnessState = Record<string, unknown>;
 const harness = () => {
   let state: HarnessState = {
     ...initialContextDrawerState,
+    sessionDecisionsBaseline: {},
     drawer: null,
     currentSessionId: SESSION_ID,
     openDrawer: vi.fn((request: unknown) => {
@@ -83,6 +84,19 @@ describe('context drawer slice', () => {
     expect(h.getState()['drawer']).toMatchObject({ payload: { tab: 'decisions' } });
   });
 
+  it('keeps the previous look as the baseline for the New tags', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce('2026-09-26T09:00:00.000Z');
+
+    await h.slice.markSessionContextSeen(SESSION_ID);
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({
+      [SESSION_ID]: '2026-09-26T09:00:00.000Z',
+    });
+
+    const firstLook = (h.getState()['sessionContextSeenAt'] as Record<string, string>)[SESSION_ID];
+    await h.slice.markSessionContextSeen(SESSION_ID);
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: firstLook });
+  });
+
   it('writes when the decisions were seen', async () => {
     await h.slice.markSessionContextSeen(SESSION_ID);
 
@@ -131,6 +145,22 @@ describe('selectNewDecisionCount', () => {
         sessionId: SESSION_ID,
       }),
     ).toBe(5);
+  });
+
+  it('counts replacements as new, never withdrawals', () => {
+    const ledgerEvent = {
+      ...event('2026-09-26T11:30:00.000Z', 1),
+      payload: { added: 1, replaced: 2, withdrawn: 4, merged: 1 },
+    } as SessionEvent;
+    expect(
+      selectNewDecisionCount({
+        state: {
+          sessionEvents: { [SESSION_ID]: [ledgerEvent] },
+          sessionContextSeenAt: { [SESSION_ID]: '2026-09-26T10:00:00.000Z' as IsoDateTime },
+        },
+        sessionId: SESSION_ID,
+      }),
+    ).toBe(3);
   });
 
   it('says nothing before the last look is known', () => {

@@ -156,6 +156,32 @@ const workflowSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
 const decisionCount = ({ count }: { readonly count: number }): string =>
   count === 1 ? '1 decision' : `${count} decisions`;
 
+const LEDGER_PARTS = ['added', 'replaced', 'withdrawn', 'merged', 'restored'] as const;
+
+const ledgerParts = ({ payload }: PayloadParams): string =>
+  LEDGER_PARTS.flatMap((key) => {
+    const count = payload?.[key] ?? 0;
+    return count > 0 ? [`${count} ${key}`] : [];
+  }).join(', ');
+
+const isLedgerPayload = ({ payload }: PayloadParams): boolean =>
+  payload?.replaced !== undefined ||
+  payload?.withdrawn !== undefined ||
+  payload?.merged !== undefined;
+
+const decisionsChangedLabel = ({ payload }: PayloadParams): string => {
+  if (payload?.consolidatedAfter !== undefined) {
+    const parts = ledgerParts({ payload });
+    const head = `Context consolidated after ${payload.consolidatedAfter}`;
+    return parts === '' ? head : `${head} · ${parts}`;
+  }
+  if (isLedgerPayload({ payload })) {
+    const parts = ledgerParts({ payload });
+    return parts === '' ? 'Decisions' : `Decisions · ${parts}`;
+  }
+  return `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`;
+};
+
 type TitleParams = {
   readonly event: SessionEvent;
 };
@@ -230,12 +256,7 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
     case 'workflow_deleted':
       return [workflowSegment({ payload }), { kind: 'text', text: ' deleted' }];
     case 'decisions_changed':
-      return [
-        {
-          kind: 'text',
-          text: `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`,
-        },
-      ];
+      return [{ kind: 'text', text: decisionsChangedLabel({ payload }) }];
     case 'project_materialized': {
       const branch = payload?.branch ?? '';
       const onBranch: ReadonlyArray<TimelineLabelSegment> =
