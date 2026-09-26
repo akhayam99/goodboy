@@ -7,7 +7,8 @@ export type HistoryRowVerb =
   | 'rewrite-with-agent'
   | 'change-plan'
   | 'restore-previous'
-  | 'discard-plan';
+  | 'discard-plan'
+  | 'bring-origin';
 
 export type HistoryRowControls = {
   readonly primary: HistoryRowVerb | null;
@@ -22,6 +23,7 @@ export const HISTORY_ROW_LABEL: Readonly<Record<HistoryRowVerb, string>> = {
   'change-plan': 'Change the plan',
   'restore-previous': 'Restore previous history',
   'discard-plan': 'Discard plan',
+  'bring-origin': 'Bring them into the plan',
 };
 
 const isHistoryEvent = ({ event }: { readonly event: SessionEvent }): boolean =>
@@ -61,6 +63,9 @@ export const historyRowControls = ({ event, events }: Params): HistoryRowControl
     return null;
   }
   const reason = event.payload?.reason ?? 'failed';
+  if (reason === 'origin-moved') {
+    return { primary: 'bring-origin', secondary: [] };
+  }
   if (reason === 'stuck') {
     return {
       primary: 'retry-with-note',

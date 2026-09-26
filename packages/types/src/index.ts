@@ -274,6 +274,7 @@ export { REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
 export type {
   HistoryBackup,
   HistoryMoveOutcome,
+  HistoryOriginAhead,
   HistoryPlan,
   HistoryPlanArgs,
   HistoryPlanState,

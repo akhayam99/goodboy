@@ -25,6 +25,7 @@ import {
   hasChanges,
   isContiguous,
   moveStep,
+  moveStepOnto,
   planSummary,
   resetStep,
   rewordStep,
@@ -75,10 +76,13 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
   const [undoStack, setUndoStack] = useState<ReadonlyArray<ReadonlyArray<HistoryStep>>>([]);
   const [scribeFor, setScribeFor] = useState<string | null>(null);
   const [isShowingBackups, setIsShowingBackups] = useState(false);
+  const [draggingSha, setDraggingSha] = useState<string | null>(null);
+  const [dropSha, setDropSha] = useState<string | null>(null);
   const [isConfirmingPush, setIsConfirmingPush] = useState(false);
   const [hasPushedBefore, setHasPushedBefore] = useState(false);
   const pushHistoryRewrite = useAppStore((s) => s.pushHistoryRewrite);
   const restoreHistory = useAppStore((s) => s.restoreHistory);
+  const bringOriginIntoHistory = useAppStore((s) => s.bringOriginIntoHistory);
   const hasPushedHistoryBefore = useAppStore((s) => s.hasPushedHistoryBefore);
   const prNumber = useAppStore((s) =>
     mountId === null ? null : (s.mountGithub[mountId]?.pr?.number ?? null),
@@ -208,6 +212,25 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
           : { kind: 'move', sha: moved.other, other: sha },
     });
   };
+  const dropOnto = ({ onto }: { readonly onto: string }) => {
+    const sha = draggingSha;
+    setDraggingSha(null);
+    setDropSha(null);
+    if (sha === null) {
+      return;
+    }
+    const moved = moveStepOnto({ items, sha, onto });
+    if (moved.direction === null) {
+      return;
+    }
+    apply({
+      next: moved.items,
+      edit:
+        moved.direction === 'newer'
+          ? { kind: 'move', sha, other: onto }
+          : { kind: 'move', sha: onto, other: sha },
+    });
+  };
   const squashWithBelow = ({ sha }: { readonly sha: string }) => {
     const older = olderThan({ sha })[0];
     if (older === undefined) {
@@ -313,6 +336,14 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
         onToggleSelect={() => toggle({ sha: step.sha })}
         onStartReword={() => setEditingSha(step.sha)}
         onKey={(key, withAlt) => onKey({ sha: step.sha, key, withAlt })}
+        isDragTarget={dropSha === step.sha && draggingSha !== step.sha}
+        onDragStart={() => setDraggingSha(step.sha)}
+        onDragEnter={() => setDropSha(step.sha)}
+        onDrop={() => dropOnto({ onto: step.sha })}
+        onDragEnd={() => {
+          setDraggingSha(null);
+          setDropSha(null);
+        }}
         editor={
           <RewordEditor
             initialMessage={step.message ?? commit.subject}
@@ -587,6 +618,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
               }}
               onRewriteWithAgent={() => void rewriteDraftWithAgent({ sessionId, mountId })}
               onUndoEdit={undoStack.length > 0 ? undo : null}
+              onBringOrigin={() => void bringOriginIntoHistory({ sessionId, mountId })}
               onApplyRewritten={(shouldPush) =>
                 void applyRewrittenHistory({ sessionId, mountId, shouldPush })
               }

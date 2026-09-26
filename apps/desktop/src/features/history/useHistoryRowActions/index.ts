@@ -49,6 +49,10 @@ export const useHistoryRowActions = ({
           }
           return;
         }
+        if (verb === 'bring-origin') {
+          void store.bringOriginIntoHistory({ sessionId, mountId });
+          return;
+        }
         if (verb === 'retry' && event.payload?.origin === 'rebase') {
           void store.rebaseBranch({ sessionId, mountId });
           return;

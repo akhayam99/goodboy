@@ -151,6 +151,27 @@ export const moveStep = ({
   return { items: next, other: other.sha };
 };
 
+export const moveStepOnto = ({
+  items,
+  sha,
+  onto,
+}: ShaParams & { readonly onto: string }): {
+  readonly items: ReadonlyArray<HistoryStep>;
+  readonly direction: 'newer' | 'older' | null;
+} => {
+  const from = items.findIndex((step) => step.sha === sha);
+  const to = items.findIndex((step) => step.sha === onto);
+  const step = items[from];
+  if (from < 0 || to < 0 || from === to || step === undefined) {
+    return { items, direction: null };
+  }
+  const rest = items.filter((candidate) => candidate.sha !== sha);
+  return {
+    items: [...rest.slice(0, to), step, ...rest.slice(to)],
+    direction: from < to ? 'newer' : 'older',
+  };
+};
+
 export const resetStep = ({ items, sha }: ShaParams): ReadonlyArray<HistoryStep> =>
   replace({ items, sha, next: (step) => ({ sha: step.sha, verb: 'pick' }) });
 

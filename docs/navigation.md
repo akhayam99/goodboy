@@ -953,9 +953,9 @@ history. The page lists the commits since main, newest first, split into
 row has a verb column (Pick, Reword, Squash into the one below, Fold into,
 Drop, Move up or down) and every verb carries one line that says what happens
 to the code and to the message; the word fixup never shows. The keys are the
-ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move.
+ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move; a row can also be dragged onto another by its grip, and it lands where that row was.
 Nothing touches git while you edit: the plan is a draft saved per worktree in
-`history_plans`, and 250ms after each edit the engine predicts it in memory
+`history_plans`, and once the plan rests for a second the engine predicts it in memory
 with `git merge-tree`. The dock says what changes (`1 reword · 1 dropped`),
 whether the code changes, and `No conflicts expected`; when an edit breaks
 the plan it names that edit (`Moving 5b3e91f above 7c2d8a1 will conflict`)
@@ -966,7 +966,7 @@ push. Commits already on origin can be rewritten too: the dock counts them,
 names the pull request that updates, and the first push that rewrites origin
 on a branch asks once in an `InlineConfirm`. The push always carries
 `--force-with-lease` on the origin sha read at apply, never a bare force; if
-origin moved, nothing is pushed and the dock says so. After an apply the dock
+origin moved, nothing is pushed and the dock offers `Bring them into the plan`, which fetches the commits origin gained, replays them on top of the rewrite in a copy and leaves `Push with lease` on the new origin sha. After an apply the dock
 reads `Rewritten here · origin has the old history` with `Push with lease`
 and `Undo rewrite`. Every move leaves a backup under `refs/goodboy/backup/`,
 kept 30 days; `Backups` in the page menu lists them with `Restore previous

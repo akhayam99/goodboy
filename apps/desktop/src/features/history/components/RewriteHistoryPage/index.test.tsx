@@ -86,6 +86,7 @@ const setup = ({
     pushHistoryRewrite: vi.fn(async () => 'pushed'),
     restoreHistory: vi.fn(async () => 'restored'),
     hasPushedHistoryBefore: vi.fn(async () => pushedBefore),
+    bringOriginIntoHistory: vi.fn(async () => 'applied'),
   };
   h.state = {
     ...actions,
@@ -185,6 +186,28 @@ describe('RewriteHistoryPage', () => {
         edit: { kind: 'move', sha: 'bbb2222bbbb', other: 'ccc3333cccc' },
       }),
     );
+  });
+
+  it('reorders by dragging a row onto another, next to the keyboard and the menu', () => {
+    const actions = setup();
+    const dragged = screen.getByTestId('history-row-aaa1111');
+    const target = screen.getByTestId('history-row-ccc3333');
+    fireEvent.dragStart(dragged, { dataTransfer: { setData: () => undefined } });
+    fireEvent.dragEnter(target);
+    fireEvent.dragOver(target, { dataTransfer: {} });
+    fireEvent.drop(target, { dataTransfer: {} });
+
+    expect(actions.editHistoryDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          { sha: 'bbb2222bbbb', verb: 'pick' },
+          { sha: 'ccc3333cccc', verb: 'pick' },
+          { sha: 'aaa1111aaaa', verb: 'pick' },
+        ],
+        edit: { kind: 'move', sha: 'aaa1111aaaa', other: 'ccc3333cccc' },
+      }),
+    );
+    expect(dragged.getAttribute('draggable')).toBe('true');
   });
 
   it('names the move that breaks the plan and offers the history rewriter', () => {
@@ -295,6 +318,40 @@ describe('RewriteHistoryPage', () => {
       mountId: MOUNT_ID,
       backupRef: 'refs/goodboy/backup/fix-ledger-postings/1790000000000000000',
       shouldPush: false,
+    });
+  });
+
+  it('brings what origin gained into the plan after the lease refused the push', () => {
+    const actions = setup({
+      run: {
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        origin: 'plan',
+        phase: 'stopped',
+        planId: 'plan-1',
+        agentId: null,
+        copyPath: null,
+        stop: {
+          reason: 'origin-moved',
+          message: 'Origin has new commits since the rewrite. Nothing was pushed.',
+          files: [],
+          sha: null,
+        },
+        result: null,
+        backupRef: null,
+        remoteSha: 'remote-sha',
+        holder: null,
+        updatedAt: 1,
+      },
+    });
+
+    expect(
+      screen.getByText('Origin has new commits since the rewrite. Nothing was pushed.'),
+    ).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Bring them into the plan' }));
+    expect(actions.bringOriginIntoHistory).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
     });
   });
 });

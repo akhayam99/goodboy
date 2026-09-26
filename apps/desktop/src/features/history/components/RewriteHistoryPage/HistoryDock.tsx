@@ -20,6 +20,7 @@ type Props = {
   readonly onRewriteWithAgent: () => void;
   readonly onUndoEdit: (() => void) | null;
   readonly onApplyRewritten: (shouldPush: boolean) => void;
+  readonly onBringOrigin: () => void;
 };
 
 const plural = ({ count, word }: { readonly count: number; readonly word: string }) =>
@@ -48,6 +49,7 @@ export const HistoryDock = ({
   onRewriteWithAgent,
   onUndoEdit,
   onApplyRewritten,
+  onBringOrigin,
 }: Props) => {
   const isBusy = run !== null && isHistoryRunActive({ phase: run.phase });
   const conflict = prediction?.steps.find((step) => step.outcome === 'conflict') ?? null;
@@ -158,6 +160,11 @@ export const HistoryDock = ({
           </span>
         )}
       </div>
+      {run !== null && run.phase === 'stopped' && run.stop?.reason === 'origin-moved' ? (
+        <Button size="sm" variant="primary" onClick={onBringOrigin}>
+          Bring them into the plan
+        </Button>
+      ) : null}
       {run !== null && run.phase === 'stopped' && run.stop?.reason === 'conflict' ? (
         <Button size="sm" variant="ghost" onClick={onRewriteWithAgent}>
           Rewrite with an agent

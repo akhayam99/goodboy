@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type {
   HistoryBackup,
   HistoryMoveOutcome,
+  HistoryOriginAhead,
   HistoryPlanArgs,
   HistoryPlanPrediction,
   HistoryRebasePlan,
@@ -136,3 +137,26 @@ export const discardHistoryCopy = async ({
   copyPath,
 }: DiscardCopyParams): Promise<void> =>
   invoke<void>('history_copy_discard', { worktreePath, copyPath });
+
+type OriginAheadParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly since: string | null;
+  readonly workspaceId: string | null;
+  readonly projectId: string | null;
+};
+
+export const readOriginAhead = async ({
+  worktreePath,
+  branch,
+  since,
+  workspaceId,
+  projectId,
+}: OriginAheadParams): Promise<HistoryOriginAhead> =>
+  invoke<HistoryOriginAhead>('history_origin_ahead', {
+    worktreePath,
+    branch,
+    since,
+    workspaceId,
+    projectId,
+  });

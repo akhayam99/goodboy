@@ -277,6 +277,33 @@ fn read_commit(cwd: &Path, sha: &str) -> Result<CommitInfo, WorktreeError> {
             sha,
         ],
     )?;
+    Ok(parse_commit(&raw))
+}
+
+fn read_commits(cwd: &Path, shas: &[String]) -> Result<HashMap<String, CommitInfo>, WorktreeError> {
+    if shas.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let mut args = vec![
+        "show".to_string(),
+        "-s".to_string(),
+        "--date=raw".to_string(),
+        "--format=%H%x1f%P%x1f%an%x1f%ae%x1f%ad%x1f%B%x1e".to_string(),
+    ];
+    args.extend(shas.iter().cloned());
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    let raw = git(cwd, &refs)?;
+    Ok(raw
+        .split('\u{1e}')
+        .filter_map(|record| {
+            let record = record.trim_start_matches('\n');
+            let (sha, rest) = record.split_once('\u{1f}')?;
+            Some((sha.trim().to_string(), parse_commit(rest)))
+        })
+        .collect())
+}
+
+fn parse_commit(raw: &str) -> CommitInfo {
     let mut parts = raw.splitn(5, '\u{1f}');
     let parents = parts
         .next()
@@ -288,13 +315,13 @@ fn read_commit(cwd: &Path, sha: &str) -> Result<CommitInfo, WorktreeError> {
     let author_email = parts.next().unwrap_or_default().to_string();
     let author_date = parts.next().unwrap_or_default().to_string();
     let message = parts.next().unwrap_or_default().trim_end().to_string();
-    Ok(CommitInfo {
+    CommitInfo {
         parents,
         author_name,
         author_email,
         author_date,
         message,
-    })
+    }
 }
 
 fn tree_of(cwd: &Path, sha: &str) -> Result<String, WorktreeError> {
@@ -321,7 +348,42 @@ fn plan_error(message: &str) -> WorktreeError {
     }
 }
 
+fn resolve_all(cwd: &Path, names: &[&str]) -> Option<Vec<String>> {
+    let args: Vec<String> = std::iter::once("rev-parse".to_string())
+        .chain(
+            names
+                .iter()
+                .map(|name| format!("{}^{{commit}}", name.trim())),
+        )
+        .collect();
+    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+    let raw = git(cwd, &refs).ok()?;
+    let resolved: Vec<String> = raw
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect();
+    (resolved.len() == names.len()).then_some(resolved)
+}
+
 fn resolved_steps(cwd: &Path, steps: &[HistoryStep]) -> Result<Vec<HistoryStep>, WorktreeError> {
+    let names: Vec<&str> = steps
+        .iter()
+        .flat_map(|step| std::iter::once(step.sha.as_str()).chain(step.target.as_deref()))
+        .collect();
+    if let Some(resolved) = resolve_all(cwd, &names) {
+        let mut next = resolved.into_iter();
+        return Ok(steps
+            .iter()
+            .map(|step| HistoryStep {
+                sha: next.next().unwrap_or_default(),
+                verb: step.verb,
+                message: step.message.clone(),
+                target: step.target.as_ref().and_then(|_| next.next()),
+            })
+            .collect());
+    }
     steps
         .iter()
         .map(|step| {
@@ -495,7 +557,10 @@ fn commit_tree(
 }
 
 fn single_parent(cwd: &Path, sha: &str) -> Result<CommitInfo, WorktreeError> {
-    let info = read_commit(cwd, sha)?;
+    one_parent(sha, read_commit(cwd, sha)?)
+}
+
+fn one_parent(sha: &str, info: CommitInfo) -> Result<CommitInfo, WorktreeError> {
     if info.parents.len() != 1 {
         return Err(plan_error(&format!(
             "{} is a merge commit: Rewrite history only replays commits with one parent",
@@ -549,8 +614,15 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
     let old_head = resolve_commit(cwd, &args.head)?;
     let steps = resolved_steps(cwd, &args.steps)?;
     let ordered = order_steps(&steps)?;
+    let replayed: Vec<String> = ordered
+        .iter()
+        .filter(|step| step.verb != HistoryVerb::Drop)
+        .map(|step| step.sha.clone())
+        .collect();
+    let mut infos = read_commits(cwd, &replayed)?;
     let mut outcomes: HashMap<String, StepPrediction> = HashMap::new();
     let mut tip = base.clone();
+    let mut tip_tree = tree_of(cwd, &base)?;
     let mut group: Option<Group> = None;
     let mut map = Vec::new();
     let mut stopped = false;
@@ -566,7 +638,10 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
             );
             continue;
         }
-        let info = single_parent(cwd, &step.sha)?;
+        let info = match infos.remove(&step.sha) {
+            Some(found) => one_parent(&step.sha, found)?,
+            None => single_parent(cwd, &step.sha)?,
+        };
         let merge_base = info.parents[0].clone();
         match merge_in_memory(cwd, &merge_base, &tip, &step.sha)? {
             MergeResult::Conflict(files) => {
@@ -583,7 +658,7 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
             }
             MergeResult::Tree(tree) => {
                 let is_folding = matches!(step.verb, HistoryVerb::Squash | HistoryVerb::Fixup);
-                if !is_folding && tree == tree_of(cwd, &tip)? {
+                if !is_folding && tree == tip_tree {
                     outcomes.insert(step.sha.clone(), prediction(&step.sha, StepOutcome::Empty));
                     continue;
                 }
@@ -596,12 +671,14 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
                     tip = commit_tree(cwd, &tree, &current.parent, &message, &author)?;
                     current.message = message;
                     current.members.push(step.sha.clone());
+                    tip_tree = tree;
                 } else {
                     finish_group(group.take(), &tip, &mut map);
                     let message = message_of(step, &info);
                     let author = info.author();
                     let parent = tip.clone();
                     tip = commit_tree(cwd, &tree, &parent, &message, &author)?;
+                    tip_tree = tree;
                     group = Some(Group {
                         message,
                         author,
@@ -639,7 +716,7 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
     Ok(PlanPrediction {
         is_supported: true,
         steps: ordered_outcomes,
-        is_tree_equal: tree_of(cwd, &tip)? == tree_of(cwd, &old_head)?,
+        is_tree_equal: tip_tree == tree_of(cwd, &old_head)?,
         changed_files: changed_files(cwd, &old_head, &tip),
         head: Some(tip),
     })
@@ -1263,6 +1340,83 @@ pub async fn history_rebase_plan(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct OriginAhead {
+    pub remote_sha: String,
+    pub commits: Vec<RebaseCommit>,
+    pub fetch_error: Option<String>,
+}
+
+pub(crate) fn origin_ahead(
+    cwd: &Path,
+    branch: &str,
+    since: Option<&str>,
+    token: Option<&str>,
+) -> Result<OriginAhead, WorktreeError> {
+    let refspec = format!("+refs/heads/{branch}:refs/remotes/origin/{branch}");
+    let cwd_text = cwd.to_string_lossy().to_string();
+    let fetch_error = match crate::github::run_git_authenticated(
+        &["fetch", "--quiet", "origin", &refspec],
+        &cwd_text,
+        token,
+    ) {
+        Ok(result) if result.exit_code == 0 => None,
+        Ok(result) => Some(result.stderr.trim().to_string()),
+        Err(error) => Some(error.to_string()),
+    };
+    let remote_sha = resolve_commit(cwd, &format!("origin/{branch}"))?;
+    let from = match since.map(str::trim).filter(|sha| !sha.is_empty()) {
+        Some(sha) => resolve_commit(cwd, sha)?,
+        None => resolve_commit(cwd, "HEAD")?,
+    };
+    let range = format!("{from}..{remote_sha}");
+    let raw = git(
+        cwd,
+        &["log", "--reverse", "--format=%H%x1f%P%x1f%s", &range],
+    )?;
+    let mut commits = Vec::new();
+    for line in raw.lines().filter(|line| !line.trim().is_empty()) {
+        let mut parts = line.splitn(3, '\u{1f}');
+        let sha = parts.next().unwrap_or_default().to_string();
+        if parts.next().unwrap_or_default().split_whitespace().count() != 1 {
+            return Err(plan_error(&format!(
+                "{} on origin is a merge commit: bring it in by hand",
+                short(&sha)
+            )));
+        }
+        commits.push(RebaseCommit {
+            sha,
+            subject: parts.next().unwrap_or_default().to_string(),
+        });
+    }
+    Ok(OriginAhead {
+        remote_sha,
+        commits,
+        fetch_error,
+    })
+}
+
+#[tauri::command]
+pub async fn history_origin_ahead(
+    worktree_path: String,
+    branch: String,
+    since: Option<String>,
+    workspace_id: Option<String>,
+    project_id: Option<String>,
+) -> Result<OriginAhead, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(worktree_path));
+        }
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        origin_ahead(&cwd, &branch, since.as_deref(), token.as_deref())
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RewriterPrepareArgs {
@@ -1471,6 +1625,10 @@ pub async fn history_copy_discard(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn slug(name: &str) -> String {
+        format!("{name}-{}-{}", std::process::id(), now_nanos())
+    }
 
     fn temp_root(name: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -1722,7 +1880,8 @@ mod tests {
                 reword,
             ],
         );
-        let result = trial(&args, "trial-verbs", false).unwrap();
+        let trial_slug = slug("trial-verbs");
+        let result = trial(&args, &trial_slug, false).unwrap();
         assert_eq!(result.stop, None);
         assert!(result.is_tree_equal);
         let head = result.head.unwrap();
@@ -1738,7 +1897,7 @@ mod tests {
         );
         assert_eq!(result.map.len(), 3);
         assert_eq!(git_ok(&b.root, &["rev-parse", "HEAD"]), b.c);
-        assert!(!copy_path_of("trial-verbs").exists());
+        assert!(!copy_path_of(&trial_slug).exists());
     }
 
     #[test]
@@ -1750,7 +1909,7 @@ mod tests {
             &b.c,
             vec![step(&b.b, HistoryVerb::Pick), step(&b.a, HistoryVerb::Pick)],
         );
-        let result = trial(&args, "trial-conflict", true).unwrap();
+        let result = trial(&args, &slug("trial-conflict"), true).unwrap();
         let stop = result.stop.unwrap();
         assert_eq!(stop.kind, StopKind::Merge);
         assert_eq!(stop.files, vec!["policy.txt".to_string()]);
@@ -1773,7 +1932,7 @@ mod tests {
                 step(&b.c, HistoryVerb::Pick),
             ],
         );
-        let result = trial(&args, "apply-restore", false).unwrap();
+        let result = trial(&args, &slug("apply-restore"), false).unwrap();
         let new_head = result.head.unwrap();
         let moved = move_branch_blocking(&b.root, "feature", &b.c, &new_head).unwrap();
         let MoveOutcome::Moved { head, backup_ref } = moved else {
@@ -1827,6 +1986,92 @@ mod tests {
         assert_eq!(left.len(), 1);
         assert_eq!(left[0].ref_name, fresh);
     }
+
+    #[test]
+    fn commits_origin_gained_after_the_apply_come_into_the_plan_and_push_with_lease() {
+        let b = branch("origin-ahead");
+        let remote = b.root.join("remote.git");
+        git_ok(&b.root, &["init", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &b.root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        git_ok(&b.root, &["push", "-u", "origin", "feature"]);
+        let other = b.root.join("other");
+        git_ok(
+            &b.root,
+            &[
+                "clone",
+                "-q",
+                "-b",
+                "feature",
+                remote.to_str().unwrap(),
+                other.to_str().unwrap(),
+            ],
+        );
+        git_ok(&other, &["config", "user.email", "test@example.com"]);
+        git_ok(&other, &["config", "user.name", "teammate"]);
+        let theirs = commit(&other, "teammate.txt", "hello\n", "Teammate adds a note");
+        git_ok(&other, &["push", "-q", "origin", "feature"]);
+        let args = plan(
+            &b.root,
+            &b.base,
+            &b.c,
+            vec![
+                step(&b.a, HistoryVerb::Pick),
+                step(&b.b, HistoryVerb::Squash),
+                step(&b.c, HistoryVerb::Pick),
+            ],
+        );
+        let rewritten = trial(&args, &slug("origin-ahead"), false)
+            .unwrap()
+            .head
+            .unwrap();
+        move_branch_blocking(&b.root, "feature", &b.c, &rewritten).unwrap();
+
+        let ahead = origin_ahead(&b.root, "feature", Some(&b.c), None).unwrap();
+        assert_eq!(ahead.remote_sha, theirs);
+        assert_eq!(
+            ahead
+                .commits
+                .iter()
+                .map(|c| c.sha.clone())
+                .collect::<Vec<_>>(),
+            vec![theirs.clone()]
+        );
+        let bring = plan(
+            &b.root,
+            &rewritten,
+            &rewritten,
+            vec![step(&theirs, HistoryVerb::Pick)],
+        );
+        let joined = trial(&bring, &slug("origin-bring"), false)
+            .unwrap()
+            .head
+            .unwrap();
+        move_branch_blocking(&b.root, "feature", &rewritten, &joined).unwrap();
+        let cwd = b.root.to_string_lossy().into_owned();
+        let pushed = crate::github::run_git_authenticated(
+            &[
+                "push",
+                &crate::github::lease_argument("feature", Some(&ahead.remote_sha)),
+                "origin",
+                "refs/heads/feature:refs/heads/feature",
+            ],
+            &cwd,
+            None,
+        )
+        .unwrap();
+        assert_eq!(
+            crate::github::lease_push_outcome(&pushed),
+            crate::github::LeasePushOutcome::Pushed
+        );
+        assert_eq!(
+            subjects(&b.root, &format!("{}..feature", b.base)),
+            vec!["Teammate adds a note", "C adds notes", "A edits the policy"]
+        );
+    }
+
     #[test]
     fn the_lease_push_refuses_when_origin_moved() {
         let b = branch("lease-push");
@@ -1847,7 +2092,10 @@ mod tests {
                 step(&b.c, HistoryVerb::Pick),
             ],
         );
-        let new_head = trial(&args, "lease-push", false).unwrap().head.unwrap();
+        let new_head = trial(&args, &slug("lease-push"), false)
+            .unwrap()
+            .head
+            .unwrap();
         move_branch_blocking(&b.root, "feature", &b.c, &new_head).unwrap();
         let cwd = b.root.to_string_lossy().into_owned();
         let refspec = "refs/heads/feature:refs/heads/feature";
@@ -1954,7 +2202,7 @@ mod tests {
                 step(&b.c, HistoryVerb::Pick),
             ],
         );
-        let prepared = trial(&args, "rewriter-collect", true).unwrap();
+        let prepared = trial(&args, &slug("rewriter-collect"), true).unwrap();
         let copy = PathBuf::from(prepared.copy_path.clone().unwrap());
         assert_eq!(prepared.stop.unwrap().files, vec!["policy.txt".to_string()]);
         std::fs::write(copy.join("policy.txt"), "three\n").unwrap();
@@ -2003,7 +2251,7 @@ mod tests {
             &b.c,
             vec![step(&b.b, HistoryVerb::Pick), step(&b.a, HistoryVerb::Pick)],
         );
-        let prepared = trial(&args, "rewriter-count", true).unwrap();
+        let prepared = trial(&args, &slug("rewriter-count"), true).unwrap();
         let copy = PathBuf::from(prepared.copy_path.unwrap());
         git_ok(&copy, &["checkout", "--theirs", "policy.txt"]);
         git_ok(&copy, &["add", "policy.txt"]);
@@ -2040,5 +2288,66 @@ mod tests {
         crate::turn::apply_push_block(&mut bare);
         assert!(!bare.output().unwrap().status.success());
         assert_eq!(git_ok(&remote, &["rev-parse", "refs/heads/feature"]), b.c);
+    }
+
+    #[test]
+    #[ignore = "timing spike, run with --ignored --nocapture on an idle machine"]
+    fn predicting_a_thirty_commit_plan_stays_inside_the_budget() {
+        let root = init_repo("predict-timing");
+        for dir in 0..40 {
+            let folder = root.join(format!("src/module{dir}"));
+            std::fs::create_dir_all(&folder).unwrap();
+            for file in 0..50 {
+                std::fs::write(
+                    folder.join(format!("file{file}.ts")),
+                    format!("export const value{dir}_{file} = {file};\n"),
+                )
+                .unwrap();
+            }
+        }
+        git_ok(&root, &["add", "."]);
+        git_ok(
+            &root,
+            &["commit", "--no-verify", "-m", "base with 2000 files"],
+        );
+        let base = git_ok(&root, &["rev-parse", "HEAD"]);
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        let shas: Vec<String> = (0..30)
+            .map(|index| {
+                commit(
+                    &root,
+                    &format!("src/module{}/file{}.ts", index % 40, index),
+                    &format!("export const changed{index} = true;\n"),
+                    &format!("change {index}"),
+                )
+            })
+            .collect();
+        let head = shas.last().unwrap().clone();
+        let mut steps: Vec<HistoryStep> = shas
+            .iter()
+            .map(|sha| step(sha, HistoryVerb::Pick))
+            .collect();
+        steps.swap(3, 4);
+        steps[10].verb = HistoryVerb::Squash;
+        steps[20].verb = HistoryVerb::Drop;
+        let mut fold = step(&shas[25], HistoryVerb::Fixup);
+        fold.target = Some(shas[12].clone());
+        steps[25] = fold;
+        let args = plan(&root, &base, &head, steps);
+
+        let started = std::time::Instant::now();
+        let prediction = predict(&args).unwrap();
+        let elapsed = started.elapsed().as_millis();
+
+        let probe = std::time::Instant::now();
+        for _ in 0..10 {
+            git_ok(&root, &["rev-parse", "HEAD"]);
+        }
+        let per_spawn = probe.elapsed().as_millis() / 10;
+        eprintln!(
+            "history prediction of a 30 commit plan over 2000 files: {elapsed} ms, one git spawn: {per_spawn} ms"
+        );
+        assert!(prediction.head.is_some());
+        assert!(elapsed < 5_000, "prediction took {elapsed} ms");
     }
 }

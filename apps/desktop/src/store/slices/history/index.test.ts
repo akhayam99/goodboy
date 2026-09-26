@@ -10,6 +10,7 @@ const engine = vi.hoisted(() => ({
   applyHistoryPlan: vi.fn(),
   pushWithLease: vi.fn(),
   restoreHistoryBackup: vi.fn(),
+  readOriginAhead: vi.fn(),
 }));
 
 const worktree = vi.hoisted(() => ({
@@ -373,6 +374,63 @@ describe('restore previous history', () => {
       }),
     ).resolves.toBe('restored');
     expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+});
+
+describe('bring origin into the plan', () => {
+  it('replays what origin gained on top of the rewrite and leaves the push to a lease', async () => {
+    const { slice, read } = harness();
+    const state = read() as unknown as Record<string, unknown>;
+    state['historyRuns'] = {
+      [MOUNT_ID]: {
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        origin: 'plan',
+        phase: 'stopped',
+        planId: 'plan-1',
+        agentId: null,
+        copyPath: null,
+        stop: { reason: 'origin-moved', message: 'moved', files: [], sha: null },
+        result: null,
+        backupRef: null,
+        remoteSha: 'remote-at-apply',
+        holder: null,
+        updatedAt: 1,
+      },
+    };
+    engine.readOriginAhead.mockResolvedValue({
+      remoteSha: 'remote-now',
+      commits: [{ sha: 'teammate1', subject: 'Teammate adds a note' }],
+      fetchError: null,
+    });
+    engine.tryHistoryPlan.mockResolvedValue({
+      head: 'joined',
+      map: [{ from: 'teammate1', to: 'joined' }],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: null,
+      copyPath: null,
+      order: [],
+    });
+
+    await expect(
+      slice.bringOriginIntoHistory({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toBe('applied');
+
+    expect(engine.readOriginAhead).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: 'fix/ledger-postings', since: 'remote-at-apply' }),
+    );
+    expect(engine.tryHistoryPlan).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      base: 'head-sha',
+      head: 'head-sha',
+      steps: [{ sha: 'teammate1', verb: 'pick' }],
+    });
+    expect(engine.applyHistoryPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedHead: 'head-sha', newHead: 'joined' }),
+    );
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+    expect(read().historyRuns[MOUNT_ID]?.phase).toBe('applied');
   });
 });
 
