@@ -220,9 +220,11 @@ pays for every turn.
 - **Browser sign-in stuck**: after 4 seconds the card offers **Open the sign-in page again**.
   After two minutes, **Run in my terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
-- **How close am I to a limit?** The Limits chips in the top bar show a bar per
-  provider. Hover one for every window and its reset, click it for the provider
-  page. Claude updates its numbers only while a Claude agent runs
+- **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
+  the 5-hour window above, the week below. From 80% it adds the worse window's
+  number with its short name (`5h 86%`, `wk 94%`). Hover one for every window and
+  its reset, click it for the provider page. Claude updates its numbers only while
+  a Claude agent runs
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
   reset (about 5 hours on Claude Max), or let the fallback order send the next turn to
   another provider. Session summaries count against the same limit
