@@ -8,6 +8,10 @@ import type { ProjectId, WorkspaceId } from '@goodboy/types';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
 import { linearIssueFields, recordByline, resolveFacts } from '../../../../shared/detail-fields';
+import type { ResolvedFact } from '../../../../shared/detail-fields/factTypes';
+import { useAppStore } from '../../../../store';
+import { LinearStateMenu } from '../LinearStateMenu';
+import { useLinearIssueState } from '../useLinearIssueState';
 import type { LinearIssue } from '../client';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
@@ -29,6 +33,33 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
     projectId,
   });
   const { description, save } = useLinearIssueDescription({ issue, workspaceId, projectId });
+  const { state, change } = useLinearIssueState({ issue, workspaceId, projectId });
+  const reportError = useAppStore((s) => s.reportError);
+  const facts = useMemo(
+    (): ReadonlyArray<ResolvedFact> =>
+      resolveFacts({ registry: linearIssueFields, entity: { ...issue, state } }).map((fact) =>
+        fact.key !== 'state' || change === null
+          ? fact
+          : {
+              ...fact,
+              editor: ({ close }) => (
+                <LinearStateMenu
+                  workspaceId={workspaceId}
+                  projectId={projectId}
+                  issueId={issue.id}
+                  currentName={state.name}
+                  onPick={(stateId) =>
+                    void change(stateId).catch((error: unknown) =>
+                      reportError({ title: "Couldn't change the status", error, workspaceId }),
+                    )
+                  }
+                  onClose={close}
+                />
+              ),
+            },
+      ),
+    [issue, state, change, workspaceId, projectId, reportError],
+  );
   const source = useMemo<ConversationSource>(
     () => ({
       toolLabel: 'Linear',
@@ -63,11 +94,7 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
             verb: 'updated',
             iso: issue.updatedAt,
           })}
-          facts={
-            <RecordProperties
-              facts={resolveFacts({ registry: linearIssueFields, entity: issue })}
-            />
-          }
+          facts={<RecordProperties facts={facts} />}
           externalRef={{ url: issue.url, label: 'issue' }}
           frame={frame}
         />

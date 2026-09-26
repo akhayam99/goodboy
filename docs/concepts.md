@@ -664,7 +664,8 @@ Merge and pull requests launch with their text as it is.
 - **Jira**: read full issues and act on them. Comment, assign, move to another
   status, edit the description.
 - **Linear**: read issues and turn them into sessions. The description and
-  comments are written back.
+  comments are written back, and the status row moves the issue to another
+  state of its team.
 - **Sentry**: read issues and events and turn them into sessions.
 - **Slack**: read threads, reply, and turn them into sessions with the goal
   filled in. Replies post as the connected user. Each workspace has its own
