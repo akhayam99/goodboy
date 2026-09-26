@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
 use rusqlite::config::DbConfig;
@@ -47,7 +48,24 @@ impl DbError {
     }
 }
 
-pub struct Db(pub Mutex<Connection>, pub PathBuf);
+/// `.2` is the wipe generation: bumped once per `db_wipe`, before the schema
+/// reset runs. A caller that captured a generation earlier (via
+/// `Db::generation`) and finds it stale after the fact knows its write would
+/// otherwise have landed in the freshly-reset database, and should refuse it.
+pub struct Db(pub Mutex<Connection>, pub PathBuf, pub AtomicU64);
+
+impl Db {
+    pub fn generation(&self) -> u64 {
+        self.2.load(Ordering::SeqCst)
+    }
+
+    /// Bumps the wipe generation and returns the new value. Called once at
+    /// the start of `db_wipe`, before anything else runs, so every
+    /// generation captured before this point is immediately stale.
+    fn bump_generation(&self) -> u64 {
+        self.2.fetch_add(1, Ordering::SeqCst) + 1
+    }
+}
 
 pub fn open() -> Result<Db, DbError> {
     let path = resolve_db_path()?;
@@ -55,7 +73,7 @@ pub fn open() -> Result<Db, DbError> {
         std::fs::create_dir_all(parent)?;
     }
     let conn = open_and_finish_wipe(&path)?;
-    Ok(Db(Mutex::new(conn), path))
+    Ok(Db(Mutex::new(conn), path, AtomicU64::new(0)))
 }
 
 const CORE_TABLES: [&str; 3] = ["schema_version", "sessions", "agents"];
@@ -374,6 +392,7 @@ pub(crate) fn reset_database(conn: &Connection) -> Result<(), DbError> {
 
 #[tauri::command(async)]
 pub fn db_wipe(app: tauri::AppHandle, state: State<'_, Db>) -> Result<(), DbError> {
+    state.bump_generation();
     crate::stop_running_work(&app);
     crate::query_bridge::shutdown();
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
@@ -840,6 +859,21 @@ mod tests {
         drop_tables_one_by_one(&conn);
         let error = conn.execute_batch(TABLE_REBUILD).unwrap_err().to_string();
         assert!(error.contains("error in view live_agents: no such table: main.agents"));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_wipe_bumps_the_generation_so_a_snapshot_taken_before_it_goes_stale() {
+        let (dir, conn) = migrated_file_db("generation");
+        let db = Db(Mutex::new(conn), dir.clone(), AtomicU64::new(0));
+
+        let before_wipe = db.generation();
+        let bumped = db.bump_generation();
+
+        assert_eq!(before_wipe, 0);
+        assert_eq!(bumped, 1);
+        assert_eq!(db.generation(), 1);
+        assert_ne!(db.generation(), before_wipe);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

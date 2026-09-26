@@ -53,6 +53,7 @@ pub const BRANCH_IN_USE: &str = "branch_in_use";
 pub const UNSAFE_CLEANUP: &str = "unsafe_cleanup";
 pub const OPERATION_PENDING: &str = "operation_pending";
 pub const REQUEST_CONFLICT: &str = "request_conflict";
+pub const DB_RESET: &str = "db_reset";
 
 pub const ERROR_CODES: &[&str] = &[
     AMBIGUOUS_MOUNT,
@@ -62,6 +63,7 @@ pub const ERROR_CODES: &[&str] = &[
     UNSAFE_CLEANUP,
     OPERATION_PENDING,
     REQUEST_CONFLICT,
+    DB_RESET,
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]

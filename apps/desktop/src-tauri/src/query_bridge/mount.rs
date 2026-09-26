@@ -10,7 +10,7 @@ use tokio::sync::oneshot;
 use super::args::{optional_text, required_text};
 use super::dispatch::Scope;
 use super::protocol::{
-    BridgeError, AMBIGUOUS_MOUNT, MOUNT_UNAVAILABLE, OPERATION_PENDING, REQUEST_CONFLICT,
+    BridgeError, AMBIGUOUS_MOUNT, DB_RESET, MOUNT_UNAVAILABLE, OPERATION_PENDING, REQUEST_CONFLICT,
 };
 use crate::db::Db;
 
@@ -280,8 +280,24 @@ fn operation_row(
     ))
 }
 
+/// Refuses a write whose caller captured the wipe generation before a
+/// `db_wipe` bumped it: the schema that write was aimed at is gone, and
+/// writing into the reset one instead would resurrect a stale operation
+/// row under a fresh session. Kept pure (plain integers, no `Db`/`AppHandle`)
+/// so it can be unit tested without a Tauri test harness.
+fn check_generation(expected: u64, current: u64) -> Result<(), BridgeError> {
+    if expected != current {
+        return Err(BridgeError::coded(
+            DB_RESET,
+            "the database was wiped while this request was pending",
+        ));
+    }
+    Ok(())
+}
+
 fn record_pending(
     app: &AppHandle,
+    expected_generation: u64,
     session_id: &str,
     request_id: &str,
     kind: &str,
@@ -289,10 +305,12 @@ fn record_pending(
     input: &Value,
 ) -> Result<(), BridgeError> {
     let state = app.state::<Db>();
+    check_generation(expected_generation, state.generation())?;
     let conn = state
         .0
         .lock()
         .map_err(|_| "db mutex poisoned".to_string())?;
+    check_generation(expected_generation, state.generation())?;
     let now = crate::util::now_ms();
     conn.execute(
         "INSERT INTO mount_operations
@@ -450,6 +468,10 @@ pub(super) async fn dispatch(
     scope: &Scope<'_>,
     verb: &str,
 ) -> Result<Value, BridgeError> {
+    // Captured now, at request-received time, rather than right before the
+    // write below: a wipe that lands anywhere in between is a wipe this
+    // request never saw, so its write must not land in the reset schema.
+    let expected_generation = app.state::<Db>().generation();
     let args = scope.args;
     let rows = session_mounts(app, scope.workspace, scope.session)?;
     if verb == "list" {
@@ -550,6 +572,7 @@ pub(super) async fn dispatch(
     }
     record_pending(
         app,
+        expected_generation,
         scope.session,
         &request_id,
         kind,
@@ -662,6 +685,21 @@ mod tests {
             disk_state: "present".to_string(),
             revision: 3,
         }
+    }
+
+    #[test]
+    fn a_request_accepted_before_a_wipe_is_refused_once_the_generation_moves() {
+        let accepted_at = 4;
+        let after_wipe = 5;
+
+        let error = check_generation(accepted_at, after_wipe).unwrap_err();
+
+        assert_eq!(error.code.as_deref(), Some(DB_RESET));
+    }
+
+    #[test]
+    fn a_request_still_on_the_same_generation_writes_through() {
+        assert!(check_generation(4, 4).is_ok());
     }
 
     #[test]
