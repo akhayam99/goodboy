@@ -38,12 +38,20 @@ export const projectFetch = async ({
 
 type CheckoutFastForwardParams = {
   readonly checkoutPath: string;
+  readonly workspaceId?: string;
+  readonly projectId?: string;
 };
 
 export const checkoutFastForward = async ({
   checkoutPath,
+  workspaceId,
+  projectId,
 }: CheckoutFastForwardParams): Promise<FastForwardResult> => {
-  return invoke<FastForwardResult>('checkout_fast_forward', { checkoutPath });
+  return invoke<FastForwardResult>('checkout_fast_forward', {
+    checkoutPath,
+    workspaceId,
+    projectId,
+  });
 };
 
 export type ChildRepo = {

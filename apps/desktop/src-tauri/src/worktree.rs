@@ -3076,14 +3076,38 @@ fn ff_merge_args(upstream: &str) -> Vec<&str> {
 #[tauri::command]
 pub async fn checkout_fast_forward(
     checkout_path: String,
+    workspace_id: Option<String>,
+    project_id: Option<String>,
 ) -> Result<FastForwardResult, WorktreeError> {
-    tauri::async_runtime::spawn_blocking(move || checkout_fast_forward_blocking(checkout_path))
-        .await
-        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+    tauri::async_runtime::spawn_blocking(move || {
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        checkout_fast_forward_blocking(checkout_path, token.as_deref())
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn fetch_remote_authenticated(
+    checkout_path: &str,
+    remote: &str,
+    token: Option<&str>,
+) -> Result<(), WorktreeError> {
+    let result =
+        crate::github::run_git_authenticated(&["fetch", "--no-tags", remote], checkout_path, token)
+            .map_err(|error| WorktreeError::Git {
+                message: error.to_string(),
+            })?;
+    if result.exit_code != 0 {
+        return Err(WorktreeError::Git {
+            message: result.stderr.trim().to_string(),
+        });
+    }
+    Ok(())
 }
 
 fn checkout_fast_forward_blocking(
     checkout_path: String,
+    token: Option<&str>,
 ) -> Result<FastForwardResult, WorktreeError> {
     let p = Path::new(&checkout_path);
     if !p.exists() {
@@ -3142,7 +3166,7 @@ fn checkout_fast_forward_blocking(
             message: format!("cannot tell which remote {upstream} belongs to"),
         });
     };
-    git(p, &["fetch", "--no-tags", remote])?;
+    fetch_remote_authenticated(&checkout_path, remote, token)?;
     let behind = match distance_between(p, &upstream, "HEAD") {
         GitDistance::Known { behind, .. } => behind,
         GitDistance::Unknown { .. } => {
@@ -4159,7 +4183,8 @@ mod rewrite_tests {
 
         super::git_argv_log::reset();
         let pulled =
-            super::checkout_fast_forward_blocking(copy.to_string_lossy().into_owned()).unwrap();
+            super::checkout_fast_forward_blocking(copy.to_string_lossy().into_owned(), None)
+                .unwrap();
         let merge_invocations: Vec<Vec<String>> = super::git_argv_log::recorded()
             .into_iter()
             .filter(|argv| argv.iter().any(|arg| arg == "merge"))
@@ -4195,7 +4220,8 @@ mod rewrite_tests {
         let before = git_ok(&root, &["rev-parse", "HEAD"]);
 
         let refusal =
-            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned(), None)
+                .unwrap_err();
 
         assert!(format!("{refusal}").contains("uncommitted changes"));
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
@@ -4207,12 +4233,39 @@ mod rewrite_tests {
     }
 
     #[test]
+    fn fast_forward_reports_the_fetch_failure_and_moves_nothing() {
+        let root = init_repo("fast-forward-fetch-fails");
+        let base = commit(&root, "base.txt", "base", "base");
+        push_to_new_remote(&root);
+        git_ok(
+            &root,
+            &[
+                "remote",
+                "set-url",
+                "origin",
+                root.join("missing.git").to_str().unwrap(),
+            ],
+        );
+
+        let error = super::checkout_fast_forward_blocking(
+            root.to_string_lossy().into_owned(),
+            Some("token-for-test"),
+        )
+        .unwrap_err();
+
+        assert!(matches!(error, super::WorktreeError::Git { ref message } if !message.is_empty()));
+        assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), base);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn fast_forward_refuses_a_branch_without_an_upstream() {
         let root = init_repo("fast-forward-no-upstream");
         commit(&root, "base.txt", "base", "base");
 
         let refusal =
-            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned(), None)
+                .unwrap_err();
 
         assert!(format!("{refusal}").contains("no upstream"));
         std::fs::remove_dir_all(root).unwrap();
@@ -4230,7 +4283,8 @@ mod rewrite_tests {
         let merge = super::git(&root, &["merge", "feature"]);
 
         let refusal =
-            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned(), None)
+                .unwrap_err();
 
         assert!(merge.is_err());
         assert!(format!("{refusal}").contains("merge in progress"));
@@ -4246,7 +4300,8 @@ mod rewrite_tests {
         std::fs::write(root.join(".git").join("index"), "not an index").unwrap();
 
         let refusal =
-            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned()).unwrap_err();
+            super::checkout_fast_forward_blocking(root.to_string_lossy().into_owned(), None)
+                .unwrap_err();
 
         assert!(format!("{refusal}").contains("git status could not be read"));
         assert_eq!(git_ok(&root, &["rev-parse", "HEAD"]), before);
