@@ -9,7 +9,8 @@ import { useElementWidth } from '../../../../shared/hooks/useElementWidth';
 import { useListKeys } from '../../../../shared/hooks/useListKeys';
 import { openUrl } from '../../../../shared/lib/editor';
 import { groupByDay } from '../../../../shared/utils/groupByDay';
-import { useSessionById, type InboxStudioFocus } from '../../../../store';
+import { useAppStore, useSessionById, type InboxStudioFocus } from '../../../../store';
+import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
 import { orderInboxRecords } from '../../orderInboxRecords';
@@ -28,6 +29,7 @@ import { InboxDetail } from './InboxDetail';
 import { InboxFacetRail } from './InboxFacetRail';
 import { InboxList, type InboxLoadFailure } from './InboxList';
 import { InboxListHeader } from './InboxListHeader';
+import { InboxLookupGroup } from './InboxLookupGroup';
 import { InboxStudioLayout } from './InboxStudioLayout';
 
 type Props = {
@@ -180,10 +182,21 @@ export const InboxStudio = ({
   const orderedRecords = days.flatMap((day) => day.items);
   const counts = inboxFacetCounts({ records: scopedRecords, query, filters });
 
-  const selectedRecord = useMemo(
-    () => scopedRecords.find((record) => record.key === selectedKey) ?? null,
-    [scopedRecords, selectedKey],
+  const workspaceName = useAppStore(
+    (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
   );
+  const lookup = useWorkspaceIssueLookup({
+    workspaceId,
+    query,
+    isKnown: (code) => records.some((record) => record.identifier.toUpperCase() === code),
+  });
+  const lookupRecords =
+    lookup.state.status === 'done' ? lookup.state.value.result.hits.map((hit) => hit.record) : [];
+
+  const selectedRecord =
+    scopedRecords.find((record) => record.key === selectedKey) ??
+    lookupRecords.find((record) => record.key === selectedKey) ??
+    null;
 
   const deselect = (): void => {
     setSelectedKey(null);
@@ -297,6 +310,12 @@ export const InboxStudio = ({
                 />
               }
             >
+              <InboxLookupGroup
+                lookup={lookup}
+                workspaceName={workspaceName}
+                selectedKey={selectedKey}
+                onSelect={(hit) => selectKey(hit.record.key)}
+              />
               <InboxList
                 days={days}
                 totalCount={scopedRecords.length}
