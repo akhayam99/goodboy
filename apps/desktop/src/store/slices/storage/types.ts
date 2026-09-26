@@ -72,8 +72,12 @@ export type StorageFilter = 'review' | 'in-use' | 'kept';
 
 export type StorageFocus = {
   readonly filter: StorageFilter;
-  readonly workspaceId: WorkspaceId | null;
 };
+
+export type StorageScope =
+  | { readonly kind: 'workspace'; readonly id: WorkspaceId }
+  | { readonly kind: 'removed' }
+  | { readonly kind: 'all' };
 
 export type StorageRemoval =
   | { readonly kind: 'removed'; readonly path: string; readonly sizeBytes: number }

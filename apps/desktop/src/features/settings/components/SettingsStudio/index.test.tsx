@@ -66,6 +66,8 @@ vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
   useSessions: () => [],
+  useWorkspaces: () => [],
+  useCurrentWorkspace: () => null,
 }));
 
 vi.mock('../../../providers/components/ProviderStudio', () => ({

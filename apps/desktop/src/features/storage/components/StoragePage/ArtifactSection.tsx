@@ -13,9 +13,10 @@ import {
   isStorageArtifactSuggested,
   storageArtifactFilter,
 } from '../../../../store/slices/storage/classifyStorageArtifact';
-import type { StorageArtifactFilter } from '../../../../store/slices/storage/types';
+import type { StorageArtifactFilter, StorageScope } from '../../../../store/slices/storage/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
+import { storageOwnerMatchesScope } from '../../storageOwnerMatchesScope';
 import { useStorageSummary } from '../../useStorageSummary';
 import { ArtifactBulkDeleteBar } from './ArtifactBulkDeleteBar';
 import { ArtifactColumns } from './ArtifactColumns';
@@ -31,12 +32,24 @@ const EMPTY_COPY = {
 
 const ReportIcon = CONCEPT_ICONS.report;
 
-export const ArtifactSection = () => {
-  const artifacts = useAppStore((state) => state.storageArtifacts);
-  const { suggestAfterDays, now } = useStorageSummary();
+type Props = {
+  readonly scope: StorageScope;
+};
+
+export const ArtifactSection = ({ scope }: Props) => {
+  const allArtifacts = useAppStore((state) => state.storageArtifacts);
+  const { suggestAfterDays, now } = useStorageSummary({ scope });
   const [filter, setFilter] = useState<StorageArtifactFilter>('review');
   const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  const artifacts = useMemo(
+    () =>
+      allArtifacts.filter((artifact) =>
+        storageOwnerMatchesScope({ ownerWorkspace: artifact.workspaceId, scope }),
+      ),
+    [allArtifacts, scope],
+  );
 
   const byFilter = useMemo(
     () => ({

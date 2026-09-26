@@ -173,6 +173,7 @@ export const NON_SESSION_STATE_KEYS = [
   'storageRemovingPaths',
   'storageOutcome',
   'storageFocus',
+  'storageScope',
   'storageArtifacts',
   'storageDeletingArtifacts',
   'budgetRules',

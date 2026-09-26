@@ -587,15 +587,25 @@ one is open at a time.
   (`SETTINGS_PANE_ENTRY`). So no scope adds a second rail column. Every scope
   panel keeps the reading width. Precedent: the VS Code settings table of
   contents and Linear's settings sidebar.
-- **Storage is the one place for disk space.** App > Storage lists every
-  worktree folder Goodboy made, grouped by repository, disconnected projects
-  and removed workspaces included, under three filters: To review, In use and
-  Kept. It is app scope because the disk belongs to the machine. The workspace
-  page only shows a Notice that points to Storage filtered on that workspace,
-  and the `open-orphan-worktrees` notification action opens Storage too
-  (`openStorage`). The only bulk action removes clean folders idle past "Suggest
-  cleanup after"; a folder with changes, an operation in progress, a writer
-  lease or no git registration never joins it and says why on its row.
+- **Storage is the one place for disk space, scoped by a picker.** App >
+  Storage lists every worktree folder Goodboy made, grouped by repository,
+  under three filters: To review, In use and Kept. A scope picker
+  (`StorageScopePicker`, `Listbox`) sits above the summary: the current
+  window's workspace, every other workspace with its own weight, `Removed
+workspaces` (folders whose owning workspace is gone or was never linked),
+  and `All workspaces` with the machine total. The scope drives the summary
+  numbers, the worktree list and the artifact list together
+  (`storageScope`, `resolveStorageScope`); it defaults to the current
+  window's workspace, or to all workspaces without one. A scope other than
+  all drops App data out of the bar into its own line (`state.storageScope`
+  never splits app data by workspace) and keeps a faint, clickable `All
+workspaces: <total>, <can go> can go` line under the numbers. The
+  workspace page's own Notice, and the `open-orphan-worktrees` notification
+  action, both open Storage already scoped to that workspace
+  (`openStorage({ scope })`); the machine-wide `open-storage` nudge opens it
+  scoped to all. The only bulk action removes clean folders idle past
+  "Suggest cleanup after"; a folder with changes, an operation in progress, a
+  writer lease or no git registration never joins it and says why on its row.
   Outside Settings there is one nudge and never a modal: `evaluateStorageNudge`
   sends a `storage-reclaimable` notification (action `open-storage`) when that
   amount passes 10 GB, then stays quiet for 14 days and speaks again only after

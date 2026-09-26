@@ -7,6 +7,7 @@ import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
   StorageArtifact,
   StorageFocus,
+  StorageScope,
   StorageFolder,
   StorageRemovalSummary,
   StorageRoot,
@@ -326,6 +327,7 @@ export type AppState = AppSliceState & {
   readonly storageRemovingPaths: Readonly<Record<string, true>>;
   readonly storageOutcome: StorageRemovalSummary | null;
   readonly storageFocus: StorageFocus | null;
+  readonly storageScope: StorageScope | null;
   readonly storageArtifacts: ReadonlyArray<StorageArtifact>;
   readonly storageDeletingArtifacts: Readonly<Record<string, true>>;
   readonly budgetRules: ReadonlyArray<BudgetRule>;
