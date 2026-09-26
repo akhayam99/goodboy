@@ -177,10 +177,13 @@ type SessionViewSliceState = {
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
+  readonly diffPage: Readonly<Record<SessionId, DiffPage | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
 };
+
+export type DiffPage = 'history';
 
 type SessionViewSliceActions = {
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
@@ -231,6 +234,8 @@ type SessionViewSliceActions = {
   }): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
   openMountDiff(sessionId: SessionId, worktreePath: string): void;
+  openRewriteHistory(sessionId: SessionId, worktreePath: string | null): void;
+  closeRewriteHistory(sessionId: SessionId): void;
   openMountTerminal(sessionId: SessionId, worktreePath: string): void;
   beginSessionCreation(
     sessionId: SessionId,

@@ -30,6 +30,7 @@ import { REVIEW_MODE_LABEL } from '../../../review/reviewModeLabel';
 import { focusedArtifactTitleOf } from '../../../artifacts/focusedArtifactTitleOf';
 import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolveDiffMount';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import { REWRITE_HISTORY_TITLE } from '../../../history/rewriteHistoryTitle';
 
 type Params = {
   readonly session: Session;
@@ -84,6 +85,11 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     }
     return mount.branch === '' ? mount.mountName : `${mount.mountName} ${mount.branch}`;
   });
+
+  const diffPageLabel = useAppStore((s) =>
+    s.diffPage?.[sessionId] === 'history' ? REWRITE_HISTORY_TITLE : null,
+  );
+  const closeRewriteHistory = useAppStore((s) => s.closeRewriteHistory);
 
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
@@ -180,6 +186,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedQuestionLabel,
         reviewModeLabel,
         diffBranchLabel,
+        diffPageLabel,
         selectedThreadLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
@@ -213,6 +220,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             navigate({ to: agentPlace({ sessionId, agentId: rootAgentId }) });
           },
           toReviewHome: () => setReviewMode({ sessionId, mode: 'queue' }),
+          toDiffBranch: () => closeRewriteHistory(sessionId),
           toThread: () => {
             if (resolverThreadId === null) {
               return;
@@ -246,6 +254,8 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedQuestionLabel,
       reviewModeLabel,
       diffBranchLabel,
+      diffPageLabel,
+      closeRewriteHistory,
       selectedThreadLabel,
       resolverThreadId,
       parentAgentId,

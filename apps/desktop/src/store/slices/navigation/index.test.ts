@@ -48,6 +48,7 @@ const makeStore = () =>
         focusedWorkflowRunId: {},
         diffFocus: {},
         diffMountPath: {},
+        diffPage: {},
         terminalMountPath: {},
         focusedArtifactId: {},
         focusedGithubIssueNumber: {},

@@ -448,6 +448,7 @@ export type AppState = AppSliceState & {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
+  readonly diffPage: Readonly<Record<SessionId, 'history' | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
   readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;
