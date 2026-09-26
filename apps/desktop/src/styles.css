@@ -145,6 +145,7 @@
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 8px;
+  --radius-frame: 10px;
 
   --tracking-eyebrow: 0.08em;
 
@@ -209,6 +210,12 @@
 
   --animate-studio-body-in: studio-body-in 160ms cubic-bezier(0.2, 0, 0, 1);
 
+  --animate-drawer-card-in: drawer-card-in 220ms cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-drawer-overlay-in: drawer-overlay-in 200ms cubic-bezier(0.2, 0, 0, 1);
+
+  --animate-drawer-swap: drawer-swap 120ms ease-out;
+
   @keyframes studio-out {
     from {
       opacity: 1;
@@ -263,6 +270,37 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes drawer-card-in {
+    from {
+      opacity: 0;
+      transform: translateX(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes drawer-overlay-in {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes drawer-swap {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
     }
   }
 
