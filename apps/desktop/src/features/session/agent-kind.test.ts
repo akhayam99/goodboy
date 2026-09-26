@@ -614,6 +614,7 @@ describe('kindForRole', () => {
     wireframe: 'wireframe',
     resolver: 'resolver',
     rewriter: 'rewriter',
+    scribe: 'scribe',
     custom: 'generic',
   } satisfies Record<AgentRole, AgentKind>;
 

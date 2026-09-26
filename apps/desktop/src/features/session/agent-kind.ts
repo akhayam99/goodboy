@@ -77,6 +77,7 @@ export const AGENT_KIND_ORDER: ReadonlyArray<AgentKind> = [
   'wireframe',
   'resolver',
   'rewriter',
+  'scribe',
   'generic',
 ];
 
@@ -236,6 +237,15 @@ export const AGENT_KIND_META: Record<
     persona: 'patches',
     expectedOutput: 'the plan replayed in the copy, ready for the engine to check',
   },
+  scribe: {
+    label: 'Scribe',
+    noun: 'Scribe',
+    firstMessagePrompt: null,
+    pluralLabel: 'scribes',
+    hint: 'Writes pull request text, commit messages and changelog entries. Never code',
+    persona: 'scribble',
+    expectedOutput: 'text for the engine to use, never a file',
+  },
 };
 
 export type AgentKindPaletteEntry = {
@@ -304,6 +314,11 @@ export const AGENT_KIND_PALETTE: Record<AgentKind, AgentKindPaletteEntry> = {
     bg: 'bg-agent-rewriter',
     fg: 'text-agent-rewriter',
     label: AGENT_KIND_META.rewriter.noun,
+  },
+  scribe: {
+    bg: 'bg-agent-scribe',
+    fg: 'text-agent-scribe',
+    label: AGENT_KIND_META.scribe.noun,
   },
   generic: {
     bg: 'bg-agent-generic',
@@ -393,6 +408,7 @@ export const KIND_TO_ROLE: Record<AgentKind, AgentRole> = {
   wireframe: 'wireframe',
   resolver: 'resolver',
   rewriter: 'rewriter',
+  scribe: 'scribe',
   generic: 'custom',
 };
 
@@ -408,6 +424,7 @@ export const ROLE_LABEL: Record<AgentRole, string> = {
   wireframe: 'Wireframe',
   resolver: 'Resolver',
   rewriter: 'History rewriter',
+  scribe: 'Scribe',
   custom: 'Generalist',
 };
 
@@ -537,6 +554,16 @@ export const AGENT_KIND_DEFAULTS: Record<
       'FORBIDDEN: `git push`, `git fetch`, creating, deleting or moving branches or refs, `git reset` or `git checkout` of anything outside the copy, reading or writing paths outside the copy, touching `.goodboy/`, changing a message the plan does not change, adding changes the conflict does not need, `--no-verify`, rewriting commits below the base.',
       'never guess the intent of a commit: when two edits change the same behavior in incompatible ways, stop with history-stuck.',
       'report with one marker per line: after each step you finish, `<<history-step from="<old sha>" to="<new sha>">>`; at the end, `<<history-done head="<sha of HEAD in the copy>">>`; when a conflict cannot be merged with confidence, `<<history-stuck from="<old sha>" files="a.ts,b.ts" reason="<one line, plain text, no double quotes>">>` and stop. you never commit outside the copy, so never ask for permission to commit. the engine checks your result and moves the branch itself.',
+    ].join('\n\n'),
+  },
+  scribe: {
+    visible: false,
+    systemPrompt: [
+      'you are the scribe. you write text about code and never code: a pull request title and body, commit messages for a squash or a reword, changelog entries. the engine opens or updates the pull request and moves commits; you only hand it text.',
+      'ALLOWED: reading the diff, `git log`, `git show` and `git diff`, reading files, the session goal, decisions and summary in the kickoff, the linked issue, and the pull request template of the project (for example `.github/pull_request_template.md`) when there is one.',
+      'FORBIDDEN: creating, editing or deleting any file, `git commit`, `git push`, running `gh`, opening, editing or commenting on a pull request, inventing tests, results or numbers you did not see.',
+      'deliver only the markers the kickoff asks for, each opening and closing tag on its own line: `<<pr-title>>`, one line, `<</pr-title>>`; `<<pr-body>>`, markdown, `<</pr-body>>`; `<<commit-message for="<sha>">>`, a subject line, a blank line, an optional body, `<</commit-message>>`; `<<changelog-entry>>`, one entry in the format of the repository CHANGELOG.md, `<</changelog-entry>>`.',
+      'titles and subjects are imperative, sentence case, at most 72 characters, no trailing period. a body says what changed and why in a few short lines a reviewer reads in one pass, follows the project template when there is one, and never lists files one by one.',
     ].join('\n\n'),
   },
 };

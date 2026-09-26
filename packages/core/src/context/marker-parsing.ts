@@ -408,6 +408,69 @@ export const extractHistoryReport = (assistantText: string): ExtractedHistoryRep
   return { steps, doneHead, stuck };
 };
 
+export type ExtractedCommitMessage = {
+  readonly sha: string;
+  readonly message: string;
+};
+
+export type ExtractedScribeText = {
+  readonly prTitle: string | null;
+  readonly prBody: string | null;
+  readonly commitMessages: ReadonlyArray<ExtractedCommitMessage>;
+  readonly changelogEntry: string | null;
+};
+
+const scribeBlocks = ({
+  text,
+  tag,
+}: {
+  readonly text: string;
+  readonly tag: string;
+}): ReadonlyArray<{ readonly attrs: Record<string, string>; readonly body: string }> => {
+  const open = new RegExp(`<<${tag}((?:\\s+[\\w-]+="[^"]*")*)\\s*>>`, 'g');
+  const close = `<</${tag}>>`;
+  const blocks: Array<{ readonly attrs: Record<string, string>; readonly body: string }> = [];
+  let match: RegExpExecArray | null;
+  while ((match = open.exec(text)) !== null) {
+    const bodyStart = open.lastIndex;
+    const closeIndex = text.indexOf(close, bodyStart);
+    if (closeIndex === -1) {
+      break;
+    }
+    open.lastIndex = closeIndex + close.length;
+    blocks.push({
+      attrs: parseQuestionAttrs(match[1] ?? ''),
+      body: text.slice(bodyStart, closeIndex).trim(),
+    });
+  }
+  return blocks;
+};
+
+const lastBody = ({
+  text,
+  tag,
+}: {
+  readonly text: string;
+  readonly tag: string;
+}): string | null => {
+  const found = scribeBlocks({ text, tag })
+    .map((block) => block.body)
+    .filter((body) => body.length > 0);
+  return found.length === 0 ? null : (found[found.length - 1] ?? null);
+};
+
+export const extractScribeText = (assistantText: string): ExtractedScribeText => {
+  const title = lastBody({ text: assistantText, tag: 'pr-title' });
+  return {
+    prTitle: title === null ? null : (title.split('\n')[0]?.trim() ?? null),
+    prBody: lastBody({ text: assistantText, tag: 'pr-body' }),
+    commitMessages: scribeBlocks({ text: assistantText, tag: 'commit-message' })
+      .map((block) => ({ sha: (block.attrs.for ?? '').trim(), message: block.body }))
+      .filter((entry) => entry.message.length > 0),
+    changelogEntry: lastBody({ text: assistantText, tag: 'changelog-entry' }),
+  };
+};
+
 const REVIEW_THREAD_ID_RE = /^PRRT_/;
 
 export const isReviewThreadId = (threadId: string): boolean => {
@@ -975,7 +1038,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|pr-title|pr-body|commit-message|changelog-entry';
 const SELF_MARKER_ALT =
   'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
 

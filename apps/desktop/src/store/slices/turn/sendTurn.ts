@@ -674,6 +674,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (turnAgentKind === 'rewriter' && rewriterCopy === null) {
       throw new Error('The copy this rewrite worked in is gone. Retry the rewrite from Activity.');
     }
+    const isScribeTurn =
+      turnAgentKind === 'scribe' && get().scribeAgents[activeAgentId] !== undefined;
     const isResolverTurn = turnAgentKind === 'resolver';
     const agentRowForLease = isResolverTurn
       ? ((get().sessionPhaseRuns[sessionId] ?? []).find((row) => row.id === activeAgentId) ??
@@ -1206,7 +1208,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...(effortFlag !== undefined && { effort: effortFlag }),
           ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
           ...(writerLease !== undefined && { writerLease }),
-          ...(rewriterCopy !== null && { blocksPush: true }),
+          ...((rewriterCopy !== null || isScribeTurn) && { blocksPush: true }),
           ...(apiKeyBinding ?? {}),
           ...claudeFlags,
         },
@@ -1754,6 +1756,17 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
       }
       clearMaterializationBatch({ sessionId, batchId: runId });
+    }
+
+    if (isScribeTurn && !turnWasCancelled) {
+      void get()
+        .settleScribe({
+          sessionId,
+          agentId: activeAgentId,
+          assistantText,
+          hasFailed: lastError !== null,
+        })
+        .catch(() => undefined);
     }
 
     if (rewriterCopy !== null && !turnWasCancelled) {

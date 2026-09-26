@@ -1,0 +1,46 @@
+import type { ExtractedScribeText } from '@goodboy/core';
+import type { AgentId, MountId, SessionId } from '@goodboy/types';
+
+export type { SetFn, GetFn } from '../../slice-types';
+
+export type ScribeTask =
+  | {
+      readonly kind: 'pr';
+      readonly closedPrNumber: number | null;
+      readonly references: ReadonlyArray<string>;
+      readonly isDraft: boolean;
+    }
+  | { readonly kind: 'pr-update'; readonly prNumber: number }
+  | {
+      readonly kind: 'commit-message';
+      readonly verb: 'reword' | 'squash';
+      readonly commits: ReadonlyArray<{ readonly sha: string; readonly subject: string }>;
+    };
+
+export type ScribeStatus = 'writing' | 'ready' | 'failed';
+
+export type ScribeWork = {
+  readonly key: string;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly agentId: AgentId | null;
+  readonly task: ScribeTask;
+  readonly status: ScribeStatus;
+  readonly output: ExtractedScribeText | null;
+  readonly error: string | null;
+  readonly updatedAt: number;
+};
+
+export type RequestScribeInput = {
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly task: ScribeTask;
+  readonly hint?: string;
+};
+
+export type SettleScribeInput = {
+  readonly sessionId: SessionId;
+  readonly agentId: AgentId;
+  readonly assistantText: string;
+  readonly hasFailed: boolean;
+};

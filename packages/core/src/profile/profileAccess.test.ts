@@ -14,6 +14,7 @@ describe('PROFILE_ACCESS', () => {
       reviewer: ['roles', 'workingRules', 'explainMore'],
       resolver: ['roles', 'workingRules', 'explainMore'],
       rewriter: ['roles', 'workingRules'],
+      scribe: ['roles', 'aboutWork', 'explainMore'],
       report: ['roles', 'aboutWork', 'explainMore'],
       wireframe: ['roles', 'aboutWork', 'explainMore'],
       custom: ['roles', 'aboutWork', 'workingRules', 'explainMore'],

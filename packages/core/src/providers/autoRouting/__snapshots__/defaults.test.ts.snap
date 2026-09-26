@@ -103,6 +103,11 @@ exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
         "key": "haiku-4.5",
       },
     ],
+    "scribe": [
+      {
+        "key": "sonnet-5",
+      },
+    ],
     "summarizer": [
       {
         "key": "haiku-4.5",
@@ -227,6 +232,11 @@ exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
         "key": "gpt-5.6-luna",
       },
     ],
+    "scribe": [
+      {
+        "key": "gpt-5.6-terra",
+      },
+    ],
     "summarizer": [
       {
         "effort": "low",
@@ -340,6 +350,11 @@ exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
       },
     ],
     "scout": [
+      {
+        "key": "auto",
+      },
+    ],
+    "scribe": [
       {
         "key": "auto",
       },
@@ -462,6 +477,11 @@ exports[`AUTO_DEFAULTS > shows every change to the table in the diff 1`] = `
     "scout": [
       {
         "effort": "low",
+        "key": "gemini-3.8-flash",
+      },
+    ],
+    "scribe": [
+      {
         "key": "gemini-3.8-flash",
       },
     ],

@@ -39,6 +39,7 @@ export const SESSION_EVICTION = [
   { key: 'mountSelectedPr', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyRuns', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'historyRewriters', keyedBy: 'agent', evictOn: 'archive' },
+  { key: 'scribeAgents', keyedBy: 'agent', evictOn: 'archive' },
   { key: 'sessionGithub', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionProjectPrs', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionSelectedPrNumber', keyedBy: 'session', evictOn: 'archive' },
@@ -241,6 +242,7 @@ export const NON_SESSION_STATE_KEYS = [
   'prWriteClaims',
   'issueBriefs',
   'workspaceDurationHistory',
+  'scribeWork',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =

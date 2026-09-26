@@ -21,6 +21,7 @@ export type RolePresentationKey =
   | 'tester'
   | 'resolver'
   | 'rewriter'
+  | 'scribe'
   | 'docs'
   | 'report'
   | 'wireframe'
@@ -189,6 +190,25 @@ export const ROLE_REGISTRY = {
     selectionEligible: false,
     pickerEligible: false,
     description: 'replay a branch history plan in a copy and merge the conflicting edits',
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
+  scribe: {
+    id: 'scribe',
+    summary:
+      'Writes text about the code, never the code: pull requests, commit messages, changelog.',
+    aliases: [],
+    presentationKey: 'scribe',
+    defaultRoutingTaskType: 'writing',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'write pull request text, commit messages and changelog entries from the diff',
     fanOut: {
       mode: 'never',
       partitionKey: null,

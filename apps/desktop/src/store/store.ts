@@ -222,6 +222,8 @@ import { createProjectMountsSlice } from './slices/project-mounts';
 import { projectMountsInitialState } from './slices/project-mounts/state';
 import { createMountCleanupSlice, mountCleanupInitialState } from './slices/mount-cleanup';
 import { createHistorySlice, historyInitialState } from './slices/history';
+import { createScribeSlice, scribeInitialState } from './slices/scribe';
+import type { RequestScribeInput, SettleScribeInput } from './slices/scribe/types';
 import type {
   ApplyHistoryRewriteInput,
   ApplyHistoryRewriteOutcome,
@@ -578,6 +580,8 @@ type AppActions = {
   }): Promise<ApplyHistoryRewriteOutcome>;
   startHistoryRewriter(input: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome>;
   settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;
+  requestScribe(input: RequestScribeInput): Promise<string>;
+  settleScribe(input: SettleScribeInput): Promise<void>;
   createPrSeries(input: CreatePrSeriesInput): Promise<PrSeries>;
   setPrSeriesMember(input: SetPrSeriesMemberInput): Promise<PrSeriesMember>;
   loadPrSeries(input: LoadPrSeriesInput): Promise<ReadonlyArray<PrSeriesView>>;
@@ -1190,6 +1194,7 @@ export const initialState: AppState = {
   ...projectMountsInitialState,
   ...mountCleanupInitialState,
   ...historyInitialState,
+  ...scribeInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
   ...issueBriefsInitialState,
@@ -1350,6 +1355,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createProjectMountsSlice(set, get),
   ...createMountCleanupSlice(set, get),
   ...createHistorySlice(set, get),
+  ...createScribeSlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
   ...createIssueBriefsSlice(set, get),

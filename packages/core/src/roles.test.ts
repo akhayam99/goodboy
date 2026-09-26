@@ -21,6 +21,7 @@ describe('ROLE_REGISTRY', () => {
       'tester',
       'resolver',
       'rewriter',
+      'scribe',
       'docs',
       'report',
       'wireframe',
@@ -122,6 +123,16 @@ describe('ROLE_REGISTRY contract', () => {
       'docs',
       'custom',
     ]);
+  });
+
+  it('keeps the scribe out of every picker, workflow and classifier', () => {
+    expect(ROLE_REGISTRY.scribe).toMatchObject({
+      presentationKey: 'scribe',
+      workflowEligible: false,
+      classifierEligible: false,
+      selectionEligible: false,
+      pickerEligible: false,
+    });
   });
 
   it('keeps the history rewriter out of every picker, workflow and classifier', () => {

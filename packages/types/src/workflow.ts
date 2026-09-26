@@ -28,6 +28,7 @@ export type AgentRole =
   | 'tester'
   | 'resolver'
   | 'rewriter'
+  | 'scribe'
   | 'docs'
   | 'report'
   | 'wireframe'
