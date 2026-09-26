@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ROLE_REGISTRY } from '@goodboy/core';
 import { Listbox, type ListboxOption } from '@goodboy/ui';
 import type { AgentRole } from '@goodboy/types';
@@ -10,22 +11,26 @@ type Props = {
   disabled: boolean;
 };
 
-const ROLE_OPTIONS: ReadonlyArray<ListboxOption<AgentRole>> = visibleAgentRoles().map((role) => ({
-  value: role,
-  label: ROLE_LABEL[role],
-  description: ROLE_REGISTRY[role].summary,
-  leading: <AgentAvatar kind={kindForRole({ role })} size="xs" />,
-}));
+const roleOptions = (): ReadonlyArray<ListboxOption<AgentRole>> =>
+  visibleAgentRoles().map((role) => ({
+    value: role,
+    label: ROLE_LABEL[role],
+    description: ROLE_REGISTRY[role].summary,
+    leading: <AgentAvatar kind={kindForRole({ role })} size="xs" />,
+  }));
 
-export const RoleSelect = ({ value, onChange, disabled }: Props) => (
-  <Listbox
-    ariaLabel="Agent role"
-    size="sm"
-    isBlock
-    searchable={false}
-    value={value}
-    options={ROLE_OPTIONS}
-    onChange={onChange}
-    disabled={disabled}
-  />
-);
+export const RoleSelect = ({ value, onChange, disabled }: Props) => {
+  const options = useMemo(roleOptions, []);
+  return (
+    <Listbox
+      ariaLabel="Agent role"
+      size="sm"
+      isBlock
+      searchable={false}
+      value={value}
+      options={options}
+      onChange={onChange}
+      disabled={disabled}
+    />
+  );
+};

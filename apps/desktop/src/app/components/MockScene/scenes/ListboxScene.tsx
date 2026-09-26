@@ -3,11 +3,12 @@ import { Monitor, Moon, Search, Sun } from 'lucide-react';
 import { Eyebrow, Listbox, ListboxList, filterOptions } from '@goodboy/ui';
 import type { ListboxOption } from '@goodboy/ui';
 import { ListboxScenePanel } from './ListboxScenePanel';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const THEMES: ReadonlyArray<ListboxOption<string>> = [
-  { value: 'system', label: 'Match system', leading: <Monitor size={14} /> },
-  { value: 'light', label: 'Light', leading: <Sun size={14} /> },
-  { value: 'dark', label: 'Dark', leading: <Moon size={14} /> },
+  { value: 'system', label: 'Match system', leading: <Monitor size={ICON_SIZE.row} /> },
+  { value: 'light', label: 'Light', leading: <Sun size={ICON_SIZE.row} /> },
+  { value: 'dark', label: 'Dark', leading: <Moon size={ICON_SIZE.row} /> },
 ];
 
 const ROLES: ReadonlyArray<ListboxOption<string>> = [
@@ -125,7 +126,7 @@ export const ListboxScene = () => {
         </ListboxScenePanel>
         <ListboxScenePanel label="Search">
           <div className="flex h-9 items-center gap-2 px-2 text-muted-foreground">
-            <Search size={14} aria-hidden />
+            <Search size={ICON_SIZE.row} aria-hidden />
             <span className="flex-1 text-body text-foreground">{BRANCH_QUERY}</span>
             <span className="text-meta text-faint-foreground">
               {branchEntries.length} of {BRANCHES.length}
