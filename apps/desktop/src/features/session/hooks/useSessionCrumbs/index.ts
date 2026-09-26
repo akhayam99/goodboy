@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Agent, Session, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
@@ -8,7 +8,11 @@ import {
   useSessionPlans,
   type LensKind,
   agentPlace,
+  sessionPlace,
 } from '../../../../store';
+import { resolverThread } from '../../../../store/slices/navigation/resolverThread';
+import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
+import { threadLocationOf } from '../../../resolve/threadLocationOf';
 import { clipQuestionText, isQuestionDelegate } from '../../../context/questionDelegate';
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
@@ -54,6 +58,19 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const reviewMode = useAppStore((s) => s.reviewModes[sessionId] ?? 'queue');
   const setReviewMode = useAppStore((s) => s.setReviewMode);
   const reviewModeLabel = REVIEW_MODE_LABEL[reviewMode];
+  const resolverThreadId = useAppStore((s) =>
+    selectedAgentId == null || selectedChildHome !== 'review'
+      ? null
+      : resolverThread({ state: s, sessionId, agentId: selectedAgentId as AgentId }),
+  );
+  const queueRows = useResolveQueueRows({ sessionId });
+  const selectedThreadLabel = useMemo(() => {
+    if (resolverThreadId === null) {
+      return null;
+    }
+    const row = queueRows.find((candidate) => candidate.thread.threadId === resolverThreadId);
+    return row === undefined ? 'Comment' : (threadLocationOf({ row })?.shortLabel ?? 'Comment');
+  }, [queueRows, resolverThreadId]);
   const diffBranchLabel = useAppStore((s) => {
     const mounts = s.sessionProjectMounts?.[sessionId] ?? EMPTY_ARRAY;
     const path = resolveDiffMount({
@@ -163,6 +180,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedQuestionLabel,
         reviewModeLabel,
         diffBranchLabel,
+        selectedThreadLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
           toOverview: () => openLens({ sessionId, lens: null }),
@@ -195,6 +213,19 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             navigate({ to: agentPlace({ sessionId, agentId: rootAgentId }) });
           },
           toReviewHome: () => setReviewMode({ sessionId, mode: 'queue' }),
+          toThread: () => {
+            if (resolverThreadId === null) {
+              return;
+            }
+            navigate({
+              to: sessionPlace({ sessionId, lens: 'review' }),
+              drawer: {
+                kind: 'conversation',
+                sessionId,
+                payload: { threadId: resolverThreadId, tab: 'comment' },
+              },
+            });
+          },
         },
       }),
     [
@@ -215,6 +246,8 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedQuestionLabel,
       reviewModeLabel,
       diffBranchLabel,
+      selectedThreadLabel,
+      resolverThreadId,
       parentAgentId,
       rootAgentId,
       isBranchless,

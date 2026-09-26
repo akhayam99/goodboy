@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { ResolveCheckRun, ResolveQueueItemWithThread, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { sessionPlace, useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useAgentMetrics } from '../../../session/hooks/useAgentMetrics';
 import type { ScriptGroup } from '../../../scripts/scripts';
@@ -132,6 +132,7 @@ export const ResolveItemContainer = ({
       EMPTY_SCRIPT_GROUPS,
   );
   const acceptResolveQueueItem = useAppStore((s) => s.acceptResolveQueueItem);
+  const navigate = useAppStore((s) => s.navigate);
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
   const discussResolveThread = useAppStore((s) => s.discussResolveThread);
   const publishResolveThread = useAppStore((s) => s.publishResolveThread);
@@ -469,6 +470,15 @@ export const ResolveItemContainer = ({
       onCancelEditing={() => setMode('read')}
       onCommitEditing={onCommitEditing}
       onBack={onBack}
+      onOpenLocation={(path) =>
+        navigate({
+          to: sessionPlace({
+            sessionId,
+            lens: 'files',
+            target: { kind: 'diff', mountPath: null, focus: { kind: 'branch', path } },
+          }),
+        })
+      }
       onPrevious={onPrevious}
       onNext={onNext}
       canPrevious={canPrevious}

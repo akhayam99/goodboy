@@ -41,6 +41,20 @@ const labels = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs.map
 const last = (crumbs: ReturnType<typeof buildSessionBreadcrumb>) => crumbs[crumbs.length - 1];
 
 describe('buildSessionBreadcrumb', () => {
+  it('puts the comment between Review and the resolver Agent', () => {
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          selectedChildHome: 'review',
+          selectedChildLabel: 'resolve: ana on retryPolicy.ts:42',
+          selectedThreadLabel: 'retryPolicy.ts:42',
+        },
+        makeHandlers(),
+      ),
+    );
+    expect(labels(crumbs)).toEqual(['Overview', 'review', 'retryPolicy.ts:42', 'Agent']);
+  });
+
   it('carries the shown branch as the last crumb of the Diff', () => {
     const crumbs = buildSessionBreadcrumb(
       base(

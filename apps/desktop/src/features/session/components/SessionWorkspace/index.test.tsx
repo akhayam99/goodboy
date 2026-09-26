@@ -107,6 +107,10 @@ const { store, hooks } = vi.hoisted(() => ({
   },
 }));
 
+vi.mock('../../../resolve/hooks/useResolveQueueRows', () => ({
+  useResolveQueueRows: () => [],
+}));
+
 vi.mock('../../../../store', async () => ({
   ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: Object.freeze([]),

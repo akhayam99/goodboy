@@ -8,5 +8,5 @@ type Params = {
 };
 
 export const resolverThread = ({ state, sessionId, agentId }: Params): string | null =>
-  (state.sessionResolveAttempts[sessionId] ?? []).find((attempt) => attempt.agentId === agentId)
+  (state.sessionResolveAttempts?.[sessionId] ?? []).find((attempt) => attempt.agentId === agentId)
     ?.threadIds[0] ?? null;

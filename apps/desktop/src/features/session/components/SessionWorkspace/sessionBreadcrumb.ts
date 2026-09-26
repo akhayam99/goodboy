@@ -13,6 +13,7 @@ export type SessionBreadcrumbHandlers = {
   toParentAgent: () => void;
   toRootAgent: () => void;
   toReviewHome: () => void;
+  toThread?: () => void;
 };
 
 export type SessionBreadcrumbInput = {
@@ -32,6 +33,7 @@ export type SessionBreadcrumbInput = {
   selectedQuestionLabel: string | null;
   reviewModeLabel: string | null;
   diffBranchLabel?: string | null;
+  selectedThreadLabel?: string | null;
   lensLabel: (lens: LensKind) => string;
   handlers: SessionBreadcrumbHandlers;
 };
@@ -61,6 +63,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     selectedQuestionLabel,
     reviewModeLabel,
     diffBranchLabel = null,
+    selectedThreadLabel = null,
     lensLabel,
     handlers,
   } = input;
@@ -158,6 +161,17 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
     }
 
     if (selectedChildHome !== 'workflows') {
+      const thread: BreadcrumbCrumb[] =
+        selectedChildHome === 'review' && selectedThreadLabel != null
+          ? [
+              {
+                id: 'review-thread',
+                label: selectedThreadLabel,
+                icon: CONCEPT_ICONS.comments,
+                ...(handlers.toThread !== undefined && { onClick: handlers.toThread }),
+              },
+            ]
+          : [];
       return sealLast([
         overview,
         {
@@ -166,6 +180,7 @@ export const buildSessionBreadcrumb = (input: SessionBreadcrumbInput): Breadcrum
           icon: LENS_ICON[selectedChildHome],
           onClick: () => handlers.toLens(selectedChildHome),
         },
+        ...thread,
         ...ancestors,
         selectedChild,
         ...question,

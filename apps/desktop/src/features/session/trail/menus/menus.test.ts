@@ -17,6 +17,10 @@ import { runMenu } from './runMenu';
 import { agentMenu } from './agentMenu';
 import { artifactMenu } from './artifactMenu';
 import { branchMenu } from './branchMenu';
+import { conversationMenu } from './conversationMenu';
+import { attemptMenu } from './attemptMenu';
+import type { ResolveQueueRow } from '../../../resolve/buildResolveQueueRows';
+import type { ResolveAttempt } from '@goodboy/types';
 import type { SessionProjectMount, WorktreeStatus } from '@goodboy/types';
 
 const rowsOf = (menu: CrumbMenuModel) => menu.groups.flatMap((group) => group.rows);
@@ -286,5 +290,71 @@ describe('branchMenu', () => {
       onSelect: vi.fn(),
     });
     expect(rowsOf(menu)).toHaveLength(1);
+  });
+});
+
+describe('conversationMenu', () => {
+  const row = (threadId: string, path: string, line: number, status: ResolveQueueRow['status']) =>
+    ({
+      thread: { threadId },
+      status,
+      reviewerNote: null,
+      attempt: null,
+      commentThread: { head: { body: `Comment on ${path}`, path, line }, replies: [] },
+    }) as unknown as ResolveQueueRow;
+
+  it('groups open conversations by file and keeps resolved ones apart', () => {
+    const menu = conversationMenu({
+      rows: [
+        row('t1', 'src/webhooks/retryPolicy.ts', 42, 'ready'),
+        row('t2', 'src/webhooks/retryPolicy.ts', 58, 'new'),
+        row('t3', 'src/webhooks/idempotency.ts', 55, 'working'),
+        row('t4', 'src/webhooks/errorShape.ts', 9, 'resolved'),
+      ],
+      currentThreadId: 't1',
+      prNumber: 528,
+      actions: [],
+      onSelect: vi.fn(),
+    });
+
+    expect(menu.groups.map((group) => group.label)).toEqual([
+      'src/webhooks/retryPolicy.ts',
+      'src/webhooks/idempotency.ts',
+      '1 resolved',
+    ]);
+    expect(menu.count).toBe('3 open');
+    expect(rowsOf(menu).map((candidate) => candidate.state?.word)).toEqual([
+      'Reply ready',
+      'Open',
+      'Working',
+      'Resolved',
+    ]);
+    expect(rowsOf(menu)[0]?.secondary).toBe(':42');
+    expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
+  });
+});
+
+describe('attemptMenu', () => {
+  it('lists the attempts on one comment, newest first, with a word each', () => {
+    const attempt = (
+      id: string,
+      agentId: string,
+      phase: ResolveAttempt['phase'],
+      createdAt: number,
+    ) => ({ id, agentId, phase, createdAt, model: 'Sonnet 5' }) as unknown as ResolveAttempt;
+    const menu = attemptMenu({
+      attempts: [attempt('a1', 'agent-1', 'failed', 1), attempt('a2', 'agent-2', 'finished', 2)],
+      threadLabel: 'retryPolicy.ts:42',
+      currentAgentId: 'agent-2',
+      ageOf: () => '18m',
+      onSelect: vi.fn(),
+    });
+
+    expect(labelsOf(menu)).toEqual(['Attempt 2', 'Attempt 1']);
+    expect(rowsOf(menu).map((candidate) => candidate.state?.word)).toEqual([
+      'Reply ready',
+      'Failed',
+    ]);
+    expect(rowsOf(menu)[0]?.isCurrent).toBe(true);
   });
 });

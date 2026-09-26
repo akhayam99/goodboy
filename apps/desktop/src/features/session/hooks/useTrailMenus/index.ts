@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { LayoutDashboard, Plus, Square } from 'lucide-react';
+import { Copy, LayoutDashboard, Plus, Square, SquareArrowOutUpRight } from 'lucide-react';
 import type {
   Agent,
   AgentId,
@@ -9,7 +9,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import { sessionTitle } from '../../sessionTitle';
-import type { CrumbMenuAction, CrumbMenuModel } from '@goodboy/ui';
+import { useCopyLink, type CrumbMenuAction, type CrumbMenuModel } from '@goodboy/ui';
 import {
   EMPTY_ARRAY,
   agentPlace,
@@ -21,6 +21,13 @@ import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolv
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { useWorktreeStatuses } from '../useWorktreeStatuses';
 import { branchMenu } from '../../trail/menus/branchMenu';
+import { conversationMenu } from '../../trail/menus/conversationMenu';
+import { attemptMenu } from '../../trail/menus/attemptMenu';
+import { resolverThread } from '../../../../store/slices/navigation/resolverThread';
+import { resolverPagePlace, sessionPlace } from '../../../../store/slices/navigation/place';
+import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
+import { threadLocationOf } from '../../../resolve/threadLocationOf';
+import { openUrl } from '../../../../shared/lib/editor';
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import {
   AGENT_KIND_PALETTE,
@@ -107,6 +114,14 @@ export const useTrailMenus = ({
     [mounts],
   );
   const branchStatuses = useWorktreeStatuses({ targets: branchTargets });
+  const queueRows = useResolveQueueRows({ sessionId });
+  const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
+  const threadId = useAppStore((s) =>
+    selectedAgentId === null
+      ? null
+      : resolverThread({ state: s, sessionId, agentId: selectedAgentId }),
+  );
+  const { copy } = useCopyLink();
 
   return useMemo(() => {
     const menus = new Map<string, CrumbMenuModel>();
@@ -282,6 +297,79 @@ export const useTrailMenus = ({
         );
         return;
       }
+      if (crumb.id === 'review-thread') {
+        const current = queueRows.find((row) => row.thread.threadId === threadId) ?? null;
+        const url = current?.commentThread?.head.url ?? null;
+        menus.set(
+          crumb.id,
+          conversationMenu({
+            rows: queueRows,
+            currentThreadId: threadId,
+            prNumber,
+            actions:
+              url === null
+                ? []
+                : [
+                    {
+                      id: 'open-github',
+                      label: 'Open on GitHub',
+                      icon: SquareArrowOutUpRight,
+                      confirm: null,
+                      onRun: () => void openUrl(url),
+                    },
+                    {
+                      id: 'copy-link',
+                      label: 'Copy link',
+                      icon: Copy,
+                      confirm: null,
+                      onRun: () => void copy({ text: url }),
+                    },
+                  ],
+            onSelect: (row) => {
+              const agentId = row.attempt?.agentId ?? null;
+              if (agentId !== null) {
+                navigate({
+                  to: resolverPagePlace({ sessionId, agentId, threadId: row.thread.threadId }),
+                });
+                return;
+              }
+              navigate({
+                to: sessionPlace({ sessionId, lens: 'review' }),
+                drawer: {
+                  kind: 'conversation',
+                  sessionId,
+                  payload: { threadId: row.thread.threadId, tab: 'comment' },
+                },
+              });
+            },
+          }),
+        );
+        return;
+      }
+      if (
+        crumb.id === 'selected-child' &&
+        selected !== null &&
+        threadId !== null &&
+        resolvers.has(selected.id)
+      ) {
+        const nowMs = Date.now();
+        const row = queueRows.find((candidate) => candidate.thread.threadId === threadId) ?? null;
+        menus.set(
+          crumb.id,
+          attemptMenu({
+            attempts: resolveAttempts.filter((attempt) => attempt.threadIds.includes(threadId)),
+            threadLabel:
+              row === null ? 'Comment' : (threadLocationOf({ row })?.shortLabel ?? 'Comment'),
+            currentAgentId: selected.id,
+            ageOf: (ms) => formatRelativeAge({ fromIso: new Date(ms).toISOString(), nowMs }),
+            onSelect: (attempt) =>
+              navigate({
+                to: resolverPagePlace({ sessionId, agentId: attempt.agentId, threadId }),
+              }),
+          }),
+        );
+        return;
+      }
       if (crumb.id === 'diff-branch') {
         menus.set(
           crumb.id,
@@ -374,5 +462,9 @@ export const useTrailMenus = ({
     diffStats,
     branchStatuses,
     openMountDiff,
+    queueRows,
+    prNumber,
+    threadId,
+    copy,
   ]);
 };

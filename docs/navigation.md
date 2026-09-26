@@ -297,17 +297,23 @@ you`, `2 running`), grouped as pages, Tools and Linked; `Overview` has no menu
   chained run indented under its own with `after ...`); a step lists every step
   of its run in order, the ones not started switched off; an agent lists the
   agents of the same home grouped Needs you, Running, Done, newest first; an
-  artifact lists the session's artifacts by kind. Every row has five slots:
-  lead, label with a faint second part, meta, a state that is always a word
-  (from `agentStateWord`, the same reading `isAgentFinished` makes), and a
-  check on the current row, which is there even when it is the only row. The
-  last segment opens its menu from the whole segment and always shows the
-  chevron; an ancestor goes up by its name and shows its chevron on hover.
-  Widths are 300 (pages), 380 (runs, steps, agents, artifacts) and 460
-  (branches); a filter appears from nine rows up. An action that breaks
-  something (Stop this step) confirms inside the menu's action band with
-  `InlineConfirm`; Escape cancels the confirm first, then closes. Shortcuts live
-  in the segment tooltip and the palette, never in the rows.
+  artifact lists the session's artifacts by kind. The Diff ends on the branch
+  it shows (`Overview > Diff > ledger-core fix/... +187 -42`), and that segment
+  lists the session's branches by repo with one state word each (`Local only`,
+  `Behind main by N`, `On origin`) and `All branches in Overview`; it never
+  turns into an icon. The resolver's page reads `Overview > Review > {file:line}
+  > Agent`: the comment segment lists the open conversations by file (resolved
+ones apart) with `Open on GitHub`and`Copy link`, and `Agent`lists the
+attempts on that comment. Every row has five slots:
+lead, label with a faint second part, meta, a state that is always a word
+(from`agentStateWord`, the same reading `isAgentFinished`makes), and a
+check on the current row, which is there even when it is the only row. The
+last segment opens its menu from the whole segment and always shows the
+chevron; an ancestor goes up by its name and shows its chevron on hover.
+Widths are 300 (pages), 380 (runs, steps, agents, artifacts) and 460
+(branches); a filter appears from nine rows up. An action that breaks
+something (Stop this step) confirms inside the menu's action band with`InlineConfirm`; Escape cancels the confirm first, then closes. Shortcuts live
+  > in the segment tooltip and the palette, never in the rows.
 - **The workflow case extends the same control**:
   `Overview > Workflows > {Run} > {Step}`. A delegated child names its root and
   parent agents between the run and itself, and an open question it answers
