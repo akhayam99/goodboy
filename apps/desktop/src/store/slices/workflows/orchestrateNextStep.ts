@@ -54,8 +54,8 @@ import { uniqueStepName } from '../../../features/workflows/uniqueStepName';
 import { workflowAvailabilitySnapshot } from '../../../features/workflows/workflowAvailabilitySnapshot';
 import { tauriDatabase } from '../../../shared/lib/db';
 import {
-  BUDGET_BLOCK_MESSAGE,
-  isBudgetBlocked,
+  budgetBlockMessage,
+  sessionBudgetBlockAfterLoad,
   loadSpendLimitTelemetry,
   resolveSpendLimitStop,
   spentUsdForRun,
@@ -551,12 +551,13 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       if (workflow == null) {
         return;
       }
-      if (isBudgetBlocked({ alerts: get().budgetAlerts ?? [], sessionId })) {
+      const sessionBlock = await sessionBudgetBlockAfterLoad({ get, sessionId });
+      if (sessionBlock !== null) {
         await persistOrchestrationStop({
           set,
           sessionId,
           workflowRunId,
-          stop: { kind: 'budget', message: BUDGET_BLOCK_MESSAGE },
+          stop: { kind: 'budget', message: budgetBlockMessage({ limitUsd: sessionBlock.capUsd }) },
         });
         return;
       }

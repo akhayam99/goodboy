@@ -12,11 +12,9 @@ type Props = {
   readonly goal: string;
   readonly isCurrent: boolean;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
-  readonly softCapUsd: number | null;
   readonly telemetryResult: QueryResult<void>;
   readonly budgetResult: QueryResult<void>;
   readonly isLoading: boolean;
-  readonly onSaveCap: (capUsd: number) => Promise<void>;
   readonly onOpened: () => void;
   readonly onRetryTelemetry: () => void;
   readonly onRetryBudget: () => void;
@@ -28,11 +26,9 @@ export const SessionPanel = ({
   goal,
   isCurrent,
   turns,
-  softCapUsd,
   telemetryResult,
   budgetResult,
   isLoading,
-  onSaveCap,
   onOpened,
   onRetryTelemetry,
   onRetryBudget,
@@ -52,12 +48,7 @@ export const SessionPanel = ({
       />
       <ErrorStrip label="session budget" error={budgetResult.error} onRetry={onRetryBudget} />
       {isLoading && <PanelLoading label="Loading budget data" />}
-      <SessionBudgetContent
-        turns={turns}
-        softCapUsd={softCapUsd}
-        onSaveCap={onSaveCap}
-        onOpenSession={onOpenSession}
-      />
+      <SessionBudgetContent turns={turns} sessionId={sessionId} onOpenSession={onOpenSession} />
     </PaneShell>
   );
 };

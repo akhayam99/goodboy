@@ -62,7 +62,13 @@ export const captureLocation = ({ state, focus: base = EMPTY_FOCUS }: Params): L
   const focus: Focus = { ...base, drawer: state.drawer };
   const sessionId = state.currentSessionId;
   if (sessionId === null) {
-    return { workspaceId, place: { at: 'board' }, studio: state.appStudio, focus };
+    const isDraft = workspaceId !== null && state.openSessionDraftWorkspaceId === workspaceId;
+    return {
+      workspaceId,
+      place: isDraft ? { at: 'session-draft' } : { at: 'board' },
+      studio: state.appStudio,
+      focus,
+    };
   }
   const lens = state.activeLens[sessionId] ?? null;
   const studio = state.sessionStudio[sessionId] ?? null;

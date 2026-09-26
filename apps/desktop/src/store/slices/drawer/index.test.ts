@@ -12,9 +12,9 @@ const SESSION_ID = 'session-1' as SessionId;
 const OTHER_SESSION_ID = 'session-2' as SessionId;
 
 const GOAL_HISTORY: DrawerRequest = {
-  kind: 'slot-history',
+  kind: 'context',
   sessionId: SESSION_ID,
-  payload: { slotKey: 'goal' },
+  payload: { tab: 'goal', view: 'versions' },
 };
 
 const README_PREVIEW: DrawerRequest = {
@@ -91,7 +91,7 @@ describe('drawer slice', () => {
     expect(selectOpenDrawer(h.get())?.kind).toBe('explore-file');
 
     h.slice.toggleDrawer(GOAL_HISTORY);
-    expect(selectOpenDrawer(h.get())?.kind).toBe('slot-history');
+    expect(selectOpenDrawer(h.get())?.kind).toBe('context');
 
     h.slice.toggleDrawer(GOAL_HISTORY);
     expect(h.get().drawer).toBeNull();

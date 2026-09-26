@@ -158,7 +158,7 @@ describe('resolveOrchestratorState', () => {
 
   it('maps every stop kind to its presentation', () => {
     const kinds: ReadonlyArray<[WorkflowOrchestrationStop['kind'], string, boolean]> = [
-      ['budget', 'paused-budget', true],
+      ['budget', 'paused-budget', false],
       ['failure', 'failed', true],
       ['questions', 'needs-answer', false],
       ['operator', 'stopped', true],
@@ -175,6 +175,20 @@ describe('resolveOrchestratorState', () => {
     expect(resolved.map((state) => state.detail !== null)).toEqual(
       kinds.map(([, , showsMessage]) => showsMessage),
     );
+  });
+
+  it('reads a spend limit stop in its own words', () => {
+    const state = resolve({
+      run: makeRun({
+        orchestrationStop: {
+          kind: 'budget',
+          message: 'Paused at the $10.00 spend limit for this session.',
+        },
+      }),
+    });
+
+    expect(state.sentence).toBe('Paused at the $10.00 spend limit for this session.');
+    expect(state.detail).toBeNull();
   });
 
   it('ignores a question stop once the question is answered', () => {

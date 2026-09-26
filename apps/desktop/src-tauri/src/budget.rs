@@ -24,6 +24,8 @@ pub struct SessionBudget {
     pub session_id: String,
     #[serde(rename = "softCapUsd")]
     pub soft_cap_usd: f64,
+    #[serde(rename = "onExceed")]
+    pub on_exceed: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -98,20 +100,72 @@ pub async fn budget_rule_delete(state: State<'_, Db>, id: String) -> Result<(), 
     Ok(())
 }
 
+fn session_on_exceed(on_exceed: Option<String>) -> &'static str {
+    match on_exceed.as_deref() {
+        Some("warn") => "warn",
+        _ => "pause",
+    }
+}
+
+fn write_session_budget(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+    soft_cap_usd: f64,
+    on_exceed: Option<String>,
+) -> Result<(), DbError> {
+    conn.execute(
+        "INSERT INTO session_budgets (session_id, soft_cap_usd, on_exceed)
+         VALUES (?1, ?2, ?3)
+         ON CONFLICT(session_id) DO UPDATE SET
+           soft_cap_usd = excluded.soft_cap_usd,
+           on_exceed = excluded.on_exceed",
+        rusqlite::params![session_id, soft_cap_usd, session_on_exceed(on_exceed)],
+    )?;
+    Ok(())
+}
+
+fn read_session_budget(
+    conn: &rusqlite::Connection,
+    session_id: &str,
+) -> Result<Option<SessionBudget>, DbError> {
+    let mut stmt = conn.prepare(
+        "SELECT session_id, soft_cap_usd, on_exceed FROM session_budgets WHERE session_id = ?1",
+    )?;
+    let mut rows = stmt.query_map(rusqlite::params![session_id], |row| {
+        Ok(SessionBudget {
+            session_id: row.get(0)?,
+            soft_cap_usd: row.get(1)?,
+            on_exceed: row.get(2)?,
+        })
+    })?;
+    match rows.next() {
+        Some(row) => Ok(Some(row.map_err(DbError::Sqlite)?)),
+        None => Ok(None),
+    }
+}
+
+fn clear_session_budget(conn: &rusqlite::Connection, session_id: &str) -> Result<(), DbError> {
+    conn.execute(
+        "DELETE FROM session_budgets WHERE session_id = ?1",
+        rusqlite::params![session_id],
+    )?;
+    conn.execute(
+        "UPDATE budget_alerts SET dismissed_at = ?2
+         WHERE session_id = ?1 AND dismissed_at IS NULL",
+        rusqlite::params![session_id, crate::util::now_ms()],
+    )?;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn session_budget_set(
     state: State<'_, Db>,
     session_id: String,
     soft_cap_usd: f64,
+    on_exceed: Option<String>,
 ) -> Result<(), DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    conn.execute(
-        "INSERT INTO session_budgets (session_id, soft_cap_usd)
-         VALUES (?1, ?2)
-         ON CONFLICT(session_id) DO UPDATE SET soft_cap_usd = excluded.soft_cap_usd",
-        rusqlite::params![session_id, soft_cap_usd],
-    )?;
-    Ok(())
+    write_session_budget(&conn, &session_id, soft_cap_usd, on_exceed)
 }
 
 #[tauri::command]
@@ -120,18 +174,13 @@ pub async fn session_budget_get(
     session_id: String,
 ) -> Result<Option<SessionBudget>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let mut stmt =
-        conn.prepare("SELECT session_id, soft_cap_usd FROM session_budgets WHERE session_id = ?1")?;
-    let mut rows = stmt.query_map(rusqlite::params![session_id], |row| {
-        Ok(SessionBudget {
-            session_id: row.get(0)?,
-            soft_cap_usd: row.get(1)?,
-        })
-    })?;
-    match rows.next() {
-        Some(row) => Ok(Some(row.map_err(DbError::Sqlite)?)),
-        None => Ok(None),
-    }
+    read_session_budget(&conn, &session_id)
+}
+
+#[tauri::command]
+pub async fn session_budget_clear(state: State<'_, Db>, session_id: String) -> Result<(), DbError> {
+    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+    clear_session_budget(&conn, &session_id)
 }
 
 #[tauri::command]
@@ -448,6 +497,61 @@ mod tests {
             rusqlite::params![id, cost_usd, start_ms],
         )
         .unwrap();
+    }
+
+    fn session_budget_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE session_budgets (
+                session_id TEXT PRIMARY KEY, soft_cap_usd REAL NOT NULL,
+                on_exceed TEXT NOT NULL DEFAULT 'pause' CHECK (on_exceed IN ('pause', 'warn'))
+            );
+            CREATE TABLE budget_alerts (
+                id TEXT PRIMARY KEY, kind TEXT, provider TEXT, session_id TEXT,
+                current_usd REAL, cap_usd REAL, created_at INTEGER, dismissed_at INTEGER
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn a_session_limit_keeps_what_happens_when_it_is_passed() {
+        let conn = session_budget_conn();
+        write_session_budget(&conn, "s1", 10.0, Some("warn".to_string())).unwrap();
+
+        let budget = read_session_budget(&conn, "s1").unwrap().unwrap();
+        assert_eq!(budget.soft_cap_usd, 10.0);
+        assert_eq!(budget.on_exceed, "warn");
+
+        write_session_budget(&conn, "s1", 12.0, None).unwrap();
+        let budget = read_session_budget(&conn, "s1").unwrap().unwrap();
+        assert_eq!(budget.soft_cap_usd, 12.0);
+        assert_eq!(budget.on_exceed, "pause");
+    }
+
+    #[test]
+    fn clearing_a_session_limit_drops_it_and_its_open_alerts() {
+        let conn = session_budget_conn();
+        write_session_budget(&conn, "s1", 10.0, None).unwrap();
+        conn.execute(
+            "INSERT INTO budget_alerts (id, kind, session_id, current_usd, cap_usd, created_at)
+             VALUES ('a1', 'session-exceeded', 's1', 11.0, 10.0, 1)",
+            [],
+        )
+        .unwrap();
+
+        clear_session_budget(&conn, "s1").unwrap();
+
+        assert!(read_session_budget(&conn, "s1").unwrap().is_none());
+        let open: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM budget_alerts WHERE dismissed_at IS NULL",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(open, 0);
     }
 
     #[test]

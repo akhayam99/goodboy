@@ -109,7 +109,11 @@ describe('emitBudgetAlerts', () => {
   });
 
   it('session over cap → emits session-exceeded alert', async () => {
-    const sessionBudget: SessionBudget = { sessionId: SESSION_ID, softCapUsd: 50 };
+    const sessionBudget: SessionBudget = {
+      sessionId: SESSION_ID,
+      softCapUsd: 50,
+      onExceed: 'pause',
+    };
     vi.mocked(getSessionBudget).mockResolvedValue(sessionBudget);
 
     const deps = makeDeps(makeResult(50), {

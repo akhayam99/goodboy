@@ -20,6 +20,7 @@ const { store } = vi.hoisted(() => ({
     sessionResolveAttempts: {},
     sessionResolvePublications: {},
     sessionOpenQuestions: {} as Record<string, ReadonlyArray<unknown>>,
+    goodboyNamedSessionId: null as string | null,
   },
 }));
 
@@ -50,12 +51,9 @@ vi.mock('./SessionDestructiveActions', () => ({
     </>
   ),
 }));
-vi.mock('./SessionActionsMenu', () => ({
-  SessionActionsMenu: () => <button aria-label="Session actions" />,
-}));
 vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
-vi.mock('./ContextDigest', () => ({
-  ContextDigest: () => <section aria-label="Context digest" />,
+vi.mock('./GoalTeaser', () => ({
+  GoalTeaser: () => <button type="button">Goal: Keep the ledger balanced</button>,
 }));
 vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="session-cost-chip" />,
@@ -85,10 +83,21 @@ describe('HeaderBand', () => {
     store.sessionArtifacts = {};
     store.sessionOpenQuestions = {};
     store.sessionResolveQueueItems = {};
+    store.goodboyNamedSessionId = null;
+  });
+
+  it('marks a title Goodboy wrote at the start until the user renames it', () => {
+    store.goodboyNamedSessionId = 'session-1';
+    const { unmount } = render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
+    expect(screen.getByText('Named by Goodboy')).toBeDefined();
+    unmount();
+
+    render(<HeaderBand session={{ ...session, titleUserEdited: true }} onSelectLens={vi.fn()} />);
+    expect(screen.queryByText('Named by Goodboy')).toBeNull();
   });
 
   it('stays clear of attention chips when nothing is waiting', () => {
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
     expect(screen.queryByRole('button', { name: /Artifacts/ })).toBeNull();
     expect(screen.queryByRole('button', { name: /Questions/ })).toBeNull();
@@ -100,7 +109,7 @@ describe('HeaderBand', () => {
     };
     store.sessionOpenQuestions = { 'session-1': [{ id: 'q1', status: 'open' }] };
     const onSelectLens = vi.fn();
-    render(<HeaderBand session={session} onSelectLens={onSelectLens} goal={<div>Goal</div>} />);
+    render(<HeaderBand session={session} onSelectLens={onSelectLens} />);
 
     const chip = screen.getByRole('button', { name: /Artifacts/ });
     expect(chip.textContent).toContain('2');
@@ -141,7 +150,7 @@ describe('HeaderBand', () => {
       ],
     };
     const onSelectLens = vi.fn();
-    render(<HeaderBand session={session} onSelectLens={onSelectLens} goal={<div>Goal</div>} />);
+    render(<HeaderBand session={session} onSelectLens={onSelectLens} />);
 
     const chip = screen.getByRole('button', { name: /Review/ });
     expect(chip.textContent).toContain('1');
@@ -151,7 +160,7 @@ describe('HeaderBand', () => {
   });
 
   it('keeps only archive and delete in the title action zone', () => {
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: 'Archive session' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Delete session' })).toBeDefined();
@@ -160,85 +169,42 @@ describe('HeaderBand', () => {
     expect(screen.queryByRole('button', { name: 'Mount a project' })).toBeNull();
   });
 
-  it('reads what the session is for before where it runs', () => {
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+  it('reads the goal line before the chips and the projects', () => {
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
-    const goal = screen.getByText('Goal');
-    const digest = screen.getByRole('region', { name: 'Context digest' });
+    const goal = screen.getByRole('button', { name: /^Goal:/ });
+    const context = screen.getByText('Context');
     const projects = screen.getByRole('region', { name: 'Projects' });
-    expect(goal.compareDocumentPosition(digest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(goal.compareDocumentPosition(context) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(
-      digest.compareDocumentPosition(projects) & Node.DOCUMENT_POSITION_FOLLOWING,
+      context.compareDocumentPosition(projects) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
   it('separates the title zone with rhythm instead of a rule', () => {
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
     expect(screen.queryAllByRole('separator')).toHaveLength(0);
   });
 
   it('renders a backticked title as inline code without the backticks', () => {
     const marked = { ...session, goal: 'run `/explore` first' } as Session;
-    render(<HeaderBand session={marked} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+    render(<HeaderBand session={marked} onSelectLens={vi.fn()} />);
 
     const title = screen.getByRole('button', { name: /run/ });
     expect(title.querySelector('code')?.textContent).toBe('/explore');
     expect(title.textContent).not.toContain('`');
   });
 
-  it('puts the decisions and summary digest after the goal', () => {
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
-
-    const goal = screen.getByText('Goal');
-    const digest = screen.getByRole('region', { name: 'Context digest' });
-    expect(goal.compareDocumentPosition(digest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
   it('falls back to one untitled label when the session carries no title', () => {
     const untitled = { ...session, goal: '   ' } as Session;
-    render(<HeaderBand session={untitled} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+    render(<HeaderBand session={untitled} onSelectLens={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: 'Untitled session' })).toBeDefined();
   });
 
-  it('keeps an empty session header to its title and one actions menu', () => {
-    render(
-      <HeaderBand
-        session={session}
-        onSelectLens={vi.fn()}
-        goal={<div>Goal</div>}
-        titleAction={<button type="button">Set a goal</button>}
-        isEmpty
-      />,
-    );
-
-    expect(screen.getByRole('button', { name: 'Session actions' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Archive session' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Delete session' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Set a goal' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Link issue' })).toBeNull();
-    expect(screen.queryByText('Context')).toBeNull();
-  });
-
-  it('shows the placeholder title faint until it is renamed', () => {
-    const untitled = { ...session, goal: 'Untitled session 2', titleUserEdited: false } as Session;
-    const { unmount } = render(
-      <HeaderBand session={untitled} onSelectLens={vi.fn()} goal={<div>Goal</div>} />,
-    );
-    expect(screen.getByRole('button', { name: 'Untitled session 2' }).className).toContain(
-      'text-faint-foreground',
-    );
-    unmount();
-
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
-    expect(screen.getByRole('button', { name: 'Refactor auth' }).className).not.toContain(
-      'text-faint-foreground',
-    );
-  });
-
   it('renders the session cost at the right edge of the context row', () => {
-    render(<HeaderBand session={session} onSelectLens={vi.fn()} goal={<div>Goal</div>} />);
+    render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
     const context = screen.getByText('Context');
     const chip = screen.getByTestId('session-cost-chip');

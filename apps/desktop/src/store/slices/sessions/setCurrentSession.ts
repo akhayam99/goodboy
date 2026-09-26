@@ -61,6 +61,9 @@ export const setCurrentSession = (set: SetFn, get: GetFn) => {
         activeLens: id ? { ...state.activeLens, [id]: null } : state.activeLens,
         selectedAgentId: id ? { ...state.selectedAgentId, [id]: null } : state.selectedAgentId,
         revealedActivityRows,
+        openSessionDraftWorkspaceId: id === null ? state.openSessionDraftWorkspaceId : null,
+        goodboyNamedSessionId:
+          id === state.goodboyNamedSessionId ? state.goodboyNamedSessionId : null,
       };
     });
     void dbSetSetting(tauriDatabase, SETTING_LAST_SESSION_ID, id ?? '');

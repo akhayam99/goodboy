@@ -67,7 +67,7 @@ import { useWorkflowDrag } from '../../../workflows/hooks/useWorkflowDrag';
 import { useSaveAsStep } from '../../../workflows/hooks/useSaveAsStep';
 import { useSavedSteps } from '../../../workflows/hooks/useSavedSteps';
 import { stepDraftFromSavedStep, type SavedStep } from '../../../workflows/savedSteps';
-import { parseSpendLimit } from '../../../workflows/components/RunSpendLimitPopover/SpendLimitFields';
+import { parseSpendLimit } from '../../../budget/parseSpendLimit';
 import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
 import { useToast } from '../../../../app/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';

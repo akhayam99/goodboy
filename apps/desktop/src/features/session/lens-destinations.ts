@@ -13,7 +13,6 @@ export type ConnectedLensTools = Readonly<Record<LensTool, boolean>>;
 
 const DESTINATIONS = [
   { lens: null, shortcut: 'lens.overview' },
-  { lens: 'context', shortcut: 'lens.context' },
   { lens: 'workflows', shortcut: 'lens.workflows' },
   { lens: 'agents', shortcut: 'lens.agents' },
   { lens: 'questions', shortcut: 'lens.questions' },

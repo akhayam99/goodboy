@@ -29,24 +29,17 @@ type RemoveProviderCapParams = {
   readonly provider: ProviderName;
 };
 
-type SaveSessionCapParams = {
-  readonly sessionId: SessionId;
-  readonly capUsd: number;
-};
-
 export type WorkspaceSpend = {
   readonly providers: ReadonlyArray<ProviderSpendEntry>;
   readonly sessions: ReadonlyArray<SessionSpend>;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly alerts: ReadonlyArray<BudgetAlert>;
   readonly rules: ReadonlyArray<BudgetRule>;
-  readonly softCapUsd: (sessionId: SessionId) => number | null;
   readonly data: BudgetData;
   readonly dismissAlert: (alertId: string) => void;
   readonly saveProviderCap: (params: SaveProviderCapParams) => Promise<void>;
   readonly saveProviderThreshold: (params: SaveProviderThresholdParams) => Promise<void>;
   readonly removeProviderCap: (params: RemoveProviderCapParams) => Promise<void>;
-  readonly saveSessionCap: (params: SaveSessionCapParams) => Promise<void>;
 };
 
 const EMPTY_TELEMETRY = EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>;
@@ -60,12 +53,10 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   const storedProviders = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
   const alerts = useAppStore((s) => s.budgetAlerts);
   const rules = useAppStore((s) => s.budgetRules);
-  const sessionBudgets = useAppStore((s) => s.sessionBudgets);
 
   const dismissBudgetAlert = useAppStore((s) => s.dismissBudgetAlert);
   const saveBudgetRule = useAppStore((s) => s.saveBudgetRule);
   const deleteBudgetRule = useAppStore((s) => s.deleteBudgetRule);
-  const setSessionBudget = useAppStore((s) => s.setSessionBudget);
   const refreshProviderSpendBreakdown = useAppStore((s) => s.refreshProviderSpendBreakdown);
 
   const sessionIds = useMemo(() => sessions.map((session) => session.id), [sessions]);
@@ -120,13 +111,6 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
     [deleteBudgetRule, refreshBreakdown, rules],
   );
 
-  const saveSessionCap = useCallback(
-    async ({ sessionId, capUsd }: SaveSessionCapParams) => {
-      await setSessionBudget(sessionId, capUsd);
-    },
-    [setSessionBudget],
-  );
-
   const windowedSessions = useMemo(
     () =>
       sessions
@@ -179,11 +163,6 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
     });
   }, [storedProviders, turns]);
 
-  const softCapUsd = useCallback(
-    (sessionId: SessionId) => sessionBudgets[sessionId]?.softCapUsd ?? null,
-    [sessionBudgets],
-  );
-
   const dismissAlert = useCallback(
     (alertId: string) => {
       void dismissBudgetAlert(alertId);
@@ -197,12 +176,10 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
     turns,
     alerts,
     rules,
-    softCapUsd,
     data,
     dismissAlert,
     saveProviderCap,
     saveProviderThreshold,
     removeProviderCap,
-    saveSessionCap,
   };
 };

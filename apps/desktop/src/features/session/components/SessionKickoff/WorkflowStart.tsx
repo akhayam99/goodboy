@@ -1,64 +1,63 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, Textarea } from '@goodboy/ui';
-import type { Session, WorkflowId } from '@goodboy/types';
+import type { WorkflowId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectPresetWorkflows } from '../../../../store/slices/workflows/selectPresetWorkflows';
+import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { StartFooter } from './StartFooter';
 import { WorkflowPresetGroup } from './WorkflowPresetGroup';
+import { useDraftStart } from './useDraftStart';
 
 type Props = {
-  readonly session: Session;
-  readonly onOpenWorkflowBuilder: () => void;
+  readonly workspaceId: WorkspaceId;
 };
 
-export const WorkflowStart = ({ session, onOpenWorkflowBuilder }: Props) => {
+export const WorkflowStart = ({ workspaceId }: Props) => {
   const workflows = useAppStore(
-    useShallow((state) => selectPresetWorkflows({ state, workspaceId: session.workspaceId })),
+    useShallow((state) => selectPresetWorkflows({ state, workspaceId })),
   );
   const builtIn = workflows.filter((workflow) => workflow.origin === 'library');
   const saved = workflows.filter((workflow) => workflow.origin !== 'library');
   const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
-  const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
-  const reportError = useAppStore((state) => state.reportError);
-  const [goal, setGoal] = useState('');
-  const [pickedId, setPickedId] = useState<WorkflowId | null>(null);
-  const [isStarting, setIsStarting] = useState(false);
+  const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
+  const goal = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowGoal);
+  const pickedId = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowId);
+  const { start, isStarting, error } = useDraftStart({ workspaceId });
 
   useEffect(() => {
-    void loadPhaseTemplates(session.workspaceId);
-  }, [loadPhaseTemplates, session.workspaceId]);
+    void loadPhaseTemplates(workspaceId);
+  }, [loadPhaseTemplates, workspaceId]);
 
   const picked =
     workflows.find((workflow) => workflow.id === pickedId) ?? builtIn[0] ?? saved[0] ?? null;
   const trimmedGoal = goal.trim();
   const canRun = picked != null && trimmedGoal !== '' && !isStarting;
 
-  const run = async () => {
+  const pick = (workflowId: WorkflowId) => {
+    patchSessionDraft({ workspaceId, patch: { workflowId } });
+  };
+
+  const run = () => {
     if (picked == null || trimmedGoal === '') {
       return;
     }
-    setIsStarting(true);
-    try {
-      await attachWorkflowToSession(session.id, picked.id, { goal: trimmedGoal, navigate: true });
-    } catch (error) {
-      void reportError({ title: `Couldn't start ${picked.name}`, error, sessionId: session.id });
-    } finally {
-      setIsStarting(false);
-    }
+    void start({ kind: 'workflow', workflowId: picked.id, goal: trimmedGoal });
   };
 
   return (
     <div className="flex flex-col gap-2">
       <Textarea
         value={goal}
-        onChange={(event) => setGoal(event.target.value)}
+        onChange={(event) =>
+          patchSessionDraft({ workspaceId, patch: { workflowGoal: event.target.value } })
+        }
         onKeyDown={(event) => {
           if (event.key !== 'Enter' || event.shiftKey || !canRun) {
             return;
           }
           event.preventDefault();
-          void run();
+          run();
         }}
         aria-label="Workflow goal"
         placeholder="What should get done?"
@@ -78,26 +77,23 @@ export const WorkflowStart = ({ session, onOpenWorkflowBuilder }: Props) => {
             label="Built in"
             workflows={builtIn}
             pickedId={picked?.id ?? null}
-            onPick={setPickedId}
+            onPick={pick}
           />
           <WorkflowPresetGroup
             label="Saved"
             workflows={saved}
             pickedId={picked?.id ?? null}
-            onPick={setPickedId}
+            onPick={pick}
           />
         </div>
       )}
-      <StartFooter note={trimmedGoal === '' ? 'Write the goal first.' : null}>
-        <Button variant="ghost" size="sm" onClick={onOpenWorkflowBuilder}>
-          Open the builder
-        </Button>
+      <StartFooter note={trimmedGoal === '' ? 'Write the goal first.' : null} error={error}>
         <Button
           size="sm"
           disabled={!canRun}
           isBusy={isStarting}
           busyLabel="Starting workflow"
-          onClick={() => void run()}
+          onClick={run}
         >
           Run workflow
         </Button>

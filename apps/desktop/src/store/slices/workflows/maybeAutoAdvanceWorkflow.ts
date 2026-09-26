@@ -10,8 +10,8 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { workflowRunHasOpenQuestions } from '../../../features/context/openQuestionsGate';
 import {
-  BUDGET_BLOCK_MESSAGE,
-  isBudgetBlocked,
+  budgetBlockMessage,
+  sessionBudgetBlockAfterLoad,
   loadSpendLimitTelemetry,
   resolveSpendLimitStop,
 } from './budgetBlock';
@@ -80,7 +80,8 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   if (activeRuns.length === 0) {
     return;
   }
-  const sessionBlocked = isBudgetBlocked({ alerts: state.budgetAlerts, sessionId });
+  const sessionBlock = await sessionBudgetBlockAfterLoad({ get, sessionId });
+  const sessionBlocked = sessionBlock !== null;
   if (!sessionBlocked) {
     await loadSpendLimitTelemetry({ get, sessionId, runs: activeRuns });
   }
@@ -88,7 +89,7 @@ const runAdvance = async ({ set, get, sessionId }: Params): Promise<void> => {
   for (const run of activeRuns) {
     const spendStop = sessionBlocked ? null : resolveSpendLimitStop({ get, sessionId, run });
     const blockMessage = sessionBlocked
-      ? BUDGET_BLOCK_MESSAGE
+      ? budgetBlockMessage({ limitUsd: sessionBlock.capUsd })
       : spendStop?.kind === 'pause'
         ? spendStop.message
         : null;

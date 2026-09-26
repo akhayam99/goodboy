@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { Button, Input, Skeleton, cn } from '@goodboy/ui';
-import type { IsoDateTime, Session } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import {
@@ -11,15 +10,21 @@ import {
 } from '../../../integrations/components/TrackerStudioLinks';
 import type { KickoffIssues } from './useKickoffIssues';
 import { StartFooter } from './StartFooter';
+import { DraftIssueBrief } from './DraftIssueBrief';
+import { issueBriefSource } from './issueBriefSource';
+import { useDraftStart } from './useDraftStart';
 
 type PickIssueParams = {
   readonly candidate: IssueCandidate;
 };
 
+type SelectParams = {
+  readonly key: string;
+};
+
 type Props = {
-  readonly session: Session;
+  readonly workspaceId: WorkspaceId;
   readonly issues: KickoffIssues;
-  readonly onPickIssue?: (params: PickIssueParams) => void;
 };
 
 const candidateKey = ({ candidate }: PickIssueParams): string =>
@@ -36,40 +41,38 @@ const matchesQuery = ({ candidate, query }: PickIssueParams & { readonly query: 
   );
 };
 
-export const TaskStart = ({ session, issues, onPickIssue }: Props) => {
-  const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
-  const reportError = useAppStore((state) => state.reportError);
-  const { showToast } = useToast();
-  const [query, setQuery] = useState('');
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [isLinking, setIsLinking] = useState(false);
+export const TaskStart = ({ workspaceId, issues }: Props) => {
+  const patchSessionDraft = useAppStore((state) => state.patchSessionDraft);
+  const requestIssueBrief = useAppStore((state) => state.requestIssueBrief);
+  const query = useAppStore((state) => selectSessionDraft({ state, workspaceId }).issueQuery);
+  const selectedKey = useAppStore((state) => selectSessionDraft({ state, workspaceId }).issueKey);
+  const pickedIssue = useAppStore(
+    (state) => selectSessionDraft({ state, workspaceId }).pickedIssue,
+  );
+  const { start, isStarting, error } = useDraftStart({ workspaceId });
 
   const visibleRows = issues.rows.filter((candidate) => matchesQuery({ candidate, query }));
   const selected =
     visibleRows.find((candidate) => candidateKey({ candidate }) === selectedKey) ?? null;
 
-  const pickUp = async ({ candidate }: PickIssueParams) => {
-    setIsLinking(true);
-    try {
-      await linkSessionExternalTask(session.id, {
-        provider: candidate.provider,
-        externalId: candidate.externalId,
-        identifier: candidate.identifier,
-        title: candidate.title,
-        url: candidate.url,
-        createdAt: new Date().toISOString() as IsoDateTime,
-      });
-      onPickIssue?.({ candidate });
-      showToast({ kind: 'success', message: `Linked ${candidate.identifier} to this session.` });
-    } catch (cause) {
-      void reportError({
-        title: `Couldn't link ${candidate.identifier}`,
-        error: cause,
-        sessionId: session.id,
-      });
-    } finally {
-      setIsLinking(false);
-    }
+  const select = ({ key }: SelectParams) => {
+    const isPickedRow = pickedIssue !== null && candidateKey({ candidate: pickedIssue }) === key;
+    patchSessionDraft({
+      workspaceId,
+      patch: { issueKey: key, pickedIssue: isPickedRow ? pickedIssue : null },
+    });
+  };
+
+  const pickUp = ({ candidate }: PickIssueParams) => {
+    patchSessionDraft({
+      workspaceId,
+      patch: { issueKey: candidateKey({ candidate }), pickedIssue: candidate },
+    });
+    void requestIssueBrief({
+      source: issueBriefSource({ candidate }),
+      workspaceId,
+      sessionId: null,
+    });
   };
 
   if (!issues.hasSources || (issues.isLoaded && issues.rows.length === 0)) {
@@ -108,13 +111,15 @@ export const TaskStart = ({ session, issues, onPickIssue }: Props) => {
     <div className="flex flex-col gap-2">
       <Input
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) =>
+          patchSessionDraft({ workspaceId, patch: { issueQuery: event.target.value } })
+        }
         onKeyDown={(event) => {
           if (event.key !== 'Enter' || selected == null) {
             return;
           }
           event.preventDefault();
-          void pickUp({ candidate: selected });
+          pickUp({ candidate: selected });
         }}
         aria-label="Search issues"
         placeholder="Search issues"
@@ -130,9 +135,9 @@ export const TaskStart = ({ session, issues, onPickIssue }: Props) => {
               <button
                 type="button"
                 aria-pressed={isSelected}
-                disabled={isLinking}
-                onClick={() => setSelectedKey(key)}
-                onDoubleClick={() => void pickUp({ candidate })}
+                disabled={isStarting}
+                onClick={() => select({ key })}
+                onDoubleClick={() => pickUp({ candidate })}
                 className={cn(
                   'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left motion-safe:transition-colors disabled:opacity-60',
                   isSelected ? 'bg-selected' : 'hover:bg-hover',
@@ -153,22 +158,38 @@ export const TaskStart = ({ session, issues, onPickIssue }: Props) => {
           <li className="px-2 py-1.5 text-label text-muted-foreground">No issue matches</li>
         ) : null}
       </ul>
-      <StartFooter note={selected == null ? 'Pick an issue to link it to this session.' : null}>
-        <Button
-          size="sm"
-          disabled={selected == null || isLinking}
-          isBusy={isLinking}
-          busyLabel="Linking"
-          onClick={() => {
-            if (selected == null) {
-              return;
+      {pickedIssue === null ? (
+        <StartFooter note={selected == null ? 'Pick an issue to start from it.' : null}>
+          <Button
+            size="sm"
+            disabled={selected == null}
+            onClick={() => {
+              if (selected == null) {
+                return;
+              }
+              pickUp({ candidate: selected });
+            }}
+          >
+            {selected == null ? 'Pick up issue' : `Pick up ${selected.identifier}`}
+          </Button>
+        </StartFooter>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <DraftIssueBrief
+            workspaceId={workspaceId}
+            candidate={pickedIssue}
+            onStart={({ title, goal }) =>
+              void start({ kind: 'task', candidate: pickedIssue, title, goal })
             }
-            void pickUp({ candidate: selected });
-          }}
-        >
-          {selected == null ? 'Pick up issue' : `Pick up ${selected.identifier}`}
-        </Button>
-      </StartFooter>
+            onDismiss={() => patchSessionDraft({ workspaceId, patch: { pickedIssue: null } })}
+          />
+          {error == null ? null : (
+            <p role="alert" className="text-secondary text-danger">
+              {error}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

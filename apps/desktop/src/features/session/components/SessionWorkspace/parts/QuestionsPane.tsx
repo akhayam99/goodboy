@@ -24,7 +24,7 @@ import { AnswerSubmitButton } from '../../../../context/components/QuestionsTab/
 import { DismissedQuestionUndo } from '../../../../context/components/QuestionsTab/DismissedQuestionUndo';
 import { QuestionClusterHeader } from '../../../../context/components/QuestionsTab/QuestionClusterHeader';
 import { QuestionsPaneCard } from './QuestionsPaneCard';
-import { ContextLoadFailure } from './ContextPane/ContextLoadFailure';
+import { ContextLoadFailure } from '../../ContextDrawer/ContextLoadFailure';
 import {
   buildQuestionClusters,
   type QuestionCluster,

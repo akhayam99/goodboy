@@ -88,6 +88,9 @@ const placeKey = ({ place }: PlaceParams): string => {
   if (place.at === 'board') {
     return 'board';
   }
+  if (place.at === 'session-draft') {
+    return 'new';
+  }
   const view = sessionViewAddress({ view: place.view });
   return view === '' ? `s/${place.sessionId}` : `s/${place.sessionId}/${view}`;
 };

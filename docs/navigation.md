@@ -223,26 +223,46 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
-**An empty session asks one question.** Until the session has any activity,
-the overview body is the kickoff: "How do you want to start?" with three
-options in a single-select list.
+**New session is a draft, not a session.** New, ⌘N, the board, the palette
+and the checklist open the `New session` draft (the `session-draft` place,
+address `new`). Nothing is written: no row in the database, the sidebar or
+the board. The trail and the title say `New session`, the title is faint and
+cannot be renamed, and there is no `⋯`, no chip and no projects section. The
+sidebar's New button stays selected while the draft is open. Each workspace
+keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
+leaving it keeps it intact, New brings it back, and the button shows a primary
+dot with `Draft in progress` while a written draft waits. `Discard draft` in
+the header empties it; Esc never does. Back returns to the draft like any
+other place.
+
+The draft asks one question, "How do you want to start?", with three options
+in a single-select list.
 
 - **Pick up a task** shows the open issues of the connected trackers with a
-  search field. Picking one and pressing **Pick up** links it and proposes the
-  brief, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Without a tracker it shows the connect links.
-- **Run a workflow** asks for the goal and a workflow, then **Run workflow**
+  search field. Picking one and pressing **Pick up** proposes the brief under
+  the list, as the issue brief flow in [concepts.md](concepts.md) describes.
+  Use brief, Edit or Use issue text starts the session. Without a tracker it
+  shows the connect links.
+- **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
 - **Not sure yet** takes an optional focus, then **Start Scout** starts a Scout
   that reads the project and suggests where to start.
 
-Only the selected option's primary shows. **Draw a wireframe**, and **Write a
-report** once an agent has finished, sit in a quiet **More ways to start**
-menu. The list preselects Pick up a task when a tracker has open issues and
-Run a workflow otherwise, and it remembers the last choice per workspace in
-local UI storage. A new session puts focus on the question, not on the title.
-The empty header keeps the title, faint while it is still the placeholder, and
-one `⋯` menu with Archive and Delete. An archived session shows no kickoff.
+Only the selected option's primary shows. The list preselects Pick up a task
+when a tracker has open issues and Run a workflow otherwise, and it never
+remembers the last choice. Opening the draft puts focus on the question.
+
+**Start is the only way a session is born from the draft.** The primary
+creates the session and starts the work in one gesture
+(`startSessionFromDraft`): the title and the goal come from the issue, the
+workflow goal or the first sentence of the Scout focus, a picked issue is
+linked, and the column moves to the new session. The header marks that title
+`Named by Goodboy` until you rename it or open the session again, and a better
+title that arrives later fades in without moving the layout. If the start fails, the
+session is removed again, the draft stays as it was and the reason shows
+inline above the primary. A session that exists always has a real title, so
+its header never has an empty state. Sessions created elsewhere with no
+activity yet show the plain overview with its actions.
 
 ## Breadcrumbs
 
@@ -679,7 +699,7 @@ one is open at a time.
   slot.
 - **Reference beside the work opens in the right drawer, not a rail.** Popover
   = pick one thing in ten seconds; drawer = reference next to the work; page =
-  the work. Slot and goal history and the Explore file preview open there.
+  the work. The session context and the Explore file preview open there.
   Creating or configuring stays in a popover, navigating stays in the sidebar,
   and an object you work on is a child page in the trail. See
   [The right drawer](#the-right-drawer).
@@ -712,8 +732,9 @@ one is open at a time.
   opens the queue with that comment. There are no return pills: the Diff, the
   publication and the resolver page all come back through Back.
 - **The switcher and the palette list only destinations the session can
-  use.** One function feeds both. Context is one entry (its goal, decisions and
-  summary parts open through their shortcuts). Explore is always listed and
+  use.** One function feeds both. Context is a drawer, not a destination: the
+  palette offers **Show context** (⌘⌥C) and neither lists a Context page.
+  Explore is always listed and
   browses the active working directory. Diff and the other branch lenses need a
   branch. The code-host lens hides on GitHub. A tool lens appears once that
   tool is connected.
@@ -771,6 +792,22 @@ one action, close), one divider, a `ScrollFade` body and an optional dock. A
 body that scrolls itself, such as a chat, passes `scroll="self"` and fills the
 frame instead. A new kind adds a variant to `DrawerContent` and a case to the
 host.
+
+The `context` kind carries `{ tab, view }`: `tab` is `goal`, `decisions` or
+`summary`, in that order, and `view` is `current` or `versions` (the old
+versions of that slot, inside the same drawer, with Restore; Escape leaves the
+view before the drawer). The **Context** chip in the session header toggles it
+on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
+Decisions and Summary. The first open shows Summary, later ones the last tab
+used in that session. The chip says `2 new` when decisions were added since the
+Decisions tab was last shown (`sessions.context_seen_at`, counted from the
+`added` of `decisions_changed` events), and opens on Decisions then; it shows
+a pulsing dot while the summarizer writes and a danger glyph when it failed,
+with Retry in the drawer's status line. The old addresses `s/{session}/context`
+and `context/goal`, `context/decisions`, `context/summary` resolve in
+`canonicalLocation` to the overview with this drawer open on the matching tab.
+The drawer header has one action, **Copy as brief**, which copies Goal,
+Decisions, Summary and Open questions in that order (`shareableContext`).
 
 The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
 or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;

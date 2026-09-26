@@ -109,6 +109,8 @@ const baseState = (stepIds: ReadonlyArray<string>, agents: ReadonlyArray<Agent>)
   sessionPhaseRuns: { [SESSION_ID]: agents },
   summarizerStatus: {},
   budgetAlerts: [],
+  sessionBudgets: {},
+  loadSessionBudget: vi.fn(async () => undefined),
   announcedWorkflowBlocks: {},
   announcedRunBudget: {},
   sessionTelemetry: {},
@@ -556,7 +558,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
 
   it('records the budget stop once while the cap stays reached', async () => {
     const state = baseState(['s0'], [makeAgent('s0', 'pending', 0)]);
-    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
+    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID, capUsd: 10 }];
     const { set, get } = harness(state);
     const advance = maybeAutoAdvanceWorkflow(set, get);
 
@@ -567,7 +569,7 @@ describe('maybeAutoAdvanceWorkflow', () => {
     const run = (state['sessions'] as ReadonlyArray<Session>)[0]!.workflowRuns[0]!;
     expect(run.orchestrationStop).toEqual({
       kind: 'budget',
-      message: 'the budget cap is reached, raise it in Budget to keep this run going',
+      message: 'Paused at the $10.00 spend limit for this session.',
     });
   });
 
@@ -596,11 +598,11 @@ describe('maybeAutoAdvanceWorkflow', () => {
     const { set, get } = harness(state);
     const advance = maybeAutoAdvanceWorkflow(set, get);
 
-    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID }];
+    state['budgetAlerts'] = [{ kind: 'session-exceeded', sessionId: SESSION_ID, capUsd: 10 }];
     await advance(SESSION_ID);
     expect(updateOrchestrationStopSpy).toHaveBeenCalledWith({}, RUN_ID, {
       kind: 'budget',
-      message: 'the budget cap is reached, raise it in Budget to keep this run going',
+      message: 'Paused at the $10.00 spend limit for this session.',
     });
     state['budgetAlerts'] = [];
     listOpenQuestionsSpy.mockResolvedValue([

@@ -317,7 +317,9 @@ const seedImpactScene = (): void => {
     providerSpendBreakdown: PROVIDER_SPEND,
     budgetRules: BUDGET_RULES,
     budgetAlerts: BUDGET_ALERTS,
-    sessionBudgets: { [PAYMENTS_ID]: { sessionId: PAYMENTS_ID, softCapUsd: 120 } },
+    sessionBudgets: {
+      [PAYMENTS_ID]: { sessionId: PAYMENTS_ID, softCapUsd: 120, onExceed: 'pause' },
+    },
     loadBudgetRules: noop,
     loadBudgetAlerts: noop,
     loadSessionTelemetry: noop,

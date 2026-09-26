@@ -270,12 +270,36 @@ describe('store contract', () => {
 
     it('setSessionBudget writes through and caches the SessionBudget', async () => {
       const store = useAppStore;
-      await store.getState().setSessionBudget(SESSION_ID, 42);
-      expect(storySpies.invokeSessionBudgetSet).toHaveBeenCalledWith(SESSION_ID, 42);
+      await store.getState().setSessionBudget(SESSION_ID, 42, 'warn');
+      expect(storySpies.invokeSessionBudgetSet).toHaveBeenCalledWith(SESSION_ID, 42, 'warn');
       expect(store.getState().sessionBudgets[SESSION_ID]).toEqual({
         sessionId: SESSION_ID,
         softCapUsd: 42,
+        onExceed: 'warn',
       });
+    });
+
+    it('clearSessionBudget drops the limit and its open alerts', async () => {
+      const store = useAppStore;
+      await store.getState().setSessionBudget(SESSION_ID, 42);
+      store.setState({
+        budgetAlerts: [
+          {
+            id: 'a1',
+            kind: 'session-exceeded',
+            sessionId: SESSION_ID,
+            currentUsd: 43,
+            capUsd: 42,
+            createdAt: NOW,
+          },
+        ],
+      });
+
+      await store.getState().clearSessionBudget(SESSION_ID);
+
+      expect(storySpies.invokeSessionBudgetClear).toHaveBeenCalledWith(SESSION_ID);
+      expect(store.getState().sessionBudgets[SESSION_ID]).toBeUndefined();
+      expect(store.getState().budgetAlerts).toEqual([]);
     });
 
     it('dismissBudgetAlert stamps dismissedAt on the matching alert', async () => {

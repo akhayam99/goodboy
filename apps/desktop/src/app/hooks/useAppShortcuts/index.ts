@@ -12,6 +12,7 @@ import {
 } from '../../../store';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
+import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useGoToBoard } from '../useGoToBoard';
 
@@ -33,6 +34,10 @@ type DeltaParams = {
 
 type LensParams = {
   readonly kind: LensKind | null;
+};
+
+type ContextParams = {
+  readonly tab?: ContextDrawerTab;
 };
 
 export const useAppShortcuts = ({
@@ -86,6 +91,15 @@ export const useAppShortcuts = ({
     },
     [currentWorkspaceSessions, currentSession, navigate],
   );
+
+  const toggleContext = useCallback(({ tab }: ContextParams) => {
+    const state = useAppStore.getState();
+    const sessionId = state.currentSessionId;
+    if (sessionId == null) {
+      return;
+    }
+    state.toggleContextDrawer({ sessionId, ...(tab !== undefined && { tab }) });
+  }, []);
 
   const goToLens = useCallback(({ kind }: LensParams) => {
     const state = useAppStore.getState();
@@ -166,10 +180,10 @@ export const useAppShortcuts = ({
   useShortcut('session.board', goToBoard);
 
   useShortcut('lens.overview', () => goToLens({ kind: null }));
-  useShortcut('lens.context', () => goToLens({ kind: 'context' }));
-  useShortcut('lens.goal', () => goToLens({ kind: 'goal' }));
-  useShortcut('lens.decisions', () => goToLens({ kind: 'decisions' }));
-  useShortcut('lens.summary', () => goToLens({ kind: 'last_output_summary' }));
+  useShortcut('lens.context', () => toggleContext({}));
+  useShortcut('lens.goal', () => toggleContext({ tab: 'goal' }));
+  useShortcut('lens.decisions', () => toggleContext({ tab: 'decisions' }));
+  useShortcut('lens.summary', () => toggleContext({ tab: 'summary' }));
   useShortcut('lens.workflows', () => goToLens({ kind: 'workflows' }));
   useShortcut('lens.agents', () => goToLens({ kind: 'agents' }));
   useShortcut('lens.review', () => goToLens({ kind: 'review' }));

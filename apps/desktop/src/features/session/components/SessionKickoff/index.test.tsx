@@ -2,37 +2,14 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Session, SessionId } from '@goodboy/types';
+import type { StoreApi, UseBoundStore } from 'zustand';
+import type { WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 
-const { store, hooks, spies } = vi.hoisted(() => ({
-  store: {
-    githubStatus: null as { readonly mode: string; readonly user?: string } | null,
-    workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
-    projects: [] as ReadonlyArray<unknown>,
-    sessionExternalTasks: {} as Record<
-      string,
-      ReadonlyArray<{ provider: string; externalId: string }>
-    >,
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<{ status: string }>>,
-    sessionProjectMounts: { 'sess-kickoff': [{ projectId: 'project-1' }] } as Record<
-      string,
-      ReadonlyArray<{ projectId: string }>
-    >,
-    phaseTemplates: {} as Record<
-      string,
-      ReadonlyArray<{ id: string; name: string; description: string; deletedAt?: string }>
-    >,
-    pendingKickoffFocusSessionId: null as string | null,
-    clearPendingKickoffFocus: vi.fn(),
-    loadPhaseTemplates: vi.fn(async () => undefined),
-    attachWorkflowToSession: vi.fn(async () => undefined),
-    spawnAgent: vi.fn(async () => 'agent-2'),
-    openArtifactCreation: vi.fn(),
-    linkSessionExternalTask: vi.fn(async () => undefined),
-    upsertSessionSlot: vi.fn(async () => undefined),
-    reportError: vi.fn(async () => undefined),
-  },
+type TestState = Record<string, unknown>;
+
+const { holder, hooks, spies } = vi.hoisted(() => ({
+  holder: { store: null as UseBoundStore<StoreApi<TestState>> | null },
   hooks: {
     isGithubAuthenticated: { current: false },
   },
@@ -40,15 +17,18 @@ const { store, hooks, spies } = vi.hoisted(() => ({
     fetchIssueCandidates: vi.fn(
       async (_params: unknown): Promise<ReadonlyArray<IssueCandidate>> => [],
     ),
-    showToast: vi.fn(),
-    onPickIssue: vi.fn(),
+    loadPhaseTemplates: vi.fn(async () => undefined),
+    startSessionFromDraft: vi.fn(async (_params: unknown) => ({ id: 'sess-new' })),
+    requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
   },
 }));
 
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
-}));
+vi.mock('../../../../store', async () => {
+  const { create } = await vi.importActual<typeof import('zustand')>('zustand');
+  const store = create<TestState>(() => ({}));
+  holder.store = store;
+  return { EMPTY_ARRAY: Object.freeze([]), useAppStore: store };
+});
 
 vi.mock('../../../integrations/github/useGithubConnection', () => ({
   useGithubConnection: () => ({
@@ -73,18 +53,10 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
   ),
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast: spies.showToast }),
-}));
-
 import { SessionKickoff } from './index';
+import { patchSessionDraft } from '../../../../store/slices/sessionDraft/patchSessionDraft';
 
-const SESSION_ID = 'sess-kickoff' as SessionId;
-const session = {
-  id: SESSION_ID,
-  workspaceId: 'ws-1',
-  goal: 'Untitled session',
-} as unknown as Session;
+const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 
 const candidate = (overrides: Partial<IssueCandidate>): IssueCandidate => ({
   provider: 'linear',
@@ -98,41 +70,51 @@ const candidate = (overrides: Partial<IssueCandidate>): IssueCandidate => ({
   ...overrides,
 });
 
-const renderKickoff = () =>
-  render(
-    <SessionKickoff
-      session={session}
-      onOpenWorkflowBuilder={vi.fn()}
-      onPickIssue={spies.onPickIssue}
-    />,
+const store = () => {
+  if (holder.store === null) {
+    throw new Error('store mock not ready');
+  }
+  return holder.store;
+};
+
+const resetStore = () => {
+  const testStore = store();
+  testStore.setState(
+    {
+      githubStatus: null,
+      workspaceIntegrations: {},
+      projects: [],
+      sessionExternalTasks: {},
+      sessionPhaseRuns: {},
+      issueBriefs: {},
+      sessionDrafts: {},
+      phaseTemplates: {
+        'ws-1': [
+          { id: 'wf-1', name: 'Plan and build', description: 'Plan, then implement' },
+          { id: 'wf-2', name: 'Fix a bug', description: 'Reproduce and fix' },
+        ],
+      },
+      loadPhaseTemplates: spies.loadPhaseTemplates,
+      startSessionFromDraft: spies.startSessionFromDraft,
+      requestIssueBrief: spies.requestIssueBrief,
+      patchSessionDraft: patchSessionDraft(testStore.setState as never),
+    },
+    true,
   );
+};
+
+const renderKickoff = () => render(<SessionKickoff workspaceId={WORKSPACE_ID} />);
 
 const radio = (name: string) => screen.getByRole('radio', { name: new RegExp(name) });
 
 beforeEach(() => {
-  localStorage.clear();
-  store.workspaceIntegrations = {};
-  store.projects = [];
-  store.sessionExternalTasks = {};
-  store.sessionPhaseRuns = {};
-  store.phaseTemplates = {
-    'ws-1': [
-      { id: 'wf-1', name: 'Plan and build', description: 'Plan, then implement' },
-      { id: 'wf-2', name: 'Fix a bug', description: 'Reproduce and fix' },
-    ],
-  };
-  store.pendingKickoffFocusSessionId = null;
-  store.clearPendingKickoffFocus.mockClear();
-  store.attachWorkflowToSession.mockClear();
-  store.spawnAgent.mockClear();
-  store.openArtifactCreation.mockClear();
-  store.linkSessionExternalTask.mockClear();
-  store.upsertSessionSlot.mockClear();
+  resetStore();
   hooks.isGithubAuthenticated.current = false;
   spies.fetchIssueCandidates.mockReset();
   spies.fetchIssueCandidates.mockResolvedValue([]);
-  spies.showToast.mockClear();
-  spies.onPickIssue.mockClear();
+  spies.startSessionFromDraft.mockReset();
+  spies.startSessionFromDraft.mockResolvedValue({ id: 'sess-new' });
+  spies.requestIssueBrief.mockClear();
 });
 
 afterEach(cleanup);
@@ -147,8 +129,7 @@ describe('SessionKickoff', () => {
       'Run a workflowDescribe the goal, then pick a workflow.',
       'Not sure yetA Scout reads the project and suggests where to start.',
     ]);
-    expect(screen.queryByText('No activity yet')).toBeNull();
-    expect(screen.queryByRole('list', { name: 'Example run' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More ways to start' })).toBeNull();
   });
 
   it('preselects Run a workflow when no tracker has candidates', () => {
@@ -159,7 +140,7 @@ describe('SessionKickoff', () => {
   });
 
   it('preselects Pick up a task when the tracker has candidates', async () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
     renderKickoff();
 
@@ -168,19 +149,31 @@ describe('SessionKickoff', () => {
   });
 
   it('falls back to Run a workflow when the tracker has nothing open', async () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     renderKickoff();
 
     await waitFor(() => expect(radio('Run a workflow').getAttribute('aria-checked')).toBe('true'));
   });
 
-  it('remembers the last choice for the workspace', () => {
+  it('keeps the choice and the text in the draft, and preselects again once it is gone', () => {
     const first = renderKickoff();
     fireEvent.click(radio('Not sure yet'));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
+      target: { value: 'the importer' },
+    });
     first.unmount();
 
-    renderKickoff();
+    const second = renderKickoff();
     expect(radio('Not sure yet').getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('textbox', { name: 'Scout focus' })).toHaveProperty(
+      'value',
+      'the importer',
+    );
+    second.unmount();
+
+    store().setState({ sessionDrafts: {} });
+    renderKickoff();
+    expect(radio('Run a workflow').getAttribute('aria-checked')).toBe('true');
   });
 
   it('shows only the selected option primary', () => {
@@ -190,6 +183,12 @@ describe('SessionKickoff', () => {
     expect(screen.getByRole('button', { name: 'Start Scout' })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Run workflow' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Pick up/ })).toBeNull();
+  });
+
+  it('puts focus on the question when the draft opens', () => {
+    renderKickoff();
+
+    expect(document.activeElement).toBe(radio('Run a workflow'));
   });
 
   it('moves with the arrow keys and confirms with Enter', async () => {
@@ -211,15 +210,7 @@ describe('SessionKickoff', () => {
     );
   });
 
-  it('lands focus on the question for a new session and clears the flag', () => {
-    store.pendingKickoffFocusSessionId = SESSION_ID;
-    renderKickoff();
-
-    expect(document.activeElement).toBe(radio('Run a workflow'));
-    expect(store.clearPendingKickoffFocus).toHaveBeenCalledOnce();
-  });
-
-  it('runs the picked workflow with the goal', async () => {
+  it('starts the session and the picked workflow in one gesture', async () => {
     renderKickoff();
     const run = screen.getByRole('button', { name: 'Run workflow' });
     expect(run.hasAttribute('disabled')).toBe(true);
@@ -230,14 +221,31 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('button', { name: /Fix a bug/ }));
     fireEvent.click(run);
 
-    await waitFor(() => expect(store.attachWorkflowToSession).toHaveBeenCalledOnce());
-    expect(store.attachWorkflowToSession).toHaveBeenCalledWith(SESSION_ID, 'wf-2', {
-      goal: 'Round once per batch',
-      navigate: true,
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: { kind: 'workflow', workflowId: 'wf-2', goal: 'Round once per batch' },
     });
   });
 
+  it('keeps the draft and says why inline when the start fails', async () => {
+    spies.startSessionFromDraft.mockRejectedValueOnce(new Error('provider offline'));
+    renderKickoff();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Workflow goal' }), {
+      target: { value: 'Round once per batch' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Run workflow' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('provider offline');
+    expect(screen.getByRole('textbox', { name: 'Workflow goal' })).toHaveProperty(
+      'value',
+      'Round once per batch',
+    );
+  });
+
   it('starts a Scout with the optional focus as its first message', async () => {
+    const onReveal = vi.fn();
+    window.addEventListener('goodboy:reveal-chat', onReveal);
     renderKickoff();
     fireEvent.click(radio('Not sure yet'));
     fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
@@ -245,16 +253,21 @@ describe('SessionKickoff', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
 
-    await waitFor(() => expect(store.spawnAgent).toHaveBeenCalledOnce());
-    expect(store.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
-      kindOverride: 'scout',
-      initialPrompt: expect.stringContaining('Focus on: the ledger-core importer'),
-      focus: 'agent',
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'scout',
+        focus: 'the ledger-core importer',
+        prompt: expect.stringContaining('Focus on: the ledger-core importer'),
+      },
     });
+    await waitFor(() => expect(onReveal).toHaveBeenCalledOnce());
+    window.removeEventListener('goodboy:reveal-chat', onReveal);
   });
 
-  it('links the picked issue from the primary and hands it on', async () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
+  it('proposes the brief of a picked issue and starts from it without linking first', async () => {
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     spies.fetchIssueCandidates.mockResolvedValue([
       candidate({}),
       candidate({ externalId: 'issue-3', identifier: 'ENG-3', title: 'Speed up the board' }),
@@ -272,36 +285,29 @@ describe('SessionKickoff', () => {
     fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Pick up ENG-1' }));
 
-    await waitFor(() => expect(store.linkSessionExternalTask).toHaveBeenCalledOnce());
-    expect(store.linkSessionExternalTask).toHaveBeenCalledWith(
-      SESSION_ID,
-      expect.objectContaining({ provider: 'linear', externalId: 'issue-1', identifier: 'ENG-1' }),
+    expect(spies.requestIssueBrief).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: WORKSPACE_ID, sessionId: null }),
     );
-    expect(store.upsertSessionSlot).not.toHaveBeenCalled();
-    expect(spies.onPickIssue).toHaveBeenCalledWith({ candidate: candidate({}) });
-    expect(spies.showToast).toHaveBeenCalledWith({
-      kind: 'success',
-      message: 'Linked ENG-1 to this session.',
+    expect(spies.startSessionFromDraft).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
+
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'task',
+        candidate: candidate({}),
+        title: 'Fix the login redirect',
+        goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+      },
     });
   });
 
-  it('hands nothing on when the link fails', async () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
-    store.linkSessionExternalTask.mockRejectedValueOnce(new Error('offline'));
-    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
-    renderKickoff();
-    await screen.findByText('ENG-1');
-
-    fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Pick up ENG-1' }));
-
-    await waitFor(() => expect(store.linkSessionExternalTask).toHaveBeenCalledOnce());
-    expect(spies.onPickIssue).not.toHaveBeenCalled();
-  });
-
   it('hides issues a session already picked up and caps each tracker at five', async () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
-    store.sessionExternalTasks = { 'sess-other': [{ provider: 'linear', externalId: 'issue-0' }] };
+    store().setState({
+      workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] },
+      sessionExternalTasks: { 'sess-other': [{ provider: 'linear', externalId: 'issue-0' }] },
+    });
     spies.fetchIssueCandidates.mockResolvedValue(
       Array.from({ length: 8 }, (_, index) =>
         candidate({ externalId: `issue-${index}`, identifier: `ENG-${index}` }),
@@ -331,32 +337,5 @@ describe('SessionKickoff', () => {
     });
     window.removeEventListener('goodboy:open-settings', onOpenSettings);
     expect(spies.fetchIssueCandidates).not.toHaveBeenCalled();
-  });
-
-  it('keeps the wireframe in a quiet menu and the report out until there is evidence', () => {
-    renderKickoff();
-    fireEvent.click(screen.getByRole('button', { name: 'More ways to start' }));
-
-    expect(screen.getByRole('menuitem', { name: /Draw a wireframe/ })).toBeDefined();
-    expect(screen.queryByRole('menuitem', { name: /Write a report/ })).toBeNull();
-    fireEvent.click(screen.getByRole('menuitem', { name: /Draw a wireframe/ }));
-    expect(store.openArtifactCreation).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      kind: 'wireframe',
-      workflowRunId: null,
-    });
-  });
-
-  it('offers the report once an agent has finished', () => {
-    store.sessionPhaseRuns = { [SESSION_ID]: [{ status: 'completed' }] };
-    renderKickoff();
-    fireEvent.click(screen.getByRole('button', { name: 'More ways to start' }));
-
-    fireEvent.click(screen.getByRole('menuitem', { name: /Write a report/ }));
-    expect(store.openArtifactCreation).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      kind: 'report',
-      workflowRunId: null,
-    });
   });
 });
