@@ -268,3 +268,180 @@ body.wf-page {
   background: var(--wf-accent);
   color: var(--wf-accent-foreground);
 }
+.wf-layout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px;
+}
+.wf-layout > .wf-screen {
+  flex: 1 1 auto;
+  position: relative;
+}
+.wf-notes {
+  flex: 0 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wf-notes summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.wf-notes h2 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--wf-muted);
+}
+.wf-notes ol,
+.wf-notes ul {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wf-states {
+  display: flex;
+  gap: 12px;
+}
+.wf-state {
+  color: var(--wf-muted);
+}
+.wf-state.wf-active {
+  color: var(--wf-foreground);
+  font-weight: 600;
+}
+[data-note] {
+  position: relative;
+}
+[data-note]::before {
+  content: attr(data-note);
+  display: none;
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  z-index: 2;
+  width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--wf-foreground);
+  color: var(--wf-background);
+  font-size: 11px;
+  font-weight: 600;
+}
+body:has(.wf-notes[open]) [data-note]::before {
+  display: inline-flex;
+}
+:target {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+.wf-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-border);
+  border-radius: var(--wf-radius);
+}
+.wf-card-title {
+  margin: 0;
+  font-weight: 600;
+}
+.wf-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  background: rgba(0, 0, 0, 0.18);
+}
+.wf-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-border);
+}
+.wf-sheet-modal {
+  align-items: center;
+  justify-content: center;
+}
+.wf-sheet-modal > .wf-sheet-body {
+  min-width: 50%;
+  border-radius: var(--wf-radius);
+}
+.wf-sheet-side {
+  justify-content: flex-end;
+}
+.wf-sheet-side > .wf-sheet-body {
+  width: min(360px, 80%);
+}
+.wf-sheet-bottom {
+  align-items: flex-end;
+}
+.wf-sheet-bottom > .wf-sheet-body {
+  width: 100%;
+}
+.wf-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 1px 8px;
+  border: 1px solid var(--wf-border);
+  border-radius: 999px;
+  font-size: 12px;
+}
+.wf-badge-warning,
+.wf-badge-danger {
+  font-weight: 600;
+}
+.wf-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.wf-toggle-track {
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  border: 1px solid var(--wf-border);
+  background: var(--wf-placeholder);
+}
+.wf-toggle-on .wf-toggle-track {
+  background: var(--wf-accent);
+}
+.wf-chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  border: 1px dashed var(--wf-border);
+  border-radius: var(--wf-radius);
+  background: var(--wf-placeholder);
+  color: var(--wf-muted);
+}
+.wf-tabs {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid var(--wf-border);
+}
+.wf-tab {
+  padding: 6px 0;
+  text-decoration: none;
+  color: var(--wf-muted);
+}
+.wf-tab.wf-active {
+  color: var(--wf-foreground);
+  border-bottom: 2px solid var(--wf-foreground);
+}
+@media print {
+  @page {
+    size: landscape;
+  }
+  .wf-notes {
+    break-inside: avoid;
+  }
+}

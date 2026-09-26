@@ -4,7 +4,9 @@ export type FrameMessage =
   | Readonly<{ type: 'pickEnded' }>;
 
 export type FrameCommand =
-  Readonly<{ type: 'reveal'; nodeId: string }> | Readonly<{ type: 'pick'; isOn: boolean }>;
+  | Readonly<{ type: 'reveal'; nodeId: string }>
+  | Readonly<{ type: 'pick'; isOn: boolean }>
+  | Readonly<{ type: 'variant'; variantId: string | null }>;
 
 const MAX_FIELD = 512;
 

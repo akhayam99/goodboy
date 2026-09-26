@@ -33,6 +33,15 @@
     if (data.type === 'reveal' && typeof data.nodeId === 'string') {
       reveal(data.nodeId);
     }
+    if (data.type === 'variant') {
+      const root = document.documentElement;
+      if (typeof data.variantId === 'string') {
+        root.setAttribute('data-variant', data.variantId);
+      }
+      if (data.variantId === null) {
+        root.removeAttribute('data-variant');
+      }
+    }
   });
   const announce = () => {
     const height = document.documentElement.scrollHeight;

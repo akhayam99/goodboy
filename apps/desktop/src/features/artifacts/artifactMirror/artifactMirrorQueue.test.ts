@@ -16,6 +16,20 @@ vi.mock('./artifactMirrorInvoke', () => ({
     pendingSpy(args),
 }));
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: async () => '0.7.0' }));
+vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
+vi.mock('@goodboy/db', () => ({
+  listArtifactRevisions: vi.fn(async () => [
+    {
+      revision: 1,
+      title: 'Settlement flow',
+      sourceText: '{"version":1}',
+      author: 'agent',
+      ask: null,
+      createdAt: '2026-09-25T09:00:00.000Z',
+      summary: null,
+    },
+  ]),
+}));
 
 import { mirrorArtifacts, resetArtifactMirrorQueue } from './artifactMirrorQueue';
 
@@ -101,8 +115,9 @@ describe('mirrorArtifacts', () => {
     expect(writeSpy).toHaveBeenCalledTimes(2);
   });
 
-  it('mirrors a wireframe as its exported folder with the mirror meta', async () => {
+  it('mirrors a wireframe as one folder per version with the mirror meta', async () => {
     const wireframe = report({
+      revision: 2,
       id: 'frame-8d21e0',
       kind: 'wireframe',
       title: 'Settlement flow',
@@ -132,7 +147,16 @@ describe('mirrorArtifacts', () => {
     const args = writeSpy.mock.calls[0]?.[0] as {
       readonly files: ReadonlyArray<{ readonly path: string; readonly contents: string }>;
     };
-    expect(args.files.map((file) => file.path)).toContain('screens/batches.html');
+    const paths = args.files.map((file) => file.path);
+    expect(paths).toContain('index.html');
+    expect(paths).toContain('v2/screens/batches.html');
+    expect(paths).toContain('v2/wireframe.json');
+    expect(paths).toContain('v1/wireframe.json');
+    expect(paths).not.toContain('v1/index.html');
+    expect(paths).toContain('wireframe.schema.json');
+    expect(args.files.find((file) => file.path === 'index.html')?.contents).toContain(
+      'v1 First draft',
+    );
     const meta = args.files.find((file) => file.path === 'meta.json');
     expect(JSON.parse(meta?.contents ?? '{}')).toMatchObject({ workspace: 'harborline' });
     expect(args.files.filter((file) => file.path === 'meta.json')).toHaveLength(1);

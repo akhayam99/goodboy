@@ -213,6 +213,26 @@ describe('WireframeViewer', () => {
     );
   });
 
+  it('opens a state of a screen as its own page', async () => {
+    const withStates = {
+      ...document,
+      version: 2,
+      screens: document.screens.map((entry, index) =>
+        index === 0 ? { ...entry, states: { empty: { hide: ['review'] }, error: {} } } : entry,
+      ),
+    };
+    renderViewer({ sourceText: JSON.stringify(withStates) });
+    await openScreens();
+    const rail = screen.getByTestId('wireframe-screen-rail');
+    expect(within(rail).getByRole('button', { name: 'Empty' })).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Error' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('wireframe-frame').getAttribute('src')).toMatch(
+        /screens\/batches--error\.html$/,
+      ),
+    );
+  });
+
   it('releases the stage when the viewer goes away', async () => {
     const view = renderViewer();
     await waitFor(() => expect(frame.staged).toHaveLength(1));

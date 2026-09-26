@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { WireframeAdjustment, WireframeDocument } from '@goodboy/core';
+import type { WireframeAdjustment, WireframeDocument, WireframeScreen } from '@goodboy/core';
 import { Button, cn, Eyebrow, SegmentedTabs, StudioDetailTabs } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
 import { postToFrame, type FrameMessage } from '../../frame/frameMessage';
@@ -31,6 +31,23 @@ const ZOOM_OPTIONS = [
 
 type Request = Readonly<{ page: WireframePage; nonce: number }>;
 
+const DEFAULT_STATE = 'default';
+
+const stateOptions = ({
+  screen,
+}: {
+  readonly screen: WireframeScreen;
+}): ReadonlyArray<Readonly<{ id: string; label: string }>> => {
+  const entries = Object.entries(screen.states ?? {});
+  if (entries.length === 0) {
+    return [];
+  }
+  return [
+    { id: DEFAULT_STATE, label: 'Default' },
+    ...entries.map(([id, state]) => ({ id, label: state.label })),
+  ];
+};
+
 type Props = {
   readonly artifact: WireframeArtifact;
   readonly document: WireframeDocument;
@@ -47,6 +64,10 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
   const [request, setRequest] = useState<Request>({ page: firstPage, nonce: 0 });
   const [shown, setShown] = useState<WireframePage>(firstPage);
   const [contentHeight, setContentHeight] = useState(0);
+  const variants = document.variants ?? [];
+  const [variant, setVariant] = useState<string | null>(variants[0]?.id ?? null);
+  const variantRef = useRef(variant);
+  variantRef.current = variant;
   const index = useMemo(() => buildWireframeIndex({ document }), [document]);
   const stageKey = `${artifact.id}|${artifact.title}|${String(artifact.metadata.fidelity)}`;
   const stagedArtifact = useRef(artifact);
@@ -70,6 +91,12 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
     if (message.type !== 'navigated') {
       return;
     }
+    if (variantRef.current !== null) {
+      postToFrame({
+        frame: frameRef.current,
+        command: { type: 'variant', variantId: variantRef.current },
+      });
+    }
     setContentHeight(message.height);
     const page = pageOfPath({ path: message.path });
     if (page === null) {
@@ -87,9 +114,19 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
   }, [onScreenChange, view, currentScreenId]);
 
   const railEntries = useMemo(
-    () => document.screens.map((entry) => ({ id: entry.id, title: entry.title, states: [] })),
+    () =>
+      document.screens.map((entry) => ({
+        id: entry.id,
+        title: entry.title,
+        states: stateOptions({ screen: entry }),
+      })),
     [document.screens],
   );
+  const screenStates = screen === null ? [] : stateOptions({ screen });
+  const chooseVariant = (next: string) => {
+    setVariant(next);
+    postToFrame({ frame: frameRef.current, command: { type: 'variant', variantId: next } });
+  };
   const notes = useMemo(() => (screen === null ? [] : screenNodeNotes({ screen })), [screen]);
   const links = useMemo(
     () => (screen === null ? [] : screenLinks({ document, screen })),
@@ -109,6 +146,26 @@ export const WireframeViewerBody = ({ artifact, document, adjustments, onScreenC
           value={view}
           onChange={setView}
         />
+        {view === 'screen' && screen !== null && screenStates.length > 1 ? (
+          <SegmentedTabs
+            ariaLabel="State"
+            options={screenStates.map((state) => ({ value: state.id, label: state.label }))}
+            value={shown.state ?? DEFAULT_STATE}
+            onChange={(state) =>
+              open({ screenId: screen.id, state: state === DEFAULT_STATE ? null : state })
+            }
+            size="sm"
+          />
+        ) : null}
+        {view === 'screen' && variant !== null && variants.length > 1 ? (
+          <SegmentedTabs
+            ariaLabel="Variant"
+            options={variants.map((entry) => ({ value: entry.id, label: entry.label }))}
+            value={variant}
+            onChange={chooseVariant}
+            size="sm"
+          />
+        ) : null}
         {view === 'screen' ? (
           <SegmentedTabs
             ariaLabel="Zoom"

@@ -422,6 +422,17 @@ constants by `buildWireframeJsonSchema`), a `README.md` with a prompt to
 rebuild it elsewhere, and `meta.json`. The pages hold no script and no inline
 style. Goodboy never reads that folder back.
 
+The wireframe spec is version 2. It can define **patterns** once and reuse
+them (`{ "use": "posting-row", "with": { ... } }`), give a screen up to 4
+**states** (empty, loading, error or a name of its own, each a set of nodes to
+hide, show or retext), cut the same flow into release **variants** with
+`only`, set the **device** (desktop, tablet or phone), and use the kinds card,
+tabs, badge, toggle, sheet and chart. A note on a node becomes a numbered
+marker on the page. A version 1 spec is upgraded when it is read: its
+`mockState` toggles become states. Every revision is kept in
+`artifact_revisions` (who made it, what was asked, the nodes picked), and the
+saved copy holds one folder per version.
+
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.
 

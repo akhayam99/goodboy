@@ -1,4 +1,9 @@
-import { WIREFRAME_LIMITS, WIREFRAME_VIEWPORTS, type WireframeTheme } from '@goodboy/core';
+import {
+  WIREFRAME_LIMITS,
+  WIREFRAME_VIEWPORTS,
+  type WireframeTheme,
+  type WireframeVariant,
+} from '@goodboy/core';
 import type { WireframeFidelity } from '../wireframeFidelity';
 import {
   SPACING_PX,
@@ -32,9 +37,10 @@ const RATIO: Readonly<Record<string, string>> = {
 type Params = {
   readonly theme: WireframeTheme;
   readonly fidelity: WireframeFidelity;
+  readonly variants?: ReadonlyArray<WireframeVariant>;
 };
 
-export const wireframeExportCss = ({ theme, fidelity }: Params): string => {
+export const wireframeExportCss = ({ theme, fidelity, variants = [] }: Params): string => {
   const palette = wireframePalette({ theme, fidelity });
   const tokens = [
     ':root {',
@@ -74,6 +80,10 @@ export const wireframeExportCss = ({ theme, fidelity }: Params): string => {
     (viewport) =>
       `.wf-viewport-${viewport} { max-width: ${VIEWPORT_WIDTH[viewport]}px; min-height: ${VIEWPORT_MIN_HEIGHT[viewport]}px; }`,
   );
+  const variantRules = variants.map(
+    (variant) =>
+      `html[data-variant='${variant.id}'] .wf-only:not(.wf-only-${variant.id}) { display: none; }`,
+  );
   return [
     tokens,
     staticRules.trim(),
@@ -83,6 +93,7 @@ export const wireframeExportCss = ({ theme, fidelity }: Params): string => {
     ...columns,
     ...ratios,
     ...viewports,
+    ...variantRules,
     '',
   ].join('\n');
 };

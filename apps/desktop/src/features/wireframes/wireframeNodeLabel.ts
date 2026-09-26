@@ -23,6 +23,14 @@ export const wireframeNodeLabel = ({ node }: { readonly node: WireframeNode }): 
       return clip({ text: node.label ?? node.placeholder ?? humanize({ id: node.id }) });
     case 'image':
       return clip({ text: node.alt });
+    case 'badge':
+    case 'toggle':
+    case 'chart':
+      return clip({ text: node.label });
+    case 'card':
+    case 'sheet':
+      return clip({ text: node.title ?? humanize({ id: node.id }) });
+    case 'tabs':
     case 'stack':
     case 'grid':
     case 'list':

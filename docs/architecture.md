@@ -106,7 +106,9 @@ on macOS and Linux.
   (`src-tauri/src/frame_stage.*`) in `<head>`. The file never holds them. The
   stylesheet hides the page chrome (`.wf-page-chrome`) so the stage shows the
   screen alone. The script talks to the parent only with `postMessage`:
-  `navigated { path, height }` on load, `reveal { nodeId }` from the parent.
+  `navigated { path, height }` on load; from the parent, `reveal { nodeId }`
+  and `variant { variantId }` (sets `data-variant` on the page, which the
+  generated stylesheet uses to hide nodes outside that release cut).
   The parent accepts a message only when `event.source` is that iframe's
   `contentWindow` and its shape parses (`frame/frameMessage.ts`). Pages mark
   each node with `data-node` so the script can find it.
@@ -201,7 +203,12 @@ Everything the app saves for itself lives in `~/.goodboy`.
 - `workspaces/<slug>/artifacts/<date>-<title>-<id>/`: a copy of each plan,
   report and wireframe of that workspace (`artifacts-dev/` for debug builds).
   A plan or a report gets `index.html`, `document.css`, `source.md` and
-  `meta.json`; a wireframe gets the folder its export writes. The folder is
+  `meta.json`. A wireframe gets one subfolder per version (`v1/`, `v2/`, ...:
+  `index.html`, one page per screen and per state under `screens/`,
+  `wireframe.css` and the version's `wireframe.json`), an `index.html` at the
+  root that lists every version with what was asked, one
+  `wireframe.schema.json`, a `README.md` and `meta.json`. Versions come from
+  `artifact_revisions` and are never pruned; only Storage deletes the folder. The folder is
   keyed by the last 6 characters of the artifact id and keeps its name when
   the title changes; `meta.json` holds the id, kind, title, status, revision,
   session, workspace and dates. It is a mirror: the database is the truth, the

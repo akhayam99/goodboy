@@ -166,8 +166,8 @@ describe('buildWireframeExport', () => {
     expect(fileOf('wireframe.css')).toContain('.wf-button-primary {');
   });
 
-  it('lists the mock state toggles in the readme and records the revision in meta', () => {
-    expect(fileOf('README.md')).toContain('`hasExceptions`: on by default');
+  it('turns the mock state toggles into state pages and records the revision in meta', () => {
+    expect(fileOf('README.md')).toContain('Import wireframe JSON');
     expect(JSON.parse(fileOf('meta.json'))).toMatchObject({
       id: 'artifact-8d21e0',
       kind: 'wireframe',

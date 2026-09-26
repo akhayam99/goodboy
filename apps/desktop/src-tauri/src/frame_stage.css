@@ -4,10 +4,16 @@ body.wf-page {
 .wf-page-chrome {
   display: none !important;
 }
-body.wf-page > .wf-screen {
+.wf-layout {
+  display: block;
+}
+.wf-layout > .wf-screen {
   max-width: none;
   border: 0;
   border-radius: 0;
+}
+[data-note]::before {
+  display: inline-flex !important;
 }
 .gb-reveal {
   outline: 2px solid #2563eb;

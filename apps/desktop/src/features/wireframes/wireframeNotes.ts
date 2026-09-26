@@ -1,4 +1,10 @@
-import type { WireframeDocument, WireframeNode, WireframeScreen } from '@goodboy/core';
+import {
+  walkWireframeNodes,
+  wireframeNodeItemIds,
+  type WireframeDocument,
+  type WireframeNode,
+  type WireframeScreen,
+} from '@goodboy/core';
 import { wireframeNodeLabel } from './wireframeNodeLabel';
 
 export type WireframeNodeNote = Readonly<{
@@ -16,26 +22,13 @@ export type WireframeScreenLink = Readonly<{
   toNumber: number;
 }>;
 
-const walk = ({
-  node,
-  visit,
-}: {
-  readonly node: WireframeNode;
-  readonly visit: (node: WireframeNode) => void;
-}): void => {
-  visit(node);
-  if (node.kind === 'stack' || node.kind === 'grid') {
-    node.children.forEach((child) => walk({ node: child, visit }));
-  }
-};
-
 export const screenNodes = ({
   screen,
 }: {
   readonly screen: WireframeScreen;
 }): ReadonlyArray<WireframeNode> => {
   const nodes: Array<WireframeNode> = [];
-  walk({ node: screen.root, visit: (node) => nodes.push(node) });
+  walkWireframeNodes({ node: screen.root, visit: (node) => nodes.push(node) });
   return nodes;
 };
 
@@ -52,9 +45,6 @@ export const screenNodeNotes = ({
     )
     .map((entry, index) => ({ ...entry, number: index + 1 }));
 
-const itemIds = ({ node }: { readonly node: WireframeNode }): ReadonlyArray<string> =>
-  node.kind === 'list' || node.kind === 'navigation' ? node.items.map((item) => item.id) : [];
-
 export const screenLinks = ({
   document,
   screen,
@@ -66,7 +56,7 @@ export const screenLinks = ({
   const labels = new Map<string, string>();
   for (const node of nodes) {
     labels.set(node.id, wireframeNodeLabel({ node }));
-    for (const id of itemIds({ node })) {
+    for (const id of wireframeNodeItemIds({ node })) {
       labels.set(id, id);
     }
   }
