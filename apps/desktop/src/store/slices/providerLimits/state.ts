@@ -10,10 +10,12 @@ export type ProviderLimitsState = {
   readonly providerLimits: Readonly<Partial<Record<ProviderId, ProviderLimits>>>;
   readonly providerLimitsProbe: Readonly<Partial<Record<ProviderId, ProviderLimitsProbeStatus>>>;
   readonly codexResetCredits: CodexResetCredits | null;
+  readonly codexPendingReset: { readonly idempotencyKey: string } | null;
 };
 
 export const providerLimitsInitialState: ProviderLimitsState = {
   providerLimits: {},
   providerLimitsProbe: {},
   codexResetCredits: null,
+  codexPendingReset: null,
 };

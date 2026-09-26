@@ -10,6 +10,7 @@ use crate::path_env;
 use crate::scratch_dir::{prepare_probe_dir, ScratchDirError};
 
 const READ_TIMEOUT: Duration = Duration::from_secs(15);
+const CONSUME_TIMEOUT: Duration = Duration::from_secs(20);
 const INITIALIZE_ID: u64 = 1;
 const REQUEST_ID: u64 = 2;
 
@@ -183,6 +184,21 @@ pub async fn codex_rate_limits_probe(
             "account/rateLimits/read",
             json!({ "excludeResetCreditDetails": !include_reset_credit_details }),
             READ_TIMEOUT,
+        )
+    })
+    .await
+    .map_err(|e| CodexAppServerError::SpawnFailed(e.to_string()))?
+}
+
+#[tauri::command]
+pub async fn codex_consume_reset_credit(
+    idempotency_key: String,
+) -> Result<Value, CodexAppServerError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        call_app_server(
+            "account/rateLimitResetCredit/consume",
+            json!({ "idempotencyKey": idempotency_key }),
+            CONSUME_TIMEOUT,
         )
     })
     .await

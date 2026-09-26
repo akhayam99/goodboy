@@ -210,4 +210,25 @@ describe('UsageGroup', () => {
     expect(state.refreshClaudeUsage).toHaveBeenCalled();
     state.providerLimitsProbe = {};
   });
+  it('links to claude.ai for a free reset when a Claude window is full', () => {
+    state.providerLimits = {
+      anthropic: {
+        ...CLAUDE_LOW,
+        status: 'reached',
+        windows: [
+          {
+            kind: 'fiveHour',
+            model: null,
+            status: 'reached',
+            usedFraction: 1,
+            resetsAt: localIso(14, 30),
+          },
+        ],
+      },
+    };
+    render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
+
+    expect(screen.getByText(/can only be used on claude.ai or in Claude Desktop/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open Claude usage' })).toBeTruthy();
+  });
 });

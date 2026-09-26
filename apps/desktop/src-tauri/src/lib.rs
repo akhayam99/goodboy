@@ -307,6 +307,7 @@ pub fn run() {
             codex_rollout::codex_rate_limits_latest,
             usage_probe::claude_usage_probe,
             codex_app_server::codex_rate_limits_probe,
+            codex_app_server::codex_consume_reset_credit,
             repo::validate_git_repo,
             repo::project_git_status,
             repo::repo_init_with_remote,

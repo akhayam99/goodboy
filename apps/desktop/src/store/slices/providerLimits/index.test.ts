@@ -237,4 +237,42 @@ describe('providerLimits slice', () => {
     });
     expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_latest');
   });
+  it('retries a failed reset with the same attempt key and clears it on the answer', async () => {
+    invokeSpy.mockRejectedValueOnce(new Error('offline'));
+    const { slice, read } = harness();
+
+    expect(await slice.consumeCodexResetCredit()).toBe('failed');
+    const firstKey = (read().codexPendingReset as { idempotencyKey: string }).idempotencyKey;
+
+    invokeSpy.mockImplementation(async (command: string) =>
+      command === 'codex_consume_reset_credit' ? { outcome: 'alreadyRedeemed' } : null,
+    );
+    expect(await slice.consumeCodexResetCredit()).toBe('reset');
+
+    const consumeCalls = invokeSpy.mock.calls.filter(
+      ([command]) => command === 'codex_consume_reset_credit',
+    );
+    expect(consumeCalls.map(([, args]) => args)).toEqual([
+      { idempotencyKey: firstKey },
+      { idempotencyKey: firstKey },
+    ]);
+    expect(read().codexPendingReset).toBeNull();
+    expect(invokeSpy).toHaveBeenCalledWith('codex_rate_limits_probe', {
+      includeResetCreditDetails: true,
+    });
+  });
+
+  it('drops the reset row when codex says no credit is left', async () => {
+    invokeSpy.mockResolvedValue({ outcome: 'noCredit' });
+    const { slice, read } = harness();
+    (read() as { codexResetCredits: unknown }).codexResetCredits = {
+      availableCount: 1,
+      creditId: 'credit-1',
+      expiresAt: null,
+      observedAt: '2099-01-01T09:00:00.000Z',
+    };
+
+    expect(await slice.consumeCodexResetCredit()).toBe('noCredit');
+    expect(read().codexResetCredits).toMatchObject({ availableCount: 0 });
+  });
 });

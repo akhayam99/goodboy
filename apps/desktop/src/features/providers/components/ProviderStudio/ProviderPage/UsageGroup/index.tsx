@@ -7,6 +7,8 @@ import { useAutoDetour } from '../../../../hooks/useAutoDetour';
 import { useProviderLimitsChip } from '../../../../hooks/useProviderLimitsChip';
 import { usageNotice } from '../../../../limits/usageNotice';
 import { PROVIDER_LABEL } from '../../../../providerLabel';
+import { ClaudeResetLink } from './ClaudeResetLink';
+import { ResetCreditRow } from './ResetCreditRow';
 import { SpendInGoodboy } from './SpendInGoodboy';
 import { USAGE_SECTION_ID } from './usageSectionId';
 import { UsageWindowRow } from './UsageWindowRow';
@@ -44,6 +46,9 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
   const hasFailed = (probe?.failures ?? 0) >= PROBE_FAILURE_LIMIT;
   const lastAge =
     chip.observedAt === null ? null : formatRelativeAge({ fromIso: chip.observedAt, nowMs });
+  const isClaudeOut =
+    providerId === 'anthropic' &&
+    windows.some((window) => window.status === 'reached' || (window.usedFraction ?? 0) >= 1);
   const status = isChecking ? 'Checking…' : lastAge === null ? null : `Updated ${lastAge}`;
 
   return (
@@ -85,6 +90,8 @@ export const UsageGroup = ({ providerId, billing, planLabel }: Props) => {
             ))}
           </ul>
         ) : null}
+        {billing === 'plan' && providerId === 'codex' ? <ResetCreditRow nowMs={nowMs} /> : null}
+        {isClaudeOut ? <ClaudeResetLink /> : null}
         {hasFailed && !isChecking ? (
           <Notice
             tone="warning"
