@@ -107,6 +107,14 @@ be used inside ToastProvider`.** `App` returns `MockScene` under the
 - **`AppShell` already has `leftSidebar` and `footer` slots.** You need no
   layout code to add the real session sidebar or the real app footer to a
   scene. Pass the components into those two props.
+- **A fixed timestamp drifts every day.** The UI measures elapsed and relative
+  times against the real clock, so a literal `'2026-08-25T17:57:00.000Z'`
+  reads as a step running for days. Wrap every seeded instant in
+  `sceneClock` (`apps/desktop/src/app/components/MockScene/sceneClock.ts`):
+  `clock.iso({ at })` and
+  `clock.ms({ at })` shift it so the anchor lands on the moment the scene
+  loaded, and the gaps between events stay exact. Files that share seed data
+  use the same anchor.
 
 - **A studio can reach `invoke()` through a hook you never render.** The rule
   above says the render must never depend on the Tauri runtime, and

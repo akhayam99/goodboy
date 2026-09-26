@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import type {
   Agent,
-  IsoDateTime,
   ProviderId,
   Session,
   SessionProjectMount,
@@ -15,10 +14,13 @@ import type { GeneratedArtifactKind } from '../../../../features/artifacts/artif
 import type { ArtifactCreationDraft } from '../../../../store/slices/artifactDrafts/types';
 import { useAppStore } from '../../../../store';
 import { SESSION_ID, seedArtifactScene } from './artifactSeed';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const RUN_ID = 'mock-artifact-run-settlement' as WorkflowRunId;
 const WORKFLOW_ID = 'mock-artifact-workflow-settlement' as WorkflowId;
-const AT = '2026-09-14T16:40:00.000Z' as IsoDateTime;
+const AT = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
 
 const ANTHROPIC: ProviderDisplayInfo = {
   id: 'anthropic' as ProviderId,

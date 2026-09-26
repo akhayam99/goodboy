@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
-import type { IsoDateTime } from '@goodboy/types';
 import { ExplorePane } from '../../../../../features/explore/components/ExplorePane';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
 import { payloadString } from './ipcPayload';
 import { sceneParam, sceneParamList } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const VARIANT = sceneParam({ key: 'v' }) ?? 'populated';
 const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
 
-const NOW = '2026-09-14T16:40:00.000Z' as IsoDateTime;
+const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
 const SESSION_DIR = '/mock/harborline/sessions/settlement-rounding';
-const MODIFIED_AT = '2026-09-14T15:40:00.000Z';
+const MODIFIED_AT = clock.iso({ at: '2026-09-14T15:40:00.000Z' });
 
 type EntryParams = {
   readonly name: string;

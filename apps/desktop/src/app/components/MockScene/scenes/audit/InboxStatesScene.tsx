@@ -4,7 +4,6 @@ import type {
   IntegrationBinding,
   IntegrationBindingId,
   IntegrationCredentialId,
-  IsoDateTime,
 } from '@goodboy/types';
 import { InboxStudio } from '../../../../../features/inbox/components/InboxStudio';
 import { useAppStore } from '../../../../../store';
@@ -13,6 +12,9 @@ import { SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
 import { payloadStrings } from './ipcPayload';
 import { sceneParam } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const noop = () => undefined;
 
@@ -20,7 +22,7 @@ const VARIANT = sceneParam({ key: 'v' }) ?? 'populated';
 const SELECT = sceneParam({ key: 'select' });
 const SELECT_LABELS: ReadonlyArray<string> = SELECT === null ? [] : [SELECT];
 
-const NOW = '2026-09-14T16:40:00.000Z' as IsoDateTime;
+const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
 
 const ISSUES = [
   {
@@ -31,7 +33,7 @@ const ISSUES = [
     state: 'OPEN',
     labels: [{ name: 'bug' }, { name: 'finance' }],
     assignees: [{ login: 'finance-lead' }],
-    updatedAt: '2026-09-14T15:58:00.000Z',
+    updatedAt: clock.iso({ at: '2026-09-14T15:58:00.000Z' }),
   },
   {
     number: 409,
@@ -41,7 +43,7 @@ const ISSUES = [
     state: 'OPEN',
     labels: [{ name: 'reliability' }],
     assignees: [{ login: 'finance-lead' }],
-    updatedAt: '2026-09-13T10:12:00.000Z',
+    updatedAt: clock.iso({ at: '2026-09-13T10:12:00.000Z' }),
   },
   {
     number: 388,
@@ -51,7 +53,7 @@ const ISSUES = [
     state: 'OPEN',
     labels: [],
     assignees: [{ login: 'finance-lead' }],
-    updatedAt: '2026-09-02T08:40:00.000Z',
+    updatedAt: clock.iso({ at: '2026-09-02T08:40:00.000Z' }),
   },
   {
     number: 351,
@@ -61,7 +63,7 @@ const ISSUES = [
     state: 'OPEN',
     labels: [{ name: 'bug' }],
     assignees: [{ login: 'finance-lead' }],
-    updatedAt: '2026-08-18T12:00:00.000Z',
+    updatedAt: clock.iso({ at: '2026-08-18T12:00:00.000Z' }),
   },
 ];
 

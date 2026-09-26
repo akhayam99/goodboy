@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type {
-  IsoDateTime,
   MountId,
   PrReviewDraft,
   Project,
@@ -34,6 +33,11 @@ import {
   SESSION_ID as RESOLVE_SESSION_ID,
   seedResolveScene,
 } from './resolveSeed';
+import { sceneClock } from '../sceneClock';
+
+const scriptsClock = sceneClock({ anchor: '2026-09-16T11:24:00.000Z' });
+const reviewClock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
+const artifactClock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const noop = () => undefined;
 
@@ -65,8 +69,8 @@ const LEDGER_PROJECT_ID = 'mock-scripts-project-ledger-core' as ProjectId;
 const RELAY_PROJECT_ID = 'mock-scripts-project-notify-relay' as ProjectId;
 const PAYMENTS_PROJECT_ID = 'mock-scripts-project-payments-api' as ProjectId;
 
-const SCRIPTS_NOW = '2026-09-16T11:24:00.000Z' as IsoDateTime;
-const SCRIPTS_EARLIER = '2026-09-16T09:05:00.000Z' as IsoDateTime;
+const SCRIPTS_NOW = scriptsClock.iso({ at: '2026-09-16T11:24:00.000Z' });
+const SCRIPTS_EARLIER = scriptsClock.iso({ at: '2026-09-16T09:05:00.000Z' });
 
 const LEDGER_WORKTREE = '/mock/harborline/ledger-core-settlement';
 const RELAY_WORKTREE = '/mock/harborline/notify-relay-settlement';
@@ -384,15 +388,15 @@ const SCRIPT_RUNS: Readonly<Record<string, ScriptRunRecord>> = {
     status: 'pending',
     result: null,
     runId: 'mock-scripts-run-settlement-replay',
-    startedAt: Date.parse('2026-09-16T11:22:40.000Z'),
+    startedAt: scriptsClock.ms({ at: '2026-09-16T11:22:40.000Z' }),
     name: 'Replay settlement batch',
   },
   [DRIFT_SCRIPT_ID]: {
     status: 'error',
     result: { stdout: DRIFT_OUTPUT, stderr: '', exitCode: 1 },
     runId: 'mock-scripts-run-posting-drift',
-    startedAt: Date.parse('2026-09-16T11:06:12.000Z'),
-    completedAt: Date.parse('2026-09-16T11:06:24.000Z'),
+    startedAt: scriptsClock.ms({ at: '2026-09-16T11:06:12.000Z' }),
+    completedAt: scriptsClock.ms({ at: '2026-09-16T11:06:24.000Z' }),
     name: 'Check posting drift',
   },
   [LEDGER_TEST_SCRIPT_ID]: {
@@ -410,15 +414,15 @@ const SCRIPT_RUNS: Readonly<Record<string, ScriptRunRecord>> = {
       exitCode: 0,
     },
     runId: 'mock-scripts-run-ledger-test',
-    startedAt: Date.parse('2026-09-16T10:41:03.000Z'),
-    completedAt: Date.parse('2026-09-16T10:41:45.000Z'),
+    startedAt: scriptsClock.ms({ at: '2026-09-16T10:41:03.000Z' }),
+    completedAt: scriptsClock.ms({ at: '2026-09-16T10:41:45.000Z' }),
     name: 'test',
   },
   [LEDGER_DEV_SCRIPT_ID]: {
     status: 'pending',
     result: null,
     runId: 'mock-scripts-run-ledger-dev',
-    startedAt: Date.parse('2026-09-16T09:12:00.000Z'),
+    startedAt: scriptsClock.ms({ at: '2026-09-16T09:12:00.000Z' }),
     name: 'dev',
   },
 };
@@ -488,7 +492,7 @@ export const ScriptsLensScene = () => {
 
 const BILLING_PROJECT_ID = 'mock-resolve-project-billing-api' as ProjectId;
 const BILLING_MOUNT_ID = 'mock-resolve-mount-billing-api' as MountId;
-const REVIEW_NOW = '2026-09-04T14:20:00.000Z' as IsoDateTime;
+const REVIEW_NOW = reviewClock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const REVIEW_WORKTREE = '/mock/cascadia/billing-api-webhook-retry';
 const REVIEW_PR_NUMBER = 528;
 const REVIEW_BRANCH = 'fix/webhook-retry-backoff';
@@ -588,7 +592,7 @@ const PREVIEW_COMMITS = [
     shortSha: 'e37b92c',
     subject: 'Cap webhook retries and honor Retry-After',
     author: 'a-delgado',
-    timestamp: Date.parse('2026-09-04T13:28:00.000Z'),
+    timestamp: reviewClock.ms({ at: '2026-09-04T13:28:00.000Z' }),
     pushed: false,
     parentSha: 'c81f4a20d95e73b6f10c8a4d29e75b3f60c19d84',
     threadIds: [THREAD_RETRY_BACKOFF_ID, THREAD_RETRY_METRICS_ID],
@@ -598,7 +602,7 @@ const PREVIEW_COMMITS = [
     shortSha: '4f21c8b',
     subject: 'Redact webhook payloads before logging',
     author: 'kwatanabe',
-    timestamp: Date.parse('2026-09-04T12:11:00.000Z'),
+    timestamp: reviewClock.ms({ at: '2026-09-04T12:11:00.000Z' }),
     pushed: false,
     parentSha: 'e37b92c05a1f8d4e6b27c90a3f5d81e402b7c96a',
     threadIds: [THREAD_LOG_REDACT_ID],
@@ -639,7 +643,7 @@ const PUBLISH_PREVIEW: ResolvePublicationPreview = {
   localHead: '4f21c8b9a7d3e6015482ba9c7d3e6f0158249bcd',
   remoteHead: 'c81f4a20d95e73b6f10c8a4d29e75b3f60c19d84',
   requiresPush: true,
-  frozenAt: Date.parse('2026-09-04T14:12:00.000Z'),
+  frozenAt: reviewClock.ms({ at: '2026-09-04T14:12:00.000Z' }),
   commits: PREVIEW_COMMITS,
   unapproved: [],
   replies: PREVIEW_REPLIES,
@@ -674,22 +678,22 @@ const REVIEW_SIBLINGS: ReadonlyArray<Session> = [
     ...RESOLVE_SESSION,
     id: 'mock-surface-session-idempotency' as SessionId,
     goal: 'Add a unique constraint on webhook event ids',
-    state: { kind: 'idle', lastActivityAt: '2026-09-04T13:58:00.000Z' as IsoDateTime },
-    updatedAt: '2026-09-04T13:58:00.000Z' as IsoDateTime,
+    state: { kind: 'idle', lastActivityAt: reviewClock.iso({ at: '2026-09-04T13:58:00.000Z' }) },
+    updatedAt: reviewClock.iso({ at: '2026-09-04T13:58:00.000Z' }),
   },
   {
     ...RESOLVE_SESSION,
     id: 'mock-surface-session-invoice-rounding' as SessionId,
     goal: 'Fix the invoice rounding drift reported by finance',
-    state: { kind: 'idle', lastActivityAt: '2026-09-04T12:40:00.000Z' as IsoDateTime },
-    updatedAt: '2026-09-04T12:40:00.000Z' as IsoDateTime,
+    state: { kind: 'idle', lastActivityAt: reviewClock.iso({ at: '2026-09-04T12:40:00.000Z' }) },
+    updatedAt: reviewClock.iso({ at: '2026-09-04T12:40:00.000Z' }),
   },
   {
     ...RESOLVE_SESSION,
     id: 'mock-surface-session-delivery-worker' as SessionId,
     goal: 'Split the delivery worker out of the billing scheduler',
-    state: { kind: 'ended', endedAt: '2026-09-04T11:05:00.000Z' as IsoDateTime },
-    updatedAt: '2026-09-04T11:05:00.000Z' as IsoDateTime,
+    state: { kind: 'ended', endedAt: reviewClock.iso({ at: '2026-09-04T11:05:00.000Z' }) },
+    updatedAt: reviewClock.iso({ at: '2026-09-04T11:05:00.000Z' }),
   },
 ];
 
@@ -767,22 +771,22 @@ const ARTIFACT_SIBLINGS: ReadonlyArray<Session> = [
     ...ARTIFACT_SESSION,
     id: 'mock-surface-session-settled-batches' as SessionId,
     goal: 'Stop notify-relay from retrying settled batches',
-    state: { kind: 'idle', lastActivityAt: '2026-09-14T16:12:00.000Z' as IsoDateTime },
-    updatedAt: '2026-09-14T16:12:00.000Z' as IsoDateTime,
+    state: { kind: 'idle', lastActivityAt: artifactClock.iso({ at: '2026-09-14T16:12:00.000Z' }) },
+    updatedAt: artifactClock.iso({ at: '2026-09-14T16:12:00.000Z' }),
   },
   {
     ...ARTIFACT_SESSION,
     id: 'mock-surface-session-payout-export' as SessionId,
     goal: 'Add a monthly payout export for finance',
-    state: { kind: 'idle', lastActivityAt: '2026-09-14T15:20:00.000Z' as IsoDateTime },
-    updatedAt: '2026-09-14T15:20:00.000Z' as IsoDateTime,
+    state: { kind: 'idle', lastActivityAt: artifactClock.iso({ at: '2026-09-14T15:20:00.000Z' }) },
+    updatedAt: artifactClock.iso({ at: '2026-09-14T15:20:00.000Z' }),
   },
   {
     ...ARTIFACT_SESSION,
     id: 'mock-surface-session-webhook-audit' as SessionId,
     goal: 'Audit the webhook signing rotation runbook',
-    state: { kind: 'ended', endedAt: '2026-09-14T13:44:00.000Z' as IsoDateTime },
-    updatedAt: '2026-09-14T13:44:00.000Z' as IsoDateTime,
+    state: { kind: 'ended', endedAt: artifactClock.iso({ at: '2026-09-14T13:44:00.000Z' }) },
+    updatedAt: artifactClock.iso({ at: '2026-09-14T13:44:00.000Z' }),
   },
 ];
 
@@ -800,7 +804,7 @@ export const ArtifactsLensShellScene = () => {
         'mock-surface-session-payout-export': 'nw/feat-monthly-payout-export',
         'mock-surface-session-webhook-audit': 'nw/chore-webhook-rotation-runbook',
       },
-      telemetryAt: '2026-09-14T16:40:00.000Z' as IsoDateTime,
+      telemetryAt: artifactClock.iso({ at: '2026-09-14T16:40:00.000Z' }),
       lens: 'plans',
     });
     useAppStore.setState({ artifactFilter: { [ARTIFACT_SESSION_ID]: 'plan' } });

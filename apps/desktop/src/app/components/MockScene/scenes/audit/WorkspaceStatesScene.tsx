@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
-import type { IsoDateTime, Session } from '@goodboy/types';
+import type { Session } from '@goodboy/types';
 import { SESSION, seedWorkflowScene } from '../workflowSeed';
 import { WorkspaceFrame } from './WorkspaceFrame';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from './workspaceChrome';
 import { sceneParam } from './sceneParams';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
 const ARCHIVED_SESSION: Session = {
   ...SESSION,
-  state: { kind: 'ended', endedAt: '2026-08-25T17:59:00.000Z' as IsoDateTime },
-  archivedAt: '2026-08-25T17:59:30.000Z' as IsoDateTime,
+  state: { kind: 'ended', endedAt: clock.iso({ at: '2026-08-25T17:59:00.000Z' }) },
+  archivedAt: clock.iso({ at: '2026-08-25T17:59:30.000Z' }),
 };
 
 export const WorkspaceStatesScene = () => {

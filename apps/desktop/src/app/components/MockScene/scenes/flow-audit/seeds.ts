@@ -1,4 +1,4 @@
-import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
+import type { ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import {
   PERSON_ANSWERS,
@@ -46,6 +46,9 @@ import {
   WORKSPACE_ID,
   noop,
 } from './fixtures';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-16T11:20:00.000Z' });
 
 const seedFlowAuditBase = () => {
   useAppStore.setState({
@@ -178,7 +181,7 @@ export const seedWorkflowRun = () => {
       [AGENT_BACKFILL_ID]: {
         kind: 'running',
         runId: 'mock-flow-provider-run-backfill' as ProviderRunId,
-        startedAt: '2026-09-16T10:34:00.000Z' as IsoDateTime,
+        startedAt: clock.iso({ at: '2026-09-16T10:34:00.000Z' }),
       },
     },
     orchestratingWorkflowRuns: { [DYNAMIC_RUN_ID]: false },
@@ -216,7 +219,7 @@ export const seedChatSurfaces = () => {
               author: 'kwatanabe',
               authorAvatarUrl: null,
               body: 'The retry timer has no jitter, a single outage will synchronize every relay.',
-              createdAt: '2026-09-16T09:52:00.000Z',
+              createdAt: clock.iso({ at: '2026-09-16T09:52:00.000Z' }),
               url: 'https://example.invalid/harborline/payments-api/pull/412#discussion_1',
               source: 'review',
               path: 'src/relay/retry.ts',
@@ -229,7 +232,7 @@ export const seedChatSurfaces = () => {
               author: 'a-delgado',
               authorAvatarUrl: null,
               body: 'A 409 here loses the retry hint, the relay cannot tell a duplicate from a conflict.',
-              createdAt: '2026-09-16T09:58:00.000Z',
+              createdAt: clock.iso({ at: '2026-09-16T09:58:00.000Z' }),
               url: 'https://example.invalid/harborline/payments-api/pull/412#discussion_2',
               source: 'review',
               path: 'src/settlement/handler.ts',
@@ -242,7 +245,7 @@ export const seedChatSurfaces = () => {
               author: 'kwatanabe',
               authorAvatarUrl: null,
               body: 'Field name reads oddly here.',
-              createdAt: '2026-09-16T10:01:00.000Z',
+              createdAt: clock.iso({ at: '2026-09-16T10:01:00.000Z' }),
               url: 'https://example.invalid/harborline/payments-api/pull/412#discussion_3',
               source: 'review',
               path: 'src/settlement/schema.ts',

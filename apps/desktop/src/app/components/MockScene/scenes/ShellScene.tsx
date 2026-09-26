@@ -17,6 +17,9 @@ import { SessionOverviewPane } from '../../../../features/session/components/Ses
 import { useAppStore } from '../../../../store';
 import { shellArrangement } from '../../../shellArrangement';
 import { NOW, SESSION, WORKSPACE_ID, seedWorkflowScene } from './workflowSeed';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
 const noop = () => undefined;
 const TAX_SESSION_ID = 'mock-shell-session-tax-question' as SessionId;
@@ -52,32 +55,32 @@ const SIDEBAR_SESSIONS: ReadonlyArray<Session> = [
   makeSession({
     id: 'mock-shell-session-rate-limits',
     goal: 'Fix duplicate retries at the API rate limit boundary',
-    state: { kind: 'idle', lastActivityAt: '2026-08-25T17:48:00.000Z' as IsoDateTime },
-    updatedAt: '2026-08-25T17:48:00.000Z' as IsoDateTime,
+    state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-08-25T17:48:00.000Z' }) },
+    updatedAt: clock.iso({ at: '2026-08-25T17:48:00.000Z' }),
   }),
   makeSession({
     id: 'mock-shell-session-tax-question',
     goal: 'Handle tax exemptions for marketplace orders',
-    state: { kind: 'idle', lastActivityAt: '2026-08-25T17:52:00.000Z' as IsoDateTime },
-    updatedAt: '2026-08-25T17:52:00.000Z' as IsoDateTime,
+    state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-08-25T17:52:00.000Z' }) },
+    updatedAt: clock.iso({ at: '2026-08-25T17:52:00.000Z' }),
   }),
   makeSession({
     id: 'mock-shell-session-homepage',
     goal: 'Ship the wholesale homepage milestone',
-    state: { kind: 'idle', lastActivityAt: '2026-08-25T17:36:00.000Z' as IsoDateTime },
-    updatedAt: '2026-08-25T17:36:00.000Z' as IsoDateTime,
+    state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-08-25T17:36:00.000Z' }) },
+    updatedAt: clock.iso({ at: '2026-08-25T17:36:00.000Z' }),
   }),
   makeSession({
     id: 'mock-shell-session-webhooks',
     goal: 'Harden webhook signature verification and replay handling',
-    state: { kind: 'ended', endedAt: '2026-08-25T16:43:00.000Z' as IsoDateTime },
-    updatedAt: '2026-08-25T16:43:00.000Z' as IsoDateTime,
+    state: { kind: 'ended', endedAt: clock.iso({ at: '2026-08-25T16:43:00.000Z' }) },
+    updatedAt: clock.iso({ at: '2026-08-25T16:43:00.000Z' }),
   }),
   makeSession({
     id: 'mock-shell-session-ledger-export',
     goal: 'Add monthly ledger exports for finance',
-    state: { kind: 'ended', endedAt: '2026-08-25T15:51:00.000Z' as IsoDateTime },
-    updatedAt: '2026-08-25T15:51:00.000Z' as IsoDateTime,
+    state: { kind: 'ended', endedAt: clock.iso({ at: '2026-08-25T15:51:00.000Z' }) },
+    updatedAt: clock.iso({ at: '2026-08-25T15:51:00.000Z' }),
   }),
 ];
 
@@ -129,7 +132,7 @@ const seedShellChrome = () => {
           userAnswer: null,
           status: 'open',
           isBlocking: false,
-          createdAt: '2026-08-25T17:52:00.000Z' as IsoDateTime,
+          createdAt: clock.iso({ at: '2026-08-25T17:52:00.000Z' }),
         },
       ],
     },
@@ -184,7 +187,7 @@ const seedShellChrome = () => {
           kind: 'turn',
           provider: 'anthropic',
           model: 'claude-sonnet-4-5',
-          recordedAt: '2026-08-25T17:59:00.000Z' as IsoDateTime,
+          recordedAt: clock.iso({ at: '2026-08-25T17:59:00.000Z' }),
           inputTokens: 18_420,
           outputTokens: 4_860,
           estimatedCostUsd: 0.184,

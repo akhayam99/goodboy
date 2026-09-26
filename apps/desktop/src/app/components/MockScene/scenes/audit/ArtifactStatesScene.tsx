@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react';
-import type { Agent, AgentId, IsoDateTime } from '@goodboy/types';
+import type { Agent, AgentId } from '@goodboy/types';
 import { ArtifactStudio } from '../../../../../features/artifacts/components/ArtifactStudio';
 import { useAppStore } from '../../../../../store';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { REPORT_ARTIFACT_ID, SESSION, SESSION_ID, seedArtifactScene } from '../artifactSeed';
 import { sceneParam } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-14T16:40:00.000Z' });
 
 const VARIANT = sceneParam({ key: 'v' }) ?? 'collection';
 const OPEN = sceneParam({ key: 'open' });
 const OPEN_LABELS: ReadonlyArray<string> = OPEN === null ? [] : [OPEN];
 
-const NOW = '2026-09-14T16:40:00.000Z' as IsoDateTime;
+const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
 
 type ClonesParams = {
   readonly agents: ReadonlyArray<Agent>;

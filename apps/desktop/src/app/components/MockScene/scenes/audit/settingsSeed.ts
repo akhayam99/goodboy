@@ -1,5 +1,4 @@
 import type {
-  IsoDateTime,
   MountId,
   OverrideSettings,
   Project,
@@ -10,9 +9,12 @@ import type {
 } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
+import { sceneClock } from '../../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-22T10:12:00.000Z' });
 
 export const SETTINGS_WORKSPACE_ID = 'mock-settings-workspace-harborline' as WorkspaceId;
-const SETTINGS_NOW = '2026-09-22T10:12:00.000Z' as IsoDateTime;
+const SETTINGS_NOW = clock.iso({ at: '2026-09-22T10:12:00.000Z' });
 
 export const SETTINGS_OVERRIDES: OverrideSettings = {
   defaultProviderId: 'anthropic',
@@ -227,7 +229,7 @@ export const seedSettingsBase = (): void => {
         revision: 1,
         ledgerId: null,
         workspaceId: SETTINGS_WORKSPACE_ID,
-        sessionActivityAt: Date.parse('2026-08-10T10:00:00.000Z'),
+        sessionActivityAt: clock.ms({ at: '2026-08-10T10:00:00.000Z' }),
         sizeBytes: 4_402_341_478,
         sizedAt: Date.parse(SETTINGS_NOW),
         facts: {
@@ -235,7 +237,7 @@ export const seedSettingsBase = (): void => {
           exists: true,
           isRegistered: true,
           branch: 'hb/refund-retry',
-          lastCommitAt: Date.parse('2026-08-10T10:00:00.000Z'),
+          lastCommitAt: clock.ms({ at: '2026-08-10T10:00:00.000Z' }),
           localOnlyCommits: 2,
           changedFiles: 0,
           changedSample: null,

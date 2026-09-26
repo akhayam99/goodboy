@@ -31,13 +31,16 @@ import { SessionOverviewPane } from '../../../../features/session/components/Ses
 import { useAppStore } from '../../../../store';
 import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-07T09:12:00.000Z' });
 
 const WORKSPACE_ID = 'mock-workspace-harborline' as WorkspaceId;
 const SESSION_ID = 'mock-session-mount-rows' as SessionId;
 const LEDGER_ID = 'mock-project-ledger-core' as ProjectId;
 const RELAY_ID = 'mock-project-notify-relay' as ProjectId;
 const SERIES_ID = 'mock-series-ledger-reconciliation' as PrSeriesId;
-const NOW = '2026-09-07T09:12:00.000Z' as IsoDateTime;
+const NOW = clock.iso({ at: '2026-09-07T09:12:00.000Z' });
 
 const ROUNDING_MOUNT = 'mock-mount-ledger-rounding' as MountId;
 const POSTINGS_MOUNT = 'mock-mount-ledger-postings' as MountId;

@@ -1,7 +1,6 @@
 import { mockIPC } from '@tauri-apps/api/mocks';
 import type { InvokeArgs } from '@tauri-apps/api/core';
 import type {
-  IsoDateTime,
   PrComment,
   PullRequestState,
   ProjectId,
@@ -28,12 +27,15 @@ import type {
 import { useAppStore } from '../../../../store';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 
 export const WORKSPACE_ID = 'mock-resolve-workspace-cascadia' as WorkspaceId;
 export const SESSION_ID = 'mock-resolve-session-webhook-retry' as SessionId;
 const PROJECT_ID = 'mock-resolve-project-billing-api' as ProjectId;
 
-const NOW_ISO = '2026-09-04T14:20:00.000Z' as IsoDateTime;
+const NOW_ISO = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const NOW_MS = Date.parse(NOW_ISO);
 const msAgo = ({ minutes }: { readonly minutes: number }): number => NOW_MS - minutes * 60_000;
 const isoAgo = ({ minutes }: { readonly minutes: number }): string =>

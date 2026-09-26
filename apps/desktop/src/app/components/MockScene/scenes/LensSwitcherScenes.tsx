@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import type {
   AgentId,
   ArtifactId,
-  IsoDateTime,
   MountId,
   OpenQuestion,
   OpenQuestionId,
@@ -24,9 +23,12 @@ import type { ScriptGroup, ScriptRunRecord } from '../../../../features/scripts/
 import { ReviewPane } from '../../../../features/review/components/ReviewPane';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 import { SESSION, SESSION_ID, WORKSPACE_ID, seedResolveScene } from './resolveSeed';
+import { sceneClock } from '../sceneClock';
 
-const NOW = '2026-09-04T14:20:00.000Z' as IsoDateTime;
-const EARLIER = '2026-09-04T11:05:00.000Z' as IsoDateTime;
+const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
+
+const NOW = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
+const EARLIER = clock.iso({ at: '2026-09-04T11:05:00.000Z' });
 
 const PROJECT_ID = 'mock-resolve-project-billing-api' as ProjectId;
 const MOUNT_ID = 'mock-resolve-mount-billing-api' as MountId;
@@ -98,7 +100,7 @@ const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     isBlocking: false,
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-09-04T13:40:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-04T13:40:00.000Z' }),
   },
   {
     id: 'mock-lens-question-retryable-set' as OpenQuestionId,
@@ -114,7 +116,7 @@ const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     isBlocking: false,
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-09-04T13:52:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-04T13:52:00.000Z' }),
   },
   {
     id: 'mock-lens-question-event-id-scope' as OpenQuestionId,
@@ -125,7 +127,7 @@ const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     isBlocking: false,
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-09-04T14:06:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-04T14:06:00.000Z' }),
   },
 ];
 
@@ -171,8 +173,8 @@ const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
     status: 'active',
     revision: 1,
     sourceTurnId: null,
-    createdAt: '2026-09-04T12:30:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-04T12:30:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-04T12:30:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-04T12:30:00.000Z' }),
   },
   {
     id: REPORT_ARTIFACT_ID,
@@ -188,8 +190,8 @@ const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
     status: 'active',
     revision: 1,
     sourceTurnId: null,
-    createdAt: '2026-09-04T11:48:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-04T11:48:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-04T11:48:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-04T11:48:00.000Z' }),
   },
 ];
 
@@ -201,8 +203,8 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     title: 'Cap and back off the webhook retries',
     bodyMd: PLAN_BODY,
     status: 'active',
-    createdAt: '2026-09-04T12:30:00.000Z' as IsoDateTime,
-    updatedAt: '2026-09-04T12:30:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-09-04T12:30:00.000Z' }),
+    updatedAt: clock.iso({ at: '2026-09-04T12:30:00.000Z' }),
     consumptionCount: 0,
   },
 ];
@@ -285,7 +287,7 @@ const SCRIPT_RUNS: Readonly<Record<string, ScriptRunRecord>> = {
     status: 'error',
     result: { stdout: REPLAY_OUTPUT, stderr: '', exitCode: 1 },
     runId: 'mock-lens-run-replay-dead-letters',
-    startedAt: Date.parse('2026-09-04T14:02:00.000Z'),
+    startedAt: clock.ms({ at: '2026-09-04T14:02:00.000Z' }),
     name: 'Replay dead letters',
   },
 };
@@ -316,8 +318,8 @@ const SIBLINGS = [
     ...SESSION,
     id: 'mock-lens-session-idempotency' as SessionId,
     goal: 'Add a unique constraint on webhook event ids',
-    state: { kind: 'idle', lastActivityAt: '2026-09-04T13:58:00.000Z' as IsoDateTime },
-    updatedAt: '2026-09-04T13:58:00.000Z' as IsoDateTime,
+    state: { kind: 'idle', lastActivityAt: clock.iso({ at: '2026-09-04T13:58:00.000Z' }) },
+    updatedAt: clock.iso({ at: '2026-09-04T13:58:00.000Z' }),
   },
   {
     ...SESSION,

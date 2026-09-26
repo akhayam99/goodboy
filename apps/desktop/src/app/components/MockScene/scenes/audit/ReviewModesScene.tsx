@@ -1,20 +1,16 @@
 import { useEffect, useState } from 'react';
-import type {
-  IsoDateTime,
-  MountId,
-  PrCheckRun,
-  Project,
-  ProjectId,
-  SessionProjectMount,
-} from '@goodboy/types';
+import type { MountId, PrCheckRun, Project, ProjectId, SessionProjectMount } from '@goodboy/types';
 import { ReviewPane } from '../../../../../features/review/components/ReviewPane';
 import { useAppStore } from '../../../../../store';
 import { ShellFrame, seedShellChrome } from '../shellChrome';
 import { SESSION, SESSION_ID, seedResolveScene } from '../resolveSeed';
 import { sceneParam } from './sceneParams';
 import { useSceneClicks } from './useSceneClicks';
+import { sceneClock } from '../../sceneClock';
 
-const NOW = '2026-09-04T14:20:00.000Z' as IsoDateTime;
+const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
+
+const NOW = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const PROJECT_ID = 'mock-review-modes-project-notify-relay' as ProjectId;
 const MOUNT_ID = 'mock-review-modes-mount-notify-relay' as MountId;
 

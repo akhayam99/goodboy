@@ -2,7 +2,6 @@ import type {
   Agent,
   AgentId,
   ContextSlot,
-  IsoDateTime,
   MountId,
   OpenQuestion,
   OpenQuestionId,
@@ -25,6 +24,9 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { sceneClock } from '../sceneClock';
+
+const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
 export const WORKSPACE_ID = 'mock-workflow-workspace-northwind' as WorkspaceId;
 const SESSION_ID = 'mock-workflow-session-orders' as SessionId;
@@ -50,8 +52,8 @@ const REBASE_AGENT_ID = 'mock-workflow-agent-rebase' as AgentId;
 const CONFLICT_AGENT_ID = 'mock-workflow-agent-conflict-explain' as AgentId;
 const STOREFRONT_WEB_PROVIDER_RUN_ID = 'mock-provider-run-storefront-web' as ProviderRunId;
 const SUMMARIZER_PROVIDER_RUN_ID = 'mock-provider-run-summarizer' as ProviderRunId;
-export const NOW = '2026-08-25T18:00:00.000Z' as IsoDateTime;
-const EARLIER = '2026-08-25T17:04:00.000Z' as IsoDateTime;
+export const NOW = clock.iso({ at: '2026-08-25T18:00:00.000Z' });
+const EARLIER = clock.iso({ at: '2026-08-25T17:04:00.000Z' });
 
 const OVERRIDES = {
   defaultProviderId: null,
@@ -78,7 +80,7 @@ const WORKSPACE: Workspace = {
   name: 'Northwind',
   slug: 'northwind',
   overrides: OVERRIDES,
-  createdAt: '2026-08-25T15:10:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-08-25T15:10:00.000Z' }),
   updatedAt: NOW,
 };
 
@@ -90,7 +92,7 @@ const PROJECTS: ReadonlyArray<Project> = [
     rootPath: '/mock/northwind/workflow/api-source',
     kind: 'repo',
     overrides: OVERRIDES,
-    createdAt: '2026-08-25T15:12:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-08-25T15:12:00.000Z' }),
     updatedAt: NOW,
   },
   {
@@ -100,7 +102,7 @@ const PROJECTS: ReadonlyArray<Project> = [
     rootPath: '/mock/northwind/workflow/storefront-web-source',
     kind: 'repo',
     overrides: OVERRIDES,
-    createdAt: '2026-08-25T15:13:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-08-25T15:13:00.000Z' }),
     updatedAt: NOW,
   },
 ];
@@ -168,7 +170,7 @@ const LINEAR_TASK: SessionExternalTask = {
   identifier: 'NW-214',
   url: 'https://linear.app/northwind/issue/NW-214/connect-checkout-to-order-creation',
   title: 'Connect checkout to order creation',
-  createdAt: '2026-08-25T17:06:20.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-08-25T17:06:20.000Z' }),
 };
 
 const WORKFLOW: Workflow = {
@@ -238,7 +240,7 @@ const WORKFLOW: Workflow = {
         'Connect checkout to the new endpoint and preserve rejected-order error states.',
     },
   ],
-  createdAt: '2026-08-25T17:07:00.000Z' as IsoDateTime,
+  createdAt: clock.iso({ at: '2026-08-25T17:07:00.000Z' }),
   updatedAt: NOW,
 };
 
@@ -249,7 +251,7 @@ export const SESSION: Session = {
   state: {
     kind: 'running',
     runId: STOREFRONT_WEB_PROVIDER_RUN_ID,
-    startedAt: '2026-08-25T17:57:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:57:00.000Z' }),
   },
   contextSlots: CONTEXT_SLOTS,
   providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -264,7 +266,7 @@ export const SESSION: Session = {
       triggerMode: 'immediate',
       executionMode: 'static',
       goal: 'Add POST /orders and wire it into the checkout flow',
-      createdAt: '2026-08-25T17:07:00.000Z' as IsoDateTime,
+      createdAt: clock.iso({ at: '2026-08-25T17:07:00.000Z' }),
     },
   ],
   autoRun: true,
@@ -285,11 +287,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'scout',
     status: 'completed',
     outputSummary: 'Mapped the checkout request, order contract, and validation path.',
-    startedAt: '2026-08-25T17:08:00.000Z' as IsoDateTime,
-    completedAt: '2026-08-25T17:12:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-08-25T17:12:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:08:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-08-25T17:12:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-08-25T17:12:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-08-25T17:12:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-08-25T17:12:00.000Z' }),
   },
   {
     id: CONTRACT_PLAN_AGENT_ID,
@@ -301,11 +303,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'planner',
     status: 'completed',
     outputSummary: 'Agreed the customerId and lineItems request with the 201 order response.',
-    startedAt: '2026-08-25T17:13:00.000Z' as IsoDateTime,
-    completedAt: '2026-08-25T17:16:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-08-25T17:16:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:13:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-08-25T17:16:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-08-25T17:16:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-08-25T17:16:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-08-25T17:16:00.000Z' }),
   },
   {
     id: API_AGENT_ID,
@@ -317,11 +319,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'implementer',
     status: 'completed',
     outputSummary: 'Added order validation, persistence, and the 201 response in api.',
-    startedAt: '2026-08-25T17:18:00.000Z' as IsoDateTime,
-    completedAt: '2026-08-25T17:39:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-08-25T17:39:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:18:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-08-25T17:39:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-08-25T17:39:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-08-25T17:39:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-08-25T17:39:00.000Z' }),
   },
   {
     id: CONTRACT_AGENT_ID,
@@ -333,11 +335,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'scout',
     status: 'completed',
     outputSummary: 'Confirmed checkout is the only caller that still sends the legacy order shape.',
-    startedAt: '2026-08-25T17:40:00.000Z' as IsoDateTime,
-    completedAt: '2026-08-25T17:43:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-08-25T17:43:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:40:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-08-25T17:43:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-08-25T17:43:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-08-25T17:43:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-08-25T17:43:00.000Z' }),
   },
   {
     id: API_TEST_AGENT_ID,
@@ -349,11 +351,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'tester',
     status: 'completed',
     outputSummary: 'Covered successful creation, invalid line items, and missing customers.',
-    startedAt: '2026-08-25T17:45:00.000Z' as IsoDateTime,
-    completedAt: '2026-08-25T17:50:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-08-25T17:50:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:45:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-08-25T17:50:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-08-25T17:50:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-08-25T17:50:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-08-25T17:50:00.000Z' }),
   },
   {
     id: CLIENT_AGENT_ID,
@@ -365,11 +367,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'implementer',
     status: 'completed',
     outputSummary: 'Added typed create-order request, response, and rejected-request handling.',
-    startedAt: '2026-08-25T17:52:00.000Z' as IsoDateTime,
-    completedAt: '2026-08-25T17:56:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-08-25T17:56:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:52:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-08-25T17:56:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-08-25T17:56:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-08-25T17:56:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-08-25T17:56:00.000Z' }),
   },
   {
     id: STOREFRONT_WEB_AGENT_ID,
@@ -382,7 +384,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     status: 'running',
     runId: STOREFRONT_WEB_PROVIDER_RUN_ID,
     outputSummary: 'Wiring checkout submission while preserving the rejected-order toast.',
-    startedAt: '2026-08-25T17:57:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:57:00.000Z' }),
   },
   {
     id: REBASE_AGENT_ID,
@@ -392,11 +394,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'implementer',
     status: 'completed',
     outputSummary: 'Rebased the API branch cleanly on main and reran the order tests.',
-    startedAt: '2026-08-25T17:24:00.000Z' as IsoDateTime,
-    completedAt: '2026-08-25T17:29:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-08-25T17:29:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:24:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-08-25T17:29:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-08-25T17:29:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-08-25T17:29:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-08-25T17:29:00.000Z' }),
   },
   {
     id: CONFLICT_AGENT_ID,
@@ -406,11 +408,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'scout',
     status: 'completed',
     outputSummary: 'The 409 means the cart was already submitted; checkout expects the error code.',
-    startedAt: '2026-08-25T17:42:00.000Z' as IsoDateTime,
-    completedAt: '2026-08-25T17:44:00.000Z' as IsoDateTime,
-    lastFinishedAt: '2026-08-25T17:44:00.000Z' as IsoDateTime,
+    startedAt: clock.iso({ at: '2026-08-25T17:42:00.000Z' }),
+    completedAt: clock.iso({ at: '2026-08-25T17:44:00.000Z' }),
+    lastFinishedAt: clock.iso({ at: '2026-08-25T17:44:00.000Z' }),
     lastViewedAt: NOW,
-    doneAt: '2026-08-25T17:44:00.000Z' as IsoDateTime,
+    doneAt: clock.iso({ at: '2026-08-25T17:44:00.000Z' }),
   },
 ];
 
@@ -429,8 +431,8 @@ const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     isBlocking: false,
     userAnswer: 'Keep the current code and message shape so the existing toast still works.',
     status: 'answered',
-    createdAt: '2026-08-25T17:31:00.000Z' as IsoDateTime,
-    answeredAt: '2026-08-25T17:34:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-08-25T17:31:00.000Z' }),
+    answeredAt: clock.iso({ at: '2026-08-25T17:34:00.000Z' }),
   },
 ];
 
@@ -440,21 +442,21 @@ const SESSION_EVENTS: ReadonlyArray<SessionEvent> = [
     sessionId: SESSION_ID,
     kind: 'workflow_started',
     payload: { workflowName: WORKFLOW.name, runId: WORKFLOW_RUN_ID },
-    createdAt: '2026-08-25T17:07:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-08-25T17:07:00.000Z' }),
   },
   {
     id: 'mock-workflow-event-decisions' as SessionEventId,
     sessionId: SESSION_ID,
     kind: 'decisions_changed',
     payload: { added: 3, removed: 0 },
-    createdAt: '2026-08-25T17:17:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-08-25T17:17:00.000Z' }),
   },
   {
     id: 'mock-workflow-event-api-pr' as SessionEventId,
     sessionId: SESSION_ID,
     kind: 'pr_created',
     payload: { number: 147, title: 'Add POST /orders' },
-    createdAt: '2026-08-25T17:55:00.000Z' as IsoDateTime,
+    createdAt: clock.iso({ at: '2026-08-25T17:55:00.000Z' }),
   },
 ];
 
@@ -513,9 +515,9 @@ export const seedWorkflowScene = () => {
         projectId: mount.projectId,
         mountName: mount.mountName,
         repoSlug: `northwind/${mount.mountName}`,
-        createdAt: Date.parse(
-          index === 0 ? '2026-08-25T17:05:15.000Z' : '2026-08-25T17:05:55.000Z',
-        ),
+        createdAt: clock.ms({
+          at: index === 0 ? '2026-08-25T17:05:15.000Z' : '2026-08-25T17:05:55.000Z',
+        }),
       })),
     },
     sessionSlots: { [SESSION_ID]: CONTEXT_SLOTS },
@@ -554,7 +556,7 @@ export const seedWorkflowScene = () => {
           kind: 'summarizer',
           provider: 'anthropic',
           model: 'claude-sonnet-4-5',
-          recordedAt: '2026-08-25T17:21:00.000Z' as IsoDateTime,
+          recordedAt: clock.iso({ at: '2026-08-25T17:21:00.000Z' }),
           inputTokens: 1_120,
           outputTokens: 280,
           estimatedCostUsd: 0.008,
@@ -566,7 +568,7 @@ export const seedWorkflowScene = () => {
           kind: 'summarizer',
           provider: 'anthropic',
           model: 'claude-sonnet-4-5',
-          recordedAt: '2026-08-25T17:41:00.000Z' as IsoDateTime,
+          recordedAt: clock.iso({ at: '2026-08-25T17:41:00.000Z' }),
           inputTokens: 1_980,
           outputTokens: 420,
           estimatedCostUsd: 0.012,
@@ -578,7 +580,7 @@ export const seedWorkflowScene = () => {
           kind: 'summarizer',
           provider: 'anthropic',
           model: 'claude-sonnet-4-5',
-          recordedAt: '2026-08-25T17:56:30.000Z' as IsoDateTime,
+          recordedAt: clock.iso({ at: '2026-08-25T17:56:30.000Z' }),
           inputTokens: 2_460,
           outputTokens: 510,
           estimatedCostUsd: 0.015,
