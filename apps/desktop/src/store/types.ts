@@ -103,6 +103,7 @@ import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { SessionDraftState } from './slices/sessionDraft/state';
+import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
@@ -253,6 +254,7 @@ type AppSliceState = ArtifactsState &
   SlackThreadsSliceState &
   BugReportDraftState &
   SessionDraftState &
+  ContextDrawerSliceState &
   DrawerSliceState &
   NavigationSliceState;
 

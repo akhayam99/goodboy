@@ -16,7 +16,6 @@ import { AgentsPane } from './parts/AgentsPane';
 import { Pane } from './parts/Pane';
 import { SessionStudioLayer } from './parts/SessionStudioLayer';
 import { QuestionsPane } from './parts/QuestionsPane';
-import { ContextPane } from './parts/ContextPane';
 import { PrPane } from './parts/PrPane';
 import { FilesPane } from './parts/FilesPane';
 import { PaneShell } from '../../../../shared/components/PaneShell';
@@ -38,7 +37,7 @@ import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSe
 import { resolveActiveMountPath } from '../../../../store/slices/worktrees/resolveActiveMountPath';
 import { ExplorePane } from '../../../explore/components/ExplorePane';
 import { SIMPLE_LENSES } from '../../lens-labels';
-import { contextRegionFor, resolveLensSurface } from '../../lens-surface';
+import { resolveLensSurface } from '../../lens-surface';
 import { LensEmptyState } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 
@@ -182,9 +181,6 @@ export const SessionWorkspace = ({ session, isActive }: SessionWorkspaceProps) =
             {lens === 'workflows' ? <WorkflowsPane session={session} /> : null}
             {lens === 'scripts' ? (
               <ScriptsPanel workspaceId={session.workspaceId} sessionId={sessionId} />
-            ) : null}
-            {surface === 'context' ? (
-              <ContextPane session={session} initialRegion={contextRegionFor({ lens })} />
             ) : null}
             {lens === 'pr' && !isGithubCodeHost ? <PrPane session={session} /> : null}
             {lens === 'review' || (lens === 'pr' && isGithubCodeHost) ? (

@@ -1,21 +1,10 @@
-import { useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import {
-  useAppStore,
-  useSessionLoading,
-  useSessionSlots,
-  useSlotHistoryCount,
-  useSummarizerStatus,
-} from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { HeaderBand } from './HeaderBand';
-import { GoalDetailAction } from './GoalDetailAction';
 import { ArchivedGate } from './ArchivedGate';
-import { goalPresence } from './goalPresence';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { OverviewActions } from './OverviewActions';
-import { GoalOverviewRegion } from './GoalOverviewRegion';
 import { AttentionCallout } from './AttentionCallout';
 
 type Props = {
@@ -25,18 +14,7 @@ type Props = {
 
 export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionId: SessionId = session.id;
-  const slots = useSessionSlots(sessionId);
-  const slotLoading = useSessionLoading(sessionId);
-  const goalHistoryCount = useSlotHistoryCount(sessionId, 'goal');
-  const summarizer = useSummarizerStatus(sessionId);
-  const loadSlotHistory = useAppStore((s) => s.loadSlotHistory);
-  const toggleDrawer = useAppStore((s) => s.toggleDrawer);
-  const [isGoalEditing, setIsGoalEditing] = useState(false);
-  const goalSlot = slots.find((slot) => slot.key === 'goal');
-
-  const isGoalLoading = goalSlot == null && slotLoading.slots;
   const isArchived = session.archivedAt != null;
-  const presence = goalPresence({ value: goalSlot?.value ?? '', sessionTitle: session.goal });
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -46,37 +24,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
 
   return (
     <PaneShell
-      header={
-        <HeaderBand
-          session={session}
-          onSelectLens={onSelectLens}
-          titleAction={
-            presence === 'own' || isGoalEditing || isGoalLoading ? null : (
-              <GoalDetailAction
-                presence={presence}
-                disabled={summarizer.status === 'running'}
-                onClick={() => setIsGoalEditing(true)}
-              />
-            )
-          }
-          goal={
-            <GoalOverviewRegion
-              sessionId={sessionId}
-              sessionTitle={session.goal}
-              value={goalSlot?.value ?? ''}
-              historyCount={goalHistoryCount}
-              isLoading={isGoalLoading}
-              isSummarizing={summarizer.status === 'running'}
-              isEditing={isGoalEditing}
-              onEditingChange={setIsGoalEditing}
-              onOpenHistory={() => {
-                void loadSlotHistory(sessionId, 'goal');
-                toggleDrawer({ kind: 'slot-history', sessionId, payload: { slotKey: 'goal' } });
-              }}
-            />
-          }
-        />
-      }
+      header={<HeaderBand session={session} onSelectLens={onSelectLens} />}
       animationClassName="animate-fade-in"
     >
       <AttentionCallout session={session} onSelectLens={onSelectLens} />

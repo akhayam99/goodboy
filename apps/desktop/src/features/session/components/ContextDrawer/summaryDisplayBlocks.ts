@@ -1,11 +1,16 @@
 import {
-  SUMMARY_SECTION_KEYS,
   SUMMARY_SECTION_TITLES,
   type SummaryDocument,
   type SummarySectionKey,
 } from '@goodboy/core';
 
 const SUMMARY_NOTES_TITLE = 'Notes';
+
+export const SUMMARY_DISPLAY_KEYS = [
+  'state',
+  'next',
+  'learned',
+] as const satisfies ReadonlyArray<SummarySectionKey>;
 
 export type SummaryDisplayBlock = {
   readonly id: string;
@@ -34,7 +39,7 @@ export const summaryDisplayBlocks = ({ document }: Params): ReadonlyArray<Summar
   const isBlankDocument = document.blocks.length === 0;
   const offersEverySection = hasKnownSection || isBlankDocument;
 
-  const sections = SUMMARY_SECTION_KEYS.flatMap<SummaryDisplayBlock>((sectionKey) => {
+  const sections = SUMMARY_DISPLAY_KEYS.flatMap<SummaryDisplayBlock>((sectionKey) => {
     const block = document.blocks.find((candidate) => candidate.sectionKey === sectionKey);
     if (block != null) {
       return [

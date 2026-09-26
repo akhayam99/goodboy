@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
@@ -8,7 +7,7 @@ import { sessionTitle } from '../../sessionTitle';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
 import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
-import { ContextDigest } from './ContextDigest';
+import { GoalTeaser } from './GoalTeaser';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { AttentionChips } from './AttentionChips';
 import { ProjectMountRows } from './ProjectMountRows';
@@ -18,11 +17,9 @@ import { ArchivedRestore } from './ArchivedRestore';
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
-  readonly goal: ReactNode;
-  readonly titleAction?: ReactNode;
 };
 
-export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: Props) => {
+export const HeaderBand = ({ session, onSelectLens }: Props) => {
   const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
@@ -86,14 +83,14 @@ export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: 
             <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
           ) : null}
           <div className="flex shrink-0 items-center gap-1">
-            {titleAction}
             <SessionDestructiveActions session={session} />
           </div>
         </div>
+        <GoalTeaser session={session} />
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
             {isArchived ? <ArchivedRestore session={session} /> : null}
-            <ContextChip sessionId={sessionId} onSelectLens={onSelectLens} />
+            <ContextChip sessionId={sessionId} />
             <AttentionChips sessionId={sessionId} onSelectLens={onSelectLens} />
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
@@ -102,10 +99,6 @@ export const HeaderBand = ({ session, onSelectLens, goal, titleAction = null }: 
             <SessionCostChip sessionId={sessionId} />
           </div>
         </div>
-      </div>
-      <div className="flex min-w-0 flex-col gap-2">
-        {goal}
-        <ContextDigest sessionId={sessionId} onSelectLens={onSelectLens} />
       </div>
       <ProjectMountRows session={session} onSelectLens={onSelectLens} />
     </div>

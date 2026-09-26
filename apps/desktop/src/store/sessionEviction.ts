@@ -50,6 +50,8 @@ export const SESSION_EVICTION = [
   { key: 'slotHistoryCounts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionSlotsLoad', keyedBy: 'session', evictOn: 'archive' },
   { key: 'summarizerStatus', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionContextSeenAt', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'contextDrawerTab', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountGitlabMr', keyedBy: 'mount', evictOn: 'archive' },
   { key: 'sessionGitlabMr', keyedBy: 'session', evictOn: 'archive' },
   { key: 'mountBitbucketPr', keyedBy: 'mount', evictOn: 'archive' },

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { CardAction, CardActionSlot, InlineConfirm, Markdown, cn } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const REVEAL_GROUP =
   'group-hover/decision-row:opacity-100 group-focus-within/decision-row:opacity-100';

@@ -6,7 +6,7 @@ const titlesOf = (text: string): ReadonlyArray<string> =>
   summaryDisplayBlocks({ document: parseSummaryDocument({ text }) }).map((block) => block.title);
 
 describe('summaryDisplayBlocks', () => {
-  it('shows the four sections in canonical order whatever order the document uses', () => {
+  it('shows State, Next and Learned in that order whatever order the document uses', () => {
     const scrambled = [
       '#### Next',
       '- later',
@@ -17,34 +17,39 @@ describe('summaryDisplayBlocks', () => {
       '#### State',
       '- mid',
     ].join('\n');
-    expect(titlesOf(scrambled)).toEqual(['Problem', 'Learned', 'State', 'Next']);
+    expect(titlesOf(scrambled)).toEqual(['State', 'Next', 'Learned']);
   });
 
   it('puts a preamble first and an unknown heading last', () => {
     const text = ['loose prose', '', '#### Risks', '- unknown', '', '#### Problem', 'known'].join(
       '\n',
     );
-    expect(titlesOf(text)).toEqual(['Notes', 'Problem', 'Learned', 'State', 'Next', 'Risks']);
+    expect(titlesOf(text)).toEqual(['Notes', 'State', 'Next', 'Learned', 'Risks']);
   });
 
   it('fills in a missing section as a placeholder once any section exists', () => {
     const blocks = summaryDisplayBlocks({
-      document: parseSummaryDocument({ text: '#### Problem\nonly this' }),
+      document: parseSummaryDocument({ text: '#### State\nonly this' }),
     });
-    expect(blocks.map((block) => block.title)).toEqual(['Problem', 'Learned', 'State', 'Next']);
-    expect(blocks.map((block) => block.index)).toEqual([0, null, null, null]);
+    expect(blocks.map((block) => block.title)).toEqual(['State', 'Next', 'Learned']);
+    expect(blocks.map((block) => block.index)).toEqual([0, null, null]);
   });
 
   it('implies no structure over prose that carries none', () => {
     expect(titlesOf('**bold label:** legacy prose')).toEqual(['Notes']);
   });
 
-  it('offers the four sections on a blank document, so nothing needs a placeholder', () => {
+  it('offers the three sections on a blank document, so nothing needs a placeholder', () => {
     const blocks = summaryDisplayBlocks({ document: parseSummaryDocument({ text: '' }) });
 
-    expect(blocks.map((block) => block.title)).toEqual(['Problem', 'Learned', 'State', 'Next']);
-    expect(blocks.map((block) => block.index)).toEqual([null, null, null, null]);
-    expect(blocks.map((block) => block.body)).toEqual(['', '', '', '']);
+    expect(blocks.map((block) => block.title)).toEqual(['State', 'Next', 'Learned']);
+    expect(blocks.map((block) => block.index)).toEqual([null, null, null]);
+    expect(blocks.map((block) => block.body)).toEqual(['', '', '']);
+  });
+
+  it('hides a Problem section an older summary still carries', () => {
+    const text = ['#### Problem', 'why', '', '#### State', '- now'].join('\n');
+    expect(titlesOf(text)).toEqual(['State', 'Next', 'Learned']);
   });
 
   it('keeps the heading the document actually wrote as the block title', () => {

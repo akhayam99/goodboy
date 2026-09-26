@@ -7,7 +7,7 @@ import {
   replaceSummarySectionBody,
   type SummarySectionKey,
 } from '@goodboy/core';
-import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { RawDocumentEditor } from './RawDocumentEditor';
 import { SummaryBlock } from './SummaryBlock';
 import { summaryDisplayBlocks } from './summaryDisplayBlocks';
