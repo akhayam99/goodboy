@@ -160,6 +160,13 @@ describe('LinearIssueDetail', () => {
       within(facts)
         .getAllByRole('listitem')
         .map((item) => item.getAttribute('data-fact-slot')),
-    ).toEqual(['person', 'weight', 'place', 'labels', 'time']);
+    ).toEqual(['state', 'weight', 'person', 'place', 'labels']);
+    expect(screen.getByText('In Progress')).toBeDefined();
+  });
+
+  it('moves the update time into the byline instead of a fact', () => {
+    render(<LinearIssueDetail issue={ISSUE} workspaceId={'workspace-1' as WorkspaceId} />);
+
+    expect(screen.getByRole('time')).toBeDefined();
   });
 });

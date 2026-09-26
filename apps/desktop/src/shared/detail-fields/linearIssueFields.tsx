@@ -3,10 +3,29 @@ import { issuePullRequests, type LinearIssue } from '../../features/integrations
 import { LinearLabelChip } from '../../features/integrations/linear/LinearLabelChip';
 import { LinearPriority } from '../../features/integrations/linear/LinearPriority';
 import { LinkedPrChip } from '../../features/integrations/linear/LinkedPrChip';
+import { RecordState } from '../components/StudioDetail/RecordState';
+import type { InboxState } from '../../features/inbox/types';
 import type { FactRegistry } from './factTypes';
-import { timeFact } from './timeFact';
+
+type StateTypeParams = {
+  readonly type: string;
+};
+
+export const linearStateCategory = ({ type }: StateTypeParams): InboxState =>
+  type === 'completed' || type === 'canceled' ? 'done' : type === 'started' ? 'active' : 'open';
 
 export const linearIssueFields: FactRegistry<LinearIssue> = {
+  state: ({ entity }) => ({
+    key: 'state',
+    label: 'Status',
+    icon: null,
+    node: (
+      <RecordState
+        category={linearStateCategory({ type: entity.state.type })}
+        label={entity.state.name}
+      />
+    ),
+  }),
   person: ({ entity }) =>
     entity.assignee == null
       ? null
@@ -43,5 +62,4 @@ export const linearIssueFields: FactRegistry<LinearIssue> = {
       icon: GitPullRequest,
       node: <LinkedPrChip pr={pr} />,
     })),
-  time: ({ entity }) => timeFact({ label: 'Updated', iso: entity.updatedAt }),
 };

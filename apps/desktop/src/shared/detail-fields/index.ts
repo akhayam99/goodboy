@@ -1,6 +1,7 @@
 export { resolveDetailFields, type ResolvedDetailFields } from './resolveDetailFields';
 export { resolveFacts } from './resolveFacts';
-export { linearIssueFields } from './linearIssueFields';
+export { recordByline, relativeTimeNode } from './recordByline';
+export { linearIssueFields, linearStateCategory } from './linearIssueFields';
 export { sentryIssueFields } from './sentryIssueFields';
 export { githubIssueFields } from './githubIssueFields';
 export { githubPullRequestFields } from './githubPullRequestFields';

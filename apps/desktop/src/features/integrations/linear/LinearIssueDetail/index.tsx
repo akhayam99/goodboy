@@ -5,10 +5,9 @@ import { RecordSections } from '../../../../shared/components/StudioDetail/Recor
 import type { RecordFrame } from '../../../../shared/components/StudioDetail/RecordActions/types';
 import { useMemo } from 'react';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { StateBadge } from '@goodboy/ui';
 import { DescriptionSection } from '../../../../shared/components/DescriptionSection';
 import { ToolImageScope } from '../../../../shared/components/ToolImageScope';
-import { linearIssueFields, resolveFacts } from '../../../../shared/detail-fields';
+import { linearIssueFields, recordByline, resolveFacts } from '../../../../shared/detail-fields';
 import type { LinearIssue } from '../client';
 import { useConversationPane } from '../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../shared/components/Conversation/types';
@@ -59,7 +58,7 @@ export const LinearIssueDetail = ({ issue, workspaceId, projectId, frame = null 
           provider="linear"
           identifier={issue.identifier}
           title={issue.title}
-          state={<StateBadge>{issue.state.name}</StateBadge>}
+          byline={recordByline({ verb: 'updated', iso: issue.updatedAt })}
           facts={
             <RecordProperties
               facts={resolveFacts({ registry: linearIssueFields, entity: issue })}

@@ -133,11 +133,11 @@ describe('fact registries', () => {
     const slotsOf = (facts: ReadonlyArray<ResolvedFact>) => facts.map((fact) => fact.slot);
 
     expect(slotsOf(resolveFacts({ registry: linearIssueFields, entity: LINEAR_ISSUE }))).toEqual([
-      'person',
+      'state',
       'weight',
+      'person',
       'place',
       'labels',
-      'time',
     ]);
     expect(slotsOf(resolveFacts({ registry: sentryIssueFields, entity: SENTRY_ISSUE }))).toEqual([
       'weight',
@@ -236,7 +236,7 @@ describe('fact registries', () => {
       },
     });
 
-    expect(sparse.map((fact) => fact.key)).toEqual(['place']);
+    expect(sparse.map((fact) => fact.key)).toEqual(['state', 'place']);
   });
 });
 
