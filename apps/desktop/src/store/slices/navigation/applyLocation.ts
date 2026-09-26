@@ -1,7 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import type { AppStore } from '../../store';
-import { drawerAfterMove } from '../drawer/drawerAfterMove';
 import type { GetFn, Location, SessionView, SetFn } from './types';
 
 type SurfaceParams = {
@@ -79,24 +78,25 @@ const surfaceChanges = ({
       ...state.focusedExternalTask,
       [sessionId]: target?.kind === 'external-task' ? target.task : null,
     },
-    drawer: drawerAfterMove({ drawer: state.drawer, sessionId, lens }),
   };
 };
 
 type Params = {
   readonly set: SetFn;
   readonly get: GetFn;
-  readonly location: Pick<Location, 'place' | 'studio'>;
+  readonly location: Pick<Location, 'place' | 'studio' | 'focus'>;
   readonly isRestore: boolean;
 };
 
 export const applyLocation = ({ set, get, location, isRestore }: Params): void => {
   const { place, studio } = location;
+  const drawer = isRestore ? location.focus.drawer : null;
   if (get().appStudio !== studio) {
     set({ appStudio: studio });
   }
   if (place.at === 'board') {
     void get().setCurrentSession(null);
+    set({ drawer: null });
     return;
   }
   const { sessionId, view } = place;
@@ -110,7 +110,7 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
     runs !== undefined &&
     !runs.some((run) => run.id === view.agentId);
   const resolved: SessionView = isAgentGone ? { ...view, agentId: null } : view;
-  set((state) => surfaceChanges({ state, sessionId, view: resolved, isRestore }));
+  set((state) => ({ ...surfaceChanges({ state, sessionId, view: resolved, isRestore }), drawer }));
   if (resolved.agentId !== null && resolved.studio === null) {
     void get()
       .selectAgent(sessionId, resolved.agentId)

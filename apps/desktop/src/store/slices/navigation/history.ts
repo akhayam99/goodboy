@@ -18,7 +18,9 @@ export const syncTop = ({ stack, live }: SyncParams): NavigationStack => {
   if (stack === undefined || top === undefined) {
     return { entries: [live], index: 0 };
   }
-  const synced: Location = isSameEntry(top, live) ? { ...live, focus: top.focus } : live;
+  const synced: Location = isSameEntry(top, live)
+    ? { ...live, focus: { ...top.focus, drawer: live.focus.drawer } }
+    : live;
   return {
     entries: stack.entries.map((entry, index) => (index === stack.index ? synced : entry)),
     index: stack.index,

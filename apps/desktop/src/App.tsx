@@ -47,7 +47,6 @@ import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
-import { useCloseStaleDrawer } from './app/hooks/useCloseStaleDrawer';
 import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
 
 const KEEP_ALIVE_CAP = 5;
@@ -62,7 +61,6 @@ export const App = () => {
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
   const isDrawerOpen = useAppStore((s) => selectOpenDrawer(s) !== null);
-  useCloseStaleDrawer();
   const bootPhase = useAppStore((s) => s.bootPhase);
   const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);

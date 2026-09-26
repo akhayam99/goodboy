@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { create } from 'zustand';
 import type { Agent, AgentId, ArtifactId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';
+import { createDrawerSlice } from '../drawer';
+import type { DrawerRequest } from '../drawer/state';
 import { createNavigationSlice } from '.';
 import { dropSession } from './history';
 import { locationKey } from './locationKey';
@@ -62,6 +64,7 @@ const makeStore = () =>
           set((state) => ({ selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } }));
         },
         ...createNavigationSlice(set, get),
+        ...createDrawerSlice(set, get),
       }) as unknown as AppStore,
   );
 
@@ -129,6 +132,7 @@ describe('navigation slice', () => {
     const stack = store.getState().navigation[WS];
     expect(stack?.entries).toHaveLength(2);
     expect(stack?.entries[1]?.focus).toEqual({
+      drawer: null,
       selection: { thread: 'gh:PRRT_42' },
       scroll: { queue: 120 },
       revealed: [],
@@ -283,6 +287,43 @@ describe('navigation slice', () => {
     expect(store.getState().activeLens[S1]).toBe('agents');
   });
 
+  it('closes the drawer on a forward move and brings it back on back', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    store.getState().openDrawer(DRAFTS);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    expect(store.getState().drawer).toBeNull();
+
+    store.getState().back();
+    expect(store.getState().drawer).toEqual(DRAFTS);
+
+    store.getState().forward();
+    expect(store.getState().drawer).toBeNull();
+  });
+
+  it('closes the drawer when an agent opens and restores it on back', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().openDrawer(DRAFTS);
+    store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: AGENT }) });
+    expect(store.getState().drawer).toBeNull();
+
+    store.getState().back();
+    expect(store.getState().drawer).toEqual(DRAFTS);
+  });
+
+  it('closes the drawer in place on request, without a history entry', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    store.getState().openDrawer(DRAFTS);
+    store.getState().closeDrawer();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().back();
+
+    expect(store.getState().drawer).toBeNull();
+    expect(store.getState().navigation[WS]?.entries).toHaveLength(3);
+  });
+
   it('keeps one stack per workspace', () => {
     const store = makeStore();
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
@@ -327,4 +368,10 @@ describe('navigation slice', () => {
   });
 });
 
-const EMPTY = { selection: {}, scroll: {}, revealed: [] };
+const DRAFTS: DrawerRequest = {
+  kind: 'review-drafts',
+  sessionId: S1,
+  payload: {},
+};
+
+const EMPTY = { drawer: null, selection: {}, scroll: {}, revealed: [] };

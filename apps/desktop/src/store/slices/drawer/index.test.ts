@@ -79,11 +79,11 @@ describe('drawer slice', () => {
     h = harness();
   });
 
-  it('opens one drawer at a time and records the lens that opened it', () => {
+  it('opens one drawer at a time', () => {
     h.slice.openDrawer(GOAL_HISTORY);
     h.slice.openDrawer(README_PREVIEW);
 
-    expect(selectOpenDrawer(h.get())).toEqual({ ...README_PREVIEW, lens: 'explore' });
+    expect(selectOpenDrawer(h.get())).toEqual(README_PREVIEW);
   });
 
   it('closes when its trigger is pressed again and switches when another one is', () => {
@@ -94,16 +94,6 @@ describe('drawer slice', () => {
     expect(selectOpenDrawer(h.get())?.kind).toBe('slot-history');
 
     h.slice.toggleDrawer(GOAL_HISTORY);
-    expect(h.get().drawer).toBeNull();
-  });
-
-  it('closes with the pane that opened it when the lens changes', () => {
-    h.slice.openDrawer(README_PREVIEW);
-
-    h.setLens(SESSION_ID, 'explore');
-    expect(selectOpenDrawer(h.get())).not.toBeNull();
-
-    h.setLens(SESSION_ID, 'files');
     expect(h.get().drawer).toBeNull();
   });
 

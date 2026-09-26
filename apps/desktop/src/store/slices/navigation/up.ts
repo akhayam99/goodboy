@@ -36,7 +36,7 @@ export const up = (set: SetFn, get: GetFn) => {
       applyLocation({
         set,
         get,
-        location: landing ?? { place: parent, studio: null },
+        location: landing ?? { place: parent, studio: null, focus: EMPTY_FOCUS },
         isRestore: true,
       });
       return;

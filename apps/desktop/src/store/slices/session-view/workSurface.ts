@@ -3,7 +3,6 @@ import type { DiffFocus, GetFn, LensKind, SessionStudio, SetFn } from './types';
 import { sentryRecordKey } from '../../../features/inbox/adapters/sentry';
 import { PROVIDER_LENS } from '../../../features/integrations/providerLens';
 import { workSurfaceFocus } from './workSurfaceFocus';
-import { drawerAfterMove } from '../drawer/drawerAfterMove';
 import { drawerAfterArtifactFocus } from '../drawer/drawerAfterArtifactFocus';
 import { sessionPlace } from '../navigation/place';
 
@@ -32,7 +31,6 @@ export const setActiveLens = (set: SetFn) => {
           ? s.focusedGithubIssueNumber
           : { ...s.focusedGithubIssueNumber, [sessionId]: null },
       focusedExternalTask: { ...s.focusedExternalTask, [sessionId]: null },
-      drawer: drawerAfterMove({ drawer: s.drawer, sessionId, lens }),
     }));
   };
 };

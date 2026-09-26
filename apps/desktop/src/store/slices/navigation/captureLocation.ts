@@ -51,8 +51,9 @@ type Params = {
   readonly focus?: Focus;
 };
 
-export const captureLocation = ({ state, focus = EMPTY_FOCUS }: Params): Location => {
+export const captureLocation = ({ state, focus: base = EMPTY_FOCUS }: Params): Location => {
   const workspaceId = state.currentWorkspaceId;
+  const focus: Focus = { ...base, drawer: state.drawer };
   const sessionId = state.currentSessionId;
   if (sessionId === null) {
     return { workspaceId, place: { at: 'board' }, studio: state.appStudio, focus };

@@ -52,7 +52,7 @@ export const closeStudio = (set: SetFn, get: GetFn) => {
     applyLocation({
       set,
       get,
-      location: landing ?? { place: live.place, studio: null },
+      location: landing ?? { place: live.place, studio: null, focus: live.focus },
       isRestore: true,
     });
   };

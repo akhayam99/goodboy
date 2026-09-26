@@ -5,6 +5,7 @@ import type {
   LensKind,
   SessionStudio,
 } from '../session-view/types';
+import type { OpenDrawer } from '../drawer/state';
 import type { StudioPlace } from './studio';
 
 export type { SetFn, GetFn } from '../../slice-types';
@@ -36,6 +37,7 @@ export type PlaceRequest =
   Place | { readonly at: 'agent'; readonly sessionId: SessionId; readonly agentId: AgentId };
 
 export type Focus = {
+  readonly drawer: OpenDrawer | null;
   readonly selection: Readonly<Record<string, string>>;
   readonly scroll: Readonly<Record<string, number>>;
   readonly revealed: ReadonlyArray<string>;
@@ -73,7 +75,7 @@ export type NavigationSliceState = {
   readonly appStudio: StudioPlace | null;
 };
 
-export const EMPTY_FOCUS: Focus = { selection: {}, scroll: {}, revealed: [] };
+export const EMPTY_FOCUS: Focus = { drawer: null, selection: {}, scroll: {}, revealed: [] };
 
 export const HISTORY_LIMIT = 50;
 
