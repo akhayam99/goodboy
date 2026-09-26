@@ -93,7 +93,7 @@ Gemini runs through Antigravity (`agy`), the app that replaces the Gemini CLI.
 1. Install `agy` from a terminal:
    `curl -fsSL https://antigravity.google/cli/install.sh | bash`
 2. Sign in to the Antigravity app with your Google account
-3. In Goodboy, click the refresh icon (**Re-detect CLIs**) on the Gemini card
+3. In Goodboy, open the Gemini page menu and choose **Check again**
 
 You sign in to Antigravity inside its own app, so the card has no **Connect** button.
 Rather use a key? Add a Gemini API key under **API keys** instead.
@@ -175,9 +175,10 @@ clears them after a confirm.
 
 ## Models in the picker
 
-Each CLI provider page has a **Models in the picker** section under Account. It
-changes only what the model picker lists, for every workspace in the app. Auto and
-pinned models keep working.
+Each provider page has a **Models in the picker** group under Usage. It changes
+only what the model picker lists, for every workspace in the app. Auto and pinned
+models keep working. Its header says how many show (`Showing 6 of 11`) next to
+**Show all**.
 
 - Each family (Opus, Sonnet, Haiku and so on) has a switch, then one chip per
   version. A lit chip shows in the picker
@@ -187,19 +188,32 @@ pinned models keep working.
 - In the picker, the settings icon next to **Provider** opens this section for the
   provider you are looking at
 
-## Usage and spend
+## The provider page
 
-Each provider page in **Settings > Providers & models** opens on **Usage**:
+Each provider page in **Settings > Providers & models** has four groups, in the
+same order for every provider: **Usage**, **Models in the picker**,
+**Permissions** and **Account**. The header carries the plan, the account and the
+CLI version (`Team plan · Signed in as you@acme.test · Claude CLI 2.1.282`), and
+its menu holds **Check again**, **Sign in again**, **Sign out** and **Copy CLI
+path**. A provider that is not connected shows only its connect card.
 
-- **Usage limits**: one row per window the provider reported (5 hours, the
-  week, a model's week), with the share used and the reset. A notice says when
-  the provider is about to run out or is out. Cursor and Gemini report nothing
-  Goodboy can read, and an API key provider is billed per token, so neither
-  shows windows
-- **Spend in Goodboy**: today, the last 7 days and this month for the current
-  workspace, counted by Goodboy at API prices, and the provider's budget when
-  you set one in Impact. On a plan this is what the same tokens would cost on
-  the API, not what you pay
+- **Usage**: one row per window the provider reported (5 hours, the week, a
+  model's week), with the share used and the reset. The header says when the
+  numbers were last updated and has a refresh button that asks the CLI now. A
+  notice says when the provider is about to run out or is out, or that three
+  checks in a row failed. Cursor and Gemini don't share usage with other apps,
+  and an API key provider is billed per token, so neither shows windows
+- **Spent in Goodboy**, the last row of Usage: today, the last 7 days and this
+  month for the current workspace, counted by Goodboy at API prices, and the
+  provider's budget when you set one. **Open in Impact** edits the budget. On a
+  plan this is what the same tokens would cost on the API, not what you pay
+- **Permissions**: what this CLI does with each mode (`Works`, `Partly` with the
+  reason, or `Not available` with the mode it runs as instead), whether it
+  follows Allow and Deny rules (only Claude does), and that role limits are
+  asked, not locked. It reads `modeSupport` in `@goodboy/core`
+- **Account**: who is signed in with the plan, the CLI version, and **Use an API
+  key instead of your plan**, which opens the API keys. Keys you already have
+  show directly, with the workspace credentials under them
 - The provider's row in the rail turns warning from 80% of a window and danger
   when the provider is out, with the reason under its name
 
@@ -210,7 +224,7 @@ pays for every turn.
 
 1. Click **Disconnect** and **Confirm**
 2. Click **Connect** and sign in with the other account
-3. Click the refresh icon and check the account on the card before you continue
+3. Choose **Check again** in the page menu and check the account in the header before you continue
 
 ## Troubleshooting
 
@@ -285,8 +299,9 @@ Each provider's connect options live in one table, not in UI code. The table is
 - `manual`: the card shows `manualReason` and a docs link. It has no **Connect** and
   no **Sign in again** button
 - `isApiProvider` reads `PROVIDER_KIND` in `packages/types/src/provider-catalog.ts`.
-  It marks openrouter and moonshot as `api`. Their card is `ApiProviderDetail`, which
-  checks the runtime and lists keys, instead of the CLI connect card
+  It marks openrouter and moonshot as `api`. Their page keeps the same four groups;
+  Account shows the OpenCode runtime with **Detect** and lists keys, instead of the
+  CLI connect card
 
 ### Commands per provider
 
@@ -644,7 +659,7 @@ project,local --no-session-persistence` in an empty scratch directory,
 - `packages/types/src/provider-registry.ts`: provider ids
 - `packages/core/src/providers/provider-api-key-env.ts`: `PROVIDER_API_KEY_ENV`
 - `apps/desktop/src/store/slices/providers/connectProvider.ts`: the steps and timers behind **Connect**
-- `apps/desktop/src/features/providers/components/ProviderStudio/`: the provider cards and **Defaults**
+- `apps/desktop/src/features/providers/components/ProviderStudio/`: the rail, **Defaults** and `ProviderPage/` (`UsageGroup`, `ModelsGroup`, `PermissionsGroup`, `AccountGroup`)
 - `apps/desktop/src/features/providers/components/ProviderConnect/guides.ts`: the guide text shown in the app
 - `apps/desktop/src-tauri/src/providers.rs`: finding CLIs and checking sign-in
 - `apps/desktop/src-tauri/src/provider_credentials.rs`: API key checks

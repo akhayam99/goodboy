@@ -2,7 +2,7 @@ import { Settings2 } from 'lucide-react';
 import type { ProviderId } from '@goodboy/types';
 import { Tooltip } from '@goodboy/ui';
 import { PROVIDER_LABEL } from '../../../features/providers/providerLabel';
-import { MODELS_SECTION } from '../../../features/providers/components/ProviderStudio/ModelVisibilitySection/constants';
+import { MODELS_SECTION } from '../../../features/providers/components/ProviderStudio/ProviderPage/ModelsGroup/constants';
 
 type Props = {
   readonly provider: ProviderId;

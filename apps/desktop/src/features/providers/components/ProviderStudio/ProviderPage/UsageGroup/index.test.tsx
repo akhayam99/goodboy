@@ -12,11 +12,14 @@ const { state, spendSpy } = vi.hoisted(() => ({
     currentWorkspaceId: 'ws-harborline',
     workspaces: [] as ReadonlyArray<never>,
     providers: [] as ReadonlyArray<{ id: ProviderId; connection: string }>,
+    providerLimitsProbe: {} as Record<string, unknown>,
+    refreshClaudeUsage: vi.fn(async () => undefined),
+    refreshCodexLimits: vi.fn(async () => undefined),
   },
   spendSpy: vi.fn(),
 }));
 
-vi.mock('../../../../../store', () => ({
+vi.mock('../../../../../../store', () => ({
   useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
 }));
 
@@ -27,7 +30,7 @@ vi.mock('@goodboy/db', async (importOriginal) => {
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
-import { UsageSection } from './index';
+import { UsageGroup } from './index';
 
 const NOW = new Date(2026, 8, 25, 12, 0).getTime();
 
@@ -70,10 +73,10 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('UsageSection', () => {
+describe('UsageGroup', () => {
   it('lists each window with its use and reset, and warns once near the limit', async () => {
     state.providerLimits = { anthropic: CLAUDE_LOW };
-    render(<UsageSection providerId="anthropic" billing="plan" />);
+    render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
     const rows = within(screen.getByRole('list', { name: 'Claude usage windows' })).getAllByRole(
       'listitem',
@@ -84,8 +87,8 @@ describe('UsageSection', () => {
     ]);
     expect(screen.getByText('Claude is about to run out.')).toBeTruthy();
     expect(screen.getByText('The 5-hour window resets at 14:30.')).toBeTruthy();
-    expect(screen.getByText('Reported by Claude · Updated 3m ago')).toBeTruthy();
-    expect(screen.getByText(/Goodboy never reads your Claude sign-in/)).toBeTruthy();
+    expect(screen.getByText('Updated 3m ago')).toBeTruthy();
+    expect(screen.getByText(/never reads your sign-in/)).toBeTruthy();
     await waitFor(() => expect(screen.getByText('$18.40')).toBeTruthy());
     expect(spendSpy).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'anthropic', workspaceId: 'ws-harborline' }),
@@ -110,7 +113,7 @@ describe('UsageSection', () => {
         observedAt: localIso(11, 48),
       },
     };
-    render(<UsageSection providerId="codex" billing="plan" />);
+    render(<UsageGroup providerId="codex" billing="plan" planLabel={null} />);
 
     expect(screen.getByText('Codex is out for the week.')).toBeTruthy();
     expect(screen.getByRole('listitem').textContent).toMatch(/100% usedOut until \S+ 18:12$/);
@@ -139,27 +142,27 @@ describe('UsageSection', () => {
         observedAt: localIso(11, 48),
       },
     };
-    render(<UsageSection providerId="codex" billing="plan" />);
+    render(<UsageGroup providerId="codex" billing="plan" planLabel={null} />);
 
     expect(screen.getByText(/Auto routes new agents to Claude until then\.$/)).toBeTruthy();
     state.providers = [];
   });
 
   it('tells a provider without limits apart from one still waiting for a turn', () => {
-    render(<UsageSection providerId="cursor" billing="plan" />);
-    expect(screen.getByText("Cursor doesn't report its limits to Goodboy.")).toBeTruthy();
+    render(<UsageGroup providerId="cursor" billing="plan" planLabel={null} />);
+    expect(screen.getByText("Cursor doesn't share usage with other apps.")).toBeTruthy();
     expect(screen.queryByText(/plan covers this/)).toBeNull();
     cleanup();
 
-    render(<UsageSection providerId="anthropic" billing="plan" />);
-    expect(screen.getByText('Claude shares its limits during a turn.')).toBeTruthy();
+    render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
+    expect(screen.getByText('No Claude usage yet.')).toBeTruthy();
     expect(screen.getByText(/Claude plan covers this/)).toBeTruthy();
   });
 
   it('bills an api key provider per token, with spend only', () => {
-    render(<UsageSection providerId="openrouter" billing="token" />);
+    render(<UsageGroup providerId="openrouter" billing="token" planLabel={null} />);
 
-    expect(screen.getByText('Billed per token. No usage windows.')).toBeTruthy();
+    expect(screen.getByText('Billed per token by your key. No usage windows.')).toBeTruthy();
     expect(screen.queryByRole('list')).toBeNull();
     expect(screen.getByRole('region', { name: 'Spend in Goodboy' })).toBeTruthy();
   });
@@ -178,13 +181,33 @@ describe('UsageSection', () => {
     ];
     const listener = vi.fn();
     window.addEventListener('goodboy:open-impact-studio', listener);
-    render(<UsageSection providerId="anthropic" billing="plan" />);
+    render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
 
-    await waitFor(() => expect(screen.getByText('$80.00 a month, $61.02 used')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: 'Edit in Impact' }));
+    await waitFor(() => expect(screen.getByText('Budget $80.00 a month, 76% used')).toBeTruthy());
+    fireEvent.click(screen.getByRole('button', { name: 'Open in Impact' }));
     expect((listener.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
       scope: { kind: 'provider', provider: 'anthropic' },
     });
     window.removeEventListener('goodboy:open-impact-studio', listener);
+  });
+  it('asks codex again with the reset details from the refresh button', () => {
+    render(<UsageGroup providerId="codex" billing="plan" planLabel="Plus" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check Codex usage now' }));
+
+    expect(state.refreshCodexLimits).toHaveBeenCalledWith({ withResetDetails: true });
+    expect(screen.getByText(/Your Plus plan covers this/)).toBeTruthy();
+  });
+
+  it('says when three checks in a row failed and offers another try', () => {
+    state.providerLimitsProbe = {
+      anthropic: { isChecking: false, checkedAt: null, failures: 3 },
+    };
+    render(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
+
+    expect(screen.getByText("Couldn't check Claude usage.")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(state.refreshClaudeUsage).toHaveBeenCalled();
+    state.providerLimitsProbe = {};
   });
 });

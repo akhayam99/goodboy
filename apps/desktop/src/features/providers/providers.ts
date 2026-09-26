@@ -12,6 +12,7 @@ type AuthStateKind = 'connected' | 'disconnected' | 'unknown';
 export type AuthState = {
   readonly state: AuthStateKind;
   readonly identity: string | null;
+  readonly plan?: string | null;
 };
 
 export type { ProviderId, ProviderConnectionState };

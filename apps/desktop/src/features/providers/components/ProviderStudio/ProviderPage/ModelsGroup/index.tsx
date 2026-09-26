@@ -7,17 +7,9 @@ import {
   type HiddenModels,
 } from '@goodboy/core';
 import type { CatalogModel, ProviderId } from '@goodboy/types';
-import {
-  Button,
-  STRIPED_LIST,
-  STRIPED_MIN_ROWS,
-  SectionHeader,
-  Switch,
-  Tooltip,
-  cn,
-} from '@goodboy/ui';
-import { PickerChip } from '../../../../../shared/components/RoutingPicker/PickerChip';
-import { useHiddenModels, useSaveHiddenModels } from '../../../hooks/useHiddenModels';
+import { BAND_ROW_CLASS, Band, Button, Switch, Tooltip, cn } from '@goodboy/ui';
+import { PickerChip } from '../../../../../../shared/components/RoutingPicker/PickerChip';
+import { useHiddenModels, useSaveHiddenModels } from '../../../../hooks/useHiddenModels';
 
 const LAST_VISIBLE_COPY = 'At least one model stays visible';
 
@@ -60,10 +52,10 @@ const versionLabel = (model: CatalogModel): string =>
     ? model.presentation.version
     : `${model.presentation.version} ${model.presentation.checkpoint}`;
 
-export const ModelVisibilitySection = ({ providerId, isFocused }: Props) => {
+export const ModelsGroup = ({ providerId, isFocused }: Props) => {
   const hidden = useHiddenModels();
   const saveHidden = useSaveHiddenModels();
-  const sectionRef = useRef<HTMLElement | null>(null);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
   const families = familiesOf({ providerId });
   const total = MODEL_CATALOGS[providerId].length;
   const shown = visibleModelCount({ provider: providerId, hidden });
@@ -86,16 +78,27 @@ export const ModelVisibilitySection = ({ providerId, isFocused }: Props) => {
     save(withModelsVisible({ provider: providerId, hidden, keys, visible }));
 
   return (
-    <section
-      ref={sectionRef}
-      aria-label="Models in the picker"
-      className="flex scroll-mt-4 flex-col gap-2"
-    >
-      <SectionHeader
+    <div ref={sectionRef} className="scroll-mt-4">
+      <Band
         label="Models in the picker"
-        hint="Only changes what you see in the model picker. Auto and pinned models are not affected."
-      />
-      <div className={cn('flex flex-col', families.length >= STRIPED_MIN_ROWS && STRIPED_LIST)}>
+        ariaLabel="Models in the picker"
+        hint="Only changes what you see in the model picker. Auto and pinned models keep working."
+        action={
+          <div className="flex items-center gap-2">
+            <span className="text-secondary text-faint-foreground">
+              Showing {shown} of {total}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={shown === total}
+              onClick={() => save({ ...hidden, [providerId]: [] })}
+            >
+              Show all
+            </Button>
+          </div>
+        }
+      >
         {families.map((family) => {
           const keys = family.models.map((model) => model.key);
           const visibleKeys = keys.filter(
@@ -104,7 +107,7 @@ export const ModelVisibilitySection = ({ providerId, isFocused }: Props) => {
           const isFamilyOn = visibleKeys.length > 0;
           const isOnlyVisibleFamily = isFamilyOn && shown === visibleKeys.length;
           return (
-            <div key={family.label} className="flex min-h-9 items-center gap-3 px-2 py-0.5">
+            <div key={family.label} className={cn(BAND_ROW_CLASS, 'gap-3')}>
               <Tooltip content={isOnlyVisibleFamily ? LAST_VISIBLE_COPY : `Show ${family.label}`}>
                 <Switch
                   label={<span className="w-24 truncate text-left text-body">{family.label}</span>}
@@ -140,20 +143,7 @@ export const ModelVisibilitySection = ({ providerId, isFocused }: Props) => {
             </div>
           );
         })}
-      </div>
-      <div className="flex items-center gap-3">
-        <span className="flex-1 text-label text-faint-foreground">
-          Showing {shown} of {total} models. Pinned models keep working.
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={shown === total}
-          onClick={() => save({ ...hidden, [providerId]: [] })}
-        >
-          Show all
-        </Button>
-      </div>
-    </section>
+      </Band>
+    </div>
   );
 };

@@ -1,9 +1,9 @@
 import type { ProviderLimitWindow } from '@goodboy/types';
 import { cn } from '@goodboy/ui';
-import { formatLimitReset, formatTimeUntil } from '../../../limits/formatLimitReset';
-import { formatUsedPercent } from '../../../limits/formatUsedPercent';
-import { limitWindowLabel } from '../../../limits/limitWindowLabel';
-import { WINDOW_TONE_FILL, WINDOW_TONE_TEXT, windowTone } from '../../../limits/windowTone';
+import { formatLimitReset, formatTimeUntil } from '../../../../limits/formatLimitReset';
+import { formatUsedPercent } from '../../../../limits/formatUsedPercent';
+import { limitWindowLabel } from '../../../../limits/limitWindowLabel';
+import { WINDOW_TONE_FILL, WINDOW_TONE_TEXT, windowTone } from '../../../../limits/windowTone';
 
 type Props = {
   readonly window: ProviderLimitWindow;
@@ -28,7 +28,7 @@ export const UsageWindowRow = ({ window, siblings, nowMs }: Props) => {
   const tone = windowTone({ window });
   const width = `${Math.round(Math.min(Math.max(window.usedFraction ?? 0, 0), 1) * 100)}%`;
   return (
-    <li className="grid h-10 grid-cols-[160px_1fr_96px_180px] items-center gap-3 px-2 text-label">
+    <li className="grid min-h-10 grid-cols-[160px_1fr_96px_200px] items-center gap-3 rounded-sm px-2 text-label">
       <span className="truncate text-foreground">{limitWindowLabel({ window, siblings })}</span>
       <span aria-hidden className="relative h-1.5 overflow-hidden rounded-full bg-muted">
         {window.usedFraction === null ? null : (
@@ -38,9 +38,7 @@ export const UsageWindowRow = ({ window, siblings, nowMs }: Props) => {
           />
         )}
       </span>
-      <span
-        className={cn('tabular-nums', WINDOW_TONE_TEXT[tone], tone !== 'neutral' && 'font-medium')}
-      >
+      <span className={cn('tabular-nums', WINDOW_TONE_TEXT[tone])}>
         {window.usedFraction === null
           ? 'Within limits'
           : `${formatUsedPercent({ usedFraction: window.usedFraction })} used`}
