@@ -241,6 +241,40 @@ describe('Markdown lists', () => {
     expect(container.querySelector('blockquote')?.textContent).toBe('quote');
   });
 
+  it('ends a list item at a page break marker', () => {
+    const { container } = render(
+      <Markdown text={['- item', '<<pagebreak>>', '1. next', '<<page-break>>'].join('\n')} />,
+    );
+    expect(container.querySelector('ul li')?.textContent).toBe('item');
+    expect(container.querySelector('ol li')?.textContent).toBe('next');
+    expect(container.querySelectorAll('[data-block="pagebreak"]')).toHaveLength(2);
+    expect(container.textContent).not.toContain('pagebreak');
+  });
+
+  it('ends a list item at a fence, a rule, or a table', () => {
+    const { container } = render(
+      <Markdown
+        text={[
+          '- fenced',
+          '```',
+          'code',
+          '```',
+          '- ruled',
+          '***',
+          '- tabled',
+          '| a | b |',
+          '| -- | -- |',
+          '| 1 | 2 |',
+        ].join('\n')}
+      />,
+    );
+    const items = [...container.querySelectorAll('li')].map((item) => item.textContent);
+    expect(items).toEqual(['fenced', 'ruled', 'tabled']);
+    expect(container.querySelector('pre')?.textContent).toContain('code');
+    expect(container.querySelector('[role="separator"]')).not.toBeNull();
+    expect(container.querySelector('table')).not.toBeNull();
+  });
+
   it('keeps a hard break inside a list item', () => {
     const { container } = render(<Markdown text={['- [x] first  ', '  second'].join('\n')} />);
     const item = container.querySelector('li');

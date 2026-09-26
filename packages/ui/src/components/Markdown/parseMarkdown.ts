@@ -228,6 +228,7 @@ const startsBlock = ({ line, nextLine }: BlockStartParams): boolean =>
   ULIST_RE.test(line) ||
   OLIST_RE.test(line) ||
   QUOTE_RE.test(line) ||
+  PAGEBREAK_RE.test(line) ||
   CALLOUT_OPEN_RE.test(line) ||
   (TABLE_ROW_RE.test(line) && TABLE_DIVIDER_RE.test(nextLine));
 
