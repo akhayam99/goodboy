@@ -73,6 +73,7 @@ export {
   listExpiredDeletedBranches,
   forgetDeletedBranch,
 } from './queries/deleted-branch';
+export { listGoodboyBranches, type GoodboyBranch } from './queries/goodboy-branch';
 export {
   describeProjectAdoption,
   moveProjectToWorkspace,

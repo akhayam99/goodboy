@@ -1386,7 +1386,7 @@ fn default_base_ref(cwd: &Path) -> Option<String> {
     }
 }
 
-fn resolve_base_ref(cwd: &Path, base_branch: Option<&str>) -> Option<String> {
+pub(crate) fn resolve_base_ref(cwd: &Path, base_branch: Option<&str>) -> Option<String> {
     let named = base_branch
         .map(str::trim)
         .filter(|name| !name.is_empty())
@@ -1436,7 +1436,7 @@ fn branch_integration(cwd: &Path, base_branch: Option<&str>, has_head: bool) -> 
     }
 }
 
-#[derive(Debug, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum BranchMergeState {
     Unknown,

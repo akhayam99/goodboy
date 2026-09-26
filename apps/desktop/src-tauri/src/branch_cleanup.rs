@@ -1,10 +1,166 @@
+use std::collections::HashMap;
 use std::path::Path;
+use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 
-use crate::worktree::{git, parse_porcelain, WorktreeError};
+use crate::worktree::{
+    branch_merge_state, git, parse_porcelain, resolve_base_ref, BranchMergeState, WorktreeError,
+};
 
 const KEEP_REF_PREFIX: &str = "refs/goodboy/deleted/";
+
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "kebab-case")]
+pub enum BranchLocation {
+    OnOrigin,
+    LocalOnly,
+    GoneOnOrigin,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectBranch {
+    pub name: String,
+    pub sha: String,
+    pub author_email: Option<String>,
+    pub last_commit_at: Option<i64>,
+    pub location: BranchLocation,
+    pub merge_state: BranchMergeState,
+    pub behind: Option<u32>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectBranchScan {
+    pub user_email: Option<String>,
+    pub branches: Vec<ProjectBranch>,
+}
+
+type MergeCacheKey = (String, String, String, String);
+
+static MERGE_STATE_CACHE: Mutex<Option<HashMap<MergeCacheKey, BranchMergeState>>> =
+    Mutex::new(None);
+
+const FOR_EACH_REF_FORMAT: &str = "%(refname:short)|%(objectname)|%(authoremail)|%(committerdate:unix)|%(upstream:short)|%(upstream:track)";
+
+fn trim_email(raw: &str) -> Option<String> {
+    let trimmed = raw
+        .trim()
+        .trim_start_matches('<')
+        .trim_end_matches('>')
+        .trim();
+    match trimmed.is_empty() {
+        true => None,
+        false => Some(trimmed.to_lowercase()),
+    }
+}
+
+fn branch_location(cwd: &Path, name: &str, upstream: &str, track: &str) -> BranchLocation {
+    if track.contains("gone") {
+        return BranchLocation::GoneOnOrigin;
+    }
+    let has_remote = !upstream.trim().is_empty()
+        || git(
+            cwd,
+            &[
+                "rev-parse",
+                "--verify",
+                "--quiet",
+                &format!("refs/remotes/origin/{name}"),
+            ],
+        )
+        .is_ok();
+    match has_remote {
+        true => BranchLocation::OnOrigin,
+        false => BranchLocation::LocalOnly,
+    }
+}
+
+fn cached_merge_state(
+    cwd: &Path,
+    name: &str,
+    sha: &str,
+    base: Option<&str>,
+    base_sha: &str,
+) -> BranchMergeState {
+    let key = (
+        cwd.to_string_lossy().into_owned(),
+        name.to_string(),
+        sha.to_string(),
+        base_sha.to_string(),
+    );
+    if let Ok(guard) = MERGE_STATE_CACHE.lock() {
+        if let Some(found) = guard.as_ref().and_then(|cache| cache.get(&key)) {
+            return found.clone();
+        }
+    }
+    let state = branch_merge_state(cwd, name, base);
+    if !matches!(state, BranchMergeState::Unknown) {
+        if let Ok(mut guard) = MERGE_STATE_CACHE.lock() {
+            guard
+                .get_or_insert_with(HashMap::new)
+                .insert(key, state.clone());
+        }
+    }
+    state
+}
+
+pub(crate) fn scan_project_branches(
+    repo_root: &str,
+    base: Option<&str>,
+) -> Result<ProjectBranchScan, BranchCleanupError> {
+    let cwd = repo_path(repo_root)?;
+    let user_email = git(cwd, &["config", "user.email"])
+        .ok()
+        .and_then(|raw| trim_email(&raw));
+    let base_ref = resolve_base_ref(cwd, base);
+    let base_sha = base_ref
+        .as_deref()
+        .and_then(|reference| git(cwd, &["rev-parse", reference]).ok())
+        .map(|raw| raw.trim().to_string())
+        .unwrap_or_default();
+    let raw = git(
+        cwd,
+        &[
+            "for-each-ref",
+            &format!("--format={FOR_EACH_REF_FORMAT}"),
+            "refs/heads",
+        ],
+    )?;
+    let branches = raw
+        .lines()
+        .filter_map(|line| {
+            let parts: Vec<&str> = line.split('|').collect();
+            let [name, sha, email, date, upstream, track] = parts.as_slice() else {
+                return None;
+            };
+            let merge_state = cached_merge_state(cwd, name, sha, base, &base_sha);
+            let behind = match (&merge_state, base_ref.as_deref()) {
+                (BranchMergeState::NotMerged { .. }, Some(reference)) => git(
+                    cwd,
+                    &["rev-list", "--count", &format!("{name}..{reference}")],
+                )
+                .ok()
+                .and_then(|count| count.trim().parse::<u32>().ok()),
+                _ => None,
+            };
+            Some(ProjectBranch {
+                name: name.to_string(),
+                sha: sha.to_string(),
+                author_email: trim_email(email),
+                last_commit_at: date.trim().parse::<i64>().ok(),
+                location: branch_location(cwd, name, upstream, track),
+                merge_state,
+                behind,
+            })
+        })
+        .collect();
+    Ok(ProjectBranchScan {
+        user_email,
+        branches,
+    })
+}
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
 #[serde(tag = "kind", rename_all = "kebab-case")]
@@ -204,6 +360,16 @@ pub async fn branch_head_sha(
     .map_err(join_error)?
 }
 
+#[tauri::command]
+pub async fn project_branches(
+    repo_root: String,
+    base: Option<String>,
+) -> Result<ProjectBranchScan, BranchCleanupError> {
+    tauri::async_runtime::spawn_blocking(move || scan_project_branches(&repo_root, base.as_deref()))
+        .await
+        .map_err(join_error)?
+}
+
 fn join_error(error: tauri::Error) -> BranchCleanupError {
     BranchCleanupError::Git {
         message: error.to_string(),
@@ -387,6 +553,54 @@ mod tests {
             &["rev-parse", "--verify", "refs/heads/goodboy/gone"]
         )
         .is_err());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn scan_says_where_each_branch_lives_and_whether_it_merged() {
+        let root = init_repo("scan");
+        let remote = root.join("remote.git");
+        git_ok(&root, &["init", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        git_ok(&root, &["push", "-u", "origin", "main"]);
+        feature_branch(&root, "goodboy/local");
+        feature_branch(&root, "goodboy/pushed");
+        git_ok(&root, &["push", "-u", "origin", "goodboy/pushed"]);
+        feature_branch(&root, "goodboy/gone");
+        git_ok(&root, &["push", "-u", "origin", "goodboy/gone"]);
+        git_ok(&root, &["push", "origin", "--delete", "goodboy/gone"]);
+        git_ok(&root, &["fetch", "--prune", "origin"]);
+        git_ok(&root, &["branch", "goodboy/unused"]);
+
+        let scan = scan_project_branches(&root.to_string_lossy(), Some("main")).unwrap();
+        let find = |name: &str| {
+            scan.branches
+                .iter()
+                .find(|branch| branch.name == name)
+                .unwrap_or_else(|| panic!("missing {name}"))
+        };
+
+        assert_eq!(scan.user_email.as_deref(), Some("test@example.com"));
+        assert_eq!(find("goodboy/local").location, BranchLocation::LocalOnly);
+        assert_eq!(find("goodboy/pushed").location, BranchLocation::OnOrigin);
+        assert_eq!(find("goodboy/gone").location, BranchLocation::GoneOnOrigin);
+        assert_eq!(
+            find("goodboy/local").merge_state,
+            BranchMergeState::NotMerged { ahead: 1 }
+        );
+        assert_eq!(find("goodboy/local").behind, Some(0));
+        assert_eq!(
+            find("goodboy/unused").merge_state,
+            BranchMergeState::NoOwnCommits
+        );
+        assert_eq!(find("main").merge_state, BranchMergeState::Protected);
+        assert_eq!(
+            find("goodboy/local").author_email.as_deref(),
+            Some("test@example.com")
+        );
         std::fs::remove_dir_all(root).unwrap();
     }
 

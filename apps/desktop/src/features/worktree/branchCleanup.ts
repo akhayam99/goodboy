@@ -86,3 +86,31 @@ export const isMergedState = (state: BranchMergeState): boolean =>
   state.kind === 'merged-via-merge' ||
   state.kind === 'merged-via-rebase' ||
   state.kind === 'merged-via-squash';
+
+export type BranchLocation = 'on-origin' | 'local-only' | 'gone-on-origin';
+
+export type ProjectBranch = {
+  readonly name: string;
+  readonly sha: string;
+  readonly authorEmail: string | null;
+  readonly lastCommitAt: number | null;
+  readonly location: BranchLocation;
+  readonly mergeState: BranchMergeState;
+  readonly behind: number | null;
+};
+
+export type ProjectBranchScan = {
+  readonly userEmail: string | null;
+  readonly branches: ReadonlyArray<ProjectBranch>;
+};
+
+type ProjectBranchesArgs = {
+  readonly repoRoot: string;
+  readonly base: string | null;
+};
+
+export const listProjectBranches = async ({
+  repoRoot,
+  base,
+}: ProjectBranchesArgs): Promise<ProjectBranchScan> =>
+  invoke<ProjectBranchScan>('project_branches', { repoRoot, base });

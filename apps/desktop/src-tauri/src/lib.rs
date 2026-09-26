@@ -268,6 +268,7 @@ pub fn run() {
             branch_cleanup::branch_restore,
             branch_cleanup::branch_forget_deleted,
             branch_cleanup::branch_head_sha,
+            branch_cleanup::project_branches,
             worktree::worktree_change_branch,
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,
