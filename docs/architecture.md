@@ -209,3 +209,36 @@ in `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
 
 The mount table, the operation log, recovery and cleanup are described in
 [mounts.md](mounts.md).
+
+### Moving a project's folder
+
+`projects.root_path`, `session_worktrees.worktree_path` and
+`last_worktree_path`, `retained_worktree_paths`, `worktree_roots`,
+`resolve_candidates`/`resolve_attempts`/`resolve_publications`,
+`skills.file_path` and `mount_operations` all store absolute paths. Moving a
+project's folder on disk (a new drive, `~/nerd` to `~/github`) does not touch
+the database: every saved path still points at the old location, so the
+project reads as `missing` and its sessions read as `unavailable`, the same
+non-destructive state as a disconnected disk (see
+[mounts.md](mounts.md)). Nothing is lost; git's own worktree links inside the
+repo point at the old absolute path too, until `git worktree repair` runs
+again from the new root.
+
+`projects.root_commit` and `projects.remote_url` hold the repository's
+identity (`repo_identity`: the root commit(s) from
+`git rev-list --max-parents=0 HEAD`, and `origin`'s URL normalized without
+credentials or a trailing `.git`), written when a project is linked, when it
+is reconnected, and once in the background the first time its git status
+comes back `ready` after boot. It never leaves the local database.
+
+Relocating a project (`project_relocate` in
+`apps/desktop/src-tauri/src/project_relocation.rs`) rewrites every table
+above by path prefix inside one transaction, checks the `UNIQUE` constraints
+on `projects.root_path` and `session_worktrees.worktree_path` first, and
+calls `git worktree repair` from the new root once the commit lands. Finding
+candidate folders (`find_moved_projects`) reads one level under a chosen
+parent, computes `repo_identity` for each, and matches saved projects by
+identity first and by folder name second; the desktop UI is
+`features/workspace/components/LocateMovedProjects/`, backed by the
+`project-relocation` store slice. `Undo move` reverses the same rewrite
+through `project_relocation_undo`.

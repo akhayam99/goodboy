@@ -128,6 +128,15 @@ on delete); a directory that was meant to stay lets a `drop-row` delete the
 row; any other directory still there closes the operation `failed` and stays
 on disk for the user to retry. Recovery never deletes a directory.
 
+A mount can also go `unavailable` because its project's whole folder moved,
+not because the mount itself was touched. That is not a recovery case: the
+fix is `Locate moved projects` (`features/workspace/components/
+LocateMovedProjects/`), which rewrites the project's and its mounts' paths
+and repairs git's worktree links; see
+[architecture.md](architecture.md#moving-a-projects-folder). Once the
+project's `root_path` is corrected, the next git status read clears the
+mount's `disk_state` on its own.
+
 ## Cleanup proposals
 
 When a lifecycle step must continue but a directory cannot go (dirty, locked,

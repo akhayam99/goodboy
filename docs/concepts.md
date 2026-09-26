@@ -83,6 +83,19 @@ one-line **description**. Both live on the project row in workspace settings.
 A repo project needs a working git setup before a session can make a worktree
 in it.
 
+**Disconnect** keeps a workspace and its projects in the database with
+everything they hold, it only hides them. Re-adding the same folder through
+Add workspace, or a project through Add project, reconnects it and its
+sessions instead of creating a duplicate. If the folder moved since it was
+disconnected, Goodboy recognizes it by repository identity and offers to
+locate it the same way a moved project is located while connected.
+
+Moving a project's folder on disk does not lose anything either: the
+database keeps its rows, but every saved path still points at the old
+location, so the project reads `Folder not found` until you **locate** it
+(pick the new folder, or its parent to locate several at once). See
+[architecture.md](architecture.md#moving-a-projects-folder).
+
 ## Sessions
 
 A **session** holds one goal. It has its own budget and notes
