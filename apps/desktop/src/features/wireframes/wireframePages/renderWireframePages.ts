@@ -4,6 +4,7 @@ import { escapeHtml } from './escapeHtml';
 import {
   renderWireframeNode,
   STATE_FILE_SEPARATOR,
+  type WireframeDiffMarks,
   wireframeLinks,
   wireframeStateScreens,
 } from './renderWireframeNode';
@@ -64,7 +65,10 @@ type ScreenPageParams = {
   readonly screen: WireframeScreen;
   readonly state: string | null;
   readonly title: string;
+  readonly marks?: WireframeDiffMarks;
 };
+
+const NO_MARKS: WireframeDiffMarks = new Map();
 
 const stateSwitch = ({
   screen,
@@ -133,6 +137,7 @@ export const renderWireframeScreenPage = ({
   screen,
   state,
   title,
+  marks = NO_MARKS,
 }: ScreenPageParams): string => {
   const index = document.screens.findIndex((entry) => entry.id === screen.id);
   const previous = document.screens[index - 1] ?? null;
@@ -164,6 +169,7 @@ export const renderWireframeScreenPage = ({
           stateScreens: wireframeStateScreens({ document }),
           state: stateEntry,
           noteNumbers,
+          marks,
         },
       },
     )}</main>${notesPanel({ document, screen })}</div>`,

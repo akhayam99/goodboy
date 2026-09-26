@@ -453,6 +453,12 @@ carries a dot instead of a number, and a fact row (plan, artifact, event,
 issue, question) carries its concept glyph. A state that asks something or
 broke replaces the number with its glyph, so colour never speaks alone.
 
+A comparison of two versions (the wireframe Compare) marks each change with a
+glyph and a word, never a colour: `+ Added`, `~ Changed`, `− Removed`,
+`= Same`. On the pages, added nodes get a solid outline with `+`, changed nodes
+a dashed outline with `~`, and removed nodes, on the older side, an outline
+with `−`.
+
 What a row is doing is computed once, as a `RowState` (phase, reason, ask), in
 `apps/desktop/src/features/workTreeModel/rowState.ts`. Every surface reads that
 value: the node comes from `rowStateNode`, the short status sentence after the

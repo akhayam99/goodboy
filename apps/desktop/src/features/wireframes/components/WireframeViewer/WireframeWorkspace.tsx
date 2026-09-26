@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  diffWireframeDocuments,
   parseWireframeSource,
   type WireframeAdjustment,
   type WireframeDocument,
@@ -10,9 +11,11 @@ import { useAppStore } from '../../../../store';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { useWireframeIteration } from '../../useWireframeIteration';
 import { useWireframeVersions } from '../../useWireframeVersions';
+import { diffChangeCount } from '../../wireframeCompare';
 import { ChangeComposer } from './ChangeComposer';
 import { DraftBanner } from './DraftBanner';
 import { VersionMenu } from './VersionMenu';
+import { WireframeCompare } from './WireframeCompare';
 import { WireframeViewerBody } from './WireframeViewerBody';
 
 type Props = {
@@ -36,6 +39,7 @@ export const WireframeWorkspace = ({
       (s.sessionPhaseRuns[sessionId] ?? []).find((agent) => agent.id === artifact.agentId) ?? null,
   );
   const [viewing, setViewing] = useState<number | null>(null);
+  const [compare, setCompare] = useState<Readonly<{ before: number; after: number }> | null>(null);
   const [screen, setScreen] = useState<Readonly<{ id: string; title: string }> | null>(null);
   const iteration = useWireframeIteration({ sessionId, artifact, screen });
   const viewed = viewing === null ? null : (versions.find((v) => v.revision === viewing) ?? null);
@@ -51,6 +55,21 @@ export const WireframeWorkspace = ({
   const draft = iteration.draft;
   const isDrafting = draft?.status === 'drafting';
   const agentName = creator?.name ?? 'Wireframe agent';
+  const readyChanges = useMemo(() => {
+    if (draft?.status !== 'ready') {
+      return null;
+    }
+    const parse = (revision: number) => {
+      const version = versions.find((entry) => entry.revision === revision) ?? null;
+      const parsed = version === null ? null : parseWireframeSource({ source: version.sourceText });
+      return parsed?.status === 'valid' ? parsed.document : null;
+    };
+    const from = parse(draft.fromRevision);
+    const to = parse(draft.toRevision);
+    return from === null || to === null
+      ? null
+      : diffChangeCount({ diff: diffWireframeDocuments({ before: from, after: to }) });
+  }, [draft, versions]);
   const model = creator?.modelOverride ?? null;
 
   const latest = useRef({ shownDocument, onScreenChange });
@@ -82,6 +101,12 @@ export const WireframeWorkspace = ({
       {draft !== null && draft.status !== 'drafting' ? (
         <DraftBanner
           draft={draft}
+          changeCount={readyChanges}
+          onCompare={() => {
+            if (draft.status === 'ready') {
+              setCompare({ before: draft.fromRevision, after: draft.toRevision });
+            }
+          }}
           currentRevision={artifact.revision}
           onAskAgain={iteration.askAgain}
           onDismiss={iteration.dismiss}
@@ -120,6 +145,19 @@ export const WireframeWorkspace = ({
     </>
   );
 
+  if (compare !== null) {
+    return (
+      <WireframeCompare
+        artifact={artifact}
+        versions={versions}
+        beforeRevision={compare.before}
+        afterRevision={compare.after}
+        onChange={setCompare}
+        onExit={() => setCompare(null)}
+      />
+    );
+  }
+
   return (
     <WireframeViewerBody
       artifact={artifact}
@@ -136,7 +174,7 @@ export const WireframeWorkspace = ({
           drafting={isDrafting ? { revision: draft.fromRevision + 1, ask: draft.ask } : null}
           agentName={agentName}
           onView={(revision) => setViewing(revision === artifact.revision ? null : revision)}
-          onCompare={(revision) => setViewing(revision === artifact.revision ? null : revision)}
+          onCompare={(revision) => setCompare({ before: revision, after: artifact.revision })}
           onRestore={iteration.restore}
         />
       }

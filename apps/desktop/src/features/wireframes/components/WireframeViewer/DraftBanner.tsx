@@ -5,11 +5,20 @@ import type { WireframeDraft } from '../../wireframeDraft';
 type Props = {
   readonly draft: Exclude<WireframeDraft, Readonly<{ status: 'drafting' }>>;
   readonly currentRevision: number;
+  readonly changeCount: number | null;
+  readonly onCompare: () => void;
   readonly onAskAgain: () => void;
   readonly onDismiss: () => void;
 };
 
-export const DraftBanner = ({ draft, currentRevision, onAskAgain, onDismiss }: Props) => {
+export const DraftBanner = ({
+  draft,
+  currentRevision,
+  changeCount,
+  onCompare,
+  onAskAgain,
+  onDismiss,
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   if (draft.status === 'ready') {
     return (
@@ -19,9 +28,21 @@ export const DraftBanner = ({ draft, currentRevision, onAskAgain, onDismiss }: P
         role="status"
         title={`v${draft.toRevision} is ready.`}
         actions={
-          <Button variant="ghost" size="sm" onClick={onDismiss}>
-            Dismiss
-          </Button>
+          <span className="flex items-center gap-1.5">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onCompare}
+              data-testid="wireframe-ready-compare"
+            >
+              {changeCount === null
+                ? 'Compare'
+                : `${changeCount} ${changeCount === 1 ? 'change' : 'changes'} · Compare`}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onDismiss}>
+              Dismiss
+            </Button>
+          </span>
         }
       />
     );

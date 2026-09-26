@@ -446,6 +446,16 @@ changed) with **View**, **Compare** and **Restore**. Viewing an older one says
 so above the stage, and Restore writes it back as a new version, `Restored vN`,
 so the history is never rewritten.
 
+**Compare** lays two versions side by side on the same screen. The diff is
+computed from the two specs by node id, never from the HTML: the rail marks
+each screen Added, Changed, Removed or Same with a glyph and the word, the
+newer page outlines added nodes with `+` and changed ones with a dashed `~`,
+the older one outlines removed nodes with `−`, and the **Changes** list says
+what moved in words. A click on a change shows the node in both pages. A node
+that kept its kind, text and place under a new id counts as changed. When a
+version lands, the notice offers `N changes · Compare` for 10 seconds; after
+that Compare stays in the versions popover.
+
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.
 

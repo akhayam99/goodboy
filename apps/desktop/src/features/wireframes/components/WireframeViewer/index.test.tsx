@@ -357,6 +357,71 @@ describe('WireframeViewer', () => {
     );
   });
 
+  it('compares two versions side by side with the changes in words', async () => {
+    const older = {
+      ...document,
+      screens: document.screens.map((entry, index) =>
+        index === 0
+          ? {
+              ...entry,
+              root: {
+                ...entry.root,
+                children: [
+                  { id: 'batches-title', kind: 'text', text: 'Old batches', variant: 'title' },
+                  ...entry.root.children.slice(1),
+                  { id: 'legacy', kind: 'text', text: 'Legacy filter' },
+                ],
+              },
+            }
+          : entry,
+      ),
+    };
+    revisions.rows = [
+      {
+        revision: 2,
+        title: 'Settlement review flow',
+        sourceText: JSON.stringify(document),
+        author: 'agent',
+        ask: 'Rename the title',
+        createdAt: '2026-09-15T11:00:00.000Z',
+        summary: null,
+      },
+      {
+        revision: 1,
+        title: 'Settlement review flow',
+        sourceText: JSON.stringify(older),
+        author: 'agent',
+        ask: null,
+        createdAt: '2026-09-15T10:00:00.000Z',
+        summary: null,
+      },
+    ];
+    renderViewer({ revision: 2 });
+    fireEvent.click(screen.getByTestId('wireframe-version-pill'));
+    const rows = await waitFor(() => {
+      const found = screen.getAllByTestId('wireframe-version-row');
+      expect(found).toHaveLength(2);
+      return found;
+    });
+    fireEvent.click(within(rows[1] as HTMLElement).getByRole('button', { name: 'Compare' }));
+    const bar = await waitFor(() => screen.getByTestId('wireframe-compare-bar'));
+    expect(bar.textContent).toContain('Rename the title');
+    const badges = screen.getAllByTestId('wireframe-compare-badge');
+    expect(badges.map((badge) => badge.textContent)).toEqual(['~ Changed', '= Same']);
+    const list = screen.getByTestId('wireframe-change-list');
+    expect(list.textContent).toContain('Batches: text changed');
+    expect(list.textContent).toContain('Legacy filter: removed');
+    await waitFor(() => expect(frame.staged.length).toBeGreaterThanOrEqual(3));
+    const staged = frame.staged
+      .flat()
+      .map((file) => file.contents)
+      .join('');
+    expect(staged).toContain('data-diff="changed"');
+    expect(staged).toContain('data-diff="removed"');
+    fireEvent.click(screen.getByTestId('wireframe-compare-exit'));
+    expect(screen.queryByTestId('wireframe-compare')).toBeNull();
+  });
+
   it('releases the stage when the viewer goes away', async () => {
     const view = renderViewer();
     await waitFor(() => expect(frame.staged).toHaveLength(1));

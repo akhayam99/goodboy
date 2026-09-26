@@ -7,6 +7,7 @@ import {
   screenStateFiles,
   WIREFRAME_CSS_FILE,
 } from './renderWireframePages';
+import type { WireframeDiffMarks } from './renderWireframeNode';
 import { wireframeExportCss } from './wireframeExportCss';
 import { WIREFRAME_JSON_FILE } from './wireframeReadme';
 import { WIREFRAME_SCREENS_DIR } from './wireframeScreenFile';
@@ -19,6 +20,7 @@ type Params = {
   readonly schemaHref: string;
   readonly subtitle?: string;
   readonly homeHref?: string;
+  readonly marks?: ReadonlyMap<string, WireframeDiffMarks>;
 };
 
 const specJson = ({
@@ -51,13 +53,21 @@ export const buildWireframeVersionFiles = ({
   schemaHref,
   subtitle,
   homeHref,
+  marks,
 }: Params): ReadonlyArray<ArtifactFolderFile> => {
-  const screens = document.screens.flatMap((screen) =>
-    screenStateFiles({ screen }).map(({ state, file }) => ({
+  const screens = document.screens.flatMap((screen) => {
+    const screenMarks = marks?.get(screen.id);
+    return screenStateFiles({ screen }).map(({ state, file }) => ({
       path: `${WIREFRAME_SCREENS_DIR}/${file}`,
-      contents: renderWireframeScreenPage({ document, screen, state, title }),
-    })),
-  );
+      contents: renderWireframeScreenPage({
+        document,
+        screen,
+        state,
+        title,
+        ...(screenMarks === undefined ? {} : { marks: screenMarks }),
+      }),
+    }));
+  });
   return [
     {
       path: 'index.html',

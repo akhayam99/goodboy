@@ -12,11 +12,16 @@ import { wireframeScreenFile } from './wireframeScreenFile';
 
 export type WireframeLinks = ReadonlyMap<string, string>;
 
+export type WireframeDiffMark = 'added' | 'changed' | 'removed';
+
+export type WireframeDiffMarks = ReadonlyMap<string, WireframeDiffMark>;
+
 export type WireframeRenderContext = Readonly<{
   links: WireframeLinks;
   stateScreens: ReadonlyMap<string, string>;
   state: WireframeScreenState | null;
   noteNumbers: ReadonlyMap<string, number>;
+  marks: WireframeDiffMarks;
 }>;
 
 export const STATE_FILE_SEPARATOR = '--';
@@ -60,7 +65,9 @@ type AttributeParams = {
 export const nodeAttributes = ({ id, kind, ctx }: AttributeParams): string => {
   const note = ctx.noteNumbers.get(id);
   const noteAttribute = note === undefined ? '' : ` data-note="${note}"`;
-  return ` id="${escapeHtml(id)}" data-node="${escapeHtml(id)}" data-kind="${kind}"${noteAttribute}`;
+  const mark = ctx.marks.get(id);
+  const markAttribute = mark === undefined ? '' : ` data-diff="${mark}"`;
+  return ` id="${escapeHtml(id)}" data-node="${escapeHtml(id)}" data-kind="${kind}"${noteAttribute}${markAttribute}`;
 };
 
 const onlyClasses = ({ only }: { readonly only: ReadonlyArray<string> | undefined }): string =>

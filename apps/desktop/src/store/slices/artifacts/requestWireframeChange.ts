@@ -1,3 +1,4 @@
+import { diffWireframeDocuments, parseWireframeSource } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { ArtifactId, SessionId, WireframeArtifact } from '@goodboy/types';
 import {
@@ -16,6 +17,21 @@ export type RequestWireframeChangeParams = WireframeDraftRequest & {
   readonly sessionId: SessionId;
   readonly artifact: WireframeArtifact;
   readonly screenTitle: string | null;
+};
+
+const summaryOf = ({
+  before,
+  after,
+}: {
+  readonly before: string;
+  readonly after: string;
+}): Readonly<Record<string, number>> | null => {
+  const was = parseWireframeSource({ source: before });
+  const now = parseWireframeSource({ source: after });
+  if (was.status !== 'valid' || now.status !== 'valid') {
+    return null;
+  }
+  return diffWireframeDocuments({ before: was.document, after: now.document }).summary;
 };
 
 const putDraft = ({
@@ -87,6 +103,7 @@ export const requestWireframeChange = (set: SetFn, get: GetFn) => {
           author: 'agent',
           ask: ask.trim(),
           pinned: { scope, screenId, nodes: picked },
+          summary: summaryOf({ before: artifact.sourceText, after: landed.sourceText }),
         },
       }).catch(() => false);
       putDraft({
