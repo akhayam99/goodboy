@@ -5,12 +5,12 @@ import { filterScriptGroups } from './filterScriptGroups';
 
 const script = ({
   name,
-  command,
+  body,
   packageName = 'ledger-core',
   relDir = '',
 }: {
   readonly name: string;
-  readonly command: string;
+  readonly body: string;
   readonly packageName?: string;
   readonly relDir?: string;
 }) =>
@@ -18,7 +18,9 @@ const script = ({
     key: `${relDir}:${name}`,
     kind: 'manifest',
     name,
-    command,
+    body,
+    invocation: body,
+    manager: 'yarn',
     source: 'package-json',
     packageName,
     relDir,
@@ -50,27 +52,32 @@ const LEDGER = group({
   mountId: 'mount-ledger',
   projectName: 'ledger-core',
   scripts: [
-    script({ name: 'test', command: 'vitest run' }),
-    script({ name: 'lint', command: 'eslint .' }),
+    script({ name: 'test', body: 'vitest run' }),
+    script({ name: 'lint', body: 'eslint .' }),
   ],
 });
 const RELAY = group({
   mountId: 'mount-relay',
   projectName: 'notify-relay',
-  scripts: [script({ name: 'dev', command: 'node --watch src/' })],
+  scripts: [script({ name: 'dev', body: 'node --watch src/' })],
 });
 const NORTHWIND = group({
   mountId: 'mount-northwind',
   projectName: 'northwind',
   scripts: [
-    script({ name: 'dev', command: 'yarn run dev', packageName: 'northwind' }),
+    script({ name: 'dev', body: 'turbo run dev', packageName: 'northwind' }),
     script({
       name: 'dev',
-      command: 'yarn run dev',
+      body: 'vite --port 3000',
       packageName: '@northwind/web',
       relDir: 'apps/web',
     }),
-    script({ name: 'dev', command: 'yarn run dev', packageName: '@acme/api', relDir: 'apps/api' }),
+    script({
+      name: 'dev',
+      body: 'tsx watch src/server.ts',
+      packageName: '@acme/api',
+      relDir: 'apps/api',
+    }),
   ],
 });
 
@@ -79,7 +86,7 @@ describe('filterScriptGroups', () => {
     expect(filterScriptGroups({ groups: [LEDGER, RELAY], query: '  ' })).toEqual([LEDGER, RELAY]);
   });
 
-  it('matches name or command and drops groups with nothing left', () => {
+  it('matches name or body and drops groups with nothing left', () => {
     const result = filterScriptGroups({ groups: [LEDGER, RELAY], query: 'VITEST' });
 
     expect(result.map((entry) => entry.projectName)).toEqual(['ledger-core']);

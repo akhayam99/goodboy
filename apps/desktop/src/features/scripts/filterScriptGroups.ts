@@ -18,7 +18,7 @@ export const filterScriptGroups = ({
     const scripts = isProjectMatch
       ? group.scripts
       : group.scripts.filter((script) =>
-          [script.name, script.command, script.packageName, script.relDir].some((field) =>
+          [script.name, script.body, script.packageName, script.relDir].some((field) =>
             field.toLocaleLowerCase().includes(needle),
           ),
         );

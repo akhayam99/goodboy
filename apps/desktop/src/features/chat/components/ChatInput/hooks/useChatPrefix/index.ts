@@ -92,7 +92,7 @@ export const useChatPrefix = ({ session, value, setValue, showToast, wrapperRef 
         sessionId: session.id,
         scriptId: script.key,
         name: script.name,
-        command: script.command,
+        command: script.invocation,
         cwd: discoveredScriptCwd({ worktreePath: group.worktreePath, relDir: script.relDir }),
         mountId: group.mountId,
       });

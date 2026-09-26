@@ -13,7 +13,9 @@ const TEST: RunnableScript = {
   key: 'manifest-test',
   kind: 'manifest',
   name: 'test',
-  command: 'vitest run',
+  body: 'vitest run',
+  invocation: 'yarn run test',
+  manager: 'yarn',
   source: 'package-json',
   packageName: '@acme/web',
   relDir: 'apps/web',
@@ -25,7 +27,9 @@ const REPLAY: RunnableScript = {
   key: 'saved-replay',
   kind: 'saved',
   name: 'Replay settlement batch',
-  command: 'pnpm --filter ledger-core exec node ./tools/replay.mjs',
+  body: 'pnpm --filter ledger-core exec node ./tools/replay.mjs',
+  invocation: 'pnpm --filter ledger-core exec node ./tools/replay.mjs',
+  manager: '',
   source: 'saved',
   packageName: '',
   relDir: '',
@@ -37,6 +41,7 @@ type RenderParams = {
   readonly script?: RunnableScript;
   readonly record?: ScriptRunRecord | null;
   readonly isSelected?: boolean;
+  readonly showSource?: boolean;
   readonly blockedReason?: string | null;
   readonly onOpen?: () => void;
   readonly onRun?: () => void;
@@ -47,6 +52,7 @@ const renderRow = ({
   script = TEST,
   record = null,
   isSelected = false,
+  showSource = true,
   blockedReason = null,
   onOpen = vi.fn(),
   onRun = vi.fn(),
@@ -58,6 +64,7 @@ const renderRow = ({
       record={record}
       now={NOW}
       isSelected={isSelected}
+      showSource={showSource}
       blockedReason={blockedReason}
       menuItems={[{ kind: 'item', key: 'copy', label: 'Copy command', onClick: vi.fn() }]}
       onOpen={onOpen}
@@ -69,12 +76,18 @@ const renderRow = ({
 afterEach(cleanup);
 
 describe('ScriptRow', () => {
-  it('shows name, command and where the script comes from on one line', () => {
+  it('shows name, body and where the script comes from on one line', () => {
     renderRow({});
 
     expect(screen.getByText('test')).toBeDefined();
     expect(screen.getByText('vitest run')).toBeDefined();
     expect(screen.getByText('package.json')).toBeDefined();
+  });
+
+  it('hides the source when the caller already says it in a section header', () => {
+    renderRow({ showSource: false });
+
+    expect(screen.queryByText('package.json')).toBeNull();
   });
 
   it('says a running script is running and offers Stop in place of Run', () => {

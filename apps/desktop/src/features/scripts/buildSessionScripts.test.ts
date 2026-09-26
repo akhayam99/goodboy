@@ -58,7 +58,7 @@ const MANIFEST: ReadonlyArray<ScriptGroup> = [
     packageName: 'acme/ledger',
     relDir: '',
     manager: 'composer',
-    scripts: [{ name: 'test', command: 'composer run-script test' }],
+    scripts: [{ name: 'test', command: 'composer run-script test', body: 'phpunit' }],
   },
   {
     source: 'package-json',
@@ -66,9 +66,9 @@ const MANIFEST: ReadonlyArray<ScriptGroup> = [
     relDir: '',
     manager: 'pnpm',
     scripts: [
-      { name: 'lint', command: 'pnpm run lint' },
-      { name: 'test', command: 'pnpm run test' },
-      { name: 'dev', command: 'pnpm run dev' },
+      { name: 'lint', command: 'pnpm run lint', body: 'eslint .' },
+      { name: 'test', command: 'pnpm run test', body: 'vitest run' },
+      { name: 'dev', command: 'pnpm run dev', body: 'vite' },
     ],
   },
 ];
@@ -94,7 +94,8 @@ describe('buildSessionScripts', () => {
     ]);
     expect(group?.scripts[0]).toMatchObject({
       kind: 'saved',
-      command: 'node ./tools/a.js',
+      body: 'node ./tools/a.js',
+      invocation: 'node ./tools/a.js',
       savedId: 'a',
     });
   });
@@ -111,7 +112,7 @@ describe('buildSessionScripts', () => {
             packageName: 'northwind',
             relDir: '',
             manager: 'yarn',
-            scripts: [{ name: 'dev', command: 'yarn run dev' }],
+            scripts: [{ name: 'dev', command: 'yarn run dev', body: 'turbo run dev' }],
           },
           {
             source: 'package-json',
@@ -119,8 +120,8 @@ describe('buildSessionScripts', () => {
             relDir: 'apps/web',
             manager: 'yarn',
             scripts: [
-              { name: 'test', command: 'yarn run test' },
-              { name: 'dev', command: 'yarn run dev' },
+              { name: 'test', command: 'yarn run test', body: 'vitest run' },
+              { name: 'dev', command: 'yarn run dev', body: 'vite --port 3000' },
             ],
           },
           {
@@ -128,7 +129,7 @@ describe('buildSessionScripts', () => {
             packageName: '@acme/api',
             relDir: 'apps/api',
             manager: 'yarn',
-            scripts: [{ name: 'dev', command: 'yarn run dev' }],
+            scripts: [{ name: 'dev', command: 'yarn run dev', body: 'tsx watch src/server.ts' }],
           },
         ],
       },

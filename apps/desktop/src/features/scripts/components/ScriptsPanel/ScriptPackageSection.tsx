@@ -1,28 +1,58 @@
 import type { ReactNode } from 'react';
+import { ChevronRight, Package } from 'lucide-react';
+import { StatusDot, cn } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ScriptPackageSection as Section } from '../../groupScriptsByPackage';
-import { SCRIPT_SOURCE_LABEL } from '../../scriptSourceLabel';
 
 type Props = {
   readonly section: Section;
+  readonly isCollapsed: boolean;
+  readonly runningCount: number;
+  readonly onToggle: () => void;
   readonly children: ReactNode;
 };
 
-export const ScriptPackageSection = ({ section, children }: Props) => {
-  const manifest = SCRIPT_SOURCE_LABEL[section.source];
-  const path = section.relDir === '' ? manifest : `${section.relDir}/${manifest}`;
-
-  return (
-    <section aria-label={`${section.packageName} scripts`} className="flex flex-col gap-0.5">
-      <header className="flex h-6 min-w-0 items-center gap-2 px-2">
-        <span className="truncate text-2xs font-medium text-muted-foreground">
-          {section.packageName}
+export const ScriptPackageSection = ({
+  section,
+  isCollapsed,
+  runningCount,
+  onToggle,
+  children,
+}: Props) => (
+  <section aria-label={`${section.packageName} scripts`} className="flex flex-col gap-0.5">
+    <button
+      type="button"
+      aria-expanded={!isCollapsed}
+      onClick={onToggle}
+      className="flex h-7 min-w-0 items-center gap-2 rounded-sm px-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+    >
+      <ChevronRight
+        size={ICON_SIZE.row}
+        aria-hidden
+        className={cn(
+          'shrink-0 text-faint-foreground motion-safe:transition-transform',
+          !isCollapsed && 'rotate-90',
+        )}
+      />
+      <Package size={ICON_SIZE.row} aria-hidden className="shrink-0 text-faint-foreground" />
+      <span className="truncate text-2xs font-medium text-muted-foreground">
+        {section.packageName}
+      </span>
+      {section.relDir === '' ? null : (
+        <span className="min-w-0 truncate font-mono text-3xs text-faint-foreground">
+          {section.relDir}
         </span>
-        <span className="min-w-0 truncate font-mono text-3xs text-faint-foreground">{path}</span>
-        <span className="shrink-0 text-2xs tabular-nums text-faint-foreground">
-          {section.scripts.length}
+      )}
+      <span className="shrink-0 text-2xs tabular-nums text-faint-foreground">
+        {section.scripts.length}
+      </span>
+      {runningCount === 0 ? null : (
+        <span className="flex shrink-0 items-center gap-1 text-2xs text-info">
+          <StatusDot tone="info" size="sm" pulsing />
+          {runningCount} running
         </span>
-      </header>
-      {children}
-    </section>
-  );
-};
+      )}
+    </button>
+    {isCollapsed ? null : children}
+  </section>
+);

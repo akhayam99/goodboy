@@ -267,10 +267,14 @@ const BILLING_GROUP: ScriptGroup = {
   relDir: '',
   manager: 'pnpm',
   scripts: [
-    { name: 'dev', command: 'tsx watch src/server.ts' },
-    { name: 'test', command: 'vitest run' },
-    { name: 'typecheck', command: 'tsc --noEmit' },
-    { name: 'deploy:staging', command: 'node ./tools/deploy.mjs --env staging' },
+    { name: 'dev', command: 'pnpm run dev', body: 'tsx watch src/server.ts' },
+    { name: 'test', command: 'pnpm run test', body: 'vitest run' },
+    { name: 'typecheck', command: 'pnpm run typecheck', body: 'tsc --noEmit' },
+    {
+      name: 'deploy:staging',
+      command: 'pnpm run deploy:staging',
+      body: 'node ./tools/deploy.mjs --env staging',
+    },
   ],
 };
 

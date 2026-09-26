@@ -76,8 +76,20 @@ const ROTATE = {
 const manifestKey = ({ path, name }: { readonly path: string; readonly name: string }) =>
   JSON.stringify([path, 'package-json', '', name]);
 
-const manifest = (scripts: ReadonlyArray<{ name: string; command: string }>) => [
-  { source: 'package-json', packageName: 'ledger-core', relDir: '', manager: 'pnpm', scripts },
+const manifest = (
+  scripts: ReadonlyArray<{
+    readonly name: string;
+    readonly command: string;
+    readonly body?: string;
+  }>,
+) => [
+  {
+    source: 'package-json',
+    packageName: 'ledger-core',
+    relDir: '',
+    manager: 'pnpm',
+    scripts: scripts.map(({ name, command, body }) => ({ name, command, body: body ?? command })),
+  },
 ];
 
 const { state } = vi.hoisted(() => ({
@@ -149,10 +161,10 @@ beforeEach(() => {
   state.saved = [REPLAY];
   state.discovered = {
     [SETTLEMENT_PATH]: manifest([
-      { name: 'lint', command: 'eslint .' },
-      { name: 'test', command: 'vitest run' },
+      { name: 'lint', command: 'pnpm run lint', body: 'eslint .' },
+      { name: 'test', command: 'pnpm run test', body: 'vitest run' },
     ]),
-    [ROUNDING_PATH]: manifest([{ name: 'test', command: 'vitest run' }]),
+    [ROUNDING_PATH]: manifest([{ name: 'test', command: 'pnpm run test', body: 'vitest run' }]),
     [RELAY_PATH]: [],
   };
   state.runs = {};
@@ -194,7 +206,7 @@ describe('ScriptsPanel', () => {
   });
 
   it('splits a monorepo into its packages, root first, and runs each in its folder', () => {
-    const dev = [{ name: 'dev', command: 'yarn run dev' }];
+    const dev = [{ name: 'dev', command: 'yarn run dev', body: 'vite --port 3000' }];
     state.discovered = {
       ...state.discovered,
       [SETTLEMENT_PATH]: [
@@ -228,9 +240,14 @@ describe('ScriptsPanel', () => {
       within(settlement)
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label')),
-    ).toEqual(['northwind scripts', '@acme/api scripts', '@northwind/web scripts']);
+    ).toEqual([
+      'Saved scripts',
+      'northwind scripts',
+      '@acme/api scripts',
+      '@northwind/web scripts',
+    ]);
     const web = within(settlement).getByRole('region', { name: '@northwind/web scripts' });
-    expect(within(web).getByText('apps/web/package.json')).toBeDefined();
+    expect(within(web).getByText('apps/web')).toBeDefined();
 
     fireEvent.click(within(web).getByRole('button', { name: 'Run dev' }));
     expect(state.runDiscoveredScript).toHaveBeenCalledWith(
@@ -249,6 +266,44 @@ describe('ScriptsPanel', () => {
         .getAllByRole('region')
         .map((region) => region.getAttribute('aria-label')),
     ).toEqual(['@acme/api scripts']);
+  });
+
+  it('closes packages beyond six by default, keeps the root open, and the filter opens a match', () => {
+    const dev = [{ name: 'dev', command: 'yarn run dev', body: 'vite' }];
+    state.discovered = {
+      ...state.discovered,
+      [SETTLEMENT_PATH]: [
+        {
+          source: 'package-json',
+          packageName: 'northwind',
+          relDir: '',
+          manager: 'yarn',
+          scripts: dev,
+        },
+        ...Array.from({ length: 7 }, (_, index) => ({
+          source: 'package-json' as const,
+          packageName: `@northwind/p${index}`,
+          relDir: `apps/p${index}`,
+          manager: 'yarn',
+          scripts: dev,
+        })),
+      ],
+    };
+    renderPanel();
+    const settlement = group('ledger-core · nw/settlement');
+
+    const root = within(settlement).getByRole('region', { name: 'northwind scripts' });
+    expect(within(root).getByRole('button', { expanded: true })).toBeDefined();
+    const p3 = within(settlement).getByRole('region', { name: '@northwind/p3 scripts' });
+    expect(within(p3).getByRole('button', { expanded: false })).toBeDefined();
+
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Filter scripts' }), {
+      target: { value: 'p3' },
+    });
+    const filtered = within(group('ledger-core · nw/settlement')).getByRole('region', {
+      name: '@northwind/p3 scripts',
+    });
+    expect(within(filtered).getByRole('button', { expanded: true })).toBeDefined();
   });
 
   it('says why a mount has no scripts and why a session has none', () => {
@@ -384,7 +439,7 @@ describe('ScriptsPanel', () => {
     expect(state.deleteScript).toHaveBeenCalledWith(REPLAY.id, WORKSPACE);
   });
 
-  it('saves a package.json script as an editable one, prefilled with its command', () => {
+  it('saves a package.json script as an editable one, prefilled with the invocation that runs from the root', () => {
     renderPanel();
     const settlement = group('ledger-core · nw/settlement');
 
@@ -394,7 +449,7 @@ describe('ScriptsPanel', () => {
     const editor = within(settlement).getByRole('region', { name: 'New script' });
     expect(
       (within(editor).getByRole('textbox', { name: 'Script body' }) as HTMLTextAreaElement).value,
-    ).toBe('eslint .');
+    ).toBe('pnpm run lint');
   });
 
   it('remembers a collapsed group for the workspace', () => {
