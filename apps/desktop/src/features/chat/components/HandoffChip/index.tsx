@@ -10,6 +10,7 @@ import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStat
 import { TranscriptShell } from '../TranscriptShell';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
+import { hasActiveWorkflowRun } from '../../../workflows/activeWorkflowRuns';
 
 type Props = {
   readonly assistantText: string;
@@ -61,7 +62,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   if (handoff == null || session == null || sourceAgentId == null) {
     return null;
   }
-  if (session.workflowRuns.length > 0) {
+  if (hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents: runs })) {
     return null;
   }
 
@@ -123,7 +124,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
       variant="leftBorder"
       className="flex w-full max-w-xl flex-col gap-1.5 text-xs"
     >
-      <span className="font-medium text-foreground">{`Suggested next: ${roleLabel}`}</span>
+      <span className="font-medium text-foreground">{`Agent suggests: ${roleLabel}`}</span>
       {handoff.reason != null && handoff.reason.length > 0 ? (
         <span className="text-muted-foreground">{handoff.reason}</span>
       ) : null}

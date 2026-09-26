@@ -63,6 +63,7 @@ import { reviseArtifactForAgent } from '../features/artifacts/reviseArtifactForA
 import { capturedWireframeFidelity } from '../features/wireframes/capturedWireframeFidelity';
 import { requestedWireframeFidelity } from '../features/wireframes/wireframeFidelity';
 import type { AgentKind } from '../features/session/agent-kind';
+import { hasActiveWorkflowRun } from '../features/workflows/activeWorkflowRuns';
 import { kindReadsAttachment } from '../features/providers/attachment-routing';
 import { classifyProviderError } from '../features/chat/classifyProviderError';
 import {
@@ -975,7 +976,10 @@ export const emitTurnNudges = async (
   if (!session) {
     return;
   }
-  const inWorkflow = session.workflowRuns.length > 0;
+  const inWorkflow = hasActiveWorkflowRun({
+    workflowRuns: session.workflowRuns,
+    agents: get().sessionPhaseRuns[sessionId] ?? [],
+  });
 
   let nextNudge: SessionNudge | null = null;
 
