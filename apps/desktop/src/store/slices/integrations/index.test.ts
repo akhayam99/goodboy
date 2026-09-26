@@ -37,9 +37,6 @@ vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModule
 vi.mock('../../../shared/lib/db', async () =>
   (await import('../../storyHarness')).dbLibModuleMock(),
 );
-vi.mock('../../../shared/lib/ls-to-db-migration', async () =>
-  (await import('../../storyHarness')).lsToDbMigrationModuleMock(),
-);
 vi.mock('../../../features/onboarding/onboarding-store', async () =>
   (await import('../../storyHarness')).onboardingStoreModuleMock(),
 );

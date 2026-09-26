@@ -493,10 +493,6 @@ export const dbLibModuleMock = () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 });
 
-export const lsToDbMigrationModuleMock = () => ({
-  migrateLsToDb: vi.fn(async () => undefined),
-});
-
 export const onboardingStoreModuleMock = () => ({
   hydrateOnboardingFromDb: vi.fn(async () => undefined),
 });
