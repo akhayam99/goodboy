@@ -44,7 +44,7 @@ const report = {
 } as unknown as ReportArtifact;
 
 describe('renderArtifactFile', () => {
-  const html = renderArtifactFile({ artifact: report });
+  const html = renderArtifactFile({ artifact: report, workspaceName: 'harborline' });
 
   it('writes a standalone page that links its stylesheet', () => {
     expect(html.startsWith('<!doctype html>')).toBe(true);

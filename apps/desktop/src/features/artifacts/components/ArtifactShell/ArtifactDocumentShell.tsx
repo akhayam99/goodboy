@@ -154,14 +154,10 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       },
     },
     edit: { onClick: startEditing },
-    openWindow: {
-      onClick: () => void exporter.openWindow(),
-      isDisabled: !exporter.canSavePdf || exporter.status.kind === 'busy',
-    },
-    print: {
-      onClick: () => void exporter.savePdf(),
-      isDisabled: !exporter.canSavePdf || exporter.status.kind === 'busy',
-      hint: exporter.pdfHint,
+    openInBrowser: {
+      onClick: savedCopy.openInBrowser,
+      isDisabled: savedCopy.location === null || !savedCopy.location.exists,
+      hint: savedCopy.error ?? undefined,
     },
     copySource: {
       onClick: () => void exporter.copySource(),
@@ -352,7 +348,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
           />
         ) : null}
         {draft === null && subject.kind === 'report' ? (
-          <ReportStudio artifact={subject.artifact} />
+          <ReportStudio sessionId={sessionId} artifact={subject.artifact} />
         ) : null}
         {subject.kind === 'wireframe' ? (
           <WireframeViewer

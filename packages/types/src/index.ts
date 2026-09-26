@@ -353,7 +353,6 @@ export type {
   ArtifactId,
   ArtifactKind,
   ArtifactProvenance,
-  ArtifactRendition,
   ArtifactRunPhase,
   ArtifactRunTarget,
   ArtifactScoutPlanEntry,

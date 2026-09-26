@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 
@@ -174,6 +175,7 @@ pub struct MirrorEntry {
     pub folder: String,
     pub revision: i64,
     pub updated_at: String,
+    pub renderer_version: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -181,6 +183,7 @@ pub struct MirrorEntry {
 struct MirrorMeta {
     revision: Option<i64>,
     updated_at: Option<String>,
+    renderer_version: Option<String>,
 }
 
 fn is_current(home: &Path, entry: &MirrorEntry) -> bool {
@@ -193,7 +196,9 @@ fn is_current(home: &Path, entry: &MirrorEntry) -> bool {
     let Ok(meta) = serde_json::from_str::<MirrorMeta>(&text) else {
         return false;
     };
-    meta.revision == Some(entry.revision) && meta.updated_at.as_deref() == Some(&entry.updated_at)
+    meta.revision == Some(entry.revision)
+        && meta.updated_at.as_deref() == Some(&entry.updated_at)
+        && meta.renderer_version.as_deref() == Some(&entry.renderer_version)
 }
 
 pub(crate) fn pending_mirrors(home: &Path, entries: &[MirrorEntry]) -> Vec<String> {
@@ -267,6 +272,123 @@ pub(crate) fn remove_mirror(
     }
     std::fs::remove_dir_all(&path)?;
     Ok(true)
+}
+
+#[cfg(target_os = "macos")]
+fn macos_default_browser_bundle_id() -> Option<String> {
+    let output = Command::new("defaults")
+        .args([
+            "read",
+            "com.apple.LaunchServices/com.apple.launchservices.secure",
+            "LSHandlers",
+        ])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let text = String::from_utf8(output.stdout).ok()?;
+    let scheme_at = text.find("LSHandlerURLScheme = https;")?;
+    let before = &text[..scheme_at];
+    let marker = "LSHandlerRoleAll = \"";
+    let start = before.rfind(marker)? + marker.len();
+    let end = before[start..].find('"')? + start;
+    let bundle_id = &before[start..end];
+    if bundle_id.is_empty() {
+        return None;
+    }
+    Some(bundle_id.to_string())
+}
+
+#[cfg(target_os = "windows")]
+fn windows_default_browser_command() -> Option<String> {
+    let prog_id_output = Command::new("reg")
+        .args([
+            "query",
+            "HKCU\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice",
+            "/v",
+            "ProgId",
+        ])
+        .output()
+        .ok()?;
+    if !prog_id_output.status.success() {
+        return None;
+    }
+    let text = String::from_utf8(prog_id_output.stdout).ok()?;
+    let prog_id = text.lines().find_map(|line| {
+        let trimmed = line.trim();
+        trimmed.strip_prefix("ProgId").map(|rest| {
+            rest.trim()
+                .rsplit_once(char::is_whitespace)
+                .map(|(_, v)| v)
+                .unwrap_or(rest.trim())
+                .to_string()
+        })
+    })?;
+    let command_output = Command::new("reg")
+        .args([
+            "query",
+            &format!("HKCR\\{prog_id}\\shell\\open\\command"),
+            "/ve",
+        ])
+        .output()
+        .ok()?;
+    if !command_output.status.success() {
+        return None;
+    }
+    let text = String::from_utf8(command_output.stdout).ok()?;
+    text.lines()
+        .find_map(|line| {
+            let trimmed = line.trim();
+            trimmed
+                .rsplit_once("REG_SZ")
+                .map(|(_, value)| value.trim().to_string())
+        })
+        .filter(|value| !value.is_empty())
+}
+
+fn open_with_browser(path: &Path) -> std::io::Result<()> {
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(bundle_id) = macos_default_browser_bundle_id() {
+            let status = Command::new("open")
+                .arg("-b")
+                .arg(&bundle_id)
+                .arg(path)
+                .status();
+            if status.map(|s| s.success()).unwrap_or(false) {
+                return Ok(());
+            }
+        }
+    }
+    #[cfg(target_os = "windows")]
+    {
+        if let Some(template) = windows_default_browser_command() {
+            let path_str = path.to_string_lossy();
+            let invocation = if template.contains("%1") {
+                template.replace("%1", &format!("\"{path_str}\""))
+            } else {
+                format!("{template} \"{path_str}\"")
+            };
+            let status = Command::new("cmd").args(["/C", &invocation]).status();
+            if status.map(|s| s.success()).unwrap_or(false) {
+                return Ok(());
+            }
+        }
+    }
+    crate::explore::spawn_open(path, false)
+}
+
+#[tauri::command]
+pub async fn artifact_mirror_open_root(workspace_slug: String) -> Result<(), ArtifactExportError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let root = mirror_root(&home()?, &workspace_slug)?;
+        std::fs::create_dir_all(&root)?;
+        crate::explore::spawn_open(&root, false)?;
+        Ok(())
+    })
+    .await
+    .map_err(|error| destination(&error.to_string()))?
 }
 
 #[tauri::command]
@@ -350,9 +472,13 @@ pub async fn artifact_mirror_open(
     folder: String,
     file: String,
 ) -> Result<(), ArtifactExportError> {
-    let path = mirror_file(&home()?, &workspace_slug, &folder, &file)?;
-    crate::explore::spawn_open(&path, false)?;
-    Ok(())
+    tauri::async_runtime::spawn_blocking(move || {
+        let path = mirror_file(&home()?, &workspace_slug, &folder, &file)?;
+        open_with_browser(&path)?;
+        Ok(())
+    })
+    .await
+    .map_err(|error| destination(&error.to_string()))?
 }
 
 #[tauri::command]
@@ -389,7 +515,19 @@ mod tests {
     }
 
     fn meta(revision: i64, updated_at: &str) -> String {
-        format!("{{\"revision\":{revision},\"updatedAt\":\"{updated_at}\"}}")
+        format!(
+            "{{\"revision\":{revision},\"updatedAt\":\"{updated_at}\",\"rendererVersion\":\"1\"}}"
+        )
+    }
+
+    fn entry(revision: i64, updated_at: &str) -> MirrorEntry {
+        MirrorEntry {
+            workspace_slug: "harborline".into(),
+            folder: "report".into(),
+            revision,
+            updated_at: updated_at.into(),
+            renderer_version: "1".into(),
+        }
     }
 
     #[test]
@@ -441,13 +579,8 @@ mod tests {
     #[test]
     fn reports_a_mirror_as_pending_until_its_meta_matches() {
         let home = scratch_home();
-        let entry = MirrorEntry {
-            workspace_slug: "harborline".into(),
-            folder: "report".into(),
-            revision: 2,
-            updated_at: "2026-09-25T10:00:00.000Z".into(),
-        };
-        assert_eq!(pending_mirrors(&home, &[entry]), vec!["report".to_string()]);
+        let want = entry(2, "2026-09-25T10:00:00.000Z");
+        assert_eq!(pending_mirrors(&home, &[want]), vec!["report".to_string()]);
         write_mirror(
             &home,
             "harborline",
@@ -455,12 +588,7 @@ mod tests {
             &[file("meta.json", &meta(1, "2026-09-24T10:00:00.000Z"))],
         )
         .expect("old");
-        let stale = MirrorEntry {
-            workspace_slug: "harborline".into(),
-            folder: "report".into(),
-            revision: 2,
-            updated_at: "2026-09-25T10:00:00.000Z".into(),
-        };
+        let stale = entry(2, "2026-09-25T10:00:00.000Z");
         assert_eq!(pending_mirrors(&home, &[stale]).len(), 1);
         write_mirror(
             &home,
@@ -469,15 +597,33 @@ mod tests {
             &[file("meta.json", &meta(2, "2026-09-25T10:00:00.000Z"))],
         )
         .expect("new");
-        let current = MirrorEntry {
-            workspace_slug: "harborline".into(),
-            folder: "report".into(),
-            revision: 2,
-            updated_at: "2026-09-25T10:00:00.000Z".into(),
-        };
+        let current = entry(2, "2026-09-25T10:00:00.000Z");
         assert!(pending_mirrors(&home, &[current]).is_empty());
         let located = locate_mirror(&home, "harborline", "report").expect("locate");
         assert!(located.exists);
+        let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[test]
+    fn reports_a_mirror_as_pending_when_only_the_renderer_version_moves() {
+        let home = scratch_home();
+        write_mirror(
+            &home,
+            "harborline",
+            "report",
+            &[file("meta.json", &meta(2, "2026-09-25T10:00:00.000Z"))],
+        )
+        .expect("write");
+        let same = entry(2, "2026-09-25T10:00:00.000Z");
+        assert!(pending_mirrors(&home, &[same]).is_empty());
+        let newer_renderer = MirrorEntry {
+            renderer_version: "2".into(),
+            ..entry(2, "2026-09-25T10:00:00.000Z")
+        };
+        assert_eq!(
+            pending_mirrors(&home, &[newer_renderer]),
+            vec!["report".to_string()]
+        );
         let _ = std::fs::remove_dir_all(home);
     }
 
@@ -541,13 +687,11 @@ mod tests {
         .expect("second");
         assert_eq!(second, first);
         assert!(!first.with_file_name(renamed).exists());
-        let entry = MirrorEntry {
-            workspace_slug: "harborline".into(),
+        let renamed_entry = MirrorEntry {
             folder: renamed.into(),
-            revision: 2,
-            updated_at: "2026-09-26T10:00:00.000Z".into(),
+            ..entry(2, "2026-09-26T10:00:00.000Z")
         };
-        assert!(pending_mirrors(&home, &[entry]).is_empty());
+        assert!(pending_mirrors(&home, &[renamed_entry]).is_empty());
         let located = locate_mirror(&home, "harborline", renamed).expect("locate");
         assert_eq!(located.path, first.to_string_lossy());
         assert!(remove_mirror(&home, "harborline", renamed).expect("remove"));
@@ -584,7 +728,11 @@ mod tests {
         assert!(!root.join("screens").exists());
         assert!(!root.join("wireframe.css").exists());
         assert!(!root.join("wireframe.json").exists());
-        assert!(root.join("v1").join("screens").join("a--empty.html").is_file());
+        assert!(root
+            .join("v1")
+            .join("screens")
+            .join("a--empty.html")
+            .is_file());
         let next = [
             file("index.html", "versions"),
             file("v2/index.html", "i2"),

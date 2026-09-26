@@ -14,6 +14,7 @@ import {
   annotateArtifactRevision as dbAnnotateArtifactRevision,
   deleteArtifact as dbDeleteArtifact,
   listArtifactRevisions as dbListArtifactRevisions,
+  loadArtifactRevision as dbLoadArtifactRevision,
   getArtifactBySourceTurn as dbGetArtifactBySourceTurn,
   insertArtifact as dbInsertArtifact,
   listArtifactsForSession as dbListArtifactsForSession,
@@ -118,6 +119,15 @@ export const listArtifactRevisions = async (
   artifactId: ArtifactId,
 ): Promise<ReadonlyArray<ArtifactRevision>> =>
   dbListArtifactRevisions({ db: tauriDatabase, artifactId });
+
+export const loadArtifactRevision = async ({
+  artifactId,
+  revision,
+}: {
+  readonly artifactId: ArtifactId;
+  readonly revision: number;
+}): Promise<ArtifactRevision | null> =>
+  dbLoadArtifactRevision({ db: tauriDatabase, artifactId, revision });
 
 export const annotateArtifactRevision = async ({
   artifactId,

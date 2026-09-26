@@ -1,5 +1,4 @@
 import {
-  AppWindow,
   ArchiveRestore,
   Bot,
   Copy,
@@ -8,7 +7,6 @@ import {
   FolderOpen,
   Pencil,
   Play,
-  Printer,
   RotateCcw,
   RotateCw,
   Square,
@@ -30,20 +28,10 @@ export const ARTIFACT_ACTION_PRESENTATION = {
   edit: { label: 'Edit', icon: Pencil },
   stop: { label: 'Stop', icon: Square },
   newVariant: { label: 'New variant', icon: RotateCcw },
-  openWindow: {
-    label: 'Open in window',
-    icon: AppWindow,
-    description: 'Reads it as a page in its own window',
-  },
   openInBrowser: {
     label: 'Open in browser',
     icon: ExternalLink,
     description: 'Opens the saved file. Print it from there as a PDF.',
-  },
-  print: {
-    label: 'Print',
-    icon: Printer,
-    description: 'Opens a print window, save as PDF from there',
   },
   copySource: { label: 'Copy', icon: Copy },
   saveSource: { label: 'Save a copy', icon: FileDown },

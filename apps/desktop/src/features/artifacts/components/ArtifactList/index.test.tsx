@@ -7,6 +7,8 @@ const { state, picker } = vi.hoisted(() => ({
   state: {
     openArtifactCreation: vi.fn(),
     importWireframe: vi.fn(async (_params: Record<string, unknown>) => ({ id: 'wireframe-9' })),
+    sessions: [] as ReadonlyArray<Record<string, unknown>>,
+    workspaces: [] as ReadonlyArray<Record<string, unknown>>,
   },
   picker: { next: null as unknown },
 }));

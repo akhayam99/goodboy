@@ -31,6 +31,7 @@ vi.mock('@goodboy/db', () => ({
   ]),
 }));
 
+import { ARTIFACT_RENDERER_VERSION } from './artifactMirrorMeta';
 import { mirrorArtifacts, resetArtifactMirrorQueue } from './artifactMirrorQueue';
 
 const report = (over: Partial<Record<string, unknown>> = {}) =>
@@ -87,6 +88,7 @@ describe('mirrorArtifacts', () => {
       workspace: 'harborline',
       revision: 1,
       appVersion: '0.7.0',
+      rendererVersion: ARTIFACT_RENDERER_VERSION,
     });
 
     await mirrorArtifacts({
@@ -106,6 +108,15 @@ describe('mirrorArtifacts', () => {
     expect(writeSpy).not.toHaveBeenCalled();
     await mirrorArtifacts({ items: [{ artifact: report(), workspaceSlug: 'harborline' }] });
     expect(pendingSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('asks the disk to compare the renderer version too, so a restyle re-writes stale files', async () => {
+    pendingSpy.mockResolvedValueOnce([]);
+    await mirrorArtifacts({ items: [{ artifact: report(), workspaceSlug: 'harborline' }] });
+    const args = pendingSpy.mock.calls[0]?.[0] as unknown as {
+      readonly entries: ReadonlyArray<{ readonly rendererVersion: string }>;
+    };
+    expect(args.entries[0]?.rendererVersion).toBe(ARTIFACT_RENDERER_VERSION);
   });
 
   it('keeps going when a write fails, and retries it next time', async () => {

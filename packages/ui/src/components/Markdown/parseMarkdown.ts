@@ -16,6 +16,8 @@ export type Block =
   | { kind: 'facts'; entries: ReadonlyArray<KitEntry> }
   | { kind: 'metrics'; entries: ReadonlyArray<KitEntry> }
   | { kind: 'timeline'; entries: ReadonlyArray<KitEntry> }
+  | { kind: 'bars'; entries: ReadonlyArray<KitEntry> }
+  | { kind: 'compare'; before: ReadonlyArray<Block>; after: ReadonlyArray<Block> }
   | { kind: 'pagebreak' }
   | { kind: 'paragraph'; content: string; isTree: boolean };
 
@@ -44,7 +46,7 @@ const TABLE_DIVIDER_RE = /^\s*\|?\s*:?-{2,}:?(\s*\|\s*:?-{2,}:?)*\s*\|?\s*$/;
 const CALLOUT_OPEN_RE = /^<<([a-zA-Z][a-zA-Z0-9_-]*)>>(.*)$/;
 const TREE_RE = /[├└│┌┐┘┤┬┼]/;
 const PAGEBREAK_RE = /^<<page-?break>>\s*$/i;
-const KIT_TAGS = ['facts', 'metrics', 'timeline'] as const;
+const KIT_TAGS = ['facts', 'metrics', 'timeline', 'bars'] as const;
 type KitTag = (typeof KIT_TAGS)[number];
 const KIT_BULLET_RE = /^\s*(?:[-*+]|\d+\.)\s+/;
 const KIT_LABEL_RE = /^\*\*([^*]+?)\*\*:?\s*|^([^:|]{1,60}?):\s+/;
@@ -105,12 +107,51 @@ const parseKitBlock = ({ tag, content }: KitBlockParams): Block => {
   return { kind: tag, entries };
 };
 
+const COMPARE_LABEL_RE = /^(before|after)\s*:\s*(.*)$/i;
+
+type CompareParams = {
+  readonly content: string;
+};
+
+const compareBlock = ({ content }: CompareParams): Block => {
+  const before: string[] = [];
+  const after: string[] = [];
+  let side: 'before' | 'after' | null = null;
+
+  for (const line of content.split('\n')) {
+    const match = line.match(COMPARE_LABEL_RE);
+    if (match) {
+      side = match[1]!.toLowerCase() === 'before' ? 'before' : 'after';
+      const rest = match[2] ?? '';
+      if (rest.trim().length > 0) {
+        (side === 'before' ? before : after).push(rest);
+      }
+      continue;
+    }
+    if (side === 'before') {
+      before.push(line);
+    }
+    if (side === 'after') {
+      after.push(line);
+    }
+  }
+
+  return {
+    kind: 'compare',
+    before: parseBlocks(before.join('\n').trim()),
+    after: parseBlocks(after.join('\n').trim()),
+  };
+};
+
 type CalloutParams = {
   readonly tag: string;
   readonly content: string;
 };
 
 const calloutBlock = ({ tag, content }: CalloutParams): Block => {
+  if (tag.toLowerCase() === 'compare') {
+    return compareBlock({ content });
+  }
   const kit = kitTagFor({ tag });
   if (kit !== null) {
     return parseKitBlock({ tag: kit, content });

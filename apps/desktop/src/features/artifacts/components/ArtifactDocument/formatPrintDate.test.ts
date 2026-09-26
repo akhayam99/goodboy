@@ -4,8 +4,8 @@ import { formatPrintDate } from './formatPrintDate';
 const ISO = '2026-09-15T10:00:00';
 
 describe('formatPrintDate', () => {
-  it('spells out the month and carries the year, so paper is never ambiguous', () => {
-    expect(formatPrintDate({ iso: ISO })).toBe('September 15, 2026 at 10:00 AM');
+  it('abbreviates the month and carries the year, so the eyebrow stays one line', () => {
+    expect(formatPrintDate({ iso: ISO })).toBe('Sep 15, 2026');
   });
 
   it('keeps the year for a date in another year', () => {

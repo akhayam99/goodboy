@@ -7,9 +7,7 @@ export type ArtifactActionId =
   | 'edit'
   | 'stop'
   | 'newVariant'
-  | 'openWindow'
   | 'openInBrowser'
-  | 'print'
   | 'copySource'
   | 'saveSource'
   | 'showInFinder'
@@ -30,8 +28,7 @@ export type ArtifactActionSet = Readonly<{
 }>;
 
 const DOCUMENT_EXPORTS: ReadonlyArray<ArtifactActionId> = [
-  'openWindow',
-  'print',
+  'openInBrowser',
   'copySource',
   'saveSource',
   'showInFinder',
@@ -75,7 +72,7 @@ export const artifactActions = ({
       return {
         primary: null,
         secondary: 'edit',
-        overflow: ['openWindow', 'print', 'regenerate', 'copySource', 'saveSource', 'showInFinder'],
+        overflow: ['openInBrowser', 'regenerate', 'copySource', 'saveSource', 'showInFinder'],
       };
     case 'wireframe':
       return {

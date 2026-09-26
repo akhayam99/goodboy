@@ -5,14 +5,18 @@ import { useAppStore } from '../../../../store';
 import { artifactFolderName } from '../../artifactFolderName';
 import {
   locateArtifactMirror,
+  openArtifactMirror,
   revealArtifactMirror,
   type ArtifactMirrorLocation,
 } from '../../artifactMirror/artifactMirrorInvoke';
+
+const MIRROR_INDEX_FILE = 'index.html';
 
 export type ArtifactSavedCopy = Readonly<{
   location: ArtifactMirrorLocation | null;
   error: string | null;
   reveal: () => void;
+  openInBrowser: () => void;
 }>;
 
 type Params = {
@@ -61,5 +65,15 @@ export const useArtifactSavedCopy = ({ sessionId, artifact }: Params): ArtifactS
     );
   }, [workspaceSlug, folder]);
 
-  return { location, error, reveal };
+  const openInBrowser = useCallback(() => {
+    if (workspaceSlug === null) {
+      return;
+    }
+    setError(null);
+    openArtifactMirror({ workspaceSlug, folder, file: MIRROR_INDEX_FILE }).catch((cause: unknown) =>
+      setError(formatError(cause)),
+    );
+  }, [workspaceSlug, folder]);
+
+  return { location, error, reveal, openInBrowser };
 };

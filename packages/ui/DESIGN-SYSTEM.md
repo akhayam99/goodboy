@@ -98,19 +98,26 @@ box, weight and tracking together. `cn` reads every role as a font size, so a
 later role or grade replaces an earlier one and a text colour never drops it.
 The list is `TYPE_ROLES` in `typeRoles.ts`.
 
-| role             | measure                       | used for                                                   |
-| ---------------- | ----------------------------- | ---------------------------------------------------------- |
-| `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title |
-| `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                       |
-| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question  |
-| `text-row`       | 14/20, 500                    | a top-level row label, a card title                        |
-| `text-body`      | 14/20                         | running text; text with no class inherits it from the body |
-| `text-prose`     | 14/22                         | messages, markdown, artifacts                              |
-| `text-label`     | 12/16                         | controls, a nested row, a status label                     |
-| `text-secondary` | 11/16                         | a secondary line, a chip, an option description            |
-| `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                    |
-| `text-meta`      | 10/14, tabular                | time, ordinal, cost, count                                 |
-| `text-code`      | mono 12/18                    | branch, path, command, inline code                         |
+| role             | measure                       | used for                                                                               |
+| ---------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
+| `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
+| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
+| `text-row`       | 14/20, 500                    | a top-level row label, a card title                                                    |
+| `text-body`      | 14/20                         | running text; text with no class inherits it from the body                             |
+| `text-prose`     | 14/22                         | messages, markdown, artifacts                                                          |
+| `text-label`     | 12/16                         | controls, a nested row, a status label                                                 |
+| `text-secondary` | 11/16                         | a secondary line, a chip, an option description                                        |
+| `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
+| `text-meta`      | 10/14, tabular                | time, ordinal, cost, count                                                             |
+| `text-code`      | mono 12/18                    | branch, path, command, inline code                                                     |
+| `document`       | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
+
+`document` is the one exception to "a role, never a size": it lives in
+`artifactDocument.css`'s own `--print-*` tokens, not `typeRoles.ts`, because
+the report reads the same way in the app, on disk and on paper, and the paper
+medium shrinks every one of its tokens under `@media print`. It never appears
+outside `ArtifactDocument`.
 
 A role with no weight inherits one: `text-label font-medium` is a control label
 at 500, `text-secondary font-medium` a chip. Weights are 400, 500 and 600, and

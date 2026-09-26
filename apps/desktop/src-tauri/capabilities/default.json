@@ -6,7 +6,6 @@
   "permissions": [
     "core:default",
     "core:webview:allow-set-webview-zoom",
-    "core:webview:allow-print",
     "core:webview:allow-create-webview-window",
     "core:window:allow-create",
     "core:window:allow-set-focus",
