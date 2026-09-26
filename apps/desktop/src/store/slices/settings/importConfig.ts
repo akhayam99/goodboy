@@ -1,5 +1,6 @@
 import type { ConfigBundleImportResult } from '@goodboy/types';
 import { listProjectsForWorkspace, listWorkspaces } from '@goodboy/db';
+import { SETTING_EDITOR_BINARY } from '../../../features/settings/settings';
 import { importConfigFromFile } from '../../../features/settings/config-export';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { GetFn, SetFn } from './types';
@@ -19,8 +20,8 @@ export const importConfig = (set: SetFn, get: GetFn) => {
       )
     ).flat();
     set({ workspaces, projects });
-    await Promise.all(
-      workspaces.flatMap((workspace) => [
+    await Promise.all([
+      ...workspaces.flatMap((workspace) => [
         get()
           .loadPhaseTemplates(workspace.id)
           .catch(() => undefined),
@@ -28,7 +29,13 @@ export const importConfig = (set: SetFn, get: GetFn) => {
           .rescanSkills(workspace.id)
           .catch(() => undefined),
       ]),
-    );
+      get()
+        .loadBudgetRules()
+        .catch(() => undefined),
+      get()
+        .loadSetting(SETTING_EDITOR_BINARY)
+        .catch(() => undefined),
+    ]);
     return result;
   };
 };

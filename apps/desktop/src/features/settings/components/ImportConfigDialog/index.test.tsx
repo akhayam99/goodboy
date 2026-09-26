@@ -21,7 +21,7 @@ describe('ImportConfigDialog', () => {
       stats: {
         workspaces: 2,
         skills: 0,
-        workflows: 3,
+        phaseTemplates: 3,
         permissionRules: 4,
         budgetRules: 5,
       },

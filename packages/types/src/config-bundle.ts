@@ -46,6 +46,10 @@ export type ConfigBundleStep = Readonly<{
   promptPrefix: string;
   providerOverride: string | null;
   modelOverride: string | null;
+  role: string | null;
+  effort: string | null;
+  expectedOutput: string | null;
+  orchestratorReason: string | null;
 }>;
 
 export type ConfigBundleWorkflow = Readonly<{
@@ -56,6 +60,10 @@ export type ConfigBundleWorkflow = Readonly<{
   steps: ReadonlyArray<ConfigBundleStep>;
   createdAt: string;
   updatedAt: string;
+  isPreset: boolean;
+  origin: string | null;
+  goal: string | null;
+  processText: string | null;
 }>;
 
 export type ConfigBundlePermissionRule = Readonly<{
@@ -82,9 +90,6 @@ export type ConfigBundleBudgetRule = Readonly<{
 
 export type ConfigBundleSettings = Readonly<{
   editorBinary: string | null;
-  enableParallelAgents: string | null;
-  maxParallelism: string | null;
-  providerPricingConfig: string | null;
 }>;
 
 export type ConfigBundle = Readonly<{
@@ -109,7 +114,7 @@ export type ConfigBundleImportResult = Readonly<{
   stats: Readonly<{
     workspaces: number;
     skills: number;
-    workflows: number;
+    phaseTemplates: number;
     permissionRules: number;
     budgetRules: number;
   }>;

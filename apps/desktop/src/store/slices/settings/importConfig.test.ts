@@ -93,6 +93,8 @@ const harness = () => {
     projects: [] as ReadonlyArray<Project>,
     loadPhaseTemplates: vi.fn(async () => undefined),
     rescanSkills: vi.fn(async () => undefined),
+    loadBudgetRules: vi.fn(async () => undefined),
+    loadSetting: vi.fn(async () => null),
   } as unknown as AppStore;
   const set: SetFn = (update) => {
     const patch = typeof update === 'function' ? update(state) : update;
@@ -127,7 +129,7 @@ describe('importConfig', () => {
     const failure: ConfigBundleImportResult = {
       ok: false,
       errors: [{ field: 'workspaces[0].name', message: 'is required' }],
-      stats: { workspaces: 0, skills: 0, workflows: 0, permissionRules: 0, budgetRules: 0 },
+      stats: { workspaces: 0, skills: 0, phaseTemplates: 0, permissionRules: 0, budgetRules: 0 },
     };
     h.importConfigFromFile.mockResolvedValueOnce(failure);
     const store = harness();
@@ -138,11 +140,11 @@ describe('importConfig', () => {
     expect(h.listWorkspaces).not.toHaveBeenCalled();
   });
 
-  it('reloads workspaces, projects, workflows and skills after a successful import', async () => {
+  it('reloads workspaces, projects, workflows, skills, budget rules and settings after a successful import', async () => {
     const success: ConfigBundleImportResult = {
       ok: true,
       errors: [],
-      stats: { workspaces: 2, skills: 0, workflows: 3, permissionRules: 4, budgetRules: 5 },
+      stats: { workspaces: 2, skills: 0, phaseTemplates: 3, permissionRules: 4, budgetRules: 5 },
     };
     h.importConfigFromFile.mockResolvedValueOnce(success);
     const wsA = workspace('ws-a');
@@ -162,13 +164,15 @@ describe('importConfig', () => {
     expect(store.state.loadPhaseTemplates).toHaveBeenCalledWith('ws-b');
     expect(store.state.rescanSkills).toHaveBeenCalledWith('ws-a');
     expect(store.state.rescanSkills).toHaveBeenCalledWith('ws-b');
+    expect(store.state.loadBudgetRules).toHaveBeenCalledTimes(1);
+    expect(store.state.loadSetting).toHaveBeenCalledWith('editor.binary');
   });
 
   it('never touches currentWorkspaceId or session state, so no turn gets cancelled', async () => {
     const success: ConfigBundleImportResult = {
       ok: true,
       errors: [],
-      stats: { workspaces: 1, skills: 0, workflows: 0, permissionRules: 0, budgetRules: 0 },
+      stats: { workspaces: 1, skills: 0, phaseTemplates: 0, permissionRules: 0, budgetRules: 0 },
     };
     h.importConfigFromFile.mockResolvedValueOnce(success);
     h.listWorkspaces.mockResolvedValueOnce([workspace('ws-a')]);

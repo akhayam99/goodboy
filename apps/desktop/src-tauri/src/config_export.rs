@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Manager};
 
 use crate::db::{Db, DbError};
 
@@ -85,6 +85,18 @@ pub struct PhaseDefinitionBundle {
     pub provider_override: Option<String>,
     #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
+    #[serde(default)]
+    pub role: Option<String>,
+    #[serde(default)]
+    pub effort: Option<String>,
+    #[serde(rename = "expectedOutput", default)]
+    pub expected_output: Option<String>,
+    #[serde(rename = "orchestratorReason", default)]
+    pub orchestrator_reason: Option<String>,
+}
+
+fn default_is_preset() -> bool {
+    true
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -99,6 +111,14 @@ pub struct PhaseTemplateBundle {
     pub created_at: String,
     #[serde(rename = "updatedAt")]
     pub updated_at: String,
+    #[serde(rename = "isPreset", default = "default_is_preset")]
+    pub is_preset: bool,
+    #[serde(default)]
+    pub origin: Option<String>,
+    #[serde(default)]
+    pub goal: Option<String>,
+    #[serde(rename = "processText", default)]
+    pub process_text: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -138,12 +158,6 @@ pub struct BudgetRuleBundle {
 pub struct SettingsBundle {
     #[serde(rename = "editorBinary")]
     pub editor_binary: Option<String>,
-    #[serde(rename = "enableParallelAgents")]
-    pub enable_parallel_agents: Option<String>,
-    #[serde(rename = "maxParallelism")]
-    pub max_parallelism: Option<String>,
-    #[serde(rename = "providerPricingConfig")]
-    pub provider_pricing_config: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -209,16 +223,14 @@ impl From<DbError> for ConfigExportError {
 // export_config command
 // ---------------------------------------------------------------------------
 
-pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportError> {
-    let conn = state.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
-
+pub fn export_config(conn: &rusqlite::Connection) -> Result<ConfigBundle, ConfigExportError> {
     // workspaces + overrides + projects
     let workspaces = {
         let mut stmt = conn.prepare(
             "SELECT id, name, created_at, updated_at,
                     default_provider_id, default_workflow_id, default_branch_prefix, parallel_enabled
              FROM workspaces
-             WHERE deleted_at IS NULL
+             WHERE deleted_at IS NULL AND disconnected_at IS NULL
              ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -242,7 +254,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
         let mut project_stmt = conn.prepare(
             "SELECT id, name, root_path, kind, created_at, updated_at
              FROM projects
-             WHERE workspace_id = ?1
+             WHERE workspace_id = ?1 AND disconnected_at IS NULL
              ORDER BY created_at ASC, id ASC",
         )?;
         for workspace in &mut workspaces {
@@ -290,8 +302,10 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
     // workflows + steps
     let phase_templates = {
         let mut stmt = conn.prepare(
-            "SELECT id, workspace_id, name, description, created_at, updated_at
+            "SELECT id, workspace_id, name, description, created_at, updated_at,
+                    is_preset, origin, goal, process_text
              FROM workflows
+             WHERE deleted_at IS NULL
              ORDER BY workspace_id, created_at ASC",
         )?;
         let template_rows = stmt.query_map([], |row| {
@@ -302,15 +316,31 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 row.get::<_, String>(3)?,
                 row.get::<_, i64>(4)?,
                 row.get::<_, i64>(5)?,
+                row.get::<_, i64>(6)?,
+                row.get::<_, Option<String>>(7)?,
+                row.get::<_, Option<String>>(8)?,
+                row.get::<_, Option<String>>(9)?,
             ))
         })?;
         let mut templates: Vec<PhaseTemplateBundle> = Vec::new();
         for row in template_rows {
-            let (id, workspace_id, name, description, created_at_ms, updated_at_ms) = row?;
+            let (
+                id,
+                workspace_id,
+                name,
+                description,
+                created_at_ms,
+                updated_at_ms,
+                is_preset_raw,
+                origin,
+                goal,
+                process_text,
+            ) = row?;
             let mut def_stmt = conn.prepare(
-                "SELECT id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override
+                "SELECT id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override,
+                        role, effort, expected_output, orchestrator_reason
                  FROM steps
-                 WHERE workflow_id = ?1
+                 WHERE workflow_id = ?1 AND deleted_at IS NULL
                  ORDER BY ordinal ASC",
             )?;
             let defs = def_stmt
@@ -323,6 +353,10 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                         prompt_prefix: r.get(4)?,
                         provider_override: r.get(5)?,
                         model_override: r.get(6)?,
+                        role: r.get(7)?,
+                        effort: r.get(8)?,
+                        expected_output: r.get(9)?,
+                        orchestrator_reason: r.get(10)?,
                     })
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
@@ -334,6 +368,10 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
                 steps: defs,
                 created_at: ms_col_to_iso(created_at_ms),
                 updated_at: ms_col_to_iso(updated_at_ms),
+                is_preset: is_preset_raw != 0,
+                origin,
+                goal,
+                process_text,
             });
         }
         templates
@@ -345,7 +383,7 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
             "SELECT id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
                     decision, priority, created_at, updated_at
              FROM permission_rules
-             WHERE scope IN ('global', 'workspace')
+             WHERE scope IN ('global', 'workspace') AND deleted_at IS NULL
              ORDER BY scope, priority DESC, created_at ASC",
         )?;
         let rows = stmt.query_map([], |row| {
@@ -397,9 +435,6 @@ pub fn export_config(state: State<'_, Db>) -> Result<ConfigBundle, ConfigExportE
         }
         SettingsBundle {
             editor_binary: get_setting(&conn, "editor.binary"),
-            enable_parallel_agents: get_setting(&conn, "experimental.enable_parallel_agents"),
-            max_parallelism: get_setting(&conn, "experimental.max_parallelism"),
-            provider_pricing_config: get_setting(&conn, "provider.pricing_config"),
         }
     };
 
@@ -445,7 +480,7 @@ pub struct ImportResult {
 }
 
 pub fn import_config(
-    state: State<'_, Db>,
+    conn: &rusqlite::Connection,
     bundle: ConfigBundle,
 ) -> Result<ImportResult, ConfigExportError> {
     // Validate schema version.
@@ -517,8 +552,6 @@ pub fn import_config(
     }
 
     // Apply in a single transaction; rollback on any failure.
-    let conn = state.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
-
     conn.execute_batch("BEGIN")?;
 
     let result = (|| -> Result<ImportStats, rusqlite::Error> {
@@ -552,25 +585,44 @@ pub fn import_config(
                 ],
             )?;
             for p in workspace_projects(w) {
-                conn.execute(
-                    "INSERT INTO projects
-                       (id, workspace_id, name, root_path, kind, created_at, updated_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-                     ON CONFLICT(id) DO UPDATE SET
-                       name       = excluded.name,
-                       root_path  = excluded.root_path,
-                       kind       = excluded.kind,
-                       updated_at = excluded.updated_at",
-                    rusqlite::params![
-                        p.id,
-                        w.id,
-                        p.name,
-                        p.root_path,
-                        p.kind,
-                        iso_to_ms(&p.created_at).unwrap_or(created_ms),
-                        iso_to_ms(&p.updated_at).unwrap_or(updated_ms),
-                    ],
-                )?;
+                let updated_at_ms = iso_to_ms(&p.updated_at).unwrap_or(updated_ms);
+                let existing_id: Option<String> = conn
+                    .query_row(
+                        "SELECT id FROM projects WHERE root_path = ?1",
+                        rusqlite::params![p.root_path],
+                        |row| row.get(0),
+                    )
+                    .ok();
+                match existing_id {
+                    Some(existing) if existing != p.id => {
+                        conn.execute(
+                            "UPDATE projects SET name = ?1, kind = ?2, updated_at = ?3
+                             WHERE id = ?4",
+                            rusqlite::params![p.name, p.kind, updated_at_ms, existing],
+                        )?;
+                    }
+                    _ => {
+                        conn.execute(
+                            "INSERT INTO projects
+                               (id, workspace_id, name, root_path, kind, created_at, updated_at)
+                             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                             ON CONFLICT(id) DO UPDATE SET
+                               name       = excluded.name,
+                               root_path  = excluded.root_path,
+                               kind       = excluded.kind,
+                               updated_at = excluded.updated_at",
+                            rusqlite::params![
+                                p.id,
+                                w.id,
+                                p.name,
+                                p.root_path,
+                                p.kind,
+                                iso_to_ms(&p.created_at).unwrap_or(created_ms),
+                                updated_at_ms,
+                            ],
+                        )?;
+                    }
+                }
             }
         }
 
@@ -599,32 +651,46 @@ pub fn import_config(
         // Phase templates + definitions - upsert.
         for t in &bundle.phase_templates {
             conn.execute(
-                "INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                "INSERT INTO workflows
+                   (id, workspace_id, name, description, created_at, updated_at,
+                    is_preset, origin, goal, process_text)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
                  ON CONFLICT(id) DO UPDATE SET
                    name        = excluded.name,
                    description = excluded.description,
-                   updated_at  = excluded.updated_at",
+                   updated_at  = excluded.updated_at,
+                   is_preset   = excluded.is_preset,
+                   origin      = excluded.origin,
+                   goal        = excluded.goal,
+                   process_text = excluded.process_text",
                 rusqlite::params![
                     t.id, t.workspace_id, t.name, t.description,
                     iso_to_ms(&t.created_at).unwrap_or(now_ms),
                     iso_to_ms(&t.updated_at).unwrap_or(now_ms),
+                    if t.is_preset { 1 } else { 0 },
+                    t.origin, t.goal, t.process_text,
                 ],
             )?;
             for d in &t.steps {
                 conn.execute(
                     "INSERT INTO steps
-                       (id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+                       (id, workflow_id, ordinal, name, prompt_prefix, provider_override, model_override,
+                        role, effort, expected_output, orchestrator_reason)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
                      ON CONFLICT(id) DO UPDATE SET
                        ordinal          = excluded.ordinal,
                        name             = excluded.name,
                        prompt_prefix    = excluded.prompt_prefix,
                        provider_override = excluded.provider_override,
-                       model_override   = excluded.model_override",
+                       model_override   = excluded.model_override,
+                       role             = excluded.role,
+                       effort           = excluded.effort,
+                       expected_output  = excluded.expected_output,
+                       orchestrator_reason = excluded.orchestrator_reason",
                     rusqlite::params![
                         d.id, d.workflow_id, d.ordinal, d.name,
                         d.prompt_prefix, d.provider_override, d.model_override,
+                        d.role, d.effort, d.expected_output, d.orchestrator_reason,
                     ],
                 )?;
             }
@@ -682,21 +748,8 @@ pub fn import_config(
         }
 
         // Settings - upsert only non-null values.
-        let setting_pairs: &[(&str, Option<&str>)] = &[
-            ("editor.binary", bundle.settings.editor_binary.as_deref()),
-            (
-                "experimental.enable_parallel_agents",
-                bundle.settings.enable_parallel_agents.as_deref(),
-            ),
-            (
-                "experimental.max_parallelism",
-                bundle.settings.max_parallelism.as_deref(),
-            ),
-            (
-                "provider.pricing_config",
-                bundle.settings.provider_pricing_config.as_deref(),
-            ),
-        ];
+        let setting_pairs: &[(&str, Option<&str>)] =
+            &[("editor.binary", bundle.settings.editor_binary.as_deref())];
         for (key, val) in setting_pairs {
             if let Some(v) = val {
                 conn.execute(
@@ -810,12 +863,37 @@ fn normalized_kind(kind: &str) -> String {
 // File-based commands (avoid requiring tauri-plugin-fs on the JS side)
 // ---------------------------------------------------------------------------
 
+fn write_config_file(path: &str, json: &str) -> Result<(), ConfigExportError> {
+    use std::io::Write;
+    let mut options = std::fs::OpenOptions::new();
+    options.write(true).create(true).truncate(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
+    }
+    let mut file = options
+        .open(path)
+        .map_err(|e| ConfigExportError::Validation(e.to_string()))?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        file.set_permissions(std::fs::Permissions::from_mode(0o600))
+            .map_err(|e| ConfigExportError::Validation(e.to_string()))?;
+    }
+    file.write_all(json.as_bytes())
+        .map_err(|e| ConfigExportError::Validation(e.to_string()))
+}
+
 #[tauri::command]
 pub async fn export_config_to_file(app: AppHandle, path: String) -> Result<(), ConfigExportError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let bundle = export_config(app.state::<Db>())?;
+        let db = app.state::<Db>();
+        let conn = db.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
+        let bundle = export_config(&conn)?;
+        drop(conn);
         let json = serde_json::to_string_pretty(&bundle)?;
-        std::fs::write(&path, json).map_err(|e| ConfigExportError::Validation(e.to_string()))
+        write_config_file(&path, &json)
     })
     .await
     .map_err(|e| ConfigExportError::Validation(e.to_string()))?
@@ -830,7 +908,9 @@ pub async fn import_config_from_file(
         let raw = std::fs::read_to_string(&path)
             .map_err(|e| ConfigExportError::Validation(e.to_string()))?;
         let bundle: ConfigBundle = serde_json::from_str(&raw)?;
-        import_config(app.state::<Db>(), bundle)
+        let db = app.state::<Db>();
+        let conn = db.0.lock().map_err(|_| ConfigExportError::Poisoned)?;
+        import_config(&conn, bundle)
     })
     .await
     .map_err(|e| ConfigExportError::Validation(e.to_string()))?
@@ -931,9 +1011,6 @@ mod tests {
             budget_rules: vec![],
             settings: SettingsBundle {
                 editor_binary: Some("code".to_string()),
-                enable_parallel_agents: Some("true".to_string()),
-                max_parallelism: Some("4".to_string()),
-                provider_pricing_config: None,
             },
         };
         let json = serde_json::to_string(&bundle).expect("serialize failed");
@@ -960,12 +1037,7 @@ mod tests {
             phase_templates: vec![],
             permission_rules: vec![],
             budget_rules: vec![],
-            settings: SettingsBundle {
-                editor_binary: None,
-                enable_parallel_agents: None,
-                max_parallelism: None,
-                provider_pricing_config: None,
-            },
+            settings: SettingsBundle { editor_binary: None },
         };
         // Simulate the schema version check (no DB needed).
         let result: Result<(), _> = if bundle.schema_version != SCHEMA_VERSION {
@@ -1007,5 +1079,71 @@ mod tests {
         }
         assert_eq!(errors.len(), 1);
         assert!(errors[0].message.contains("session"));
+    }
+
+    fn export_conn() -> rusqlite::Connection {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE workspaces (
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL, default_provider_id TEXT, default_workflow_id TEXT,
+                default_branch_prefix TEXT, parallel_enabled INTEGER, deleted_at INTEGER,
+                disconnected_at INTEGER
+            );
+            CREATE TABLE projects (
+                id TEXT PRIMARY KEY, workspace_id TEXT, name TEXT NOT NULL, root_path TEXT NOT NULL,
+                kind TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+                disconnected_at INTEGER
+            );
+            CREATE TABLE skills (
+                id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL,
+                description TEXT NOT NULL, file_path TEXT NOT NULL, body TEXT NOT NULL,
+                frontmatter_json TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+            );
+            CREATE TABLE workflows (
+                id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL,
+                description TEXT NOT NULL, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
+                is_preset INTEGER NOT NULL DEFAULT 1, origin TEXT, goal TEXT, process_text TEXT,
+                deleted_at INTEGER
+            );
+            CREATE TABLE steps (
+                id TEXT PRIMARY KEY, workflow_id TEXT NOT NULL, ordinal INTEGER NOT NULL,
+                name TEXT NOT NULL, prompt_prefix TEXT, provider_override TEXT, model_override TEXT,
+                role TEXT, effort TEXT, expected_output TEXT, orchestrator_reason TEXT,
+                deleted_at INTEGER
+            );
+            CREATE TABLE permission_rules (
+                id TEXT PRIMARY KEY, scope TEXT NOT NULL, workspace_id TEXT, session_id TEXT,
+                pattern_tool TEXT NOT NULL, pattern_args_matcher TEXT, decision TEXT NOT NULL,
+                priority INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL, deleted_at INTEGER
+            );
+            CREATE TABLE budget_rules (
+                id TEXT PRIMARY KEY, provider TEXT, period TEXT NOT NULL, cap_usd REAL NOT NULL,
+                alert_threshold_pct REAL, created_at INTEGER NOT NULL
+            );
+            CREATE TABLE settings (
+                key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL
+            );",
+        )
+        .unwrap();
+        conn
+    }
+
+    #[test]
+    fn export_excludes_soft_deleted_permission_rules() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO permission_rules
+               (id, scope, workspace_id, session_id, pattern_tool, pattern_args_matcher,
+                decision, priority, created_at, updated_at, deleted_at)
+             VALUES
+               ('live', 'global', NULL, NULL, 'Bash', NULL, 'allow', 0, 1, 1, NULL),
+               ('gone', 'global', NULL, NULL, 'Bash', NULL, 'deny', 0, 1, 1, 1);",
+        )
+        .unwrap();
+        let bundle = export_config(&conn).expect("export failed");
+        assert_eq!(bundle.permission_rules.len(), 1);
+        assert_eq!(bundle.permission_rules[0].id, "live");
     }
 }
