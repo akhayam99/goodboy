@@ -267,14 +267,14 @@ describe('ChatInput, first message', () => {
     expect(document.activeElement).toBe(textarea);
   });
 
-  it('keeps the general placeholder once the agent has a turn', () => {
+  it('asks to reply to the agent by name once its first turn has run', () => {
     mockStore.setState({
       sessionPhaseRuns: { 'session-1': [{ id: 'agent-1', name: 'Scout', kind: 'scout' }] },
       agentRunHistory: { 'agent-1': [{}] } as unknown as Record<string, never>,
     });
     render(<ChatInput session={makeSession()} />);
 
-    expect(screen.getByRole('textbox').getAttribute('placeholder')).toContain('Message Claude');
+    expect(screen.getByRole('textbox').getAttribute('placeholder')).toBe('Reply to Scout');
     mockStore.setState({ agentRunHistory: {} });
   });
 });
@@ -294,24 +294,6 @@ describe('ChatInput, input wiring', () => {
     render(<ChatInput session={makeSession()} />);
     const textarea = screen.getByRole('textbox');
     expect((textarea as HTMLTextAreaElement).disabled).toBe(false);
-  });
-
-  it('shows the session cost badge in the footer once spend accrues', () => {
-    mockStore.setState({
-      sessionTelemetry: {
-        'session-1': [
-          { kind: 'turn', estimatedCostUsd: 1.5 },
-          { kind: 'summarizer', estimatedCostUsd: 9 },
-        ],
-      },
-    });
-    render(<ChatInput session={makeSession()} />);
-    expect(screen.getByTitle(/session spend: \$1\.50/i)).toBeDefined();
-  });
-
-  it('hides the session cost badge when there is no spend yet', () => {
-    render(<ChatInput session={makeSession()} />);
-    expect(screen.queryByTitle(/session spend/i)).toBeNull();
   });
 
   it('textarea stays enabled when session is running so user can queue next message', () => {

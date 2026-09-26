@@ -3,21 +3,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-const { resolveMock, featuresState } = vi.hoisted(() => ({
+const { resolveMock } = vi.hoisted(() => ({
   resolveMock: vi.fn(),
-  featuresState: { SESSION_FEATURES: { budget: true } },
 }));
 
 vi.mock('../../../../features/providers/routing', () => ({
   resolveProviderForTurn: resolveMock,
 }));
-vi.mock('../../../../shared/lib/features', () => featuresState);
 
 import { RoutingIndicator } from './index';
 
 beforeEach(() => {
   resolveMock.mockReset();
-  featuresState.SESSION_FEATURES.budget = true;
 });
 afterEach(cleanup);
 

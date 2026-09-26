@@ -17,12 +17,17 @@ export type SuggestionKind =
   | 'answer-questions'
   | 'mount-project';
 
+export type NextStepBand = 0 | 1 | 2 | 3;
+
 type SuggestionBase = {
   readonly id: string;
   readonly priority: number;
   readonly title: string;
   readonly detail?: string;
   readonly sessionId: SessionId;
+  readonly band: NextStepBand;
+  readonly fingerprint: string;
+  readonly targetKey: string | null;
 };
 
 export type RebaseSuggestionTarget = {

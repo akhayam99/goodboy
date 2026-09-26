@@ -1,8 +1,10 @@
 import type { RetryRunParams } from '../../retryRun';
 import { memo, type ReactNode } from 'react';
-import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { transcriptItemEqual } from '../../utils/transcriptItemEqual';
+import type { PermissionState } from '../../utils/toolStatus';
+import type { TurnOutcome } from '../../utils/turnOutcome';
 import { ArtifactBlockCard } from '../ArtifactBlockCard';
 import { ArtifactCaptureNoticeCard } from '../ArtifactCaptureNoticeCard';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
@@ -14,11 +16,11 @@ import { HandoffBlock } from '../HandoffBlock';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { ToolCallCard } from '../ToolCallCard';
+import { TurnFooter } from '../TurnFooter';
 import { AssistantText } from './AssistantText';
 import { DecisionNoteRow } from './DecisionNoteRow';
 import { TranscriptErrorRow } from './TranscriptErrorRow';
 import { FileEditBlock } from './FileEditBlock';
-import { UsageRow } from './UsageRow';
 import { UserText } from './UserText';
 
 type TranscriptCardProps = {
@@ -30,6 +32,10 @@ type TranscriptCardProps = {
   readonly onOpenDiff?: (filePath: string) => void;
   readonly onRetryRun?: (params: RetryRunParams) => void;
   readonly retryingRunId?: ProviderRunId | null;
+  readonly activeRunId?: ProviderRunId | null;
+  readonly permission?: PermissionState;
+  readonly turnOutcome?: TurnOutcome;
+  readonly turnStartedAt?: IsoDateTime | null;
 };
 
 const TranscriptCardImpl = ({
@@ -41,6 +47,10 @@ const TranscriptCardImpl = ({
   onOpenDiff,
   onRetryRun,
   retryingRunId = null,
+  activeRunId,
+  permission,
+  turnOutcome,
+  turnStartedAt,
 }: TranscriptCardProps): ReactNode => {
   switch (item.kind) {
     case 'user_text':
@@ -64,7 +74,7 @@ const TranscriptCardImpl = ({
     case 'artifact_block':
       return <ArtifactBlockCard item={item} sessionId={sessionId} agentId={agentId} />;
     case 'tool_call':
-      return <ToolCallCard item={item} />;
+      return <ToolCallCard item={item} activeRunId={activeRunId} permission={permission} />;
     case 'file_edit':
       return (
         <FileEditBlock
@@ -75,7 +85,15 @@ const TranscriptCardImpl = ({
         />
       );
     case 'usage':
-      return <UsageRow usage={item.usage} />;
+      return (
+        <TurnFooter
+          item={item}
+          sessionId={sessionId}
+          agentId={agentId}
+          outcome={turnOutcome}
+          startedAt={turnStartedAt}
+        />
+      );
     case 'error': {
       const errorRunId = item.runId;
       return (
@@ -142,5 +160,10 @@ export const TranscriptCard = memo(
     prev.onRefreshAuth === next.onRefreshAuth &&
     prev.onOpenDiff === next.onOpenDiff &&
     prev.onRetryRun === next.onRetryRun &&
-    prev.retryingRunId === next.retryingRunId,
+    prev.retryingRunId === next.retryingRunId &&
+    prev.activeRunId === next.activeRunId &&
+    prev.permission?.requested === next.permission?.requested &&
+    prev.permission?.decision === next.permission?.decision &&
+    prev.turnOutcome === next.turnOutcome &&
+    prev.turnStartedAt === next.turnStartedAt,
 );

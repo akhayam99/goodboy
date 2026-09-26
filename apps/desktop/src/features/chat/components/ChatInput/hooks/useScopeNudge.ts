@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import type { IsoDateTime, Session } from '@goodboy/types';
 import { insertNudgeEvent, updateNudgeEventOutcome, type NudgeOutcome } from '@goodboy/db';
+import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { tauriDatabase } from '../../../../../shared/lib/db';
 import type { AgentKind } from '../../../../session/agent-kind';
+import { hasActiveWorkflowRun } from '../../../../workflows/activeWorkflowRuns';
 import { detectScopeMismatch, type ScopeMismatch } from '../../../utils/scope-mismatch';
 import type { PendingAttachment } from '../lib';
 
@@ -21,6 +23,7 @@ type UseScopeNudgeArgs = {
 export const useScopeNudge = ({ session, activeAgentKind, isRunning }: UseScopeNudgeArgs) => {
   const [scopePending, setScopePending] = useState<ScopePending | null>(null);
   const [scopeNudgeEventId, setScopeNudgeEventId] = useState<string | null>(null);
+  const sessionAgents = useAppStore((s) => s.sessionPhaseRuns[session.id] ?? EMPTY_ARRAY);
 
   const recordScopeOutcome = async (outcome: NudgeOutcome) => {
     if (!scopeNudgeEventId) return;
@@ -43,7 +46,7 @@ export const useScopeNudge = ({ session, activeAgentKind, isRunning }: UseScopeN
       isRunning ||
       scopePending !== null ||
       activeAgentKind === null ||
-      session.workflowRuns.length > 0
+      hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents: sessionAgents })
     ) {
       return false;
     }

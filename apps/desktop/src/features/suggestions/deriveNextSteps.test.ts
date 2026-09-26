@@ -9,7 +9,7 @@ import type {
   StepId,
   WorkflowRunId,
 } from '@goodboy/types';
-import { deriveSessionSuggestions } from './deriveSessionSuggestions';
+import { deriveNextSteps } from './deriveNextSteps';
 import type {
   SuggestionMountEvent,
   SuggestionMountEventKind,
@@ -59,7 +59,7 @@ const derive = ({
   mainDistance?: number | null;
   mountEvents?: ReadonlyArray<SuggestionMountEvent>;
 }) =>
-  deriveSessionSuggestions({
+  deriveNextSteps({
     sessionId,
     workflowRuns: [
       {
@@ -89,7 +89,7 @@ const derive = ({
     ],
   });
 
-describe('deriveSessionSuggestions', () => {
+describe('deriveNextSteps', () => {
   it('ranks all suggestion kinds', () => {
     const suggestions = derive({
       openQuestionCount: 2,
@@ -213,7 +213,7 @@ describe('deriveSessionSuggestions', () => {
       };
       readonly mainDistance?: number;
     }) =>
-      deriveSessionSuggestions({
+      deriveNextSteps({
         sessionId,
         workflowRuns: [],
         plans: [],
@@ -249,7 +249,7 @@ describe('deriveSessionSuggestions', () => {
   });
 
   it('collapses two mounts of one project into one ordered rebase suggestion', () => {
-    const suggestions = deriveSessionSuggestions({
+    const suggestions = deriveNextSteps({
       sessionId,
       workflowRuns: [],
       plans: [],
@@ -295,7 +295,7 @@ describe('deriveSessionSuggestions', () => {
   });
 
   it('sorts several projects by distance and then project name without reordering ties', () => {
-    const suggestions = deriveSessionSuggestions({
+    const suggestions = deriveNextSteps({
       sessionId,
       workflowRuns: [],
       plans: [],

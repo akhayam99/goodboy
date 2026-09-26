@@ -202,9 +202,7 @@ groups: Work (agents, workflows, questions, resolvers), Outputs (artifacts
 with plans, reports and wireframes, pull requests, issues) and Session log
 (branches and worktrees, decisions, session events). Each row shows how many
 of its kind the session holds, and how many of those rows the filter is
-hiding when the toggle is off. Suggestions live outside the filter: the
-Suggested next strip never disappears behind a preset. Presets set the whole
-filter in one click: **Everything**, **Work**, and **Needs you**, which shows
+hiding when the toggle is off. Presets set the whole filter in one click: **Everything**, **Work**, and **Needs you**, which shows
 only what waits on you whatever the filter hides and lasts until you leave
 it. A saved filter that matches the old Work preset migrates onto the new
 one, resolvers included. The trigger counts hidden rows, not hidden kinds
@@ -215,9 +213,44 @@ visible, tagged "Shown because you started it", until you leave the session;
 the next visit it follows the filter like every other row. The filter shows
 once the feed holds more than one kind of row. **Start agent** is the one
 primary, and its menu starts a workflow, a report or a wireframe. When the
-activity column is narrower than 28rem, the needs-you chip keeps its count,
-Filter keeps its icon and the Suggested next strip keeps its title and
-action.
+activity column is narrower than 28rem, the needs-you chip keeps its count
+and Filter keeps its icon. Suggestions live in **Next steps**, above Activity
+and outside its filter, not as a row inside the feed.
+
+## Next steps
+
+One engine, `deriveNextSteps` (`features/suggestions/`), decides everything
+the app suggests doing next. It owns the concept: nothing else derives a
+suggestion, and every surface that shows one calls the same
+`useSuggestionActions` resolver, so clicking "Continue" does the same thing
+whether you clicked it on the board or in the session overview.
+
+- **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
+  in the session overview, above Activity, outside its filter and its
+  grouping: a suggestion is not activity, it is a pointer to what activity
+  should happen next. A new session shows the kickoff instead; the two never
+  compete for the same moment.
+- Every suggestion carries a **band** (0 waits on you, 1 unblocks something,
+  2 ships something, 3 improves something), a **why** (the second line, the
+  concrete reason), a **fingerprint** (kind, object, trigger version) and a
+  **target key** (the object it is about, when it has one). One winning
+  suggestion per target key survives per render: `dedupeByTargetKey` keeps
+  whichever has the lower band number.
+- A suggestion you acted on does not come back for the same fingerprint;
+  "Not now" is scoped the same way. Three "Not now" on the same kind inside
+  a workspace in 14 days, with no acceptance between them, moves that kind
+  behind everything else instead of leading (`shouldDemote`,
+  `nextStepGates.ts`): the only learning this engine does, and it resets
+  the moment one of that kind is accepted.
+- Six suggestion kinds ship today: answer open questions, continue a
+  workflow's ready step, fix review conversations, rebase a project, run a
+  ready plan, add a proposed project. Eleven more (approve a permission,
+  sign in, retry a failed run, fix CI, push, open or ready a pull request,
+  merge, close a finished worktree, and more) are a later addition to the
+  same engine, not a second one.
+- The board card's "Continue" and the Next surface's primary action for a
+  ready workflow step both call `activateWorkflowAgent` on the same pending
+  agent; neither one just opens a panel and leaves starting the step to you.
 
 ## Agents
 

@@ -930,4 +930,21 @@ describe('RoutingPicker', () => {
     expect(providerRow?.className).toContain('[&>*]:flex-1');
     expect(providerButton.className).toContain('min-w-0');
   });
+
+  it('renders the budget slot inside the trigger, next to the model summary', () => {
+    render(
+      <RoutingPicker
+        {...baseProps}
+        variant="pill"
+        budget={<span data-testid="budget-slot">18% left</span>}
+      />,
+    );
+    expect(screen.getByTestId('budget-slot')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /routing/i }).textContent).toContain('18% left');
+  });
+
+  it('omits the budget slot when the caller passes none', () => {
+    render(<RoutingPicker {...baseProps} variant="pill" />);
+    expect(screen.queryByTestId('budget-slot')).toBeNull();
+  });
 });

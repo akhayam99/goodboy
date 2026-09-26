@@ -34,6 +34,8 @@ import {
 import { reduceTranscript } from '../../utils/transcript-items';
 import { clusterOperations } from '../../utils/cluster-operations';
 import { classifyThinkingContext } from '../../utils/thinking-context';
+import { permissionFor, toolStatus } from '../../utils/toolStatus';
+import { turnFootersFor } from '../../utils/turnOutcome';
 import { AuthRequiredCallout } from '../AuthRequiredCallout';
 import { ChatInput } from '../ChatInput';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
@@ -202,10 +204,25 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
   });
   const agentKind = agentState?.kind ?? session.state.kind;
   const isEnded = agentKind === 'ended';
+  const turnStateForRun = agentState ?? session.state;
+  const activeRunId =
+    turnStateForRun.kind === 'running' || turnStateForRun.kind === 'blocked'
+      ? turnStateForRun.runId
+      : null;
+  const turnFooters = useMemo(() => turnFootersFor({ items, activeRunId }), [items, activeRunId]);
   const lastItem = items[items.length - 1];
   const lastRow = rows[rows.length - 1];
   const lastClusterRunning =
-    lastRow?.kind === 'operations' && lastRow.items.some((i) => i.kind === 'tool_call' && !i.ended);
+    lastRow?.kind === 'operations' &&
+    lastRow.items.some(
+      (i) =>
+        i.kind === 'tool_call' &&
+        toolStatus({
+          item: i,
+          activeRunId,
+          permission: permissionFor({ items: lastRow.items, toolUseId: i.toolUseId }),
+        }) === 'running',
+    );
   const isThinking =
     agentKind === 'running' &&
     (lastItem?.kind ?? 'user_text') !== 'assistant_text' &&
@@ -469,6 +486,8 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
                   onRetryRun={(params) => void handleRetryRun(params)}
                   retryingRunId={retryingRunId}
                   mountSuggestionsByRun={mountSuggestionsByRun}
+                  activeRunId={activeRunId}
+                  turnFooters={turnFooters}
                 />
               </ChatImageLoaderProvider>
             </ul>

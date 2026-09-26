@@ -38,3 +38,25 @@ export const splitWorkflowRuns = ({ attachedRuns, agents }: Params) => {
 
   return { agentsByRunId, discarded, completed, active };
 };
+
+const CONCLUDED_AGENT_STATUSES = new Set(['completed', 'failed', 'skipped', 'stopped']);
+
+type HasActiveWorkflowRunParams = {
+  readonly workflowRuns: ReadonlyArray<WorkflowRun>;
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+export const hasActiveWorkflowRun = ({
+  workflowRuns,
+  agents,
+}: HasActiveWorkflowRunParams): boolean =>
+  workflowRuns.some((run) => {
+    if (run.discardedAt != null) {
+      return false;
+    }
+    const runAgents = agents.filter((agent) => agent.workflowRunId === run.id);
+    if (runAgents.length === 0) {
+      return true;
+    }
+    return runAgents.some((agent) => !CONCLUDED_AGENT_STATUSES.has(agent.status));
+  });

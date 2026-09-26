@@ -389,11 +389,9 @@ open. Queued children of an agent you closed draw as skipped. Both shapes come
 from each row's `RowState` in `buildTimelineStream`, not from a second status
 check.
 
-Suggestions are not scheduled work, so they never draw a dash. They sit in one
-**Suggested next** strip above NOW, on a `bg-subtle` surface aligned with the
-row text, with no rail and no node: an eyebrow, then one line per suggestion
-with its glyph, title, detail and one action. A suggestion leaves the strip
-once its work exists, for example a plan once an agent consumes it.
+Suggestions are not scheduled work, so they never draw a dash and never sit in
+the activity feed. They live in the Next steps slot (`NextStepSlot`) above
+Activity, outside its filter, as `docs/concepts.md` (Next steps) describes.
 
 The workflow detail uses the same vocabulary for one run. Its run tree has no
 session spine: `layoutTimelineRail` runs with `hasSpine: false`, the run lane
@@ -412,10 +410,11 @@ clock glyph.
 ### Work nodes and row states
 
 Every surface that draws a sequence of work (the activity feed, the workflow
-run tree, the agents on a project) draws its nodes with one primitive,
-`WorkNode` in `packages/ui/src/components/WorkTree/`. It is 20px on every
-grade, sits on the canvas so the lane never shows through it, and knows
-nothing about agents: the caller hands it a state, a mark and a label.
+run tree, the agents on a project, the transcript's status column) draws its
+nodes with one primitive, `WorkNode` in `packages/ui/src/components/WorkTree/`.
+It knows nothing about agents: the caller hands it a state, a mark, a label
+and a `size` (`md`, 20px, the default; `sm`, 14px, for a transcript row's
+icon column), and sits on the canvas so the lane never shows through it.
 
 | node       | ring                                    | centre                   |
 | ---------- | --------------------------------------- | ------------------------ |
@@ -424,12 +423,19 @@ nothing about agents: the caller hands it a state, a mark and a label.
 | `running`  | 2px `border-soft` track + `spin-border` | local index, or info dot |
 | `question` | 1.5px `warning`                         | `?`, warning             |
 | `budget`   | 1.5px `warning`                         | `$`, warning             |
+| `approval` | 1.5px `warning`                         | shield, warning          |
 | `failed`   | 1.5px `danger`                          | `!`, danger              |
 | `done`     | 1px `success` over a `success/18` fill  | check, success           |
 | `closed`   | 1px `border`                            | check, muted             |
 | `stopped`  | 1px `border`                            | small square, muted      |
 | `skipped`  | 1px `border-soft`                       | dash, faint              |
 | `marker`   | `ring-1` in the concept tone            | the concept glyph        |
+
+`approval` is a pending permission request without a decision yet: a tool
+call waiting on you, distinct from `question` (an open question waiting on
+you) even though both use the warning tone. The transcript also gives a
+turn's `blocked` state its own node this way instead of sharing `question`'s
+glyph.
 
 A node can also take `progress`, measured active time over the usual time,
 from 0 to 1 and clamped. A `running` node with progress draws a 2px `info` arc

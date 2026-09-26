@@ -22,10 +22,25 @@ export const CHAT_PREFIX_RE = new RegExp(
   `^\\s*[${CHAT_PREFIXES.map((prefix) => escapeForClass(prefix.symbol)).join('')}][^\\s]*$`,
 );
 
-export const CHAT_PLACEHOLDER = [
-  'Message Claude',
-  ...CHAT_PREFIXES.map((prefix) => `${prefix.symbol} ${prefix.noun}`),
-].join(' · ');
+type ComposerPlaceholderParams = {
+  readonly isRunning: boolean;
+  readonly firstMessagePrompt: string | null;
+  readonly roleLabel: string | null;
+};
+
+export const composerPlaceholder = ({
+  isRunning,
+  firstMessagePrompt,
+  roleLabel,
+}: ComposerPlaceholderParams): string => {
+  if (firstMessagePrompt !== null) {
+    return firstMessagePrompt;
+  }
+  if (isRunning) {
+    return roleLabel !== null ? `Queue a message for ${roleLabel}` : 'Queue a message';
+  }
+  return roleLabel !== null ? `Reply to ${roleLabel}` : 'Reply';
+};
 
 export const VALID_PROVIDERS = [
   'anthropic',

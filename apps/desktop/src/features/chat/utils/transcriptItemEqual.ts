@@ -21,7 +21,8 @@ export const transcriptItemEqual = ({ previous, next }: ItemPair): boolean => {
     return (
       previous.ended === next.ended &&
       previous.isError === next.isError &&
-      previous.output === next.output
+      previous.output === next.output &&
+      previous.endedAt === next.endedAt
     );
   }
   if (previous.kind === 'assistant_text' && next.kind === 'assistant_text') {
@@ -33,6 +34,9 @@ export const transcriptItemEqual = ({ previous, next }: ItemPair): boolean => {
       previous.artifactKind === next.artifactKind &&
       previous.title === next.title
     );
+  }
+  if (previous.kind === 'usage' && next.kind === 'usage') {
+    return previous.at === next.at && previous.usage === next.usage;
   }
   return true;
 };

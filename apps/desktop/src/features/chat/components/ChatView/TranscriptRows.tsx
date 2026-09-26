@@ -4,6 +4,7 @@ import type { AgentId, OpenQuestion, ProviderRunId, SessionId } from '@goodboy/t
 import type { TranscriptRow } from '../../utils/cluster-operations';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import type { TranscriptItem } from '../../utils/transcript-items';
+import type { TurnFooterInfo } from '../../utils/turnOutcome';
 import { OperationsCluster } from '../OperationsCluster';
 import { ThinkingIndicator } from '../ThinkingIndicator';
 import { TranscriptCard } from '../TranscriptCards';
@@ -24,6 +25,8 @@ type Props = {
   onRetryRun: (params: RetryRunParams) => void;
   retryingRunId: ProviderRunId | null;
   mountSuggestionsByRun?: ReadonlyMap<ProviderRunId, ReactNode>;
+  activeRunId?: ProviderRunId | null;
+  turnFooters?: ReadonlyMap<ProviderRunId, TurnFooterInfo>;
 };
 
 const RUN_BEARING_KINDS = new Set<TranscriptItem['kind']>([
@@ -69,6 +72,8 @@ export const TranscriptRows = ({
   onRetryRun,
   retryingRunId,
   mountSuggestionsByRun,
+  activeRunId,
+  turnFooters,
 }: Props) => {
   const out: ReactNode[] = [];
   const suggestions = mountSuggestionsByRun ?? new Map<ProviderRunId, ReactNode>();
@@ -161,6 +166,7 @@ export const TranscriptRows = ({
           onOpenDiff={onOpenDiff}
           onRetryRun={onRetryRun}
           retryingRunId={retryingRunId}
+          activeRunId={activeRunId}
         />,
       );
       return;
@@ -178,6 +184,7 @@ export const TranscriptRows = ({
             onOpenDiff={onOpenDiff}
             onRetryRun={onRetryRun}
             retryingRunId={retryingRunId}
+            activeRunId={activeRunId}
           />
         ) : (
           <TranscriptCard
@@ -189,6 +196,15 @@ export const TranscriptRows = ({
             onOpenDiff={onOpenDiff}
             onRetryRun={onRetryRun}
             retryingRunId={retryingRunId}
+            activeRunId={activeRunId}
+            turnOutcome={
+              row.item.kind === 'usage' ? turnFooters?.get(row.item.runId)?.outcome : undefined
+            }
+            turnStartedAt={
+              row.item.kind === 'usage'
+                ? (turnFooters?.get(row.item.runId)?.startedAt ?? null)
+                : undefined
+            }
           />
         )}
       </li>,

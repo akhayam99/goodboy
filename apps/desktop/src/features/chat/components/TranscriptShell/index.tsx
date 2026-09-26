@@ -10,7 +10,6 @@ type Props = {
   readonly children: ReactNode;
   readonly className?: string;
   readonly emphasis?: boolean;
-  readonly nested?: boolean;
   readonly type?: 'button' | 'submit' | 'reset';
   readonly onClick?: MouseEventHandler<HTMLButtonElement>;
   readonly title?: string;
@@ -26,7 +25,6 @@ export const TranscriptShell = ({
   children,
   className,
   emphasis = false,
-  nested = false,
   type,
   onClick,
   title,
@@ -35,12 +33,13 @@ export const TranscriptShell = ({
   'data-testid': testId,
 }: Props) => {
   const accent = tintClasses(tone);
+  const hasRail = tone !== 'neutral';
   const shellClassName = cn(
     variant === 'boxed' && 'rounded-r-md border-l-2 py-2 pl-3 pr-3',
     variant === 'boxed' && (emphasis ? accent.border : accent.borderSoft),
     variant === 'leftBorder' &&
-      (nested ? 'border-l-2 py-2 pl-2 pr-2' : 'rounded-r-md border-l-2 py-1 pl-2 pr-2'),
-    variant === 'leftBorder' && (nested ? accent.borderSoft : accent.border),
+      (hasRail ? 'rounded-r-md border-l-2 py-1 pl-2 pr-2' : 'py-1 pl-2 pr-2'),
+    variant === 'leftBorder' && hasRail && accent.border,
     variant === 'pill' && 'rounded-full border px-2.5 py-1',
     variant === 'pill' && accent.border,
     variant === 'pill' && accent.bg,

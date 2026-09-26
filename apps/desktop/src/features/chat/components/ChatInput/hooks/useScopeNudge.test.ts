@@ -90,6 +90,16 @@ describe('useScopeNudge', () => {
     expect(intercepted).toBe(false);
   });
 
+  it('intercepts again once every workflow run on the session has concluded', async () => {
+    detectScopeMismatchSpy.mockReturnValue(MISMATCH);
+    const { result } = mount({ workflowRuns: [{ discardedAt: '2026-06-08T10:00:00.000Z' }] });
+    let intercepted = false;
+    await act(async () => {
+      intercepted = await result.current.checkAndInterceptScope('do it', []);
+    });
+    expect(intercepted).toBe(true);
+  });
+
   it('does not intercept when there is no mismatch', async () => {
     const { result } = mount();
     let intercepted = true;
