@@ -1117,3 +1117,73 @@ describe('materializing a review thread the queue has never seen', () => {
     expect(live.get().sessionResolveQueueItems[SESSION_ID] ?? []).toEqual([]);
   });
 });
+
+type ListedParams = { readonly live: ReturnType<typeof createHarness> };
+
+const listThenResolve = async ({ live }: ListedParams) => {
+  const github = githubWithThread({ threadId: 'PRRT_1', prNumber: 12 });
+  live.store.setState({ sessionGithub: github } as never);
+  await live.actions.materializeReviewThreads({
+    sessionId: SESSION_ID,
+    prNumber: 12,
+    projectId: PROJECT_ID,
+    comments: (github[SESSION_ID]?.detail.comments ?? []) as never,
+  });
+  await live.actions.persistResolveTurn({
+    sessionId: SESSION_ID,
+    agent: { ...agent, sourceThreadIds: ['PRRT_1'] },
+    assistantText: ASSISTANT_TEXT,
+  });
+  const seen = (live.get().sessionResolveQueueItems[SESSION_ID] ?? []).find(
+    ({ thread }) => thread.threadId === 'PRRT_1',
+  );
+  if (seen === undefined) {
+    throw new Error('the listed thread has no queue item');
+  }
+  return seen;
+};
+
+describe('accepting a comment the pull request read listed before the resolver ran', () => {
+  it('accepts right after the resolver reports', async () => {
+    const live = createHarness();
+    const seen = await listThenResolve({ live });
+
+    expect(seen.thread.revision).toBeGreaterThan(0);
+    await live.actions.acceptResolveQueueItem({
+      sessionId: SESSION_ID,
+      itemId: seen.item.id,
+      revision: seen.thread.revision,
+      reply: seen.thread.replyDraft ?? '',
+    });
+
+    expect(
+      (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
+        ({ thread }) => thread.threadId === 'PRRT_1',
+      )?.item,
+    ).toMatchObject({ approvalState: 'accepted', approvedRevision: seen.thread.revision });
+  });
+
+  it('still reports stale when the thread changes after the user looked', async () => {
+    const live = createHarness();
+    const seen = await listThenResolve({ live });
+    await live.actions.updateResolveThread({
+      sessionId: SESSION_ID,
+      threadId: 'PRRT_1',
+      patch: { state: 'needs_answer', question: 'Which retry budget?' },
+    });
+
+    await expect(
+      live.actions.acceptResolveQueueItem({
+        sessionId: SESSION_ID,
+        itemId: seen.item.id,
+        revision: seen.thread.revision,
+        reply: seen.thread.replyDraft ?? '',
+      }),
+    ).rejects.toThrow('Approval revision is stale');
+    expect(
+      (await listResolveQueueItems({ db, sessionId: SESSION_ID })).find(
+        ({ thread }) => thread.threadId === 'PRRT_1',
+      )?.item.approvalState,
+    ).toBe('none');
+  });
+});

@@ -5,6 +5,7 @@ import {
   listResolveQueueItems,
   listResolveThreads,
   insertResolveQueueItem,
+  rebaseResolveQueueItem,
   setResolveAttemptPhase,
 } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
@@ -125,13 +126,20 @@ export const persistResolveTurn = async ({
   if (!isCandidate) {
     const updatedRows = await listResolveThreads({ db, sessionId });
     const queueItems = await listResolveQueueItems({ db, sessionId });
-    const queuedThreadIds = new Set(queueItems.map(({ thread }) => thread.threadId));
     for (const row of updatedRows) {
-      if (
-        !owned.includes(row.threadId) ||
-        row.disposition === null ||
-        queuedThreadIds.has(row.threadId)
-      ) {
+      if (!owned.includes(row.threadId) || row.disposition === null) {
+        continue;
+      }
+      const queued = queueItems.find(({ thread }) => thread.threadId === row.threadId);
+      if (queued !== undefined) {
+        if (queued.item.candidateRevision !== row.revision) {
+          await rebaseResolveQueueItem({
+            db,
+            sessionId,
+            itemId: queued.item.id,
+            candidateRevision: row.revision,
+          });
+        }
         continue;
       }
       const now = Date.now();
