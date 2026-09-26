@@ -2414,6 +2414,26 @@ fn worktree_is_ancestor_blocking(
     Ok(output.status.success())
 }
 
+#[tauri::command]
+pub async fn worktree_abort_rebase(worktree_path: String) -> Result<(), WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || worktree_abort_rebase_blocking(&worktree_path))
+        .await
+        .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn worktree_abort_rebase_blocking(worktree_path: &str) -> Result<(), WorktreeError> {
+    let p = Path::new(worktree_path);
+    if !p.exists() {
+        return Err(WorktreeError::RepoNotFound(worktree_path.to_string()));
+    }
+    if in_progress_operation(p) != Some(GitOperation::Rebase) {
+        return Err(WorktreeError::Git {
+            message: "no rebase is stopped in this worktree".to_string(),
+        });
+    }
+    git(p, &["rebase", "--abort"]).map(|_| ())
+}
+
 #[derive(Debug, Serialize, PartialEq)]
 pub struct RangeCommit {
     pub sha: String,
@@ -4065,6 +4085,28 @@ mod rewrite_tests {
         assert!(!root.join(".git").join("rebase-merge").exists());
         assert!(!root.join(".git").join("rebase-apply").exists());
         assert_eq!(super::in_progress_operation(&root), None);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn aborting_a_stopped_rebase_puts_the_branch_back() {
+        let root = init_repo("abort-stopped-rebase");
+        commit(&root, "shared.txt", "base\n", "base");
+        git_ok(&root, &["checkout", "-b", "feature"]);
+        let before = commit(&root, "shared.txt", "feature\n", "feature change");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "shared.txt", "main change\n", "main change");
+        git_ok(&root, &["checkout", "feature"]);
+        assert!(super::git(&root, &["rebase", "main"]).is_err());
+
+        super::worktree_abort_rebase_blocking(root.to_str().unwrap()).unwrap();
+
+        assert_eq!(super::in_progress_operation(&root), None);
+        assert_eq!(
+            super::git(&root, &["rev-parse", "HEAD"]).unwrap().trim(),
+            before
+        );
+        assert!(super::worktree_abort_rebase_blocking(root.to_str().unwrap()).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
 

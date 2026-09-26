@@ -29,6 +29,7 @@ import { MountRequestAction } from './MountRequestAction';
 import { MountRequestLink } from './MountRequestLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
+import { RebaseStoppedNotice } from './RebaseStoppedNotice';
 import { MountActionsMenu } from './MountActionsMenu';
 import { RemoveWorktreeAction } from './RemoveWorktreeAction';
 import { useMountPresence } from './useMountPresence';
@@ -365,6 +366,18 @@ export const ProjectMountRow = ({
           />
         </div>
       </div>
+      {isRepo && hasTools && worktreeStatus?.inProgress === 'rebase' ? (
+        <div className="col-span-full flex flex-col px-2 pb-2">
+          <RebaseStoppedNotice
+            sessionId={sessionId}
+            mountId={row.mountId}
+            worktreePath={worktreePath}
+            baseBranch={row.baseBranch}
+            status={worktreeStatus}
+            onOpenTerminal={() => openLens({ lens: 'terminal' })}
+          />
+        </div>
+      ) : null}
       {observation === null ? null : (
         <div className="col-span-full flex flex-col px-2 pb-2">
           <MountBranchDecision

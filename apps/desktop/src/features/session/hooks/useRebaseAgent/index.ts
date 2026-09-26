@@ -28,11 +28,29 @@ type RunParams = {
   readonly behind?: number;
 };
 
+type ResumeParams = {
+  readonly mountId: MountId;
+};
+
 type Result = {
   readonly canRebase: boolean;
+  readonly canResume: boolean;
   readonly isRunning: boolean;
   readonly error: string | null;
   readonly run: (params: RunParams) => Promise<void>;
+  readonly resume: (params: ResumeParams) => Promise<void>;
+};
+
+type PromptParams = {
+  readonly baseBranch: string;
+  readonly mountId: MountId;
+  readonly worktreePath: string;
+};
+
+type LaunchParams = {
+  readonly targetMountId: MountId;
+  readonly behind: number | null;
+  readonly promptOf: (params: PromptParams) => string;
 };
 
 type Pending = {
@@ -91,6 +109,22 @@ export const rebasePromptFor = ({
     `- This rebase belongs to mount ${mountId} at ${worktreePath}. Run every git command there and never in a sibling mount.`,
     `- Fetch origin ${baseBranch} before rebasing.`,
     `- Rebase the session branch onto origin/${baseBranch} and resolve conflicts by favoring the branch's intent.`,
+    "- Run the repository's typecheck to confirm nothing broke.",
+    `- Push the rebased branch with "$GOODBOY_BIN" query github push --mount ${mountId} --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.`,
+    '- Never merge and never touch other branches.',
+    '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
+  ].join('\n');
+
+export const resumeRebasePromptFor = ({
+  baseBranch,
+  mountId,
+  worktreePath,
+}: PromptParams): string =>
+  [
+    `A rebase of this session branch onto origin/${baseBranch} stopped halfway. Finish it.`,
+    `- This rebase belongs to mount ${mountId} at ${worktreePath}. Run every git command there and never in a sibling mount.`,
+    '- Read git status to find the conflicting files.',
+    "- Resolve each conflict by favoring the branch's intent, stage it, and run git rebase --continue until the rebase finishes.",
     "- Run the repository's typecheck to confirm nothing broke.",
     `- Push the rebased branch with "$GOODBOY_BIN" query github push --mount ${mountId} --force-with-lease; fall back to git push --force-with-lease only if the bridge is unavailable.`,
     '- Never merge and never touch other branches.',
@@ -175,6 +209,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
   const isRunning = isStarting || isAgentRunning;
   const behindMain = status != null ? distanceBehind({ distance: status.mainDistance }) : null;
   const canRebase = sessionId != null && behindMain != null && behindMain > 0;
+  const canResume = sessionId != null && status?.inProgress === 'rebase';
 
   useEffect(() => {
     pendingRef.current = pending;
@@ -239,10 +274,8 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
     showToast,
   ]);
 
-  const run = async ({ mountId: targetMountId, behind }: RunParams): Promise<void> => {
-    const runBehind = behind ?? behindMain;
-    const canRunRebase = sessionId != null && runBehind != null && runBehind > 0;
-    if (!canRunRebase || isRunning || sessionId == null || config.provider === '') {
+  const launch = async ({ targetMountId, behind, promptOf }: LaunchParams): Promise<void> => {
+    if (isRunning || sessionId == null || config.provider === '') {
       return;
     }
     const target = targetFor({ id: targetMountId });
@@ -262,7 +295,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
       const agentId = await spawnAgent(sessionId, {
         mountId: target.mountId,
         name: `${REBASE_AGENT_PREFIX}${target.baseBranch}`,
-        initialPrompt: rebasePromptFor({
+        initialPrompt: promptOf({
           baseBranch: target.baseBranch,
           mountId: target.mountId,
           worktreePath: target.worktreePath,
@@ -281,7 +314,7 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
           projectId: target.projectId,
           projectName: target.projectName,
           worktreePath: target.worktreePath,
-          behind: runBehind,
+          ...(behind === null ? {} : { behind }),
           branch: target.baseBranch,
           agentId,
         },
@@ -307,5 +340,20 @@ export const useRebaseAgent = ({ sessionId, mountId, status, onError }: Params):
     }
   };
 
-  return { canRebase, isRunning, error, run };
+  const run = async ({ mountId: targetMountId, behind }: RunParams): Promise<void> => {
+    const runBehind = behind ?? behindMain;
+    if (runBehind == null || runBehind <= 0) {
+      return;
+    }
+    await launch({ targetMountId, behind: runBehind, promptOf: rebasePromptFor });
+  };
+
+  const resume = async ({ mountId: targetMountId }: ResumeParams): Promise<void> => {
+    if (!canResume) {
+      return;
+    }
+    await launch({ targetMountId, behind: behindMain, promptOf: resumeRebasePromptFor });
+  };
+
+  return { canRebase, canResume, isRunning, error, run, resume };
 };

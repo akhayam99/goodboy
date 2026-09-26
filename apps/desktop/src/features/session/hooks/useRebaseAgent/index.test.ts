@@ -293,6 +293,33 @@ describe('useRebaseAgent', () => {
     });
   });
 
+  it('hands a stopped rebase to an agent that finishes it on the same mount', async () => {
+    const stopped = { ...status(0), inProgress: 'rebase' } as WorktreeStatus;
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, mountId, status: stopped }));
+
+    expect(result.current.canRebase).toBe(false);
+    expect(result.current.canResume).toBe(true);
+    await act(() => result.current.resume({ mountId }));
+
+    expect(state.spawnAgent).toHaveBeenCalledWith(
+      sessionId,
+      expect.objectContaining({
+        mountId,
+        name: 'Rebase on main',
+        initialPrompt: expect.stringContaining('stopped halfway. Finish it.'),
+      }),
+    );
+  });
+
+  it('refuses to resume when no rebase stopped', async () => {
+    const { result } = renderHook(() => useRebaseAgent({ sessionId, mountId, status: status(2) }));
+
+    expect(result.current.canResume).toBe(false);
+    await act(() => result.current.resume({ mountId }));
+
+    expect(state.spawnAgent).not.toHaveBeenCalled();
+  });
+
   it('spawns the rebase agent on the mount it names', async () => {
     const { result } = renderHook(() => useRebaseAgent({ sessionId, status: status(2) }));
 

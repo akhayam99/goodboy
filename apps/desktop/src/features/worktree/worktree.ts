@@ -451,6 +451,14 @@ export const worktreeIsAncestor = async ({
   return invoke<boolean>('worktree_is_ancestor', { worktreePath, sha, head });
 };
 
+type AbortRebaseParams = {
+  readonly worktreePath: string;
+};
+
+export const worktreeAbortRebase = async ({ worktreePath }: AbortRebaseParams): Promise<void> => {
+  await invoke<void>('worktree_abort_rebase', { worktreePath });
+};
+
 export type RangeCommit = { readonly sha: string; readonly subject: string };
 
 export type CommitRangeParams = {

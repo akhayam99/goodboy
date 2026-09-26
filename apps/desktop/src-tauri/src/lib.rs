@@ -246,6 +246,7 @@ pub fn run() {
             worktree::worktree_changed_files,
             worktree::worktree_commits,
             worktree::worktree_is_ancestor,
+            worktree::worktree_abort_rebase,
             worktree::worktree_commit_range,
             worktree::worktree_blame_line,
             worktree::worktree_remote_head,
