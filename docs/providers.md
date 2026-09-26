@@ -364,10 +364,11 @@ and side jobs (`aux_spawn.rs`). All four live under `apps/desktop/src-tauri/src/
 Goodboy runs codex with no prompts:
 
 ```
-codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s workspace-write -- <PROMPT>
+codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s <SANDBOX> -- <PROMPT>
 ```
 
-- In `bypassPermissions` mode, `-s workspace-write` becomes
+- The sandbox follows the mode, as in [Permission modes per CLI](#permission-modes-per-cli).
+  Full access keeps `workspace-write`: Goodboy never passes
   `--dangerously-bypass-approvals-and-sandbox`
 - `--skip-git-repo-check` is required. Without it, codex refuses folders it does not trust
 - codex CLI v0.130 writes the `codex login status` output to stderr when no terminal
@@ -396,10 +397,10 @@ help, install, models, plugin, plugins, update`. `agy login` does not exist
 Each turn starts like this:
 
 ```
-agy -p <PROMPT> --model <MODEL> --sandbox
+agy -p <PROMPT> --model <MODEL> --mode <plan|accept-edits> --sandbox
 ```
 
-- In bypass permission mode, `--sandbox` becomes `--dangerously-skip-permissions`
+- In Full access, `--mode` and `--sandbox` become `--dangerously-skip-permissions`
 - `agy` has no stable JSON output. So the parser treats each stdout line as one
   `assistant_text` delta (a chunk of reply text)
 - In headless mode `agy` reports no token usage per turn. Goodboy estimates the cost
@@ -423,6 +424,27 @@ opencode looks up providers live on models.dev, so the model id names the provid
 - OpenRouter models are saved with the full slug (`openrouter/anthropic/claude-sonnet-4.5`)
 - Moonshot models point at Moonshot directly (`moonshotai/kimi-k3`)
 - Both already contain a `/`, so `opencodeModelArg` adds no `OPENCODE_ROUTING` prefix
+
+### Permission modes per CLI
+
+Every turn sends the session's mode to its CLI, not only to Claude.
+`modeSupportFor` in `packages/core/src/permissions/modeSupport.ts` owns the
+table; `sendTurn` sends its `runsAs` value and `turn.rs` turns it into flags. A
+mode a CLI can't honor runs as the next stricter one it has, never a looser one.
+
+| Mode                              | Claude              | Codex                                                       | Antigravity                      | Cursor                      | opencode family                            |
+| --------------------------------- | ------------------- | ----------------------------------------------------------- | -------------------------------- | --------------------------- | ------------------------------------------ |
+| Read only (`plan`)                | `plan`              | `-s read-only`                                              | `--mode plan --sandbox`          | `--mode plan`, no `--force` | `--agent plan`: no edits, shell still runs |
+| Don't ask (`dontAsk`)             | `dontAsk`           | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
+| Ask first (`default`)             | `manual`            | runs Read only                                              | runs Read only                   | runs Read only              | runs Read only                             |
+| Edits allowed (`acceptEdits`)     | `acceptEdits`       | `-s workspace-write`: commands run too, inside the projects | `--mode accept-edits --sandbox`  | runs Read only              | runs Read only                             |
+| Full access (`bypassPermissions`) | `bypassPermissions` | `-s workspace-write`                                        | `--dangerously-skip-permissions` | `--force`                   | `--dangerously-skip-permissions`           |
+
+- Claude 2.1.282 lists `manual` in place of `default`, so Ask first sends `manual`
+- Allow and deny rules still reach Claude only (`--allowedTools`,
+  `--disallowedTools`). The other CLIs have no equivalent flag
+- The composer's mode picker disables the rows the active provider can't honor
+  and says why
 
 ### API keys
 

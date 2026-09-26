@@ -355,7 +355,7 @@ describe('sendTurn, permission proxy integration', () => {
     expect(args.permissionMode).toBe('bypassPermissions');
   });
 
-  it('does NOT forward permission flags when provider is cursor', async () => {
+  it('sends the mode but not the rules when provider is cursor', async () => {
     const routingMod = await import('../features/providers/routing');
     (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
       selectedProvider: 'cursor',
@@ -369,8 +369,30 @@ describe('sendTurn, permission proxy integration', () => {
     const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(args.allowedTools).toBeUndefined();
     expect(args.disallowedTools).toBeUndefined();
-    expect(args.permissionMode).toBeUndefined();
+    expect(args.permissionMode).toBe('bypassPermissions');
     expect(permissionRuleListSpy).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['codex', 'default', 'plan'],
+    ['codex', 'acceptEdits', 'acceptEdits'],
+    ['gemini', 'acceptEdits', 'acceptEdits'],
+    ['cursor', 'acceptEdits', 'plan'],
+    ['opencode', 'dontAsk', 'plan'],
+    ['anthropic', 'default', 'default'],
+  ] as const)('sends %s the stricter mode it can honor for %s', async (provider, mode, sent) => {
+    const routingMod = await import('../features/providers/routing');
+    (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      selectedProvider: provider,
+      selectedModel: 'model-1',
+      reason: 'preference',
+    });
+    setupSession(useAppStore);
+    useAppStore.setState({ sessions: [{ ...buildSession(), permissionMode: mode }] });
+    await useAppStore.getState().sendTurn({ sessionId: SESSION_ID, content: 'hi' });
+
+    const args = runTurnSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(args.permissionMode).toBe(sent);
   });
 
   it('marks the agent turn blocked when the stream reports a permission request', async () => {
