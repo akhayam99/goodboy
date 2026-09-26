@@ -16,8 +16,44 @@ const { scrollIntoViewMock, state, toastMock } = vi.hoisted(() => ({
     refreshGithubStatus: vi.fn(async () => undefined),
     loadSetting: vi.fn(async () => null),
     saveSetting: vi.fn(async () => undefined),
-    exportConfig: vi.fn(async () => null),
-    importConfig: vi.fn(async () => null),
+    backupExportGroups: {
+      workspaces: true,
+      projects: true,
+      folderPaths: false,
+      profile: true,
+      workflowsYours: true,
+      workflowsOrchestrated: false,
+      scripts: true,
+      permissionRules: true,
+      budgetRules: true,
+      integrations: true,
+      appPreferences: true,
+    },
+    backupExportPreview: null as unknown,
+    backupExportLeaveOut: [] as ReadonlyArray<string>,
+    backupExportPhase: 'idle' as string,
+    backupExportError: null as string | null,
+    backupExportedPath: null as string | null,
+    setBackupExportGroup: vi.fn(),
+    loadBackupExportPreview: vi.fn(async () => undefined),
+    setBackupFindingIncluded: vi.fn(),
+    writeBackupExport: vi.fn(async () => null),
+    resetBackupExport: vi.fn(),
+    backupImportPath: null as string | null,
+    backupImportProjectParent: null as string | null,
+    backupImportPreview: null as unknown,
+    backupImportWorkspaceTargets: {} as Record<string, string>,
+    backupImportResolvedPaths: {} as Record<string, string>,
+    backupImportPhase: 'idle' as string,
+    backupImportError: null as string | null,
+    backupImportResult: null as unknown,
+    chooseBackupImportFile: vi.fn(async () => undefined),
+    loadBackupImportPreview: vi.fn(async () => undefined),
+    chooseBackupImportProjectParent: vi.fn(async () => undefined),
+    setBackupImportWorkspaceTarget: vi.fn(),
+    setBackupImportResolvedPath: vi.fn(),
+    applyBackupImport: vi.fn(async () => undefined),
+    resetBackupImport: vi.fn(),
     wipeLocalDatabase: vi.fn(async () => undefined),
     relaunchApp: vi.fn(async () => undefined),
     loadDetectedEditors: vi.fn(async () => undefined),
@@ -86,10 +122,6 @@ vi.mock('./WorkspaceScopePanel', () => ({
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
-}));
-
-vi.mock('../ImportConfigDialog', () => ({
-  ImportConfigDialog: () => null,
 }));
 
 vi.mock('../../../onboarding/onboarding-store', () => ({

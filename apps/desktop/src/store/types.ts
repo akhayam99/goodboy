@@ -21,6 +21,7 @@ import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { DurationEstimatesState } from './slices/durationEstimates/state';
 import type { ProviderLimitsState } from './slices/providerLimits/state';
 import type { ProjectRelocationState } from './slices/project-relocation/state';
+import type { BackupState } from './slices/backup/state';
 import type { SentryLinksState } from './slices/sentryLinks/state';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type {
@@ -253,6 +254,7 @@ type AppSliceState = ArtifactsState &
   DurationEstimatesState &
   ProviderLimitsState &
   ProjectRelocationState &
+  BackupState &
   SentryLinksState &
   UpdaterState &
   ChangelogState &

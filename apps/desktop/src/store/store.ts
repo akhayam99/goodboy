@@ -209,6 +209,8 @@ import type {
 } from './slices/workflows/addStepToWorkflowRun';
 import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWorkflowAgent';
 import { createSettingsSlice } from './slices/settings';
+import { createBackupSlice } from './slices/backup';
+import { backupInitialState } from './slices/backup/state';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import type { BulkSessionResult } from './slices/sessions/types';
@@ -837,8 +839,6 @@ type AppActions = {
   setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
   refreshUnreadWorkspaces(): Promise<void>;
   setPanelSectionExpanded(sessionId: SessionId, section: PanelSection, expanded: boolean): void;
-  exportConfig(): Promise<string | null>;
-  importConfig(): Promise<import('@goodboy/types').ConfigBundleImportResult | null>;
   refreshGithubStatus(): Promise<void>;
   refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
   setGithubToken(params: {
@@ -1104,6 +1104,7 @@ export type AppStore = AppState &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
   ReturnType<typeof createProjectRelocationSlice> &
+  ReturnType<typeof createBackupSlice> &
   ReturnType<typeof createSentryLinksSlice> &
   ReturnType<typeof createStorageSlice> &
   ReturnType<typeof createHandoffsSlice> &
@@ -1119,6 +1120,7 @@ export const initialState: AppState = {
   ...initialNavigationState,
   ...initialScriptsState,
   ...projectRelocationInitialState,
+  ...backupInitialState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
   workspaces: [],
@@ -1322,7 +1324,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createOverridesSlice(set, get),
   ...createCredentialsSlice(set, get),
   ...createWorkflowsSlice(set, get),
-  ...createSettingsSlice(set, get),
+  ...createSettingsSlice(set),
+  ...createBackupSlice(set, get),
   ...createTranscriptsSlice(set, get),
   ...createSummariesSlice(set, get),
   ...createSessionsSlice(set, get),

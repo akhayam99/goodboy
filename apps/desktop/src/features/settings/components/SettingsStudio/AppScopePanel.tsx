@@ -1,7 +1,7 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { APP_SECTIONS, type AppSection } from './appSections';
-import { AppBackupSection } from './AppBackupSection';
+import { BackupPage } from '../../../backup/components/BackupPage';
 import { AppDangerSection } from './AppDangerSection';
 import { AppGeneralSection } from './AppGeneralSection';
 import { AppHelpSection } from './AppHelpSection';
@@ -31,7 +31,7 @@ const SectionBody = ({ section, workspaceId, requestClose }: Props) => {
     case 'shortcuts':
       return <ShortcutsSection />;
     case 'backup':
-      return <AppBackupSection />;
+      return <BackupPage />;
     case 'storage':
       return <StoragePage />;
     case 'security-findings':

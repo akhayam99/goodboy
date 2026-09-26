@@ -119,7 +119,6 @@
     "apps/desktop/src-tauri/src/bridge/snapshot.rs": 36,
     "apps/desktop/src-tauri/src/bridge/tokens.rs": 5,
     "apps/desktop/src-tauri/src/budget.rs": 2,
-    "apps/desktop/src-tauri/src/config_export.rs": 42,
     "apps/desktop/src-tauri/src/db.rs": 11,
     "apps/desktop/src-tauri/src/editor.rs": 9,
     "apps/desktop/src-tauri/src/external_terminal.rs": 16,
@@ -843,7 +842,6 @@
     "apps/desktop/src/features/review/components/ReviewPane/WriteReview/DraftCard.tsx": 1,
     "apps/desktop/src/features/session/components/AgentTree/ClusterChildRow.tsx": 1,
     "apps/desktop/src/features/session/components/sessionCardShell.ts": 1,
-    "apps/desktop/src/features/settings/components/ImportConfigDialog/index.tsx": 1,
     "apps/desktop/src/features/workflows/components/NextActionStrip/index.tsx": 1,
     "apps/desktop/src/features/workflows/components/OrchestratorStrip/index.tsx": 1,
     "apps/desktop/src/features/workspace/components/SessionActivityBar/SessionActivityItem.tsx": 1

@@ -242,3 +242,32 @@ identity first and by folder name second; the desktop UI is
 `features/workspace/components/LocateMovedProjects/`, backed by the
 `project-relocation` store slice. `Undo move` reverses the same rewrite
 through `project_relocation_undo`.
+
+### Backup and setup export
+
+Settings › App › Backup reads and writes a JSON bundle, schema version 3
+(`apps/desktop/src-tauri/src/config_export.rs`, mirrored in
+`packages/types/src/config-bundle.ts`). What goes in is chosen per group
+(`ExportGroups`): workspaces, projects, folder paths, profile, workflows you
+made, workflows the orchestrator wrote, saved scripts, permission rules,
+budget rules, linked integrations and app preferences. Folder paths and
+orchestrator-written workflows are off by default; every other group is on.
+Never included, in any bundle: API keys and tokens, sign-ins, sessions and
+transcripts, artifacts, worktree folders, usage history, notifications.
+
+Before a write, `config_export_preview` reports which open security findings
+(`security_findings`, see [SECURITY.md](../SECURITY.md)) fall inside the
+selected groups; `config_export_write` takes an explicit `leaveOut` list of
+fingerprints and skips that finding's subject (a script, a permission rule,
+a workspace's profile) entirely. The file is written with `0600` permissions.
+
+Import is a read-only preview followed by an explicit apply, never one step:
+`config_import_preview` matches each bundle workspace to an existing one by
+id then by name, and matches each project without a folder path against
+candidate folders under a chosen parent, reusing `find_moved_projects` from
+project relocation (one matching engine, two call sites). The caller then
+picks, per workspace, `merge into <existing>` or `add as a new workspace`,
+and resolves a folder for projects the engine could not place, before calling
+`config_import_apply`. Import only inserts and updates; it never deletes a
+row, and a project it cannot resolve a folder for is skipped and counted,
+not dropped from the file.

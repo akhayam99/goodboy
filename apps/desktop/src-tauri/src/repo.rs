@@ -304,7 +304,7 @@ fn identities_match(project: &MovedProjectInput, identity: &RepoIdentity) -> boo
     root_matches && remote_matches
 }
 
-fn find_moved_projects_blocking(args: FindMovedProjectsArgs) -> Vec<MovedProjectMatch> {
+pub(crate) fn find_moved_projects_blocking(args: FindMovedProjectsArgs) -> Vec<MovedProjectMatch> {
     let candidates: Vec<(PathBuf, RepoIdentity)> = candidate_directories(Path::new(&args.parent))
         .into_iter()
         .filter_map(|path| {

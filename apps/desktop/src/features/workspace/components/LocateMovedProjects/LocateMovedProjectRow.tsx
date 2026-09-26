@@ -50,7 +50,7 @@ export const LocateMovedProjectRow = ({ candidate, isBusy, onSelectedChange, onC
         className="mt-1 size-4 accent-primary"
       />
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-label font-medium text-foreground">{candidate.name}</span>
+        <span className="text-row text-foreground">{candidate.name}</span>
         <span className="truncate text-code text-faint-foreground line-through">
           {candidate.fromRoot}
         </span>
