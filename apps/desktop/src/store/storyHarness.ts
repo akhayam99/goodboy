@@ -509,6 +509,7 @@ export const turnModuleMock = () => ({
 export const permissionsModuleMock = () => ({
   invokePermissionRuleList: vi.fn(async () => []),
   invokePermissionRuleUpsert: vi.fn(async () => undefined),
+  invokePermissionRuleDelete: vi.fn(async () => undefined),
   invokePermissionAuditInsert: vi.fn(async () => undefined),
   invokeAuditRetryEnqueue: vi.fn(async () => undefined),
   invokeAuditRetryDrain: vi.fn(async () => []),

@@ -9,6 +9,8 @@ import { WorkspaceDefaultsGrid } from './WorkspaceDefaultsGrid';
 import { WorkspaceReviewRepliesSection } from './WorkspaceReviewRepliesSection';
 import { REVIEW_REPLIES_SECTION_ID } from '../../../resolve/replySettingsCopy';
 import { WorkspaceTitle } from './WorkspaceTitle';
+import { PermissionsSettings } from '../../../permissions/components/PermissionsSettings';
+import { PERMISSIONS_SECTION_ID } from '../../../permissions/openPermissionSettings';
 import { WorkspaceStorageNotice } from '../../../../features/storage/components/WorkspaceStorageNotice';
 import { WORKSPACE_FEATURES } from '../../../../shared/lib/features';
 import { useAppStore } from '../../../../store';
@@ -86,6 +88,10 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
 
         <div ref={anchor({ id: REVIEW_REPLIES_SECTION_ID })}>
           <WorkspaceReviewRepliesSection workspaceId={workspaceId} />
+        </div>
+
+        <div ref={anchor({ id: PERMISSIONS_SECTION_ID })}>
+          <PermissionsSettings workspaceId={workspaceId} />
         </div>
 
         {WORKSPACE_FEATURES.skills ? (

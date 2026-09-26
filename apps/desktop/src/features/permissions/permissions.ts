@@ -134,6 +134,12 @@ export const invokePermissionRuleUpsert = async (
   return rowToPermissionRule(row);
 };
 
+export const invokePermissionRuleDelete = async ({
+  id,
+}: {
+  readonly id: PermissionRuleId;
+}): Promise<void> => invoke<void>('permission_rule_delete', { id });
+
 export const invokePermissionAuditInsert = async (
   input: PermissionAuditInsertPayload,
 ): Promise<PermissionAuditEntry> => {

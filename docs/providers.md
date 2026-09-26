@@ -455,6 +455,11 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   is not in older CLIs and would break them
 - Allow and deny rules still reach Claude only (`--allowedTools`,
   `--disallowedTools`). The other CLIs have no equivalent flag
+- Settings, Workspace, Permissions shows this table in words, one column per
+  provider, and lists the workspace and global rules. Each rule names the
+  provider that follows it and the ones that ignore it, and a deny rule that a
+  provider running agents in the workspace ignores raises a warning. Remove
+  deletes the rule (`permission_rule_delete`)
 - The composer's mode picker offers four modes: Read only, Ask first, Edits
   allowed and Full access. It disables the rows the active provider can't
   honor and says why. `dontAsk` stays in the type for older sessions and reads
