@@ -28,9 +28,9 @@ export const InitGuide = ({ rootPath, state }: Props) => {
     <section aria-label="Set up git for this project" className="flex flex-col gap-3 p-3">
       <div className="flex flex-col gap-1.5">
         <Eyebrow label="Git setup" muted />
-        <h3 className="text-xs font-semibold text-foreground">{HEADLINE[state]}</h3>
+        <h3 className="text-label font-semibold text-foreground">{HEADLINE[state]}</h3>
         <p className="text-xs leading-relaxed text-muted-foreground">{LEDE[state]}</p>
-        <p className="text-2xs text-faint-foreground">
+        <p className="text-secondary text-faint-foreground">
           Sessions stay unavailable until the first commit exists.
         </p>
       </div>

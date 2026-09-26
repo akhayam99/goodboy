@@ -5,7 +5,7 @@ export const BootBrand = () => (
     <DogMascot size={64} className="text-primary" />
     <div className="flex flex-col items-center gap-0.5">
       <span className="text-lg font-bold tracking-tight">Goodboy</span>
-      <span className="text-xs tracking-tight text-faint-foreground">
+      <span className="text-label tracking-tight text-faint-foreground">
         workspace orchestrator for coding agents
       </span>
     </div>

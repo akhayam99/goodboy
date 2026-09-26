@@ -45,9 +45,9 @@ export const HandoffCard = ({ handoff, sessionId, at, initiallyOpen }: Props) =>
             }
           />
           <div className="flex min-w-0 flex-col gap-1.5 pb-2 pl-7 pr-2">
-            <span className="truncate text-sm font-medium text-foreground">{handoff.ask}</span>
+            <span className="truncate text-row text-foreground">{handoff.ask}</span>
             {handoff.why === null ? null : (
-              <span className="truncate text-xs text-muted-foreground">Why: {handoff.why}</span>
+              <span className="truncate text-label text-muted-foreground">Why: {handoff.why}</span>
             )}
             {disclosure.open ? null : (
               <HandoffChips sections={handoff.sections} onOpenSection={disclosure.openSection} />

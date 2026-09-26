@@ -48,11 +48,11 @@ export const FieldRow = ({
   const labelBlock = (
     <div className="flex min-w-40 shrink flex-col gap-0.5">
       {associate ? (
-        <label htmlFor={controlId} className="text-xs font-medium text-foreground">
+        <label htmlFor={controlId} className="text-label font-medium text-foreground">
           {label}
         </label>
       ) : (
-        <span className="text-xs font-medium text-foreground">{label}</span>
+        <span className="text-label font-medium text-foreground">{label}</span>
       )}
       {help ? <p className="text-2xs leading-relaxed text-muted-foreground">{help}</p> : null}
     </div>

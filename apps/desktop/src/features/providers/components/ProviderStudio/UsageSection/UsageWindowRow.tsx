@@ -28,7 +28,7 @@ export const UsageWindowRow = ({ window, siblings, nowMs }: Props) => {
   const tone = windowTone({ window });
   const width = `${Math.round(Math.min(Math.max(window.usedFraction ?? 0, 0), 1) * 100)}%`;
   return (
-    <li className="grid h-10 grid-cols-[160px_1fr_96px_180px] items-center gap-3 text-xs">
+    <li className="grid h-10 grid-cols-[160px_1fr_96px_180px] items-center gap-3 text-label">
       <span className="truncate text-foreground">{limitWindowLabel({ window, siblings })}</span>
       <span aria-hidden className="relative h-1.5 overflow-hidden rounded-full bg-muted">
         {window.usedFraction === null ? null : (

@@ -121,7 +121,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
       data-testid="handoff-card"
       tone="neutral"
       variant="leftBorder"
-      className="flex w-full max-w-xl flex-col gap-1.5 text-xs"
+      className="flex w-full max-w-xl flex-col gap-1.5 text-label"
     >
       <span className="font-medium text-foreground">{`Suggested next: ${roleLabel}`}</span>
       {handoff.reason != null && handoff.reason.length > 0 ? (
@@ -134,7 +134,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
             disabled={isPending}
             onClick={onSpawn}
             className={cn(
-              'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+              'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
               'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               'disabled:cursor-not-allowed disabled:opacity-60',
             )}
@@ -149,12 +149,12 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
         ) : (
           <>
             <AgentStatusIcon status={spawnedChild.status} />
-            <span className="text-2xs text-muted-foreground">{statusLabel}</span>
+            <span className="text-secondary text-muted-foreground">{statusLabel}</span>
             <button
               type="button"
               onClick={onOpen}
               className={cn(
-                'rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground',
+                'rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground',
                 'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
               )}
             >

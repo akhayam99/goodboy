@@ -64,7 +64,7 @@ export const WorktreeRow = ({
         data-testid="storage-folder-row"
         data-status={status}
         className={cn(
-          'group flex h-10 items-center gap-2.5 rounded-md px-2 text-sm hover:bg-hover',
+          'group flex h-10 items-center gap-2.5 rounded-md px-2 text-body hover:bg-hover',
           isRemoving && 'opacity-60',
         )}
       >
@@ -83,15 +83,15 @@ export const WorktreeRow = ({
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
           <Tooltip content={folder.path}>
-            <span className="truncate font-mono text-xs text-foreground">{title}</span>
+            <span className="truncate text-code text-foreground">{title}</span>
           </Tooltip>
-          <span className="truncate text-2xs text-faint-foreground">
+          <span className="truncate text-secondary text-faint-foreground">
             {folderWhyLine({ folder })}
             {note === null ? null : <span className="text-info"> · {note}</span>}
             {isRecent ? <span> · idle under {suggestAfterDays} days</span> : null}
           </span>
         </div>
-        <span className={cn(STORAGE_COLUMN.size, 'text-2xs text-foreground')}>
+        <span className={cn(STORAGE_COLUMN.size, 'text-secondary text-foreground')}>
           {folder.sizeBytes === null ? (
             isMeasuring ? (
               <Skeleton className="ml-auto h-3 w-10" />
@@ -102,10 +102,10 @@ export const WorktreeRow = ({
             formatBytes({ bytes: folder.sizeBytes })
           )}
         </span>
-        <span className={cn(STORAGE_COLUMN.age, 'text-2xs text-muted-foreground')}>
+        <span className={cn(STORAGE_COLUMN.age, 'text-secondary text-muted-foreground')}>
           {formatSince({ from: lastChange, now })}
         </span>
-        <span className={cn(STORAGE_COLUMN.status, 'text-2xs', STATUS_TONE[status])}>
+        <span className={cn(STORAGE_COLUMN.status, 'text-secondary', STATUS_TONE[status])}>
           {statusLabel}
         </span>
         <WorktreeRowActions

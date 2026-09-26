@@ -138,7 +138,7 @@ export const NotificationCenter = () => {
                 <span
                   className={cn(
                     'absolute -right-1.5 -top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-warning px-1 font-bold leading-none text-on-tone tabular-nums',
-                    unread > 9 ? 'text-3xs' : 'text-2xs',
+                    unread > 9 ? 'text-meta' : 'text-secondary',
                   )}
                 >
                   {unread > 99 ? '99+' : unread}
@@ -149,7 +149,7 @@ export const NotificationCenter = () => {
         }
       >
         <header className="flex items-center justify-between gap-2 px-3 py-2">
-          <span className="text-xs font-semibold text-foreground">Notifications</span>
+          <span className="text-label font-semibold text-foreground">Notifications</span>
           <SegmentedTabs
             ariaLabel="Show unread or all notifications"
             options={viewOptions}
@@ -219,7 +219,7 @@ export const NotificationCenter = () => {
             close();
             openNotificationsStudio();
           }}
-          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-2xs text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
+          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-secondary text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
         >
           Open all notifications
           <ChevronRight size={ICON_SIZE.row} aria-hidden />

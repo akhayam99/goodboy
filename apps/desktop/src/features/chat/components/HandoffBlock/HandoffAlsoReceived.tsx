@@ -28,7 +28,7 @@ export const HandoffAlsoReceived = ({ handoff, sessionId }: Props) => {
             aria-expanded={disclosure.open}
             onClick={disclosure.toggle}
             className={cn(
-              'flex shrink-0 items-center gap-2 text-2xs font-medium text-muted-foreground',
+              'flex shrink-0 items-center gap-2 text-secondary font-medium text-muted-foreground',
               TRANSCRIPT_ROW_HOVER,
             )}
           >

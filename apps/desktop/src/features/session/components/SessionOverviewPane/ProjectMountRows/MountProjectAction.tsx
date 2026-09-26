@@ -86,7 +86,7 @@ export const MountProjectAction = ({ sessionId, workspaceId, presentation = 'ico
     >
       {availableProjects.length === 0 || isComplete ? (
         <div className="flex flex-col gap-2 px-3 py-2">
-          <p className="text-xs text-muted-foreground">
+          <p className="text-label text-muted-foreground">
             {emptyPickerMessage({ hasWorkspaceProjects })}
           </p>
           <Button

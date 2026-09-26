@@ -28,7 +28,7 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
   const hidden = group.folders.length - visible.length;
   return (
     <div role="group" aria-label={group.root.projectName} className="flex flex-col">
-      <div className="flex h-8 items-center gap-2 px-2 text-xs font-semibold text-foreground">
+      <div className="flex h-8 items-center gap-2 px-2 text-label font-semibold text-foreground">
         <RepoIcon size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
         <span className="truncate">{group.root.projectName}</span>
         {group.root.workspaceName === null ? null : (
@@ -37,12 +37,12 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
           </span>
         )}
         {group.root.isDisconnected ? (
-          <span className="inline-flex h-4.5 items-center gap-1 rounded-sm bg-muted px-1.5 text-3xs font-medium text-muted-foreground">
+          <span className="inline-flex h-4.5 items-center gap-1 rounded-sm bg-muted px-1.5 text-meta font-medium text-muted-foreground">
             <Unplug size={11} aria-hidden />
             Disconnected
           </span>
         ) : null}
-        <span className="ml-auto shrink-0 text-2xs font-normal tabular-nums text-muted-foreground">
+        <span className="ml-auto shrink-0 text-secondary font-normal tabular-nums text-muted-foreground">
           {pluralize(group.folders.length, 'folder')} · {formatBytes({ bytes: group.bytes })}
         </span>
       </div>
@@ -63,7 +63,7 @@ export const WorktreeGroup = ({ group, now, suggestAfterDays, selected, onToggle
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="flex h-8 items-center gap-2 rounded-md px-2 text-left text-xs text-muted-foreground hover:bg-hover"
+          className="flex h-8 items-center gap-2 rounded-md px-2 text-left text-label text-muted-foreground hover:bg-hover"
         >
           <ChevronRight size={ICON_SIZE.row} aria-hidden />
           Show {hidden} more in {group.root.projectName}

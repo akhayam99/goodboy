@@ -52,7 +52,7 @@ export const AgentBriefChildren = ({ session, agent, kind, children }: Props) =>
     <SectionSurface
       label="Subagents"
       action={
-        <span className="text-2xs tabular-nums text-muted-foreground">
+        <span className="text-secondary tabular-nums text-muted-foreground">
           {`${done} of ${children.length} done`}
         </span>
       }

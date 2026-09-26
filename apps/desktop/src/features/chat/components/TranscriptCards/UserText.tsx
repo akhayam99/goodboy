@@ -78,7 +78,7 @@ export const UserText = ({
         </div>
       )}
       {text.length > 0 && (
-        <div className="text-sm text-foreground">
+        <div className="text-body text-foreground">
           <Markdown text={text} />
         </div>
       )}

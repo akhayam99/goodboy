@@ -99,7 +99,7 @@ export const ModelVisibilitySection = ({ providerId, isFocused }: Props) => {
             <div key={family.label} className="flex min-h-9 items-center gap-3 py-0.5">
               <Tooltip content={isOnlyVisibleFamily ? LAST_VISIBLE_COPY : `Show ${family.label}`}>
                 <Switch
-                  label={<span className="w-24 truncate text-left text-sm">{family.label}</span>}
+                  label={<span className="w-24 truncate text-left text-body">{family.label}</span>}
                   checked={isFamilyOn}
                   disabled={isOnlyVisibleFamily}
                   onChange={(next) => setVisible(keys, next)}
@@ -134,7 +134,7 @@ export const ModelVisibilitySection = ({ providerId, isFocused }: Props) => {
         })}
       </div>
       <div className="flex items-center gap-3">
-        <span className="flex-1 text-xs text-faint-foreground">
+        <span className="flex-1 text-label text-faint-foreground">
           Showing {shown} of {total} models. Pinned models keep working.
         </span>
         <Button

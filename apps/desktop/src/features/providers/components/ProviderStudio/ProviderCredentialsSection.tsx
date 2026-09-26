@@ -88,7 +88,7 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
+              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-label font-medium text-muted-foreground transition-colors hover:bg-hover hover:text-foreground"
             >
               <Plus size={ICON_SIZE.row} aria-hidden /> Add key
             </button>
@@ -135,8 +135,8 @@ export const ProviderCredentialsSection = ({ providerId }: Props) => {
                   <KeyRound size={ICON_SIZE.control} />
                 </span>
                 <div className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-medium text-foreground">{c.label}</span>
-                  <span className="font-mono text-2xs text-faint-foreground">{c.hint}</span>
+                  <span className="truncate text-row text-foreground">{c.label}</span>
+                  <span className="font-mono text-secondary text-faint-foreground">{c.hint}</span>
                 </div>
                 <div className="flex-1" />
                 <Tooltip content={`Remove ${c.label}`}>

@@ -28,7 +28,7 @@ export const BriefEditor = ({ source, initialTitle, initialGoal, onSave, onCance
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         aria-label="Brief title"
-        className="h-7 text-sm font-semibold"
+        className="h-7 text-heading"
       />
       <Textarea
         value={goal}

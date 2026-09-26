@@ -70,7 +70,7 @@ export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search presets"
               aria-label="Search presets"
-              className="h-7 bg-background text-xs"
+              className="h-7 bg-background text-label"
             />
           ) : null}
           <div role="listbox" aria-label="Presets" className="flex flex-col">
@@ -87,7 +87,7 @@ export const PresetPicker = ({ presets, selectedId, disabled, onSelect, onDelete
               />
             ))}
             {shown.length === 0 ? (
-              <p className="px-2 py-1.5 text-2xs text-faint-foreground">No preset matches.</p>
+              <p className="px-2 py-1.5 text-secondary text-faint-foreground">No preset matches.</p>
             ) : null}
           </div>
         </>

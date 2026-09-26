@@ -96,16 +96,16 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
           event.preventDefault();
           commit({ candidate: query });
         }}
-        className="px-2 font-mono text-xs"
+        className="px-2 text-code"
       />
       {isLoading ? (
-        <span className="px-1 text-2xs text-muted-foreground">Loading branches</span>
+        <span className="px-1 text-secondary text-muted-foreground">Loading branches</span>
       ) : null}
       {hasError ? (
-        <span className="px-1 text-2xs text-muted-foreground">Could not load branches</span>
+        <span className="px-1 text-secondary text-muted-foreground">Could not load branches</span>
       ) : null}
       {!isLoading && filteredBranches.length === 0 ? (
-        <span className="px-1 text-2xs text-muted-foreground">No matching branches</span>
+        <span className="px-1 text-secondary text-muted-foreground">No matching branches</span>
       ) : null}
       {filteredBranches.length > 0 ? (
         <ScrollFade className="max-h-44" viewportClassName="py-0.5" fadeFrom="subtle">
@@ -117,7 +117,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
                   onMouseEnter={() => setHighlightIndex(index)}
                   onClick={() => commit({ candidate: branch })}
                   className={cn(
-                    'flex w-full rounded-sm px-2 py-1.5 text-left font-mono text-xs',
+                    'flex w-full rounded-sm px-2 py-1.5 text-left text-code',
                     index === highlightIndex
                       ? cn(tintClasses('primary').bg, 'text-foreground')
                       : 'text-muted-foreground hover:bg-hover hover:text-foreground',
@@ -134,7 +134,7 @@ export const BaseBranchSelectContent = ({ repoPath, value, onCommit, onClose }: 
         <button
           type="button"
           onClick={() => commit({ candidate: '' })}
-          className="rounded-sm px-2 py-1.5 text-left text-2xs text-muted-foreground hover:bg-hover hover:text-foreground"
+          className="rounded-sm px-2 py-1.5 text-left text-secondary text-muted-foreground hover:bg-hover hover:text-foreground"
         >
           Use default
         </button>

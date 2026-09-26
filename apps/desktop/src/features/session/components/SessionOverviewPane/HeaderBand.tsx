@@ -60,7 +60,7 @@ export const HeaderBand = ({
                 aria-label="Session title"
                 className="text-xl font-semibold"
               />
-              <div className="flex items-center justify-between gap-2 text-2xs">
+              <div className="flex items-center justify-between gap-2 text-secondary">
                 <span className="min-w-0 truncate text-danger">{rename.error ?? ''}</span>
                 <span className="shrink-0 font-mono tabular-nums text-muted-foreground">
                   {rename.draft.length}/{rename.maxLength}

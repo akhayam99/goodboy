@@ -219,7 +219,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           {unlinkError != null ? (
-            <p className={cn('shrink-0 pt-3 text-xs text-danger', PANE_RHYTHM.inset)}>
+            <p className={cn('shrink-0 pt-3 text-label text-danger', PANE_RHYTHM.inset)}>
               {unlinkError}
             </p>
           ) : null}
@@ -275,7 +275,7 @@ export const IntegrationPane = ({ sessionId, workspaceId, provider }: Props) => 
           onSelect={setFocusedTaskKey}
         />
       ) : null}
-      {unlinkError != null ? <p className="text-xs text-danger">{unlinkError}</p> : null}
+      {unlinkError != null ? <p className="text-label text-danger">{unlinkError}</p> : null}
     </PaneShell>
   );
 };

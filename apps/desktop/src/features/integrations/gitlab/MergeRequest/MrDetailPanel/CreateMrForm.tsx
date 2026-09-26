@@ -172,7 +172,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                     onChange={(e) => setTitle(e.target.value)}
                     disabled={busy !== null}
                     aria-label="Merge request title"
-                    className="h-8 w-full text-sm sm:w-96"
+                    className="h-8 w-full text-body sm:w-96"
                   />
                 </FieldRow>
                 <Divider />
@@ -185,7 +185,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                     maxRows={10}
                     disabled={busy !== null}
                     aria-label="Merge request description"
-                    className="w-full text-sm sm:w-96"
+                    className="w-full text-body sm:w-96"
                   />
                 </FieldRow>
                 <Divider />
@@ -194,7 +194,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                     value={targetBranch}
                     onChange={(e) => setTargetBranch(e.target.value)}
                     placeholder="main"
-                    className="h-8 w-full font-mono text-sm sm:w-96"
+                    className="h-8 w-full font-mono text-body sm:w-96"
                     disabled={busy !== null}
                     autoCapitalize="off"
                     autoCorrect="off"
@@ -239,7 +239,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
             {shownError != null && (
               <span
                 role="alert"
-                className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
+                className="inline-flex min-w-0 items-center gap-1 truncate text-label text-danger"
                 title={shownError}
               >
                 <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />

@@ -117,10 +117,10 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
         trigger={trigger}
       >
         <div className="flex flex-col gap-3 p-3">
-          <span className="text-sm font-semibold text-foreground">New turns start in</span>
+          <span className="text-heading text-foreground">New turns start in</span>
 
           {running !== null && diverges ? (
-            <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1.5 text-2xs">
+            <div className="flex flex-col gap-0.5 rounded-md bg-subtle px-2 py-1.5 text-secondary">
               <span className="text-muted-foreground">This turn runs in {runningLabel}</span>
               <span className="text-muted-foreground">New turns start in {nextLabel}</span>
             </div>
@@ -136,13 +136,13 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
                   onClick={() => setPendingMountId(candidate.mountId)}
                   className="flex-col items-start gap-0 px-2 py-1.5"
                 >
-                  <span className="truncate text-xs">
+                  <span className="truncate text-label">
                     {mountDisplayName({
                       projectName: candidate.projectName,
                       mountName: candidate.mountName,
                     })}
                   </span>
-                  <span className="truncate text-3xs text-muted-foreground">
+                  <span className="truncate text-meta text-muted-foreground">
                     {candidate.hasGit ? candidate.branch : 'no git'} · {candidate.worktreePath}
                   </span>
                 </SelectableRow>
@@ -150,7 +150,7 @@ export const WriteDestinationControl = ({ sessionId, agentId, fallback }: Props)
             ))}
           </ul>
 
-          <span className="text-2xs text-muted-foreground">
+          <span className="text-secondary text-muted-foreground">
             Every agent can write in all of them. This picks where a new turn opens its terminal,
             runs git and shows its pull request.
           </span>

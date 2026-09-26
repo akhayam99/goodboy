@@ -39,7 +39,7 @@ export const RecommendationRow = ({
         aria-pressed={active}
         aria-label={isAuto ? `${AUTO_LABEL}, now ${summary}` : `${label} ${summary}`}
         className={cn(
-          'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-xs transition-colors',
+          'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-label transition-colors',
           active
             ? 'bg-background font-medium text-foreground'
             : 'text-muted-foreground hover:bg-background hover:text-foreground',
@@ -61,7 +61,7 @@ export const RecommendationRow = ({
           )}
           {shownLabel}
         </span>
-        <span className="flex min-w-0 items-center gap-1 text-2xs font-normal">
+        <span className="flex min-w-0 items-center gap-1 text-secondary font-normal">
           {isAuto ? (
             <span className="truncate text-faint-foreground">Now: {summary}</span>
           ) : routing.label === null ? (

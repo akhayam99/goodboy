@@ -22,7 +22,7 @@ export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidan
       <StepTreeGutter span="none" identityIndex={identityIndex} />
       {isOpen ? (
         <div className="flex min-w-0 flex-1 flex-col gap-1 pl-2">
-          <label htmlFor={GUIDANCE_ID} className="text-2xs text-muted-foreground">
+          <label htmlFor={GUIDANCE_ID} className="text-secondary text-muted-foreground">
             Guidance (optional)
           </label>
           <Textarea
@@ -40,7 +40,7 @@ export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidan
             minRows={3}
             maxRows={7}
             disabled={disabled}
-            className="resize-none bg-subtle text-sm"
+            className="resize-none bg-subtle text-body"
           />
         </div>
       ) : (
@@ -51,7 +51,7 @@ export const GuidanceDisclosure = ({ identityIndex, guidance, disabled, onGuidan
             setIsOpen(true);
           }}
           disabled={disabled}
-          className="flex h-7 min-w-0 items-center gap-2 rounded-md px-2 text-xs text-faint-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-7 min-w-0 items-center gap-2 rounded-md px-2 text-label text-faint-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus size={ICON_SIZE.row} aria-hidden />
           <span>Add guidance for the orchestrator</span>

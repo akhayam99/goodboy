@@ -520,7 +520,7 @@ export const ChatView = ({ session, isActive = true }: Props) => {
       {isEnded ? (
         <>
           <Divider />
-          <div className="px-4 py-3 text-xs text-muted-foreground">
+          <div className="px-4 py-3 text-label text-muted-foreground">
             Session ended. No more turns run here, and the branch is kept.
           </div>
         </>

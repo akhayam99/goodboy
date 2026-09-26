@@ -256,7 +256,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
       )}
       {(blocker !== null || drift !== null) && (
         <div className="flex items-center gap-2">
-          <span className="text-2xs text-warning">{blocker?.sentence ?? drift}</span>
+          <span className="text-secondary text-warning">{blocker?.sentence ?? drift}</span>
           {recovery !== null && (
             <GhostActionButton
               icon={BLOCKER_ACTION_ICON[recovery]}
@@ -287,7 +287,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
       )}
       <div className="flex items-center gap-4">
         {preview !== null && (
-          <span className="text-2xs tabular-nums text-muted-foreground">
+          <span className="text-secondary tabular-nums text-muted-foreground">
             {frozenAtLabel({ frozenAt: preview.frozenAt })}
           </span>
         )}

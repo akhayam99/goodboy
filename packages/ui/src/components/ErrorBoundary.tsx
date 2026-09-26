@@ -95,13 +95,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           )}
         >
           <h1 className="text-base font-semibold tracking-tight">Something went wrong</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             Goodboy hit a runtime error and stopped rendering. Your data is safe: sessions, agents,
             and providers are all persisted to disk. Try again first, and reload only if the screen
             comes back broken.
           </p>
           <ScrollFade className="max-h-40" viewportClassName="rounded-sm bg-muted px-3 py-2">
-            <pre className="whitespace-pre-wrap break-words text-xs text-danger">
+            <pre className="whitespace-pre-wrap break-words text-label text-danger">
               {error.message}
             </pre>
           </ScrollFade>
@@ -109,14 +109,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <button
               type="button"
               onClick={this.reset}
-              className="rounded-sm bg-primary px-3 py-1.5 text-xs font-semibold text-on-tone hover:opacity-90"
+              className="rounded-sm bg-primary px-3 py-1.5 text-label font-semibold text-on-tone hover:opacity-90"
             >
               Try again
             </button>
             <button
               type="button"
               onClick={this.reload}
-              className="rounded-sm border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover"
+              className="rounded-sm border border-border px-3 py-1.5 text-label font-semibold text-foreground hover:bg-hover"
             >
               Reload
             </button>
@@ -125,7 +125,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 type="button"
                 onClick={this.report}
                 aria-label="Report this on GitHub"
-                className="inline-flex items-center gap-1.5 rounded-sm border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-hover"
+                className="inline-flex items-center gap-1.5 rounded-sm border border-border px-3 py-1.5 text-label font-semibold text-foreground hover:bg-hover"
               >
                 Report this
                 <ExternalLink size={11} aria-hidden />

@@ -37,7 +37,7 @@ export const ShortcutGroupSurface = ({ group }: Props) => {
     >
       <ul className="flex flex-col gap-2">
         {shortcutRows({ group }).map((row) => (
-          <li key={row.key} className="flex items-center justify-between gap-3 text-xs">
+          <li key={row.key} className="flex items-center justify-between gap-3 text-label">
             <span className="min-w-0 truncate text-muted-foreground">{row.label}</span>
             <KbdPill className="shrink-0">
               {shortcutRangeGlyphs({ first: row.first, last: row.last })}

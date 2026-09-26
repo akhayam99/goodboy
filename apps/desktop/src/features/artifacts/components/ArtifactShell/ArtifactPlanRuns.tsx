@@ -28,7 +28,7 @@ export const ArtifactPlanRuns = ({ sessionId, planId, agents }: Props) => {
     <section aria-label="Runs" className="flex min-w-0 flex-col gap-1.5">
       <SectionHeader label="Runs" />
       {consumptions.length === 0 ? (
-        <p className="text-xs text-muted-foreground">Nobody ran this plan yet.</p>
+        <p className="text-label text-muted-foreground">Nobody ran this plan yet.</p>
       ) : (
         <ul className="flex min-w-0 flex-col gap-1">
           {consumptions.map((consumption) => {
@@ -40,7 +40,7 @@ export const ArtifactPlanRuns = ({ sessionId, planId, agents }: Props) => {
             return (
               <li
                 key={consumption.id}
-                className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground"
+                className="flex min-w-0 items-center gap-1.5 text-label text-muted-foreground"
               >
                 <span className="shrink-0">Run by</span>
                 <button

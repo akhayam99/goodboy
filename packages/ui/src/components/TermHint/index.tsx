@@ -69,7 +69,7 @@ export const TermHint = ({ children, term, definition, action, className }: Term
         </button>
       }
     >
-      <span className="text-xs font-medium text-foreground">{term}</span>
+      <span className="text-label font-medium text-foreground">{term}</span>
       <span className="text-xs leading-relaxed text-muted-foreground">{definition}</span>
       {action === undefined ? null : (
         <button
@@ -78,7 +78,10 @@ export const TermHint = ({ children, term, definition, action, className }: Term
             dropdown.close();
             action.onAct();
           }}
-          className={cn('self-start rounded-xs text-xs text-primary hover:underline', FOCUS_RING)}
+          className={cn(
+            'self-start rounded-xs text-label text-primary hover:underline',
+            FOCUS_RING,
+          )}
         >
           {action.label}
         </button>

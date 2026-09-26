@@ -40,14 +40,16 @@ export const WorkspaceRow = ({ workspace, density, highlighted, onOpen }: Props)
       />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="truncate text-sm font-medium text-foreground">{workspace.name}</span>
+          <span className="truncate text-row text-foreground">{workspace.name}</span>
           {hasUnread ? (
             <Chip tone="warning" size="3xs" bordered={false} label="unread" className="shrink-0" />
           ) : null}
         </span>
-        <span className="block truncate text-xs text-muted-foreground">{projectsLabel}</span>
+        <span className="block truncate text-label text-muted-foreground">{projectsLabel}</span>
       </span>
-      {lastSeen ? <span className="shrink-0 text-xs text-faint-foreground">{lastSeen}</span> : null}
+      {lastSeen ? (
+        <span className="shrink-0 text-label text-faint-foreground">{lastSeen}</span>
+      ) : null}
     </button>
   );
 };

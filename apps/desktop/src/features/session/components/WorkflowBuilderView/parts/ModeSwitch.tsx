@@ -39,6 +39,6 @@ export const ModeSwitch = ({ mode, disabled, control = null, onChange }: Props) 
       />
       {control}
     </div>
-    <div className="text-2xs text-faint-foreground">{MODE_HINT[mode]}</div>
+    <div className="text-secondary text-faint-foreground">{MODE_HINT[mode]}</div>
   </div>
 );

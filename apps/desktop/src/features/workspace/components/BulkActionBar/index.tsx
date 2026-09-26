@@ -54,14 +54,14 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
         className,
       )}
     >
-      <span className="mr-auto text-xs font-medium text-foreground">{count} selected</span>
+      <span className="mr-auto text-label font-medium text-foreground">{count} selected</span>
       {scope === 'active' && (
         <Button
           variant="secondary"
           size="sm"
           onClick={() => void onArchive()}
           title="Archive selected sessions"
-          className="shrink-0 gap-1 px-2 text-xs"
+          className="shrink-0 gap-1 px-2 text-label"
         >
           <Archive size={11} aria-hidden />
           Archive ({count})
@@ -73,7 +73,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
           size="sm"
           onClick={() => void onRestore()}
           title="Restore selected sessions"
-          className="shrink-0 gap-1 px-2 text-xs"
+          className="shrink-0 gap-1 px-2 text-label"
         >
           <RotateCcw size={11} aria-hidden />
           Restore ({count})
@@ -84,7 +84,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
         size="sm"
         onClick={() => setPending('delete')}
         title="Delete selected sessions"
-        className="shrink-0 gap-1 px-2 text-xs"
+        className="shrink-0 gap-1 px-2 text-label"
       >
         <Trash2 size={11} aria-hidden />
         Delete ({count})
@@ -94,7 +94,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
         size="sm"
         onClick={onSelectAll}
         title="Select every session in view"
-        className="shrink-0 px-2 text-xs"
+        className="shrink-0 px-2 text-label"
       >
         All
       </Button>
@@ -103,7 +103,7 @@ export const BulkActionBar = ({ scope, sessions, onSelectAll, onClear, className
         size="sm"
         onClick={onClear}
         title="Clear selection"
-        className="shrink-0 px-2 text-xs"
+        className="shrink-0 px-2 text-label"
       >
         Clear
       </Button>

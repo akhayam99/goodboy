@@ -120,7 +120,7 @@ export const ChipsInput = ({
           {values.map((value) => (
             <span
               key={value}
-              className="inline-flex h-6 items-center gap-1 rounded-sm bg-subtle pl-2 pr-0.5 text-xs text-foreground"
+              className="inline-flex h-6 items-center gap-1 rounded-sm bg-subtle pl-2 pr-0.5 text-label text-foreground"
             >
               {value}
               <Tooltip content={`Remove ${value}`} anchorClassName="flex">
@@ -156,7 +156,7 @@ export const ChipsInput = ({
             onKeyDown={onKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            className="h-6 min-w-24 flex-1 bg-transparent px-1 text-sm text-foreground outline-none placeholder:text-faint-foreground"
+            className="h-6 min-w-24 flex-1 bg-transparent px-1 text-body text-foreground outline-none placeholder:text-faint-foreground"
           />
         </div>
       }
@@ -168,7 +168,7 @@ export const ChipsInput = ({
           return (
             <li key={option.key} className="flex flex-col">
               {isGroupStart ? (
-                <span className="px-3 pb-1 pt-2 text-3xs font-medium uppercase tracking-eyebrow text-faint-foreground">
+                <span className="px-3 pb-1 pt-2 text-meta font-medium uppercase tracking-eyebrow text-faint-foreground">
                   {option.group}
                 </span>
               ) : null}
@@ -182,7 +182,7 @@ export const ChipsInput = ({
                 onMouseEnter={() => setHighlight(index)}
                 onClick={() => add({ value: option.value })}
                 className={cn(
-                  'mx-1 rounded-sm px-2 py-1 text-left text-sm',
+                  'mx-1 rounded-sm px-2 py-1 text-left text-body',
                   option.isCustom ? 'text-muted-foreground' : 'text-foreground',
                   index === highlight && 'bg-hover',
                 )}

@@ -155,7 +155,7 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
           <button
             type="button"
             onClick={() => setSelectedProjectIds({ workspaceId, selectedProjectIds: [] })}
-            className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-2xs font-medium text-muted-foreground hover:bg-hover hover:text-foreground"
+            className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-secondary font-medium text-muted-foreground hover:bg-hover hover:text-foreground"
           >
             <X size={10} aria-hidden />
             Clear
@@ -165,7 +165,7 @@ export const ProjectFilter = ({ workspaceId, sessions }: Props) => {
       <Divider />
       <div className="flex max-h-64 flex-col overflow-y-auto p-1">
         {options.length === 0 ? (
-          <span className="px-2 py-3 text-xs text-muted-foreground">
+          <span className="px-2 py-3 text-label text-muted-foreground">
             No projects in any session
           </span>
         ) : (

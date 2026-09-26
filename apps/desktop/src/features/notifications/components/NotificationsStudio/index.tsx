@@ -207,7 +207,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                       <button
                         type="button"
                         onClick={clearFilters}
-                        className="rounded-md px-2 py-1 text-xs font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
+                        className="rounded-md px-2 py-1 text-label font-medium text-foreground ring-1 ring-inset ring-border hover:bg-hover"
                       >
                         Clear filters
                       </button>
@@ -227,7 +227,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                     >
                       <div className="flex items-baseline gap-1.5 px-2.5 pb-1">
                         <Eyebrow label={entry.label} />
-                        <span className="text-2xs tabular-nums text-faint-foreground">
+                        <span className="text-secondary tabular-nums text-faint-foreground">
                           {entry.items.length}
                         </span>
                       </div>
@@ -259,7 +259,7 @@ export const NotificationsStudio = ({ onClose }: Props) => {
                 </div>
               )}
               {hasOlder && notifications.length > 0 && (
-                <div className="flex items-center justify-between gap-3 px-2.5 text-2xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-3 px-2.5 text-secondary text-muted-foreground">
                   <span className="tabular-nums">
                     Showing {loadedMatching} of {counts.matching}
                   </span>

@@ -101,7 +101,7 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
               aria-label="Branch prefix"
               className="w-auto font-mono"
             />
-            <span className="font-mono text-xs text-faint-foreground">/&lt;slug&gt;</span>
+            <span className="text-code text-faint-foreground">/&lt;slug&gt;</span>
           </span>
         </WorkspaceDefaultRow>
 

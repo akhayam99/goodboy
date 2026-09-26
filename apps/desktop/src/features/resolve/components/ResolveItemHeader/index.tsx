@@ -79,14 +79,10 @@ export const ResolveItemHeader = ({
               {RESOLVE_ITEM_LABEL.backToConversations}
             </Button>
             <div className="flex min-w-0 flex-col gap-1">
-              <h2
-                tabIndex={-1}
-                data-resolve-heading
-                className="break-words text-sm font-medium leading-5"
-              >
+              <h2 tabIndex={-1} data-resolve-heading className="break-words text-row">
                 {title}
               </h2>
-              <p className="break-all text-2xs text-muted-foreground">
+              <p className="break-all text-secondary text-muted-foreground">
                 PR #{prNumber}
                 {location !== null && ` · ${location}`}
               </p>
@@ -116,7 +112,7 @@ export const ResolveItemHeader = ({
                 items={menuItems}
                 label="More"
                 align="right"
-                trigger={<span className="text-2xs">More</span>}
+                trigger={<span className="text-secondary">More</span>}
               />
             )}
           </div>
@@ -124,7 +120,9 @@ export const ResolveItemHeader = ({
         <div className="grid min-w-0 grid-cols-1 items-start gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <div className="flex min-w-0 flex-col items-start gap-1">
             <ResolveStatusBadge status={status} />
-            {nextStep !== null && <p className="text-2xs text-muted-foreground">{nextStep}</p>}
+            {nextStep !== null && (
+              <p className="text-secondary text-muted-foreground">{nextStep}</p>
+            )}
           </div>
           {!isEditing && (
             <div className="flex min-w-0 flex-wrap items-center gap-2 max-[320px]:[&>button]:w-full">

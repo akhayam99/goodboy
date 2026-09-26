@@ -131,14 +131,14 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       <AgentBriefHandoffLine sessionId={session.id} agentId={agent.id} />
       {!isTerminal ? (
         <SectionSurface label="Now">
-          <div className="flex items-center gap-2 text-xs text-foreground">
+          <div className="flex items-center gap-2 text-label text-foreground">
             <StatusDot tone={now.tone} size="sm" pulsing={now.isPulsing} />
             <span className="min-w-0 flex-1 truncate">{now.label}</span>
             {time === null ? null : (
               <Tooltip content={time.detail}>
                 <span
                   data-testid="agent-now-time"
-                  className="shrink-0 text-2xs tabular-nums text-muted-foreground"
+                  className="shrink-0 text-secondary tabular-nums text-muted-foreground"
                 >
                   {time.headline}
                 </span>
@@ -152,11 +152,11 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       <AgentBriefQuestions session={session} agent={agent} />
       {summary !== '' && !isSplitIntoSubagents ? (
         <SectionSurface label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
-          <div className="text-sm text-foreground">
+          <div className="text-body text-foreground">
             <Markdown text={stripControlMarkers(summary)} />
           </div>
           {!hasOutputSummary ? (
-            <span className="text-2xs text-muted-foreground">from the last reply</span>
+            <span className="text-secondary text-muted-foreground">from the last reply</span>
           ) : null}
         </SectionSurface>
       ) : null}

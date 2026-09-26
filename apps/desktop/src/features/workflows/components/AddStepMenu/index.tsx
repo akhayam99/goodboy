@@ -129,7 +129,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
           disabled={disabled}
           aria-haspopup="dialog"
           aria-expanded={dropdown.open}
-          className="flex h-8 min-w-0 flex-1 items-center rounded-md pl-2 text-left text-xs text-faint-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-8 min-w-0 flex-1 items-center rounded-md pl-2 text-left text-label text-faint-foreground transition-colors hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           Add step
         </button>
@@ -152,7 +152,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
           aria-expanded
           aria-controls={listId}
           aria-activedescendant={activeId}
-          className="h-7 pl-7 text-xs"
+          className="h-7 pl-7 text-label"
         />
       </label>
       <ul
@@ -174,7 +174,7 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
         {builtin.length > 0 ? (
           <li
             role="presentation"
-            className="px-2 pb-0.5 pt-2 text-3xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
+            className="px-2 pb-0.5 pt-2 text-meta font-semibold uppercase tracking-eyebrow text-faint-foreground"
           >
             Built in
           </li>
@@ -183,14 +183,14 @@ export const AddStepMenu = ({ groups, disabled, onPick }: Props) => {
         {workspace.length > 0 ? (
           <li
             role="presentation"
-            className="px-2 pb-0.5 pt-2 text-3xs font-semibold uppercase tracking-eyebrow text-faint-foreground"
+            className="px-2 pb-0.5 pt-2 text-meta font-semibold uppercase tracking-eyebrow text-faint-foreground"
           >
             This workspace
           </li>
         ) : null}
         {workspace.map((step, index) => renderStep(step, index + 1 + builtin.length))}
         {needle !== '' && builtin.length === 0 && workspace.length === 0 ? (
-          <li role="presentation" className="px-2 py-1.5 text-2xs text-muted-foreground">
+          <li role="presentation" className="px-2 py-1.5 text-secondary text-muted-foreground">
             No saved steps match that search
           </li>
         ) : null}

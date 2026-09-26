@@ -29,14 +29,14 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
         <button
           type="button"
           onClick={dropdown.toggle}
-          className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2 py-1 text-xs font-medium text-foreground transition-colors hover:border-border hover:bg-hover"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border-soft px-2 py-1 text-label font-medium text-foreground transition-colors hover:border-border hover:bg-hover"
           aria-haspopup="listbox"
           aria-expanded={dropdown.open}
           title={`${prs.length} pull requests on this branch`}
         >
           <PullRequestChip state={current.state} variant="icon" iconSize={12} />
           <span className="tabular-nums">#{current.number}</span>
-          <span className="text-2xs text-muted-foreground">of {prs.length}</span>
+          <span className="text-secondary text-muted-foreground">of {prs.length}</span>
           <ChevronDown size={ICON_SIZE.row} aria-hidden className="text-muted-foreground" />
         </button>
       }
@@ -54,7 +54,7 @@ export const PrSwitcher = ({ prs, selected, onSelect }: Props) => {
                   dropdown.close();
                 }}
                 className={cn(
-                  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-xs transition-colors hover:bg-hover',
+                  'flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-label transition-colors hover:bg-hover',
                   p.number === selected && cn(tintClasses('primary').bgSoft),
                 )}
               >

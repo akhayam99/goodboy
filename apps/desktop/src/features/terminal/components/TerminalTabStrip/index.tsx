@@ -40,7 +40,7 @@ export const TerminalTabStrip = ({ tabs, activeId, onSelect, onClose, onSpawn }:
               }
             }}
             className={cn(
-              'group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs motion-safe:transition-colors',
+              'group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-label motion-safe:transition-colors',
               active
                 ? cn(
                     tintClasses('primary').bg,

@@ -286,18 +286,18 @@ const AnsweredClusterHeader = ({
         <button
           type="button"
           onClick={() => void selectAgent(sessionId, agentId)}
-          className="flex min-w-0 items-center gap-1.5 text-2xs font-medium hover:opacity-70 motion-safe:transition-opacity"
+          className="flex min-w-0 items-center gap-1.5 text-secondary font-medium hover:opacity-70 motion-safe:transition-opacity"
         >
           <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="truncate text-foreground">{agentName}</span>
         </button>
       ) : (
-        <div className="flex min-w-0 items-center gap-1.5 text-2xs font-medium">
+        <div className="flex min-w-0 items-center gap-1.5 text-secondary font-medium">
           <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
           <span className="truncate text-foreground">unknown agent</span>
         </div>
       )}
-      <span className="shrink-0 text-2xs text-muted-foreground">
+      <span className="shrink-0 text-secondary text-muted-foreground">
         {formatRelativeAge({ fromIso: newestAt })}
       </span>
     </div>

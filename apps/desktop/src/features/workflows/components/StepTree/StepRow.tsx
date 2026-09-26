@@ -105,7 +105,7 @@ export const StepRow = ({
             <AgentKindChip kind={kind} label={ROLE_LABEL[step.role]} />
             <span
               className={cn(
-                'min-w-0 truncate text-sm leading-5 text-foreground',
+                'min-w-0 truncate text-body text-foreground',
                 isExpanded && 'font-medium',
               )}
             >

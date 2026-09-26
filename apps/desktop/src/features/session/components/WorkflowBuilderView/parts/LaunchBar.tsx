@@ -53,7 +53,7 @@ export const LaunchBar = ({
       </div>
     </div>
     {reason === null ? null : (
-      <p id={START_REASON_ID} className="self-end text-2xs text-faint-foreground">
+      <p id={START_REASON_ID} className="self-end text-secondary text-faint-foreground">
         {reason}
       </p>
     )}

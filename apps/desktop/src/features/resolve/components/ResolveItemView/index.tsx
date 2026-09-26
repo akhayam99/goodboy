@@ -195,7 +195,7 @@ export const ResolveItemView = ({
             {question != null && question !== '' && (
               <div className="flex min-w-0 flex-col gap-2">
                 <SectionHeader label={RESOLVE_ITEM_LABEL.agentQuestion} headingLevel={3} />
-                <Markdown text={question} variant="preview" className="text-sm text-foreground" />
+                <Markdown text={question} variant="preview" className="text-body text-foreground" />
               </div>
             )}
             {!isDelivered && (mode === 'read' || mode === 'resolve') && !isAnswering && (
@@ -217,8 +217,8 @@ export const ResolveItemView = ({
               onEditReply={onEditReply}
               settingsLine={<ReplySettingsLine sessionId={sessionId} />}
             />
-            {note !== null && <p className="text-2xs text-warning">{note}</p>}
-            {error !== null && <p className="text-2xs text-danger">{error}</p>}
+            {note !== null && <p className="text-secondary text-warning">{note}</p>}
+            {error !== null && <p className="text-secondary text-danger">{error}</p>}
           </div>
           <aside
             aria-label={RESOLVE_ITEM_LABEL.aboutThisComment}
@@ -268,7 +268,7 @@ export const ResolveItemView = ({
                       <button
                         type="button"
                         onClick={() => onSelectRelated(covered.thread.threadId)}
-                        className="block w-full truncate rounded-sm text-left text-xs leading-4 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                        className="block w-full truncate rounded-sm text-left text-label text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
                       >
                         {covered.reviewerNote?.body ?? RESOLVE_COMMENT_UNAVAILABLE}
                       </button>
@@ -286,7 +286,7 @@ export const ResolveItemView = ({
           <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-5 py-3">
             <p
               className={cn(
-                'min-w-0 text-2xs',
+                'min-w-0 text-secondary',
                 isCommitBlocked ? 'text-warning' : 'text-muted-foreground',
               )}
             >

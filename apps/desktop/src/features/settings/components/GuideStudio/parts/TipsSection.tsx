@@ -50,12 +50,12 @@ export const TipsSection = ({}: Props) => {
                 className={cn(
                   'flex h-5 w-5 items-center justify-center rounded-full',
                   tintClasses('warning').bg,
-                  'font-mono text-2xs font-semibold tabular-nums text-warning',
+                  'font-mono text-secondary font-semibold tabular-nums text-warning',
                 )}
               >
                 {i + 1}
               </span>
-              <span className="text-sm font-semibold text-foreground">{t.title}</span>
+              <span className="text-heading text-foreground">{t.title}</span>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">{t.body}</p>
           </div>

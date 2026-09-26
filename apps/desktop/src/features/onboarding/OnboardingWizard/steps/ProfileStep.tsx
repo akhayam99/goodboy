@@ -14,8 +14,8 @@ export const ProfileStep = ({ profile, onProfileChange }: Props) => (
     </span>
 
     <div className="flex flex-col gap-2">
-      <h2 className="text-2xl font-semibold tracking-tight text-foreground">About you</h2>
-      <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground">
+      <h2 className="text-display text-foreground">About you</h2>
+      <p className="mx-auto max-w-md text-prose text-muted-foreground">
         Each agent reads the parts that help its job. It is optional, and you can edit it in
         Settings.
       </p>

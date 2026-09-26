@@ -97,12 +97,12 @@ export const ArtifactSection = () => {
           className="ml-auto"
         />
       </div>
-      <p className="text-2xs text-faint-foreground">
+      <p className="text-secondary text-faint-foreground">
         Copies in ~/.goodboy/workspaces/&lt;workspace&gt;/artifacts. They are small: clean them to
         tidy up, not for space. Opening one in the reader counts as use.
       </p>
       {shown.length === 0 ? (
-        <p className="py-3 text-xs text-muted-foreground">{EMPTY_COPY[filter]}</p>
+        <p className="py-3 text-label text-muted-foreground">{EMPTY_COPY[filter]}</p>
       ) : (
         <div className="@container flex flex-col">
           <ArtifactColumns isSelecting={selected !== null} />

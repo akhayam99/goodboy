@@ -62,7 +62,7 @@ export const EditorCrumb = ({
   const items = candidates.filter((item): item is OverflowMenuItem => item !== null);
 
   return (
-    <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-xs">
+    <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-label">
       <button
         type="button"
         onClick={onBack}
@@ -76,7 +76,7 @@ export const EditorCrumb = ({
       </span>
       <span
         role="status"
-        className="inline-flex shrink-0 items-center gap-1 text-2xs text-faint-foreground"
+        className="inline-flex shrink-0 items-center gap-1 text-secondary text-faint-foreground"
       >
         {saveStatus === 'saved' ? <Check size={ICON_SIZE.row} aria-hidden /> : null}
         {STATUS_LABEL[saveStatus]}

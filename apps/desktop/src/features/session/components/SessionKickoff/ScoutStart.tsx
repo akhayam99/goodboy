@@ -60,7 +60,7 @@ export const ScoutStart = ({ session }: Props) => {
         aria-label="Scout focus"
         placeholder="Optional: an area, a file or a question"
         data-kickoff-field
-        className="h-8 text-sm"
+        className="h-8 text-body"
       />
       <StartFooter note="Scout only reads. It changes nothing.">
         <Button

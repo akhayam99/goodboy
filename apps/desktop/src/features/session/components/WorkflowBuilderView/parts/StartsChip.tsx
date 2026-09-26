@@ -95,8 +95,8 @@ export const StartsChip = ({ choice, runs, disabled, onChange }: Props) => {
               )}
             >
               <span className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-xs text-foreground">{option.label}</span>
-                <span className="text-2xs text-faint-foreground">{option.hint}</span>
+                <span className="truncate text-label text-foreground">{option.label}</span>
+                <span className="text-secondary text-faint-foreground">{option.hint}</span>
               </span>
               {isActive ? (
                 <Check size={ICON_SIZE.row} aria-hidden className="mt-0.5 shrink-0 text-primary" />

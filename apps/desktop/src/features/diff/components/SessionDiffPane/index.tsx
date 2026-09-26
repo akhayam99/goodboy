@@ -239,12 +239,12 @@ export const SessionDiffPane = ({
     rebase.error !== null || diff.metaError !== null ? (
       <PageColumn className="pb-2">
         {rebase.error !== null ? (
-          <p role="alert" className="text-2xs text-danger" title={rebase.error}>
+          <p role="alert" className="text-secondary text-danger" title={rebase.error}>
             {rebase.error}
           </p>
         ) : null}
         {diff.metaError !== null ? (
-          <p role="status" className="text-2xs text-muted-foreground" title={diff.metaError}>
+          <p role="status" className="text-secondary text-muted-foreground" title={diff.metaError}>
             Couldn't read this branch's commits.
           </p>
         ) : null}

@@ -12,7 +12,7 @@ type Props = {
 };
 
 const GHOST =
-  'inline-flex items-center gap-1 rounded-md px-2 py-1 text-2xs font-medium text-muted-foreground motion-safe:transition-colors';
+  'inline-flex items-center gap-1 rounded-md px-2 py-1 text-secondary font-medium text-muted-foreground motion-safe:transition-colors';
 
 export const NotificationsToolbar = ({
   unreadCount,

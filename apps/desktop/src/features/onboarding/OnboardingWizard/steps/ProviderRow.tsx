@@ -51,7 +51,7 @@ export const ProviderRow = ({ info, isExpanded, onExpandedChange }: Props) => {
           <Icon size={ICON_SIZE.hero} aria-hidden />
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-sm font-medium capitalize text-foreground">{label}</span>
+          <span className="text-row capitalize text-foreground">{label}</span>
           <StatusPill connection={info.connection} />
         </div>
         {isExpanded && !isApi && (

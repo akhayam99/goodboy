@@ -18,7 +18,7 @@ export const FocusedPane = ({ lens, count, actions, children }: Props) => (
         <div className="flex min-w-0 items-baseline gap-2">
           <Eyebrow label={lens} muted />
           {count != null ? (
-            <span className="text-2xs tabular-nums text-faint-foreground">{count}</span>
+            <span className="text-secondary tabular-nums text-faint-foreground">{count}</span>
           ) : null}
         </div>
         {actions}

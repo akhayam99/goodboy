@@ -29,7 +29,7 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
               key={plan.id}
               type="button"
               className={cn(
-                'flex items-center justify-between gap-4 rounded-md border px-3 py-2 text-left text-xs leading-4 transition-colors',
+                'flex items-center justify-between gap-4 rounded-md border px-3 py-2 text-left text-label transition-colors',
                 planTint.bgSoft,
                 planTint.borderSoft,
                 planTint.hoverBgSoft,
@@ -46,7 +46,7 @@ export const AgentBriefPlans = ({ plans, sessionId }: Props) => {
                 <CONCEPT_ICONS.plans size={ICON_SIZE.row} aria-hidden className={planTint.icon} />
                 <span className="min-w-0 truncate text-foreground">{plan.title}</span>
               </span>
-              <span className="shrink-0 text-3xs text-muted-foreground">
+              <span className="shrink-0 text-meta text-muted-foreground">
                 {plan.status} ·{' '}
                 {consumer != null
                   ? planConsumerLabel({ name: consumer.name, count: plan.consumptionCount })

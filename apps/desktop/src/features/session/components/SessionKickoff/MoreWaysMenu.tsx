@@ -40,7 +40,7 @@ export const MoreWaysMenu = ({ sessionId }: Props) => {
     <OverflowMenu
       items={items}
       label={LABEL}
-      triggerClassName="flex items-center gap-1 px-1.5 text-2xs"
+      triggerClassName="flex items-center gap-1 px-1.5 text-secondary"
       trigger={
         <>
           <span>{LABEL}</span>

@@ -311,7 +311,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
         className="flex min-w-0 flex-col gap-4"
       >
         {alert === null ? null : (
-          <span role="alert" className="text-2xs text-danger">
+          <span role="alert" className="text-secondary text-danger">
             {alert}
           </span>
         )}
@@ -321,7 +321,7 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
             aria-label={`Edit ${artifact.title}`}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
-            className="artifact-prose-measure w-full font-mono text-sm"
+            className="artifact-prose-measure w-full font-mono text-body"
             autoGrow
             minRows={12}
             maxRows={80}

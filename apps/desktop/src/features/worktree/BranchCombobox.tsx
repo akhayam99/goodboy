@@ -126,7 +126,10 @@ export const BranchCombobox = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      className={cn('bg-subtle', isNoMatchesVisible && 'px-2 py-2 text-xs text-muted-foreground')}
+      className={cn(
+        'bg-subtle',
+        isNoMatchesVisible && 'px-2 py-2 text-label text-muted-foreground',
+      )}
       anchorClassName="w-full"
       trigger={
         <div
@@ -146,7 +149,7 @@ export const BranchCombobox = ({
             aria-expanded={open}
             aria-autocomplete="list"
             autoComplete="off"
-            className="flex-1 truncate bg-transparent px-2 text-sm font-mono text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
+            className="flex-1 truncate bg-transparent px-2 text-body font-mono text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
             onChange={(e) => {
               setQuery(e.target.value);
               if (!open) {
@@ -204,16 +207,18 @@ export const BranchCombobox = ({
                     select({ name: b.name });
                   }}
                   className={cn(
-                    'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-sm font-mono',
+                    'flex cursor-pointer items-center gap-2 px-2.5 py-1.5 text-body font-mono',
                     highlightIdx === i
                       ? cn(tintClasses('primary').bg, 'text-foreground')
                       : 'text-muted-foreground',
                   )}
                 >
                   <span className="min-w-0 flex-1 truncate">{b.name}</span>
-                  {b.inUse ? <span className="shrink-0 text-2xs text-warning">in use</span> : null}
+                  {b.inUse ? (
+                    <span className="shrink-0 text-secondary text-warning">in use</span>
+                  ) : null}
                   {b.hasUncommitted ? (
-                    <span className="shrink-0 text-2xs text-warning">dirty</span>
+                    <span className="shrink-0 text-secondary text-warning">dirty</span>
                   ) : null}
                 </li>
               ))}

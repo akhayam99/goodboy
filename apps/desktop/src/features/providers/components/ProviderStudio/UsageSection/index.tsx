@@ -41,12 +41,12 @@ export const UsageSection = ({ providerId, billing }: Props) => {
           label="Usage limits"
           action={
             reportedBy === null ? undefined : (
-              <span className="text-2xs text-faint-foreground">{reportedBy}</span>
+              <span className="text-secondary text-faint-foreground">{reportedBy}</span>
             )
           }
         />
         {billing === 'token' ? (
-          <p className="text-xs text-muted-foreground">Billed per token. No usage windows.</p>
+          <p className="text-label text-muted-foreground">Billed per token. No usage windows.</p>
         ) : (
           <>
             {windows.length > 0 ? (
@@ -70,7 +70,7 @@ export const UsageSection = ({ providerId, billing }: Props) => {
               />
             )}
             {reports ? (
-              <p className="text-2xs text-faint-foreground">
+              <p className="text-secondary text-faint-foreground">
                 {providerId === 'anthropic' && windows.length === 1
                   ? `${SOURCE_LINE[providerId] ?? ''} Claude reports only the window that limits you right now.`
                   : SOURCE_LINE[providerId]}

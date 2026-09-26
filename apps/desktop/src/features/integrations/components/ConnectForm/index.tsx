@@ -63,7 +63,7 @@ const ConfigFieldInput = ({
   readonly isDisabled: boolean;
 }) => (
   <div className="flex min-w-0 flex-col gap-1.5">
-    <label htmlFor={field.id} className="text-xs font-medium text-foreground">
+    <label htmlFor={field.id} className="text-label font-medium text-foreground">
       {field.label}
     </label>
     <Input
@@ -154,7 +154,7 @@ export const ConnectForm = ({
       {credentialId === null ? guide : null}
       {credentialId === null ? (
         <div className="flex min-w-0 flex-col gap-1.5">
-          <label htmlFor={tokenId} className="text-xs font-medium text-foreground">
+          <label htmlFor={tokenId} className="text-label font-medium text-foreground">
             {tokenLabel}
           </label>
           <Input
@@ -174,7 +174,7 @@ export const ConnectForm = ({
               href={tokenLink.href}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex w-fit items-center gap-1 text-2xs text-muted-foreground hover:text-foreground"
+              className="inline-flex w-fit items-center gap-1 text-secondary text-muted-foreground hover:text-foreground"
             >
               {tokenLink.label} <ExternalLink size={10} aria-hidden />
             </a>
@@ -187,7 +187,7 @@ export const ConnectForm = ({
           open={isConfigOpen}
           onOpenChange={setIsConfigOpen}
           trigger={
-            <span className="text-2xs font-normal text-muted-foreground">
+            <span className="text-secondary font-normal text-muted-foreground">
               {config.disclosureLabel ?? 'Advanced'}
             </span>
           }
@@ -204,7 +204,9 @@ export const ConnectForm = ({
         <Collapsible
           open={isNoteOpen}
           onOpenChange={setIsNoteOpen}
-          trigger={<span className="text-2xs font-normal text-muted-foreground">{note.label}</span>}
+          trigger={
+            <span className="text-secondary font-normal text-muted-foreground">{note.label}</span>
+          }
         >
           <div className="text-2xs leading-relaxed text-muted-foreground">{note.body}</div>
         </Collapsible>

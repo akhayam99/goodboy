@@ -60,7 +60,7 @@ export const SlackFormBody = ({ workspaceId, onConnected, shouldAutoFocus = fals
               {SLACK_USER_SCOPES.map((scope) => (
                 <li
                   key={scope}
-                  className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-2xs text-foreground"
+                  className="rounded-full border border-border-soft px-2 py-0.5 font-mono text-secondary text-foreground"
                 >
                   {scope}
                 </li>

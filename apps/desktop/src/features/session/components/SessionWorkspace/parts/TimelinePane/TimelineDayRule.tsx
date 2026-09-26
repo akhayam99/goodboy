@@ -14,7 +14,10 @@ type Props = {
 export const TimelineDayRule = ({ item, rail, railWidth, lanes = null }: Props) => (
   <div className="flex min-w-0 items-center" style={{ height: item.height }}>
     <span
-      className={cn('shrink-0 pr-2 text-2xs font-medium text-muted-foreground', TIMELINE_GUTTER)}
+      className={cn(
+        'shrink-0 pr-2 text-secondary font-medium text-muted-foreground',
+        TIMELINE_GUTTER,
+      )}
     >
       {item.label}
     </span>
@@ -24,7 +27,7 @@ export const TimelineDayRule = ({ item, rail, railWidth, lanes = null }: Props) 
     <span className="flex min-w-0 flex-1 items-center gap-2 pl-2 pr-1.5">
       <span
         className={cn(
-          'shrink-0 text-2xs font-medium text-muted-foreground',
+          'shrink-0 text-secondary font-medium text-muted-foreground',
           TIMELINE_GUTTER_FALLBACK,
         )}
       >

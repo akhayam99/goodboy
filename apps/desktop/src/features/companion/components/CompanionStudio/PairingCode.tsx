@@ -38,7 +38,7 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
   if (error !== null) {
     return (
       <div className="flex size-[300px] flex-col items-center justify-center gap-3">
-        <p className="text-center text-xs text-danger">{error}</p>
+        <p className="text-center text-label text-danger">{error}</p>
         <Button variant="secondary" size="sm" onClick={onMint}>
           <RefreshCw size={ICON_SIZE.row} aria-hidden /> Retry
         </Button>
@@ -71,7 +71,7 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
               style={{ width: `${(Math.min(remaining, total) / total) * 100}%` }}
             />
           </div>
-          <span className="text-2xs font-semibold tabular-nums text-muted-foreground">
+          <span className="text-secondary font-semibold tabular-nums text-muted-foreground">
             Expires in {remaining}s
           </span>
         </div>
@@ -81,7 +81,7 @@ export const PairingCode = ({ info, loading, error, remaining, total, onMint }: 
         <Button variant="secondary" size="sm" onClick={onMint}>
           <RefreshCw size={ICON_SIZE.row} aria-hidden /> New code
         </Button>
-        <p className="max-w-[18rem] text-center text-2xs text-muted-foreground">
+        <p className="max-w-[18rem] text-center text-secondary text-muted-foreground">
           A new code is minted automatically when this one expires.
         </p>
       </div>

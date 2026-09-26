@@ -353,7 +353,7 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                 headingSize="page"
               >
                 <div className="flex flex-col gap-3">
-                  <div className="flex max-w-prose flex-col gap-2 text-sm leading-relaxed text-foreground">
+                  <div className="flex max-w-prose flex-col gap-2 text-prose text-foreground">
                     <p className="font-medium">{previewTitle === '' ? 'Untitled' : previewTitle}</p>
                     <p className="whitespace-pre-wrap text-foreground">{previewBody}</p>
                   </div>
@@ -368,13 +368,13 @@ export const ReportIssueStudio = ({ onClose }: Props) => {
                   {errorMessage != null ? (
                     <span
                       role="alert"
-                      className="inline-flex items-center gap-1 text-xs text-danger"
+                      className="inline-flex items-center gap-1 text-label text-danger"
                     >
                       <AlertTriangle size={ICON_SIZE.row} aria-hidden />
                       {errorMessage}
                     </span>
                   ) : version != null ? (
-                    <span className="text-2xs text-muted-foreground">
+                    <span className="text-secondary text-muted-foreground">
                       v{version} · Posts publicly on GitHub, under your account
                     </span>
                   ) : (

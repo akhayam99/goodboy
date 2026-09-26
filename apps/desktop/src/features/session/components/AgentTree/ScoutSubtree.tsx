@@ -63,7 +63,7 @@ export const ScoutSubtree = ({
         aria-expanded={expanded}
         aria-label={`${expanded ? 'collapse' : 'expand'} ${groupLabel}`}
         className={cn(
-          'flex items-center gap-1 px-2 py-0.5 text-2xs uppercase tracking-eyebrow',
+          'flex items-center gap-1 px-2 py-0.5 text-secondary uppercase tracking-eyebrow',
           tintClasses('info').text,
           'transition-colors hover:text-info',
         )}
@@ -79,7 +79,7 @@ export const ScoutSubtree = ({
             className={cn(
               'inline-flex shrink-0 items-center gap-1 rounded-sm',
               tintClasses('warning').bg,
-              'px-1 py-0.5 text-3xs font-medium text-warning',
+              'px-1 py-0.5 text-meta font-medium text-warning',
             )}
             title={`${unreadCount} scout ${unreadCount === 1 ? 'reply' : 'replies'} to review`}
           >

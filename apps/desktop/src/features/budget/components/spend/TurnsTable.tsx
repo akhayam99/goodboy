@@ -81,7 +81,7 @@ export const TurnsTable = ({
       ) : (
         <div className="flex max-w-full flex-col gap-1">
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full min-w-[36rem] text-left text-xs">
+            <table className="w-full min-w-[36rem] text-left text-label">
               <thead className="text-muted-foreground">
                 <tr>
                   <th className="px-2 py-2 font-medium">type</th>

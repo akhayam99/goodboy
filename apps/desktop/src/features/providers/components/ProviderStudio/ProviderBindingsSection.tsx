@@ -53,8 +53,8 @@ export const ProviderBindingsSection = ({ providerId, cliIdentity }: Props) => {
                 <FolderGit2 size={ICON_SIZE.control} />
               </span>
               <div className="flex min-w-0 flex-col">
-                <span className="truncate text-sm font-medium text-foreground">{ws.name}</span>
-                <span className="text-2xs text-faint-foreground">
+                <span className="truncate text-row text-foreground">{ws.name}</span>
+                <span className="text-secondary text-faint-foreground">
                   {usingKey ? 'billed to API key' : 'billed to CLI login'}
                 </span>
               </div>

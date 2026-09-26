@@ -11,7 +11,7 @@ type Props = {
 export const Chip = ({ tone, children }: Props) => (
   <span
     className={cn(
-      'inline-flex items-center rounded-md px-2 py-0.5 text-2xs font-medium',
+      'inline-flex items-center rounded-md px-2 py-0.5 text-secondary font-medium',
       tintClasses(tone).bg,
       tintClasses(tone).text,
     )}

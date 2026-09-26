@@ -137,7 +137,7 @@ export const AttachmentChip = ({
   const body = (
     <>
       <Icon size={ICON_SIZE.hero} aria-hidden className="shrink-0 text-muted-foreground" />
-      <span className="truncate text-xs text-foreground">{fileName}</span>
+      <span className="truncate text-label text-foreground">{fileName}</span>
     </>
   );
 

@@ -20,7 +20,7 @@ export const WorkMeta = ({
   <span
     data-testid="work-meta"
     className={cn(
-      'flex shrink-0 items-center gap-2 text-2xs leading-4 tabular-nums',
+      'flex shrink-0 items-center gap-2 text-secondary tabular-nums',
       isPlanned ? 'text-faint-foreground' : 'text-muted-foreground',
     )}
   >

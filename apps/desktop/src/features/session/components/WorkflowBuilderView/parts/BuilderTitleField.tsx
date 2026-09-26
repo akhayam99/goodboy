@@ -78,14 +78,14 @@ export const BuilderTitleField = ({
         />
         {hasAside ? (
           <div className="flex h-9 shrink-0 items-center gap-2">
-            {isSuggesting ? <KbdPill className="h-4 text-3xs">Tab</KbdPill> : null}
+            {isSuggesting ? <KbdPill className="h-4 text-meta">Tab</KbdPill> : null}
             {origin}
             {estimate}
           </div>
         ) : null}
       </div>
       {isSuggesting ? (
-        <p id={TITLE_HINT_ID} className="text-2xs text-faint-foreground">
+        <p id={TITLE_HINT_ID} className="text-secondary text-faint-foreground">
           Suggested from the goal. Press Tab to keep it, or type to name it yourself.
         </p>
       ) : null}

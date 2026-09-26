@@ -22,14 +22,14 @@ export const StorageLegendItem = ({ segment }: Props) => (
         .getElementById(segment.target)
         ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
-    className="flex h-6 items-center gap-2 rounded-sm px-1 text-left text-xs text-foreground hover:bg-hover"
+    className="flex h-6 items-center gap-2 rounded-sm px-1 text-left text-label text-foreground hover:bg-hover"
   >
     <i aria-hidden className={cn('block size-2.5 shrink-0 rounded-sm', segment.swatch)} />
     <span className="min-w-0 truncate">{segment.label}</span>
     <span className="ml-auto tabular-nums text-muted-foreground">
       {formatBytes({ bytes: segment.bytes })}
     </span>
-    <span className="w-20 shrink-0 truncate text-right text-2xs tabular-nums text-faint-foreground">
+    <span className="w-20 shrink-0 truncate text-right text-secondary tabular-nums text-faint-foreground">
       {segment.detail}
     </span>
   </button>

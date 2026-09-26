@@ -50,7 +50,7 @@ export const ProviderPicker = ({
           aria-expanded={open}
           aria-label={`${ariaLabel}: ${summary}`}
           className={cn(
-            'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
+            'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-label transition-colors',
             open
               ? cn('border-primary', tintClasses('primary').bgSoft)
               : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',

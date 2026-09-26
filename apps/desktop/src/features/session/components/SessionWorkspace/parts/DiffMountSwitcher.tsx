@@ -45,7 +45,7 @@ export const DiffMountSwitcher = ({
                 data-stat={statState}
                 onClick={() => openMountDiff(sessionId, mount.worktreePath)}
                 className={cn(
-                  'flex min-w-0 items-center gap-2 rounded-md border border-transparent px-2.5 py-1 text-xs font-medium motion-safe:transition-all',
+                  'flex min-w-0 items-center gap-2 rounded-md border border-transparent px-2.5 py-1 text-label font-medium motion-safe:transition-all',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
                   isSelected
                     ? 'bg-elevated font-semibold text-foreground ring-1 ring-inset ring-border'
@@ -55,7 +55,7 @@ export const DiffMountSwitcher = ({
               >
                 <span className="min-w-0 truncate">{mount.mountName}</span>
                 {isNameShared && mount.branch !== '' ? (
-                  <span className="min-w-0 shrink truncate font-mono text-3xs text-muted-foreground">
+                  <span className="min-w-0 shrink truncate font-mono text-meta text-muted-foreground">
                     {mount.branch}
                   </span>
                 ) : null}
@@ -63,7 +63,7 @@ export const DiffMountSwitcher = ({
                   {stat == null ? null : hasChanges ? (
                     <DiffStat additions={stat.additions} deletions={stat.deletions} />
                   ) : (
-                    <span className="text-3xs tabular-nums text-faint-foreground">no changes</span>
+                    <span className="text-meta text-faint-foreground">no changes</span>
                   )}
                 </span>
               </button>

@@ -59,7 +59,7 @@ export const CollapsedCrumbs = ({ crumbs, className }: Props) => {
                   close();
                   crumb.onClick?.();
                 }}
-                className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:hover:bg-transparent"
+                className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left text-label text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:hover:bg-transparent"
               >
                 {Icon == null ? null : (
                   <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0" />

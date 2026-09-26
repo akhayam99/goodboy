@@ -18,7 +18,7 @@ export const HandoffEarlierStepRow = ({ entry, sessionId }: Props) => {
         }
         void selectAgent(sessionId, entry.agentId);
       }}
-      className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-xs transition-colors hover:bg-hover"
+      className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left text-label transition-colors hover:bg-hover"
     >
       <span className="shrink-0 text-foreground">{entry.label}</span>
       {entry.detail === null ? null : (

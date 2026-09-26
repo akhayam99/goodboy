@@ -219,7 +219,7 @@ export const CreatePrPanel = ({
           <SectionHeader
             label="Open a pull request"
             action={
-              <span className="inline-flex items-center gap-1 font-mono text-2xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1 font-mono text-secondary text-muted-foreground">
                 <GitBranch size={11} aria-hidden />
                 {branch ?? 'no branch'}
               </span>
@@ -251,7 +251,7 @@ export const CreatePrPanel = ({
                     placeholder="Pull request title"
                     disabled={busy !== null}
                     aria-label="Pull request title"
-                    className="h-8 w-full text-sm sm:w-96"
+                    className="h-8 w-full text-body sm:w-96"
                     autoFocus
                   />
                 </FieldRow>
@@ -261,7 +261,7 @@ export const CreatePrPanel = ({
                     value={body}
                     onChange={(e) => setBody(e.target.value)}
                     placeholder="What changed and why"
-                    className="w-full text-sm sm:w-96"
+                    className="w-full text-body sm:w-96"
                     autoGrow
                     minRows={3}
                     maxRows={12}
@@ -315,14 +315,14 @@ export const CreatePrPanel = ({
                       <li key={reference.number} className="flex items-center gap-2">
                         <code
                           data-testid="pr-issue-reference"
-                          className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-2xs text-foreground"
+                          className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-secondary text-foreground"
                         >
                           {reference.line}
                         </code>
                         <button
                           type="button"
                           onClick={() => void openUrl(reference.url)}
-                          className="truncate text-2xs text-muted-foreground transition-colors hover:text-foreground"
+                          className="truncate text-secondary text-muted-foreground transition-colors hover:text-foreground"
                         >
                           {reference.identifier}
                         </button>
@@ -349,7 +349,7 @@ export const CreatePrPanel = ({
         <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {error == null && isDraftAgentRunning && (
-              <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-xs text-muted-foreground">
+              <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
                 <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                 An agent is already opening a pull request for this session.
               </span>
@@ -357,7 +357,7 @@ export const CreatePrPanel = ({
             {error != null && (
               <span
                 role="alert"
-                className="inline-flex min-w-0 items-center gap-1 truncate text-xs text-danger"
+                className="inline-flex min-w-0 items-center gap-1 truncate text-label text-danger"
                 title={error}
               >
                 <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />

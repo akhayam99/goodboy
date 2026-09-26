@@ -40,7 +40,7 @@ export const PlannerDraftRow = ({
   onPlan,
 }: Props) => (
   <div className="flex flex-col gap-1.5 rounded-lg bg-subtle p-2.5 ring-1 ring-border-soft focus-within:ring-foreground/15">
-    <label htmlFor={PROCESS_ID} className="text-2xs text-muted-foreground">
+    <label htmlFor={PROCESS_ID} className="text-secondary text-muted-foreground">
       Describe the steps
     </label>
     <Textarea
@@ -51,7 +51,7 @@ export const PlannerDraftRow = ({
       autoGrow
       minRows={2}
       maxRows={7}
-      className="min-h-12 resize-none border-0 bg-transparent px-0 py-0 text-sm shadow-none focus-visible:ring-0"
+      className="min-h-12 resize-none border-0 bg-transparent px-0 py-0 text-body shadow-none focus-visible:ring-0"
     />
     <div className="flex items-center justify-end gap-2">
       <RoutingPicker

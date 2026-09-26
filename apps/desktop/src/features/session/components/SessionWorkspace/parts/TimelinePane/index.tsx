@@ -532,7 +532,7 @@ export const TimelinePane = ({ session, actions, kickoff, onKickoffShownChange }
         <TimelineSkeleton />
       ) : model.entries.length === 0 ? null : visibleEntries.length === 0 ? (
         <div className="flex items-center gap-2 py-2">
-          <p className="min-w-0 flex-1 text-xs text-muted-foreground">
+          <p className="min-w-0 flex-1 text-label text-muted-foreground">
             {isNeedsYou
               ? 'Nothing needs you right now.'
               : 'Everything is hidden by the activity filter. Show a category to bring it back.'}

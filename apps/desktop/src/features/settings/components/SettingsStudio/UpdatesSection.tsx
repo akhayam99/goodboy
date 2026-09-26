@@ -91,7 +91,7 @@ export const UpdatesSection = () => {
           </span>
         </FieldRow>
         {failure !== null && (
-          <p role="status" className="text-xs text-danger">
+          <p role="status" className="text-label text-danger">
             {failureLine({ failure, target })}
           </p>
         )}

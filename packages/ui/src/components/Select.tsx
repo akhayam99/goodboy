@@ -9,8 +9,8 @@ export type SelectProps = Omit<ComponentProps<'select'>, 'size'> & {
 };
 
 const SIZE: Record<SelectSize, string> = {
-  sm: 'h-7 pl-2 pr-7 text-xs',
-  md: 'h-8 pl-2.5 pr-8 text-sm',
+  sm: 'h-7 pl-2 pr-7 text-label',
+  md: 'h-8 pl-2.5 pr-8 text-body',
 };
 
 const CHEVRON_OFFSET: Record<SelectSize, string> = {

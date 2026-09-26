@@ -55,14 +55,14 @@ export const BriefReady = ({
       />
       {entry.brief.acceptance.length > 0 && (
         <div className="flex flex-col gap-1">
-          <span id={doneWhenId} className="text-2xs font-medium text-foreground">
+          <span id={doneWhenId} className="text-secondary font-medium text-foreground">
             Done when
           </span>
           <ul aria-labelledby={doneWhenId} className="flex flex-col gap-1">
             {entry.brief.acceptance.map((criterion) => (
               <li
                 key={criterion}
-                className="flex items-start gap-1.5 text-2xs text-muted-foreground"
+                className="flex items-start gap-1.5 text-secondary text-muted-foreground"
               >
                 <span
                   aria-hidden
@@ -74,7 +74,7 @@ export const BriefReady = ({
           </ul>
         </div>
       )}
-      <p className="text-2xs text-faint-foreground">
+      <p className="text-secondary text-faint-foreground">
         The full {source.noun} stays linked to this session.
       </p>
       <footer className="flex items-center gap-1.5">

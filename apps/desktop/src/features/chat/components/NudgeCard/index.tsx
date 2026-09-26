@@ -59,7 +59,7 @@ export const NudgeCard = ({
   }, [autoFocusPrimary]);
 
   return (
-    <TranscriptShell tone={severity} variant="boxed" emphasis className="relative text-xs">
+    <TranscriptShell tone={severity} variant="boxed" emphasis className="relative text-label">
       <section data-testid={testId} aria-label={ariaLabel} className="flex flex-col gap-2">
         {onDismiss ? (
           <Tooltip content="Dismiss">
@@ -83,7 +83,7 @@ export const NudgeCard = ({
           <div className="flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-medium leading-relaxed text-foreground">{title}</p>
-              {body ? <p className="text-xs text-muted-foreground">{body}</p> : null}
+              {body ? <p className="text-label text-muted-foreground">{body}</p> : null}
             </div>
             {primary || secondary || tertiary ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -94,7 +94,7 @@ export const NudgeCard = ({
                     onClick={primary.onClick}
                     data-testid={primary.testId}
                     className={cn(
-                      'rounded-md px-2 py-0.5 text-2xs font-semibold hover:opacity-90',
+                      'rounded-md px-2 py-0.5 text-secondary font-semibold hover:opacity-90',
                       tint.solid,
                     )}
                   >
@@ -106,7 +106,7 @@ export const NudgeCard = ({
                     type="button"
                     onClick={secondary.onClick}
                     data-testid={secondary.testId}
-                    className="rounded-md border border-border px-2 py-0.5 text-2xs font-semibold text-foreground hover:bg-hover"
+                    className="rounded-md border border-border px-2 py-0.5 text-secondary font-semibold text-foreground hover:bg-hover"
                   >
                     {secondary.label}
                   </button>
@@ -116,7 +116,7 @@ export const NudgeCard = ({
                     type="button"
                     onClick={tertiary.onClick}
                     data-testid={tertiary.testId}
-                    className="rounded-md px-2 py-0.5 text-2xs font-semibold text-muted-foreground hover:bg-hover hover:text-foreground"
+                    className="rounded-md px-2 py-0.5 text-secondary font-semibold text-muted-foreground hover:bg-hover hover:text-foreground"
                   >
                     {tertiary.label}
                   </button>

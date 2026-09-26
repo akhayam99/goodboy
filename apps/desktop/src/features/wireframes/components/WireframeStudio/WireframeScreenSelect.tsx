@@ -25,7 +25,7 @@ export const WireframeScreenSelect = ({ screens, currentScreenId, onSelect }: Pr
           </option>
         ))}
       </Select>
-      <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">
+      <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
         {`${order + 1}/${screens.length}`}
       </span>
     </span>

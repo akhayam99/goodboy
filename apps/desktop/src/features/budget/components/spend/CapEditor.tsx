@@ -134,7 +134,7 @@ export const CapEditor = ({
   return (
     <StudioWidget label={label} hint={hint}>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">$</span>
+        <span className="text-body text-muted-foreground">$</span>
         <Input
           type="text"
           inputMode="decimal"
@@ -159,7 +159,7 @@ export const CapEditor = ({
           </Button>
         ) : null}
         {currentCapUsd !== null ? (
-          <span className="ml-auto text-2xs text-muted-foreground tabular-nums">
+          <span className="ml-auto text-secondary text-muted-foreground tabular-nums">
             current {formatUsd(currentCapUsd)}
           </span>
         ) : null}
@@ -169,7 +169,7 @@ export const CapEditor = ({
           <Divider />
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">at</span>
+              <span className="text-body text-muted-foreground">at</span>
               <Input
                 type="text"
                 inputMode="numeric"
@@ -185,7 +185,7 @@ export const CapEditor = ({
                 className="max-w-20 font-mono tabular-nums"
                 aria-label="alert threshold percent"
               />
-              <span className="text-sm text-muted-foreground">% of the cap</span>
+              <span className="text-body text-muted-foreground">% of the cap</span>
               <Button
                 variant="secondary"
                 size="sm"
@@ -195,7 +195,7 @@ export const CapEditor = ({
                 Update threshold
               </Button>
             </div>
-            <p className="text-2xs text-muted-foreground">
+            <p className="text-secondary text-muted-foreground">
               At this share of the cap Goodboy warns you and routes the next turn to another
               provider. If none has room, work continues here.
             </p>

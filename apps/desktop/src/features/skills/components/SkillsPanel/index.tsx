@@ -256,11 +256,11 @@ const SkillRow = ({ skill, onEdit, onDelete }: SkillRowProps) => {
           title={`Edit ${skill.name}`}
           className="flex min-w-0 flex-col items-start gap-0.5 rounded-md px-2.5 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
         >
-          <span className="truncate text-sm font-medium text-foreground" title={skill.filePath}>
+          <span className="truncate text-row text-foreground" title={skill.filePath}>
             /{skill.name}
           </span>
           {skill.description !== '' ? (
-            <span className="truncate text-xs text-muted-foreground">{skill.description}</span>
+            <span className="truncate text-label text-muted-foreground">{skill.description}</span>
           ) : null}
         </button>
         <div className="col-start-2 row-start-1 flex items-start gap-1 px-2 py-1.5">
@@ -386,7 +386,7 @@ const SkillEditor = ({
             placeholder="skill prompt body…"
             rows={6}
             disabled={saving}
-            className="w-full font-mono text-xs sm:w-96"
+            className="w-full text-code sm:w-96"
           />
         </FieldRow>
       </section>
@@ -395,7 +395,7 @@ const SkillEditor = ({
       <footer className="flex shrink-0 items-center gap-3">
         <div className="min-w-0 flex-1">
           {error !== null ? (
-            <span role="alert" className="inline-flex items-center gap-1 text-xs text-danger">
+            <span role="alert" className="inline-flex items-center gap-1 text-label text-danger">
               <AlertTriangle size={ICON_SIZE.row} aria-hidden />
               {error}
             </span>

@@ -47,7 +47,7 @@ export const WorkspaceIdentityRow = () => {
           >
             <span
               aria-hidden
-              className="flex size-5 shrink-0 items-center justify-center rounded-md text-3xs font-bold text-on-tone ring-1 ring-inset ring-border-soft"
+              className="flex size-5 shrink-0 items-center justify-center rounded-md text-meta font-bold text-on-tone ring-1 ring-inset ring-border-soft"
               style={{ backgroundColor: accent }}
             >
               {initialOf(currentWorkspace.name)}

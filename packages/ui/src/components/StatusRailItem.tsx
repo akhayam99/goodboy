@@ -42,9 +42,9 @@ export const StatusRailItem = ({
       {icon}
     </span>
     <span className="flex min-w-0 flex-1 flex-col">
-      <span className={cn('truncate text-sm', density === 'row' && 'font-medium')}>{label}</span>
+      <span className={cn('truncate text-body', density === 'row' && 'font-medium')}>{label}</span>
       {subtitle === undefined ? null : (
-        <span className="truncate text-2xs text-muted-foreground">{subtitle}</span>
+        <span className="truncate text-secondary text-muted-foreground">{subtitle}</span>
       )}
     </span>
     {tone === undefined ? null : (

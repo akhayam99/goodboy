@@ -43,10 +43,10 @@ export const StorageCleanupSettings = () => {
   return (
     <section aria-label="Cleanup" className="flex flex-col gap-1">
       <Eyebrow label="Cleanup" />
-      <div className="flex min-h-10 items-center gap-3 px-2 text-sm">
+      <div className="flex min-h-10 items-center gap-3 px-2 text-body">
         <label htmlFor="storage-suggest-after" className="flex min-w-0 flex-1 flex-col">
           <span className="text-foreground">Suggest cleanup after</span>
-          <span className="text-2xs text-faint-foreground">
+          <span className="text-secondary text-faint-foreground">
             Clean folders idle longer than this are preselected and counted in &quot;can go&quot;.
           </span>
         </label>
@@ -58,10 +58,10 @@ export const StorageCleanupSettings = () => {
           ))}
         </Select>
       </div>
-      <div className="flex min-h-10 items-center gap-3 px-2 text-sm">
+      <div className="flex min-h-10 items-center gap-3 px-2 text-body">
         <div className="flex min-w-0 flex-1 flex-col">
           <span className="text-foreground">Scan another repository</span>
-          <span className="text-2xs text-faint-foreground">
+          <span className="text-secondary text-faint-foreground">
             For a repository Goodboy used in a workspace you removed.
           </span>
         </div>

@@ -27,7 +27,7 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
           disabled={disabled}
           onClick={toggle}
           className={cn(
-            'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
+            'flex w-full items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-label transition-colors',
             open
               ? cn('border-primary', tintClasses('primary').bgSoft)
               : 'border-border-soft bg-subtle hover:border-border hover:bg-hover',
@@ -58,7 +58,7 @@ export const RoleSelect = ({ value, onChange, disabled }: Props) => {
               close();
             }}
             className={cn(
-              'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-xs transition-colors',
+              'flex w-full items-center gap-1.5 px-2 py-1.5 text-left text-label transition-colors',
               active
                 ? cn(tintClasses('primary').bg, 'text-foreground')
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',

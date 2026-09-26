@@ -38,7 +38,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
       )}
     >
       <div className="flex items-center gap-1.5">
-        <span className="min-w-0 truncate font-mono text-2xs text-muted-foreground">
+        <span className="min-w-0 truncate font-mono text-secondary text-muted-foreground">
           {draft.path}:{draft.line}
         </span>
         <Chip
@@ -77,7 +77,7 @@ export const DraftCard = ({ draft, onEdit, onDiscard }: Props) => {
             value={body}
             onChange={(event) => setBody(event.target.value)}
             aria-label="Edit draft comment"
-            className="text-xs"
+            className="text-label"
             autoGrow
             maxRows={8}
             onKeyDown={(event) => {

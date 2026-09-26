@@ -28,7 +28,7 @@ export const CustomAnswerField = ({
         onClick={onToggle}
         className={cn(
           ROW_FRAME,
-          'items-center gap-2 border-border-soft text-left text-sm font-medium text-muted-foreground',
+          'items-center gap-2 border-border-soft text-left text-row text-muted-foreground',
           'transition-[color,background-color,border-color] duration-150',
           'hover:border-border hover:bg-hover hover:text-foreground',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
@@ -51,7 +51,10 @@ export const CustomAnswerField = ({
       )}
     >
       <span
-        className={cn('text-2xs font-medium', filled ? 'text-primary' : 'text-muted-foreground')}
+        className={cn(
+          'text-secondary font-medium',
+          filled ? 'text-primary' : 'text-muted-foreground',
+        )}
       >
         your answer
       </span>
@@ -63,7 +66,7 @@ export const CustomAnswerField = ({
         autoGrow
         minRows={1}
         maxRows={4}
-        className="min-h-5 w-full resize-none border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0 focus-visible:shadow-none"
+        className="min-h-5 w-full resize-none border-0 bg-transparent p-0 text-body shadow-none focus-visible:ring-0 focus-visible:shadow-none"
       />
     </div>
   );

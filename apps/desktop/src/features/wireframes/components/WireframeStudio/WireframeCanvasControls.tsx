@@ -41,7 +41,7 @@ export const WireframeCanvasControls = ({ navigation, order, screenCount, onZoom
       disabled={navigation.zoom <= ZOOM_BOUNDS.min}
       data-testid="wireframe-zoom-out"
     />
-    <span className="min-w-10 text-center tabular-nums text-2xs text-muted-foreground">
+    <span className="min-w-10 text-center tabular-nums text-secondary text-muted-foreground">
       {Math.round(navigation.zoom * 100)}%
     </span>
     <IconButton

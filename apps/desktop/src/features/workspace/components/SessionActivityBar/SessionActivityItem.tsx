@@ -74,18 +74,18 @@ export const SessionActivityItem = ({
         <span className="flex w-full min-w-0 items-baseline gap-2">
           <InlineMarkdown
             text={session.goal}
-            className="min-w-0 flex-1 truncate text-sm font-medium leading-5 text-foreground"
+            className="min-w-0 flex-1 truncate text-row text-foreground"
           />
           <span
             data-testid="session-row-trailing"
-            className="w-12 shrink-0 text-right text-3xs tabular-nums text-faint-foreground"
+            className="w-12 shrink-0 text-right text-meta text-faint-foreground"
           >
             <span className={cn(hasCost && 'group-hover/session-row:hidden')}>{summary.age}</span>
             {hasCost ? (
               <CostBadge
                 value={summary.cost}
                 title={`Session spend: ${formatUsd(summary.cost)} (excludes summarizer)`}
-                className="hidden font-sans text-3xs font-medium tabular-nums text-muted-foreground group-hover/session-row:inline"
+                className="hidden font-sans text-meta font-medium text-muted-foreground group-hover/session-row:inline"
               />
             ) : null}
           </span>
@@ -94,7 +94,7 @@ export const SessionActivityItem = ({
           {summary.progress !== null ? (
             <SessionProgress progress={summary.progress} tone={summary.tone} className="flex-1" />
           ) : (
-            <span className="min-w-0 flex-1 truncate text-2xs text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
               {summary.reason}
             </span>
           )}

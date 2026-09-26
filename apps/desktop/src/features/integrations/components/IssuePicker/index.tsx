@@ -181,7 +181,7 @@ export const IssuePicker = ({
             aria-expanded={isOpen}
             aria-autocomplete="list"
             autoComplete="off"
-            className="flex-1 truncate bg-transparent px-2 text-sm text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
+            className="flex-1 truncate bg-transparent px-2 text-body text-foreground outline-none placeholder:text-faint-foreground disabled:cursor-not-allowed"
             onChange={(event) => {
               setQuery(event.target.value);
               if (!isOpen) {
@@ -270,10 +270,10 @@ export const IssuePicker = ({
                       highlightIdx === index && cn(tintClasses('primary').bg),
                     )}
                   >
-                    <div className="flex items-center gap-2 text-sm">
+                    <div className="flex items-center gap-2 text-body">
                       {pasted == null ? (
                         <>
-                          <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+                          <span className="shrink-0 font-mono text-secondary text-muted-foreground">
                             {row.identifier}
                           </span>
                           <span className="min-w-0 flex-1 truncate text-foreground">
@@ -293,7 +293,7 @@ export const IssuePicker = ({
           )}
 
           {isEmptyState && (
-            <div className="px-3 py-2 text-xs text-muted-foreground">
+            <div className="px-3 py-2 text-label text-muted-foreground">
               <EmptyState
                 icon={CONCEPT_ICONS.search}
                 tone={CONCEPT_TONE.search}

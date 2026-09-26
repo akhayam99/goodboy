@@ -31,7 +31,7 @@ export const SummarizerBadge = ({ sessionId }: { sessionId: SessionId }) => {
           cn(
             'inline-flex h-6 shrink-0 items-center gap-1 rounded-md',
             tintClasses('danger').bg,
-            'px-2 text-2xs text-danger motion-safe:transition-colors',
+            'px-2 text-secondary text-danger motion-safe:transition-colors',
           ),
           retrying && 'animate-border-pulse',
           canRetry

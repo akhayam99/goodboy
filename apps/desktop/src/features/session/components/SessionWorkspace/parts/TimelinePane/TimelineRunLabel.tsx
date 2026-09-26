@@ -32,7 +32,7 @@ export const TimelineRunLabel = ({
       <span
         title={title}
         className={cn(
-          'truncate text-sm leading-5',
+          'truncate text-body',
           WORK_ROW.title,
           isDiscarded ? 'text-muted-foreground' : 'text-foreground',
         )}

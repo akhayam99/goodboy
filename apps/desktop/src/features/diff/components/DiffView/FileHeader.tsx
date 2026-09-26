@@ -111,18 +111,18 @@ export const FileHeader = ({
         <span
           aria-label={STATUS_WORD[file.status]}
           className={cn(
-            'flex size-4 shrink-0 items-center justify-center rounded-sm font-mono text-3xs font-bold',
+            'flex size-4 shrink-0 items-center justify-center rounded-sm font-mono text-meta font-bold',
             tone.text,
             tone.bg,
           )}
         >
           {STATUS_LETTER[file.status]}
         </span>
-        <span className="min-w-0 truncate font-mono text-xs" title={file.path}>
+        <span className="min-w-0 truncate text-code" title={file.path}>
           <span className="text-faint-foreground">{dir}</span>
           <span className="text-foreground">{name}</span>
         </span>
-        <span className="shrink-0 text-2xs tabular-nums">
+        <span className="shrink-0 text-secondary tabular-nums">
           {file.additions > 0 ? <span className="text-success">+{file.additions}</span> : null}
           {file.additions > 0 && file.deletions > 0 ? ' ' : null}
           {file.deletions > 0 ? <span className="text-danger">−{file.deletions}</span> : null}
@@ -136,14 +136,14 @@ export const FileHeader = ({
       {commentCount > 0 ? (
         <span
           aria-label={`${commentCount} ${commentCount === 1 ? 'comment' : 'comments'}`}
-          className="flex shrink-0 items-center gap-1 text-2xs tabular-nums text-muted-foreground"
+          className="flex shrink-0 items-center gap-1 text-secondary tabular-nums text-muted-foreground"
         >
           <MessageSquare size={ICON_SIZE.row} aria-hidden />
           {commentCount}
         </span>
       ) : null}
       {viewed === 'stale' ? (
-        <span className="shrink-0 text-2xs text-faint-foreground">Changed since viewed</span>
+        <span className="shrink-0 text-secondary text-faint-foreground">Changed since viewed</span>
       ) : null}
       {onToggleViewed ? (
         <button
@@ -152,7 +152,7 @@ export const FileHeader = ({
           aria-checked={isViewed}
           onClick={onToggleViewed}
           className={cn(
-            'inline-flex h-5 shrink-0 items-center gap-1 rounded-sm border px-1.5 text-2xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            'inline-flex h-5 shrink-0 items-center gap-1 rounded-sm border px-1.5 text-secondary font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
             isViewed
               ? 'border-transparent text-success'
               : 'border-border text-muted-foreground hover:bg-hover hover:text-foreground',

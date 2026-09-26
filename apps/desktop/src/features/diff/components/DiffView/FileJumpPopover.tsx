@@ -51,9 +51,9 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
           aria-expanded
           aria-controls="diff-jump-list"
           aria-activedescendant={jump.results.length > 0 ? activeId : undefined}
-          className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-faint-foreground"
+          className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
         />
-        <span className="shrink-0 text-2xs tabular-nums text-faint-foreground">
+        <span className="shrink-0 text-secondary tabular-nums text-faint-foreground">
           {jump.results.length}
         </span>
       </label>
@@ -65,7 +65,7 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
         className="max-h-80 overflow-y-auto py-1"
       >
         {jump.results.length === 0 ? (
-          <p className="px-3 py-2 text-xs text-muted-foreground">No file matches</p>
+          <p className="px-3 py-2 text-label text-muted-foreground">No file matches</p>
         ) : (
           jump.results.map((file, index) => {
             const { dir, name } = splitPath(file.path);
@@ -88,7 +88,7 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
                 <span
                   aria-label={STATUS_WORD[file.status]}
                   className={cn(
-                    'flex size-4 items-center justify-center rounded-sm font-mono text-3xs font-bold',
+                    'flex size-4 items-center justify-center rounded-sm font-mono text-meta font-bold',
                     tone.text,
                     tone.bg,
                   )}
@@ -99,7 +99,7 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
                   <span className="text-foreground">{name}</span>{' '}
                   <span className="text-faint-foreground">{dir.replace(/\/$/, '')}</span>
                 </span>
-                <span className="text-2xs tabular-nums">
+                <span className="text-secondary tabular-nums">
                   {file.additions > 0 ? (
                     <span className="text-success">+{file.additions}</span>
                   ) : null}{' '}
@@ -107,7 +107,7 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
                     <span className="text-danger">−{file.deletions}</span>
                   ) : null}
                 </span>
-                <span className="flex items-center gap-0.5 text-2xs tabular-nums text-muted-foreground">
+                <span className="flex items-center gap-0.5 text-secondary tabular-nums text-muted-foreground">
                   {count > 0 ? (
                     <>
                       <MessageSquare size={10} aria-hidden />
@@ -125,7 +125,7 @@ export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, o
           })
         )}
       </div>
-      <div className="flex items-center gap-3 px-3 py-1.5 text-2xs text-faint-foreground">
+      <div className="flex items-center gap-3 px-3 py-1.5 text-secondary text-faint-foreground">
         <span className="flex items-center gap-1">
           <KbdPill>↑</KbdPill>
           <KbdPill>↓</KbdPill>

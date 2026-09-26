@@ -38,15 +38,15 @@ export const TranscriptRowHeader = ({
     <>
       {onToggle ? <TranscriptChevron open={open} /> : <span aria-hidden className="w-3 shrink-0" />}
       {icon != null && <span className={cn('flex shrink-0 items-center', tint.icon)}>{icon}</span>}
-      <span className={cn('shrink-0 text-2xs font-medium uppercase tracking-eyebrow', tint.text)}>
+      <span
+        className={cn('shrink-0 text-secondary font-medium uppercase tracking-eyebrow', tint.text)}
+      >
         {eyebrow}
       </span>
       {badge}
-      <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{preview}</span>
+      <span className="min-w-0 flex-1 truncate text-label text-muted-foreground">{preview}</span>
       {meta != null && (
-        <span className="shrink-0 font-mono text-3xs tabular-nums text-muted-foreground">
-          {meta}
-        </span>
+        <span className="shrink-0 font-mono text-meta text-muted-foreground">{meta}</span>
       )}
     </>
   );

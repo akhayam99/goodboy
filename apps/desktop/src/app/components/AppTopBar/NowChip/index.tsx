@@ -136,7 +136,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
           title={label}
           aria-expanded={isOpen}
           className={cn(
-            'flex shrink-0 items-center gap-2.5 rounded-sm px-1.5 py-1 text-2xs motion-safe:transition-colors',
+            'flex shrink-0 items-center gap-2.5 rounded-sm px-1.5 py-1 text-secondary motion-safe:transition-colors',
             isOpen ? 'bg-muted' : 'hover:bg-hover',
           )}
         >
@@ -165,7 +165,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
       }
     >
       <header className="flex items-center gap-2 px-3 py-2">
-        <span className="truncate text-xs font-semibold text-foreground">
+        <span className="truncate text-label font-semibold text-foreground">
           {workspace == null ? 'Now' : `Now in ${workspace.name}`}
         </span>
       </header>

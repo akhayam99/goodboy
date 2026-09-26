@@ -17,7 +17,7 @@ export const Switch = ({ label, checked, disabled, onChange, className }: Switch
     disabled={disabled}
     onClick={() => onChange(!checked)}
     className={cn(
-      'inline-flex items-center gap-2 rounded-full px-2 py-1 text-xs transition-colors',
+      'inline-flex items-center gap-2 rounded-full px-2 py-1 text-label transition-colors',
       checked ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
       disabled && 'cursor-not-allowed opacity-50',
       className,

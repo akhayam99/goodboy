@@ -36,10 +36,10 @@ export const ConversationAgentRow = ({ row, now, onOpenCommit }: Props) => {
       )}
     >
       <WorkNode state={result.node} label={result.lead} mark={{ kind: 'dot' }} />
-      <span className="shrink-0 rounded-sm bg-subtle px-1.5 text-2xs leading-4 text-muted-foreground">
+      <span className="shrink-0 rounded-sm bg-subtle px-1.5 text-secondary text-muted-foreground">
         {RESOLVER_ROLE_LABEL}
       </span>
-      <span className="flex min-w-0 flex-1 items-baseline gap-1.5 text-xs leading-4 text-muted-foreground">
+      <span className="flex min-w-0 flex-1 items-baseline gap-1.5 text-label text-muted-foreground">
         <span className="min-w-0 truncate">{result.lead}</span>
         {result.sha !== null && (
           <Tooltip content={result.sha} side="top">
@@ -68,7 +68,7 @@ export const ConversationAgentRow = ({ row, now, onOpenCommit }: Props) => {
         )}
         {more > 0 && <span className="shrink-0 text-faint-foreground">with {more} more</span>}
       </span>
-      <span className="flex shrink-0 items-center gap-2 text-2xs leading-4 tabular-nums text-muted-foreground">
+      <span className="flex shrink-0 items-center gap-2 text-secondary tabular-nums text-muted-foreground">
         <span className={WORK_META_COLUMN.routing}>
           {attempt === null ? null : (
             <span className={WORK_META_COLUMN.routingName}>

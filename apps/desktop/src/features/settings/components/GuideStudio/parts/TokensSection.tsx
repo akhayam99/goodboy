@@ -35,7 +35,7 @@ export const TokensSection = ({}: Props) => (
     </Block>
 
     <Block title="Context window">
-      <p className="text-sm leading-relaxed text-muted-foreground">
+      <p className="text-prose text-muted-foreground">
         Each model has a hard ceiling on how many tokens fit in one call. The bar under each agent
         shows how full the current context is. Past roughly 75% the agent starts forgetting;
         consider summarizing or starting a new session.

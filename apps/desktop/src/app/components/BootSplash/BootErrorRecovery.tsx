@@ -25,7 +25,7 @@ export const BootErrorRecovery = ({ error, category, onRetry }: Props) => {
     <div
       role="alert"
       className={cn(
-        'flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-xs',
+        'flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label',
         tintClasses('danger').border,
       )}
     >

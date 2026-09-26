@@ -33,13 +33,11 @@ export const PresetPickerOption = ({ preset, isSelected, onSelect, onDelete }: P
       >
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="min-w-0 truncate text-xs text-foreground">{preset.name}</span>
-            <span className="shrink-0 text-3xs tabular-nums text-faint-foreground">
-              {steps.length}
-            </span>
+            <span className="min-w-0 truncate text-label text-foreground">{preset.name}</span>
+            <span className="shrink-0 text-meta text-faint-foreground">{steps.length}</span>
           </span>
           {description === '' ? null : (
-            <span className="truncate text-2xs text-faint-foreground">{description}</span>
+            <span className="truncate text-secondary text-faint-foreground">{description}</span>
           )}
         </span>
         <span aria-hidden className="flex shrink-0 items-center gap-1">

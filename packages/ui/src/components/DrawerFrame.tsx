@@ -66,9 +66,11 @@ export const DrawerFrame = ({
           {Icon == null ? null : (
             <Icon size={14} aria-hidden className={cn('shrink-0', iconClassName)} />
           )}
-          <h2 className="min-w-0 truncate text-sm font-semibold text-foreground">{title}</h2>
+          <h2 className="min-w-0 truncate text-heading text-foreground">{title}</h2>
           {count != null ? (
-            <span className="shrink-0 text-2xs tabular-nums text-muted-foreground">{count}</span>
+            <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
+              {count}
+            </span>
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1">

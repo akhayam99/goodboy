@@ -248,7 +248,7 @@ export const DefaultsPanel = ({ workspaceId }: Props) => {
         ))}
       </section>
 
-      {error != null ? <p className="text-xs text-danger">{error}</p> : null}
+      {error != null ? <p className="text-label text-danger">{error}</p> : null}
     </PaneShell>
   );
 };

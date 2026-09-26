@@ -416,7 +416,7 @@ export const WorkflowRow = ({
                     onAnswer={onAnswerQuestion}
                   />
                 ) : (
-                  <p className="pb-1 text-2xs text-faint-foreground">
+                  <p className="pb-1 text-secondary text-faint-foreground">
                     No agents yet for this workflow.
                   </p>
                 )}

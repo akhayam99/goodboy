@@ -44,7 +44,7 @@ export const ThinkingIndicator = ({ context }: Props) => {
     <div
       role="status"
       aria-label="Agent working"
-      className="relative flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-2xs animate-border-pulse"
+      className="relative flex w-fit items-center gap-1.5 rounded-md px-2 py-1 text-secondary animate-border-pulse"
     >
       <DogMascot size={ICON_SIZE.row} className="text-faint-foreground" />
       <span aria-hidden className="text-muted-foreground">

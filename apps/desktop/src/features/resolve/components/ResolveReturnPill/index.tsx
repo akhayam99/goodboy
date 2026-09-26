@@ -33,7 +33,7 @@ export const ResolveReturnPill = ({ sessionId }: Props) => {
       <button
         type="button"
         onClick={() => returnFromResolveDiff({ sessionId })}
-        className="flex min-w-0 items-center gap-1.5 rounded-full border border-border-soft px-2.5 py-1 text-2xs text-muted-foreground motion-safe:transition-colors hover:text-foreground"
+        className="flex min-w-0 items-center gap-1.5 rounded-full border border-border-soft px-2.5 py-1 text-secondary text-muted-foreground motion-safe:transition-colors hover:text-foreground"
       >
         <ArrowLeft size={ICON_SIZE.row} aria-hidden />
         <span className="shrink-0">{RESOLVE_ITEM_LABEL.backToConversations}</span>

@@ -29,7 +29,7 @@ export const ModelTable = ({
   }
 
   return (
-    <table className="w-full text-left text-xs">
+    <table className="w-full text-left text-label">
       <thead className="text-muted-foreground">
         <tr>
           <th className="px-3 py-2 font-medium">model</th>
