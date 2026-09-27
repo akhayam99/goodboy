@@ -899,14 +899,16 @@ Bitbucket the pull requests of the linked repo. Open ones show as open, merged
 and closed ones as closed.
 
 With two or more projects in the workspace, the rail also filters by project,
-but only when a record in the current scope belongs to one: a Linear, Jira or
-Slack view shows no Project section at all. Projects with no records hide
-behind a quiet "Show N empty" toggle at the end of the section; the selected
-project stays listed even at zero. A GitHub or GitLab record belongs to the
-project whose remote (`Project.remoteUrl`) is its repo, and only when two or
-more projects have a remote on that host; with one, the list stays flat. A
-tracker record never belongs to a project; its row shows the tracker's own
-project or team instead. A Sentry error
+but only when the current view includes a source that maps to projects
+(`PROJECT_MAPPED_PROVIDERS`: Sentry, GitHub and GitLab) and a record there
+belongs to one. A Linear, Jira or Slack view, or a view narrowed to one of
+them by Source or Type, shows no Project section at all, and a pick that
+leaves no mapped source drops the project filter. Projects with no records
+hide behind a quiet "Show N empty" toggle at the end of the section; the
+selected project stays listed even at zero, and a project's count is the
+records tied to it. A GitHub or GitLab record belongs to the project whose
+remote (`Project.remoteUrl`) is its repo. A tracker record never belongs to a
+project; its row shows the tracker's own project or team instead. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
@@ -914,9 +916,13 @@ suggested from Sentry code mappings and wait for your Link. The inbox reads the
 first page of every linked Sentry project besides the connected one, in one
 load that starts once the links are read. A Sentry call that hits a rate limit
 or a gateway error is retried up to twice, waiting what `Retry-After` asks for
-(at most 5 seconds), before the tool says it did not load. A record
-no project claims, such as a Linear or Jira issue, stays visible under every
-project filter. In Settings, Workspace, a project that reads Sentry shows the
+(at most 5 seconds), before the tool says it did not load. The project
+filter applies to the mapped sources only: a Sentry, GitHub or GitLab record
+tied to another project, or to none, leaves the list, while every Linear, Jira,
+Slack or Bitbucket record stays. In a mixed view with a project picked, one
+quiet line under the section says so (`projectFilterNote`), for example
+"Project filter applies to Sentry. Linear issues aren't tied to a project, so
+they stay listed." In Settings, Workspace, a project that reads Sentry shows the
 Sentry glyph, and its tooltip names the Sentry projects.
 
 ## Providers and routing
