@@ -362,7 +362,8 @@ run menu next to it.
 orchestrated runs alike: its step agents, the agents the orchestrator spawned,
 and their fan-out children. A running agent is stopped first. The agents drop
 out of the session, the board and the per-agent cost rows at once, and there
-is no undo. What they already spent stays in the session total, as it does for
+is no undo. The questions they left open go with them, as they do when you
+delete one agent. What they already spent stays in the session total, as it does for
 a deleted agent. Discard is the verb that keeps the run and its agents
 restorable.
 
