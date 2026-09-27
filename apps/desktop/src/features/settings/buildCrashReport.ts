@@ -88,6 +88,15 @@ const fitCrashBody = ({ version, title, message, trace }: FitCrashBodyParams): s
   return crashBody({ version, message: cutMessage, trace: cutTrace });
 };
 
+const ERROR_NAME = /^[A-Za-z][A-Za-z0-9_]{0,63}$/;
+
+type CrashKindParams = {
+  readonly error: Error;
+};
+
+const crashKind = ({ error }: CrashKindParams): string =>
+  ERROR_NAME.test(error.name) ? error.name : 'runtime error';
+
 type BuildCrashReportParams = {
   readonly error: Error;
   readonly componentStack: string | null;
@@ -100,7 +109,7 @@ export const buildCrashReport = ({
   version,
 }: BuildCrashReportParams): CrashReport => {
   const message = withoutLoneSurrogates({ text: redactReport({ text: error.message }) });
-  const title = capIssueTitle({ title: `Crash: ${message.split('\n')[0] ?? 'runtime error'}` });
+  const title = capIssueTitle({ title: `Crash: ${crashKind({ error })}` });
   const stack =
     componentStack === null
       ? ''

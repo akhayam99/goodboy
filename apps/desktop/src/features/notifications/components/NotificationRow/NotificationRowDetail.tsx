@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Send, SlidersHorizontal } from 'lucide-react';
+import { Bug, SlidersHorizontal } from 'lucide-react';
 import type { Notification } from '@goodboy/db';
 import { cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -78,8 +78,8 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
               onClick={() => sendNotificationToDevelopers({ notification: latest })}
               className={GHOST}
             >
-              <Send size={ICON_SIZE.row} aria-hidden />
-              Send to developers
+              <Bug size={ICON_SIZE.row} aria-hidden />
+              Report this
             </button>
           )}
         </div>

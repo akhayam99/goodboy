@@ -38,7 +38,9 @@ Apart from signing in to a provider, Goodboy goes online in two cases:
 
 ### Bug reports
 
-The error text that the crash screen and the startup-error screen put into a report passes through one filter before it leaves. The filter:
+A report goes to the public Goodboy issue tracker on GitHub, so it carries only what helps find the problem. The app version and the error message leave. From the crash screen, where it broke in the app, cut to 1,500 characters. From a startup error, the startup step that failed. From **Report this** on a notification, that notification's title and text. The crash title names only the kind of error, never its message.
+
+Every piece of text the app puts into a report passes through one filter before it leaves. The filter:
 
 - Removes keys and tokens (GitHub, Anthropic, OpenAI, Slack, GitLab, AWS, JWT) and any value after words like `authorization`, `bearer`, `api key`, `token`, `password` or `secret`
 - Shortens every path under your home folder to `~/…/<file name>`, dropping your username and every folder name. Paths on external volumes and in temporary folders are shortened the same way. Your username is also removed wherever else it appears
@@ -54,6 +56,8 @@ When a report attaches context, that context is a fixed list, and each item pass
 - The version of each provider CLI Goodboy found, such as `Claude CLI 2.1.260`
 
 The context carries nothing else: no log files, no session content, no action history, no ids, no project or repository names, no screenshots.
+
+What never leaves: log files, session content, prompts and replies, transcripts, diffs, the clipboard, environment variables and your system's password store. The app never reads them to build a report. What removal cannot promise: a secret in a format the app does not know passes through, and text you type in the report form is sent as you wrote it. Read the preview before you send.
 
 ### Pairing a phone
 
@@ -73,5 +77,5 @@ For contributors who change the files below.
 - `apps/desktop/src-tauri/tauri.conf.json` holds the public key that verifies an update before it installs. The update manifest is `latest.json`, published with each GitHub release. Each window checks once when it opens. It checks again when it gets focus, when it becomes visible, and every hour while visible. Only those later checks wait at least 30 minutes between each other, per window. The check on open does not wait, so a normal launch followed by a click into the app can send two requests a few seconds apart. A development build never checks
 - `apps/desktop/src/shared/utils/redactReport.ts` is the filter described in **Bug reports**. Its test corpus lists the cases it must hold. A new kind of report text goes through it, never around it
 - `apps/desktop/src/features/settings/reportContext/` builds the report context. `ReportContext` is the list above; adding a field means adding its label and its redaction test, or the build fails. The system line comes from the `app_platform` command in `apps/desktop/src-tauri/src/app_platform.rs`, which reads the compile target and `sw_vers` on macOS or `uname -r` on Linux, and the build id from `GOODBOY_BUILD_SHA`, set by the release workflow
-- The crash and startup-error report buttons open a prefilled `github.com` issue in the browser. The issue carries the app version and the error message, filtered by `redactReport`. From the crash screen it also carries up to 1,500 characters of the component stack, filtered the same way. Title and body travel in the link's query string, so GitHub receives them when the page loads, not when you submit. The crash link is capped at 4,096 bytes, which cuts a long message shorter. Only submitting the form files the public issue. Closing the tab files nothing
+- The crash and startup-error report buttons open a prefilled `github.com` issue in the browser. Every piece of text the app puts in a report, including a notification sent with **Report this**, is filtered by `redactReport`. The crash issue carries the app version, the error message and up to 1,500 characters of the component stack; its title is `Crash:` plus the error's class name. The startup-error issue carries the failed step and the error message, with no template and no labels. Title and body travel in the link's query string, so GitHub receives them when the page loads, not when you submit. The link is capped at 4,096 bytes, which cuts a long message shorter. Only submitting the form files the public issue. Closing the tab files nothing
 - The **Changelog** reads its notes from `CHANGELOG.md`, packaged with the app: all releases are available offline. It fetches only the publish date of each release from `api.github.com`, merged in over the packaged text. Missing dates while offline show without a message. A release entry's before/after picture, when it has one, downloads from `raw.githubusercontent.com`, from `main` first and from that release's own tag when `main` fails, and is cached under `~/.goodboy/cache/changelog/<version>`; offline, or when the picture is missing or unreadable, the block simply does not appear, with no placeholder and no message. An image inside rendered Markdown loads only after you press **Load image**, and the request goes to whatever host that image points to

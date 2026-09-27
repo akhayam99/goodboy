@@ -86,15 +86,49 @@ describe('buildCrashReport', () => {
     expect(report.body).toContain('did not fit the report link');
   });
 
-  it('caps a runaway title instead of letting it fill the link', () => {
+  it('names the error kind in the title and never the message', () => {
     const report = buildCrashReport({
-      error: errorWith('t'.repeat(20000)),
+      error: new TypeError('fetch failed: Authorization: Bearer sk-ant-api03-AbCdEfGhIjKlMnOp'),
       componentStack: null,
       version: '0.1.81',
     });
 
+    expect(report.title).toBe('Crash: TypeError');
+  });
+
+  it('falls back to a plain title when the error name is not a plain identifier', () => {
+    const error = errorWith('boom');
+    error.name = `leak ${'t'.repeat(20000)}`;
+    const report = buildCrashReport({ error, componentStack: null, version: '0.1.81' });
+
+    expect(report.title).toBe('Crash: runtime error');
     expect(report.url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_BYTES);
-    expect(report.title.endsWith('…')).toBe(true);
+  });
+
+  it('removes secrets, emails, link queries and home paths from the message and the stack', () => {
+    const report = buildCrashReport({
+      error: errorWith(
+        'fetch https://api.github.com/graphql?access_token=abc123def456 failed for rowan@example.dev: Authorization: Bearer sk-ant-api03-AbCdEfGhIjKlMnOp',
+      ),
+      componentStack:
+        '\n    at Row (/Users/rowan/code/harborline/src/Row.tsx:12) ghp_AbCdEfGhIjKlMnOpQrSt1234',
+      version: '0.1.81',
+    });
+    const decoded = decodeURIComponent(report.url);
+
+    for (const leak of [
+      'sk-ant-api03',
+      'ghp_AbCd',
+      'access_token',
+      'rowan@example.dev',
+      '/Users/rowan',
+    ]) {
+      expect(report.body).not.toContain(leak);
+      expect(report.title).not.toContain(leak);
+      expect(decoded).not.toContain(leak);
+    }
+    expect(report.body).toContain('https://api.github.com/… failed');
+    expect(report.body).toContain('~/…/Row.tsx:12');
   });
 
   it('cuts the stack further when the capped stack alone overflows the link', () => {
