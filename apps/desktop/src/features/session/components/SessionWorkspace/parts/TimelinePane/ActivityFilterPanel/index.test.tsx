@@ -150,7 +150,11 @@ describe('ActivityFilterPanel', () => {
     expect(within(panel).queryByRole('tab', { name: 'Custom' })).toBeNull();
     fireEvent.click(within(panel).getByRole('tab', { name: 'Needs you' }));
     expect(onPreset).toHaveBeenCalledWith({ preset: 'needsYou' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Show everything' }));
+    const showEverything = within(panel).getByRole('button', { name: 'Show everything' });
+    expect(showEverything.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(showEverything.closest('footer')).toBeNull();
+    expect(panel.querySelector('[role="separator"]')).toBeNull();
+    fireEvent.click(showEverything);
     expect(onPreset).toHaveBeenCalledWith({ preset: 'everything' });
   });
 

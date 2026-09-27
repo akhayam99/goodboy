@@ -17,11 +17,6 @@ export type PopoverBodyProps = {
   readonly className?: string;
 };
 
-export type PopoverFooterProps = {
-  readonly children: ReactNode;
-  readonly className?: string;
-};
-
 export const Popover = ({
   children,
   className,
@@ -57,8 +52,4 @@ export const PopoverBody = ({ children, className }: PopoverBodyProps) => (
   >
     {children}
   </ScrollFade>
-);
-
-export const PopoverFooter = ({ children, className }: PopoverFooterProps) => (
-  <footer className={cn('relative z-10 shrink-0 bg-floating', className)}>{children}</footer>
 );

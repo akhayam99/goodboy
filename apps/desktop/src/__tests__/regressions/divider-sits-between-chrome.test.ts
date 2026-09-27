@@ -49,10 +49,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.tsx': {
-    count: 2,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/github/components/PullRequest/ThreadReplies.tsx': {
     count: 1,
     reason: 'debt',
@@ -95,27 +91,17 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/DetachDetails.tsx':
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectSyncControl.tsx':
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterPanel/index.tsx':
-    { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineDayRule.tsx':
     { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/terminal/components/TerminalDock/index.tsx': {
     count: 1,
     reason: 'debt',
-  },
-  'apps/desktop/src/features/workflows/components/RunSpendLimitPopover/index.tsx': {
-    count: 2,
-    reason: 'chrome',
   },
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx': {
     count: 2,
