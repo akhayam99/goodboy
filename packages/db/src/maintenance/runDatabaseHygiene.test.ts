@@ -255,4 +255,33 @@ describe('runDatabaseHygiene', () => {
     expect(rows.find((row) => row.id === 'in-flight')?.status_kind).toBe('cancelled');
     expect(spend).toEqual([{ id: 'spend-1' }]);
   });
+
+  it('soft-deletes step agents left behind by a deleted workflow run', async () => {
+    const db = await makeMigratedTestDatabase();
+    await seedSession({ db });
+    await db.execute(
+      `INSERT INTO workflows (id, workspace_id, name, description, created_at, updated_at)
+       VALUES ('workflow-1', 'workspace-1', 'Workflow', '', ?, ?)`,
+      [NOW, NOW],
+    );
+    await db.execute(
+      `INSERT INTO steps (id, workflow_id, ordinal, name, prompt_prefix)
+       VALUES ('step-1', 'workflow-1', 0, 'Scout', '')`,
+    );
+    await db.execute(
+      `INSERT INTO agents (id, session_id, ordinal, name, status, step_id)
+       VALUES ('orphan', 'session-1', 1, 'Scout', 'completed', 'step-1')`,
+    );
+
+    const result = await runDatabaseHygiene({ db, now: NOW });
+    const rows = await db.select<{ id: string; deleted_at: number | null }>(
+      'SELECT id, deleted_at FROM agents ORDER BY id',
+    );
+
+    expect(result.orphanedWorkflowAgentsDeleted).toBe(1);
+    expect(rows).toEqual([
+      { id: 'agent-1', deleted_at: null },
+      { id: 'orphan', deleted_at: NOW },
+    ]);
+  });
 });

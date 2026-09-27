@@ -12,6 +12,8 @@ import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import type { Database } from '../client';
 import {
   attachWorkflowToSession,
+  deleteOrphanedWorkflowAgents,
+  detachWorkflowFromSession,
   discardWorkflowInSession,
   restoreWorkflowInSession,
   repointWorkflowRunTemplate,
@@ -933,6 +935,147 @@ describe('session_workflows trigger-mode queries', () => {
       const runs = await readRunsNewestFirst({ db });
       expect(runs[0]!.discardedAt).toBeUndefined();
       expect(await readPlanStatus({ db })).toBe('active');
+    });
+  });
+
+  describe('detachWorkflowFromSession', () => {
+    type InsertAgentParams = {
+      readonly id: string;
+      readonly workflowRunId: string | null;
+      readonly parentAgentId?: string;
+    };
+
+    const insertAgent = async ({ id, workflowRunId, parentAgentId }: InsertAgentParams) => {
+      await db.execute(
+        'INSERT INTO agents (id, session_id, ordinal, name, status, workflow_run_id, parent_agent_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, sessionId, 0, id, 'completed', workflowRunId, parentAgentId ?? null],
+      );
+    };
+
+    const readDeletedAt = async (): Promise<Record<string, number | null>> => {
+      const rows = await db.select<{ readonly id: string; readonly deleted_at: number | null }>(
+        'SELECT id, deleted_at FROM agents ORDER BY id',
+      );
+      return Object.fromEntries(rows.map((row) => [row.id, row.deleted_at]));
+    };
+
+    const attachRun = async (runId: string) => {
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: runId as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+    };
+
+    it('soft-deletes the run agents and their spawned children in the same transaction', async () => {
+      await attachRun('run-1');
+      await attachRun('run-2');
+      await insertAgent({ id: 'step-agent', workflowRunId: 'run-1' });
+      await insertAgent({ id: 'orchestrator-spawned', workflowRunId: 'run-1' });
+      await insertAgent({ id: 'fanout-child', workflowRunId: null, parentAgentId: 'step-agent' });
+      await insertAgent({
+        id: 'nested-child',
+        workflowRunId: null,
+        parentAgentId: 'fanout-child',
+      });
+      await insertAgent({ id: 'other-run', workflowRunId: 'run-2' });
+      await insertAgent({ id: 'standalone', workflowRunId: null });
+
+      await detachWorkflowFromSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
+
+      expect(await readDeletedAt()).toEqual({
+        'fanout-child': Date.parse(NOW),
+        'nested-child': Date.parse(NOW),
+        'orchestrator-spawned': Date.parse(NOW),
+        'other-run': null,
+        standalone: null,
+        'step-agent': Date.parse(NOW),
+      });
+      const live = await db.select<{ readonly id: string }>(
+        'SELECT id FROM live_agents ORDER BY id',
+      );
+      expect(live.map((row) => row.id)).toEqual(['other-run', 'standalone']);
+      expect((await readRunsNewestFirst({ db })).map((run) => run.id)).toEqual(['run-2']);
+    });
+
+    it('keeps the first deletion time of an agent deleted before its run', async () => {
+      await attachRun('run-1');
+      await insertAgent({ id: 'step-agent', workflowRunId: 'run-1' });
+      await db.execute("UPDATE agents SET deleted_at = 5 WHERE id = 'step-agent'");
+
+      await detachWorkflowFromSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
+
+      expect(await readDeletedAt()).toEqual({ 'step-agent': 5 });
+    });
+
+    it('soft-deletes the agents of runs pruned by a reorder', async () => {
+      await attachRun('run-1');
+      await attachRun('run-2');
+      await insertAgent({ id: 'kept', workflowRunId: 'run-1' });
+      await insertAgent({ id: 'pruned', workflowRunId: 'run-2' });
+      await insertAgent({ id: 'pruned-child', workflowRunId: null, parentAgentId: 'pruned' });
+
+      await updateWorkflowOrder(db, sessionId, ['run-1' as WorkflowRunId], NOW);
+
+      expect(await readDeletedAt()).toEqual({
+        kept: null,
+        pruned: Date.parse(NOW),
+        'pruned-child': Date.parse(NOW),
+      });
+    });
+  });
+
+  describe('deleteOrphanedWorkflowAgents', () => {
+    it('soft-deletes step agents whose run is gone, once', async () => {
+      await db.execute(
+        `INSERT INTO steps (id, workflow_id, ordinal, name, prompt_prefix)
+         VALUES ('step-live', ?, 0, 'Scout', ''), ('step-gone', ?, 0, 'Build', '')`,
+        [workflowId, workflowId2],
+      );
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-live' as WorkflowRunId,
+        workflowId,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await attachWorkflowToSession({
+        db,
+        sessionId,
+        workflowRunId: 'run-gone' as WorkflowRunId,
+        workflowId: workflowId2,
+        autoRun: true,
+        updatedAt: NOW,
+      });
+      await db.execute(
+        `INSERT INTO agents (id, session_id, ordinal, name, status, step_id, workflow_run_id, parent_agent_id)
+         VALUES
+           ('orphan', ?, 0, 'orphan', 'completed', 'step-gone', 'run-gone', NULL),
+           ('orphan-child', ?, 1, 'child', 'completed', NULL, NULL, 'orphan'),
+           ('live', ?, 2, 'live', 'completed', 'step-live', 'run-live', NULL),
+           ('same-workflow', ?, 3, 'same', 'completed', 'step-live', NULL, NULL),
+           ('standalone', ?, 4, 'standalone', 'completed', NULL, NULL, NULL)`,
+        [sessionId, sessionId, sessionId, sessionId, sessionId],
+      );
+      await db.execute("DELETE FROM session_workflows WHERE workflow_run_id = 'run-gone'");
+
+      expect(await deleteOrphanedWorkflowAgents({ db, now: 42 })).toBe(2);
+      expect(await deleteOrphanedWorkflowAgents({ db, now: 99 })).toBe(0);
+
+      const rows = await db.select<{ readonly id: string; readonly deleted_at: number | null }>(
+        'SELECT id, deleted_at FROM agents ORDER BY id',
+      );
+      expect(rows).toEqual([
+        { id: 'live', deleted_at: null },
+        { id: 'orphan', deleted_at: 42 },
+        { id: 'orphan-child', deleted_at: 42 },
+        { id: 'same-workflow', deleted_at: null },
+        { id: 'standalone', deleted_at: null },
+      ]);
     });
   });
 

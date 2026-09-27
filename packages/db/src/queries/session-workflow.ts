@@ -221,14 +221,73 @@ export const attachWorkflowToSession = async ({
   await bumpSessionUpdatedAt(db, sessionId, updatedAt);
 };
 
+type RunAgentsDeleteParams = {
+  readonly runFilter: string;
+  readonly params: ReadonlyArray<unknown>;
+  readonly deletedAt: number;
+};
+
+const runAgentsDeleteStatement = ({
+  runFilter,
+  params,
+  deletedAt,
+}: RunAgentsDeleteParams): PlainStatement => ({
+  sql: `WITH RECURSIVE owned(id) AS (
+          SELECT id FROM agents WHERE ${runFilter}
+          UNION
+          SELECT a.id FROM agents a JOIN owned o ON a.parent_agent_id = o.id
+        )
+        UPDATE agents SET deleted_at = ?
+        WHERE deleted_at IS NULL AND id IN (SELECT id FROM owned)`,
+  params: [...params, deletedAt],
+});
+
 export const detachWorkflowFromSession = async (
   db: Database,
   sessionId: SessionId,
   workflowRunId: WorkflowRunId,
   updatedAt: IsoDateTime,
 ): Promise<void> => {
-  await db.execute('DELETE FROM session_workflows WHERE workflow_run_id = ?', [workflowRunId]);
-  await bumpSessionUpdatedAt(db, sessionId, updatedAt);
+  await db.transaction({
+    statements: [
+      runAgentsDeleteStatement({
+        runFilter: 'workflow_run_id = ?',
+        params: [workflowRunId],
+        deletedAt: Date.parse(updatedAt),
+      }),
+      {
+        sql: 'DELETE FROM session_workflows WHERE workflow_run_id = ?',
+        params: [workflowRunId],
+      },
+      sessionTouchStatement({ sessionId, updatedAt }),
+    ],
+  });
+};
+
+type DeleteOrphanedWorkflowAgentsParams = {
+  readonly db: Database;
+  readonly now: number;
+};
+
+export const deleteOrphanedWorkflowAgents = async ({
+  db,
+  now,
+}: DeleteOrphanedWorkflowAgentsParams): Promise<number> => {
+  const { sql, params } = runAgentsDeleteStatement({
+    runFilter: `deleted_at IS NULL
+            AND workflow_run_id IS NULL
+            AND parent_agent_id IS NULL
+            AND step_id IS NOT NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM steps st
+              JOIN session_workflows sw ON sw.workflow_id = st.workflow_id
+              WHERE st.id = agents.step_id AND sw.session_id = agents.session_id
+            )`,
+    params: [],
+    deletedAt: now,
+  });
+  const { rowsAffected } = await db.execute(sql, params);
+  return rowsAffected;
 };
 
 export const updateWorkflowOrder = async (
@@ -246,8 +305,20 @@ export const updateWorkflowOrder = async (
            WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})`,
           params: [sessionId, ...workflowRunIds],
         };
+  const prunedRunAgents = runAgentsDeleteStatement({
+    runFilter:
+      workflowRunIds.length === 0
+        ? 'workflow_run_id IN (SELECT workflow_run_id FROM session_workflows WHERE session_id = ?)'
+        : `workflow_run_id IN (
+             SELECT workflow_run_id FROM session_workflows
+             WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})
+           )`,
+    params: [sessionId, ...workflowRunIds],
+    deletedAt: Date.parse(updatedAt),
+  });
   await db.transaction({
     statements: [
+      prunedRunAgents,
       prune,
       ...workflowRunIds.map((runId, ordinal) => ({
         sql: 'UPDATE session_workflows SET ordinal = ? WHERE workflow_run_id = ? AND session_id = ?',

@@ -12,7 +12,8 @@ Data is stored **only locally**. No data leaves the user's machine.
 - API keys are NEVER stored here. Use the OS keyring through the desktop secret store.
 - Conversation history is stored locally, so Goodboy owns the conversation across providers. Nothing is sent anywhere.
 - The user can wipe the DB by deleting the file. Reset = clean slate.
-- Retention runs at boot in `runDatabaseHygiene`. `permission_audit_log` keeps 30 days and at most 5000 rows. `turn_events` keeps 90 days and at most 200k rows. A finished `provider_runs` row older than 90 days is deleted only when no `telemetry_records`, `agents` or `file_versions` row points at it. Spend rows are never pruned, and neither are `agent_turn_spans` rows, which hold no content and carry the duration history (see [docs/turns.md](../../docs/turns.md#turn-spans)).
+- Retention runs at boot in `runDatabaseHygiene`. `permission_audit_log` keeps 30 days and at most 5000 rows. `turn_events` keeps 90 days and at most 200k rows. A finished `provider_runs` row older than 90 days is deleted only when no `telemetry_records`, `agents` or `file_versions` row points at it. Spend rows are never pruned, and neither are `agent_turn_spans` rows, which hold no content and carry the duration history (see [docs/turns.md](../../docs/turns.md#turn-spans)). It also soft-deletes the step agents a deleted workflow run left behind, and their children: a live step agent with no `workflow_run_id` whose step's workflow no longer runs in its session.
+- Deleting a workflow run (`detachWorkflowFromSession`, or a reorder that prunes a run) sets `deleted_at` on every agent of that run and on their `parent_agent_id` descendants in the same transaction. The soft-delete must run before the row goes: `agents.workflow_run_id` is `ON DELETE SET NULL`, so after the delete the agents no longer name their run.
 
 ## Schema rules
 
