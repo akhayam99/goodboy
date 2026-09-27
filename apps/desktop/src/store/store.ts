@@ -248,6 +248,8 @@ import type { BringOriginOutcome } from './slices/history/bringOriginIntoHistory
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
+import { createSessionSyncSlice } from './slices/session-sync';
+import { sessionSyncInitialState } from './slices/session-sync/state';
 import { createIssueBriefsSlice } from './slices/issue-briefs';
 import { issueBriefsInitialState } from './slices/issue-briefs/state';
 import { createDurationEstimatesSlice } from './slices/durationEstimates';
@@ -1164,6 +1166,7 @@ export type AppStore = AppState &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createPrWritesSlice> &
+  ReturnType<typeof createSessionSyncSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
@@ -1245,6 +1248,7 @@ export const initialState: AppState = {
   ...scribeInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
+  ...sessionSyncInitialState,
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
   ...providerLimitsInitialState,
@@ -1411,6 +1415,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createScribeSlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
+  ...createSessionSyncSlice(set, get),
   ...createIssueBriefsSlice(set, get),
   ...createDurationEstimatesSlice(set, get),
   ...createProviderLimitsSlice(set, get),

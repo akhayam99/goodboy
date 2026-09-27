@@ -293,7 +293,11 @@ whether you clicked it on the board or in the session overview.
   landed on the same engine, not a second one: approve a pending permission,
   sign back in after `auth_required`, unblock a failed workflow step, retry
   the last standalone agent that failed, fix a pull request's failing checks,
-  push unpushed commits on a clean worktree, open a pull request once a
+  push unpushed commits on a clean worktree (counted against the branch's
+  own copy on origin by `branchPushStateOf`; `Push the branch` with `Not
+pushed yet` when origin has no copy, and `Branch diverged from origin`
+  with `Review history` instead of a push when origin moved on its own),
+  open a pull request once a
   mount is ahead with none yet, mark a green draft ready, merge an approved
   and green pull request, review the changes once a standalone implementer
   finishes clean, close a merged worktree's cleanup proposal, and continue

@@ -7,6 +7,7 @@ mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
 mod branch_cleanup;
+mod branch_remote;
 mod bridge;
 mod budget;
 mod changelog_images;
@@ -294,6 +295,7 @@ pub fn run() {
             history::history_copy_discard,
             worktree::worktree_diff_working,
             worktree::worktree_status,
+            branch_remote::worktree_sync_branch_ref,
             worktree::checkout_fast_forward,
             worktree::worktree_list_local_branches,
             worktree::worktree_list_branch_names,

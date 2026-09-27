@@ -178,6 +178,19 @@ export const ensure = async ({
   return entry.value;
 };
 
+type RefreshParams = {
+  readonly worktreePaths: ReadonlyArray<string>;
+};
+
+export const refreshWorktreeStatuses = async ({ worktreePaths }: RefreshParams): Promise<void> => {
+  const wanted = new Set(worktreePaths);
+  await Promise.all(
+    Array.from(entries.values())
+      .filter((entry) => wanted.has(entry.worktreePath))
+      .map((entry) => fetchInto(entry)),
+  );
+};
+
 export const resetWorktreeStatusCache = () => {
   entries.clear();
   queue.length = 0;

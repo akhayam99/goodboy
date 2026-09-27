@@ -41,6 +41,7 @@ const { storeState, spies } = vi.hoisted(() => {
   const runPlan = vi.fn(async () => 'agent-implementer');
   const skipStuckStepAndAdvance = vi.fn(async () => undefined);
   const pushSessionBranch = vi.fn(async () => ({ ok: true as const }));
+  const openRewriteHistory = vi.fn();
   const createPrForSession = vi.fn(async () => undefined);
   const markPrReady = vi.fn(async () => undefined);
   const mergePr = vi.fn(async () => undefined);
@@ -61,6 +62,7 @@ const { storeState, spies } = vi.hoisted(() => {
       runPlan,
       skipStuckStepAndAdvance,
       pushSessionBranch,
+      openRewriteHistory,
       createPrForSession,
       markPrReady,
       mergePr,
@@ -93,6 +95,7 @@ const { storeState, spies } = vi.hoisted(() => {
       navigate,
       skipStuckStepAndAdvance,
       pushSessionBranch,
+      openRewriteHistory,
       createPrForSession,
       markPrReady,
       mergePr,
@@ -681,7 +684,9 @@ describe('useSuggestionActions', () => {
           projectName: 'web',
           branch: 'feature/web',
           worktreePath: '/tmp/web',
+          state: 'ahead',
           ahead: 4,
+          behind: 0,
         },
       },
     });
@@ -693,6 +698,33 @@ describe('useSuggestionActions', () => {
       sessionId: SESSION_ID,
       mountId: WEB_MOUNT_ID,
     });
+  });
+
+  it('opens the history of a diverged branch instead of pushing it', () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'push-branch:mount-web',
+        kind: 'push-branch',
+        band: 2,
+        payload: {
+          mountId: WEB_MOUNT_ID,
+          projectId: WEB_ID,
+          projectName: 'web',
+          branch: 'feature/web',
+          worktreePath: '/tmp/web',
+          state: 'diverged',
+          ahead: 2,
+          behind: 3,
+        },
+      },
+    });
+
+    expect(actions.primary?.label).toBe('Review history');
+    actions.primary?.onAct();
+
+    expect(spies.openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/tmp/web');
+    expect(spies.pushSessionBranch).not.toHaveBeenCalled();
   });
 
   it('opens a pull request for the named mount', () => {

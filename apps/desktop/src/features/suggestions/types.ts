@@ -138,7 +138,9 @@ export type SessionSuggestion =
         readonly projectName: string;
         readonly branch: string;
         readonly worktreePath: string;
+        readonly state: 'ahead' | 'not-pushed' | 'diverged';
         readonly ahead: number;
+        readonly behind: number;
       };
     })
   | (SuggestionBase & {

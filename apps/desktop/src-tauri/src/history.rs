@@ -1646,17 +1646,7 @@ pub(crate) fn origin_ahead(
     since: Option<&str>,
     token: Option<&str>,
 ) -> Result<OriginAhead, WorktreeError> {
-    let refspec = format!("+refs/heads/{branch}:refs/remotes/origin/{branch}");
-    let cwd_text = cwd.to_string_lossy().to_string();
-    let fetch_error = match crate::github::run_git_authenticated(
-        &["fetch", "--quiet", "origin", &refspec],
-        &cwd_text,
-        token,
-    ) {
-        Ok(result) if result.exit_code == 0 => None,
-        Ok(result) => Some(result.stderr.trim().to_string()),
-        Err(error) => Some(error.to_string()),
-    };
+    let fetch_error = crate::branch_remote::fetch_branch_ref(cwd, "origin", branch, token);
     let remote_sha = resolve_commit(cwd, &format!("origin/{branch}"))?;
     let from = match since.map(str::trim).filter(|sha| !sha.is_empty()) {
         Some(sha) => resolve_commit(cwd, sha)?,

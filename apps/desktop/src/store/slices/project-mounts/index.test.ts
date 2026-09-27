@@ -231,6 +231,9 @@ const makeState = (): State => ({
   terminalTabs: {},
   recordSessionEvent: vi.fn(async () => undefined),
   reconcileOrphanWorktrees: vi.fn(async () => undefined),
+  refreshSessionPr: vi.fn(async () => undefined),
+  refreshSessionMr: vi.fn(async () => undefined),
+  refreshSessionBitbucketPr: vi.fn(async () => undefined),
 });
 
 const makeSlice = () => {
@@ -555,6 +558,22 @@ describe('project mount lifecycle', () => {
     expect(switched.worktreePath).toBe(`${REPO_ROOT}/wt/first`);
     expect(switched.branch).toBe('ak/second');
     expect(switched.revision).toBe(1);
+  });
+
+  it('re-reads the request of a switched mount right away', async () => {
+    const { slice, state } = makeSlice();
+    seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+
+    await slice.switchMount({
+      sessionId: SESSION_ID,
+      mountId: 'mount-1' as MountId,
+      branch: 'ak/second',
+    });
+
+    const expected = { mountId: 'mount-1', force: true, silent: true };
+    expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, expected);
+    expect(state.refreshSessionMr).toHaveBeenCalledWith(SESSION_ID, expected);
+    expect(state.refreshSessionBitbucketPr).toHaveBeenCalledWith(SESSION_ID, expected);
   });
 
   it('refuses a switch while the head of the mount is unresolved', async () => {

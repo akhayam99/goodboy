@@ -15,6 +15,7 @@ import { WorkflowFollowToastBridge } from './features/workflows/components/Workf
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
+import { SessionRefreshBridge } from './features/session/components/SessionRefreshBridge';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -42,6 +43,7 @@ import {
   useWorkspaces,
 } from './store';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
+import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';
 import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
@@ -121,6 +123,7 @@ export const App = () => {
   }, [hydrate, checkForUpdates]);
 
   useGithubPolling();
+  useSessionFocusRecheck();
   useProviderRefreshOnFocus();
   useProviderLimitsProbe();
   useUpdaterPolling();
@@ -217,6 +220,7 @@ export const App = () => {
       <WorkflowFollowToastBridge />
       <NewSessionBridge />
       <SessionArchiveBridge />
+      <SessionRefreshBridge />
       <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
       <AppShell
         topBar={

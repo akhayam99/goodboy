@@ -82,7 +82,10 @@ const statusOf = ({
   ({
     upstream,
     mainDistance: { kind: 'known', ahead: 3, behind },
-    upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+    upstreamDistance:
+      upstream === null
+        ? { kind: 'unknown', reason: 'no-upstream' }
+        : { kind: 'known', ahead: 0, behind: 0 },
   }) as unknown as WorktreeStatus;
 
 const renderPane = () =>
