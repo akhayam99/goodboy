@@ -16,13 +16,13 @@ export const RESOLVE_IN_REVIEW_LABEL = 'Resolve in Review';
 export const notesCountLabel = ({ count }: { readonly count: number }): string =>
   `${count} ${count === 1 ? 'note' : 'notes'}`;
 
-export const DiffNotesDock = ({ sessionId, openNotes }: Props) => {
+export const DiffNotesActions = ({ sessionId, openNotes }: Props) => {
   const toggleDrawer = useAppStore((s) => s.toggleDrawer);
   const isDrawerOpen = useAppStore((s) => selectOpenDrawer(s)?.kind === 'diff-notes');
   const count = openNotes.length;
 
   return (
-    <div data-slot="diff-notes-dock" className="flex min-w-0 items-center gap-2">
+    <div data-slot="diff-notes-actions" className="flex min-w-0 items-center gap-2">
       <Button
         variant="ghost"
         size="sm"
@@ -32,11 +32,9 @@ export const DiffNotesDock = ({ sessionId, openNotes }: Props) => {
         <MessageSquare size={ICON_SIZE.row} aria-hidden />
         {notesCountLabel({ count })}
       </Button>
-      <div className="ml-auto flex items-center gap-2">
-        <Button size="sm" onClick={() => void openReview({ sessionId })} disabled={count === 0}>
-          {RESOLVE_IN_REVIEW_LABEL}
-        </Button>
-      </div>
+      <Button size="sm" onClick={() => void openReview({ sessionId })} disabled={count === 0}>
+        {RESOLVE_IN_REVIEW_LABEL}
+      </Button>
     </div>
   );
 };
