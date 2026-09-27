@@ -98,7 +98,10 @@ describe('ResolveWithPopover', () => {
     const dialog = openPopover();
 
     fireEvent.click(within(dialog).getByRole('button', { name: PROVIDER_LABEL.codex }));
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Resolve 2' }));
+    const start = within(dialog).getByRole('button', { name: 'Resolve 2' });
+    expect(start.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(start.closest('footer')).toBeNull();
+    fireEvent.click(start);
 
     await vi.waitFor(() => expect(h.state.spawnAgent).toHaveBeenCalledTimes(1));
     const args = h.state.spawnAgent.mock.calls[0]?.[1];

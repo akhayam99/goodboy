@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Download, Search } from 'lucide-react';
-import { AnchoredPopover, Button, Input, PopoverFooter, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, FormActions, Input, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
@@ -108,7 +108,7 @@ export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
           </span>
         ) : null}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-1.5 pb-2">
         {emptyText === null ? (
           <div className="grid grid-cols-1 gap-x-3 gap-y-3 sm:grid-cols-2">
             {visible.map(({ group, workflows }) => (
@@ -126,39 +126,44 @@ export const ImportPopover = ({ workspaceId, takenNames }: Props) => {
         ) : (
           <p className="px-1.5 py-2 text-label text-muted-foreground">{emptyText}</p>
         )}
-      </div>
-      <PopoverFooter className="flex min-h-10 shrink-0 items-center gap-2 px-3 py-1.5">
-        <span
-          role={importer.importError === null ? undefined : 'alert'}
-          className={
-            importer.importError === null
-              ? 'min-w-0 flex-1 truncate text-secondary text-muted-foreground'
-              : 'min-w-0 flex-1 truncate text-secondary text-danger'
+        <FormActions
+          className="px-1.5"
+          leading={
+            <span
+              role={importer.importError === null ? undefined : 'alert'}
+              className={
+                importer.importError === null
+                  ? 'min-w-0 truncate text-secondary text-muted-foreground'
+                  : 'min-w-0 truncate text-secondary text-danger'
+              }
+            >
+              {importer.importError === null
+                ? selectionSummary({ picks: importer.picks })
+                : `Couldn't import. ${importer.importError}`}
+            </span>
           }
         >
-          {importer.importError === null
-            ? selectionSummary({ picks: importer.picks })
-            : `Couldn't import. ${importer.importError}`}
-        </span>
-        {count > 0 ? (
+          {count > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={importer.clear}
+              disabled={importer.isImporting}
+              className="text-muted-foreground"
+            >
+              Clear
+            </Button>
+          ) : null}
           <Button
-            variant="ghost"
             size="sm"
-            onClick={importer.clear}
-            disabled={importer.isImporting}
+            disabled={count === 0}
+            isBusy={importer.isImporting}
+            onClick={() => void onImport()}
           >
-            Clear
+            {count > 0 ? `Import ${count}` : 'Import'}
           </Button>
-        ) : null}
-        <Button
-          size="sm"
-          disabled={count === 0}
-          isBusy={importer.isImporting}
-          onClick={() => void onImport()}
-        >
-          {count > 0 ? `Import ${count}` : 'Import'}
-        </Button>
-      </PopoverFooter>
+        </FormActions>
+      </div>
     </AnchoredPopover>
   );
 };
