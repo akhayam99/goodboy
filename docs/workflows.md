@@ -360,12 +360,18 @@ run menu next to it.
 
 **Delete** removes the run and every agent it owns, for preset, custom and
 orchestrated runs alike: its step agents, the agents the orchestrator spawned,
-and their fan-out children. A running agent is stopped first. The agents drop
-out of the session, the board and the per-agent cost rows at once, and there
-is no undo. The questions they left open go with them, as they do when you
-delete one agent. What they already spent stays in the session total, as it does for
-a deleted agent. Discard is the verb that keeps the run and its agents
-restorable.
+and their fan-out children at any depth. It is a bulk delete of those agents
+with the single-agent method, so the result is the same as deleting each one
+by hand: a running agent is stopped first (`stopAgentForDelete`), its
+worktree writer and attachment files are released (`releaseAgentFiles`), its
+store entries are cleared (`omitDeletedAgents`), and in the database its
+messages, turn events, open questions and summary go and the row is
+tombstoned (`agentPurgeStatements`, one transaction for the whole run). The
+agents drop out of the session, the board and the per-agent cost rows at
+once, and there is no undo. What they already spent stays in the session
+total, as it does for a deleted agent. The launch cleanup of agents a run left
+behind purges them the same way. Discard is the verb that keeps the run and
+its agents restorable.
 
 ### Hands-free runs
 
