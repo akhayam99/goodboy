@@ -300,6 +300,10 @@ budget rules, linked integrations and app preferences. Folder paths and
 orchestrator-written workflows are off by default; every other group is on.
 Never included, in any bundle: API keys and tokens, sign-ins, sessions and
 transcripts, artifacts, worktree folders, usage history, notifications.
+A workspace's JSON-shaped overrides (provider bindings, task models, role
+models, provider pool) carry as nested JSON values in the bundle, not
+string-encoded text; a bundle written before this stayed compatible through
+a deserializer that still accepts the old `*Json` string fields.
 
 Before a write, `config_export_preview` reports which open security findings
 (`security_findings`, see [SECURITY.md](../SECURITY.md)) fall inside the

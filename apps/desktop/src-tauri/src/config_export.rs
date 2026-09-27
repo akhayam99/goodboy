@@ -77,6 +77,37 @@ pub struct ProjectBundle {
     pub updated_at: String,
 }
 
+fn normalize_json_ish(raw: serde_json::Value) -> Option<serde_json::Value> {
+    match raw {
+        serde_json::Value::Null => None,
+        serde_json::Value::String(s) => {
+            let trimmed = s.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                serde_json::from_str(trimmed).ok()
+            }
+        }
+        other => Some(other),
+    }
+}
+
+fn deserialize_json_ish<'de, D>(deserializer: D) -> Result<Option<serde_json::Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = serde_json::Value::deserialize(deserializer)?;
+    Ok(normalize_json_ish(raw))
+}
+
+fn json_text_to_value(text: Option<String>) -> Option<serde_json::Value> {
+    text.and_then(|s| normalize_json_ish(serde_json::Value::String(s)))
+}
+
+fn json_value_to_text(value: &Option<serde_json::Value>) -> Option<String> {
+    value.as_ref().map(|v| v.to_string())
+}
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceOverridesBundle {
@@ -84,16 +115,32 @@ pub struct WorkspaceOverridesBundle {
     pub default_branch_prefix: Option<String>,
     #[serde(default)]
     pub default_verbosity: Option<String>,
-    #[serde(default)]
-    pub provider_bindings_json: Option<String>,
-    #[serde(default)]
-    pub task_models_json: Option<String>,
-    #[serde(default)]
-    pub role_models_json: Option<String>,
+    #[serde(
+        default,
+        alias = "providerBindingsJson",
+        deserialize_with = "deserialize_json_ish"
+    )]
+    pub provider_bindings: Option<serde_json::Value>,
+    #[serde(
+        default,
+        alias = "taskModelsJson",
+        deserialize_with = "deserialize_json_ish"
+    )]
+    pub task_models: Option<serde_json::Value>,
+    #[serde(
+        default,
+        alias = "roleModelsJson",
+        deserialize_with = "deserialize_json_ish"
+    )]
+    pub role_models: Option<serde_json::Value>,
     #[serde(default)]
     pub parallel_agents: Option<bool>,
-    #[serde(default)]
-    pub provider_pool_json: Option<String>,
+    #[serde(
+        default,
+        alias = "providerPoolJson",
+        deserialize_with = "deserialize_json_ish"
+    )]
+    pub provider_pool: Option<serde_json::Value>,
     #[serde(default)]
     pub attribution_footer: Option<bool>,
     #[serde(default)]
@@ -469,11 +516,11 @@ fn build_bundle(
                     default_provider_id: row.get(4)?,
                     default_branch_prefix: row.get(5)?,
                     default_verbosity: row.get(6)?,
-                    provider_bindings_json: row.get(7)?,
-                    task_models_json: row.get(8)?,
-                    role_models_json: row.get(9)?,
+                    provider_bindings: json_text_to_value(row.get(7)?),
+                    task_models: json_text_to_value(row.get(8)?),
+                    role_models: json_text_to_value(row.get(9)?),
                     parallel_agents: row.get::<_, Option<i64>>(10)?.map(|v| v != 0),
-                    provider_pool_json: row.get(11)?,
+                    provider_pool: json_text_to_value(row.get(11)?),
                     attribution_footer: row.get::<_, Option<i64>>(12)?.map(|v| v != 0),
                     reply_voice: row.get(13)?,
                     reply_style_note: row.get(14)?,
@@ -1010,11 +1057,11 @@ fn apply_bundle(
                     w.overrides.default_provider_id,
                     w.overrides.default_branch_prefix,
                     w.overrides.default_verbosity,
-                    w.overrides.provider_bindings_json,
-                    w.overrides.task_models_json,
-                    w.overrides.role_models_json,
+                    json_value_to_text(&w.overrides.provider_bindings),
+                    json_value_to_text(&w.overrides.task_models),
+                    json_value_to_text(&w.overrides.role_models),
                     w.overrides.parallel_agents.map(|v| if v { 1 } else { 0 }),
-                    w.overrides.provider_pool_json,
+                    json_value_to_text(&w.overrides.provider_pool),
                     w.overrides.attribution_footer.map(|v| if v { 1 } else { 0 }),
                     w.overrides.reply_voice,
                     w.overrides.reply_style_note,
@@ -2443,6 +2490,83 @@ mod tests {
         assert_eq!(project_id, "p");
         assert_eq!(name, "deploy");
         assert_eq!(body, "echo hi");
+    }
+
+    #[test]
+    fn workspace_overrides_json_round_trips_as_a_typed_value_not_a_string() {
+        let source = export_conn();
+        source
+            .execute_batch(
+                "INSERT INTO workspaces (id, name, created_at, updated_at, provider_bindings, provider_pool)
+                 VALUES ('w', 'W', 1, 1, '{\"anthropic\":\"acct-1\"}', '[\"anthropic\",\"openai\"]');",
+            )
+            .unwrap();
+
+        let bundle = build_bundle(&source, &ExportGroups::default(), &HashSet::new())
+            .expect("export failed");
+        let overrides = &bundle.workspaces[0].overrides;
+        assert_eq!(
+            overrides.provider_bindings,
+            Some(serde_json::json!({"anthropic": "acct-1"}))
+        );
+        assert_eq!(
+            overrides.provider_pool,
+            Some(serde_json::json!(["anthropic", "openai"]))
+        );
+
+        let json = serde_json::to_string(&bundle).expect("serialize failed");
+        assert!(
+            json.contains("\"providerBindings\":{\"anthropic\":\"acct-1\"}"),
+            "provider bindings must serialize as a nested object, not an escaped string: {json}"
+        );
+
+        let target = export_conn();
+        target
+            .execute_batch("INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);")
+            .unwrap();
+        apply_bundle(&target, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+        let stored: String = target
+            .query_row(
+                "SELECT provider_bindings FROM workspaces WHERE id = 'w'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&stored).unwrap(),
+            serde_json::json!({"anthropic": "acct-1"})
+        );
+    }
+
+    #[test]
+    fn workspace_overrides_json_accepts_the_legacy_string_encoded_shape() {
+        let legacy = serde_json::json!({
+            "schemaVersion": SCHEMA_VERSION,
+            "exportedAt": "2026-01-01T00:00:00Z",
+            "workspaces": [{
+                "id": "w",
+                "name": "W",
+                "projects": [],
+                "createdAt": "2026-01-01T00:00:00Z",
+                "updatedAt": "2026-01-01T00:00:00Z",
+                "overrides": {
+                    "defaultProviderId": null,
+                    "defaultBranchPrefix": null,
+                    "providerBindingsJson": "{\"anthropic\":\"acct-legacy\"}",
+                },
+            }],
+            "skills": [],
+            "phaseTemplates": [],
+            "permissionRules": [],
+            "budgetRules": [],
+        });
+
+        let bundle: ConfigBundle =
+            serde_json::from_str(&legacy.to_string()).expect("legacy shape must still parse");
+        assert_eq!(
+            bundle.workspaces[0].overrides.provider_bindings,
+            Some(serde_json::json!({"anthropic": "acct-legacy"}))
+        );
     }
 
     #[test]
