@@ -59,7 +59,11 @@ CREATE TABLE session_events_new (
     'session_restored',
     'write_destination_changed',
     'question_dismissed',
-    'question_restored'
+    'question_restored',
+    'history_rewritten',
+    'history_pushed',
+    'history_stopped',
+    'history_restored'
   )),
   payload_json TEXT,
   created_at INTEGER NOT NULL,

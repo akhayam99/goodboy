@@ -5,7 +5,7 @@ SET config = json_set(
   '$.userId', COALESCE(json_extract(config, '$.botUserId'), ''),
   '$.userName', json_extract(config, '$.botUserName'),
   '$.followedChannels', json('[]'),
-  '$.hasSelectedChannels', json('false'),
+  '$.hasSelectedChannels', json('true'),
   '$.includePrivate', json('false'),
   '$.agentPolicy', json('{"readFollowed":"allow","readOthers":"off","reply":"ask","react":"allow"}'),
   '$.signature', json('{"agents":true,"own":false,"text":"Written with Goodboy"}')

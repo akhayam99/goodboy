@@ -30,7 +30,7 @@ describe('m202 slack binding settings', () => {
       userId: 'U1',
       userName: 'Mara',
       followedChannels: [],
-      hasSelectedChannels: false,
+      hasSelectedChannels: true,
       includePrivate: false,
       agentPolicy: {
         readFollowed: 'allow',
