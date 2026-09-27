@@ -51,12 +51,16 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
   const rule = useAppStore(
     (state) => state.workspaceOverrides[workspaceId]?.afterMerge ?? DEFAULT_AFTER_MERGE_RULE,
   );
-  const repos = useAppStore(
+  const repoProjects = useAppStore(
     useShallow((state) =>
-      state.projects
-        .filter((project) => project.workspaceId === workspaceId && project.kind === 'repo')
-        .map((project) => ({ name: project.name, rootPath: project.rootPath })),
+      state.projects.filter(
+        (project) => project.workspaceId === workspaceId && project.kind === 'repo',
+      ),
     ),
+  );
+  const repos = useMemo(
+    () => repoProjects.map((project) => ({ name: project.name, rootPath: project.rootPath })),
+    [repoProjects],
   );
   const patchWorkspaceOverrides = useAppStore((state) => state.patchWorkspaceOverrides);
   const reportError = useAppStore((state) => state.reportError);
