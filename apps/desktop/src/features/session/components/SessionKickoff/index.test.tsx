@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { StoreApi, UseBoundStore } from 'zustand';
-import type { WorkspaceId } from '@goodboy/types';
+import type { Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 
 type TestState = Record<string, unknown>;
@@ -67,6 +67,32 @@ const candidate = (overrides: Partial<IssueCandidate>): IssueCandidate => ({
   goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
   body: 'The redirect loops.',
   branchSlug: 'fix-the-login-redirect',
+  ...overrides,
+});
+
+const PROJECT_OVERRIDES = {
+  defaultProviderId: null,
+  defaultWorkflowId: null,
+  defaultBranchPrefix: null,
+  parallelEnabled: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+  attributionFooter: null,
+};
+
+const project = (overrides: Partial<Project>): Project => ({
+  id: 'project-ledger-core' as ProjectId,
+  workspaceId: WORKSPACE_ID,
+  name: 'ledger-core',
+  rootPath: '/tmp/ledger-core',
+  kind: 'repo',
+  overrides: PROJECT_OVERRIDES,
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
   ...overrides,
 });
 
@@ -307,6 +333,50 @@ describe('SessionKickoff', () => {
         prompt: 'Build the login page',
         routing: null,
       },
+    });
+  });
+
+  it('shows no project chip with zero or one project in the workspace', () => {
+    const first = renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+    expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
+    first.unmount();
+
+    store().setState({ projects: [project({})] });
+    renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+    expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
+  });
+
+  it('preselects the sole project without a chip', async () => {
+    store().setState({ projects: [project({})] });
+    renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
+      target: { value: 'the ledger-core importer' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
+
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(store().getState().sessionDrafts).toMatchObject({
+      [WORKSPACE_ID]: { projectId: 'project-ledger-core' },
+    });
+  });
+
+  it('shows a project chip and lets you pick when the workspace has more than one', () => {
+    store().setState({
+      projects: [project({}), project({ id: 'project-northwind' as ProjectId, name: 'northwind' })],
+    });
+    renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+
+    expect(screen.getByRole('button', { name: 'Project: ledger-core' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Project: ledger-core' }));
+    fireEvent.click(screen.getByRole('option', { name: 'northwind' }));
+
+    expect(screen.getByRole('button', { name: 'Project: northwind' })).toBeDefined();
+    expect(store().getState().sessionDrafts).toMatchObject({
+      [WORKSPACE_ID]: { projectId: 'project-northwind' },
     });
   });
 

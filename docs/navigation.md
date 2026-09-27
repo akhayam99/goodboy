@@ -247,13 +247,16 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   shows the connect links.
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
-- **Ask an agent** (`AgentStart`) is the real chat composer's field: role and
-  model sit below it as chips (`AgentStartFields`), opening the same role grid
-  and model picker `Start agent` uses. The role defaults to Scout every time,
-  never the last one picked, because a habitual Implementer writes code you
-  did not ask for. Scout alone can start with an empty field ("Start Scout on
-  the whole project", which reads the project and changes nothing); every
-  other role needs a prompt first. The model chip reads Auto until pinned.
+- **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
+  model and project sit below it as chips (`AgentStartFields`), opening the
+  same role grid and model picker `Start agent` uses. The role defaults to
+  Scout every time, never the last one picked, because a habitual Implementer
+  writes code you did not ask for. Scout alone can start with an empty field
+  ("Start Scout on the whole project", which reads the project and changes
+  nothing); every other role needs a prompt first. The model chip reads Auto
+  until pinned. The project chip only shows when the workspace has more than
+  one repo project; with one it is preselected with no chip, with none the
+  session starts with no project attached.
 
 Only the selected tab's panel, and only its primary, shows. The tabs
 preselect Pick up a task when a tracker has open issues and Run a workflow
