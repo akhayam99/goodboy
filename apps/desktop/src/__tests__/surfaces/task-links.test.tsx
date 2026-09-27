@@ -573,6 +573,55 @@ describe('tasks and sessions on the real store', () => {
     );
   });
 
+  it.each([
+    { how: 'pasted link', value: 'https://cascadia.sentry.io/issues/4512099/' },
+    { how: 'short code', value: 'core-api-3c' },
+  ])(
+    'links a sentry issue outside the list from its $how in the session link button',
+    async ({ value }) => {
+      const entry = CASES.find((candidate) => candidate.provider === 'sentry');
+      if (entry == null) {
+        throw new Error('missing sentry case');
+      }
+      const session = seed(entry);
+      const resolved = {
+        ...SENTRY_ISSUE,
+        id: '4512099',
+        shortId: 'CORE-API-3C',
+        title: 'ValueError in the ledger-core nightly close',
+        permalink: 'https://cascadia.sentry.io/issues/4512099/',
+      };
+      bridge.routes = {
+        ...entry.routes,
+        sentry_fetch_issue: () => resolved,
+        sentry_resolve_short_id: () => resolved,
+      };
+
+      await mount(surfaces(session, entry, <LinkIssueAction session={session} />));
+      fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Link an issue' });
+      const picker = within(dialog).getByRole('combobox');
+      fireEvent.focus(picker);
+      fireEvent.change(picker, { target: { value } });
+      fireEvent.click(
+        await screen.findByRole('option', { name: 'Link CORE-API-3C' }, { timeout: 2000 }),
+      );
+      await settle();
+
+      await waitFor(() =>
+        expect(useAppStore.getState().sessionExternalTasks[session.id]).toEqual([
+          expect.objectContaining({
+            provider: 'sentry',
+            externalId: '4512099',
+            identifier: 'CORE-API-3C',
+            title: resolved.title,
+            url: resolved.permalink,
+          }),
+        ]),
+      );
+    },
+  );
+
   it('shows a sentry issue linked from the session in the full inbox', async () => {
     const entry = CASES.find((candidate) => candidate.provider === 'sentry');
     if (entry == null) {
