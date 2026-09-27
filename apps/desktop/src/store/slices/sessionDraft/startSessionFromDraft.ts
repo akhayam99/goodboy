@@ -1,4 +1,4 @@
-import type { Session, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, Session, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../features/integrations/fetchIssueCandidates';
 import {
   AGENT_KIND_META,
@@ -11,8 +11,15 @@ import type { GetFn, SetFn } from './types';
 
 export const SCOUT_DRAFT_TITLE = 'Scout the project';
 
+export type SessionDraftRun = (session: Session) => Promise<void>;
+
+export type SessionDraftMount = {
+  readonly projectId: ProjectId | null;
+  readonly reason: string;
+};
+
 export type SessionDraftThen =
-  | { readonly kind: 'workflow'; readonly workflowId: WorkflowId }
+  | { readonly kind: 'workflow-run'; readonly run: SessionDraftRun }
   | {
       readonly kind: 'agent';
       readonly agentKind: AgentKind;
@@ -27,12 +34,12 @@ export type SessionDraftStart =
       readonly title: string;
       readonly goal: string;
       readonly then?: SessionDraftThen;
+      readonly mount?: SessionDraftMount;
     }
-  | { readonly kind: 'workflow'; readonly workflowId: WorkflowId; readonly goal: string }
   | {
       readonly kind: 'workflow-run';
       readonly goal: string;
-      readonly run: (session: Session) => Promise<void>;
+      readonly run: SessionDraftRun;
     }
   | {
       readonly kind: 'scout';
@@ -60,7 +67,6 @@ const seedOf = ({ start }: SeedParams): Seed => {
   switch (start.kind) {
     case 'task':
       return { title: start.title.trim(), goal: start.goal.trim() };
-    case 'workflow':
     case 'workflow-run': {
       const goal = start.goal.trim();
       return { title: draftGoalText({ text: goal }), goal };
@@ -78,20 +84,6 @@ const seedOf = ({ start }: SeedParams): Seed => {
       return unreachable;
     }
   }
-};
-
-type AttachWorkflowParams = {
-  readonly get: GetFn;
-  readonly session: Session;
-  readonly workflowId: WorkflowId;
-  readonly goal: string;
-};
-
-const attachWorkflow = async ({ get, session, workflowId, goal }: AttachWorkflowParams) => {
-  await get().attachWorkflowToSession(session.id, workflowId, {
-    goal: goal.trim(),
-    navigate: true,
-  });
 };
 
 type SpawnStartAgentParams = {
@@ -130,8 +122,8 @@ type LaunchParams = {
 const launch = async ({ get, session, start }: LaunchParams): Promise<void> => {
   switch (start.kind) {
     case 'task':
-      if (start.then?.kind === 'workflow') {
-        await attachWorkflow({ get, session, workflowId: start.then.workflowId, goal: start.goal });
+      if (start.then?.kind === 'workflow-run') {
+        await start.then.run(session);
         return;
       }
       if (start.then?.kind === 'agent') {
@@ -144,9 +136,6 @@ const launch = async ({ get, session, start }: LaunchParams): Promise<void> => {
         });
         return;
       }
-      return;
-    case 'workflow':
-      await attachWorkflow({ get, session, workflowId: start.workflowId, goal: start.goal });
       return;
     case 'workflow-run':
       await start.run(session);
@@ -171,13 +160,16 @@ export const startSessionFromDraft = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, start }: StartSessionFromDraftParams): Promise<Session> => {
     const { title, goal } = seedOf({ start });
     const candidate = start.kind === 'task' ? start.candidate : null;
-    const projectId = get().sessionDrafts[workspaceId]?.projectId ?? null;
+    const mount = start.kind === 'task' ? (start.mount ?? null) : null;
+    const projectId =
+      mount === null ? (get().sessionDrafts[workspaceId]?.projectId ?? null) : mount.projectId;
     const { session } = await get().createSession({
       workspaceId,
       goal: goal === '' ? title : goal,
       title,
       omitGoalSlot: goal === '',
       ...(projectId !== null && { projectId }),
+      ...(projectId !== null && mount !== null && { projectReason: mount.reason }),
       ...(candidate !== null && {
         externalTasks: [
           {

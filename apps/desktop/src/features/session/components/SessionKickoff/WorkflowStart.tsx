@@ -8,7 +8,7 @@ type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
-const KICKOFF_GOAL_PLACEHOLDER = 'What should get done?';
+export const KICKOFF_GOAL_PLACEHOLDER = 'What should get done?';
 
 export const WorkflowStart = ({ workspaceId }: Props) => {
   const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);

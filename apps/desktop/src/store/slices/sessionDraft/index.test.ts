@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 
 const { discardUncreatedSession } = vi.hoisted(() => ({
   discardUncreatedSession: vi.fn(async (_params: unknown) => undefined),
@@ -105,10 +105,11 @@ describe('session draft slice', () => {
   it('creates the session and starts the workflow in one gesture, then drops the draft', async () => {
     h.set({ openSessionDraftWorkspaceId: WORKSPACE_ID });
     h.slice.patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { workflowGoal: 'Ship it' } });
+    const run = vi.fn(async (_session: unknown) => undefined);
 
     await h.slice.startSessionFromDraft({
       workspaceId: WORKSPACE_ID,
-      start: { kind: 'workflow', workflowId: 'wf-1' as WorkflowId, goal: '  Ship it  ' },
+      start: { kind: 'workflow-run', goal: '  Ship it  ', run },
     });
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
@@ -117,10 +118,7 @@ describe('session draft slice', () => {
       title: 'Ship it',
       omitGoalSlot: false,
     });
-    expect(h.spies.attachWorkflowToSession).toHaveBeenCalledWith(SESSION_ID, 'wf-1', {
-      goal: 'Ship it',
-      navigate: true,
-    });
+    expect(run).toHaveBeenCalledWith({ id: SESSION_ID });
     expect(h.getState().openSessionDraftWorkspaceId).toBeNull();
     expect(h.getState().sessionDrafts).toEqual({});
     expect(h.getState().goodboyNamedSessionId).toBe(SESSION_ID);
@@ -279,7 +277,12 @@ describe('session draft slice', () => {
     expect(h.spies.spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('links the issue and attaches a workflow in the same gesture when the task has a "then"', async () => {
+  it('links the issue, mounts the issue project and runs the workflow in one gesture', async () => {
+    h.slice.patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: { projectId: 'project-other' as ProjectId },
+    });
+    const run = vi.fn(async (_session: unknown) => undefined);
     await h.slice.startSessionFromDraft({
       workspaceId: WORKSPACE_ID,
       start: {
@@ -296,15 +299,50 @@ describe('session draft slice', () => {
         },
         title: 'Invoices credited twice',
         goal: 'Stop crediting twice.',
-        then: { kind: 'workflow', workflowId: 'wf-2' as WorkflowId },
+        then: { kind: 'workflow-run', run },
+        mount: { projectId: 'project-ledger' as ProjectId, reason: 'from GitHub repo acme/ledger' },
       },
     });
 
-    expect(h.spies.attachWorkflowToSession).toHaveBeenCalledWith(SESSION_ID, 'wf-2', {
-      goal: 'Stop crediting twice.',
-      navigate: true,
-    });
+    expect(h.spies.createSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectId: 'project-ledger',
+        projectReason: 'from GitHub repo acme/ledger',
+        externalTasks: [expect.objectContaining({ identifier: 'NW-214' })],
+      }),
+    );
+    expect(run).toHaveBeenCalledWith({ id: SESSION_ID });
     expect(h.spies.spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('starts a task with no project when the issue mount is set to none', async () => {
+    h.slice.patchSessionDraft({
+      workspaceId: WORKSPACE_ID,
+      patch: { projectId: 'project-other' as ProjectId },
+    });
+    await h.slice.startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'task',
+        candidate: {
+          provider: 'linear',
+          externalId: 'issue-214',
+          identifier: 'NW-214',
+          title: 'Invoices credited twice',
+          url: 'https://linear.app/northwind/issue/NW-214',
+          goal: 'Stop crediting twice.',
+          body: '',
+          branchSlug: 'invoices-credited-twice',
+        },
+        title: 'Invoices credited twice',
+        goal: 'Stop crediting twice.',
+        mount: { projectId: null, reason: 'from GitHub repo acme/ledger' },
+      },
+    });
+
+    const [input] = h.spies.createSession.mock.calls[0] ?? [];
+    expect(input).not.toHaveProperty('projectId');
+    expect(input).not.toHaveProperty('projectReason');
   });
 
   it('links the issue and spawns an agent in the same gesture when the task has a "then"', async () => {
@@ -344,12 +382,14 @@ describe('session draft slice', () => {
   it('leaves no session behind and keeps the draft when the start fails', async () => {
     h.set({ openSessionDraftWorkspaceId: WORKSPACE_ID });
     h.slice.patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { workflowGoal: 'Ship it' } });
-    h.spies.attachWorkflowToSession.mockRejectedValueOnce(new Error('no provider'));
+    const run = vi.fn(async (_session: unknown) => {
+      throw new Error('no provider');
+    });
 
     await expect(
       h.slice.startSessionFromDraft({
         workspaceId: WORKSPACE_ID,
-        start: { kind: 'workflow', workflowId: 'wf-1' as WorkflowId, goal: 'Ship it' },
+        start: { kind: 'workflow-run', goal: 'Ship it', run },
       }),
     ).rejects.toThrow('no provider');
 
