@@ -11,12 +11,22 @@ import type { GetFn, SetFn } from './types';
 
 export const SCOUT_DRAFT_TITLE = 'Scout the project';
 
+export type SessionDraftThen =
+  | { readonly kind: 'workflow'; readonly workflowId: WorkflowId }
+  | {
+      readonly kind: 'agent';
+      readonly agentKind: AgentKind;
+      readonly prompt: string;
+      readonly routing: AgentKindRouting | null;
+    };
+
 export type SessionDraftStart =
   | {
       readonly kind: 'task';
       readonly candidate: IssueCandidate;
       readonly title: string;
       readonly goal: string;
+      readonly then?: SessionDraftThen;
     }
   | { readonly kind: 'workflow'; readonly workflowId: WorkflowId; readonly goal: string }
   | {
@@ -64,6 +74,47 @@ const seedOf = ({ start }: SeedParams): Seed => {
   }
 };
 
+type AttachWorkflowParams = {
+  readonly get: GetFn;
+  readonly session: Session;
+  readonly workflowId: WorkflowId;
+  readonly goal: string;
+};
+
+const attachWorkflow = async ({ get, session, workflowId, goal }: AttachWorkflowParams) => {
+  await get().attachWorkflowToSession(session.id, workflowId, {
+    goal: goal.trim(),
+    navigate: true,
+  });
+};
+
+type SpawnStartAgentParams = {
+  readonly get: GetFn;
+  readonly session: Session;
+  readonly agentKind: AgentKind;
+  readonly prompt: string;
+  readonly routing: AgentKindRouting | null;
+};
+
+const spawnStartAgent = async ({
+  get,
+  session,
+  agentKind,
+  prompt,
+  routing,
+}: SpawnStartAgentParams) => {
+  await get().spawnAgent(session.id, {
+    kindOverride: agentKind,
+    initialPrompt: prompt,
+    focus: 'agent',
+    ...(routing !== null && {
+      provider: routing.provider,
+      model: routing.model,
+      effort: routing.effort,
+    }),
+  });
+};
+
 type LaunchParams = {
   readonly get: GetFn;
   readonly session: Session;
@@ -73,23 +124,31 @@ type LaunchParams = {
 const launch = async ({ get, session, start }: LaunchParams): Promise<void> => {
   switch (start.kind) {
     case 'task':
+      if (start.then?.kind === 'workflow') {
+        await attachWorkflow({ get, session, workflowId: start.then.workflowId, goal: start.goal });
+        return;
+      }
+      if (start.then?.kind === 'agent') {
+        await spawnStartAgent({
+          get,
+          session,
+          agentKind: start.then.agentKind,
+          prompt: start.then.prompt,
+          routing: start.then.routing,
+        });
+        return;
+      }
       return;
     case 'workflow':
-      await get().attachWorkflowToSession(session.id, start.workflowId, {
-        goal: start.goal.trim(),
-        navigate: true,
-      });
+      await attachWorkflow({ get, session, workflowId: start.workflowId, goal: start.goal });
       return;
     case 'scout':
-      await get().spawnAgent(session.id, {
-        kindOverride: start.agentKind,
-        initialPrompt: start.prompt,
-        focus: 'agent',
-        ...(start.routing !== null && {
-          provider: start.routing.provider,
-          model: start.routing.model,
-          effort: start.routing.effort,
-        }),
+      await spawnStartAgent({
+        get,
+        session,
+        agentKind: start.agentKind,
+        prompt: start.prompt,
+        routing: start.routing,
       });
       return;
     default: {

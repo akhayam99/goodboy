@@ -146,9 +146,12 @@ describe('sendTurn, provider failure fallback', () => {
     );
     const transcript = useAppStore.getState().transcripts[AGENT_A] ?? [];
     const notice = transcript.find(
-      (event) => event.kind === 'error' && event.message.includes('retrying on'),
+      (event) => event.kind === 'decision_note' && event.message.includes('retrying on'),
     );
     expect(notice).toBeDefined();
+    expect(
+      transcript.filter((event) => event.kind === 'error' && event.message.includes('rate limit')),
+    ).toHaveLength(0);
     expect(transcript.filter((event) => event.kind === 'user_text')).toHaveLength(1);
     expect(useAppStore.getState().agentTurnState[AGENT_A]?.kind).not.toBe('error');
   });
@@ -194,6 +197,11 @@ describe('sendTurn, provider failure fallback', () => {
 
     expect(storySpies.runTurn).toHaveBeenCalledOnce();
     expect(useAppStore.getState().agentTurnState[AGENT_A]?.kind).toBe('error');
+    const transcript = useAppStore.getState().transcripts[AGENT_A] ?? [];
+    const stopped = transcript.find(
+      (event) => event.kind === 'error' && event.message.includes('connection reset by peer'),
+    );
+    expect(stopped).toMatchObject({ retryable: true });
   });
 
   const USAGE_LIMIT_MESSAGE =

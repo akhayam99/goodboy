@@ -67,6 +67,13 @@ already ship, a gap on a mature crate with wide use is a watch, not a removal.
   no network or file access. The usual alternative, `qrcodegen`, has an older
   last release (April 2022), so switching gains nothing.
 
+`core-foundation-sys` (macOS) and `windows-sys` (Windows) are direct
+platform-gated dependencies of `goodboy-desktop` for native default-browser
+detection (`artifact_mirror.rs`, Launch Services and `AssocQueryStringW`).
+Neither is new to the dependency tree: both already resolved as transitive
+deps of `tauri`/`objc2` at the exact versions now pinned directly, so this
+added zero new crates and a two-line `Cargo.lock` diff.
+
 The rules for internal workspace deps (the `workspace:*` protocol, no phantom deps) live in [CONVENTIONS.md](../CONVENTIONS.md) → pnpm.
 
 ## Upgrades: stable over newest

@@ -36,6 +36,7 @@ type BranchLook = Pick<CrumbState, 'tone' | 'glyph'>;
 
 const PRIORITY_LOOK = {
   merged: { tone: 'merged', glyph: GitMerge },
+  'merged-then': { tone: 'warning', glyph: GitMerge },
   'gone-on-origin': { tone: 'danger', glyph: CloudOff },
   'local-only': { tone: 'warning', glyph: Laptop },
   'behind-main': { tone: 'warning', glyph: ArrowDown },

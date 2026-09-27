@@ -65,6 +65,8 @@ export type MountPullRequestLink = MountPullRequestIdentity &
     url: string;
     state: MountPullRequestState;
     snapshot: unknown;
+    mergedHeadSha?: string | null;
+    mergedAt?: IsoDateTime | null;
     lastObservedAt: IsoDateTime;
     createdAt: IsoDateTime;
     updatedAt: IsoDateTime;

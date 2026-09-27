@@ -9,6 +9,7 @@ import type {
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   disconnectProject,
+  findDisconnectedProjectByIdentity,
   findProjectByRootPath,
   getProjectById,
   insertProject,
@@ -251,5 +252,44 @@ describe('project queries', () => {
     expect((await getProjectById({ db, id: project.id }))?.disconnectedAt).toBeDefined();
     await reconnectProject({ db, id: project.id, at: at({ value: '2026-08-22T12:00:00Z' }) });
     expect((await getProjectById({ db, id: project.id }))?.disconnectedAt).toBeUndefined();
+  });
+
+  it('prefers the exact identity pair over a newer clone that shares only the remote', async () => {
+    const db = await makeDb();
+    await db.execute('UPDATE workspaces SET disconnected_at = ? WHERE id = ?', [
+      Date.now(),
+      workspaceId,
+    ]);
+    const remoteUrl = 'github.com/acme/ledger-core';
+    const identities = [
+      { id: 'original', rootCommit: 'sha-1', checkedAt: '2026-08-22T11:00:00Z' },
+      { id: 'rewritten', rootCommit: 'sha-2', checkedAt: '2026-08-22T12:00:00Z' },
+    ];
+    for (const identity of identities) {
+      await insertProject({ db, project: makeProject({ id: identity.id }) });
+      await updateProjectIdentity({
+        db,
+        projectId: identity.id as ProjectId,
+        rootCommit: identity.rootCommit,
+        remoteUrl,
+        checkedAt: at({ value: identity.checkedAt }),
+      });
+    }
+
+    const exact = await findDisconnectedProjectByIdentity({ db, rootCommit: 'sha-1', remoteUrl });
+    const remoteOnly = await findDisconnectedProjectByIdentity({
+      db,
+      rootCommit: null,
+      remoteUrl,
+    });
+    const conflicting = await findDisconnectedProjectByIdentity({
+      db,
+      rootCommit: 'sha-3',
+      remoteUrl,
+    });
+
+    expect(exact?.id).toBe('original');
+    expect(remoteOnly?.id).toBe('rewritten');
+    expect(conflicting).toBeNull();
   });
 });

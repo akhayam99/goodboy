@@ -18,6 +18,8 @@ type JoinedRow = ItemRow & {
   readonly stage: ResolveThread['stage'];
   readonly stateReason: string | null;
   readonly revision: number;
+  readonly threadGeneration: number;
+  readonly threadReopenedFromThreadId: string | null;
   readonly activeAttemptId: string | null;
   readonly disposition: ResolveThread['disposition'];
   readonly replyDraft: string | null;
@@ -98,7 +100,8 @@ export const listResolveQueueItems = async ({
        q.created_at AS createdAt, q.updated_at AS updatedAt,
        r.id AS threadRowId, r.project_id AS projectId, r.pr_number AS prNumber,
        r.origin_kind AS originKind, r.diff_comment_id AS diffCommentId, r.state, r.stage, r.state_reason AS stateReason,
-       r.revision, r.active_attempt_id AS activeAttemptId, r.disposition,
+       r.revision, r.generation AS threadGeneration, r.reopened_from_thread_id AS threadReopenedFromThreadId,
+       r.active_attempt_id AS activeAttemptId, r.disposition,
        r.reply_draft AS replyDraft, r.commit_shas_json AS commitShas,
        r.fixup_of_sha AS fixupOfSha, r.replaces_sha AS replacesSha, r.question,
        r.reply_posted_at AS replyPostedAt, r.reply_id AS replyId,
@@ -141,6 +144,8 @@ export const listResolveQueueItems = async ({
       stage: row.stage,
       stateReason: row.stateReason,
       revision: row.revision,
+      generation: row.threadGeneration,
+      reopenedFromThreadId: row.threadReopenedFromThreadId,
       activeAttemptId: row.activeAttemptId,
       disposition: row.disposition,
       replyDraft: row.replyDraft,

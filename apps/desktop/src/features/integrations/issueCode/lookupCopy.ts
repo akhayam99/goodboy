@@ -1,4 +1,5 @@
 import type { WorkspaceLookup } from '../hooks/useWorkspaceIssueLookup';
+import type { InboxRecord } from '../../inbox/types';
 import type { LookupFailure } from './classifyLookupError';
 import type { LookupProvider, LookupTarget } from './routeIssueCode';
 
@@ -34,7 +35,19 @@ const joinOr = (names: ReadonlyArray<string>): string =>
 const joinAnd = (names: ReadonlyArray<string>): string =>
   names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
-export const lookingUpText = ({ code }: { readonly code: string }): string => `Looking up ${code}`;
+export const lookingUpText = ({
+  code,
+  providers,
+}: {
+  readonly code: string;
+  readonly providers: ReadonlyArray<LookupProvider>;
+}): string => {
+  if (providers.length === 0) {
+    return `Looking up ${code}`;
+  }
+  const names = providers.map((provider) => PROVIDER_LABEL[provider]);
+  return `Looking up ${code} in ${joinAnd(names)}`;
+};
 
 const failureStatus = ({
   code,
@@ -151,3 +164,20 @@ export const lookupStatuses = ({
 };
 
 export const ISSUE_SEARCH_PLACEHOLDER = 'Search, or paste CAS-231, #482 or a link';
+
+const assigneeNameOf = (record: InboxRecord): string | null => {
+  const { payload } = record;
+  switch (payload.provider) {
+    case 'linear':
+      return payload.kind === 'issue' ? (payload.issue.assignee?.name ?? null) : null;
+    case 'jira':
+      return payload.issue.assignee?.displayName ?? null;
+    default:
+      return null;
+  }
+};
+
+export const lookupHitSecondLine = (record: InboxRecord): string => {
+  const assignee = assigneeNameOf(record);
+  return assignee === null ? record.context : `Assigned to ${assignee}`;
+};

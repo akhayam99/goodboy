@@ -14,6 +14,8 @@ const thread = (patch: Partial<ResolveThread> = {}): ResolveThread => ({
   stage: 'new',
   stateReason: null,
   revision: 1,
+  generation: 0,
+  reopenedFromThreadId: null,
   activeAttemptId: null,
   disposition: null,
   replyDraft: null,

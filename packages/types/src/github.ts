@@ -49,6 +49,8 @@ export type PullRequestState = {
   body: string;
   updatedAt: string;
   mergeQueue?: { position: number | null } | null;
+  headSha?: string | null;
+  mergedAt?: string | null;
 };
 
 export type LinkedIssue = {

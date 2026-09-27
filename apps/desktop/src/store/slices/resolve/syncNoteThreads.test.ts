@@ -7,6 +7,8 @@ import {
   listResolveQueueItems,
   listResolveThreads,
   migrate,
+  reopenDiffComment,
+  resolveDiffComment,
   type Database,
 } from '@goodboy/db';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
@@ -91,6 +93,39 @@ describe('syncNoteThreads', () => {
     const [row] = await listResolveThreads({ db, sessionId });
     expect(row?.state).toBe('closed');
     expect(row?.stage).toBe('resolved');
+  });
+
+  it('reopening a resolved note opens a new generation instead of reviving the closed one', async () => {
+    const { actions, get } = createHarness();
+    await insertDiffComment(db, 'rounding', sessionId, 'src/ledger.ts', 'Round half even');
+    await actions.syncNoteThreads({ sessionId });
+
+    await resolveDiffComment(db, 'rounding');
+    await actions.syncNoteThreads({ sessionId });
+
+    await reopenDiffComment(db, 'rounding');
+    await actions.syncNoteThreads({ sessionId });
+
+    const rows = await listResolveThreads({ db, sessionId });
+    const closed = rows.find((row) => row.threadId === 'note:rounding');
+    const reopened = rows.find((row) => row.threadId === 'note:rounding:g1');
+    expect(closed).toEqual(
+      expect.objectContaining({ state: 'closed', stage: 'resolved', generation: 0 }),
+    );
+    expect(closed?.closedAt).not.toBeNull();
+    expect(reopened).toEqual(
+      expect.objectContaining({
+        state: 'open',
+        stage: 'new',
+        generation: 1,
+        reopenedFromThreadId: closed?.id,
+      }),
+    );
+    expect(
+      get()
+        .sessionResolveQueueItems[sessionId]?.map((entry) => entry.item.threadId)
+        .sort(),
+    ).toEqual(['note:rounding', 'note:rounding:g1']);
   });
 });
 

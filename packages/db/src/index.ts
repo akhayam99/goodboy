@@ -48,6 +48,7 @@ export {
   listProjectsForWorkspace,
   listAllProjectsForWorkspace,
   findProjectByRootPath,
+  findDisconnectedProjectByIdentity,
   disconnectProject,
   reconnectProject,
   updateProjectKind,
@@ -274,7 +275,11 @@ export {
   listUnsettledMountOperations,
   upsertMountOperation,
 } from './queries/mount-operation';
-export { listMountPullRequestLinks, upsertMountPullRequestLink } from './queries/mount-pr-link';
+export {
+  listMergedRequestHeads,
+  listMountPullRequestLinks,
+  upsertMountPullRequestLink,
+} from './queries/mount-pr-link';
 export {
   findPrSeriesMembership,
   getPrSeries,

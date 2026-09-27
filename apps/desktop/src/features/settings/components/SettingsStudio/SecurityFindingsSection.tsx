@@ -51,9 +51,8 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-body text-muted-foreground">
-        Goodboy checks the text it keeps for you (saved scripts, workflow prompts, your profile,
-        reply templates, permission rules) for anything that looks like a key or a token. This text
-        never leaves your Mac.
+        Goodboy checks a project script for anything that looks like a key or a token each time you
+        save it. This text never leaves your Mac.
       </p>
       {open.length > 0 && (
         <p className="text-label text-faint-foreground">
@@ -65,7 +64,7 @@ export const SecurityFindingsSection = ({ workspaceId }: Props) => {
       {status === 'ready' && open.length === 0 && (
         <p className="flex items-center gap-1.5 text-body text-muted-foreground">
           <ShieldCheck size={ICON_SIZE.row} aria-hidden />
-          No findings.
+          No findings in your saved scripts.
         </p>
       )}
       {open.map((finding) => (

@@ -1,22 +1,25 @@
 import type { BranchMergeState } from '../../../features/worktree/worktree';
 import type { BranchCleanupError } from '../../../features/worktree/branchCleanup';
+import { pluralize } from '../../../shared/utils/pluralize';
 
 type MergeParams = {
   readonly branch: string;
   readonly state: BranchMergeState;
 };
 
-const commits = (count: number): string => (count === 1 ? '1 new commit' : `${count} new commits`);
+const commits = (count: number): string => pluralize(count, 'new commit');
 
 export const keptBecauseOfMerge = ({ branch, state }: MergeParams): string | null => {
   switch (state.kind) {
     case 'merged-via-merge':
     case 'merged-via-rebase':
-    case 'merged-via-squash':
+    case 'merged-via-pr':
     case 'no-own-commits':
       return null;
+    case 'merged-then':
+      return `Kept ${branch}: ${commits(state.newCommits)} after the merge.`;
     case 'not-merged':
-      return `Kept ${branch}: ${commits(state.ahead)} after the merge.`;
+      return `Kept ${branch}: ${pluralize(state.ahead, 'commit')} not in the base branch.`;
     case 'protected':
       return `Kept ${branch}: it is a protected branch.`;
     case 'unknown':

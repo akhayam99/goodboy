@@ -82,6 +82,11 @@ export const asBranchCleanupError = (error: unknown): BranchCleanupError | null 
     : null;
 };
 
+export const isMergedState = (state: BranchMergeState): boolean =>
+  state.kind === 'merged-via-merge' ||
+  state.kind === 'merged-via-rebase' ||
+  state.kind === 'merged-via-pr';
+
 export type BranchLocation = 'on-origin' | 'local-only' | 'gone-on-origin';
 
 export type ProjectBranch = {
@@ -102,10 +107,12 @@ export type ProjectBranchScan = {
 type ProjectBranchesArgs = {
   readonly repoRoot: string;
   readonly base: string | null;
+  readonly mergedHeads?: Readonly<Record<string, string>>;
 };
 
 export const listProjectBranches = async ({
   repoRoot,
   base,
+  mergedHeads = {},
 }: ProjectBranchesArgs): Promise<ProjectBranchScan> =>
-  invoke<ProjectBranchScan>('project_branches', { repoRoot, base });
+  invoke<ProjectBranchScan>('project_branches', { repoRoot, base, mergedHeads });

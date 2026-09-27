@@ -274,11 +274,12 @@ whether you clicked it on the board or in the session overview.
   suggestion per target key survives per render: `dedupeByTargetKey` keeps
   whichever has the lower band number.
 - A suggestion you acted on does not come back for the same fingerprint;
-  "Not now" is scoped the same way, and both persist: the fingerprint rides
-  along in the same `next:<kind>` row's `contextJson`
-  (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), so a reload
-  or a remount does not resurrect what you just dismissed or acted on,
-  inside the same 14-day window the demotion rule below reads. Three "Not
+  "Not now" is scoped the same way, and both persist for good: the
+  fingerprint rides along in the same `next:<kind>` row's `contextJson`
+  (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), read back with
+  no time bound, so a reload or a remount does not resurrect what you just
+  dismissed or acted on. It returns only if the trigger changes and the
+  fingerprint with it (new commits, new red CI, a new plan). Three "Not
   now" on the same kind inside a session in 14 days, with no acceptance
   between them, moves that kind behind everything else instead of leading
   (`shouldDemote`, `nextStepGates.ts`): the only learning this engine does,
@@ -297,7 +298,8 @@ whether you clicked it on the board or in the session overview.
   and green pull request, review the changes once a standalone implementer
   finishes clean, close a merged worktree's cleanup proposal, and continue
   with a workflow once a standalone scout or generic agent finishes clean
-  with a goal set and no workflow attached yet - its "Set up" action attaches
+  with a goal set and no workflow attached yet (a discarded run does not
+  count as attached, so the offer comes back) - its "Set up" action attaches
   the workspace's first library workflow with the session's own goal in one
   click, no form. Merge, close-worktree and unblock-step's Skip arm a
   confirm on the row before they act; the other new kinds run on one click,
@@ -614,7 +616,9 @@ review comments, never on its own.
 
 A note resolves like a review thread, with the same resolver and the same
 panel, but there is no reply to write: `Resolve` keeps the fix on the branch
-and closes the note, and `Close note` closes it without a change.
+and closes the note, and `Close note` closes it without a change. Reopening a
+closed note opens a new conversation generation instead of reviving the
+closed one, so the resolved history stays next to the reopened conversation.
 
 Every open review thread on the pull request gets a conversation as soon as
 Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
@@ -810,8 +814,11 @@ language. It reads the issue text, not its comments, and answers in checked
 JSON, so a reply with a preamble fails instead of leaking into the goal. The
 brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
 text or Dismiss, and a failure stays inline in the card with Retry. The first
-three start the session with the brief's title and goal and link the issue;
-nothing exists before that. In the
+three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
+`SessionKickoff/`) underneath: Run a workflow (preselected, the workspace's
+first library preset) or Ask an agent, precompiled with that goal and
+editable. Its own action links the issue, creates the session and starts the
+workflow or agent in the same gesture; nothing exists before that. In the
 Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no

@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { StoreApi, UseBoundStore } from 'zustand';
-import type { WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 
 type TestState = Record<string, unknown>;
@@ -82,6 +82,37 @@ const candidate = (overrides: Partial<IssueCandidate>): IssueCandidate => ({
   goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
   body: 'The redirect loops.',
   branchSlug: 'fix-the-login-redirect',
+  ...overrides,
+});
+
+const PROJECT_OVERRIDES = {
+  defaultProviderId: null,
+  defaultBranchPrefix: null,
+  defaultVerbosity: null,
+  providerBindings: null,
+  taskModels: null,
+  roleModels: null,
+  parallelAgents: null,
+  providerPool: null,
+  attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
+  afterMerge: null,
+};
+
+const project = (overrides: Partial<Project>): Project => ({
+  id: 'project-ledger-core' as ProjectId,
+  workspaceId: WORKSPACE_ID,
+  name: 'ledger-core',
+  rootPath: '/tmp/ledger-core',
+  kind: 'repo',
+  overrides: PROJECT_OVERRIDES,
+  createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
   ...overrides,
 });
 
@@ -328,7 +359,51 @@ describe('SessionKickoff', () => {
     });
   });
 
-  it('proposes the brief of a picked issue and starts from it without linking first', async () => {
+  it('shows no project chip with zero or one project in the workspace', () => {
+    const first = renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+    expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
+    first.unmount();
+
+    store().setState({ projects: [project({})] });
+    renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+    expect(screen.queryByRole('button', { name: /^Project:/ })).toBeNull();
+  });
+
+  it('preselects the sole project without a chip', async () => {
+    store().setState({ projects: [project({})] });
+    renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
+      target: { value: 'the ledger-core importer' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
+
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(store().getState().sessionDrafts).toMatchObject({
+      [WORKSPACE_ID]: { projectId: 'project-ledger-core' },
+    });
+  });
+
+  it('shows a project chip and lets you pick when the workspace has more than one', () => {
+    store().setState({
+      projects: [project({}), project({ id: 'project-northwind' as ProjectId, name: 'northwind' })],
+    });
+    renderKickoff();
+    fireEvent.click(tab('Ask an agent'));
+
+    expect(screen.getByRole('button', { name: 'Project: ledger-core' })).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Project: ledger-core' }));
+    fireEvent.click(screen.getByRole('option', { name: 'northwind' }));
+
+    expect(screen.getByRole('button', { name: 'Project: northwind' })).toBeDefined();
+    expect(store().getState().sessionDrafts).toMatchObject({
+      [WORKSPACE_ID]: { projectId: 'project-northwind' },
+    });
+  });
+
+  it('proposes the brief of a picked issue and opens how to work on it, without linking first', async () => {
     store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     spies.fetchIssueCandidates.mockResolvedValue([
       candidate({}),
@@ -353,6 +428,13 @@ describe('SessionKickoff', () => {
     expect(spies.startSessionFromDraft).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
 
+    expect(spies.startSessionFromDraft).not.toHaveBeenCalled();
+    expect(screen.getByRole('tab', { name: 'Run a workflow' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Fix a bug/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run workflow' }));
+
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
@@ -361,6 +443,37 @@ describe('SessionKickoff', () => {
         candidate: candidate({}),
         title: 'Fix the login redirect',
         goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+        then: { kind: 'workflow', workflowId: 'wf-2' },
+      },
+    });
+  });
+
+  it('lets how to work on it start an agent instead, precompiled with the brief', async () => {
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
+    renderKickoff();
+    await screen.findByText('ENG-1');
+
+    fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick up ENG-1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Implementer' }));
+
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'task',
+        candidate: candidate({}),
+        title: 'Fix the login redirect',
+        goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+        then: {
+          kind: 'agent',
+          agentKind: 'implementer',
+          prompt: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+          routing: null,
+        },
       },
     });
   });

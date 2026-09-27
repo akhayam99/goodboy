@@ -154,6 +154,8 @@ const buildThread = (seed: ThreadSeed): ResolveThread => ({
   stage: seed.stage,
   stateReason: null,
   revision: seed.revision,
+  generation: 0,
+  reopenedFromThreadId: null,
   activeAttemptId: seed.activeAttemptId,
   disposition: seed.disposition,
   replyDraft: seed.replyDraft,

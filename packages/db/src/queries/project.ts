@@ -228,6 +228,35 @@ export const findProjectByRootPath = async ({
   return row === undefined ? null : toDomain({ row });
 };
 
+type FindDisconnectedProjectByIdentityParams = {
+  readonly db: Database;
+  readonly rootCommit: string | null;
+  readonly remoteUrl: string | null;
+};
+
+export const findDisconnectedProjectByIdentity = async ({
+  db,
+  rootCommit,
+  remoteUrl,
+}: FindDisconnectedProjectByIdentityParams): Promise<Project | null> => {
+  if (rootCommit === null && remoteUrl === null) {
+    return null;
+  }
+  const rows = await db.select<ProjectRow>(
+    `SELECT projects.* FROM projects
+     JOIN workspaces ON workspaces.id = projects.workspace_id
+     WHERE workspaces.disconnected_at IS NOT NULL
+       AND (projects.root_commit = ? OR projects.remote_url = ?)
+       AND NOT (? IS NOT NULL AND projects.root_commit IS NOT NULL AND projects.root_commit <> ?)
+       AND NOT (? IS NOT NULL AND projects.remote_url IS NOT NULL AND projects.remote_url <> ?)
+     ORDER BY ((projects.root_commit = ?) IS 1) + ((projects.remote_url = ?) IS 1) DESC,
+       projects.updated_at DESC`,
+    [rootCommit, remoteUrl, rootCommit, rootCommit, remoteUrl, remoteUrl, rootCommit, remoteUrl],
+  );
+  const row = rows[0];
+  return row === undefined ? null : toDomain({ row });
+};
+
 type ProjectTimestampParams = {
   readonly db: Database;
   readonly id: ProjectId;

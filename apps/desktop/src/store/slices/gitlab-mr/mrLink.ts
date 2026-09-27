@@ -74,6 +74,8 @@ export const toMountMrLink = ({
     url: mr.webUrl,
     state: gitlabRequestState({ mr }),
     snapshot: mr,
+    headSha: mr.sha ?? null,
+    mergedAt: mr.mergedAt ?? null,
     existing,
     observedAt,
   });

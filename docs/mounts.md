@@ -209,7 +209,10 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   rebase is stopped).
 - **Merged rows move under `Show completed`.** A row is merged when its
   request merged, or when a pushed branch that tracks its own name has a
-  clean tree and nothing past the base.
+  clean tree and nothing past the base. A merged request whose branch moved
+  past its `merged_head_sha` stays open instead and reads `Merged, then N
+new commits` (`checkMergedThen`, one git check per tip, kept in
+  `mergedThen` by mount).
 - **Requests are created per mount.** Creation refreshes the provider first,
   so a retry after the remote accepted a request attaches the existing one
   instead of opening a duplicate. GitHub and GitLab requests open as drafts
@@ -239,11 +242,20 @@ origin`. A repo project can override it from its row editor
   `runAfterMergeCleanup` deletes only a branch Goodboy created
   (`session_worktrees.branch_origin = 'created'`; older rows read `unknown`
   and are never deleted by the rule), only if `branch_merge_state` says it
-  is merged (merge commit, rebase, or squash by patch-id) or has no commits
-  of its own, and only after the folder unmounts cleanly. The tip is parked
+  is merged or has no commits of its own, and only after the folder
+  unmounts cleanly. Polling stores the head at merge on the request link
+  (`mount_pr_links.merged_head_sha` and `merged_at`: GitHub `headRefOid`
+  and `mergedAt`, GitLab `sha` and `merged_at`, Bitbucket the source
+  commit), and a later poll without it keeps the stored one. A squash merge
+  is read only from that record: its `merged_head_sha` is merged when the local tip (and
+  `origin/<branch>`, if any) is an ancestor of it, and `Merged, then N new
+commits` otherwise. Without a record, only a merge commit or a rebase
+  counts. The tip is parked
   under `refs/goodboy/deleted/<branch>`, then `git update-ref -d` deletes
   the branch only if it still points at the checked sha. The origin choice
-  runs `git push origin --delete` with `--force-with-lease` and is off when
+  runs `git push origin --delete` with `--force-with-lease` (on the merged
+  head when the link has one, so a push after the merge refuses) and is off
+  when
   GitHub already deletes merged branches (`delete_branch_on_merge`, read
   once a day). Anything kept falls back to the merge cleanup proposal with
   the reason (`Kept goodboy/fx-rates: 2 new commits after the merge.`).

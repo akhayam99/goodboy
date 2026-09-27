@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { ProjectBranch } from '../../worktree/branchCleanup';
-import { classifyBranch, matchesBranchFilter, matchesBranchTab } from './classifyBranch';
+import { verdictCopy } from './branchCopy';
+import {
+  classifyBranch,
+  matchesBranchFilter,
+  matchesBranchTab,
+  unmergedCommits,
+} from './classifyBranch';
 
 const NOW = Date.parse('2026-09-27T10:00:00.000Z');
 const DAY_S = 24 * 60 * 60;
@@ -13,7 +19,7 @@ const branch = (patch: Partial<ProjectBranch>): ProjectBranch => ({
   authorEmail: 'dev@harborline.test',
   lastCommitAt: nowS - DAY_S,
   location: 'on-origin',
-  mergeState: { kind: 'merged-via-squash' },
+  mergeState: { kind: 'merged-via-pr' },
   behind: null,
   ...patch,
 });
@@ -66,6 +72,18 @@ describe('classifyBranch', () => {
         .verdict,
     ).toBe('needs-look');
     expect(classify({ mergeState: { kind: 'not-merged', ahead: 1 } }).verdict).toBe('kept');
+  });
+
+  it('never calls a branch with commits after its merge safe', () => {
+    const entry = classify({ mergeState: { kind: 'merged-then', newCommits: 2 } });
+
+    expect(entry.verdict).toBe('needs-look');
+    expect(unmergedCommits(entry)).toBe(2);
+    expect(verdictCopy({ branch: entry.branch, base: 'main' })).toEqual({
+      label: 'Merged, then 2 new commits',
+      detail: null,
+      isSafe: false,
+    });
   });
 
   it('marks branches by your git email as yours when Goodboy did not make them', () => {

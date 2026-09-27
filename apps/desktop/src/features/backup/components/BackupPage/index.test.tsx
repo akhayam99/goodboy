@@ -144,11 +144,13 @@ describe('BackupPage', () => {
       },
       workspaceMatches: [{ bundleId: 'w-1', name: 'Harborline', existingId: null, action: 'add' }],
       projectMatches: [],
+      groupStats: [{ group: 'workspaces', adds: 1, updates: 0 }],
     };
 
     render(<BackupPage />);
 
     screen.getByText('Harborline');
+    screen.getByText('Workspaces: 1 new, 0 updated');
     fireEvent.click(screen.getByRole('button', { name: 'Import now' }));
 
     await waitFor(() => expect(state.applyBackupImport).toHaveBeenCalledOnce());

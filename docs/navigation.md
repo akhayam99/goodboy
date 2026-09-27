@@ -243,43 +243,62 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
 - **Pick up a task** shows the open issues of the connected trackers with a
   search field. Picking one and pressing **Pick up** proposes the brief under
   the list, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Use brief, Edit or Use issue text starts the session. Without a tracker it
-  shows the connect links. The search, like the Inbox search, reads an issue
+  Use brief, Edit or Use issue text settles the title and goal and opens
+  **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
+  or Ask an agent choice as the other two tabs, precompiled with that goal,
+  Run a workflow preselected. Its own primary links the issue, creates the
+  session and starts the workflow or agent in one gesture. Without a tracker
+  it shows the connect links. The search, like the Inbox search, reads an issue
   code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
   `owner/repo#482`, a tracker URL; anything else stays a local filter). When
   no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
   right tracker once (300 ms after typing, cached two minutes): a key goes to
-  Jira when it matches the Jira project, otherwise to Linear and Jira;
-  `#N` goes to every GitHub or GitLab repo of the workspace's projects (four
-  GitHub calls at a time); a short id resolves across the Sentry organization
-  (`sentry_resolve_short_id`). Hits sit in a `Not in your inbox` group above
-  the list (`InboxLookupGroup`) and open or pick up like any other issue;
-  a miss is one row in that group that says why (not found or not visible,
-  key rejected with `Sign in again`, missing permission, rate limited or
-  unreachable with `Try again`, tracker not connected, no repo for `#N`).
-  The mobile companion resolves Linear, Sentry and GitLab issues through the
-  same direct lookups instead of searching only the issues assigned to you.
-  Issues can be starred (`StarToggle`, the same star as projects) from an
-  Inbox row, a lookup hit or `s` on the selected row. Stars live per
-  workspace (`workspace_starred_issues`, keyed by provider and external id;
-  GitHub keys by `owner/repo#N`) with the last copy of identifier, title and
-  state, so the `Starred` group draws before any tracker answers. In the
-  Inbox it sits under `Not in your inbox` and above the days, and a starred
-  issue leaves the days; open ones come first, closed ones at the bottom
-  with `Unstar closed` and `Undo`, and one the tracker no longer returns
-  reads `Can't reach NW-230 anymore`. Pick up a task shows only the open
-  starred issues, even ones a session already picked up. Opening the Inbox
-  or Pick up a task refreshes the stars through the same lookups, at most
-  every five minutes (`refreshStarredIssues`).
+  Jira when it matches the Jira project, to Linear alone when the prefix
+  matches a Linear team key (`linear_fetch_team_keys`, fetched once per
+  connection and cached, so a recognized team no longer also fires a Jira
+  call that was always going to 404), otherwise to Linear and Jira; `#N` goes
+  to every GitHub or GitLab repo of the workspace's projects (four GitHub
+  calls at a time); a short id resolves across the Sentry organization
+  (`sentry_resolve_short_id`). While a lookup is in flight, the row names the
+  trackers it asked (`Looking up CAS-231 in Linear and Jira`). Hits sit in a
+  `Not in your inbox` group above the list (`InboxLookupGroup`) and open or
+  pick up like any other issue, with a second line showing `Assigned to
+<name>` for a Linear or Jira hit with a known assignee, the project/repo
+  context otherwise; a miss is one row in that group that says why (not
+  found or not visible, key rejected with `Sign in again`, missing
+  permission, tracker not connected, no repo for `#N`), and a rate limit
+  shows a live countdown and retries once on its own when it ends, alongside
+  the manual `Try again`. The mobile companion resolves Linear, Sentry and
+  GitLab issues through the same direct lookups instead of searching only
+  the issues assigned to you. Issues can be starred (`StarToggle`, the same
+  star as projects) from an Inbox row, a lookup hit or `s` on the selected
+  row. Stars live per workspace (`workspace_starred_issues`, keyed by
+  provider and external id; GitHub keys by `owner/repo#N`) with the last
+  copy of identifier, title and state, so the `Starred` group draws before
+  any tracker answers; a row not refreshed since app start opens the detail
+  panel from that snapshot (`placeholderRecordOf`), not the tool's URL, and
+  gets replaced once the refresh lands a real record. In the Inbox it sits
+  under `Not in your inbox` and above the days, and a starred issue leaves
+  the days; open ones come first, closed ones at the bottom with `Unstar
+closed` and `Undo`, and one the tracker no longer returns reads `Can't
+reach NW-230 anymore`. Pick up a task shows only the open starred issues,
+  even ones a session already picked up. Opening the Inbox or Pick up a task
+  refreshes the stars at most every five minutes (`refreshStarredIssues`):
+  one request per tracker for Linear and Jira, one per project for GitLab,
+  and one per issue for GitHub and Sentry, which have no batch endpoint for
+  fetching by id.
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
-- **Ask an agent** (`AgentStart`) is the real chat composer's field: role and
-  model sit below it as chips (`AgentStartFields`), opening the same role grid
-  and model picker `Start agent` uses. The role defaults to Scout every time,
-  never the last one picked, because a habitual Implementer writes code you
-  did not ask for. Scout alone can start with an empty field ("Start Scout on
-  the whole project", which reads the project and changes nothing); every
-  other role needs a prompt first. The model chip reads Auto until pinned.
+- **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
+  model and project sit below it as chips (`AgentStartFields`), opening the
+  same role grid and model picker `Start agent` uses. The role defaults to
+  Scout every time, never the last one picked, because a habitual Implementer
+  writes code you did not ask for. Scout alone can start with an empty field
+  ("Start Scout on the whole project", which reads the project and changes
+  nothing); every other role needs a prompt first. The model chip reads Auto
+  until pinned. The project chip only shows when the workspace has more than
+  one repo project; with one it is preselected with no chip, with none the
+  session starts with no project attached.
 
 Only the selected tab's panel, and only its primary, shows. The tabs
 preselect Pick up a task when a tracker has open issues and Run a workflow
@@ -709,13 +728,16 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   Below the worktrees, `Branches` (`BranchesSection`) lists local branches
   only, in the same scope, grouped by project. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
-  test cached by both tips. A filter picks `Made by Goodboy` (the default,
+  test cached by both tips and fed each branch's merged pull request head
+  (`listMergedRequestHeads`). A filter picks `Made by Goodboy` (the default,
   branch names from `session_worktrees` and `retained_worktree_paths`),
   `Yours` (plus branches whose tip is authored by the repo's `user.email`,
   shown `By you`) or `All local`; protected branches never show. Tabs split
-  `Safe to delete` (merged by merge commit, rebase or squash, or never
-  used), `Needs a look` (unmerged and gone on origin, local only for over 30
-  days, or older than 90 days; never preselected) and `All`. Each row has
+  `Safe to delete` (merged by merge commit or rebase, merged by its pull
+  request with nothing after the merged head, or never used), `Needs a
+look` (`Merged, then N new commits`, unmerged and gone on origin, local
+  only for over 30 days, or older than 90 days; never preselected) and
+  `All`. Each row has
   the session chip (`SessionChip`: stage dot, title, stage word, opens the
   session), `On origin` / `Local only` / `Gone on origin`, the verdict and
   the last commit's age. Delete goes through an InlineConfirm in the bulk
@@ -1051,8 +1073,10 @@ Drop, Move up or down) and every verb carries one line that says what happens
 to the code and to the message; the word fixup never shows. The keys are the
 ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move; a row can also be dragged onto another by its grip, and it lands where that row was.
 Nothing touches git while you edit: the plan is a draft saved per worktree in
-`history_plans`, and once the plan rests for a second the engine predicts it in memory
-with `git merge-tree`. The dock says what changes (`1 reword · 1 dropped`),
+`history_plans`, and once the plan rests for a quarter of a second the engine predicts it in memory
+with one `git merge-tree --stdin` process for every commit and one `git fast-import` that writes
+the predicted commits (git 2.45 or newer; older git spawns one merge and one commit per step).
+The dock says what changes (`1 reword · 1 dropped`),
 whether the code changes, and `No conflicts expected`; when an edit breaks
 the plan it names that edit (`Moving 5b3e91f above 7c2d8a1 will conflict`)
 and offers `Rewrite with an agent` or undoing the change. `Apply and push`

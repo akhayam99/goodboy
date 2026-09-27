@@ -3,6 +3,7 @@ import type {
   MountId,
   MountPullRequestLink,
   MountPullRequestState,
+  ProjectId,
   SessionId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -20,6 +21,8 @@ export type MountPullRequestLinkRow = {
   readonly url: string;
   readonly state: MountPullRequestState;
   readonly snapshot: string;
+  readonly mergedHeadSha: string | null;
+  readonly mergedAt: number | null;
   readonly lastObservedAt: number;
   readonly createdAt: number;
   readonly updatedAt: number;
@@ -41,12 +44,15 @@ export const MOUNT_PR_LINK_COLUMNS = `link.id, link.mount_id AS mountId, link.pr
   link.repo_slug AS repoSlug, link.pr_number AS prNumber,
   link.head_branch AS headBranch, link.base_branch AS baseBranch,
   link.url, link.state, link.snapshot_json AS snapshot,
+  link.merged_head_sha AS mergedHeadSha, link.merged_at AS mergedAt,
   link.last_observed_at AS lastObservedAt,
   link.created_at AS createdAt, link.updated_at AS updatedAt`;
 
 export const toMountPullRequestLink = (row: MountPullRequestLinkRow): MountPullRequestLink => ({
   ...row,
   snapshot: parseJsonColumn({ value: row.snapshot, isValid: isJsonValue, fallback: null }),
+  mergedHeadSha: row.mergedHeadSha ?? null,
+  mergedAt: row.mergedAt == null ? null : (new Date(row.mergedAt).toISOString() as IsoDateTime),
   lastObservedAt: new Date(row.lastObservedAt).toISOString() as IsoDateTime,
   createdAt: new Date(row.createdAt).toISOString() as IsoDateTime,
   updatedAt: new Date(row.updatedAt).toISOString() as IsoDateTime,
@@ -60,8 +66,9 @@ export const upsertMountPullRequestLink = async ({
   const result = await db.execute(
     `INSERT INTO mount_pr_links
       (id, mount_id, provider, host, repo_slug, pr_number, head_branch, base_branch,
-       url, state, snapshot_json, last_observed_at, created_at, updated_at)
-     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+       url, state, snapshot_json, merged_head_sha, merged_at,
+       last_observed_at, created_at, updated_at)
+     SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
      WHERE EXISTS (
        SELECT 1 FROM session_worktrees WHERE session_id = ? AND id = ?
      )
@@ -71,6 +78,8 @@ export const upsertMountPullRequestLink = async ({
        url = excluded.url,
        state = excluded.state,
        snapshot_json = excluded.snapshot_json,
+       merged_head_sha = COALESCE(excluded.merged_head_sha, mount_pr_links.merged_head_sha),
+       merged_at = COALESCE(excluded.merged_at, mount_pr_links.merged_at),
        last_observed_at = excluded.last_observed_at,
        updated_at = excluded.updated_at`,
     [
@@ -85,6 +94,8 @@ export const upsertMountPullRequestLink = async ({
       link.url,
       link.state,
       JSON.stringify(link.snapshot) ?? 'null',
+      link.mergedHeadSha ?? null,
+      link.mergedAt == null ? null : Date.parse(link.mergedAt),
       Date.parse(link.lastObservedAt),
       Date.parse(link.createdAt),
       Date.parse(link.updatedAt),
@@ -109,4 +120,29 @@ export const listMountPullRequestLinks = async ({
     [sessionId, mountId],
   );
   return rows.map(toMountPullRequestLink);
+};
+
+type ListMergedRequestHeadsParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+};
+
+type MergedHeadRow = {
+  readonly headBranch: string;
+  readonly mergedHeadSha: string;
+};
+
+export const listMergedRequestHeads = async ({
+  db,
+  projectId,
+}: ListMergedRequestHeadsParams): Promise<Readonly<Record<string, string>>> => {
+  const rows = await db.select<MergedHeadRow>(
+    `SELECT link.head_branch AS headBranch, link.merged_head_sha AS mergedHeadSha
+     FROM mount_pr_links link
+     JOIN session_worktrees mount ON mount.id = link.mount_id
+     WHERE mount.project_id = ? AND link.state = 'merged' AND link.merged_head_sha IS NOT NULL
+     ORDER BY COALESCE(link.merged_at, link.updated_at), link.id`,
+    [projectId],
+  );
+  return Object.fromEntries(rows.map((row) => [row.headBranch, row.mergedHeadSha]));
 };

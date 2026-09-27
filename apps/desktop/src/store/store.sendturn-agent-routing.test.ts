@@ -3115,7 +3115,7 @@ describe('sendTurn, role fallback model', () => {
       .sendTurn({ sessionId: SESSION_ID, agentId: AGENT_A, content: 'go' });
 
     const messages = (useAppStore.getState().transcripts[AGENT_A] ?? [])
-      .filter((event) => event.kind === 'error')
+      .filter((event) => event.kind === 'decision_note')
       .map((event) => ('message' in event ? event.message : ''));
 
     expect(messages.join(' ')).toContain('retrying on anthropic Haiku 4.5');

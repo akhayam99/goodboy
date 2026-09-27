@@ -48,49 +48,53 @@ export const syncNoteThreads = async ({ set, get, sessionId }: Params): Promise<
   const live = new Set(
     (await listResolveQueueItems({ db, sessionId })).map((entry) => entry.item.threadId),
   );
+  const rowsForNote = (noteId: string): ReadonlyArray<ResolveThread> =>
+    rows.filter(
+      (row) => (row.diffCommentId ?? noteIdOfThread({ threadId: row.threadId })) === noteId,
+    );
+
+  const latestGenerationOf = (
+    candidates: ReadonlyArray<ResolveThread>,
+  ): ResolveThread | undefined =>
+    candidates.reduce<ResolveThread | undefined>(
+      (best, row) => (best === undefined || row.generation > best.generation ? row : best),
+      undefined,
+    );
+
   let changed = 0;
   for (const note of notes) {
     if (!isOpenNote({ note })) {
       continue;
     }
-    const threadId = noteThreadId({ noteId: note.id });
-    const previous = rows.find((row) => row.threadId === threadId);
-    if (previous !== undefined && previous.state === 'closed') {
-      const reopened = await saveResolveThread({
-        db,
-        row: {
-          ...previous,
-          state: 'open',
-          stage: 'new',
-          stateReason: null,
-          closedAt: null,
-          closedSource: null,
-          updatedAt: Date.now(),
-        },
-        expectedRevision: previous.revision,
-      });
-      changed += reopened ? 1 : 0;
-    }
-    const row =
-      previous ??
-      createResolveThread({
-        sessionId,
-        threadId,
-        projectId: get().sessionActiveProject[sessionId] ?? null,
-        diffCommentId: note.id,
-      });
-    if (previous === undefined && !(await saveResolveThread({ db, row, expectedRevision: null }))) {
+    const current = latestGenerationOf(rowsForNote(note.id));
+    const isReopen = current !== undefined && current.state === 'closed';
+    const row: ResolveThread =
+      current === undefined || isReopen
+        ? createResolveThread({
+            sessionId,
+            threadId: noteThreadId({
+              noteId: note.id,
+              generation: current === undefined ? 0 : current.generation + 1,
+            }),
+            projectId: get().sessionActiveProject[sessionId] ?? null,
+            diffCommentId: note.id,
+            generation: current === undefined ? 0 : current.generation + 1,
+            reopenedFromThreadId: current === undefined ? null : current.id,
+          })
+        : current;
+    const isNewRow = current === undefined || isReopen;
+    if (isNewRow && !(await saveResolveThread({ db, row, expectedRevision: null }))) {
       continue;
     }
-    if (live.has(threadId)) {
-      changed += previous === undefined ? 1 : 0;
+    if (live.has(row.threadId)) {
+      changed += isNewRow ? 1 : 0;
       continue;
     }
     await insertResolveQueueItem({
       db,
-      item: newQueueItem({ sessionId, threadId, candidateRevision: row.revision }),
+      item: newQueueItem({ sessionId, threadId: row.threadId, candidateRevision: row.revision }),
     });
-    live.add(threadId);
+    live.add(row.threadId);
     changed += 1;
   }
   const now = Date.now();

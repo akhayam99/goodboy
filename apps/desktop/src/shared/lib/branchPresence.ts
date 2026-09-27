@@ -1,7 +1,9 @@
 import type { WorktreeStatus } from '@goodboy/types';
 import { distanceAhead, distanceBehind } from './gitStatus';
+import { mergedThenLabel } from './mergedThen';
 
-export type BranchPresenceKind = 'on-origin' | 'local-only' | 'gone-on-origin' | 'merged';
+export type BranchPresenceKind =
+  'on-origin' | 'local-only' | 'gone-on-origin' | 'merged' | 'merged-then';
 
 export type BranchPresence = {
   readonly kind: BranchPresenceKind;
@@ -12,9 +14,17 @@ export type BranchPresence = {
 type PresenceParams = {
   readonly status: WorktreeStatus;
   readonly isMerged: boolean;
+  readonly commitsAfterMerge?: number | null;
 };
 
-export const branchPresenceOf = ({ status, isMerged }: PresenceParams): BranchPresence => {
+export const branchPresenceOf = ({
+  status,
+  isMerged,
+  commitsAfterMerge = null,
+}: PresenceParams): BranchPresence => {
+  if (commitsAfterMerge !== null && commitsAfterMerge > 0) {
+    return { kind: 'merged-then', label: mergedThenLabel(commitsAfterMerge), toPush: null };
+  }
   if (isMerged) {
     return { kind: 'merged', label: 'Merged', toPush: null };
   }
@@ -40,6 +50,7 @@ type MergedParams = {
   readonly baseBranch: string | null;
   readonly isMainCheckout: boolean;
   readonly isRequestMerged: boolean;
+  readonly commitsAfterMerge?: number | null;
 };
 
 const tracksOwnBranch = ({ status }: { readonly status: WorktreeStatus }): boolean => {
@@ -55,7 +66,11 @@ export const isBranchMergedOf = ({
   baseBranch,
   isMainCheckout,
   isRequestMerged,
+  commitsAfterMerge = null,
 }: MergedParams): boolean => {
+  if (commitsAfterMerge !== null && commitsAfterMerge > 0) {
+    return false;
+  }
   if (isRequestMerged) {
     return true;
   }

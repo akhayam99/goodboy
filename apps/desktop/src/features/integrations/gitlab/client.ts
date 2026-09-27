@@ -64,6 +64,30 @@ export const gitlabFetchIssue = async (
   });
 };
 
+type FetchIssuesParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
+  readonly host: string;
+  readonly projectPath: string;
+  readonly issueIids: ReadonlyArray<number>;
+};
+
+export const gitlabFetchIssues = async ({
+  workspaceId,
+  projectId,
+  host,
+  projectPath,
+  issueIids,
+}: FetchIssuesParams): Promise<GitlabIssue[]> => {
+  return invoke<GitlabIssue[]>('gitlab_fetch_issues', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    host,
+    projectPath,
+    issueIids,
+  });
+};
+
 type UpdateDescriptionParams = {
   readonly workspaceId: WorkspaceId;
   readonly projectId?: ProjectId;
@@ -122,6 +146,8 @@ export type GitlabMergeRequest = {
   hasConflicts: boolean;
   mergeStatus: GitlabMergeStatus;
   updatedAt: string;
+  sha?: string | null;
+  mergedAt?: string | null;
   author?: GitlabMrAuthor | null;
   reviewers?: ReadonlyArray<GitlabMrAuthor> | null;
 };

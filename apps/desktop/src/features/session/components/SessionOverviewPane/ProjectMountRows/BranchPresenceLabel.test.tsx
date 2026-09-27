@@ -26,6 +26,12 @@ describe('BranchPresenceLabel', () => {
     expect(container.innerHTML).toBe('');
   });
 
+  it('says merged, then N new commits when the branch moved past its merge', () => {
+    render(<BranchPresenceLabel status={statusOf()} isMerged commitsAfterMerge={2} />);
+
+    expect(screen.getByText('Merged, then 2 new commits')).toBeDefined();
+  });
+
   it('names a branch never pushed as local only', () => {
     render(
       <BranchPresenceLabel

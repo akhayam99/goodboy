@@ -594,6 +594,17 @@ describe('deriveNextSteps eleven new kinds', () => {
     expect(noPreset.some((candidate) => candidate.kind === 'continue-with-workflow')).toBe(false);
   });
 
+  it('offers continuing with a workflow again once the session only has a discarded run', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'completed', roleKind: 'scout' })],
+      hasGoal: true,
+      hasEverAttachedWorkflow: false,
+      recommendedWorkflow: { id: 'workflow-1' as WorkflowId, name: 'Plan and ship' },
+    });
+    expect(suggestions.some((candidate) => candidate.kind === 'continue-with-workflow')).toBe(true);
+  });
+
   it('suggests fixing failing checks on an open PR', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,

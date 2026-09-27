@@ -610,7 +610,8 @@ export type BranchMergeState =
   | { readonly kind: 'protected' }
   | { readonly kind: 'merged-via-merge' }
   | { readonly kind: 'merged-via-rebase' }
-  | { readonly kind: 'merged-via-squash' }
+  | { readonly kind: 'merged-via-pr' }
+  | { readonly kind: 'merged-then'; readonly newCommits: number }
   | { readonly kind: 'no-own-commits' }
   | { readonly kind: 'not-merged'; readonly ahead: number };
 
@@ -618,14 +619,21 @@ type BranchMergeStateParams = {
   readonly repoPath: string;
   readonly branch: string;
   readonly base?: string | null;
+  readonly mergedHead?: string | null;
 };
 
 export const branchMergeState = async ({
   repoPath,
   branch,
   base = null,
+  mergedHead = null,
 }: BranchMergeStateParams): Promise<BranchMergeState> => {
-  return invoke<BranchMergeState>('worktree_branch_merge_state', { repoPath, branch, base });
+  return invoke<BranchMergeState>('worktree_branch_merge_state', {
+    repoPath,
+    branch,
+    base,
+    mergedHead,
+  });
 };
 export type ChangeBranchArgs = {
   readonly repoPath: string;

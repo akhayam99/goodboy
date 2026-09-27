@@ -334,6 +334,7 @@ export type {
   ExportCounts,
   ExportGroups,
   ExportPreview,
+  ImportGroupStat,
   ImportManifest,
   ImportPreview,
   LeftOutFinding,

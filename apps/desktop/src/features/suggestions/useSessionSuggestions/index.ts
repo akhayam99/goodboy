@@ -312,6 +312,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
       }),
       hasRunningAgent: effectiveAgents.some((agent) => agent.status === 'running'),
       hasGoal: session.goal.trim() !== '',
+      hasEverAttachedWorkflow: attachedRuns.some(({ run }) => run.discardedAt == null),
       recommendedWorkflow,
       dismissedFingerprints,
       demotedKinds,

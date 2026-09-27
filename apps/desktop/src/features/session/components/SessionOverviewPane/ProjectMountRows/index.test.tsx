@@ -39,6 +39,8 @@ const { store, useWorktreeStatuses, useWorktreeStatusPending } = vi.hoisted(() =
     resolveMountCleanup: vi.fn(async () => undefined),
     settings: {} as Record<string, string>,
     saveSetting: vi.fn(async () => undefined),
+    mergedThen: {} as Record<string, { head: string; mergedHead: string; newCommits: number }>,
+    checkMergedThen: vi.fn(async () => undefined),
   },
   useWorktreeStatuses: vi.fn(() => new Map()),
   useWorktreeStatusPending: vi.fn(() => new Set()),
@@ -324,6 +326,53 @@ describe('ProjectMountRows', () => {
       'API on feat/two',
       'API on feat/one',
     ]);
+  });
+
+  it('keeps a merged branch that moved on open, with merged then its new commits', () => {
+    store.sessionMounts = {
+      'session-1': [mountView({ id: 'mount-1', branch: 'feat/one', path: '/api-one' })],
+    };
+    store.mountGithub = {
+      'mount-1': {
+        ...githubState({ number: 11, state: 'merged' }),
+        pr: { ...githubState({ number: 11, state: 'merged' }).pr, headSha: 'merged-sha' },
+      },
+    };
+    store.mergedThen = { 'mount-1': { head: 'ccc', mergedHead: 'merged-sha', newCommits: 2 } };
+    useWorktreeStatuses.mockReturnValue(
+      new Map([
+        [
+          '/api-one',
+          {
+            branch: 'feat/one',
+            head: 'ccc',
+            headSubject: 'after the merge',
+            upstream: 'origin/feat/one',
+            upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+            mainDistance: { kind: 'known', ahead: 3, behind: 0 },
+            workingTree: {
+              kind: 'known',
+              staged: 0,
+              unstaged: 0,
+              untracked: 0,
+              unmerged: 0,
+              changed: 0,
+            },
+            inProgress: null,
+          },
+        ],
+      ]),
+    );
+    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+
+    expect(
+      screen.getAllByTestId('project-mount-row').map((row) => row.getAttribute('aria-label')),
+    ).toEqual(['API on feat/one']);
+    expect(screen.getByText('Merged, then 2 new commits')).toBeDefined();
+    expect(store.checkMergedThen).toHaveBeenCalledWith(
+      expect.objectContaining({ mountId: 'mount-1', head: 'ccc', mergedHead: 'merged-sha' }),
+    );
+    store.mergedThen = {};
   });
 
   it('moves a branch git already merged into the base under show completed', () => {

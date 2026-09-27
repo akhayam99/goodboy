@@ -73,11 +73,14 @@ on macOS and Linux.
   wireframe render in the app through `ArtifactDocument` (`medium="screen"`,
   themed) and on disk through the same component (`medium="file"`, always
   light). `Open in browser` (`artifact_mirror_open`) opens that file with the
-  OS default web browser, never with a `.html` file's default app: macOS
-  resolves the `https` handler from `LaunchServices`, Windows reads the
-  `UrlAssociations` registry key for `https`, and both fall back to the
-  platform opener (`spawn_open`) if resolution fails; Linux always uses that
-  opener. `⌘P` from there prints, with the browser's own print dialog.
+  OS default web browser, never with a `.html` file's default app: macOS asks
+  Launch Services directly (`LSCopyDefaultApplicationURLForURL`, via
+  `core-foundation-sys`), Windows asks the shell's association API directly
+  (`AssocQueryStringW`, via `windows-sys`), both native calls rather than
+  shelling out to `defaults`/`reg`, and both fall back to the platform opener
+  (`spawn_open`) if resolution fails. Linux always uses that opener, which
+  already resolves the default browser through `xdg-open` on its own. `⌘P`
+  from there prints, with the browser's own print dialog.
 - **The file is never stale.** `meta.json` carries `rendererVersion`
   (`ARTIFACT_RENDERER_VERSION`) beside `revision` and `updatedAt`. Rust's
   `is_current` compares all three, so a restyle that bumps the version alone,
@@ -300,6 +303,10 @@ budget rules, linked integrations and app preferences. Folder paths and
 orchestrator-written workflows are off by default; every other group is on.
 Never included, in any bundle: API keys and tokens, sign-ins, sessions and
 transcripts, artifacts, worktree folders, usage history, notifications.
+A workspace's JSON-shaped overrides (provider bindings, task models, role
+models, provider pool) carry as nested JSON values in the bundle, not
+string-encoded text; a bundle written before this stayed compatible through
+a deserializer that still accepts the old `*Json` string fields.
 
 Before a write, `config_export_preview` reports which open security findings
 (`security_findings`, see [SECURITY.md](../SECURITY.md)) fall inside the
@@ -314,6 +321,10 @@ candidate folders under a chosen parent, reusing `find_moved_projects` from
 project relocation (one matching engine, two call sites). The caller then
 picks, per workspace, `merge into <existing>` or `add as a new workspace`,
 and resolves a folder for projects the engine could not place, before calling
-`config_import_apply`. Import only inserts and updates; it never deletes a
-row, and a project it cannot resolve a folder for is skipped and counted,
-not dropped from the file.
+`config_import_apply`. The preview also returns `groupStats`, a per-group
+adds/updates tally (workspaces, projects, skills, workflows, permission
+rules, budget rules, scripts, linked integrations) computed by checking each
+bundle row against the local database before any write, so the confirm step
+shows what will change instead of only a post-apply count. Import only
+inserts and updates; it never deletes a row, and a project it cannot resolve
+a folder for is skipped and counted, not dropped from the file.

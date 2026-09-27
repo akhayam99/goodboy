@@ -1,7 +1,7 @@
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::Stdio;
+use std::process::{Child, ChildStdin, ChildStdout, Stdio};
 use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
@@ -16,6 +16,8 @@ use crate::worktree_writer::{
 };
 
 const MERGE_TREE_BASE_MIN: (u32, u32) = (2, 40);
+const BATCHED_REPLAY_MIN: (u32, u32) = (2, 45);
+const PREDICT_REF: &str = "refs/goodboy/predict";
 const BACKUP_PREFIX: &str = "refs/goodboy/backup";
 const BACKUP_KEEP_SECS: u64 = 30 * 24 * 60 * 60;
 const LEASE_HOLDER: &str = "history-rewrite";
@@ -266,6 +268,10 @@ pub(crate) fn supports_merge_tree_base() -> bool {
     git_version().is_some_and(|version| version >= MERGE_TREE_BASE_MIN)
 }
 
+fn supports_batched_replay() -> bool {
+    git_version().is_some_and(|version| version >= BATCHED_REPLAY_MIN)
+}
+
 fn read_commit(cwd: &Path, sha: &str) -> Result<CommitInfo, WorktreeError> {
     let raw = git(
         cwd,
@@ -348,41 +354,83 @@ fn plan_error(message: &str) -> WorktreeError {
     }
 }
 
-fn resolve_all(cwd: &Path, names: &[&str]) -> Option<Vec<String>> {
-    let args: Vec<String> = std::iter::once("rev-parse".to_string())
-        .chain(
-            names
-                .iter()
-                .map(|name| format!("{}^{{commit}}", name.trim())),
-        )
+fn rev_parse_all(cwd: &Path, revs: &[String]) -> Option<Vec<String>> {
+    let args: Vec<&str> = std::iter::once("rev-parse")
+        .chain(revs.iter().map(String::as_str))
         .collect();
-    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-    let raw = git(cwd, &refs).ok()?;
+    let raw = git(cwd, &args).ok()?;
     let resolved: Vec<String> = raw
         .lines()
         .map(str::trim)
         .filter(|line| !line.is_empty())
         .map(str::to_string)
         .collect();
-    (resolved.len() == names.len()).then_some(resolved)
+    (resolved.len() == revs.len()).then_some(resolved)
+}
+
+fn commit_rev(name: &str) -> String {
+    format!("{}^{{commit}}", name.trim())
+}
+
+fn step_revs(steps: &[HistoryStep]) -> Vec<String> {
+    steps
+        .iter()
+        .flat_map(|step| std::iter::once(step.sha.as_str()).chain(step.target.as_deref()))
+        .map(commit_rev)
+        .collect()
+}
+
+fn steps_from(steps: &[HistoryStep], resolved: Vec<String>) -> Vec<HistoryStep> {
+    let mut next = resolved.into_iter();
+    steps
+        .iter()
+        .map(|step| HistoryStep {
+            sha: next.next().unwrap_or_default(),
+            verb: step.verb,
+            message: step.message.clone(),
+            target: step.target.as_ref().and_then(|_| next.next()),
+        })
+        .collect()
+}
+
+struct ResolvedPlan {
+    base: String,
+    base_tree: String,
+    head_tree: String,
+    steps: Vec<HistoryStep>,
+}
+
+fn resolve_plan(cwd: &Path, args: &HistoryPlanArgs) -> Result<ResolvedPlan, WorktreeError> {
+    let head_commit = commit_rev(&args.head);
+    let mut revs = vec![
+        commit_rev(&args.base),
+        format!("{}^{{tree}}", args.base.trim()),
+        format!("{head_commit}^{{tree}}"),
+    ];
+    revs.extend(step_revs(&args.steps));
+    if let Some(mut resolved) = rev_parse_all(cwd, &revs) {
+        let rest = resolved.split_off(3);
+        let mut ends = resolved.into_iter();
+        return Ok(ResolvedPlan {
+            base: ends.next().unwrap_or_default(),
+            base_tree: ends.next().unwrap_or_default(),
+            head_tree: ends.next().unwrap_or_default(),
+            steps: steps_from(&args.steps, rest),
+        });
+    }
+    let base = resolve_commit(cwd, &args.base)?;
+    let head = resolve_commit(cwd, &args.head)?;
+    Ok(ResolvedPlan {
+        base_tree: tree_of(cwd, &base)?,
+        head_tree: tree_of(cwd, &head)?,
+        steps: resolved_steps(cwd, &args.steps)?,
+        base,
+    })
 }
 
 fn resolved_steps(cwd: &Path, steps: &[HistoryStep]) -> Result<Vec<HistoryStep>, WorktreeError> {
-    let names: Vec<&str> = steps
-        .iter()
-        .flat_map(|step| std::iter::once(step.sha.as_str()).chain(step.target.as_deref()))
-        .collect();
-    if let Some(resolved) = resolve_all(cwd, &names) {
-        let mut next = resolved.into_iter();
-        return Ok(steps
-            .iter()
-            .map(|step| HistoryStep {
-                sha: next.next().unwrap_or_default(),
-                verb: step.verb,
-                message: step.message.clone(),
-                target: step.target.as_ref().and_then(|_| next.next()),
-            })
-            .collect());
+    if let Some(resolved) = rev_parse_all(cwd, &step_revs(steps)) {
+        return Ok(steps_from(steps, resolved));
     }
     steps
         .iter()
@@ -556,6 +604,229 @@ fn commit_tree(
     Ok(run.stdout.trim().to_string())
 }
 
+struct MergeStream {
+    child: Child,
+    input: ChildStdin,
+    output: BufReader<ChildStdout>,
+}
+
+impl MergeStream {
+    fn start(cwd: &Path) -> Result<Self, WorktreeError> {
+        let mut child = crate::path_env::command("git")
+            .args([
+                "merge-tree",
+                "--stdin",
+                "--name-only",
+                "--no-messages",
+                "-z",
+            ])
+            .current_dir(cwd)
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()?;
+        let input = child.stdin.take();
+        let output = child.stdout.take();
+        let (Some(input), Some(output)) = (input, output) else {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Err(plan_error("git merge-tree did not open its pipes"));
+        };
+        Ok(Self {
+            child,
+            input,
+            output: BufReader::new(output),
+        })
+    }
+
+    fn token(&mut self) -> Result<String, WorktreeError> {
+        let mut raw = Vec::new();
+        self.output.read_until(0, &mut raw)?;
+        if raw.pop() != Some(0) {
+            return Err(plan_error("git merge-tree stopped answering"));
+        }
+        Ok(String::from_utf8_lossy(&raw).into_owned())
+    }
+
+    fn merge(
+        &mut self,
+        merge_base: &str,
+        ours: &str,
+        theirs: &str,
+    ) -> Result<MergeResult, WorktreeError> {
+        writeln!(self.input, "{merge_base} -- {ours} {theirs}")?;
+        self.input.flush()?;
+        let status = self.token()?;
+        let tree = self.token()?;
+        let mut files = Vec::new();
+        loop {
+            let file = self.token()?;
+            if file.is_empty() {
+                break;
+            }
+            files.push(file);
+        }
+        match status.as_str() {
+            "1" => Ok(MergeResult::Tree(tree)),
+            "0" => Ok(MergeResult::Conflict(files)),
+            _ => Err(plan_error("git merge-tree answered with an unknown status")),
+        }
+    }
+}
+
+impl Drop for MergeStream {
+    fn drop(&mut self) {
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+    }
+}
+
+struct PendingCommit {
+    tree: String,
+    parent: String,
+    message: String,
+    author: Author,
+}
+
+enum Replayer {
+    Batched {
+        merges: MergeStream,
+        commits: Vec<PendingCommit>,
+    },
+    Direct,
+}
+
+impl Replayer {
+    fn start(cwd: &Path, batched: bool) -> Result<Self, WorktreeError> {
+        if !batched {
+            return Ok(Self::Direct);
+        }
+        Ok(Self::Batched {
+            merges: MergeStream::start(cwd)?,
+            commits: Vec::new(),
+        })
+    }
+
+    fn merge(
+        &mut self,
+        cwd: &Path,
+        merge_base: &str,
+        tip: &str,
+        tip_tree: &str,
+        theirs: &str,
+    ) -> Result<MergeResult, WorktreeError> {
+        match self {
+            Self::Batched { merges, .. } => merges.merge(merge_base, tip_tree, theirs),
+            Self::Direct => merge_in_memory(cwd, merge_base, tip, theirs),
+        }
+    }
+
+    fn commit(
+        &mut self,
+        cwd: &Path,
+        tree: &str,
+        parent: &str,
+        message: &str,
+        author: &Author,
+    ) -> Result<String, WorktreeError> {
+        match self {
+            Self::Batched { commits, .. } => {
+                commits.push(PendingCommit {
+                    tree: tree.to_string(),
+                    parent: parent.to_string(),
+                    message: message.to_string(),
+                    author: author.clone(),
+                });
+                Ok(format!(":{}", commits.len()))
+            }
+            Self::Direct => commit_tree(cwd, tree, parent, message, author),
+        }
+    }
+
+    fn finish(self, cwd: &Path) -> Result<HashMap<String, String>, WorktreeError> {
+        match self {
+            Self::Batched { merges, commits } => {
+                drop(merges);
+                write_commits(cwd, &commits)
+            }
+            Self::Direct => Ok(HashMap::new()),
+        }
+    }
+}
+
+fn import_script(commits: &[PendingCommit], committer: &str) -> String {
+    let mut script = String::new();
+    for (index, pending) in commits.iter().enumerate() {
+        script.push_str(&format!(
+            "commit {PREDICT_REF}\nmark :{}\nauthor {} <{}> {}\ncommitter {committer}\ndata {}\n{}\nfrom {}\nM 040000 {} \"\"\n\n",
+            index + 1,
+            pending.author.name,
+            pending.author.email,
+            pending.author.date,
+            pending.message.len(),
+            pending.message,
+            pending.parent,
+            pending.tree,
+        ));
+    }
+    for index in 1..=commits.len() {
+        script.push_str(&format!("get-mark :{index}\n"));
+    }
+    script.push_str(&format!("reset {PREDICT_REF}\n\ndone\n"));
+    script
+}
+
+fn write_commits(
+    cwd: &Path,
+    commits: &[PendingCommit],
+) -> Result<HashMap<String, String>, WorktreeError> {
+    if commits.is_empty() {
+        return Ok(HashMap::new());
+    }
+    let committer = git(cwd, &["var", "GIT_COMMITTER_IDENT"])?
+        .trim()
+        .to_string();
+    let script = import_script(commits, &committer);
+    let mut child = crate::path_env::command("git")
+        .args(["fast-import", "--quiet", "--done", "--cat-blob-fd=1"])
+        .current_dir(cwd)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
+    let input = child.stdin.take();
+    let writer = std::thread::spawn(move || {
+        input.map_or(Ok(()), |mut input| input.write_all(script.as_bytes()))
+    });
+    let output = child.wait_with_output()?;
+    let written = writer.join().unwrap_or(Ok(()));
+    if !output.status.success() {
+        return Err(plan_error(&format!(
+            "git fast-import failed: {}",
+            crate::worktree::redact_credentials(&String::from_utf8_lossy(&output.stderr)).trim()
+        )));
+    }
+    written?;
+    let shas: Vec<String> = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect();
+    if shas.len() != commits.len() {
+        return Err(plan_error(
+            "git fast-import returned the wrong number of commits",
+        ));
+    }
+    Ok(shas
+        .into_iter()
+        .enumerate()
+        .map(|(index, sha)| (format!(":{}", index + 1), sha))
+        .collect())
+}
+
 fn single_parent(cwd: &Path, sha: &str) -> Result<CommitInfo, WorktreeError> {
     one_parent(sha, read_commit(cwd, sha)?)
 }
@@ -610,23 +881,37 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
             changed_files: Vec::new(),
         });
     }
-    let base = resolve_commit(cwd, &args.base)?;
-    let old_head = resolve_commit(cwd, &args.head)?;
-    let steps = resolved_steps(cwd, &args.steps)?;
-    let ordered = order_steps(&steps)?;
+    let resolved = resolve_plan(cwd, args)?;
+    let ordered = order_steps(&resolved.steps)?;
+    if supports_batched_replay() {
+        if let Ok(found) = predict_with(cwd, &resolved, &ordered, true) {
+            return Ok(found);
+        }
+    }
+    predict_with(cwd, &resolved, &ordered, false)
+}
+
+fn predict_with(
+    cwd: &Path,
+    resolved: &ResolvedPlan,
+    ordered: &[HistoryStep],
+    batched: bool,
+) -> Result<PlanPrediction, WorktreeError> {
+    let steps = &resolved.steps;
     let replayed: Vec<String> = ordered
         .iter()
         .filter(|step| step.verb != HistoryVerb::Drop)
         .map(|step| step.sha.clone())
         .collect();
     let mut infos = read_commits(cwd, &replayed)?;
+    let mut replayer = Replayer::start(cwd, batched)?;
     let mut outcomes: HashMap<String, StepPrediction> = HashMap::new();
-    let mut tip = base.clone();
-    let mut tip_tree = tree_of(cwd, &base)?;
+    let mut tip = resolved.base.clone();
+    let mut tip_tree = resolved.base_tree.clone();
     let mut group: Option<Group> = None;
     let mut map = Vec::new();
     let mut stopped = false;
-    for step in &ordered {
+    for step in ordered {
         if stopped {
             outcomes.insert(step.sha.clone(), blocked(&step.sha));
             continue;
@@ -643,7 +928,7 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
             None => single_parent(cwd, &step.sha)?,
         };
         let merge_base = info.parents[0].clone();
-        match merge_in_memory(cwd, &merge_base, &tip, &step.sha)? {
+        match replayer.merge(cwd, &merge_base, &tip, &tip_tree, &step.sha)? {
             MergeResult::Conflict(files) => {
                 outcomes.insert(
                     step.sha.clone(),
@@ -668,7 +953,7 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
                     };
                     let message = combined_message(step, &current.message, &info);
                     let author = current.author.clone();
-                    tip = commit_tree(cwd, &tree, &current.parent, &message, &author)?;
+                    tip = replayer.commit(cwd, &tree, &current.parent, &message, &author)?;
                     current.message = message;
                     current.members.push(step.sha.clone());
                     tip_tree = tree;
@@ -677,7 +962,7 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
                     let message = message_of(step, &info);
                     let author = info.author();
                     let parent = tip.clone();
-                    tip = commit_tree(cwd, &tree, &parent, &message, &author)?;
+                    tip = replayer.commit(cwd, &tree, &parent, &message, &author)?;
                     tip_tree = tree;
                     group = Some(Group {
                         message,
@@ -691,9 +976,16 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
         }
     }
     finish_group(group, &tip, &mut map);
+    let written = replayer.finish(cwd)?;
+    let sha_of = |handle: &str| {
+        written
+            .get(handle)
+            .cloned()
+            .unwrap_or_else(|| handle.to_string())
+    };
     for moved in &map {
         if let Some(entry) = outcomes.get_mut(&moved.from) {
-            entry.new_sha = moved.to.clone();
+            entry.new_sha = moved.to.as_deref().map(sha_of);
         }
     }
     let ordered_outcomes = steps
@@ -716,9 +1008,9 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
     Ok(PlanPrediction {
         is_supported: true,
         steps: ordered_outcomes,
-        is_tree_equal: tip_tree == tree_of(cwd, &old_head)?,
-        changed_files: changed_files(cwd, &old_head, &tip),
-        head: Some(tip),
+        is_tree_equal: tip_tree == resolved.head_tree,
+        changed_files: changed_files(cwd, &resolved.head_tree, &tip_tree),
+        head: Some(sha_of(&tip)),
     })
 }
 
@@ -2291,13 +2583,12 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "timing spike, run with --ignored --nocapture on an idle machine"]
     fn predicting_a_thirty_commit_plan_stays_inside_the_budget() {
         let root = init_repo("predict-timing");
         for dir in 0..40 {
             let folder = root.join(format!("src/module{dir}"));
             std::fs::create_dir_all(&folder).unwrap();
-            for file in 0..50 {
+            for file in 0..10 {
                 std::fs::write(
                     folder.join(format!("file{file}.ts")),
                     format!("export const value{dir}_{file} = {file};\n"),
@@ -2308,7 +2599,7 @@ mod tests {
         git_ok(&root, &["add", "."]);
         git_ok(
             &root,
-            &["commit", "--no-verify", "-m", "base with 2000 files"],
+            &["commit", "--no-verify", "-m", "base with 400 files"],
         );
         let base = git_ok(&root, &["rev-parse", "HEAD"]);
         git_ok(&root, &["checkout", "-b", "feature"]);
@@ -2316,7 +2607,7 @@ mod tests {
             .map(|index| {
                 commit(
                     &root,
-                    &format!("src/module{}/file{}.ts", index % 40, index),
+                    &format!("src/module{}/file{}.ts", index % 40, index % 10),
                     &format!("export const changed{index} = true;\n"),
                     &format!("change {index}"),
                 )
@@ -2339,15 +2630,44 @@ mod tests {
         let prediction = predict(&args).unwrap();
         let elapsed = started.elapsed().as_millis();
 
+        let resolved = resolve_plan(&root, &args).unwrap();
+        let ordered = order_steps(&resolved.steps).unwrap();
+        let direct_started = std::time::Instant::now();
+        let direct = predict_with(&root, &resolved, &ordered, false).unwrap();
+        let direct_elapsed = direct_started.elapsed().as_millis();
+
         let probe = std::time::Instant::now();
         for _ in 0..10 {
             git_ok(&root, &["rev-parse", "HEAD"]);
         }
         let per_spawn = probe.elapsed().as_millis() / 10;
         eprintln!(
-            "history prediction of a 30 commit plan over 2000 files: {elapsed} ms, one git spawn: {per_spawn} ms"
+            "history prediction of a 30 commit plan over 400 files: {elapsed} ms batched, {direct_elapsed} ms one spawn per commit, one git spawn: {per_spawn} ms"
         );
-        assert!(prediction.head.is_some());
-        assert!(elapsed < 5_000, "prediction took {elapsed} ms");
+        let outcomes = |found: &PlanPrediction| {
+            found
+                .steps
+                .iter()
+                .map(|step| (step.sha.clone(), step.outcome, step.files.clone()))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(outcomes(&prediction), outcomes(&direct));
+        assert_eq!(prediction.changed_files, direct.changed_files);
+        assert_eq!(prediction.is_tree_equal, direct.is_tree_equal);
+        let head = prediction.head.unwrap();
+        assert_eq!(
+            git_ok(&root, &["rev-parse", &format!("{head}^{{tree}}")]),
+            git_ok(
+                &root,
+                &["rev-parse", &format!("{}^{{tree}}", direct.head.unwrap())]
+            )
+        );
+        assert_eq!(git_ok(&root, &["for-each-ref", PREDICT_REF]), "");
+        if supports_batched_replay() {
+            assert!(
+                elapsed < 1_000 || elapsed < per_spawn * 12,
+                "prediction took {elapsed} ms with {per_spawn} ms per git spawn"
+            );
+        }
     }
 }

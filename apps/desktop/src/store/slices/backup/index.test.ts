@@ -104,6 +104,7 @@ beforeEach(() => {
     },
     workspaceMatches: [{ bundleId: 'w-1', name: 'Harborline', existingId: null, action: 'add' }],
     projectMatches: [],
+    groupStats: [{ group: 'workspaces', adds: 1, updates: 0 }],
   });
   h.configImportApply.mockResolvedValue({
     ok: true,
