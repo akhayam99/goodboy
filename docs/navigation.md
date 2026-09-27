@@ -449,8 +449,13 @@ covered.
   over a studio on the board it closes the studio; in a session it navigates
   to the board as a history entry. ⌘⇧H does the same. The command center opens
   the palette and shows ⌘K; it never takes typing itself.
-- Right: the Now chip (needs you, running, scripts, each only when above
-  zero), today's spend and the bell. Now opens one popover grouped by those
+- Right: the storage chip, the Now chip (needs you, running, scripts, each
+  only when above zero), today's spend and the bell. The storage chip
+  (`StorageChip`) reads `Free 7 GB` in muted text only while at least 1 GB of
+  worktree folders can go on every workspace, the same "can go" the Storage
+  summary counts (`useStorageSummary`); it never turns warning, and it hides
+  when there is nothing to free. A click opens App > Storage scoped to all
+  workspaces on To review, scrolled to the worktree folders. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
   session and opens that run's output in the right drawer. Spend opens Impact
   on its Spend tab; it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
