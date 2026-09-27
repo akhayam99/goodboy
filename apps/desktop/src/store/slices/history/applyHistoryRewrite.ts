@@ -3,6 +3,7 @@ import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { applyHistoryPlan, pushWithLease } from '../../../features/history/historyEngine';
 import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/worktree';
+import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
 import { historyTargetOf } from './historyTargetOf';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
 import { setHistoryRun } from './setHistoryRun';
@@ -133,6 +134,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       });
       break;
     }
+    await refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] }).catch(() => undefined);
     if (!input.shouldPush || !remote.hasUpstream) {
       return 'applied';
     }
@@ -173,6 +175,9 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
     }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
     if (pushed.kind === 'pushed') {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushed', stop: null } });
+      await refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] }).catch(
+        () => undefined,
+      );
       if (planId !== null) {
         await markHistoryPlan({
           db: tauriDatabase,

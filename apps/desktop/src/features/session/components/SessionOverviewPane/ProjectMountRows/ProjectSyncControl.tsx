@@ -68,14 +68,8 @@ type CommitBaseBranchParams = {
   readonly candidate: string | null;
 };
 
-type NotifyParams = {
-  readonly title: string;
-  readonly message: string;
-};
-
 export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Props) => {
   const dropdown = useDropdown({ width: 'w-64', expectedHeight: 160 });
-  const reportError = useAppStore((state) => state.reportError);
   const configuredBaseBranch = useAppStore(
     (state) => state.projects.find((project) => project.id === projectId)?.baseBranch ?? null,
   );
@@ -85,15 +79,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
   const [baseError, setBaseError] = useState<string | null>(null);
   const baseBranch = configuredBaseBranch ?? 'main';
-  const notify = ({ title, message }: NotifyParams) => {
-    void reportError({ title, error: message, sessionId });
-  };
-  const rebase = useRebaseBranch({
-    sessionId,
-    mountId,
-    status,
-    onError: (message) => notify({ title: "Couldn't rebase the branch", message }),
-  });
+  const rebase = useRebaseBranch({ sessionId, mountId, status });
   const push = usePushBranch({ sessionId, mountId });
 
   const distance = status?.mainDistance.kind === 'known' ? status.mainDistance : null;

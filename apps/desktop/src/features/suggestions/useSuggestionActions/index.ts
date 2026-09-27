@@ -9,7 +9,7 @@ import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
 import { startResolve } from '../../resolve/startResolve';
 import { kindRouting } from '../../session/agent-kind';
-import { useRebaseBranch } from '../../session/hooks/useRebaseBranch';
+import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
 import { resolveNewLabel } from '../../resolve/resolveQueueCopy';
@@ -58,7 +58,6 @@ export type SuggestionActionResolver = (params: {
 }) => SuggestionActions;
 
 const NO_ACTIONS: SuggestionActions = { primary: null, onDismiss: null };
-const REBASE_FAILURE_TITLE = "Couldn't rebase the branch";
 const EMPTY_ROWS: ReadonlyArray<ResolveThread> = [];
 
 type StartRebaseParams = {
@@ -84,7 +83,6 @@ export const useSuggestionActions = ({
       ),
     ),
   );
-  const reportError = useAppStore((state) => state.reportError);
   const roleModels = useSessionRoleModels({ sessionId });
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
@@ -134,9 +132,6 @@ export const useSuggestionActions = ({
     sessionId,
     mountId: behind?.mountId ?? null,
     status: behind?.status ?? null,
-    onError: (message) => {
-      void reportError({ title: REBASE_FAILURE_TITLE, error: message, sessionId });
-    },
   });
 
   const unresolvedThreads = useMemo(() => eligibleReviewThreads({ github, rows }), [github, rows]);

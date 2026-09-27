@@ -126,6 +126,7 @@ vi.mock('../../session/hooks/useWorktreeStatuses', () => ({
   useWorktreeStatuses: spies.worktreeStatuses,
 }));
 vi.mock('../../session/hooks/useRebaseBranch', () => ({
+  REBASE_FAILURE_TITLE: "Couldn't rebase the branch",
   useRebaseBranch: spies.useRebaseBranch,
 }));
 vi.mock('../../workflows/useAdvanceWorkflowAgent', () => ({
