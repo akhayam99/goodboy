@@ -21,15 +21,15 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import type { ProviderId, SessionId, SessionMountView } from '@goodboy/types';
+import type { ProviderId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
-  STORY_NOW,
   importStore,
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
 import { sessionPlace } from '../../store/slices/navigation/place';
+import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { ToastProvider } from '../../app/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
@@ -45,6 +45,7 @@ import { SessionDraftPane } from '../../features/session/components/SessionDraft
 import { WorkspaceSwitcher } from '../../features/workspace/components/WorkspaceSwitcher';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { PullRequestPage } from '../../features/review/components/PullRequestPage';
+import { CONTEXT_TAB_LABEL } from '../../features/session/components/ContextDrawer/contextTabs';
 import type { SettingsFocus } from '../../features/settings/components/SettingsStudio/types';
 
 const LINKED_PR_URL = 'https://example.invalid/cascade/pull/231';
@@ -243,48 +244,6 @@ const expectNoRenderLoop = (): void => {
   expect(consoleErrors.filter((line) => line.includes('Maximum update depth'))).toEqual([]);
 };
 
-type SeedSessionWithMountsParams = {
-  readonly hasPr?: boolean;
-};
-
-const seedSessionWithMounts = ({ hasPr = false }: SeedSessionWithMountsParams = {}): SessionId => {
-  seedBoardScene();
-  const state = useAppStore.getState();
-  const session = state.sessions.find(
-    (candidate) =>
-      (state.sessionProjectMounts[candidate.id]?.length ?? 0) > 0 &&
-      (!hasPr || state.sessionGithub[candidate.id]?.pr != null),
-  );
-  if (session === undefined) {
-    throw new Error('the board seed has no session with a mount');
-  }
-  const views: ReadonlyArray<SessionMountView> = (state.sessionProjectMounts[session.id] ?? []).map(
-    (mount) => ({
-      id: mount.mountId,
-      sessionId: session.id,
-      projectId: mount.projectId,
-      worktreePath: mount.worktreePath,
-      lastWorktreePath: mount.lastWorktreePath,
-      branch: mount.branch,
-      baseBranch: mount.baseBranch,
-      parallelIndex: mount.parallelIndex,
-      mountName: mount.mountName,
-      repoSlug: null,
-      repoRoot: mount.repoRoot,
-      isAttached: true,
-      diskState: 'present',
-      revision: mount.revision,
-      createdAt: STORY_NOW,
-      updatedAt: STORY_NOW,
-    }),
-  );
-  useAppStore.setState({
-    currentSessionId: session.id,
-    sessionMounts: { ...state.sessionMounts, [session.id]: views },
-  });
-  return session.id;
-};
-
 describe('primary surfaces mount on real store selectors', () => {
   it.each([
     ['github', GITHUB_RECORD],
@@ -337,16 +296,18 @@ describe('primary surfaces mount on real store selectors', () => {
   });
 
   it('opens the session overview', async () => {
-    const sessionId = seedSessionWithMounts();
+    const sessionId = seedSessionWithMounts({ useAppStore });
 
     await mountSurface({ ui: <KeepAliveWorkSurface sessionId={sessionId} isActive /> });
 
-    expect(screen.getAllByText('Overview').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
+    expect(screen.getByTestId('context-chip')).toBeDefined();
     expectNoRenderLoop();
   });
 
   it('opens the session diff', async () => {
-    const sessionId = seedSessionWithMounts();
+    const sessionId = seedSessionWithMounts({ useAppStore });
 
     await mountSurface({ ui: <KeepAliveWorkSurface sessionId={sessionId} isActive /> });
     await act(async () => {
@@ -354,12 +315,13 @@ describe('primary surfaces mount on real store selectors', () => {
       await new Promise((resolve) => setTimeout(resolve, 20));
     });
 
-    expect(screen.getAllByText('Diff').length).toBeGreaterThan(0);
+    expect(screen.getByRole('heading', { name: 'Diff' })).toBeDefined();
+    expect(screen.queryByText('No worktree for this session')).toBeNull();
     expectNoRenderLoop();
   });
 
   it('opens the pull request page', async () => {
-    const sessionId = seedSessionWithMounts({ hasPr: true });
+    const sessionId = seedSessionWithMounts({ useAppStore, hasPr: true });
     const state = useAppStore.getState();
     const session = state.sessions.find((candidate) => candidate.id === sessionId);
     const pr = state.sessionGithub[sessionId]?.pr ?? null;
@@ -378,14 +340,14 @@ describe('primary surfaces mount on real store selectors', () => {
 
     await mountSurface({ ui: <SessionDraftPane workspaceId={WORKSPACE_ID} /> });
 
-    expect(screen.getAllByText('New session').length).toBeGreaterThan(0);
+    expect(screen.getByRole('radiogroup', { name: 'How do you want to start?' })).toBeDefined();
     expectNoRenderLoop();
   });
 
   it.each(['goal', 'decisions', 'summary'] as const)(
     'opens the %s tab of the context drawer',
     async (tab) => {
-      const sessionId = seedSessionWithMounts();
+      const sessionId = seedSessionWithMounts({ useAppStore });
 
       await mountSurface({
         ui: (
@@ -393,7 +355,9 @@ describe('primary surfaces mount on real store selectors', () => {
         ),
       });
 
-      expect(screen.getAllByText('Summary').length).toBeGreaterThan(0);
+      expect(
+        screen.getByRole('tab', { name: CONTEXT_TAB_LABEL[tab] }).getAttribute('aria-selected'),
+      ).toBe('true');
       expectNoRenderLoop();
     },
   );
