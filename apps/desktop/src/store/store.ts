@@ -326,6 +326,7 @@ import { initialSessionDraftState } from './slices/sessionDraft/state';
 import type { PatchSessionDraftParams } from './slices/sessionDraft/patchSessionDraft';
 import type { DiscardSessionDraftParams } from './slices/sessionDraft/discardSessionDraft';
 import type { StartSessionFromDraftParams } from './slices/sessionDraft/startSessionFromDraft';
+import type { StartBlankSessionParams } from './slices/sessionDraft/startBlankSession';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
 import {
@@ -414,6 +415,7 @@ type AppActions = {
   patchSessionDraft(params: PatchSessionDraftParams): void;
   discardSessionDraft(params: DiscardSessionDraftParams): void;
   startSessionFromDraft(params: StartSessionFromDraftParams): Promise<Session>;
+  startBlankSession(params: StartBlankSessionParams): Promise<Session>;
   openDrawer(request: DrawerRequest): void;
   closeDrawer(): void;
   toggleDrawer(request: DrawerRequest): void;
