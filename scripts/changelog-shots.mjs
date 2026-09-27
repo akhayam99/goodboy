@@ -7,10 +7,10 @@ import { fileURLToPath } from 'node:url';
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEV_URL = 'http://localhost:1421';
 const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const CSS_WIDTH = 680;
-const CSS_HEIGHT = 425;
-const DEVICE_SCALE_FACTOR = 2;
+const WINDOW_METRICS = { width: 1360, height: 850, deviceScaleFactor: 1, mobile: false };
+const SHOT_METRICS = { width: 680, height: 425, deviceScaleFactor: 2, mobile: false };
 const RENDER_WAIT_MS = 4000;
+const RELAYOUT_WAIT_MS = 1000;
 const THEMES = ['dark', 'light'];
 const OUT_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/changelog/next');
 
@@ -97,15 +97,7 @@ const captureThemePng = async ({ theme }) => {
   );
   try {
     const { send } = await openCdpClient({ port });
-    await send({
-      method: 'Emulation.setDeviceMetricsOverride',
-      params: {
-        width: CSS_WIDTH,
-        height: CSS_HEIGHT,
-        deviceScaleFactor: DEVICE_SCALE_FACTOR,
-        mobile: false,
-      },
-    });
+    await send({ method: 'Emulation.setDeviceMetricsOverride', params: WINDOW_METRICS });
     await send({ method: 'Page.enable' });
     await send({
       method: 'Page.navigate',
@@ -124,8 +116,14 @@ const captureThemePng = async ({ theme }) => {
     });
     const nodeId = queryResult.result?.nodeId;
     if (nodeId === undefined || nodeId === 0) {
-      throw new Error(`scene "${scene}" has no [data-shot] element`);
+      const windowShot = await send({ method: 'Page.captureScreenshot', params: { format: 'png' } });
+      if (windowShot.result?.data === undefined) {
+        throw new Error(`could not capture scene "${scene}"`);
+      }
+      return Buffer.from(windowShot.result.data, 'base64');
     }
+    await send({ method: 'Emulation.setDeviceMetricsOverride', params: SHOT_METRICS });
+    await sleep({ ms: RELAYOUT_WAIT_MS });
     const boxResult = await send({ method: 'DOM.getBoxModel', params: { nodeId } });
     const quad = boxResult.result?.model?.content;
     if (quad === undefined) {
