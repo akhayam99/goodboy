@@ -172,7 +172,7 @@ const record = ({ provider, kind, identifier, title, state, ago, context }: Reco
     updatedAt: isoAgo(ago),
     url: `https://example.invalid/${provider}/${identifier}`,
     context,
-    projectIds: [SCENE_PROJECT_ID],
+    ...(provider === 'sentry' ? { projectIds: [SCENE_PROJECT_ID] } : {}),
     payload: { provider, kind, sessionId: null },
   }) as unknown as InboxRecord;
 
@@ -187,7 +187,6 @@ const SELECTED_RECORD: InboxRecord = {
   updatedAt: SELECTED_ISSUE.updatedAt,
   url: SELECTED_ISSUE.url,
   context: 'Payments',
-  projectIds: [SCENE_PROJECT_ID],
   payload: { provider: 'linear', kind: 'issue', issue: SELECTED_ISSUE, sessionId: null },
 };
 

@@ -141,6 +141,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Start from the goal: the session opens on its Overview, where you add the goal, projects and work when you are ready.',
       },
       {
+        term: 'Launch from the Inbox',
+        desc: 'Launch a session from an issue in the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. A Sentry error or a GitHub item opens in its project and says why.',
+      },
+      {
         term: 'Named for you',
         desc: 'A new session gets a short title, marked Named by Goodboy until you rename it.',
       },

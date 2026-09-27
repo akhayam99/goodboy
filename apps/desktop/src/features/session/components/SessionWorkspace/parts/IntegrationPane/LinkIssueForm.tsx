@@ -14,7 +14,7 @@ import type { IssueCandidate } from '../../../../../integrations/fetchIssueCandi
 import { slackGetThread, slackListChannels } from '../../../../../integrations/slack/client';
 import { hydrateSlackThreadTask } from '../../../../../integrations/slack/hydrateSlackThreadTask';
 import { parseSlackThreadExternalId } from '../../../../../integrations/slack/threadFormulas';
-import { resolvePastedIssueCandidate } from './resolvePastedIssueCandidate';
+import { usePastedIssueResolver } from './usePastedIssueResolver';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -74,6 +74,7 @@ export const LinkIssueForm = ({
   const [isLinking, setIsLinking] = useState(false);
   const linkSessionExternalTask = useAppStore((state) => state.linkSessionExternalTask);
   const candidates = useIssueCandidates({ workspaceId, provider });
+  const pasted = usePastedIssueResolver({ workspaceId, provider });
 
   const handlePick = async (candidate: IssueCandidate) => {
     setError(null);
@@ -118,7 +119,8 @@ export const LinkIssueForm = ({
         value={null}
         placeholder={`Search ${providerLabel} ${nounPlural} or paste a URL…`}
         disabled={isLinking}
-        resolvePaste={(rawValue) => resolvePastedIssueCandidate({ provider, rawValue })}
+        resolvePaste={pasted.resolvePaste}
+        onQueryChange={pasted.onQueryChange}
         onOpen={candidates.load}
         onPick={(candidate) => void handlePick(candidate)}
         onClear={() => undefined}

@@ -58,6 +58,7 @@ const [LOOKUP_RECORD] = adaptLinearIssues({ groups: buildLinearGroups([LOOKUP_IS
 
 const LOOKUP: WorkspaceIssueLookup = {
   code: QUERY,
+  settled: null,
   state:
     LOOKUP_RECORD === undefined
       ? { status: 'idle' }

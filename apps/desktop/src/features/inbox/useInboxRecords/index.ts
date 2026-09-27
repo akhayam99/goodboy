@@ -92,8 +92,14 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     ],
   );
   const records = useMemo(
-    () => attachInboxProjects({ records: adapted, projects, rootPath, links: sentryLinks }),
-    [adapted, projects, rootPath, sentryLinks],
+    () =>
+      attachInboxProjects({
+        records: adapted,
+        projects,
+        links: sentryLinks,
+        gitlabHosts: gitlabMrs.host == null ? [] : [gitlabMrs.host],
+      }),
+    [adapted, projects, sentryLinks, gitlabMrs.host],
   );
   const errors = {
     github: github.error ?? githubPrs.error,

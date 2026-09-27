@@ -31,6 +31,7 @@ export type WorkspaceIssueLookup = {
   readonly loadingProviders: ReadonlyArray<LookupProvider>;
   readonly retryAt: number | null;
   readonly retry: () => void;
+  readonly settled: LookupResult | null;
 };
 
 export const RATE_LIMIT_RETRY_MS = 20_000;
@@ -76,6 +77,7 @@ type Params = {
   readonly query: string;
   readonly isKnown?: (code: string) => boolean;
   readonly immediate?: boolean;
+  readonly providers?: ReadonlyArray<LookupProvider>;
 };
 
 export const useWorkspaceIssueLookup = ({
@@ -83,6 +85,7 @@ export const useWorkspaceIssueLookup = ({
   query,
   isKnown,
   immediate = false,
+  providers,
 }: Params): WorkspaceIssueLookup => {
   const [attempt, setAttempt] = useState(0);
   const { connected: toolConnected, integrations } = useToolConnections({ workspaceId });
@@ -119,10 +122,12 @@ export const useWorkspaceIssueLookup = ({
     () =>
       new Set<LookupProvider>(
         (['linear', 'jira', 'github', 'gitlab', 'sentry'] as const).filter(
-          (provider) => toolConnected[provider],
+          (provider) =>
+            toolConnected[provider] && (providers === undefined || providers.includes(provider)),
         ),
       ),
     [
+      providers,
       toolConnected.linear,
       toolConnected.jira,
       toolConnected.github,
@@ -236,5 +241,6 @@ export const useWorkspaceIssueLookup = ({
     loadingProviders,
     retryAt,
     retry: () => setAttempt((current) => current + 1),
+    settled: state.status === 'done' && state.key === key ? state.value.result : null,
   };
 };

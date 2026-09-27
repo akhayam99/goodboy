@@ -53,6 +53,7 @@ type ExternalTaskInput = {
 type Input = {
   workspaceId: WorkspaceId;
   projectId?: ProjectId;
+  projectReason?: string;
   goal: string;
   title?: string;
   branchPrefix?: string;
@@ -75,6 +76,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
     projectId,
+    projectReason,
     goal,
     title,
     branchPrefix,
@@ -212,7 +214,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
           reason:
             trimmedExisting !== undefined && trimmedExisting !== ''
               ? `adopted existing branch ${trimmedExisting}`
-              : 'the session works in this project',
+              : (projectReason ?? 'the session works in this project'),
           taskIdentifiers: (externalTasks ?? []).map((task) => task.identifier),
         });
       } catch (error) {
