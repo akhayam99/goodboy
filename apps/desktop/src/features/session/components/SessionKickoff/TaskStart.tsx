@@ -1,8 +1,7 @@
-import { Button, Input, Skeleton, cn } from '@goodboy/ui';
+import { Button, Eyebrow, Input, Skeleton } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
-import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 import {
   TRACKER_STUDIO_LINKS,
@@ -16,6 +15,12 @@ import { useDraftStart } from './useDraftStart';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { InboxLookupGroup } from '../../../inbox/components/InboxStudio/InboxLookupGroup';
 import { ISSUE_SEARCH_PLACEHOLDER } from '../../../integrations/issueCode/lookupCopy';
+import { candidateOfRecord } from '../../../integrations/starred/candidateOfRecord';
+import { useInboxStars } from '../../../inbox/useInboxStars';
+import type { InboxRecord } from '../../../inbox/types';
+import { IssueCandidateRow } from './IssueCandidateRow';
+
+const EMPTY_RECORDS: ReadonlyArray<InboxRecord> = [];
 
 type PickIssueParams = {
   readonly candidate: IssueCandidate;
@@ -60,9 +65,21 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
     isKnown: (code) => issues.rows.some((row) => row.identifier.toUpperCase() === code),
   });
   const lookupHits = lookup.state.status === 'done' ? lookup.state.value.result.hits : [];
-  const visibleRows = issues.rows.filter((candidate) => matchesQuery({ candidate, query }));
+  const stars = useInboxStars({ workspaceId, records: EMPTY_RECORDS });
+  const starredRows = stars.rows.flatMap((row) => {
+    if (row.record === null || row.issue.state === 'done' || row.issue.state === 'missing') {
+      return [];
+    }
+    const candidate = candidateOfRecord(row.record);
+    return candidate === null || !matchesQuery({ candidate, query }) ? [] : [candidate];
+  });
+  const starredKeys = new Set(starredRows.map((candidate) => candidateKey({ candidate })));
+  const visibleRows = issues.rows.filter(
+    (candidate) =>
+      matchesQuery({ candidate, query }) && !starredKeys.has(candidateKey({ candidate })),
+  );
   const selected =
-    [...visibleRows, ...lookupHits.map((hit) => hit.candidate)].find(
+    [...starredRows, ...visibleRows, ...lookupHits.map((hit) => hit.candidate)].find(
       (candidate) => candidateKey({ candidate }) === selectedKey,
     ) ?? null;
   const selectedLookupKey =
@@ -142,31 +159,41 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
         selectedKey={selectedLookupKey}
         onSelect={(hit) => select({ key: candidateKey({ candidate: hit.candidate }) })}
       />
+      {starredRows.length === 0 ? null : (
+        <div className="flex flex-col gap-0.5">
+          <div className="px-2 py-1">
+            <Eyebrow label="Starred" />
+          </div>
+          <ul aria-label="Starred issues" className="flex flex-col gap-0.5">
+            {starredRows.map((candidate) => {
+              const key = candidateKey({ candidate });
+              return (
+                <li key={key}>
+                  <IssueCandidateRow
+                    candidate={candidate}
+                    isSelected={key === selectedKey}
+                    disabled={isStarting}
+                    onSelect={() => select({ key })}
+                    onPickUp={() => pickUp({ candidate })}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
       <ul aria-label="Issues" className="flex flex-col gap-0.5">
         {visibleRows.map((candidate) => {
           const key = candidateKey({ candidate });
-          const isSelected = key === selectedKey;
           return (
             <li key={key}>
-              <button
-                type="button"
-                aria-pressed={isSelected}
+              <IssueCandidateRow
+                candidate={candidate}
+                isSelected={key === selectedKey}
                 disabled={isStarting}
-                onClick={() => select({ key })}
-                onDoubleClick={() => pickUp({ candidate })}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left motion-safe:transition-colors disabled:opacity-60',
-                  isSelected ? 'bg-selected' : 'hover:bg-hover',
-                )}
-              >
-                <IntegrationGlyph provider={candidate.provider} size="xs" />
-                <span className="shrink-0 font-mono text-secondary text-muted-foreground">
-                  {candidate.identifier}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-body text-foreground">
-                  {candidate.title}
-                </span>
-              </button>
+                onSelect={() => select({ key })}
+                onPickUp={() => pickUp({ candidate })}
+              />
             </li>
           );
         })}

@@ -259,6 +259,18 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   unreachable with `Try again`, tracker not connected, no repo for `#N`).
   The mobile companion resolves Linear, Sentry and GitLab issues through the
   same direct lookups instead of searching only the issues assigned to you.
+  Issues can be starred (`StarToggle`, the same star as projects) from an
+  Inbox row, a lookup hit or `s` on the selected row. Stars live per
+  workspace (`workspace_starred_issues`, keyed by provider and external id;
+  GitHub keys by `owner/repo#N`) with the last copy of identifier, title and
+  state, so the `Starred` group draws before any tracker answers. In the
+  Inbox it sits under `Not in your inbox` and above the days, and a starred
+  issue leaves the days; open ones come first, closed ones at the bottom
+  with `Unstar closed` and `Undo`, and one the tracker no longer returns
+  reads `Can't reach NW-230 anymore`. Pick up a task shows only the open
+  starred issues, even ones a session already picked up. Opening the Inbox
+  or Pick up a task refreshes the stars through the same lookups, at most
+  every five minutes (`refreshStarredIssues`).
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
 - **Ask an agent** (`AgentStart`) is the real chat composer's field: role and

@@ -13,6 +13,7 @@ const { holder, hooks, spies } = vi.hoisted(() => ({
   hooks: {
     isGithubAuthenticated: { current: false },
     lookup: { current: null as unknown },
+    starredRows: { current: [] as ReadonlyArray<unknown> },
   },
   spies: {
     fetchIssueCandidates: vi.fn(
@@ -44,6 +45,14 @@ vi.mock('../../../integrations/jira/useJiraConfig', () => ({
   useJiraConfig: () => null,
 }));
 
+vi.mock('../../../inbox/useInboxStars', () => ({
+  useInboxStars: () => ({
+    rows: hooks.starredRows.current,
+    isStarred: () => false,
+    canStar: () => false,
+    toggle: async () => undefined,
+  }),
+}));
 vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
   useWorkspaceIssueLookup: () =>
     hooks.lookup.current ?? { code: null, state: { status: 'idle' }, retry: () => undefined },
@@ -119,6 +128,7 @@ beforeEach(() => {
   resetStore();
   hooks.isGithubAuthenticated.current = false;
   hooks.lookup.current = null;
+  hooks.starredRows.current = [];
   spies.fetchIssueCandidates.mockReset();
   spies.fetchIssueCandidates.mockResolvedValue([]);
   spies.startSessionFromDraft.mockReset();
@@ -353,6 +363,53 @@ describe('SessionKickoff', () => {
         goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
       },
     });
+  });
+
+  it('keeps open starred issues on top and leaves the closed ones in the inbox', async () => {
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
+    const linearRecord = (id: string, identifier: string, title: string) => ({
+      key: `linear:issue:${id}`,
+      provider: 'linear',
+      kind: 'issue',
+      identifier,
+      title,
+      state: 'open',
+      stateLabel: 'Todo',
+      updatedAt: '2026-09-20T10:00:00Z',
+      url: `https://linear.app/cascadia/issue/${identifier}`,
+      context: 'Cascadia',
+      payload: {
+        provider: 'linear',
+        kind: 'issue',
+        sessionId: null,
+        issue: {
+          id,
+          identifier,
+          title,
+          description: '',
+          url: `https://linear.app/cascadia/issue/${identifier}`,
+          state: { name: 'Todo', type: 'unstarted' },
+          team: { key: 'CAS' },
+          labels: { nodes: [] },
+        },
+      },
+    });
+    hooks.starredRows.current = [
+      {
+        issue: { provider: 'linear', externalId: 'lin-231', identifier: 'CAS-231', state: 'open' },
+        record: linearRecord('lin-231', 'CAS-231', 'Settle the month close'),
+      },
+      {
+        issue: { provider: 'linear', externalId: 'lin-12', identifier: 'CAS-12', state: 'done' },
+        record: linearRecord('lin-12', 'CAS-12', 'Old close'),
+      },
+    ];
+    renderKickoff();
+
+    const starred = await screen.findByRole('list', { name: 'Starred issues' });
+    expect(starred.textContent).toContain('CAS-231');
+    expect(screen.queryByText('CAS-12')).toBeNull();
   });
 
   it('picks up an issue found by code that is not assigned to you', async () => {
