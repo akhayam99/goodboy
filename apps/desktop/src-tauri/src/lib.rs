@@ -64,6 +64,9 @@ mod worktree;
 mod worktree_writer;
 
 #[cfg(target_os = "macos")]
+mod help_menu;
+
+#[cfg(target_os = "macos")]
 fn suppress_webkit_media_remote() {
     use objc2::runtime::AnyObject;
     use objc2::{class, msg_send};
@@ -176,6 +179,8 @@ pub fn run() {
         .setup(move |app| {
             use tauri::Manager;
             query_bridge::start(app.handle().clone());
+            #[cfg(target_os = "macos")]
+            help_menu::install(app.handle())?;
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
