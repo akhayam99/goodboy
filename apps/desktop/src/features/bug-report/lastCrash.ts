@@ -2,7 +2,10 @@ import { invoke } from '@tauri-apps/api/core';
 
 export type LastCrashSource = 'window' | 'promise' | 'rust';
 
+export type LastCrashKind = 'panic' | 'error';
+
 export type LastCrash = {
+  readonly kind: LastCrashKind;
   readonly source: LastCrashSource;
   readonly message: string;
   readonly stack: string;
@@ -18,6 +21,11 @@ export type LastCrashInput = {
   readonly stack: string;
   readonly screen: string | null;
   readonly actions: ReadonlyArray<string>;
+};
+
+export const LAST_CRASH_TITLE: Readonly<Record<LastCrashKind, string>> = {
+  panic: 'Goodboy closed unexpectedly last time',
+  error: 'Goodboy hit an error last time',
 };
 
 export const writeLastCrash = async (crash: LastCrashInput): Promise<void> => {

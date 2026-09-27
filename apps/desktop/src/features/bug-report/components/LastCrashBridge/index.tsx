@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useToast } from '../../../../app/components/Toast';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
-import { claimLastCrash, deleteLastCrash, type LastCrash } from '../../lastCrash';
+import { LAST_CRASH_TITLE, claimLastCrash, deleteLastCrash, type LastCrash } from '../../lastCrash';
 import { openReportSheet } from '../../openReportSheet';
 
 type MessageParams = {
@@ -25,7 +25,7 @@ export const LastCrashBridge = () => {
       }
       showToast({
         kind: 'warning',
-        title: 'Goodboy closed unexpectedly',
+        title: LAST_CRASH_TITLE[crash.kind],
         message: crashMessage({ crash }),
         persist: true,
         action: { label: 'Report it', onClick: () => openReportSheet({ crash }) },

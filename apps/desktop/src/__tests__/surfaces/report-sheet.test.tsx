@@ -129,6 +129,7 @@ const mount = () =>
   );
 
 const LAST_CRASH = {
+  kind: 'panic',
   source: 'window',
   message: 'TypeError: rows is undefined at /Users/rowan/code/core-api/.env for Cascade',
   stack: 'at Row (/src/Row.tsx:4)',
@@ -301,14 +302,14 @@ describe('report sheet on the real store', () => {
     bridge.lastCrash = LAST_CRASH;
     mount();
 
-    expect(await screen.findByText('Goodboy closed unexpectedly')).toBeDefined();
+    expect(await screen.findByText('Goodboy closed unexpectedly last time')).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Report it' }));
 
     const sheet = await screen.findByRole('dialog', { name: 'Report this crash' });
     await within(sheet).findByText('macOS 26.0 arm64');
     expect(within(sheet).getByRole('textbox', { name: /one line/i })).toHaveProperty(
       'value',
-      'Goodboy closed unexpectedly',
+      'Goodboy closed unexpectedly last time',
     );
     expect(within(sheet).getByText('Error and stack')).toBeDefined();
     const sent = sentText(sheet);
@@ -322,11 +323,28 @@ describe('report sheet on the real store', () => {
     expect(bridge.calls.filter((call) => call.command === 'last_crash_claim')).toHaveLength(1);
   });
 
+  it('says the app hit an error, not that it closed, when it kept running', async () => {
+    bridge.lastCrash = { ...LAST_CRASH, kind: 'error', actions: ['nav.back', 'lens.agents'] };
+    mount();
+
+    expect(await screen.findByText('Goodboy hit an error last time')).toBeDefined();
+    expect(screen.queryByText(/closed unexpectedly/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Report it' }));
+
+    const sheet = await screen.findByRole('dialog', { name: 'Report this error' });
+    await within(sheet).findByText('macOS 26.0 arm64');
+    expect(within(sheet).getByRole('textbox', { name: /one line/i })).toHaveProperty(
+      'value',
+      'Goodboy hit an error last time',
+    );
+    expect(sentText(sheet)).toContain('Last actions: nav.back, lens.agents');
+  });
+
   it('deletes the saved crash when the toast is dismissed', async () => {
     bridge.lastCrash = LAST_CRASH;
     mount();
 
-    await screen.findByText('Goodboy closed unexpectedly');
+    await screen.findByText('Goodboy closed unexpectedly last time');
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss notification' }));
 
     await waitFor(() =>

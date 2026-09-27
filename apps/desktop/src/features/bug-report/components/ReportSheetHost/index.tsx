@@ -9,6 +9,7 @@ import { tauriGhRunner } from '../../../github/github';
 import { collectReportContext } from '../../../settings/reportContext';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { lastCrashPart } from '../../crashReport';
+import { LAST_CRASH_TITLE } from '../../lastCrash';
 import {
   OPEN_REPORT_SHEET_EVENT,
   REPORT_OPEN_MENU_EVENT,
@@ -48,7 +49,7 @@ const leadParts = ({ state, detail }: LeadPartsParams): ReadonlyArray<ReportPart
 
 const headingFor = ({ detail }: { readonly detail: OpenReportSheetDetail }): string => {
   if (detail.crash != null) {
-    return 'Report this crash';
+    return detail.crash.kind === 'panic' ? 'Report this crash' : 'Report this error';
   }
   return detail.notice == null ? 'Report a bug' : 'Report this';
 };
@@ -56,8 +57,6 @@ const headingFor = ({ detail }: { readonly detail: OpenReportSheetDetail }): str
 const NO_PARTS: ReadonlyArray<ReportPart> = [];
 
 const NO_DETAIL: OpenReportSheetDetail = {};
-
-const CRASH_LINE = 'Goodboy closed unexpectedly';
 
 const detailOf = (event: Event): OpenReportSheetDetail =>
   event instanceof CustomEvent && event.detail != null ? event.detail : NO_DETAIL;
@@ -84,7 +83,7 @@ export const ReportSheetHost = () => {
     const state = useAppStore.getState();
     const lead = leadParts({ state, detail });
     if (detail.crash != null && state.bugReportDraft.title === '') {
-      state.setBugReportDraft({ title: CRASH_LINE });
+      state.setBugReportDraft({ title: LAST_CRASH_TITLE[detail.crash.kind] });
     }
     setParts(lead);
     setOpened((current) => ({ key: (current?.key ?? 0) + 1, heading: headingFor({ detail }) }));

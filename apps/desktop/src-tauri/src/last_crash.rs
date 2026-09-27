@@ -46,9 +46,18 @@ impl LastCrashError {
     }
 }
 
+const KIND_ERROR: &str = "error";
+const KIND_PANIC: &str = "panic";
+
+fn error_kind() -> String {
+    KIND_ERROR.to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct LastCrash {
+    #[serde(default = "error_kind")]
+    pub kind: String,
     pub source: String,
     pub message: String,
     pub stack: String,
@@ -139,6 +148,7 @@ fn record_from_input(input: LastCrashInput, now: u128) -> Result<LastCrash, Last
         return Err(LastCrashError::Source);
     }
     Ok(LastCrash {
+        kind: error_kind(),
         source: input.source,
         message: capped(&input.message, MAX_MESSAGE),
         stack: capped(&input.stack, MAX_STACK),
@@ -158,7 +168,8 @@ fn record_from_input(input: LastCrashInput, now: u128) -> Result<LastCrash, Last
 fn write_first_at(path: &Path, crash: &LastCrash) -> Result<(), LastCrashError> {
     let _guard = FILE_LOCK.lock().unwrap_or_else(|error| error.into_inner());
     if let Some(existing) = read_from(path) {
-        if !existing.shown && !is_expired(&existing, unix_millis()) {
+        let outranks = crash.kind == KIND_PANIC && existing.kind != KIND_PANIC;
+        if !existing.shown && !is_expired(&existing, unix_millis()) && !outranks {
             return Ok(());
         }
     }
@@ -250,6 +261,7 @@ fn panic_message(info: &std::panic::PanicHookInfo<'_>) -> String {
 fn panic_record(message: &str, backtrace: &str, home: Option<&str>, now: u128) -> LastCrash {
     let first_line = message.lines().next().unwrap_or("panic");
     LastCrash {
+        kind: KIND_PANIC.to_string(),
         source: "rust".to_string(),
         message: capped(&without_home(first_line, home), MAX_MESSAGE),
         stack: own_frames(backtrace),
@@ -296,6 +308,7 @@ mod tests {
 
     fn crash_at(occurred_at: u64) -> LastCrash {
         LastCrash {
+            kind: error_kind(),
             source: "window".to_string(),
             message: "TypeError: x is undefined".to_string(),
             stack: "at Row (Row.tsx:4)".to_string(),
@@ -305,6 +318,32 @@ mod tests {
             occurred_at,
             shown: false,
         }
+    }
+
+    #[test]
+    fn a_panic_replaces_an_unshown_error_but_not_the_reverse() {
+        let path = temp_path("rank");
+        let now = u64::try_from(unix_millis()).unwrap();
+        write_first_at(&path, &crash_at(now)).unwrap();
+        let panic = panic_record("boom", "", None, u128::from(now));
+        write_first_at(&path, &panic).unwrap();
+        write_first_at(&path, &crash_at(now)).unwrap();
+
+        let kept = read_from(&path).unwrap();
+        assert_eq!(kept.kind, "panic");
+        assert_eq!(kept.message, "boom");
+    }
+
+    #[test]
+    fn a_record_without_a_kind_reads_as_an_error() {
+        let path = temp_path("legacy");
+        fs::write(
+            &path,
+            br#"{"source":"window","message":"m","stack":"","screen":null,"appVersion":"0.11.1","occurredAt":1}"#,
+        )
+        .unwrap();
+
+        assert_eq!(read_from(&path).unwrap().kind, "error");
     }
 
     #[test]
@@ -385,6 +424,7 @@ mod tests {
             vec!["navigate".to_string(), "agent.retry".to_string()]
         );
         assert_eq!(record.occurred_at, 5);
+        assert_eq!(record.kind, "error");
     }
 
     #[test]
@@ -425,5 +465,6 @@ mod tests {
         assert_eq!(record.message, "could not open ~/.goodboy/data.db");
         assert_eq!(record.stack, "goodboy_desktop_lib::turn::spawn_turn");
         assert_eq!(record.source, "rust");
+        assert_eq!(record.kind, "panic");
     }
 }
