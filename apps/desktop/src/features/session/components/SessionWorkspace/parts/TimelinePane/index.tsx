@@ -514,7 +514,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
       case 'continue': {
         const { agent } = ask;
         return {
-          label: entry.kind === 'run' ? 'Continue step' : 'Continue',
+          label: 'Continue',
           onAct: () => void continueStoppedAgent({ sessionId, agentId: agent.id }),
         };
       }

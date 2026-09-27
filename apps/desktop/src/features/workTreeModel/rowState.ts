@@ -127,7 +127,6 @@ export type RowFailedStep = {
 };
 
 export type RowStoppedStep = {
-  readonly agent: Agent;
   readonly stepLabel: string | null;
 };
 
@@ -172,14 +171,14 @@ const waitingRunState = ({
     return {
       phase: 'waiting',
       reason: { kind: 'stepBlocked', stepLabel: failedStep.stepLabel },
-      ask: { kind: 'restartStep' },
+      ask: null,
     };
   }
   if (failedStep != null || (advance?.kind === 'blocked' && advance.reason === 'failed-step')) {
     return {
       phase: 'failed',
       reason: { kind: 'stepFailed', stepLabel: failedStep?.stepLabel ?? null },
-      ask: { kind: 'restartStep' },
+      ask: failedStep == null ? { kind: 'restartStep' } : null,
     };
   }
   if (question != null) {
@@ -196,7 +195,7 @@ const waitingRunState = ({
     return {
       phase: 'waiting',
       reason: { kind: 'stepStopped', stepLabel: stoppedStep.stepLabel },
-      ask: { kind: 'continue', agent: stoppedStep.agent },
+      ask: null,
     };
   }
   if ((advance?.kind === 'blocked' && advance.reason === 'questions') || stop === 'questions') {

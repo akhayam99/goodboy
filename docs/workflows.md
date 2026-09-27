@@ -247,6 +247,12 @@ quiet (`stepAsking`: a neutral "Waiting on a step" node, no sentence, no
 Answer). The run row takes the question only when the filter hides both, and
 its Answer then opens the asking agent at that question.
 
+A failed, blocked or stopped step works the same way. The run row names it
+("Step 4 failed", "Step 4 stopped by you") and offers nothing; the step's own
+row carries the one **Restart the step** or **Continue**. The run row keeps the
+Restart only when the run is held on a failed step that no row of the run
+shows.
+
 The workflow detail draws the run as a run tree (`RunTree`), the same stream
 the activity feed builds, limited to one run (`buildRunTreeStream`). Time runs
 the same way: the first step sits at the bottom, queued steps sit above the

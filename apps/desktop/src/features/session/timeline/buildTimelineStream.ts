@@ -472,10 +472,12 @@ const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
 const agentRowStateOf = ({
   entry,
   readyAgentId,
+  failedAgentId = null,
   questionRowIds = NO_QUESTION_ROWS,
 }: {
   readonly entry: TimelineAgentEntry;
   readonly readyAgentId: string | null;
+  readonly failedAgentId?: string | null;
   readonly questionRowIds?: ReadonlySet<string>;
 }): RowState => {
   const state = resolveAgentRowState({
@@ -488,7 +490,13 @@ const agentRowStateOf = ({
   const isAskedOnItsQuestionRow =
     state.ask?.kind === 'answer' &&
     entry.openQuestions.every((question) => questionRowIds.has(question.id));
-  return isAskedOnItsQuestionRow ? { ...state, ask: null } : state;
+  if (isAskedOnItsQuestionRow) {
+    return { ...state, ask: null };
+  }
+  if (failedAgentId === entry.agent.id && state.ask == null) {
+    return { ...state, ask: { kind: 'restartStep' } };
+  }
+  return state;
 };
 
 const hasScheduledChildWork = ({
@@ -602,6 +610,7 @@ type EmitAgentParams = {
   readonly groupId: string | null;
   readonly showSubagents: boolean;
   readonly readyAgentId: string | null;
+  readonly failedAgentId?: string | null;
   readonly isParentClosed: boolean;
   readonly context: EmitContext;
 };
@@ -618,12 +627,14 @@ const agentRows = ({
   groupId,
   showSubagents,
   readyAgentId,
+  failedAgentId = null,
   isParentClosed,
   context,
 }: EmitAgentParams): ReadonlyArray<DraftRow> => {
   const resolved = agentRowStateOf({
     entry,
     readyAgentId,
+    failedAgentId,
     questionRowIds: context.questionRowIds,
   });
   const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
@@ -711,7 +722,11 @@ const failedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }) => {
       isAgentStatusHalted({ status: child.agent.status }) &&
       child.agent.doneAt == null
     ) {
-      return { stepLabel: child.stepLabel, isBlocked: child.agent.status === 'blocked' };
+      return {
+        agentId: child.agent.id,
+        stepLabel: child.stepLabel,
+        isBlocked: child.agent.status === 'blocked',
+      };
     }
   }
   return null;
@@ -720,7 +735,7 @@ const failedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }) => {
 const stoppedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }): RowStoppedStep | null => {
   for (const child of entry.children) {
     if (child.kind === 'agent' && child.agent.status === 'stopped' && child.agent.doneAt == null) {
-      return { agent: child.agent, stepLabel: child.stepLabel };
+      return { stepLabel: child.stepLabel };
     }
   }
   return null;
@@ -753,6 +768,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
   const steps = stepAgentsOf({ entry });
   const hasRunningStep = steps.some((agent) => agent.status === 'running');
   const isDeciding = !isFinished && context.decidingRunIds.has(entry.run.id);
+  const failedStep = failedStepOf({ entry });
   const shownQuestionIds = runShownQuestionIds({
     entry,
     questionRowIds: context.questionRowIds,
@@ -764,7 +780,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
     isFinished,
     isDeciding,
     hasRunningStep,
-    failedStep: failedStepOf({ entry }),
+    failedStep,
     stoppedStep: stoppedStepOf({ entry }),
     question: runOpenQuestion({ entry, shownQuestionIds }),
     isQuestionShown: hasShownRunQuestion({ entry, shownQuestionIds }),
@@ -792,6 +808,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
           groupId: laneId,
           showSubagents: context.showWorkflowSubagents,
           readyAgentId: readyStep?.agent.id ?? null,
+          failedAgentId: failedStep?.agentId ?? null,
           isParentClosed: false,
           context,
         }),

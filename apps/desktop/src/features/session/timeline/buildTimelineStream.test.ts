@@ -2570,6 +2570,59 @@ describe('buildTimelineStream, question artifact rows', () => {
     expect(needsYouRootIds({ items }).size).toBe(1);
   });
 
+  it('puts the one Restart on the failed step row, never on the run row', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one', 'two'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const asks = items.flatMap((item) =>
+      item.kind === 'row' && item.rowState.ask != null
+        ? [`${item.entry.kind}:${item.rowState.ask.kind}`]
+        : [],
+    );
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(asks).toEqual(['agent:restartStep']);
+    expect(stateOf(runRow)).toBe('failed:stepFailed');
+    expect(needsYouRootIds({ items }).size).toBe(1);
+  });
+
+  it('puts the one Continue on the stopped step row, never on the run row', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one', 'two'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'stopped',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const asks = items.flatMap((item) =>
+      item.kind === 'row' && item.rowState.ask != null
+        ? [`${item.entry.kind}:${item.rowState.ask.kind}`]
+        : [],
+    );
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(asks).toEqual(['agent:continue']);
+    expect(stateOf(runRow)).toBe('waiting:stepStopped');
+  });
+
   it('gives the Answer back to the asking agent when question rows are hidden', () => {
     const { items } = stream({
       workflows: [
