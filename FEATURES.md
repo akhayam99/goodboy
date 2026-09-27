@@ -333,7 +333,7 @@ Hand the next agent where things stand. After each turn a summary of **State**, 
 
 ### Context drawer
 
-Open goal, decisions and summary from any session page, with "N new since you last looked" and **Copy as brief**.
+Open goal, decisions and summary from any session page, with **Copy as brief**. A dot on **Context** says something changed since you last looked, and the drawer lists added, removed and reworded decisions first. Each tab reads as labelled blocks, the key line first and the rest folded.
 
 ### Context budgets
 
@@ -373,7 +373,7 @@ Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Line
   <img src="./docs/readme/s19-inbox-light.webp" alt="The Inbox with HBL-412 pasted and found outside your inbox, a starred issue and a Slack thread">
 </picture>
 
-Work from one list instead of seven tabs: issues, Slack threads and Sentry errors from your connected tools, plus merge requests from GitLab and Bitbucket, grouped by day, with keyboard navigation.
+Work from one list instead of seven tabs: issues, Slack threads and Sentry errors from your connected tools, plus pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket, grouped by day, with keyboard navigation. Projects with nothing in them fold under **Show N empty**.
 
 ### Find any issue by code or link
 
@@ -386,6 +386,10 @@ Keep the issues you follow on top of the Inbox and of **Pick up a task**.
 ### Launch a session from any item
 
 Start a session from an issue, a Slack thread or an error, with the brief already drafted.
+
+### Link an item to a session
+
+Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick.
 
 ### Trackers
 
@@ -642,7 +646,11 @@ Delete old branches with confidence. They are sorted into **Safe to delete** and
 
 ### Storage scope
 
-Clean up this workspace, other workspaces, removed ones or all of them, each with its weight. Bulk actions name the scope they act on.
+Clean up this workspace, other workspaces, removed ones or all of them, each with its weight, from the picker in the page header. Bulk actions name the scope they act on. The page reads as two groups: **Free up space** and **Clean up branches**.
+
+### Free space chip
+
+See reclaimable space at a glance. While at least 1 GB of worktree folders can go, the top bar shows **Free N GB**, and a click opens Storage at the folders.
 
 ### Artifacts from deleted sessions
 
@@ -690,6 +698,14 @@ Read release notes inside the app, searchable, with links into the screen each c
 ### Before and after pictures
 
 See a change instead of reading about it. Release notes can show **Before** and **After** pictures, with a lightbox, in light and dark.
+
+### Report a bug
+
+Tell us what broke in one line. **⌘I** (**Ctrl+Shift+I** on Windows and Linux) opens a report sheet from any screen, and so do the footer chip, the palette, Settings, the macOS Help menu and **Report this** on a notification. Version, system, screen and CLI versions come along as chips you can remove, **What gets sent** shows exactly what leaves, and secrets, paths and emails are stripped. It files through gh, or opens the issue on GitHub. After a crash, the next launch offers to report it.
+
+### Guide
+
+Learn how Goodboy works in 18 short chapters that follow a task, with search and links that open each screen. Open **Guide** from the palette.
 
 <a id="keyboard-and-terminal"></a>
 <details>

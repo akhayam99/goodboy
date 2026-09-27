@@ -225,7 +225,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Context drawer',
-        desc: 'Open the goal, decisions and summary from any session page, and Copy as brief.',
+        desc: 'Open the goal, decisions and summary from any session page, and Copy as brief. A dot on Context means something changed since you last looked, and those changes come first.',
       },
       {
         term: 'What the agent received',
@@ -247,11 +247,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Inbox',
-        desc: 'Issues, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue.',
+        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue.',
       },
       {
         term: 'Start from anything',
-        desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted.',
+        desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted. Link to a session attaches the item to one you already have.',
       },
       {
         term: 'Slack',
@@ -388,7 +388,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Scope',
-        desc: 'Clean up this workspace, other workspaces or removed ones, each with its weight.',
+        desc: 'Clean up this workspace, other workspaces or removed ones, each with its weight. When 1 GB or more can go, the top bar shows Free N GB and opens Storage.',
       },
       {
         term: 'Security findings',
@@ -471,6 +471,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Links into the app',
         desc: 'A change can open the screen it touched, and some show before and after pictures.',
+      },
+      {
+        term: 'Report a bug',
+        desc: 'The report shortcut opens a one-line report from any screen. What gets sent shows exactly what leaves, and a crash from last launch can be reported from its toast.',
       },
     ],
     links: [

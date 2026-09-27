@@ -95,7 +95,7 @@ The review comes back with seven comments. Select them and press **Resolve**. An
 
 Every agent still has its own chat when you want to steer by hand. Type while it works and your message waits for its turn, or send it now and interrupt.
 
-The inbox, plans and wireframes, history rewriting, storage cleanup, security findings and the rest are in [FEATURES.md](./FEATURES.md), with screenshots. [goodboy-ai.dev](https://goodboy-ai.dev) tells the story in a minute.
+The inbox, plans and wireframes, history rewriting, storage cleanup, security findings and the rest are in [FEATURES.md](./FEATURES.md), with screenshots. Something broke? Press **⌘I** in the app and report it in one line. [goodboy-ai.dev](https://goodboy-ai.dev) tells the story in a minute.
 
 [See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#agents-and-chat)
 
