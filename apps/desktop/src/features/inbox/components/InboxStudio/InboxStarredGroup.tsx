@@ -1,4 +1,5 @@
 import { Button, Eyebrow } from '@goodboy/ui';
+import { placeholderRecordOf } from '../../../integrations/starred/placeholderRecordOf';
 import type { InboxRecord } from '../../types';
 import type { StarredRow } from '../../useInboxStars';
 import { InboxRow } from './InboxRow';
@@ -50,23 +51,33 @@ export const InboxStarredGroup = ({
           </Button>
         ) : null}
       </div>
-      {rows.map((row) =>
-        row.record === null ? (
+      {rows.map((row) => {
+        if (row.record !== null) {
+          return (
+            <InboxRow
+              key={row.record.key}
+              record={row.record}
+              selected={selectedKey === row.record.key}
+              onSelect={onSelect}
+              star={{ isStarred: true, onToggle: () => onUnstar(row) }}
+            />
+          );
+        }
+        const placeholder = placeholderRecordOf(row.issue);
+        if (placeholder === null) {
+          return null;
+        }
+        return (
           <StarredSnapshotRow
             key={`${row.issue.provider}:${row.issue.externalId}`}
             issue={row.issue}
+            recordKey={placeholder.key}
+            selected={selectedKey === placeholder.key}
+            onSelect={() => onSelect(placeholder)}
             onUnstar={() => onUnstar(row)}
           />
-        ) : (
-          <InboxRow
-            key={row.record.key}
-            record={row.record}
-            selected={selectedKey === row.record.key}
-            onSelect={onSelect}
-            star={{ isStarred: true, onToggle: () => onUnstar(row) }}
-          />
-        ),
-      )}
+        );
+      })}
     </section>
   );
 };
