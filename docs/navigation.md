@@ -545,8 +545,9 @@ One sheet files every report. `ReportSheetHost`
 chip, centred, with no overlay: the page under it stays live. Every door lands
 there: ⌘I from anywhere, Report a bug in the Goodboy chip, Report a bug in the
 palette (it also answers bug, issue, feedback, crash and broken), **Settings >
-App > Help**, and Report this on a warning or error notification, which
-attaches that notification. Opening the sheet reads the screen you are on
+App > Help**, **Help > Report a bug** in the macOS menu bar (`help_menu.rs`
+emits `goodboy://report-open` to the focused window), and Report this on a
+warning or error notification, which attaches that notification. Opening the sheet reads the screen you are on
 before anything moves, so Settings stays open under it.
 
 - **One line is the title.** The cursor starts there. ⇥ or Add detail opens a
@@ -567,6 +568,12 @@ before anything moves, so Settings stays open under it.
   under the error, with the error and our stack frames attached and the line
   set to `Crash: <kind>`. The startup error screen opens it under the error
   with Report this. Neither needs the store.
+- **After a crash the app could not show.** An uncaught window error or a
+  panic leaves `~/.goodboy/last-crash.json`. The next launch shows one
+  persistent toast, Goodboy closed unexpectedly, with when and where; Report
+  it opens the sheet as Report this crash with the error attached, and Dismiss
+  deletes the record. `LastCrashBridge` claims the record, so only one window
+  shows it.
 
 First-run setup is a full-screen wizard in one shell that never moves: a top
 bar with a labelled stepper (Provider, Project, Code host, Tasks, First
