@@ -225,7 +225,11 @@ saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
   needs this attribute; nothing else does. It is not the same target as a
   README screenshot, which captures the whole viewport. The script clips to
   this element's box, at 680×425 CSS pixels, DPR 2 (1360×850 physical), and
-  converts through `cwebp -q 80`.
+  converts through `cwebp -q 80`. A scene without `[data-shot]` is captured
+  whole instead, at a 1360×850 window and DPR 1, so the picture keeps the same
+  size. Extra scene params ride in the scene argument
+  (`'session-start&kind=workflow'`), and `GOODBOY_SHOT_URL` points the script
+  at a dev server on another port.
 - **Both themes, one command each.** The script captures dark and light in
   one run; a scene that renders differently per theme needs no extra work,
   the `&theme=` query param already switches it (`MockScene/index.tsx`).
