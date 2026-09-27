@@ -336,8 +336,11 @@ the Inbox (Launch session).
   instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
-  that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
-N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. A
+  that applies of `Merged`, `Gone on origin`, `Local only`, `Diverged from
+origin`, `Behind main by N` and `On origin` (`branchPriorityOf`), and `All
+branches in Overview`. `Local only` and `Diverged from origin` read the
+  branch's own remote copy (`branchPushStateOf`), never the base it was cut
+  from. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the menu and in the Diff header alike
   (`isMountRequestMerged`). It never

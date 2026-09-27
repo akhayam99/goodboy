@@ -232,6 +232,18 @@ new commits` (`checkMergedThen`, one git check per tip, kept in
   branch change and every 5 minutes, but its timer and its visibility sweep
   skip mounts already fetched with no request, so only the recheck finds a PR
   opened outside the app. There is no faster global poll.
+- **The push count re-reads with the request.** Every push surface (the
+  suggestion, the branch word, the sync control, the Diff's `Push branch`,
+  Rewrite history's on-origin commits) reads one state, `branchPushStateOf`
+  over `worktree_status`, which compares HEAD with the branch's own
+  `<remote>/<branch>` ref ([traps.md](./traps.md)). An in-app push or history
+  push re-reads the worktree status at once (`refreshWorktreeStatuses`).
+  `recheckSessionMounts` re-reads the session's worktree statuses first, on
+  turn end and on focus, with or without GitHub, so a push by an agent or a
+  terminal, which moves the shared tracking ref, clears the count. A push
+  from another clone does not move that ref: when a request refresh returns
+  a head sha that differs from it, `syncBranchRefToPr` fetches that one ref
+  (`worktree_sync_branch_ref`) and re-reads the status. No other fetch runs.
 - **Refresh re-reads a session on demand.** The header's Refresh button
   (before Archive and Delete, hidden on an archived session), ⌘⇧R and the
   palette's `Refresh session` run `resyncSession`: mounts and branches from

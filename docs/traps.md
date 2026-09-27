@@ -67,6 +67,17 @@ file holds those explanations. Everything below has been "fixed" at least once a
   a ref instead of adding a provider parameter to `onModel`. This matters for
   more than passing UI state when the consumer persists the pair, as
   `step_def_upsert` does into the SQLite `step_library` table.
+- A push count never reads `@{upstream}` or the `branch.ab` line of `git
+status` directly. A branch cut from a remote-tracking ref (`worktree add -b
+<b> <path> origin/main`) tracks that ref under git's default
+  `branch.autoSetupMerge`, and `git push origin <b>` does not move it, so
+  `@{u}..HEAD` counts the branch's own commits against main forever. That is
+  how a suggestion kept asking to push 8 commits already on origin.
+  `branch_remote::branch_remote` compares HEAD with `<remote>/<branch>` and is
+  the one reader for `worktree_status`, `worktree_commits` (`pushed`) and
+  `project_git_status`; `upstream` is that ref or null. New branches are cut
+  with `--no-track` and the in-app push passes `--set-upstream`, but old
+  branches still track main, so do not "simplify" back to `@{u}`.
 
 ## Hand-maintained lists the compiler does not check
 
