@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, ScrollFade, cn, formatError } from '@goodboy/ui';
+import { Button, FormActions, ScrollFade, cn, formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { scanChildRepos, validateGitRepo } from '../../../shared/lib/repo';
@@ -15,7 +15,7 @@ import { StepTransition } from './StepTransition';
 import { Stepper } from './Stepper';
 import { WizardStepBody } from './WizardStepBody';
 import { visibleWizardSteps, type WizardStepId } from './wizardSteps';
-import { wizardFooter, type WizardCtaAction } from './wizardCta';
+import { wizardActions, type WizardCtaAction } from './wizardCta';
 import { hostFromRemote } from './hostFromRemote';
 import { handOffFirstSession, startFirstScout } from './startFirstSession';
 import type { FolderPick } from './steps/ProjectStep';
@@ -243,7 +243,7 @@ export const WizardFrame = ({
     });
   };
 
-  const footer = wizardFooter({
+  const actions = wizardActions({
     step,
     providersConnected,
     hasWorkspace: workspace !== null,
@@ -329,7 +329,7 @@ export const WizardFrame = ({
         close();
       }}
       className={cn(
-        'fixed inset-0 z-onboarding grid grid-rows-[52px_minmax(0,1fr)_60px] overflow-hidden bg-background outline-none',
+        'fixed inset-0 z-onboarding grid grid-rows-[52px_minmax(0,1fr)] overflow-hidden bg-background outline-none',
         closing ? 'motion-safe:animate-studio-out' : 'motion-safe:animate-studio-in',
       )}
     >
@@ -353,67 +353,64 @@ export const WizardFrame = ({
         <div className="flex justify-center px-6 pb-10 pt-7">
           <div
             className={cn(
-              'flex w-full flex-col gap-4',
+              'flex w-full flex-col gap-8',
               step === 'first-session' ? 'max-w-[604px]' : 'max-w-[540px]',
             )}
           >
-            <StepTransition transition={transition} renderStep={renderStep} />
-            {stepError !== null ? (
-              <p role="alert" className="text-label text-danger">
-                {stepError}
-              </p>
-            ) : null}
+            <div className="flex flex-col gap-4">
+              <StepTransition transition={transition} renderStep={renderStep} />
+              {stepError !== null ? (
+                <p role="alert" className="text-label text-danger">
+                  {stepError}
+                </p>
+              ) : null}
+            </div>
+            <FormActions
+              reason={actions.hint}
+              leading={
+                step === 'welcome' ? (
+                  <button
+                    type="button"
+                    onClick={() => close()}
+                    className="rounded-md px-1 py-1 text-label text-faint-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  >
+                    I&apos;ve used Goodboy before: skip setup
+                  </button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    onClick={goBack}
+                    disabled={isLocked}
+                    className={cn('text-muted-foreground', isFirstStep && 'invisible')}
+                  >
+                    Back
+                  </Button>
+                )
+              }
+            >
+              {actions.skip !== null && (
+                <Button
+                  variant="ghost"
+                  disabled={actions.skip.disabled}
+                  onClick={CTA_HANDLERS[actions.skip.action]}
+                  className="text-muted-foreground"
+                >
+                  {actions.skip.label}
+                </Button>
+              )}
+              {actions.primary !== null && (
+                <Button
+                  variant="primary"
+                  disabled={actions.primary.disabled}
+                  onClick={CTA_HANDLERS[actions.primary.action]}
+                >
+                  {actions.primary.label}
+                </Button>
+              )}
+            </FormActions>
           </div>
         </div>
       </ScrollFade>
-
-      <footer className="flex items-center justify-center border-t border-border-soft px-6">
-        <div className="flex w-full max-w-[604px] items-center justify-between gap-3">
-          {step === 'welcome' ? (
-            <button
-              type="button"
-              onClick={() => close()}
-              className="rounded-md px-1 py-1 text-label text-faint-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              I&apos;ve used Goodboy before: skip setup
-            </button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={goBack}
-              disabled={isLocked}
-              className={cn(isFirstStep && 'invisible')}
-            >
-              Back
-            </Button>
-          )}
-          <div className="flex min-w-0 items-center gap-2">
-            {footer.hint !== null && (
-              <p className="min-w-0 max-w-xs text-secondary text-muted-foreground">{footer.hint}</p>
-            )}
-            {footer.skip !== null && (
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={footer.skip.disabled}
-                onClick={CTA_HANDLERS[footer.skip.action]}
-              >
-                {footer.skip.label}
-              </Button>
-            )}
-            {footer.primary !== null && (
-              <Button
-                variant="primary"
-                disabled={footer.primary.disabled}
-                onClick={CTA_HANDLERS[footer.primary.action]}
-              >
-                {footer.primary.label}
-              </Button>
-            )}
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
