@@ -3,11 +3,17 @@ import type { SentryCodeMapping } from '../integrations/sentry/client';
 import { suggestLinks } from '../integrations/sentry/SentryProjectMap/suggestLinks';
 import { sentryLinkedProjects } from './attachInboxProjects';
 import { recordRepoPath, repoHostOf, repoProjectsOf } from './repoProjectsOf';
-import type { InboxRecord } from './types';
+import type { InboxProvider } from './types';
 
 export type LaunchMountOption = {
   readonly projectId: ProjectId;
   readonly name: string;
+};
+
+export type LaunchMountSource = {
+  readonly provider: InboxProvider;
+  readonly url: string;
+  readonly sentryProject: string | null;
 };
 
 export type LaunchMount = {
@@ -17,7 +23,7 @@ export type LaunchMount = {
 };
 
 type Params = {
-  readonly record: InboxRecord;
+  readonly source: LaunchMountSource;
   readonly projects: ReadonlyArray<Project>;
   readonly links: ReadonlyArray<ProjectSentryLink>;
   readonly mappings: ReadonlyArray<SentryCodeMapping>;
@@ -44,15 +50,15 @@ const rankedMount = ({ ids, projects, reason, scoreOf }: RankedParams): LaunchMo
 };
 
 export const launchMountFor = ({
-  record,
+  source,
   projects,
   links,
   mappings,
   gitlabHosts,
 }: Params): LaunchMount | null => {
-  const host = repoHostOf({ provider: record.provider });
+  const host = repoHostOf({ provider: source.provider });
   if (host !== null) {
-    const path = recordRepoPath({ host, url: record.url });
+    const path = recordRepoPath({ host, url: source.url });
     if (path === null) {
       return null;
     }
@@ -66,10 +72,7 @@ export const launchMountFor = ({
       scoreOf: () => 0,
     });
   }
-  if (record.payload.provider !== 'sentry') {
-    return null;
-  }
-  const slug = record.payload.issue.project?.slug ?? null;
+  const slug = source.provider === 'sentry' ? source.sentryProject : null;
   if (slug === null) {
     return null;
   }
