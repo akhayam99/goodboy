@@ -1,4 +1,5 @@
 import { currentPlatform } from '../platform';
+import { recordShortcut } from '../utils/actionRing';
 import { SHORTCUTS, platformCombo, type ShortcutEntry, type ShortcutId } from './registry';
 
 type Parsed = {
@@ -70,6 +71,7 @@ const onKeyDown = (event: KeyboardEvent): void => {
       continue;
     }
     event.preventDefault();
+    recordShortcut({ id: registration.id });
     registration.handler();
     return;
   }

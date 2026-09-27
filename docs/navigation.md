@@ -570,8 +570,10 @@ before anything moves, so Settings stays open under it.
   with Report this. Neither needs the store.
 - **After a crash the app could not show.** An uncaught window error or a
   panic leaves `~/.goodboy/last-crash.json`. The next launch shows one
-  persistent toast, Goodboy closed unexpectedly, with when and where; Report
-  it opens the sheet as Report this crash with the error attached, and Dismiss
+  persistent toast with when and where: Goodboy closed unexpectedly last time
+  after a panic, Goodboy hit an error last time when the window kept running.
+  Report it opens the sheet as Report this crash or Report this error with the
+  error and the last action names attached, and Dismiss
   deletes the record. `LastCrashBridge` claims the record, so only one window
   shows it.
 

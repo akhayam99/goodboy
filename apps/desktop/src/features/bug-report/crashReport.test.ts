@@ -24,6 +24,29 @@ beforeEach(() => {
   invoke.mockClear();
 });
 
+describe('captureCrash actions', () => {
+  it('carries the last shortcut and screen names, never their content', async () => {
+    const { installCrashCapture } = await loadCapture();
+    const { registerShortcut } = await import('../../shared/keyboard/dispatcher');
+    const { useAppStore } = await import('../../store');
+    installCrashCapture();
+    const stop = registerShortcut('nav.back', () => undefined);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'BracketLeft', ctrlKey: true }));
+    useAppStore.setState({ appStudio: { kind: 'guide' } });
+    window.dispatchEvent(
+      Object.assign(new Event('unhandledrejection'), {
+        reason: new Error('send prompt fix the refund for Rowan'),
+      }),
+    );
+    stop();
+
+    expect(payloadOf(0)).toMatchObject({
+      crash: { actions: ['screen.board', 'nav.back', 'screen.board.guide'] },
+    });
+  });
+});
+
 describe('captureCrash', () => {
   it('writes one redacted crash with our frames and the screen', async () => {
     const { captureCrash } = await loadCapture();

@@ -1,3 +1,4 @@
+import { isActionName, recentActions, recordScreen } from '../../shared/utils/actionRing';
 import { redactReport } from '../../shared/utils/redactReport';
 import { useAppStore } from '../../store';
 import {
@@ -82,7 +83,31 @@ export const captureCrash = ({ source, message, stack }: CaptureParams): void =>
     message: clean(message),
     stack: clean(trimStack({ stack })),
     screen: currentScreen(),
-    actions: [],
+    actions: recentActions().filter((name) => isActionName({ name })),
+  });
+};
+
+const followScreens = (): void => {
+  let last: string | null = null;
+  const note = () => {
+    const screen = currentScreen();
+    if (screen == null || screen === last) {
+      return;
+    }
+    last = screen;
+    recordScreen({ label: screen });
+  };
+  note();
+  useAppStore.subscribe((state, previous) => {
+    const moved =
+      state.currentSessionId !== previous.currentSessionId ||
+      state.appStudio !== previous.appStudio ||
+      state.activeLens !== previous.activeLens ||
+      state.sessionStudio !== previous.sessionStudio ||
+      state.openSessionDraftWorkspaceId !== previous.openSessionDraftWorkspaceId;
+    if (moved) {
+      note();
+    }
   });
 };
 
@@ -92,6 +117,7 @@ const describeReason = (reason: unknown): { readonly message: string; readonly s
     : { message: typeof reason === 'string' ? reason : 'Unhandled rejection' };
 
 export const installCrashCapture = (): void => {
+  followScreens();
   window.addEventListener('error', (event) => {
     const described =
       event.error == null ? { message: event.message } : describeReason(event.error);
