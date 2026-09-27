@@ -22,7 +22,6 @@ const renderRail = (releases: ReadonlyArray<ReleaseEntry>) =>
   render(
     <ChangelogRail
       releases={releases}
-      dates={{}}
       selectedVersion={null}
       installedVersion={null}
       query=""
@@ -64,7 +63,6 @@ describe('ChangelogRail', () => {
     render(
       <ChangelogRail
         releases={[buildRelease('0.7.0'), buildRelease('0.6.0')]}
-        dates={{}}
         selectedVersion={null}
         installedVersion={null}
         query=""
