@@ -35,9 +35,21 @@ vi.mock('./AttentionCallout', () => ({ AttentionCallout: () => null }));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => null }));
 vi.mock('../../../suggestions/components/NextStepSlot', () => ({ NextStepSlot: () => null }));
 
+const { setup } = vi.hoisted(() => ({ setup: { isActive: false } }));
+
+vi.mock('../SessionSetup/useSessionSetup', () => ({
+  useSessionSetup: () => ({ isActive: setup.isActive, steps: [] }),
+}));
+vi.mock('../SessionSetup', () => ({
+  SessionSetup: () => <section aria-label="Set up" />,
+}));
+
 import { SessionOverviewPane } from './index';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  setup.isActive = false;
+});
 
 const session = (archivedAt: string | null): Session =>
   ({ id: 'sess-1', workspaceId: 'ws-1', goal: 'Untitled session', archivedAt }) as Session;
@@ -47,8 +59,16 @@ describe('SessionOverviewPane', () => {
     render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
 
     expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
-    expect(screen.queryByRole('region', { name: 'Kickoff' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Set up' })).toBeNull();
     expect(screen.getByTestId('header')).toBeDefined();
+  });
+
+  it('shows the setup steps instead of the activity while nothing has started', () => {
+    setup.isActive = true;
+    render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
+
+    expect(screen.getByRole('region', { name: 'Set up' })).toBeDefined();
+    expect(screen.queryByRole('region', { name: 'Activity' })).toBeNull();
   });
 
   it('shows the activity of an archived session', () => {
