@@ -28,6 +28,12 @@ describe('branchPresenceOf', () => {
     });
   });
 
+  it('says merged, then the commits after the merge', () => {
+    expect(branchPresenceOf({ status: statusOf(), isMerged: false, commitsAfterMerge: 1 })).toEqual(
+      { kind: 'merged-then', label: 'Merged, then 1 new commit', toPush: null },
+    );
+  });
+
   it('reports a branch never pushed as local only', () => {
     const status = statusOf({
       upstream: null,
@@ -179,6 +185,18 @@ describe('isBranchMergedOf', () => {
         isRequestMerged: true,
       }),
     ).toBe(true);
+  });
+
+  it('keeps a merged branch open once it moved past the merged head', () => {
+    expect(
+      isBranchMergedOf({
+        status: statusOf(),
+        baseBranch: 'main',
+        isMainCheckout: false,
+        isRequestMerged: true,
+        commitsAfterMerge: 2,
+      }),
+    ).toBe(false);
   });
 
   it('calls a pushed branch with nothing past the base merged', () => {

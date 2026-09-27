@@ -200,7 +200,10 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   rebase is stopped).
 - **Merged rows move under `Show completed`.** A row is merged when its
   request merged, or when a pushed branch that tracks its own name has a
-  clean tree and nothing past the base.
+  clean tree and nothing past the base. A merged request whose branch moved
+  past its `merged_head_sha` stays open instead and reads `Merged, then N
+new commits` (`checkMergedThen`, one git check per tip, kept in
+  `mergedThen` by mount).
 - **Requests are created per mount.** Creation refreshes the provider first,
   so a retry after the remote accepted a request attaches the existing one
   instead of opening a duplicate. GitHub and GitLab requests open as drafts

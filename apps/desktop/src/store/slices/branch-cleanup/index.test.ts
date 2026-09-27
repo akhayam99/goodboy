@@ -59,6 +59,7 @@ vi.mock('../../../features/worktree/branchCleanup', async (importOriginal) => {
   };
 });
 
+import { checkMergedThen } from './checkMergedThen';
 import { deleteBranches } from './deleteBranches';
 import { loadProjectBranches } from './loadProjectBranches';
 import { forgetRepoAutoDeleteCache } from './repoDeletesMergedBranches';
@@ -403,5 +404,47 @@ describe('deleteBranches', () => {
       expect.objectContaining({ kind: 'branch_deleted' }),
     );
     expect(h.listProjectBranches).toHaveBeenCalled();
+  });
+});
+
+describe('checkMergedThen', () => {
+  const params = {
+    mountId: MOUNT_ID,
+    repoRoot: '/repos/ledger-core',
+    branch: BRANCH,
+    baseBranch: 'main',
+    head: 'sha-tip',
+    mergedHead: 'sha-merged',
+  };
+
+  it('stores the commits after the merged head once per tip', async () => {
+    h.branchMergeState.mockResolvedValue({ kind: 'merged-then', newCommits: 2 });
+    const context = makeStore();
+    const check = checkMergedThen(context.set, context.get);
+
+    await check(params);
+    await check(params);
+
+    expect(h.branchMergeState).toHaveBeenCalledTimes(1);
+    expect(h.branchMergeState).toHaveBeenCalledWith({
+      repoPath: '/repos/ledger-core',
+      branch: BRANCH,
+      base: 'main',
+      mergedHead: 'sha-merged',
+    });
+    expect(context.store.state.mergedThen[MOUNT_ID]).toEqual({
+      head: 'sha-tip',
+      mergedHead: 'sha-merged',
+      newCommits: 2,
+    });
+  });
+
+  it('stores zero when the branch sits at its merged head', async () => {
+    h.branchMergeState.mockResolvedValue({ kind: 'merged-via-pr' });
+    const context = makeStore();
+
+    await checkMergedThen(context.set, context.get)(params);
+
+    expect(context.store.state.mergedThen[MOUNT_ID]?.newCommits).toBe(0);
   });
 });

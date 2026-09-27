@@ -10,6 +10,15 @@ export type RunAfterMergeCleanupParams = {
   readonly mergedHeadSha?: string | null;
 };
 
+export type CheckMergedThenParams = {
+  readonly mountId: MountId;
+  readonly repoRoot: string;
+  readonly branch: string;
+  readonly baseBranch: string | null;
+  readonly head: string;
+  readonly mergedHead: string;
+};
+
 export type AfterMergeOutcome =
   | { readonly kind: 'ask'; readonly keptBecause: string | null }
   | { readonly kind: 'deleted'; readonly deleted: DeletedBranch }
@@ -56,4 +65,5 @@ export type BranchCleanupSlice = BranchCleanupState & {
   loadProjectBranches(params: LoadProjectBranchesParams): Promise<void>;
   deleteBranches(params: DeleteBranchesParams): Promise<DeleteBranchesOutcome>;
   restoreDeletedBranches(params: RestoreDeletedBranchesParams): Promise<void>;
+  checkMergedThen(params: CheckMergedThenParams): Promise<void>;
 };

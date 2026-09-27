@@ -6,6 +6,7 @@ import { branchPresenceOf, type BranchPresence } from '../../../../../shared/lib
 type Props = {
   readonly status: WorktreeStatus | null;
   readonly isMerged?: boolean;
+  readonly commitsAfterMerge?: number | null;
 };
 
 type GlyphParams = {
@@ -21,6 +22,7 @@ const presenceGlyphOf = ({ kind }: GlyphParams) => {
     case 'on-origin':
       return <Cloud size={11} aria-hidden />;
     case 'merged':
+    case 'merged-then':
       return <GitMerge size={11} aria-hidden />;
     default: {
       const exhaustive: never = kind;
@@ -29,11 +31,15 @@ const presenceGlyphOf = ({ kind }: GlyphParams) => {
   }
 };
 
-export const BranchPresenceLabel = ({ status, isMerged = false }: Props) => {
+export const BranchPresenceLabel = ({
+  status,
+  isMerged = false,
+  commitsAfterMerge = null,
+}: Props) => {
   if (status === null) {
     return null;
   }
-  const presence = branchPresenceOf({ status, isMerged });
+  const presence = branchPresenceOf({ status, isMerged, commitsAfterMerge });
   if (presence.kind === 'on-origin' && presence.toPush === null) {
     return null;
   }
