@@ -86,7 +86,7 @@ Tell agents once who you are and how you like to work, in four short parts. **Se
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s02-kickoff-dark.webp">
-  <img src="./docs/readme/s02-kickoff-light.webp" alt="Pick up a task with HBL-412 selected and a drafted brief">
+  <img src="./docs/readme/s02-kickoff-light.webp" alt="A blank session's overview with the goal set and Start the work listing your workflows, built-in ones, and an orchestrated or custom workflow">
 </picture>
 
 ### Start blank, set it up step by step
