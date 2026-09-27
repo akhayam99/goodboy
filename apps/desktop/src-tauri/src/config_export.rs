@@ -77,6 +77,37 @@ pub struct ProjectBundle {
     pub updated_at: String,
 }
 
+fn normalize_json_ish(raw: serde_json::Value) -> Option<serde_json::Value> {
+    match raw {
+        serde_json::Value::Null => None,
+        serde_json::Value::String(s) => {
+            let trimmed = s.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                serde_json::from_str(trimmed).ok()
+            }
+        }
+        other => Some(other),
+    }
+}
+
+fn deserialize_json_ish<'de, D>(deserializer: D) -> Result<Option<serde_json::Value>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let raw = serde_json::Value::deserialize(deserializer)?;
+    Ok(normalize_json_ish(raw))
+}
+
+fn json_text_to_value(text: Option<String>) -> Option<serde_json::Value> {
+    text.and_then(|s| normalize_json_ish(serde_json::Value::String(s)))
+}
+
+fn json_value_to_text(value: &Option<serde_json::Value>) -> Option<String> {
+    value.as_ref().map(|v| v.to_string())
+}
+
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceOverridesBundle {
@@ -84,16 +115,32 @@ pub struct WorkspaceOverridesBundle {
     pub default_branch_prefix: Option<String>,
     #[serde(default)]
     pub default_verbosity: Option<String>,
-    #[serde(default)]
-    pub provider_bindings_json: Option<String>,
-    #[serde(default)]
-    pub task_models_json: Option<String>,
-    #[serde(default)]
-    pub role_models_json: Option<String>,
+    #[serde(
+        default,
+        alias = "providerBindingsJson",
+        deserialize_with = "deserialize_json_ish"
+    )]
+    pub provider_bindings: Option<serde_json::Value>,
+    #[serde(
+        default,
+        alias = "taskModelsJson",
+        deserialize_with = "deserialize_json_ish"
+    )]
+    pub task_models: Option<serde_json::Value>,
+    #[serde(
+        default,
+        alias = "roleModelsJson",
+        deserialize_with = "deserialize_json_ish"
+    )]
+    pub role_models: Option<serde_json::Value>,
     #[serde(default)]
     pub parallel_agents: Option<bool>,
-    #[serde(default)]
-    pub provider_pool_json: Option<String>,
+    #[serde(
+        default,
+        alias = "providerPoolJson",
+        deserialize_with = "deserialize_json_ish"
+    )]
+    pub provider_pool: Option<serde_json::Value>,
     #[serde(default)]
     pub attribution_footer: Option<bool>,
     #[serde(default)]
@@ -469,11 +516,11 @@ fn build_bundle(
                     default_provider_id: row.get(4)?,
                     default_branch_prefix: row.get(5)?,
                     default_verbosity: row.get(6)?,
-                    provider_bindings_json: row.get(7)?,
-                    task_models_json: row.get(8)?,
-                    role_models_json: row.get(9)?,
+                    provider_bindings: json_text_to_value(row.get(7)?),
+                    task_models: json_text_to_value(row.get(8)?),
+                    role_models: json_text_to_value(row.get(9)?),
                     parallel_agents: row.get::<_, Option<i64>>(10)?.map(|v| v != 0),
-                    provider_pool_json: row.get(11)?,
+                    provider_pool: json_text_to_value(row.get(11)?),
                     attribution_footer: row.get::<_, Option<i64>>(12)?.map(|v| v != 0),
                     reply_voice: row.get(13)?,
                     reply_style_note: row.get(14)?,
@@ -1010,11 +1057,11 @@ fn apply_bundle(
                     w.overrides.default_provider_id,
                     w.overrides.default_branch_prefix,
                     w.overrides.default_verbosity,
-                    w.overrides.provider_bindings_json,
-                    w.overrides.task_models_json,
-                    w.overrides.role_models_json,
+                    json_value_to_text(&w.overrides.provider_bindings),
+                    json_value_to_text(&w.overrides.task_models),
+                    json_value_to_text(&w.overrides.role_models),
                     w.overrides.parallel_agents.map(|v| if v { 1 } else { 0 }),
-                    w.overrides.provider_pool_json,
+                    json_value_to_text(&w.overrides.provider_pool),
                     w.overrides.attribution_footer.map(|v| if v { 1 } else { 0 }),
                     w.overrides.reply_voice,
                     w.overrides.reply_style_note,
@@ -1417,10 +1464,114 @@ pub struct ProjectMatch {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ImportGroupStat {
+    pub group: String,
+    pub adds: usize,
+    pub updates: usize,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportPreview {
     pub manifest: ImportManifest,
     pub workspace_matches: Vec<WorkspaceMatch>,
     pub project_matches: Vec<ProjectMatch>,
+    pub group_stats: Vec<ImportGroupStat>,
+}
+
+fn count_id_group<'a>(
+    conn: &rusqlite::Connection,
+    table: &str,
+    group: &str,
+    ids: impl Iterator<Item = &'a str>,
+) -> Result<ImportGroupStat, rusqlite::Error> {
+    let sql = format!("SELECT 1 FROM {table} WHERE id = ?1 LIMIT 1");
+    let mut stmt = conn.prepare(&sql)?;
+    let mut adds = 0usize;
+    let mut updates = 0usize;
+    for id in ids {
+        if stmt.exists(rusqlite::params![id])? {
+            updates += 1;
+        } else {
+            adds += 1;
+        }
+    }
+    Ok(ImportGroupStat {
+        group: group.to_string(),
+        adds,
+        updates,
+    })
+}
+
+fn project_group_stat(
+    conn: &rusqlite::Connection,
+    bundle: &ConfigBundle,
+    project_matches: &[ProjectMatch],
+) -> Result<ImportGroupStat, rusqlite::Error> {
+    let all_projects: Vec<ProjectBundle> = bundle
+        .workspaces
+        .iter()
+        .flat_map(workspace_projects)
+        .collect();
+    let mut stmt = conn.prepare("SELECT id, root_path FROM projects")?;
+    let existing: Vec<(String, String)> = stmt
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<_, _>>()?;
+    let mut adds = 0usize;
+    let mut updates = 0usize;
+    for project in &all_projects {
+        let Some(root_path) = project_matches
+            .iter()
+            .find(|m| m.bundle_project_id == project.id)
+            .and_then(|m| m.resolved_path.as_deref())
+        else {
+            continue;
+        };
+        let target = normalized_root_path(root_path);
+        let matched = existing
+            .iter()
+            .any(|(id, path)| *id == project.id || normalized_root_path(path) == target);
+        if matched {
+            updates += 1;
+        } else {
+            adds += 1;
+        }
+    }
+    Ok(ImportGroupStat {
+        group: "projects".to_string(),
+        adds,
+        updates,
+    })
+}
+
+fn tool_binding_group_stat(
+    conn: &rusqlite::Connection,
+    bundle: &ConfigBundle,
+) -> Result<ImportGroupStat, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT 1 FROM integration_bindings
+         WHERE workspace_id = ?1 AND COALESCE(project_id, '') = COALESCE(?2, '') AND provider = ?3
+         LIMIT 1",
+    )?;
+    let mut adds = 0usize;
+    let mut updates = 0usize;
+    for binding in &bundle.tool_bindings {
+        let exists = stmt.exists(rusqlite::params![
+            binding.workspace_id,
+            binding.project_id,
+            binding.provider,
+        ])?;
+        if exists {
+            updates += 1;
+        } else {
+            adds += 1;
+        }
+    }
+    Ok(ImportGroupStat {
+        group: "toolBindings".to_string(),
+        adds,
+        updates,
+    })
 }
 
 fn verdict_label(verdict: &MovedProjectVerdict) -> String {
@@ -1530,10 +1681,62 @@ fn build_import_preview(
         }
     }
 
+    let (workspace_adds, workspace_updates) =
+        workspace_matches
+            .iter()
+            .fold((0usize, 0usize), |(adds, updates), m| {
+                if m.action == "add" {
+                    (adds + 1, updates)
+                } else {
+                    (adds, updates + 1)
+                }
+            });
+    let mut group_stats = vec![
+        ImportGroupStat {
+            group: "workspaces".to_string(),
+            adds: workspace_adds,
+            updates: workspace_updates,
+        },
+        project_group_stat(conn, bundle, &project_matches)?,
+        count_id_group(
+            conn,
+            "skills",
+            "skills",
+            bundle.skills.iter().map(|s| s.id.as_str()),
+        )?,
+        count_id_group(
+            conn,
+            "workflows",
+            "phaseTemplates",
+            bundle.phase_templates.iter().map(|t| t.id.as_str()),
+        )?,
+        count_id_group(
+            conn,
+            "permission_rules",
+            "permissionRules",
+            bundle.permission_rules.iter().map(|r| r.id.as_str()),
+        )?,
+        count_id_group(
+            conn,
+            "budget_rules",
+            "budgetRules",
+            bundle.budget_rules.iter().map(|b| b.id.as_str()),
+        )?,
+        count_id_group(
+            conn,
+            "project_scripts",
+            "scripts",
+            bundle.scripts.iter().map(|s| s.id.as_str()),
+        )?,
+        tool_binding_group_stat(conn, bundle)?,
+    ];
+    group_stats.retain(|stat| stat.adds > 0 || stat.updates > 0);
+
     Ok(ImportPreview {
         manifest,
         workspace_matches,
         project_matches,
+        group_stats,
     })
 }
 
@@ -2290,6 +2493,83 @@ mod tests {
     }
 
     #[test]
+    fn workspace_overrides_json_round_trips_as_a_typed_value_not_a_string() {
+        let source = export_conn();
+        source
+            .execute_batch(
+                "INSERT INTO workspaces (id, name, created_at, updated_at, provider_bindings, provider_pool)
+                 VALUES ('w', 'W', 1, 1, '{\"anthropic\":\"acct-1\"}', '[\"anthropic\",\"openai\"]');",
+            )
+            .unwrap();
+
+        let bundle = build_bundle(&source, &ExportGroups::default(), &HashSet::new())
+            .expect("export failed");
+        let overrides = &bundle.workspaces[0].overrides;
+        assert_eq!(
+            overrides.provider_bindings,
+            Some(serde_json::json!({"anthropic": "acct-1"}))
+        );
+        assert_eq!(
+            overrides.provider_pool,
+            Some(serde_json::json!(["anthropic", "openai"]))
+        );
+
+        let json = serde_json::to_string(&bundle).expect("serialize failed");
+        assert!(
+            json.contains("\"providerBindings\":{\"anthropic\":\"acct-1\"}"),
+            "provider bindings must serialize as a nested object, not an escaped string: {json}"
+        );
+
+        let target = export_conn();
+        target
+            .execute_batch("INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);")
+            .unwrap();
+        apply_bundle(&target, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+        let stored: String = target
+            .query_row(
+                "SELECT provider_bindings FROM workspaces WHERE id = 'w'",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            serde_json::from_str::<serde_json::Value>(&stored).unwrap(),
+            serde_json::json!({"anthropic": "acct-1"})
+        );
+    }
+
+    #[test]
+    fn workspace_overrides_json_accepts_the_legacy_string_encoded_shape() {
+        let legacy = serde_json::json!({
+            "schemaVersion": SCHEMA_VERSION,
+            "exportedAt": "2026-01-01T00:00:00Z",
+            "workspaces": [{
+                "id": "w",
+                "name": "W",
+                "projects": [],
+                "createdAt": "2026-01-01T00:00:00Z",
+                "updatedAt": "2026-01-01T00:00:00Z",
+                "overrides": {
+                    "defaultProviderId": null,
+                    "defaultBranchPrefix": null,
+                    "providerBindingsJson": "{\"anthropic\":\"acct-legacy\"}",
+                },
+            }],
+            "skills": [],
+            "phaseTemplates": [],
+            "permissionRules": [],
+            "budgetRules": [],
+        });
+
+        let bundle: ConfigBundle =
+            serde_json::from_str(&legacy.to_string()).expect("legacy shape must still parse");
+        assert_eq!(
+            bundle.workspaces[0].overrides.provider_bindings,
+            Some(serde_json::json!({"anthropic": "acct-legacy"}))
+        );
+    }
+
+    #[test]
     fn integration_binding_import_creates_a_credential_with_no_secret_when_none_exists() {
         let conn = export_conn();
         conn.execute_batch(
@@ -2394,5 +2674,114 @@ mod tests {
             credential_count, 1,
             "no placeholder credential is created when one already exists"
         );
+    }
+
+    #[test]
+    fn import_preview_group_stats_split_adds_from_updates() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('existing-ws', 'Existing', 1, 1);
+             INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+             VALUES ('existing-project', 'existing-ws', 'ledger-core', '/repo/existing', 'repo', 1, 1);
+             INSERT INTO skills (id, workspace_id, name, description, file_path, body, frontmatter_json, created_at, updated_at)
+             VALUES ('existing-skill', 'existing-ws', 'a', 'd', 'f', 'b', '{}', 1, 1);",
+        )
+        .unwrap();
+
+        let bundle = ConfigBundle {
+            schema_version: SCHEMA_VERSION,
+            exported_at: "2026-01-01T00:00:00Z".to_string(),
+            workspaces: vec![
+                WorkspaceBundle {
+                    id: "existing-ws".to_string(),
+                    name: "Existing".to_string(),
+                    root_path: None,
+                    projects: vec![bundled_project(
+                        "imported-project-1",
+                        "/repo/existing",
+                        "repo",
+                    )],
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                    overrides: WorkspaceOverridesBundle::default(),
+                    profile: None,
+                },
+                WorkspaceBundle {
+                    id: "new-ws".to_string(),
+                    name: "New".to_string(),
+                    root_path: None,
+                    projects: vec![bundled_project("imported-project-2", "/repo/new", "repo")],
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                    overrides: WorkspaceOverridesBundle::default(),
+                    profile: None,
+                },
+            ],
+            skills: vec![
+                SkillBundle {
+                    id: "existing-skill".to_string(),
+                    workspace_id: "existing-ws".to_string(),
+                    name: "a".to_string(),
+                    description: "d".to_string(),
+                    file_path: "f".to_string(),
+                    body: "b".to_string(),
+                    frontmatter_json: "{}".to_string(),
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                },
+                SkillBundle {
+                    id: "new-skill".to_string(),
+                    workspace_id: "new-ws".to_string(),
+                    name: "b".to_string(),
+                    description: "d".to_string(),
+                    file_path: "f".to_string(),
+                    body: "b".to_string(),
+                    frontmatter_json: "{}".to_string(),
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                },
+            ],
+            phase_templates: vec![],
+            permission_rules: vec![],
+            budget_rules: vec![],
+            scripts: vec![],
+            tool_bindings: vec![ToolBindingBundle {
+                workspace_id: "existing-ws".to_string(),
+                project_id: None,
+                provider: "linear".to_string(),
+                config_json: "{}".to_string(),
+            }],
+            app_preferences: AppPreferencesBundle::default(),
+        };
+
+        let preview = build_import_preview(&conn, &bundle, None).expect("preview failed");
+        let stat = |group: &str| {
+            preview
+                .group_stats
+                .iter()
+                .find(|s| s.group == group)
+                .unwrap_or_else(|| panic!("missing group_stats entry for {group}"))
+        };
+
+        let workspaces = stat("workspaces");
+        assert_eq!((workspaces.adds, workspaces.updates), (1, 1));
+        let projects = stat("projects");
+        assert_eq!((projects.adds, projects.updates), (1, 1));
+        let skills = stat("skills");
+        assert_eq!((skills.adds, skills.updates), (1, 1));
+        let tool_bindings = stat("toolBindings");
+        assert_eq!((tool_bindings.adds, tool_bindings.updates), (1, 0));
+
+        for empty_group in [
+            "phaseTemplates",
+            "permissionRules",
+            "budgetRules",
+            "scripts",
+        ] {
+            assert!(
+                preview.group_stats.iter().all(|s| s.group != empty_group),
+                "empty group {empty_group} should be left out of the preview"
+            );
+        }
     }
 }

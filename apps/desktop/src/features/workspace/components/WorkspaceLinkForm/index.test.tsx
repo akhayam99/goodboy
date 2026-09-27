@@ -15,8 +15,10 @@ const { state, repoMocks, dialogMock } = vi.hoisted(() => ({
         workspaceName: string;
         disconnectedAt: string;
         sessionCount: number;
+        moved: { projectId: string; fromRoot: string } | null;
       } | null>
     >(async () => null),
+    reconnectMovedProject: vi.fn(async () => ({ id: 'ws-gone', name: 'Harborline' })),
     createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
       id: 'ws-created',
       name,
@@ -200,6 +202,7 @@ describe('WorkspaceLinkForm', () => {
       workspaceName: 'Harborline',
       disconnectedAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
       sessionCount: 48,
+      moved: null,
     });
     state.addWorkspace.mockResolvedValueOnce({ id: 'ws-gone', name: 'Harborline' });
     renderForm({ onComplete });
@@ -221,12 +224,45 @@ describe('WorkspaceLinkForm', () => {
     });
   });
 
+  it('routes a moved-and-disconnected match through relocation instead of a fresh workspace', async () => {
+    const onComplete = vi.fn();
+    state.checkReconnectCandidate.mockResolvedValueOnce({
+      workspaceId: 'ws-gone',
+      workspaceName: 'Harborline',
+      disconnectedAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
+      sessionCount: 48,
+      moved: { projectId: 'proj-gone', fromRoot: '/old/repos/alpha' },
+    });
+    renderForm({ onComplete });
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: /choose a folder/i }));
+
+    await waitFor(() => screen.getByText(/This looks like it moved from Harborline, disconnected/));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect Harborline' }));
+
+    await waitFor(() =>
+      expect(state.reconnectMovedProject).toHaveBeenCalledWith({
+        workspaceId: 'ws-gone',
+        projectId: 'proj-gone',
+        fromRoot: '/old/repos/alpha',
+        toRoot: '/repos/alpha',
+      }),
+    );
+    expect(state.addWorkspace).not.toHaveBeenCalled();
+    expect(onComplete).toHaveBeenCalledWith({
+      mode: 'project',
+      workspace: expect.objectContaining({ id: 'ws-gone' }),
+    });
+  });
+
   it('clears the reconnect card when a different folder is chosen instead', async () => {
     state.checkReconnectCandidate.mockResolvedValueOnce({
       workspaceId: 'ws-gone',
       workspaceName: 'Harborline',
       disconnectedAt: new Date(Date.now() - 3 * 86_400_000).toISOString(),
       sessionCount: 48,
+      moved: null,
     });
     renderForm();
     fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));

@@ -350,6 +350,7 @@ export const dbModuleMock = () => ({
   listAllProjectsForWorkspace: vi.fn(async () => [] as ReadonlyArray<Project>),
   listProviderCredentials: storySpies.listProviderCredentials,
   findProjectByRootPath: vi.fn(async () => null),
+  findDisconnectedProjectByIdentity: vi.fn(async () => null),
   getProjectById: vi.fn(async () => null),
   insertProject: vi.fn(async () => undefined),
   reconnectProject: vi.fn(async () => undefined),
@@ -745,6 +746,7 @@ export const configExportModuleMock = () => ({
     },
     workspaceMatches: [],
     projectMatches: [],
+    groupStats: [],
   })),
   configImportApply: vi.fn(async () => ({
     ok: true,

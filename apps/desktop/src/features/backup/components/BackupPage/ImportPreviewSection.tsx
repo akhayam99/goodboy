@@ -8,6 +8,17 @@ const VERDICT_LABEL: Readonly<Record<string, string>> = {
   not_found: 'Not found',
 };
 
+const GROUP_LABEL: Readonly<Record<string, string>> = {
+  workspaces: 'Workspaces',
+  projects: 'Projects',
+  skills: 'Skills',
+  phaseTemplates: 'Workflows',
+  permissionRules: 'Permission rules',
+  budgetRules: 'Budget rules',
+  scripts: 'Scripts',
+  toolBindings: 'Linked integrations',
+};
+
 type Props = {
   readonly preview: ImportPreview;
   readonly workspaceTargets: Readonly<Record<string, string>>;
@@ -36,6 +47,15 @@ export const ImportPreviewSection = ({
         {preview.manifest.workspaceCount === 1 ? 'workspace' : 'workspaces'},{' '}
         {preview.manifest.projectCount} projects, {preview.manifest.workflowCount} workflows.
       </p>
+      {preview.groupStats.length > 0 && (
+        <ul className="flex flex-col gap-0.5 text-label text-muted-foreground">
+          {preview.groupStats.map((stat) => (
+            <li key={stat.group}>
+              {GROUP_LABEL[stat.group] ?? stat.group}: {stat.adds} new, {stat.updates} updated
+            </li>
+          ))}
+        </ul>
+      )}
       <ul className="flex flex-col gap-1.5">
         {preview.workspaceMatches.map((match) => {
           const chosenTarget = workspaceTargets[match.bundleId] ?? match.existingId ?? null;

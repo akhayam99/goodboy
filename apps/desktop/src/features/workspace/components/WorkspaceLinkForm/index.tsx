@@ -54,6 +54,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
   const formId = useId();
   const addWorkspace = useAppStore((state) => state.addWorkspace);
   const checkReconnectCandidate = useAppStore((state) => state.checkReconnectCandidate);
+  const reconnectMovedProject = useAppStore((state) => state.reconnectMovedProject);
   const createWorkspace = useAppStore((state) => state.createWorkspace);
   const addProject = useAppStore((state) => state.addProject);
   const addProjects = useAppStore((state) => state.addProjects);
@@ -203,8 +204,19 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
       if (reconnectCandidate === null) {
         return;
       }
-      const workspace = await addWorkspace({ rootPath: reconnectCandidate.rootPath });
+      const { rootPath, candidate } = reconnectCandidate;
       setReconnectCandidate(null);
+      if (candidate.moved !== null) {
+        const workspace = await reconnectMovedProject({
+          workspaceId: candidate.workspaceId,
+          projectId: candidate.moved.projectId,
+          fromRoot: candidate.moved.fromRoot,
+          toRoot: rootPath,
+        });
+        await completeWithWorkspace({ mode: 'project', workspace });
+        return;
+      }
+      const workspace = await addWorkspace({ rootPath });
       await completeWithWorkspace({ mode: 'project', workspace });
     });
 
@@ -410,7 +422,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
                 <Notice
                   tone="info"
                   placement="inline"
-                  title={`This folder was part of ${reconnectCandidate.candidate.workspaceName}, disconnected ${formatRelativeAge({ fromIso: reconnectCandidate.candidate.disconnectedAt })}, with ${reconnectCandidate.candidate.sessionCount} ${reconnectCandidate.candidate.sessionCount === 1 ? 'session' : 'sessions'}.`}
+                  title={`${reconnectCandidate.candidate.moved !== null ? 'This looks like it moved from' : 'This folder was part of'} ${reconnectCandidate.candidate.workspaceName}, disconnected ${formatRelativeAge({ fromIso: reconnectCandidate.candidate.disconnectedAt })}, with ${reconnectCandidate.candidate.sessionCount} ${reconnectCandidate.candidate.sessionCount === 1 ? 'session' : 'sessions'}.`}
                   actions={
                     <>
                       <Button size="sm" disabled={busy} onClick={onReconnect}>

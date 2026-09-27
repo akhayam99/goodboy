@@ -48,6 +48,7 @@ export {
   listProjectsForWorkspace,
   listAllProjectsForWorkspace,
   findProjectByRootPath,
+  findDisconnectedProjectByIdentity,
   disconnectProject,
   reconnectProject,
   updateProjectKind,

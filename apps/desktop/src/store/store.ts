@@ -500,6 +500,12 @@ type AppActions = {
   disconnectWorkspace(id: WorkspaceId): Promise<void>;
   loadDisconnectedWorkspaces(): Promise<void>;
   reconnectWorkspaceById(id: WorkspaceId): Promise<void>;
+  reconnectMovedProject(input: {
+    workspaceId: WorkspaceId;
+    projectId: ProjectId;
+    fromRoot: string;
+    toRoot: string;
+  }): Promise<Workspace>;
   mergeWorkspaces(input: {
     sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
     targetWorkspaceId: WorkspaceId;

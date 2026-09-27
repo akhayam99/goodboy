@@ -12,8 +12,10 @@ const { state, repoMocks, dialogMock, onboarding } = vi.hoisted(() => ({
         workspaceName: string;
         disconnectedAt: string;
         sessionCount: number;
+        moved: { projectId: string; fromRoot: string } | null;
       } | null>
     >(async () => null),
+    reconnectMovedProject: vi.fn(async () => ({ id: 'ws-new', name: 'repo' })),
     createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
       id: 'ws-created',
       name,
