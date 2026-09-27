@@ -25,7 +25,7 @@
 
 <br>
 
-Goodboy is a free desktop app for **macOS** and **Linux** that runs coding agents from the providers you connect.
+Goodboy started as a free desktop app for coding agents, on **macOS** and **Linux**. It grew into an ADE, an agentic development environment: agents from the providers you connect do the work, and Goodboy gives that work its structure.
 
 The idea is small. A task keeps its own goal, decisions and summary, so the agents working on it do not need the story told twice. Here is what happens when you hand it one.
 

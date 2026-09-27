@@ -31,7 +31,8 @@ export const Install = () => {
           <div className="duoText">
             <h2 id="h2-install">Setup is a folder and a provider</h2>
             <p className="sub">
-              Install it, connect a provider, and point it at a folder you already work in.
+              Install it on macOS or Linux, connect a provider, and point it at a folder you already
+              work in.
             </p>
           </div>
           <div>

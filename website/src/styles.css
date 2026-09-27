@@ -175,11 +175,6 @@ h3 {
   font-weight: 600;
 }
 
-.hl {
-  background: linear-gradient(transparent 62%, var(--accent-soft) 62%);
-  padding: 0 2px;
-}
-
 .nobr {
   white-space: nowrap;
 }
@@ -327,11 +322,6 @@ h3 {
 
 #hero {
   padding: 64px 0 40px;
-  background: radial-gradient(
-    1200px 520px at 70% -10%,
-    color-mix(in oklch, var(--accent-soft) 70%, transparent),
-    transparent 70%
-  );
 }
 
 #hero .heroCopy {

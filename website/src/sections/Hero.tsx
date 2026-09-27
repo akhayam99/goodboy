@@ -6,14 +6,13 @@ export const Hero = () => (
   <section id="hero" aria-labelledby="h2-hero">
     <div className="wrap">
       <div className="heroCopy">
-        <p className="eyebrow">A desktop app for coding agents, on macOS and Linux</p>
-        <h1 id="h2-hero">
-          Stop <span className="hl">re&#8209;explaining yourself</span>
-        </h1>
+        <p className="eyebrow">A desktop app for coding agents, and much more</p>
+        <h1 id="h2-hero">Stop re&#8209;explaining yourself</h1>
         <p className="sub">
-          Goodboy is a free desktop app that runs coding agents from the providers you connect. Each
-          task keeps its goal, its decisions and where it stands, so the next agent starts briefed
-          and you can tell at a glance what needs you.
+          Goodboy is an ADE, an agentic development environment: agents from the providers you
+          connect do the work, and Goodboy gives that work its structure. Each task keeps its goal,
+          its decisions and where it stands, so the next agent starts briefed and you can tell at a
+          glance what needs you.
         </p>
         <div className="ctaRow">
           <a className="btn" href="#install">
