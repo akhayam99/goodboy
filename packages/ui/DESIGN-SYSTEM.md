@@ -102,7 +102,7 @@ The list is `TYPE_ROLES` in `typeRoles.ts`.
 | ---------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
 | `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
 | `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
-| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
+| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a wizard question                               |
 | `text-row`       | 14/20, 500                    | a top-level row label, a card title                                                    |
 | `text-body`      | 14/20                         | running text; text with no class inherits it from the body                             |
 | `text-prose`     | 14/22                         | messages, markdown, artifacts                                                          |
@@ -729,7 +729,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. `SplitButton` joins the primary half, which its owner renders through `primary({ className })` so a popover can anchor to it, with a chevron half that opens the less frequent starts as a menu. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon. `OverflowMenu` and `SplitButton` render items through the same `MenuItems`.
-- The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
+- A blank session's setup follows the same rule: only the open step shows its fields and its one primary (Save goal, Start agent), the other steps are single rows that reopen in place, and Skip is a ghost beside the primary. The workflow list under Start the work is a list of rows, never tiles. A grid of tiles is not an action zone.
 - The session overview's actions carry a second exception: a frequent alternative to the primary sits as one secondary button beside it, not folded into the menu. `OverviewActions` shows a secondary Run workflow (Open run once one is active) next to the primary Start agent, with `OverflowMenu` labeled Create holding only the rarer starts (Report, Wireframe). Still one primary; the secondary is the one alternative common enough to earn its own button.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
@@ -861,12 +861,13 @@ Lenses always use `inline`. Only a surface's own main empty state gets the
 large size and an `h2`. An empty lens leaves `headingLevel` unset, so it adds
 nothing to the document outline.
 
-The new session draft is the kickoff. It asks "How do you want to
-start?" and answers with a single-select list of three rows, each a concept
-glyph, a title and one line: Pick up a task, Run a workflow, Not sure yet. The
-selected row reveals its fields and its one primary under the list. Arrow keys
-move between rows and Enter moves into the selected row's fields. There is no
-example run and no grid of tiles.
+A blank session's empty state is its setup (`SessionSetup`): `Set up this
+session` over an ordered list of Goal, Project and Start the work. Each row is
+a 20px step marker (the ordinal, filled with primary on the open step, a
+success check once done, a faint ring otherwise), a title and, once done or
+skipped, a muted one-line summary. The open step sits on `subtle` with its one
+line of explanation, its fields and its action row. There is no example run
+and no grid of tiles.
 
 Inline empty states belong to a lens or a compact collection surface. A filled,
 borderless inline empty state belongs to a surface's own body and uses
