@@ -52,6 +52,7 @@ import {
 import { FrameScene } from './scenes/audit/FrameScene';
 import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
 import { SessionStatesScene } from './scenes/audit/SessionStatesScene';
+import { SessionStartScene } from './scenes/audit/SessionStartScene';
 import { WorkspaceStatesScene } from './scenes/audit/WorkspaceStatesScene';
 import { SettingsAppScene } from './scenes/audit/SettingsAppScene';
 import { SettingsNoWorkspaceScene } from './scenes/audit/SettingsNoWorkspaceScene';
@@ -136,6 +137,7 @@ export const MOCK_SCENES = {
   frame: FrameScene,
   'board-states': BoardStatesScene,
   'session-states': SessionStatesScene,
+  'session-start': SessionStartScene,
   'workspace-states': WorkspaceStatesScene,
   'settings-app': SettingsAppScene,
   'settings-no-workspace': SettingsNoWorkspaceScene,
