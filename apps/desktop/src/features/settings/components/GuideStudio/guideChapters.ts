@@ -126,7 +126,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Pick up a task',
-        desc: 'Choose an issue from your tools or the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. A Sentry error or a GitHub item opens in its project and says why.',
+        desc: 'Choose an issue from your tools or the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. A Sentry error or a GitHub or GitLab item opens in its project and says why.',
       },
       {
         term: 'Run a workflow',
@@ -251,7 +251,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Inbox',
-        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub items when several projects live on GitHub, filter by project.',
+        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub or GitLab items when several projects live on that host, filter by project.',
       },
       {
         term: 'Start from anything',

@@ -40,9 +40,9 @@ Pull requests an agent opened or you made in a terminal show up when the turn en
 #### Inbox groups by project where it maps to code
 <!-- gb area=inbox screen=inbox image=inbox-source -->
 
-The Project filter shows for Sentry errors, and for GitHub items when several projects live on GitHub. Linear and Jira stay one flat list.
+The Project filter shows for Sentry errors, and for GitHub or GitLab items when several projects live on that host. Linear and Jira stay one flat list.
 
-Launching a session from a Sentry error or a GitHub item mounts the project it belongs to, and the launch panel says why.
+Launching a session from a Sentry error or a GitHub or GitLab item mounts the project it belongs to, and the launch panel says why.
 
 ### Fixed
 
