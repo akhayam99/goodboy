@@ -682,6 +682,13 @@ tooltip is the only place it shows. Off macOS, typing wins over the lens
 plane. An AltGr character, or a Ctrl+Alt combo typed into a field or the
 terminal, never fires a shortcut.
 
+**Esc never leaves full screen on macOS.** A full-screen window keeps its Space
+when Esc goes unhandled: the web layer still gets every Escape keydown first, so
+popovers, the palette, drawers, studios and inline edits close or cancel as
+usual, and only the leftover key stops at the window
+(`src-tauri/src/fullscreen_escape.rs`). Leave full screen with the green
+button, View > Exit Full Screen or Ctrl+⌘F.
+
 ## Studios
 
 Utility studios render in the shell's studio slot, between the top bar and the
