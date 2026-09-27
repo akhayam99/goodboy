@@ -415,6 +415,46 @@ export const listArchivedSessionRefs = async ({
   }));
 };
 
+export type SessionTitleRef = {
+  readonly sessionId: SessionId;
+  readonly workspaceId: WorkspaceId;
+  readonly goal: string;
+  readonly stateKind: TurnState['kind'];
+  readonly updatedAt: IsoDateTime;
+};
+
+type SessionTitleRow = {
+  id: string;
+  workspace_id: string;
+  goal: string;
+  state_kind: TurnState['kind'];
+  updated_at: number;
+};
+
+type ListSessionTitlesParams = {
+  readonly db: Database;
+};
+
+export const listSessionTitlesAcrossWorkspaces = async ({
+  db,
+}: ListSessionTitlesParams): Promise<ReadonlyArray<SessionTitleRef>> => {
+  const rows = await db.select<SessionTitleRow>(
+    `SELECT s.id, s.workspace_id, s.goal, s.state_kind, s.updated_at
+       FROM sessions s
+       JOIN workspaces w ON w.id = s.workspace_id
+      WHERE s.archived_at IS NULL AND s.deleted_at IS NULL AND w.deleted_at IS NULL
+      ORDER BY s.updated_at DESC
+      LIMIT 2000`,
+  );
+  return rows.map((row) => ({
+    sessionId: row.id as SessionId,
+    workspaceId: row.workspace_id as WorkspaceId,
+    goal: row.goal,
+    stateKind: row.state_kind,
+    updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
+  }));
+};
+
 export const renameSession = async (
   db: Database,
   id: SessionId,

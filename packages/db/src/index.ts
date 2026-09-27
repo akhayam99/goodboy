@@ -118,6 +118,7 @@ export {
   listSessionsForWorkspace,
   listArchivedSessionsForWorkspace,
   listArchivedSessionRefs,
+  listSessionTitlesAcrossWorkspaces,
   renameSession,
   deleteSession,
   purgeSessionForDelete,
@@ -126,6 +127,7 @@ export {
   updateSessionConfig,
   type SessionConfigUpdate,
   type ArchivedSessionRef,
+  type SessionTitleRef,
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
