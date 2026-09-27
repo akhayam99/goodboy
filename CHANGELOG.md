@@ -44,7 +44,7 @@ Signing in to a provider now opens exactly one tab, with a link to reopen it if 
 Every dropdown and hand-built list in the app now works the same way: type to filter, search once a list passes eight options, pick more than one where that makes sense, and see why an option is unavailable instead of guessing.
 
 #### A calmer, more consistent look
-<!-- gb area=app pr=1893,1901 -->
+<!-- gb area=app image=calmer-look pr=1893,1901 -->
 
 Type sizes, corner radii and shadows now follow one scale across the app, and settings, model defaults and other boxed sections sit on a shared framed background. Tables with many columns stripe every five rows so your eye can track across them.
 
@@ -86,7 +86,7 @@ This version updates your data in one direction. To go back to 0.6, restore the 
 Each plan, report and wireframe is also saved as a folder inside its workspace folder, with a page you can open in a browser. The folder follows each new revision, and artifacts made before this version are copied after the first launch. Show in Finder, in the Details panel, opens it.
 
 #### Replies to reviewers in your voice
-<!-- gb area=review screen=settings/workspace/review-replies pr=1886 -->
+<!-- gb area=review screen=settings/workspace/review-replies image=review-replies pr=1886 -->
 
 Replies to review comments follow two templates, one for a fix and one for a change you decline, and the agent writes only the reason. In Settings, under Review replies, pick Terse, Friendly, Formal or Like my replies, which reads your last 20 replies and writes a short style note you can edit.
 
@@ -107,7 +107,7 @@ When you approve a fix and the branch got new commits in the meantime, Goodboy a
 In the commit list, a fix made for an earlier commit shows which one, as fixup of or replaces.
 
 #### Artifacts from deleted sessions in Storage
-<!-- gb area=storage screen=settings/app/storage pr=1886 -->
+<!-- gb area=storage screen=settings/app/storage image=storage-artifacts pr=1886 -->
 
 Storage lists the plans, reports and wireframes left behind by deleted sessions, with their size and when you last opened them. Open one, keep it for 30 days or for good, or delete it with its files. The ones you have not opened in a long time are grouped for one bulk delete.
 
@@ -151,14 +151,14 @@ Storage lists the worktree folders on disk by repository, with size and state, a
 ### Improved
 
 #### Review comments in eight states
-<!-- gb area=review pr=1884 -->
+<!-- gb area=review image=review-states pr=1884 -->
 
 Each comment is New, Working, Needs you, Ready, Approved, Resolved, Failed or Later, with one sentence and one action. Open comments are grouped by file, with the agent working on each one underneath. Select several to approve them or set them aside, then close them on GitHub in one go.
 
 If Goodboy quits while posting replies, it checks GitHub before trying again, so a reply is not posted twice.
 
 #### One diff view
-<!-- gb area=review pr=1884 -->
+<!-- gb area=review image=diff-view pr=1884 -->
 
 Changes under review, the review you are writing and a single open file share one diff view, with syntax colors and file headers that stay in view. Press `T` to jump to a file and `[` or `]` to move between files. Code in chat uses the same colors.
 
