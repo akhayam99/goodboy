@@ -349,7 +349,7 @@ fn windows_default_browser_command() -> Option<String> {
         s.encode_utf16().chain(std::iter::once(0)).collect()
     }
 
-    let scheme = to_wide("http");
+    let scheme = to_wide("https");
     let mut buffer = [0u16; 1024];
     let mut len = buffer.len() as u32;
     let status = unsafe {
