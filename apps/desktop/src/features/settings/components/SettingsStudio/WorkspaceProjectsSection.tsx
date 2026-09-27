@@ -48,7 +48,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   }, [hasSentry, loadProjectSentryLinks, workspaceId]);
 
   return (
-    <section aria-labelledby="workspace-projects" className="flex flex-col gap-2">
+    <section aria-label="Projects" className="flex flex-col gap-2">
       {!isRelocationOpen && missing.length > 0 && (
         <Notice
           tone="warning"
@@ -73,6 +73,7 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
             <span className="text-eyebrow tabular-nums text-foreground">{count}</span>
           </h2>
         )}
+        hint="Repositories and folders agents work in for this workspace."
         emptyHint="No projects linked yet. Add a repository or a folder."
         editorExtra={({ project }) =>
           project.kind === 'repo' ? <GoodboyIgnoreField project={project} /> : null

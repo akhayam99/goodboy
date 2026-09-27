@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { WorkspaceId } from '@goodboy/types';
-import { Eyebrow, Input, Switch } from '@goodboy/ui';
+import { Input, SectionHeader, Switch } from '@goodboy/ui';
 import { VerbositySelect } from '../../../../features/session/components/VerbositySelect';
 import { DEFAULT_BRANCH_PREFIX } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
@@ -78,10 +78,12 @@ export const WorkspaceDefaultsGrid = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section aria-labelledby="workspace-new-sessions" className="flex flex-col gap-2">
-      <h2 id="workspace-new-sessions">
-        <Eyebrow label="New sessions" />
-      </h2>
+    <section aria-label="New sessions" className="flex flex-col gap-2">
+      <SectionHeader
+        label="New sessions"
+        hint="Defaults every new session in this workspace starts with."
+        headingLevel={2}
+      />
       <div className="grid grid-cols-1 gap-x-8 gap-y-1 @xl:grid-cols-2">
         <WorkspaceDefaultRow label="Branch prefix" help="Prefixes every new session branch.">
           <span className="flex items-center gap-1">

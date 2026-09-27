@@ -17,3 +17,6 @@ export const AFTER_MERGE_NEVER =
 
 export const githubAutoDeleteNote = ({ projectName }: { readonly projectName: string }): string =>
   `GitHub already deletes merged branches in ${projectName} (repository setting).`;
+
+export const githubAutoDeleteSummary = ({ count }: { readonly count: number }): string =>
+  `GitHub already deletes merged branches in ${count} repositories.`;

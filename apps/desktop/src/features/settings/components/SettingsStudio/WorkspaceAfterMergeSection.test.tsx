@@ -33,6 +33,14 @@ const payments = {
   rootPath: '/repos/payments-api',
 };
 
+const ledger = {
+  id: 'proj-ledger',
+  workspaceId: WORKSPACE,
+  name: 'ledger-core',
+  kind: 'repo',
+  rootPath: '/repos/ledger-core',
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   state.workspaceOverrides = {};
@@ -80,5 +88,26 @@ describe('WorkspaceAfterMergeSection', () => {
       (screen.getByRole('tab', { name: 'Also delete the branch on origin' }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
+  });
+
+  it('collapses more than one auto-deleting repo into one line with a disclosure', async () => {
+    state.projects = [payments, ledger];
+    autoDelete.mockResolvedValue(true);
+    render(<WorkspaceAfterMergeSection workspaceId={WORKSPACE} />);
+
+    expect(
+      await screen.findByText('GitHub already deletes merged branches in 2 repositories.'),
+    ).toBeDefined();
+    expect(screen.queryByText('payments-api')).toBeNull();
+    expect(screen.queryByText('ledger-core')).toBeNull();
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'GitHub already deletes merged branches in 2 repositories.',
+      }),
+    );
+
+    expect(screen.getByText('payments-api')).toBeDefined();
+    expect(screen.getByText('ledger-core')).toBeDefined();
   });
 });
