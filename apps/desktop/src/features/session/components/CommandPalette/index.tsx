@@ -25,7 +25,7 @@ import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PaletteLeading } from './PaletteLeading';
 import { LENS_ICON } from '../../lens-labels';
-import { useThemeStore } from '../../../../shared/lib/theme';
+import { getAppliedTheme, useThemeStore } from '../../../../shared/lib/theme';
 import { linkedProjectsLabel } from '../../../workspace/linkedProjectsLabel';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { requestNewSession } from '../../requestNewSession';
@@ -165,7 +165,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
   const runScript = useAppStore((s) => s.runScript);
   const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
-  const theme = useThemeStore((s) => s.theme);
+  const theme = getAppliedTheme();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
   const parsed = useMemo(() => parseQuery(query), [query]);

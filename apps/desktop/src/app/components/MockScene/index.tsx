@@ -85,6 +85,7 @@ import { BrandStorageScene } from './scenes/brand/StorageScene';
 import { BrandSecurityFindingsScene } from './scenes/brand/SecurityFindingsScene';
 import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
+import { applyDocumentTheme } from '../../../shared/lib/theme';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -202,7 +203,7 @@ export const MockScene = () => {
     if (params.get('theme') !== 'light') {
       return;
     }
-    document.documentElement.setAttribute('data-theme', 'light');
+    applyDocumentTheme({ theme: 'light' });
   }, []);
 
   return (
