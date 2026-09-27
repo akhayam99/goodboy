@@ -116,7 +116,10 @@ const captureThemePng = async ({ theme }) => {
     });
     const nodeId = queryResult.result?.nodeId;
     if (nodeId === undefined || nodeId === 0) {
-      const windowShot = await send({ method: 'Page.captureScreenshot', params: { format: 'png' } });
+      const windowShot = await send({
+        method: 'Page.captureScreenshot',
+        params: { format: 'png' },
+      });
       if (windowShot.result?.data === undefined) {
         throw new Error(`could not capture scene "${scene}"`);
       }
