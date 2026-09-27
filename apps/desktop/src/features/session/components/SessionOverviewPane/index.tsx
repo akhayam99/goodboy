@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import type { LensKind } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
@@ -7,6 +7,8 @@ import { ArchivedGate } from './ArchivedGate';
 import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { OverviewActions } from './OverviewActions';
 import { AttentionCallout } from './AttentionCallout';
+import { useAttentionTarget } from './useAttentionTarget';
+import { isAttentionCalloutShown } from './lib';
 import { NextStepSlot } from '../../../suggestions/components/NextStepSlot';
 import { SessionSetup } from '../SessionSetup';
 import { useSessionSetup } from '../SessionSetup/useSessionSetup';
@@ -18,11 +20,24 @@ type Props = {
 
 const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
 
+const NO_AGENTS: ReadonlySet<string> = new Set();
+
 export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionId: SessionId = session.id;
   const isArchived = session.archivedAt != null;
   const setup = useSessionSetup({ session });
   const [shownQuestionIds, setShownQuestionIds] = useState<ReadonlySet<string>>(NO_SHOWN_QUESTIONS);
+  const attention = useAttentionTarget({ session });
+  const isQuestionShownBelow = !setup.isActive;
+  const calloutAgentId =
+    attention.target?.kind === 'agent' &&
+    isAttentionCalloutShown({ attention, isQuestionShownBelow })
+      ? attention.target.agentId
+      : null;
+  const shownApprovalAgentIds = useMemo(
+    () => (calloutAgentId === null ? NO_AGENTS : new Set<string>([calloutAgentId])),
+    [calloutAgentId],
+  );
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -38,9 +53,10 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
       animationClassName="animate-fade-in"
     >
       <AttentionCallout
-        session={session}
+        sessionId={sessionId}
+        attention={attention}
         onSelectLens={onSelectLens}
-        isQuestionShownBelow={!setup.isActive}
+        isQuestionShownBelow={isQuestionShownBelow}
       />
       {setup.isActive ? (
         <SessionSetup session={session} steps={setup.steps} />
@@ -50,6 +66,7 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
             session={session}
             onSelectLens={onSelectLens}
             shownQuestionIds={shownQuestionIds}
+            shownAgentIds={shownApprovalAgentIds}
           />
           <TimelinePane
             session={session}

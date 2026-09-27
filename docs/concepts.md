@@ -303,6 +303,10 @@ whether you clicked it on the board or in the session overview.
   Activity does not show, so it never sits above a question already in view.
   With one such question, **Answer** opens the agent that asked at that
   question (`useOpenAgentQuestion`); with more, it opens the questions view.
+- An approval has one place in the overview: the **Needs you** callout,
+  whose **Answer the approval** opens the blocked agent. The approve-tool
+  suggestion for that same agent stays out of Next steps; an approval the
+  callout does not name (a second blocked agent) still shows there.
 - Eighteen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
   project, run a ready plan, add a proposed project) plus twelve more that

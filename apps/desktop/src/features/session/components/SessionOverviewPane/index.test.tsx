@@ -31,9 +31,16 @@ const { shown } = vi.hoisted(() => ({
   shown: {
     reported: new Set<string>(),
     slot: null as ReadonlySet<string> | null,
+    slotAgents: null as ReadonlySet<string> | null,
     callout: null as boolean | null,
+    attention: {
+      stage: { stage: 'running', reason: '', attention: null },
+      target: null,
+    } as Record<string, unknown>,
   },
 }));
+
+vi.mock('./useAttentionTarget', () => ({ useAttentionTarget: () => shown.attention }));
 
 vi.mock('../SessionWorkspace/parts/TimelinePane', async () => {
   const { useLayoutEffect } = await import('react');
@@ -59,8 +66,15 @@ vi.mock('./AttentionCallout', () => ({
 }));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => null }));
 vi.mock('../../../suggestions/components/NextStepSlot', () => ({
-  NextStepSlot: ({ shownQuestionIds }: { shownQuestionIds?: ReadonlySet<string> }) => {
+  NextStepSlot: ({
+    shownQuestionIds,
+    shownAgentIds,
+  }: {
+    shownQuestionIds?: ReadonlySet<string>;
+    shownAgentIds?: ReadonlySet<string>;
+  }) => {
     shown.slot = shownQuestionIds ?? null;
+    shown.slotAgents = shownAgentIds ?? null;
     return null;
   },
 }));
@@ -81,7 +95,12 @@ afterEach(() => {
   setup.isActive = false;
   shown.reported = new Set();
   shown.slot = null;
+  shown.slotAgents = null;
   shown.callout = null;
+  shown.attention = {
+    stage: { stage: 'running', reason: '', attention: null },
+    target: null,
+  };
 });
 
 const session = (archivedAt: string | null): Session =>
@@ -102,6 +121,16 @@ describe('SessionOverviewPane', () => {
 
     expect([...(shown.slot ?? [])]).toEqual(['q-1']);
     expect(shown.callout).toBe(true);
+  });
+
+  it('tells the next step which agent approval the needs-you callout already shows', () => {
+    shown.attention = {
+      stage: { stage: 'attention', reason: 'Needs approval', attention: 'needs-approval' },
+      target: { kind: 'agent', agentId: 'agent-7', home: 'agents', label: 'Answer the approval' },
+    };
+    render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
+
+    expect([...(shown.slotAgents ?? [])]).toEqual(['agent-7']);
   });
 
   it('keeps the needs-you callout for questions while setup hides the activity', () => {
