@@ -174,6 +174,8 @@ describe('Context drawer summary', () => {
     expect(within(state).getByRole('button', { name: 'Show less' })).toBeDefined();
 
     const questions = within(drawer).getByRole('region', { name: 'Open questions' });
-    expect(within(questions).getByText('How many retries should raise the banner?')).toBeDefined();
+    expect(
+      within(questions).getByText('Which failures should count toward a stuck delivery?'),
+    ).toBeDefined();
   });
 });

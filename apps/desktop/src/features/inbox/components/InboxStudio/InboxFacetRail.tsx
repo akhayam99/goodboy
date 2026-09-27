@@ -9,7 +9,6 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react';
-import { useState } from 'react';
 import type { Project } from '@goodboy/types';
 import { StatusDot } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -34,6 +33,7 @@ import {
   type InboxView,
 } from '../../kindFilter';
 import { INBOX_PROVIDERS, type InboxProvider } from '../../types';
+import { InboxProjectFacets } from './InboxProjectFacets';
 
 type Props = {
   readonly filters: InboxFilters;
@@ -91,51 +91,6 @@ const sourceTrailing = ({ isLoading, error }: SourceTrailingParams) => {
     return <StatusDot tone="neutral" size="sm" pulsing ariaLabel="Loading" role="status" />;
   }
   return undefined;
-};
-
-type ProjectFacetsProps = {
-  readonly projects: ReadonlyArray<Project>;
-  readonly filters: InboxFilters;
-  readonly counts: InboxFacetCounts;
-  readonly onFiltersChange: (filters: InboxFilters) => void;
-};
-
-const ProjectFacets = ({ projects, filters, counts, onFiltersChange }: ProjectFacetsProps) => {
-  const [isShowingEmpty, setIsShowingEmpty] = useState(false);
-  const isVisible = (project: Project) =>
-    counts.project(project.id) > 0 || filters.project === project.id;
-  const hiddenCount = projects.filter((project) => !isVisible(project)).length;
-  const shown = isShowingEmpty ? projects : projects.filter(isVisible);
-
-  return (
-    <FacetSection label="Project">
-      {shown.map((project) => (
-        <FacetRow
-          key={project.id}
-          icon={project.kind === 'repo' ? CONCEPT_ICONS.projectRepo : CONCEPT_ICONS.projectFolder}
-          label={project.name}
-          count={counts.project(project.id)}
-          isSelected={filters.project === project.id}
-          onClick={() =>
-            onFiltersChange({
-              ...filters,
-              project: filters.project === project.id ? null : project.id,
-            })
-          }
-        />
-      ))}
-      {hiddenCount > 0 ? (
-        <button
-          type="button"
-          aria-expanded={isShowingEmpty}
-          onClick={() => setIsShowingEmpty((current) => !current)}
-          className="self-start rounded-md px-2 py-1 text-meta text-faint-foreground hover:bg-hover hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-        >
-          {isShowingEmpty ? 'Hide empty' : `Show ${hiddenCount} empty`}
-        </button>
-      ) : null}
-    </FacetSection>
-  );
 };
 
 export const InboxFacetRail = ({
@@ -213,7 +168,7 @@ export const InboxFacetRail = ({
         </FacetSection>
       ) : null}
       {projects.length > 1 ? (
-        <ProjectFacets
+        <InboxProjectFacets
           projects={projects}
           filters={filters}
           counts={counts}

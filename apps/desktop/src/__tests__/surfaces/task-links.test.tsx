@@ -501,9 +501,11 @@ describe('tasks and sessions on the real store', () => {
     const inboxRegion = screen.getByRole('region', { name: 'Inbox item' });
     fireEvent.click(within(inboxRegion).getByRole('combobox', { name: 'Link to a session' }));
     fireEvent.change(await screen.findByRole('combobox', { name: 'Search sessions' }), {
-      target: { value: 'rate limiting' },
+      target: { value: session.goal },
     });
-    fireEvent.click(await screen.findByRole('option', { name: /rate limiting/ }));
+    fireEvent.click(
+      await screen.findByRole('option', { name: (name) => name.includes(session.goal) }),
+    );
     await settle();
 
     await expectLinked(session, entry);
@@ -549,7 +551,7 @@ describe('tasks and sessions on the real store', () => {
       projectSentryLinks: {
         [WORKSPACE_ID]: [
           {
-            projectId: 'mock-board-project-core-api' as ProjectId,
+            projectId: 'mock-board-project-payments-api' as ProjectId,
             sentryProject: 'payments-api',
           },
         ],
