@@ -38,7 +38,8 @@ Below, `X` is the new version and `X-1` is the current latest.
    is left unbumped.
    In the same commit, add the `## Goodboy vX` section to `CHANGELOG.md` (see
    "Release notes" below). The build reads its body from there, and fails if
-   the section is missing.
+   the section is missing. In the same commit, align the in-app Guide with the
+   release (see "Align the in-app Guide" below).
 2. Create the release branch following the branch-naming rule in
    [CONVENTIONS.md](../CONVENTIONS.md). Commit
    `chore(repo): bump version to X`, push, open PR.
@@ -154,6 +155,21 @@ pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
   missing, offline, or unreadable. `scripts/release-notes.mjs` expands it into
   a `<picture>` under the entry when it builds the tagged release's GitHub
   body; the in-app parser ignores that block.
+
+## Align the in-app Guide
+
+The Guide (Settings, App, Help, Open guide) explains Goodboy chapter by
+chapter, in the order a task lives. Its text is in
+`apps/desktop/src/features/settings/components/GuideStudio/guideChapters.ts`.
+
+- For each app-facing PR in the release notes, find the chapter it touches.
+  Remove what the release made false, add what it made new, and keep each
+  chapter short and plain.
+- Check every changed sentence against the code, not the PR title. Screen
+  names and button labels in the Guide must match the app exactly.
+- A chapter link opens a screen through a `GuideTarget`. If the release moved
+  or renamed a screen, fix the link.
+- Run `pnpm --filter @goodboy/desktop exec vitest run src/features/settings/components/GuideStudio`.
 
 ## Finish
 

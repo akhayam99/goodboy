@@ -1,5 +1,5 @@
 import type { Tone } from '@goodboy/ui';
-import { BookOpen, Smartphone, type LucideIcon } from 'lucide-react';
+import { Smartphone, type LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { StudioKind } from '../../../store';
 
@@ -22,10 +22,11 @@ export const STUDIO_META = {
     skeleton: 'rail',
   },
   guide: {
-    icon: BookOpen,
-    title: 'Getting started',
-    closeLabel: 'close getting started',
-    skeleton: 'grid',
+    icon: CONCEPT_ICONS.guide,
+    tone: CONCEPT_TONE.guide,
+    title: 'Guide',
+    closeLabel: 'close guide',
+    skeleton: 'rail',
   },
   report: {
     icon: CONCEPT_ICONS.reportIssue,

@@ -25,7 +25,7 @@ export const AppHelpSection = ({ requestClose }: Props) => {
         </Button>
       </FieldRow>
 
-      <FieldRow label="Guide" help="How the board, sessions and agents fit together.">
+      <FieldRow label="Guide" help="How Goodboy works, from setup to cleanup.">
         <Button
           variant="secondary"
           size="sm"
