@@ -22,10 +22,6 @@ type Allowance = {
 };
 
 const ALLOWED: Readonly<Record<string, Allowance>> = {
-  'apps/desktop/src/features/settings/components/GuideStudio/parts/TipsSection.tsx': {
-    count: 1,
-    reason: 'chip',
-  },
   'apps/desktop/src/features/context/components/ContextPanel/strips/GitlabMrStrip.tsx': {
     count: 1,
     reason: 'chip',

@@ -189,7 +189,6 @@ beforeAll(async () => {
   await Promise.all([
     import('../../features/settings/components/SettingsStudio'),
     import('../../features/settings/components/GuideStudio'),
-    import('../../features/settings/components/ReportIssueStudio'),
     import('../../features/workspace/components/WorkspaceLinkStudio'),
     import('../../features/workflows/components/WorkflowStudio'),
     import('../../features/inbox/components/InboxStudio'),
@@ -540,13 +539,10 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => band('Pair device'),
   },
   {
-    name: 'palette: Report an issue',
-    covers: ['openStudio', 'studio:report', 'palette:Report an issue'],
-    open: () => openPalette(/^Report an issue/),
-    lands: both(
-      () => band('Report an issue'),
-      () => heading('Preview'),
-    ),
+    name: 'palette: Report a bug',
+    covers: ['palette:Report a bug'],
+    open: () => openPalette(/^Report a bug/),
+    lands: () => visible('dialog', 'Report a bug'),
   },
   {
     name: 'palette: Keyboard shortcuts',
@@ -555,13 +551,10 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => heading('Shortcuts'),
   },
   {
-    name: 'palette: Getting started',
-    covers: ['openStudio', 'studio:guide', 'palette:Getting started'],
-    open: () => openPalette(/^Getting started/),
-    lands: both(
-      () => band('Getting started'),
-      () => heading('What is Goodboy?'),
-    ),
+    name: 'palette: Guide',
+    covers: ['openStudio', 'studio:guide', 'palette:Guide'],
+    open: () => openPalette(/^Guide/),
+    lands: () => band('Guide'),
   },
   {
     name: 'palette: Add workspace',

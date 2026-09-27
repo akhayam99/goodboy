@@ -669,6 +669,33 @@ dismiss button as the Notice actions. Chat errors in the desktop app go through 
 turns a known provider failure into a sentence and keeps the raw text as the
 detail.
 
+## Report sheet
+
+`ReportSheet` is the one shape for reporting a bug. It takes everything from
+props and reads no store, so it also renders inside `ErrorBoundary` after the
+app below it has crashed.
+
+- **Variants**: `floating` is level 4 (`floating`, `shadow-lg`, `border`,
+  `rounded-lg`), placed by the host above the footer chip with no overlay.
+  `inline` drops the shadow onto `subtle`, for the crash and startup screens.
+- **Head**: the bug glyph, a `text-heading` title, an optional type control (a
+  `chip` Listbox) and an Esc `KbdPill` when the sheet can close.
+- **Line**: one borderless `text-body` input that takes focus on mount, and
+  can start selected. ⇥ from the line, or Add detail, opens an autogrowing
+  `Textarea` under it. ⌘↵ anywhere in the sheet submits.
+- **Match**: an open issue that matches the line sits in a `fill` row with
+  Add mine there.
+- **Attachments**: one `rounded-full` `fill` chip per part, `text-secondary`,
+  a 12px glyph and a × with a tooltip. A removed part stays as a dashed chip,
+  struck through, that puts it back. The error chip carries the danger ring.
+- **What gets sent**: a disclosure row (chevron, shield in success, the
+  summary in `faint-foreground`) that opens the exact text in a `muted`
+  `ScrollFade` of `text-code`, a copy button, and the line that says what never
+  leaves.
+- **Footer**: the destination or the error in `text-secondary`, Add detail
+  while the detail is closed, and the primary button whose label names the
+  destination, with its shortcut in an on-tone pill.
+
 ## Pane anatomy
 
 The package ships the pane primitives `PANE_RHYTHM`, `PageColumn`, `ScrollFade`,

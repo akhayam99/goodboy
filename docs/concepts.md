@@ -572,7 +572,8 @@ is the **session record** on the **Overview**:
 
 - The goal, the decisions and the summary, in that order, in the **Context**
   drawer (the overview keeps one `Goal` line under the title when the goal
-  says more than the title). The summary reads as State, Next and Learned.
+  says more than the title). The summary reads as State, Next, Open questions and Learned, one
+  block each, key line first.
 - What the session produces, as sections of the same page: workflows, agents,
   review, questions, diff and plans
 
@@ -866,11 +867,23 @@ and by source, one pick per section, with counts; only the types a connected
 tool can produce show. A tool that did not load says so in its source row and
 in one notice above the list. The state column uses the tool's own word, the
 same one the record shows. A record opens in a drawer beside the list, with the
-same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
-to it.
+same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
+the workspace with Link to a session, or open the session already linked to it.
+A record shows its session whichever way the link was made: launched from the
+inbox, picked there, or linked from the session's own link button, by search or
+by pasted URL. The session link button searches the issues of every Sentry
+project linked to the workspace, not only the connected one.
+
+Pull and merge requests come from the code hosts. GitHub lists the open pull
+requests of the workspace root repo that ask for your review, plus your own
+open ones updated in the last seven days, through the same `gh` login as issues
+(`listInboxPullRequests`). GitLab lists open merge requests assigned to you, and
+Bitbucket the pull requests of the linked repo. Open ones show as open, merged
+and closed ones as closed.
 
 With two or more projects in the workspace, the rail also filters by project.
-Code host records belong to the project at the workspace root. A Sentry error
+Projects with no records hide behind a quiet "Show N empty" toggle at the end
+of the section; the selected project stays listed even at zero. Code host records belong to the project at the workspace root. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be

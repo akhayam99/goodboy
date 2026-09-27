@@ -2,6 +2,7 @@ import { renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
+import type { GithubPrGroup } from '../../github/components/PullRequest/useGithubPrs';
 import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
 import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import type { JiraIssueGroup } from '../../integrations/jira/JiraStudio/useJiraIssues';
@@ -19,6 +20,7 @@ const h = vi.hoisted(() => ({
     error: null as string | null,
     hasRemote: null as boolean | null,
   },
+  githubPrs: { groups: [] as GithubPrGroup[], loading: false, error: null as string | null },
   gitlabIssues: { groups: [] as GitlabIssueGroup[], loading: false, error: null as string | null },
   gitlabMrs: {
     groups: [] as GitlabMrGroup[],
@@ -34,6 +36,7 @@ const h = vi.hoisted(() => ({
   bitbucket: { groups: [] as BitbucketPrGroup[], loading: false, error: null as string | null },
   refetch: {
     github: vi.fn(),
+    githubPrs: vi.fn(),
     gitlabIssues: vi.fn(),
     gitlabMrs: vi.fn(),
     linear: vi.fn(),
@@ -69,6 +72,13 @@ vi.mock('../../github/components/PullRequest/useGithubIssues', () => ({
   useGithubIssues: (params: { isEnabled: boolean }) => {
     h.enabled.github = params.isEnabled;
     return { ...h.github, refetch: h.refetch.github };
+  },
+}));
+
+vi.mock('../../github/components/PullRequest/useGithubPrs', () => ({
+  useGithubPrs: (params: { isEnabled: boolean }) => {
+    h.enabled.githubPrs = params.isEnabled;
+    return { ...h.githubPrs, refetch: h.refetch.githubPrs };
   },
 }));
 
@@ -181,6 +191,7 @@ const jiraGroups = (updatedAt: string): JiraIssueGroup[] => [
 beforeEach(() => {
   h.integrations = {};
   h.github = { groups: [], loading: false, error: null, hasRemote: null };
+  h.githubPrs = { groups: [], loading: false, error: null };
   h.gitlabIssues = { groups: [], loading: false, error: null };
   h.gitlabMrs = { groups: [], host: null, loading: false, error: null };
   h.linear = { groups: [], loading: false, error: null };
@@ -220,6 +231,7 @@ describe('useInboxRecords', () => {
     renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));
 
     expect(h.enabled.github).toBe(true);
+    expect(h.enabled.githubPrs).toBe(true);
     expect(h.enabled.linear).toBe(true);
     expect(h.enabled.jira).toBe(false);
     expect(h.enabled.gitlab).toBe(false);
@@ -266,6 +278,7 @@ describe('useInboxRecords', () => {
     result.current.refetch();
 
     expect(h.refetch.github).toHaveBeenCalledOnce();
+    expect(h.refetch.githubPrs).toHaveBeenCalledOnce();
     expect(h.refetch.gitlabIssues).toHaveBeenCalledOnce();
     expect(h.refetch.gitlabMrs).toHaveBeenCalledOnce();
     expect(h.refetch.linear).toHaveBeenCalledOnce();
@@ -281,5 +294,58 @@ describe('useInboxRecords', () => {
     const { result } = renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));
 
     expect(result.current.isLoading).toBe(true);
+  });
+
+  it('merges github pull requests next to issues and surfaces their errors', () => {
+    h.github = {
+      groups: githubGroups('2026-08-01T10:00:00Z'),
+      loading: false,
+      error: null,
+      hasRemote: true,
+    };
+    h.githubPrs = {
+      groups: [
+        {
+          key: 'review-requested',
+          label: 'Review requested',
+          rows: [
+            {
+              role: 'review-requested',
+              sessionId: null,
+              pr: {
+                number: 12,
+                title: 'Retry ledger sync',
+                url: 'https://github.com/harborline/ledger-core/pull/12',
+                state: 'open',
+                mergeable: true,
+                checks: null,
+                baseBranch: 'main',
+                headBranch: 'retry-sync',
+                isDraft: false,
+                reviewDecision: null,
+                body: '',
+                updatedAt: '2026-08-02T10:00:00Z',
+              },
+            },
+          ],
+        },
+      ],
+      loading: true,
+      error: null,
+    };
+
+    const { result, rerender } = renderHook(() =>
+      useInboxRecords({ workspaceId, rootPath: '/repo' }),
+    );
+
+    expect(result.current.records.map((record) => record.key)).toEqual([
+      'github:pr:12',
+      'github:issue:1',
+    ]);
+    expect(result.current.loading.github).toBe(true);
+
+    h.githubPrs = { groups: [], loading: false, error: 'gh pr list failed' };
+    rerender();
+    expect(result.current.errors.github).toBe('gh pr list failed');
   });
 });

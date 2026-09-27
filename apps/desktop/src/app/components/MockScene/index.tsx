@@ -26,6 +26,7 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
 import { OpenQuestionsScene } from './scenes/flow-audit/OpenQuestionsScene';
@@ -86,6 +87,9 @@ import { BrandSecurityFindingsScene } from './scenes/brand/SecurityFindingsScene
 import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
+import { AgentBriefScene } from './scenes/AgentBriefScene';
+import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
+import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -110,6 +114,7 @@ export const MOCK_SCENES = {
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
+  'context-drawer': ContextDrawerScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
   'open-questions': OpenQuestionsScene,
@@ -164,11 +169,14 @@ export const MOCK_SCENES = {
   'brand-storage': BrandStorageScene,
   'brand-security-findings': BrandSecurityFindingsScene,
   'brand-tools': BrandToolsScene,
+  'agent-brief': AgentBriefScene,
+  'crash-report': CrashReportScene,
 };
 
 const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];
 
 export const MockScene = () => {
+  useReportSheetParam();
   useEffect(() => {
     document.getElementById('boot-shell')?.remove();
   }, []);
@@ -209,6 +217,7 @@ export const MockScene = () => {
   return (
     <ToastProvider>
       <Scene />
+      <ReportSheetHost />
     </ToastProvider>
   );
 };

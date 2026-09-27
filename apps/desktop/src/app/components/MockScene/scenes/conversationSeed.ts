@@ -29,14 +29,14 @@ const MR_THREADS: ReadonlyArray<ConversationThread> = [
     id: 'mr-1',
     head: message({
       id: 'mr-1a',
-      name: 'Robin Vale',
+      name: 'Robin V.',
       minutes: 30,
       body: '500 feels high for the nightly job. Can we read it from config?',
     }),
     replies: [
       message({
         id: 'mr-1b',
-        name: 'Sam Kerr',
+        name: 'Sam K.',
         minutes: 12,
         body: 'Moved to `SETTLE_BATCH_SIZE`, default 200.',
       }),
@@ -48,14 +48,14 @@ const MR_THREADS: ReadonlyArray<ConversationThread> = [
     id: 'mr-2',
     head: message({
       id: 'mr-2a',
-      name: 'Priya Moss',
+      name: 'Priya M.',
       minutes: 8,
       body: 'Can we get a test for the rollback path before merging?',
     }),
     replies: [1, 2, 3, 4, 5].map((index) =>
       message({
         id: `mr-2r${index}`,
-        name: index % 2 === 0 ? 'Priya Moss' : 'Sam Kerr',
+        name: index % 2 === 0 ? 'Priya M.' : 'Sam K.',
         minutes: 8 - index,
         body: `Follow-up ${index} on the rollback test.`,
       }),
@@ -65,8 +65,8 @@ const MR_THREADS: ReadonlyArray<ConversationThread> = [
   },
   {
     id: 'mr-3',
-    head: message({ id: 'mr-3a', name: 'Robin Vale', minutes: 90, body: 'Rename the flag.' }),
-    replies: [message({ id: 'mr-3b', name: 'Sam Kerr', minutes: 80, body: 'Done.' })],
+    head: message({ id: 'mr-3a', name: 'Robin V.', minutes: 90, body: 'Rename the flag.' }),
+    replies: [message({ id: 'mr-3b', name: 'Sam K.', minutes: 80, body: 'Done.' })],
     anchor: 'settle/flags.ts:12',
     isResolved: true,
   },

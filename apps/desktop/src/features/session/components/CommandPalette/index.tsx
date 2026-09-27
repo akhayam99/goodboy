@@ -19,7 +19,7 @@ import { PALETTE_PREFIXES, palettePlaceholder, type PaletteGroup } from './palet
 import { useLensDestinations } from '../../hooks/useLensDestinations';
 import { openLens } from '../../openLens';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
-import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
+import { openReportSheet } from '../../../bug-report/openReportSheet';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../../notifications/studioEvent';
 import { useToast } from '../../../../app/components/Toast';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -37,6 +37,7 @@ type PaletteItem = {
   readonly id: string;
   readonly label: string;
   readonly sublabel?: string;
+  readonly keywords?: string;
   readonly group: PaletteGroup;
   readonly isDestination?: boolean;
   readonly accent?: string;
@@ -381,10 +382,12 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     });
     out.push({
       id: 'action:report-issue',
-      label: 'Report an issue',
+      label: 'Report a bug',
+      sublabel: shortcutGlyphs('report.open'),
+      keywords: 'bug report issue feedback crash broken',
       group: 'action',
       icon: CONCEPT_ICONS.reportIssue,
-      onSelect: () => window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT)),
+      onSelect: () => openReportSheet(),
     });
 
     out.push({
@@ -397,7 +400,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     });
     out.push({
       id: 'help:guide',
-      label: 'Getting started',
+      label: 'Guide',
       group: 'help',
       icon: CONCEPT_ICONS.guide,
       onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-guide')),
@@ -438,6 +441,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
               score: Math.max(
                 fuzzyScore(q, item.label),
                 item.sublabel ? fuzzyScore(q, item.sublabel) : 0,
+                item.keywords ? fuzzyScore(q, item.keywords) : 0,
               ),
             }))
             .filter(({ score }) => score > 0)

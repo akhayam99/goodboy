@@ -7,6 +7,8 @@ import { StageBoard } from '../../../../features/workspace/components/StageBoard
 import { useAppStore, useSessions } from '../../../../store';
 import { shellArrangement } from '../../../shellArrangement';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
+import { sceneParam } from './audit/sceneParams';
+import { SETTINGS_STORAGE_FOLDERS } from './audit/settingsSeed';
 
 const noop = () => undefined;
 
@@ -21,6 +23,9 @@ const seedBoardChrome = (): void => {
     scriptRuns: {},
     projectScripts: {},
     navigate: () => undefined,
+    ...(sceneParam({ key: 'storage' }) === 'reclaimable'
+      ? { storageFolders: [...SETTINGS_STORAGE_FOLDERS] }
+      : {}),
   });
 };
 

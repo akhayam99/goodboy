@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { useGithubIssues } from '../../github/components/PullRequest/useGithubIssues';
+import { useGithubPrs } from '../../github/components/PullRequest/useGithubPrs';
 import { useBitbucketPrs } from '../../integrations/bitbucket/BitbucketStudio/useBitbucketPrs';
 import { useWorkspaceBitbucketRepo } from '../../integrations/bitbucket/useWorkspaceBitbucketRepo';
 import { useGitlabIssues } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
@@ -11,7 +12,7 @@ import { useJiraIssues } from '../../integrations/jira/JiraStudio/useJiraIssues'
 import { useLinearIssues } from '../../integrations/linear/LinearStudio/useLinearIssues';
 import { useSlackThreads } from '../../integrations/slack/SlackStudio/useSlackThreads';
 import { adaptBitbucketPrs } from '../adapters/bitbucket';
-import { adaptGithubIssues } from '../adapters/github';
+import { adaptGithubIssues, adaptGithubPrs } from '../adapters/github';
 import { adaptGitlab } from '../adapters/gitlab';
 import { adaptJiraIssues } from '../adapters/jira';
 import { adaptLinearIssues } from '../adapters/linear';
@@ -41,6 +42,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
   const has = (provider: InboxProvider): boolean =>
     provider === 'github' ? true : integrations.some((binding) => binding.provider === provider);
   const github = useGithubIssues({ workspaceId, rootPath, isEnabled: has('github') });
+  const githubPrs = useGithubPrs({ workspaceId, rootPath, isEnabled: has('github') });
   const gitlabIssues = useGitlabIssues({ workspaceId, isEnabled: has('gitlab') });
   const gitlabMrs = useGitlabMrs({ workspaceId, isEnabled: has('gitlab') });
   const linear = useLinearIssues(workspaceId, has('linear'));
@@ -63,6 +65,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     () =>
       [
         ...adaptGithubIssues({ groups: github.groups }),
+        ...adaptGithubPrs({ groups: githubPrs.groups }),
         ...adaptGitlab({
           issueGroups: gitlabIssues.groups,
           mrGroups: gitlabMrs.groups,
@@ -76,6 +79,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
       ].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
     [
       github.groups,
+      githubPrs.groups,
       gitlabIssues.groups,
       gitlabMrs.groups,
       gitlabMrs.host,
@@ -92,7 +96,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     [adapted, projects, rootPath, sentryLinks],
   );
   const errors = {
-    github: github.error,
+    github: github.error ?? githubPrs.error,
     gitlab: gitlabIssues.error ?? gitlabMrs.error,
     linear: linear.error,
     jira: jira.error,
@@ -101,7 +105,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
     bitbucket: bitbucket.error,
   } satisfies Errors;
   const loading = {
-    github: github.loading,
+    github: github.loading || githubPrs.loading,
     gitlab: gitlabIssues.loading || gitlabMrs.loading,
     linear: linear.loading,
     jira: jira.isLoading,
@@ -114,6 +118,7 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
   );
   const refetch = (): void => {
     github.refetch();
+    githubPrs.refetch();
     gitlabIssues.refetch();
     gitlabMrs.refetch();
     linear.refetch();

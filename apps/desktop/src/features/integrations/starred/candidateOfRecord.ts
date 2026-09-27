@@ -14,7 +14,7 @@ export const candidateOfRecord = (record: InboxRecord): IssueCandidate | null =>
     case 'linear':
       return linearIssueCandidate(payload.issue);
     case 'github':
-      return githubIssueCandidate(payload.issue);
+      return payload.kind === 'issue' ? githubIssueCandidate(payload.issue) : null;
     case 'gitlab':
       return payload.kind === 'issue' ? gitlabIssueCandidate(payload.issue) : null;
     case 'jira':

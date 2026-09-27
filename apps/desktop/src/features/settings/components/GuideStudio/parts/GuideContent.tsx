@@ -1,30 +1,42 @@
 import { useEffect, useRef } from 'react';
-import { ScrollFade, cn } from '@goodboy/ui';
-import { PANE_RHYTHM } from '@goodboy/ui';
-import { AgentsSection } from './AgentsSection';
+import { PANE_RHYTHM, ScrollFade, cn } from '@goodboy/ui';
+import type { GuideChapter, GuideExtra } from '../guideChapters';
+import type { GuideTarget } from '../guideTarget';
+import { ChapterSection } from './ChapterSection';
 import { findScrollParent } from './findScrollParent';
 import { LegendSection } from './LegendSection';
-import { OverviewSection } from './OverviewSection';
-import { SessionsSection } from './SessionsSection';
-import { StageBoardSection } from './StageBoardSection';
-import { TipsSection } from './TipsSection';
-import { TokensSection } from './TokensSection';
-import { ToolsSection } from './ToolsSection';
-import { TurnsSection } from './TurnsSection';
+import { ShortcutsExtra } from './ShortcutsExtra';
+import { StagesExtra } from './StagesExtra';
 
-type Section =
-  'overview' | 'board' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
-
-type Props = {
-  readonly onJump: (s: Section) => void;
-  readonly onVisible: (s: Section) => void;
-  readonly registerScrollTo: (fn: (id: Section) => void) => void;
+const renderExtra = ({ extra }: { readonly extra: GuideExtra | undefined }) => {
+  switch (extra) {
+    case 'stages':
+      return <StagesExtra />;
+    case 'shortcuts':
+      return <ShortcutsExtra />;
+    case 'legend':
+      return <LegendSection />;
+    case undefined:
+      return null;
+    default: {
+      const unreachable: never = extra;
+      return unreachable;
+    }
+  }
 };
 
-export const GuideContent = ({ onJump, onVisible, registerScrollTo }: Props) => {
+type Props = {
+  readonly chapters: ReadonlyArray<GuideChapter>;
+  readonly onOpen: (target: GuideTarget) => void;
+  readonly onVisible: (id: string) => void;
+  readonly registerScrollTo: (fn: (id: string) => void) => void;
+};
+
+export const GuideContent = ({ chapters, onOpen, onVisible, registerScrollTo }: Props) => {
   const anchorsRef = useRef<Record<string, HTMLDivElement | null>>({});
   const onVisibleRef = useRef(onVisible);
   onVisibleRef.current = onVisible;
+  const chapterKey = chapters.map((chapter) => chapter.id).join('|');
 
   useEffect(() => {
     registerScrollTo((id) =>
@@ -34,10 +46,11 @@ export const GuideContent = ({ onJump, onVisible, registerScrollTo }: Props) => 
 
   useEffect(() => {
     const els = Object.values(anchorsRef.current).filter((el): el is HTMLDivElement => el != null);
-    if (els.length === 0) {
+    const first = els[0];
+    if (first === undefined) {
       return;
     }
-    const root = findScrollParent({ element: els[0]! });
+    const root = findScrollParent({ element: first });
     const observer = new IntersectionObserver(
       (records) => {
         const top = records
@@ -45,16 +58,16 @@ export const GuideContent = ({ onJump, onVisible, registerScrollTo }: Props) => 
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
         const id = top?.target.getAttribute('data-guide-section');
         if (id) {
-          onVisibleRef.current(id as Section);
+          onVisibleRef.current(id);
         }
       },
       { root, rootMargin: '0px 0px -65% 0px', threshold: 0 },
     );
     els.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
-  }, []);
+  }, [chapterKey]);
 
-  const anchor = (id: Section) => (el: HTMLDivElement | null) => {
+  const anchor = (id: string) => (el: HTMLDivElement | null) => {
     if (el) {
       el.dataset.guideSection = id;
       el.style.scrollMarginTop = '2.5rem';
@@ -64,34 +77,14 @@ export const GuideContent = ({ onJump, onVisible, registerScrollTo }: Props) => 
 
   return (
     <ScrollFade className="h-full w-full" viewportClassName={PANE_RHYTHM.body}>
-      <div className={cn('flex flex-col gap-12', PANE_RHYTHM.column)}>
-        <div ref={anchor('overview')}>
-          <OverviewSection onJump={onJump} />
-        </div>
-        <div ref={anchor('board')}>
-          <StageBoardSection />
-        </div>
-        <div ref={anchor('session')}>
-          <SessionsSection />
-        </div>
-        <div ref={anchor('turn')}>
-          <TurnsSection />
-        </div>
-        <div ref={anchor('tools')}>
-          <ToolsSection />
-        </div>
-        <div ref={anchor('tokens')}>
-          <TokensSection />
-        </div>
-        <div ref={anchor('agents')}>
-          <AgentsSection />
-        </div>
-        <div ref={anchor('tips')}>
-          <TipsSection />
-        </div>
-        <div ref={anchor('legenda')}>
-          <LegendSection />
-        </div>
+      <div className={cn('flex flex-col gap-14 pb-24', PANE_RHYTHM.column)}>
+        {chapters.map((chapter) => (
+          <div key={chapter.id} ref={anchor(chapter.id)}>
+            <ChapterSection chapter={chapter} onOpen={onOpen}>
+              {renderExtra({ extra: chapter.extra })}
+            </ChapterSection>
+          </div>
+        ))}
       </div>
     </ScrollFade>
   );

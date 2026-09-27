@@ -416,6 +416,8 @@ export type {
   GithubPrCacheEntry,
   GithubIssue,
   GithubIssueComment,
+  GithubInboxPrRole,
+  GithubInboxPullRequest,
   LinkedIssue,
   PrCheckConclusion,
   PrCheckRun,

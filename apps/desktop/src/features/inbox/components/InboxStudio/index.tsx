@@ -14,6 +14,8 @@ import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspac
 import { placeholderRecordOf } from '../../../integrations/starred/placeholderRecordOf';
 import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
+import { attachLinkedSession } from '../../attachLinkedSession';
+import { useInboxLinkedSessions } from '../../useInboxLinkedSessions';
 import { orderInboxRecords } from '../../orderInboxRecords';
 import { INBOX_PROVIDERS, type InboxKind, type InboxProvider, type InboxRecord } from '../../types';
 import {
@@ -123,10 +125,23 @@ export const InboxStudio = ({
   onFocusChange,
   onClose,
 }: Props) => {
-  const { records, isLoading, loading, errors, connected, projects, refetch } = useInboxRecords({
+  const {
+    records: fetchedRecords,
+    isLoading,
+    loading,
+    errors,
+    connected,
+    projects,
+    refetch,
+  } = useInboxRecords({
     workspaceId,
     rootPath,
   });
+  const linkedSessions = useInboxLinkedSessions({ workspaceId });
+  const records = useMemo(
+    () => fetchedRecords.map((record) => attachLinkedSession({ record, linked: linkedSessions })),
+    [fetchedRecords, linkedSessions],
+  );
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<InboxFilters>(() =>
     initialFilters({ workspaceId, initialKind, initialProvider }),
@@ -200,7 +215,9 @@ export const InboxStudio = ({
       return [row.record];
     }
     const placeholder = placeholderRecordOf(row.issue);
-    return placeholder === null ? [] : [placeholder];
+    return placeholder === null
+      ? []
+      : [attachLinkedSession({ record: placeholder, linked: linkedSessions })];
   });
   const orderedRecords = [...starredRecords, ...days.flatMap((day) => day.items)];
   const counts = inboxFacetCounts({ records: scopedRecords, query, filters });
@@ -218,7 +235,11 @@ export const InboxStudio = ({
     isKnown: (code) => records.some((record) => record.identifier.toUpperCase() === code),
   });
   const lookupRecords =
-    lookup.state.status === 'done' ? lookup.state.value.result.hits.map((hit) => hit.record) : [];
+    lookup.state.status === 'done'
+      ? lookup.state.value.result.hits.map((hit) =>
+          attachLinkedSession({ record: hit.record, linked: linkedSessions }),
+        )
+      : [];
 
   const selectedRecord =
     scopedRecords.find((record) => record.key === selectedKey) ??

@@ -338,8 +338,6 @@ import type { GoToHistoryParams } from './slices/navigation/goToHistory';
 import { initialDrawerState, type DrawerRequest } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
-import type { Params as AddBugReportImagesParams } from './slices/bugReportDraft/addBugReportImages';
-import type { Params as RemoveBugReportImageParams } from './slices/bugReportDraft/removeBugReportImage';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
@@ -403,8 +401,6 @@ type AppActions = {
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
   focusChangelogRelease(params: FocusChangelogReleaseParams): void;
   setBugReportDraft(params: SetBugReportDraftParams): void;
-  addBugReportImages(params: AddBugReportImagesParams): void;
-  removeBugReportImage(params: RemoveBugReportImageParams): void;
   clearBugReportDraft(): void;
   openSessionDraft(): void;
   openContextDrawer(params: OpenContextDrawerParams): void;

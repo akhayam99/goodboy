@@ -164,7 +164,7 @@ describe('theme switch is a class swap on the html element', () => {
       ),
     });
     const surface = screen.getByTestId('measured');
-    const field = screen.getByRole('combobox', { name: 'Theme' });
+    const field = screen.getByRole('tablist', { name: 'Theme' });
     const outside: Array<Node> = [];
     const observer = new MutationObserver((records) => {
       records
@@ -178,6 +178,8 @@ describe('theme switch is a class swap on the html element', () => {
 
     expect(counts.toggle).toBe(3);
     expect(outside).toEqual([]);
-    expect(field.textContent).toContain('Light');
+    expect(field.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.trim()).toBe(
+      'Light',
+    );
   });
 });

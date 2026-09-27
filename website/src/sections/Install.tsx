@@ -56,8 +56,8 @@ export const Install = () => {
               <b>No account, no waitlist. You are working in about five minutes.</b>
             </p>
             <p className="reassure">
-              Try it and break it. <b>&quot;This feels off&quot; is a valid bug report.</b>{' '}
-              <a href={SITE.issues}>Open an issue →</a>
+              Try it and break it. <b>&quot;This feels off&quot; is a valid bug report.</b> Press ⌘I
+              in the app to file one in a line, or <a href={SITE.issues}>open an issue →</a>
             </p>
             <SeeHow anchor="set-up" />
           </div>

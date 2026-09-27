@@ -9,6 +9,7 @@ import type {
 import { useOpenSession } from '../../../../shared/hooks/useOpenSession';
 import { useAppStore } from '../../../../store';
 import { LaunchSessionPopover } from '../../components/LaunchSessionPopover';
+import { LinkToSessionPicker } from '../../components/LinkToSessionPicker';
 import { launchSpecFor } from '../../launchSpecFor';
 import type { InboxRecord } from '../../types';
 
@@ -52,12 +53,15 @@ export const useRecordFrame = ({
     spec == null ? null : linkedSessionId != null ? (
       <OpenSessionButton sessionId={linkedSessionId} onOpened={onLaunched} />
     ) : (
-      <LaunchSessionPopover
-        workspaceId={workspaceId}
-        spec={spec}
-        openRequest={launchRequest}
-        onLaunched={onLaunched}
-      />
+      <>
+        <LaunchSessionPopover
+          workspaceId={workspaceId}
+          spec={spec}
+          openRequest={launchRequest}
+          onLaunched={onLaunched}
+        />
+        <LinkToSessionPicker workspaceId={workspaceId} task={spec.externalTask} />
+      </>
     );
 
   const sentryIssueId = record.payload.provider === 'sentry' ? record.payload.issue.id : null;

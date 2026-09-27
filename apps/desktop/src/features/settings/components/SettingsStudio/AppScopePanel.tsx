@@ -9,7 +9,7 @@ import { SecurityFindingsSection } from './SecurityFindingsSection';
 import { ShortcutsSection } from './ShortcutsSection';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 import { StoragePage } from '../../../storage/components/StoragePage';
-import { StorageCheckAgain } from '../../../storage/components/StoragePage/StorageCheckAgain';
+import { StorageHeaderActions } from '../../../storage/components/StoragePage/StorageHeaderActions';
 import { SETTINGS_PANE_ENTRY } from './settingsPaneEntry';
 
 type Props = {
@@ -55,7 +55,7 @@ export const AppScopePanel = ({ section, workspaceId, requestClose }: Props) => 
       animationClassName={SETTINGS_PANE_ENTRY}
       title={label}
       meta={SECTION_META[section]}
-      actions={section === 'storage' ? <StorageCheckAgain /> : undefined}
+      actions={section === 'storage' ? <StorageHeaderActions /> : undefined}
     >
       <SectionBody section={section} workspaceId={workspaceId} requestClose={requestClose} />
     </PaneShell>

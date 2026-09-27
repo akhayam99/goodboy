@@ -87,6 +87,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          GOODBOY_BUILD_SHA: ${{ github.sha }}
           # Updater signing: tauri-action signs the update artifacts and emits
           # latest.json (attached to the release) so the in-app updater can
           # verify and apply new versions. Its "notes" field is releaseBody,
@@ -151,6 +152,7 @@ jobs:
         uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOODBOY_BUILD_SHA: ${{ github.sha }}
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}

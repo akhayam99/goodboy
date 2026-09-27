@@ -96,6 +96,10 @@ Access ("My Certificates", right-click the Developer ID cert, Export). Then run
 `base64 -i cert.p12 | gh secret set APPLE_CERTIFICATE --repo akhayam99/goodboy`
 and update `APPLE_CERTIFICATE_PASSWORD`.
 
+Both `tauri-action` steps also set `GOODBOY_BUILD_SHA` to the release commit. The
+`app_platform` command bakes its first 12 characters into the binary, and bug
+reports show them as the build. A local build has no value and reports `dev`.
+
 ## Auto-update
 
 On launch, packaged builds check

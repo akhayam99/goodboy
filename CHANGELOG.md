@@ -12,6 +12,75 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.11.3
+
+Report a bug from any screen with one shortcut, see your GitHub pull requests in the Inbox, and spot free disk space from the header.
+
+### New
+
+#### Report a bug from any screen
+<!-- gb area=app image=report-sheet -->
+
+Press `Cmd+I` (`Ctrl+Shift+I` on Windows and Linux) to open a one-line report sheet over whatever you are looking at. The footer chip, the command palette, Settings, the Help menu on macOS and Report this on a notification open the same sheet.
+
+Your version, system, screen and CLI versions ride along as chips you can remove, and What gets sent shows exactly what leaves. Secrets, home folders, emails and project names are stripped first. Goodboy files the issue through gh when you are signed in, or opens it prefilled on GitHub.
+
+If Goodboy crashed or hit an error last time, a toast offers to report it with the error attached. The crash and startup error screens show the same sheet.
+
+#### GitHub pull requests in the Inbox
+<!-- gb area=inbox screen=inbox -->
+
+Pull requests waiting on your review and your own open pull requests from the last week show in the Inbox, next to GitLab and Bitbucket, with the same detail pane and Pick up flow.
+
+#### Link an inbox item to a session
+<!-- gb area=inbox screen=inbox -->
+
+Link to a session sits next to Launch session on every inbox item. Pick one of the workspace's sessions to link the task without starting a new one. The Project filter folds projects with no items under Show N empty.
+
+#### Free space in the header
+<!-- gb area=storage screen=settings/app/storage image=storage-chip -->
+
+When at least 1 GB of worktree folders can go, the top bar shows a Free N GB chip. A click opens Storage on every workspace, scrolled to the folders.
+
+### Improved
+
+#### The context drawer shows what changed
+<!-- gb area=sessions image=context-drawer -->
+
+The Context chip shows a dot when something changed since you last looked, and the drawer lists added, removed and reworded decisions first. Every tab reads as labelled blocks with a count, the key line first and the rest folded. Summary lists open questions after Next.
+
+#### A Guide to how Goodboy works
+<!-- gb area=app -->
+
+The Guide has 18 short chapters that follow a task from setting up a workspace to keyboard shortcuts, with search and links that open the screen each chapter describes. Open it from the command palette.
+
+#### Storage in two groups
+<!-- gb area=storage screen=settings/app/storage -->
+
+Storage reads as Free up space and Clean up branches, each with its own group. The workspace picker sits in the page header next to Check again.
+
+#### Workspace settings in titled sections
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Projects, About you, New sessions and After a pull request merges each get a title and a one-line description, like Providers and Models. The auto-delete note folds into one line when more than one repo qualifies.
+
+#### Agent brief with the turn usage row
+<!-- gb area=agents -->
+
+The agent brief shows usage in the same row and detail popover as a turn in the transcript. Its header puts name, role and status on one line, with provider, model and effort under it.
+
+#### Theme in one click
+<!-- gb area=settings screen=settings/app -->
+
+The theme setting is a Light, Dark and System switch instead of a dropdown. In light mode the Goodboy mark in the footer sits on a dark chip.
+
+### Fixed
+
+- Board columns with no sessions line up at the same height. <!-- gb area=sessions -->
+- The inbox shows the linked session for merge requests, Bitbucket pull requests, looked-up codes and tasks linked from a pasted link. <!-- gb area=inbox -->
+- Linking a Sentry issue from a session lists the issues of every linked Sentry project. <!-- gb area=inbox -->
+- The Context chip no longer counts every past decision change as new on a session you never opened. <!-- gb area=sessions -->
+
 ## Goodboy v0.11.2
 
 Rewrite history opens again, reports leave out your personal details, and a report that failed to save no longer looks done.
@@ -43,12 +112,12 @@ This version updates your data in one direction. To go back to 0.10, restore the
 ### New
 
 #### Start work right after picking up an issue
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=pickup-kickoff -->
 
 Once you settle an issue's brief in Pick up a task, How to work on it opens underneath with the goal already filled in. Run a workflow or ask an agent, and one click links the issue, creates the session and starts the work.
 
 #### Choose the project when you ask an agent
-<!-- gb area=agents -->
+<!-- gb area=agents image=project-chip -->
 
 Ask an agent has a project chip next to role and model when the workspace has more than one repo project. With a single project it is picked for you.
 
@@ -60,7 +129,7 @@ Reopening a resolved review note starts a new conversation next to the closed on
 ### Improved
 
 #### Merged, then new commits
-<!-- gb area=storage screen=settings/app/storage -->
+<!-- gb area=storage screen=settings/app/storage image=merged-new-commits -->
 
 A branch that gained commits after its pull request merged reads Merged, then N new commits, on the session overview and under Needs a look in Storage. After-merge cleanup keeps such a branch instead of deleting it.
 
@@ -141,7 +210,7 @@ When a lookup fails, the row says why, with Sign in again or Try again.
 Star an issue from the Inbox, with the same star used for projects, and it stays in a Starred group at the top of the Inbox and of Pick up a task. Closed starred issues sink to the bottom of the group, where Unstar closed clears them with an Undo.
 
 #### Choose what happens after a pull request merges
-<!-- gb area=storage screen=settings/app/storage -->
+<!-- gb area=storage screen=settings/app/storage image=storage-branches -->
 
 Set a default for every workspace: ask me, delete the branch on this Mac, or delete it on origin too, with an override per project. Goodboy deletes a branch only if it still points at the merged commit, and a deleted branch can be restored for 14 days.
 
@@ -164,7 +233,7 @@ A reply waiting for you shows as a card in the session's transcript and in the S
 ### Improved
 
 #### Start a session three ways
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=start-three-ways -->
 
 A new session asks how you want to start, with three tabs: Pick up a task, Run a workflow and Ask an agent. Ask an agent is a real composer with the role and model below it. The role starts on Scout every time, and every other role needs a prompt.
 
@@ -181,7 +250,7 @@ A pull request now has its own page, with its state action and Write review at t
 Write it for me fills the title and body of a new pull request, and you check them before pressing Create.
 
 #### Reports look like a real document
-<!-- gb area=artifacts -->
+<!-- gb area=artifacts image=report-document -->
 
 A report renders as one real document, not a stack of print sheets, with the type scale and font Goodboy uses everywhere else. Open it straight in your browser, and see the folder it and every other artifact live in on disk.
 
@@ -249,12 +318,12 @@ Every provider now lives on one page with its usage, models, permissions and acc
 Codex reads its usage straight from its own app server, and a free reset is one click from the provider page when Codex offers one.
 
 #### A property list for every linked tool
-<!-- gb area=integrations screen=settings/tools -->
+<!-- gb area=integrations screen=settings/tools image=property-list -->
 
 Linear, Jira, Sentry, Slack, GitHub and GitLab items in Review and Inbox now show the same label and value list, with a byline naming who opened it and when instead of scattered facts. Opening one no longer jumps as it loads.
 
 #### Tool calls, turns and the composer, redesigned
-<!-- gb area=sessions -->
+<!-- gb area=sessions image=tool-calls -->
 
 A tool call now shows its real state, running, waiting on you, stopped or denied, instead of one generic spinner. Every turn ends with a footer naming its provider, model and cost, with the full breakdown one click away.
 
@@ -297,7 +366,7 @@ This version updates your data in one direction. To go back to 0.7, restore the 
 ### New
 
 #### Back always takes you back
-<!-- gb area=app pr=1899 -->
+<!-- gb area=app image=resolve-tabs pr=1899 -->
 
 Studios, drawers and lenses now share one navigation history: opening one adds a step, closing it removes one, and Back or Esc walks it the same way everywhere.
 
@@ -308,7 +377,7 @@ The Review conversation now opens in the same drawer as everything else, so Back
 ### Improved
 
 #### Every provider gets the permission mode you picked
-<!-- gb area=providers screen=settings/providers pr=1892 -->
+<!-- gb area=providers screen=settings/providers image=permission-modes pr=1892 -->
 
 Cursor, Codex, Antigravity and the opencode-based providers now receive the session's permission mode, not only Claude. When a provider can't honor a mode exactly, Goodboy runs it as the next stricter one, and the mode picker grays out the modes it can't honor and says why.
 
@@ -369,7 +438,7 @@ Replies to review comments follow two templates, one for a fix and one for a cha
 You also choose whether replies are signed, whether the thread is resolved after the reply, and how fix commits are written. A preview updates as you type.
 
 #### Three built-in workflows
-<!-- gb area=workflows screen=workflows pr=1886 -->
+<!-- gb area=workflows screen=workflows image=builtin-workflows pr=1886 -->
 
 Refactor, Plan and ship, and Fix a bug come with the app, with their steps ready to run. Your workspaces get them at the next launch, unless you already have a workflow with that name. If you edit or delete one, Restore built-in workflows puts it back.
 
@@ -401,7 +470,7 @@ This version updates your data in one direction. To go back to 0.5, restore the 
 ### New
 
 #### Usage limits for each provider
-<!-- gb area=providers screen=settings/providers pr=1884 -->
+<!-- gb area=providers screen=settings/providers image=usage-limits pr=1884 -->
 
 A chip in the top bar shows how much of each plan provider you have used, from 80% on, and the reset day once you run out. The provider page opens on Usage, with each window, when it resets, and what you spent in Goodboy today, over the last 7 days and this month.
 
@@ -617,7 +686,7 @@ The overview, a workflow run, an agent's subagents and the workflow builder draw
 A step waiting on your answer, a failed step and a queued one look different at a glance. The next action for a stuck step sits above the tabs, and agents that finished show as done on their own.
 
 #### A workflow builder that previews the run
-<!-- gb area=workflows screen=workflows pr=1875 -->
+<!-- gb area=workflows screen=workflows image=workflow-builder pr=1875 -->
 
 The builder shows the plan as a tree before the run starts. In custom and preset plans you change each step's provider, model, effort, role and instructions in place. Autorun is a toggle, and each run gets a generated title.
 

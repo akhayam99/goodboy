@@ -128,6 +128,21 @@ describe('StageColumn', () => {
     expect(screen.getByText('Nothing archived')).toBeDefined();
   });
 
+  it('gives every empty column the same min-height, whatever its copy length', () => {
+    const { container: shortOne } = renderColumn([], makeSelection(), {
+      kind: 'stage',
+      stage: 'done',
+    });
+    const { container: longOne } = renderColumn([], makeSelection(), {
+      kind: 'stage',
+      stage: 'attention',
+    });
+    const shortEmpty = shortOne.querySelector('[class*="min-h-28"]');
+    const longEmpty = longOne.querySelector('[class*="min-h-28"]');
+    expect(shortEmpty).not.toBeNull();
+    expect(longEmpty).not.toBeNull();
+  });
+
   it('marks the cards the board selection owns', () => {
     renderColumn(
       [makeSession('s-1', 'one'), makeSession('s-2', 'two')],

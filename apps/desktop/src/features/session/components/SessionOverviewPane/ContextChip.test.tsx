@@ -10,10 +10,11 @@ const { store } = vi.hoisted(() => ({
     status: 'idle' as 'idle' | 'running' | 'error',
     drawer: null as unknown,
     currentSessionId: 'sess-1',
-    sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+    sessionDecisions: {} as Record<string, ReadonlyArray<unknown>>,
     sessionContextSeenAt: {} as Record<string, string | null>,
     toggleContextDrawer: vi.fn(),
     loadSessionContextSeen: vi.fn(async () => undefined),
+    loadSessionDecisions: vi.fn(async () => undefined),
   },
 }));
 
@@ -38,7 +39,7 @@ const chip = () => screen.getByTestId('context-chip');
 beforeEach(() => {
   store.status = 'idle';
   store.drawer = null;
-  store.sessionEvents = {};
+  store.sessionDecisions = {};
   store.sessionContextSeenAt = {};
   vi.clearAllMocks();
 });
@@ -53,22 +54,29 @@ describe('ContextChip', () => {
     fireEvent.click(chip());
     expect(store.toggleContextDrawer).toHaveBeenCalledWith({ sessionId: SID });
     expect(store.loadSessionContextSeen).toHaveBeenCalledWith(SID);
+    expect(store.loadSessionDecisions).toHaveBeenCalledWith(SID);
   });
 
-  it('says how many decisions are new and opens on them', () => {
+  it('shows a quiet dot, never a count, and opens on decisions', () => {
     store.sessionContextSeenAt = { [SID]: '2026-09-26T10:00:00.000Z' };
-    store.sessionEvents = {
+    store.sessionDecisions = {
       [SID]: [
         {
-          kind: 'decisions_changed',
-          payload: { added: 2, removed: 1 },
+          number: 1,
+          status: 'active',
+          author: 'agent',
+          closedBy: null,
+          previousText: null,
+          rewordedAt: null,
           createdAt: '2026-09-26T11:00:00.000Z',
+          updatedAt: '2026-09-26T11:00:00.000Z',
         },
       ],
     };
     render(<ContextChip sessionId={SID} />);
 
-    expect(chip().textContent).toBe('Context2 new');
+    expect(chip().textContent).toBe('Context');
+    expect(screen.getByLabelText('Changed since you last looked')).toBeDefined();
     fireEvent.click(chip());
     expect(store.toggleContextDrawer).toHaveBeenCalledWith({ sessionId: SID, tab: 'decisions' });
   });

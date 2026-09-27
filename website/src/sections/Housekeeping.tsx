@@ -10,7 +10,10 @@ export const Housekeeping = () => (
     sub="Branches and working copies pile up. Goodboy shows what each one weighs, which session made it and which are safe to delete, squash-merged branches included."
   >
     <div className="stackText">
-      <p>A deleted branch can come back for 14 days.</p>
+      <p>
+        A deleted branch can come back for 14 days. When a gigabyte or more can go, the top bar says
+        so, and one click opens the cleanup.
+      </p>
       <div className="linkRow">
         <SeeHow anchor="storage" />
       </div>

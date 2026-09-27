@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Eyebrow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { useAppStore, useWorkspaces } from '../../../../store';
 import { isStorageFolderSuggested } from '../../../../store/slices/storage/classifyStorageFolder';
@@ -38,12 +38,14 @@ export const WorktreeSection = ({ scope }: Props) => {
   const { summary, suggestAfterDays, now } = useStorageSummary({ scope });
   const [filter, setFilter] = useState<StorageFilter>(focus?.filter ?? 'review');
   const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     if (focus === null) {
       return;
     }
     setFilter(focus.filter);
+    sectionRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     focusStorage(null);
   }, [focus, focusStorage]);
 
@@ -78,7 +80,12 @@ export const WorktreeSection = ({ scope }: Props) => {
     });
 
   return (
-    <section id="storage-worktrees" aria-label="Worktrees" className="flex flex-col gap-2">
+    <section
+      ref={sectionRef}
+      id="storage-worktrees"
+      aria-label="Worktrees"
+      className="flex flex-col gap-2"
+    >
       <div className="flex flex-wrap items-center gap-3">
         <Eyebrow
           icon={<FolderIcon size={ICON_SIZE.row} aria-hidden />}

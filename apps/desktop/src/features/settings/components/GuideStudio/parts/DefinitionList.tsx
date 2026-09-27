@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn, tintClasses, type Tone as SharedTone } from '@goodboy/ui';
-
-type Tone = Extract<SharedTone, 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral'>;
+import { cn, tintClasses, type Tone } from '@goodboy/ui';
 
 type DefinitionRow = {
   readonly term: string;

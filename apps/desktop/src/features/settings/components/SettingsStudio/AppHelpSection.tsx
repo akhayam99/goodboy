@@ -1,8 +1,9 @@
 import { RotateCcw, Smartphone } from 'lucide-react';
-import { Button, FieldRow } from '@goodboy/ui';
+import { Button, FieldRow, KbdPill } from '@goodboy/ui';
 import { reopenWizard } from '../../../onboarding/onboarding-store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
+import { openReportSheet } from '../../../bug-report/openReportSheet';
 
 type Props = {
   readonly requestClose: () => void;
@@ -25,7 +26,7 @@ export const AppHelpSection = ({ requestClose }: Props) => {
         </Button>
       </FieldRow>
 
-      <FieldRow label="Guide" help="How the board, sessions and agents fit together.">
+      <FieldRow label="Guide" help="How Goodboy works, from setup to cleanup.">
         <Button
           variant="secondary"
           size="sm"
@@ -47,15 +48,13 @@ export const AppHelpSection = ({ requestClose }: Props) => {
         </Button>
       </FieldRow>
 
-      <FieldRow label="Feedback" help="You see exactly what gets sent before you send it.">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={closeThen(() =>
-            window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT)),
-          )}
-        >
-          <CONCEPT_ICONS.reportIssue size={ICON_SIZE.control} aria-hidden /> Report an issue
+      <FieldRow
+        label="Report a bug"
+        help="A line from you, the rest attached. You see all of it before it goes."
+      >
+        <Button variant="secondary" size="sm" onClick={() => openReportSheet()}>
+          <CONCEPT_ICONS.reportIssue size={ICON_SIZE.control} aria-hidden /> Report a bug
+          <KbdPill>{shortcutGlyphs('report.open')}</KbdPill>
         </Button>
       </FieldRow>
     </div>

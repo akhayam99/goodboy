@@ -54,7 +54,14 @@ export { CommandPreview } from './components/CommandPreview';
 export { DiffLayoutToggle } from './components/DiffLayoutToggle';
 export type { DiffLayoutMode } from './components/DiffLayoutToggle';
 export { ErrorBoundary } from './components/ErrorBoundary';
-export type { ErrorReportOutcome, ErrorReportRequest } from './components/ErrorBoundary';
+export type { ErrorReportRequest } from './components/ErrorBoundary';
+export { ReportSheet } from './components/ReportSheet';
+export type {
+  ReportSheetAttachment,
+  ReportSheetDuplicate,
+  ReportSheetProps,
+  ReportSheetVariant,
+} from './components/ReportSheet';
 export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
 export { HeaderBand } from './components/HeaderBand';

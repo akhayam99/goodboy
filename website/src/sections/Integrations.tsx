@@ -26,7 +26,7 @@ export const Integrations = () => (
     id="integrations"
     headingId="h2-integrations"
     heading="The cards write themselves"
-    sub="Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack. The Inbox puts issues, Slack threads and Sentry errors in one list, plus merge requests from GitLab and Bitbucket."
+    sub="Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack. The Inbox puts issues, Slack threads and Sentry errors in one list, plus pull requests from GitHub and merge requests from GitLab and Bitbucket."
   >
     <ul className="toolRow" aria-label="Supported tools">
       {TOOLS.map((tool) => (
@@ -40,7 +40,8 @@ export const Integrations = () => (
       <p>
         A code pasted from chat opens from the right tracker, and a session started from any item
         has its brief already drafted. Agents on any provider can read the ticket and the pull
-        request themselves, through Goodboy, which keeps your keys.
+        request themselves, through Goodboy, which keeps your keys. An item you already work on
+        links to its session in one click.
       </p>
       <p>In Slack you pick the channels, and a reply can wait for your OK before it goes out.</p>
       <div className="linkRow">

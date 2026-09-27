@@ -58,7 +58,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 import { CommandPalette } from './index';
-import { REPORT_ISSUE_STUDIO_EVENT } from '../../../settings/reportIssueStudioEvent';
+import { OPEN_REPORT_SHEET_EVENT } from '../../../bug-report/openReportSheet';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 
 beforeEach(() => {
@@ -126,15 +126,15 @@ describe('CommandPalette', () => {
     expect(screen.queryByText('New session')).toBeNull();
   });
 
-  it('opens the report issue studio through the shared studio event', () => {
+  it('opens the report sheet from bug, the word people type', () => {
     const listener = vi.fn();
-    window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
-    render(<CommandPalette onClose={vi.fn()} initialQuery="report an issue" />);
+    window.addEventListener(OPEN_REPORT_SHEET_EVENT, listener);
+    render(<CommandPalette onClose={vi.fn()} initialQuery="bug" />);
 
-    fireEvent.mouseDown(screen.getByText('Report an issue'));
+    fireEvent.mouseDown(screen.getByText('Report a bug'));
 
     expect(listener).toHaveBeenCalledOnce();
-    window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
+    window.removeEventListener(OPEN_REPORT_SHEET_EVENT, listener);
   });
 
   it.each([
@@ -187,7 +187,7 @@ describe('CommandPalette', () => {
 
     expect(screen.getByText('Open Terminal')).toBeDefined();
     expect(screen.getByText('Open settings')).toBeDefined();
-    expect(screen.getByText('Report an issue')).toBeDefined();
+    expect(screen.getByText('Report a bug')).toBeDefined();
   });
 
   it('selects the first rendered row on open, whatever group it belongs to', () => {

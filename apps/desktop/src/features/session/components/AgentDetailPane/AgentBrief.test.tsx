@@ -55,12 +55,18 @@ vi.mock('../../../chat/utils/transcript-items', () => ({
   reduceTranscript: () => transcriptItems.items,
 }));
 
+const agentMetrics = vi.hoisted(() => ({
+  aggregatesByAgentId: new Map(),
+  providerUsageByAgentId: new Map(),
+  turnsByAgentId: new Map(),
+}));
+
 vi.mock('../../hooks/useAgentMetrics', () => ({
   useAgentMetrics: () => ({
     latestTelemetryByAgentId: new Map(),
-    aggregatesByAgentId: new Map(),
-    providerUsageByAgentId: new Map(),
-    turnsByAgentId: new Map(),
+    aggregatesByAgentId: agentMetrics.aggregatesByAgentId,
+    providerUsageByAgentId: agentMetrics.providerUsageByAgentId,
+    turnsByAgentId: agentMetrics.turnsByAgentId,
   }),
 }));
 
@@ -120,6 +126,9 @@ beforeEach(() => {
     agentHandoffs: {},
   });
   transcriptItems.items = [];
+  agentMetrics.aggregatesByAgentId = new Map();
+  agentMetrics.providerUsageByAgentId = new Map();
+  agentMetrics.turnsByAgentId = new Map();
 });
 
 describe('AgentBrief summary', () => {
@@ -216,37 +225,62 @@ describe('AgentBrief summary', () => {
 });
 
 describe('AgentBrief statistics', () => {
-  it('reads cost, turns, input and output as one metadata line, not four cards', () => {
-    const { container } = render(
+  const seedUsage = () => {
+    agentMetrics.aggregatesByAgentId = new Map([
+      [agentId, { inputTokens: 100000, outputTokens: 1400, estimatedCostUsd: 0.12, turns: 3 }],
+    ]);
+    agentMetrics.providerUsageByAgentId = new Map([
+      [
+        agentId,
+        [
+          {
+            provider: 'anthropic',
+            model: 'claude-opus-5',
+            inputTokens: 100000,
+            outputTokens: 1400,
+            cachedInputTokens: 90000,
+            cacheCreationInputTokens: 2000,
+          },
+        ],
+      ],
+    ]);
+    agentMetrics.turnsByAgentId = new Map([[agentId, 3]]);
+  };
+
+  it('shows the new usage footer with the model, tokens and cached share, not the old metadata line', () => {
+    seedUsage();
+    render(
       <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
     );
 
-    const metrics = ['cost', 'turns', 'input', 'output'].map((label) => screen.getByText(label));
-    const line = metrics[0]?.parentElement?.parentElement ?? null;
-
-    expect(line).not.toBeNull();
-    expect(metrics.every((metric) => metric.parentElement?.parentElement === line)).toBe(true);
-    expect(container.querySelector('.grid')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Usage detail' })).toBeTruthy();
+    expect(screen.getByText(/in ·/)).toBeTruthy();
+    expect(screen.getByText('~$0.12')).toBeTruthy();
+    expect(screen.getByText('47% cached')).toBeTruthy();
+    expect(screen.getByText('3 turns')).toBeTruthy();
   });
 
-  it('leads with the outcome and leaves the numbers behind it', () => {
+  it('leads with the outcome and leaves the usage footer behind it', () => {
+    seedUsage();
     render(
       <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
     );
 
     const outcome = screen.getByRole('heading', { level: 2, name: 'Outcome' });
-    const position = outcome.compareDocumentPosition(screen.getByText('cost'));
+    const footer = screen.getByRole('button', { name: 'Usage detail' });
 
-    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(outcome.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     expect(screen.getAllByRole('heading')).toHaveLength(1);
   });
 
-  it('keeps the numbers off a surface of their own, so they cannot reinflate', () => {
+  it('says nothing when the agent has not produced any usage yet', () => {
     render(
       <AgentBrief session={session} agent={makeAgent({ outputSummary: 'shipped the refactor' })} />,
     );
 
-    expect(screen.getByText('cost').closest('section')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Usage detail' })).toBeNull();
   });
 });
 

@@ -113,64 +113,59 @@ describe('BootSplash boot handoff', () => {
     render(<BootSplash phase="error" error={DATABASE_UNAVAILABLE_MESSAGE} onRetry={vi.fn()} />);
 
     expect(screen.queryByRole('button', { name: /retry/i })).toBeNull();
-    expect(screen.getByRole('button', { name: /report on github/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Report this' })).toBeDefined();
   });
 });
 
 describe('BootSplash issue report', () => {
   afterEach(cleanup);
 
-  it('keeps the home path out of the issue link', () => {
-    render(
-      <BootSplash
-        phase="migrating"
-        error="cannot open /Users/dev/.goodboy/data.db"
-        onRetry={vi.fn()}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
+  const openSheet = async ({ error }: { readonly error: string }) => {
+    render(<BootSplash phase="migrating" error={error} onRetry={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Report this' }));
+    const sheet = await screen.findByRole('dialog', { name: 'Report this startup error' });
+    await screen.findByRole('button', { name: /open on github/i });
+    return sheet;
+  };
 
-    const url = String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]);
-    expect(decodeURIComponent(url)).toContain('cannot open ~/.goodboy/data.db');
-    expect(decodeURIComponent(url)).not.toContain('/Users/dev');
+  const sentText = (): string => {
+    fireEvent.click(screen.getByRole('button', { name: /what gets sent/i }));
+    return screen.getByLabelText('What gets sent', { selector: 'pre' }).textContent ?? '';
+  };
+
+  it('opens the report sheet inline with the startup error attached', async () => {
+    await openSheet({ error: 'boom' });
+
+    expect(screen.getByRole('textbox', { name: /one line/i })).toHaveProperty(
+      'value',
+      'Startup failed: migration',
+    );
+    expect(screen.getByText('Error and stack')).toBeDefined();
   });
 
-  it('keeps secrets, emails and link queries out of the issue link', () => {
-    render(
-      <BootSplash
-        phase="migrating"
-        error="sync https://api.github.com/graphql?access_token=abc123def456 for rowan@example.dev with ghp_AbCdEfGhIjKlMnOpQrSt1234"
-        onRetry={vi.fn()}
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
+  it('keeps the home path, secrets, emails and link queries out of what gets sent', async () => {
+    await openSheet({
+      error:
+        'cannot open /Users/dev/.goodboy/data.db then sync https://api.github.com/graphql?access_token=abc123def456 for rowan@example.dev with ghp_AbCdEfGhIjKlMnOpQrSt1234',
+    });
 
-    const decoded = decodeURIComponent(String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]));
-    expect(decoded).toContain('sync https://api.github.com/graphql for');
-    for (const leak of ['access_token', 'rowan@example.dev', 'ghp_AbCd']) {
-      expect(decoded).not.toContain(leak);
+    const sent = sentText();
+    expect(sent).toContain('cannot open ~/…/data.db');
+    expect(sent).toContain('sync https://api.github.com/… for');
+    for (const leak of ['/Users/dev', 'access_token', 'rowan@example.dev', 'ghp_AbCd']) {
+      expect(sent).not.toContain(leak);
     }
   });
 
-  it('cuts a runaway error so the link stays inside the length the shell will open', () => {
-    render(<BootSplash phase="migrating" error={'e'.repeat(20000)} onRetry={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
+  it('cuts a runaway error so the link stays inside the length the shell will open', async () => {
+    await openSheet({ error: 'e'.repeat(20000) });
+    fireEvent.click(screen.getByRole('button', { name: /open on github/i }));
 
+    await vi.waitFor(() => expect(vi.mocked(openUrl)).toHaveBeenCalled());
     const url = String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]);
     expect(url.length).toBeLessThanOrEqual(4096);
-    expect(decodeURIComponent(url)).toContain('the rest of the error did not fit the report link');
-  });
-
-  it('opens a plain new issue form without a template the repo does not have', () => {
-    render(<BootSplash phase="migrating" error="boom" onRetry={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
-
-    const url = String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]);
     expect(url).not.toContain('template=');
-    expect(url).not.toContain('breadcrumbs');
-    expect(
-      url.startsWith('https://github.com/akhayam99/goodboy/issues/new?title=Boot%20failure'),
-    ).toBe(true);
+    expect(decodeURIComponent(url)).toContain('It is on your clipboard');
   });
 });
 
