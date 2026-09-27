@@ -4,7 +4,7 @@ import type { Notification } from '@goodboy/db';
 import { cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
-import { sendNotificationToDevelopers } from '../../../settings/sendNotificationToDevelopers';
+import { openReportSheet } from '../../../bug-report/openReportSheet';
 import { RetryWithPicker } from './RetryWithPicker';
 
 type Props = {
@@ -24,9 +24,9 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
     latest.action?.kind === 'retry-summarizer' || latest.action?.kind === 'retry-step-summary'
       ? latest.action
       : null;
-  const canSendToDevelopers = latest.severity === 'warning' || latest.severity === 'error';
+  const canReport = latest.severity === 'warning' || latest.severity === 'error';
   const hasBody = latest.body != null && latest.body !== '';
-  const hasActions = retryAction != null || canSendToDevelopers;
+  const hasActions = retryAction != null || canReport;
 
   return (
     <div className="flex flex-col gap-2 pb-2.5 pl-13 pr-2.5">
@@ -72,10 +72,12 @@ export const NotificationRowDetail = ({ notifications }: Props) => {
               Retry with another model
             </button>
           )}
-          {canSendToDevelopers && (
+          {canReport && (
             <button
               type="button"
-              onClick={() => sendNotificationToDevelopers({ notification: latest })}
+              onClick={() =>
+                openReportSheet({ notice: { title: latest.title, body: latest.body ?? '' } })
+              }
               className={GHOST}
             >
               <Bug size={ICON_SIZE.row} aria-hidden />

@@ -46,6 +46,19 @@ export const GoodboyMenu = ({
       </header>
       <Divider />
       <div className="flex flex-col gap-2 py-2">
+        <ul className="flex flex-col">
+          <MenuRow
+            icon={<CONCEPT_ICONS.reportIssue size={ICON_SIZE.row} aria-hidden />}
+            label="Report a bug"
+            trailing={
+              <span className="flex items-center gap-2 text-secondary text-faint-foreground">
+                {hasDraft ? 'Draft saved' : null}
+                <kbd className="font-sans">{shortcutGlyphs('report.open')}</kbd>
+              </span>
+            }
+            onClick={onReport}
+          />
+        </ul>
         {hasUpdate ? (
           <div className="px-2">
             <UpdateNotice />
@@ -69,16 +82,6 @@ export const GoodboyMenu = ({
           </section>
         ) : null}
         <ul className="flex flex-col">
-          <MenuRow
-            icon={<CONCEPT_ICONS.reportIssue size={ICON_SIZE.row} aria-hidden />}
-            label="Report a bug"
-            trailing={
-              hasDraft ? (
-                <span className="text-secondary text-faint-foreground">Draft saved</span>
-              ) : null
-            }
-            onClick={onReport}
-          />
           <MenuRow
             icon={<CONCEPT_ICONS.changelog size={ICON_SIZE.row} aria-hidden />}
             label="What's new"

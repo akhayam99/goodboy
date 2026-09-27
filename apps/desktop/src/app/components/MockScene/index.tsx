@@ -88,6 +88,8 @@ import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
+import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
+import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -168,11 +170,13 @@ export const MOCK_SCENES = {
   'brand-security-findings': BrandSecurityFindingsScene,
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
+  'crash-report': CrashReportScene,
 };
 
 const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];
 
 export const MockScene = () => {
+  useReportSheetParam();
   useEffect(() => {
     document.getElementById('boot-shell')?.remove();
   }, []);
@@ -213,6 +217,7 @@ export const MockScene = () => {
   return (
     <ToastProvider>
       <Scene />
+      <ReportSheetHost />
     </ToastProvider>
   );
 };

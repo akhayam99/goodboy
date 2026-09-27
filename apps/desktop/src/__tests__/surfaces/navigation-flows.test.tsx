@@ -189,7 +189,6 @@ beforeAll(async () => {
   await Promise.all([
     import('../../features/settings/components/SettingsStudio'),
     import('../../features/settings/components/GuideStudio'),
-    import('../../features/settings/components/ReportIssueStudio'),
     import('../../features/workspace/components/WorkspaceLinkStudio'),
     import('../../features/workflows/components/WorkflowStudio'),
     import('../../features/inbox/components/InboxStudio'),

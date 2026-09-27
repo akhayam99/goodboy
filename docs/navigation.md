@@ -536,12 +536,51 @@ flow.
 Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
 the Apple menu or Linear's help menu does. Its label says one thing, in this
 order: an update is ready, setup is unfinished (with its progress), or
-"Goodboy beta". Its popover holds the version and release notes, the update,
-the setup checklist, Report a bug (the draft survives closing), What's new,
-keyboard shortcuts and Sponsor. Report a bug swaps the popover for the short
-form, and its primary action opens the full form instead of sending. The
-popover opens by itself once, when the first agent finishes a turn, and never
-while the setup wizard is open; the checklist has no floating card.
+"Goodboy beta". Its popover leads with Report a bug (with ⌘I, and Draft saved
+when a draft waits), then the version and release notes, the update, the setup
+checklist, What's new, keyboard shortcuts and Sponsor. Report a bug closes the
+popover and opens the report sheet. The popover opens by itself once, when the
+first agent finishes a turn, and never while the setup wizard is open; the
+checklist has no floating card.
+
+## Report sheet
+
+One sheet files every report. `ReportSheetHost`
+(`features/bug-report/components/ReportSheetHost`) floats it above the footer
+chip, centred, with no overlay: the page under it stays live. Every door lands
+there: ⌘I from anywhere, Report a bug in the Goodboy chip, Report a bug in the
+palette (it also answers bug, issue, feedback, crash and broken), **Settings >
+App > Help**, **Help > Report a bug** in the macOS menu bar (`help_menu.rs`
+emits `goodboy://report-open` to the focused window), and Report this on a
+warning or error notification, which attaches that notification. Opening the sheet reads the screen you are on
+before anything moves, so Settings stays open under it.
+
+- **One line is the title.** The cursor starts there. ⇥ or Add detail opens a
+  longer field, ⌘↵ sends, Esc closes, and the line and the detail stay in the
+  `bugReportDraft` slice until the report is sent.
+- **Every attached part is a chip.** Version and build, system, screen, CLI
+  versions, and the notification or the error when there is one. A chip's ×
+  leaves it out; the dashed chip puts it back.
+- **What gets sent** opens the exact text that leaves, with the count of
+  redactions and the list of what never leaves.
+- **The button says where it goes.** With GitHub connected it is Send, and
+  the issue is filed through `gh` under your account; the toast links it.
+  While you type, an open issue that matches shows above the chips with Add
+  mine there, which comments instead of filing. Without GitHub it is Open on
+  GitHub: a prefilled link, and when the report does not fit the link the full
+  text goes to the clipboard first.
+- **Crash and startup failure.** The crash screen shows the same sheet inline
+  under the error, with the error and our stack frames attached and the line
+  set to `Crash: <kind>`. The startup error screen opens it under the error
+  with Report this. Neither needs the store.
+- **After a crash the app could not show.** An uncaught window error or a
+  panic leaves `~/.goodboy/last-crash.json`. The next launch shows one
+  persistent toast with when and where: Goodboy closed unexpectedly last time
+  after a panic, Goodboy hit an error last time when the window kept running.
+  Report it opens the sheet as Report this crash or Report this error with the
+  error and the last action names attached, and Dismiss
+  deletes the record. `LastCrashBridge` claims the record, so only one window
+  shows it.
 
 First-run setup is a full-screen wizard in one shell that never moves: a top
 bar with a labelled stepper (Provider, Project, Code host, Tasks, First
@@ -604,7 +643,9 @@ outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
 would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
-elsewhere, where Ctrl+T belongs to the shell. The plane is for the dispatcher.
+elsewhere, where Ctrl+T belongs to the shell. Report a bug (`report.open`) is
+⌘I on macOS and Ctrl+Shift+I elsewhere, because Ctrl+I is Tab in a terminal;
+it fires from anywhere, the terminal included. The plane is for the dispatcher.
 Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Window), and Settings > App > Shortcuts lists the
 groups in that order, read top to bottom per column. Entries that share a
@@ -630,7 +671,7 @@ Utility studios render in the shell's studio slot, between the top bar and the
 footer, so both bars stay visible and usable. The one exception is the
 workspace launcher, which has no shell. There, Add workspace takes the whole
 window, and so do the app studios: Settings (its corner gear, ⌘, or ⌘/ for
-shortcuts), the guide and Report an issue. The palette opens there too.
+shortcuts) and the guide. The palette opens there too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
@@ -653,7 +694,7 @@ one is open at a time.
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
-  (Inbox, Notifications, Report an issue, Add workspace, Impact), `rail`
+  (Inbox, Notifications, Add workspace, Impact), `rail`
   (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
@@ -664,8 +705,7 @@ one is open at a time.
   popover (its footer's Open all notifications) and from the palette's Go to
   group, never from the footer, since the bell already shows the unread count.
   The popover never deletes history. That lives in the studio, behind its
-  confirm. Report an issue opens from the top bar, **Settings > App > Help**
-  and the palette. It sits next to settings, not beside the named launchers.
+  confirm. Reporting a bug is not a studio: it is the report sheet above.
 - **Notifications have one row and one scope.** `NotificationRow` draws a
   group in the popover (`compact`, one line, eight rows at most, Unread or
   All) and in the studio (`cozy`, opens in place with the body, the older

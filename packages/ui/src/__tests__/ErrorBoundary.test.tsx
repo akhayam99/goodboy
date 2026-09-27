@@ -1,23 +1,14 @@
 // @vitest-environment happy-dom
 
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
-import { afterEach } from 'vitest';
-import {
-  ErrorBoundary,
-  type ErrorReportOutcome,
-  type ErrorReportRequest,
-} from '../components/ErrorBoundary';
-
-const SUMMARY = 'The report carries the message above and the component stack.';
-
-const opened = async (): Promise<ErrorReportOutcome> => ({ kind: 'opened' });
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { ErrorBoundary, type ErrorReportRequest } from '../components/ErrorBoundary';
 
 afterEach(cleanup);
 
 function Boom({ throwNow }: { throwNow: boolean }): null {
   if (throwNow) {
-    throw new Error('kaboom');
+    throw new Error('kaboom with ghp_secret');
   }
   return null;
 }
@@ -65,32 +56,48 @@ describe('ErrorBoundary', () => {
   it('offers the cheap recovery before the destructive one, in sentence case', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(
-      <ErrorBoundary onReport={opened} reportSummary={SUMMARY}>
+      <ErrorBoundary>
         <Boom throwNow />
       </ErrorBoundary>,
     );
 
     expect(screen.getByRole('heading', { name: 'Something went wrong' })).toBeDefined();
     const labels = screen.getAllByRole('button').map((button) => button.textContent);
-    expect(labels[0]).toBe('Try again');
-    expect(labels[1]).toBe('Reload');
+    expect(labels).toEqual(['Try again', 'Reload']);
     consoleError.mockRestore();
   });
 
-  it('names GitHub in the report control and says what it includes before the click', () => {
+  it('shows the message through the injected filter', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(
-      <ErrorBoundary onReport={opened} reportSummary={SUMMARY}>
+      <ErrorBoundary describeError={(error) => error.message.replace('ghp_secret', '[redacted]')}>
         <Boom throwNow />
       </ErrorBoundary>,
     );
 
-    expect(screen.getByRole('button', { name: 'Report this on GitHub' })).toBeDefined();
-    expect(screen.getByText(SUMMARY)).toBeDefined();
+    expect(screen.getByText('kaboom with [redacted]')).toBeDefined();
+    expect(screen.queryByText(/ghp_secret/)).toBeNull();
     consoleError.mockRestore();
   });
 
-  it('has no report control when no report path was injected', () => {
+  it('renders the injected report inline with the caught error and the component stack', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const renderReport = vi.fn((request: ErrorReportRequest) => (
+      <p>report for {request.error.message}</p>
+    ));
+    render(
+      <ErrorBoundary renderReport={renderReport}>
+        <Boom throwNow />
+      </ErrorBoundary>,
+    );
+
+    expect(screen.getByText('report for kaboom with ghp_secret')).toBeDefined();
+    const last = renderReport.mock.calls.at(-1)?.[0];
+    expect(last?.componentStack).not.toBeNull();
+    consoleError.mockRestore();
+  });
+
+  it('has no report when no report path was injected', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     render(
       <ErrorBoundary>
@@ -99,62 +106,6 @@ describe('ErrorBoundary', () => {
     );
 
     expect(screen.queryByRole('button', { name: /report/i })).toBeNull();
-    consoleError.mockRestore();
-  });
-
-  it('hands the caught error and the component stack to the report path', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    const onReport = vi.fn<(request: ErrorReportRequest) => Promise<ErrorReportOutcome>>(
-      async () => ({ kind: 'opened' }),
-    );
-    render(
-      <ErrorBoundary onReport={onReport} reportSummary={SUMMARY}>
-        <Boom throwNow />
-      </ErrorBoundary>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Report this on GitHub' }));
-
-    await waitFor(() => expect(onReport).toHaveBeenCalledTimes(1));
-    expect(onReport.mock.calls[0]?.[0].error.message).toBe('kaboom');
-    expect(onReport.mock.calls[0]?.[0].componentStack).not.toBe('');
-    consoleError.mockRestore();
-  });
-
-  it('renders its own failure in place when the browser will not open', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    render(
-      <ErrorBoundary
-        onReport={async () => ({ kind: 'failed', url: 'https://github.com/owner/repo/issues/new' })}
-        reportSummary={SUMMARY}
-      >
-        <Boom throwNow />
-      </ErrorBoundary>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Report this on GitHub' }));
-
-    expect(await screen.findByText(/could not open your browser/i)).toBeDefined();
-    expect(screen.getByText('https://github.com/owner/repo/issues/new')).toBeDefined();
-    consoleError.mockRestore();
-  });
-
-  it('renders its own failure in place when the report link cannot be built', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    render(
-      <ErrorBoundary
-        onReport={async () => {
-          throw new Error('no url');
-        }}
-        reportSummary={SUMMARY}
-      >
-        <Boom throwNow />
-      </ErrorBoundary>,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Report this on GitHub' }));
-
-    expect(await screen.findByText(/could not build the report link/i)).toBeDefined();
     consoleError.mockRestore();
   });
 });

@@ -177,9 +177,6 @@ vi.mock('../features/settings/components/SettingsStudio', () => ({
   ),
 }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
-vi.mock('../features/settings/components/ReportIssueStudio', () => ({
-  ReportIssueStudio: () => <div data-testid="report-issue-studio" />,
-}));
 vi.mock('../app/components/Toast', () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useToast: () => ({ showToast: vi.fn() }),
@@ -274,7 +271,6 @@ vi.mock('../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPollin
 vi.mock('../features/artifacts/hooks/useArtifactMirror', () => ({ useArtifactMirror: vi.fn() }));
 
 import { App } from '../App';
-import { REPORT_ISSUE_STUDIO_EVENT } from '../features/settings/reportIssueStudioEvent';
 
 beforeEach(() => {
   state.appStudio = null;
@@ -335,32 +331,6 @@ describe('GitHub footer state', () => {
     expect(screen.getByTestId('settings-studio').getAttribute('data-scope')).toBe('tools');
     expect(screen.getByTestId('settings-studio').getAttribute('data-tool')).toBe('github');
     expect(screen.queryByTestId('inbox-studio')).toBeNull();
-  });
-});
-
-describe('Report issue studio reachability', () => {
-  it('mounts the studio when the shared open event fires', async () => {
-    render(<App />);
-
-    expect(screen.queryByTestId('report-issue-studio')).toBeNull();
-    act(() => {
-      window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
-    });
-
-    expect(await screen.findByTestId('report-issue-studio')).toBeDefined();
-  });
-
-  it('closes the settings studio when the report studio takes over', () => {
-    render(<App />);
-    fireEvent.click(screen.getByRole('button', { name: 'Open settings' }));
-    expect(screen.getByTestId('settings-studio')).toBeDefined();
-
-    act(() => {
-      window.dispatchEvent(new CustomEvent(REPORT_ISSUE_STUDIO_EVENT));
-    });
-
-    expect(screen.queryByTestId('settings-studio')).toBeNull();
-    expect(screen.getByTestId('report-issue-studio')).toBeDefined();
   });
 });
 
