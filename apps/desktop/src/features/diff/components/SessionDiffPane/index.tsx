@@ -20,6 +20,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/compo
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
 import { branchStateOf } from '../../../session/trail/menus/branchMenu';
+import { branchPushStateOf } from '../../../../shared/lib/branchPushState';
 import { PushBranchButton } from './PushBranchButton';
 import {
   DEFAULT_EDITOR_BINARY,
@@ -204,7 +205,8 @@ export const SessionDiffPane = ({
       ) : null}
     </span>
   );
-  const isLocalOnly = diff.status !== null && diff.status.upstream === null;
+  const isLocalOnly =
+    diff.status !== null && branchPushStateOf({ status: diff.status }).kind === 'not-pushed';
   const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
   const rebasePrediction = useRebasePrediction({
     worktreePath,
