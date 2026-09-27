@@ -470,7 +470,7 @@ const SERIES: PrSeriesView = {
   projectId: LEDGER_ID,
   name: 'Ledger reconciliation rewrite',
   workItemIdentifier: 'HBL-391',
-  workItemUrl: 'https://example.invalid/harborline/issues/2481',
+  workItemUrl: 'https://example.invalid/linear/HBL-391',
   plannedCount: 6,
   parentRequest: null,
   createdAt: NOW,
