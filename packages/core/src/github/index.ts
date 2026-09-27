@@ -39,6 +39,8 @@ export {
   updateIssueBody,
 } from './issues';
 
+export { listInboxPullRequests } from './inboxPrs';
+
 export { REVIEW_REPLY_SAMPLE_SIZE, listMyReviewReplies, type ReviewReply } from './reviewReplies';
 
 export { learnReplyStyle, parseStyleNote, type ReplyStyleDeps } from './replyStyle';

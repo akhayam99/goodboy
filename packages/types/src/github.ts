@@ -53,6 +53,13 @@ export type PullRequestState = {
   mergedAt?: string | null;
 };
 
+export type GithubInboxPrRole = 'review-requested' | 'author';
+
+export type GithubInboxPullRequest = {
+  pr: PullRequestState;
+  role: GithubInboxPrRole;
+};
+
 export type LinkedIssue = {
   number: number;
   title?: string;
