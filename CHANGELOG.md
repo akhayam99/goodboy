@@ -12,6 +12,136 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.10.0
+
+Rewrite a branch's history from its own page, find any issue by its code, and give every decision and wireframe a history you can go back to.
+
+This version updates your data in one direction. To go back to 0.9, restore the backup Goodboy made before updating.
+
+### New
+
+#### Rewrite history for any branch
+<!-- gb area=review -->
+
+A new Rewrite history page sits under any branch: reword, squash, fold into or drop a commit, or drag one to reorder the plan before you apply it. Goodboy tries the plan in a copy first, and a conflict names the files both commits change.
+
+Apply pushes with a lease and keeps the old history as a backup you can restore. If origin gained commits in the meantime, bring them into the plan and push again. Rebase on main runs on the same engine and calls an agent only for a conflict.
+
+Suggest a message drafts a squash or reword for you, and a pull request description Goodboy wrote updates after the push, unless you edited it.
+
+#### Review works before a pull request exists
+<!-- gb area=review -->
+
+Review no longer needs a pull request. Internal notes on a branch read like comments, and Resolve on one works the same way it does on a review thread.
+
+#### Every decision gets a number
+<!-- gb area=sessions -->
+
+Decisions in a session are numbered, so a reworded or replaced one still points back to what changed, with a reason attached. An agent or the summarizer can propose the same operations you would: replace, reword or withdraw one, always with a byline.
+
+#### A version history for every wireframe
+<!-- gb area=artifacts -->
+
+Every wireframe keeps its past versions. Compare two side by side to see exactly what changed, and bring in a wireframe made outside Goodboy through the same import flow.
+
+Ask for a change from a composer under the stage instead of leaving Goodboy, and the request tracks against the version it started from.
+
+#### Restore an earlier version of any artifact
+<!-- gb area=artifacts -->
+
+Plans, reports and wireframes keep every revision. The artifact's details list them newest first with who wrote each one, and Restore brings an older one back as a new revision, so the history stays intact.
+
+#### Find any issue by its code or link
+<!-- gb area=inbox screen=inbox -->
+
+Type or paste an issue code or link in the Inbox search or in Pick up a task, and Goodboy looks it up in the right tracker, even when the issue is not assigned to you. Hits show in a Not in your inbox group and open like any other issue.
+
+When a lookup fails, the row says why, with Sign in again or Try again.
+
+#### Star an issue to keep it up top
+<!-- gb area=inbox screen=inbox -->
+
+Star an issue from the Inbox, with the same star used for projects, and it stays in a Starred group at the top of the Inbox and of Pick up a task. Closed starred issues sink to the bottom of the group, where Unstar closed clears them with an Undo.
+
+#### Choose what happens after a pull request merges
+<!-- gb area=storage screen=settings/app/storage -->
+
+Set a default for every workspace: ask me, delete the branch on this Mac, or delete it on origin too, with an override per project. Goodboy deletes a branch only if it still points at the merged commit, and a deleted branch can be restored for 14 days.
+
+Storage gets a Branches section: made by Goodboy, yours or all local, sorted into Safe to delete and Needs a look, each with its session and whether it lives on origin, only on this Mac, or is gone on origin.
+
+#### Eleven more next steps
+<!-- gb area=sessions -->
+
+The Next slot reads what the session is doing and suggests eleven more moves: approve a pending permission, sign back in, unblock a failed step, retry a failed agent, fix failing checks, push, open or merge a pull request, mark a green draft ready, review finished changes, or clean up a merged worktree.
+
+Merge and cleanup ask for one more click. A suggestion you dismiss stays dismissed, and once a scout finishes cleanly, Next offers to continue with your workspace's first library workflow.
+
+#### Choose what agents can do in Slack
+<!-- gb area=integrations screen=settings/tools -->
+
+Pick the channels Goodboy follows, then choose what agents can do there: read threads, reply or react, each allowed, ask me first or never. Agents never start a conversation or send a direct message. An optional signature goes under the messages an agent writes, and under yours too if you want.
+
+A reply waiting for you shows as a card in the session's transcript and in the Slack thread, ready to send, edit or discard. Each thread says whether it is answered or still open.
+
+### Improved
+
+#### Start a session three ways
+<!-- gb area=sessions -->
+
+A new session asks how you want to start, with three tabs: Pick up a task, Run a workflow and Ask an agent. Ask an agent is a real composer with the role and model below it. The role starts on Scout every time, and every other role needs a prompt.
+
+In a session's Overview, Run workflow now sits next to Start agent, and reports and wireframes move into a Create menu.
+
+#### Pull request gets its own page
+<!-- gb area=review -->
+
+A pull request now has its own page, with its state action and Write review at the top, then its details, checks and activity in the same property list as every other linked record. The number in the trail switches pull request. Review keeps only the conversations, and the pull request page sends you there when some are waiting.
+
+#### Pull request text written for you
+<!-- gb area=review -->
+
+Write it for me fills the title and body of a new pull request, and you check them before pressing Create.
+
+#### Reports look like a real document
+<!-- gb area=artifacts -->
+
+A report renders as one real document, not a stack of print sheets, with the type scale and font Goodboy uses everywhere else. Open it straight in your browser, and see the folder it and every other artifact live in on disk.
+
+#### Reconnect a workspace or a moved project
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Adding a folder that belongs to a disconnected workspace shows its name and how many sessions it holds, with Reconnect as a choice instead of a silent reconnect.
+
+If you moved projects on disk, Locate moved projects finds them by repository identity, not only by name, moves them and repairs their git worktrees, with Undo move if you picked wrong.
+
+#### Export and import your setup without keys or paths
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Export your setup in groups, with folder paths off by default and keys never included. Open security findings stay out unless you add them.
+
+Import shows what it adds and updates before it writes anything, and it never deletes. Integrations you import ask you to sign in again.
+
+#### Assign a Linear issue from its detail
+<!-- gb area=integrations screen=settings/tools -->
+
+Change a Linear issue's assignee, or unassign it, straight from its detail in Goodboy. The Integrations page now says how many of your tools are connected.
+
+#### Resolve a comment again from the trail
+<!-- gb area=review -->
+
+The resolver's menu in the trail has Resolve again, which rereads the comment and tries once more. It stays hidden while an attempt on the same comment is still running.
+
+#### Before and after pictures in release notes
+<!-- gb area=app -->
+
+A release note can show a before and an after picture next to the words, and the main changes of earlier releases from 0.5 onward now carry theirs.
+
+### Fixed
+
+- A branch merged with squash now reads as merged in the branch menu and the diff header. <!-- gb area=review -->
+- Bulk actions in Storage name the scope they act on. <!-- gb area=storage -->
+
 ## Goodboy v0.9.0
 
 Starting a session now walks you through setup, every provider gets one settings page, and Goodboy scans saved scripts for secrets before they ship.
@@ -35,7 +165,7 @@ Saving a script now scans it for tokens and keys, and a new Security findings pa
 ### Improved
 
 #### One page per provider
-<!-- gb area=providers screen=settings/providers -->
+<!-- gb area=providers screen=settings/providers image=provider-page -->
 
 Every provider now lives on one page with its usage, models, permissions and account in clearly separated groups. Connecting Linear, Jira or Sentry walks you through numbered steps instead of one bare form, and Sentry can link more than one project per workspace.
 
