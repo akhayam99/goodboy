@@ -1,3 +1,4 @@
+mod app_platform;
 mod artifact_folder;
 mod artifact_mirror;
 mod artifacts;
@@ -209,6 +210,7 @@ pub fn run() {
             explore::explore_read,
             explore::explore_open,
             boot_breadcrumb::boot_breadcrumb,
+            app_platform::app_platform,
             db::db_exec,
             db::db_execute,
             db::db_list_migration_snapshots,
