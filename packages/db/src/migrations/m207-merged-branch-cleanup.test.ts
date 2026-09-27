@@ -135,4 +135,39 @@ describe('m207 merged branch cleanup', () => {
 
     expect(columns).toEqual([{ name: 'branch_origin', dflt_value: "'unknown'" }]);
   });
+
+  it('keeps a history event from before the rebuild and accepts its own new kinds', async () => {
+    const db = await makeMigratedTestDatabase({ throughVersion: 200 });
+    await db.execute(
+      `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+       VALUES ('harborline', 'Harborline', 'harborline', 1, 1)`,
+    );
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+       VALUES ('session-1', 'harborline', 'Ledger', 'idle', 1, 1)`,
+    );
+    await db.execute(
+      'INSERT INTO session_events (id, session_id, kind, payload_json, created_at) VALUES (?, ?, ?, ?, ?)',
+      ['ev-history', 'session-1', 'history_stopped', '{"planId":"plan-1"}', 1],
+    );
+
+    await migrate(db, migrations);
+    await db.execute(
+      'INSERT INTO session_events (id, session_id, kind, payload_json, created_at) VALUES (?, ?, ?, ?, ?)',
+      ['ev-branch-deleted', 'session-1', 'branch_deleted', '{"branch":"goodboy/fx-rates"}', 2],
+    );
+    await db.execute(
+      'INSERT INTO session_events (id, session_id, kind, payload_json, created_at) VALUES (?, ?, ?, ?, ?)',
+      ['ev-branch-restored', 'session-1', 'branch_restored', '{"branch":"goodboy/fx-rates"}', 3],
+    );
+
+    const rows = await db.select<{ id: string; kind: string }>(
+      'SELECT id, kind FROM session_events ORDER BY created_at ASC',
+    );
+    expect(rows).toEqual([
+      { id: 'ev-history', kind: 'history_stopped' },
+      { id: 'ev-branch-deleted', kind: 'branch_deleted' },
+      { id: 'ev-branch-restored', kind: 'branch_restored' },
+    ]);
+  });
 });

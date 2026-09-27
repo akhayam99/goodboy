@@ -85,6 +85,27 @@ describe('openMountRequest', () => {
     ).resolves.toEqual({ kind: 'unavailable', reason: 'no_mount' });
   });
 
+  it('reports a failed outcome instead of opening when the mount switch fails', async () => {
+    const { state, run } = harness();
+    state.setSessionActiveMount.mockRejectedValueOnce(new Error('mount is busy'));
+
+    await expect(
+      run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'github' }),
+    ).resolves.toEqual({ kind: 'failed', error: 'mount is busy' });
+    expect(state.navigate).not.toHaveBeenCalled();
+    expect(state.setPullRequestMode).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed outcome for a non-github provider too', async () => {
+    const { state, run } = harness();
+    state.setSessionActiveMount.mockRejectedValueOnce(new Error('mount is busy'));
+
+    await expect(
+      run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'gitlab' }),
+    ).resolves.toEqual({ kind: 'failed', error: 'mount is busy' });
+    expect(state.navigate).not.toHaveBeenCalled();
+  });
+
   it('keeps gitlab and bitbucket on their own mount scoped studios, through navigate', async () => {
     const gitlab = harness();
     await gitlab.run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'gitlab' });

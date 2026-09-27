@@ -37,6 +37,7 @@ import {
   upsertContextSlot,
 } from '@goodboy/db';
 import type {
+  Agent,
   AgentId,
   AgentTurnSpan,
   AttachmentInput,
@@ -794,14 +795,28 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
         : runsForSession;
       const reusable = findReusableAgent(scopedRuns, phaseDefinition.id);
-      const resolved = await resolvePhaseAgent({
-        sessionId,
-        definition: phaseDefinition,
-        workflowRunId: phaseWorkflowRunId,
-        reusable,
-        providerRunId: runId,
-        now,
-      });
+      let resolved: Agent | null = null;
+      try {
+        resolved =
+          (await resolvePhaseAgent({
+            sessionId,
+            definition: phaseDefinition,
+            workflowRunId: phaseWorkflowRunId,
+            reusable,
+            providerRunId: runId,
+            now,
+          })) ?? null;
+      } catch (error) {
+        console.error('resolvePhaseAgent failed', error);
+      }
+      if (resolved === null) {
+        await updateProviderRunStatus(tauriDatabase, runId, {
+          kind: 'failed',
+          finishedAt: now(),
+          error: 'could not resolve the agent for this step',
+        });
+        return NOT_BLOCKED;
+      }
       resolvedAgentId = resolved.id;
       const refreshedRuns = await invokeAgentList(sessionId);
       set((state) => ({
