@@ -154,7 +154,7 @@ const captureThemePng = async ({ theme }) => {
     return Buffer.from(shot.result.data, 'base64');
   } finally {
     proc.kill('SIGKILL');
-    rmSync(profileDir, { recursive: true, force: true });
+    rmSync(profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
 };
 
