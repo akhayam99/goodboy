@@ -1011,7 +1011,14 @@ Other identifiers:
 - `ArtifactKind`: `plan`, `report`, `wireframe`
 - `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`
 - Plans sit between `<<plan>>` and `<</plan>>` markers
-- Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope
+- Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope.
+  The line after the marker is a JSON header with title, format and metadata.
+  The content follows it as raw text up to `<</artifact>>`, so markdown is
+  never escaped into a JSON string. The parser still reads the older single
+  JSON object body, and repairs raw newlines, stray quotes and smart quotes in
+  it. It also reads a block wrapped in a plain or `json` code fence
+  (`packages/core/src/artifacts/envelopeBody.ts`,
+  `packages/core/src/artifacts/locateArtifactBlocks.ts`).
 - A review conversation is a `resolve_threads` row. A fix attempt is a
   `resolve_attempts` row.
 
