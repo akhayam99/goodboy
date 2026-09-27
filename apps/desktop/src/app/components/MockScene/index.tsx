@@ -26,6 +26,7 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
@@ -114,6 +115,7 @@ export const MOCK_SCENES = {
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
+  'activity-question': ActivityQuestionScene,
   'context-drawer': ContextDrawerScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
