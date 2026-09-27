@@ -1,4 +1,6 @@
 import { SeeHow } from '../components/SeeHow';
+import { PhoneFigure } from '../components/PhoneFigure';
+import { PhoneSession } from '../components/phone/PhoneSession';
 import { Shot } from '../components/Shot';
 import { SESSION } from '../figures';
 import { SITE } from '../site';
@@ -23,6 +25,9 @@ export const Hero = () => (
         </div>
         <SeeHow anchor="inside-a-session" />
       </div>
+      <PhoneFigure caption="One session, eight chats, each on the model that fits its job">
+        <PhoneSession />
+      </PhoneFigure>
     </div>
     <div className="wrap">
       <Shot figure={SESSION} isEager />

@@ -45,6 +45,14 @@ bleed, the window zooms toward `focus`, and the crops stack under it, so a
 phone shows the large picture first and the details after. When a screenshot
 is recaptured, cut its detail crops again from the new capture.
 
+Phones do not get the desktop figure. Under 860px every `Shot` hides, and each
+section shows its `phone` figure instead (`PhoneFigure`): one portrait visual
+on the same dark stage, where the app's text renders at 11px or more on a
+390px screen. It is either a portrait crop listed as a `PhoneShot` in
+`figures.ts` (`<id>-p.webp`, cut from a capture of the scene at 420 CSS pixels
+wide and a device scale factor of 3, or from a narrow panel of the 4K capture)
+or a card drawn in `components/phone/` from the same canon numbers.
+
 ## Verify with the page
 
 Check the rendered page, not the diff:

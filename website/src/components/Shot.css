@@ -140,55 +140,6 @@
 
 @media (max-width: 860px) {
   .shot {
-    --stage-pad: 16px;
-    --stage-foot: 22px;
-    margin: 0 -24px;
-  }
-  .shot:has(.details) {
-    --stage-foot: 22px;
-  }
-  .stage {
-    border-radius: 0;
-    padding: 28px 0;
-  }
-  .win {
-    width: 158%;
-    margin-left: calc(16px - var(--focus) * (58% + 32px));
-    border-radius: 10px;
-  }
-  .winBar {
-    height: 22px;
-    gap: 6px;
-    padding: 0 10px;
-  }
-  .winBar i {
-    width: 8px;
-    height: 8px;
-  }
-  .details {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 22px;
-    margin: 22px 24px 0;
-  }
-  .details li,
-  .details li:only-child {
-    flex: none;
-    max-width: none;
-  }
-  .detailFrame {
-    border-radius: 10px;
-    box-shadow:
-      0 0 0 1px rgb(16 17 19 / 0.1),
-      0 18px 36px -20px rgb(8 12 14 / 0.5);
-  }
-}
-
-@media (max-width: 560px) {
-  .shot {
-    margin: 0 -16px;
-  }
-  .details {
-    margin: 20px 16px 0;
+    display: none;
   }
 }

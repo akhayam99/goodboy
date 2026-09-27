@@ -212,3 +212,54 @@ export const STORAGE: Figure = {
     },
   ],
 };
+
+export type PhoneImage = {
+  readonly id: string;
+  readonly width: number;
+  readonly height: number;
+};
+
+export type PhoneShot = {
+  readonly alt: string;
+  readonly caption: string;
+  readonly images: readonly PhoneImage[];
+};
+
+export const PHONE_CHAT: PhoneShot = {
+  alt: 'An implementer chat on Codex: the fix is in, both pull requests are up, and a Slack reply for #payments-oncall waits for Send',
+  caption: 'One chat, one job: it made the fix and drafted the reply',
+  images: [{ id: 'chat-p', width: 1080, height: 1530 }],
+};
+
+export const PHONE_BOARD: PhoneShot = {
+  alt: 'Two board columns: needs you, with two sessions waiting on a question, and in review, with pull requests 318 and 90 and what each cost',
+  caption: 'Needs you and in review, with each pull request and its cost',
+  images: [
+    { id: 'board-p1', width: 791, height: 716 },
+    { id: 'board-p2', width: 791, height: 716 },
+  ],
+};
+
+export const PHONE_BUILDER: PhoneShot = {
+  alt: 'A new orchestrated workflow: the orchestrator on GPT-5.6 Sol, guidance to stop before any change to ledger-core, and Start workflow',
+  caption: 'An orchestrator picks each next agent, on the model you set',
+  images: [{ id: 'builder-p', width: 1080, height: 1533 }],
+};
+
+export const PHONE_INBOX: PhoneShot = {
+  alt: 'HBL-412 open in the Inbox: urgent, assigned to Dana R., with Launch session and the description from Linear',
+  caption: 'HBL-412, one press away from a session',
+  images: [{ id: 'inbox-p', width: 1080, height: 1642 }],
+};
+
+export const PHONE_REPORT: PhoneShot = {
+  alt: 'The session report: Retried webhooks no longer double credit, with what was wrong and where it came from',
+  caption: 'The session report, as a document you can share',
+  images: [{ id: 'report-p', width: 1080, height: 1631 }],
+};
+
+export const PHONE_CONTEXT: PhoneShot = {
+  alt: 'The Context drawer: two active decisions, and decision 1 replaced by decision 3 with its reason',
+  caption: 'Decision 3 replaced decision 1, and says why',
+  images: [{ id: 'context-d1', width: 1066, height: 1171 }],
+};

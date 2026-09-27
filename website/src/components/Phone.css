@@ -1,0 +1,232 @@
+.phoneFig {
+  display: none;
+  margin: 0;
+}
+
+.phoneStage {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), transparent 40%),
+    linear-gradient(160deg, var(--stage-a) 0%, var(--stage-b) 50%, var(--stage-c) 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 24px 48px -32px rgb(12 20 22 / 0.6);
+}
+
+.phoneStage > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.1),
+    0 18px 36px -18px rgb(0 0 0 / 0.6);
+}
+
+.phoneFig figcaption {
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--gray6);
+}
+
+.pCard {
+  display: grid;
+  padding: 16px;
+  border-radius: 12px;
+  background: #16181c;
+  color: #e6e8eb;
+  font: 400 14px/1.4 var(--sans);
+  text-align: left;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.1),
+    0 18px 36px -18px rgb(0 0 0 / 0.6);
+}
+
+.pHead {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 14px;
+}
+
+.pTitle {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #f1f3f5;
+}
+
+.pChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  color: #c9cdd2;
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.09);
+}
+
+.pChip .bicon {
+  color: #c9cdd2;
+}
+
+.pChip.pPrimary {
+  font-weight: 600;
+  color: #0b1a1d;
+  background: #22c3d6;
+  box-shadow: none;
+}
+
+.pLabel {
+  padding: 2px 0 6px;
+  font: 600 11px/1 var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8b9096;
+}
+
+.pRows {
+  display: grid;
+  list-style: none;
+  padding: 0;
+}
+
+.pRows li {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 12px 0;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.pRole {
+  margin-right: 4px;
+  padding: 3px 7px;
+  border-radius: 5px;
+  font: 600 11.5px/1.2 var(--sans);
+}
+
+.pRole.scout {
+  color: #7cc0ff;
+  background: rgb(56 139 253 / 0.16);
+}
+
+.pRole.planner {
+  color: #c9a2ff;
+  background: rgb(163 113 247 / 0.18);
+}
+
+.pRole.implementer {
+  color: #63d17a;
+  background: rgb(46 160 67 / 0.18);
+}
+
+.pRole.tester {
+  color: #5fd4de;
+  background: rgb(34 179 194 / 0.16);
+}
+
+.pTask {
+  font-size: 14.5px;
+  line-height: 1.38;
+  color: #e6e8eb;
+}
+
+.pMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  font-size: 12.5px;
+  color: #9aa0a6;
+}
+
+.pCost {
+  margin-left: auto;
+  font: 500 12.5px var(--mono);
+  color: #d4d8dc;
+}
+
+.pCost.muted {
+  font-family: var(--sans);
+  color: #7c8288;
+}
+
+.pFile,
+.pMono {
+  font: 400 12px var(--mono);
+  color: #8b9096;
+}
+
+.pBranch {
+  font: 500 13px var(--mono);
+  color: #e6e8eb;
+}
+
+.pState {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.pState.ok {
+  color: #63d17a;
+}
+
+.pState.warn {
+  color: #e3b341;
+}
+
+.pAction {
+  margin-left: auto;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #e6e8eb;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+
+.pMore {
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+  font-size: 12.5px;
+  color: #8b9096;
+}
+
+.pButton {
+  justify-self: start;
+  margin-top: 4px;
+  padding: 7px 11px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e6e8eb;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+
+.pFinding {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: rgb(210 153 34 / 0.1);
+}
+
+@media (max-width: 860px) {
+  .phoneFig {
+    display: grid;
+    gap: 12px;
+  }
+}

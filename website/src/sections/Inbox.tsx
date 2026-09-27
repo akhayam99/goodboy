@@ -1,8 +1,9 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
 import { SeeHow } from '../components/SeeHow';
+import { PhoneFigure } from '../components/PhoneFigure';
 import { Shot } from '../components/Shot';
-import { INBOX } from '../figures';
+import { INBOX, PHONE_INBOX } from '../figures';
 import { SITE } from '../site';
 
 export const Inbox = () => (
@@ -11,6 +12,7 @@ export const Inbox = () => (
     headingId="h2-integrations"
     heading="Inbox"
     sub="Issues, pull requests, Slack threads and Sentry errors in one list. The cards write themselves."
+    phone={<PhoneFigure shot={PHONE_INBOX} />}
   >
     <Shot figure={INBOX} />
     <div className="stackText">

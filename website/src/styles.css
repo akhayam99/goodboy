@@ -771,8 +771,40 @@ footer a:hover {
   section.block {
     padding: 72px 0;
   }
-  .stack > .shot {
-    order: -1;
+  .blockHead {
+    margin-bottom: 28px;
+  }
+  .blockHead + .phoneFig {
+    margin-bottom: 28px;
+  }
+  .stack {
+    gap: 24px;
+  }
+  .stackText p:nth-of-type(n + 2) {
+    display: none;
+  }
+  .benefits {
+    gap: 0;
+  }
+  .benefits li {
+    padding: 16px 0;
+    font-size: 15.5px;
+  }
+  .benefits li:nth-child(n + 5) {
+    display: none;
+  }
+  .contrastCard {
+    padding: 20px;
+  }
+  #hero .phoneFig {
+    margin-top: 40px;
+  }
+  #hero .eyebrow {
+    font-size: 10.5px;
+    letter-spacing: 0.05em;
+  }
+  .billsHead {
+    margin: 64px 0 28px;
   }
   #hero {
     padding-top: 48px;

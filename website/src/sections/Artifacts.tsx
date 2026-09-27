@@ -1,8 +1,9 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
 import { SeeHow } from '../components/SeeHow';
+import { PhoneFigure } from '../components/PhoneFigure';
 import { Shot } from '../components/Shot';
-import { COMPARE } from '../figures';
+import { COMPARE, PHONE_REPORT } from '../figures';
 import { SITE } from '../site';
 
 export const Artifacts = () => (
@@ -11,6 +12,7 @@ export const Artifacts = () => (
     headingId="h2-artifacts"
     heading="Plans, reports and wireframes"
     sub="The plan does not scroll away. It lives next to the task, with who made it and what it came from."
+    phone={<PhoneFigure shot={PHONE_REPORT} />}
   >
     <Shot figure={COMPARE} />
     <div className="stackText">

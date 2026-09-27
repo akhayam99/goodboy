@@ -1,8 +1,9 @@
 import { Benefits, type Benefit } from '../components/Benefits';
 import { Block } from '../components/Block';
 import { SeeHow } from '../components/SeeHow';
+import { PhoneFigure } from '../components/PhoneFigure';
 import { Shot } from '../components/Shot';
-import { BOARD } from '../figures';
+import { BOARD, PHONE_BOARD } from '../figures';
 
 const ITEMS: readonly Benefit[] = [
   {
@@ -33,6 +34,7 @@ export const Leads = () => (
     headingId="h2-leads"
     heading="For leads and project managers"
     sub="Look once and you know where every task stands, without asking anyone."
+    phone={<PhoneFigure shot={PHONE_BOARD} />}
   >
     <Shot figure={BOARD} />
     <Benefits items={ITEMS} />
