@@ -30,11 +30,6 @@ type Props = {
   readonly contextTab?: ContextDrawerTab;
 };
 
-const contextTabFromUrl = (): ContextDrawerTab => {
-  const tab = new URLSearchParams(window.location.search).get('tab');
-  return tab === 'goal' || tab === 'summary' ? tab : 'decisions';
-};
-
 export const ActivityRunScene = ({ contextTab }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
@@ -73,5 +68,3 @@ export const ActivityRunScene = ({ contextTab }: Props) => {
     />
   );
 };
-
-export const ContextDrawerScene = () => <ActivityRunScene contextTab={contextTabFromUrl()} />;

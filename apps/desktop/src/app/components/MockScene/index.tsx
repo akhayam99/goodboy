@@ -24,7 +24,8 @@ import {
   ArtifactCreateWireframeScene,
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
-import { ActivityRunScene, ContextDrawerScene } from './scenes/ActivityRunScene';
+import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
 import { OpenQuestionsScene } from './scenes/flow-audit/OpenQuestionsScene';
