@@ -397,7 +397,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     });
     out.push({
       id: 'help:guide',
-      label: 'Getting started',
+      label: 'Guide',
       group: 'help',
       icon: CONCEPT_ICONS.guide,
       onSelect: () => window.dispatchEvent(new CustomEvent('goodboy:open-guide')),

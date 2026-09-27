@@ -1,120 +1,77 @@
-import { Palette } from 'lucide-react';
-import { SectionHeader } from '@goodboy/ui';
+import type { SessionStage } from '@goodboy/types';
+import { tintClasses } from '@goodboy/ui';
+import { MODE_COPY, PICKER_MODES } from '../../../../permissions/modeCopy';
+import { contextUsageTone } from '../../../../session/contextUsageTone';
+import { SESSION_STAGE_META, STAGE_TONE } from '../../../../session/session-stage';
 import { LegendaGrid } from './LegendaGrid';
 import { LegendBlock } from './LegendBlock';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+
+const STAGES: ReadonlyArray<SessionStage> = ['attention', 'running', 'review', 'building', 'done'];
 
 type Props = Record<never, never>;
 
 export const LegendSection = ({}: Props) => (
-  <div className="flex flex-col gap-7">
-    <SectionHeader
-      size="page"
-      icon={<Palette size={ICON_SIZE.control} aria-hidden className="text-primary" />}
-      label="Legend"
-      hint="Color meanings used throughout the interface."
-    />
+  <div className="grid grid-cols-2 gap-3">
+    <LegendBlock title="Board columns">
+      <LegendaGrid
+        rows={STAGES.map((stage) => ({
+          dot: tintClasses(STAGE_TONE[stage]).dot,
+          label: SESSION_STAGE_META[stage].label,
+          desc: SESSION_STAGE_META[stage].reason,
+        }))}
+      />
+    </LegendBlock>
 
-    <LegendBlock title="Agent status, workflow steps">
+    <LegendBlock title="Steps and agents">
       <LegendaGrid
         rows={[
-          { dot: 'bg-idle', label: 'pending', desc: 'not yet started' },
-          { dot: 'bg-info', label: 'running', desc: 'active turn in progress' },
-          { dot: 'bg-success', label: 'completed', desc: 'ended successfully' },
-          { dot: 'bg-danger', label: 'failed', desc: 'ended with error' },
           {
-            dot: 'border border-idle bg-transparent',
-            label: 'skipped',
-            desc: 'bypassed by workflow logic',
+            dot: tintClasses('warning').dot,
+            label: 'waiting',
+            desc: 'needs your answer or approval',
+          },
+          { dot: tintClasses('danger').dot, label: 'failed', desc: 'ended with an error' },
+          {
+            dot: tintClasses('neutral').dot,
+            label: 'the rest',
+            desc: 'running, done or skipped, no color',
           },
         ]}
       />
     </LegendBlock>
 
-    <LegendBlock title="Stage board groups">
+    <LegendBlock title="Permission modes">
       <LegendaGrid
-        rows={[
-          {
-            dot: 'bg-warning motion-safe:animate-soft-pulse',
-            label: 'attention',
-            desc: 'amber pulse, an agent replied or hit a question',
-          },
-          {
-            dot: 'bg-info',
-            label: 'running',
-            desc: 'info accent, a turn is active in this session',
-          },
-          {
-            dot: 'bg-success',
-            label: 'review',
-            desc: 'work landed and is ready to read or ship',
-          },
-          {
-            dot: 'bg-transparent ring-1 ring-border-soft',
-            label: 'building / done',
-            desc: 'no accent, nothing needs you yet',
-          },
-        ]}
+        rows={[...PICKER_MODES].reverse().map((mode) => ({
+          dot: tintClasses(MODE_COPY[mode].tone).dot,
+          label: MODE_COPY[mode].label,
+          desc: MODE_COPY[mode].short.replace(/\.$/, '').toLowerCase(),
+        }))}
       />
     </LegendBlock>
 
-    <LegendBlock title="Edit types, transcript">
+    <LegendBlock title="Context meter">
       <LegendaGrid
         rows={[
-          { dot: 'bg-primary', label: 'create', desc: 'new file or resource added' },
-          { dot: 'bg-idle', label: 'modify', desc: 'existing file changed' },
-          { dot: 'bg-danger', label: 'delete', desc: 'file or resource removed' },
-        ]}
-      />
-    </LegendBlock>
-
-    <LegendBlock title="Context window, CTX fill level">
-      <LegendaGrid
-        rows={[
-          { dot: 'bg-success', label: '< 50%', desc: 'comfortable: plenty of context remaining' },
-          { dot: 'bg-info', label: '50 to 75%', desc: 'moderate: monitor closely' },
-          { dot: 'bg-warning', label: '75 to 90%', desc: 'high: consider summarizing soon' },
-          { dot: 'bg-danger', label: '90% or more', desc: 'critical: start a new session' },
-        ]}
-      />
-    </LegendBlock>
-
-    <LegendBlock title="Verbosity, output density">
-      <LegendaGrid
-        rows={[
-          { dot: 'bg-success', label: 'brief', desc: 'bare minimum: one-liners only' },
-          { dot: 'bg-info', label: 'normal', desc: 'standard prose with rationale' },
-          { dot: 'bg-danger', label: 'verbose', desc: 'full long-form with alternatives' },
-        ]}
-      />
-    </LegendBlock>
-
-    <LegendBlock title="Permission mode, tool access">
-      <LegendaGrid
-        rows={[
-          { dot: 'bg-danger', label: 'Full access', desc: 'does anything without asking' },
           {
-            dot: 'bg-warning',
-            label: 'Edits allowed',
-            desc: 'changes files in your projects, asks before anything else',
+            dot: contextUsageTone({ pct: 0, prefix: 'bg' }),
+            label: 'under 50%',
+            desc: 'plenty of room',
           },
           {
-            dot: 'bg-info',
-            label: 'Ask first',
-            desc: "stops before anything it hasn't been allowed",
+            dot: contextUsageTone({ pct: 0.5, prefix: 'bg' }),
+            label: '50 to 75%',
+            desc: 'keep an eye on it',
           },
-          { dot: 'bg-idle', label: 'Read only', desc: 'reads and answers, changes nothing' },
-        ]}
-      />
-    </LegendBlock>
-
-    <LegendBlock title="Autorun badge">
-      <LegendaGrid
-        rows={[
           {
-            dot: 'bg-primary',
-            label: 'Autorun',
-            desc: 'autorun mode: next action fires without user confirmation',
+            dot: contextUsageTone({ pct: 0.75, prefix: 'bg' }),
+            label: '75 to 90%',
+            desc: 'wrap up or summarize soon',
+          },
+          {
+            dot: contextUsageTone({ pct: 0.9, prefix: 'bg' }),
+            label: '90% or more',
+            desc: 'start a new session',
           },
         ]}
       />
