@@ -1,33 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildCrashReport, collapseHomePaths, CRASH_TRACE_BUDGET } from './buildCrashReport';
+import { buildCrashReport, CRASH_TRACE_BUDGET } from './buildCrashReport';
 import { isOpenableUrl } from './components/ReportIssueStudio/issuePayload';
 import { MAX_ISSUE_URL_BYTES } from './issueUrl';
 
 const errorWith = (message: string): Error => new Error(message);
-
-describe('collapseHomePaths', () => {
-  it('shortens a macOS home folder to a tilde', () => {
-    expect(collapseHomePaths({ text: 'at /Users/ada/goodboy/src/App.tsx:3' })).toBe(
-      'at ~/goodboy/src/App.tsx:3',
-    );
-  });
-
-  it('shortens a linux home folder to a tilde', () => {
-    expect(collapseHomePaths({ text: 'at /home/ada/goodboy/src/App.tsx' })).toBe(
-      'at ~/goodboy/src/App.tsx',
-    );
-  });
-
-  it('shortens a windows home folder to a tilde', () => {
-    expect(collapseHomePaths({ text: 'at C:\\Users\\ada\\goodboy\\App.tsx' })).toBe(
-      'at ~\\goodboy\\App.tsx',
-    );
-  });
-
-  it('leaves a path outside a home folder alone', () => {
-    expect(collapseHomePaths({ text: 'at /opt/goodboy/App.tsx' })).toBe('at /opt/goodboy/App.tsx');
-  });
-});
 
 describe('buildCrashReport', () => {
   it('carries no home path into the issue url', () => {
@@ -97,15 +73,49 @@ describe('buildCrashReport', () => {
     expect(report.body).toContain('did not fit the report link');
   });
 
-  it('caps a runaway title instead of letting it fill the link', () => {
+  it('names the error kind in the title and never the message', () => {
     const report = buildCrashReport({
-      error: errorWith('t'.repeat(20000)),
+      error: new TypeError('fetch failed: Authorization: Bearer sk-ant-api03-AbCdEfGhIjKlMnOp'),
       componentStack: null,
       version: '0.1.81',
     });
 
+    expect(report.title).toBe('Crash: TypeError');
+  });
+
+  it('falls back to a plain title when the error name is not a plain identifier', () => {
+    const error = errorWith('boom');
+    error.name = `leak ${'t'.repeat(20000)}`;
+    const report = buildCrashReport({ error, componentStack: null, version: '0.1.81' });
+
+    expect(report.title).toBe('Crash: runtime error');
     expect(report.url.length).toBeLessThanOrEqual(MAX_ISSUE_URL_BYTES);
-    expect(report.title.endsWith('…')).toBe(true);
+  });
+
+  it('removes secrets, emails, link queries and home paths from the message and the stack', () => {
+    const report = buildCrashReport({
+      error: errorWith(
+        'fetch https://api.github.com/graphql?access_token=abc123def456 failed for rowan@example.dev: Authorization: Bearer sk-ant-api03-AbCdEfGhIjKlMnOp',
+      ),
+      componentStack:
+        '\n    at Row (/Users/rowan/code/harborline/src/Row.tsx:12) ghp_AbCdEfGhIjKlMnOpQrSt1234',
+      version: '0.1.81',
+    });
+    const decoded = decodeURIComponent(report.url);
+
+    for (const leak of [
+      'sk-ant-api03',
+      'ghp_AbCd',
+      'access_token',
+      'rowan@example.dev',
+      '/Users/rowan',
+    ]) {
+      expect(report.body).not.toContain(leak);
+      expect(report.title).not.toContain(leak);
+      expect(decoded).not.toContain(leak);
+    }
+    expect(report.body).toContain('https://api.github.com/graphql failed');
+    expect(report.body).toContain('~/code/harborline/src/Row.tsx:12');
   });
 
   it('cuts the stack further when the capped stack alone overflows the link', () => {
