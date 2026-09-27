@@ -24,7 +24,7 @@ Rewrite history opens again, reports leave out your personal details, and a repo
 - An inbox loading error shows its real message instead of [object Object]. <!-- gb area=inbox -->
 - Switching between light and dark mode changes the colors in one step, with no text fading out and back in. <!-- gb area=app -->
 - Reports, wireframes and plans with long markdown bodies are saved reliably. <!-- gb area=artifacts -->
-- An agent whose report, wireframe or plan was not saved ends blocked with No artifact and a Retry capture action, instead of showing green. <!-- gb area=artifacts -->
+- An agent whose report, wireframe or plan was not saved ends blocked with a Retry capture action, instead of showing green. <!-- gb area=artifacts -->
 
 ## Goodboy v0.11.1
 

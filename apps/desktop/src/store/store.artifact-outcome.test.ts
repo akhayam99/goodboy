@@ -222,4 +222,17 @@ describe('artifact outcome through the real store', () => {
     const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
     expect(events.some((event) => event.kind === 'artifact_capture_failed')).toBe(false);
   });
+
+  it('shows no green when a parsed report fails to save', async () => {
+    const { createArtifact } = await import('../features/artifacts/artifacts');
+    vi.mocked(createArtifact).mockRejectedValueOnce(new Error('disk full'));
+
+    await runReportTurn(CAPTURED_REPORT);
+
+    await vi.waitFor(() => expect(agentRow()?.status).toBe('blocked'));
+    expect(artifacts()).toEqual([]);
+    expect(stateWord().word).toBe('No artifact');
+    const events = useAppStore.getState().transcripts[AGENT_ID] ?? [];
+    expect(events.some((event) => event.kind === 'artifact_capture_failed')).toBe(true);
+  });
 });

@@ -182,6 +182,7 @@ import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { GetFn, SendTurnResult, SetFn } from './types';
 import { formatClockTime } from '../../../shared/utils/formatClockTime';
 import {
+  expectsArtifact,
   isAgentMissingArtifact,
   MISSING_ARTIFACT_CODE,
   MISSING_ARTIFACT_MESSAGE,
@@ -1836,6 +1837,21 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
       const settledAgentRow =
         (get().sessionPhaseRuns[sessionId] ?? []).find((row) => row.id === activeAgentId) ?? null;
+      if (
+        captured.error !== null &&
+        settledAgentRow !== null &&
+        settledAgentRow.status === 'completed' &&
+        expectsArtifact({ kind: earlyAgentKind })
+      ) {
+        await invokeAgentUpdateStatus(settledAgentRow.id, {
+          status: 'blocked',
+          completedAt: now(),
+        });
+        const blockedRuns = await invokeAgentList(sessionId);
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: blockedRuns },
+        }));
+      }
       if (
         captured.error === null &&
         captured.plan === null &&
