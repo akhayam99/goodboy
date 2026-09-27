@@ -167,7 +167,7 @@ const FORMS: Readonly<Record<string, () => ReactNode>> = {
   import: () =>
     column(
       <div className="flex justify-end">
-        <ImportPopover workspaceId={WORKSPACE_ID} takenNames={[]} />
+        <ImportPopover workspaceId={WORKSPACE_ID} takenNames={new Set<string>()} />
       </div>,
     ),
   locate: () => column(<LocateMovedProjects workspaceId={WORKSPACE_ID} onChoose={noop} />),
