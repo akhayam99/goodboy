@@ -86,7 +86,7 @@ Tell agents once who you are and how you like to work, in four short parts. **Se
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s02-kickoff-dark.webp">
-  <img src="./docs/readme/s02-kickoff-light.webp" alt="Pick up a task with HBL-412 selected and a drafted brief">
+  <img src="./docs/readme/s02-kickoff-light.webp" alt="The kickoff with Pick up a task, Run a workflow and Ask an agent, Start blank in the header, and HBL-412 picked with a drafted brief">
 </picture>
 
 ### How do you want to start?
@@ -95,7 +95,7 @@ Start from an issue, a workflow or a question, in one draft with three tabs: **P
 
 ### Start blank
 
-Start from the goal instead: **Start blank** opens the session straight on its Overview, and you add the goal, projects and work from there.
+Start from the goal instead: **Start blank** in the kickoff header opens the session straight on its Overview, and you add the goal, projects and work from there.
 
 ### Pick up a task, with a drafted brief
 
@@ -150,6 +150,10 @@ Know what needs you from any screen. A top-bar chip counts sessions that need yo
 ### Session overview
 
 Find the goal, linked issues, projects, cost and the buttons to start an agent or a workflow on one screen. **Run workflow** turns into **Open run** while a run is live, so a second one does not start on top.
+
+### Refresh a session
+
+See pull requests made outside Goodboy without reloading. One an agent opened or you made in a terminal shows up when the turn ends or when you come back to the window. **Refresh**, next to Archive and Delete in the session header, re-reads projects, branches and pull requests right away, also from **⌘⇧R** and the command palette.
 
 ### Activity
 
@@ -297,7 +301,7 @@ Line work up behind work: start a run now, by hand, or after another run finishe
 
 ### Workflow run
 
-Follow a run as a tree with one pinned next action, and add steps to a live or finished run.
+Follow a run as a tree with one pinned next action, and add steps to a live or finished run. Deleting a run deletes its agents and their open questions with it.
 
 ### Step handoff summary
 
@@ -393,7 +397,7 @@ Start a session from an issue, a Slack thread or an error, with the brief alread
 
 ### Link an item to a session
 
-Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick.
+Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session, paste an issue code or a link into the Overview link picker to find the issue and link it.
 
 ### Trackers
 
@@ -725,7 +729,7 @@ Open a real login shell in the session's worktree with **⌘T**, and find it sti
 
 ### Keyboard shortcuts, back and forward
 
-Drive Goodboy from the keyboard: about 40 shortcuts, a key for each view, workspaces 1 to 9, and **⌘[** and **⌘]** through history. One registry drives the keys, the help screen and the tooltips.
+Drive Goodboy from the keyboard: about 40 shortcuts, a key for each view, workspaces 1 to 9, and **⌘[** and **⌘]** through history. One registry drives the keys, the help screen and the tooltips. **Esc** closes what is open inside the app and never takes the window out of macOS full screen.
 
 ### Notifications
 

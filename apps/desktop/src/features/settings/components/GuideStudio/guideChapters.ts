@@ -195,7 +195,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Workflows',
-        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step has its own provider, model and effort.',
+        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step has its own provider, model and effort. Deleting a run deletes its agents and their open questions.',
       },
       {
         term: 'Orchestrated',
@@ -251,7 +251,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Inbox',
-        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue.',
+        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub items when several projects live on GitHub, filter by project.',
       },
       {
         term: 'Start from anything',
@@ -299,6 +299,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Pull request page',
         desc: 'Whether a GitHub pull request can merge, in plain words, with checks and activity. Merge asks for confirmation.',
+      },
+      {
+        term: 'Refresh',
+        desc: 'A pull request an agent or your terminal opened shows up when the turn ends or when you come back to the window. Refresh in the session header, or ⌘⇧R, reads it right away.',
       },
       {
         term: 'Write it for me',
@@ -495,6 +499,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Command palette',
         desc: 'Find workspaces, sessions, agents, pages, scripts and actions, with the same prefixes as the message box: $ for scripts, ~ for workflows, @ for agents.',
+      },
+      {
+        term: 'Esc',
+        desc: 'Closes the menu, panel or dialog in front. It never takes the window out of macOS full screen.',
       },
     ],
     links: [

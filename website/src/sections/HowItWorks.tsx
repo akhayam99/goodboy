@@ -19,6 +19,10 @@ export const HowItWorks = () => (
         why.
       </p>
       <p>
+        Press New and pick Run a workflow: the same builder opens there, and the session and its run
+        start together. Or start blank and add the goal later.
+      </p>
+      <p>
         Heading somewhere you did not mean? Leave a hint for the next decision, or have it read
         right away.
       </p>
