@@ -47,6 +47,8 @@ type Store = {
   readonly forgetIntegrationCredential: ReturnType<typeof vi.fn>;
   readonly disconnectIntegration: ReturnType<typeof vi.fn>;
   readonly connectLinear: ReturnType<typeof vi.fn>;
+  readonly githubStatus: null;
+  readonly projectSentryLinks: Readonly<Record<string, never>>;
 };
 
 type Props = {
@@ -77,6 +79,8 @@ const h = vi.hoisted(() => ({
     forgetIntegrationCredential: vi.fn(async () => undefined),
     disconnectIntegration: vi.fn(async () => undefined),
     connectLinear: vi.fn(async () => undefined),
+    githubStatus: null,
+    projectSentryLinks: {},
   },
   openUrl: vi.fn(async () => undefined),
   loadCandidates: vi.fn(),
@@ -103,6 +107,10 @@ vi.mock('../../../../../../store', async () => {
       selector({ ...h.store, ...github() }),
   };
 });
+
+vi.mock('../../../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
+  useWorkspaceIssueLookup: () => ({ code: null, settled: null }),
+}));
 
 vi.mock('../../../../../../shared/lib/editor', () => ({
   openUrl: h.openUrl,

@@ -126,7 +126,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Pick up a task',
-        desc: 'Choose an issue from your tools. Goodboy drafts a short title and goal linked back to it, and you keep or edit them.',
+        desc: 'Choose an issue from your tools or the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. A Sentry error or a GitHub item opens in its project and says why.',
       },
       {
         term: 'Run a workflow',

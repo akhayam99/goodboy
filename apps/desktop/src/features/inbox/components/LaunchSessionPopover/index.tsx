@@ -4,6 +4,7 @@ import { AnchoredPopover, Button, KbdPill, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
+import type { LaunchMount } from '../../launchMountFor';
 import type { LaunchSpec } from '../../launchSpecFor';
 
 type Props = {
@@ -11,9 +12,16 @@ type Props = {
   readonly spec: LaunchSpec;
   readonly openRequest: number;
   readonly onLaunched: () => void;
+  readonly mount?: LaunchMount | null;
 };
 
-export const LaunchSessionPopover = ({ workspaceId, spec, openRequest, onLaunched }: Props) => {
+export const LaunchSessionPopover = ({
+  workspaceId,
+  spec,
+  openRequest,
+  onLaunched,
+  mount = null,
+}: Props) => {
   const dropdown = useDropdown({ align: 'start', width: 'w-96', expectedHeight: 320 });
   const [focusRequest, setFocusRequest] = useState(0);
   const { open: isOpen, toggle } = dropdown;
@@ -58,6 +66,7 @@ export const LaunchSessionPopover = ({ workspaceId, spec, openRequest, onLaunche
         briefSource={spec.briefSource}
         onClose={onLaunched}
         focusRequest={focusRequest}
+        mount={mount}
       />
     </AnchoredPopover>
   );

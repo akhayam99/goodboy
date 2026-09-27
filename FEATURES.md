@@ -377,7 +377,7 @@ Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Line
   <img src="./docs/readme/s19-inbox-light.webp" alt="The Inbox with HBL-412 pasted and found outside your inbox, a starred issue and a Slack thread">
 </picture>
 
-Work from one list instead of seven tabs: issues, Slack threads and Sentry errors from your connected tools, plus pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket, grouped by day, with keyboard navigation. Projects with nothing in them fold under **Show N empty**.
+Work from one list instead of seven tabs: issues, Slack threads and Sentry errors from your connected tools, plus pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket, grouped by day, with keyboard navigation. Sentry errors filter by the project they belong to, and GitHub items too when several projects live on GitHub. Linear and Jira stay one flat list.
 
 ### Find any issue by code or link
 
@@ -389,7 +389,7 @@ Keep the issues you follow on top of the Inbox and of **Pick up a task**.
 
 ### Launch a session from any item
 
-Start a session from an issue, a Slack thread or an error, with the brief already drafted.
+Start a session from an issue, a Slack thread or an error, with the brief already drafted. A Sentry error or a GitHub item opens in its project, and the popover says why.
 
 ### Link an item to a session
 

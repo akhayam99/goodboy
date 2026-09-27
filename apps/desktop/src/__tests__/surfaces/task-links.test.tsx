@@ -494,6 +494,55 @@ describe('tasks and sessions on the real store', () => {
     await expectLinked(session, entry);
   });
 
+  it('mounts the project linked to the sentry project when launching from its error', async () => {
+    const entry = CASES.find((candidate) => candidate.provider === 'sentry');
+    if (entry == null) {
+      throw new Error('missing sentry case');
+    }
+    const session = seed(entry);
+    const project = useAppStore.getState().projects.find((candidate) => candidate.kind === 'repo');
+    if (project == null) {
+      throw new Error('the board scene has no repo project');
+    }
+    useAppStore.setState({
+      projectSentryLinks: {
+        [WORKSPACE_ID]: [{ projectId: project.id, sentryProject: 'payments-api' }],
+      },
+    } as unknown as Partial<StoreState>);
+    const createSession = vi.fn(async () => ({ session }));
+    stubActions({
+      createSession: createSession as unknown as StoreState['createSession'],
+      requestIssueBrief: vi.fn(async () => undefined),
+    });
+    const record: InboxRecord = {
+      ...entry.record,
+      payload: {
+        provider: 'sentry',
+        kind: 'error',
+        issue: { ...SENTRY_ISSUE, project: { slug: 'payments-api', name: 'payments-api' } },
+        sessionId: null,
+      } as InboxRecord['payload'],
+    };
+
+    await mount(<InboxItem record={record} workspaceId={WORKSPACE_ID} />);
+    fireEvent.click(screen.getByRole('button', { name: /Launch session/ }));
+    const panel = await screen.findByRole('region', { name: 'Launch session' });
+    expect(
+      within(panel).getByRole('combobox', { name: 'Project to work in' }).textContent,
+    ).toContain(`Works in ${project.name}`);
+    expect(within(panel).getByText('from Sentry project payments-api')).toBeDefined();
+    fireEvent.click(within(panel).getByRole('button', { name: /Launch session/ }));
+
+    await waitFor(() =>
+      expect(createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: project.id,
+          projectReason: 'from Sentry project payments-api',
+        }),
+      ),
+    );
+  });
+
   it.each(CASES)('links a $label inbox item to an existing session', async (entry) => {
     const session = seed(entry);
 
@@ -572,6 +621,55 @@ describe('tasks and sessions on the real store', () => {
       ]),
     );
   });
+
+  it.each([
+    { how: 'pasted link', value: 'https://cascadia.sentry.io/issues/4512099/' },
+    { how: 'short code', value: 'core-api-3c' },
+  ])(
+    'links a sentry issue outside the list from its $how in the session link button',
+    async ({ value }) => {
+      const entry = CASES.find((candidate) => candidate.provider === 'sentry');
+      if (entry == null) {
+        throw new Error('missing sentry case');
+      }
+      const session = seed(entry);
+      const resolved = {
+        ...SENTRY_ISSUE,
+        id: '4512099',
+        shortId: 'CORE-API-3C',
+        title: 'ValueError in the ledger-core nightly close',
+        permalink: 'https://cascadia.sentry.io/issues/4512099/',
+      };
+      bridge.routes = {
+        ...entry.routes,
+        sentry_fetch_issue: () => resolved,
+        sentry_resolve_short_id: () => resolved,
+      };
+
+      await mount(surfaces(session, entry, <LinkIssueAction session={session} />));
+      fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Link an issue' });
+      const picker = within(dialog).getByRole('combobox');
+      fireEvent.focus(picker);
+      fireEvent.change(picker, { target: { value } });
+      fireEvent.click(
+        await screen.findByRole('option', { name: 'Link CORE-API-3C' }, { timeout: 2000 }),
+      );
+      await settle();
+
+      await waitFor(() =>
+        expect(useAppStore.getState().sessionExternalTasks[session.id]).toEqual([
+          expect.objectContaining({
+            provider: 'sentry',
+            externalId: '4512099',
+            identifier: 'CORE-API-3C',
+            title: resolved.title,
+            url: resolved.permalink,
+          }),
+        ]),
+      );
+    },
+  );
 
   it('shows a sentry issue linked from the session in the full inbox', async () => {
     const entry = CASES.find((candidate) => candidate.provider === 'sentry');

@@ -20,6 +20,7 @@ const COUNTS: InboxFacetCounts = {
   kind: { issue: 5, 'pr-mr': 0, thread: 0, error: 2 },
   source: { ...NONE, github: 5, sentry: 2 },
   project: () => 0,
+  hasProjectMapping: true,
 };
 
 const NOT_LOADING: Readonly<Record<InboxProvider, boolean>> = {
@@ -210,6 +211,29 @@ describe('InboxFacetRail', () => {
     );
 
     expect(within(section('Project')).queryByRole('button', { name: /empty/ })).toBeNull();
+  });
+
+  it('leaves the project section out when no item in view maps to a project', () => {
+    const projects = [
+      { id: 'ledger', name: 'ledger-core', kind: 'repo' },
+      { id: 'relay', name: 'notify-relay', kind: 'repo' },
+    ] as unknown as ReadonlyArray<Project>;
+    render(
+      <InboxFacetRail
+        filters={{ ...NO_INBOX_FILTERS, source: 'linear' }}
+        counts={{ ...COUNTS, project: () => 0, hasProjectMapping: false }}
+        connected={['linear', 'sentry']}
+        loading={NOT_LOADING}
+        errors={NO_ERRORS}
+        projects={projects}
+        onFiltersChange={vi.fn()}
+        onClearFilters={vi.fn()}
+      />,
+    );
+
+    const rail = screen.getByRole('navigation', { name: 'Filter the inbox' });
+    expect(within(rail).queryByRole('region', { name: 'Project' })).toBeNull();
+    expect(within(rail).queryByRole('button', { name: /empty/ })).toBeNull();
   });
 
   it('leaves the project section out with a single project', () => {

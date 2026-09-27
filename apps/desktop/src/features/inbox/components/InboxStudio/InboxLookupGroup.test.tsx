@@ -36,6 +36,7 @@ const lookup = (patch: Partial<WorkspaceIssueLookup>): WorkspaceIssueLookup => (
   loadingProviders: [],
   retryAt: null,
   retry: vi.fn(),
+  settled: null,
   ...patch,
 });
 

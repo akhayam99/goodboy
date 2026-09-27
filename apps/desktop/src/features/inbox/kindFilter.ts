@@ -168,6 +168,7 @@ export type InboxFacetCounts = {
   readonly kind: Readonly<Record<InboxTypeFacet, number>>;
   readonly source: Readonly<Record<InboxProvider, number>>;
   readonly project: (project: ProjectId) => number;
+  readonly hasProjectMapping: boolean;
 };
 
 type FacetCountsParams = {
@@ -234,6 +235,9 @@ export const inboxFacetCounts = ({
     source: sourceCounts({ records: forSource }),
     project: (project: ProjectId): number =>
       forProject.filter((record) => matchesProject({ record, project })).length,
+    hasProjectMapping: forProject.some(
+      (record) => record.projectIds != null && record.projectIds.length > 0,
+    ),
   };
 };
 
