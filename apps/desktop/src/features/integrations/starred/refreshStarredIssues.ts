@@ -225,7 +225,9 @@ export const refreshStarredIssues = async ({
         stateLabel: record.stateLabel,
         refreshedAt: now,
       });
-    } else if (outcome.reached.has(key)) {
+      continue;
+    }
+    if (outcome.reached.has(key)) {
       snapshots.push({ ...issue, state: 'missing', refreshedAt: now });
     }
   }
