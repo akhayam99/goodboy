@@ -77,7 +77,7 @@ export const seedShellChrome = ({
           sessionId: session.id,
           kind: 'turn',
           provider: 'anthropic',
-          model: 'claude-sonnet-4-5',
+          model: 'claude-sonnet-5',
           recordedAt: telemetryAt,
           inputTokens: 22_140,
           outputTokens: 5_310,

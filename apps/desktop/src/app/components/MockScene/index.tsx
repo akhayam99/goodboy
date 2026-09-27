@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ToastProvider } from '../Toast';
+import { finish as finishOnboarding } from '../../../features/onboarding/onboarding-store';
 import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
@@ -71,6 +72,19 @@ import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
 import { ListboxScene } from './scenes/ListboxScene';
+import { BrandKickoffScene } from './scenes/brand/KickoffScene';
+import { BrandLookupScene } from './scenes/brand/LookupScene';
+import { BrandSlackScene } from './scenes/brand/SlackScene';
+import { BrandContextScene } from './scenes/brand/ContextScene';
+import { BrandCompareScene } from './scenes/brand/CompareScene';
+import { BrandDiffScene } from './scenes/brand/DiffScene';
+import { BrandHistoryScene } from './scenes/brand/HistoryScene';
+import { BrandLimitsScene } from './scenes/brand/LimitsScene';
+import { BrandCodexScene } from './scenes/brand/CodexScene';
+import { BrandStorageScene } from './scenes/brand/StorageScene';
+import { BrandSecurityFindingsScene } from './scenes/brand/SecurityFindingsScene';
+import { BrandToolsScene } from './scenes/brand/ToolsScene';
+import { useBrandChrome } from './scenes/brand/brandChrome';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -137,7 +151,21 @@ export const MOCK_SCENES = {
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,
+  'brand-kickoff': BrandKickoffScene,
+  'brand-lookup': BrandLookupScene,
+  'brand-slack': BrandSlackScene,
+  'brand-context': BrandContextScene,
+  'brand-compare': BrandCompareScene,
+  'brand-diff': BrandDiffScene,
+  'brand-history': BrandHistoryScene,
+  'brand-limits': BrandLimitsScene,
+  'brand-codex': BrandCodexScene,
+  'brand-storage': BrandStorageScene,
+  'brand-security-findings': BrandSecurityFindingsScene,
+  'brand-tools': BrandToolsScene,
 };
+
+const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];
 
 export const MockScene = () => {
   useEffect(() => {
@@ -148,6 +176,27 @@ export const MockScene = () => {
   const sceneName = params.get('scene') ?? 'workspace';
   const Scene =
     Object.entries(MOCK_SCENES).find(([key]) => key === sceneName)?.[1] ?? WorkspaceScene;
+
+  if (params.get('brand') === '1') {
+    finishOnboarding();
+  }
+
+  useEffect(() => {
+    if (params.get('brand') !== '1') {
+      return;
+    }
+    const drop = () =>
+      document.querySelectorAll('[role="alert"], [role="status"]').forEach((node) => {
+        if (BRAND_HIDDEN_TOASTS.some((text) => node.textContent?.includes(text))) {
+          (node as HTMLElement).style.display = 'none';
+        }
+      });
+    const observer = new MutationObserver(drop);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
+  useBrandChrome({ isBrand: params.get('brand') === '1' });
 
   useEffect(() => {
     if (params.get('theme') !== 'light') {

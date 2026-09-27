@@ -75,9 +75,9 @@ const LEDGER_MOUNT_ID = 'mock-scripts-mount-ledger' as MountId;
 const SCRIPTS_NOW = scriptsClock.iso({ at: '2026-09-16T11:24:00.000Z' });
 const SCRIPTS_EARLIER = scriptsClock.iso({ at: '2026-09-16T09:05:00.000Z' });
 
-const LEDGER_WORKTREE = '/mock/harborline/ledger-core-settlement';
-const RELAY_WORKTREE = '/mock/harborline/notify-relay-settlement';
-const PAYMENTS_WORKTREE = '/mock/harborline/payments-api-settlement';
+const LEDGER_WORKTREE = '~/code/harborline/ledger-core-settlement';
+const RELAY_WORKTREE = '~/code/harborline/notify-relay-settlement';
+const PAYMENTS_WORKTREE = '~/code/harborline/payments-api-settlement';
 const NORTHWIND_WORKTREE = '/mock/northwind/storefront-settlement';
 
 const SCRIPTS_WORKSPACE: Workspace = {
@@ -111,17 +111,17 @@ const SCRIPTS_PROJECTS: ReadonlyArray<Project> = [
   makeProject({
     id: LEDGER_PROJECT_ID,
     name: 'ledger-core',
-    rootPath: '/mock/harborline/ledger-core',
+    rootPath: '~/code/harborline/ledger-core',
   }),
   makeProject({
     id: RELAY_PROJECT_ID,
     name: 'notify-relay',
-    rootPath: '/mock/harborline/notify-relay',
+    rootPath: '~/code/harborline/notify-relay',
   }),
   makeProject({
     id: PAYMENTS_PROJECT_ID,
     name: 'payments-api',
-    rootPath: '/mock/harborline/payments-api',
+    rootPath: '~/code/harborline/payments-api',
   }),
   makeProject({
     id: NORTHWIND_PROJECT_ID,
@@ -179,7 +179,7 @@ const SCRIPTS_MOUNTS: ReadonlyArray<SessionProjectMount> = [
     projectId: LEDGER_PROJECT_ID,
     mountName: 'ledger-core',
     worktreePath: LEDGER_WORKTREE,
-    repoRoot: '/mock/harborline/ledger-core',
+    repoRoot: '~/code/harborline/ledger-core',
     branch: 'nw/fix-settlement-replay',
     parallelIndex: 0,
   }),
@@ -188,7 +188,7 @@ const SCRIPTS_MOUNTS: ReadonlyArray<SessionProjectMount> = [
     projectId: RELAY_PROJECT_ID,
     mountName: 'notify-relay',
     worktreePath: RELAY_WORKTREE,
-    repoRoot: '/mock/harborline/notify-relay',
+    repoRoot: '~/code/harborline/notify-relay',
     branch: 'nw/fix-settlement-replay',
     parallelIndex: 1,
   }),
@@ -197,7 +197,7 @@ const SCRIPTS_MOUNTS: ReadonlyArray<SessionProjectMount> = [
     projectId: PAYMENTS_PROJECT_ID,
     mountName: 'payments-api',
     worktreePath: PAYMENTS_WORKTREE,
-    repoRoot: '/mock/harborline/payments-api',
+    repoRoot: '~/code/harborline/payments-api',
     branch: 'nw/fix-settlement-replay',
     parallelIndex: 2,
   }),
