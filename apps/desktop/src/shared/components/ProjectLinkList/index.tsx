@@ -20,6 +20,7 @@ type Props = {
   readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
   readonly density?: ProjectLinkDensity;
   readonly heading?: (params: { readonly count: number }) => ReactNode;
+  readonly hint?: string;
 };
 
 export const ProjectLinkList = ({
@@ -30,6 +31,7 @@ export const ProjectLinkList = ({
   rowBadge,
   density = 'comfortable',
   heading,
+  hint,
 }: Props) => {
   const linking = useProjectLinking({ workspaceId, initialConflicts });
   const isCompact = density === 'compact';
@@ -61,6 +63,9 @@ export const ProjectLinkList = ({
             onLinkPlainFolder={() => void linking.linkPlainFolder()}
           />
         </div>
+      )}
+      {isCompact && hint !== undefined && (
+        <p className="text-secondary text-faint-foreground">{hint}</p>
       )}
       {linking.linked.length === 0 && emptyHint !== undefined && (
         <p className="text-body text-muted-foreground">{emptyHint}</p>

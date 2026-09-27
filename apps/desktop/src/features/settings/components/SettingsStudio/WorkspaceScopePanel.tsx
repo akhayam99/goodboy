@@ -84,10 +84,11 @@ export const WorkspaceScopePanel = ({ workspaceId, initialSection, requestClose 
         )}
 
         <div id="general" ref={anchor({ id: 'general' })}>
-          <div className="flex flex-col gap-4">
-            <WorkspaceDefaultsGrid workspaceId={workspaceId} />
-            <WorkspaceAfterMergeSection workspaceId={workspaceId} />
-          </div>
+          <WorkspaceDefaultsGrid workspaceId={workspaceId} />
+        </div>
+
+        <div id="after-merge" ref={anchor({ id: 'after-merge' })}>
+          <WorkspaceAfterMergeSection workspaceId={workspaceId} />
         </div>
 
         <div ref={anchor({ id: REVIEW_REPLIES_SECTION_ID })}>

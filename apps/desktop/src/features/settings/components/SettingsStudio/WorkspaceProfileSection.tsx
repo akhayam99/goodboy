@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { WorkspaceId, WorkspaceProfile } from '@goodboy/types';
-import { Eyebrow } from '@goodboy/ui';
+import { SectionHeader } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { ProfileForm } from '../../../../shared/components/ProfileForm';
 import { normalizeWorkspaceProfile } from '../../../../shared/utils/normalizeWorkspaceProfile';
@@ -36,10 +36,12 @@ export const WorkspaceProfileSection = ({ workspaceId }: Props) => {
   };
 
   return (
-    <section aria-labelledby="workspace-about-you" className="flex flex-col gap-3">
-      <h2 id="workspace-about-you">
-        <Eyebrow label="About you" />
-      </h2>
+    <section aria-label="About you" className="flex flex-col gap-3">
+      <SectionHeader
+        label="About you"
+        hint="What agents already know about you and how you like to work."
+        headingLevel={2}
+      />
       <ProfileForm value={draft} onChange={setDraft} onCommit={(next) => void commit(next)} />
     </section>
   );

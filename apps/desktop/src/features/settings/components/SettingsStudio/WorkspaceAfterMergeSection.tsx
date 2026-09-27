@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AFTER_MERGE_RULES, type AfterMergeRule, type WorkspaceId } from '@goodboy/types';
-import { SegmentedTabs } from '@goodboy/ui';
+import { Collapsible, SectionHeader, SegmentedTabs } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { DEFAULT_AFTER_MERGE_RULE } from '../../../../store/slices/branch-cleanup';
 import { repoDeletesMergedBranches } from '../../../../store/slices/branch-cleanup/repoDeletesMergedBranches';
-import { AFTER_MERGE_LABEL, AFTER_MERGE_NEVER, githubAutoDeleteNote } from './afterMergeCopy';
+import {
+  AFTER_MERGE_LABEL,
+  AFTER_MERGE_NEVER,
+  githubAutoDeleteNote,
+  githubAutoDeleteSummary,
+} from './afterMergeCopy';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -65,6 +70,7 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
   const patchWorkspaceOverrides = useAppStore((state) => state.patchWorkspaceOverrides);
   const reportError = useAppStore((state) => state.reportError);
   const [isBusy, setIsBusy] = useState(false);
+  const [isReposOpen, setIsReposOpen] = useState(false);
   const autoDeleting = useGithubAutoDeleteRepos({ workspaceId, repos });
   const isOriginRedundant = repos.length > 0 && autoDeleting.length === repos.length;
 
@@ -90,21 +96,46 @@ export const WorkspaceAfterMergeSection = ({ workspaceId }: Props) => {
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-row text-foreground">After a pull request merges</span>
-      <SegmentedTabs
-        ariaLabel="After a pull request merges"
-        size="sm"
-        value={rule}
-        options={options}
-        onChange={(next) => void choose(next)}
+    <section aria-label="After a pull request merges" className="flex flex-col gap-2">
+      <SectionHeader
+        label="After a pull request merges"
+        hint="What happens to the branch, its folder and its worktree once a pull request lands."
+        headingLevel={2}
       />
-      <p className="text-secondary text-faint-foreground">{AFTER_MERGE_NEVER}</p>
-      {autoDeleting.map((projectName) => (
-        <p key={projectName} className="text-secondary text-muted-foreground">
-          {githubAutoDeleteNote({ projectName })}
-        </p>
-      ))}
-    </div>
+      <div className="flex flex-col gap-1.5">
+        <SegmentedTabs
+          ariaLabel="After a pull request merges"
+          size="sm"
+          value={rule}
+          options={options}
+          onChange={(next) => void choose(next)}
+        />
+        <p className="text-secondary text-faint-foreground">{AFTER_MERGE_NEVER}</p>
+        {autoDeleting.length === 1 && (
+          <p className="text-secondary text-muted-foreground">
+            {githubAutoDeleteNote({ projectName: autoDeleting[0]! })}
+          </p>
+        )}
+        {autoDeleting.length > 1 && (
+          <Collapsible
+            open={isReposOpen}
+            onOpenChange={setIsReposOpen}
+            trigger={
+              <span className="text-secondary text-muted-foreground">
+                {githubAutoDeleteSummary({ count: autoDeleting.length })}
+              </span>
+            }
+          >
+            <ul className="flex flex-col gap-0.5">
+              {autoDeleting.map((projectName) => (
+                <li key={projectName} className="text-secondary text-muted-foreground">
+                  {projectName}
+                </li>
+              ))}
+            </ul>
+          </Collapsible>
+        )}
+      </div>
+    </section>
   );
 };
