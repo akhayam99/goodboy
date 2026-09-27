@@ -55,6 +55,7 @@ import {
 import { timelineLaneRuns } from '../../../../timeline/timelineLaneRuns';
 import { layoutTimelineRail } from '../../../../../workTreeModel/railGeometry';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
+import { useOpenAgentQuestion } from '../../../../../context/hooks/useOpenAgentQuestion';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useAgentTouchedWorktrees } from '../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
@@ -105,6 +106,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
   const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
   const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
+  const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const openQuestions = useSessionOpenQuestions(sessionId);
   const answeredQuestions = useSessionAnsweredQuestions(sessionId);
   const dismissedQuestions = useSessionDismissedQuestions(sessionId);
@@ -433,12 +435,18 @@ export const TimelinePane = ({ session, actions }: Props) => {
 
   const answerAction = ({
     question,
+    isAskerOffScreen,
   }: {
     readonly question: OpenQuestion | null;
+    readonly isAskerOffScreen: boolean;
   }): TimelineRowAction => ({
     label: 'Answer',
     asksUser: true,
     onAct: () => {
+      if (question != null && isAskerOffScreen) {
+        openAgentQuestion({ question });
+        return;
+      }
       if (question != null) {
         focusQuestion(question.id);
       }
@@ -479,7 +487,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
     }
     switch (ask.kind) {
       case 'answer':
-        return answerAction({ question: ask.question });
+        return answerAction({ question: ask.question, isAskerOffScreen: entry.kind === 'run' });
       case 'restartStep': {
         const target = openTargetFor({ entry });
         if (target == null) {
