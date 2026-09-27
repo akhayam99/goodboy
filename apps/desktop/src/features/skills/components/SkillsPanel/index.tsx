@@ -337,7 +337,7 @@ const SkillEditor = ({
     <div className="flex flex-col gap-8" onKeyDown={onKeyDown}>
       <SectionHeader label={isNew ? 'New skill' : 'Edit skill'} />
 
-      <section className="flex flex-col gap-4">
+      <section className="flex flex-col">
         <FieldRow label="Name">
           <Input
             value={form.name}

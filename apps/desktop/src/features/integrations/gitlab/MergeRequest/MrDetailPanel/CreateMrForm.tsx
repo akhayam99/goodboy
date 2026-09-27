@@ -146,7 +146,7 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
     <div className="flex min-h-0 flex-1 flex-col">
       <FormPage>
         <section className="flex flex-col gap-6">
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col">
             <SectionHeader
               label="How"
               hint="Fill the merge request yourself, or hand it to an agent that drafts and opens it."

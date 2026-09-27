@@ -225,7 +225,7 @@ export const CreatePrPanel = ({
               </span>
             }
           />
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col">
             <SectionHeader
               label="How"
               hint="Fill the pull request yourself, or let Scribe write the title and description for you to check."
