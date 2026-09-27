@@ -194,12 +194,58 @@ fn is_transient_status(status: reqwest::StatusCode) -> bool {
     matches!(status.as_u16(), 429 | 502 | 503 | 504)
 }
 
+const MONTHS: [&str; 12] = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
+    let y = if month <= 2 { year - 1 } else { year };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = (month + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
+}
+
+fn parse_http_date_ms(value: &str) -> Option<i64> {
+    let parts: Vec<&str> = value.split_whitespace().collect();
+    if parts.len() != 6 || parts[5] != "GMT" {
+        return None;
+    }
+    let day: i64 = parts[1].parse().ok()?;
+    let month = MONTHS.iter().position(|m| *m == parts[2])? as i64 + 1;
+    let year: i64 = parts[3].parse().ok()?;
+    let clock: Vec<i64> = parts[4]
+        .split(':')
+        .map(|p| p.parse().ok())
+        .collect::<Option<_>>()?;
+    if clock.len() != 3 {
+        return None;
+    }
+    let days = days_from_civil(year, month, day);
+    Some(((days * 86_400) + clock[0] * 3_600 + clock[1] * 60 + clock[2]) * 1_000)
+}
+
+fn retry_after_ms(value: &str, now_ms: i64) -> Option<u64> {
+    let value = value.trim();
+    if let Ok(seconds) = value.parse::<f64>() {
+        return (seconds.is_finite() && seconds >= 0.0).then(|| (seconds * 1000.0).ceil() as u64);
+    }
+    parse_http_date_ms(value).map(|at| at.saturating_sub(now_ms).max(0) as u64)
+}
+
+fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0)
+}
+
 fn retry_wait(attempt: u32, retry_after: Option<&str>) -> std::time::Duration {
     let backoff = BASE_BACKOFF_MS.saturating_mul(1u64 << attempt.min(8));
     let wait = retry_after
-        .and_then(|value| value.trim().parse::<f64>().ok())
-        .filter(|seconds| seconds.is_finite() && *seconds >= 0.0)
-        .map(|seconds| (seconds * 1000.0).ceil() as u64)
+        .and_then(|value| retry_after_ms(value, now_ms()))
         .unwrap_or(backoff);
     std::time::Duration::from_millis(wait.min(MAX_RETRY_WAIT_MS))
 }
@@ -774,7 +820,7 @@ mod tests {
             std::time::Duration::from_millis(MAX_RETRY_WAIT_MS)
         );
         assert_eq!(
-            retry_wait(0, Some("Wed, 21 Oct 2026 07:28:00 GMT")),
+            retry_wait(0, Some("soon")),
             std::time::Duration::from_millis(BASE_BACKOFF_MS)
         );
         assert_eq!(
@@ -785,6 +831,22 @@ mod tests {
             retry_wait(30, None),
             std::time::Duration::from_millis(MAX_RETRY_WAIT_MS)
         );
+    }
+
+    #[test]
+    fn the_retry_wait_reads_an_http_date() {
+        let at = parse_http_date_ms("Wed, 21 Oct 2026 07:28:00 GMT").unwrap();
+        assert_eq!(at, 1_792_567_680_000);
+        assert_eq!(
+            retry_after_ms("Wed, 21 Oct 2026 07:28:00 GMT", at - 3_000),
+            Some(3_000)
+        );
+        assert_eq!(
+            retry_after_ms("Wed, 21 Oct 2026 07:28:00 GMT", at + 10_000),
+            Some(0)
+        );
+        assert_eq!(retry_after_ms("Wed, 21 Oct 2026 07:28:00 CET", at), None);
+        assert_eq!(parse_http_date_ms("Thu, 01 Jan 1970 00:00:00 GMT"), Some(0));
     }
 
     async fn serve(responses: Vec<&'static str>) -> (String, tokio::task::JoinHandle<usize>) {
