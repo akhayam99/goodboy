@@ -52,6 +52,25 @@ vi.mock('../../../../shared/lib/editor', () => ({ openUrl: h.openUrl }));
 vi.mock('../../../../store', () => ({
   useSessionById: (id: SessionId | null) =>
     id === LINKED_SESSION_ID ? { id, goal: '**Fix** the crash' } : null,
+  useAppStore: <T,>(selector: (state: { readonly workspaces: ReadonlyArray<never> }) => T) =>
+    selector({ workspaces: [] }),
+}));
+
+vi.mock('../../useInboxStars', () => ({
+  useInboxStars: () => ({
+    rows: [],
+    isStarred: () => false,
+    canStar: () => false,
+    toggle: async () => undefined,
+  }),
+}));
+
+vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
+  useWorkspaceIssueLookup: () => ({
+    code: null,
+    state: { status: 'idle' },
+    retry: () => undefined,
+  }),
 }));
 
 vi.mock('../../useInboxRecords', () => ({

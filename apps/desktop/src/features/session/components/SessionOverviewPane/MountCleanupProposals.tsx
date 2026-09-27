@@ -59,6 +59,11 @@ export const MountCleanupProposals = ({ sessionId }: Props) => {
                 ? ''
                 : ` (${formatBytes({ bytes: proposal.sizeBytes })})`}
             </span>
+            {proposal.keptBecause !== undefined && (
+              <span className="truncate text-secondary text-muted-foreground">
+                {proposal.keptBecause}
+              </span>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button

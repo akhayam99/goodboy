@@ -244,7 +244,33 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   search field. Picking one and pressing **Pick up** proposes the brief under
   the list, as the issue brief flow in [concepts.md](concepts.md) describes.
   Use brief, Edit or Use issue text starts the session. Without a tracker it
-  shows the connect links.
+  shows the connect links. The search, like the Inbox search, reads an issue
+  code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
+  `owner/repo#482`, a tracker URL; anything else stays a local filter). When
+  no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
+  right tracker once (300 ms after typing, cached two minutes): a key goes to
+  Jira when it matches the Jira project, otherwise to Linear and Jira;
+  `#N` goes to every GitHub or GitLab repo of the workspace's projects (four
+  GitHub calls at a time); a short id resolves across the Sentry organization
+  (`sentry_resolve_short_id`). Hits sit in a `Not in your inbox` group above
+  the list (`InboxLookupGroup`) and open or pick up like any other issue;
+  a miss is one row in that group that says why (not found or not visible,
+  key rejected with `Sign in again`, missing permission, rate limited or
+  unreachable with `Try again`, tracker not connected, no repo for `#N`).
+  The mobile companion resolves Linear, Sentry and GitLab issues through the
+  same direct lookups instead of searching only the issues assigned to you.
+  Issues can be starred (`StarToggle`, the same star as projects) from an
+  Inbox row, a lookup hit or `s` on the selected row. Stars live per
+  workspace (`workspace_starred_issues`, keyed by provider and external id;
+  GitHub keys by `owner/repo#N`) with the last copy of identifier, title and
+  state, so the `Starred` group draws before any tracker answers. In the
+  Inbox it sits under `Not in your inbox` and above the days, and a starred
+  issue leaves the days; open ones come first, closed ones at the bottom
+  with `Unstar closed` and `Undo`, and one the tracker no longer returns
+  reads `Can't reach NW-230 anymore`. Pick up a task shows only the open
+  starred issues, even ones a session already picked up. Opening the Inbox
+  or Pick up a task refreshes the stars through the same lookups, at most
+  every five minutes (`refreshStarredIssues`).
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
 - **Ask an agent** (`AgentStart`) is the real chat composer's field: role and
@@ -517,12 +543,14 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows and Settings. Settings always opens App > General,
-with or without a workspace; Workspace settings opens only from the gear on
-the current-workspace row of the workspace popover. Providers & models is a Settings scope, reached from the
-Settings rail and the palette, so it has no footer launcher. Impact opens from
-the spend figure and the palette, Changelog from the Goodboy chip and the
-palette, so neither earns a footer entry.
+Right: Inbox, Workflows, Impact and Settings. Settings always opens App >
+General, with or without a workspace; Workspace settings opens only from the
+gear on the current-workspace row of the workspace popover. Impact is a
+destination, so it has a launcher; the launcher opens its Overview tab, while
+the spend figure in the top bar and the `Impact: Spend` palette entry open its
+Spend tab. Providers & models is a Settings scope, reached from the Settings
+rail and the palette, so it has no footer launcher. Changelog opens from the
+Goodboy chip and the palette, so it earns no footer entry either.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label
@@ -678,7 +706,26 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  Below the worktrees, "Artifacts from deleted sessions" lists plans, reports
+  Below the worktrees, `Branches` (`BranchesSection`) lists local branches
+  only, in the same scope, grouped by project. It scans only when it opens:
+  one `git for-each-ref` per project (`project_branches`), with the merge
+  test cached by both tips. A filter picks `Made by Goodboy` (the default,
+  branch names from `session_worktrees` and `retained_worktree_paths`),
+  `Yours` (plus branches whose tip is authored by the repo's `user.email`,
+  shown `By you`) or `All local`; protected branches never show. Tabs split
+  `Safe to delete` (merged by merge commit, rebase or squash, or never
+  used), `Needs a look` (unmerged and gone on origin, local only for over 30
+  days, or older than 90 days; never preselected) and `All`. Each row has
+  the session chip (`SessionChip`: stage dot, title, stage word, opens the
+  session), `On origin` / `Local only` / `Gone on origin`, the verdict and
+  the last commit's age. Delete goes through an InlineConfirm in the bulk
+  bar that counts the commits an unmerged branch takes with it and offers
+  `Also delete N on origin` only for Goodboy's own pushed branches in repos
+  where GitHub does not already delete merged branches. Deletes use the
+  same compare-and-delete and 14-day restore as the after-merge rule; a
+  success Notice carries `Undo` for the batch. A branch another worktree
+  holds reads Protected, so its folder goes first from Worktrees.
+  Below that, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
@@ -718,9 +765,10 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   a 32px grid row (star, kind, name, description, a base-branch chip only
   when set by hand, a Folder-not-found flag) with Open in editor, Copy path
   and Unlink in a reserved column, dim at rest; clicking the name opens an
-  inline editor below the row for the rest (description, base branch,
-  folder, facts, footer actions). New session defaults sit in a
-  two-column grid with each help behind an info mark, and disconnecting is a
+  inline editor below the row for the rest (description, base branch, After
+  merge for repos, folder, facts, footer actions). New session defaults sit in a
+  two-column grid with each help behind an info mark, followed by the
+  `After a pull request merges` segmented control, and disconnecting is a
   ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
   comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail

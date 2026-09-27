@@ -176,6 +176,7 @@ const OVERRIDES = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 } as const;
 
 const STAMP = '2026-09-20T08:00:00.000Z' as IsoDateTime;

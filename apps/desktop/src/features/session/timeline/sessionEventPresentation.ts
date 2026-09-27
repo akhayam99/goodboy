@@ -29,6 +29,8 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   worktree_created: 'plain',
   branch_created: 'plain',
   branch_switched: 'plain',
+  branch_deleted: 'muted',
+  branch_restored: 'plain',
   issue_linked: 'plain',
   issue_unlinked: 'muted',
   pr_created: PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_created].tone,
@@ -75,6 +77,8 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   },
   branch_created: { icon: GitBranch, tone: 'info', label: 'Branch' },
   branch_switched: { icon: GitBranch, tone: 'info', label: 'Branch' },
+  branch_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Branch' },
+  branch_restored: { icon: CONCEPT_ICONS.restore, tone: 'info', label: 'Branch' },
   issue_linked: { icon: Link2, tone: 'neutral', label: 'Issue' },
   issue_unlinked: { icon: Link2Off, tone: 'neutral', label: 'Issue' },
   pr_created: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_created], label: 'Pull request' },
@@ -285,6 +289,24 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
             { kind: 'value', text: payload.from, variant: 'branch' },
             { kind: 'text', text: ' → ' },
             { kind: 'value', text: payload.to, variant: 'branch' },
+          ];
+    case 'branch_deleted':
+      return payload?.branch == null
+        ? [{ kind: 'text', text: 'Branch deleted' }]
+        : [
+            { kind: 'text', text: 'Deleted ' },
+            { kind: 'value', text: payload.branch, variant: 'branch' },
+            {
+              kind: 'text',
+              text: payload.onOrigin === true ? ' on this Mac and on origin' : ' on this Mac',
+            },
+          ];
+    case 'branch_restored':
+      return payload?.branch == null
+        ? [{ kind: 'text', text: 'Branch restored' }]
+        : [
+            { kind: 'text', text: 'Restored ' },
+            { kind: 'value', text: payload.branch, variant: 'branch' },
           ];
     case 'issue_linked':
       return [{ kind: 'text', text: 'Linked ' }, ...issueSegments({ payload })];

@@ -34,6 +34,7 @@ export type {
   MountCleanupDecision,
   MountCleanupDisposition,
   MountCleanupProposal,
+  BranchOrigin,
   MountDiskState,
   MountOperation,
   MountOperationKind,
@@ -260,6 +261,7 @@ export type {
   ProviderBindings,
   ReplyVoice,
   ResolveCommitStyle,
+  AfterMergeRule,
   ResolvedSettings,
   RoleModelFallback,
   RoleModelPreference,
@@ -270,7 +272,7 @@ export type {
   TaskModelPreferences,
   VerbosityLevel,
 } from './settings';
-export { REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
+export { AFTER_MERGE_RULES, REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
 export type {
   HistoryBackup,
   HistoryMoveOutcome,
@@ -465,3 +467,6 @@ export type {
 } from './resolve';
 export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './security-finding';
 export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';
+export type { DeletedBranch } from './deleted-branch';
+export { DELETED_BRANCH_KEEP_DAYS } from './deleted-branch';
+export type { StarredIssue, StarredIssueState } from './starred-issue';

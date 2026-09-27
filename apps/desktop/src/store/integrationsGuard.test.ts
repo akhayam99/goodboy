@@ -208,6 +208,7 @@ describe('the advertised verbs', () => {
         replyTemplateNoChange: null,
         resolveOnGithub: null,
         resolveCommitStyle: null,
+        afterMerge: null,
       },
       createdAt: now,
       updatedAt: now,

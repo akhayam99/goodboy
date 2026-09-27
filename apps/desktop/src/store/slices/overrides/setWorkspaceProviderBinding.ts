@@ -18,6 +18,7 @@ const EMPTY_OVERRIDE: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 export const setWorkspaceProviderBinding = (set: SetFn, get: GetFn) => {

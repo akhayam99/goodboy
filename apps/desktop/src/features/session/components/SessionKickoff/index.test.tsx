@@ -12,6 +12,8 @@ const { holder, hooks, spies } = vi.hoisted(() => ({
   holder: { store: null as UseBoundStore<StoreApi<TestState>> | null },
   hooks: {
     isGithubAuthenticated: { current: false },
+    lookup: { current: null as unknown },
+    starredRows: { current: [] as ReadonlyArray<unknown> },
   },
   spies: {
     fetchIssueCandidates: vi.fn(
@@ -43,6 +45,18 @@ vi.mock('../../../integrations/jira/useJiraConfig', () => ({
   useJiraConfig: () => null,
 }));
 
+vi.mock('../../../inbox/useInboxStars', () => ({
+  useInboxStars: () => ({
+    rows: hooks.starredRows.current,
+    isStarred: () => false,
+    canStar: () => false,
+    toggle: async () => undefined,
+  }),
+}));
+vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
+  useWorkspaceIssueLookup: () =>
+    hooks.lookup.current ?? { code: null, state: { status: 'idle' }, retry: () => undefined },
+}));
 vi.mock('../../../integrations/fetchIssueCandidates', () => ({
   fetchIssueCandidates: (params: unknown) => spies.fetchIssueCandidates(params as never),
 }));
@@ -51,6 +65,7 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
   IntegrationGlyph: ({ provider }: { provider: string }) => (
     <span data-testid={`glyph-${provider}`} />
   ),
+  integrationLabel: ({ provider }: { provider: string }) => provider,
 }));
 
 import { SessionKickoff } from './index';
@@ -84,6 +99,7 @@ const resetStore = () => {
       githubStatus: null,
       workspaceIntegrations: {},
       projects: [],
+      workspaces: [],
       providers: [],
       sessionExternalTasks: {},
       sessionPhaseRuns: {},
@@ -111,6 +127,8 @@ const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(name) }
 beforeEach(() => {
   resetStore();
   hooks.isGithubAuthenticated.current = false;
+  hooks.lookup.current = null;
+  hooks.starredRows.current = [];
   spies.fetchIssueCandidates.mockReset();
   spies.fetchIssueCandidates.mockResolvedValue([]);
   spies.startSessionFromDraft.mockReset();
@@ -345,6 +363,106 @@ describe('SessionKickoff', () => {
         goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
       },
     });
+  });
+
+  it('keeps open starred issues on top and leaves the closed ones in the inbox', async () => {
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
+    const linearRecord = (id: string, identifier: string, title: string) => ({
+      key: `linear:issue:${id}`,
+      provider: 'linear',
+      kind: 'issue',
+      identifier,
+      title,
+      state: 'open',
+      stateLabel: 'Todo',
+      updatedAt: '2026-09-20T10:00:00Z',
+      url: `https://linear.app/cascadia/issue/${identifier}`,
+      context: 'Cascadia',
+      payload: {
+        provider: 'linear',
+        kind: 'issue',
+        sessionId: null,
+        issue: {
+          id,
+          identifier,
+          title,
+          description: '',
+          url: `https://linear.app/cascadia/issue/${identifier}`,
+          state: { name: 'Todo', type: 'unstarted' },
+          team: { key: 'CAS' },
+          labels: { nodes: [] },
+        },
+      },
+    });
+    hooks.starredRows.current = [
+      {
+        issue: { provider: 'linear', externalId: 'lin-231', identifier: 'CAS-231', state: 'open' },
+        record: linearRecord('lin-231', 'CAS-231', 'Settle the month close'),
+      },
+      {
+        issue: { provider: 'linear', externalId: 'lin-12', identifier: 'CAS-12', state: 'done' },
+        record: linearRecord('lin-12', 'CAS-12', 'Old close'),
+      },
+    ];
+    renderKickoff();
+
+    const starred = await screen.findByRole('list', { name: 'Starred issues' });
+    expect(starred.textContent).toContain('CAS-231');
+    expect(screen.queryByText('CAS-12')).toBeNull();
+  });
+
+  it('picks up an issue found by code that is not assigned to you', async () => {
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
+    const found = candidate({
+      externalId: 'issue-231',
+      identifier: 'CAS-231',
+      title: 'Settle the month close',
+      url: 'https://linear.app/cascadia/issue/CAS-231',
+    });
+    hooks.lookup.current = {
+      code: 'CAS-231',
+      retry: () => undefined,
+      state: {
+        status: 'done',
+        key: 'CAS-231#0',
+        value: {
+          route: { kind: 'lookup', label: 'CAS-231', targets: [] },
+          result: {
+            hits: [
+              {
+                target: { provider: 'linear', identifier: 'CAS-231' },
+                candidate: found,
+                record: {
+                  key: 'linear:issue:issue-231',
+                  provider: 'linear',
+                  kind: 'issue',
+                  identifier: 'CAS-231',
+                  title: 'Settle the month close',
+                  state: 'open',
+                  stateLabel: 'Todo',
+                  updatedAt: '2026-09-20T10:00:00Z',
+                  url: found.url,
+                  context: 'Cascadia',
+                  payload: {},
+                },
+              },
+            ],
+            misses: [],
+          },
+        },
+      },
+    };
+    renderKickoff();
+    await screen.findByText('Not in your inbox');
+
+    fireEvent.click(screen.getByRole('option', { name: /CAS-231 Settle the month close/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick up CAS-231' }));
+
+    expect(spies.requestIssueBrief).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: WORKSPACE_ID, sessionId: null }),
+    );
   });
 
   it('hides issues a session already picked up and caps each tracker at five', async () => {

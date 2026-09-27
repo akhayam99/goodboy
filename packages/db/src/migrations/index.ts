@@ -65,6 +65,8 @@ import { m203IntegrationDrafts } from './m203-integration-drafts';
 import { m204ResolveThreadsWithoutPr } from './m204-resolve-threads-without-pr';
 import { m205ProjectIdentity } from './m205-project-identity';
 import { m206ProjectRelocations } from './m206-project-relocations';
+import { m207MergedBranchCleanup } from './m207-merged-branch-cleanup';
+import { m208WorkspaceStarredIssues } from './m208-workspace-starred-issues';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -417,4 +419,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 204, sql: m204ResolveThreadsWithoutPr },
   { version: 205, sql: m205ProjectIdentity },
   { version: 206, sql: m206ProjectRelocations },
+  { version: 207, sql: m207MergedBranchCleanup },
+  { version: 208, sql: m208WorkspaceStarredIssues },
 ];

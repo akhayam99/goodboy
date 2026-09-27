@@ -1,4 +1,5 @@
 import type {
+  BranchOrigin,
   IsoDateTime,
   MountDiskState,
   MountId,
@@ -26,6 +27,7 @@ type SessionWorktreeRow = {
   readonly is_attached: number;
   readonly disk_state: MountDiskState;
   readonly revision: number;
+  readonly branch_origin?: BranchOrigin;
   readonly created_at: number;
   readonly updated_at: number;
 };
@@ -40,6 +42,7 @@ export type SessionWorktree = {
   readonly mountName?: string;
   readonly repoSlug?: string;
   readonly revision?: number;
+  readonly branchOrigin?: BranchOrigin;
   readonly createdAt: number;
 };
 
@@ -94,6 +97,7 @@ const toMount = (row: SessionWorktreeRow): SessionMount => ({
   isAttached: row.is_attached !== 0,
   diskState: row.disk_state,
   revision: row.revision,
+  ...(row.branch_origin === undefined ? {} : { branchOrigin: row.branch_origin }),
   createdAt: new Date(row.created_at).toISOString() as IsoDateTime,
   updatedAt: new Date(row.updated_at).toISOString() as IsoDateTime,
 });
@@ -155,8 +159,9 @@ export const insertSessionMount = async ({
       {
         sql: `INSERT INTO session_worktrees
           (id, session_id, worktree_path, last_worktree_path, branch, base_branch, parallel_index,
-           project_id, mount_name, repo_slug, is_attached, disk_state, revision, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           project_id, mount_name, repo_slug, is_attached, disk_state, revision, branch_origin,
+           created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         params: [
           mount.id,
           mount.sessionId,
@@ -171,6 +176,7 @@ export const insertSessionMount = async ({
           mount.isAttached ? 1 : 0,
           mount.diskState,
           mount.revision,
+          mount.branchOrigin ?? 'unknown',
           Date.parse(mount.createdAt),
           Date.parse(mount.updatedAt),
         ],
@@ -307,6 +313,7 @@ export const insertSessionWorktree = async (
       isAttached: true,
       diskState: 'unchecked',
       revision: 0,
+      ...(worktree.branchOrigin === undefined ? {} : { branchOrigin: worktree.branchOrigin }),
       createdAt,
       updatedAt: createdAt,
     },

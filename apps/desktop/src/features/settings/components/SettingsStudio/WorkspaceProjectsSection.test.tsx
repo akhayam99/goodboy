@@ -28,6 +28,8 @@ const { state, repoMocks } = vi.hoisted(() => ({
     setProjectStarred: vi.fn(async () => undefined),
     describeProject: vi.fn(async () => undefined),
     updateProjectBaseBranch: vi.fn(async () => undefined),
+    updateProjectAfterMerge: vi.fn(async () => undefined),
+    workspaceOverrides: {} as Record<string, { readonly afterMerge: string | null }>,
     loadProjectGitStatus: vi.fn(async () => undefined),
     findMovedProjects: vi.fn(async () => undefined),
     setProjectRelocationSelected: vi.fn(),
@@ -89,6 +91,7 @@ beforeEach(() => {
   state.workspaceIntegrations = {};
   state.projectSentryLinks = {};
   state.projectGitStatus = {};
+  state.workspaceOverrides = {};
 });
 afterEach(cleanup);
 
@@ -263,6 +266,7 @@ describe('WorkspaceProjectsSection', () => {
         rootPath: '/repos/ledger-core',
         kind: 'repo',
         workspaceId: WORKSPACE_ID,
+        overrides: { afterMerge: null },
       },
     ];
     render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
@@ -272,6 +276,34 @@ describe('WorkspaceProjectsSection', () => {
 
     openEditor('ledger-core');
     expect(screen.getByRole('combobox', { name: 'Base branch' })).toBeDefined();
+  });
+
+  it('lets a repo override what happens after a merge, naming what it inherits', async () => {
+    state.workspaceOverrides = { [WORKSPACE_ID]: { afterMerge: 'ask' } };
+    state.projects = [
+      {
+        id: 'proj-ledger',
+        name: 'ledger-core',
+        rootPath: '/repos/ledger-core',
+        kind: 'repo',
+        workspaceId: WORKSPACE_ID,
+        overrides: { afterMerge: null },
+      },
+    ];
+    render(<WorkspaceProjectsSection workspaceId={WORKSPACE_ID} />);
+
+    openEditor('ledger-core');
+    const field = screen.getByRole('combobox', { name: 'After merge in ledger-core' });
+    expect(field.textContent).toContain('Same as workspace · Ask me');
+    fireEvent.click(field);
+    fireEvent.click(screen.getByRole('option', { name: 'Delete folder and branch on this Mac' }));
+
+    await waitFor(() =>
+      expect(state.updateProjectAfterMerge).toHaveBeenCalledWith({
+        projectId: 'proj-ledger',
+        afterMerge: 'local',
+      }),
+    );
   });
 
   it('unlinks a project from its row only after the inline confirm', async () => {

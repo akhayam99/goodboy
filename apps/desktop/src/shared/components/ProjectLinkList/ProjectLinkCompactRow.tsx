@@ -72,13 +72,14 @@ export const ProjectLinkCompactRow = ({
             )}
           </span>
         </span>
-        {project.baseBranch != null && project.baseBranch !== '' ? (
-          <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-code text-muted-foreground">
-            {project.baseBranch}
-          </span>
-        ) : (
-          <span />
-        )}
+        <span className="flex shrink-0 items-center gap-2">
+          {badge}
+          {project.baseBranch != null && project.baseBranch !== '' ? (
+            <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-code text-muted-foreground">
+              {project.baseBranch}
+            </span>
+          ) : null}
+        </span>
         {isFolderMissing ? (
           <span className="flex shrink-0 items-center gap-1 text-label text-warning">
             <AlertTriangle size={ICON_SIZE.control} aria-hidden />

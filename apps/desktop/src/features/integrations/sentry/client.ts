@@ -169,3 +169,20 @@ export const sentryFetchIssueDetail = async (
     ...(projectId != null ? { projectId } : {}),
   });
 };
+
+export const sentryResolveShortId = async ({
+  workspaceId,
+  shortId,
+}: {
+  readonly workspaceId: WorkspaceId;
+  readonly shortId: string;
+}): Promise<SentryIssue> =>
+  invoke<SentryIssue>('sentry_resolve_short_id', { workspaceId, shortId });
+
+export const sentryFetchIssue = async ({
+  workspaceId,
+  issueId,
+}: {
+  readonly workspaceId: WorkspaceId;
+  readonly issueId: string;
+}): Promise<SentryIssue> => invoke<SentryIssue>('sentry_fetch_issue', { workspaceId, issueId });

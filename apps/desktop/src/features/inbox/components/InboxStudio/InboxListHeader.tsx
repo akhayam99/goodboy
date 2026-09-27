@@ -1,3 +1,4 @@
+import { ISSUE_SEARCH_PLACEHOLDER } from '../../../integrations/issueCode/lookupCopy';
 import type { ReactNode, RefObject } from 'react';
 import { ListFilter, RefreshCw, Search, X } from 'lucide-react';
 import { AnchoredPopover, Chip, IconButton, KbdPill, cn, useDropdown } from '@goodboy/ui';
@@ -59,7 +60,7 @@ export const InboxListHeader = ({
             event.preventDefault();
             onQueryChange('');
           }}
-          placeholder="Search"
+          placeholder={ISSUE_SEARCH_PLACEHOLDER}
           aria-label="Search the inbox"
           autoComplete="off"
           className="min-w-0 flex-1 bg-transparent text-label text-foreground outline-none placeholder:text-faint-foreground"

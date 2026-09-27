@@ -217,6 +217,8 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   worktree_created: 'worktree',
   branch_created: 'worktree',
   branch_switched: 'worktree',
+  branch_deleted: 'worktree',
+  branch_restored: 'worktree',
   issue_linked: 'issues',
   issue_unlinked: 'issues',
   pr_created: 'pullRequests',

@@ -31,6 +31,7 @@ const OVERRIDES: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 const PROJECT: Project = {
   id: PROJECT_ID,

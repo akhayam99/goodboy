@@ -131,10 +131,29 @@ export const ghIssueByNumber = async (
   if (slug == null) {
     throw new Error('could not detect a GitHub repository for this project');
   }
+  return ghIssueInRepo({ repo: slug, issueNumber, cwd, workspaceId });
+};
+
+type IssueInRepoParams = {
+  readonly repo: string;
+  readonly issueNumber: number;
+  readonly cwd?: string;
+  readonly workspaceId?: string;
+};
+
+export const ghIssueInRepo = async ({
+  repo,
+  issueNumber,
+  cwd,
+  workspaceId,
+}: IssueInRepoParams): Promise<GithubIssue> => {
   const raw = await ghRunJson<RawGithubIssueView>({
     runner: tauriGhRunner,
-    args: ['issue', 'view', String(issueNumber), '--repo', slug, '--json', ISSUE_VIEW_FIELDS],
-    opts: { cwd, workspaceId },
+    args: ['issue', 'view', String(issueNumber), '--repo', repo, '--json', ISSUE_VIEW_FIELDS],
+    opts: {
+      ...(cwd === undefined ? {} : { cwd }),
+      ...(workspaceId === undefined ? {} : { workspaceId }),
+    },
     shape: 'object',
   });
   return {
@@ -305,4 +324,31 @@ export const tauriGhRunner: GhRunner = {
       throw new Error(`gh run [${args.join(' ')}] failed: ${msg}`, { cause: err });
     }
   },
+};
+
+type RepoDeletesMergedBranchesParams = {
+  readonly cwd: string;
+  readonly workspaceId?: string;
+};
+
+export const ghRepoDeletesMergedBranches = async ({
+  cwd,
+  workspaceId,
+}: RepoDeletesMergedBranchesParams): Promise<boolean | null> => {
+  const slug = await detectRepoSlug(tauriGhRunner, cwd, workspaceId);
+  if (slug == null) {
+    return null;
+  }
+  const res = await tauriGhRunner.run(['api', `repos/${slug}`, '--jq', '.delete_branch_on_merge'], {
+    cwd,
+    ...(workspaceId === undefined ? {} : { workspaceId }),
+  });
+  if (res.exitCode !== 0) {
+    return null;
+  }
+  const value = res.stdout.trim();
+  if (value === 'true') {
+    return true;
+  }
+  return value === 'false' ? false : null;
 };

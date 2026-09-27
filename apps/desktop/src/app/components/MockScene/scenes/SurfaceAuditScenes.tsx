@@ -61,6 +61,7 @@ const OVERRIDES = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 const SCRIPTS_WORKSPACE_ID = 'mock-scripts-workspace-harborline' as WorkspaceId;

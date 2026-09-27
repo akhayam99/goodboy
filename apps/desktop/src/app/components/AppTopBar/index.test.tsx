@@ -23,6 +23,7 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       replyTemplateNoChange: null,
       resolveOnGithub: null,
       resolveCommitStyle: null,
+      afterMerge: null,
     },
     createdAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,
     updatedAt: '2026-08-02T08:00:00.000Z' as IsoDateTime,

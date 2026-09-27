@@ -31,6 +31,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 const at = ({ value }: { readonly value: string }): IsoDateTime =>

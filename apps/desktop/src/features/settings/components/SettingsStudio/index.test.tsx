@@ -176,6 +176,7 @@ describe('SettingsStudio', () => {
         replyTemplateNoChange: null,
         resolveOnGithub: null,
         resolveCommitStyle: null,
+        afterMerge: null,
       },
       createdAt: '2026-09-01' as IsoDateTime,
       updatedAt: '2026-09-01' as IsoDateTime,

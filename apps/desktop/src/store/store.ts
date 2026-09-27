@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { type AppliedDecisionOps, type SlotKey } from '@goodboy/core';
 import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
 import type {
+  AfterMergeRule,
   AgentId,
   AgentSourceKind,
   ArtifactId,
@@ -257,6 +258,8 @@ import { createSentryLinksSlice } from './slices/sentryLinks';
 import { sentryLinksInitialState } from './slices/sentryLinks/state';
 import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
+import { createBranchCleanupSlice } from './slices/branch-cleanup';
+import { createStarredIssuesSlice } from './slices/starred-issues';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -473,6 +476,10 @@ type AppActions = {
   updateProjectBaseBranch(input: {
     projectId: ProjectId;
     baseBranch: string | null;
+  }): Promise<void>;
+  updateProjectAfterMerge(input: {
+    projectId: ProjectId;
+    afterMerge: AfterMergeRule | null;
   }): Promise<void>;
   setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
   describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
@@ -1162,7 +1169,9 @@ export type AppStore = AppState &
   ReturnType<typeof createSentryLinksSlice> &
   ReturnType<typeof createStorageSlice> &
   ReturnType<typeof createHandoffsSlice> &
-  ReturnType<typeof createSecurityFindingsSlice>;
+  ReturnType<typeof createSecurityFindingsSlice> &
+  ReturnType<typeof createBranchCleanupSlice> &
+  ReturnType<typeof createStarredIssuesSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1405,6 +1414,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSentryLinksSlice(set, get),
   ...createHandoffsSlice(set, get),
   ...createSecurityFindingsSlice(set, get),
+  ...createBranchCleanupSlice(set, get),
+  ...createStarredIssuesSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

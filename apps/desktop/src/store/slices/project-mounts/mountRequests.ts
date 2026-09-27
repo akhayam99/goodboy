@@ -278,12 +278,19 @@ export const observeMountRequestTransition = async ({
   if (next.state !== 'merged') {
     return;
   }
+  const afterMerge = await get()
+    .runAfterMergeCleanup({ sessionId, mountId: next.mountId, expectedBranch: next.headBranch })
+    .catch(() => ({ kind: 'ask', keptBecause: null }) as const);
+  if (afterMerge.kind !== 'ask') {
+    return;
+  }
   await get()
     .proposeMountCleanup({
       sessionId,
       mountId: next.mountId,
       reason: 'merge_cleanup',
       expectedBranch: next.headBranch,
+      ...(afterMerge.keptBecause === null ? {} : { keptBecause: afterMerge.keptBecause }),
       request: {
         provider: next.provider,
         host: next.host,

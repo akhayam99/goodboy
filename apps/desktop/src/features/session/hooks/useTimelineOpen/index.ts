@@ -14,6 +14,8 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   worktree_created: { lens: 'files', label: 'Open files' },
   branch_created: { lens: 'files', label: 'Open files' },
   branch_switched: { lens: 'files', label: 'Open files' },
+  branch_deleted: null,
+  branch_restored: { lens: 'files', label: 'Open files' },
   issue_linked: { lens: null, label: 'Open overview' },
   issue_unlinked: { lens: null, label: 'Open overview' },
   pr_created: { lens: 'pr', label: 'Open PR' },
@@ -130,6 +132,22 @@ export const useTimelineOpen = ({
         return {
           label: 'Open files',
           open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'files' }) }),
+        };
+      }
+      if (entry.kind === 'event' && entry.event.kind === 'branch_deleted') {
+        const deletedBranchId = entry.event.payload?.deletedBranchId;
+        if (deletedBranchId === undefined) {
+          return null;
+        }
+        return {
+          label: 'Restore',
+          open: () => {
+            void store
+              .restoreDeletedBranch({ id: deletedBranchId })
+              .catch((error: unknown) =>
+                store.reportError({ title: "Couldn't restore the branch", error, sessionId }),
+              );
+          },
         };
       }
       if (entry.kind === 'event') {

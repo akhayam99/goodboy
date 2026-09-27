@@ -1,5 +1,11 @@
-import { PROVIDER_IDS, REPLY_VOICES, RESOLVE_COMMIT_STYLES } from '@goodboy/types';
+import {
+  AFTER_MERGE_RULES,
+  PROVIDER_IDS,
+  REPLY_VOICES,
+  RESOLVE_COMMIT_STYLES,
+} from '@goodboy/types';
 import type {
+  AfterMergeRule,
   OverrideSettings,
   ProviderBindings,
   ProviderId,
@@ -27,6 +33,7 @@ export type OverrideRow = {
   readonly reply_template_no_change?: string | null;
   readonly resolve_on_github?: number | null;
   readonly resolve_commit_style?: string | null;
+  readonly after_merge?: string | null;
 };
 
 export const REPLY_SETTING_COLUMNS =
@@ -47,12 +54,16 @@ export const replySettingValues = ({
 
 const REPLY_VOICE_SET: ReadonlySet<string> = new Set(REPLY_VOICES);
 const COMMIT_STYLE_SET: ReadonlySet<string> = new Set(RESOLVE_COMMIT_STYLES);
+const AFTER_MERGE_SET: ReadonlySet<string> = new Set(AFTER_MERGE_RULES);
 
 const replyVoiceOf = ({ raw }: ParseJsonParams): ReplyVoice | null =>
   raw !== null && REPLY_VOICE_SET.has(raw) ? (raw as ReplyVoice) : null;
 
 const commitStyleOf = ({ raw }: ParseJsonParams): ResolveCommitStyle | null =>
   raw !== null && COMMIT_STYLE_SET.has(raw) ? (raw as ResolveCommitStyle) : null;
+
+const afterMergeOf = ({ raw }: ParseJsonParams): AfterMergeRule | null =>
+  raw !== null && AFTER_MERGE_SET.has(raw) ? (raw as AfterMergeRule) : null;
 
 type ParseJsonParams = {
   readonly raw: string | null;
@@ -119,4 +130,5 @@ export const overridesFromRow = ({ row }: Params): OverrideSettings => ({
   replyTemplateNoChange: row.reply_template_no_change ?? null,
   resolveOnGithub: row.resolve_on_github == null ? null : row.resolve_on_github !== 0,
   resolveCommitStyle: commitStyleOf({ raw: row.resolve_commit_style ?? null }),
+  afterMerge: afterMergeOf({ raw: row.after_merge ?? null }),
 });

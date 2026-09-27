@@ -295,6 +295,7 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
             replyTemplateNoChange: null,
             resolveOnGithub: null,
             resolveCommitStyle: null,
+            afterMerge: null,
           },
           createdAt: NOW,
           updatedAt: NOW,

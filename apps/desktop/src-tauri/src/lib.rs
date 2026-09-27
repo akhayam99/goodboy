@@ -5,6 +5,7 @@ mod attachment;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
+mod branch_cleanup;
 mod bridge;
 mod budget;
 mod changelog_images;
@@ -286,6 +287,11 @@ pub fn run() {
             worktree::worktree_list_branch_names,
             worktree::worktree_repo_default_base_branch,
             worktree::worktree_branch_merge_state,
+            branch_cleanup::branch_delete_checked,
+            branch_cleanup::branch_restore,
+            branch_cleanup::branch_forget_deleted,
+            branch_cleanup::branch_head_sha,
+            branch_cleanup::project_branches,
             worktree::worktree_change_branch,
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,
@@ -434,6 +440,8 @@ pub fn run() {
             sentry::sentry_list_projects,
             sentry::sentry_list_code_mappings,
             sentry::sentry_fetch_issues,
+            sentry::sentry_fetch_issue,
+            sentry::sentry_resolve_short_id,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_validate_connection,
             gitlab::gitlab_connect,

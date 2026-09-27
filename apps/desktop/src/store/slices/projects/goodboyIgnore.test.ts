@@ -42,6 +42,7 @@ const EMPTY_OVERRIDES = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 } as const;
 
 const makeProject = (overrides: Partial<Project> = {}): Project => ({

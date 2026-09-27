@@ -51,6 +51,7 @@ export {
   disconnectProject,
   reconnectProject,
   updateProjectKind,
+  updateProjectAfterMerge,
   updateProjectBaseBranch,
   updateProjectStar,
   updateProjectDescription,
@@ -71,6 +72,15 @@ export {
   markHistoryPlan,
   saveDraftHistoryPlan,
 } from './queries/history-plan';
+export {
+  insertDeletedBranch,
+  listDeletedBranches,
+  getDeletedBranch,
+  markDeletedBranchRestored,
+  listExpiredDeletedBranches,
+  forgetDeletedBranch,
+} from './queries/deleted-branch';
+export { listGoodboyBranches, type GoodboyBranch } from './queries/goodboy-branch';
 export {
   describeProjectAdoption,
   moveProjectToWorkspace,
@@ -522,3 +532,10 @@ export {
   listProjectSentryLinks,
   removeProjectSentryLink,
 } from './queries/project-sentry-link';
+export {
+  listStarredIssues,
+  starIssue,
+  unstarIssue,
+  unstarClosedIssues,
+  updateStarredIssueSnapshots,
+} from './queries/starred-issue';
