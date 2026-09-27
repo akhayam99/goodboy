@@ -25,7 +25,7 @@ const noop = () => undefined;
 const MINUTE = 60_000;
 const HOUR = 3_600_000;
 const DAY = 86_400_000;
-const ROOT_PATH = '/mock/cascade/core-api';
+const ROOT_PATH = '/mock/cascadia/payments-api';
 
 const isoAgo = (offsetMs: number): string => new Date(Date.now() - offsetMs).toISOString();
 
@@ -63,7 +63,7 @@ const SELECTED_ISSUE: LinearIssue = {
   team: { key: 'CAS' },
   priority: 2,
   priorityLabel: 'High',
-  assignee: { name: 'Robin Vale' },
+  assignee: { name: 'Robin V.' },
   project: { name: 'Payments' },
   labels: {
     nodes: [
@@ -93,27 +93,27 @@ const linearComment = ({ id, name, ago, body, parentId }: CommentParams): Linear
 const SELECTED_COMMENTS: ReadonlyArray<LinearIssueComment> = [
   linearComment({
     id: 'cas-231-c1',
-    name: 'Robin Vale',
+    name: 'Robin V.',
     ago: 3 * HOUR,
     body: 'Reproduced on staging with a gift card plus a card. The refund job only walks the first charge on the order.',
   }),
   linearComment({
     id: 'cas-231-c2',
-    name: 'Jules Marin',
+    name: 'Jules M.',
     ago: 2 * HOUR,
     body: 'Do we refund the gift card first or the card? Support has been doing the card first.',
     parentId: 'cas-231-c1',
   }),
   linearComment({
     id: 'cas-231-c3',
-    name: 'Robin Vale',
+    name: 'Robin V.',
     ago: 110 * MINUTE,
     body: 'Card first, then the gift card balance. Same order as capture, reversed.',
     parentId: 'cas-231-c1',
   }),
   linearComment({
     id: 'cas-231-c4',
-    name: 'Priya Nand',
+    name: 'Priya N.',
     ago: 40 * MINUTE,
     body: 'Finance wants a list of the 14 orders before we touch them. I will pull it from ledger-core.',
   }),
@@ -194,7 +194,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'DuplicateChargeError: charge already captured for order',
     state: 'alert',
     ago: 8 * MINUTE,
-    context: 'core-api',
+    context: 'payments-api',
   }),
   SELECTED_RECORD,
   record({
@@ -204,7 +204,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'The admin sessions table loads every row at once',
     state: 'open',
     ago: 50 * MINUTE,
-    context: 'cascade/web-console',
+    context: 'cascadia/notify-relay',
   }),
   record({
     provider: 'slack',
@@ -240,7 +240,7 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
     title: 'Export button stays disabled after a failed export',
     state: 'open',
     ago: 9 * HOUR,
-    context: 'cascade/web-console',
+    context: 'cascadia/notify-relay',
   }),
   record({
     provider: 'sentry',
