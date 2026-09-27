@@ -71,6 +71,7 @@ import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
 import { ListboxScene } from './scenes/ListboxScene';
+import { AgentBriefScene } from './scenes/AgentBriefScene';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -137,6 +138,7 @@ export const MOCK_SCENES = {
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,
+  'agent-brief': AgentBriefScene,
 };
 
 export const MockScene = () => {

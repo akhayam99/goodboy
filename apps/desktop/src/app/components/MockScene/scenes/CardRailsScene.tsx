@@ -7,6 +7,7 @@ import { AuthRequiredCallout } from '../../../../features/chat/components/AuthRe
 import { FileEditBlock } from '../../../../features/chat/components/TranscriptCards/FileEditBlock';
 import { NudgeCard } from '../../../../features/chat/components/NudgeCard';
 import { TurnFooter } from '../../../../features/chat/components/TurnFooter';
+import { AgentUsageFooter } from '../../../../features/session/components/AgentDetailPane/AgentUsageFooter';
 import { UserText } from '../../../../features/chat/components/TranscriptCards/UserText';
 import { PermissionDecisionCard } from '../../../../features/permissions/components/PermissionDecisionCard';
 import { PermissionRequestCard } from '../../../../features/permissions/components/PermissionRequestCard';
@@ -176,6 +177,28 @@ export const CardRailsScene = () => {
               at: NOW,
             }}
             startedAt={clock.iso({ at: '2026-09-22T09:11:18.000Z' })}
+          />
+        </Row>
+        <Row label="brief usage footer">
+          <AgentUsageFooter
+            aggregate={{
+              inputTokens: 182412,
+              outputTokens: 1388,
+              estimatedCostUsd: 0.34,
+              turns: 6,
+            }}
+            contextUsage={[
+              {
+                provider: 'anthropic',
+                model: 'claude-opus-5',
+                inputTokens: 182412,
+                outputTokens: 1388,
+                cachedInputTokens: 171300,
+                cacheCreationInputTokens: 8204,
+                contextTokens: 76000,
+              },
+            ]}
+            turns={6}
           />
         </Row>
         <Row label="your message">

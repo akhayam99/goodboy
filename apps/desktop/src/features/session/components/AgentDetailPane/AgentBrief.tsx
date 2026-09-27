@@ -20,7 +20,7 @@ import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { classifyAgent } from '../../agent-kind';
-import { AgentMetaLine } from './AgentMetaLine';
+import { AgentUsageFooter } from './AgentUsageFooter';
 import { AgentAnsweringFor } from './AgentAnsweringFor';
 import { AgentBriefDelegates } from './AgentBriefDelegates';
 import { AgentBriefChildren } from './AgentBriefChildren';
@@ -181,7 +181,7 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
             ?.id ?? null
         }
       />
-      <AgentMetaLine
+      <AgentUsageFooter
         aggregate={metrics.aggregatesByAgentId.get(agent.id) ?? null}
         contextUsage={metrics.providerUsageByAgentId.get(agent.id) ?? EMPTY_ARRAY}
         turns={metrics.turnsByAgentId.get(agent.id) ?? 0}

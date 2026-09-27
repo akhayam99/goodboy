@@ -1,8 +1,6 @@
-import { Info } from 'lucide-react';
 import {
-  cn,
+  AnchoredPopover,
   formatTokens,
-  formatUsd,
   useDropdown,
   WorkNode,
   type WorkNodeState,
@@ -12,14 +10,11 @@ import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnOutcome } from '../../utils/turnOutcome';
 import { formatDuration } from '../../utils/format-duration';
-import { modelLabel } from '../../utils/chat-constants';
-import { contextUsageTone } from '../../../session/contextUsageTone';
 import { contextWindowFor } from '../../../session/contextWindowFor';
-import { ProviderIcon } from '../../../providers/components/ProviderIcon';
-import { AnchoredPopover } from '@goodboy/ui';
 import { TranscriptShell } from '../TranscriptShell';
 import { useTurnFooter } from './useTurnFooter';
 import { TurnFooterDetail } from './TurnFooterDetail';
+import { UsageStatsRow } from './UsageStatsRow';
 
 type Props = {
   readonly item: Extract<TranscriptItem, { kind: 'usage' }>;
@@ -104,31 +99,13 @@ export const TurnFooter = ({
             aria-label="Turn detail"
             className="flex items-center gap-1.5 text-secondary tabular-nums text-muted-foreground transition-opacity hover:opacity-80"
           >
-            <ProviderIcon provider={data.provider} size={11} />
-            {data.model != null && <span>{modelLabel(data.model)}</span>}
-            {duration != null && <span className="text-faint-foreground">{duration}</span>}
-            <span>
-              {formatTokens(totalInput)} in · {formatTokens(data.outputTokens)} out
-            </span>
-            {cachedPct != null && <span>{cachedPct}% cached</span>}
-            {data.estimatedCostUsd != null && <span>~{formatUsd(data.estimatedCostUsd)}</span>}
-            {contextPct != null && (
-              <span className="flex items-center gap-1">
-                <span className="h-0.5 w-6 overflow-hidden rounded-full bg-muted">
-                  <span
-                    className={cn(
-                      'block h-full rounded-full',
-                      contextUsageTone({ pct: contextPct, prefix: 'bg' }),
-                    )}
-                    style={{ width: `${contextPct * 100}%` }}
-                  />
-                </span>
-                <span className={contextUsageTone({ pct: contextPct, prefix: 'text' })}>
-                  {Math.round(contextPct * 100)}%
-                </span>
-              </span>
-            )}
-            <Info size={11} aria-hidden />
+            <UsageStatsRow
+              data={data}
+              totalInput={totalInput}
+              cachedPct={cachedPct}
+              contextPct={contextPct}
+              duration={duration}
+            />
           </button>
         }
       >
