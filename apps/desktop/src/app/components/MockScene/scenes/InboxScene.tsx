@@ -11,6 +11,8 @@ import { InboxStudioLayout } from '../../../../features/inbox/components/InboxSt
 import { NO_INBOX_FILTERS, inboxFacetCounts } from '../../../../features/inbox/kindFilter';
 import { orderInboxRecords } from '../../../../features/inbox/orderInboxRecords';
 import { PaneShell } from '../../../../shared/components/PaneShell';
+import { useAppStore } from '../../../../store';
+import type { ProjectId } from '@goodboy/types';
 import { groupByDay } from '../../../../shared/utils/groupByDay';
 import type { InboxKind, InboxProvider, InboxRecord } from '../../../../features/inbox/types';
 import type {
@@ -26,6 +28,7 @@ const MINUTE = 60_000;
 const HOUR = 3_600_000;
 const DAY = 86_400_000;
 const ROOT_PATH = '/mock/cascadia/payments-api';
+const SCENE_PROJECT_ID = 'mock-board-project-payments-api' as ProjectId;
 
 const isoAgo = (offsetMs: number): string => new Date(Date.now() - offsetMs).toISOString();
 
@@ -169,6 +172,7 @@ const record = ({ provider, kind, identifier, title, state, ago, context }: Reco
     updatedAt: isoAgo(ago),
     url: `https://example.invalid/${provider}/${identifier}`,
     context,
+    projectIds: [SCENE_PROJECT_ID],
     payload: { provider, kind, sessionId: null },
   }) as unknown as InboxRecord;
 
@@ -183,6 +187,7 @@ const SELECTED_RECORD: InboxRecord = {
   updatedAt: SELECTED_ISSUE.updatedAt,
   url: SELECTED_ISSUE.url,
   context: 'Payments',
+  projectIds: [SCENE_PROJECT_ID],
   payload: { provider: 'linear', kind: 'issue', issue: SELECTED_ISSUE, sessionId: null },
 };
 
@@ -275,6 +280,7 @@ const CONNECTED: ReadonlyArray<InboxProvider> = ['github', 'linear', 'jira', 'se
 
 export const InboxScene = () => {
   const [isReady, setIsReady] = useState(false);
+  const projects = useAppStore((state) => state.projects);
 
   useEffect(() => {
     installIpc();
@@ -311,6 +317,7 @@ export const InboxScene = () => {
                   connected={CONNECTED}
                   loading={NOT_LOADING}
                   errors={NO_ERRORS}
+                  projects={projects}
                   onFiltersChange={noop}
                   onClearFilters={noop}
                 />
