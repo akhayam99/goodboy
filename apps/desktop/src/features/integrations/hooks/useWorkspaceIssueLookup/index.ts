@@ -6,7 +6,6 @@ import { useAppStore } from '../../../../store';
 import { tauriGhRunner } from '../../../github/github';
 import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../../../shared/lib/remoteHost';
 import { worktreeRemoteUrl } from '../../../worktree/worktree';
-import { linearFetchTeamKeys } from '../../linear/client';
 import { lookupIssueByCode, type LookupResult } from '../../issueCode/lookupIssueByCode';
 import { parseIssueCode } from '../../issueCode/parseIssueCode';
 import {
@@ -19,6 +18,7 @@ import { useJiraConfig } from '../../jira/useJiraConfig';
 import { useToolConnections } from '../../useToolConnections';
 import { targetProvider } from '../../issueCode/lookupCopy';
 import { useIssueLookup, type IssueLookupState } from '../useIssueLookup';
+import { forgetTeamKeys, teamKeysOf } from './linearTeamKeys';
 
 export type WorkspaceLookup = {
   readonly route: LookupRoute;
@@ -44,18 +44,6 @@ type RepoRemote = {
 };
 
 const remoteCache = new Map<string, Promise<RepoRemote>>();
-
-const teamKeysCache = new Map<string, Promise<ReadonlyArray<string>>>();
-
-const teamKeysOf = (workspaceId: WorkspaceId): Promise<ReadonlyArray<string>> => {
-  const cached = teamKeysCache.get(workspaceId);
-  if (cached !== undefined) {
-    return cached;
-  }
-  const pending = linearFetchTeamKeys({ workspaceId }).catch(() => []);
-  teamKeysCache.set(workspaceId, pending);
-  return pending;
-};
 
 const remoteOf = ({
   rootPath,
@@ -146,6 +134,7 @@ export const useWorkspaceIssueLookup = ({
   const [linearTeamKeys, setLinearTeamKeys] = useState<ReadonlyArray<string> | null>(null);
   useEffect(() => {
     if (!connected.has('linear')) {
+      forgetTeamKeys(workspaceId);
       setLinearTeamKeys(null);
       return;
     }
