@@ -257,7 +257,7 @@
     }
   }
 
-  --animate-theme-icon-in: theme-icon-in 420ms cubic-bezier(0.2, 0, 0, 1) both;
+  --animate-theme-icon-in: theme-icon-in 420ms cubic-bezier(0.3, 0, 0.2, 1) both;
 
   @keyframes theme-icon-in {
     from {
@@ -445,7 +445,7 @@ html[data-theme-switching] [data-theme-icon] {
 }
 
 ::view-transition-old(theme-icon) {
-  animation: theme-icon-out 420ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: theme-icon-out 300ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 @keyframes theme-icon-out {
