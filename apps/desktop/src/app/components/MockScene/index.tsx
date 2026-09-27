@@ -74,6 +74,7 @@ import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
 import { ListboxScene } from './scenes/ListboxScene';
+import { BrandKickoffScene } from './scenes/brand/KickoffScene';
 import { BrandLookupScene } from './scenes/brand/LookupScene';
 import { BrandSlackScene } from './scenes/brand/SlackScene';
 import { BrandContextScene } from './scenes/brand/ContextScene';
@@ -158,6 +159,7 @@ export const MOCK_SCENES = {
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,
+  'brand-kickoff': BrandKickoffScene,
   'brand-lookup': BrandLookupScene,
   'brand-slack': BrandSlackScene,
   'brand-context': BrandContextScene,

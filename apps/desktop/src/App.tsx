@@ -14,6 +14,7 @@ import { NotificationToastBridge } from './features/notifications/components/Not
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
+import { SessionDraftPane } from './features/session/components/SessionDraftPane';
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
@@ -49,6 +50,7 @@ import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessi
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
+import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
 import { LastCrashBridge } from './features/bug-report/components/LastCrashBridge';
 
@@ -82,7 +84,8 @@ export const App = () => {
   );
   const currentSession = useCurrentSession();
   const currentWorkspaceSessions = useSessions();
-  const hasActiveSession = currentSession != null;
+  const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
+  const hasActiveSession = currentSession != null || isDraftShown;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
   const connected = useConnectedIntegrations({ workspaceId: currentWorkspaceId });
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
@@ -245,7 +248,7 @@ export const App = () => {
         leftSidebar={
           hasActiveSession && arrangement.leftSlot !== 'none' ? (
             arrangement.leftSlot === 'rail' ? (
-              <CollapsedRail onToggleSidebar={sessionSidebar.toggle} />
+              <CollapsedRail onToggleSidebar={sessionSidebar.toggle} isDraftShown={isDraftShown} />
             ) : (
               <SessionNavSidebar
                 currentSessionId={currentSession?.id ?? null}
@@ -290,6 +293,8 @@ export const App = () => {
                   />
                 ))}
               </div>
+            ) : currentWorkspace && isDraftShown ? (
+              <SessionDraftPane workspaceId={currentWorkspace.id} />
             ) : currentWorkspace ? (
               <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
             ) : (

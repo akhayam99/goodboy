@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { EffortLevel, Session, Workflow } from '@goodboy/types';
@@ -84,7 +85,8 @@ vi.mock('../../../../store', () => {
     <T,>(selector: (s: never) => T) => selector(getState() as never),
     { getState },
   );
-  const useSessionSlots = () => [{ key: 'goal', value: 'do a thing' }];
+  const useSessionSlots = (sessionId: string | null) =>
+    sessionId === null ? [] : [{ key: 'goal', value: 'do a thing' }];
   const useCurrentWorkspace = () => ({ name: 'Test workspace' });
   return { EMPTY_ARRAY: Object.freeze([]), useAppStore, useCurrentWorkspace, useSessionSlots };
 });
@@ -182,7 +184,7 @@ vi.mock('../../../../shared/components/RoutingPicker', () => ({
 }));
 
 import { PlannerClient } from '@goodboy/core';
-import { WorkflowBuilderView, uniqueWorkflowName } from './index';
+import { WorkflowBuilderView, uniqueWorkflowName, type BuilderKickoff } from './index';
 
 const session: Session = {
   id: 'sess-1',
@@ -758,6 +760,13 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     );
     expect(tabs.map((tab) => tab.textContent)).toEqual(['Orchestrated', 'Custom', 'Preset']);
     expect(tabs[0]!.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('keeps its own Custom hint, where the steps are on screen', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Custom' }));
+
+    expect(screen.getByText('You set every step. Click a step to edit it.')).toBeDefined();
   });
 
   it('starts from the goal alone and leaves the process out of the run', async () => {
@@ -2107,5 +2116,124 @@ describe('WorkflowBuilderView (saved steps)', () => {
     expect(mockSavePhaseTemplate.mock.calls[0]![0].steps[0]).toMatchObject({
       libraryStepId: 'lib-router',
     });
+  });
+});
+
+type KickoffHarnessProps = {
+  readonly start: BuilderKickoff['start'];
+};
+
+const KickoffHarness = ({ start }: KickoffHarnessProps) => {
+  const [goal, setGoal] = useState('');
+  return (
+    <WorkflowBuilderView
+      kickoff={{
+        workspaceId: session.workspaceId,
+        goal,
+        goalPlaceholder: 'What should get done?',
+        onGoalChange: setGoal,
+        start,
+      }}
+    />
+  );
+};
+
+const createdSession = { ...session, id: 'sess-new' } as Session;
+
+const kickoffStart = () =>
+  vi.fn(async (run: (target: Session) => Promise<void>) => {
+    await run(createdSession);
+  });
+
+const kickoffGoal = () =>
+  screen.getByPlaceholderText('What should get done?') as HTMLTextAreaElement;
+
+describe('WorkflowBuilderView (kickoff, before the session exists)', () => {
+  it('shows the orchestrated plan, guidance, Can use and the launch controls', () => {
+    storeState.providers = [{ id: 'anthropic', connection: 'connected' }];
+    render(<KickoffHarness start={kickoffStart()} />);
+
+    expect(screen.getByRole('tab', { name: 'Orchestrated' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    expect(orchestratorPicker()).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: /add guidance for the orchestrator/i }),
+    ).toBeDefined();
+    expect(screen.getByText('Can use')).toBeDefined();
+    expect(screen.getByText('Autorun')).toBeDefined();
+    expect(screen.getByText('Set a goal to start')).toBeDefined();
+    expect(startBtn().disabled).toBe(true);
+  });
+
+  it('has one goal field and nothing that needs a session', () => {
+    render(<KickoffHarness start={kickoffStart()} />);
+
+    expect(screen.getAllByRole('textbox', { name: 'Goal' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /use session goal/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /cancel workflow builder/i })).toBeNull();
+  });
+
+  it('edits custom steps with the planner in the kickoff', async () => {
+    render(<KickoffHarness start={kickoffStart()} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Custom' }));
+    fireEvent.change(kickoffGoal(), { target: { value: 'test goal' } });
+    mockPlan.mockResolvedValue({ output: PLAN_FIXTURE });
+    fireEvent.change(screen.getByPlaceholderText(/describe the process/i), {
+      target: { value: 'do something' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /generate plan/i }));
+
+    await waitFor(() => screen.getByText('2 steps'));
+    expect(stepToggles()).toHaveLength(2);
+  });
+
+  it('offers the preset picker when the workspace has presets', () => {
+    storeState.phaseTemplates = { 'ws-1': [presetWorkflow('wf-1', 'Plan and ship')] };
+    render(<KickoffHarness start={kickoffStart()} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Preset' }));
+
+    expect(screen.getByText('Pick a preset')).toBeDefined();
+    expect(screen.queryByText('No presets in this workspace yet')).toBeNull();
+  });
+
+  it('keeps its draft under the workspace kickoff, not a session', () => {
+    render(<KickoffHarness start={kickoffStart()} />);
+    fireEvent.change(kickoffGoal(), { target: { value: 'test goal' } });
+    fireEvent.click(screen.getByRole('tab', { name: 'Custom' }));
+
+    expect(storeState.workflowDrafts['kickoff:ws-1']?.mode).toBe('custom');
+    expect(storeState.workflowDrafts['sess-1']).toBeUndefined();
+  });
+
+  it('creates the session, then starts the orchestrated run on it, in one action', async () => {
+    const start = kickoffStart();
+    render(<KickoffHarness start={start} />);
+    fireEvent.change(kickoffGoal(), { target: { value: 'test goal' } });
+    fireEvent.click(startBtn());
+
+    await waitFor(() => expect(mockAttach).toHaveBeenCalledOnce());
+    expect(start).toHaveBeenCalledOnce();
+    expect(mockSavePhaseTemplate.mock.calls[0]![0]).toEqual(
+      expect.objectContaining({ workspaceId: 'ws-1', origin: 'orchestrated' }),
+    );
+    expect(mockAttach).toHaveBeenCalledWith(
+      'sess-new',
+      expect.any(String),
+      expect.objectContaining({ goal: 'test goal', executionMode: 'dynamic', navigate: true }),
+    );
+  });
+
+  it('shows why inline when the session could not be created', async () => {
+    const start = vi.fn(async () => {
+      throw new Error('provider offline');
+    });
+    render(<KickoffHarness start={start} />);
+    fireEvent.change(kickoffGoal(), { target: { value: 'test goal' } });
+    fireEvent.click(startBtn());
+
+    expect((await screen.findByRole('alert')).textContent).toContain('provider offline');
+    expect(mockAttach).not.toHaveBeenCalled();
+    expect(kickoffGoal().value).toBe('test goal');
   });
 });

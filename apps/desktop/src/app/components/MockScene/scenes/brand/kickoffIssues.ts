@@ -3,9 +3,11 @@ import type {
   IntegrationBindingId,
   IntegrationCredentialId,
   IsoDateTime,
+  StarredIssue,
   WorkspaceId,
 } from '@goodboy/types';
 import type { LinearIssue } from '../../../../../features/integrations/linear/client';
+import type { InboxRecord } from '../../../../../features/inbox/types';
 import { BRAND_PEOPLE, BRAND_SESSION, BRAND_WORKSPACE_NAME } from './canon';
 
 const MINUTE = 60_000;
@@ -100,6 +102,95 @@ export const HBL_398: LinearIssue = linearIssue({
   project: 'Notifications',
   labels: [{ name: 'oncall', color: '#f2994a' }],
   ago: 3 * HOUR,
+});
+
+export const HBL_377: LinearIssue = linearIssue({
+  id: 'mock-brand-linear-hbl-377',
+  identifier: 'HBL-377',
+  title: 'Reconcile the ledger snapshot before the Monday close',
+  description:
+    'Finance needs the nightly snapshot in ledger-core to match the settlement export before the books close on Monday.',
+  state: { name: 'In Progress', type: 'started' },
+  priority: 2,
+  priorityLabel: 'High',
+  assignee: BRAND_PEOPLE.owner.name,
+  creator: BRAND_PEOPLE.reviewer.name,
+  project: 'Ledger',
+  labels: [{ name: 'finance', color: '#26b5ce' }],
+  ago: 2 * DAY,
+});
+
+export const HBL_405: LinearIssue = linearIssue({
+  id: 'mock-brand-linear-hbl-405',
+  identifier: 'HBL-405',
+  title: 'Expire processed webhook event ids after 30 days',
+  description: 'The processed events table grows without bound. Keep 30 days, then prune.',
+  state: { name: 'Backlog', type: 'backlog' },
+  priority: 3,
+  priorityLabel: 'Medium',
+  assignee: BRAND_PEOPLE.owner.name,
+  creator: BRAND_PEOPLE.owner.name,
+  project: 'Payments',
+  labels: [{ name: 'webhooks', color: '#5e6ad2' }],
+  ago: 26 * HOUR,
+});
+
+export const HBL_389: LinearIssue = linearIssue({
+  id: 'mock-brand-linear-hbl-389',
+  identifier: 'HBL-389',
+  title: 'Paginate the ledger export endpoint',
+  description:
+    'The export endpoint returns every row for a tenant at once and times out past 40k rows.',
+  state: { name: 'Todo', type: 'unstarted' },
+  priority: 4,
+  priorityLabel: 'Low',
+  assignee: BRAND_PEOPLE.owner.name,
+  creator: BRAND_PEOPLE.reviewer.name,
+  project: 'Ledger',
+  labels: [],
+  ago: 4 * DAY,
+});
+
+export const KICKOFF_ASSIGNED: ReadonlyArray<LinearIssue> = [HBL_412, HBL_398, HBL_405, HBL_389];
+
+const STATE_OF: Readonly<Record<string, InboxRecord['state']>> = {
+  unstarted: 'open',
+  backlog: 'open',
+  started: 'active',
+  completed: 'done',
+};
+
+export const linearRecordOf = (issue: LinearIssue): InboxRecord => ({
+  key: `linear:issue:${issue.id}`,
+  provider: 'linear',
+  kind: 'issue',
+  identifier: issue.identifier,
+  title: issue.title,
+  state: STATE_OF[issue.state.type] ?? 'open',
+  stateLabel: issue.state.name,
+  updatedAt: issue.updatedAt,
+  url: issue.url,
+  context: issue.project?.name ?? '',
+  payload: { provider: 'linear', kind: 'issue', issue, sessionId: null },
+});
+
+type StarParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly issue: LinearIssue;
+};
+
+export const starredLinearOf = ({ workspaceId, issue }: StarParams): StarredIssue => ({
+  workspaceId,
+  provider: 'linear',
+  externalId: issue.id,
+  identifier: issue.identifier,
+  container: null,
+  title: issue.title,
+  url: issue.url,
+  state: STATE_OF[issue.state.type] === 'active' ? 'active' : 'open',
+  stateLabel: issue.state.name,
+  starredAt: kickoffIsoAgo(5 * DAY),
+  refreshedAt: kickoffIsoAgo(10 * MINUTE),
 });
 
 export const linearBindingOf = ({

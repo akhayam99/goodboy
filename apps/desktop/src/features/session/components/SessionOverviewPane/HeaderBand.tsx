@@ -16,11 +16,10 @@ import { ArchivedRestore } from './ArchivedRestore';
 
 type Props = {
   readonly session: Session;
-  readonly isSettingUp?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props) => {
+export const HeaderBand = ({ session, onSelectLens }: Props) => {
   const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
@@ -81,7 +80,7 @@ export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props
             <SessionDestructiveActions session={session} />
           </div>
         </div>
-        {isSettingUp ? null : <GoalTeaser session={session} />}
+        <GoalTeaser session={session} />
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
             {isArchived ? <ArchivedRestore session={session} /> : null}
@@ -95,11 +94,7 @@ export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props
           </div>
         </div>
       </div>
-      <ProjectMountRows
-        session={session}
-        isHiddenWhenEmpty={isSettingUp}
-        onSelectLens={onSelectLens}
-      />
+      <ProjectMountRows session={session} onSelectLens={onSelectLens} />
     </div>
   );
 };
