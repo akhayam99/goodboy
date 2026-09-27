@@ -11,6 +11,7 @@ export type RowStateReason =
   | { readonly kind: 'budget'; readonly limitUsd: number | null }
   | { readonly kind: 'failed' }
   | { readonly kind: 'blocked' }
+  | { readonly kind: 'noArtifact' }
   | { readonly kind: 'needsApproval' }
   | { readonly kind: 'stepFailed'; readonly stepLabel: string | null }
   | { readonly kind: 'stepBlocked'; readonly stepLabel: string | null }
@@ -49,6 +50,7 @@ type AgentParams = {
   readonly isAsking: boolean;
   readonly question: OpenQuestion | null;
   readonly isReadyStep: boolean;
+  readonly isMissingArtifact?: boolean;
 };
 
 const isAwaitingFirstMessage = ({ agent }: { readonly agent: Agent }): boolean =>
@@ -64,6 +66,7 @@ export const resolveAgentRowState = ({
   isAsking,
   question,
   isReadyStep,
+  isMissingArtifact = false,
 }: AgentParams): RowState => {
   if (isAgentClosedByUser({ agent })) {
     return { phase: 'closed', reason: { kind: 'closed' }, ask: null };
@@ -93,7 +96,11 @@ export const resolveAgentRowState = ({
     case 'skipped':
       return { phase: 'skipped', reason: { kind: 'skipped' }, ask: null };
     case 'blocked':
-      return { phase: 'waiting', reason: { kind: 'blocked' }, ask: null };
+      return {
+        phase: 'waiting',
+        reason: { kind: isMissingArtifact ? 'noArtifact' : 'blocked' },
+        ask: null,
+      };
     case 'stopped':
       return {
         phase: 'waiting',

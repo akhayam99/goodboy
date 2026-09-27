@@ -1,10 +1,48 @@
 import { Button, cn, tintClasses } from '@goodboy/ui';
 import { useCallback } from 'react';
+import {
+  buildIssueUrl,
+  fitsIssueUrl,
+  longestFittingPrefix,
+  withoutLoneSurrogates,
+} from '../../../features/settings/issueUrl';
 import { openUrl } from '../../../shared/lib/editor';
-import { redactHomePath } from './redactHomePath';
+import { redactReportText } from '../../../shared/utils/redactReportText';
 
-const GITHUB_NEW_ISSUE_URL =
-  'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
+const BOOT_ISSUE_TITLE = 'Boot failure';
+
+const ERROR_FIT_NOTICE = '\n[cut here: the rest of the error did not fit the report link]';
+
+type BootBodyParams = {
+  readonly category: string;
+  readonly error: string;
+};
+
+const bootBody = ({ category, error }: BootBodyParams): string =>
+  `**category:** ${category}\n\n**error:**\n\`\`\`\n${error}\n\`\`\``;
+
+const bootIssueUrl = ({ category, error }: BootBodyParams): string => {
+  const safeCategory = withoutLoneSurrogates({ text: redactReportText({ text: category }) });
+  const safeError = withoutLoneSurrogates({ text: redactReportText({ text: error }) });
+  const whole = bootBody({ category: safeCategory, error: safeError });
+  if (fitsIssueUrl({ title: BOOT_ISSUE_TITLE, body: whole })) {
+    return buildIssueUrl({ title: BOOT_ISSUE_TITLE, body: whole });
+  }
+
+  const cutError = longestFittingPrefix({
+    text: safeError,
+    marker: ERROR_FIT_NOTICE,
+    fits: ({ candidate }) =>
+      fitsIssueUrl({
+        title: BOOT_ISSUE_TITLE,
+        body: bootBody({ category: safeCategory, error: candidate }),
+      }),
+  });
+  return buildIssueUrl({
+    title: BOOT_ISSUE_TITLE,
+    body: bootBody({ category: safeCategory, error: cutError }),
+  });
+};
 
 type Props = {
   readonly error: string;
@@ -17,8 +55,7 @@ const sentenceCase = ({ text }: { readonly text: string }): string =>
 
 export const BootErrorRecovery = ({ error, category, onRetry }: Props) => {
   const openIssue = useCallback(() => {
-    const body = `**category:** ${category}\n\n**error:**\n\`\`\`\n${redactHomePath({ text: error })}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`;
-    void openUrl(`${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(body)}`);
+    void openUrl(bootIssueUrl({ category, error }));
   }, [error, category]);
 
   return (

@@ -42,6 +42,7 @@ import {
   resolveRootAgent,
 } from '../../agent-kind';
 import { agentStateWord } from '../../agentStateWord';
+import { isAgentMissingArtifact } from '../../../artifacts/turnArtifactOutcome';
 import { useAgentLifecycleSignals } from '../useAgentLifecycleSignals';
 import { settledResolverAgentIds } from '../../../review/settledResolverAgentIds';
 import { selectResolverAgentIds } from '../../../review/selectResolverAgentIds';
@@ -182,6 +183,7 @@ export const useTrailMenus = ({
         isTurnLive: signals.liveTurnAgentIds.has(agent.id),
         hasActiveChild: activeParents.has(agent.id),
         isResolverSettled: settled.has(agent.id),
+        isMissingArtifact: isAgentMissingArtifact({ agent, kind: kindOf(agent), artifacts }),
       });
     const roleOf = (agent: Agent) => {
       const kind = kindOf(agent);

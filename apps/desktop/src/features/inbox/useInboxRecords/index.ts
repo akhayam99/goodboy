@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
@@ -9,7 +9,6 @@ import { useGitlabIssues } from '../../integrations/gitlab/MergeRequest/useGitla
 import { useGitlabMrs } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import { useJiraIssues } from '../../integrations/jira/JiraStudio/useJiraIssues';
 import { useLinearIssues } from '../../integrations/linear/LinearStudio/useLinearIssues';
-import { useSentryIssues } from '../../integrations/sentry/SentryStudio/useSentryIssues';
 import { useSlackThreads } from '../../integrations/slack/SlackStudio/useSlackThreads';
 import { adaptBitbucketPrs } from '../adapters/bitbucket';
 import { adaptGithubIssues } from '../adapters/github';
@@ -20,6 +19,7 @@ import { adaptSentryIssues } from '../adapters/sentry';
 import { adaptSlackThreads } from '../adapters/slack';
 import { attachInboxProjects } from '../attachInboxProjects';
 import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../types';
+import { useInboxSentryIssues } from '../useInboxSentryIssues';
 
 type Params = { readonly workspaceId: WorkspaceId; readonly rootPath: string };
 type Errors = Readonly<Record<InboxProvider, string | null>>;
@@ -52,20 +52,10 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
       ),
     ),
   );
-  const sentryLinks = useAppStore((state) => state.projectSentryLinks[workspaceId] ?? EMPTY_ARRAY);
-  const loadProjectSentryLinks = useAppStore((state) => state.loadProjectSentryLinks);
-  const hasSentry = has('sentry');
-  useEffect(() => {
-    if (!hasSentry) {
-      return;
-    }
-    void loadProjectSentryLinks({ workspaceId }).catch(() => undefined);
-  }, [hasSentry, loadProjectSentryLinks, workspaceId]);
-  const linkedSentryProjects = useMemo(
-    () => sentryLinks.map((link) => link.sentryProject),
-    [sentryLinks],
-  );
-  const sentry = useSentryIssues(workspaceId, hasSentry, linkedSentryProjects);
+  const { sentry, links: sentryLinks } = useInboxSentryIssues({
+    workspaceId,
+    isEnabled: has('sentry'),
+  });
   const slack = useSlackThreads({ workspaceId, isEnabled: has('slack') });
   const bitbucketRepo = useWorkspaceBitbucketRepo({ workspaceId, isEnabled: has('bitbucket') });
   const bitbucket = useBitbucketPrs({ repo: bitbucketRepo });

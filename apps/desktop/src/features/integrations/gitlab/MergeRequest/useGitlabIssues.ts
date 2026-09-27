@@ -6,6 +6,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { useAppStore, useSessions } from '../../../../store';
 import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
@@ -148,7 +149,7 @@ export const useGitlabIssues = ({ workspaceId, isEnabled = true }: HookParams): 
       const rows = await gitlabFetchAssignedIssues(workspaceId, host);
       setIssues(rows);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setLoading(false);
     }

@@ -32,6 +32,7 @@ import {
 } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
 import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
+import { rowStateNode, rowStateTone } from '../../workTreeModel/rowStateCopy';
 import { runIdentity, runIdentitySeed } from './runIdentity';
 import { markerCenterY, TIMELINE_RHYTHM } from '../../workTreeModel/timelineRhythm';
 
@@ -2024,6 +2025,47 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
     createdAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 30 }) }),
     updatedAt: typedString<IsoDateTime>({ value: localIso({ day: 18, hour: 9, minute: 30 }) }),
   } as unknown as SessionArtifact;
+
+  const reportAgentOf = ({ status }: { readonly status: Agent['status'] }): Agent => ({
+    ...agent({
+      id: 'weekly-report',
+      ordinal: 0,
+      startedAt: localIso({ day: 18, hour: 9 }),
+      completedAt: localIso({ day: 18, hour: 9, minute: 20 }),
+      status,
+    }),
+    kind: 'report',
+  });
+
+  const reportRowOf = (items: ReadonlyArray<TimelineStreamItem>) =>
+    items.find((item) => item.kind === 'row' && item.id === 'agent:weekly-report');
+
+  it('shows a blocked report agent without an artifact as no artifact, never done', () => {
+    const { items } = stream({ agents: [reportAgentOf({ status: 'blocked' })] });
+    const row = reportRowOf(items);
+
+    expect(stateOf(row)).toBe('waiting:noArtifact');
+    if (row?.kind !== 'row') return;
+    expect(rowStateNode({ state: row.rowState })).toEqual({
+      state: 'approval',
+      label: 'No artifact',
+    });
+    expect(rowStateTone({ state: row.rowState })).toBe('warning');
+  });
+
+  it('shows a report agent whose artifact was captured as done', () => {
+    const { items } = stream({
+      agents: [reportAgentOf({ status: 'completed' })],
+      artifacts: [
+        {
+          ...runReport,
+          agentId: typedString<AgentId>({ value: 'weekly-report' }),
+        } as SessionArtifact,
+      ],
+    });
+
+    expect(stateOf(reportRowOf(items))).toBe('done');
+  });
 
   it('keeps a run report in the stream by default', () => {
     const { items } = stream({

@@ -131,7 +131,7 @@ describe('NotificationsStudio', () => {
       screen.getByRole('button', { name: 'Older failure' }).getAttribute('aria-expanded'),
     ).toBe('true');
     expect(screen.getByRole('list', { name: 'Earlier in this group' })).toBeDefined();
-    expect(screen.getByRole('button', { name: /send to developers/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: /report this/i })).toBeDefined();
     expect(state.markNotificationRead).toHaveBeenCalledTimes(2);
   });
 

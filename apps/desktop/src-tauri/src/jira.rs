@@ -1354,7 +1354,10 @@ mod tests {
 
     #[test]
     fn build_keys_jql_trims_whitespace_around_keys() {
-        assert_eq!(build_keys_jql(&[" NW-142 ".to_string()]), "key in (\"NW-142\")");
+        assert_eq!(
+            build_keys_jql(&[" NW-142 ".to_string()]),
+            "key in (\"NW-142\")"
+        );
     }
 
     #[test]

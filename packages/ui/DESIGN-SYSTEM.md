@@ -909,6 +909,16 @@ collapse and unmounts them on `transitionend`, or at once when no transition
 runs (reduced motion, tests). `Collapsible` opens through it. A disclosure
 never mounts and unmounts its panel by hand.
 
+A theme switch is a class swap on `<html>` and nothing else: `applyDocumentTheme`
+sets the `light` or `dark` class, `data-theme` and `color-scheme`, and the CSS
+variables repaint the page in one frame. No view transition, no React state:
+the zustand store keeps only the preference. For that frame
+`html[data-theme-switching]` turns every element transition off, so a
+`transition-colors` surface lands on its new color at once instead of
+animating in waves. The few things that paint with JS colors (the xterm
+terminal, the changelog image, the theme toggle icon) listen through
+`subscribeAppliedTheme` or `useAppliedTheme` and update only themselves.
+
 - `spin-border`: working, on an element whose own edge carries the signal
   (a `WorkNode`'s ring). A session card or row carries its tone in a
   `ToneBar` instead, a bar inside the surface rather than a border around it,

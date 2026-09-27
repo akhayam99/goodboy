@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Session, SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { useAppStore, useSessions } from '../../../../store';
 import {
   issuePullRequests,
@@ -165,7 +166,7 @@ export const useLinearIssues = (workspaceId: WorkspaceId, isEnabled = true): Use
       const rows = await linearFetchAssignedIssues(workspaceId);
       setIssues(rows);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,7 @@ import {
   captureArtifactFromTurnText,
   extractFanOut,
   extractReviewComments,
+  extractStepDone,
   fanOutCapabilityForRole,
   fallbackStepOutputSummary,
   hasBlockingQuestion,
@@ -13,6 +14,10 @@ import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgen
 import { classifyAgent, KIND_TO_ROLE } from '../../../features/session/agent-kind';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
 import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
+import {
+  agentHasArtifact,
+  turnArtifactOutcome,
+} from '../../../features/artifacts/turnArtifactOutcome';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -84,8 +89,35 @@ export const completeResolvedAgent = async ({
     return null;
   }
 
+  const captured = captureArtifactFromTurnText({ assistantText, emittingProvider });
+  const artifactOutcome = didAgentDie
+    ? 'not-expected'
+    : turnArtifactOutcome({
+        kind: ranKind,
+        captured,
+        assistantText,
+        hasPriorArtifact: agentHasArtifact({
+          artifacts: get().sessionArtifacts?.[sessionId],
+          agentId: resolvedAgentId,
+        }),
+      });
+
+  const isWorkflowStep = ranAgent?.stepId != null && ranAgent.workflowRunId != null;
+  const blocksOnMissingArtifact =
+    artifactOutcome === 'missing' &&
+    (!isWorkflowStep || captured.status === 'error' || extractStepDone(assistantText) !== null);
+
+  if (blocksOnMissingArtifact) {
+    await invokeAgentUpdateStatus(resolvedAgentId, { status: 'blocked', completedAt: now() });
+    const refreshedRuns = await invokeAgentList(sessionId);
+    set((state) => ({
+      sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: refreshedRuns },
+    }));
+    void get().refreshUnreadWorkspaces();
+    return isWorkflowStep ? false : null;
+  }
+
   if (!!ranAgent?.stepId && !!ranAgent?.workflowRunId) {
-    const captured = captureArtifactFromTurnText({ assistantText, emittingProvider });
     const planCapturedThisTurn =
       captured.status === 'captured' &&
       captured.artifact.kind === 'plan' &&
@@ -94,7 +126,7 @@ export const completeResolvedAgent = async ({
       sessionId,
       resolvedAgentId,
       assistantText,
-      planCapturedThisTurn,
+      planCapturedThisTurn || artifactOutcome === 'captured',
       { didAgentDie },
     );
     return shouldAutoAdvance;

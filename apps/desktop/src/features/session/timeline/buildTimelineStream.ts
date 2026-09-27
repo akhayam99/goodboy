@@ -474,6 +474,7 @@ const agentRowStateOf = ({
     isAsking: entry.openQuestions.length > 0 && !isQuestionDelegate({ agent: entry.agent }),
     question: oldestAgentOpenQuestion({ entry }),
     isReadyStep: readyAgentId === entry.agent.id,
+    isMissingArtifact: entry.isMissingArtifact,
   });
 
 const hasScheduledChildWork = ({

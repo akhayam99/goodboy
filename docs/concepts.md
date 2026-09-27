@@ -875,7 +875,10 @@ belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
 suggested from Sentry code mappings and wait for your Link. The inbox reads the
-first page of every linked Sentry project besides the connected one. A record
+first page of every linked Sentry project besides the connected one, in one
+load that starts once the links are read. A Sentry call that hits a rate limit
+or a gateway error is retried up to twice, waiting what `Retry-After` asks for
+(at most 5 seconds), before the tool says it did not load. A record
 no project claims, such as a Linear or Jira issue, stays visible under every
 project filter. In Settings, Workspace, a project that reads Sentry shows the
 Sentry glyph, and its tooltip names the Sentry projects.
@@ -1011,7 +1014,14 @@ Other identifiers:
 - `ArtifactKind`: `plan`, `report`, `wireframe`
 - `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`
 - Plans sit between `<<plan>>` and `<</plan>>` markers
-- Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope
+- Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope.
+  The line after the marker is a JSON header with title, format and metadata.
+  The content follows it as raw text up to `<</artifact>>`, so markdown is
+  never escaped into a JSON string. The parser still reads the older single
+  JSON object body, and repairs raw newlines, stray quotes and smart quotes in
+  it. It also reads a block wrapped in a plain or `json` code fence
+  (`packages/core/src/artifacts/envelopeBody.ts`,
+  `packages/core/src/artifacts/locateArtifactBlocks.ts`).
 - A review conversation is a `resolve_threads` row. A fix attempt is a
   `resolve_attempts` row.
 

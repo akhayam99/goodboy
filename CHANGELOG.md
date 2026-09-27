@@ -12,6 +12,20 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.11.2
+
+Rewrite history opens again, reports leave out your personal details, and a report that failed to save no longer looks done.
+
+### Fixed
+
+- Rewrite history opens from the diff instead of crashing the window. <!-- gb area=review -->
+- Crash, boot and notification reports leave out your home folder, email addresses, secrets and link parameters before you send them. <!-- gb area=app -->
+- The inbox loads Sentry issues on the first try instead of showing an error banner over issues that already arrived. <!-- gb area=inbox -->
+- An inbox loading error shows its real message instead of [object Object]. <!-- gb area=inbox -->
+- Switching between light and dark mode changes the colors in one step, with no text fading out and back in. <!-- gb area=app -->
+- Reports, wireframes and plans with long markdown bodies are saved reliably. <!-- gb area=artifacts -->
+- A report or wireframe agent whose artifact was not saved ends blocked with a Retry capture action, instead of showing green. <!-- gb area=artifacts -->
+
 ## Goodboy v0.11.1
 
 Every screen names a model the same way.
