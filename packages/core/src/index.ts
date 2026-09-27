@@ -84,6 +84,7 @@ export {
   removeDecision,
   removeFromSlot,
   removeQuestionsFromSlot,
+  removeSessionQuestionsFromSlots,
   replaceDecision,
   replaceSummarySectionBody,
   serializeDecisions,
