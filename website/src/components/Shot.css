@@ -139,7 +139,52 @@
 }
 
 @media (max-width: 860px) {
-  .shot {
-    display: none;
+  .shot,
+  .shot:has(.details) {
+    --stage-pad: 12px;
+    --stage-foot: 12px;
+    margin: 0 -24px;
+  }
+  .stage {
+    border-radius: 0;
+  }
+  .win {
+    border-radius: 8px;
+  }
+  .winBar {
+    height: 18px;
+    gap: 5px;
+    padding: 0 8px;
+  }
+  .winBar i {
+    width: 6px;
+    height: 6px;
+  }
+  .details {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    margin: 20px 24px 0;
+  }
+  .details li,
+  .details li:only-child {
+    flex: none;
+    max-width: none;
+  }
+  .detailFrame {
+    border-radius: 10px;
+    box-shadow:
+      0 0 0 1px rgb(16 17 19 / 0.1),
+      0 18px 36px -20px rgb(8 12 14 / 0.5);
+  }
+}
+
+@media (max-width: 560px) {
+  .shot,
+  .shot:has(.details) {
+    margin: 0 -16px;
+  }
+  .details {
+    margin: 20px 16px 0;
   }
 }

@@ -1,9 +1,8 @@
 import { Benefits, type Benefit } from '../components/Benefits';
 import { Block } from '../components/Block';
 import { SeeHow } from '../components/SeeHow';
-import { PhoneFigure } from '../components/PhoneFigure';
 import { Shot } from '../components/Shot';
-import { CHAT, PHONE_CHAT } from '../figures';
+import { CHAT } from '../figures';
 
 const ITEMS: readonly Benefit[] = [
   {
@@ -38,7 +37,6 @@ export const Developers = () => (
     headingId="h2-developers"
     heading="For developers"
     sub="Less time explaining, more time reviewing finished work."
-    phone={<PhoneFigure shot={PHONE_CHAT} />}
     isAlt
   >
     <Shot figure={CHAT} />

@@ -1,9 +1,8 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
 import { SeeHow } from '../components/SeeHow';
-import { PhoneFigure } from '../components/PhoneFigure';
 import { Shot } from '../components/Shot';
-import { BUILDER, PHONE_BUILDER } from '../figures';
+import { BUILDER } from '../figures';
 import { SITE } from '../site';
 
 export const Workflows = () => (
@@ -12,7 +11,6 @@ export const Workflows = () => (
     headingId="h2-workflows"
     heading="Workflows"
     sub="Give Goodboy a goal and a workflow runs it as steps, each one a fresh agent with a short brief."
-    phone={<PhoneFigure shot={PHONE_BUILDER} />}
     isAlt
   >
     <Shot figure={BUILDER} />

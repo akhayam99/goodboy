@@ -1,8 +1,6 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
 import { SeeHow } from '../components/SeeHow';
-import { PhoneFigure } from '../components/PhoneFigure';
-import { PhoneStorage } from '../components/phone/PhoneStorage';
 import { Shot } from '../components/Shot';
 import { STORAGE } from '../figures';
 import { SITE } from '../site';
@@ -13,11 +11,6 @@ export const Storage = () => (
     headingId="h2-privacy"
     heading="Storage and security"
     sub="No account, no server. Your tasks, decisions and settings live on your computer, and prompts go to the provider you picked."
-    phone={
-      <PhoneFigure caption="What each working copy weighs, and a token caught in a saved script">
-        <PhoneStorage />
-      </PhoneFigure>
-    }
     isAlt
   >
     <Shot figure={STORAGE} />

@@ -1,5 +1,4 @@
 import './Shot.css';
-import type { CSSProperties } from 'react';
 import type { Figure } from '../figures';
 import { Details } from './Details';
 import { useInViewOnce } from './Reveal';
@@ -11,10 +10,9 @@ type Props = {
 
 export const Shot = ({ figure, isEager = false }: Props) => {
   const { ref, inView } = useInViewOnce<HTMLElement>();
-  const style = { '--focus': figure.focus } as CSSProperties;
 
   return (
-    <figure className={inView ? 'shot in' : 'shot'} ref={ref} style={style}>
+    <figure className={inView ? 'shot in' : 'shot'} ref={ref}>
       <div className="stage">
         <div className="win">
           <div className="winBar" aria-hidden="true">
@@ -25,7 +23,7 @@ export const Shot = ({ figure, isEager = false }: Props) => {
           <img
             src={`/img/${figure.id}-1920.webp`}
             srcSet={`/img/${figure.id}-1920.webp 1920w, /img/${figure.id}.webp ${figure.width}w`}
-            sizes="(max-width: 860px) 170vw, 1240px"
+            sizes="(max-width: 860px) 200vw, 1240px"
             width={figure.width}
             height={figure.height}
             alt={figure.alt}

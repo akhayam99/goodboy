@@ -1,7 +1,5 @@
 import { Block } from '../components/Block';
 import { SeeHow } from '../components/SeeHow';
-import { PhoneFigure } from '../components/PhoneFigure';
-import { PhoneResolve } from '../components/phone/PhoneResolve';
 import { Shot } from '../components/Shot';
 import { RESOLVE } from '../figures';
 
@@ -11,11 +9,6 @@ export const Review = () => (
     headingId="h2-review"
     heading="Pull request review"
     sub="Pick the comments and press Resolve. An agent writes each fix as a commit and drafts the reply in your voice, and you approve."
-    phone={
-      <PhoneFigure caption="Each comment gets a commit or a reply, and you approve">
-        <PhoneResolve />
-      </PhoneFigure>
-    }
     isAlt
   >
     <Shot figure={RESOLVE} />
