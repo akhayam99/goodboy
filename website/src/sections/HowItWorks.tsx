@@ -1,0 +1,28 @@
+import { Block } from '../components/Block';
+import { More } from '../components/More';
+import { Shot } from '../components/Shot';
+import { S04 } from '../figures';
+import { SITE } from '../site';
+
+export const HowItWorks = () => (
+  <Block
+    id="how"
+    headingId="h2-how"
+    heading="How it works"
+    sub="Give Goodboy a goal and a workflow runs it as steps, each one a fresh agent with a short brief."
+    isAlt
+  >
+    <div className="stackText">
+      <p>
+        In Orchestrated mode a model picks the next step after each one finishes and writes down
+        why.
+      </p>
+      <p>
+        Heading somewhere you did not mean? Leave a hint for the next decision, or have it read
+        right away.
+      </p>
+      <More href={`${SITE.concepts}#workflows`}>How workflows work</More>
+    </div>
+    <Shot figure={S04} />
+  </Block>
+);

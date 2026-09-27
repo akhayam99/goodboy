@@ -1,40 +1,24 @@
-import { delay } from '../components/Reveal';
+import { Block } from '../components/Block';
+import { More } from '../components/More';
+import { Shot } from '../components/Shot';
+import { S26 } from '../figures';
 import { SITE } from '../site';
 
 export const Privacy = () => (
-  <section className="block" id="privacy" aria-labelledby="h2-privacy">
-    <div className="wrap split splitCenter">
-      <div className="blockHead">
-        <h2 className="rv" id="h2-privacy">
-          Everything stays on your computer
-        </h2>
-        <p className="sub rv" style={delay(80)}>
-          Everything the app knows about your work stays in one file on your computer.{' '}
-          <b>No account, no server.</b>
-        </p>
-      </div>
-
-      <div className="splitBody">
-        <div className="dbcard rv" style={delay(160)}>
-          <div className="dhead">
-            <b>~/.goodboy/data.db</b>
-            <span>Copy it and your history comes with you.</span>
-          </div>
-          <div className="dtbl">
-            <span className="t">sessions</span>
-            <span className="t">chats</span>
-            <span className="t">plans</span>
-            <span className="t">costs</span>
-            <span className="t">activity</span>
-          </div>
-        </div>
-        <p className="caption rv" style={delay(200)}>
-          Your prompts go straight from your computer to the provider you picked.
-        </p>
-      </div>
-      <a className="more rv" style={delay(260)} href={SITE.privacy}>
-        Read the full pledge <span className="arr">→</span>
-      </a>
+  <Block
+    id="privacy"
+    headingId="h2-privacy"
+    heading="No account, no server"
+    sub="Your tasks, decisions and settings live on your computer. Prompts go to the provider you picked, and your tool keys stay with Goodboy."
+    isAlt
+  >
+    <div className="stackText">
+      <p>
+        Paste a token into a saved script and Goodboy flags it, and an export of your setup leaves
+        that script out unless you say otherwise.
+      </p>
+      <More href={SITE.privacy}>Read the full pledge</More>
     </div>
-  </section>
+    <Shot figure={S26} />
+  </Block>
 );

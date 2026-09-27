@@ -1,6 +1,4 @@
-import './Install.css';
 import { useEffect, useRef, useState } from 'react';
-import { delay } from '../components/Reveal';
 import { SITE } from '../site';
 
 export const Install = () => {
@@ -28,26 +26,23 @@ export const Install = () => {
 
   return (
     <>
-      <section className="block" id="install" aria-labelledby="h2-install">
-        <div className="wrap split">
-          <div className="blockHead">
-            <h2 className="rv" id="h2-install">
-              Setup is a folder and a provider
-            </h2>
-            <p className="sub rv" style={delay(80)}>
-              Install it, connect a provider you already pay for, and point it at a folder you
-              already work in.
+      <section className="block alt" id="install" aria-labelledby="h2-install">
+        <div className="wrap duo">
+          <div className="duoText">
+            <h2 id="h2-install">Setup is a folder and a provider</h2>
+            <p className="sub">
+              Install it, connect a provider, and point it at a folder you already work in.
             </p>
           </div>
-          <div className="splitBody">
-            <div className="instRow rv" style={delay(160)}>
-              <div className="cmd">
-                <span className="p">$</span>
-                <span>{SITE.brew}</span>
-                <button id="copyBtn" type="button" onClick={handleCopy}>
-                  {copied ? 'copied' : 'copy'}
-                </button>
-              </div>
+          <div>
+            <div className="cmd">
+              <span className="p">$</span>
+              <span>{SITE.brew}</span>
+              <button id="copyBtn" type="button" onClick={handleCopy}>
+                {copied ? 'copied' : 'copy'}
+              </button>
+            </div>
+            <div className="ctaRow">
               <a className="btn" href={SITE.latest}>
                 Download for macOS
               </a>
@@ -55,22 +50,22 @@ export const Install = () => {
                 Linux builds on the release page
               </a>
             </div>
-            <p className="reassure rv" style={delay(200)}>
+            <p className="reassure">
               <b>No account, no waitlist. You are working in about five minutes.</b>
             </p>
-            <p className="reassure rv" style={delay(240)}>
+            <p className="reassure">
               Try it and break it. <b>&quot;This feels off&quot; is a valid bug report.</b>{' '}
               <a href={SITE.issues}>Open an issue →</a>
             </p>
           </div>
         </div>
       </section>
-      <section className="block alt in-closer" aria-labelledby="h2-close">
+      <section className="block closer" aria-labelledby="h2-close">
         <div className="wrap">
-          <h2 className="rv" id="h2-close">
+          <h2 id="h2-close">
             Ready to stop <span className="nobr">re-explaining</span> yourself?
           </h2>
-          <div className="ctaRow rv" style={delay(80)}>
+          <div className="ctaRow center">
             <a className="btn" href={SITE.latest}>
               Download for macOS
             </a>
