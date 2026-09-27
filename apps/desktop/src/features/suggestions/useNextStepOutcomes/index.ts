@@ -10,8 +10,7 @@ import {
 } from '../nextStepOutcomes';
 import type { SuggestionKind } from '../types';
 
-const WINDOW_DAYS = 14;
-const WINDOW_MS = WINDOW_DAYS * 24 * 60 * 60 * 1_000;
+const EPOCH: IsoDateTime = new Date(0).toISOString() as IsoDateTime;
 
 type Params = {
   readonly sessionId: SessionId;
@@ -34,8 +33,7 @@ export const useNextStepOutcomes = ({ sessionId }: Params): NextStepGateState =>
 
   useEffect(() => {
     let isStale = false;
-    const sinceTs = new Date(Date.now() - WINDOW_MS).toISOString() as IsoDateTime;
-    listNudgeEvents({ db: tauriDatabase, sessionId, sinceTs })
+    listNudgeEvents({ db: tauriDatabase, sessionId, sinceTs: EPOCH })
       .then((events) => {
         if (isStale) {
           return;

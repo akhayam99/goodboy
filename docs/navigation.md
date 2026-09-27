@@ -243,8 +243,12 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
 - **Pick up a task** shows the open issues of the connected trackers with a
   search field. Picking one and pressing **Pick up** proposes the brief under
   the list, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Use brief, Edit or Use issue text starts the session. Without a tracker it
-  shows the connect links. The search, like the Inbox search, reads an issue
+  Use brief, Edit or Use issue text settles the title and goal and opens
+  **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
+  or Ask an agent choice as the other two tabs, precompiled with that goal,
+  Run a workflow preselected. Its own primary links the issue, creates the
+  session and starts the workflow or agent in one gesture. Without a tracker
+  it shows the connect links. The search, like the Inbox search, reads an issue
   code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
   `owner/repo#482`, a tracker URL; anything else stays a local filter). When
   no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
@@ -273,13 +277,16 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   every five minutes (`refreshStarredIssues`).
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
-- **Ask an agent** (`AgentStart`) is the real chat composer's field: role and
-  model sit below it as chips (`AgentStartFields`), opening the same role grid
-  and model picker `Start agent` uses. The role defaults to Scout every time,
-  never the last one picked, because a habitual Implementer writes code you
-  did not ask for. Scout alone can start with an empty field ("Start Scout on
-  the whole project", which reads the project and changes nothing); every
-  other role needs a prompt first. The model chip reads Auto until pinned.
+- **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
+  model and project sit below it as chips (`AgentStartFields`), opening the
+  same role grid and model picker `Start agent` uses. The role defaults to
+  Scout every time, never the last one picked, because a habitual Implementer
+  writes code you did not ask for. Scout alone can start with an empty field
+  ("Start Scout on the whole project", which reads the project and changes
+  nothing); every other role needs a prompt first. The model chip reads Auto
+  until pinned. The project chip only shows when the workspace has more than
+  one repo project; with one it is preselected with no chip, with none the
+  session starts with no project attached.
 
 Only the selected tab's panel, and only its primary, shows. The tabs
 preselect Pick up a task when a tracker has open issues and Run a workflow

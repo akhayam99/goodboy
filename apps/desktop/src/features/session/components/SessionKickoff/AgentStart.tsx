@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, Textarea } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
+import { useWorkspaceRepoProjects } from '../../hooks/useWorkspaceRepoProjects';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AGENT_KIND_META, visibleAgentKinds } from '../../agent-kind';
 import { AgentStartFields, type AgentStartRouting } from '../AgentStartFields';
@@ -40,6 +42,13 @@ export const AgentStart = ({ workspaceId }: Props) => {
       state.providers.filter((provider) => provider.connection === 'connected').map((p) => p.id),
     ),
   );
+  const projects = useWorkspaceRepoProjects({ workspaceId });
+  useEffect(() => {
+    const firstProjectId = projects[0]?.id ?? null;
+    if (draft.projectId === null && firstProjectId !== null) {
+      patchSessionDraft({ workspaceId, patch: { projectId: firstProjectId } });
+    }
+  }, [draft.projectId, projects, patchSessionDraft, workspaceId]);
   const suggestion = resolveSpawnRouting({
     kind,
     roleModels: null,
@@ -103,6 +112,9 @@ export const AgentStart = ({ workspaceId }: Props) => {
           onRoutingChange={(next) =>
             patchSessionDraft({ workspaceId, patch: { agentRouting: next } })
           }
+          projects={projects}
+          projectId={draft.projectId}
+          onProjectChange={(next) => patchSessionDraft({ workspaceId, patch: { projectId: next } })}
         />
       </div>
       <StartFooter note="Scout only reads. It changes nothing." error={error}>
