@@ -133,6 +133,8 @@ const seedStart = (): void => {
     loadPrSeries: async () => [],
     createSession: createInMemory as never,
     attachWorkflowToSession: async () => undefined,
+    savePhaseTemplate: async () => undefined,
+    generateWorkflowTitle: async () => undefined,
     spawnAgent: async () => undefined,
     workspaceIntegrations: {},
     starredIssues: {},
