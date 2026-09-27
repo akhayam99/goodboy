@@ -230,13 +230,13 @@ export const WizardFrame = ({
     if (workspace === null) {
       return;
     }
-    close(() =>
-      handOffFirstSession({
+    close(() => {
+      void handOffFirstSession({
         workspaceId: workspace.id,
         projectId: projects[0]?.id ?? null,
         choice,
-      }),
-    );
+      });
+    });
   };
 
   const footer = wizardFooter({

@@ -26,6 +26,7 @@ import {
 import type { MountGithubState } from '../../store/types';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { App } from '../../App';
+import { sessionPlace } from '../../store/slices/navigation/place';
 import { APP_SECTIONS } from '../../features/settings/components/SettingsStudio/appSections';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
@@ -520,9 +521,38 @@ const ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: New session',
-    covers: ['openSessionDraft', 'palette:New session'],
-    open: () => openPalette(/^New session/),
-    lands: () => heading('New session'),
+    covers: ['palette:New session'],
+    open: async (ctx) => {
+      const seeded = useAppStore.getState().sessions.find((s) => s.id === ctx.sessionId)!;
+      useAppStore.setState({
+        createSession: async () => {
+          const session = {
+            ...seeded,
+            id: 'session-blank-start' as SessionId,
+            goal: '',
+            workflowRuns: [],
+          };
+          useAppStore.setState((state) => ({
+            sessions: [session, ...state.sessions],
+            sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: [] },
+            sessionSlots: { ...state.sessionSlots, [session.id]: [] },
+            sessionProjectMounts: { ...state.sessionProjectMounts, [session.id]: [] },
+          }));
+          useAppStore.getState().navigate({ to: sessionPlace({ sessionId: session.id }) });
+          return { session };
+        },
+      } as never);
+      await openPalette(/^New session/);
+    },
+    lands: both(async (ctx) => {
+      await waitFor(() => {
+        const state = useAppStore.getState();
+        const current = state.sessions.find((candidate) => candidate.id === state.currentSessionId);
+        expect(current?.id).not.toBe(ctx.sessionId);
+        expect(current?.goal).toBe('');
+        expect(state.activeLens[current!.id] ?? null).toBeNull();
+      }, WAIT);
+    }),
   },
   {
     name: 'palette: Connect a provider',
