@@ -252,8 +252,15 @@ export type ProjectMatch = Readonly<{
   verdict: ProjectMatchVerdict;
 }>;
 
+export type ImportGroupStat = Readonly<{
+  group: string;
+  adds: number;
+  updates: number;
+}>;
+
 export type ImportPreview = Readonly<{
   manifest: ImportManifest;
   workspaceMatches: ReadonlyArray<WorkspaceMatch>;
   projectMatches: ReadonlyArray<ProjectMatch>;
+  groupStats: ReadonlyArray<ImportGroupStat>;
 }>;

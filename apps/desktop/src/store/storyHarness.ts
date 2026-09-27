@@ -746,6 +746,7 @@ export const configExportModuleMock = () => ({
     },
     workspaceMatches: [],
     projectMatches: [],
+    groupStats: [],
   })),
   configImportApply: vi.fn(async () => ({
     ok: true,

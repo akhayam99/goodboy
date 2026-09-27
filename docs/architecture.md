@@ -314,6 +314,10 @@ candidate folders under a chosen parent, reusing `find_moved_projects` from
 project relocation (one matching engine, two call sites). The caller then
 picks, per workspace, `merge into <existing>` or `add as a new workspace`,
 and resolves a folder for projects the engine could not place, before calling
-`config_import_apply`. Import only inserts and updates; it never deletes a
-row, and a project it cannot resolve a folder for is skipped and counted,
-not dropped from the file.
+`config_import_apply`. The preview also returns `groupStats`, a per-group
+adds/updates tally (workspaces, projects, skills, workflows, permission
+rules, budget rules, scripts, linked integrations) computed by checking each
+bundle row against the local database before any write, so the confirm step
+shows what will change instead of only a post-apply count. Import only
+inserts and updates; it never deletes a row, and a project it cannot resolve
+a folder for is skipped and counted, not dropped from the file.

@@ -1417,10 +1417,114 @@ pub struct ProjectMatch {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ImportGroupStat {
+    pub group: String,
+    pub adds: usize,
+    pub updates: usize,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportPreview {
     pub manifest: ImportManifest,
     pub workspace_matches: Vec<WorkspaceMatch>,
     pub project_matches: Vec<ProjectMatch>,
+    pub group_stats: Vec<ImportGroupStat>,
+}
+
+fn count_id_group<'a>(
+    conn: &rusqlite::Connection,
+    table: &str,
+    group: &str,
+    ids: impl Iterator<Item = &'a str>,
+) -> Result<ImportGroupStat, rusqlite::Error> {
+    let sql = format!("SELECT 1 FROM {table} WHERE id = ?1 LIMIT 1");
+    let mut stmt = conn.prepare(&sql)?;
+    let mut adds = 0usize;
+    let mut updates = 0usize;
+    for id in ids {
+        if stmt.exists(rusqlite::params![id])? {
+            updates += 1;
+        } else {
+            adds += 1;
+        }
+    }
+    Ok(ImportGroupStat {
+        group: group.to_string(),
+        adds,
+        updates,
+    })
+}
+
+fn project_group_stat(
+    conn: &rusqlite::Connection,
+    bundle: &ConfigBundle,
+    project_matches: &[ProjectMatch],
+) -> Result<ImportGroupStat, rusqlite::Error> {
+    let all_projects: Vec<ProjectBundle> = bundle
+        .workspaces
+        .iter()
+        .flat_map(workspace_projects)
+        .collect();
+    let mut stmt = conn.prepare("SELECT id, root_path FROM projects")?;
+    let existing: Vec<(String, String)> = stmt
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<_, _>>()?;
+    let mut adds = 0usize;
+    let mut updates = 0usize;
+    for project in &all_projects {
+        let Some(root_path) = project_matches
+            .iter()
+            .find(|m| m.bundle_project_id == project.id)
+            .and_then(|m| m.resolved_path.as_deref())
+        else {
+            continue;
+        };
+        let target = normalized_root_path(root_path);
+        let matched = existing
+            .iter()
+            .any(|(id, path)| *id == project.id || normalized_root_path(path) == target);
+        if matched {
+            updates += 1;
+        } else {
+            adds += 1;
+        }
+    }
+    Ok(ImportGroupStat {
+        group: "projects".to_string(),
+        adds,
+        updates,
+    })
+}
+
+fn tool_binding_group_stat(
+    conn: &rusqlite::Connection,
+    bundle: &ConfigBundle,
+) -> Result<ImportGroupStat, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT 1 FROM integration_bindings
+         WHERE workspace_id = ?1 AND COALESCE(project_id, '') = COALESCE(?2, '') AND provider = ?3
+         LIMIT 1",
+    )?;
+    let mut adds = 0usize;
+    let mut updates = 0usize;
+    for binding in &bundle.tool_bindings {
+        let exists = stmt.exists(rusqlite::params![
+            binding.workspace_id,
+            binding.project_id,
+            binding.provider,
+        ])?;
+        if exists {
+            updates += 1;
+        } else {
+            adds += 1;
+        }
+    }
+    Ok(ImportGroupStat {
+        group: "toolBindings".to_string(),
+        adds,
+        updates,
+    })
 }
 
 fn verdict_label(verdict: &MovedProjectVerdict) -> String {
@@ -1530,10 +1634,62 @@ fn build_import_preview(
         }
     }
 
+    let (workspace_adds, workspace_updates) =
+        workspace_matches
+            .iter()
+            .fold((0usize, 0usize), |(adds, updates), m| {
+                if m.action == "add" {
+                    (adds + 1, updates)
+                } else {
+                    (adds, updates + 1)
+                }
+            });
+    let mut group_stats = vec![
+        ImportGroupStat {
+            group: "workspaces".to_string(),
+            adds: workspace_adds,
+            updates: workspace_updates,
+        },
+        project_group_stat(conn, bundle, &project_matches)?,
+        count_id_group(
+            conn,
+            "skills",
+            "skills",
+            bundle.skills.iter().map(|s| s.id.as_str()),
+        )?,
+        count_id_group(
+            conn,
+            "workflows",
+            "phaseTemplates",
+            bundle.phase_templates.iter().map(|t| t.id.as_str()),
+        )?,
+        count_id_group(
+            conn,
+            "permission_rules",
+            "permissionRules",
+            bundle.permission_rules.iter().map(|r| r.id.as_str()),
+        )?,
+        count_id_group(
+            conn,
+            "budget_rules",
+            "budgetRules",
+            bundle.budget_rules.iter().map(|b| b.id.as_str()),
+        )?,
+        count_id_group(
+            conn,
+            "project_scripts",
+            "scripts",
+            bundle.scripts.iter().map(|s| s.id.as_str()),
+        )?,
+        tool_binding_group_stat(conn, bundle)?,
+    ];
+    group_stats.retain(|stat| stat.adds > 0 || stat.updates > 0);
+
     Ok(ImportPreview {
         manifest,
         workspace_matches,
         project_matches,
+        group_stats,
     })
 }
 
@@ -2394,5 +2550,114 @@ mod tests {
             credential_count, 1,
             "no placeholder credential is created when one already exists"
         );
+    }
+
+    #[test]
+    fn import_preview_group_stats_split_adds_from_updates() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('existing-ws', 'Existing', 1, 1);
+             INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+             VALUES ('existing-project', 'existing-ws', 'ledger-core', '/repo/existing', 'repo', 1, 1);
+             INSERT INTO skills (id, workspace_id, name, description, file_path, body, frontmatter_json, created_at, updated_at)
+             VALUES ('existing-skill', 'existing-ws', 'a', 'd', 'f', 'b', '{}', 1, 1);",
+        )
+        .unwrap();
+
+        let bundle = ConfigBundle {
+            schema_version: SCHEMA_VERSION,
+            exported_at: "2026-01-01T00:00:00Z".to_string(),
+            workspaces: vec![
+                WorkspaceBundle {
+                    id: "existing-ws".to_string(),
+                    name: "Existing".to_string(),
+                    root_path: None,
+                    projects: vec![bundled_project(
+                        "imported-project-1",
+                        "/repo/existing",
+                        "repo",
+                    )],
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                    overrides: WorkspaceOverridesBundle::default(),
+                    profile: None,
+                },
+                WorkspaceBundle {
+                    id: "new-ws".to_string(),
+                    name: "New".to_string(),
+                    root_path: None,
+                    projects: vec![bundled_project("imported-project-2", "/repo/new", "repo")],
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                    overrides: WorkspaceOverridesBundle::default(),
+                    profile: None,
+                },
+            ],
+            skills: vec![
+                SkillBundle {
+                    id: "existing-skill".to_string(),
+                    workspace_id: "existing-ws".to_string(),
+                    name: "a".to_string(),
+                    description: "d".to_string(),
+                    file_path: "f".to_string(),
+                    body: "b".to_string(),
+                    frontmatter_json: "{}".to_string(),
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                },
+                SkillBundle {
+                    id: "new-skill".to_string(),
+                    workspace_id: "new-ws".to_string(),
+                    name: "b".to_string(),
+                    description: "d".to_string(),
+                    file_path: "f".to_string(),
+                    body: "b".to_string(),
+                    frontmatter_json: "{}".to_string(),
+                    created_at: "2026-01-01T00:00:00Z".to_string(),
+                    updated_at: "2026-01-01T00:00:00Z".to_string(),
+                },
+            ],
+            phase_templates: vec![],
+            permission_rules: vec![],
+            budget_rules: vec![],
+            scripts: vec![],
+            tool_bindings: vec![ToolBindingBundle {
+                workspace_id: "existing-ws".to_string(),
+                project_id: None,
+                provider: "linear".to_string(),
+                config_json: "{}".to_string(),
+            }],
+            app_preferences: AppPreferencesBundle::default(),
+        };
+
+        let preview = build_import_preview(&conn, &bundle, None).expect("preview failed");
+        let stat = |group: &str| {
+            preview
+                .group_stats
+                .iter()
+                .find(|s| s.group == group)
+                .unwrap_or_else(|| panic!("missing group_stats entry for {group}"))
+        };
+
+        let workspaces = stat("workspaces");
+        assert_eq!((workspaces.adds, workspaces.updates), (1, 1));
+        let projects = stat("projects");
+        assert_eq!((projects.adds, projects.updates), (1, 1));
+        let skills = stat("skills");
+        assert_eq!((skills.adds, skills.updates), (1, 1));
+        let tool_bindings = stat("toolBindings");
+        assert_eq!((tool_bindings.adds, tool_bindings.updates), (1, 0));
+
+        for empty_group in [
+            "phaseTemplates",
+            "permissionRules",
+            "budgetRules",
+            "scripts",
+        ] {
+            assert!(
+                preview.group_stats.iter().all(|s| s.group != empty_group),
+                "empty group {empty_group} should be left out of the preview"
+            );
+        }
     }
 }
