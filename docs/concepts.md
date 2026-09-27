@@ -254,6 +254,18 @@ activity column is narrower than 28rem, the needs-you chip keeps its count
 and Filter keeps its icon. Suggestions live in **Next steps**, above Activity
 and outside its filter, not as a row inside the feed.
 
+An open question shows once on screen, on the agent that asked it. Its
+question row, on that agent's lane, carries the text and the one **Answer**;
+the agent row keeps its "Needs you" state without a second button, and takes
+the Answer back when the filter hides question rows. The workflow row says
+nothing about a question its step or the question row already shows: no
+sentence, no Answer, only a neutral "Waiting on a step" node. It names the
+question only when neither is in view (a sub-agent and question rows both
+filtered out), and then its Answer opens the asking agent at the question.
+The activity reports which open questions its rows show (`shownQuestionIds`),
+so Next steps and the needs-you callout above it do not repeat them. The
+needs-you count counts each family once, so one question never counts twice.
+
 ## Next steps
 
 One engine, `deriveNextSteps` (`features/suggestions/`), decides everything
@@ -287,6 +299,10 @@ whether you clicked it on the board or in the session overview.
   dismiss writes a `next:<kind>` row to `nudge_events`
   (`useNextStepOutcomes`); the demotion window reads the session's own
   history, not the workspace's.
+- The answer-open-questions suggestion counts only the open questions the
+  Activity does not show, so it never sits above a question already in view.
+  With one such question, **Answer** opens the agent that asked at that
+  question (`useOpenAgentQuestion`); with more, it opens the questions view.
 - Eighteen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
   project, run a ready plan, add a proposed project) plus twelve more that
