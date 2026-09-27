@@ -137,7 +137,7 @@ const run = ({ set, get }: { readonly set: SetFn; readonly get: GetFn }) =>
 beforeEach(() => {
   vi.clearAllMocks();
   forgetRepoAutoDeleteCache();
-  h.branchMergeState.mockResolvedValue({ kind: 'merged-via-squash' });
+  h.branchMergeState.mockResolvedValue({ kind: 'merged-via-pr' });
   h.deleteBranchChecked.mockResolvedValue({
     keepRef: `refs/goodboy/deleted/${BRANCH}`,
     deletedOnOrigin: false,
@@ -181,7 +181,7 @@ describe('runAfterMergeCleanup', () => {
   });
 
   it('keeps a branch with commits after the merge, with the count in the reason', async () => {
-    h.branchMergeState.mockResolvedValue({ kind: 'not-merged', ahead: 2 });
+    h.branchMergeState.mockResolvedValue({ kind: 'merged-then', newCommits: 2 });
     const context = makeStore();
 
     expect(await run(context)).toEqual({
@@ -189,6 +189,17 @@ describe('runAfterMergeCleanup', () => {
       keptBecause: `Kept ${BRANCH}: 2 new commits after the merge.`,
     });
     expect(context.store.state.unmountMount).not.toHaveBeenCalled();
+  });
+
+  it('keeps a branch git cannot see merged, never deleting its commits', async () => {
+    h.branchMergeState.mockResolvedValue({ kind: 'not-merged', ahead: 3 });
+    const context = makeStore();
+
+    expect(await run(context)).toEqual({
+      kind: 'ask',
+      keptBecause: `Kept ${BRANCH}: 3 commits not in the base branch.`,
+    });
+    expect(h.deleteBranchChecked).not.toHaveBeenCalled();
   });
 
   it('stops when the folder refuses to go', async () => {

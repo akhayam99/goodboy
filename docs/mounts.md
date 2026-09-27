@@ -230,8 +230,12 @@ origin`. A repo project can override it from its row editor
   `runAfterMergeCleanup` deletes only a branch Goodboy created
   (`session_worktrees.branch_origin = 'created'`; older rows read `unknown`
   and are never deleted by the rule), only if `branch_merge_state` says it
-  is merged (merge commit, rebase, or squash by patch-id) or has no commits
-  of its own, and only after the folder unmounts cleanly. The tip is parked
+  is merged or has no commits of its own, and only after the folder
+  unmounts cleanly. A squash merge is read only from the pull request
+  record: its `merged_head_sha` is merged when the local tip (and
+  `origin/<branch>`, if any) is an ancestor of it, and `Merged, then N new
+commits` otherwise. Without a record, only a merge commit or a rebase
+  counts. The tip is parked
   under `refs/goodboy/deleted/<branch>`, then `git update-ref -d` deletes
   the branch only if it still points at the checked sha. The origin choice
   runs `git push origin --delete` with `--force-with-lease` and is off when

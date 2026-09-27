@@ -792,9 +792,10 @@ pub async fn worktree_branch_merge_state(
     repo_path: String,
     branch: String,
     base: Option<String>,
+    merged_head: Option<String>,
 ) -> Result<BranchMergeState, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
-        branch_merge_state_blocking(repo_path, branch, base)
+        branch_merge_state_blocking(repo_path, branch, base, merged_head)
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
@@ -804,12 +805,18 @@ fn branch_merge_state_blocking(
     repo_path: String,
     branch: String,
     base: Option<String>,
+    merged_head: Option<String>,
 ) -> Result<BranchMergeState, WorktreeError> {
     let p = Path::new(&repo_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(repo_path));
     }
-    Ok(branch_merge_state(p, &branch, base.as_deref()))
+    Ok(branch_merge_state(
+        p,
+        &branch,
+        base.as_deref(),
+        merged_head.as_deref(),
+    ))
 }
 
 fn list_branch_names_blocking(repo_path: String) -> Result<Vec<String>, WorktreeError> {
@@ -1443,9 +1450,15 @@ pub enum BranchMergeState {
     Protected,
     MergedViaMerge,
     MergedViaRebase,
-    MergedViaSquash,
+    MergedViaPr,
+    MergedThen {
+        #[serde(rename = "newCommits")]
+        new_commits: u32,
+    },
     NoOwnCommits,
-    NotMerged { ahead: u32 },
+    NotMerged {
+        ahead: u32,
+    },
 }
 
 const PROTECTED_BRANCH_NAMES: [&str; 3] = ["main", "master", "develop"];
@@ -1477,82 +1490,51 @@ fn is_rebase_merged(cwd: &Path, base_ref: &str, branch_ref: &str) -> bool {
     raw.lines().all(|line| !line.trim_start().starts_with('+'))
 }
 
-const SQUASH_SCAN_LIMIT: u32 = 2000;
-
-fn git_patch_ids(cwd: &Path, patch: &str) -> Vec<String> {
-    use std::io::Write;
-    let child = crate::path_env::command("git")
-        .args(["patch-id", "--stable"])
-        .current_dir(cwd)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .spawn();
-    let Ok(mut child) = child else {
-        return Vec::new();
-    };
-    if let Some(mut stdin) = child.stdin.take() {
-        if stdin.write_all(patch.as_bytes()).is_err() {
-            return Vec::new();
-        }
-    }
-    let Ok(output) = child.wait_with_output() else {
-        return Vec::new();
-    };
-    String::from_utf8_lossy(&output.stdout)
-        .lines()
-        .filter_map(|line| line.split_whitespace().next().map(str::to_string))
-        .collect()
+fn commit_exists(cwd: &Path, sha: &str) -> bool {
+    git(cwd, &["cat-file", "-e", &format!("{sha}^{{commit}}")]).is_ok()
 }
 
-fn is_squash_merged(cwd: &Path, base_ref: &str, tip: &str) -> bool {
-    let Ok(merge_base_raw) = git(cwd, &["merge-base", base_ref, tip]) else {
-        return false;
-    };
-    let merge_base = merge_base_raw.trim();
-    let range = format!("{merge_base}..{base_ref}");
-    let Ok(count_raw) = git(cwd, &["rev-list", "--count", "--no-merges", &range]) else {
-        return false;
-    };
-    let within_limit = count_raw
-        .trim()
-        .parse::<u32>()
-        .map(|count| count > 0 && count <= SQUASH_SCAN_LIMIT)
-        .unwrap_or(false);
-    if !within_limit {
-        return false;
-    }
-    let Ok(branch_diff) = git(cwd, &["diff", "--full-index", merge_base, tip]) else {
-        return false;
-    };
-    if branch_diff.trim().is_empty() {
-        return false;
-    }
-    let Some(branch_id) = git_patch_ids(cwd, &branch_diff).into_iter().next() else {
-        return false;
-    };
-    let Ok(base_log) = git(
+fn commits_after(cwd: &Path, merged_head: &str, tip: &str) -> u32 {
+    git(
+        cwd,
+        &["rev-list", "--count", &format!("{merged_head}..{tip}")],
+    )
+    .ok()
+    .and_then(|raw| raw.trim().parse::<u32>().ok())
+    .unwrap_or(0)
+}
+
+fn merged_by_request(cwd: &Path, branch: &str, tip: &str, merged_head: &str) -> BranchMergeState {
+    let origin_tip = git(
         cwd,
         &[
-            "log",
-            "-p",
-            "--full-index",
-            "--no-merges",
-            "--format=commit %H",
-            &range,
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("refs/remotes/origin/{branch}"),
         ],
-    ) else {
-        return false;
-    };
-    git_patch_ids(cwd, &base_log)
+    )
+    .ok()
+    .map(|raw| raw.trim().to_string())
+    .filter(|sha| !sha.is_empty());
+    let new_commits = [Some(tip.to_string()), origin_tip]
         .into_iter()
-        .any(|id| id == branch_id)
+        .flatten()
+        .filter(|candidate| !is_ancestor(cwd, candidate, merged_head))
+        .map(|candidate| commits_after(cwd, merged_head, &candidate).max(1))
+        .max()
+        .unwrap_or(0);
+    match new_commits {
+        0 => BranchMergeState::MergedViaPr,
+        _ => BranchMergeState::MergedThen { new_commits },
+    }
 }
 
 pub(crate) fn branch_merge_state(
     cwd: &Path,
     branch: &str,
     base_branch: Option<&str>,
+    merged_head: Option<&str>,
 ) -> BranchMergeState {
     let Some(base_ref) = resolve_base_ref(cwd, base_branch) else {
         return BranchMergeState::Unknown;
@@ -1565,6 +1547,12 @@ pub(crate) fn branch_merge_state(
         return BranchMergeState::Unknown;
     };
     let tip = tip_raw.trim().to_string();
+    let known_head = merged_head
+        .map(str::trim)
+        .filter(|sha| !sha.is_empty() && commit_exists(cwd, sha));
+    if let Some(head) = known_head {
+        return merged_by_request(cwd, branch, &tip, head);
+    }
     if is_ancestor(cwd, &tip, &base_ref) {
         return match is_on_first_parent_line(cwd, &base_ref, &tip) {
             true => BranchMergeState::NoOwnCommits,
@@ -1573,9 +1561,6 @@ pub(crate) fn branch_merge_state(
     }
     if is_rebase_merged(cwd, &base_ref, branch) {
         return BranchMergeState::MergedViaRebase;
-    }
-    if is_squash_merged(cwd, &base_ref, &tip) {
-        return BranchMergeState::MergedViaSquash;
     }
     let Ok(raw) = git(
         cwd,
@@ -5231,7 +5216,7 @@ mod rewrite_tests {
         commit(&root, "a.txt", "hello", "init");
         git_ok(&root, &["branch", "goodboy/empty"]);
 
-        let state = super::branch_merge_state(&root, "goodboy/empty", Some("main"));
+        let state = super::branch_merge_state(&root, "goodboy/empty", Some("main"), None);
 
         assert_eq!(state, super::BranchMergeState::NoOwnCommits);
         std::fs::remove_dir_all(root).unwrap();
@@ -5249,7 +5234,7 @@ mod rewrite_tests {
             &["merge", "--no-ff", "-m", "merge feature", "goodboy/feature"],
         );
 
-        let state = super::branch_merge_state(&root, "goodboy/feature", Some("main"));
+        let state = super::branch_merge_state(&root, "goodboy/feature", Some("main"), None);
 
         assert_eq!(state, super::BranchMergeState::MergedViaMerge);
         std::fs::remove_dir_all(root).unwrap();
@@ -5268,27 +5253,73 @@ mod rewrite_tests {
         commit(&root, "c.txt", "main moved on", "main work");
         git_ok(&root, &["cherry-pick", &feature_sha]);
 
-        let state = super::branch_merge_state(&root, "goodboy/rebased", Some("main"));
+        let state = super::branch_merge_state(&root, "goodboy/rebased", Some("main"), None);
 
         assert_eq!(state, super::BranchMergeState::MergedViaRebase);
         std::fs::remove_dir_all(root).unwrap();
     }
 
+    fn squash_merge(root: &Path, branch: &str) -> String {
+        git_ok(root, &["checkout", "-b", branch]);
+        commit(root, "b.txt", "one", "first");
+        commit(root, "c.txt", "two", "second");
+        let head = git_ok(root, &["rev-parse", "HEAD"]);
+        git_ok(root, &["checkout", "main"]);
+        commit(root, "d.txt", "main moved on", "main work");
+        git_ok(root, &["merge", "--squash", branch]);
+        git_ok(root, &["commit", "-m", "squash feature"]);
+        head
+    }
+
     #[test]
-    fn branch_merge_state_reports_merged_via_squash() {
+    fn branch_merge_state_reads_a_squash_as_merged_only_from_the_request() {
         let root = init_repo("merge-state-squashed");
         commit(&root, "a.txt", "hello", "init");
-        git_ok(&root, &["checkout", "-b", "goodboy/squashed"]);
-        commit(&root, "b.txt", "one", "first");
-        commit(&root, "c.txt", "two", "second");
+        let head = squash_merge(&root, "goodboy/squashed");
+
+        let without = super::branch_merge_state(&root, "goodboy/squashed", Some("main"), None);
+        let with = super::branch_merge_state(&root, "goodboy/squashed", Some("main"), Some(&head));
+
+        assert_eq!(without, super::BranchMergeState::NotMerged { ahead: 2 });
+        assert_eq!(with, super::BranchMergeState::MergedViaPr);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_counts_commits_after_the_merged_head() {
+        let root = init_repo("merge-state-merged-then");
+        commit(&root, "a.txt", "hello", "init");
+        let head = squash_merge(&root, "goodboy/reused");
+        git_ok(&root, &["checkout", "goodboy/reused"]);
+        commit(&root, "e.txt", "more", "after merge one");
+        commit(&root, "f.txt", "more", "after merge two");
         git_ok(&root, &["checkout", "main"]);
-        commit(&root, "d.txt", "main moved on", "main work");
-        git_ok(&root, &["merge", "--squash", "goodboy/squashed"]);
-        git_ok(&root, &["commit", "-m", "squash feature"]);
 
-        let state = super::branch_merge_state(&root, "goodboy/squashed", Some("main"));
+        let state = super::branch_merge_state(&root, "goodboy/reused", Some("main"), Some(&head));
 
-        assert_eq!(state, super::BranchMergeState::MergedViaSquash);
+        assert_eq!(
+            state,
+            super::BranchMergeState::MergedThen { new_commits: 2 }
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn branch_merge_state_falls_back_to_git_when_the_merged_head_is_unknown() {
+        let root = init_repo("merge-state-missing-head");
+        commit(&root, "a.txt", "hello", "init");
+        git_ok(&root, &["checkout", "-b", "goodboy/feature"]);
+        commit(&root, "b.txt", "feature", "feature work");
+        git_ok(&root, &["checkout", "main"]);
+
+        let state = super::branch_merge_state(
+            &root,
+            "goodboy/feature",
+            Some("main"),
+            Some("0000000000000000000000000000000000000000"),
+        );
+
+        assert_eq!(state, super::BranchMergeState::NotMerged { ahead: 1 });
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -5299,7 +5330,7 @@ mod rewrite_tests {
         git_ok(&root, &["checkout", "-b", "goodboy/reused"]);
         commit(&root, "b.txt", "feature", "feature work");
 
-        let state = super::branch_merge_state(&root, "goodboy/reused", Some("main"));
+        let state = super::branch_merge_state(&root, "goodboy/reused", Some("main"), None);
 
         assert_eq!(state, super::BranchMergeState::NotMerged { ahead: 1 });
         std::fs::remove_dir_all(root).unwrap();
@@ -5310,7 +5341,7 @@ mod rewrite_tests {
         let root = init_repo("merge-state-protected");
         commit(&root, "a.txt", "hello", "init");
 
-        let state = super::branch_merge_state(&root, "main", Some("main"));
+        let state = super::branch_merge_state(&root, "main", Some("main"), None);
 
         assert_eq!(state, super::BranchMergeState::Protected);
         std::fs::remove_dir_all(root).unwrap();
@@ -5327,7 +5358,7 @@ mod rewrite_tests {
             &["worktree", "add", other.to_str().unwrap(), "goodboy/held"],
         );
 
-        let state = super::branch_merge_state(&root, "goodboy/held", Some("main"));
+        let state = super::branch_merge_state(&root, "goodboy/held", Some("main"), None);
 
         assert_eq!(state, super::BranchMergeState::Protected);
         git_ok(
@@ -5343,7 +5374,7 @@ mod rewrite_tests {
         commit(&root, "a.txt", "hello", "init");
         git_ok(&root, &["branch", "goodboy/orphan"]);
 
-        let state = super::branch_merge_state(&root, "goodboy/orphan", None);
+        let state = super::branch_merge_state(&root, "goodboy/orphan", None, None);
 
         assert_eq!(state, super::BranchMergeState::Unknown);
         std::fs::remove_dir_all(root).unwrap();

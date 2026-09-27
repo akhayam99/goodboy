@@ -46,7 +46,7 @@ const branch = (patch: Record<string, unknown>) => ({
   authorEmail: 'dev@harborline.test',
   lastCommitAt: nowS - 86_400,
   location: 'on-origin',
-  mergeState: { kind: 'merged-via-squash' },
+  mergeState: { kind: 'merged-via-pr' },
   behind: null,
   ...patch,
 });

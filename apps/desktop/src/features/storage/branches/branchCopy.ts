@@ -1,4 +1,5 @@
 import type { BranchLocation, ProjectBranch } from '../../worktree/branchCleanup';
+import { mergedThenLabel } from '../../../shared/lib/mergedThen';
 import { pluralize } from '../../../shared/utils/pluralize';
 
 export const LOCATION_LABEL: Readonly<Record<BranchLocation, string>> = {
@@ -26,8 +27,14 @@ export const verdictCopy = ({
       return { label: 'Safe to delete · merged', detail: 'merge commit', isSafe: true };
     case 'merged-via-rebase':
       return { label: 'Safe to delete · merged', detail: 'rebase', isSafe: true };
-    case 'merged-via-squash':
-      return { label: 'Safe to delete · merged', detail: 'squash', isSafe: true };
+    case 'merged-via-pr':
+      return { label: 'Safe to delete · merged', detail: 'pull request', isSafe: true };
+    case 'merged-then':
+      return {
+        label: mergedThenLabel(state.newCommits),
+        detail: null,
+        isSafe: false,
+      };
     case 'no-own-commits':
       return {
         label: 'Safe to delete · no commits',
