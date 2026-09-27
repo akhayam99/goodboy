@@ -63,7 +63,7 @@ vi.mock('../../../../shared/lib/editor', () => ({
   openUrl: mocks.openUrl,
 }));
 
-import { useThemeStore } from '../../../../shared/lib/theme';
+import { applyDocumentTheme } from '../../../../shared/lib/theme';
 import { GoodboyChip, SPONSOR_URL } from './index';
 import { OPEN_REPORT_SHEET_EVENT } from '../../../../features/bug-report/openReportSheet';
 
@@ -83,7 +83,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
-  useThemeStore.setState({ preference: 'dark', theme: 'dark' });
+  applyDocumentTheme({ theme: 'dark' });
 });
 
 const renderChip = () => {
@@ -117,7 +117,7 @@ describe('GoodboyChip', () => {
 
   it('wraps the rest mark in a dark chip when the theme is light', () => {
     mocks.progress.finished = true;
-    useThemeStore.setState({ preference: 'light', theme: 'light' });
+    applyDocumentTheme({ theme: 'light' });
     renderChip();
 
     const chip = screen.getByRole('button', { name: REST_LABEL });
@@ -125,7 +125,7 @@ describe('GoodboyChip', () => {
   });
 
   it('never puts the dark chip on the setup or update states', () => {
-    useThemeStore.setState({ preference: 'light', theme: 'light' });
+    applyDocumentTheme({ theme: 'light' });
     renderChip();
 
     const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });

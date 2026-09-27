@@ -21,7 +21,7 @@ beforeEach(() => {
     saveSetting,
     reportError,
   } as never);
-  useThemeStore.setState({ preference: 'dark', theme: 'dark' });
+  useThemeStore.setState({ preference: 'dark' });
 });
 
 afterEach(cleanup);

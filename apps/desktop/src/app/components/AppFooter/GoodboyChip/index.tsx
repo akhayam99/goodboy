@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
-import { useThemeStore } from '../../../../shared/lib/theme';
+import { useAppliedTheme } from '../../../../shared/lib/theme';
 import { collapse } from '../../../../features/onboarding/onboarding-store';
 import { useOnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../../features/changelog/hooks/useInstalledVersion';
@@ -52,7 +52,7 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
     isQueued;
   const isSetupOpen = !progress.finished && progress.hasProjects && !progress.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
-  const theme = useThemeStore((s) => s.theme);
+  const theme = useAppliedTheme();
   const isBrandChip = state === 'rest' && theme === 'light';
   const shouldAutoOpen =
     !progress.finished &&
