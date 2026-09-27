@@ -19,7 +19,15 @@ const {
   removeQuestionsFromSlotSpy,
   loadSessionSlotsSpy,
   loadSessionOpenQuestionsSpy,
+  purgeAgentSpy,
+  abandonWriterSpy,
+  deleteAttachmentSpy,
+  listResolveAttemptsSpy,
 } = vi.hoisted(() => ({
+  purgeAgentSpy: vi.fn(async (): Promise<ReadonlyArray<string>> => []),
+  abandonWriterSpy: vi.fn(async () => undefined),
+  deleteAttachmentSpy: vi.fn(async () => undefined),
+  listResolveAttemptsSpy: vi.fn(async (): Promise<ReadonlyArray<unknown>> => []),
   cancelTurnSpy: vi.fn(async () => undefined),
   detachInDbSpy: vi.fn(async (): Promise<ReadonlyArray<string>> => []),
   invokeAgentListSpy: vi.fn(async (): Promise<ReadonlyArray<unknown>> => []),
@@ -32,7 +40,13 @@ const {
 
 vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: detachInDbSpy,
+  purgeAgentForDelete: purgeAgentSpy,
+  listResolveAttempts: listResolveAttemptsSpy,
   updateSessionState: vi.fn(async () => undefined),
+}));
+
+vi.mock('../../../features/worktree/worktree', () => ({
+  abandonWorktreeWriter: abandonWriterSpy,
 }));
 
 vi.mock('@goodboy/core', () => ({
@@ -45,6 +59,7 @@ vi.mock('../../../shared/lib/db', () => ({
 
 vi.mock('../../../features/chat/turn', () => ({
   cancelTurn: cancelTurnSpy,
+  deleteAttachment: deleteAttachmentSpy,
 }));
 
 vi.mock('../../../features/workflows/workflows', () => ({
@@ -56,6 +71,7 @@ vi.mock('../../awaitRunStopped', () => ({
 }));
 
 import { detachWorkflowFromSession } from './detachWorkflowFromSession';
+import { deleteAgent } from '../agents/deleteAgent';
 
 const SESSION_ID = 'session-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
@@ -171,7 +187,7 @@ const buildHarness = ({ executionMode, isPreset, agents, runningId }: HarnessPar
     },
     transcripts: perAgent([]),
     agentDraft: perAgent('draft'),
-    agentAttachments: perAgent([]),
+    agentAttachments: perAgent([{ relPath: '.goodboy/attachments/trace.png' }]),
     agentQueue: perAgent([]),
     agentRunHistory: perAgent([]),
     runRouting: perAgent({}),
@@ -179,7 +195,7 @@ const buildHarness = ({ executionMode, isPreset, agents, runningId }: HarnessPar
     agentProviderOverride: perAgent('claude'),
     agentEffortOverride: perAgent('high'),
     agentKindOverride: perAgent('builder'),
-    agentTurnDestination: perAgent('dest'),
+    agentTurnDestination: perAgent({ kind: 'mount', worktreePath: '/code/ledger-core' }),
     workflowContinueAttempts: perAgent(1),
     clusterStepStartAttempts: perAgent(1),
     decisionRestartMarks: { [RUN_ID]: 1, [OTHER_RUN_ID]: 1 },
@@ -195,7 +211,11 @@ const buildHarness = ({ executionMode, isPreset, agents, runningId }: HarnessPar
     set as unknown as Parameters<typeof detachWorkflowFromSession>[0],
     (() => state) as unknown as Parameters<typeof detachWorkflowFromSession>[1],
   );
-  return { detach, state };
+  const deleteOne = deleteAgent(
+    set as unknown as Parameters<typeof deleteAgent>[0],
+    (() => state) as unknown as Parameters<typeof deleteAgent>[1],
+  );
+  return { detach, deleteOne, state };
 };
 
 describe('detachWorkflowFromSession', () => {
@@ -310,4 +330,70 @@ describe('detachWorkflowFromSession', () => {
     expect(purgedAgentIds.size).toBe(0);
     expect(state.sessionPhaseRuns[SESSION_ID]).toHaveLength(4);
   });
+
+  it.each(KIND_CASES)(
+    'releases the worktree and attachments of every $kind run agent as a single delete does',
+    async ({ executionMode, isPreset, agents, deletedIds }) => {
+      const { detach } = buildHarness({ executionMode, isPreset, agents });
+
+      await detach(SESSION_ID, RUN_ID);
+
+      const released = abandonWriterSpy.mock.calls.map((call) => {
+        const [params] = call as unknown as [{ readonly holder: string }];
+        return params.holder;
+      });
+      expect(released.sort()).toEqual([...deletedIds].sort());
+      expect(deleteAttachmentSpy).toHaveBeenCalledTimes(deletedIds.length);
+      expect(deleteAttachmentSpy).toHaveBeenCalledWith(
+        '/code/ledger-core',
+        '.goodboy/attachments/trace.png',
+      );
+    },
+  );
+
+  it.each(KIND_CASES)(
+    'leaves the store of a $kind run as deleting each agent by hand does',
+    async ({ executionMode, isPreset, agents, deletedIds }) => {
+      const byRun = buildHarness({ executionMode, isPreset, agents });
+      await byRun.detach(SESSION_ID, RUN_ID);
+      const runCalls = {
+        abandoned: abandonWriterSpy.mock.calls.length,
+        attachments: deleteAttachmentSpy.mock.calls.length,
+      };
+      vi.clearAllMocks();
+      purgedAgentIds.clear();
+
+      const byHand = buildHarness({ executionMode, isPreset, agents });
+      invokeAgentListSpy.mockReset();
+      invokeAgentListSpy.mockResolvedValue(SURVIVORS.map(agent));
+      for (const id of deletedIds) {
+        await byHand.deleteOne(SESSION_ID, id as AgentId);
+      }
+
+      expect(purgeAgentSpy).toHaveBeenCalledTimes(deletedIds.length);
+      expect({
+        abandoned: abandonWriterSpy.mock.calls.length,
+        attachments: deleteAttachmentSpy.mock.calls.length,
+      }).toEqual(runCalls);
+      const agentMaps = (state: typeof byRun.state) => ({
+        sessionPhaseRuns: state.sessionPhaseRuns,
+        selectedAgentId: state.selectedAgentId,
+        agentTurnState: state.agentTurnState,
+        transcripts: state.transcripts,
+        agentDraft: state.agentDraft,
+        agentAttachments: state.agentAttachments,
+        agentQueue: state.agentQueue,
+        agentRunHistory: state.agentRunHistory,
+        runRouting: state.runRouting,
+        agentModelOverride: state.agentModelOverride,
+        agentProviderOverride: state.agentProviderOverride,
+        agentEffortOverride: state.agentEffortOverride,
+        agentKindOverride: state.agentKindOverride,
+        agentTurnDestination: state.agentTurnDestination,
+        workflowContinueAttempts: state.workflowContinueAttempts,
+        clusterStepStartAttempts: state.clusterStepStartAttempts,
+      });
+      expect(agentMaps(byRun.state)).toEqual(agentMaps(byHand.state));
+    },
+  );
 });
