@@ -7,11 +7,15 @@ import type { IsoDateTime, PermissionRule, PermissionRuleId, WorkspaceId } from 
 const mocks = vi.hoisted(() => ({
   list: vi.fn(),
   remove: vi.fn(async () => undefined),
+  upsert: vi.fn(),
+  audit: vi.fn(),
   setDefault: vi.fn(async () => undefined),
   reportError: vi.fn(async () => undefined),
   state: {
     workspaces: [] as ReadonlyArray<{ id: string; name: string; defaultPermissionMode?: string }>,
     sessions: [] as ReadonlyArray<{
+      id?: string;
+      goal?: string;
       workspaceId: string;
       providerPreference: { defaultProvider: string; enabledProviders?: ReadonlyArray<string> };
     }>,
@@ -21,6 +25,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../../permissions', () => ({
   invokePermissionRuleList: mocks.list,
   invokePermissionRuleDelete: mocks.remove,
+  invokePermissionRuleUpsert: mocks.upsert,
+  invokePermissionAuditList: mocks.audit,
 }));
 
 vi.mock('../../../../store', () => ({
@@ -59,9 +65,20 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.state.workspaces = [{ id: WORKSPACE_ID, name: 'Harborline' }];
   mocks.state.sessions = [
-    { workspaceId: WORKSPACE_ID, providerPreference: { defaultProvider: 'anthropic' } },
-    { workspaceId: WORKSPACE_ID, providerPreference: { defaultProvider: 'codex' } },
+    {
+      id: 'session-1',
+      goal: 'Fix ledger rounding',
+      workspaceId: WORKSPACE_ID,
+      providerPreference: { defaultProvider: 'anthropic' },
+    },
+    {
+      id: 'session-2',
+      goal: 'Retry the webhook',
+      workspaceId: WORKSPACE_ID,
+      providerPreference: { defaultProvider: 'codex' },
+    },
   ];
+  mocks.audit.mockResolvedValue([]);
   mocks.list.mockImplementation(async ({ scope }: { readonly scope: string }) =>
     scope === 'workspace' ? [rule({})] : [denyPush],
   );
@@ -127,5 +144,60 @@ describe('PermissionsSettings', () => {
     await waitFor(() =>
       expect(screen.queryByText('Commands starting with "pnpm test"')).toBeNull(),
     );
+  });
+
+  it('adds a deny rule from a suggestion for every workspace', async () => {
+    mocks.upsert.mockResolvedValue(
+      rule({
+        id: 'rule-3' as PermissionRuleId,
+        scope: 'global',
+        workspaceId: undefined,
+        pattern: { tool: 'Bash', argsMatcher: 'git push --force *' },
+        decision: 'deny',
+      }),
+    );
+    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+    await screen.findByText('Commands starting with "pnpm test"');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));
+    fireEvent.click(screen.getByRole('button', { name: 'git push' }));
+    const form = screen.getByRole('form', { name: 'Add rule' });
+    fireEvent.change(within(form).getByRole('textbox', { name: 'Commands starting with' }), {
+      target: { value: 'git push --force' },
+    });
+    fireEvent.click(within(form).getByRole('tab', { name: 'All workspaces' }));
+    fireEvent.click(within(form).getByRole('button', { name: 'Add rule' }));
+
+    await waitFor(() =>
+      expect(mocks.upsert).toHaveBeenCalledWith({
+        scope: 'global',
+        patternTool: 'Bash',
+        patternArgsMatcher: 'git push --force *',
+        decision: 'deny',
+        priority: 100,
+      }),
+    );
+    expect(await screen.findByText('Commands starting with "git push --force"')).toBeDefined();
+    expect(screen.queryByRole('form', { name: 'Add rule' })).toBeNull();
+  });
+
+  it('lists the recent decisions with the command, the session and when', async () => {
+    mocks.audit.mockResolvedValue([
+      {
+        id: 'audit-1',
+        sessionId: 'session-1',
+        toolName: 'Bash',
+        input: { command: 'pnpm test --filter ledger-core' },
+        decision: 'allow',
+        decidedAt: new Date(Date.now() - 120_000).toISOString(),
+      },
+    ]);
+    render(<PermissionsSettings workspaceId={WORKSPACE_ID} />);
+
+    const list = await screen.findByRole('list', { name: 'Recent decisions' });
+    expect(within(list).getByText('Allowed')).toBeDefined();
+    expect(within(list).getByText('pnpm test')).toBeDefined();
+    expect(within(list).getByText(/session "Fix ledger rounding"/)).toBeDefined();
+    expect(mocks.audit).toHaveBeenCalledWith({ sessionIds: ['session-1', 'session-2'] });
   });
 });

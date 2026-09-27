@@ -451,6 +451,14 @@ export const worktreeIsAncestor = async ({
   return invoke<boolean>('worktree_is_ancestor', { worktreePath, sha, head });
 };
 
+type AbortRebaseParams = {
+  readonly worktreePath: string;
+};
+
+export const worktreeAbortRebase = async ({ worktreePath }: AbortRebaseParams): Promise<void> => {
+  await invoke<void>('worktree_abort_rebase', { worktreePath });
+};
+
 export type RangeCommit = { readonly sha: string; readonly subject: string };
 
 export type CommitRangeParams = {
@@ -613,6 +621,16 @@ export const listBranchNames = async ({
   repoPath,
 }: ListBranchNamesParams): Promise<ReadonlyArray<string>> => {
   return invoke<ReadonlyArray<string>>('worktree_list_branch_names', { repoPath });
+};
+
+type RepoDefaultBaseBranchParams = {
+  readonly repoPath: string;
+};
+
+export const repoDefaultBaseBranch = async ({
+  repoPath,
+}: RepoDefaultBaseBranchParams): Promise<string | null> => {
+  return invoke<string | null>('worktree_repo_default_base_branch', { repoPath });
 };
 
 export type ChangeBranchArgs = {

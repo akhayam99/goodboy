@@ -19,16 +19,24 @@ vi.mock('../../../../store', () => ({
   useCurrentWorkspace: () => workspaceRef.value,
   useHasUnreadElsewhere: () => false,
   useWorkspaces: () => (workspaceRef.value ? [workspaceRef.value] : []),
+  useDisconnectedWorkspaces: () => [],
   useWorkspaceHasUnread: () => false,
+  useRunningHere: () => 0,
   useAppStore: (
     selector: (s: {
       projects: ReadonlyArray<{ id: string; workspaceId: string; kind: string; rootPath: string }>;
-      openWorkspace: () => Promise<void>;
+      openWorkspace: () => Promise<{ kind: 'opened' }>;
+      switchWorkspaceHere: () => Promise<void>;
+      reconnectWorkspaceById: () => Promise<void>;
+      loadDisconnectedWorkspaces: () => Promise<void>;
     }) => unknown,
   ) =>
     selector({
       projects: [{ id: 'proj-1', workspaceId: 'ws-1', kind: 'repo', rootPath: '/code/monorepo' }],
-      openWorkspace: async () => undefined,
+      openWorkspace: async () => ({ kind: 'opened' }),
+      switchWorkspaceHere: async () => undefined,
+      reconnectWorkspaceById: async () => undefined,
+      loadDisconnectedWorkspaces: async () => undefined,
     }),
 }));
 

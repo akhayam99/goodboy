@@ -38,6 +38,8 @@ export {
   useWorkspaceHasUnread,
   useHasUnreadElsewhere,
   useWorkspaces,
+  useDisconnectedWorkspaces,
+  useRunningHere,
   type MountDiffStat,
 } from './selectors';
 export { useTranscript } from './transcript';

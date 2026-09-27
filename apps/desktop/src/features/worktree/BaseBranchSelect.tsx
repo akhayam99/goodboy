@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cn, Listbox } from '@goodboy/ui';
-import { listBranchNames } from './worktree';
+import { listBranchNames, repoDefaultBaseBranch } from './worktree';
 
 type Props = {
   readonly repoPath: string;
@@ -19,6 +19,8 @@ const STATUS_LABEL: Record<LoadState, string | undefined> = {
   failed: 'Could not load branches',
 };
 
+const AUTO_VALUE = '';
+
 export const BaseBranchSelect = ({
   repoPath,
   value,
@@ -29,6 +31,21 @@ export const BaseBranchSelect = ({
   const [isOpen, setIsOpen] = useState(false);
   const [branches, setBranches] = useState<ReadonlyArray<string>>([]);
   const [loadState, setLoadState] = useState<LoadState>('idle');
+  const [detected, setDetected] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    repoDefaultBaseBranch({ repoPath })
+      .then((next) => {
+        if (!isCancelled) {
+          setDetected(next);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      isCancelled = true;
+    };
+  }, [repoPath]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -59,6 +76,9 @@ export const BaseBranchSelect = ({
     void onCommit(trimmed === '' ? null : trimmed);
   };
 
+  const autoLabel = detected === null ? 'Auto' : `Auto · ${detected}`;
+  const autoDescription = detected === null ? undefined : `Detected from origin/HEAD: ${detected}`;
+
   return (
     <Listbox
       ariaLabel="Base branch"
@@ -69,32 +89,19 @@ export const BaseBranchSelect = ({
       searchPlaceholder="Search or enter a branch"
       placeholder={placeholder}
       disabled={disabled}
-      value={value}
-      options={branches.map((branch) => ({ value: branch, label: branch, isCode: true }))}
+      value={value ?? AUTO_VALUE}
+      options={[
+        { value: AUTO_VALUE, label: 'Auto', description: autoDescription },
+        ...branches.map((branch) => ({ value: branch, label: branch, isCode: true })),
+      ]}
       onChange={commit}
       onOpenChange={setIsOpen}
       create={{ label: (query) => `Use ${query}`, onCreate: commit }}
       status={STATUS_LABEL[loadState]}
       valueLabel={
         <span className={cn('truncate text-code', value === null && 'text-faint-foreground')}>
-          {value ?? placeholder}
+          {value ?? autoLabel}
         </span>
-      }
-      footer={
-        value === null
-          ? undefined
-          : ({ close }) => (
-              <button
-                type="button"
-                onClick={() => {
-                  commit('');
-                  close();
-                }}
-                className="flex h-8 items-center rounded-sm px-2 text-left text-label text-muted-foreground hover:bg-hover hover:text-foreground"
-              >
-                Use default
-              </button>
-            )
       }
     />
   );

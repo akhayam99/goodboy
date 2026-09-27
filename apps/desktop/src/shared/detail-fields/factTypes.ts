@@ -15,12 +15,17 @@ export const FACT_SLOTS: ReadonlyArray<FactSlot> = [
   'time',
 ];
 
+export type FactEditorParams = {
+  readonly close: () => void;
+};
+
 export type Fact = {
   readonly key: string;
   readonly label: string;
   readonly icon: LucideIcon | null;
   readonly node: ReactNode;
   readonly hint?: string;
+  readonly editor?: (params: FactEditorParams) => ReactNode;
 };
 
 export type ResolvedFact = Fact & {

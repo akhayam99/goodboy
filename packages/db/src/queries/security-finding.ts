@@ -68,8 +68,9 @@ export const recordSecurityFindings = async ({
 }: RecordSecurityFindingsParams): Promise<void> => {
   const timestamp = Date.parse(at);
   const existingRows = await db.select<SecurityFindingRow>(
-    'SELECT * FROM security_findings WHERE subject_kind = ? AND subject_id = ?',
-    [subjectKind, subjectId],
+    `SELECT * FROM security_findings
+     WHERE workspace_id = ? AND project_id IS ? AND subject_kind = ? AND subject_id = ?`,
+    [workspaceId, projectId, subjectKind, subjectId],
   );
   const currentFingerprints = new Set(findings.map((finding) => finding.fingerprint));
   const existingByFingerprint = new Map(existingRows.map((row) => [row.fingerprint, row]));

@@ -1,5 +1,5 @@
 import type { ArtifactId, ArtifactKind, SessionArtifact } from '@goodboy/types';
-import type { CrumbMenuGroup, CrumbMenuModel, CrumbMenuRow } from '@goodboy/ui';
+import type { CrumbMenuAction, CrumbMenuGroup, CrumbMenuModel, CrumbMenuRow } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 
 export type ArtifactEntry = {
@@ -15,6 +15,7 @@ type Params = {
   readonly artifacts: ReadonlyArray<ArtifactEntry>;
   readonly currentId: ArtifactId | null;
   readonly ageOf: (iso: string) => string;
+  readonly actions?: ReadonlyArray<CrumbMenuAction>;
   readonly onSelect: (id: ArtifactId) => void;
 };
 
@@ -45,7 +46,13 @@ export const artifactEntryOf = ({
   author,
 });
 
-export const artifactMenu = ({ artifacts, currentId, ageOf, onSelect }: Params): CrumbMenuModel => {
+export const artifactMenu = ({
+  artifacts,
+  currentId,
+  ageOf,
+  actions = [],
+  onSelect,
+}: Params): CrumbMenuModel => {
   const rowOf = (entry: ArtifactEntry): CrumbMenuRow => ({
     id: entry.id,
     lead: { kind: 'icon', icon: KIND_ICON[entry.kind] },
@@ -70,7 +77,7 @@ export const artifactMenu = ({ artifacts, currentId, ageOf, onSelect }: Params):
     count: artifacts.length,
     triggerLabel: 'Switch artifact',
     groups,
-    actions: [],
+    actions: actions.slice(0, 2),
     width: 'regular',
     filterPlaceholder: 'Filter artifacts',
   };

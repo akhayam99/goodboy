@@ -5,14 +5,22 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type { Agent, AgentId, AgentStatus, SessionId, TelemetryRecord } from '@goodboy/types';
 
 const { hoverState, markAgentSeen } = vi.hoisted(() => ({
-  hoverState: { hasUnread: false },
+  hoverState: {
+    hasUnread: false,
+    sessions: null as ReadonlyArray<Record<string, unknown>> | null,
+  },
   markAgentSeen: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => {
-  const useAppStore = Object.assign(() => undefined, {
-    getState: () => ({ markAgentSeen }),
-  });
+  const useAppStore = Object.assign(
+    (
+      selector: (state: { readonly sessions: ReadonlyArray<Record<string, unknown>> }) => unknown,
+    ) => (hoverState.sessions === null ? undefined : selector({ sessions: hoverState.sessions })),
+    {
+      getState: () => ({ markAgentSeen }),
+    },
+  );
   return {
     agentHasUnread: () => hoverState.hasUnread,
     useAppStore,
@@ -273,5 +281,19 @@ describe('AgentRow numbering', () => {
     renderRow(false, { ordinal: 3 });
     expect(screen.getByText('4.')).toBeDefined();
     expect(screen.getAllByTitle(/Agent 4/).length).toBeGreaterThan(0);
+  });
+
+  it('says which mode runs when the provider cannot honor the session mode', () => {
+    hoverState.sessions = [
+      {
+        id: SID,
+        permissionMode: 'default',
+        providerPreference: { defaultProvider: 'anthropic' },
+      },
+    ];
+    renderRow(false, { providerOverride: 'codex' });
+
+    expect(screen.getByText("Read only · Ask first isn't available on Codex")).toBeDefined();
+    hoverState.sessions = null;
   });
 });

@@ -9,11 +9,3 @@ export type AppDataUsage = {
 
 export const appDataUsage = async (): Promise<AppDataUsage> =>
   invoke<AppDataUsage>('app_data_usage');
-
-type RevealParams = {
-  readonly path: string;
-};
-
-export const revealInFileManager = async ({ path }: RevealParams): Promise<void> => {
-  await invoke('reveal_in_file_manager', { path });
-};

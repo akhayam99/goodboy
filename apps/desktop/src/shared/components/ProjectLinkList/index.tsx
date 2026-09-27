@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { useProjectLinking } from '../../hooks/useProjectLinking';
@@ -7,13 +7,17 @@ import { ProjectAdoptionNotice } from '../ProjectAdoptionNotice';
 import { ProjectAddPopover } from './ProjectAddPopover';
 import { ProjectLinkAddRow } from './ProjectLinkAddRow';
 import { ProjectLinkRow } from './ProjectLinkRow';
+import { ProjectGroups } from './ProjectGroups';
 import type { ProjectLinkDensity } from './projectLinkDensity';
+
+const FILTER_VISIBLE_FROM = 10;
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly initialConflicts?: ReadonlyArray<ProjectAttachConflict>;
   readonly emptyHint?: string;
-  readonly rowAccessory?: (params: { readonly project: Project }) => ReactNode;
+  readonly editorExtra?: (params: { readonly project: Project }) => ReactNode;
+  readonly rowBadge?: (params: { readonly project: Project }) => ReactNode;
   readonly density?: ProjectLinkDensity;
   readonly heading?: (params: { readonly count: number }) => ReactNode;
 };
@@ -22,12 +26,14 @@ export const ProjectLinkList = ({
   workspaceId,
   initialConflicts,
   emptyHint,
-  rowAccessory,
+  editorExtra,
+  rowBadge,
   density = 'comfortable',
   heading,
 }: Props) => {
   const linking = useProjectLinking({ workspaceId, initialConflicts });
   const isCompact = density === 'compact';
+  const [query, setQuery] = useState('');
 
   return (
     <div className="flex flex-col gap-2">
@@ -35,6 +41,16 @@ export const ProjectLinkList = ({
         <div className="flex min-w-0 items-center gap-2">
           {heading?.({ count: linking.linked.length })}
           <span className="flex-1" />
+          {linking.linked.length >= FILTER_VISIBLE_FROM ? (
+            <input
+              type="text"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Filter projects"
+              aria-label="Filter projects"
+              className="h-8 w-48 rounded-md border border-border-soft bg-background px-2 text-label text-foreground outline-none placeholder:text-faint-foreground focus:border-border"
+            />
+          ) : null}
           <ProjectAddPopover
             path={linking.path}
             busy={linking.busy}
@@ -49,20 +65,35 @@ export const ProjectLinkList = ({
       {linking.linked.length === 0 && emptyHint !== undefined && (
         <p className="text-body text-muted-foreground">{emptyHint}</p>
       )}
-      {linking.linked.length > 0 && (
-        <ul className={isCompact ? 'flex flex-col' : 'flex flex-col gap-2'}>
+      {linking.linked.length > 0 && isCompact ? (
+        <ProjectGroups
+          workspaceId={workspaceId}
+          projects={
+            query.trim() === ''
+              ? linking.linked
+              : linking.linked.filter((project) =>
+                  project.name.toLowerCase().includes(query.trim().toLowerCase()),
+                )
+          }
+          busy={linking.busy}
+          query={query}
+          onUnlink={linking.unlink}
+          editorExtra={editorExtra}
+          rowBadge={rowBadge}
+        />
+      ) : null}
+      {linking.linked.length > 0 && !isCompact ? (
+        <ul className="flex flex-col gap-2">
           {linking.linked.map((project) => (
             <ProjectLinkRow
               key={project.id}
               project={project}
               busy={linking.busy}
-              density={density}
-              accessory={rowAccessory?.({ project })}
               onUnlink={linking.unlink}
             />
           ))}
         </ul>
-      )}
+      ) : null}
 
       {!isCompact && (
         <ProjectLinkAddRow

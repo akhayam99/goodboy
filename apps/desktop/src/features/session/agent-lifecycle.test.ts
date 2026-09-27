@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { Agent, AgentId, IsoDateTime, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  IsoDateTime,
+  ProviderRunId,
+  SessionId,
+  WorkflowRunId,
+} from '@goodboy/types';
 import {
   isAgentClosable,
   isAgentClosedByUser,
@@ -102,9 +109,12 @@ describe('isAgentClosedByUser', () => {
 });
 
 describe('isTurnStateLive', () => {
-  it('treats starting, running and blocked turns as live', () => {
+  it('treats starting and running turns as live, and a turn waiting on approval as not', () => {
     const at = DONE_AT;
+    const runId = 'run-1' as ProviderRunId;
     expect(isTurnStateLive({ turnState: { kind: 'starting', startedAt: at } })).toBe(true);
+    expect(isTurnStateLive({ turnState: { kind: 'running', runId, startedAt: at } })).toBe(true);
+    expect(isTurnStateLive({ turnState: { kind: 'blocked', runId, blockedAt: at } })).toBe(false);
     expect(isTurnStateLive({ turnState: { kind: 'idle', lastActivityAt: at } })).toBe(false);
     expect(isTurnStateLive({ turnState: null })).toBe(false);
   });

@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PermissionRule, WorkspaceId } from '@goodboy/types';
-import { invokePermissionRuleDelete, invokePermissionRuleList } from '../../permissions';
+import {
+  invokePermissionRuleDelete,
+  invokePermissionRuleList,
+  invokePermissionRuleUpsert,
+} from '../../permissions';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
+};
+
+export type NewRule = {
+  readonly decision: 'allow' | 'deny';
+  readonly command: string;
+  readonly where: 'workspace' | 'global';
 };
 
 export type PermissionRules = {
@@ -12,6 +22,7 @@ export type PermissionRules = {
   readonly error: Error | null;
   readonly retry: () => void;
   readonly remove: (rule: PermissionRule) => Promise<void>;
+  readonly add: (rule: NewRule) => Promise<void>;
 };
 
 const toError = (value: unknown): Error =>
@@ -65,5 +76,20 @@ export const usePermissionRules = ({ workspaceId }: Params): PermissionRules => 
     setRules((current) => current.filter((candidate) => candidate.id !== rule.id));
   }, []);
 
-  return { rules, isLoading, error, retry, remove };
+  const add = useCallback(
+    async ({ decision, command, where }: NewRule) => {
+      const created = await invokePermissionRuleUpsert({
+        scope: where,
+        ...(where === 'workspace' ? { workspaceId } : {}),
+        patternTool: 'Bash',
+        patternArgsMatcher: `${command.trim()} *`,
+        decision,
+        priority: 100,
+      });
+      setRules((current) => [created, ...current.filter((rule) => rule.id !== created.id)]);
+    },
+    [workspaceId],
+  );
+
+  return { rules, isLoading, error, retry, remove, add };
 };

@@ -33,7 +33,7 @@ export const useStudioEvents = ({ open, close, openPalette }: Params) => {
         const store = useAppStore.getState();
         const workspace = store.workspaces.find((candidate) => candidate.id === workspaceId);
         void store
-          .openWorkspace(workspaceId, workspace?.name ?? '')
+          .openWorkspace({ id: workspaceId, title: workspace?.name ?? '', onRunning: 'new-window' })
           .catch(() => undefined)
           .then(() => {
             if (useAppStore.getState().currentWorkspaceId === workspaceId) {

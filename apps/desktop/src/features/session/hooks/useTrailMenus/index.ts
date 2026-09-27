@@ -54,6 +54,17 @@ import { agentMenu } from '../../trail/menus/agentMenu';
 import { stepMenu } from '../../trail/menus/stepMenu';
 import { runMenu, type RunEntry } from '../../trail/menus/runMenu';
 import { artifactEntryOf, artifactMenu } from '../../trail/menus/artifactMenu';
+import {
+  newArtifactAction,
+  retryStepActions,
+  savedCopyActions,
+} from '../../trail/menus/crumbActions';
+import { artifactFolderName } from '../../../artifacts/artifactFolderName';
+import { newArtifactEventName } from '../../../artifacts/newArtifactEventName';
+import {
+  locateArtifactMirror,
+  revealArtifactMirror,
+} from '../../../artifacts/artifactMirror/artifactMirrorInvoke';
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
@@ -89,6 +100,11 @@ export const useTrailMenus = ({
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
   const cancelCurrentTurn = useAppStore((s) => s.cancelCurrentTurn);
+  const recoverStuckStep = useAppStore((s) => s.recoverStuckStep);
+  const reportError = useAppStore((s) => s.reportError);
+  const workspaceSlug = useAppStore(
+    (s) => s.workspaces.find((workspace) => workspace.id === session.workspaceId)?.slug ?? null,
+  );
   const signals = useAgentLifecycleSignals({ sessionId });
   const attachedRuns = useAttachedWorkflowRuns({ session });
   const selectedWorkflowRun = useSelectedWorkflowRun({ session });
@@ -204,7 +220,18 @@ export const useTrailMenus = ({
           stateOf,
           roleLabelOf: (stepAgent, role) => (stepAgent !== null ? roleOf(stepAgent).label : role),
           modelOf: (stepAgent, stepModel) => stepAgent?.modelOverride ?? stepModel ?? 'Auto',
-          actions: stopAction(agent),
+          actions: [
+            ...stopAction(agent),
+            ...retryStepActions({
+              agent,
+              isTurnLive: signals.liveTurnAgentIds.has(agent.id),
+              onRetry: () =>
+                void recoverStuckStep({ sessionId, workflowRunId: entry.run.id }).catch(
+                  (error: unknown) =>
+                    reportError({ title: "Couldn't retry the step", error, sessionId }),
+                ),
+            }),
+          ],
           onSelect: toAgent,
         });
       }
@@ -253,9 +280,19 @@ export const useTrailMenus = ({
       ...entry,
       isFinished: finishedIds.has(entry.run.id),
     }));
+    const newArtifact = newArtifactAction({
+      onRun: () => {
+        setFocusedArtifactId(sessionId, null);
+        openLens({ sessionId, lens: 'plans' });
+        window.requestAnimationFrame(() =>
+          window.dispatchEvent(new CustomEvent(newArtifactEventName(sessionId))),
+        );
+      },
+    });
     const pageActions: Partial<Record<LensKind, ReadonlyArray<CrumbMenuAction>>> = {
       agents: [startAgent],
       workflows: [startWorkflow],
+      plans: [newArtifact],
     };
 
     crumbs.forEach((crumb, index) => {
@@ -394,6 +431,7 @@ export const useTrailMenus = ({
       }
       if (crumb.id === 'artifact' && artifacts.length > 0) {
         const nowMs = Date.now();
+        const focused = artifacts.find((artifact) => artifact.id === focusedArtifactId);
         menus.set(
           crumb.id,
           artifactMenu({
@@ -410,6 +448,36 @@ export const useTrailMenus = ({
               ),
             currentId: focusedArtifactId,
             ageOf: (iso) => formatRelativeAge({ fromIso: iso, nowMs }),
+            actions:
+              focused === undefined
+                ? []
+                : savedCopyActions({
+                    hasWorkspace: workspaceSlug !== null,
+                    onReveal: () => {
+                      if (workspaceSlug === null) {
+                        return;
+                      }
+                      void revealArtifactMirror({
+                        workspaceSlug,
+                        folder: artifactFolderName({ artifact: focused }),
+                      }).catch((error: unknown) =>
+                        reportError({ title: "Couldn't show the saved copy", error, sessionId }),
+                      );
+                    },
+                    onCopyPath: () => {
+                      if (workspaceSlug === null) {
+                        return;
+                      }
+                      void locateArtifactMirror({
+                        workspaceSlug,
+                        folder: artifactFolderName({ artifact: focused }),
+                      })
+                        .then((location) => copy({ text: location.path }))
+                        .catch((error: unknown) =>
+                          reportError({ title: "Couldn't copy the path", error, sessionId }),
+                        );
+                    },
+                  }),
             onSelect: (id) => {
               setFocusedArtifactId(sessionId, id);
               openLens({ sessionId, lens: 'plans' });
@@ -457,6 +525,9 @@ export const useTrailMenus = ({
     setFocusedArtifactId,
     setFocusedWorkflowRun,
     cancelCurrentTurn,
+    recoverStuckStep,
+    reportError,
+    workspaceSlug,
     mounts,
     diffPath,
     diffStats,

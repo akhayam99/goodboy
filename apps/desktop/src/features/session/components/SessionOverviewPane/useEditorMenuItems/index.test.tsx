@@ -77,7 +77,7 @@ describe('useEditorMenuItems', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'VS Code' }));
 
-    expect(openInEditor).toHaveBeenCalledWith('/api', 'code');
+    expect(openInEditor).toHaveBeenCalledWith({ path: '/api', editor: 'code' });
   });
 
   it('says no editor was detected when none is known', () => {

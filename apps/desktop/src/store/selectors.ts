@@ -44,6 +44,7 @@ import {
 } from './slices/session-view';
 import { summarizeMountWork } from './slices/project-mounts/mountCompletion';
 import { agentHasUnread } from './slices/agents/agentHasUnread';
+import { countRunningSessions } from './slices/presence/openWorkspace';
 import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
 import { isSessionPrFetchable } from './slices/github/resolveSessionPrFetch';
 import { runSpendUsd } from './slices/workflows/runSpendUsd';
@@ -709,8 +710,14 @@ function findSessionInAnyPool(state: AppState, id: string | null): Session | nul
 
 const selectCurrentSession = (state: AppState): Session | null =>
   findSessionInAnyPool(state, state.currentSessionId);
+const selectRunningHere = (state: AppState): number => countRunningSessions(state.sessions);
+const selectDisconnectedWorkspaces = (state: AppState): ReadonlyArray<Workspace> =>
+  state.disconnectedWorkspaces;
 export const useWorkspaces = (): ReadonlyArray<Workspace> => useAppStore(selectWorkspaces);
+export const useDisconnectedWorkspaces = (): ReadonlyArray<Workspace> =>
+  useAppStore(selectDisconnectedWorkspaces);
 export const useCurrentWorkspace = (): Workspace | null => useAppStore(selectCurrentWorkspace);
+export const useRunningHere = (): number => useAppStore(selectRunningHere);
 export const useSessions = (): ReadonlyArray<Session> => useAppStore(selectSessions);
 export const useCurrentSession = (): Session | null => useAppStore(selectCurrentSession);
 

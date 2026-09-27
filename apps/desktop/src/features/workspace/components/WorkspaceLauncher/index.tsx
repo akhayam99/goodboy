@@ -17,7 +17,7 @@ import { DogMascot } from '../../../../shared/components/DogMascot';
 import { SETTING_REOPEN_LAST } from '../../../settings/settings';
 import { UpdatePill } from '../../../updater/components/UpdatePill';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
-import { WorkspaceRow } from '../WorkspaceRow';
+import { WorkspaceListRow } from '../WorkspaceListRow';
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 
 export const WorkspaceLauncher = () => {
@@ -46,7 +46,7 @@ export const WorkspaceLauncher = () => {
   }, [query]);
 
   const select = (workspace: Workspace) => {
-    void openWorkspace(workspace.id, workspace.name);
+    void openWorkspace({ id: workspace.id, title: workspace.name, onRunning: 'new-window' });
   };
 
   const addWorkspace = () => window.dispatchEvent(new CustomEvent('goodboy:add-workspace'));
@@ -149,9 +149,8 @@ export const WorkspaceLauncher = () => {
                   </li>
                 ) : (
                   <li key={w.id} className="group/launcher relative">
-                    <WorkspaceRow
+                    <WorkspaceListRow
                       workspace={w}
-                      density="card"
                       highlighted={i === activeIndex}
                       onOpen={() => select(w)}
                     />
