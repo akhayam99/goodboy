@@ -10,6 +10,27 @@ import { recordNextStepOutcome } from '../../useNextStepOutcomes';
 import type { SessionSuggestion } from '../../types';
 import { NextStepRow } from './NextStepRow';
 
+const choiceKey = ({
+  suggestion,
+  choiceId,
+}: {
+  readonly suggestion: SessionSuggestion;
+  readonly choiceId: string;
+}) => `${suggestion.id}:choice:${choiceId}`;
+
+const pendingChoiceIds = ({
+  suggestion,
+  pendingKeys,
+}: {
+  readonly suggestion: SessionSuggestion;
+  readonly pendingKeys: ReadonlySet<string>;
+}): ReadonlySet<string> => {
+  const prefix = choiceKey({ suggestion, choiceId: '' });
+  return new Set(
+    [...pendingKeys].flatMap((key) => (key.startsWith(prefix) ? [key.slice(prefix.length)] : [])),
+  );
+};
+
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
@@ -68,23 +89,28 @@ export const NextStepSlot = ({ session, onSelectLens }: Props) => {
     if (primary === null) {
       return actions;
     }
+    const tracked =
+      ({ key, task }: { readonly key: string; readonly task: () => Promise<void> }) =>
+      async () => {
+        void recordNextStepOutcome({
+          sessionId,
+          kind: suggestion.kind,
+          outcome: 'accepted',
+          fingerprint: suggestion.fingerprint,
+        });
+        await pending.run({ key, failureTitle: primary.failureTitle, task });
+      };
     return {
       ...actions,
       primary: {
         ...primary,
-        run: async () => {
-          void recordNextStepOutcome({
-            sessionId,
-            kind: suggestion.kind,
-            outcome: 'accepted',
-            fingerprint: suggestion.fingerprint,
-          });
-          await pending.run({
-            key: suggestion.id,
-            failureTitle: primary.failureTitle,
-            task: primary.run,
-          });
-        },
+        run: tracked({ key: suggestion.id, task: primary.run }),
+        ...(primary.choices !== undefined && {
+          choices: primary.choices.map((choice) => ({
+            ...choice,
+            run: tracked({ key: choiceKey({ suggestion, choiceId: choice.id }), task: choice.run }),
+          })),
+        }),
       },
     };
   };
@@ -104,6 +130,7 @@ export const NextStepSlot = ({ session, onSelectLens }: Props) => {
         actions={actions}
         compact={isCompact}
         isPending={pending.pendingKeys.has(suggestion.id)}
+        pendingChoiceIds={pendingChoiceIds({ suggestion, pendingKeys: pending.pendingKeys })}
         onNotNow={() => onNotNow(suggestion, actions)}
       />
     );

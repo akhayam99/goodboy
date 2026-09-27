@@ -814,6 +814,9 @@ the transcript already shows counts the same (`isReportedError`), so the runner
 never logs one failure twice. Every next-step suggestion runs through it:
 `SuggestionAction.run` returns a promise and carries its `failureTitle`, and
 `NextStepSlot` owns the runner (`useSuggestionActions` test guards every kind).
+A suggestion's `choices` (a rebase target, "Start tester instead") render as
+ghost buttons beside the primary in `NextStepRow`, run through the same runner
+under their own key, and hold the row's other controls while one runs.
 
 ## Section rhythm
 
