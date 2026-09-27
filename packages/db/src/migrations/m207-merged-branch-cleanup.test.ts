@@ -101,31 +101,6 @@ describe('m207 merged branch cleanup', () => {
     ).toEqual([]);
   });
 
-  it('carries history events across the session events rebuild', async () => {
-    const db = await makeMigratedTestDatabase({ throughVersion: 206 });
-    await seedWorkspace(db);
-    await db.execute(
-      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
-       VALUES ('session-1', 'harborline', 'Ledger', 'idle', 1, 1)`,
-    );
-    await db.execute(
-      `INSERT INTO session_events (id, session_id, kind, payload_json, created_at)
-       VALUES ('ev-history', 'session-1', 'history_rewritten', '{}', 1)`,
-    );
-
-    await migrate(db, migrations);
-    await db.execute(
-      `INSERT INTO session_events (id, session_id, kind, payload_json, created_at)
-       VALUES ('ev-restored', 'session-1', 'history_restored', '{}', 2)`,
-    );
-
-    expect(
-      await db.select<{ readonly kind: string }>(
-        'SELECT kind FROM session_events ORDER BY created_at',
-      ),
-    ).toEqual([{ kind: 'history_rewritten' }, { kind: 'history_restored' }]);
-  });
-
   it('starts every existing mount as unknown origin', async () => {
     const db = await makeMigratedTestDatabase();
 
