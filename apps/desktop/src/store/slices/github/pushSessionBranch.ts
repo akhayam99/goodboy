@@ -1,7 +1,6 @@
 import type { MountId, SessionId } from '@goodboy/types';
 import { gitPush } from '../../../features/github/github';
 import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
-import { invalidateLocalBranchesCache } from '../../../features/worktree/worktree';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn } from './types';
 
@@ -36,7 +35,6 @@ export const pushSessionBranch = async ({
   if (push.exitCode !== 0) {
     return { ok: false, error: push.stderr.trim() || `git push exited with ${push.exitCode}` };
   }
-  invalidateLocalBranchesCache(repo.repoRoot);
   await refreshWorktreeStatuses({ worktreePaths: [repo.worktreePath] }).catch(() => undefined);
   void get().refreshSessionPr(sessionId, { mountId, force: true, silent: true });
   return { ok: true };
