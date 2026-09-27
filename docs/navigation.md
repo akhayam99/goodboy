@@ -533,9 +533,9 @@ before anything moves, so Settings stays open under it.
 First-run setup is a full-screen wizard in one shell that never moves: a top
 bar with a labelled stepper (Provider, Project, Code host, Tasks, First
 session) and Skip setup, a body that starts at the same line on every step,
-and a footer pinned at the bottom (Back left, Skip for now and the primary
-right). Steps crossfade in place (240 ms, 80 ms of opacity with reduced
-motion); the footer is disabled while they do. Welcome says what the five
+and the form actions inline at the end of the step (Back, Skip for now and
+the primary, right-aligned, no divider). Steps crossfade in place (240 ms,
+80 ms of opacity with reduced motion); the actions are disabled while they do. Welcome says what the five
 steps take. Provider needs one usable route (a CLI login, a saved key or
 OpenCode's free models). Project picks one folder, with or without version
 control, names the workspace after its parent folder and finds the

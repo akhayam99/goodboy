@@ -376,18 +376,19 @@ export const WizardFrame = ({
                   >
                     I&apos;ve used Goodboy before: skip setup
                   </button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    onClick={goBack}
-                    disabled={isLocked}
-                    className={cn('text-muted-foreground', isFirstStep && 'invisible')}
-                  >
-                    Back
-                  </Button>
-                )
+                ) : null
               }
             >
+              {isFirstStep ? null : (
+                <Button
+                  variant="ghost"
+                  onClick={goBack}
+                  disabled={isLocked}
+                  className="text-muted-foreground"
+                >
+                  Back
+                </Button>
+              )}
               {actions.skip !== null && (
                 <Button
                   variant="ghost"

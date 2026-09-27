@@ -492,6 +492,13 @@ describe('OnboardingWizard', () => {
       expect(screen.getByTestId('CodeHostStep')).toBeDefined();
     });
 
+    it('keeps Back right-aligned beside the step action', async () => {
+      await reachFirstSession();
+      const back = screen.getByRole('button', { name: /^back$/i });
+      const skip = screen.getByRole('button', { name: /skip, open the board/i });
+      expect(back.parentElement).toBe(skip.parentElement);
+    });
+
     it('offers Skip, open the board instead of a primary in the action row', async () => {
       await reachFirstSession();
       expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
