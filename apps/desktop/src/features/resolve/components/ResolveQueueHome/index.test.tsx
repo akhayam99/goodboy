@@ -624,18 +624,18 @@ describe('the shape of the queue surface', () => {
     expect(screen.getAllByRole('checkbox')).toHaveLength(1);
   });
 
-  it('keeps the pull request header and the dock on the empty and error states', () => {
+  it('keeps the pull request header and the publish actions on the empty and error states', () => {
     h.state.sessionGithub = { [SESSION_ID]: { pr: null, detail: null } };
     const { unmount } = render(
       <ResolveQueueHome
         session={SESSION}
         header={<div>PR header</div>}
-        dock={<div>Publish dock</div>}
+        publish={<div>Publish actions</div>}
       />,
     );
 
     expect(screen.getByText('PR header')).toBeDefined();
-    expect(screen.getByText('Publish dock')).toBeDefined();
+    expect(screen.getByText('Publish actions')).toBeDefined();
     unmount();
 
     twoRows();
@@ -651,12 +651,12 @@ describe('the shape of the queue surface', () => {
       <ResolveQueueHome
         session={SESSION}
         header={<div>PR header</div>}
-        dock={<div>Publish dock</div>}
+        publish={<div>Publish actions</div>}
       />,
     );
 
     expect(screen.getByText('PR header')).toBeDefined();
-    expect(screen.getByText('Publish dock')).toBeDefined();
+    expect(screen.getByText('Publish actions')).toBeDefined();
   });
 
   it('groups every open comment under its file, with no filter tabs', () => {

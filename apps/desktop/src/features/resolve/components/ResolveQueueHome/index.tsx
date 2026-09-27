@@ -91,7 +91,7 @@ export const OPEN_CONVERSATIONS_LABEL = 'Open conversations';
 type Props = {
   readonly session: Session;
   readonly header?: ReactElement | null;
-  readonly dock?: ReactNode;
+  readonly publish?: ReactNode;
 };
 
 type QueuePaneParams = {
@@ -127,7 +127,7 @@ const scrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
   return null;
 };
 
-export const ResolveQueueHome = ({ session, header = null, dock = null }: Props) => {
+export const ResolveQueueHome = ({ session, header = null, publish = null }: Props) => {
   const sessionId = session.id as SessionId;
   const listRef = useRef<HTMLDivElement | null>(null);
   const detailRef = useRef<HTMLDivElement | null>(null);
@@ -515,16 +515,16 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
         <PaneShell
           title={RESOLVE_QUEUE_TITLE}
           scroll="body"
-          dock={dock}
           {...(meta != null && { meta })}
           {...(actions != null && { actions })}
         >
           {children}
+          {publish}
         </PaneShell>
       );
     }
     return (
-      <PaneShell header={header} scroll="body" dock={dock}>
+      <PaneShell header={header} scroll="body">
         <SectionHeader
           size="page"
           label={RESOLVE_QUEUE_TITLE}
@@ -538,6 +538,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
           action={actions ?? undefined}
         />
         {children}
+        {publish}
       </PaneShell>
     );
   };

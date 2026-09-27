@@ -315,20 +315,19 @@ export const PullRequestPage = ({ session }: Props) => {
 
   if (mode === 'write_review') {
     return (
-      <PaneShell
-        header={header}
-        scroll="self"
-        dock={
-          <PublishBar
-            sessionId={sessionId}
-            provider="github"
-            draftCount={openDrafts.length}
-            publishing={isBusy}
-            onPublish={(opts) => void onWriteReviewPublish(opts)}
-          />
-        }
-      >
-        <WriteReview session={session} />
+      <PaneShell header={header} scroll="self">
+        <WriteReview
+          session={session}
+          publishBar={
+            <PublishBar
+              sessionId={sessionId}
+              provider="github"
+              draftCount={openDrafts.length}
+              publishing={isBusy}
+              onPublish={(opts) => void onWriteReviewPublish(opts)}
+            />
+          }
+        />
       </PaneShell>
     );
   }
