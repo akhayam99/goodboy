@@ -865,7 +865,22 @@ the workspace with Link to a session, or open the session already linked to it.
 A record shows its session whichever way the link was made: launched from the
 inbox, picked there, or linked from the session's own link button, by search or
 by pasted URL. The session link button searches the issues of every Sentry
-project linked to the workspace, not only the connected one.
+project linked to the workspace, not only the connected one. A code or link
+pasted there goes through the same lookup as the inbox search
+(`useWorkspaceIssueLookup`, scoped to the picked tracker) and links the task
+`launchSpecFor` builds from the resolved record, so a Sentry short code such as
+`PAYMENTS-API-3` resolves and a Sentry link keeps its short id. A paste the
+lookup cannot resolve falls back to the fields read from the URL.
+
+Launch session mounts the item's project when it maps to one
+(`launchMountFor`). A Sentry error reads the projects linked to its Sentry
+project and the ones a Sentry code mapping points at; a GitHub or GitLab item
+reads the project whose remote is its repo. One match is mounted, several
+preselect the best (linked and mapped, then a name equal to the Sentry
+project) and the popover lets you pick another or none, and no match mounts
+nothing. Linear, Jira and Slack items never mount one. The popover names the
+project and the reason ("from Sentry project payments-api"), and the mount
+keeps that reason.
 
 Pull and merge requests come from the code hosts. GitHub lists the open pull
 requests of the workspace root repo that ask for your review, plus your own
@@ -874,9 +889,15 @@ open ones updated in the last seven days, through the same `gh` login as issues
 Bitbucket the pull requests of the linked repo. Open ones show as open, merged
 and closed ones as closed.
 
-With two or more projects in the workspace, the rail also filters by project.
-Projects with no records hide behind a quiet "Show N empty" toggle at the end
-of the section; the selected project stays listed even at zero. Code host records belong to the project at the workspace root. A Sentry error
+With two or more projects in the workspace, the rail also filters by project,
+but only when a record in the current scope belongs to one: a Linear, Jira or
+Slack view shows no Project section at all. Projects with no records hide
+behind a quiet "Show N empty" toggle at the end of the section; the selected
+project stays listed even at zero. A GitHub or GitLab record belongs to the
+project whose remote (`Project.remoteUrl`) is its repo, and only when two or
+more projects have a remote on that host; with one, the list stays flat. A
+tracker record never belongs to a project; its row shows the tracker's own
+project or team instead. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
