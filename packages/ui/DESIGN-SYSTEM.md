@@ -782,6 +782,37 @@ A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`
 
 **Copy feedback lives on the control.** `useCopyLink().copy({ text, key })` keys the copied state, so in a list only the row whose `key` matches flips to "Copied". A successful copy never toasts; a failure shows inline while the control stays mounted, and only a menu item, which unmounts on click, reports a failure through a toast. `CopyButton` reads "Copy", "Copied", "Copy failed".
 
+## Action feedback
+
+Every click that starts work answers at once, on the control that started it,
+and answers again when the work ends. The product rules live in
+[DESIGN.md](../../DESIGN.md) → Status & signals; the mechanics are here.
+
+- **Pending is on the control.** The button that started the action takes
+  `isBusy` (`Button`, `GhostActionButton`, `InlineConfirm`) or `busy`
+  (`IconButton`, `RefreshIconButton`): the pulsing glyph, `aria-busy`, and
+  disabled against a second submit. Never a spinner, never a toast that
+  says "started" when the control already says it.
+- **Success is the new state.** The action refetches exactly the state it
+  changed (the mount's request, the worktree status, the resolve rows), so
+  the screen shows the result without a reload. A toast adds nothing when the
+  result is on screen; it is only for a result that lands somewhere else, like
+  an agent started with `focus: 'none'`.
+- **Failure is one log row.** The error goes to `reportError` with a title
+  that names the action ("Couldn't push the branch") and the real message as
+  its body. The toast is its preview. The control comes back enabled, so the
+  click is the retry. Never a toast, an inline banner and a suggestion for the
+  same outcome.
+
+`usePendingAction` (`apps/desktop/src/shared/hooks/usePendingAction`) is the
+one runner: `run({ key, failureTitle, task })` keeps `key` in `pendingKeys`
+until `task` settles, drops a second run of the same key, reports a thrown
+error once through `reportError` and resolves to whether it worked. A store
+action that already logged its failure throws `ReportedError` so the runner
+does not log it twice. Every next-step suggestion runs through it:
+`SuggestionAction.run` returns a promise and carries its `failureTitle`, and
+`NextStepSlot` owns the runner (`useSuggestionActions` test guards every kind).
+
 ## Section rhythm
 
 `PANE_RHYTHM.stack` separates peer sections. `Divider` separates app chrome from content, never content from content: [docs/styling.md](../../docs/styling.md) owns the rule. Section children do not add margins. `SectionHeader` is the standard section heading, with an optional description. The eyebrow size is the default for every surface. `size="page"` is only for a document whose body is prose the reader came for, such as the guide or a creation flow's form sections. Description copy comes only through `hint`, so its size and muted tone stay matched to the heading grade.

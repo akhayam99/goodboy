@@ -221,7 +221,8 @@ new commits` (`checkMergedThen`, one git check per tip, kept in
   it.** `refreshSessionPr` fills the entry per mount (`gh pr list --head
 <branch>`). Creating, merging, closing, reopening, marking ready or draft
   and editing a request refresh it forced. So do a push (`pushSessionBranch`,
-  which the header, the suggestion and the resolve push share), a history push
+  which the header, the suggestion and the resolve push share, and which also
+  re-reads that worktree's status so the ahead count drops at once), a history push
   (rebase or rewrite) and a branch switch on any mount. Changes made outside
   the app (an agent that ran `gh`, a terminal) are caught cheaply:
   `recheckSessionMounts` runs when an agent turn ends and when the window
