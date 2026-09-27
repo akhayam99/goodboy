@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import { formatError, InlineConfirm, ScrollFade } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { sessionTitle } from '../../sessionTitle';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -52,7 +53,7 @@ export const BulkDeleteSessionsConfirm = ({ sessions, onClose, onConfirmed, clas
       >
         {sessions.map((session) => (
           <span key={session.id} className="truncate font-mono text-foreground">
-            {session.goal}
+            {sessionTitle({ session })}
           </span>
         ))}
       </ScrollFade>

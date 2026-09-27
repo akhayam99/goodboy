@@ -34,7 +34,6 @@ import {
 } from '../../app/components/MockScene/scenes/audit/settingsSeed';
 import { OnboardingWizard } from '../../features/onboarding/OnboardingWizard';
 import { openWizardStep } from '../../features/onboarding/onboarding-store';
-import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
 import { InboxDetail } from '../../features/inbox/components/InboxStudio/InboxDetail';
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
@@ -130,8 +129,13 @@ const expectNoRenderLoop = (): void => {
 describe('main flows on the real store', () => {
   it('starts the first session from the onboarding wizard', async () => {
     seedSettingsBase();
-    const startSessionFromDraft = vi.fn(async () => ({ id: 'session-started' }) as Session);
-    stubActions({ hydrated: true, startSessionFromDraft });
+    const createSession = vi.fn(async () => ({ session: { id: 'session-started' } as Session }));
+    const spawnAgent = vi.fn(async () => undefined);
+    stubActions({
+      hydrated: true,
+      createSession: createSession as unknown as StoreState['createSession'],
+      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
+    });
 
     await mountFlow(<OnboardingWizard />);
     await act(async () => {
@@ -140,36 +144,18 @@ describe('main flows on the real store', () => {
     });
     fireEvent.click(await screen.findByRole('button', { name: /Start Scout/ }));
 
-    await waitFor(() => expect(startSessionFromDraft).toHaveBeenCalledOnce());
-    expect(startSessionFromDraft).toHaveBeenCalledWith({
-      workspaceId: SETTINGS_WORKSPACE.id,
-      start: expect.objectContaining({ kind: 'scout' }),
-    });
-    const projectId = useAppStore.getState().projects[0]?.id ?? null;
-    expect(useAppStore.getState().sessionDrafts[SETTINGS_WORKSPACE.id]?.projectId).toBe(projectId);
-    expectNoRenderLoop();
-  });
-
-  it('starts a session from the new session draft', async () => {
-    seedBoardScene();
-    const startSessionFromDraft = vi.fn(async () => ({ id: 'session-started' }) as Session);
-    stubActions({ startSessionFromDraft });
-
-    await mountFlow(<SessionDraftPane workspaceId={WORKSPACE_ID} />);
-    fireEvent.click(screen.getByRole('tab', { name: /Ask an agent/ }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Scout focus' }), {
-      target: { value: 'the ledger-core importer' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Start Scout' }));
-
-    await waitFor(() => expect(startSessionFromDraft).toHaveBeenCalledOnce());
-    expect(startSessionFromDraft).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE_ID,
-      start: expect.objectContaining({
-        kind: 'scout',
-        prompt: expect.stringContaining('the ledger-core importer'),
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
+    const projectId = useAppStore.getState().projects[0]?.id;
+    expect(createSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: SETTINGS_WORKSPACE.id,
+        ...(projectId === undefined ? {} : { projectId }),
       }),
-    });
+    );
+    expect(spawnAgent).toHaveBeenCalledWith(
+      'session-started',
+      expect.objectContaining({ kindOverride: 'scout' }),
+    );
     expectNoRenderLoop();
   });
 
