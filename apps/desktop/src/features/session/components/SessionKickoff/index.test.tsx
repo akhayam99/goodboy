@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { StoreApi, UseBoundStore } from 'zustand';
-import type { Project, ProjectId, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
 
 type TestState = Record<string, unknown>;
@@ -72,9 +72,7 @@ const candidate = (overrides: Partial<IssueCandidate>): IssueCandidate => ({
 
 const PROJECT_OVERRIDES = {
   defaultProviderId: null,
-  defaultWorkflowId: null,
   defaultBranchPrefix: null,
-  parallelEnabled: null,
   defaultVerbosity: null,
   providerBindings: null,
   taskModels: null,
@@ -82,6 +80,12 @@ const PROJECT_OVERRIDES = {
   parallelAgents: null,
   providerPool: null,
   attributionFooter: null,
+  replyVoice: null,
+  replyStyleNote: null,
+  replyTemplateFixed: null,
+  replyTemplateNoChange: null,
+  resolveOnGithub: null,
+  resolveCommitStyle: null,
 };
 
 const project = (overrides: Partial<Project>): Project => ({
@@ -91,8 +95,8 @@ const project = (overrides: Partial<Project>): Project => ({
   rootPath: '/tmp/ledger-core',
   kind: 'repo',
   overrides: PROJECT_OVERRIDES,
-  createdAt: '2026-01-01T00:00:00.000Z',
-  updatedAt: '2026-01-01T00:00:00.000Z',
+  createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
+  updatedAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
   ...overrides,
 });
 
@@ -380,7 +384,7 @@ describe('SessionKickoff', () => {
     });
   });
 
-  it('proposes the brief of a picked issue and starts from it without linking first', async () => {
+  it('proposes the brief of a picked issue and opens how to work on it, without linking first', async () => {
     store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     spies.fetchIssueCandidates.mockResolvedValue([
       candidate({}),
@@ -405,6 +409,13 @@ describe('SessionKickoff', () => {
     expect(spies.startSessionFromDraft).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
 
+    expect(spies.startSessionFromDraft).not.toHaveBeenCalled();
+    expect(screen.getByRole('tab', { name: 'Run a workflow' }).getAttribute('aria-selected')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Fix a bug/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Run workflow' }));
+
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
@@ -413,6 +424,37 @@ describe('SessionKickoff', () => {
         candidate: candidate({}),
         title: 'Fix the login redirect',
         goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+        then: { kind: 'workflow', workflowId: 'wf-2' },
+      },
+    });
+  });
+
+  it('lets how to work on it start an agent instead, precompiled with the brief', async () => {
+    store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
+    spies.fetchIssueCandidates.mockResolvedValue([candidate({})]);
+    renderKickoff();
+    await screen.findByText('ENG-1');
+
+    fireEvent.click(screen.getByRole('button', { name: /ENG-1/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick up ENG-1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Ask an agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start Implementer' }));
+
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'task',
+        candidate: candidate({}),
+        title: 'Fix the login redirect',
+        goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+        then: {
+          kind: 'agent',
+          agentKind: 'implementer',
+          prompt: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+          routing: null,
+        },
       },
     });
   });

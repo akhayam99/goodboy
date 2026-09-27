@@ -279,6 +279,68 @@ describe('session draft slice', () => {
     expect(h.spies.spawnAgent).not.toHaveBeenCalled();
   });
 
+  it('links the issue and attaches a workflow in the same gesture when the task has a "then"', async () => {
+    await h.slice.startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'task',
+        candidate: {
+          provider: 'linear',
+          externalId: 'issue-214',
+          identifier: 'NW-214',
+          title: 'Invoices credited twice',
+          url: 'https://linear.app/northwind/issue/NW-214',
+          goal: 'Stop crediting twice.',
+          body: '',
+          branchSlug: 'invoices-credited-twice',
+        },
+        title: 'Invoices credited twice',
+        goal: 'Stop crediting twice.',
+        then: { kind: 'workflow', workflowId: 'wf-2' as WorkflowId },
+      },
+    });
+
+    expect(h.spies.attachWorkflowToSession).toHaveBeenCalledWith(SESSION_ID, 'wf-2', {
+      goal: 'Stop crediting twice.',
+      navigate: true,
+    });
+    expect(h.spies.spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('links the issue and spawns an agent in the same gesture when the task has a "then"', async () => {
+    await h.slice.startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'task',
+        candidate: {
+          provider: 'linear',
+          externalId: 'issue-214',
+          identifier: 'NW-214',
+          title: 'Invoices credited twice',
+          url: 'https://linear.app/northwind/issue/NW-214',
+          goal: 'Stop crediting twice.',
+          body: '',
+          branchSlug: 'invoices-credited-twice',
+        },
+        title: 'Invoices credited twice',
+        goal: 'Stop crediting twice.',
+        then: {
+          kind: 'agent',
+          agentKind: 'implementer',
+          prompt: 'Stop crediting twice.',
+          routing: null,
+        },
+      },
+    });
+
+    expect(h.spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
+      kindOverride: 'implementer',
+      initialPrompt: 'Stop crediting twice.',
+      focus: 'agent',
+    });
+    expect(h.spies.attachWorkflowToSession).not.toHaveBeenCalled();
+  });
+
   it('leaves no session behind and keeps the draft when the start fails', async () => {
     h.set({ openSessionDraftWorkspaceId: WORKSPACE_ID });
     h.slice.patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { workflowGoal: 'Ship it' } });

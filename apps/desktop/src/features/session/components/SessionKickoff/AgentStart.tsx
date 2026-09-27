@@ -5,7 +5,7 @@ import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { selectSessionDraft } from '../../../../store/slices/sessionDraft/selectSessionDraft';
 import { selectWorkspaceResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
-import { starredProjectsFirst } from '../../../../shared/utils/starredProjectsFirst';
+import { useWorkspaceRepoProjects } from '../../hooks/useWorkspaceRepoProjects';
 import { resolveSpawnRouting } from '../../spawn-routing';
 import { AGENT_KIND_META, visibleAgentKinds } from '../../agent-kind';
 import { AgentStartFields, type AgentStartRouting } from '../AgentStartFields';
@@ -42,15 +42,7 @@ export const AgentStart = ({ workspaceId }: Props) => {
       state.providers.filter((provider) => provider.connection === 'connected').map((p) => p.id),
     ),
   );
-  const projects = useAppStore(
-    useShallow((state) =>
-      starredProjectsFirst({
-        projects: state.projects.filter(
-          (project) => project.workspaceId === workspaceId && project.kind === 'repo',
-        ),
-      }),
-    ),
-  );
+  const projects = useWorkspaceRepoProjects({ workspaceId });
   useEffect(() => {
     const firstProjectId = projects[0]?.id ?? null;
     if (draft.projectId === null && firstProjectId !== null) {

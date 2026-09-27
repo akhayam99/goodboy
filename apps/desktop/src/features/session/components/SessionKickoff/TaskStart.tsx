@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button, Input, Skeleton, cn } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -11,6 +12,7 @@ import {
 import type { KickoffIssues } from './useKickoffIssues';
 import { StartFooter } from './StartFooter';
 import { DraftIssueBrief } from './DraftIssueBrief';
+import { HowToWorkOnIt } from './HowToWorkOnIt';
 import { issueBriefSource } from './issueBriefSource';
 import { useDraftStart } from './useDraftStart';
 
@@ -50,6 +52,10 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
     (state) => selectSessionDraft({ state, workspaceId }).pickedIssue,
   );
   const { start, isStarting, error } = useDraftStart({ workspaceId });
+  const [acceptedBrief, setAcceptedBrief] = useState<{
+    readonly title: string;
+    readonly goal: string;
+  } | null>(null);
 
   const visibleRows = issues.rows.filter((candidate) => matchesQuery({ candidate, query }));
   const selected =
@@ -174,19 +180,32 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
           </Button>
         </StartFooter>
       ) : (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <DraftIssueBrief
             workspaceId={workspaceId}
             candidate={pickedIssue}
-            onStart={({ title, goal }) =>
-              void start({ kind: 'task', candidate: pickedIssue, title, goal })
-            }
-            onDismiss={() => patchSessionDraft({ workspaceId, patch: { pickedIssue: null } })}
+            onStart={({ title, goal }) => setAcceptedBrief({ title, goal })}
+            onDismiss={() => {
+              setAcceptedBrief(null);
+              patchSessionDraft({ workspaceId, patch: { pickedIssue: null } });
+            }}
           />
-          {error == null ? null : (
-            <p role="alert" className="text-secondary text-danger">
-              {error}
-            </p>
+          {acceptedBrief == null ? null : (
+            <HowToWorkOnIt
+              workspaceId={workspaceId}
+              goal={acceptedBrief.goal}
+              isStarting={isStarting}
+              error={error}
+              onStart={(then) =>
+                void start({
+                  kind: 'task',
+                  candidate: pickedIssue,
+                  title: acceptedBrief.title,
+                  goal: acceptedBrief.goal,
+                  then,
+                })
+              }
+            />
           )}
         </div>
       )}

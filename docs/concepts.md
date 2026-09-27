@@ -812,8 +812,11 @@ language. It reads the issue text, not its comments, and answers in checked
 JSON, so a reply with a preamble fails instead of leaking into the goal. The
 brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
 text or Dismiss, and a failure stays inline in the card with Retry. The first
-three start the session with the brief's title and goal and link the issue;
-nothing exists before that. In the
+three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
+`SessionKickoff/`) underneath: Run a workflow (preselected, the workspace's
+first library preset) or Ask an agent, precompiled with that goal and
+editable. Its own action links the issue, creates the session and starts the
+workflow or agent in the same gesture; nothing exists before that. In the
 Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no

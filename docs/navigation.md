@@ -243,8 +243,12 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
 - **Pick up a task** shows the open issues of the connected trackers with a
   search field. Picking one and pressing **Pick up** proposes the brief under
   the list, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Use brief, Edit or Use issue text starts the session. Without a tracker it
-  shows the connect links.
+  Use brief, Edit or Use issue text settles the title and goal and opens
+  **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
+  or Ask an agent choice as the other two tabs, precompiled with that goal,
+  Run a workflow preselected. Its own primary links the issue, creates the
+  session and starts the workflow or agent in one gesture. Without a tracker
+  it shows the connect links.
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
 - **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
