@@ -332,7 +332,10 @@ emitted no block keeps the usual continue path. The missing-block case also
 emits `artifact_capture_failed` with code `missing`, so the transcript shows
 the Retry capture card. A captured artifact of the expected kind counts as the
 step output, so the repair turn completes the step without a step-done marker
-(`apps/desktop/src/features/artifacts/turnArtifactOutcome.ts`).
+(`apps/desktop/src/features/artifacts/turnArtifactOutcome.ts`). A blocked
+report or wireframe agent that owns no artifact reads "No artifact" in amber
+in the activity rows and the trail, instead of "Blocked" or "Needs you"
+(`isAgentMissingArtifact`, row reason `noArtifact`).
 
 Whatever the outcome, a turn that forked a mount hands off to one continuation
 turn on the new mount once it ends.

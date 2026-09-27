@@ -23,6 +23,18 @@ const agentWith = (status: AgentStatus, doneAt?: string): Agent =>
   }) as Agent;
 
 describe('agentStateWord', () => {
+  it('names a blocked agent that is missing its artifact instead of calling it done', () => {
+    const word = agentStateWord({
+      agent: agentWith('blocked'),
+      hasOpenQuestion: false,
+      isTurnLive: false,
+      hasActiveChild: false,
+      isMissingArtifact: true,
+    });
+
+    expect(word).toEqual({ word: 'No artifact', tone: 'warning', group: 'needs-you' });
+  });
+
   it('never puts a word in a group that contradicts isAgentFinished', () => {
     for (const status of STATUSES) {
       for (const doneAt of [undefined, '2026-09-26T10:00:00.000Z']) {

@@ -13,6 +13,7 @@ import type {
   WorkflowRun,
 } from '@goodboy/types';
 import { classifyAgent, type AgentKind } from '../agent-kind';
+import { isAgentMissingArtifact } from '../../artifacts/turnArtifactOutcome';
 import { attachedQuestionsFor } from './attachedQuestions';
 import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
@@ -28,6 +29,7 @@ export type TimelineAgentEntry = {
   readonly ordinal: number;
   readonly agent: Agent;
   readonly agentKind: AgentKind;
+  readonly isMissingArtifact: boolean;
   readonly stepLabel: string | null;
   readonly openQuestions: ReadonlyArray<OpenQuestion>;
   readonly terminalQuestions: ReadonlyArray<OpenQuestion>;
@@ -332,13 +334,15 @@ export const buildTimelineGroups = ({
         }),
       )
       .sort(compareNewestFirst);
+    const agentKind = classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null });
     return {
       kind: 'agent',
       id: entryId,
       at: creation.at,
       ordinal: agent.ordinal,
       agent,
-      agentKind: classifyAgent({ agent, override: agentKindOverride[agent.id] ?? null }),
+      agentKind,
+      isMissingArtifact: isAgentMissingArtifact({ agent, kind: agentKind, artifacts }),
       stepLabel,
       openQuestions: attachedQuestions.filter((question) => question.status === 'open'),
       terminalQuestions: attachedQuestions.filter((question) => question.status !== 'open'),

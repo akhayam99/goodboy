@@ -37,6 +37,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Failed';
     case 'blocked':
       return 'Blocked, tell the agent what to do next';
+    case 'noArtifact':
+      return 'No artifact, use Retry capture in the transcript';
     case 'needsApproval':
       return 'Needs approval, answer the request in the transcript';
     case 'stepFailed':
@@ -106,6 +108,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return 'Write to start';
     case 'blocked':
       return 'Blocked';
+    case 'noArtifact':
+      return 'No artifact';
     case 'needsApproval':
       return 'Needs approval';
     case 'stepBlocked':
@@ -177,7 +181,11 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
       if (state.reason?.kind === 'budget') {
         return 'budget';
       }
-      if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
+      if (
+        state.reason?.kind === 'blocked' ||
+        state.reason?.kind === 'stepBlocked' ||
+        state.reason?.kind === 'noArtifact'
+      ) {
         return 'approval';
       }
       return 'question';
@@ -206,6 +214,9 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   }
   if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
     return { state: node, label: 'Blocked' };
+  }
+  if (state.reason?.kind === 'noArtifact') {
+    return { state: node, label: 'No artifact' };
   }
   if (state.reason?.kind === 'needsApproval') {
     return { state: node, label: 'Needs approval' };
