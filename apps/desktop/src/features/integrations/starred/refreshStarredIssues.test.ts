@@ -113,7 +113,7 @@ describe('refreshStarredIssues', () => {
     expect(linearFetchIssuesByIds).toHaveBeenCalledTimes(1);
     expect(linearFetchIssuesByIds).toHaveBeenCalledWith({
       workspaceId: WORKSPACE,
-      issueIds: ['CAS-231', 'CAS-232'],
+      issueIds: ['lin-1', 'lin-2'],
     });
     expect(jiraGetIssues).not.toHaveBeenCalled();
     expect(lookup).toHaveBeenCalledTimes(1);

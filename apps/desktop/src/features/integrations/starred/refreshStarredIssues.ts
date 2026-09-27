@@ -69,7 +69,7 @@ const refreshLinear = async (
   }
   const issues = await linearFetchIssuesByIds({
     workspaceId,
-    issueIds: linearPaired.map((pair) => pair.target.identifier),
+    issueIds: linearPaired.map((pair) => pair.issue.externalId),
   }).catch(() => null);
   if (issues === null) {
     return;
