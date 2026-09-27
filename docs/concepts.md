@@ -869,6 +869,13 @@ same one the record shows. A record opens in a drawer beside the list, with the
 same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
 to it.
 
+Pull and merge requests come from the code hosts. GitHub lists the open pull
+requests of the workspace root repo that ask for your review, plus your own
+open ones updated in the last seven days, through the same `gh` login as issues
+(`listInboxPullRequests`). GitLab lists open merge requests assigned to you, and
+Bitbucket the pull requests of the linked repo. Open ones show as open, merged
+and closed ones as closed.
+
 With two or more projects in the workspace, the rail also filters by project.
 Code host records belong to the project at the workspace root. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
