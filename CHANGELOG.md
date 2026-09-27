@@ -12,6 +12,59 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.11.0
+
+Pick up an issue and start work on it in one step, reconnect a project you moved, and see a merged branch that gained new commits.
+
+This version updates your data in one direction. To go back to 0.10, restore the backup Goodboy made before updating.
+
+### New
+
+#### Start work right after picking up an issue
+<!-- gb area=sessions -->
+
+Once you settle an issue's brief in Pick up a task, How to work on it opens underneath with the goal already filled in. Run a workflow or ask an agent, and one click links the issue, creates the session and starts the work.
+
+#### Choose the project when you ask an agent
+<!-- gb area=agents -->
+
+Ask an agent has a project chip next to role and model when the workspace has more than one repo project. With a single project it is picked for you.
+
+#### A reopened note keeps its history
+<!-- gb area=review -->
+
+Reopening a resolved review note starts a new conversation next to the closed one, so both stay visible in Review.
+
+### Improved
+
+#### Merged, then new commits
+<!-- gb area=storage screen=settings/app/storage -->
+
+A branch that gained commits after its pull request merged reads Merged, then N new commits, on the session overview and under Needs a look in Storage. After-merge cleanup keeps such a branch instead of deleting it.
+
+#### Faster, clearer issue lookups
+<!-- gb area=inbox screen=inbox -->
+
+A lookup that hits a rate limit shows a countdown and tries again on its own, and Looking up names the trackers it asked. Linear and Jira hits show who the issue is assigned to. Starred issues refresh with one request per tracker where the tracker allows it.
+
+#### See what an import changes before it applies
+<!-- gb area=settings -->
+
+Importing a settings bundle shows how many workspaces, projects, skills, workflows, rules, scripts and integrations it adds or updates before you confirm.
+
+#### Quicker history rewrite previews
+<!-- gb area=review -->
+
+Rewrite history previews a long plan in a fraction of the time, so editing the plan stays responsive.
+
+### Fixed
+
+- Picking a moved project's new folder in the workspace picker reconnects the existing project, with its sessions and links, instead of adding a new one. <!-- gb area=app -->
+- Continue with workflow shows for a session whose only workflow run was discarded. <!-- gb area=workflows -->
+- A dismissed next step no longer comes back after two weeks. <!-- gb area=sessions -->
+- Clicking a starred issue opens its details in Goodboy instead of the tracker in the browser. <!-- gb area=inbox -->
+- Opening an artifact in your browser uses your default browser more reliably on macOS and Windows. <!-- gb area=artifacts -->
+
 ## Goodboy v0.10.0
 
 Rewrite a branch's history from its own page, find any issue by its code, and give every decision and wireframe a history you can go back to.
