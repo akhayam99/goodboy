@@ -235,7 +235,11 @@ export const WizardFrame = ({
         workspaceId: workspace.id,
         projectId: projects[0]?.id ?? null,
         choice,
-      });
+      }).catch((error: unknown) =>
+        useAppStore
+          .getState()
+          .reportError({ severity: 'error', title: "Couldn't create the session", error }),
+      );
     });
   };
 
