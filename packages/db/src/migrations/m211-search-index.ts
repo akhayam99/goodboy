@@ -1,7 +1,7 @@
 type IndexedSource = {
   readonly name: string;
   readonly table: string;
-  readonly docId: (row: 'NEW' | 'OLD') => string;
+  readonly docId: string;
   readonly watched: string;
   readonly when?: string;
   readonly kind: string;
@@ -24,39 +24,54 @@ const NOW = `CAST(unixepoch('subsec') * 1000 AS INTEGER)`;
 const DOC_COLUMNS = `id, fts_rowid, kind, ref_id, workspace_id, session_id, agent_id, mount_id,
     project_id, provider, container, status, occurred_at, created_at, updated_at`;
 
-const writeDoc = (source: IndexedSource): string => `
+type SourceParams = {
+  readonly source: IndexedSource;
+};
+
+type DocIdParams = SourceParams & {
+  readonly row: 'NEW' | 'OLD';
+};
+
+const docId = ({ source, row }: DocIdParams): string => source.docId.replaceAll('ROW.', `${row}.`);
+
+const writeDoc = ({ source }: SourceParams): string => `
   INSERT INTO search_docs (${DOC_COLUMNS})
-  SELECT ${source.docId('NEW')}, (SELECT IFNULL(MAX(fts_rowid), 0) + 1 FROM search_docs),
+  SELECT ${docId({ source, row: 'NEW' })}, (SELECT IFNULL(MAX(fts_rowid), 0) + 1 FROM search_docs),
     ${source.kind}, ${source.refId}, ${source.workspaceId ?? 'NULL'}, ${source.sessionId ?? 'NULL'},
     ${source.agentId ?? 'NULL'}, ${source.mountId ?? 'NULL'}, ${source.projectId ?? 'NULL'},
     ${source.provider ?? 'NULL'}, ${source.container ?? 'NULL'}, ${source.status ?? 'NULL'},
     ${source.occurredAt}, ${NOW}, ${NOW}
   WHERE ${source.when ?? '1'};
   INSERT INTO search_index (rowid, title, body)
-  SELECT fts_rowid, ${source.title}, ${source.body} FROM search_docs WHERE id = ${source.docId('NEW')};`;
+  SELECT fts_rowid, ${source.title}, ${source.body} FROM search_docs WHERE id = ${docId({ source, row: 'NEW' })};`;
 
-const triggersFor = (source: IndexedSource): string => `
+const triggersFor = ({ source }: SourceParams): string => `
 CREATE TRIGGER search_${source.name}_insert AFTER INSERT ON ${source.table} BEGIN
-  DELETE FROM search_docs WHERE id = ${source.docId('NEW')};${writeDoc(source)}
+  DELETE FROM search_docs WHERE id = ${docId({ source, row: 'NEW' })};${writeDoc({ source })}
 END;
 
 CREATE TRIGGER search_${source.name}_update AFTER UPDATE OF ${source.watched} ON ${source.table} BEGIN
-  DELETE FROM search_docs WHERE id IN (${source.docId('OLD')}, ${source.docId('NEW')});${writeDoc(source)}
+  DELETE FROM search_docs WHERE id IN (${docId({ source, row: 'OLD' })}, ${docId({ source, row: 'NEW' })});${writeDoc({ source })}
 END;
 
 CREATE TRIGGER search_${source.name}_delete AFTER DELETE ON ${source.table} BEGIN
-  DELETE FROM search_docs WHERE id = ${source.docId('OLD')};
+  DELETE FROM search_docs WHERE id = ${docId({ source, row: 'OLD' })};
 END;
 `;
 
-const jsonField = (column: string, path: string): string =>
+type JsonFieldParams = {
+  readonly column: string;
+  readonly path: string;
+};
+
+const jsonField = ({ column, path }: JsonFieldParams): string =>
   `CASE WHEN json_valid(${column}) THEN json_extract(${column}, '${path}') END`;
 
 const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'session',
     table: 'sessions',
-    docId: (row) => `'session:' || ${row}.id`,
+    docId: `'session:' || ROW.id`,
     watched: 'goal, workspace_id',
     kind: `'session'`,
     refId: 'NEW.id',
@@ -69,7 +84,7 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'message',
     table: 'messages',
-    docId: (row) => `'message:' || ${row}.id`,
+    docId: `'message:' || ROW.id`,
     watched: 'content, role',
     when: `NEW.role IN ('user', 'assistant')`,
     kind: `'message'`,
@@ -84,7 +99,7 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'agent',
     table: 'agents',
-    docId: (row) => `'agent:' || ${row}.id`,
+    docId: `'agent:' || ROW.id`,
     watched: 'name, output_summary',
     kind: `'agent'`,
     refId: 'NEW.id',
@@ -97,7 +112,7 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'artifact',
     table: 'session_artifacts',
-    docId: (row) => `'artifact:' || ${row}.id`,
+    docId: `'artifact:' || ROW.id`,
     watched: 'title, source_text, status',
     kind: 'NEW.kind',
     refId: 'NEW.id',
@@ -111,7 +126,7 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'decision',
     table: 'session_decisions',
-    docId: (row) => `'decision:' || ${row}.id`,
+    docId: `'decision:' || ROW.id`,
     watched: 'text, why, status',
     kind: `'decision'`,
     refId: 'NEW.id',
@@ -124,7 +139,7 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'question',
     table: 'open_questions',
-    docId: (row) => `'question:' || ${row}.id`,
+    docId: `'question:' || ROW.id`,
     watched: 'text, user_answer, status',
     kind: `'question'`,
     refId: 'NEW.id',
@@ -137,8 +152,7 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'linked_issue',
     table: 'session_external_tasks',
-    docId: (row) =>
-      `'task:' || ${row}.session_id || ':' || ${row}.provider || ':' || ${row}.external_id`,
+    docId: `'task:' || ROW.session_id || ':' || ROW.provider || ':' || ROW.external_id`,
     watched: 'session_id, provider, external_id, identifier, title',
     kind: `'issue'`,
     refId: 'NEW.external_id',
@@ -152,8 +166,7 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'starred_issue',
     table: 'workspace_starred_issues',
-    docId: (row) =>
-      `'starred:' || ${row}.workspace_id || ':' || ${row}.provider || ':' || ${row}.external_id`,
+    docId: `'starred:' || ROW.workspace_id || ':' || ROW.provider || ':' || ROW.external_id`,
     watched: 'identifier, title, state, container',
     kind: `'issue'`,
     refId: 'NEW.external_id',
@@ -168,22 +181,22 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
   {
     name: 'github_pr',
     table: 'github_pr_cache',
-    docId: (row) => `'ghpr:' || ${row}.repo_slug || ':' || ${row}.branch`,
+    docId: `'ghpr:' || ROW.repo_slug || ':' || ROW.branch`,
     watched: 'pr_json',
-    when: `${jsonField('NEW.pr_json', '$.number')} IS NOT NULL`,
+    when: `${jsonField({ column: 'NEW.pr_json', path: '$.number' })} IS NOT NULL`,
     kind: `'pr'`,
     refId: 'NEW.branch',
     provider: `'github'`,
     container: 'NEW.repo_slug',
-    status: jsonField('NEW.pr_json', '$.state'),
+    status: jsonField({ column: 'NEW.pr_json', path: '$.state' }),
     occurredAt: 'NEW.fetched_at',
-    title: `'#' || ${jsonField('NEW.pr_json', '$.number')} || ' ' || COALESCE(${jsonField('NEW.pr_json', '$.title')}, '')`,
+    title: `'#' || ${jsonField({ column: 'NEW.pr_json', path: '$.number' })} || ' ' || COALESCE(${jsonField({ column: 'NEW.pr_json', path: '$.title' })}, '')`,
     body: `NEW.branch || ' ' || NEW.repo_slug`,
   },
   {
     name: 'mount_pr',
     table: 'mount_pr_links',
-    docId: (row) => `'mountpr:' || ${row}.id`,
+    docId: `'mountpr:' || ROW.id`,
     watched: 'pr_number, head_branch, state, snapshot_json',
     kind: `'pr'`,
     refId: 'NEW.id',
@@ -192,13 +205,13 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
     container: 'NEW.repo_slug',
     status: 'NEW.state',
     occurredAt: 'NEW.created_at',
-    title: `'#' || NEW.pr_number || ' ' || COALESCE(${jsonField('NEW.snapshot_json', '$.title')}, '')`,
+    title: `'#' || NEW.pr_number || ' ' || COALESCE(${jsonField({ column: 'NEW.snapshot_json', path: '$.title' })}, '')`,
     body: `NEW.head_branch || ' ' || NEW.repo_slug`,
   },
   {
     name: 'branch',
     table: 'session_worktrees',
-    docId: (row) => `'branch:' || ${row}.id`,
+    docId: `'branch:' || ROW.id`,
     watched: 'branch, mount_name, project_id, repo_slug, is_attached',
     kind: `'branch'`,
     refId: 'NEW.id',
@@ -274,4 +287,4 @@ CREATE TABLE search_excluded_projects (
   updated_at INTEGER NOT NULL,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
-${SOURCES.map(triggersFor).join('')}`;
+${SOURCES.map((source) => triggersFor({ source })).join('')}`;

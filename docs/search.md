@@ -60,3 +60,26 @@ Deletes cascade. `search_docs` has foreign keys to sessions, agents,
 mounts, projects and workspaces with `ON DELETE CASCADE`, and the delete
 trigger of each source removes its own doc. A tombstoned session or agent
 keeps its docs until the tombstone is collected, and the query hides them.
+
+### Backfill
+
+m211 creates the triggers but indexes nothing, so an upgrade never blocks
+boot. Rows written before it are filled by `runSearchBackfillStep` in
+`packages/db/src/maintenance/searchBackfill.ts`, one batch of 500 rows of one
+source per call, in its own transaction. `search_index_state` keeps a cursor
+per source (the row id, or the rowid for the three tables without one), so
+the backfill resumes where it stopped after a quit or a crash. A doc the
+triggers already wrote is skipped, so running it twice changes nothing.
+
+The backfill has its own copy of the per-source columns. The triggers are
+frozen in m211 and the backfill is not, so `searchBackfill.test.ts` checks
+that a rebuilt index equals the one the triggers wrote, row for row. A
+migration that changes a trigger changes the backfill in the same pull
+request.
+
+`rebuildSearchIndex` empties the index and the cursors; the next idle steps
+refill it. `purgeExcludedSearchDocs` deletes the docs of the projects in
+`search_excluded_projects`. A doc belongs to a project when it names it,
+when its session's active project is that project, when its session or
+mount has a worktree of it, or, for a pull request, when a worktree of it
+has the same repo and branch.

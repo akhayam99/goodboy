@@ -23,6 +23,14 @@ export {
   pickRestorableSnapshot,
 } from './migrations/downgradeGuard';
 export { runDatabaseHygiene, type DatabaseHygieneResult } from './maintenance/runDatabaseHygiene';
+export {
+  purgeExcludedSearchDocs,
+  readSearchBackfillProgress,
+  rebuildSearchIndex,
+  runSearchBackfillStep,
+  type SearchBackfillProgress,
+  type SearchBackfillStep,
+} from './maintenance/searchBackfill';
 
 export { NotFoundError, UniqueViolationError } from './shared/errors';
 
