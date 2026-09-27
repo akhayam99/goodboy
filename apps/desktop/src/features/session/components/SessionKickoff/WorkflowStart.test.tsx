@@ -136,6 +136,16 @@ describe('WorkflowStart', () => {
     });
   });
 
+  it('explains Custom for the kickoff, where no steps are shown yet', () => {
+    draftWith({ workflowMode: 'custom' });
+    renderStart();
+
+    expect(
+      screen.getByText('Write the steps yourself, or draft them with the planner.'),
+    ).toBeDefined();
+    expect(screen.queryByText('You set every step. Click a step to edit it.')).toBeNull();
+  });
+
   it('opens the shared builder for custom steps', () => {
     draftWith({ workflowMode: 'custom' });
     renderStart();

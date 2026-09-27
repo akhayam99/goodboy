@@ -9,6 +9,7 @@ type Props = {
   readonly mode: Mode;
   readonly disabled: boolean;
   readonly control?: ReactNode;
+  readonly hints?: Partial<Record<Mode, ReactNode>>;
   readonly onChange: (mode: Mode) => void;
 };
 
@@ -23,7 +24,7 @@ const MODE_HINT: Record<Mode, ReactNode> = {
   preset: 'A saved sequence. Edit any step before starting.',
 };
 
-export const ModeSwitch = ({ mode, disabled, control = null, onChange }: Props) => (
+export const ModeSwitch = ({ mode, disabled, control = null, hints = {}, onChange }: Props) => (
   <div className="flex flex-col gap-1.5">
     <div className="flex flex-wrap items-center justify-between gap-3">
       <SegmentedTabs
@@ -39,6 +40,6 @@ export const ModeSwitch = ({ mode, disabled, control = null, onChange }: Props) 
       />
       {control}
     </div>
-    <div className="text-secondary text-faint-foreground">{MODE_HINT[mode]}</div>
+    <div className="text-secondary text-faint-foreground">{hints[mode] ?? MODE_HINT[mode]}</div>
   </div>
 );

@@ -16,6 +16,10 @@ import { StartFooter } from './StartFooter';
 import { WorkflowPresetGroup } from './WorkflowPresetGroup';
 import { useDraftStart } from './useDraftStart';
 
+const KICKOFF_MODE_HINTS: Partial<Record<Mode, string>> = {
+  custom: 'Write the steps yourself, or draft them with the planner.',
+};
+
 type Props = {
   readonly workspaceId: WorkspaceId;
 };
@@ -106,7 +110,12 @@ export const WorkflowStart = ({ workspaceId }: Props) => {
         autoGrow
         className="text-body"
       />
-      <ModeSwitch mode={mode} disabled={isStarting} onChange={changeMode} />
+      <ModeSwitch
+        mode={mode}
+        disabled={isStarting}
+        hints={KICKOFF_MODE_HINTS}
+        onChange={changeMode}
+      />
       {isPreset && workflows.length === 0 ? (
         <p className="px-2.5 text-label text-muted-foreground">
           No workflows in this workspace yet.

@@ -760,6 +760,13 @@ describe('WorkflowBuilderView (orchestrated mode)', () => {
     expect(tabs[0]!.getAttribute('aria-selected')).toBe('true');
   });
 
+  it('keeps its own Custom hint, where the steps are on screen', () => {
+    render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Custom' }));
+
+    expect(screen.getByText('You set every step. Click a step to edit it.')).toBeDefined();
+  });
+
   it('starts from the goal alone and leaves the process out of the run', async () => {
     render(<WorkflowBuilderView session={session} onClose={vi.fn()} />);
     setGoal();
