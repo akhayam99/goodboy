@@ -703,7 +703,8 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   Below the worktrees, `Branches` (`BranchesSection`) lists local branches
   only, in the same scope, grouped by project. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
-  test cached by both tips. A filter picks `Made by Goodboy` (the default,
+  test cached by both tips and fed each branch's merged pull request head
+  (`listMergedRequestHeads`). A filter picks `Made by Goodboy` (the default,
   branch names from `session_worktrees` and `retained_worktree_paths`),
   `Yours` (plus branches whose tip is authored by the repo's `user.email`,
   shown `By you`) or `All local`; protected branches never show. Tabs split

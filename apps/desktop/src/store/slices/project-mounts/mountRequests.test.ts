@@ -144,7 +144,7 @@ describe('observeMountRequestTransition', () => {
       sessionId,
       projectId,
       previous: makeLink({ state: 'approved' }),
-      next: makeLink({ state: 'merged' }),
+      next: { ...makeLink({ state: 'merged' }), mergedHeadSha: 'sha-merged' },
       title: 'Persist the session trace',
       url: 'https://github.com/acme/web/pull/42',
     });
@@ -153,6 +153,7 @@ describe('observeMountRequestTransition', () => {
       sessionId,
       mountId,
       expectedBranch: 'ak/feat-session-events',
+      mergedHeadSha: 'sha-merged',
     });
     expect(proposeMountCleanup).not.toHaveBeenCalled();
   });

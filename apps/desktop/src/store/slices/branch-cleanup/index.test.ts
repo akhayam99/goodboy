@@ -18,6 +18,7 @@ const h = vi.hoisted(() => ({
   listExpiredDeletedBranches: vi.fn(async () => [] as ReadonlyArray<unknown>),
   forgetDeletedBranch: vi.fn(),
   listGoodboyBranches: vi.fn(async () => [] as ReadonlyArray<unknown>),
+  listMergedRequestHeads: vi.fn(async () => ({ 'goodboy/fx-rates': 'sha-merged' })),
   listProjectBranches: vi.fn(),
   loadMountViews: vi.fn(),
   branchMergeState: vi.fn(),
@@ -37,6 +38,7 @@ vi.mock('@goodboy/db', () => ({
   listExpiredDeletedBranches: h.listExpiredDeletedBranches,
   forgetDeletedBranch: h.forgetDeletedBranch,
   listGoodboyBranches: h.listGoodboyBranches,
+  listMergedRequestHeads: h.listMergedRequestHeads,
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({ projectFetch: h.projectFetch }));
@@ -216,6 +218,34 @@ describe('runAfterMergeCleanup', () => {
     expect(h.deleteBranchChecked).not.toHaveBeenCalled();
   });
 
+  it('tests the merge against the recorded merged head and leases origin on it', async () => {
+    const context = makeStore({ workspaceRule: 'local-and-origin' });
+
+    await runAfterMergeCleanup(
+      context.set,
+      context.get,
+    )({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      expectedBranch: BRANCH,
+      mergedHeadSha: 'sha-merged',
+    });
+
+    expect(h.branchMergeState).toHaveBeenCalledWith({
+      repoPath: '/repos/ledger-core',
+      branch: BRANCH,
+      base: 'main',
+      mergedHead: 'sha-merged',
+    });
+    expect(h.deleteBranchChecked).toHaveBeenCalledWith({
+      repoRoot: '/repos/ledger-core',
+      branch: BRANCH,
+      expectedSha: 'sha-tip',
+      alsoOrigin: true,
+      originLeaseSha: 'sha-merged',
+    });
+  });
+
   it('removes the folder, deletes the branch by sha and logs it with a restore id', async () => {
     const context = makeStore();
 
@@ -314,6 +344,7 @@ describe('loadProjectBranches', () => {
     expect(h.listProjectBranches).toHaveBeenCalledWith({
       repoRoot: '/repos/ledger-core',
       base: null,
+      mergedHeads: { [BRANCH]: 'sha-merged' },
     });
     expect(context.store.state.branchScans[PROJECT_ID]?.status).toBe('ready');
 

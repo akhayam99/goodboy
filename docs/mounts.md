@@ -241,7 +241,9 @@ commits` otherwise. Without a record, only a merge commit or a rebase
   counts. The tip is parked
   under `refs/goodboy/deleted/<branch>`, then `git update-ref -d` deletes
   the branch only if it still points at the checked sha. The origin choice
-  runs `git push origin --delete` with `--force-with-lease` and is off when
+  runs `git push origin --delete` with `--force-with-lease` (on the merged
+  head when the link has one, so a push after the merge refuses) and is off
+  when
   GitHub already deletes merged branches (`delete_branch_on_merge`, read
   once a day). Anything kept falls back to the merge cleanup proposal with
   the reason (`Kept goodboy/fx-rates: 2 new commits after the merge.`).
