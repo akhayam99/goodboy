@@ -1,98 +1,64 @@
-// @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 
-const SESSION_ID = 'session-harborline-first' as SessionId;
-
-const { store, setState } = vi.hoisted(() => ({
+const { store } = vi.hoisted(() => ({
   store: {
-    createSession: vi.fn(async () => ({ session: { id: 'session-harborline-first' } })),
-    spawnAgent: vi.fn(async () => undefined),
-    focusSessionSetupStep: vi.fn(),
+    startSessionFromDraft: vi.fn(async () => undefined),
+    patchSessionDraft: vi.fn(),
+    openSessionDraft: vi.fn(),
   },
-  setState: vi.fn(),
 }));
 
 vi.mock('../../../store', () => ({
-  useAppStore: { getState: () => store, setState },
+  useAppStore: { getState: () => store },
 }));
 
-import { scoutKickoffPrompt } from './scoutKickoffPrompt';
-import { SCOUT_FIRST_TITLE, handOffFirstSession, startFirstScout } from './startFirstSession';
+import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/AgentStart';
+import { handOffFirstSession, startFirstScout } from './startFirstSession';
 
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
 const PROJECT_ID = 'project-ledger-core' as ProjectId;
 
 beforeEach(() => {
-  store.createSession.mockClear();
-  store.spawnAgent.mockClear();
-  store.focusSessionSetupStep.mockClear();
-  setState.mockClear();
+  store.startSessionFromDraft.mockClear();
+  store.patchSessionDraft.mockClear();
+  store.openSessionDraft.mockClear();
 });
 
 describe('startFirstScout', () => {
-  it('creates the first session in the picked project and starts Scout on the prompt', async () => {
+  it('starts the first session from a scout draft in the picked project, the prompt as its focus', async () => {
     await startFirstScout({
       workspaceId: WORKSPACE_ID,
       projectId: PROJECT_ID,
       prompt: 'Find one small bug',
     });
 
-    expect(store.createSession).toHaveBeenCalledWith({
+    expect(store.patchSessionDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
-      goal: 'Find one small bug',
-      title: 'Find one small bug',
-      omitGoalSlot: false,
-      projectId: PROJECT_ID,
+      patch: { projectId: PROJECT_ID },
     });
-    expect(store.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
-      kindOverride: 'scout',
-      initialPrompt: scoutKickoffPrompt({ focus: 'Find one small bug' }),
-      focus: 'agent',
-    });
-    expect(setState).toHaveBeenCalledWith({ goodboyNamedSessionId: SESSION_ID });
-  });
 
-  it('names an empty focus after Scout and keeps the goal empty', async () => {
-    await startFirstScout({ workspaceId: WORKSPACE_ID, projectId: null, prompt: '  ' });
-
-    expect(store.createSession).toHaveBeenCalledWith({
+    expect(store.startSessionFromDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
-      goal: SCOUT_FIRST_TITLE,
-      title: SCOUT_FIRST_TITLE,
-      omitGoalSlot: true,
+      start: {
+        kind: 'scout',
+        agentKind: 'scout',
+        focus: 'Find one small bug',
+        prompt: scoutKickoffPrompt({ focus: 'Find one small bug' }),
+        routing: null,
+      },
     });
   });
 });
 
 describe('handOffFirstSession', () => {
-  it('opens a blank session in the project on its Start the work step for a workflow', async () => {
-    await handOffFirstSession({
+  it('opens the session draft on the picked choice and project', () => {
+    handOffFirstSession({ workspaceId: WORKSPACE_ID, projectId: PROJECT_ID, choice: 'workflow' });
+
+    expect(store.patchSessionDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
-      projectId: PROJECT_ID,
-      choice: 'workflow',
+      patch: { choice: 'workflow', projectId: PROJECT_ID },
     });
-
-    expect(store.createSession).toHaveBeenCalledWith({
-      workspaceId: WORKSPACE_ID,
-      goal: '',
-      omitGoalSlot: true,
-      projectId: PROJECT_ID,
-    });
-    expect(store.focusSessionSetupStep).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      step: 'work',
-    });
-  });
-
-  it('opens the Inbox for a task and creates nothing', async () => {
-    const onInbox = vi.fn();
-    window.addEventListener('goodboy:open-inbox', onInbox);
-
-    await handOffFirstSession({ workspaceId: WORKSPACE_ID, projectId: PROJECT_ID, choice: 'task' });
-
-    window.removeEventListener('goodboy:open-inbox', onInbox);
-    expect(onInbox).toHaveBeenCalledOnce();
-    expect(store.createSession).not.toHaveBeenCalled();
+    expect(store.openSessionDraft).toHaveBeenCalledOnce();
   });
 });

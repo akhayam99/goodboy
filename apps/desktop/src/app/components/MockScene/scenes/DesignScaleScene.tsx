@@ -3,11 +3,7 @@ import { Eyebrow, cn } from '@goodboy/ui';
 const ROLE_SAMPLES = [
   { role: 'text-display', className: 'text-display', sample: 'Connect your first provider' },
   { role: 'text-title', className: 'text-title', sample: 'Fix the half-cent rounding drift' },
-  {
-    role: 'text-heading',
-    className: 'text-heading',
-    sample: 'Give your first agent something to do',
-  },
+  { role: 'text-heading', className: 'text-heading', sample: 'How do you want to start?' },
   { role: 'text-row', className: 'text-row', sample: 'Rewrite the Harborline retry queue' },
   {
     role: 'text-body',

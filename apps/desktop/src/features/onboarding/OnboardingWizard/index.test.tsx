@@ -232,7 +232,7 @@ const setHook = (partial: Partial<OnboardingWizardState>) =>
 beforeEach(() => {
   finishWizard.mockClear();
   firstSession.startFirstScout.mockReset().mockResolvedValue(undefined);
-  firstSession.handOffFirstSession.mockReset().mockResolvedValue(undefined);
+  firstSession.handOffFirstSession.mockReset();
   Object.assign(hookState, baseState);
   Object.assign(tools.connected, {
     github: false,

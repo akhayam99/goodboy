@@ -55,11 +55,11 @@ describe('FirstSessionStep', () => {
     expect(onConnectTaskManager).toHaveBeenCalledOnce();
   });
 
-  it('hands a task start to the Inbox when an issue source exists', () => {
+  it('hands a task start to a new session when an issue source exists', () => {
     const { onHandOff } = renderStep({ hasIssueSource: true });
     fireEvent.click(screen.getByRole('tab', { name: /pick up a task/i }));
     expect(screen.queryByText('Connect a code host to see your tasks')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Open the Inbox' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open a new session' }));
     expect(onHandOff).toHaveBeenCalledWith('task');
   });
 

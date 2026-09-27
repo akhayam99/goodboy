@@ -230,17 +230,13 @@ export const WizardFrame = ({
     if (workspace === null) {
       return;
     }
-    close(() => {
-      void handOffFirstSession({
+    close(() =>
+      handOffFirstSession({
         workspaceId: workspace.id,
         projectId: projects[0]?.id ?? null,
         choice,
-      }).catch((error: unknown) =>
-        useAppStore
-          .getState()
-          .reportError({ severity: 'error', title: "Couldn't create the session", error }),
-      );
-    });
+      }),
+    );
   };
 
   const footer = wizardFooter({
