@@ -23,7 +23,6 @@ export const Artifacts = () => (
       <More href={`${SITE.concepts}#plans`}>How plans work</More>
     </div>
     <Shot figure={S13} />
-    <div className="sp sm" />
     <Shot figure={S14} />
   </Block>
 );

@@ -464,8 +464,8 @@ section.block.alt .window {
   height: 96px;
 }
 
-.sp.sm {
-  height: 28px;
+.shot + .shot {
+  margin-top: 28px;
 }
 
 .duo {
