@@ -72,6 +72,7 @@ import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
 import { ListboxScene } from './scenes/ListboxScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
+import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -138,9 +139,11 @@ export const MOCK_SCENES = {
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,
+  'crash-report': CrashReportScene,
 };
 
 export const MockScene = () => {
+  useReportSheetParam();
   useEffect(() => {
     document.getElementById('boot-shell')?.remove();
   }, []);
