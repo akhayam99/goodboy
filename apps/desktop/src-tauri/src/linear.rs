@@ -216,6 +216,41 @@ query AssignedIssues($filter: IssueFilter!) {
 }
 "#;
 
+const ISSUES_BY_ID_QUERY: &str = r#"
+query IssuesByIds($ids: [String!]!) {
+  issues(first: 250, filter: { id: { in: $ids } }) {
+    nodes {
+      id
+      identifier
+      title
+      description
+      url
+      state { name type }
+      team { key }
+      priority
+      priorityLabel
+      assignee { name }
+      creator { name }
+      project { name }
+      labels { nodes { name color } }
+      updatedAt
+      branchName
+      attachments(first: 10) {
+        nodes { id title url sourceType metadata }
+      }
+    }
+  }
+}
+"#;
+
+const TEAM_KEYS_QUERY: &str = r#"
+query TeamKeys {
+  teams(first: 250) {
+    nodes { key }
+  }
+}
+"#;
+
 const ISSUE_QUERY: &str = r#"
 query Issue($issueId: String!) {
   issue(id: $issueId) {
@@ -455,6 +490,34 @@ pub async fn linear_fetch_issue(
 }
 
 #[tauri::command]
+pub async fn linear_fetch_issues_by_ids(
+    workspace_id: String,
+    project_id: Option<String>,
+    issue_ids: Vec<String>,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<Vec<LinearIssue>, LinearError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let resp: IssuesResponse = graphql(
+        &token,
+        ISSUES_BY_ID_QUERY,
+        Some(serde_json::json!({ "ids": issue_ids })),
+    )
+    .await?;
+    Ok(resp.issues.nodes)
+}
+
+#[tauri::command]
+pub async fn linear_fetch_team_keys(
+    workspace_id: String,
+    project_id: Option<String>,
+    cache: State<'_, LinearTokenCache>,
+) -> Result<Vec<String>, LinearError> {
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let resp: TeamKeysResponse = graphql(&token, TEAM_KEYS_QUERY, None).await?;
+    Ok(resp.teams.nodes.into_iter().map(|node| node.key).collect())
+}
+
+#[tauri::command]
 pub async fn linear_fetch_issue_comments(
     workspace_id: String,
     project_id: Option<String>,
@@ -629,6 +692,16 @@ struct IssueStateUpdateResponse {
 #[derive(Deserialize)]
 struct ViewerResponse {
     viewer: LinearViewer,
+}
+
+#[derive(Deserialize)]
+struct LinearTeamKey {
+    key: String,
+}
+
+#[derive(Deserialize)]
+struct TeamKeysResponse {
+    teams: Nodes<LinearTeamKey>,
 }
 
 #[derive(Deserialize)]

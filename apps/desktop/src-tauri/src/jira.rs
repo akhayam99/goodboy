@@ -144,6 +144,14 @@ fn build_project_jql(project_key: &str, assigned_only: bool) -> String {
     )
 }
 
+fn build_keys_jql(issue_keys: &[String]) -> String {
+    let quoted: Vec<String> = issue_keys
+        .iter()
+        .map(|key| format!("\"{}\"", key.trim()))
+        .collect();
+    format!("key in ({})", quoted.join(", "))
+}
+
 fn error_message(body: &str) -> Option<String> {
     let parsed: Value = serde_json::from_str(body).ok()?;
     let messages: Vec<String> = parsed
@@ -947,6 +955,34 @@ pub async fn jira_list_issues(
 }
 
 #[tauri::command]
+pub async fn jira_get_issues(
+    workspace_id: String,
+    project_id: Option<String>,
+    site_url: String,
+    email: String,
+    issue_keys: Vec<String>,
+    cache: State<'_, JiraTokenCache>,
+) -> Result<Vec<JiraIssue>, JiraError> {
+    if issue_keys.is_empty() {
+        return Ok(Vec::new());
+    }
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let root = site_root(&site_url)?;
+    let base = api_base(&site_url)?;
+    let credentials = Credentials {
+        root: &root,
+        email: &email,
+        token: &token,
+    };
+    let jql = build_keys_jql(&issue_keys);
+    let raw = search_issues(&credentials, &base, &jql).await?;
+    Ok(raw
+        .into_iter()
+        .map(|issue| map_issue(issue, credentials.root))
+        .collect())
+}
+
+#[tauri::command]
 pub async fn jira_get_issue(
     workspace_id: String,
     project_id: Option<String>,
@@ -1306,6 +1342,19 @@ mod tests {
             build_project_jql("GB", false),
             "project = \"GB\" AND statusCategory != Done ORDER BY updated DESC"
         );
+    }
+
+    #[test]
+    fn build_keys_jql_quotes_each_key() {
+        assert_eq!(
+            build_keys_jql(&["NW-142".to_string(), "OPS-44".to_string()]),
+            "key in (\"NW-142\", \"OPS-44\")"
+        );
+    }
+
+    #[test]
+    fn build_keys_jql_trims_whitespace_around_keys() {
+        assert_eq!(build_keys_jql(&[" NW-142 ".to_string()]), "key in (\"NW-142\")");
     }
 
     #[test]
