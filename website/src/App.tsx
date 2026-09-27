@@ -12,6 +12,7 @@ import { Routing } from './sections/Routing';
 import { Integrations } from './sections/Integrations';
 import { Review } from './sections/Review';
 import { Housekeeping } from './sections/Housekeeping';
+import { Features } from './sections/Features';
 import { Privacy } from './sections/Privacy';
 import { Faq } from './sections/Faq';
 import { Install } from './sections/Install';
@@ -33,6 +34,7 @@ export const App = () => (
       <Integrations />
       <Review />
       <Housekeeping />
+      <Features />
       <Privacy />
       <Faq />
       <Install />

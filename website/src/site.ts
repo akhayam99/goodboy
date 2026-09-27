@@ -5,6 +5,7 @@ export const SITE = {
   latest: 'https://github.com/akhayam99/goodboy/releases/latest',
   linux: 'https://github.com/akhayam99/goodboy/releases',
   issues: 'https://github.com/akhayam99/goodboy/issues',
+  features: 'https://github.com/akhayam99/goodboy/blob/main/FEATURES.md',
   concepts: 'https://github.com/akhayam99/goodboy/blob/main/docs/concepts.md',
   privacy: 'https://github.com/akhayam99/goodboy#where-your-work-lives',
   providersDoc: 'https://github.com/akhayam99/goodboy/blob/main/docs/providers.md',
