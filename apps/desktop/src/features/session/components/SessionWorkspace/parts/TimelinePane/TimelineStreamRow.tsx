@@ -20,6 +20,7 @@ export type TimelineRowAction = {
   readonly label: string;
   readonly onAct: () => void;
   readonly asksUser?: boolean;
+  readonly isBusy?: boolean;
 };
 
 type Props = {
@@ -186,6 +187,7 @@ export const TimelineStreamRow = ({
                 emphasis={action.asksUser === true ? 'outline' : 'solid'}
                 size="sm"
                 className="h-6"
+                isBusy={action.isBusy === true}
                 onClick={action.onAct}
               >
                 {action.label}

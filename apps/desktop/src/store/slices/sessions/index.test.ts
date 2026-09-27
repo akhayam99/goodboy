@@ -708,7 +708,16 @@ describe('store contract', () => {
         });
         await store.getState().bulkArchiveTask([SESSION_ID, SESSION_ID_2]);
         expect(store.getState().sessions.map((x) => x.id)).toEqual([SESSION_ID]);
-        expect(storySpies.insertNotification).toHaveBeenCalled();
+        await vi.waitFor(() =>
+          expect(storySpies.insertNotification).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+              title: "Couldn't archive 1 of 2 sessions",
+              sessionId: SESSION_ID,
+              body: expect.stringContaining('db down'),
+            }),
+          ),
+        );
       });
 
       it('bulkUnarchiveTask restores every selected session into the active list', async () => {

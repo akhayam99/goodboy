@@ -30,6 +30,7 @@ import { runSpendUsd } from '../../../../../../store/slices/workflows/runSpendUs
 import { useSessionRoleModels } from '../../../../../../shared/hooks/useSessionRoleModels';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
+import { usePendingAction } from '../../../../../../shared/hooks/usePendingAction';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
 import { isWorkflowRunClosable } from '../../../../../workflows/isWorkflowRunClosable';
 import { WorkflowRunMenu } from '../../../../../workflows/components/WorkflowRunMenu';
@@ -116,6 +117,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
   const openContextDrawer = useAppStore((s) => s.openContextDrawer);
   const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
+  const pending = usePendingAction({ sessionId });
   const activity = useActivityFilter();
   const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
   const diffStats = useMountDiffStats(sessionId);
@@ -491,14 +493,26 @@ export const TimelinePane = ({ session, actions }: Props) => {
         const { agent } = ask;
         return {
           label: `Start ${ask.step.name}`,
-          onAct: () => void advanceAgent({ agent }),
+          isBusy: pending.pendingKeys.has(agent.id),
+          onAct: () =>
+            void pending.run({
+              key: agent.id,
+              failureTitle: "The next step didn't start",
+              task: () => advanceAgent({ agent }),
+            }),
         };
       }
       case 'continue': {
         const { agent } = ask;
         return {
           label: entry.kind === 'run' ? 'Continue step' : 'Continue',
-          onAct: () => void continueStoppedAgent({ sessionId, agentId: agent.id }),
+          isBusy: pending.pendingKeys.has(agent.id),
+          onAct: () =>
+            void pending.run({
+              key: agent.id,
+              failureTitle: "Couldn't continue the agent",
+              task: () => continueStoppedAgent({ sessionId, agentId: agent.id }),
+            }),
         };
       }
       default: {

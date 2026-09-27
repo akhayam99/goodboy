@@ -265,6 +265,10 @@ about its effect is a worse defect than one that reads badly.
   alert, and it clears the moment routing changes.
 - **Unknown is never zero.** A failed load draws a dash with a muted "not
   loaded" hint, or an error state with Retry. Never 0, and never "nothing".
+- **Every action answers twice.** Pending shows at once on the control that
+  started it, then the new state shows without a reload, or the failure lands
+  in the log. `packages/ui/DESIGN-SYSTEM.md` → Action feedback has the
+  mechanics.
 - **No echo toasts.** A control that already shows its new value (switch,
   select, a field saved on blur) saves silently, like VS Code and Linear
   settings.

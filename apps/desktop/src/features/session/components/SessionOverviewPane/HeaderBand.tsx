@@ -5,6 +5,7 @@ import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { sessionTitle } from '../../sessionTitle';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
+import { SessionRefreshAction } from './SessionRefreshAction';
 import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { GoalTeaser } from './GoalTeaser';
@@ -78,6 +79,7 @@ export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props
             <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
           ) : null}
           <div className="flex shrink-0 items-center gap-1">
+            {isArchived ? null : <SessionRefreshAction sessionId={sessionId} />}
             <SessionDestructiveActions session={session} />
           </div>
         </div>

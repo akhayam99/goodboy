@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../store';
+import { ReportedError } from '../../../store/slices/notifications/reportedError';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -35,7 +36,7 @@ export const useMountProposalActions = ({ sessionId }: Params): MountProposalAct
           body: `Could not add ${projectName}. Try again. ${formatError(error)}`,
           sessionId,
         });
-        throw error;
+        throw new ReportedError(formatError(error));
       }
     },
     [emitNotification, ensureProjectMounted, sessionId],

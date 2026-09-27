@@ -42,7 +42,12 @@ file holds those explanations. Everything below has been "fixed" at least once a
   `resolveRowState`). Only `nextStage` computes it: thread writes go through
   `saveResolveThread`, queue decisions through `advanceResolveStage`. A write
   that calls `upsertResolveThread` directly skips the stage and leaves the row
-  lying. Verdicts in
+  lying. The Resolve lens reads its rows from `sessionResolveQueueItems`,
+  whose entries carry a copy of the thread row. `projectResolveRows` swaps
+  those copies for the fresh rows by thread id, so every thread write shows
+  on the queue at once. A projection that sets `sessionResolveThreads` alone
+  leaves the queue on the old row: a started resolver stays invisible until a
+  reload. Verdicts in
   memory are derived from the row through `threadOutcome`. They are never
   rebuilt by replaying assistant messages. Marker parsing writes rows, but it
   does not own them. `resolve_publications` and `resolve_publication_threads`

@@ -40,6 +40,7 @@ import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { isReportedError } from '../notifications/reportedError';
 
 const spawnQueue = createKeyedQueue();
 
@@ -273,16 +274,23 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
     }
   } else if (kickoff.length > 0) {
     const handedPlan = planSection === '' ? null : planForKickoff;
-    void get().sendTurn({
-      sessionId,
-      agentId: inserted.id,
-      content: kickoff,
-      ...(args.mountId !== undefined && { mountId: args.mountId }),
-      handoff: {
-        instruction: baseKickoff,
-        plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
-      },
-    });
+    void get()
+      .sendTurn({
+        sessionId,
+        agentId: inserted.id,
+        content: kickoff,
+        ...(args.mountId !== undefined && { mountId: args.mountId }),
+        handoff: {
+          instruction: baseKickoff,
+          plan: handedPlan === null ? null : { id: handedPlan.id, title: handedPlan.title },
+        },
+      })
+      .catch((error: unknown) => {
+        if (isReportedError(error)) {
+          return;
+        }
+        void get().reportError({ title: "The agent didn't start", error, sessionId });
+      });
   }
 
   if (planToConsume) {

@@ -4,6 +4,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { prEventPayload } from './prEventPayload';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
+import { ReportedError } from '../notifications/reportedError';
 
 const MERGE_FLAG: Record<PrMergeMethod, string> = {
   squash: '--squash',
@@ -47,7 +48,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
             sessionId,
             workspaceId: workspace.id,
           });
-          throw new Error(errMsg);
+          throw new ReportedError(errMsg);
         }
         await get().refreshSessionPr(sessionId, { force: true });
         await get().recordSessionEventOnce({

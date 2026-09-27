@@ -102,6 +102,7 @@ const harness = () => {
     sendTurn: vi.fn(async () => ({ blockedOverBudget: false })),
     updateResolveThread: vi.fn(async () => true),
     refreshPrDescription: vi.fn(async () => false),
+    refreshSessionPr: vi.fn(async () => undefined),
     loadHistoryDraft: vi.fn(async () => undefined),
   };
   const set = ((patch: unknown) => {
@@ -165,6 +166,11 @@ describe('rebase on main', () => {
       expect.objectContaining({ branch: 'fix/ledger-postings', expectedRemoteSha: 'remote-sha' }),
     );
     expect(read().historyRuns[MOUNT_ID]?.phase).toBe('pushed');
+    expect(read().refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
+      mountId: MOUNT_ID,
+      force: true,
+      silent: true,
+    });
   });
 
   it('hands a predicted conflict to the hidden history rewriter working in a copy', async () => {

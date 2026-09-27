@@ -27,9 +27,9 @@ const suggestion = (overrides: Partial<SessionSuggestion> = {}): SessionSuggesti
 
 describe('NextStepRow', () => {
   it('acts right away when the action does not require a confirm', () => {
-    const onAct = vi.fn();
+    const run = vi.fn(async () => undefined);
     const actions: SuggestionActions = {
-      primary: { label: 'Answer', isDisabled: false, onAct },
+      primary: { label: 'Answer', isDisabled: false, failureTitle: 'Failed', run },
       onDismiss: null,
     };
     render(
@@ -37,19 +37,26 @@ describe('NextStepRow', () => {
         suggestion={suggestion({ kind: 'answer-questions' })}
         actions={actions}
         compact={false}
+        isPending={false}
         onNotNow={vi.fn()}
       />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
-    expect(onAct).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('arms a confirm-requiring action instead of acting on the first click', () => {
-    const onAct = vi.fn();
+    const run = vi.fn(async () => undefined);
     const actions: SuggestionActions = {
-      primary: { label: 'Merge', isDisabled: false, requiresConfirm: true, onAct },
+      primary: {
+        label: 'Merge',
+        isDisabled: false,
+        requiresConfirm: true,
+        failureTitle: 'Failed',
+        run,
+      },
       onDismiss: null,
     };
     render(
@@ -57,20 +64,27 @@ describe('NextStepRow', () => {
         suggestion={suggestion()}
         actions={actions}
         compact={false}
+        isPending={false}
         onNotNow={vi.fn()}
       />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
 
-    expect(onAct).not.toHaveBeenCalled();
+    expect(run).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
   });
 
   it('acts once the armed confirm is clicked again', () => {
-    const onAct = vi.fn();
+    const run = vi.fn(async () => undefined);
     const actions: SuggestionActions = {
-      primary: { label: 'Merge', isDisabled: false, requiresConfirm: true, onAct },
+      primary: {
+        label: 'Merge',
+        isDisabled: false,
+        requiresConfirm: true,
+        failureTitle: 'Failed',
+        run,
+      },
       onDismiss: null,
     };
     render(
@@ -78,6 +92,7 @@ describe('NextStepRow', () => {
         suggestion={suggestion()}
         actions={actions}
         compact={false}
+        isPending={false}
         onNotNow={vi.fn()}
       />,
     );
@@ -85,13 +100,19 @@ describe('NextStepRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
 
-    expect(onAct).toHaveBeenCalledTimes(1);
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('disarms on Cancel without acting', () => {
-    const onAct = vi.fn();
+    const run = vi.fn(async () => undefined);
     const actions: SuggestionActions = {
-      primary: { label: 'Merge', isDisabled: false, requiresConfirm: true, onAct },
+      primary: {
+        label: 'Merge',
+        isDisabled: false,
+        requiresConfirm: true,
+        failureTitle: 'Failed',
+        run,
+      },
       onDismiss: null,
     };
     render(
@@ -99,6 +120,7 @@ describe('NextStepRow', () => {
         suggestion={suggestion()}
         actions={actions}
         compact={false}
+        isPending={false}
         onNotNow={vi.fn()}
       />,
     );
@@ -106,14 +128,44 @@ describe('NextStepRow', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Merge' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(onAct).not.toHaveBeenCalled();
+    expect(run).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
 
-  it('disarms when the row switches to a different suggestion', () => {
-    const onAct = vi.fn();
+  it('shows the running action as busy and refuses a second click', () => {
+    const run = vi.fn(async () => undefined);
     const actions: SuggestionActions = {
-      primary: { label: 'Merge', isDisabled: false, requiresConfirm: true, onAct },
+      primary: { label: 'Push', isDisabled: false, failureTitle: 'Failed', run },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'push-branch' })}
+        actions={actions}
+        compact={false}
+        isPending
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: 'Push' });
+    fireEvent.click(button);
+
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    expect(button.hasAttribute('disabled')).toBe(true);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('disarms when the row switches to a different suggestion', () => {
+    const run = vi.fn(async () => undefined);
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Merge',
+        isDisabled: false,
+        requiresConfirm: true,
+        failureTitle: 'Failed',
+        run,
+      },
       onDismiss: null,
     };
     const { rerender } = render(
@@ -121,6 +173,7 @@ describe('NextStepRow', () => {
         suggestion={suggestion()}
         actions={actions}
         compact={false}
+        isPending={false}
         onNotNow={vi.fn()}
       />,
     );
@@ -132,6 +185,7 @@ describe('NextStepRow', () => {
         suggestion={suggestion({ id: 'merge-pr:mount-other' })}
         actions={actions}
         compact={false}
+        isPending={false}
         onNotNow={vi.fn()}
       />,
     );

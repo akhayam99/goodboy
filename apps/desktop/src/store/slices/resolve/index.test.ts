@@ -1129,3 +1129,36 @@ describe('accepting a comment the pull request read listed before the resolver r
     ).toBe('none');
   });
 });
+
+describe('starting a resolver on a queued comment', () => {
+  it('shows the new attempt on the queue row without a reload', async () => {
+    const live = createHarness();
+    const github = githubWithThread({ threadId: 'PRRT_1', prNumber: 12 });
+    live.store.setState({ sessionGithub: github } as never);
+    await live.actions.materializeReviewThreads({
+      sessionId: SESSION_ID,
+      prNumber: 12,
+      projectId: PROJECT_ID,
+      comments: (github[SESSION_ID]?.detail.comments ?? []) as never,
+    });
+
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent: { ...agent, status: 'pending', sourceThreadIds: ['PRRT_1'] },
+      provider: 'claude',
+      model: 'claude-opus-5-5',
+      effort: null,
+      instructions: 'Fix the retry loop',
+      phase: 'queued',
+      mountTarget: MOUNT_TARGET,
+    });
+
+    const entry = (live.get().sessionResolveQueueItems[SESSION_ID] ?? []).find(
+      ({ thread }) => thread.threadId === 'PRRT_1',
+    );
+    expect(entry?.thread).toMatchObject({ activeAttemptId: attemptId, state: 'working' });
+    expect(
+      (live.get().sessionResolveAttempts[SESSION_ID] ?? []).map((attempt) => attempt.id),
+    ).toContain(attemptId);
+  });
+});

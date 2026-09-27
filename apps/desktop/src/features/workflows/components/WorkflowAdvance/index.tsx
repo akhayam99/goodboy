@@ -2,6 +2,8 @@ import type { SessionId, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import { cn, PANE_RHYTHM } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { notifyWorkflowGateBlock } from '../../../../store/slices/workflows/notifyWorkflowGateBlock';
+import { WorkflowGateError } from '../../../../store/slices/workflows/workflowActivationGate';
+import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 import { agentRoutingOverrides } from '../../agentRoutingOverrides';
 import { useWorkflowRunAdvance } from '../../hooks/useWorkflowRunAdvance';
 import { WorkflowNextStepCta } from '../WorkflowNextStepCta';
@@ -31,6 +33,7 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
   );
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const emitNotification = useAppStore((state) => state.emitNotification);
+  const reportError = useAppStore((state) => state.reportError);
 
   const nextStepId = state.kind === 'complete' ? null : state.step.id;
   const pendingAgent =
@@ -70,7 +73,13 @@ export const WorkflowAdvance = ({ sessionId, run, workflow }: Props) => {
         bypassGate: isConfirmed,
       });
     } catch (error) {
-      notifyWorkflowGateBlock({ error, sessionId, emitNotification });
+      if (error instanceof WorkflowGateError) {
+        notifyWorkflowGateBlock({ error, sessionId, emitNotification });
+        return;
+      }
+      if (!isReportedError(error)) {
+        void reportError({ title: "The next step didn't start", error, sessionId });
+      }
     }
   };
 

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { formatError } from '@goodboy/ui';
 import type { AgentId, MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
@@ -10,7 +9,6 @@ type Params = {
   readonly sessionId: SessionId | null;
   readonly mountId?: MountId | null;
   readonly status: WorktreeStatus | null;
-  readonly onError?: (message: string) => void;
 };
 
 type RunParams = {
@@ -26,12 +24,15 @@ type Result = {
   readonly run: (params: RunParams) => Promise<void>;
 };
 
-export const useRebaseBranch = ({ sessionId, mountId, status, onError }: Params): Result => {
+export const REBASE_FAILURE_TITLE = "Couldn't rebase the branch";
+
+export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result => {
   const [isStarting, setIsStarting] = useState(false);
   const run = useAppStore((state) =>
     mountId == null ? null : (state.historyRuns[mountId] ?? null),
   );
   const rebaseBranch = useAppStore((state) => state.rebaseBranch);
+  const reportError = useAppStore((state) => state.reportError);
   const { showToast } = useToast();
   const baseBranch = useAppStore((state) => {
     if (sessionId == null || mountId == null) {
@@ -75,7 +76,7 @@ export const useRebaseBranch = ({ sessionId, mountId, status, onError }: Params)
         });
       }
     } catch (failure) {
-      onError?.(formatError(failure));
+      void reportError({ title: REBASE_FAILURE_TITLE, error: failure, sessionId });
     } finally {
       setIsStarting(false);
     }

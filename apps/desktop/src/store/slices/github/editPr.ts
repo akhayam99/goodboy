@@ -2,6 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
+import { ReportedError } from '../notifications/reportedError';
 
 export type EditPrOptions = {
   title?: string;
@@ -49,7 +50,7 @@ export const editPr = (_set: SetFn, get: GetFn) => {
         sessionId,
         workspaceId: workspace.id,
       });
-      throw new Error(errMsg);
+      throw new ReportedError(errMsg);
     }
     await get().refreshSessionPr(sessionId, { force: true });
   };

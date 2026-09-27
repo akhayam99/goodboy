@@ -4,6 +4,7 @@ import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { prEventPayload } from './prEventPayload';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
+import { ReportedError } from '../notifications/reportedError';
 
 export const closePr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number) => {
@@ -41,7 +42,7 @@ export const closePr = (_set: SetFn, get: GetFn) => {
             sessionId,
             workspaceId: workspace.id,
           });
-          throw new Error(errMsg);
+          throw new ReportedError(errMsg);
         }
         await get().refreshSessionPr(sessionId, { force: true });
         await get().recordSessionEventOnce({
