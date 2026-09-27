@@ -533,6 +533,7 @@ describe('SessionActivityBar, row node', () => {
     expect(nodeOf(row).textContent).toBe('?');
     expect(row.querySelector('[data-testid="tone-bar"]')?.className).toContain('bg-warning');
     expect(within(row).getByText('1 question to answer')).toBeDefined();
+    expect(within(row).queryByText('1 open question')).toBeNull();
   });
 
   it('marks an errored agent with !', () => {
