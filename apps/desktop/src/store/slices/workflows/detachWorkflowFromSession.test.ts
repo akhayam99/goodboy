@@ -101,7 +101,7 @@ const KIND_CASES: ReadonlyArray<KindCase> = [
   },
   {
     kind: 'orchestrated',
-    executionMode: 'orchestrated',
+    executionMode: 'dynamic',
     isPreset: true,
     agents: [
       { id: 'planned', workflowRunId: RUN_ID },
@@ -219,7 +219,7 @@ describe('detachWorkflowFromSession', () => {
 
   it('stops a running agent of the run before deleting it', async () => {
     const { detach } = buildHarness({
-      executionMode: 'orchestrated',
+      executionMode: 'dynamic',
       isPreset: true,
       agents: KIND_CASES[2]!.agents,
       runningId: 'spawned-child',

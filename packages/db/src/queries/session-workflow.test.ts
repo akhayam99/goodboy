@@ -1004,11 +1004,12 @@ describe('session_workflows trigger-mode queries', () => {
     it('keeps the first deletion time of an agent deleted before its run', async () => {
       await attachRun('run-1');
       await insertAgent({ id: 'step-agent', workflowRunId: 'run-1' });
+      await insertAgent({ id: 'left-child', workflowRunId: null, parentAgentId: 'step-agent' });
       await db.execute("UPDATE agents SET deleted_at = 5 WHERE id = 'step-agent'");
 
       await detachWorkflowFromSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
 
-      expect(await readDeletedAt()).toEqual({ 'step-agent': 5 });
+      expect(await readDeletedAt()).toEqual({ 'left-child': Date.parse(NOW), 'step-agent': 5 });
     });
 
     it('soft-deletes the agents of runs pruned by a reorder', async () => {
