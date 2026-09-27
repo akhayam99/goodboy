@@ -11,6 +11,7 @@ import { RunSpendLimitPopover } from '../../../../../features/workflows/componen
 import { SpendLimitEditor } from '../../../../../features/budget/components/SessionSpendPopover/SpendLimitEditor';
 import { ScriptEditor } from '../../../../../features/scripts/components/ScriptEditor';
 import { SavedStepEditor } from '../../../../../features/workflows/components/WorkflowStudio/SavedStepsList/SavedStepEditor';
+import { ImportPopover } from '../../../../../features/workflows/components/WorkflowStudio/ImportPopover';
 import { LocateMovedProjects } from '../../../../../features/workspace/components/LocateMovedProjects';
 import { blankStepDraft } from '../../../../../features/workflows/engine';
 import { useAppStore } from '../../../../../store';
@@ -161,6 +162,12 @@ const FORMS: Readonly<Record<string, () => ReactNode>> = {
           onRemove={noop}
           onDone={noop}
         />
+      </div>,
+    ),
+  import: () =>
+    column(
+      <div className="flex justify-end">
+        <ImportPopover workspaceId={WORKSPACE_ID} takenNames={[]} />
       </div>,
     ),
   locate: () => column(<LocateMovedProjects workspaceId={WORKSPACE_ID} onChoose={noop} />),
