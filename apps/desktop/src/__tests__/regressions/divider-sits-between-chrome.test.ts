@@ -67,10 +67,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/providers/components/ProviderConnect/ConnectDetails.tsx': {
     count: 1,
     reason: 'debt',
