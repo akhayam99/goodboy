@@ -1,29 +1,20 @@
-// @vitest-environment happy-dom
-
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 
 type PushResult = { ok: true } | { ok: false; error: string };
 
-type ToastOptions = { readonly title?: string };
-
-const { showToast, state } = vi.hoisted(() => ({
-  showToast:
-    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
+const { state } = vi.hoisted(() => ({
   state: {
-    pushSessionBranch: vi.fn(async (): Promise<PushResult> => ({ ok: true })),
-    beginSessionCreation: vi.fn(() => 'creation-1'),
-    endSessionCreation: vi.fn(),
+    pushSessionBranch: vi.fn(async (_params: unknown): Promise<PushResult> => ({ ok: true })),
+    beginSessionCreation: vi.fn((_sessionId: string, _params: unknown) => 'creation-1'),
+    endSessionCreation: vi.fn((_sessionId: string, _creationId: string) => undefined),
+    reportError: vi.fn(async (_params: unknown) => undefined),
   },
 }));
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T>(selector: (store: typeof state) => T) => selector(state),
-}));
-
-vi.mock('../../../../app/components/Toast', () => ({
-  useToast: () => ({ showToast }),
 }));
 
 import { usePushBranch } from './index';
@@ -34,61 +25,79 @@ const mountId = 'mount-1' as MountId;
 beforeEach(() => {
   state.pushSessionBranch.mockReset();
   state.pushSessionBranch.mockResolvedValue({ ok: true });
-  state.beginSessionCreation.mockReset();
-  state.beginSessionCreation.mockReturnValue('creation-1');
-  state.endSessionCreation.mockReset();
-  showToast.mockClear();
+  state.beginSessionCreation.mockClear();
+  state.endSessionCreation.mockClear();
+  state.reportError.mockClear();
 });
 
 afterEach(cleanup);
 
 describe('usePushBranch', () => {
-  it('pushes the session branch and clears the busy state', async () => {
+  it('shows pending until the push settles, then clears it without a toast', async () => {
+    let finish: (result: PushResult) => void = () => undefined;
+    state.pushSessionBranch.mockImplementationOnce(
+      () =>
+        new Promise<PushResult>((resolve) => {
+          finish = resolve;
+        }),
+    );
     const { result } = renderHook(() => usePushBranch({ sessionId, mountId }));
 
-    await act(() => result.current.run());
+    let outcome: Promise<boolean> = Promise.resolve(false);
+    act(() => {
+      outcome = result.current.run();
+    });
+    expect(result.current.isBusy).toBe(true);
 
-    expect(state.pushSessionBranch).toHaveBeenCalledWith({ sessionId, mountId });
+    await act(async () => {
+      finish({ ok: true });
+      await outcome;
+    });
+
+    await expect(outcome).resolves.toBe(true);
     expect(result.current.isBusy).toBe(false);
-    expect(result.current.error).toBeNull();
-  });
-
-  it('confirms the start and the end of a successful push in place', async () => {
-    const { result } = renderHook(() => usePushBranch({ sessionId, mountId }));
-
-    await act(() => result.current.run());
-
-    expect(showToast.mock.calls.map((call) => call[0]?.title)).toEqual([
-      'Push started',
-      'Push done',
-    ]);
+    expect(state.pushSessionBranch).toHaveBeenCalledWith({ sessionId, mountId });
     expect(state.beginSessionCreation).toHaveBeenCalledWith(sessionId, {
       kind: 'branch',
       label: 'Pushing the branch',
     });
     expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
+    expect(state.reportError).not.toHaveBeenCalled();
   });
 
-  it('surfaces an unsuccessful push result', async () => {
+  it('logs an unsuccessful push result once, with the git message', async () => {
     state.pushSessionBranch.mockResolvedValueOnce({
       ok: false,
       error: 'remote rejected the branch',
     });
     const { result } = renderHook(() => usePushBranch({ sessionId, mountId }));
 
-    await act(() => result.current.run());
+    let outcome = true;
+    await act(async () => {
+      outcome = await result.current.run();
+    });
 
-    expect(result.current.error).toBe('remote rejected the branch');
-    expect(showToast.mock.calls.map((call) => call[0]?.title)).toEqual(['Push started']);
+    expect(outcome).toBe(false);
+    expect(state.reportError).toHaveBeenCalledTimes(1);
+    expect(state.reportError).toHaveBeenCalledWith({
+      title: "Couldn't push the branch",
+      error: new Error('remote rejected the branch'),
+      sessionId,
+    });
     expect(state.endSessionCreation).toHaveBeenCalledWith(sessionId, 'creation-1');
   });
 
-  it('surfaces a rejected push', async () => {
+  it('logs a rejected push', async () => {
     state.pushSessionBranch.mockRejectedValueOnce(new Error('network unavailable'));
     const { result } = renderHook(() => usePushBranch({ sessionId, mountId }));
 
-    await act(() => result.current.run());
+    await act(async () => {
+      await result.current.run();
+    });
 
-    expect(result.current.error).toBe('network unavailable');
+    expect(state.reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ error: new Error('network unavailable') }),
+    );
+    expect(result.current.isBusy).toBe(false);
   });
 });

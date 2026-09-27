@@ -94,11 +94,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
     status,
     onError: (message) => notify({ title: "Couldn't rebase the branch", message }),
   });
-  const push = usePushBranch({
-    sessionId,
-    mountId,
-    onError: (message) => notify({ title: "Couldn't push the branch", message }),
-  });
+  const push = usePushBranch({ sessionId, mountId });
 
   const distance = status?.mainDistance.kind === 'known' ? status.mainDistance : null;
   const main =

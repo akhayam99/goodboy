@@ -287,7 +287,7 @@ export const SessionDiffPane = ({
           : `Rebase on ${baseBranch}`}
     </Button>
   ) : isLocalOnly && mountId !== null && (ahead ?? diff.commits.length) > 0 ? (
-    <PushBranchButton sessionId={sessionId} mountId={mountId} />
+    <PushBranchButton sessionId={sessionId} mountId={mountId} onPushed={diff.refresh} />
   ) : null;
 
   const actions = (

@@ -3,9 +3,17 @@ import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
   gitPush: vi.fn(async () => ({ exitCode: 0, stdout: '', stderr: '' })),
+  refreshWorktreeStatuses: vi.fn(async (_params: unknown) => undefined),
+  invalidateLocalBranchesCache: vi.fn((_repoRoot: string) => undefined),
 }));
 
 vi.mock('../../../features/github/github', () => ({ gitPush: h.gitPush }));
+vi.mock('../../../features/session/hooks/useWorktreeStatuses/cache', () => ({
+  refreshWorktreeStatuses: h.refreshWorktreeStatuses,
+}));
+vi.mock('../../../features/worktree/worktree', () => ({
+  invalidateLocalBranchesCache: h.invalidateLocalBranchesCache,
+}));
 
 import { pushSessionBranch } from './pushSessionBranch';
 
@@ -95,6 +103,22 @@ describe('pushSessionBranch', () => {
     });
   });
 
+  it('re-reads the pushed worktree so ahead counts drop without a reload', async () => {
+    const state = makeState();
+
+    await pushSessionBranch({
+      get: (() => state) as never,
+      sessionId: SESSION_ID,
+      mountId: SIBLING_MOUNT_ID,
+    });
+
+    expect(h.refreshWorktreeStatuses).toHaveBeenCalledTimes(1);
+    expect(h.refreshWorktreeStatuses).toHaveBeenCalledWith({
+      worktreePaths: ['/worktrees/task-2'],
+    });
+    expect(h.invalidateLocalBranchesCache).toHaveBeenCalledWith('/repos/goodboy');
+  });
+
   it('leaves the pull request alone when the push fails', async () => {
     const state = makeState();
     h.gitPush.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'rejected' });
@@ -107,6 +131,7 @@ describe('pushSessionBranch', () => {
 
     expect(result).toEqual({ ok: false, error: 'rejected' });
     expect(state.refreshSessionPr).not.toHaveBeenCalled();
+    expect(h.refreshWorktreeStatuses).not.toHaveBeenCalled();
   });
 
   it('refuses a mount the session does not hold', async () => {
