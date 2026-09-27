@@ -906,11 +906,7 @@ export const WorkflowBuilderView = (props: Props) => {
     setError(null);
     setBusy(true);
     try {
-      if (props.session !== undefined) {
-        await runOn(props.session);
-      } else {
-        await props.kickoff.start(runOn);
-      }
+      await (props.session !== undefined ? runOn(props.session) : props.kickoff.start(runOn));
       handleClose();
     } catch (err) {
       setError({ title: "Couldn't start the workflow", message: formatError(err) });
