@@ -130,10 +130,11 @@ When an agent needs a decision, it asks you, and the session moves to **needs yo
 
 ## Pull request review
 
-The **Review** tab shows a pull request with its checks and every comment thread.
+The **Review** tab holds every comment thread on the code; the pull request has its own page with its state, checks and activity.
 
 - Send a comment to an agent: it fixes the code in a local commit and drafts the reply
 - Each thread is marked: a question for you, a reply ready, a comment that changed
+- Review works before a pull request exists too, on the branch alone
 - Nothing is pushed or posted until you approve it
 
 ![The Review tab of a session: comment threads on a pull request marked as a question for you, a changed comment and two replies ready, with the push and resolve action at the bottom](./docs/images/resolve-queue-shell.png)
