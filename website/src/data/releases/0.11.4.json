@@ -1,16 +1,16 @@
 {
   "version": "0.11.4",
-  "summary": "Start a session blank from the goal, and pick orchestrated, custom or preset right in the kickoff.",
+  "summary": "New sessions open blank on their overview and set up in three short steps, with every kind of workflow one pick away.",
   "new": [
     {
-      "title": "Start blank, straight from the goal",
+      "title": "Start blank, set it up step by step",
       "area": "sessions",
-      "copy": "The kickoff keeps Pick up a task, Run a workflow and Ask an agent."
+      "copy": "New opens a session right away, with nothing to fill in first, and lands on its Overview."
     },
     {
-      "title": "Orchestrated, custom or preset in Run a workflow",
+      "title": "Pick any workflow to start the work",
       "area": "workflows",
-      "copy": "Run a workflow now offers the same Orchestrated, Custom and Preset choice as the workflow form."
+      "copy": "Start the work lists your workflows, the built-in ones, and an orchestrated or custom workflow."
     }
   ],
   "groups": [
@@ -125,23 +125,16 @@
       "image": "s02-kickoff",
       "features": [
         {
-          "id": "how-do-you-want-to-start",
-          "title": "How do you want to start?",
-          "copy": "Start from an issue, a workflow or a question, in one draft with three tabs: Pick up a task, Run a workflow and Ask an agent.",
+          "id": "start-blank-set-it-up-step-by-step",
+          "title": "Start blank, set it up step by step",
+          "copy": "New opens a fresh session right away, with nothing to fill in first.",
           "image": null,
-          "isNew": false
-        },
-        {
-          "id": "start-blank",
-          "title": "Start blank",
-          "copy": "Start from the goal instead: Start blank opens the session straight on its Overview, and you add the goal, projects and work from there.",
-          "image": null,
-          "isNew": false
+          "isNew": true
         },
         {
           "id": "pick-up-a-task-with-a-drafted-brief",
           "title": "Pick up a task, with a drafted brief",
-          "copy": "Turn an issue into a briefed session in one pick.",
+          "copy": "Turn an issue into a briefed session from the Inbox.",
           "image": null,
           "isNew": false
         },
@@ -155,7 +148,7 @@
         {
           "id": "run-a-workflow",
           "title": "Run a workflow",
-          "copy": "Write a goal and pick Orchestrated, Custom or Preset.",
+          "copy": "Start the work lists your own workflows, the built-in ones, an orchestrated workflow and a custom one.",
           "image": null,
           "isNew": false
         },
