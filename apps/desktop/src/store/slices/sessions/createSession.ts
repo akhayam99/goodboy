@@ -92,11 +92,13 @@ export const createSession = (set: SetFn, get: GetFn) => {
     attachmentInputs,
     omitGoalSlot = false,
   }: Input): Promise<{ session: Session }> => {
-    const workspace = await getWorkspaceById({ db: tauriDatabase, id: workspaceId });
+    const [workspace, projects] = await Promise.all([
+      getWorkspaceById({ db: tauriDatabase, id: workspaceId }),
+      listProjectsForWorkspace({ db: tauriDatabase, workspaceId }),
+    ]);
     if (workspace === null) {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
-    const projects = await listProjectsForWorkspace({ db: tauriDatabase, workspaceId });
     const project = projectId !== undefined ? resolveSessionProject({ projects, projectId }) : null;
 
     const trimmedPrefix = branchPrefix?.trim();
