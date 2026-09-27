@@ -54,8 +54,20 @@ describe('SecurityFindingsSection', () => {
     render(<SecurityFindingsSection workspaceId={WORKSPACE_ID} />);
 
     expect(screen.getByText('Checking…')).toBeDefined();
-    await waitFor(() => expect(screen.getByText('No findings.')).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getByText('No findings in your saved scripts.')).toBeDefined(),
+    );
     expect(h.loadSecurityFindings).toHaveBeenCalledWith({ workspaceId: WORKSPACE_ID });
+  });
+
+  it('describes the scan as covering saved scripts only', () => {
+    render(<SecurityFindingsSection workspaceId={WORKSPACE_ID} />);
+
+    expect(
+      screen.getByText(
+        'Goodboy checks a project script for anything that looks like a key or a token each time you save it. This text never leaves your Mac.',
+      ),
+    ).toBeDefined();
   });
 
   it('names the script and project when it can resolve them', async () => {
