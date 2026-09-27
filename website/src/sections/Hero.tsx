@@ -1,3 +1,4 @@
+import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
 import { S01 } from '../figures';
 import { SITE } from '../site';
@@ -22,6 +23,7 @@ export const Hero = () => (
             Star on GitHub
           </a>
         </div>
+        <SeeHow anchor="the-board" />
       </div>
       <Shot figure={S01} isEager />
     </div>

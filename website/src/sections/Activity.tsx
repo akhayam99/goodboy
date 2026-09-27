@@ -1,5 +1,6 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
+import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
 import { S03 } from '../figures';
 import { SITE } from '../site';
@@ -15,7 +16,10 @@ export const Activity = () => (
         Above it sits the one move that unblocks the task, here a question only you can answer. A
         queued step even gives a rough time, learned from your own past runs.
       </p>
-      <More href={`${SITE.concepts}#the-object-model`}>Why the task comes first</More>
+      <div className="linkRow">
+        <More href={`${SITE.concepts}#the-object-model`}>Why the task comes first</More>
+        <SeeHow anchor="activity" />
+      </div>
     </div>
     <Shot figure={S03} />
   </Block>

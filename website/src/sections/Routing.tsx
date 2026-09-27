@@ -2,6 +2,7 @@ import './Routing.css';
 import type { CSSProperties } from 'react';
 import { BrandMark, type BrandId } from '../components/BrandIcons';
 import { More } from '../components/More';
+import { SeeHow } from '../components/SeeHow';
 import { delay, useInViewOnce } from '../components/Reveal';
 import { Shot } from '../components/Shot';
 import { S16 } from '../figures';
@@ -119,7 +120,10 @@ export const Routing = () => {
               When Codex offers a free reset, it sits right on the usage page, with a warning if
               spending it now would waste it.
             </p>
-            <More href={`${SITE.concepts}#provider-routing--balance`}>See how routing works</More>
+            <div className="linkRow">
+              <More href={`${SITE.concepts}#provider-routing--balance`}>See how routing works</More>
+              <SeeHow anchor="providers-limits-and-cost" />
+            </div>
           </div>
           <Shot figure={S16} />
         </div>

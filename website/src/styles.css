@@ -445,6 +445,64 @@ section.block.alt .window {
   margin-top: 0;
 }
 
+.seeHow {
+  color: var(--gray7);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--gray3);
+  text-underline-offset: 4px;
+  transition:
+    color 0.15s ease,
+    text-decoration-color 0.15s ease;
+}
+
+.seeHow:hover {
+  color: var(--accent-deep);
+  text-decoration-color: currentColor;
+}
+
+.linkRow {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px 28px;
+}
+
+#hero .heroCopy .seeHow,
+.duo .seeHow {
+  display: inline-block;
+  margin-top: 18px;
+}
+
+.beltHow {
+  margin-top: 10px;
+  padding: 0 24px;
+}
+
+.toolRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: -12px 0 44px;
+  padding: 0;
+  list-style: none;
+}
+
+.toolRow li {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--gray3);
+  background: #fff;
+  font-weight: 600;
+  font-size: 15px;
+}
+
 .stackText h3 {
   grid-column: 1 / -1;
   margin-bottom: 0;

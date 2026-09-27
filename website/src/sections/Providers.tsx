@@ -1,4 +1,5 @@
 import { BrandMark, type BrandId } from '../components/BrandIcons';
+import { SeeHow } from '../components/SeeHow';
 import { SITE } from '../site';
 
 type Chip = {
@@ -40,6 +41,9 @@ export const Providers = () => (
     <p className="beltMore">
       Seven providers, one session. Connect each the way it supports, with a login you already have
       or an API key. <a href={SITE.providersDoc}>Set up a provider →</a>
+    </p>
+    <p className="beltHow">
+      <SeeHow anchor="provider-connection" />
     </p>
   </section>
 );

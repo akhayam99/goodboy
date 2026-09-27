@@ -1,5 +1,6 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
+import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
 import { S10 } from '../figures';
 import { SITE } from '../site';
@@ -16,7 +17,10 @@ export const Workspace = () => (
         its own branch and pull request, while <code>ledger-core</code> is only read.
       </p>
       <p>Your own checkout stays as you left it.</p>
-      <More href={SITE.concepts}>How workspaces work</More>
+      <div className="linkRow">
+        <More href={SITE.concepts}>How workspaces work</More>
+        <SeeHow anchor="workspace-with-several-projects" />
+      </div>
     </div>
     <Shot figure={S10} />
   </Block>

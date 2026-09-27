@@ -1,5 +1,6 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
+import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
 import { S08 } from '../figures';
 import { SITE } from '../site';
@@ -17,7 +18,10 @@ export const Briefing = () => (
         the task from Claude to Codex and the next agent picks up where the last one stopped.
       </p>
       <p>Curious what it was told? Open the agent and read exactly what it was sent.</p>
-      <More href={`${SITE.concepts}#shared-context`}>How shared context works</More>
+      <div className="linkRow">
+        <More href={`${SITE.concepts}#shared-context`}>How shared context works</More>
+        <SeeHow anchor="shared-context" />
+      </div>
     </div>
     <Shot figure={S08} />
   </Block>

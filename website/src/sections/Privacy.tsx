@@ -1,5 +1,6 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
+import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
 import { S26 } from '../figures';
 import { SITE } from '../site';
@@ -17,7 +18,10 @@ export const Privacy = () => (
         Paste a token into a saved script and Goodboy flags it, and an export of your setup leaves
         that script out unless you say otherwise.
       </p>
-      <More href={SITE.privacy}>Read the full pledge</More>
+      <div className="linkRow">
+        <More href={SITE.privacy}>Read the full pledge</More>
+        <SeeHow anchor="security-findings" />
+      </div>
     </div>
     <Shot figure={S26} />
   </Block>

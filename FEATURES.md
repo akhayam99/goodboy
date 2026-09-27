@@ -350,6 +350,18 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
   <img src="./docs/readme/s20-integrations-light.webp" width="480" alt="The integrations list in settings, 5 of 7 connected: GitHub, Linear, Jira, Sentry and Slack, with GitLab and Bitbucket not connected">
 </picture>
 
+### Supported tools
+
+Connect the ones you use. Each one feeds the Inbox and can start a session with its brief drafted.
+
+- **GitHub**: issues and pull requests, review comments you resolve with an agent, and the pull request page
+- **GitLab**: issues and merge requests, with threaded discussions, replies, approvals and merge
+- **Bitbucket**: pull requests, with comments, approvals and merge
+- **Jira**: issues you comment on, assign, edit and move between statuses
+- **Linear**: issues you comment on, assign, edit and move between states, with threaded replies
+- **Sentry**: errors with stack trace, breadcrumbs and tags, ready to hand to an agent
+- **Slack**: threads from the channels you pick, where agents read, reply and react, and replies wait for your OK by default
+
 ### Agents use your tools
 
 Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack, as far as you connected them, without handing them your keys. The agent asks Goodboy over a local socket only your user can open, and Goodboy makes the call.

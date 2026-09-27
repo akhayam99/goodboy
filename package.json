@@ -27,11 +27,11 @@
     "knip": "knip",
     "knip:production": "knip --workspace apps/desktop --production --include files,exports,types",
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
-    "check:doc-refs": "node scripts/check-doc-refs.mjs",
+    "check:doc-refs": "node scripts/check-doc-refs.mjs && node scripts/check-feature-anchors.mjs",
     "release:kind": "node scripts/release-kind.mjs",
     "changelog:shots": "node scripts/changelog-shots.mjs",
     "features:snapshot": "node scripts/snapshot-features.mjs",
-    "test:scripts": "node --test scripts/snapshot-features.test.mjs",
+    "test:scripts": "node --test scripts/snapshot-features.test.mjs scripts/check-feature-anchors.test.mjs",
     "codemod:type-roles": "node scripts/codemods/type-roles.mjs",
     "prepare": "lefthook install"
   },

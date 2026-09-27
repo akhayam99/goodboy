@@ -1,5 +1,6 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
+import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
 import { S04 } from '../figures';
 import { SITE } from '../site';
@@ -21,7 +22,10 @@ export const HowItWorks = () => (
         Heading somewhere you did not mean? Leave a hint for the next decision, or have it read
         right away.
       </p>
-      <More href={`${SITE.concepts}#workflows`}>How workflows work</More>
+      <div className="linkRow">
+        <More href={`${SITE.concepts}#workflows`}>How workflows work</More>
+        <SeeHow anchor="workflows" />
+      </div>
     </div>
     <Shot figure={S04} />
   </Block>

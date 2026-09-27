@@ -1,4 +1,5 @@
 import { Block } from '../components/Block';
+import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
 import { S12 } from '../figures';
 
@@ -18,6 +19,9 @@ export const Review = () => (
         Want the branch tidy afterwards? Squash and reorder commits with the conflicts shown before
         you apply, and take it back within 30 days.
       </p>
+      <div className="linkRow">
+        <SeeHow anchor="resolve" />
+      </div>
     </div>
     <Shot figure={S12} />
   </Block>

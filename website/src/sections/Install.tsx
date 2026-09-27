@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { SeeHow } from '../components/SeeHow';
 import { SITE } from '../site';
 
 export const Install = () => {
@@ -58,6 +59,7 @@ export const Install = () => {
               Try it and break it. <b>&quot;This feels off&quot; is a valid bug report.</b>{' '}
               <a href={SITE.issues}>Open an issue →</a>
             </p>
+            <SeeHow anchor="set-up" />
           </div>
         </div>
       </section>

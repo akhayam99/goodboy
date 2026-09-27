@@ -35,6 +35,10 @@ The idea is small. A task keeps its own goal, decisions and summary, so the agen
 
 You pick an issue from Linear. Goodboy drafts a title and a goal from it, and the task lands on the **board** as a session. From there the board moves it for you, between **building**, **running**, **needs you** and **in review**, with done work folded to the side, as the work changes. Each card shows its pull request and what it has cost so far.
 
+Tasks come from the tools you connect: [GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#supported-tools).
+
+[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#the-board)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s01-board-dark.webp">
   <img src="./docs/readme/s01-board-light.webp" alt="The Harborline board: eleven sessions across building, running, needs you and in review, with the webhook fix in review on pull request 318 at $3.47">
@@ -47,6 +51,8 @@ You pick an issue from Linear. Goodboy drafts a title and a goal from it, and th
 A **workflow** splits the task into steps, and each step is a fresh agent with a short brief. In **Orchestrated** mode a model picks the next step after each one finishes and writes down why.
 
 That is also where the money goes. In the run below, a scout read the posting path for two cents. The planner spent $1.28, because that is the step that has to think. Want to steer? Queue a hint for the next decision, or have the orchestrator read it now.
+
+[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#workflows)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s04-workflow-run-dark.webp">
@@ -61,6 +67,8 @@ Every agent on the task reads the same **goal**, the numbered **decisions** and 
 
 Claude runs out halfway through? With another eligible provider connected, the turn can move there, and the chat says where it went. The top bar shows how much of your Claude and Codex plans is left before you start.
 
+[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#shared-context)
+
 <img src=".github/providers.png" alt="Claude, Cursor, Codex, Gemini, OpenCode, OpenRouter and Moonshot" width="880">
 
 <picture>
@@ -74,6 +82,8 @@ Claude runs out halfway through? With another eligible provider connected, the t
 
 The review comes back with seven comments. Select them and press **Resolve**. An agent writes each fix as a local commit and drafts the reply in your voice, and you approve it, send it back, or mark it **Will not fix**. One more action pushes the fixes, posts the replies and resolves the threads on GitHub.
 
+[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#resolve)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s12-resolve-dark.webp">
   <img src="./docs/readme/s12-resolve-light.webp" alt="Seven review comments on pull request 318 grouped by file, with replies ready to review, one fix committed and one comment waiting for an answer">
@@ -86,6 +96,8 @@ The review comes back with seven comments. Select them and press **Resolve**. An
 Every agent still has its own chat when you want to steer by hand. Type while it works and your message waits for its turn, or send it now and interrupt.
 
 The inbox, plans and wireframes, history rewriting, storage cleanup, security findings and the rest are in [FEATURES.md](./FEATURES.md), with screenshots. [goodboy-ai.dev](https://goodboy-ai.dev) tells the story in a minute.
+
+[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#agents-and-chat)
 
 <br>
 
@@ -102,6 +114,8 @@ Or pick a package from the [latest release](https://github.com/akhayam99/goodboy
 - **macOS**: the `.dmg`, then drop Goodboy in Applications
 - **Linux**: `AppImage`, `.deb` or `.rpm`
 
+[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#set-up)
+
 <br>
 
 <a id="where-your-work-lives"></a>
@@ -112,6 +126,8 @@ Or pick a package from the [latest release](https://github.com/akhayam99/goodboy
 - Prompts go to the provider you chose
 - Tool keys go in your system credential store
 - No account, and no Goodboy server
+
+[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#security-backup-and-updates)
 
 <br>
 

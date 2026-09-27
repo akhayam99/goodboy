@@ -1,5 +1,6 @@
 import { Block } from '../components/Block';
 import { More } from '../components/More';
+import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
 import { S13, S14 } from '../figures';
 import { SITE } from '../site';
@@ -20,7 +21,10 @@ export const Artifacts = () => (
         A report opens as a document in any browser, with where it came from one click away. A plan
         waits as Ready to run until you say go.
       </p>
-      <More href={`${SITE.concepts}#plans`}>How plans work</More>
+      <div className="linkRow">
+        <More href={`${SITE.concepts}#plans`}>How plans work</More>
+        <SeeHow anchor="artifacts" />
+      </div>
     </div>
     <Shot figure={S13} />
     <Shot figure={S14} />
