@@ -816,10 +816,12 @@ JSON, so a reply with a preamble fails instead of leaking into the goal. The
 brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
 text or Dismiss, and a failure stays inline in the card with Retry. The first
 three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
-`SessionKickoff/`) underneath: Run a workflow (preselected, the workspace's
-first library preset) or Ask an agent, precompiled with that goal and
-editable. Its own action links the issue, creates the session and starts the
-workflow or agent in the same gesture; nothing exists before that. In the
+`SessionKickoff/`) underneath: Run a workflow (preselected, the full workflow
+builder with the goal filled in) or Ask an agent, precompiled with that goal
+and editable. Its own action links the issue, mounts the project the issue
+maps to (the same rule as Launch session in the Inbox), creates the session
+and starts the workflow or agent in the same gesture; nothing exists before
+that. In the
 Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no

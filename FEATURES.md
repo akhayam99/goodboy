@@ -99,7 +99,7 @@ Start from the goal instead: **Start blank** opens the session straight on its O
 
 ### Pick up a task, with a drafted brief
 
-Turn an issue into a briefed session in one pick. Goodboy drafts a short title and goal linked back to the issue, and you keep it, edit it, or use the issue text.
+Turn an issue into a briefed session in one pick. Goodboy drafts a short title and goal linked back to the issue, and you keep it, edit it, or use the issue text. Then run it through the same workflow builder as **Run a workflow**, or ask an agent. A Sentry error or a GitHub issue opens in the project it belongs to, and one Start links the issue, creates the session and starts the work.
 
 ### Ask an agent
 

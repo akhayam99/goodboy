@@ -126,7 +126,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Pick up a task',
-        desc: 'Choose an issue from your tools. Goodboy drafts a short title and goal linked back to it, and you keep or edit them.',
+        desc: 'Choose an issue from your tools. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. Then run it through the same workflow builder, or ask an agent, and Start opens it in the project the issue belongs to.',
       },
       {
         term: 'Run a workflow',
