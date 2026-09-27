@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { AnchoredPopover, Divider, IconButton, cn, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { useThemeStore } from '../../../../shared/lib/theme';
 import { collapse } from '../../../../features/onboarding/onboarding-store';
 import { useOnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../../features/changelog/hooks/useInstalledVersion';
@@ -56,6 +57,8 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
     isQueued;
   const isSetupOpen = !progress.finished && progress.hasProjects && !progress.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
+  const theme = useThemeStore((s) => s.theme);
+  const isBrandChip = state === 'rest' && theme === 'light';
   const shouldAutoOpen =
     !progress.finished &&
     progress.wizardDone &&
@@ -103,7 +106,8 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
             data-testid="goodboy-chip"
             className={cn(
               'flex h-6 items-center gap-1.5 rounded-md px-2 text-secondary motion-safe:transition-colors',
-              isOpen ? 'bg-muted' : 'hover:bg-hover',
+              isBrandChip && 'goodboy-brand-chip',
+              isOpen ? 'bg-muted' : isBrandChip ? 'bg-background hover:bg-hover' : 'hover:bg-hover',
             )}
           >
             <GoodboyChipLabel state={state} progress={progress} />

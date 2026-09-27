@@ -71,6 +71,7 @@ vi.mock('../../../../shared/lib/editor', () => ({
   openUrl: mocks.openUrl,
 }));
 
+import { useThemeStore } from '../../../../shared/lib/theme';
 import { GoodboyChip, SPONSOR_URL } from './index';
 
 const REST_LABEL = 'Goodboy beta: version, help and sponsor';
@@ -89,6 +90,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  useThemeStore.setState({ preference: 'dark', theme: 'dark' });
 });
 
 const renderChip = () => {
@@ -110,6 +112,31 @@ describe('GoodboyChip', () => {
 
     const chip = screen.getByRole('button', { name: REST_LABEL });
     expect(chip.textContent).toBe('Goodboybeta');
+  });
+
+  it('leaves the rest mark bare in dark mode', () => {
+    mocks.progress.finished = true;
+    renderChip();
+
+    const chip = screen.getByRole('button', { name: REST_LABEL });
+    expect(chip.className).not.toContain('goodboy-brand-chip');
+  });
+
+  it('wraps the rest mark in a dark chip when the theme is light', () => {
+    mocks.progress.finished = true;
+    useThemeStore.setState({ preference: 'light', theme: 'light' });
+    renderChip();
+
+    const chip = screen.getByRole('button', { name: REST_LABEL });
+    expect(chip.className).toContain('goodboy-brand-chip');
+  });
+
+  it('never puts the dark chip on the setup or update states', () => {
+    useThemeStore.setState({ preference: 'light', theme: 'light' });
+    renderChip();
+
+    const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
+    expect(chip.className).not.toContain('goodboy-brand-chip');
   });
 
   it('says setup and its progress while setup is open', () => {
