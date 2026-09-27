@@ -107,8 +107,8 @@ On launch, packaged builds check
 newer version exists, the footer's Goodboy chip says "Update ready" and its
 popover offers "Restart to update", and an "Update to X" chip shows up in
 `WorkspaceLauncher`. Clicking that chip opens an inline confirm anchored to it
-(no dialog). It says how many agents a restart stops, links "What's new" to
-that release in the changelog, and starts "Download and restart". While the
+(no dialog). It says how many running agents pick up after the restart, links
+"What's new" to that release in the changelog, and starts "Download and restart". While the
 update downloads, the chip reads "Downloading 42%" (or "Downloading" when the
 size is unknown). If the install fails, including a failed relaunch, the
 pending update is kept. The chip turns into "Update failed", with the reason
@@ -118,6 +118,15 @@ shows no chip and no notification. It shows up in **Settings > App > General**
 instead, next to the installed version, the last check time and **Check now**.
 The changelog opens on the focused or installed release and marks newer ones
 "available".
+
+Installing never relaunches straight away. `relaunchWithResume`
+(`store/slices/updater/prepareRestart.ts`) writes `restart.reason` in the
+settings table, then calls `restart_prepare`, which records the live turns in
+`restart.interrupted_runs` and stops them without sending their end, so no
+window settles them as failed. Only then does it relaunch; a failed relaunch
+calls `restart_abort`. The next launch resumes those agents and reopens every window
+([turns.md](turns.md#surviving-a-reload-or-a-restart),
+[navigation.md](navigation.md#addresses-and-history)).
 
 This is macOS only. The Linux job writes no
 `latest.json` and no `.sig`, so nothing tells a Linux build that a newer
