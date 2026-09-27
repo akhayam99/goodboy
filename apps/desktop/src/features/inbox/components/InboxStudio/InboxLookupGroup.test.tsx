@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import type { LookupHit } from '../../../integrations/issueCode/lookupIssueByCode';
 
@@ -33,6 +33,8 @@ const hit = {
 const lookup = (patch: Partial<WorkspaceIssueLookup>): WorkspaceIssueLookup => ({
   code: 'CAS-231',
   state: { status: 'idle' },
+  loadingProviders: [],
+  retryAt: null,
   retry: vi.fn(),
   ...patch,
 });
@@ -50,6 +52,74 @@ describe('InboxLookupGroup', () => {
 
     expect(screen.getByText('Not in your inbox')).toBeDefined();
     expect(screen.getByText('Looking up CAS-231')).toBeDefined();
+  });
+
+  it('names the trackers being asked while looking up', () => {
+    render(
+      <InboxLookupGroup
+        lookup={lookup({
+          state: { status: 'loading', key: 'CAS-231#0' },
+          loadingProviders: ['linear', 'jira'],
+        })}
+        workspaceName="Harborline"
+        selectedKey={null}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Looking up CAS-231 in Linear and Jira')).toBeDefined();
+  });
+
+  it('counts down a rate-limited tracker and still lets Try again fire early', () => {
+    vi.useFakeTimers();
+    const retry = vi.fn();
+    const retryAt = Date.now() + 20_000;
+    render(
+      <InboxLookupGroup
+        lookup={lookup({
+          retry,
+          retryAt,
+          state: {
+            status: 'done',
+            key: 'CAS-231#0',
+            value: {
+              route: {
+                kind: 'lookup',
+                label: 'CAS-231',
+                targets: [{ provider: 'linear', identifier: 'CAS-231' }],
+              },
+              result: {
+                hits: [],
+                misses: [
+                  {
+                    target: { provider: 'linear', identifier: 'CAS-231' },
+                    failure: 'rate-limited',
+                  },
+                ],
+              },
+            },
+          },
+        })}
+        workspaceName="Harborline"
+        selectedKey={null}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('Linear asked Goodboy to slow down. Trying again in 20s.'),
+    ).toBeDefined();
+
+    act(() => {
+      vi.advanceTimersByTime(5_000);
+    });
+    expect(
+      screen.getByText('Linear asked Goodboy to slow down. Trying again in 15s.'),
+    ).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retry).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('lists a hit and opens it on click', () => {

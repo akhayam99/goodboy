@@ -40,7 +40,7 @@ export const InboxLookupGroup = ({
       {state.status === 'loading' ? (
         <div className="flex h-8 items-center gap-2.5 px-2.5 text-label text-muted-foreground">
           <WorkNode size="sm" state="running" mark={{ kind: 'dot' }} label="Looking up" />
-          {lookingUpText({ code })}
+          {lookingUpText({ code, providers: lookup.loadingProviders })}
         </div>
       ) : null}
       {hits.map((hit) => (
@@ -62,6 +62,7 @@ export const InboxLookupGroup = ({
         <LookupStatusRow
           key={status.key}
           status={status}
+          retryAt={status.key.endsWith(':rate-limited') ? lookup.retryAt : null}
           onAction={(chosen) => {
             if (chosen.action?.kind === 'retry') {
               lookup.retry();

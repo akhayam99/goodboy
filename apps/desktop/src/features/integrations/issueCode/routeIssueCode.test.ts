@@ -10,6 +10,7 @@ const context = (
   sentryProjects: patch.sentryProjects ?? [],
   githubRepos: patch.githubRepos ?? [],
   gitlabProjects: patch.gitlabProjects ?? [],
+  linearTeamKeys: patch.linearTeamKeys ?? null,
 });
 
 const route = (input: string, ctx: LookupContext) => routeIssueCode(parseIssueCode(input), ctx);
@@ -30,6 +31,35 @@ describe('routeIssueCode', () => {
       targets: [
         { provider: 'linear', identifier: 'CAS-231' },
         { provider: 'jira', key: 'CAS-231' },
+      ],
+    });
+  });
+
+  it('sends a key that matches a known Linear team to Linear alone', () => {
+    expect(
+      route(
+        'CAS-231',
+        context({ on: ['linear', 'jira'], jiraProjectKey: 'NW', linearTeamKeys: ['CAS'] }),
+      ),
+    ).toEqual({
+      kind: 'lookup',
+      label: 'CAS-231',
+      targets: [{ provider: 'linear', identifier: 'CAS-231' }],
+    });
+  });
+
+  it('still asks Linear and Jira together when the team keys are known but the prefix matches neither', () => {
+    expect(
+      route(
+        'OPS-44',
+        context({ on: ['linear', 'jira'], jiraProjectKey: 'NW', linearTeamKeys: ['CAS'] }),
+      ),
+    ).toEqual({
+      kind: 'lookup',
+      label: 'OPS-44',
+      targets: [
+        { provider: 'linear', identifier: 'OPS-44' },
+        { provider: 'jira', key: 'OPS-44' },
       ],
     });
   });

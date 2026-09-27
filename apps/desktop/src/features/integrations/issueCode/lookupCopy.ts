@@ -34,7 +34,19 @@ const joinOr = (names: ReadonlyArray<string>): string =>
 const joinAnd = (names: ReadonlyArray<string>): string =>
   names.length <= 1 ? (names[0] ?? '') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
 
-export const lookingUpText = ({ code }: { readonly code: string }): string => `Looking up ${code}`;
+export const lookingUpText = ({
+  code,
+  providers,
+}: {
+  readonly code: string;
+  readonly providers: ReadonlyArray<LookupProvider>;
+}): string => {
+  if (providers.length === 0) {
+    return `Looking up ${code}`;
+  }
+  const names = providers.map((provider) => PROVIDER_LABEL[provider]);
+  return `Looking up ${code} in ${joinAnd(names)}`;
+};
 
 const failureStatus = ({
   code,
