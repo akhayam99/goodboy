@@ -8,6 +8,7 @@ import {
 } from '../../../../../features/bug-report/crashReport';
 import { openReportSheet } from '../../../../../features/bug-report/openReportSheet';
 import { useAppStore } from '../../../../../store';
+import { CrashThrower } from './CrashThrower';
 import { sceneParam } from './sceneParams';
 
 const OPEN_DELAY_MS = 400;
@@ -35,12 +36,6 @@ export const useReportSheetParam = (): void => {
   }, []);
 };
 
-const Crash = (): null => {
-  throw new Error(
-    'fetch failed: Authorization: Bearer sk-ant-api03-AbCdEfGhIjKlMnOp at /Users/rowan/code/core-api/.env',
-  );
-};
-
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport
     heading="Report this crash"
@@ -51,6 +46,6 @@ const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
 
 export const CrashReportScene = () => (
   <ErrorBoundary describeError={describeCrash} renderReport={renderCrashReport}>
-    <Crash />
+    <CrashThrower />
   </ErrorBoundary>
 );
