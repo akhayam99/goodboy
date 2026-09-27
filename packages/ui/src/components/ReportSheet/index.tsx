@@ -5,6 +5,7 @@ import { FOCUS_RING } from '../../focusRing';
 import { useEscapeLayer } from '../../useEscapeLayer';
 import { Button } from '../Button';
 import { CopyButton } from '../CopyButton';
+import { FormActions } from '../FormActions';
 import { KbdPill } from '../KbdPill';
 import { ScrollFade } from '../ScrollFade';
 import { Textarea } from '../Textarea';
@@ -272,16 +273,20 @@ export const ReportSheet = ({
           ) : null}
         </div>
       </div>
-      <footer className="flex flex-wrap items-center gap-2 px-3 pb-3">
-        <div className="min-w-0 flex-1 text-secondary text-muted-foreground">
-          {error != null ? (
-            <span role="alert" className="text-danger">
-              {error}
-            </span>
-          ) : (
-            destination
-          )}
-        </div>
+      <FormActions
+        className="px-3 pb-3"
+        leading={
+          <div className="min-w-0 text-secondary text-muted-foreground">
+            {error != null ? (
+              <span role="alert" className="text-danger">
+                {error}
+              </span>
+            ) : (
+              destination
+            )}
+          </div>
+        }
+      >
         {isDetailOpen ? null : (
           <Button variant="ghost" size="sm" onClick={openDetail}>
             Add detail
@@ -301,7 +306,7 @@ export const ReportSheet = ({
             {submitHint}
           </KbdPill>
         </Button>
-      </footer>
+      </FormActions>
     </section>
   );
 };
