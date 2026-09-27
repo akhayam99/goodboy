@@ -333,7 +333,8 @@ mod tests {
             assert_eq!(
                 serve(&mut store, &path).status(),
                 StatusCode::NOT_FOUND,
-                "{path}"
+                "{}",
+                path.replace(id.as_str(), "<stage>")
             );
         }
         assert!(store.insert(vec![file("../x.html", "x")]).is_err());

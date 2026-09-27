@@ -4,6 +4,7 @@ import {
   applyDecisionOps,
   countDecisionChanges,
   isLedgerOverBudget,
+  normalizeDecisionText,
   reconcileDecisionsText,
   renderDecisionsSlot,
   seedDecisionLedger,
@@ -339,5 +340,20 @@ describe('decision markers', () => {
       { kind: 'replace', number: 3, text: 'Key on id and provider', reason: 'payload changes' },
       { kind: 'withdraw', number: 5, reason: 'The ledger already keeps retry state' },
     ]);
+  });
+});
+
+describe('normalizeDecisionText', () => {
+  it('strips bullet and number prefixes, punctuation and casing', () => {
+    expect(normalizeDecisionText({ text: '- Key on the event ID!' })).toBe('key on the event id');
+    expect(normalizeDecisionText({ text: 'D3 Retry with backoff.' })).toBe('retry with backoff');
+    expect(normalizeDecisionText({ text: '2) Cache the result;;' })).toBe('cache the result');
+  });
+
+  it('answers quickly on a long run of trailing punctuation', () => {
+    const started = performance.now();
+    const result = normalizeDecisionText({ text: `decision${'!'.repeat(50_000)}` });
+    expect(performance.now() - started).toBeLessThan(200);
+    expect(result).toBe('decision');
   });
 });

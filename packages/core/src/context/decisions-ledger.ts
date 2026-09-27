@@ -93,20 +93,29 @@ type ApplyParams = {
 
 const NUMBER_PREFIX = /^D(\d+)[ \t]+/;
 const BULLET_PREFIX = /^\s*(?:[-*+]|\d+[.)])\s+/;
+const TRAILING_PUNCTUATION = new Set(['.', ';', ':', '!']);
 
 type TextParams = {
   readonly text: string;
 };
 
+const stripTrailingPunctuation = (text: string): string => {
+  let end = text.length;
+  while (end > 0 && TRAILING_PUNCTUATION.has(text.charAt(end - 1))) {
+    end -= 1;
+  }
+  return text.slice(0, end);
+};
+
 export const normalizeDecisionText = ({ text }: TextParams): string =>
-  text
-    .replace(BULLET_PREFIX, '')
-    .replace(NUMBER_PREFIX, '')
-    .toLowerCase()
-    .replace(/[`*_]/g, '')
-    .replace(/\s+/g, ' ')
-    .replace(/[.;:!]+$/, '')
-    .trim();
+  stripTrailingPunctuation(
+    text
+      .replace(BULLET_PREFIX, '')
+      .replace(NUMBER_PREFIX, '')
+      .toLowerCase()
+      .replace(/[`*_]/g, '')
+      .replace(/\s+/g, ' '),
+  ).trim();
 
 const cleanText = ({ text }: TextParams): string => text.replace(NUMBER_PREFIX, '').trim();
 
