@@ -23,7 +23,7 @@ const HistoryEntry = ({
   onRestore,
 }: HistoryEntryProps) => {
   return (
-    <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-subtle p-3">
+    <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-elevated p-3">
       <div className="flex items-center gap-2">
         <AuthorshipChip byUser={entry.author === 'user'} />
         <span className="text-secondary text-muted-foreground">

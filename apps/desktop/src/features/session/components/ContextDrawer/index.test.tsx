@@ -14,7 +14,6 @@ const { store } = vi.hoisted(() => ({
     },
     historyCount: 0,
     history: [] as ReadonlyArray<unknown>,
-    sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
     sessionContextSeenAt: {} as Record<string, string | null>,
     sessionDecisions: {} as Record<string, ReadonlyArray<SessionDecision>>,
     sessionDecisionsBaseline: {} as Record<string, string | null>,
@@ -66,7 +65,6 @@ beforeEach(() => {
   );
   store.summarizer = { status: 'idle', lastUpdate: null, lastAttempt: null };
   store.historyCount = 0;
-  store.sessionEvents = {};
   store.sessionContextSeenAt = {};
   store.sessionDecisions = {};
   store.sessionDecisionsBaseline = {};
@@ -126,32 +124,20 @@ describe('ContextDrawer', () => {
     expect(within(panel).getByText('Next')).toBeDefined();
   });
 
-  it('marks the decisions as seen once their tab is shown', () => {
-    renderDrawer('decisions');
+  it('marks the context seen when it opens on any tab and again when it closes', () => {
+    const { unmount } = renderDrawer('goal');
 
-    expect(store.markSessionContextSeen).toHaveBeenCalledWith(SID);
+    expect(store.markSessionContextSeen).toHaveBeenCalledTimes(1);
+    unmount();
+    expect(store.markSessionContextSeen).toHaveBeenCalledTimes(2);
   });
 
-  it('does not mark the decisions seen from another tab', () => {
-    renderDrawer('goal');
-
-    expect(store.markSessionContextSeen).not.toHaveBeenCalled();
-  });
-
-  it('flags new decisions on their tab', () => {
-    store.sessionContextSeenAt = { [SID]: '2026-09-26T10:00:00.000Z' };
-    store.sessionEvents = {
-      [SID]: [
-        {
-          kind: 'decisions_changed',
-          payload: { added: 2, removed: 0 },
-          createdAt: '2026-09-26T11:00:00.000Z',
-        },
-      ],
-    };
+  it('dots the Decisions tab when they changed since the last look', () => {
+    store.sessionDecisionsBaseline = { [SID]: '2026-09-26T09:00:00.000Z' };
+    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
     renderDrawer('summary');
 
-    expect(screen.getByRole('img', { name: '2 new since you last looked' })).toBeDefined();
+    expect(screen.getByRole('img', { name: 'Changed since you last looked' })).toBeDefined();
   });
 
   it('numbers the decisions newest first and says who settled them', () => {

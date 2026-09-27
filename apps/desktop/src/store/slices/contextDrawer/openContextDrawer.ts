@@ -1,5 +1,6 @@
 import type { SessionId } from '@goodboy/types';
 import type { ContextDrawerTab, ContextDrawerView } from '../drawer/state';
+import { selectOpenDrawer } from '../drawer/selectOpenDrawer';
 import { DEFAULT_CONTEXT_TAB } from './state';
 import type { GetFn, SetFn } from './types';
 
@@ -14,7 +15,17 @@ export const openContextDrawer = (set: SetFn, get: GetFn) => {
   return ({ sessionId, tab, view = 'current', highlight }: OpenContextDrawerParams): void => {
     const state = get();
     const nextTab = tab ?? state.contextDrawerTab[sessionId] ?? DEFAULT_CONTEXT_TAB;
-    set({ contextDrawerTab: { ...state.contextDrawerTab, [sessionId]: nextTab } });
+    const current = selectOpenDrawer(state);
+    const isAlreadyOpen =
+      current !== null && current.kind === 'context' && current.sessionId === sessionId;
+    const seenAt = state.sessionContextSeenAt[sessionId];
+    set({
+      contextDrawerTab: { ...state.contextDrawerTab, [sessionId]: nextTab },
+      ...(!isAlreadyOpen &&
+        seenAt !== undefined && {
+          sessionDecisionsBaseline: { ...state.sessionDecisionsBaseline, [sessionId]: seenAt },
+        }),
+    });
     state.openDrawer({
       kind: 'context',
       sessionId,

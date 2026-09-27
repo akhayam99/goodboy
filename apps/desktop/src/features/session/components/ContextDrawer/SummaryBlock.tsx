@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pencil, Plus, type LucideIcon } from 'lucide-react';
-import { CardAction, CardActionSlot, Eyebrow, Markdown } from '@goodboy/ui';
+import { CardAction, CardActionSlot } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ContextBlock } from './ContextBlock';
+import { KeyLineList } from './KeyLineList';
+import { summaryItems } from './summaryItems';
 
 const REVEAL_GROUP =
-  'group-hover/summary-block:opacity-100 group-focus-within/summary-block:opacity-100';
+  'group-hover/context-block:opacity-100 group-focus-within/context-block:opacity-100';
 
 type Props = {
   readonly title: string;
@@ -15,10 +17,11 @@ type Props = {
   readonly onCommit: (body: string) => void;
 };
 
-export const SummaryBlock = ({ title, body, icon: Icon, isLocked, onCommit }: Props) => {
+export const SummaryBlock = ({ title, body, icon, isLocked, onCommit }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(body);
-  const hasBody = body.trim() !== '';
+  const items = useMemo(() => summaryItems({ body }), [body]);
+  const hasBody = items.length > 0;
 
   const startEditing = () => {
     setDraft(body);
@@ -34,15 +37,12 @@ export const SummaryBlock = ({ title, body, icon: Icon, isLocked, onCommit }: Pr
   };
 
   return (
-    <section aria-label={title} className="group/summary-block flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <h3>
-          <Eyebrow
-            label={title}
-            icon={Icon != null ? <Icon size={ICON_SIZE.row} aria-hidden /> : undefined}
-          />
-        </h3>
-        {isEditing ? null : (
+    <ContextBlock
+      title={title}
+      icon={icon}
+      {...(hasBody && { count: items.length })}
+      action={
+        isEditing ? null : (
           <CardActionSlot label={`${title} actions`}>
             <CardAction
               icon={hasBody ? Pencil : Plus}
@@ -53,8 +53,9 @@ export const SummaryBlock = ({ title, body, icon: Icon, isLocked, onCommit }: Pr
               onClick={startEditing}
             />
           </CardActionSlot>
-        )}
-      </div>
+        )
+      }
+    >
       {isEditing ? (
         <BlockEditor
           value={draft}
@@ -67,10 +68,10 @@ export const SummaryBlock = ({ title, body, icon: Icon, isLocked, onCommit }: Pr
           }}
         />
       ) : hasBody ? (
-        <div className="text-prose [overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap">
-          <Markdown text={body} />
-        </div>
-      ) : null}
-    </section>
+        <KeyLineList items={items} label={title} />
+      ) : (
+        <p className="text-secondary text-faint-foreground">Nothing yet.</p>
+      )}
+    </ContextBlock>
   );
 };

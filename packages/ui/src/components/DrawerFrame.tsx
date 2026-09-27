@@ -59,7 +59,7 @@ export const DrawerFrame = ({
   return (
     <section
       aria-label={title}
-      className="flex h-full min-h-0 min-w-0 flex-col bg-background motion-safe:animate-nav-step-in"
+      className="flex h-full min-h-0 min-w-0 flex-col bg-subtle motion-safe:animate-nav-step-in"
     >
       <header className="flex h-11 shrink-0 items-center gap-2 pl-4 pr-2">
         <div className="flex min-w-0 flex-1 items-center gap-2">

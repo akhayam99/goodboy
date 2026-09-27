@@ -19,6 +19,7 @@ export const MountKindGlyph = ({ projectKind, isMainCheckout, label }: Props) =>
   return (
     <Tooltip content={`${label} is the ${kind}`}>
       <span
+        role="img"
         data-testid="mount-kind-glyph"
         data-kind={kind}
         aria-label={`${label} is the ${kind}`}
