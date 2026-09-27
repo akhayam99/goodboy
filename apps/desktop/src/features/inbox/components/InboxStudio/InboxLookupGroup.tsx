@@ -3,7 +3,8 @@ import type { WorkspaceIssueLookup } from '../../../integrations/hooks/useWorksp
 import type { LookupHit } from '../../../integrations/issueCode/lookupIssueByCode';
 import { lookingUpText, lookupStatuses } from '../../../integrations/issueCode/lookupCopy';
 import { openToolSettings } from '../../../integrations/openToolSettings';
-import { InboxRow } from './InboxRow';
+import { InboxRow, type InboxRowStar } from './InboxRow';
+import type { InboxRecord } from '../../types';
 import { LookupStatusRow } from './LookupStatusRow';
 
 type Props = {
@@ -11,9 +12,16 @@ type Props = {
   readonly workspaceName: string;
   readonly selectedKey: string | null;
   readonly onSelect: (hit: LookupHit) => void;
+  readonly starOf?: (record: InboxRecord) => InboxRowStar | undefined;
 };
 
-export const InboxLookupGroup = ({ lookup, workspaceName, selectedKey, onSelect }: Props) => {
+export const InboxLookupGroup = ({
+  lookup,
+  workspaceName,
+  selectedKey,
+  onSelect,
+  starOf,
+}: Props) => {
   const { state, code } = lookup;
   if (state.status === 'idle' || code === null) {
     return null;
@@ -41,6 +49,7 @@ export const InboxLookupGroup = ({ lookup, workspaceName, selectedKey, onSelect 
             record={hit.record}
             selected={selectedKey === hit.record.key}
             onSelect={() => onSelect(hit)}
+            star={starOf?.(hit.record)}
           />
           {hit.record.context === '' ? null : (
             <span className="h-4 truncate pl-[122px] text-secondary text-faint-foreground">

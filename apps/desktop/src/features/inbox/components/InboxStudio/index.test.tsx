@@ -56,6 +56,15 @@ vi.mock('../../../../store', () => ({
     selector({ workspaces: [] }),
 }));
 
+vi.mock('../../useInboxStars', () => ({
+  useInboxStars: () => ({
+    rows: [],
+    isStarred: () => false,
+    canStar: () => false,
+    toggle: async () => undefined,
+  }),
+}));
+
 vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
   useWorkspaceIssueLookup: () => ({
     code: null,

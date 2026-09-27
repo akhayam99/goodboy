@@ -1,7 +1,7 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { inlineMarkdownText, useEscapeLayer } from '@goodboy/ui';
-import type { SessionId, WorkspaceId } from '@goodboy/types';
+import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { StudioShell } from '../../../../shared/components/StudioShell';
@@ -14,7 +14,7 @@ import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspac
 import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
 import { orderInboxRecords } from '../../orderInboxRecords';
-import { INBOX_PROVIDERS, type InboxKind, type InboxProvider } from '../../types';
+import { INBOX_PROVIDERS, type InboxKind, type InboxProvider, type InboxRecord } from '../../types';
 import {
   NO_INBOX_FILTERS,
   activeFilterCount,
@@ -30,6 +30,9 @@ import { InboxFacetRail } from './InboxFacetRail';
 import { InboxList, type InboxLoadFailure } from './InboxList';
 import { InboxListHeader } from './InboxListHeader';
 import { InboxLookupGroup } from './InboxLookupGroup';
+import { InboxStarredGroup } from './InboxStarredGroup';
+import type { InboxRowStar } from './InboxRow';
+import { useInboxStars } from '../../useInboxStars';
 import { InboxStudioLayout } from './InboxStudioLayout';
 
 type Props = {
@@ -168,23 +171,40 @@ export const InboxStudio = ({
     return goal === '' ? 'Linked session' : goal;
   })();
 
+  const stars = useInboxStars({ workspaceId, records });
+  const [unstarredClosed, setUnstarredClosed] = useState<ReadonlyArray<StarredIssue>>([]);
   const days = useMemo(
     () =>
       groupByDay({
         items: orderInboxRecords({
-          records: filterInboxRecords({ records: scopedRecords, query, filters }),
+          records: filterInboxRecords({ records: scopedRecords, query, filters }).filter(
+            (record) => !stars.isStarred(record),
+          ),
         }),
         timestampOf: (record) => record.updatedAt,
         now: new Date(),
       }),
-    [scopedRecords, query, filters],
+    [scopedRecords, query, filters, stars.isStarred],
   );
-  const orderedRecords = days.flatMap((day) => day.items);
+  const needle = query.trim().toLowerCase();
+  const starredRows = stars.rows.filter((row) =>
+    row.record === null
+      ? needle === '' ||
+        row.issue.identifier.toLowerCase().includes(needle) ||
+        row.issue.title.toLowerCase().includes(needle)
+      : filterInboxRecords({ records: [row.record], query, filters }).length > 0,
+  );
+  const starredRecords = starredRows.flatMap((row) => (row.record === null ? [] : [row.record]));
+  const orderedRecords = [...starredRecords, ...days.flatMap((day) => day.items)];
   const counts = inboxFacetCounts({ records: scopedRecords, query, filters });
 
   const workspaceName = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
   );
+  const unstarIssue = useAppStore((state) => state.unstarIssue);
+  const unstarClosedIssues = useAppStore((state) => state.unstarClosedIssues);
+  const restoreStarredIssues = useAppStore((state) => state.restoreStarredIssues);
+  const reportError = useAppStore((state) => state.reportError);
   const lookup = useWorkspaceIssueLookup({
     workspaceId,
     query,
@@ -195,8 +215,35 @@ export const InboxStudio = ({
 
   const selectedRecord =
     scopedRecords.find((record) => record.key === selectedKey) ??
+    starredRecords.find((record) => record.key === selectedKey) ??
     lookupRecords.find((record) => record.key === selectedKey) ??
     null;
+
+  const starOf = (record: InboxRecord): InboxRowStar | undefined =>
+    stars.canStar(record)
+      ? { isStarred: stars.isStarred(record), onToggle: () => void stars.toggle(record) }
+      : undefined;
+
+  const toggleSelectedStar = (key: string | null): void => {
+    const record = [...orderedRecords, ...lookupRecords].find((entry) => entry.key === key);
+    if (record !== undefined) {
+      void stars.toggle(record);
+    }
+  };
+
+  const unstarClosed = async (): Promise<void> => {
+    try {
+      setUnstarredClosed(await unstarClosedIssues({ workspaceId }));
+    } catch (error) {
+      void reportError({ title: "Couldn't unstar the closed issues", error, workspaceId });
+    }
+  };
+
+  const undoUnstarClosed = async (): Promise<void> => {
+    const issues = unstarredClosed;
+    setUnstarredClosed([]);
+    await restoreStarredIssues({ workspaceId, issues }).catch(() => undefined);
+  };
 
   const deselect = (): void => {
     setSelectedKey(null);
@@ -239,6 +286,7 @@ export const InboxStudio = ({
     extraKeys: {
       o: openSelected,
       r: focusReply,
+      s: toggleSelectedStar,
       '/': () => searchRef.current?.focus(),
     },
   });
@@ -315,9 +363,26 @@ export const InboxStudio = ({
                 workspaceName={workspaceName}
                 selectedKey={selectedKey}
                 onSelect={(hit) => selectKey(hit.record.key)}
+                starOf={starOf}
+              />
+              <InboxStarredGroup
+                rows={starredRows}
+                selectedKey={selectedKey}
+                unstarredCount={unstarredClosed.length}
+                onSelect={(record) => selectKey(record.key)}
+                onUnstar={(row) =>
+                  void unstarIssue({
+                    workspaceId,
+                    provider: row.issue.provider,
+                    externalId: row.issue.externalId,
+                  })
+                }
+                onUnstarClosed={() => void unstarClosed()}
+                onUndoUnstar={() => void undoUnstarClosed()}
               />
               <InboxList
                 days={days}
+                starOf={starOf}
                 totalCount={scopedRecords.length}
                 connectedCount={connected.length}
                 isLoading={isLoading}
