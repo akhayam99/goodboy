@@ -26,6 +26,7 @@ import {
 } from '../../../../../shared/components/conceptIcons';
 import { sessionCardShell, sessionTone } from '../../../../session/components/sessionCardShell';
 import { useOpenSession } from '../../../../../shared/hooks/useOpenSession';
+import { sessionTitle } from '../../../../session/sessionTitle';
 import type { BoardNavigation } from '../useBoardNavigation';
 import { getLinkedRequest } from './getLinkedRequest';
 import { PrRequestSlot } from './PrRequestSlot';
@@ -204,7 +205,7 @@ export const StageBoardCard = memo(function StageBoardCard({
           />
           <button
             type="button"
-            title={inlineMarkdownText({ text: session.goal })}
+            title={inlineMarkdownText({ text: sessionTitle({ session }) })}
             aria-pressed={selected === true}
             aria-keyshortcuts="Alt+Enter"
             onKeyDown={(event) => {
@@ -220,7 +221,10 @@ export const StageBoardCard = memo(function StageBoardCard({
             }}
             className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
-            <InlineMarkdown text={session.goal} className="line-clamp-2 min-h-10 text-row" />
+            <InlineMarkdown
+              text={sessionTitle({ session })}
+              className="line-clamp-2 min-h-10 text-row"
+            />
           </button>
         </span>
 

@@ -19,6 +19,10 @@ export const HowItWorks = () => (
         why.
       </p>
       <p>
+        Press New and the session opens blank on its overview. Set a goal and a project, then pick
+        your own workflow, a built-in one, or an orchestrated or custom one.
+      </p>
+      <p>
         Heading somewhere you did not mean? Leave a hint for the next decision, or have it read
         right away.
       </p>

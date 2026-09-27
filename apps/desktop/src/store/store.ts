@@ -313,7 +313,7 @@ import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
-import { createSessionDraftSlice } from './slices/sessionDraft';
+import { createSessionStartSlice } from './slices/sessionStart';
 import { createContextDrawerSlice } from './slices/contextDrawer';
 import { initialContextDrawerState } from './slices/contextDrawer/state';
 import { createDecisionsSlice } from './slices/decisions';
@@ -322,10 +322,10 @@ import type { ApplySessionDecisionOpsParams } from './slices/decisions/applySess
 import type { NoteDecisionChangesParams } from './slices/decisions/noteDecisionChanges';
 import type { ConsolidateSessionContextParams } from './slices/decisions/consolidateSessionContext';
 import type { OpenContextDrawerParams } from './slices/contextDrawer/openContextDrawer';
-import { initialSessionDraftState } from './slices/sessionDraft/state';
-import type { PatchSessionDraftParams } from './slices/sessionDraft/patchSessionDraft';
-import type { DiscardSessionDraftParams } from './slices/sessionDraft/discardSessionDraft';
-import type { StartSessionFromDraftParams } from './slices/sessionDraft/startSessionFromDraft';
+import { initialSessionStartState } from './slices/sessionStart/state';
+import type { SaveSessionSetupGoalParams } from './slices/sessionStart/saveSessionSetupGoal';
+import type { SessionSetupStepParams } from './slices/sessionStart/skipSessionSetupStep';
+import type { CloseSessionSetupStepParams } from './slices/sessionStart/closeSessionSetupStep';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
 import {
@@ -402,7 +402,7 @@ type AppActions = {
   focusChangelogRelease(params: FocusChangelogReleaseParams): void;
   setBugReportDraft(params: SetBugReportDraftParams): void;
   clearBugReportDraft(): void;
-  openSessionDraft(): void;
+  startBlankSession(): Promise<Session | null>;
   openContextDrawer(params: OpenContextDrawerParams): void;
   toggleContextDrawer(params: OpenContextDrawerParams): void;
   loadSessionContextSeen(sessionId: SessionId): Promise<void>;
@@ -411,9 +411,10 @@ type AppActions = {
   applySessionDecisionOps(params: ApplySessionDecisionOpsParams): Promise<AppliedDecisionOps>;
   noteDecisionChanges(params: NoteDecisionChangesParams): Promise<void>;
   consolidateSessionContext(params: ConsolidateSessionContextParams): void;
-  patchSessionDraft(params: PatchSessionDraftParams): void;
-  discardSessionDraft(params: DiscardSessionDraftParams): void;
-  startSessionFromDraft(params: StartSessionFromDraftParams): Promise<Session>;
+  saveSessionSetupGoal(params: SaveSessionSetupGoalParams): Promise<void>;
+  skipSessionSetupStep(params: SessionSetupStepParams): void;
+  focusSessionSetupStep(params: SessionSetupStepParams): void;
+  closeSessionSetupStep(params: CloseSessionSetupStepParams): void;
   openDrawer(request: DrawerRequest): void;
   closeDrawer(): void;
   toggleDrawer(request: DrawerRequest): void;
@@ -1179,7 +1180,7 @@ export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
   ...initialBugReportDraftState,
-  ...initialSessionDraftState,
+  ...initialSessionStartState,
   ...initialContextDrawerState,
   ...initialDecisionsState,
   ...initialDrawerState,
@@ -1425,7 +1426,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createUpdaterSlice(set, get),
   ...createChangelogSlice(set, get),
   ...createBugReportDraftSlice(set, get),
-  ...createSessionDraftSlice(set, get),
+  ...createSessionStartSlice(set, get),
   ...createContextDrawerSlice(set, get),
   ...createDecisionsSlice(set, get),
   ...createDrawerSlice(set, get),

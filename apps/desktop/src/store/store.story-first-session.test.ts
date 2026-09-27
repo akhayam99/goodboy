@@ -91,53 +91,49 @@ const primeMount = () => {
 };
 
 describe('story: a first-run user opens their workspace and starts a session', () => {
-  it('New session opens a draft and writes nothing', () => {
-    useAppStore.getState().openSessionDraft();
+  it('New session creates a blank session with nothing required and nothing mounted', async () => {
+    const session = await useAppStore.getState().startBlankSession();
 
     const state = useAppStore.getState();
-    expect(state.sessions).toEqual([]);
-    expect(state.currentSessionId).toBeNull();
-    expect(state.openSessionDraftWorkspaceId).toBe(WORKSPACE_ID);
+    expect(session).not.toBeNull();
+    expect(state.sessions.map((candidate) => candidate.id)).toEqual([session?.id]);
+    expect(state.currentSessionId).toBe(session?.id);
+    expect(state.activeLens[session!.id] ?? null).toBeNull();
+    expect(session?.goal).toBe('');
+    expect(state.sessionSlots[session!.id]).toEqual([]);
+    expect(state.sessionPhaseRuns[session!.id]).toEqual([]);
+    expect(state.sessionProjectMounts[session!.id]).toEqual([]);
     expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(storySpies.createSessionDir).not.toHaveBeenCalled();
     expect(recordedEventKinds()).toEqual([]);
   });
 
-  it('Start creates the session with nothing mounted', async () => {
-    useAppStore.getState().openSessionDraft();
-    const session = await useAppStore.getState().startSessionFromDraft({
-      workspaceId: WORKSPACE_ID,
-      start: {
-        kind: 'task',
-        candidate: {
-          provider: 'linear',
-          externalId: 'issue-214',
-          identifier: 'NW-214',
-          title: 'Invoices credited twice',
-          url: 'https://linear.app/northwind/issue/NW-214',
-          goal: 'Stop crediting an invoice twice.',
-          body: '',
-          branchSlug: 'invoices-credited-twice',
-        },
-        title: 'Invoices credited twice',
-        goal: 'Stop crediting an invoice twice.',
-      },
+  it('New session again reuses the untouched blank session instead of piling up another', async () => {
+    const first = await useAppStore.getState().startBlankSession();
+    const second = await useAppStore.getState().startBlankSession();
+
+    expect(second?.id).toBe(first?.id);
+    expect(useAppStore.getState().sessions).toHaveLength(1);
+  });
+
+  it('the goal step names an untitled session from the goal and keeps the goal', async () => {
+    const session = await useAppStore.getState().startBlankSession();
+
+    await useAppStore.getState().saveSessionSetupGoal({
+      sessionId: session!.id,
+      goal: 'Stop crediting an invoice twice. Then reconcile last week.',
     });
 
     const state = useAppStore.getState();
-    expect(state.sessions.map((candidate) => candidate.id)).toContain(session.id);
-    expect(state.currentSessionId).toBe(session.id);
-    expect(state.openSessionDraftWorkspaceId).toBeNull();
-    expect(session.goal).toBe('Invoices credited twice');
-    expect(state.sessionSlots[session.id]).toEqual([
-      { key: 'goal', value: 'Stop crediting an invoice twice.', enabled: true },
-    ]);
-    expect(state.sessionExternalTasks[session.id]?.map((task) => task.identifier)).toEqual([
-      'NW-214',
-    ]);
-    expect(storySpies.createWorktree).not.toHaveBeenCalled();
-    expect(state.sessionWorktrees[session.id]).toEqual([]);
-    expect(state.sessionProjectMounts[session.id]).toEqual([]);
+    const saved = state.sessions.find((candidate) => candidate.id === session!.id);
+    expect(saved?.goal).toBe('Stop crediting an invoice twice.');
+    expect(saved?.titleUserEdited).toBe(false);
+    expect(state.goodboyNamedSessionId).toBe(session!.id);
+    expect(state.sessionSlots[session!.id]?.find((slot) => slot.key === 'goal')?.value).toBe(
+      'Stop crediting an invoice twice. Then reconcile last week.',
+    );
+
+    const next = await useAppStore.getState().startBlankSession();
+    expect(next?.id).not.toBe(session!.id);
   });
 
   it('the first read turn runs from the scratch standpoint, mounting nothing', async () => {

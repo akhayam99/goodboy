@@ -225,97 +225,45 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
-**New session is a draft, not a session.** New, ⌘N, the board, the palette
-and the checklist open the `New session` draft (the `session-draft` place,
-address `new`). Nothing is written: no row in the database, the sidebar or
-the board. The trail and the title say `New session`, the title is faint and
-cannot be renamed, and there is no `⋯`, no chip and no projects section. The
-sidebar's New button stays selected while the draft is open. Each workspace
-keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
-leaving it keeps it intact, New brings it back, and the button shows a primary
-dot with `Draft in progress` while a written draft waits. `Discard draft` in
-the header empties it; Esc never does. Back returns to the draft like any
-other place.
+**New session starts blank, straight on its Overview.** New, ⌘N, the board,
+the palette, the collapsed rail and the checklist all fire
+`goodboy:new-session`, and `NewSessionBridge` calls `startBlankSession`
+(`store/slices/sessionStart/`): it creates a session with no title, goal,
+project, agent or workflow and lands on its Overview. Nothing is asked first.
+While the last blank session is still untouched (no title, goal, slot, mount,
+agent or workflow run), New goes back to it instead of creating another one,
+so repeated presses never pile up empty sessions. A second press while the
+first create is still running is ignored. A blank session reads `Untitled
+session` in the header, the sidebar, the board and every confirm
+(`sessionTitle`).
 
-The draft asks one question, "How do you want to start?", with three choices
-on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
+**A session with nothing started sets itself up inline** (`SessionSetup`).
+While it has no agent and no workflow run, the Overview shows `Set up this
+session` in place of the next step and Activity: an ordered list of three
+steps, one open at a time, each with its own empty state and actions.
 
-- **Pick up a task** shows the open issues of the connected trackers with a
-  search field. Picking one and pressing **Pick up** proposes the brief under
-  the list, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Use brief, Edit or Use issue text settles the title and goal and opens
-  **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
-  or Ask an agent choice as the other two tabs, precompiled with that goal,
-  Run a workflow preselected. Its own primary links the issue, creates the
-  session and starts the workflow or agent in one gesture. Without a tracker
-  it shows the connect links. The search, like the Inbox search, reads an issue
-  code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
-  `owner/repo#482`, a tracker URL; anything else stays a local filter). When
-  no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
-  right tracker once (300 ms after typing, cached two minutes): a key goes to
-  Jira when it matches the Jira project, to Linear alone when the prefix
-  matches a Linear team key (`linear_fetch_team_keys`, fetched once per
-  connection and cached, so a recognized team no longer also fires a Jira
-  call that was always going to 404), otherwise to Linear and Jira; `#N` goes
-  to every GitHub or GitLab repo of the workspace's projects (four GitHub
-  calls at a time); a short id resolves across the Sentry organization
-  (`sentry_resolve_short_id`). While a lookup is in flight, the row names the
-  trackers it asked (`Looking up CAS-231 in Linear and Jira`). Hits sit in a
-  `Not in your inbox` group above the list (`InboxLookupGroup`) and open or
-  pick up like any other issue, with a second line showing `Assigned to
-<name>` for a Linear or Jira hit with a known assignee, the project/repo
-  context otherwise; a miss is one row in that group that says why (not
-  found or not visible, key rejected with `Sign in again`, missing
-  permission, tracker not connected, no repo for `#N`), and a rate limit
-  shows a live countdown and retries once on its own when it ends, alongside
-  the manual `Try again`. The mobile companion resolves Linear, Sentry and
-  GitLab issues through the same direct lookups instead of searching only
-  the issues assigned to you. Issues can be starred (`StarToggle`, the same
-  star as projects) from an Inbox row, a lookup hit or `s` on the selected
-  row. Stars live per workspace (`workspace_starred_issues`, keyed by
-  provider and external id; GitHub keys by `owner/repo#N`) with the last
-  copy of identifier, title and state, so the `Starred` group draws before
-  any tracker answers; a row not refreshed since app start opens the detail
-  panel from that snapshot (`placeholderRecordOf`), not the tool's URL, and
-  gets replaced once the refresh lands a real record. In the Inbox it sits
-  under `Not in your inbox` and above the days, and a starred issue leaves
-  the days; open ones come first, closed ones at the bottom with `Unstar
-closed` and `Undo`, and one the tracker no longer returns reads `Can't
-reach NW-230 anymore`. Pick up a task shows only the open starred issues,
-  even ones a session already picked up. Opening the Inbox or Pick up a task
-  refreshes the stars at most every five minutes (`refreshStarredIssues`):
-  one request per tracker for Linear and Jira, one per project for GitLab,
-  and one per issue for GitHub and Sentry, which have no batch endpoint for
-  fetching by id.
-- **Run a workflow** asks for the goal and a preset, then **Run workflow**
-  starts it with that goal.
-- **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
-  model and project sit below it as chips (`AgentStartFields`), opening the
-  same role grid and model picker `Start agent` uses. The role defaults to
-  Scout every time, never the last one picked, because a habitual Implementer
-  writes code you did not ask for. Scout alone can start with an empty field
-  ("Start Scout on the whole project", which reads the project and changes
-  nothing); every other role needs a prompt first. The model chip reads Auto
-  until pinned. The project chip only shows when the workspace has more than
-  one repo project; with one it is preselected with no chip, with none the
-  session starts with no project attached.
+- **Goal** asks "What should this session get done?". Save goal writes the
+  goal slot and, while the session is untitled, names it after the goal's
+  first sentence (`saveSessionSetupGoal`, marked `Named by Goodboy`).
+- **Project** lists the workspace projects not in the session yet
+  (`MountProjectList`, the same list and preflight as Add project). Skip keeps
+  the turns in the session folder; a workspace with no project offers `Add
+workspace project`.
+- **Start the work** lists `Your workflows`, `Built in` and `From scratch`
+  (`Orchestrated workflow`, `Custom workflow`), with Start agent and the Create
+  menu beside them. Picking a workflow prefills the builder draft
+  (`builderDraftFor`: the preset and its steps, or the custom or orchestrated
+  approach, plus the session goal) and opens the same `Start a workflow` studio
+  the Workflows lens uses (`WorkflowBuilderView`), editable before anything
+  starts.
 
-Only the selected tab's panel, and only its primary, shows. The tabs
-preselect Pick up a task when a tracker has open issues and Run a workflow
-otherwise, and they never remember the last choice. Opening the draft puts
-focus on the selected tab.
-
-**Start is the only way a session is born from the draft.** The primary
-creates the session and starts the work in one gesture
-(`startSessionFromDraft`): the title and the goal come from the issue, the
-workflow goal or the first sentence of the Scout focus, a picked issue is
-linked, and the column moves to the new session. The header marks that title
-`Named by Goodboy` until you rename it or open the session again, and a better
-title that arrives later fades in without moving the layout. If the start fails, the
-session is removed again, the draft stays as it was and the reason shows
-inline above the primary. A session that exists always has a real title, so
-its header never has an empty state. Sessions created elsewhere with no
-activity yet show the plain overview with its actions.
+Each step can be skipped, and a done or skipped row reopens in place on click
+(`focusSessionSetupStep`). The next open step is the first one neither done
+nor skipped. Skips live in memory per session. The header hides `Add a goal`
+and the empty Projects section while the setup shows, so nothing is asked
+twice. The first agent or workflow run ends the setup and the Overview
+becomes the usual document. Picking up an issue with a drafted brief lives in
+the Inbox (Launch session).
 
 ## Breadcrumbs
 
@@ -594,13 +542,12 @@ control, names the workspace after its parent folder and finds the
 repositories inside one. Code host is skipped by itself when no project is a
 repository. Code host and Tasks can be skipped; Sentry, Slack and the rest
 live in Settings › Integrations. There is no permissions question: every
-workspace starts on Full access. The last step offers the same three ways as
-a new session, with Ask an agent picked and three starters: Start Scout
-starts the session from a Scout draft (`startSessionFromDraft`) with that
-starter as its focus, and Scout running. Pick up a task and Run a workflow
-close the wizard on the new session draft with that choice picked. Either
-way the draft carries the project picked in the Project step, so the session
-lands in it. With no
+workspace starts on Full access. The last step offers three ways to start,
+with Ask an agent picked and three starters: Start Scout creates the session
+in the project picked in the Project step (`startFirstScout`), titled after
+the starter, with Scout running on it. Pick up a task closes the wizard on the
+Inbox. Run a workflow closes it on a blank session in that project, open on its
+Start the work step. With no
 issue source at all, Pick up a task says so and leads back to Code host. The checklist has six
 items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
@@ -977,12 +924,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
 
 ## Creating a session
 
-The new session form always lands on Overview. It offers no agent-kind picker
-before the session exists: the kind is a choice made inside a session, not a
-condition for having one. Its issue sources come from a curated allowlist, not
-from every connected provider, because a connected code host does not mean an
-issue picker. The section hides when none of the allowed sources is connected.
-Creating a session picks no project either. The session is born on the
+A new session is created blank and always lands on Overview. Nothing is a
+condition for having one: goal, project, agents and workflow are each set
+later, inline, from the setup steps. Creating a session picks no project. The session is born on the
 workspace with only a container directory, and projects are materialized when
 the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
 

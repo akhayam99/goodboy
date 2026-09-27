@@ -86,16 +86,16 @@ Tell agents once who you are and how you like to work, in four short parts. **Se
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s02-kickoff-dark.webp">
-  <img src="./docs/readme/s02-kickoff-light.webp" alt="Pick up a task with HBL-412 selected and a drafted brief">
+  <img src="./docs/readme/s02-kickoff-light.webp" alt="A blank session's overview with the goal set and Start the work listing your workflows, built-in ones, and an orchestrated or custom workflow">
 </picture>
 
-### How do you want to start?
+### Start blank, set it up step by step
 
-Start from an issue, a workflow or a question, in one draft with three tabs: **Pick up a task**, **Run a workflow** and **Ask an agent**. The draft becomes a session only when you press Start, so empty sessions do not pile up.
+**New** opens a fresh session right away, with nothing to fill in first. Its overview walks you through **Goal**, **Project** and **Start the work**, one step at a time, and any step can be skipped or reopened. Press New again before touching it and you land back on the same session, so empty sessions do not pile up.
 
 ### Pick up a task, with a drafted brief
 
-Turn an issue into a briefed session in one pick. Goodboy drafts a short title and goal linked back to the issue, and you keep it, edit it, or use the issue text.
+Turn an issue into a briefed session from the Inbox. Goodboy drafts a short title and goal linked back to the issue, and you keep it or edit it.
 
 ### Ask an agent
 
@@ -103,7 +103,7 @@ Map an unfamiliar repo before you plan: **Scout** is the default and can start w
 
 ### Run a workflow
 
-Write a goal, pick a built-in or saved workflow, and run it from the first screen.
+Start the work lists your own workflows, the built-in ones, an orchestrated workflow and a custom one. Picking any of them opens the full workflow form, filled in with your goal, so you can change the steps before it starts.
 
 ### Named by Goodboy
 

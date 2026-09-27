@@ -265,8 +265,8 @@ whether you clicked it on the board or in the session overview.
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
   in the session overview, above Activity, outside its filter and its
   grouping: a suggestion is not activity, it is a pointer to what activity
-  should happen next. A new session shows the kickoff instead; the two never
-  compete for the same moment.
+  should happen next. A session with nothing started shows its setup steps
+  instead; the two never compete for the same moment.
 - Every suggestion carries a **band** (0 waits on you, 1 unblocks something,
   2 ships something, 3 improves something), a **why** (the second line, the
   concrete reason), a **fingerprint** (kind, object, trigger version) and a
@@ -808,19 +808,12 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the new session draft, or opening Launch session on an
-inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
-of one to three sentences and up to five "done when" criteria, in the issue's
-language. It reads the issue text, not its comments, and answers in checked
-JSON, so a reply with a preamble fails instead of leaking into the goal. The
-brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
-text or Dismiss, and a failure stays inline in the card with Retry. The first
-three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
-`SessionKickoff/`) underneath: Run a workflow (preselected, the workspace's
-first library preset) or Ask an agent, precompiled with that goal and
-editable. Its own action links the issue, creates the session and starts the
-workflow or agent in the same gesture; nothing exists before that. In the
-Launch session popover the brief fills the goal only while you have not edited it, and
+Opening Launch session on an inbox issue asks the **Issue briefs** task model
+for a brief: a title, a goal of one to three sentences and up to five "done
+when" criteria, in the issue's language. It reads the issue text, not its
+comments, and answers in checked JSON, so a reply with a preamble fails
+instead of leaking into the goal. The brief is only a proposal: in the Launch
+session popover it fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
 connected provider free for the task, the card shows the issue text alone.
