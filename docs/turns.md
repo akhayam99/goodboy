@@ -328,8 +328,8 @@ completed by a turn that left no captured artifact. When the block fails to
 parse, or a report or wireframe agent that owns no artifact yet ends its turn
 without one, `completeResolvedAgent` sets the agent to `blocked` instead, and
 a workflow step does not advance. A block that parses but fails to save sets
-a completed artifact agent back to `blocked` once the capture error lands
-(`sendTurn`). A step that has not said it is done and
+a completed report or wireframe agent back to `blocked` once the capture
+error lands (`sendTurn`). A plan that fails to save keeps the step moving. A step that has not said it is done and
 emitted no block keeps the usual continue path. The missing-block case also
 emits `artifact_capture_failed` with code `missing`, so the transcript shows
 the Retry capture card. A captured artifact of the expected kind counts as the

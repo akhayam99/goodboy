@@ -1841,6 +1841,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         captured.error !== null &&
         settledAgentRow !== null &&
         settledAgentRow.status === 'completed' &&
+        earlyAgentKind !== 'planner' &&
         expectsArtifact({ kind: earlyAgentKind })
       ) {
         await invokeAgentUpdateStatus(settledAgentRow.id, {
