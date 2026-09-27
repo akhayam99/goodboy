@@ -118,7 +118,7 @@ Saving a script now scans it for tokens and keys, and a new Security findings pa
 ### Improved
 
 #### One page per provider
-<!-- gb area=providers screen=settings/providers -->
+<!-- gb area=providers screen=settings/providers image=provider-page -->
 
 Every provider now lives on one page with its usage, models, permissions and account in clearly separated groups. Connecting Linear, Jira or Sentry walks you through numbered steps instead of one bare form, and Sentry can link more than one project per workspace.
 
