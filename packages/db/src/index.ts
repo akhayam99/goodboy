@@ -131,6 +131,7 @@ export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/sess
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
   attachWorkflowToSession,
+  deleteOrphanedWorkflowAgents,
   detachWorkflowFromSession,
   discardWorkflowInSession,
   restoreWorkflowInSession,
