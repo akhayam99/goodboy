@@ -2,6 +2,7 @@ import { useState, type ComponentProps } from 'react';
 import { formatError, InlineConfirm } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { sessionTitle } from '../../sessionTitle';
 import { useSessionArchive } from '../../hooks/useSessionArchive';
 import { isBranchlessSession } from '../../../../shared/utils/isBranchlessSession';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -74,7 +75,7 @@ export const DeleteSessionConfirm = ({ session, onClose, className, surface }: P
       })}
     >
       <p className="truncate rounded-md border border-border-soft bg-subtle px-2 py-1 font-mono text-foreground">
-        {session.goal}
+        {sessionTitle({ session })}
       </p>
       <p className="font-medium text-danger">{warning}</p>
       {error != null && <p className="font-medium text-danger">{error}</p>}

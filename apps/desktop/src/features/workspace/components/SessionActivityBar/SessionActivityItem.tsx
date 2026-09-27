@@ -4,6 +4,7 @@ import { PANE_RHYTHM, TERMINAL_DIM, ToneBar, cn, formatUsd, InlineMarkdown } fro
 import { sessionTone } from '../../../session/components/sessionCardShell';
 import { useSessionSummary } from '../../hooks/useSessionSummary';
 import { SessionProgress } from '../SessionProgress';
+import { sessionTitle } from '../../../session/sessionTitle';
 import { SessionRowMeta } from './SessionRowMeta';
 import { SessionRowNode } from './SessionRowNode';
 
@@ -74,7 +75,7 @@ export const SessionActivityItem = ({
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex w-full min-w-0 items-baseline gap-2">
           <InlineMarkdown
-            text={session.goal}
+            text={sessionTitle({ session })}
             className="min-w-0 flex-1 truncate text-row text-foreground"
           />
           <span

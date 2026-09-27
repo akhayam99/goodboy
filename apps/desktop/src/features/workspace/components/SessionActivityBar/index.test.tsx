@@ -154,6 +154,11 @@ describe('SessionActivityBar, baseline', () => {
     );
   });
 
+  it('names a blank session Untitled session instead of leaving the row empty', () => {
+    renderBar([], [makeSession('s-blank', '')]);
+    expect(screen.getByText('Untitled session')).toBeDefined();
+  });
+
   it('renders empty-state copy when no sessions in active tab', () => {
     renderBar([]);
     expect(screen.getByText(/no sessions yet/i)).toBeDefined();

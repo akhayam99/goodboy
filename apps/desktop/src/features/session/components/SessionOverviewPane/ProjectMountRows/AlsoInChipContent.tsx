@@ -3,6 +3,7 @@ import type { Session } from '@goodboy/types';
 import { useAppStore, useSessionStageInfo } from '../../../../../store';
 import { sessionPlace } from '../../../../../store/slices/navigation/place';
 import { describeSessionStage } from '../../../session-stage';
+import { sessionTitle } from '../../../sessionTitle';
 
 type Props = {
   readonly session: Session;
@@ -12,9 +13,10 @@ export const AlsoInChipContent = ({ session }: Props) => {
   const stage = useSessionStageInfo(session);
   const presentation = describeSessionStage(stage);
   const navigate = useAppStore((state) => state.navigate);
+  const title = sessionTitle({ session });
 
   return (
-    <Tooltip content={`Also in ${session.goal}`}>
+    <Tooltip content={`Also in ${title}`}>
       <Chip
         as="button"
         tone="neutral"
@@ -26,7 +28,7 @@ export const AlsoInChipContent = ({ session }: Props) => {
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="shrink-0 text-faint-foreground">Also in</span>
             <StatusDot tone={presentation.tone} size="sm" />
-            <span className="min-w-0 truncate">{session.goal}</span>
+            <span className="min-w-0 truncate">{title}</span>
           </span>
         }
       />
