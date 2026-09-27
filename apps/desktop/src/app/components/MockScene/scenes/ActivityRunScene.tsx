@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { SESSION, seedActivityRunScene } from './activityRunSeed';
 import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
@@ -25,7 +26,16 @@ const SIBLINGS: ReadonlyArray<Session> = [
   sibling('mock-run-sibling-export', 'Fix the rounding drift in the settlement export', 6),
 ];
 
-export const ActivityRunScene = () => {
+type Props = {
+  readonly contextTab?: ContextDrawerTab;
+};
+
+const contextTabFromUrl = (): ContextDrawerTab => {
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  return tab === 'goal' || tab === 'summary' ? tab : 'decisions';
+};
+
+export const ActivityRunScene = ({ contextTab }: Props) => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -42,8 +52,11 @@ export const ActivityRunScene = () => {
       lens: null,
     });
     useAppStore.setState({ selectedAgentId: {} });
+    if (contextTab !== undefined) {
+      useAppStore.getState().openContextDrawer({ sessionId: SESSION.id, tab: contextTab });
+    }
     setIsReady(true);
-  }, []);
+  }, [contextTab]);
 
   useShowCompletedMounts({ isReady });
   useHoveredMountRow({ isReady, rowLabel: 'nw/backfill-processed-events' });
@@ -60,3 +73,5 @@ export const ActivityRunScene = () => {
     />
   );
 };
+
+export const ContextDrawerScene = () => <ActivityRunScene contextTab={contextTabFromUrl()} />;

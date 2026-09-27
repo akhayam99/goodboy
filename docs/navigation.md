@@ -964,10 +964,14 @@ versions of that slot, inside the same drawer, with Restore; Escape leaves the
 view before the drawer). The **Context** chip in the session header toggles it
 on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
 Decisions and Summary. The first open shows Summary, later ones the last tab
-used in that session. The chip says `2 new` when decisions were added since the
-Decisions tab was last shown (`sessions.context_seen_at`, counted from the
-`added` and `replaced` of `decisions_changed` events; withdrawals never count),
-and opens on Decisions then; it shows
+used in that session. The chip carries a quiet dot, never a count, when the
+decisions ledger changed since the drawer was last seen
+(`sessions.context_seen_at`, compared with the ledger rows in
+`decisionChangesSince`: added, removed and reworded rows, leaving out what you
+did yourself and what came and went unseen), and opens on Decisions then. The
+drawer marks it seen when it opens, on any tab, and again when it closes. A
+session never looked at starts its baseline the first time it loads, so the
+rows it already had never read as new. The chip shows
 a pulsing dot while the summarizer writes and a danger glyph when it failed,
 with Retry in the drawer's status line. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary` resolve in
@@ -975,12 +979,19 @@ and `context/goal`, `context/decisions`, `context/summary` resolve in
 The drawer header has one action, **Copy as brief**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
 
-The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)):
-active decisions newest first, each with its number, at most two lines of
+The drawer sits on the `subtle` panel surface, like every `DrawerFrame`. Its
+tabs are a `SegmentedTabs` strip at its own width, with the status line on the
+same row; the Decisions tab carries the count and the change dot.
+
+The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)).
+When something changed since the previous look (`sessionDecisionsBaseline`,
+the `context_seen_at` captured when the drawer opened), it starts with
+**Changed since you last looked**: one line per row, `+` added, `−` removed
+(`Replaced by 7` or `Withdrawn`), a pencil for reworded, and a click scrolls to
+the row and highlights it. Then **Active**, with its count: active decisions
+newest first, each with its number, at most two lines of
 text, and who settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
-`replaces 5`). A row added or replaced since the previous look carries `New`
-until the next open (`sessionDecisionsBaseline`, the `context_seen_at` before
-this one). A row the summarizer reworded says `Reworded by Goodboy` with
+`replaces 5`). An added row also carries `New` until the next open. A row the summarizer reworded says `Reworded by Goodboy` with
 **Show previous**. On hover a row offers edit (a reword of yours) and
 Withdraw, with no confirm because the bottom group, **Replaced and withdrawn**,
 offers Restore; its rows are struck through, point at the decision that

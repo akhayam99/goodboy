@@ -9,6 +9,6 @@ export const createContextDrawerSlice = (set: SetFn, get: GetFn) => {
     openContextDrawer: openContextDrawer(set, get),
     toggleContextDrawer: toggleContextDrawer(get),
     loadSessionContextSeen: loadSessionContextSeen(set, get),
-    markSessionContextSeen: markSessionContextSeen(set, get),
+    markSessionContextSeen: markSessionContextSeen(set),
   };
 };

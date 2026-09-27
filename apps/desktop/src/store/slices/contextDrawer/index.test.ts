@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { IsoDateTime, SessionEvent, SessionId } from '@goodboy/types';
+import type { IsoDateTime, SessionDecision, SessionId } from '@goodboy/types';
 
 const { db } = vi.hoisted(() => ({
   db: {
@@ -17,9 +17,13 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { createContextDrawerSlice } from './index';
 import { initialContextDrawerState } from './state';
-import { selectNewDecisionCount } from './selectNewDecisionCount';
+import { decisionChangesSince, NO_DECISION_CHANGES } from './decisionChangesSince';
+import { selectHasContextChange } from './selectHasContextChange';
 
 const SESSION_ID = 'sess-1' as SessionId;
+const SEEN_AT = '2026-09-26T10:00:00.000Z' as IsoDateTime;
+const BEFORE = '2026-09-26T09:00:00.000Z' as IsoDateTime;
+const AFTER = '2026-09-26T11:00:00.000Z' as IsoDateTime;
 
 type HarnessState = Record<string, unknown>;
 
@@ -44,19 +48,32 @@ const harness = () => {
   return { slice, getState: () => state };
 };
 
-const event = (createdAt: string, added: number): SessionEvent =>
-  ({
-    id: createdAt,
-    sessionId: SESSION_ID,
-    kind: 'decisions_changed',
-    payload: { added, removed: 0 },
-    createdAt,
-  }) as unknown as SessionEvent;
+const decision = (
+  row: Partial<SessionDecision> & { readonly number: number },
+): SessionDecision => ({
+  id: `d-${row.number}`,
+  sessionId: SESSION_ID,
+  text: `Decision ${row.number}`,
+  status: 'active',
+  replacedBy: null,
+  author: 'agent',
+  agentId: null,
+  turnOrdinal: 1,
+  reason: null,
+  closedBy: null,
+  closedByAgentId: null,
+  previousText: null,
+  rewordedAt: null,
+  createdAt: BEFORE,
+  updatedAt: BEFORE,
+  ...row,
+});
 
 let h = harness();
 
 beforeEach(() => {
   h = harness();
+  db.getSessionContextSeenAt.mockClear();
   db.setSessionContextSeenAt.mockClear();
 });
 
@@ -92,20 +109,24 @@ describe('context drawer slice', () => {
     expect(h.getState()['drawer']).toMatchObject({ payload: { tab: 'decisions' } });
   });
 
-  it('keeps the previous look as the baseline for the New tags', async () => {
-    db.getSessionContextSeenAt.mockResolvedValueOnce('2026-09-26T09:00:00.000Z');
+  it('keeps the previous look as the baseline for the change marks while open', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(BEFORE);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
 
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'decisions' });
     await h.slice.markSessionContextSeen(SESSION_ID);
-    expect(h.getState()['sessionDecisionsBaseline']).toEqual({
-      [SESSION_ID]: '2026-09-26T09:00:00.000Z',
-    });
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: BEFORE });
+
+    h.slice.openContextDrawer({ sessionId: SESSION_ID, tab: 'goal' });
+    expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: BEFORE });
 
     const firstLook = (h.getState()['sessionContextSeenAt'] as Record<string, string>)[SESSION_ID];
-    await h.slice.markSessionContextSeen(SESSION_ID);
+    h.slice.toggleContextDrawer({ sessionId: SESSION_ID });
+    h.slice.openContextDrawer({ sessionId: SESSION_ID });
     expect(h.getState()['sessionDecisionsBaseline']).toEqual({ [SESSION_ID]: firstLook });
   });
 
-  it('writes when the decisions were seen', async () => {
+  it('writes when the context was seen', async () => {
     await h.slice.markSessionContextSeen(SESSION_ID);
 
     const seenAt = (h.getState()['sessionContextSeenAt'] as Record<string, string>)[SESSION_ID];
@@ -113,70 +134,85 @@ describe('context drawer slice', () => {
     expect(db.setSessionContextSeenAt).toHaveBeenCalledWith(SESSION_ID, seenAt);
   });
 
-  it('loads when the decisions were last seen once', async () => {
-    db.getSessionContextSeenAt.mockResolvedValueOnce('2026-09-26T10:00:00.000Z');
+  it('loads when the context was last seen once', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(SEEN_AT);
     await h.slice.loadSessionContextSeen(SESSION_ID);
     await h.slice.loadSessionContextSeen(SESSION_ID);
 
-    expect(h.getState()['sessionContextSeenAt']).toEqual({
-      [SESSION_ID]: '2026-09-26T10:00:00.000Z',
-    });
+    expect(h.getState()['sessionContextSeenAt']).toEqual({ [SESSION_ID]: SEEN_AT });
+    expect(db.getSessionContextSeenAt).toHaveBeenCalledTimes(1);
+    expect(db.setSessionContextSeenAt).not.toHaveBeenCalled();
+  });
+
+  it('starts the baseline now for a session never looked at, so old rows are not new', async () => {
+    db.getSessionContextSeenAt.mockResolvedValueOnce(null);
+    await h.slice.loadSessionContextSeen(SESSION_ID);
+
+    const seenAt = (h.getState()['sessionContextSeenAt'] as Record<string, string | null>)[
+      SESSION_ID
+    ];
+    expect(typeof seenAt).toBe('string');
+    expect(db.setSessionContextSeenAt).toHaveBeenCalledWith(SESSION_ID, seenAt);
   });
 });
 
-describe('selectNewDecisionCount', () => {
-  const events = [
-    event('2026-09-26T09:00:00.000Z', 3),
-    event('2026-09-26T11:00:00.000Z', 2),
-    { ...event('2026-09-26T12:00:00.000Z', 4), kind: 'issue_linked' } as SessionEvent,
-  ];
-
-  it('counts the decisions added after the last look', () => {
-    expect(
-      selectNewDecisionCount({
-        state: {
-          sessionEvents: { [SESSION_ID]: events },
-          sessionContextSeenAt: { [SESSION_ID]: '2026-09-26T10:00:00.000Z' as IsoDateTime },
-        },
-        sessionId: SESSION_ID,
+describe('decisionChangesSince', () => {
+  it('lists added, removed and reworded rows after the last look', () => {
+    const ledger = [
+      decision({ number: 1 }),
+      decision({ number: 2, createdAt: AFTER, updatedAt: AFTER }),
+      decision({
+        number: 3,
+        status: 'replaced',
+        replacedBy: 2,
+        closedBy: 'agent',
+        updatedAt: AFTER,
       }),
-    ).toBe(2);
+      decision({ number: 4, status: 'withdrawn', closedBy: 'summarizer', updatedAt: AFTER }),
+      decision({ number: 5, previousText: 'Old', rewordedAt: AFTER, updatedAt: AFTER }),
+    ];
+
+    const changes = decisionChangesSince({ ledger, since: SEEN_AT });
+
+    expect(changes.added.map((row) => row.number)).toEqual([2]);
+    expect(changes.removed.map((row) => row.number)).toEqual([3, 4]);
+    expect(changes.reworded.map((row) => row.number)).toEqual([5]);
   });
 
-  it('counts every added decision when the tab was never opened', () => {
-    expect(
-      selectNewDecisionCount({
-        state: {
-          sessionEvents: { [SESSION_ID]: events },
-          sessionContextSeenAt: { [SESSION_ID]: null },
-        },
-        sessionId: SESSION_ID,
+  it('leaves out what you did yourself and what came and went unseen', () => {
+    const ledger = [
+      decision({ number: 1, author: 'user', createdAt: AFTER, updatedAt: AFTER }),
+      decision({ number: 2, status: 'withdrawn', closedBy: 'user', updatedAt: AFTER }),
+      decision({
+        number: 3,
+        status: 'withdrawn',
+        closedBy: 'agent',
+        createdAt: AFTER,
+        updatedAt: AFTER,
       }),
-    ).toBe(5);
-  });
+      decision({ number: 4, status: 'withdrawn', closedBy: 'agent', updatedAt: BEFORE }),
+    ];
 
-  it('counts replacements as new, never withdrawals', () => {
-    const ledgerEvent = {
-      ...event('2026-09-26T11:30:00.000Z', 1),
-      payload: { added: 1, replaced: 2, withdrawn: 4, merged: 1 },
-    } as SessionEvent;
-    expect(
-      selectNewDecisionCount({
-        state: {
-          sessionEvents: { [SESSION_ID]: [ledgerEvent] },
-          sessionContextSeenAt: { [SESSION_ID]: '2026-09-26T10:00:00.000Z' as IsoDateTime },
-        },
-        sessionId: SESSION_ID,
-      }),
-    ).toBe(3);
+    expect(decisionChangesSince({ ledger, since: SEEN_AT })).toBe(NO_DECISION_CHANGES);
   });
 
   it('says nothing before the last look is known', () => {
-    expect(
-      selectNewDecisionCount({
-        state: { sessionEvents: { [SESSION_ID]: events }, sessionContextSeenAt: {} },
-        sessionId: SESSION_ID,
-      }),
-    ).toBe(0);
+    const ledger = [decision({ number: 1, createdAt: AFTER })];
+
+    expect(decisionChangesSince({ ledger, since: undefined })).toBe(NO_DECISION_CHANGES);
+    expect(decisionChangesSince({ ledger, since: null })).toBe(NO_DECISION_CHANGES);
+    expect(decisionChangesSince({ ledger: undefined, since: SEEN_AT })).toBe(NO_DECISION_CHANGES);
+  });
+
+  it('signals a change only when one happened after the last look', () => {
+    const quiet = [decision({ number: 1 })];
+    const changed = [...quiet, decision({ number: 2, createdAt: AFTER })];
+    const state = (ledger: ReadonlyArray<SessionDecision>) => ({
+      sessionDecisions: { [SESSION_ID]: ledger },
+      sessionContextSeenAt: { [SESSION_ID]: SEEN_AT },
+    });
+
+    expect(selectHasContextChange({ state: state(quiet), sessionId: SESSION_ID })).toBe(false);
+    expect(selectHasContextChange({ state: state(changed), sessionId: SESSION_ID })).toBe(true);
   });
 });

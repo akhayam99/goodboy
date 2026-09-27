@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { SkeletonText } from '@goodboy/ui';
+import { SectionHeader, SkeletonText } from '@goodboy/ui';
 import { activeDecisionsNewestFirst, type DecisionOp } from '@goodboy/core';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import {
+  hasDecisionChanges,
+  type DecisionChangesSince,
+} from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { AddDecisionRow } from './AddDecisionRow';
+import { DecisionChangesList } from './DecisionChangesList';
 import { ClosedDecisionRow } from './ClosedDecisionRow';
 import { DecisionRowItem } from './DecisionRowItem';
 import { EnteringRow } from './EnteringRow';
@@ -24,6 +29,7 @@ const NO_NUMBERS: ReadonlySet<number> = new Set();
 
 type Props = {
   readonly sessionId: SessionId;
+  readonly changes: DecisionChangesSince;
   readonly highlight: ReadonlyArray<number>;
   readonly isLocked: boolean;
   readonly isRawEditing: boolean;
@@ -34,6 +40,7 @@ type Props = {
 
 export const DecisionsSection = ({
   sessionId,
+  changes,
   highlight,
   isLocked,
   isRawEditing,
@@ -100,6 +107,10 @@ export const DecisionsSection = ({
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
     [decisions],
   );
+  const addedNumbers = useMemo(
+    () => new Set(changes.added.map((row) => row.number)),
+    [changes.added],
+  );
   const replacedBy = useMemo(() => {
     const map = new Map<number, number>();
     for (const row of decisions) {
@@ -138,7 +149,13 @@ export const DecisionsSection = ({
     });
   };
   const jumpTo = (number: number) => {
-    rows.current.get(number)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    const isClosed = decisions.some((row) => row.number === number && row.status !== 'active');
+    if (isClosed && !isClosedOpen) {
+      setIsClosedOpen(true);
+    }
+    window.requestAnimationFrame(() => {
+      rows.current.get(number)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
     setHighlightMs(HIGHLIGHT_MS);
     setHighlighted(new Set([number]));
   };
@@ -151,46 +168,60 @@ export const DecisionsSection = ({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-5">
+      {hasDecisionChanges(changes) ? (
+        <DecisionChangesList changes={changes} onJump={jumpTo} />
+      ) : null}
       {active.length === 0 ? (
         <p className="text-body text-muted-foreground">
           No decisions yet. Agents record one when they settle a choice; you can add your own.
         </p>
       ) : (
-        <div className="flex flex-col gap-0.5">
-          {active.map((row) => (
-            <EnteringRow key={row.id} isEntering={!seenAtFirst.has(row.number)}>
-              <DecisionRowItem
-                number={row.number}
-                text={row.text}
-                byline={activeDecisionByline({
-                  decision: row,
-                  agentNames,
-                  replaces: replacedBy.get(row.number) ?? null,
-                  nowMs,
-                })}
-                isNew={row.author !== 'user' && isAfterBaseline({ iso: row.createdAt, baseline })}
-                reworded={
-                  row.previousText !== null &&
-                  row.rewordedAt !== null &&
-                  (baseline === null ||
-                    baseline === undefined ||
-                    isAfterBaseline({ iso: row.rewordedAt, baseline }))
-                    ? {
-                        age: decisionAge({ iso: row.rewordedAt, nowMs }),
-                        previousText: row.previousText,
-                      }
-                    : null
-                }
-                isLocked={isLocked}
-                isHighlighted={highlighted.has(row.number)}
-                rowRef={refFor(row.number)}
-                onReword={(text) => write({ kind: 'reword', number: row.number, text })}
-                onWithdraw={() => write({ kind: 'withdraw', number: row.number, reason: null })}
-              />
-            </EnteringRow>
-          ))}
-        </div>
+        <section aria-label="Active decisions" className="flex flex-col gap-1.5">
+          <SectionHeader
+            label="Active"
+            headingLevel={3}
+            meta={
+              <span className="text-secondary tabular-nums text-faint-foreground">
+                {active.length}
+              </span>
+            }
+          />
+          <div className="flex flex-col gap-0.5">
+            {active.map((row) => (
+              <EnteringRow key={row.id} isEntering={!seenAtFirst.has(row.number)}>
+                <DecisionRowItem
+                  number={row.number}
+                  text={row.text}
+                  byline={activeDecisionByline({
+                    decision: row,
+                    agentNames,
+                    replaces: replacedBy.get(row.number) ?? null,
+                    nowMs,
+                  })}
+                  isNew={addedNumbers.has(row.number)}
+                  reworded={
+                    row.previousText !== null &&
+                    row.rewordedAt !== null &&
+                    (baseline === null ||
+                      baseline === undefined ||
+                      isAfterBaseline({ iso: row.rewordedAt, baseline }))
+                      ? {
+                          age: decisionAge({ iso: row.rewordedAt, nowMs }),
+                          previousText: row.previousText,
+                        }
+                      : null
+                  }
+                  isLocked={isLocked}
+                  isHighlighted={highlighted.has(row.number)}
+                  rowRef={refFor(row.number)}
+                  onReword={(text) => write({ kind: 'reword', number: row.number, text })}
+                  onWithdraw={() => write({ kind: 'withdraw', number: row.number, reason: null })}
+                />
+              </EnteringRow>
+            ))}
+          </div>
+        </section>
       )}
       {closed.length === 0 ? null : (
         <div className="flex flex-col gap-0.5">

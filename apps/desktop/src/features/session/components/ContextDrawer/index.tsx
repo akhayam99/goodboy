@@ -20,7 +20,10 @@ import {
   useSummarizerStatus,
 } from '../../../../store';
 import type { ContextDrawerTab, ContextDrawerView } from '../../../../store/slices/drawer/state';
-import { selectNewDecisionCount } from '../../../../store/slices/contextDrawer/selectNewDecisionCount';
+import {
+  decisionChangesSince,
+  hasDecisionChanges,
+} from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { shareableContext } from '../../context/shareableContext';
 import { CONTEXT_TABS, CONTEXT_TAB_LABEL, CONTEXT_TAB_SLOT } from './contextTabs';
@@ -62,10 +65,11 @@ export const ContextDrawer = ({
   const slotsLoad = useSessionSlotsLoad(sessionId);
   const openQuestions = useSessionOpenQuestions(sessionId);
   const summarizer = useSummarizerStatus(sessionId);
-  const newCount = useAppStore((state) => selectNewDecisionCount({ state, sessionId }));
+  const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
   const openContextDrawer = useAppStore((state) => state.openContextDrawer);
   const ensureSessionSlots = useAppStore((state) => state.ensureSessionSlots);
   const loadSessionSlots = useAppStore((state) => state.loadSessionSlots);
+  const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
   const loadSessionOpenQuestions = useAppStore((state) => state.loadSessionOpenQuestions);
   const loadSessionContextSeen = useAppStore((state) => state.loadSessionContextSeen);
   const markSessionContextSeen = useAppStore((state) => state.markSessionContextSeen);
@@ -86,6 +90,11 @@ export const ContextDrawer = ({
         : ledger.filter((row) => row.status === 'active').length,
     [decisions, ledger],
   );
+  const changes = useMemo(
+    () => decisionChangesSince({ ledger, since: baseline }),
+    [baseline, ledger],
+  );
+  const hasChanges = hasDecisionChanges(changes);
   const hasSlot = slots.some((slot) => slot.key === slotKey);
   const isLoading = !hasSlot && (loading.slots || slotsLoad === null);
   const hasFailed = !hasSlot && !isLoading && slotsLoad === 'failed';
@@ -97,12 +106,20 @@ export const ContextDrawer = ({
     void loadSessionContextSeen(sessionId);
   }, [ensureSessionSlots, loadSessionContextSeen, loadSessionOpenQuestions, sessionId]);
 
+  const hasLedger = ledger !== undefined;
   useEffect(() => {
-    if (tab !== 'decisions') {
+    if (hasLedger) {
       return;
     }
+    void loadSessionDecisions(sessionId);
+  }, [hasLedger, loadSessionDecisions, sessionId]);
+
+  useEffect(() => {
     void markSessionContextSeen(sessionId);
-  }, [markSessionContextSeen, sessionId, tab]);
+    return () => {
+      void markSessionContextSeen(sessionId);
+    };
+  }, [markSessionContextSeen, sessionId]);
 
   useEffect(() => {
     setIsRawEditing(false);
@@ -122,8 +139,8 @@ export const ContextDrawer = ({
       value: candidate,
       label: CONTEXT_TAB_LABEL[candidate],
       ...(candidate === 'decisions' &&
-        (decisionCount > 0 || newCount > 0) && {
-          badge: <DecisionsBadge count={decisionCount} newCount={newCount} />,
+        (decisionCount > 0 || hasChanges) && {
+          badge: <DecisionsBadge count={decisionCount} hasChanges={hasChanges} />,
         }),
     }),
   );
@@ -171,6 +188,7 @@ export const ContextDrawer = ({
       return (
         <DecisionsSection
           sessionId={sessionId}
+          changes={changes}
           highlight={highlight}
           isLocked={isLocked}
           isRawEditing={isRawEditing}
@@ -222,9 +240,8 @@ export const ContextDrawer = ({
         )
       }
     >
-      <div className="flex shrink-0 flex-col gap-1 px-4 pt-3">
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 pt-3">
         <SegmentedTabs
-          fill
           size="sm"
           ariaLabel="Context"
           options={options}
