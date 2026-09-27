@@ -3,6 +3,8 @@
 const bridge = vi.hoisted(() => ({
   mode: 'gh-cli' as 'gh-cli' | 'absent',
   similar: '[]',
+  lastCrash: null as null | Record<string, unknown>,
+  menuHandlers: [] as Array<() => void>,
   calls: [] as Array<{
     readonly command: string;
     readonly args: ReadonlyArray<string>;
@@ -27,6 +29,11 @@ vi.mock('@tauri-apps/api/core', () => ({
           scopes: [],
           scoped: false,
         };
+      }
+      if (command === 'last_crash_claim') {
+        const claimed = bridge.lastCrash;
+        bridge.lastCrash = null;
+        return claimed;
       }
       if (command === 'app_platform') {
         return { os: 'macos', osVersion: '26.0', arch: 'aarch64', buildSha: '7f3a2c1' };
@@ -54,6 +61,16 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: vi.fn(async () => '0.12.0') }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefined) }));
+vi.mock('@tauri-apps/api/webviewWindow', () => ({
+  getCurrentWebviewWindow: () => ({
+    listen: vi.fn(async (event: string, handler: () => void) => {
+      if (event === 'goodboy://report-open') {
+        bridge.menuHandlers.push(handler);
+      }
+      return () => undefined;
+    }),
+  }),
+}));
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -67,6 +84,7 @@ import { ToastProvider } from '../../app/components/Toast';
 import { seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import { ReportSheetHost } from '../../features/bug-report/components/ReportSheetHost';
 import { openReportSheet } from '../../features/bug-report/openReportSheet';
+import { LastCrashBridge } from '../../features/bug-report/components/LastCrashBridge';
 
 const MAC_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15';
 
@@ -84,6 +102,8 @@ beforeEach(async () => {
   bridge.mode = 'gh-cli';
   bridge.similar = '[]';
   bridge.calls = [];
+  bridge.lastCrash = null;
+  bridge.menuHandlers = [];
   clipboard = [];
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
@@ -104,8 +124,19 @@ const mount = () =>
     <ToastProvider>
       <textarea aria-label="Terminal input" className="xterm-helper-textarea" />
       <ReportSheetHost />
+      <LastCrashBridge />
     </ToastProvider>,
   );
+
+const LAST_CRASH = {
+  source: 'window',
+  message: 'TypeError: rows is undefined at /Users/rowan/code/core-api/.env for Cascade',
+  stack: 'at Row (/src/Row.tsx:4)',
+  screen: 'Session › Agents',
+  appVersion: '0.11.1',
+  actions: [],
+  occurredAt: Date.parse('2026-09-26T18:42:00.000Z'),
+};
 
 const pressReportShortcut = (target: Element) => {
   fireEvent.keyDown(target, { key: 'i', code: 'KeyI', metaKey: true });
@@ -253,5 +284,54 @@ describe('report sheet on the real store', () => {
     expect(ghRuns('comment')[0]?.args.slice(0, 3)).toEqual(['issue', 'comment', '1542']);
     expect(ghRuns('create')).toHaveLength(0);
     expect(await screen.findByText('Added to #1542')).toBeDefined();
+  });
+
+  it('opens from the macOS Help menu item', async () => {
+    mount();
+    await waitFor(() => expect(bridge.menuHandlers).toHaveLength(1));
+
+    act(() => {
+      bridge.menuHandlers[0]?.();
+    });
+
+    expect(await screen.findByRole('dialog', { name: 'Report a bug' })).toBeDefined();
+  });
+
+  it('offers the crash from last launch once and opens the sheet with it attached', async () => {
+    bridge.lastCrash = LAST_CRASH;
+    mount();
+
+    expect(await screen.findByText('Goodboy closed unexpectedly')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Report it' }));
+
+    const sheet = await screen.findByRole('dialog', { name: 'Report this crash' });
+    await within(sheet).findByText('macOS 26.0 arm64');
+    expect(within(sheet).getByRole('textbox', { name: /one line/i })).toHaveProperty(
+      'value',
+      'Goodboy closed unexpectedly',
+    );
+    expect(within(sheet).getByText('Error and stack')).toBeDefined();
+    const sent = sentText(sheet);
+    expect(sent).toContain('In 0.11.1, on Session › Agents');
+    for (const leak of ['/Users/rowan', 'Cascade', 'core-api']) {
+      expect(sent).not.toContain(leak);
+    }
+    await waitFor(() =>
+      expect(bridge.calls.filter((call) => call.command === 'last_crash_delete')).toHaveLength(1),
+    );
+    expect(bridge.calls.filter((call) => call.command === 'last_crash_claim')).toHaveLength(1);
+  });
+
+  it('deletes the saved crash when the toast is dismissed', async () => {
+    bridge.lastCrash = LAST_CRASH;
+    mount();
+
+    await screen.findByText('Goodboy closed unexpectedly');
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss notification' }));
+
+    await waitFor(() =>
+      expect(bridge.calls.filter((call) => call.command === 'last_crash_delete')).toHaveLength(1),
+    );
+    expect(screen.queryByRole('dialog', { name: 'Report this crash' })).toBeNull();
   });
 });

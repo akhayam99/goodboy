@@ -1,4 +1,8 @@
+import type { LastCrash } from './lastCrash';
+
 export const OPEN_REPORT_SHEET_EVENT = 'goodboy:open-report-sheet';
+
+export const REPORT_OPEN_MENU_EVENT = 'goodboy://report-open';
 
 export type ReportNotice = {
   readonly title: string;
@@ -7,6 +11,7 @@ export type ReportNotice = {
 
 export type OpenReportSheetDetail = {
   readonly notice?: ReportNotice;
+  readonly crash?: LastCrash;
 };
 
 export const openReportSheet = (detail: OpenReportSheetDetail = {}): void => {

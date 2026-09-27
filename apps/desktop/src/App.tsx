@@ -52,6 +52,7 @@ import { DrawerHost } from './app/components/DrawerHost';
 import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
+import { LastCrashBridge } from './features/bug-report/components/LastCrashBridge';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -205,6 +206,7 @@ export const App = () => {
       <ToastProvider>
         <NotificationToastBridge />
         <ReportSheetHost />
+        <LastCrashBridge />
         {layers}
       </ToastProvider>
     );
@@ -214,6 +216,7 @@ export const App = () => {
     <ToastProvider>
       <NotificationToastBridge />
       <ReportSheetHost />
+      <LastCrashBridge />
       <WorkflowFollowToastBridge />
       <NewSessionBridge />
       <SessionArchiveBridge />

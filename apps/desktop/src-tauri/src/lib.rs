@@ -21,11 +21,12 @@ mod external_terminal;
 mod file_versions;
 mod frame_protocol;
 mod github;
-mod history;
 mod gitlab;
 mod goodboy_ignore;
+mod history;
 mod integration_credentials;
 mod jira;
+mod last_crash;
 mod linear;
 mod live_child;
 mod local_image;
@@ -101,6 +102,7 @@ pub fn run_query_cli() -> Option<i32> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    last_crash::install_panic_hook();
     boot_breadcrumb::record("process-start", Some("start"));
     #[cfg(target_os = "macos")]
     suppress_webkit_media_remote();
@@ -211,6 +213,9 @@ pub fn run() {
             explore::explore_open,
             boot_breadcrumb::boot_breadcrumb,
             app_platform::app_platform,
+            last_crash::last_crash_write,
+            last_crash::last_crash_claim,
+            last_crash::last_crash_delete,
             db::db_exec,
             db::db_execute,
             db::db_list_migration_snapshots,

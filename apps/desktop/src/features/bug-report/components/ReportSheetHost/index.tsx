@@ -7,10 +7,12 @@ import { useAppStore } from '../../../../store';
 import type { AppState } from '../../../../store/types';
 import { tauriGhRunner } from '../../../github/github';
 import { collectReportContext } from '../../../settings/reportContext';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { lastCrashPart } from '../../crashReport';
 import {
   OPEN_REPORT_SHEET_EVENT,
+  REPORT_OPEN_MENU_EVENT,
   type OpenReportSheetDetail,
-  type ReportNotice,
 } from '../../openReportSheet';
 import { contextParts, noticePart, type ReportPart } from '../../reportBody';
 import type { ReportFiled } from '../../reportDestination';
@@ -19,15 +21,19 @@ import { ReportComposer, type ReportDraft, type ReportLinkOpened } from '../Repo
 
 type Opened = {
   readonly key: number;
-  readonly notice: ReportNotice | null;
+  readonly heading: string;
 };
 
-type NoticePartsParams = {
+type LeadPartsParams = {
   readonly state: AppState;
-  readonly notice: ReportNotice | null;
+  readonly detail: OpenReportSheetDetail;
 };
 
-const noticeParts = ({ state, notice }: NoticePartsParams): ReadonlyArray<ReportPart> => {
+const leadParts = ({ state, detail }: LeadPartsParams): ReadonlyArray<ReportPart> => {
+  if (detail.crash != null) {
+    return [lastCrashPart({ crash: detail.crash })];
+  }
+  const notice = detail.notice;
   if (notice == null) {
     return [];
   }
@@ -40,10 +46,29 @@ const noticeParts = ({ state, notice }: NoticePartsParams): ReadonlyArray<Report
   ];
 };
 
+const headingFor = ({ detail }: { readonly detail: OpenReportSheetDetail }): string => {
+  if (detail.crash != null) {
+    return 'Report this crash';
+  }
+  return detail.notice == null ? 'Report a bug' : 'Report this';
+};
+
 const NO_PARTS: ReadonlyArray<ReportPart> = [];
 
-const isOpenDetail = (event: Event): event is CustomEvent<OpenReportSheetDetail | null> =>
-  event instanceof CustomEvent;
+const NO_DETAIL: OpenReportSheetDetail = {};
+
+const CRASH_LINE = 'Goodboy closed unexpectedly';
+
+const detailOf = (event: Event): OpenReportSheetDetail =>
+  event instanceof CustomEvent && event.detail != null ? event.detail : NO_DETAIL;
+
+const listenToMenu = async (onOpen: () => void): Promise<() => void> => {
+  try {
+    return await getCurrentWebviewWindow().listen(REPORT_OPEN_MENU_EVENT, onOpen);
+  } catch {
+    return () => undefined;
+  }
+};
 
 export const ReportSheetHost = () => {
   const draft = useAppStore((s) => s.bugReportDraft);
@@ -55,24 +80,38 @@ export const ReportSheetHost = () => {
   const [opened, setOpened] = useState<Opened | null>(null);
   const [parts, setParts] = useState<ReadonlyArray<ReportPart>>(NO_PARTS);
 
-  const open = useCallback((notice: ReportNotice | null) => {
+  const open = useCallback((detail: OpenReportSheetDetail) => {
     const state = useAppStore.getState();
-    const lead = noticeParts({ state, notice });
+    const lead = leadParts({ state, detail });
+    if (detail.crash != null && state.bugReportDraft.title === '') {
+      state.setBugReportDraft({ title: CRASH_LINE });
+    }
     setParts(lead);
-    setOpened((current) => ({ key: (current?.key ?? 0) + 1, notice }));
+    setOpened((current) => ({ key: (current?.key ?? 0) + 1, heading: headingFor({ detail }) }));
     void collectReportContext({ state }).then((context) => {
       setParts([...lead, ...contextParts({ context })]);
     });
   }, []);
 
-  useShortcut('report.open', () => open(null));
+  useShortcut('report.open', () => open(NO_DETAIL));
 
   useEffect(() => {
-    const onOpen = (event: Event) => {
-      open(isOpenDetail(event) ? (event.detail?.notice ?? null) : null);
-    };
+    const onOpen = (event: Event) => open(detailOf(event));
     window.addEventListener(OPEN_REPORT_SHEET_EVENT, onOpen);
-    return () => window.removeEventListener(OPEN_REPORT_SHEET_EVENT, onOpen);
+    let unlisten: (() => void) | null = null;
+    let isActive = true;
+    void listenToMenu(() => open(NO_DETAIL)).then((stop) => {
+      if (isActive) {
+        unlisten = stop;
+        return;
+      }
+      stop();
+    });
+    return () => {
+      isActive = false;
+      window.removeEventListener(OPEN_REPORT_SHEET_EVENT, onOpen);
+      unlisten?.();
+    };
   }, [open]);
 
   useEffect(() => {
@@ -134,7 +173,7 @@ export const ReportSheetHost = () => {
       <div className="pointer-events-auto w-full max-w-140 animate-popover-in">
         <ReportComposer
           key={opened.key}
-          heading={opened.notice == null ? 'Report a bug' : 'Report this'}
+          heading={opened.heading}
           variant="floating"
           parts={parts}
           draft={draft}

@@ -14,10 +14,16 @@ import { bootstrapTheme } from './shared/lib/theme';
 import { loadRemoteImage } from './shared/lib/remoteImage';
 import { APP_CODE_HIGHLIGHTER } from './features/diff/lib/highlight/codeHighlighter';
 import { CrashReport } from './features/bug-report/components/CrashReport';
-import { crashKind, crashPart, describeCrash } from './features/bug-report/crashReport';
+import {
+  crashKind,
+  crashPart,
+  describeCrash,
+  installCrashCapture,
+} from './features/bug-report/crashReport';
 import './styles.css';
 
 bootstrapTheme();
+installCrashCapture();
 
 const renderCrashReport = ({ error, componentStack }: ErrorReportRequest) => (
   <CrashReport
