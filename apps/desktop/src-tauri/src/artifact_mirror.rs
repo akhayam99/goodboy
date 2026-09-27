@@ -275,85 +275,113 @@ pub(crate) fn remove_mirror(
 }
 
 #[cfg(target_os = "macos")]
-fn macos_default_browser_bundle_id() -> Option<String> {
-    let output = Command::new("defaults")
-        .args([
-            "read",
-            "com.apple.LaunchServices/com.apple.launchservices.secure",
-            "LSHandlers",
-        ])
-        .output()
-        .ok()?;
-    if !output.status.success() {
-        return None;
+fn macos_default_browser_app_path() -> Option<PathBuf> {
+    use core_foundation_sys::base::{kCFAllocatorDefault, CFRelease, CFTypeRef};
+    use core_foundation_sys::string::{
+        kCFStringEncodingUTF8, CFStringCreateWithBytes, CFStringRef,
+    };
+    use core_foundation_sys::url::{
+        CFURLCreateWithString, CFURLGetFileSystemRepresentation, CFURLRef,
+    };
+
+    const K_LS_ROLES_VIEWER: u32 = 0x0000_0002;
+
+    #[link(name = "CoreServices", kind = "framework")]
+    extern "C" {
+        fn LSCopyDefaultApplicationURLForURL(
+            in_url: CFURLRef,
+            in_role_mask: u32,
+            out_error: *mut CFTypeRef,
+        ) -> CFURLRef;
     }
-    let text = String::from_utf8(output.stdout).ok()?;
-    let scheme_at = text.find("LSHandlerURLScheme = https;")?;
-    let before = &text[..scheme_at];
-    let marker = "LSHandlerRoleAll = \"";
-    let start = before.rfind(marker)? + marker.len();
-    let end = before[start..].find('"')? + start;
-    let bundle_id = &before[start..end];
-    if bundle_id.is_empty() {
-        return None;
+
+    unsafe {
+        let scheme = b"https://example.com";
+        let cf_string: CFStringRef = CFStringCreateWithBytes(
+            kCFAllocatorDefault,
+            scheme.as_ptr(),
+            scheme.len() as isize,
+            kCFStringEncodingUTF8,
+            0,
+        );
+        if cf_string.is_null() {
+            return None;
+        }
+        let cf_url: CFURLRef =
+            CFURLCreateWithString(kCFAllocatorDefault, cf_string, std::ptr::null());
+        CFRelease(cf_string as CFTypeRef);
+        let cf_url = cf_url;
+        if cf_url.is_null() {
+            return None;
+        }
+
+        let mut error: CFTypeRef = std::ptr::null_mut();
+        let app_url = LSCopyDefaultApplicationURLForURL(cf_url, K_LS_ROLES_VIEWER, &mut error);
+        CFRelease(cf_url as CFTypeRef);
+        if !error.is_null() {
+            CFRelease(error);
+        }
+        if app_url.is_null() {
+            return None;
+        }
+
+        let mut buffer = [0u8; 1024];
+        let ok = CFURLGetFileSystemRepresentation(
+            app_url,
+            1,
+            buffer.as_mut_ptr(),
+            buffer.len() as isize,
+        );
+        CFRelease(app_url as CFTypeRef);
+        if ok == 0 {
+            return None;
+        }
+        let end = buffer.iter().position(|&b| b == 0).unwrap_or(buffer.len());
+        std::str::from_utf8(&buffer[..end]).ok().map(PathBuf::from)
     }
-    Some(bundle_id.to_string())
 }
 
 #[cfg(target_os = "windows")]
 fn windows_default_browser_command() -> Option<String> {
-    let prog_id_output = Command::new("reg")
-        .args([
-            "query",
-            "HKCU\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\https\\UserChoice",
-            "/v",
-            "ProgId",
-        ])
-        .output()
-        .ok()?;
-    if !prog_id_output.status.success() {
+    use windows_sys::core::{PCWSTR, PWSTR};
+    use windows_sys::Win32::UI::Shell::{AssocQueryStringW, ASSOCF_IS_PROTOCOL, ASSOCSTR_COMMAND};
+
+    fn to_wide(s: &str) -> Vec<u16> {
+        s.encode_utf16().chain(std::iter::once(0)).collect()
+    }
+
+    let scheme = to_wide("http");
+    let mut buffer = [0u16; 1024];
+    let mut len = buffer.len() as u32;
+    let status = unsafe {
+        AssocQueryStringW(
+            ASSOCF_IS_PROTOCOL,
+            ASSOCSTR_COMMAND,
+            PCWSTR(scheme.as_ptr()),
+            PCWSTR(std::ptr::null()),
+            PWSTR(buffer.as_mut_ptr()),
+            &mut len,
+        )
+    };
+    if status < 0 {
         return None;
     }
-    let text = String::from_utf8(prog_id_output.stdout).ok()?;
-    let prog_id = text.lines().find_map(|line| {
-        let trimmed = line.trim();
-        trimmed.strip_prefix("ProgId").map(|rest| {
-            rest.trim()
-                .rsplit_once(char::is_whitespace)
-                .map(|(_, v)| v)
-                .unwrap_or(rest.trim())
-                .to_string()
-        })
-    })?;
-    let command_output = Command::new("reg")
-        .args([
-            "query",
-            &format!("HKCR\\{prog_id}\\shell\\open\\command"),
-            "/ve",
-        ])
-        .output()
-        .ok()?;
-    if !command_output.status.success() {
-        return None;
+    let end = buffer.iter().position(|&c| c == 0).unwrap_or(buffer.len());
+    let command = String::from_utf16_lossy(&buffer[..end]);
+    if command.is_empty() {
+        None
+    } else {
+        Some(command)
     }
-    let text = String::from_utf8(command_output.stdout).ok()?;
-    text.lines()
-        .find_map(|line| {
-            let trimmed = line.trim();
-            trimmed
-                .rsplit_once("REG_SZ")
-                .map(|(_, value)| value.trim().to_string())
-        })
-        .filter(|value| !value.is_empty())
 }
 
 fn open_with_browser(path: &Path) -> std::io::Result<()> {
     #[cfg(target_os = "macos")]
     {
-        if let Some(bundle_id) = macos_default_browser_bundle_id() {
+        if let Some(app_path) = macos_default_browser_app_path() {
             let status = Command::new("open")
-                .arg("-b")
-                .arg(&bundle_id)
+                .arg("-a")
+                .arg(&app_path)
                 .arg(path)
                 .status();
             if status.map(|s| s.success()).unwrap_or(false) {
@@ -783,5 +811,17 @@ mod tests {
         assert!(remove_mirror(&home, "harborline", "..").is_err());
         assert!(remove_mirror(&home, "harborline", "a/b").is_err());
         let _ = std::fs::remove_dir_all(home);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_default_browser_app_path_resolves_a_real_app_bundle() {
+        let path = macos_default_browser_app_path().expect("Launch Services must resolve https");
+        assert!(path.exists(), "resolved app bundle must exist: {path:?}");
+        assert_eq!(
+            path.extension().and_then(|ext| ext.to_str()),
+            Some("app"),
+            "resolved path must be an app bundle: {path:?}"
+        );
     }
 }

@@ -1629,6 +1629,7 @@ name = "goodboy-desktop"
 version = "0.9.0"
 dependencies = [
  "base64 0.22.1",
+ "core-foundation-sys",
  "dirs",
  "keyring",
  "libc",
@@ -1652,6 +1653,7 @@ dependencies = [
  "tauri-plugin-updater",
  "thiserror 2.0.19",
  "tokio",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

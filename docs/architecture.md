@@ -73,11 +73,14 @@ on macOS and Linux.
   wireframe render in the app through `ArtifactDocument` (`medium="screen"`,
   themed) and on disk through the same component (`medium="file"`, always
   light). `Open in browser` (`artifact_mirror_open`) opens that file with the
-  OS default web browser, never with a `.html` file's default app: macOS
-  resolves the `https` handler from `LaunchServices`, Windows reads the
-  `UrlAssociations` registry key for `https`, and both fall back to the
-  platform opener (`spawn_open`) if resolution fails; Linux always uses that
-  opener. `⌘P` from there prints, with the browser's own print dialog.
+  OS default web browser, never with a `.html` file's default app: macOS asks
+  Launch Services directly (`LSCopyDefaultApplicationURLForURL`, via
+  `core-foundation-sys`), Windows asks the shell's association API directly
+  (`AssocQueryStringW`, via `windows-sys`), both native calls rather than
+  shelling out to `defaults`/`reg`, and both fall back to the platform opener
+  (`spawn_open`) if resolution fails. Linux always uses that opener, which
+  already resolves the default browser through `xdg-open` on its own. `⌘P`
+  from there prints, with the browser's own print dialog.
 - **The file is never stale.** `meta.json` carries `rendererVersion`
   (`ARTIFACT_RENDERER_VERSION`) beside `revision` and `updatedAt`. Rust's
   `is_current` compares all three, so a restyle that bumps the version alone,
