@@ -107,7 +107,12 @@ describe('MountProjectList', () => {
   it('goes back to the list without creating anything', () => {
     renderList();
     fireEvent.click(screen.getByRole('button', { name: 'Add goodboy' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    const back = screen.getByRole('button', { name: 'Back' });
+    expect(back.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(back.parentElement).toBe(
+      screen.getByRole('button', { name: 'Add project' }).parentElement,
+    );
+    fireEvent.click(back);
 
     expect(screen.getByRole('button', { name: 'Add goodboy' })).toBeTruthy();
     expect(h.ensureProjectMounted).not.toHaveBeenCalled();
