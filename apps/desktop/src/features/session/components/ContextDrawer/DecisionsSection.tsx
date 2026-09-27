@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { SectionHeader, SkeletonText } from '@goodboy/ui';
+import { SkeletonText } from '@goodboy/ui';
 import { activeDecisionsNewestFirst, type DecisionOp } from '@goodboy/core';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ContextBlock } from './ContextBlock';
 import {
   hasDecisionChanges,
   type DecisionChangesSince,
@@ -168,7 +169,7 @@ export const DecisionsSection = ({
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3">
       {hasDecisionChanges(changes) ? (
         <DecisionChangesList changes={changes} onJump={jumpTo} />
       ) : null}
@@ -177,17 +178,8 @@ export const DecisionsSection = ({
           No decisions yet. Agents record one when they settle a choice; you can add your own.
         </p>
       ) : (
-        <section aria-label="Active decisions" className="flex flex-col gap-1.5">
-          <SectionHeader
-            label="Active"
-            headingLevel={3}
-            meta={
-              <span className="text-secondary tabular-nums text-faint-foreground">
-                {active.length}
-              </span>
-            }
-          />
-          <div className="flex flex-col gap-0.5">
+        <ContextBlock title="Active" icon={CONCEPT_ICONS.decisions} count={active.length}>
+          <div className="-mx-2 flex flex-col gap-0.5">
             {active.map((row) => (
               <EnteringRow key={row.id} isEntering={!seenAtFirst.has(row.number)}>
                 <DecisionRowItem
@@ -221,7 +213,7 @@ export const DecisionsSection = ({
               </EnteringRow>
             ))}
           </div>
-        </section>
+        </ContextBlock>
       )}
       {closed.length === 0 ? null : (
         <div className="flex flex-col gap-0.5">

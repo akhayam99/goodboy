@@ -125,14 +125,14 @@ export const ContextDrawer = ({
     setIsRawEditing(false);
   }, [tab, view]);
 
-  const brief = shareableContext({
-    goal,
-    decisions,
-    summary,
-    openQuestions: openQuestions
-      .filter((question) => question.status === 'open')
-      .map((question) => question.text),
-  });
+  const openQuestionTexts = useMemo(
+    () =>
+      openQuestions
+        .filter((question) => question.status === 'open')
+        .map((question) => question.text),
+    [openQuestions],
+  );
+  const brief = shareableContext({ goal, decisions, summary, openQuestions: openQuestionTexts });
 
   const options: ReadonlyArray<SegmentedTabOption<ContextDrawerTab>> = CONTEXT_TABS.map(
     (candidate) => ({
@@ -207,6 +207,7 @@ export const ContextDrawer = ({
     }
     return (
       <SummarySection
+        openQuestions={openQuestionTexts}
         value={value}
         isLoading={isLoading}
         isLocked={isLocked}

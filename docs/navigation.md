@@ -983,6 +983,15 @@ The drawer sits on the `subtle` panel surface, like every `DrawerFrame`. Its
 tabs are a `SegmentedTabs` strip at its own width, with the status line on the
 same row; the Decisions tab carries the count and the change dot.
 
+Every tab reads as labelled blocks (`ContextBlock`: a `fill` band with an
+eyebrow title, an icon and a count). A block shows its key line first and
+folds the rest behind **Show N more** (`KeyLineList`); `summaryItems` splits a
+body into items, one per top-level bullet with its sub-bullets, or one per
+sentence for prose. Summary shows State, Next, Open questions (the session's
+open questions, read only) and Learned, then any section the summarizer did not
+name. Goal is one block with Edit and Versions in its header. Decisions shows
+the changes block, then Active, then the folded Replaced and withdrawn group.
+
 The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)).
 When something changed since the previous look (`sessionDecisionsBaseline`,
 the `context_seen_at` captured when the drawer opened), it starts with

@@ -1,8 +1,9 @@
 import { Minus, Pencil, Plus, type LucideIcon } from 'lucide-react';
-import { SectionHeader, cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import type { SessionDecision } from '@goodboy/types';
 import type { DecisionChangesSince } from '../../../../store/slices/contextDrawer/decisionChangesSince';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { ContextBlock } from './ContextBlock';
 
 type ChangeKind = 'added' | 'removed' | 'reworded';
 
@@ -45,15 +46,8 @@ export const DecisionChangesList = ({ changes, onJump }: Props) => {
   ];
 
   return (
-    <section aria-label="Changed since you last looked" className="flex flex-col gap-1.5">
-      <SectionHeader
-        label="Changed since you last looked"
-        headingLevel={3}
-        meta={
-          <span className="text-secondary tabular-nums text-faint-foreground">{rows.length}</span>
-        }
-      />
-      <ul className="flex flex-col">
+    <ContextBlock title="Changed since you last looked" count={rows.length}>
+      <ul className="-mx-2 flex flex-col">
         {rows.map((row) => {
           const mark = MARK[row.kind];
           const Icon = mark.icon;
@@ -87,6 +81,6 @@ export const DecisionChangesList = ({ changes, onJump }: Props) => {
           );
         })}
       </ul>
-    </section>
+    </ContextBlock>
   );
 };

@@ -148,3 +148,32 @@ describe('Context drawer change marks', () => {
     ).toBeNull();
   });
 });
+
+describe('Context drawer summary', () => {
+  it('reads the summary by section, key line first and the rest collapsed', async () => {
+    act(() => {
+      useAppStore.getState().openContextDrawer({ sessionId: SESSION_ID, tab: 'summary' });
+    });
+    renderSurface();
+    await settle();
+
+    const drawer = screen.getByRole('region', { name: 'Context' });
+    const sections = within(drawer)
+      .getAllByRole('heading', { level: 3 })
+      .map((heading) => heading.textContent);
+    expect(sections).toEqual(['State4', 'Next3', 'Open questions1', 'Learned2']);
+
+    const state = within(drawer).getByRole('region', { name: 'State' });
+    expect(
+      within(state).getByText('Dedupe check and idempotency column are live in payments-api'),
+    ).toBeDefined();
+    expect(within(state).queryByText('42 tests pass on the webhook handler')).toBeNull();
+
+    fireEvent.click(within(state).getByRole('button', { name: 'Show 3 more' }));
+    expect(within(state).getByText('42 tests pass on the webhook handler')).toBeDefined();
+    expect(within(state).getByRole('button', { name: 'Show less' })).toBeDefined();
+
+    const questions = within(drawer).getByRole('region', { name: 'Open questions' });
+    expect(within(questions).getByText('How many retries should raise the banner?')).toBeDefined();
+  });
+});
