@@ -162,6 +162,13 @@ describe('useSentryIssues', () => {
     await waitFor(() => expect(result.current.error).toBe('offline'));
   });
 
+  it('reads the message of a tauri error object instead of printing [object Object]', async () => {
+    fetchIssues.mockRejectedValueOnce({ kind: 'no_token', message: 'no personal API key stored' });
+    const { result } = renderHook(() => useSentryIssues(WS));
+
+    await waitFor(() => expect(result.current.error).toBe('no personal API key stored'));
+  });
+
   it('refetch resets rows and reloads from the first page', async () => {
     fetchIssues
       .mockResolvedValueOnce(page([makeIssue({ id: 'a' })], 'cur-1'))

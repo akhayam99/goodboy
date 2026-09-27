@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { sentryFetchIssues, type SentryIssue, type SentryIssuesPage } from '../client';
 import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
 
@@ -86,7 +87,7 @@ export const useSentryIssues = (
         setCursor(page.next_cursor);
         setHasMore(page.next_cursor != null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        setError(formatError(err));
       } finally {
         setLoading(false);
       }
