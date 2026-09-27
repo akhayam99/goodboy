@@ -11,7 +11,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke }));
 const themeState = vi.hoisted(() => ({ theme: 'dark' as 'dark' | 'light' }));
 
 vi.mock('../../../../shared/lib/theme', () => ({
-  useThemeStore: (selector: (value: typeof themeState) => unknown) => selector(themeState),
+  useAppliedTheme: () => themeState.theme,
 }));
 
 beforeEach(() => {
@@ -71,8 +71,9 @@ describe('useChangelogImage', () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
-  it('refetches with the theme-specific file name when the theme changes', async () => {
-    invoke.mockResolvedValue('data:image/webp;base64,AAA=');
+  it('refetches with the theme-specific file name when the theme changes, keeping the shown image meanwhile', async () => {
+    invoke.mockResolvedValueOnce('data:image/webp;base64,AAA=');
+    invoke.mockResolvedValueOnce('data:image/webp;base64,BBB=');
     const { result, rerender } = renderHook(
       ({ theme }: { readonly theme: 'dark' | 'light' }) => {
         themeState.theme = theme;
@@ -85,12 +86,16 @@ describe('useChangelogImage', () => {
     act(() => {
       rerender({ theme: 'light' });
     });
+    expect(result.current).toEqual({ kind: 'ready', dataUri: 'data:image/webp;base64,AAA=' });
 
     await waitFor(() =>
       expect(invoke).toHaveBeenCalledWith('changelog_image', {
         version: '0.10.0',
         file: 'scroll-fade-after-light.webp',
       }),
+    );
+    await waitFor(() =>
+      expect(result.current).toEqual({ kind: 'ready', dataUri: 'data:image/webp;base64,BBB=' }),
     );
   });
 });

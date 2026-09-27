@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useThemeStore } from '../../../../shared/lib/theme';
+import { useEffect, useRef, useState } from 'react';
+import { useAppliedTheme } from '../../../../shared/lib/theme';
 import { changelogImageFileName } from '../../changelogImageFiles';
 import type { ChangelogImageVariant } from '../../changelogImageFiles';
 import { fetchChangelogImage } from '../../fetchChangelogImage';
@@ -25,16 +25,22 @@ export const useChangelogImage = ({
   variant,
   enabled = true,
 }: Params): ChangelogImageState => {
-  const theme = useThemeStore((s) => s.theme);
+  const theme = useAppliedTheme();
+  const shownFor = useRef<string | null>(null);
   const [state, setState] = useState<ChangelogImageState>(enabled ? LOADING : ABSENT);
 
   useEffect(() => {
     if (!enabled) {
+      shownFor.current = null;
       setState(ABSENT);
       return;
     }
     let cancelled = false;
-    setState(LOADING);
+    const subject = `${version}|${image}|${variant}`;
+    if (shownFor.current !== subject) {
+      shownFor.current = subject;
+      setState(LOADING);
+    }
     const file = changelogImageFileName({ image, variant, theme });
     fetchChangelogImage({ version, file })
       .then((dataUri) => {

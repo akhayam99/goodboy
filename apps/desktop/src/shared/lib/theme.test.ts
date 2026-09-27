@@ -2,7 +2,13 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { STORAGE_KEYS } from './storage-keys';
-import { bootstrapTheme, resolveTheme, useThemeStore, withViewTransition } from './theme';
+import {
+  bootstrapTheme,
+  getAppliedTheme,
+  resolveTheme,
+  subscribeAppliedTheme,
+  useThemeStore,
+} from './theme';
 
 type Listener = () => void;
 
@@ -28,8 +34,11 @@ let stop: () => void = () => undefined;
 
 beforeEach(() => {
   localStorage.clear();
-  document.documentElement.removeAttribute('data-theme');
-  useThemeStore.setState({ preference: 'dark', theme: 'dark' });
+  const root = document.documentElement;
+  root.removeAttribute('data-theme');
+  root.classList.remove('light', 'dark');
+  root.style.removeProperty('color-scheme');
+  useThemeStore.setState({ preference: 'dark' });
 });
 
 afterEach(() => {
@@ -51,7 +60,8 @@ describe('theme store', () => {
     mockSystem({ isLight: true });
     stop = bootstrapTheme();
 
-    expect(useThemeStore.getState()).toMatchObject({ preference: 'dark', theme: 'dark' });
+    expect(useThemeStore.getState().preference).toBe('dark');
+    expect(getAppliedTheme()).toBe('dark');
     expect(isLightApplied()).toBe(false);
   });
 
@@ -59,11 +69,12 @@ describe('theme store', () => {
     const system = mockSystem({ isLight: false });
     localStorage.setItem(STORAGE_KEYS.theme, 'system');
     stop = bootstrapTheme();
-    expect(useThemeStore.getState().theme).toBe('dark');
+    expect(getAppliedTheme()).toBe('dark');
 
     system.flip({ toLight: true });
 
-    expect(useThemeStore.getState()).toMatchObject({ preference: 'system', theme: 'light' });
+    expect(useThemeStore.getState().preference).toBe('system');
+    expect(getAppliedTheme()).toBe('light');
     expect(isLightApplied()).toBe(true);
   });
 
@@ -74,7 +85,7 @@ describe('theme store', () => {
 
     system.flip({ toLight: true });
 
-    expect(useThemeStore.getState().theme).toBe('dark');
+    expect(getAppliedTheme()).toBe('dark');
   });
 
   it('toggles from Match system to the explicit opposite of what shows', () => {
@@ -84,7 +95,8 @@ describe('theme store', () => {
 
     useThemeStore.getState().toggleTheme();
 
-    expect(useThemeStore.getState()).toMatchObject({ preference: 'dark', theme: 'dark' });
+    expect(useThemeStore.getState().preference).toBe('dark');
+    expect(getAppliedTheme()).toBe('dark');
     expect(localStorage.getItem(STORAGE_KEYS.theme)).toBe('dark');
   });
 
@@ -96,7 +108,8 @@ describe('theme store', () => {
       new StorageEvent('storage', { key: STORAGE_KEYS.theme, newValue: 'light' }),
     );
 
-    expect(useThemeStore.getState()).toMatchObject({ preference: 'light', theme: 'light' });
+    expect(useThemeStore.getState().preference).toBe('light');
+    expect(getAppliedTheme()).toBe('light');
     expect(isLightApplied()).toBe(true);
   });
 
@@ -106,7 +119,7 @@ describe('theme store', () => {
 
     window.dispatchEvent(new StorageEvent('storage', { key: 'unrelated', newValue: 'light' }));
 
-    expect(useThemeStore.getState().theme).toBe('dark');
+    expect(getAppliedTheme()).toBe('dark');
   });
 
   it('stops listening once the caller tears it down', () => {
@@ -118,7 +131,7 @@ describe('theme store', () => {
       new StorageEvent('storage', { key: STORAGE_KEYS.theme, newValue: 'light' }),
     );
 
-    expect(useThemeStore.getState().theme).toBe('dark');
+    expect(getAppliedTheme()).toBe('dark');
   });
 });
 
@@ -144,6 +157,8 @@ describe('theme switch paint', () => {
   it('leaves transitions alone when the resolved theme does not change', () => {
     vi.useFakeTimers();
     mockSystem({ isLight: false });
+    useThemeStore.getState().setPreference('dark');
+    vi.runAllTimers();
 
     useThemeStore.getState().setPreference('system');
 
@@ -152,50 +167,38 @@ describe('theme switch paint', () => {
   });
 });
 
-type MutableDocument = { startViewTransition?: unknown };
+describe('applied theme', () => {
+  it('swaps the html class, data-theme and color-scheme together', () => {
+    const root = document.documentElement;
 
-const setStartViewTransition = (value: unknown): void => {
-  (document as unknown as MutableDocument).startViewTransition = value;
-};
+    useThemeStore.getState().setPreference('light');
 
-describe('withViewTransition', () => {
-  afterEach(() => {
-    setStartViewTransition(undefined);
+    expect(root.classList.contains('light')).toBe(true);
+    expect(root.classList.contains('dark')).toBe(false);
+    expect(root.style.colorScheme).toBe('light');
+    expect(isLightApplied()).toBe(true);
+
+    useThemeStore.getState().setPreference('dark');
+
+    expect(root.classList.contains('dark')).toBe(true);
+    expect(root.classList.contains('light')).toBe(false);
+    expect(root.style.colorScheme).toBe('dark');
+    expect(isLightApplied()).toBe(false);
   });
 
-  it('runs the update directly when the browser has no View Transition API', () => {
-    setStartViewTransition(undefined);
-    const update = vi.fn();
+  it('tells painters once per real swap and never for a no-op', () => {
+    useThemeStore.getState().setPreference('dark');
+    const painter = vi.fn();
+    const unsubscribe = subscribeAppliedTheme(painter);
 
-    withViewTransition(update);
+    useThemeStore.getState().setPreference('dark');
+    expect(painter).not.toHaveBeenCalled();
 
-    expect(update).toHaveBeenCalledTimes(1);
-  });
+    useThemeStore.getState().toggleTheme();
+    expect(painter).toHaveBeenCalledTimes(1);
 
-  it('runs the update through startViewTransition when available', () => {
-    const startViewTransition = vi.fn((callback: () => void) => {
-      callback();
-      return {};
-    });
-    vi.stubGlobal('matchMedia', () => ({ matches: false }));
-    setStartViewTransition(startViewTransition);
-    const update = vi.fn();
-
-    withViewTransition(update);
-
-    expect(startViewTransition).toHaveBeenCalledTimes(1);
-    expect(update).toHaveBeenCalledTimes(1);
-  });
-
-  it('skips the view transition and runs the update directly under reduced motion', () => {
-    const startViewTransition = vi.fn();
-    vi.stubGlobal('matchMedia', () => ({ matches: true }));
-    setStartViewTransition(startViewTransition);
-    const update = vi.fn();
-
-    withViewTransition(update);
-
-    expect(startViewTransition).not.toHaveBeenCalled();
-    expect(update).toHaveBeenCalledTimes(1);
+    unsubscribe();
+    useThemeStore.getState().toggleTheme();
+    expect(painter).toHaveBeenCalledTimes(1);
   });
 });
