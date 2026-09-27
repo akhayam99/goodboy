@@ -54,7 +54,7 @@ describe('SessionRefreshAction', () => {
     const button = screen.getByRole('button', { name: 'Refreshing' });
     expect(button.getAttribute('aria-busy')).toBe('true');
     expect(button.querySelector('svg')?.getAttribute('class')).toContain('animate-soft-pulse');
-    expect((button as HTMLButtonElement).disabled).toBe(false);
+    expect((button as HTMLButtonElement).disabled).toBe(true);
 
     fireEvent.click(button);
 

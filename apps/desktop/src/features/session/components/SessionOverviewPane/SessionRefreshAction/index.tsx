@@ -22,12 +22,7 @@ export const SessionRefreshAction = ({ sessionId }: Props) => {
       label={isRefreshing ? 'Refreshing' : 'Refresh'}
       tooltip={tooltip}
       busy={isRefreshing}
-      aria-busy={isRefreshing}
-      onClick={() => {
-        if (!isRefreshing) {
-          void refresh({ sessionId });
-        }
-      }}
+      onClick={() => void refresh({ sessionId })}
       className="size-6 shrink-0"
     />
   );
