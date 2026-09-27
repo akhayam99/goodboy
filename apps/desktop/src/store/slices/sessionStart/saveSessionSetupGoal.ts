@@ -23,12 +23,12 @@ export const saveSessionSetupGoal = (set: SetFn, get: GetFn) => {
     }
     const title = clampTitle(draftGoalText({ text }));
     const now = new Date().toISOString() as IsoDateTime;
+    await renameSessionInDb(tauriDatabase, sessionId, title, now, false);
     set((state) => ({
       sessions: state.sessions.map((candidate) =>
         candidate.id === sessionId ? { ...candidate, goal: title, updatedAt: now } : candidate,
       ),
       goodboyNamedSessionId: sessionId,
     }));
-    await renameSessionInDb(tauriDatabase, sessionId, title, now, false);
   };
 };
