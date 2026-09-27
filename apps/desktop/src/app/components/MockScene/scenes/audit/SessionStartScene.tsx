@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { IsoDateTime, Session, SessionId, StepId, Workflow, WorkflowId } from '@goodboy/types';
-import { useAppStore, useCurrentSession } from '../../../../../store';
-import { selectIsSessionDraftShown } from '../../../../../store/slices/sessionDraft/selectIsSessionDraftShown';
+import { useAppStore } from '../../../../../store';
 import {
   EMPTY_SESSION_DRAFT,
   type StartChoice,
 } from '../../../../../store/slices/sessionDraft/state';
-import { SessionDraftPane } from '../../../../../features/session/components/SessionDraftPane';
 import { NewSessionBridge } from '../../../../../features/session/components/NewSessionBridge';
-import { SessionWorkspace } from '../../../../../features/session/components/SessionWorkspace';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
 import { WorkspaceFrame } from './WorkspaceFrame';
+import { SessionStartMain } from './SessionStartMain';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from './workspaceChrome';
 import { sceneParam } from './sceneParams';
 import { sceneClock } from '../../sceneClock';
@@ -143,22 +141,6 @@ const seedStart = (): void => {
   } as never);
 };
 
-const StartMain = () => {
-  const isDraftShown = useAppStore((state) => selectIsSessionDraftShown({ state }));
-  const session = useCurrentSession();
-  if (isDraftShown) {
-    return <SessionDraftPane workspaceId={WORKSPACE_ID} />;
-  }
-  if (session === null) {
-    return null;
-  }
-  return (
-    <div className="relative h-full w-full">
-      <SessionWorkspace key={session.id} session={session} isActive />
-    </div>
-  );
-};
-
 export const SessionStartScene = () => {
   const [isReady, setIsReady] = useState(false);
 
@@ -173,7 +155,7 @@ export const SessionStartScene = () => {
   return (
     <>
       <NewSessionBridge />
-      <WorkspaceFrame session={SESSION} main={<StartMain />} />
+      <WorkspaceFrame session={SESSION} main={<SessionStartMain />} />
     </>
   );
 };

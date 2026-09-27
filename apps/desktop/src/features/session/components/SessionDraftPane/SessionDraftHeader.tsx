@@ -10,8 +10,7 @@ type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
-export const START_BLANK_HINT =
-  'Create the session now. Set the goal and the rest on its Overview.';
+const START_BLANK_HINT = 'Create the session now. Set the goal and the rest on its Overview.';
 
 export const SessionDraftHeader = ({ workspaceId }: Props) => {
   const hasContent = useAppStore((state) =>
