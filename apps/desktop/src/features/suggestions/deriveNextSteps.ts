@@ -121,6 +121,7 @@ type Params = {
   readonly cleanupProposals?: ReadonlyArray<SuggestionCleanupProposal>;
   readonly hasRunningAgent?: boolean;
   readonly hasGoal?: boolean;
+  readonly hasEverAttachedWorkflow?: boolean;
   readonly recommendedWorkflow?: SuggestionRecommendedWorkflow | null;
   readonly now?: () => number;
   readonly dismissedFingerprints?: ReadonlySet<string>;
@@ -142,6 +143,7 @@ export const deriveNextSteps = ({
   cleanupProposals = [],
   hasRunningAgent = false,
   hasGoal = false,
+  hasEverAttachedWorkflow = workflowRuns.length > 0,
   recommendedWorkflow = null,
   now = () => Date.now(),
   dismissedFingerprints,
@@ -261,7 +263,7 @@ export const deriveNextSteps = ({
     lastStandaloneAgent?.status === 'completed' &&
     (lastStandaloneAgent.roleKind === 'scout' || lastStandaloneAgent.roleKind === 'generic') &&
     hasGoal &&
-    workflowRuns.length === 0 &&
+    !hasEverAttachedWorkflow &&
     recommendedWorkflow != null
   ) {
     suggestions.push({

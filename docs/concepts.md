@@ -298,7 +298,8 @@ whether you clicked it on the board or in the session overview.
   and green pull request, review the changes once a standalone implementer
   finishes clean, close a merged worktree's cleanup proposal, and continue
   with a workflow once a standalone scout or generic agent finishes clean
-  with a goal set and no workflow attached yet - its "Set up" action attaches
+  with a goal set and no workflow attached yet (a discarded run does not
+  count as attached, so the offer comes back) - its "Set up" action attaches
   the workspace's first library workflow with the session's own goal in one
   click, no form. Merge, close-worktree and unblock-step's Skip arm a
   confirm on the row before they act; the other new kinds run on one click,
