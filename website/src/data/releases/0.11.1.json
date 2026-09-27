@@ -513,6 +513,13 @@
       "image": "s20-integrations",
       "features": [
         {
+          "id": "supported-tools",
+          "title": "Supported tools",
+          "copy": "Connect the ones you use.",
+          "image": null,
+          "isNew": false
+        },
+        {
           "id": "agents-use-your-tools",
           "title": "Agents use your tools",
           "copy": "Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack, as far as you connected them, without handing them your keys.",

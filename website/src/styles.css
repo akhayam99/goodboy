@@ -485,7 +485,7 @@ section.block.alt .window {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin: -12px 0 44px;
+  margin: -12px 0 36px;
   padding: 0;
   list-style: none;
 }
