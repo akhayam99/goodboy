@@ -1233,7 +1233,22 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...claudeFlags,
         },
         now,
-        { onProviderLimits: (limits) => void get().recordProviderLimits({ limits }) },
+        {
+          onProviderLimits: (limits) => void get().recordProviderLimits({ limits }),
+          owner: {
+            agentId: turnSpanBase.agentId,
+            sessionId: turnSpanBase.sessionId,
+            workspaceId: turnSpanBase.workspaceId,
+            workflowRunId: turnSpanBase.workflowRunId,
+            stepRole: turnSpanBase.stepRole,
+            provider,
+            model: turnSpanBase.model,
+            effort: turnSpanBase.effort,
+            startedAt: turnSpanBase.startedAt,
+            workingDir,
+            mountId: turnMountId,
+          },
+        },
       )) {
         const maxModeFailure =
           provider === 'cursor' && rawEvent.kind === 'error'
