@@ -308,13 +308,18 @@ const clickButton = async (name: RegExp | string): Promise<void> => {
   await click(await screen.findByRole('button', { name }));
 };
 
+const clickFirstButton = async (name: RegExp): Promise<void> => {
+  const [first] = await screen.findAllByRole('button', { name });
+  await click(first!);
+};
+
 const openCrumb = async (label: RegExp): Promise<void> => {
   await clickButton(/^Overview/);
   await click(await screen.findByRole('menuitemradio', { name: label }));
 };
 
 const openPalette = async (label: RegExp, query?: string): Promise<void> => {
-  await clickButton(/^Search Cascade/);
+  await clickButton(/^Search .+ \(/);
   if (query !== undefined) {
     const input = await screen.findByRole('combobox', { name: /search/i });
     fireEvent.change(input, { target: { value: query } });
@@ -679,21 +684,21 @@ const ROWS: ReadonlyArray<Row> = [
   {
     name: 'mount row: scripts',
     covers: ['navigate', 'lens:scripts'],
-    open: () => clickButton(/^Open scripts for/),
+    open: () => clickFirstButton(/^Open scripts for/),
     lands: both(lens('scripts'), () => heading('Scripts')),
   },
   {
     name: 'mount row: terminal',
     covers: ['openMountTerminal', 'lens:terminal'],
-    open: () => clickButton(/^Open terminal for/),
+    open: () => clickFirstButton(/^Open terminal for/),
     lands: lens('terminal'),
   },
   {
     name: 'linked issue chip',
     covers: ['openExternalTaskLens'],
     seed: 'issue',
-    open: () => clickButton(/^Open CAS-212/),
-    lands: async () => expect((await screen.findAllByText(/CAS-212/)).length).toBeGreaterThan(0),
+    open: () => clickButton(/^Open HBL-377/),
+    lands: async () => expect((await screen.findAllByText(/HBL-377/)).length).toBeGreaterThan(0),
   },
   {
     name: 'back arrow returns to the overview',
@@ -717,13 +722,13 @@ const ROWS: ReadonlyArray<Row> = [
   {
     name: 'pull request page from the mount row',
     covers: ['openMountRequest', 'openReviewTarget'],
-    open: () => clickButton(/^Open PR #\d+ of /),
-    lands: both(lens('review'), () => heading(/Add pagination/)),
+    open: () => clickFirstButton(/^Open PR #\d+ of /),
+    lands: both(lens('review'), () => heading(/Stop retried webhooks/)),
   },
   {
     name: 'mount row: changes to the mount diff',
     covers: ['openMountDiff'],
-    open: () => clickButton(/^View the changes of /),
+    open: () => clickFirstButton(/^View the changes of /),
     lands: both(lens('files'), () => heading('Diff')),
   },
   ...(['Report', 'Wireframe'] as const).map((kind): Row => ({
@@ -812,16 +817,22 @@ describe('navigation flow table ratchet', () => {
     });
     fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
     await settle();
-    await clickButton(/^Search Cascade/);
+    await clickButton(/^Search .+ \(/);
     const sessionGoals = new Set(useAppStore.getState().sessions.map((session) => session.goal));
     const workspaceNames = new Set(useAppStore.getState().workspaces.map((ws) => ws.name));
+    const agentNames = new Set(
+      Object.values(useAppStore.getState().sessionPhaseRuns)
+        .flat()
+        .map((agent) => agent.name),
+    );
     const destinations = screen
       .getAllByRole('option')
       .map((option) => option.getAttribute('aria-label') ?? option.textContent ?? '')
       .filter(
         (label) =>
-          ![...sessionGoals, ...workspaceNames].some((name) => label.startsWith(name)) &&
-          !/^Switch to (light|dark) mode/.test(label),
+          ![...sessionGoals, ...workspaceNames, ...agentNames].some((name) =>
+            label.startsWith(name),
+          ) && !/^Switch to (light|dark) mode/.test(label),
       )
       .map((label) => `palette:${label.replace(/(Ctrl|⌘).*$/, '').trim()}`);
 
