@@ -39,6 +39,16 @@ describe('redactReportText', () => {
     expect(text).not.toContain('hunter2hunter2');
   });
 
+  it('removes short labelled secrets and bare token values', () => {
+    const text = redactReportText({
+      text: 'password=12345 token: abc Authorization: Bearer xyz secret="q1"',
+    });
+
+    expect(text).toBe(
+      `password=${REDACTED} token: ${REDACTED} Authorization: ${REDACTED} secret=${REDACTED}`,
+    );
+  });
+
   it('collapses home paths', () => {
     const text = redactReportText({ text: 'spawn codex cwd=/Users/rowan/code/harborline' });
 
