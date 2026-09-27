@@ -55,8 +55,7 @@ export const Features = () => {
       id="features"
       headingId="h2-features"
       heading="What it does"
-      sub="Every feature, grouped the way a task lives, from set up to clean up."
-      isAlt
+      sub="The board, the terminal, the command palette and the rest, grouped the way a task lives, from set up to clean up."
     >
       <div className="featMap">
         <div className="featBar">

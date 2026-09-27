@@ -1,293 +1,214 @@
-export type Pin = {
-  readonly n: number;
-  readonly left: number;
-  readonly top: number;
-};
-
-export type Caption = {
-  readonly text: string;
-  readonly isMobile: boolean;
+export type Detail = {
+  readonly id: string;
+  readonly width: number;
+  readonly height: number;
+  readonly caption: string;
 };
 
 export type Figure = {
   readonly id: string;
   readonly width: number;
   readonly height: number;
-  readonly mobileWidth: number;
-  readonly mobileHeight: number;
   readonly alt: string;
-  readonly pins: readonly Pin[];
-  readonly mobilePins: readonly Pin[];
-  readonly captions: readonly Caption[];
+  readonly focus: number;
+  readonly details: readonly Detail[];
 };
 
-export const S01: Figure = {
-  id: 'S01',
-  width: 1800,
-  height: 900,
-  mobileWidth: 576,
-  mobileHeight: 222,
-  alt: 'The Harborline board: eleven sessions across building, running, needs you and in review, with the webhook fix in review on pull request 318 at $3.47',
-  pins: [
-    { n: 1, left: 76.13, top: 29.1 },
-    { n: 2, left: 79.38, top: 28.03 },
-  ],
-  mobilePins: [
-    { n: 1, left: 55.82, top: 61.71 },
-    { n: 2, left: 73.29, top: 62.49 },
-  ],
-  captions: [
-    { text: 'The pull request the task opened', isMobile: true },
-    { text: 'What the task has cost so far', isMobile: true },
-  ],
-};
-
-export const S04: Figure = {
-  id: 'S04',
-  width: 1800,
-  height: 731,
-  mobileWidth: 1032,
-  mobileHeight: 635,
-  alt: 'An orchestrated run on the webhook fix waiting on step 4, with the hint box, Queue and Read now, and a hint that waits for the next decision',
-  pins: [
-    { n: 1, left: 51.53, top: 32.88 },
-    { n: 2, left: 38.88, top: 59.02 },
-  ],
-  mobilePins: [
-    { n: 1, left: 6.02, top: 8.15 },
-    { n: 2, left: 31.81, top: 92.32 },
-  ],
-  captions: [
-    { text: 'The step running now, with its own model', isMobile: true },
-    { text: 'Your hint, waiting for the next decision', isMobile: true },
+export const SESSION: Figure = {
+  id: 'session',
+  width: 3840,
+  height: 2400,
+  alt: 'A Harborline session: the sessions list on the left, the webhook fix with its projects, pull requests 318 and 57, an open question and the Activity timeline with each agent and its model',
+  focus: 0.62,
+  details: [
+    {
+      id: 'session-d1',
+      width: 902,
+      height: 816,
+      caption: 'Every task is a session, sorted by where it stands',
+    },
+    {
+      id: 'session-d2',
+      width: 1400,
+      height: 588,
+      caption: 'Each step names its agent, its model and its cost',
+    },
   ],
 };
 
-export const S03: Figure = {
-  id: 'S03',
-  width: 1800,
-  height: 1491,
-  mobileWidth: 766,
-  mobileHeight: 78,
-  alt: 'A session overview with its projects, a suggestion to answer an open question, and the Activity timeline with a queued step at about 11 to 14 minutes',
-  pins: [
-    { n: 1, left: 15.04, top: 79.57 },
-    { n: 2, left: 38.84, top: 75.55 },
-  ],
-  mobilePins: [{ n: 1, left: 3.71, top: 50.0 }],
-  captions: [
-    { text: 'The one move that unblocks the task, here a question', isMobile: true },
-    { text: 'The next step, queued with a rough time', isMobile: false },
+export const AGENTS: Figure = {
+  id: 'agents',
+  width: 3840,
+  height: 2400,
+  alt: 'A workflow run on the webhook fix: eight agents, scouts on Composer, GPT-5.6 Terra and Haiku, a planner on Opus 5.5, implementers on GPT-5.6 Sol and Kimi K3 and a tester on Haiku, each with its own cost',
+  focus: 0.5,
+  details: [
+    {
+      id: 'agents-d1',
+      width: 1400,
+      height: 504,
+      caption: 'Eight chats on one task, each with a role and its own model',
+    },
   ],
 };
 
-export const S08: Figure = {
-  id: 'S08',
-  width: 1800,
-  height: 1125,
-  mobileWidth: 1032,
-  mobileHeight: 790,
-  alt: 'The brief as it was sent to Codex, next to the Context drawer where decision 3 replaced decision 1 with its reason',
-  pins: [
-    { n: 1, left: 95.02, top: 21.83 },
-    { n: 2, left: 89.63, top: 40.78 },
-    { n: 3, left: 32.8, top: 66.22 },
-  ],
-  mobilePins: [
-    { n: 1, left: 87.75, top: 7.28 },
-    { n: 2, left: 65.55, top: 70.9 },
-  ],
-  captions: [
-    { text: 'Decision 3, and the one it replaced', isMobile: true },
-    { text: 'The replaced decision keeps its reason', isMobile: true },
-    { text: 'The exact text Codex received', isMobile: false },
+export const CHAT: Figure = {
+  id: 'chat',
+  width: 3840,
+  height: 2400,
+  alt: 'An implementer chat on Codex: the ask, three groups of operations, both pull requests up and a Slack reply for #payments-oncall waiting to be sent',
+  focus: 0.45,
+  details: [],
+};
+
+export const BOARD: Figure = {
+  id: 'board',
+  width: 3840,
+  height: 1600,
+  alt: 'The Harborline board: eleven sessions across building, running, needs you and in review, each card with its pull request and its cost',
+  focus: 0.5,
+  details: [
+    {
+      id: 'board-d1',
+      width: 768,
+      height: 298,
+      caption: 'Where it stands, its pull request, its cost',
+    },
+    {
+      id: 'board-d2',
+      width: 1150,
+      height: 464,
+      caption: 'Claude spend this month against its cap',
+    },
   ],
 };
 
-export const S13: Figure = {
-  id: 'S13',
-  width: 1800,
-  height: 1125,
-  mobileWidth: 948,
-  mobileHeight: 201,
+export const BUILDER: Figure = {
+  id: 'builder',
+  width: 2572,
+  height: 1707,
+  alt: 'A new orchestrated workflow for the duplicate credit fix, with its goal, the orchestrator on GPT-5.6 Sol and guidance to stop before any change to ledger-core',
+  focus: 0.3,
+  details: [
+    {
+      id: 'builder-d1',
+      width: 1229,
+      height: 672,
+      caption: 'Orchestrated, custom or preset, with an orchestrator on the model you set',
+    },
+  ],
+};
+
+export const INBOX: Figure = {
+  id: 'inbox',
+  width: 3840,
+  height: 2400,
+  alt: 'The Inbox with HBL-412 pasted in the search and open on the right, with Launch session',
+  focus: 1,
+  details: [
+    {
+      id: 'inbox-d1',
+      width: 1066,
+      height: 835,
+      caption: 'HBL-412, one press away from a session',
+    },
+    {
+      id: 'inbox-d2',
+      width: 672,
+      height: 394,
+      caption: 'GitHub, Linear, Sentry and Slack in one list',
+    },
+  ],
+};
+
+export const RESOLVE: Figure = {
+  id: 'resolve',
+  width: 3840,
+  height: 2400,
+  alt: 'Seven review comments on pull request 318 grouped by file, one fixed in commit 4f21c8b, one waiting for an answer and several replies ready to review',
+  focus: 0.35,
+  details: [
+    {
+      id: 'resolve-d1',
+      width: 1400,
+      height: 565,
+      caption: 'A fix committed, and replies drafted for you to review',
+    },
+  ],
+};
+
+export const COMPARE: Figure = {
+  id: 'compare',
+  width: 3840,
+  height: 2400,
   alt: 'Wireframe compare for the deliveries screen, v2 to v3, where v3 adds a stuck delivery banner and an attempts column',
-  pins: [
-    { n: 1, left: 75.69, top: 37.89 },
-    { n: 2, left: 83.54, top: 51.22 },
-  ],
-  mobilePins: [
-    { n: 1, left: 95.57, top: 27.61 },
-    { n: 2, left: 96.29, top: 72.39 },
-  ],
-  captions: [
-    { text: 'v3 adds a banner for a stuck delivery', isMobile: true },
-    { text: 'and a column with the attempts per event', isMobile: true },
-  ],
-};
-
-export const S14: Figure = {
-  id: 'S14',
-  width: 1800,
-  height: 1620,
-  mobileWidth: 1014,
-  mobileHeight: 1314,
-  alt: 'The session report: Retried webhooks no longer double credit, with what was wrong, where it came from and what changed',
-  pins: [
-    { n: 1, left: 47.47, top: 5.94 },
-    { n: 2, left: 22.32, top: 19.94 },
-  ],
-  mobilePins: [
-    { n: 1, left: 77.53, top: 8.79 },
-    { n: 2, left: 6.1, top: 48.78 },
-  ],
-  captions: [
-    { text: 'Where it came from: the agents and the plan behind it', isMobile: true },
-    { text: 'What the session did, in plain words', isMobile: true },
+  focus: 0.9,
+  details: [
+    {
+      id: 'compare-d1',
+      width: 1400,
+      height: 709,
+      caption: 'v3 adds a stuck-delivery banner and an attempts column',
+    },
+    {
+      id: 'compare-d2',
+      width: 1400,
+      height: 853,
+      caption: 'The session report, as a document',
+    },
   ],
 };
 
-export const S04r: Figure = {
-  id: 'S04r',
-  width: 1800,
-  height: 612,
-  mobileWidth: 939,
-  mobileHeight: 423,
-  alt: 'Workflow steps by role, scouts, a planner, implementers and a tester, each with its own model and cost, the planner at $1.28 and a scout at $0.02',
-  pins: [
-    { n: 1, left: 93.26, top: 42.54 },
-    { n: 2, left: 93.26, top: 74.78 },
-  ],
-  mobilePins: [
-    { n: 1, left: 93.28, top: 11.7 },
-    { n: 2, left: 93.93, top: 88.3 },
-  ],
-  captions: [
-    { text: 'The planner, the step that costs the most', isMobile: true },
-    { text: 'A scout, for two cents', isMobile: true },
-  ],
-};
-
-export const S10: Figure = {
-  id: 'S10',
-  width: 1800,
-  height: 582,
-  mobileWidth: 801,
-  mobileHeight: 360,
-  alt: 'The projects of one session: payments-api with pull request 318 in review and 311 merged, notify-relay with pull request 57 in review',
-  pins: [
-    { n: 1, left: 76.98, top: 33.44 },
-    { n: 2, left: 76.32, top: 70.94 },
-  ],
-  mobilePins: [
-    { n: 1, left: 96.29, top: 15.83 },
-    { n: 2, left: 93.83, top: 84.17 },
-  ],
-  captions: [
-    { text: 'The branch this session opened, in review as #318', isMobile: true },
-    { text: 'A second branch in notify-relay, in review as #57', isMobile: true },
+export const CONTEXT: Figure = {
+  id: 'context',
+  width: 3840,
+  height: 2400,
+  alt: 'The brief an implementer received on Codex, next to the Context drawer where decision 3 replaced decision 1 with its reason',
+  focus: 1,
+  details: [
+    {
+      id: 'context-d1',
+      width: 1066,
+      height: 1171,
+      caption: 'Decision 3 replaced decision 1, and says why',
+    },
+    {
+      id: 'context-d2',
+      width: 1400,
+      height: 488,
+      caption: 'The brief the agent received, part by part',
+    },
   ],
 };
 
-export const S16: Figure = {
-  id: 'S16',
-  width: 1800,
-  height: 623,
-  mobileWidth: 795,
-  mobileHeight: 237,
-  alt: 'The top bar with Claude out until 14:20, above the Codex usage page with 41% and 58% used and one free reset',
-  pins: [
-    { n: 1, left: 12.05, top: 72.33 },
-    { n: 2, left: 14.31, top: 92.56 },
-    { n: 3, left: 58.36, top: 52.54 },
-  ],
-  mobilePins: [{ n: 3, left: 68.5, top: 24.68 }],
-  captions: [
-    { text: 'A free Codex reset, and when it expires', isMobile: false },
-    { text: 'What Goodboy spent on Codex today', isMobile: false },
-    { text: 'How much of the 5-hour window and the week is used', isMobile: true },
+export const IMPACT: Figure = {
+  id: 'impact',
+  width: 3840,
+  height: 2400,
+  alt: 'Claude spend for the last 30 days: $151.72 of a $170 cap, a warning at 80 percent, and the spend by model',
+  focus: 0.3,
+  details: [
+    {
+      id: 'impact-d1',
+      width: 1400,
+      height: 395,
+      caption: 'What is left of the Codex plan, with a free reset',
+    },
   ],
 };
 
-export const S19: Figure = {
-  id: 'S19',
-  width: 1800,
-  height: 1125,
-  mobileWidth: 888,
-  mobileHeight: 917,
-  alt: 'The Inbox with HBL-412 pasted in the search and found outside the inbox, open on the right with Launch session',
-  pins: [
-    { n: 1, left: 79.14, top: 14.06 },
-    { n: 2, left: 85.3, top: 43.29 },
-  ],
-  mobilePins: [
-    { n: 1, left: 31.9, top: 5.4 },
-    { n: 2, left: 61.88, top: 91.49 },
-  ],
-  captions: [
-    { text: 'HBL-412, found from a code pasted in search', isMobile: true },
-    { text: 'One press starts a session with the brief drafted', isMobile: true },
-  ],
-};
-
-export const S12: Figure = {
-  id: 'S12',
-  width: 1800,
-  height: 1352,
-  mobileWidth: 1011,
-  mobileHeight: 615,
-  alt: 'Seven review comments on pull request 318 grouped by file, one fixed in commit 4f21c8b and several replies ready to review',
-  pins: [
-    { n: 1, left: 27.53, top: 65.95 },
-    { n: 2, left: 29.07, top: 80.41 },
-  ],
-  mobilePins: [
-    { n: 1, left: 75.48, top: 40.0 },
-    { n: 2, left: 80.0, top: 92.2 },
-  ],
-  captions: [
-    { text: 'The fix, committed', isMobile: true },
-    { text: 'A reply drafted in your voice, waiting for you', isMobile: true },
-  ],
-};
-
-export const S25: Figure = {
-  id: 'S25',
-  width: 1800,
-  height: 642,
-  mobileWidth: 1011,
-  mobileHeight: 627,
-  alt: 'Working copies of old sessions with what each weighs, 5.0 GB in all, and one button to remove the three that are safe',
-  pins: [
-    { n: 1, left: 52.06, top: 41.3 },
-    { n: 2, left: 3.39, top: 85.64 },
-  ],
-  mobilePins: [
-    { n: 1, left: 82.69, top: 11.72 },
-    { n: 2, left: 4.07, top: 88.52 },
-  ],
-  captions: [
-    { text: 'What each working copy weighs', isMobile: true },
-    { text: 'Clears the three that are safe, in one go', isMobile: true },
-  ],
-};
-
-export const S26: Figure = {
-  id: 'S26',
-  width: 1800,
-  height: 174,
-  mobileWidth: 942,
-  mobileHeight: 411,
-  alt: 'A saved script that looks like it contains a token, with Not a secret',
-  pins: [
-    { n: 1, left: 20.72, top: 50.0 },
-    { n: 2, left: 86.58, top: 34.74 },
-  ],
-  mobilePins: [
-    { n: 1, left: 62.47, top: 42.7 },
-    { n: 2, left: 7.31, top: 79.56 },
-  ],
-  captions: [
-    { text: 'The token, masked, in a saved script', isMobile: true },
-    { text: 'Dismiss it when it is not a secret', isMobile: true },
+export const STORAGE: Figure = {
+  id: 'storage',
+  width: 3840,
+  height: 2400,
+  alt: 'Storage settings: working copies of old sessions with what each weighs, 5.0 GB in all, and one button to remove the three that are safe',
+  focus: 0.55,
+  details: [
+    {
+      id: 'storage-d1',
+      width: 1400,
+      height: 464,
+      caption: 'What each working copy weighs, and which are safe to remove',
+    },
   ],
 };

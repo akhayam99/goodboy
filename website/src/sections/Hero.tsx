@@ -1,6 +1,6 @@
 import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
-import { S01 } from '../figures';
+import { SESSION } from '../figures';
 import { SITE } from '../site';
 
 export const Hero = () => (
@@ -10,10 +10,8 @@ export const Hero = () => (
         <p className="eyebrow">A desktop app for coding agents, and much more</p>
         <h1 id="h2-hero">Stop re&#8209;explaining yourself</h1>
         <p className="sub">
-          Goodboy is an ADE, an agentic development environment: agents from the providers you
-          connect do the work, and Goodboy gives that work its structure. Each task keeps its goal,
-          its decisions and where it stands, so the next agent starts briefed and you can tell at a
-          glance what needs you.
+          Goodboy is an ADE, an agentic development environment. Use Claude, Codex, Cursor and more
+          in the same session, give each chat one job, and keep the whole task in one place.
         </p>
         <div className="ctaRow">
           <a className="btn" href="#install">
@@ -23,9 +21,11 @@ export const Hero = () => (
             Star on GitHub
           </a>
         </div>
-        <SeeHow anchor="the-board" />
+        <SeeHow anchor="inside-a-session" />
       </div>
-      <Shot figure={S01} isEager />
+    </div>
+    <div className="wrap">
+      <Shot figure={SESSION} isEager />
     </div>
   </section>
 );

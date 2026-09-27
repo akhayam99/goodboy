@@ -9,11 +9,11 @@ export const Nav = () => (
         <a className="hidesm" href="#how">
           How it works
         </a>
-        <a className="hidesm" href="#roles">
-          Roles
+        <a className="hidesm" href="#developers">
+          Developers
         </a>
-        <a className="hidesm" href="#routing">
-          Routing
+        <a className="hidesm" href="#leads">
+          Leads
         </a>
         <a className="hidesm" href="#integrations">
           Integrations
