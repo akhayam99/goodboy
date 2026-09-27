@@ -20,6 +20,7 @@ import type { HistoryState } from './slices/history/state';
 import type { ScribeState } from './slices/scribe/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
+import type { SessionSyncState } from './slices/session-sync/state';
 import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { DurationEstimatesState } from './slices/durationEstimates/state';
 import type { ProviderLimitsState } from './slices/providerLimits/state';
@@ -255,6 +256,7 @@ type AppSliceState = ArtifactsState &
   ResolveState &
   ReviewNavigationState &
   PrWritesState &
+  SessionSyncState &
   IssueBriefsState &
   DurationEstimatesState &
   ProviderLimitsState &
