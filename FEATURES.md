@@ -327,13 +327,17 @@ Bring custom workflows over from your other workspaces.
 
 Record a decision once and have the agents after it read it. Each one gets a number and a byline, and replacing or withdrawing it needs a reason that stays next to it.
 
+### See why each decision was made
+
+Read the reason behind a decision without opening the run. When Goodboy records a decision from a session, it keeps the reason that came with it, and the context drawer shows it as a muted line under the decision, with **Show more** when it runs long.
+
 ### Running summary
 
 Hand the next agent where things stand. After each turn a summary of **State**, **Next** and **Learned** is updated, and an edit you made in the meantime is kept.
 
 ### Context drawer
 
-Open goal, decisions and summary from any session page, with **Copy as brief**. A dot on **Context** says something changed since you last looked, and the drawer lists added, removed and reworded decisions first. Each tab reads as labelled blocks, the key line first and the rest folded.
+Open goal, decisions and summary from any session page, with **Copy as brief**. A dot on **Context** says something changed since you last looked, and the drawer lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one. Each tab reads as labelled blocks, the key line first and the rest folded.
 
 ### Context budgets
 

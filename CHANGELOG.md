@@ -18,7 +18,7 @@ Decisions in the context drawer now show why they were made, in a quiet line rig
 
 This version updates your data in one direction. To go back to 0.11, restore the backup Goodboy made before updating.
 
-### Improved
+### New
 
 #### See why each decision was made
 <!-- gb area=sessions image=decision-why -->

@@ -63,7 +63,7 @@ That is also where the money goes. In the run below, a scout read the posting pa
 
 ## Shared context
 
-Every agent on the task reads the same **goal**, the numbered **decisions** and a **summary** that updates after each turn. When the plan changes its mind, the new decision says what it replaced and why, and the next agent starts from there. Open any agent and **View as sent** shows the exact text it received.
+Every agent on the task reads the same **goal**, the numbered **decisions** and a **summary** that updates after each turn. Decisions Goodboy records keep why they were made, shown right under them in the context drawer. When the plan changes its mind, the new decision says what it replaced and why, and the next agent starts from there. Open any agent and **View as sent** shows the exact text it received.
 
 Claude runs out halfway through? With another eligible provider connected, the turn can move there, and the chat says where it went. The top bar shows how much of your Claude and Codex plans is left before you start.
 

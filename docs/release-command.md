@@ -162,7 +162,7 @@ pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
   mock scene: the full 1360×850 window, or the scene's `[data-shot]` element
   when it has one (`docs/mock-screenshots.md`, "Pictures for the changelog").
   Run it once per checkout with `pnpm dev` up in `apps/desktop`, then move
-  the files from `docs/changelog/next/` to `docs/changelog/<version>/`. A
+  the files from the `next` staging folder to `docs/changelog/<version>/`. A
   brand-new screen only ever gets an `after` pair. A release that already
   shipped can gain pictures later, in the same folder and under the same
   caps. The app fetches each file from `main` at

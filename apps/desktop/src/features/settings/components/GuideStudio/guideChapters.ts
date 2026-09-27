@@ -221,7 +221,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Decisions',
-        desc: 'Each decision gets a number and a byline. Replacing or withdrawing one needs a reason that stays next to it.',
+        desc: 'Each decision gets a number and a byline. A decision Goodboy records keeps why it was made, shown under it in the context drawer. Replacing or withdrawing one needs a reason that stays next to it.',
       },
       {
         term: 'Running summary',
