@@ -1,0 +1,34 @@
+name: issue type label
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    name: label
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: add the label named on the type line
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          kind="$(printf '%s\n' "$ISSUE_BODY" \
+            | grep -m1 -iE '^Type:[[:space:]]*(bug|idea|question)[[:space:]]*$' \
+            | sed -E 's/^[Tt][Yy][Pp][Ee]:[[:space:]]*//; s/[[:space:]]*$//' \
+            | tr '[:upper:]' '[:lower:]' || true)"
+          case "$kind" in
+            bug) color=D73A4A; description="Something broke" ;;
+            idea) color=0E8A16; description="Something could be better" ;;
+            question) color=FBCA04; description="Something is unclear" ;;
+            *) echo "no type line"; exit 0 ;;
+          esac
+          gh label create "$kind" --repo "$GITHUB_REPOSITORY" \
+            --color "$color" --description "$description" 2>/dev/null || true
+          gh issue edit "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label "$kind"
