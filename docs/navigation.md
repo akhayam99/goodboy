@@ -814,7 +814,10 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   tool glyph, the identifier and the state on the identity line, with Open in
   the tool, the `⋯` menu and, in the inbox, close at its end. Under the title
   sits one action row: one primary (Launch session, or Open session once one is
-  linked) and at most two tool verbs picked by state. Everything else lives in
+  linked) and at most two tool verbs picked by state. Before a session is
+  linked, the inbox adds Link to a session beside Launch session: a searchable
+  list of the workspace's sessions, inline, that links the record to the one
+  you pick. Everything else lives in
   `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink session,
   then destructive verbs after a separator. Editable properties change from the
   control that shows them (the Jira state opens its transitions). Launch

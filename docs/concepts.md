@@ -866,8 +866,12 @@ and by source, one pick per section, with counts; only the types a connected
 tool can produce show. A tool that did not load says so in its source row and
 in one notice above the list. The state column uses the tool's own word, the
 same one the record shows. A record opens in a drawer beside the list, with the
-same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
-to it.
+same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
+the workspace with Link to a session, or open the session already linked to it.
+A record shows its session whichever way the link was made: launched from the
+inbox, picked there, or linked from the session's own link button, by search or
+by pasted URL. The session link button searches the issues of every Sentry
+project linked to the workspace, not only the connected one.
 
 With two or more projects in the workspace, the rail also filters by project.
 Projects with no records hide behind a quiet "Show N empty" toggle at the end
