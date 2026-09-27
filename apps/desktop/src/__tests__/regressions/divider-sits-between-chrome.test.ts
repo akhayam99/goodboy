@@ -109,10 +109,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineDayRule.tsx':
     { count: 1, reason: 'chrome' },
-  'apps/desktop/src/features/skills/components/SkillsPanel/index.tsx': {
-    count: 5,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/terminal/components/TerminalDock/index.tsx': {
     count: 1,
     reason: 'debt',
@@ -130,10 +126,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     reason: 'chrome',
   },
   'apps/desktop/src/features/workspace/components/SessionActivityBar/SessionViewMenu/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx': {
     count: 1,
     reason: 'debt',
   },

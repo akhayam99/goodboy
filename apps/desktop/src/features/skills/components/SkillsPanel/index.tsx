@@ -3,9 +3,9 @@ import type { KeyboardEvent } from 'react';
 import { AlertTriangle, Pencil, Trash2 } from 'lucide-react';
 import {
   Button,
-  Divider,
   EmptyState,
   FieldRow,
+  FormActions,
   formatError,
   InlineConfirm,
   Input,
@@ -334,10 +334,10 @@ const SkillEditor = ({
   };
 
   return (
-    <div className="flex flex-col gap-4" onKeyDown={onKeyDown}>
+    <div className="flex flex-col gap-8" onKeyDown={onKeyDown}>
       <SectionHeader label={isNew ? 'New skill' : 'Edit skill'} />
 
-      <section className="flex flex-col">
+      <section className="flex flex-col gap-4">
         <FieldRow label="Name">
           <Input
             value={form.name}
@@ -348,7 +348,6 @@ const SkillEditor = ({
             className="w-full sm:w-72"
           />
         </FieldRow>
-        <Divider />
         <FieldRow label="Description">
           <Input
             value={form.description}
@@ -358,7 +357,6 @@ const SkillEditor = ({
             className="w-full sm:w-72"
           />
         </FieldRow>
-        <Divider />
         <FieldRow label="Args" help="Comma-separated list of argument names.">
           <Input
             value={form.args}
@@ -368,7 +366,6 @@ const SkillEditor = ({
             className="w-full sm:w-72"
           />
         </FieldRow>
-        <Divider />
         <FieldRow label="Scripts" help="Comma-separated list of script paths.">
           <Input
             value={form.scripts}
@@ -378,7 +375,6 @@ const SkillEditor = ({
             className="w-full sm:w-72"
           />
         </FieldRow>
-        <Divider />
         <FieldRow label="Body">
           <Textarea
             value={form.body}
@@ -391,23 +387,28 @@ const SkillEditor = ({
         </FieldRow>
       </section>
 
-      <Divider />
-      <footer className="flex shrink-0 items-center gap-3">
-        <div className="min-w-0 flex-1">
-          {error !== null ? (
+      <FormActions
+        leading={
+          error === null ? null : (
             <span role="alert" className="inline-flex items-center gap-1 text-label text-danger">
               <AlertTriangle size={ICON_SIZE.row} aria-hidden />
               {error}
             </span>
-          ) : null}
-        </div>
-        <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
+          )
+        }
+      >
+        <Button
+          variant="ghost"
+          onClick={onCancel}
+          disabled={saving}
+          className="text-muted-foreground"
+        >
           Cancel
         </Button>
-        <Button size="sm" onClick={onSave} disabled={saving}>
+        <Button onClick={onSave} disabled={saving}>
           {saving ? 'Saving…' : 'Save'}
         </Button>
-      </footer>
+      </FormActions>
     </div>
   );
 };
