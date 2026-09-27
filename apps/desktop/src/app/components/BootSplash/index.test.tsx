@@ -131,7 +131,7 @@ describe('BootSplash issue report', () => {
     fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
 
     const url = String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]);
-    expect(decodeURIComponent(url)).toContain('cannot open ~/.goodboy/data.db');
+    expect(decodeURIComponent(url)).toContain('cannot open ~/…/data.db');
     expect(decodeURIComponent(url)).not.toContain('/Users/dev');
   });
 });

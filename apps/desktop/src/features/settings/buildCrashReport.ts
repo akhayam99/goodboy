@@ -1,3 +1,4 @@
+import { redactReport } from '../../shared/utils/redactReport';
 import {
   buildIssueUrl,
   capIssueTitle,
@@ -11,19 +12,6 @@ export const CRASH_TRACE_BUDGET = 1500;
 const MESSAGE_FIT_NOTICE = '\n[cut here: the rest of the message did not fit the report link]';
 
 const TRACE_FIT_NOTICE = '\n[cut here: the rest of the stack did not fit the report link]';
-
-const HOME_PATH_PATTERNS: ReadonlyArray<RegExp> = [
-  /\/Users\/[^/\s"')]+/g,
-  /\/home\/[^/\s"')]+/g,
-  /[A-Za-z]:\\Users\\[^\\\s"')]+/g,
-];
-
-type CollapseHomePathsParams = {
-  readonly text: string;
-};
-
-export const collapseHomePaths = ({ text }: CollapseHomePathsParams): string =>
-  HOME_PATH_PATTERNS.reduce((carried, pattern) => carried.replace(pattern, '~'), text);
 
 type CapTraceParams = {
   readonly trace: string;
@@ -111,12 +99,12 @@ export const buildCrashReport = ({
   componentStack,
   version,
 }: BuildCrashReportParams): CrashReport => {
-  const message = withoutLoneSurrogates({ text: collapseHomePaths({ text: error.message }) });
+  const message = withoutLoneSurrogates({ text: redactReport({ text: error.message }) });
   const title = capIssueTitle({ title: `Crash: ${message.split('\n')[0] ?? 'runtime error'}` });
   const stack =
     componentStack === null
       ? ''
-      : withoutLoneSurrogates({ text: collapseHomePaths({ text: componentStack }) }).trim();
+      : withoutLoneSurrogates({ text: redactReport({ text: componentStack }) }).trim();
   const trace = capTrace({ trace: stack === '' ? '(no component stack was captured)' : stack });
   const body = fitCrashBody({ version, title, message, trace });
 

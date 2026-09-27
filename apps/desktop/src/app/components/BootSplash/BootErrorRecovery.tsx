@@ -1,7 +1,7 @@
 import { Button, cn, tintClasses } from '@goodboy/ui';
 import { useCallback } from 'react';
 import { openUrl } from '../../../shared/lib/editor';
-import { redactHomePath } from './redactHomePath';
+import { redactReport } from '../../../shared/utils/redactReport';
 
 const GITHUB_NEW_ISSUE_URL =
   'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
@@ -17,7 +17,7 @@ const sentenceCase = ({ text }: { readonly text: string }): string =>
 
 export const BootErrorRecovery = ({ error, category, onRetry }: Props) => {
   const openIssue = useCallback(() => {
-    const body = `**category:** ${category}\n\n**error:**\n\`\`\`\n${redactHomePath({ text: error })}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`;
+    const body = `**category:** ${category}\n\n**error:**\n\`\`\`\n${redactReport({ text: error })}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`;
     void openUrl(`${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(body)}`);
   }, [error, category]);
 

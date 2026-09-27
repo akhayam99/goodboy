@@ -1,33 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildCrashReport, collapseHomePaths, CRASH_TRACE_BUDGET } from './buildCrashReport';
+import { buildCrashReport, CRASH_TRACE_BUDGET } from './buildCrashReport';
 import { isOpenableUrl } from './components/ReportIssueStudio/issuePayload';
 import { MAX_ISSUE_URL_BYTES } from './issueUrl';
 
 const errorWith = (message: string): Error => new Error(message);
-
-describe('collapseHomePaths', () => {
-  it('shortens a macOS home folder to a tilde', () => {
-    expect(collapseHomePaths({ text: 'at /Users/ada/goodboy/src/App.tsx:3' })).toBe(
-      'at ~/goodboy/src/App.tsx:3',
-    );
-  });
-
-  it('shortens a linux home folder to a tilde', () => {
-    expect(collapseHomePaths({ text: 'at /home/ada/goodboy/src/App.tsx' })).toBe(
-      'at ~/goodboy/src/App.tsx',
-    );
-  });
-
-  it('shortens a windows home folder to a tilde', () => {
-    expect(collapseHomePaths({ text: 'at C:\\Users\\ada\\goodboy\\App.tsx' })).toBe(
-      'at ~\\goodboy\\App.tsx',
-    );
-  });
-
-  it('leaves a path outside a home folder alone', () => {
-    expect(collapseHomePaths({ text: 'at /opt/goodboy/App.tsx' })).toBe('at /opt/goodboy/App.tsx');
-  });
-});
 
 describe('buildCrashReport', () => {
   it('carries no home path into the issue url', () => {
@@ -39,7 +15,20 @@ describe('buildCrashReport', () => {
 
     expect(report.body).not.toContain('/Users/ada');
     expect(report.url).not.toContain('%2FUsers%2Fada');
-    expect(report.body).toContain('~/goodboy/App.tsx');
+    expect(report.body).toContain('~/…/App.tsx');
+    expect(report.body).toContain('at Row (~/…/Row.tsx:12)');
+  });
+
+  it('carries no secret or email from the error into the title or body', () => {
+    const report = buildCrashReport({
+      error: errorWith('401 for rowan@example.dev with ghp_AbCdEfGhIjKlMnOpQrStUv123456'),
+      componentStack: null,
+      version: '0.1.81',
+    });
+
+    expect(report.title).not.toContain('ghp_AbCdEfGhIjKlMnOpQrStUv123456');
+    expect(report.body).not.toContain('ghp_AbCdEfGhIjKlMnOpQrStUv123456');
+    expect(report.body).not.toContain('rowan@example.dev');
   });
 
   it('opens a prefill form and never posts', () => {
