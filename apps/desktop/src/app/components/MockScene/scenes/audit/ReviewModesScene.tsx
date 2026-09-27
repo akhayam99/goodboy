@@ -11,14 +11,14 @@ import { sceneClock } from '../../sceneClock';
 const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 
 const NOW = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
-const PROJECT_ID = 'mock-review-modes-project-notify-relay' as ProjectId;
-const MOUNT_ID = 'mock-review-modes-mount-notify-relay' as MountId;
+const PROJECT_ID = 'mock-review-modes-project-payments-api' as ProjectId;
+const MOUNT_ID = 'mock-review-modes-mount-payments-api' as MountId;
 
 const PROJECT: Project = {
   id: PROJECT_ID,
   workspaceId: SESSION.workspaceId,
-  name: 'notify-relay',
-  rootPath: '/mock/harborline/notify-relay',
+  name: 'payments-api',
+  rootPath: '~/code/harborline/payments-api',
   kind: 'repo',
   baseBranch: 'main',
   overrides: {
@@ -47,11 +47,11 @@ const MOUNT: SessionProjectMount = {
   mountId: MOUNT_ID,
   sessionId: SESSION_ID,
   projectId: PROJECT_ID,
-  mountName: 'notify-relay',
-  worktreePath: '/mock/harborline/notify-relay-webhook-retry',
+  mountName: 'payments-api',
+  worktreePath: '~/code/harborline/payments-api-duplicate-credit',
   lastWorktreePath: null,
-  repoRoot: '/mock/harborline/notify-relay',
-  branch: 'fix/webhook-retry-backoff',
+  repoRoot: '~/code/harborline/payments-api',
+  branch: 'hl/fix-duplicate-credit',
   baseBranch: 'main',
   parallelIndex: 0,
   isAttached: true,
@@ -83,7 +83,7 @@ export const ReviewModesScene = () => {
     seedShellChrome({
       session: SESSION,
       siblings: [],
-      branches: { [SESSION_ID]: 'fix/webhook-retry-backoff' },
+      branches: { [SESSION_ID]: 'hl/fix-duplicate-credit' },
       telemetryAt: NOW,
       lens: 'review',
     });

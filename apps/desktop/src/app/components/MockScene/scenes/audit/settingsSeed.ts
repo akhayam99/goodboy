@@ -87,7 +87,7 @@ export const SETTINGS_PROJECTS: ReadonlyArray<Project> = [
   makeProject({
     id: 'mock-settings-ledger',
     name: 'ledger-core',
-    rootPath: '/mock/harborline/ledger-core',
+    rootPath: '~/code/harborline/ledger-core',
     kind: 'repo',
     description: 'Settles payments and writes the ledger',
     isStarred: true,
@@ -95,13 +95,13 @@ export const SETTINGS_PROJECTS: ReadonlyArray<Project> = [
   makeProject({
     id: 'mock-settings-relay',
     name: 'notify-relay',
-    rootPath: '/mock/harborline/notify-relay',
+    rootPath: '~/code/harborline/notify-relay',
     kind: 'repo',
   }),
   makeProject({
     id: 'mock-settings-payments',
     name: 'payments-api',
-    rootPath: '/mock/harborline/services/payments-api-with-a-long-folder-name',
+    rootPath: '~/code/harborline/services/payments-api-with-a-long-folder-name',
     kind: 'repo',
     description: 'Public API in front of ledger-core and notify-relay',
     isStarred: true,
@@ -109,7 +109,7 @@ export const SETTINGS_PROJECTS: ReadonlyArray<Project> = [
   makeProject({
     id: 'mock-settings-runbooks',
     name: 'runbooks',
-    rootPath: '/mock/harborline/runbooks',
+    rootPath: '~/code/harborline/runbooks',
     kind: 'folder',
     description: 'On-call runbooks, plain folder',
   }),
@@ -201,7 +201,7 @@ export const seedSettingsBase = (): void => {
     storageStatsLoading: false,
     storageRoots: [
       {
-        repoRoot: '/mock/harborline/ledger-core',
+        repoRoot: '~/code/harborline/ledger-core',
         projectName: 'ledger-core',
         workspaceId: SETTINGS_WORKSPACE_ID,
         workspaceName: 'Harborline',
@@ -217,8 +217,8 @@ export const seedSettingsBase = (): void => {
     ],
     storageFolders: [
       {
-        path: '/mock/harborline/ledger-core/.goodboy/worktrees/refund-retry-a1',
-        repoRoot: '/mock/harborline/ledger-core',
+        path: '~/code/harborline/ledger-core/.goodboy/worktrees/refund-retry-a1',
+        repoRoot: '~/code/harborline/ledger-core',
         branch: 'hb/refund-retry',
         origin: 'archived',
         why: 'archived-session',
@@ -232,7 +232,7 @@ export const seedSettingsBase = (): void => {
         sizeBytes: 4_402_341_478,
         sizedAt: Date.parse(SETTINGS_NOW),
         facts: {
-          path: '/mock/harborline/ledger-core/.goodboy/worktrees/refund-retry-a1',
+          path: '~/code/harborline/ledger-core/.goodboy/worktrees/refund-retry-a1',
           exists: true,
           isRegistered: true,
           branch: 'hb/refund-retry',
@@ -279,7 +279,7 @@ export const seedSettingsBase = (): void => {
     orphanWorktrees: {
       [SETTINGS_WORKSPACE_ID]: [
         {
-          path: '/mock/harborline/ledger-core/.goodboy/worktrees/old-spike',
+          path: '~/code/harborline/ledger-core/.goodboy/worktrees/old-spike',
           name: 'old-spike',
           isRegistered: false,
         },

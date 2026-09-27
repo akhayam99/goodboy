@@ -152,7 +152,7 @@ export const InboxStatesScene = () => {
       main={
         <InboxStudio
           workspaceId={SESSION.workspaceId}
-          rootPath="/mock/harborline/ledger-core"
+          rootPath="~/code/harborline/ledger-core"
           onClose={noop}
         />
       }

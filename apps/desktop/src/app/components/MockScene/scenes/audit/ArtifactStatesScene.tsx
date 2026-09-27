@@ -55,7 +55,7 @@ export const ArtifactStatesScene = () => {
     seedShellChrome({
       session: SESSION,
       siblings: [],
-      branches: { [SESSION_ID]: 'nw/fix-posting-rounding' },
+      branches: { [SESSION_ID]: 'hl/fix-duplicate-credit' },
       telemetryAt: NOW,
       lens: 'plans',
     });

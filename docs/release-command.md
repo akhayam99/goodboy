@@ -39,6 +39,16 @@ Below, `X` is the new version and `X-1` is the current latest.
    In the same commit, add the `## Goodboy vX` section to `CHANGELOG.md` (see
    "Release notes" below). The build reads its body from there, and fails if
    the section is missing.
+   Then align the public pages with the release, in the same PR:
+   - Update `README.md`, `FEATURES.md` and `website/`: drop what is no longer
+     true and add what is new. Edit them in place, never rewrite them from
+     scratch.
+   - Run `node scripts/snapshot-features.mjs X`. It reads `FEATURES.md` and the
+     `## Goodboy vX` entry in `CHANGELOG.md`, and writes one JSON file named
+     after the version into `website/src/data/releases/`: the feature map the
+     site shows for that version, with its New items highlighted. Run it after
+     the edits above, so the snapshot matches what shipped.
+   - Commit the edits and the new JSON in the release PR.
 2. Create the release branch following the branch-naming rule in
    [CONVENTIONS.md](../CONVENTIONS.md). Commit
    `chore(repo): bump version to X`, push, open PR.

@@ -1,0 +1,66 @@
+import { useEffect, useState } from 'react';
+import { parseUnifiedDiff } from '@goodboy/core';
+import type { DiffComment } from '@goodboy/types';
+import { fileSignature, writeReviewedMap } from '../../../../../features/diff/lib/reviewedFiles';
+import { useAppStore } from '../../../../../store';
+import { ShellFrame } from '../shellChrome';
+import { BRAND_PEOPLE } from './canon';
+import { CTX_SESSION, CTX_SESSION_ID, minutesAgo, seedContextBase } from './contextBase';
+import {
+  APPLY_WEBHOOK_NOTE_LINE,
+  APPLY_WEBHOOK_PATH,
+  CTX_PATCH,
+  POST_CREDIT_PATH,
+} from './contextDiffPatch';
+import { DiffStage } from './DiffStage';
+
+const NOTES: ReadonlyArray<DiffComment> = [
+  {
+    id: 'mock-brand-diff-note-duplicate-log',
+    sessionId: CTX_SESSION_ID,
+    filePath: APPLY_WEBHOOK_PATH,
+    body: `Log the duplicate at info with the event id, so on-call can count redeliveries. ${BRAND_PEOPLE.reviewer.name} asked for it on #318.`,
+    status: 'open',
+    createdAt: minutesAgo(9),
+    anchor: { side: 'new', lineNumber: APPLY_WEBHOOK_NOTE_LINE },
+    authorKind: 'user',
+  },
+];
+
+const markViewed = (): void => {
+  const file = parseUnifiedDiff(CTX_PATCH).find((entry) => entry.path === POST_CREDIT_PATH);
+  if (file === undefined) {
+    return;
+  }
+  writeReviewedMap(CTX_SESSION_ID, { kind: 'branch' }, { [file.path]: fileSignature(file) });
+};
+
+export const BrandDiffScene = () => {
+  const [isReady, setIsReady] = useState(false);
+  const [isStaged, setIsStaged] = useState(false);
+
+  useEffect(() => {
+    seedContextBase({ lens: 'files' });
+    markViewed();
+    useAppStore.setState({
+      diffComments: { [CTX_SESSION_ID]: NOTES },
+      diffFocus: {},
+      diffPage: {},
+      loadDiffComments: async () => undefined,
+      sessionPhaseRuns: { [CTX_SESSION_ID]: [] },
+    });
+    setIsReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (isReady) {
+      setIsStaged(true);
+    }
+  }, [isReady]);
+
+  if (!isReady) {
+    return null;
+  }
+
+  return <ShellFrame session={CTX_SESSION} main={isStaged ? <DiffStage /> : null} />;
+};

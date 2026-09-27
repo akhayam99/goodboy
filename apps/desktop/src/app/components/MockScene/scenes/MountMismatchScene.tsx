@@ -32,8 +32,8 @@ const POSTINGS_BRANCH = 'fix/ledger-reconciliation-idempotent-postings';
 const RELAY_BRANCH = 'fix/notify-relay-webhook-rate-limit-backoff';
 const RELAY_OBSERVED = 'fix/notify-relay-retry-budget';
 
-const LEDGER_ROOT = '/mock/harborline/ledger-core';
-const RELAY_ROOT = '/mock/harborline/notify-relay';
+const LEDGER_ROOT = '~/code/harborline/ledger-core';
+const RELAY_ROOT = '~/code/harborline/notify-relay';
 
 const OVERRIDES = {
   defaultProviderId: null,

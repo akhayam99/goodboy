@@ -367,7 +367,7 @@ describe('primary surfaces mount on real store selectors', () => {
 
     await mountSurface({ ui: <WorkspaceSwitcher onClose={() => undefined} /> });
 
-    expect(screen.getAllByText('Cascade').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Harborline').length).toBeGreaterThan(0);
     expectNoRenderLoop();
   });
 
