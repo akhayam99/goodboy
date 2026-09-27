@@ -3,12 +3,10 @@ import {
   Button,
   Chip,
   EmptyState,
+  FormPage,
   Notice,
-  PANE_RHYTHM,
-  ScrollFade,
   Switch,
   Tooltip,
-  cn,
   formatError,
 } from '@goodboy/ui';
 import {
@@ -1145,107 +1143,105 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       variant="slot"
     >
       {() => (
-        <ScrollFade className="min-h-0 w-full flex-1">
-          <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'flex flex-col gap-8')}>
-            <div className="flex flex-col gap-3">
-              <BuilderTitleField
-                value={title}
-                placeholder={defaultTitle}
-                suggestion={activeSuggestion}
-                disabled={blocked}
-                onChange={setTitle}
-                onAcceptSuggestion={() => {
-                  if (activeSuggestion !== null) {
-                    setTitle(activeSuggestion);
-                  }
-                }}
-                origin={
-                  isPresetEdited && basePreset !== null ? (
-                    <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-secondary text-muted-foreground">
-                      {`Edited from ${basePreset.name}`}
-                    </span>
-                  ) : null
+        <FormPage>
+          <div className="flex flex-col gap-3">
+            <BuilderTitleField
+              value={title}
+              placeholder={defaultTitle}
+              suggestion={activeSuggestion}
+              disabled={blocked}
+              onChange={setTitle}
+              onAcceptSuggestion={() => {
+                if (activeSuggestion !== null) {
+                  setTitle(activeSuggestion);
                 }
-                estimate={
-                  estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />
-                }
-              />
-              <GoalField
-                value={goalText}
-                hasSessionGoal={sessionGoal.length > 0}
-                isSessionGoal={goalText === sessionGoal}
-                canUndo={goalHistory.length > 0}
-                isPolishing={polishing}
-                disabled={busy}
-                files={{
-                  isDragging: isDraggingFiles,
-                  composerRef,
-                  fileInputRef,
-                  onFiles: onFileInputChange,
-                  attachments: attachments.map((a) => (
-                    <AttachmentChip
-                      key={a.id}
-                      {...pendingAttachmentProps(a)}
-                      onRemove={() => removeAttachment(a.id)}
-                    />
-                  )),
-                }}
-                onChange={onGoalChange}
-                onBlur={() => requestTitleSuggestion(goalText)}
-                onUseSessionGoal={onUseSessionGoal}
-                onUndo={onUndoGoal}
-                onPolish={() => void onPolishGoal()}
-              />
-            </div>
-            <div className="flex flex-col gap-4">
-              <ModeSwitch mode={mode} disabled={blocked} control={modeControl} onChange={setMode} />
-              {mode === 'custom' && isPlannerOpen ? (
-                <PlannerDraftRow
-                  process={processText}
-                  hasPlan={plan !== null}
-                  isPlanning={planning}
-                  disabled={blocked}
-                  connectedProviders={connectedProviders}
-                  providerOverride={plannerProviderOverride}
-                  modelOverride={plannerModelOverride}
-                  effort={plannerEffort}
-                  recommendedProvider={resolvedPlanTaskModel.providerId}
-                  recommendedModel={plannerRecommendedModel}
-                  onProcess={setProcessText}
-                  onProvider={(next) => {
-                    setPlannerProviderOverride(next);
-                    setPlannerModelOverride('');
-                  }}
-                  onModel={setPlannerModelOverride}
-                  onEffort={setPlannerEffortOverride}
-                  onPlan={() => void onPlan()}
-                />
-              ) : null}
-              {renderPlan()}
-            </div>
-            <div className="flex flex-col gap-3">
-              {error === null ? null : (
-                <Notice
-                  tone="danger"
-                  placement="inline"
-                  role="alert"
-                  title={error.title}
-                  body={error.message}
-                />
-              )}
-              <LaunchBar
-                controls={launchControls}
-                reason={startGate.reason}
-                isStartDisabled={startGate.isDisabled}
-                isStarting={busy}
-                canDiscard={!draftEmpty}
-                onDiscard={resetDraft}
-                onStart={() => void onStart()}
-              />
-            </div>
-            <DragGhost ghost={ghost} />
+              }}
+              origin={
+                isPresetEdited && basePreset !== null ? (
+                  <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-secondary text-muted-foreground">
+                    {`Edited from ${basePreset.name}`}
+                  </span>
+                ) : null
+              }
+              estimate={
+                estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />
+              }
+            />
+            <GoalField
+              value={goalText}
+              hasSessionGoal={sessionGoal.length > 0}
+              isSessionGoal={goalText === sessionGoal}
+              canUndo={goalHistory.length > 0}
+              isPolishing={polishing}
+              disabled={busy}
+              files={{
+                isDragging: isDraggingFiles,
+                composerRef,
+                fileInputRef,
+                onFiles: onFileInputChange,
+                attachments: attachments.map((a) => (
+                  <AttachmentChip
+                    key={a.id}
+                    {...pendingAttachmentProps(a)}
+                    onRemove={() => removeAttachment(a.id)}
+                  />
+                )),
+              }}
+              onChange={onGoalChange}
+              onBlur={() => requestTitleSuggestion(goalText)}
+              onUseSessionGoal={onUseSessionGoal}
+              onUndo={onUndoGoal}
+              onPolish={() => void onPolishGoal()}
+            />
           </div>
-        </ScrollFade>
+          <div className="flex flex-col gap-4">
+            <ModeSwitch mode={mode} disabled={blocked} control={modeControl} onChange={setMode} />
+            {mode === 'custom' && isPlannerOpen ? (
+              <PlannerDraftRow
+                process={processText}
+                hasPlan={plan !== null}
+                isPlanning={planning}
+                disabled={blocked}
+                connectedProviders={connectedProviders}
+                providerOverride={plannerProviderOverride}
+                modelOverride={plannerModelOverride}
+                effort={plannerEffort}
+                recommendedProvider={resolvedPlanTaskModel.providerId}
+                recommendedModel={plannerRecommendedModel}
+                onProcess={setProcessText}
+                onProvider={(next) => {
+                  setPlannerProviderOverride(next);
+                  setPlannerModelOverride('');
+                }}
+                onModel={setPlannerModelOverride}
+                onEffort={setPlannerEffortOverride}
+                onPlan={() => void onPlan()}
+              />
+            ) : null}
+            {renderPlan()}
+          </div>
+          <div className="flex flex-col gap-3">
+            {error === null ? null : (
+              <Notice
+                tone="danger"
+                placement="inline"
+                role="alert"
+                title={error.title}
+                body={error.message}
+              />
+            )}
+            <LaunchBar
+              controls={launchControls}
+              reason={startGate.reason}
+              isStartDisabled={startGate.isDisabled}
+              isStarting={busy}
+              canDiscard={!draftEmpty}
+              onDiscard={resetDraft}
+              onStart={() => void onStart()}
+            />
+          </div>
+          <DragGhost ghost={ghost} />
+        </FormPage>
       )}
     </StudioShell>
   );
