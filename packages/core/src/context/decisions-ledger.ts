@@ -10,7 +10,7 @@ import { SLOT_BUDGETS } from './budgets';
 import { parseDecisions } from './decisions-document';
 
 export type DecisionOp =
-  | { readonly kind: 'add'; readonly text: string }
+  | { readonly kind: 'add'; readonly text: string; readonly why?: string | null }
   | { readonly kind: 'reword'; readonly number: number; readonly text: string }
   | { readonly kind: 'merge'; readonly numbers: ReadonlyArray<number>; readonly text: string }
   | {
@@ -151,10 +151,12 @@ const insertRow = ({
   rows,
   params,
   text,
+  why,
 }: {
   readonly rows: MutableLedger;
   readonly params: ApplyParams;
   readonly text: string;
+  readonly why: string | null;
 }): SessionDecision => {
   const number = nextNumber({ rows });
   const row: SessionDecision = {
@@ -162,6 +164,7 @@ const insertRow = ({
     sessionId: params.sessionId,
     number,
     text,
+    why,
     status: 'active',
     replacedBy: null,
     author: params.actor.author,
@@ -221,7 +224,8 @@ const applyAdd = ({ op, rows, params }: OpParams<'add'>): OpOutcome => {
   if (isTomb && params.actor.author !== 'user') {
     return rejected('tomb');
   }
-  const row = insertRow({ rows, params, text });
+  const why = op.why ?? null;
+  const row = insertRow({ rows, params, text, why: hasReason(why) ? why.trim() : null });
   return { kind: 'applied', changes: [{ kind: 'added', number: row.number, text }] };
 };
 
@@ -318,7 +322,7 @@ const applyReplace = ({ op, rows, params }: OpParams<'replace'>): OpOutcome => {
   if (normalizeDecisionText({ text }) === '') {
     return rejected('empty');
   }
-  const next = insertRow({ rows, params, text });
+  const next = insertRow({ rows, params, text, why: null });
   closeRow({ rows, params, row, status: 'replaced', replacedBy: next.number, reason: op.reason });
   return {
     kind: 'applied',
@@ -486,6 +490,7 @@ export const seedDecisionLedger = ({
     sessionId,
     number: index + 1,
     text: row.text,
+    why: null,
     status: 'active',
     replacedBy: null,
     author: 'summarizer',

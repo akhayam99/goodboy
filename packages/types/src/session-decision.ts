@@ -13,6 +13,7 @@ export type SessionDecision = Readonly<{
   sessionId: SessionId;
   number: number;
   text: string;
+  why: string | null;
   status: SessionDecisionStatus;
   replacedBy: number | null;
   author: SessionDecisionAuthor;

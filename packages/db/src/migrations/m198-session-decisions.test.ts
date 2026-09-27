@@ -26,6 +26,7 @@ const decision = (overrides: Partial<SessionDecision>): SessionDecision => ({
   sessionId: SESSION,
   number: 1,
   text: 'Key idempotency on the provider event id',
+  why: null,
   status: 'active',
   replacedBy: null,
   author: 'agent',

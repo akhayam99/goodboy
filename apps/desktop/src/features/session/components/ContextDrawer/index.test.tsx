@@ -80,6 +80,7 @@ const decision = (overrides: Partial<SessionDecision>): SessionDecision => ({
   sessionId: SID,
   number: 1,
   text: 'Key redeliveries by event id',
+  why: null,
   status: 'active',
   replacedBy: null,
   author: 'agent',

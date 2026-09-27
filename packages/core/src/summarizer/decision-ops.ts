@@ -48,10 +48,11 @@ const entryOf = ({ value }: ValueParams): EntryOutcome => {
       if (text === null) {
         return invalid('add without text');
       }
-      if (textOf({ value: value.why }) === null) {
+      const why = textOf({ value: value.why });
+      if (why === null) {
         return { kind: 'skip' };
       }
-      return { kind: 'op', op: { kind: 'add', text } };
+      return { kind: 'op', op: { kind: 'add', text, why } };
     }
     case 'reword': {
       const number = idOf({ value: value.id });

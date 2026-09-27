@@ -386,7 +386,9 @@ snapshot keep reading one string.
 - The summarizer never writes the `decisions` slot (an upsert of it is
   dropped). It answers `{ upserts, decisionOps }` and names decisions by
   number; an `add` without a `why` is dropped, because a line with no reason
-  is state, not a decision. Operations that do not parse fail the answer, which
+  is state, not a decision. The `why` is kept on the row (`why`, m210) and
+  shown under the decision in the context drawer; decisions from agents, from
+  you and from before m210 have none. Operations that do not parse fail the answer, which
   is asked again once. Its summary is three sections, `Learned`, `State`,
   `Next`; an old `Problem` section is dropped on the next pass.
 - The desktop applies every write through `applySessionDecisionOps`

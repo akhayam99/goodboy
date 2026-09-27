@@ -236,6 +236,7 @@ const decision = (
 ): SessionDecision => ({
   id: `mock-run-decision-${row.number}`,
   sessionId: SESSION_ID,
+  why: null,
   status: 'active',
   replacedBy: null,
   author: 'agent',
