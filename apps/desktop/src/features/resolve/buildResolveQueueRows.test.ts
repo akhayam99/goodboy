@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type {
   DiffComment,
+  IsoDateTime,
   PrComment,
   ResolveAttempt,
   ResolveQueueItem,
@@ -145,7 +146,7 @@ describe('buildResolveQueueRows', () => {
       filePath: 'src/ledger.ts',
       body: 'Round half even',
       status: 'open',
-      createdAt: '2026-01-01T00:00:00.000Z',
+      createdAt: '2026-01-01T00:00:00.000Z' as IsoDateTime,
       authorKind: 'user',
     };
     const entries: ReadonlyArray<ResolveQueueItemWithThread> = [
