@@ -53,10 +53,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/features/github/components/PullRequest/CreatePrPanel.tsx': {
-    count: 5,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/github/components/PullRequest/ThreadReplies.tsx': {
     count: 1,
     reason: 'debt',
@@ -64,10 +60,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   'apps/desktop/src/features/inbox/components/InboxStudio/InboxStudioLayout.tsx': {
     count: 1,
     reason: 'chrome',
-  },
-  'apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx': {
-    count: 4,
-    reason: 'debt',
   },
   'apps/desktop/src/features/integrations/jira/AssigneePicker.tsx': { count: 3, reason: 'debt' },
   'apps/desktop/src/features/integrations/jira/TransitionMenu.tsx': { count: 1, reason: 'debt' },
