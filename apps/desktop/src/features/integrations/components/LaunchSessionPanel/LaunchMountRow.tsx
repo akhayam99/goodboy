@@ -25,7 +25,7 @@ export const LaunchMountRow = ({ mount, selectedId, disabled, onChange }: Props)
       <Listbox
         trigger="chip"
         size="sm"
-        ariaLabel="Project to mount"
+        ariaLabel="Project to work in"
         disabled={disabled}
         value={selected === null ? NO_PROJECT : selected.projectId}
         options={options}
@@ -33,7 +33,7 @@ export const LaunchMountRow = ({ mount, selectedId, disabled, onChange }: Props)
           <>
             <ProjectIcon size={ICON_SIZE.row} aria-hidden className="shrink-0" />
             <span className="truncate">
-              {selected === null ? 'No project' : `Mounts ${selected.name}`}
+              {selected === null ? 'No project' : `Works in ${selected.name}`}
             </span>
           </>
         }

@@ -385,7 +385,7 @@ Keep the issues you follow on top of the Inbox and of **Pick up a task**.
 
 ### Launch a session from any item
 
-Start a session from an issue, a Slack thread or an error, with the brief already drafted. A Sentry error or a GitHub item mounts its project, and the popover says why.
+Start a session from an issue, a Slack thread or an error, with the brief already drafted. A Sentry error or a GitHub item opens in its project, and the popover says why.
 
 ### Link an item to a session
 

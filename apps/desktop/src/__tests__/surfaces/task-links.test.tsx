@@ -527,9 +527,9 @@ describe('tasks and sessions on the real store', () => {
     await mount(<InboxItem record={record} workspaceId={WORKSPACE_ID} />);
     fireEvent.click(screen.getByRole('button', { name: /Launch session/ }));
     const panel = await screen.findByRole('region', { name: 'Launch session' });
-    expect(within(panel).getByRole('combobox', { name: 'Project to mount' }).textContent).toContain(
-      `Mounts ${project.name}`,
-    );
+    expect(
+      within(panel).getByRole('combobox', { name: 'Project to work in' }).textContent,
+    ).toContain(`Works in ${project.name}`);
     expect(within(panel).getByText('from Sentry project payments-api')).toBeDefined();
     fireEvent.click(within(panel).getByRole('button', { name: /Launch session/ }));
 

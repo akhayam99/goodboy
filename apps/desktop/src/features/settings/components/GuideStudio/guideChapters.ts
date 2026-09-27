@@ -138,7 +138,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Pick up a task',
-        desc: 'Launch a session from an issue in the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. A Sentry error or a GitHub item mounts its project and says why.',
+        desc: 'Launch a session from an issue in the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. A Sentry error or a GitHub item opens in its project and says why.',
       },
       {
         term: 'Named for you',
