@@ -12,6 +12,21 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.12.0
+
+Decisions in the context drawer now show why they were made, in a quiet line right under each one.
+
+This version updates your data in one direction. To go back to 0.11, restore the backup Goodboy made before updating.
+
+### Improved
+
+#### See why each decision was made
+<!-- gb area=sessions image=decision-why -->
+
+When Goodboy records a decision from a session, it now keeps the reason that came with it. The Decisions tab of the context drawer shows that reason as a muted line under the decision, cut to two lines with Show more when it runs longer.
+
+Decisions you add yourself, decisions from agents and decisions recorded before this version have no reason line.
+
 ## Goodboy v0.11.4
 
 New sessions open blank on their overview and set up in three short steps, with every kind of workflow one pick away.
