@@ -14,7 +14,7 @@ import { EMPTY_SESSION_DRAFT, initialSessionDraftState } from './state';
 import { selectSessionDraft } from './selectSessionDraft';
 import { selectIsSessionDraftShown } from './selectIsSessionDraftShown';
 import { hasSessionDraftContent } from './hasSessionDraftContent';
-import { SESSION_DRAFT_PLACE } from '../navigation/place';
+import { SESSION_DRAFT_PLACE, sessionPlace } from '../navigation/place';
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 'sess-1' as SessionId;
@@ -30,6 +30,7 @@ const harness = () => {
     createSession: vi.fn(async (_input: unknown) => ({ session: { id: SESSION_ID } })),
     attachWorkflowToSession: vi.fn(async () => undefined),
     spawnAgent: vi.fn(async () => 'agent-1'),
+    setWorkflowDraft: vi.fn(),
   };
   let state: HarnessState = {
     ...initialSessionDraftState,
@@ -360,5 +361,44 @@ describe('session draft slice', () => {
     expect(
       selectSessionDraft({ state: h.getState() as never, workspaceId: WORKSPACE_ID }).workflowGoal,
     ).toBe('Ship it');
+  });
+
+  it('starts a blank session with nothing required and keeps the draft', async () => {
+    h.set({ openSessionDraftWorkspaceId: WORKSPACE_ID });
+    h.slice.patchSessionDraft({ workspaceId: WORKSPACE_ID, patch: { workflowGoal: 'Ship it' } });
+
+    await h.slice.startBlankSession({ workspaceId: WORKSPACE_ID });
+
+    expect(h.spies.createSession).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      goal: '',
+      omitGoalSlot: true,
+    });
+    expect(h.spies.attachWorkflowToSession).not.toHaveBeenCalled();
+    expect(h.spies.spawnAgent).not.toHaveBeenCalled();
+    expect(h.getState().openSessionDraftWorkspaceId).toBeNull();
+    expect(h.getState().goodboyNamedSessionId).toBeNull();
+    expect(
+      selectSessionDraft({ state: h.getState() as never, workspaceId: WORKSPACE_ID }).workflowGoal,
+    ).toBe('Ship it');
+  });
+
+  it('opens the shared workflow builder seeded with the approach and the goal', async () => {
+    await h.slice.startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: { kind: 'workflow-builder', choice: { kind: 'orchestrated' }, goal: ' Ship it ' },
+    });
+
+    expect(h.spies.createSession).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: WORKSPACE_ID, goal: 'Ship it', title: 'Ship it' }),
+    );
+    expect(h.spies.setWorkflowDraft).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ mode: 'dynamic', goalText: 'Ship it' }),
+    );
+    expect(h.spies.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, studio: { kind: 'workflow' } }),
+    });
+    expect(h.spies.attachWorkflowToSession).not.toHaveBeenCalled();
   });
 });

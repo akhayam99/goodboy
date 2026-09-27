@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { StoreApi, UseBoundStore } from 'zustand';
 import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../integrations/fetchIssueCandidates';
@@ -156,6 +156,7 @@ const renderKickoff = () => render(<SessionKickoff workspaceId={WORKSPACE_ID} />
 const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(name) });
 
 beforeEach(() => {
+  localStorage.clear();
   resetStore();
   hooks.isGithubAuthenticated.current = false;
   hooks.lookup.current = null;
@@ -174,9 +175,14 @@ describe('SessionKickoff', () => {
     renderKickoff();
 
     expect(screen.getByRole('tablist', { name: 'How do you want to start?' })).toBeDefined();
-    expect(screen.getAllByRole('tab').map((node) => node.textContent)).toEqual([
+    const kinds = screen.getByRole('tablist', { name: 'How do you want to start?' });
+    expect(
+      within(kinds)
+        .getAllByRole('tab')
+        .map((node) => node.textContent),
+    ).toEqual([
       'Pick up a taskAn issue from your tracker.',
-      'Run a workflowPreset or orchestrated.',
+      'Run a workflowOrchestrated, custom or preset.',
       'Ask an agentScout or any other role.',
     ]);
     expect(screen.queryByRole('button', { name: 'More ways to start' })).toBeNull();
@@ -186,7 +192,7 @@ describe('SessionKickoff', () => {
     renderKickoff();
 
     expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
-    expect(screen.getAllByRole('button', { name: 'Run workflow' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Set up orchestration' })).toHaveLength(1);
   });
 
   it('preselects Pick up a task when the tracker has candidates', async () => {
@@ -260,6 +266,7 @@ describe('SessionKickoff', () => {
 
   it('starts the session and the picked workflow in one gesture', async () => {
     renderKickoff();
+    fireEvent.click(screen.getByRole('tab', { name: 'Preset' }));
     const run = screen.getByRole('button', { name: 'Run workflow' });
     expect(run.hasAttribute('disabled')).toBe(true);
 
@@ -279,6 +286,7 @@ describe('SessionKickoff', () => {
   it('keeps the draft and says why inline when the start fails', async () => {
     spies.startSessionFromDraft.mockRejectedValueOnce(new Error('provider offline'));
     renderKickoff();
+    fireEvent.click(screen.getByRole('tab', { name: 'Preset' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Workflow goal' }), {
       target: { value: 'Round once per batch' },
     });
