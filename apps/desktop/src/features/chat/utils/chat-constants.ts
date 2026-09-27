@@ -46,7 +46,7 @@ const humanizeUnknownId = (id: string): string => {
 const CLAUDE_VERSION_PATTERN = /^claude-(opus|sonnet|haiku|fable)-(\d+)-(\d+)$/i;
 
 const unknownModelLabel = (id: string): string => {
-  const claudeMatch = CLAUDE_VERSION_PATTERN.exec(id);
+  const claudeMatch = CLAUDE_VERSION_PATTERN.exec(stripProviderPrefix(id));
   if (claudeMatch) {
     const family = claudeMatch[1]!;
     return `${family.charAt(0).toUpperCase()}${family.slice(1).toLowerCase()} ${claudeMatch[2]}.${claudeMatch[3]}`;

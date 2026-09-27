@@ -28,6 +28,10 @@ describe('modelLabel', () => {
       'Mistralai Mistral Large 2411',
     );
   });
+
+  it('matches the Claude shorthand against the provider-stripped id', () => {
+    expect(modelLabel('anthropic/claude-opus-4-1')).toBe('Opus 4.1');
+  });
 });
 
 describe('suggestHeavierModel, price of the model actually running', () => {
