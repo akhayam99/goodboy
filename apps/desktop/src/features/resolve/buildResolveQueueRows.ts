@@ -77,8 +77,7 @@ const commentThreadByThreadId = ({
 }): ReadonlyMap<string, CommentThread> => {
   const map = new Map<string, CommentThread>();
   for (const note of notes) {
-    const thread = noteCommentThread({ note });
-    map.set(thread.head.threadId ?? note.id, thread);
+    map.set(note.id, noteCommentThread({ note }));
   }
   const threads = groupThreads(comments.filter((comment) => comment.source === 'review'));
   for (const thread of threads) {
@@ -212,7 +211,10 @@ export const buildResolveQueueRows = ({
 }: Params): ReadonlyArray<ResolveQueueRow> => {
   const commentThreads = commentThreadByThreadId({ comments, notes });
   return entries.map(({ item, thread }) => {
-    const commentThread = commentThreads.get(thread.threadId) ?? null;
+    const commentThread =
+      (thread.originKind === 'diff_comment' && thread.diffCommentId !== null
+        ? commentThreads.get(thread.diffCommentId)
+        : commentThreads.get(thread.threadId)) ?? null;
     const attempt =
       thread.activeAttemptId === null
         ? null

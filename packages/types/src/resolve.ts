@@ -29,6 +29,8 @@ export type ResolveThread = Readonly<{
   stage: ResolveStage;
   stateReason: string | null;
   revision: number;
+  generation: number;
+  reopenedFromThreadId: string | null;
   activeAttemptId: string | null;
   disposition: 'fix' | 'reply' | 'no_change' | null;
   replyDraft: string | null;
