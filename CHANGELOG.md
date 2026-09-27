@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.11.1
+
+Every screen names a model the same way.
+
+### Fixed
+
+- Every screen names a model the same way. <!-- gb area=agents -->
+
 ## Goodboy v0.11.0
 
 Pick up an issue and start work on it in one step, reconnect a project you moved, and see a merged branch that gained new commits.

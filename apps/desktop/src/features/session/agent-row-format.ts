@@ -11,10 +11,6 @@ export const shortModel = (model: string): string => {
   if (descriptor != null) {
     return descriptor.label;
   }
-  const m = model.match(/claude-(haiku|sonnet|opus|fable)/i);
-  if (m && m[1]) {
-    return m[1].toLowerCase();
-  }
   return model;
 };
 
