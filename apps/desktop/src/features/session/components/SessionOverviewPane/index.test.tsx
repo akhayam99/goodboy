@@ -27,13 +27,43 @@ vi.mock('./HeaderBand', () => ({
   HeaderBand: () => <header data-testid="header" />,
 }));
 
-vi.mock('../SessionWorkspace/parts/TimelinePane', () => ({
-  TimelinePane: () => <section aria-label="Activity" />,
+const { shown } = vi.hoisted(() => ({
+  shown: {
+    reported: new Set<string>(),
+    slot: null as ReadonlySet<string> | null,
+    callout: null as boolean | null,
+  },
 }));
 
-vi.mock('./AttentionCallout', () => ({ AttentionCallout: () => null }));
+vi.mock('../SessionWorkspace/parts/TimelinePane', async () => {
+  const { useLayoutEffect } = await import('react');
+  return {
+    TimelinePane: ({
+      onShownQuestionsChange,
+    }: {
+      onShownQuestionsChange?: (ids: ReadonlySet<string>) => void;
+    }) => {
+      useLayoutEffect(() => {
+        onShownQuestionsChange?.(shown.reported);
+      }, [onShownQuestionsChange]);
+      return <section aria-label="Activity" />;
+    },
+  };
+});
+
+vi.mock('./AttentionCallout', () => ({
+  AttentionCallout: ({ isQuestionShownBelow }: { isQuestionShownBelow?: boolean }) => {
+    shown.callout = isQuestionShownBelow ?? false;
+    return null;
+  },
+}));
 vi.mock('./OverviewActions', () => ({ OverviewActions: () => null }));
-vi.mock('../../../suggestions/components/NextStepSlot', () => ({ NextStepSlot: () => null }));
+vi.mock('../../../suggestions/components/NextStepSlot', () => ({
+  NextStepSlot: ({ shownQuestionIds }: { shownQuestionIds?: ReadonlySet<string> }) => {
+    shown.slot = shownQuestionIds ?? null;
+    return null;
+  },
+}));
 
 const { setup } = vi.hoisted(() => ({ setup: { isActive: false } }));
 
@@ -49,6 +79,9 @@ import { SessionOverviewPane } from './index';
 afterEach(() => {
   cleanup();
   setup.isActive = false;
+  shown.reported = new Set();
+  shown.slot = null;
+  shown.callout = null;
 });
 
 const session = (archivedAt: string | null): Session =>
@@ -61,6 +94,21 @@ describe('SessionOverviewPane', () => {
     expect(screen.getByRole('region', { name: 'Activity' })).toBeDefined();
     expect(screen.queryByRole('region', { name: 'Set up' })).toBeNull();
     expect(screen.getByTestId('header')).toBeDefined();
+  });
+
+  it('tells the next step which questions the activity already shows', () => {
+    shown.reported = new Set(['q-1']);
+    render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
+
+    expect([...(shown.slot ?? [])]).toEqual(['q-1']);
+    expect(shown.callout).toBe(true);
+  });
+
+  it('keeps the needs-you callout for questions while setup hides the activity', () => {
+    setup.isActive = true;
+    render(<SessionOverviewPane session={session(null)} onSelectLens={vi.fn()} />);
+
+    expect(shown.callout).toBe(false);
   });
 
   it('shows the setup steps instead of the activity while nothing has started', () => {

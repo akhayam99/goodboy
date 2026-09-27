@@ -113,7 +113,7 @@ describe('deriveNextSteps', () => {
       'resolve-threads',
       'rebase-project',
     ]);
-    expect(suggestions[0]?.payload).toEqual({ count: 2 });
+    expect(suggestions[0]?.payload).toEqual({ count: 2, firstQuestion: null });
   });
 
   it('uses the shared plan-ready union gates', () => {

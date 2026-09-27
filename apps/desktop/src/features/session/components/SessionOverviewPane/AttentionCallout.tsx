@@ -11,9 +11,14 @@ import { attentionAgentId, resolveAttentionTarget } from './lib';
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
+  readonly isQuestionShownBelow?: boolean;
 };
 
-export const AttentionCallout = ({ session, onSelectLens }: Props) => {
+export const AttentionCallout = ({
+  session,
+  onSelectLens,
+  isQuestionShownBelow = false,
+}: Props) => {
   const sessionId = session.id as SessionId;
   const stage = useSessionStageInfo(session);
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
@@ -40,6 +45,9 @@ export const AttentionCallout = ({ session, onSelectLens }: Props) => {
   }, [agentKindOverride, blockedAgentId, agents, stage]);
 
   if (stage.stage !== 'attention' || target === null) {
+    return null;
+  }
+  if (isQuestionShownBelow && stage.attention === 'open-question') {
     return null;
   }
 

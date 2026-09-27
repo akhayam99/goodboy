@@ -19,7 +19,12 @@ import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
-import type { RebaseSuggestionTarget, SessionSuggestion, SuggestionKind } from './types';
+import type {
+  RebaseSuggestionTarget,
+  SessionSuggestion,
+  SuggestionKind,
+  SuggestionQuestion,
+} from './types';
 
 export type SuggestionFailedStep = {
   readonly stepId: StepId;
@@ -112,6 +117,7 @@ type Params = {
   readonly plans: ReadonlyArray<SuggestionPlan>;
   readonly consumedPlanIds: ReadonlySet<PlanId>;
   readonly openQuestionCount: number;
+  readonly firstOpenQuestion?: SuggestionQuestion | null;
   readonly hasPullRequest: boolean;
   readonly eligibleThreadCount: number;
   readonly projects: ReadonlyArray<SuggestionProject>;
@@ -134,6 +140,7 @@ export const deriveNextSteps = ({
   plans,
   consumedPlanIds,
   openQuestionCount,
+  firstOpenQuestion = null,
   hasPullRequest,
   eligibleThreadCount,
   projects,
@@ -181,7 +188,7 @@ export const deriveNextSteps = ({
       sessionId,
       targetKey: null,
       fingerprint: `answer-questions:${sessionId}:${openQuestionCount}`,
-      payload: { count: openQuestionCount },
+      payload: { count: openQuestionCount, firstQuestion: firstOpenQuestion },
     });
   }
   for (const agent of agents) {

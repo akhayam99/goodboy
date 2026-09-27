@@ -16,6 +16,7 @@ import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent
 import { resolveNewLabel } from '../../resolve/resolveQueueCopy';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
+import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
 
 const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
@@ -69,6 +70,7 @@ export const useSuggestionActions = ({
   onSelectQuestions,
 }: Params): SuggestionActionResolver => {
   const sessionId = session.id;
+  const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
   const mounts = useAppStore(
     (state) =>
@@ -265,8 +267,16 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'answer-questions') {
+      const { count, firstQuestion } = suggestion.payload;
       return {
-        primary: { label: 'Answer', isDisabled: false, onAct: onSelectQuestions },
+        primary: {
+          label: 'Answer',
+          isDisabled: false,
+          onAct:
+            count === 1 && firstQuestion != null
+              ? () => openAgentQuestion({ question: firstQuestion })
+              : onSelectQuestions,
+        },
         onDismiss: null,
       };
     }

@@ -26,7 +26,10 @@ type Params = {
   readonly session: Session;
   readonly agents?: ReadonlyArray<Agent>;
   readonly withRebase?: boolean;
+  readonly shownQuestionIds?: ReadonlySet<string>;
 };
+
+const NO_SHOWN_QUESTIONS: ReadonlySet<string> = new Set();
 
 type LatestRebaseRequestsParams = {
   readonly events: ReadonlyArray<SessionEvent>;
@@ -72,7 +75,12 @@ const latestRebaseRequests = ({
   return requests;
 };
 
-export const useSessionSuggestions = ({ session, agents, withRebase = true }: Params) => {
+export const useSessionSuggestions = ({
+  session,
+  agents,
+  withRebase = true,
+  shownQuestionIds = NO_SHOWN_QUESTIONS,
+}: Params) => {
   const sessionId = session.id;
   const storedAgents = useAppStore(
     (state) => state.sessionPhaseRuns[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<Agent>),
@@ -195,6 +203,10 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
       }
     }
     const rebaseRequests = latestRebaseRequests({ events, agents: effectiveAgents });
+    const offScreenQuestions = openQuestions
+      .filter((question) => question.status === 'open' && !shownQuestionIds.has(question.id))
+      .sort((first, second) => first.createdAt.localeCompare(second.createdAt));
+    const firstOffScreen = offScreenQuestions[0] ?? null;
     return deriveNextSteps({
       sessionId,
       workflowRuns: active.map(({ run, workflow }) => {
@@ -228,7 +240,11 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
         };
       }),
       consumedPlanIds,
-      openQuestionCount: openQuestions.filter((question) => question.status === 'open').length,
+      openQuestionCount: offScreenQuestions.length,
+      firstOpenQuestion:
+        firstOffScreen == null
+          ? null
+          : { id: firstOffScreen.id, createdByAgentId: firstOffScreen.createdByAgentId ?? null },
       hasPullRequest: github?.pr != null,
       eligibleThreadCount: eligibleReviewThreadCount({ github, rows: resolveRows }),
       mountEvents: toMountEvents({ events }),
@@ -340,6 +356,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
     rebaseMounts,
     resolveRows,
     sessionId,
+    shownQuestionIds,
     withRebase,
     worktreeStatuses,
   ]);

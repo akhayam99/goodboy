@@ -1,6 +1,7 @@
 import type {
   AgentId,
   MountId,
+  OpenQuestionId,
   PlanId,
   PrMergeMethod,
   ProjectId,
@@ -35,6 +36,11 @@ export const SUGGESTION_KINDS = [
 ] as const;
 
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
+
+export type SuggestionQuestion = {
+  readonly id: OpenQuestionId;
+  readonly createdByAgentId: AgentId | null;
+};
 
 export type NextStepBand = 0 | 1 | 2 | 3;
 
@@ -81,7 +87,10 @@ export type SessionSuggestion =
     })
   | (SuggestionBase & {
       readonly kind: 'answer-questions';
-      readonly payload: { readonly count: number };
+      readonly payload: {
+        readonly count: number;
+        readonly firstQuestion: SuggestionQuestion | null;
+      };
     })
   | (SuggestionBase & {
       readonly kind: 'mount-project';

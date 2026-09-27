@@ -5,6 +5,7 @@ import type {
   Agent,
   AgentId,
   MountId,
+  OpenQuestionId,
   PlanId,
   ProjectId,
   Session,
@@ -98,6 +99,7 @@ const { storeState, spies } = vi.hoisted(() => {
       mergePr,
       resolveMountCleanup,
       attachWorkflowToSession,
+      requestOpenQuestionScroll: vi.fn(),
     },
   };
 });
@@ -476,7 +478,10 @@ describe('useSuggestionActions', () => {
         ...suggestionBase,
         id: 'answer-questions:session-1',
         kind: 'answer-questions',
-        payload: { count: 2 },
+        payload: {
+          count: 2,
+          firstQuestion: { id: 'question-1' as OpenQuestionId, createdByAgentId: AGENT_ID },
+        },
       },
     });
 
@@ -484,6 +489,31 @@ describe('useSuggestionActions', () => {
     actions.primary?.onAct();
 
     expect(onSelectQuestions).toHaveBeenCalledTimes(1);
+  });
+
+  it('jumps to the agent that asked when one question is out of view', () => {
+    const actions = actionsFor({
+      suggestion: {
+        ...suggestionBase,
+        id: 'answer-questions:session-1',
+        kind: 'answer-questions',
+        payload: {
+          count: 1,
+          firstQuestion: { id: 'question-1' as OpenQuestionId, createdByAgentId: AGENT_ID },
+        },
+      },
+    });
+
+    actions.primary?.onAct();
+
+    expect(onSelectQuestions).not.toHaveBeenCalled();
+    expect(spies.navigate).toHaveBeenCalledWith({
+      to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID }),
+    });
+    expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
+      agentId: AGENT_ID,
+      questionId: 'question-1',
+    });
   });
 
   it('mounts a proposed project with the reason the agent recorded', () => {

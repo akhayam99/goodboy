@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import type { OpenQuestion, SessionId } from '@goodboy/types';
+import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
 
 type Params = {
@@ -7,7 +7,10 @@ type Params = {
 };
 
 type OpenParams = {
-  readonly question: OpenQuestion;
+  readonly question: {
+    readonly id: OpenQuestionId;
+    readonly createdByAgentId?: AgentId | null;
+  };
 };
 
 export const useOpenAgentQuestion = ({ sessionId }: Params) => {

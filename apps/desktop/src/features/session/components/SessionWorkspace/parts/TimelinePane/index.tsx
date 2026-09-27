@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { runsForWorkflowRun } from '@goodboy/core';
 import type { ReactNode } from 'react';
@@ -53,6 +53,7 @@ import {
   needsYouRootIds,
 } from '../../../../timeline/needsYou';
 import { timelineLaneRuns } from '../../../../timeline/timelineLaneRuns';
+import { shownQuestionIds } from '../../../../timeline/shownQuestionIds';
 import { layoutTimelineRail } from '../../../../../workTreeModel/railGeometry';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { useOpenAgentQuestion } from '../../../../../context/hooks/useOpenAgentQuestion';
@@ -84,9 +85,10 @@ const EMPTY_REVEALED_ROWS: ReadonlySet<string> = new Set();
 type Props = {
   readonly session: Session;
   readonly actions: ReactNode;
+  readonly onShownQuestionsChange?: (ids: ReadonlySet<string>) => void;
 };
 
-export const TimelinePane = ({ session, actions }: Props) => {
+export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
@@ -297,6 +299,13 @@ export const TimelinePane = ({ session, actions }: Props) => {
   );
 
   const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
+
+  const shownQuestions = useMemo(() => shownQuestionIds({ items: stream.items }), [stream.items]);
+  const shownQuestionsKey = [...shownQuestions].sort().join(' ');
+
+  useLayoutEffect(() => {
+    onShownQuestionsChange?.(shownQuestions);
+  }, [onShownQuestionsChange, shownQuestionsKey]);
 
   const listRef = useRef<HTMLDivElement>(null);
 

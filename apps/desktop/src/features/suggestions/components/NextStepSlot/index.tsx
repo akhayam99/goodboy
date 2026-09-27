@@ -12,12 +12,13 @@ import { NextStepRow } from './NextStepRow';
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
+  readonly shownQuestionIds?: ReadonlySet<string>;
 };
 
-export const NextStepSlot = ({ session, onSelectLens }: Props) => {
+export const NextStepSlot = ({ session, onSelectLens, shownQuestionIds }: Props) => {
   const sessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const suggestions = useSessionSuggestions({ session, agents });
+  const suggestions = useSessionSuggestions({ session, agents, shownQuestionIds });
   const transcriptProposals = useTranscriptMountProposals({ session });
   const transcriptOwned = useMemo(
     () => transcriptOwnedProjectIds({ proposals: transcriptProposals }),
