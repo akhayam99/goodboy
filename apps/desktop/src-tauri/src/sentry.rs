@@ -186,6 +186,47 @@ fn read_config(
     })
 }
 
+const MAX_ATTEMPTS: u32 = 3;
+const BASE_BACKOFF_MS: u64 = 400;
+const MAX_RETRY_WAIT_MS: u64 = 5_000;
+
+fn is_transient_status(status: reqwest::StatusCode) -> bool {
+    matches!(status.as_u16(), 429 | 502 | 503 | 504)
+}
+
+fn retry_wait(attempt: u32, retry_after: Option<&str>) -> std::time::Duration {
+    let backoff = BASE_BACKOFF_MS.saturating_mul(1u64 << attempt.min(8));
+    let wait = retry_after
+        .and_then(|value| value.trim().parse::<f64>().ok())
+        .filter(|seconds| seconds.is_finite() && *seconds >= 0.0)
+        .map(|seconds| (seconds * 1000.0).ceil() as u64)
+        .unwrap_or(backoff);
+    std::time::Duration::from_millis(wait.min(MAX_RETRY_WAIT_MS))
+}
+
+async fn send_retrying<F>(build: F) -> Result<reqwest::Response, SentryError>
+where
+    F: Fn() -> reqwest::RequestBuilder,
+{
+    let mut attempt = 0;
+    loop {
+        let is_last = attempt + 1 >= MAX_ATTEMPTS;
+        let wait = match build().send().await {
+            Ok(res) if !is_last && is_transient_status(res.status()) => retry_wait(
+                attempt,
+                res.headers()
+                    .get(reqwest::header::RETRY_AFTER)
+                    .and_then(|v| v.to_str().ok()),
+            ),
+            Ok(res) => return Ok(res),
+            Err(e) if !is_last && (e.is_connect() || e.is_timeout()) => retry_wait(attempt, None),
+            Err(e) => return Err(e.into()),
+        };
+        tokio::time::sleep(wait).await;
+        attempt += 1;
+    }
+}
+
 fn parse_next_cursor(link: &str) -> Option<String> {
     for segment in link.split(',') {
         if !segment.contains("rel=\"next\"") || !segment.contains("results=\"true\"") {
@@ -354,11 +395,14 @@ async fn get_all_pages<T: serde::de::DeserializeOwned>(
     let mut items: Vec<T> = Vec::new();
     let mut cursor: Option<String> = None;
     for _ in 0..MAX_LIST_PAGES {
-        let mut request = http_client().get(url).bearer_auth(secret);
-        if let Some(value) = cursor.as_deref() {
-            request = request.query(&[("cursor", value)]);
-        }
-        let res = request.send().await?;
+        let res = send_retrying(|| {
+            let request = http_client().get(url).bearer_auth(secret);
+            match cursor.as_deref() {
+                Some(value) => request.query(&[("cursor", value)]),
+                None => request,
+            }
+        })
+        .await?;
         let status = res.status();
         if !status.is_success() {
             let body = res.text().await.unwrap_or_default();
@@ -473,12 +517,13 @@ pub async fn sentry_fetch_issues(
     if let Some(cursor) = cursor {
         params.push(("cursor", cursor));
     }
-    let res = http_client()
-        .get(&url)
-        .bearer_auth(&cfg.token)
-        .query(&params)
-        .send()
-        .await?;
+    let res = send_retrying(|| {
+        http_client()
+            .get(&url)
+            .bearer_auth(&cfg.token)
+            .query(&params)
+    })
+    .await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
@@ -518,11 +563,8 @@ pub async fn sentry_resolve_short_id(
     cache: State<'_, SentryTokenCache>,
 ) -> Result<SentryIssue, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
-    let res = http_client()
-        .get(short_id_url(&cfg.org, &short_id))
-        .bearer_auth(&cfg.token)
-        .send()
-        .await?;
+    let url = short_id_url(&cfg.org, &short_id);
+    let res = send_retrying(|| http_client().get(&url).bearer_auth(&cfg.token)).await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
@@ -542,11 +584,7 @@ pub async fn sentry_fetch_issue(
 ) -> Result<SentryIssue, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
     let url = format!("{}/issues/{}/", BASE_URL, issue_id);
-    let res = http_client()
-        .get(&url)
-        .bearer_auth(&cfg.token)
-        .send()
-        .await?;
+    let res = send_retrying(|| http_client().get(&url).bearer_auth(&cfg.token)).await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
@@ -566,11 +604,7 @@ pub async fn sentry_fetch_issue_detail(
 ) -> Result<SentryIssueDetail, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
     let url = format!("{}/issues/{}/events/latest/", BASE_URL, issue_id);
-    let res = http_client()
-        .get(&url)
-        .bearer_auth(&cfg.token)
-        .send()
-        .await?;
+    let res = send_retrying(|| http_client().get(&url).bearer_auth(&cfg.token)).await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
@@ -712,6 +746,86 @@ mod tests {
             organization_projects_url("northwind"),
             "https://sentry.io/api/0/organizations/northwind/projects/"
         );
+    }
+
+    #[test]
+    fn a_rate_limit_or_a_gateway_error_is_transient_and_a_client_error_is_not() {
+        for code in [429u16, 502, 503, 504] {
+            assert!(is_transient_status(
+                reqwest::StatusCode::from_u16(code).unwrap()
+            ));
+        }
+        for code in [200u16, 400, 401, 403, 404, 500] {
+            assert!(!is_transient_status(
+                reqwest::StatusCode::from_u16(code).unwrap()
+            ));
+        }
+    }
+
+    #[test]
+    fn the_retry_wait_honors_retry_after_and_stays_capped() {
+        assert_eq!(retry_wait(0, Some("2")), std::time::Duration::from_secs(2));
+        assert_eq!(
+            retry_wait(0, Some("0.25")),
+            std::time::Duration::from_millis(250)
+        );
+        assert_eq!(
+            retry_wait(0, Some("600")),
+            std::time::Duration::from_millis(MAX_RETRY_WAIT_MS)
+        );
+        assert_eq!(
+            retry_wait(0, Some("Wed, 21 Oct 2026 07:28:00 GMT")),
+            std::time::Duration::from_millis(BASE_BACKOFF_MS)
+        );
+        assert_eq!(
+            retry_wait(1, None),
+            std::time::Duration::from_millis(BASE_BACKOFF_MS * 2)
+        );
+        assert_eq!(
+            retry_wait(30, None),
+            std::time::Duration::from_millis(MAX_RETRY_WAIT_MS)
+        );
+    }
+
+    async fn serve(responses: Vec<&'static str>) -> (String, tokio::task::JoinHandle<usize>) {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!("http://{}/issues/", listener.local_addr().unwrap());
+        let handle = tokio::spawn(async move {
+            let mut served = 0;
+            for response in responses {
+                let (mut socket, _) = listener.accept().await.unwrap();
+                let mut buf = [0u8; 4096];
+                let _ = socket.read(&mut buf).await.unwrap();
+                socket.write_all(response.as_bytes()).await.unwrap();
+                socket.shutdown().await.unwrap();
+                served += 1;
+            }
+            served
+        });
+        (url, handle)
+    }
+
+    const RATE_LIMITED: &str = "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 0\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    const OK_EMPTY: &str =
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n[]";
+
+    #[tokio::test]
+    async fn a_rate_limited_first_call_is_retried_and_recovers() {
+        let (url, server) = serve(vec![RATE_LIMITED, OK_EMPTY]).await;
+        let client = reqwest::Client::new();
+        let res = send_retrying(|| client.get(&url)).await.unwrap();
+        assert_eq!(res.status(), reqwest::StatusCode::OK);
+        assert_eq!(server.await.unwrap(), 2);
+    }
+
+    #[tokio::test]
+    async fn a_rate_limit_that_never_clears_surfaces_after_the_last_attempt() {
+        let (url, server) = serve(vec![RATE_LIMITED; MAX_ATTEMPTS as usize]).await;
+        let client = reqwest::Client::new();
+        let res = send_retrying(|| client.get(&url)).await.unwrap();
+        assert_eq!(res.status(), reqwest::StatusCode::TOO_MANY_REQUESTS);
+        assert_eq!(server.await.unwrap(), MAX_ATTEMPTS as usize);
     }
 
     #[test]
