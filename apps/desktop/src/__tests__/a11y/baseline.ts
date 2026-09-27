@@ -34,6 +34,7 @@ export const A11Y_BASELINE = {
   'scene lens-switcher': [],
   'scene lens-switcher-closed': [],
   'scene session-states': ['aria-allowed-role'],
+  'scene session-start': ['aria-allowed-role'],
   'scene workspace-states': ['aria-allowed-role', 'aria-prohibited-attr', 'nested-interactive'],
   'scene review-modes': [],
   'scene workflow-studio': ['label'],
