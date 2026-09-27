@@ -116,15 +116,17 @@ export type ConfigBundleBudgetRule = Readonly<{
 
 export type ConfigBundleScript = Readonly<{
   id: string;
-  workspaceId: string;
+  projectId: string;
   name: string;
   body: string;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }>;
 
 export type ConfigBundleToolBinding = Readonly<{
   workspaceId: string;
+  projectId?: string;
   provider: string;
   configJson: string;
 }>;

@@ -1,10 +1,13 @@
 use std::collections::{HashMap, HashSet};
 
+use rusqlite::OptionalExtension;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
 use crate::db::{Db, DbError};
-use crate::repo::{find_moved_projects_blocking, FindMovedProjectsArgs, MovedProjectInput, MovedProjectVerdict};
+use crate::repo::{
+    find_moved_projects_blocking, FindMovedProjectsArgs, MovedProjectInput, MovedProjectVerdict,
+};
 
 const SCHEMA_VERSION: u32 = 3;
 const LEGACY_SCHEMA_VERSIONS: [u32; 2] = [1, 2];
@@ -54,9 +57,17 @@ pub struct ProjectBundle {
     pub description: Option<String>,
     #[serde(rename = "starredAt", default, skip_serializing_if = "Option::is_none")]
     pub starred_at: Option<String>,
-    #[serde(rename = "baseBranch", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "baseBranch",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub base_branch: Option<String>,
-    #[serde(rename = "rootCommit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rootCommit",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub root_commit: Option<String>,
     #[serde(rename = "remoteUrl", default, skip_serializing_if = "Option::is_none")]
     pub remote_url: Option<String>,
@@ -202,10 +213,12 @@ pub struct BudgetRuleBundle {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ScriptBundle {
     pub id: String,
-    #[serde(rename = "workspaceId")]
-    pub workspace_id: String,
+    #[serde(rename = "projectId")]
+    pub project_id: String,
     pub name: String,
     pub body: String,
+    #[serde(rename = "sortOrder", default)]
+    pub sort_order: i64,
     #[serde(rename = "createdAt")]
     pub created_at: String,
     #[serde(rename = "updatedAt")]
@@ -216,6 +229,8 @@ pub struct ScriptBundle {
 pub struct ToolBindingBundle {
     #[serde(rename = "workspaceId")]
     pub workspace_id: String,
+    #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
+    pub project_id: Option<String>,
     pub provider: String,
     #[serde(rename = "configJson")]
     pub config_json: String,
@@ -497,9 +512,7 @@ fn build_bundle(
                             created_at: ms_col_to_iso(row.get::<_, i64>(4).unwrap_or(0)),
                             updated_at: ms_col_to_iso(row.get::<_, i64>(5).unwrap_or(0)),
                             description: row.get(6)?,
-                            starred_at: row
-                                .get::<_, Option<i64>>(7)?
-                                .map(ms_col_to_iso),
+                            starred_at: row.get::<_, Option<i64>>(7)?.map(ms_col_to_iso),
                             base_branch: row.get(8)?,
                             root_commit: row.get(9)?,
                             remote_url: row.get(10)?,
@@ -537,6 +550,22 @@ fn build_bundle(
     };
 
     let live_workspace_ids: HashSet<String> = workspaces.iter().map(|w| w.id.clone()).collect();
+
+    let live_project_ids: HashSet<String> = {
+        let mut stmt =
+            conn.prepare("SELECT id, workspace_id FROM projects WHERE disconnected_at IS NULL")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        let mut set = HashSet::new();
+        for row in rows {
+            let (id, workspace_id) = row?;
+            if live_workspace_ids.contains(&workspace_id) {
+                set.insert(id);
+            }
+        }
+        set
+    };
 
     let skills = if groups.workspaces {
         let mut stmt = conn.prepare(
@@ -724,26 +753,24 @@ fn build_bundle(
 
     let scripts = if groups.scripts {
         let mut stmt = conn.prepare(
-            "SELECT id, workspace_id, name, body, created_at, updated_at
-             FROM workspace_scripts
-             WHERE workspace_id IN (
-               SELECT id FROM workspaces WHERE deleted_at IS NULL AND disconnected_at IS NULL
-             )
-             ORDER BY workspace_id, sort_order ASC",
+            "SELECT id, project_id, name, body, sort_order, created_at, updated_at
+             FROM project_scripts
+             ORDER BY project_id, sort_order ASC",
         )?;
         let rows = stmt.query_map([], |row| {
             Ok(ScriptBundle {
                 id: row.get(0)?,
-                workspace_id: row.get(1)?,
+                project_id: row.get(1)?,
                 name: row.get(2)?,
                 body: row.get(3)?,
-                created_at: ms_col_to_iso(row.get(4)?),
-                updated_at: ms_col_to_iso(row.get(5)?),
+                sort_order: row.get(4)?,
+                created_at: ms_col_to_iso(row.get(5)?),
+                updated_at: ms_col_to_iso(row.get(6)?),
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .filter(|script| live_workspace_ids.contains(&script.workspace_id))
+            .filter(|script| live_project_ids.contains(&script.project_id))
             .filter(|script| !excluded_scripts.contains(&script.id))
             .collect()
     } else {
@@ -752,8 +779,8 @@ fn build_bundle(
 
     let tool_bindings = if groups.integrations {
         let mut stmt = conn.prepare(
-            "SELECT workspace_id, provider, config
-             FROM workspace_integrations
+            "SELECT workspace_id, project_id, provider, config
+             FROM integration_bindings
              WHERE workspace_id IN (
                SELECT id FROM workspaces WHERE deleted_at IS NULL AND disconnected_at IS NULL
              )
@@ -762,11 +789,17 @@ fn build_bundle(
         let rows = stmt.query_map([], |row| {
             Ok(ToolBindingBundle {
                 workspace_id: row.get(0)?,
-                provider: row.get(1)?,
-                config_json: row.get::<_, Option<String>>(2)?.unwrap_or_else(|| "{}".to_string()),
+                project_id: row.get(1)?,
+                provider: row.get(2)?,
+                config_json: row
+                    .get::<_, Option<String>>(3)?
+                    .unwrap_or_else(|| "{}".to_string()),
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .filter(|binding| live_workspace_ids.contains(&binding.workspace_id))
+            .collect()
     } else {
         Vec::new()
     };
@@ -811,9 +844,8 @@ fn leave_out_subject_ids(
     if leave_out.is_empty() {
         return Ok(HashSet::new());
     }
-    let mut stmt = conn.prepare(
-        "SELECT subject_id, fingerprint FROM security_findings WHERE subject_kind = ?1",
-    )?;
+    let mut stmt = conn
+        .prepare("SELECT subject_id, fingerprint FROM security_findings WHERE subject_kind = ?1")?;
     let rows = stmt.query_map(rusqlite::params![subject_kind], |row| {
         Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
     })?;
@@ -937,6 +969,7 @@ fn apply_bundle(
     let result = (|| -> Result<ImportStats, rusqlite::Error> {
         let now_ms = crate::util::now_ms();
         let mut unresolved_projects = 0usize;
+        let mut project_id_remap: HashMap<String, String> = HashMap::new();
 
         for w in &bundle.workspaces {
             let created_ms = iso_to_ms(&w.created_at).unwrap_or(now_ms);
@@ -1053,6 +1086,7 @@ fn apply_bundle(
                                 existing,
                             ],
                         )?;
+                        project_id_remap.insert(p.id.clone(), existing);
                     }
                     _ => {
                         conn.execute(
@@ -1213,44 +1247,105 @@ fn apply_bundle(
         }
 
         for s in &bundle.scripts {
+            let project_id = project_id_remap
+                .get(&s.project_id)
+                .cloned()
+                .unwrap_or_else(|| s.project_id.clone());
             conn.execute(
-                "INSERT INTO workspace_scripts (id, workspace_id, name, body, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                "INSERT INTO project_scripts (id, project_id, name, body, sort_order, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
                  ON CONFLICT(id) DO UPDATE SET
+                   project_id = excluded.project_id,
                    name       = excluded.name,
                    body       = excluded.body,
+                   sort_order = excluded.sort_order,
                    updated_at = excluded.updated_at",
                 rusqlite::params![
                     s.id,
-                    s.workspace_id,
+                    project_id,
                     s.name,
                     s.body,
+                    s.sort_order,
                     iso_to_ms(&s.created_at).unwrap_or(now_ms),
                     iso_to_ms(&s.updated_at).unwrap_or(now_ms),
                 ],
             )?;
         }
 
+        let mut credential_counter: u64 = 0;
         for t in &bundle.tool_bindings {
+            let workspace_id = workspace_targets
+                .get(&t.workspace_id)
+                .cloned()
+                .unwrap_or_else(|| t.workspace_id.clone());
+            let project_id = t.project_id.as_ref().map(|id| {
+                project_id_remap
+                    .get(id)
+                    .cloned()
+                    .unwrap_or_else(|| id.clone())
+            });
+
+            let existing_credential_id: Option<String> = conn
+                .query_row(
+                    "SELECT credential_id FROM integration_bindings
+                     WHERE workspace_id = ?1 AND COALESCE(project_id, '') = COALESCE(?2, '') AND provider = ?3",
+                    rusqlite::params![workspace_id, project_id, t.provider],
+                    |row| row.get(0),
+                )
+                .optional()?;
+            let credential_id = match existing_credential_id {
+                Some(id) => id,
+                None => {
+                    credential_counter += 1;
+                    let id = format!("integration-credential-import-{now_ms}-{credential_counter}");
+                    conn.execute(
+                        "INSERT INTO integration_credentials (id, provider, label, account, created_at, updated_at)
+                         VALUES (?1, ?2, ?3, '', ?4, ?4)",
+                        rusqlite::params![
+                            id,
+                            t.provider,
+                            format!("Imported {}", t.provider),
+                            now_ms,
+                        ],
+                    )?;
+                    id
+                }
+            };
             conn.execute(
-                "INSERT INTO workspace_integrations (id, workspace_id, provider, config, credential_key, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
-                 ON CONFLICT(workspace_id, provider) DO UPDATE SET config = excluded.config, updated_at = excluded.updated_at",
+                "INSERT INTO integration_bindings (id, workspace_id, project_id, provider, credential_id, config, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)
+                 ON CONFLICT (workspace_id, COALESCE(project_id, ''), provider) DO UPDATE SET
+                   config     = excluded.config,
+                   updated_at = excluded.updated_at",
                 rusqlite::params![
-                    format!("{}-{}", t.workspace_id, t.provider),
-                    t.workspace_id,
+                    format!(
+                        "integration-binding:{workspace_id}:{}:{}",
+                        project_id.clone().unwrap_or_default(),
+                        t.provider
+                    ),
+                    workspace_id,
+                    project_id,
                     t.provider,
+                    credential_id,
                     t.config_json,
-                    format!("integration:{}:{}", t.workspace_id, t.provider),
                     now_ms,
                 ],
             )?;
         }
 
         let setting_pairs: &[(&str, Option<&str>)] = &[
-            ("editor.binary", bundle.app_preferences.editor_binary.as_deref()),
-            ("editor.default", bundle.app_preferences.editor_default.as_deref()),
-            ("providers.hiddenModels", bundle.app_preferences.hidden_models_json.as_deref()),
+            (
+                "editor.binary",
+                bundle.app_preferences.editor_binary.as_deref(),
+            ),
+            (
+                "editor.default",
+                bundle.app_preferences.editor_default.as_deref(),
+            ),
+            (
+                "providers.hiddenModels",
+                bundle.app_preferences.hidden_models_json.as_deref(),
+            ),
         ];
         for (key, val) in setting_pairs {
             if let Some(v) = val {
@@ -1342,7 +1437,11 @@ fn build_import_preview(
     bundle: &ConfigBundle,
     project_parent: Option<&str>,
 ) -> Result<ImportPreview, ConfigExportError> {
-    let project_count: usize = bundle.workspaces.iter().map(|w| workspace_projects(w).len()).sum();
+    let project_count: usize = bundle
+        .workspaces
+        .iter()
+        .map(|w| workspace_projects(w).len())
+        .sum();
     let manifest = ImportManifest {
         schema_version: bundle.schema_version,
         exported_at: bundle.exported_at.clone(),
@@ -1375,7 +1474,11 @@ fn build_import_preview(
             bundle_id: w.id.clone(),
             name: w.name.clone(),
             existing_id: existing_id.clone(),
-            action: if existing_id.is_some() { "merge".to_string() } else { "add".to_string() },
+            action: if existing_id.is_some() {
+                "merge".to_string()
+            } else {
+                "add".to_string()
+            },
         });
     }
 
@@ -1394,9 +1497,12 @@ fn build_import_preview(
         }
     }
     let found_matches = match project_parent {
-        Some(parent) if !path_less_inputs.is_empty() => find_moved_projects_blocking(
-            FindMovedProjectsArgs { parent: parent.to_string(), projects: path_less_inputs },
-        ),
+        Some(parent) if !path_less_inputs.is_empty() => {
+            find_moved_projects_blocking(FindMovedProjectsArgs {
+                parent: parent.to_string(),
+                projects: path_less_inputs,
+            })
+        }
         _ => Vec::new(),
     };
     for w in &bundle.workspaces {
@@ -1417,12 +1523,18 @@ fn build_import_preview(
                 name: p.name.clone(),
                 has_path: false,
                 resolved_path: found.and_then(|m| m.path.clone()),
-                verdict: found.map(|m| verdict_label(&m.verdict)).unwrap_or_else(|| "not_found".to_string()),
+                verdict: found
+                    .map(|m| verdict_label(&m.verdict))
+                    .unwrap_or_else(|| "not_found".to_string()),
             });
         }
     }
 
-    Ok(ImportPreview { manifest, workspace_matches, project_matches })
+    Ok(ImportPreview {
+        manifest,
+        workspace_matches,
+        project_matches,
+    })
 }
 
 fn ms_col_to_iso(ms: i64) -> String {
@@ -1699,7 +1811,10 @@ mod tests {
         let projects = workspace_projects(&workspace);
         assert_eq!(projects.len(), 1);
         assert_eq!(projects[0].id, "workspace-1-project");
-        assert_eq!(projects[0].root_path, Some("/Users/dev/goodboy".to_string()));
+        assert_eq!(
+            projects[0].root_path,
+            Some("/Users/dev/goodboy".to_string())
+        );
         assert_eq!(projects[0].kind, "repo");
     }
 
@@ -1707,7 +1822,11 @@ mod tests {
     fn bundled_projects_win_over_a_legacy_root_path() {
         let workspace = bundled_workspace(
             Some("/Users/dev/legacy"),
-            vec![bundled_project("project-1", "/Users/dev/goodboy", "unknown")],
+            vec![bundled_project(
+                "project-1",
+                "/Users/dev/goodboy",
+                "unknown",
+            )],
         );
         let projects = workspace_projects(&workspace);
         assert_eq!(projects.len(), 1);
@@ -1795,16 +1914,21 @@ mod tests {
                 id TEXT PRIMARY KEY, provider TEXT, period TEXT NOT NULL, cap_usd REAL NOT NULL,
                 alert_threshold_pct REAL, created_at INTEGER NOT NULL
             );
-            CREATE TABLE workspace_scripts (
-                id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, name TEXT NOT NULL, body TEXT NOT NULL,
+            CREATE TABLE project_scripts (
+                id TEXT PRIMARY KEY, project_id TEXT NOT NULL, name TEXT NOT NULL, body TEXT NOT NULL,
                 sort_order INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
             );
-            CREATE TABLE workspace_integrations (
-                id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, provider TEXT NOT NULL,
-                config TEXT NOT NULL DEFAULT '{}', credential_key TEXT NOT NULL,
-                created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL,
-                UNIQUE (workspace_id, provider)
+            CREATE TABLE integration_credentials (
+                id TEXT PRIMARY KEY, provider TEXT NOT NULL, label TEXT NOT NULL,
+                account TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
             );
+            CREATE TABLE integration_bindings (
+                id TEXT PRIMARY KEY, workspace_id TEXT NOT NULL, project_id TEXT, provider TEXT NOT NULL,
+                credential_id TEXT NOT NULL, config TEXT NOT NULL DEFAULT '{}',
+                created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+            );
+            CREATE UNIQUE INDEX idx_integration_bindings_scope
+              ON integration_bindings(workspace_id, COALESCE(project_id, ''), provider);
             CREATE TABLE workspace_profiles (
                 workspace_id TEXT PRIMARY KEY, roles_json TEXT, about_work TEXT, working_rules TEXT,
                 explain_more_json TEXT, updated_at INTEGER
@@ -1851,7 +1975,8 @@ mod tests {
                ('rule-gone', 'workspace', 'gone', NULL, 'Bash', NULL, 'allow', 0, 1, 1);",
         )
         .unwrap();
-        let bundle = build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+        let bundle =
+            build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
         assert_eq!(
             bundle
                 .skills
@@ -1886,7 +2011,8 @@ mod tests {
              VALUES ('p', 'w', 'ledger-core', '/nerd/ledger-core', 'repo', 1, 1);",
         )
         .unwrap();
-        let bundle = build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+        let bundle =
+            build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
         assert_eq!(bundle.workspaces[0].projects[0].root_path, None);
 
         let mut with_paths = ExportGroups::default();
@@ -1909,16 +2035,26 @@ mod tests {
                ('orchestrated', 'w', 'Auto', 'd', 1, 1, 'orchestrated');",
         )
         .unwrap();
-        let bundle = build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+        let bundle =
+            build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
         assert_eq!(
-            bundle.phase_templates.iter().map(|t| t.id.as_str()).collect::<Vec<_>>(),
+            bundle
+                .phase_templates
+                .iter()
+                .map(|t| t.id.as_str())
+                .collect::<Vec<_>>(),
             vec!["yours"]
         );
 
         let mut with_orchestrated = ExportGroups::default();
         with_orchestrated.workflows_orchestrated = true;
-        let bundle = build_bundle(&conn, &with_orchestrated, &HashSet::new()).expect("export failed");
-        let mut ids = bundle.phase_templates.iter().map(|t| t.id.as_str()).collect::<Vec<_>>();
+        let bundle =
+            build_bundle(&conn, &with_orchestrated, &HashSet::new()).expect("export failed");
+        let mut ids = bundle
+            .phase_templates
+            .iter()
+            .map(|t| t.id.as_str())
+            .collect::<Vec<_>>();
         ids.sort_unstable();
         assert_eq!(ids, vec!["orchestrated", "yours"]);
     }
@@ -1928,25 +2064,37 @@ mod tests {
         let conn = export_conn();
         conn.execute_batch(
             "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
-             INSERT INTO workspace_scripts (id, workspace_id, name, body, created_at, updated_at)
-             VALUES ('deploy', 'w', 'deploy', 'DEPLOY_TOKEN=ghp_secretvalue', 1, 1);
+             INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+             VALUES ('p', 'w', 'ledger-core', '/repo/ledger-core', 'repo', 1, 1);
+             INSERT INTO project_scripts (id, project_id, name, body, created_at, updated_at)
+             VALUES ('deploy', 'p', 'deploy', 'DEPLOY_TOKEN=ghp_secretvalue', 1, 1);
              INSERT INTO security_findings
                (id, workspace_id, subject_kind, subject_id, secret_kind, fingerprint, last4, first_seen_at)
              VALUES ('finding-1', 'w', 'script', 'deploy', 'github-token', 'fp-1', '3f9a', 1);",
         )
         .unwrap();
 
-        let preview = open_findings_for_groups(&conn, &ExportGroups::default()).expect("preview failed");
+        let preview =
+            open_findings_for_groups(&conn, &ExportGroups::default()).expect("preview failed");
         assert_eq!(preview.len(), 1);
         assert_eq!(preview[0].fingerprint, "fp-1");
 
-        let bundle = build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
-        assert_eq!(bundle.scripts.len(), 1, "nothing is left out until the writer names a fingerprint");
+        let bundle =
+            build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
+        assert_eq!(
+            bundle.scripts.len(),
+            1,
+            "nothing is left out until the writer names a fingerprint"
+        );
 
         let mut leave_out = HashSet::new();
         leave_out.insert("fp-1".to_string());
-        let bundle = build_bundle(&conn, &ExportGroups::default(), &leave_out).expect("export failed");
-        assert!(bundle.scripts.is_empty(), "the named fingerprint's script is left out");
+        let bundle =
+            build_bundle(&conn, &ExportGroups::default(), &leave_out).expect("export failed");
+        assert!(
+            bundle.scripts.is_empty(),
+            "the named fingerprint's script is left out"
+        );
     }
 
     #[test]
@@ -2091,11 +2239,160 @@ mod tests {
             app_preferences: AppPreferencesBundle::default(),
         };
 
-        let result = apply_bundle(&conn, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+        let result =
+            apply_bundle(&conn, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
         assert_eq!(result.stats.unresolved_projects, 1);
         let count: i64 = conn
             .query_row("SELECT COUNT(*) FROM projects", [], |row| row.get(0))
             .unwrap();
         assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn scripts_round_trip_through_project_scripts_keyed_by_project() {
+        let source = export_conn();
+        source
+            .execute_batch(
+                "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
+                 INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+                 VALUES ('p', 'w', 'ledger-core', '/repo/ledger-core', 'repo', 1, 1);
+                 INSERT INTO project_scripts (id, project_id, name, body, sort_order, created_at, updated_at)
+                 VALUES ('deploy', 'p', 'deploy', 'echo hi', 2, 1, 1);",
+            )
+            .unwrap();
+
+        let bundle = build_bundle(&source, &ExportGroups::default(), &HashSet::new())
+            .expect("export failed");
+        assert_eq!(bundle.scripts.len(), 1);
+        assert_eq!(bundle.scripts[0].project_id, "p");
+        assert_eq!(bundle.scripts[0].sort_order, 2);
+
+        let target = export_conn();
+        target
+            .execute_batch(
+                "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);
+                 INSERT INTO projects (id, workspace_id, name, root_path, kind, created_at, updated_at)
+                 VALUES ('p', 'w', 'ledger-core', '/repo/ledger-core', 'repo', 1, 1);",
+            )
+            .unwrap();
+        apply_bundle(&target, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+
+        let (project_id, name, body): (String, String, String) = target
+            .query_row(
+                "SELECT project_id, name, body FROM project_scripts WHERE id = 'deploy'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            )
+            .expect("script imported");
+        assert_eq!(project_id, "p");
+        assert_eq!(name, "deploy");
+        assert_eq!(body, "echo hi");
+    }
+
+    #[test]
+    fn integration_binding_import_creates_a_credential_with_no_secret_when_none_exists() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('w', 'W', 1, 1);",
+        )
+        .unwrap();
+        let bundle = ConfigBundle {
+            schema_version: SCHEMA_VERSION,
+            exported_at: "2026-01-01T00:00:00Z".to_string(),
+            workspaces: vec![],
+            skills: vec![],
+            phase_templates: vec![],
+            permission_rules: vec![],
+            budget_rules: vec![],
+            scripts: vec![],
+            tool_bindings: vec![ToolBindingBundle {
+                workspace_id: "w".to_string(),
+                project_id: None,
+                provider: "linear".to_string(),
+                config_json: "{\"teamId\":\"team-1\"}".to_string(),
+            }],
+            app_preferences: AppPreferencesBundle::default(),
+        };
+
+        apply_bundle(&conn, bundle, &HashMap::new(), &HashMap::new()).expect("import failed");
+
+        let (config, credential_id): (String, String) = conn
+            .query_row(
+                "SELECT config, credential_id FROM integration_bindings WHERE workspace_id = 'w' AND provider = 'linear'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .expect("binding imported");
+        assert_eq!(config, "{\"teamId\":\"team-1\"}");
+
+        let account: String = conn
+            .query_row(
+                "SELECT account FROM integration_credentials WHERE id = ?1",
+                [&credential_id],
+                |row| row.get(0),
+            )
+            .expect("a credential row exists for the binding, with no secret written to it");
+        assert_eq!(account, "", "import never writes a real account or token");
+    }
+
+    #[test]
+    fn integration_binding_import_keeps_the_existing_credential_on_merge() {
+        let conn = export_conn();
+        conn.execute_batch(
+            "INSERT INTO workspaces (id, name, created_at, updated_at) VALUES ('existing-ws', 'Existing', 1, 1);
+             INSERT INTO integration_credentials (id, provider, label, account, created_at, updated_at)
+             VALUES ('cred-existing', 'linear', 'Linear', 'someone@example.com', 1, 1);
+             INSERT INTO integration_bindings (id, workspace_id, project_id, provider, credential_id, config, created_at, updated_at)
+             VALUES ('binding-existing', 'existing-ws', NULL, 'linear', 'cred-existing', '{\"old\":true}', 1, 1);",
+        )
+        .unwrap();
+
+        let bundle = ConfigBundle {
+            schema_version: SCHEMA_VERSION,
+            exported_at: "2026-01-01T00:00:00Z".to_string(),
+            workspaces: vec![],
+            skills: vec![],
+            phase_templates: vec![],
+            permission_rules: vec![],
+            budget_rules: vec![],
+            scripts: vec![],
+            tool_bindings: vec![ToolBindingBundle {
+                workspace_id: "from-other-mac".to_string(),
+                project_id: None,
+                provider: "linear".to_string(),
+                config_json: "{\"new\":true}".to_string(),
+            }],
+            app_preferences: AppPreferencesBundle::default(),
+        };
+        let mut targets = HashMap::new();
+        targets.insert("from-other-mac".to_string(), "existing-ws".to_string());
+
+        apply_bundle(&conn, bundle, &targets, &HashMap::new()).expect("import failed");
+
+        let (config, credential_id): (String, String) = conn
+            .query_row(
+                "SELECT config, credential_id FROM integration_bindings WHERE workspace_id = 'existing-ws' AND provider = 'linear'",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .expect("binding still present");
+        assert_eq!(
+            config, "{\"new\":true}",
+            "config is updated from the import"
+        );
+        assert_eq!(
+            credential_id, "cred-existing",
+            "merging an import must never replace a working sign-in with a placeholder"
+        );
+
+        let credential_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM integration_credentials", [], |row| {
+                row.get(0)
+            })
+            .unwrap();
+        assert_eq!(
+            credential_count, 1,
+            "no placeholder credential is created when one already exists"
+        );
     }
 }
