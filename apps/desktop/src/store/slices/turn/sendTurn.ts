@@ -1907,6 +1907,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
     }
 
+    void get().recheckSessionMounts({ sessionId, reason: 'turn-end' });
+
     if (!lastError && shouldAutoAdvanceWorkflow) {
       void get().maybeAutoAdvanceWorkflow(sessionId);
     }

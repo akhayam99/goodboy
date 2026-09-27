@@ -52,6 +52,10 @@ vi.mock('./SessionDestructiveActions', () => ({
     </>
   ),
 }));
+vi.mock('./SessionRefreshAction', () => ({
+  SessionRefreshAction: () => <button aria-label="Refresh" />,
+}));
+vi.mock('./ArchivedRestore', () => ({ ArchivedRestore: () => <button>Restore</button> }));
 vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
 vi.mock('./GoalTeaser', () => ({
   GoalTeaser: () => <button type="button">Goal: Keep the ledger balanced</button>,
@@ -160,14 +164,29 @@ describe('HeaderBand', () => {
     expect(onSelectLens).toHaveBeenCalledWith('review');
   });
 
-  it('keeps only archive and delete in the title action zone', () => {
+  it('keeps only refresh, archive and delete in the title action zone, in that order', () => {
     render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: 'Archive session' })).toBeDefined();
+    const refresh = screen.getByRole('button', { name: 'Refresh' });
+    const archive = screen.getByRole('button', { name: 'Archive session' });
     expect(screen.getByRole('button', { name: 'Delete session' })).toBeDefined();
+    expect(
+      refresh.compareDocumentPosition(archive) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Scripts' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Open worktree' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Mount a project' })).toBeNull();
+  });
+
+  it('drops refresh from an archived session', () => {
+    render(
+      <HeaderBand
+        session={{ ...session, archivedAt: '2026-09-01T00:00:00.000Z' } as Session}
+        onSelectLens={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Refresh' })).toBeNull();
   });
 
   it('reads the goal line before the chips and the projects', () => {

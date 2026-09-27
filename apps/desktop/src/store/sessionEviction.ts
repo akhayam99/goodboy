@@ -45,6 +45,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionProjectPrs', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionSelectedPrNumber', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionLoading', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionSyncing', keyedBy: 'session', evictOn: 'archive' },
   { key: 'selectedAgentId', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionOpenQuestions', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionWorkflows', keyedBy: 'session', evictOn: 'archive' },

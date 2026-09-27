@@ -443,6 +443,12 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Context'),
   },
   {
+    name: 'palette: Refresh session',
+    covers: ['resyncSession', 'palette:Refresh session'],
+    open: () => openPalette(/^Refresh session/),
+    lands: () => visible('button', /^Refresh(ing)?$/),
+  },
+  {
     name: 'palette: Back to board',
     covers: ['navigate', 'palette:Back to board'],
     open: () => openPalette(/^Back to board/),

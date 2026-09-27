@@ -59,6 +59,17 @@ Every event on this page is a browser CustomEvent sent via `window.dispatchEvent
 
 Events between app windows use Tauri `emit`/`listen`, not the window bus. `features/workspace/window.ts` owns `goodboy:presence`, `goodboy:presence-request` and `goodboy:window-closing` (which workspace each window shows). `features/review/prWriteBus.ts` owns `goodboy:pr-write`, which claims and releases a pull request write so two windows never push the same PR at once. `src-tauri/src/help_menu.rs` emits `goodboy://report-open` to the focused window only when you choose **Help > Report a bug** on macOS; `ReportSheetHost` listens on its own webview window and opens the report sheet.
 
+## Git and request state is not on the bus
+
+No window event announces a push, a new pull request or a branch switch. The
+store action that changes git or request state refreshes the mount itself
+(`refreshSessionPr`, forced, for that mount), and the Overview row reads the
+store, so it updates without a listener. Changes made outside the app are
+picked up by `recheckSessionMounts` on turn end and on window focus, and by the
+header's Refresh. [mounts.md](mounts.md) lists every trigger. Do not add a
+window event for this: a feature that wants fresh request state calls the store
+action.
+
 ## Adding an event
 
 Event names follow the pattern `goodboy:verb-noun` (e.g., `goodboy:open-plan-studio`, `goodboy:reveal-chat`). Every event must be dispatched and listened in the same pull request, and its row lands here in the same commit; a listener without a dispatch is unreachable code. Payloads should stay minimal: pass only the ids and enums needed to route or initialize a feature, never entire objects. If an event grows past three fields, reconsider whether routing logic belongs in a store method instead.

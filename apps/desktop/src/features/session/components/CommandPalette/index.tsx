@@ -17,6 +17,7 @@ import { AGENT_KIND_META, agentKindPalette, classifyAgent, type AgentKind } from
 import { parseQuery } from '../../../quick-actions';
 import { PALETTE_PREFIXES, palettePlaceholder, type PaletteGroup } from './palettePrefixes';
 import { useLensDestinations } from '../../hooks/useLensDestinations';
+import { useSessionRefresh } from '../../hooks/useSessionRefresh';
 import { openLens } from '../../openLens';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { openReportSheet } from '../../../bug-report/openReportSheet';
@@ -165,6 +166,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
   });
   const runScript = useAppStore((s) => s.runScript);
   const reportError = useAppStore((s) => s.reportError);
+  const refreshSession = useSessionRefresh();
   const { showToast } = useToast();
   const theme = getAppliedTheme();
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -236,6 +238,16 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
         icon: CONCEPT_ICONS.context,
         onSelect: () => toggleContextDrawer({ sessionId }),
       });
+      if (currentSession.archivedAt == null) {
+        out.push({
+          id: 'action:refresh',
+          label: SHORTCUTS['session.refresh'].label,
+          sublabel: shortcutGlyphs('session.refresh'),
+          group: 'action',
+          icon: CONCEPT_ICONS.refresh,
+          onSelect: () => void refreshSession({ sessionId }),
+        });
+      }
     }
 
     if (currentSession) {
@@ -423,6 +435,7 @@ export const CommandPalette = ({ onClose, initialQuery = '' }: Props) => {
     openWorkspace,
     navigate,
     toggleContextDrawer,
+    refreshSession,
     theme,
     toggleTheme,
   ]);

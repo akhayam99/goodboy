@@ -662,7 +662,10 @@ too. An entry carries its own combo for other systems where the plain mapping
 would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
 elsewhere, where Ctrl+T belongs to the shell. Report a bug (`report.open`) is
 ⌘I on macOS and Ctrl+Shift+I elsewhere, because Ctrl+I is Tab in a terminal;
-it fires from anywhere, the terminal included. The plane is for the dispatcher.
+it fires from anywhere, the terminal included. Refresh session
+(`session.refresh`, ⌘⇧R) sits on the session plane beside Archive (⌘⇧A) and
+Delete (⌘⇧⌫), because it acts on the open session; ⌘R stays the app reload.
+The plane is for the dispatcher.
 Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Window), and Settings > App > Shortcuts lists the
 groups in that order, read top to bottom per column. Entries that share a
