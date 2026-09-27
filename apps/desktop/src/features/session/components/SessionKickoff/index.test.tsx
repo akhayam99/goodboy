@@ -22,6 +22,7 @@ const { holder, hooks, spies } = vi.hoisted(() => ({
     loadPhaseTemplates: vi.fn(async () => undefined),
     startSessionFromDraft: vi.fn(async (_params: unknown) => ({ id: 'sess-new' })),
     requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
+    runBuilder: vi.fn(async (_session: unknown) => undefined),
   },
 }));
 
@@ -31,6 +32,32 @@ vi.mock('../../../../store', async () => {
   holder.store = store;
   return { EMPTY_ARRAY: Object.freeze([]), useAppStore: store };
 });
+
+type BuilderKickoffStub = {
+  readonly goal: string;
+  readonly goalPlaceholder: string;
+  readonly onGoalChange: (goal: string) => void;
+  readonly start: (run: (session: unknown) => Promise<void>) => Promise<void>;
+};
+
+vi.mock('../WorkflowBuilderView', () => ({
+  WorkflowBuilderView: ({ kickoff }: { readonly kickoff: BuilderKickoffStub }) => (
+    <div data-testid="workflow-builder">
+      <textarea
+        aria-label="Goal"
+        placeholder={kickoff.goalPlaceholder}
+        value={kickoff.goal}
+        onChange={(event) => kickoff.onGoalChange(event.target.value)}
+      />
+      <button
+        type="button"
+        onClick={() => void kickoff.start(spies.runBuilder).catch(() => undefined)}
+      >
+        Start workflow
+      </button>
+    </div>
+  ),
+}));
 
 vi.mock('../../../integrations/github/useGithubConnection', () => ({
   useGithubConnection: () => ({
@@ -192,7 +219,8 @@ describe('SessionKickoff', () => {
     renderKickoff();
 
     expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
-    expect(screen.getAllByRole('button', { name: 'Set up orchestration' })).toHaveLength(1);
+    expect(screen.getByTestId('workflow-builder')).toBeDefined();
+    expect(screen.getAllByRole('button', { name: 'Start workflow' })).toHaveLength(1);
   });
 
   it('preselects Pick up a task when the tracker has candidates', async () => {
@@ -237,7 +265,7 @@ describe('SessionKickoff', () => {
     fireEvent.click(tab('Ask an agent'));
 
     expect(screen.getByRole('button', { name: 'Start Scout on the whole project' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Run workflow' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start workflow' })).toBeNull();
     expect(screen.queryByRole('button', { name: /Pick up/ })).toBeNull();
   });
 
@@ -264,36 +292,36 @@ describe('SessionKickoff', () => {
     expect(tab('Run a workflow').getAttribute('aria-selected')).toBe('true');
   });
 
-  it('starts the session and the picked workflow in one gesture', async () => {
+  it('feeds one goal field into the builder and starts the session with the run', async () => {
     renderKickoff();
-    fireEvent.click(screen.getByRole('tab', { name: 'Preset' }));
-    const run = screen.getByRole('button', { name: 'Run workflow' });
-    expect(run.hasAttribute('disabled')).toBe(true);
 
-    fireEvent.change(screen.getByRole('textbox', { name: 'Workflow goal' }), {
+    expect(screen.getAllByRole('textbox')).toHaveLength(1);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: '  Round once per batch  ' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /Fix a bug/ }));
-    fireEvent.click(run);
+    expect(
+      (store().getState().sessionDrafts as Record<string, { workflowGoal: string }>)['ws-1']
+        ?.workflowGoal,
+    ).toBe('  Round once per batch  ');
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
-      start: { kind: 'workflow', workflowId: 'wf-2', goal: 'Round once per batch' },
+      start: { kind: 'workflow-run', goal: 'Round once per batch', run: spies.runBuilder },
     });
   });
 
-  it('keeps the draft and says why inline when the start fails', async () => {
+  it('keeps the goal in the draft when the start fails', async () => {
     spies.startSessionFromDraft.mockRejectedValueOnce(new Error('provider offline'));
     renderKickoff();
-    fireEvent.click(screen.getByRole('tab', { name: 'Preset' }));
-    fireEvent.change(screen.getByRole('textbox', { name: 'Workflow goal' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Goal' }), {
       target: { value: 'Round once per batch' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Run workflow' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
 
-    expect((await screen.findByRole('alert')).textContent).toContain('provider offline');
-    expect(screen.getByRole('textbox', { name: 'Workflow goal' })).toHaveProperty(
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(screen.getByRole('textbox', { name: 'Goal' })).toHaveProperty(
       'value',
       'Round once per batch',
     );

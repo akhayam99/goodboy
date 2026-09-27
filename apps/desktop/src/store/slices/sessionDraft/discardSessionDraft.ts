@@ -1,4 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
+import { kickoffDraftKey } from '../workflowDrafts/kickoffDraftKey';
 import type { SetFn } from './types';
 
 export type DiscardSessionDraftParams = {
@@ -7,13 +8,18 @@ export type DiscardSessionDraftParams = {
 
 export const discardSessionDraft = (set: SetFn) => {
   return ({ workspaceId }: DiscardSessionDraftParams): void => {
+    const builderKey = kickoffDraftKey({ workspaceId });
     set((state) => {
-      if (state.sessionDrafts[workspaceId] === undefined) {
+      const hasDraft = state.sessionDrafts[workspaceId] !== undefined;
+      const hasBuilderDraft = state.workflowDrafts?.[builderKey] !== undefined;
+      if (!hasDraft && !hasBuilderDraft) {
         return {};
       }
       const sessionDrafts = { ...state.sessionDrafts };
       delete sessionDrafts[workspaceId];
-      return { sessionDrafts };
+      const workflowDrafts = { ...state.workflowDrafts };
+      delete workflowDrafts[builderKey];
+      return { sessionDrafts, workflowDrafts };
     });
   };
 };

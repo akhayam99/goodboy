@@ -34,7 +34,7 @@ export const SessionKickoff = ({ workspaceId }: Props) => {
   const pick = (next: StartChoice) => {
     patchSessionDraft({ workspaceId, patch: { choice: next } });
     requestAnimationFrame(() => {
-      bodyRef.current?.querySelector<HTMLElement>('[data-kickoff-field]')?.focus();
+      bodyRef.current?.querySelector<HTMLElement>('[data-kickoff-field], textarea')?.focus();
     });
   };
 

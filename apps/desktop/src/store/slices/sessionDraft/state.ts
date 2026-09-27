@@ -1,7 +1,6 @@
 import type { ProjectId, SessionId, WorkflowId, WorkspaceId } from '@goodboy/types';
 import type { IssueCandidate } from '../../../features/integrations/fetchIssueCandidates';
 import type { AgentKind, AgentKindRouting } from '../../../features/session/agent-kind';
-import type { Mode } from '../workflowDrafts/types';
 
 export type StartChoice = 'task' | 'workflow' | 'scout';
 
@@ -12,7 +11,6 @@ export type SessionDraft = {
   readonly pickedIssue: IssueCandidate | null;
   readonly workflowGoal: string;
   readonly workflowId: WorkflowId | null;
-  readonly workflowMode: Mode | null;
   readonly agentPrompt: string;
   readonly projectId: ProjectId | null;
   readonly agentKind: AgentKind;
@@ -26,7 +24,6 @@ export const EMPTY_SESSION_DRAFT: SessionDraft = {
   pickedIssue: null,
   workflowGoal: '',
   workflowId: null,
-  workflowMode: null,
   agentPrompt: '',
   projectId: null,
   agentKind: 'scout',
