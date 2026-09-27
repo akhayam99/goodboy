@@ -343,7 +343,6 @@ fn macos_default_browser_app_path() -> Option<PathBuf> {
 
 #[cfg(target_os = "windows")]
 fn windows_default_browser_command() -> Option<String> {
-    use windows_sys::core::{PCWSTR, PWSTR};
     use windows_sys::Win32::UI::Shell::{AssocQueryStringW, ASSOCF_IS_PROTOCOL, ASSOCSTR_COMMAND};
 
     fn to_wide(s: &str) -> Vec<u16> {
@@ -357,9 +356,9 @@ fn windows_default_browser_command() -> Option<String> {
         AssocQueryStringW(
             ASSOCF_IS_PROTOCOL,
             ASSOCSTR_COMMAND,
-            PCWSTR(scheme.as_ptr()),
-            PCWSTR(std::ptr::null()),
-            PWSTR(buffer.as_mut_ptr()),
+            scheme.as_ptr(),
+            std::ptr::null(),
+            buffer.as_mut_ptr(),
             &mut len,
         )
     };
