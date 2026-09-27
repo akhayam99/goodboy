@@ -274,11 +274,12 @@ whether you clicked it on the board or in the session overview.
   suggestion per target key survives per render: `dedupeByTargetKey` keeps
   whichever has the lower band number.
 - A suggestion you acted on does not come back for the same fingerprint;
-  "Not now" is scoped the same way, and both persist: the fingerprint rides
-  along in the same `next:<kind>` row's `contextJson`
-  (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), so a reload
-  or a remount does not resurrect what you just dismissed or acted on,
-  inside the same 14-day window the demotion rule below reads. Three "Not
+  "Not now" is scoped the same way, and both persist for good: the
+  fingerprint rides along in the same `next:<kind>` row's `contextJson`
+  (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), read back with
+  no time bound, so a reload or a remount does not resurrect what you just
+  dismissed or acted on. It returns only if the trigger changes and the
+  fingerprint with it (new commits, new red CI, a new plan). Three "Not
   now" on the same kind inside a session in 14 days, with no acceptance
   between them, moves that kind behind everything else instead of leading
   (`shouldDemote`, `nextStepGates.ts`): the only learning this engine does,

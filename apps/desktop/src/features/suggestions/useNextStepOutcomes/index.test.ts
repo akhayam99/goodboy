@@ -102,6 +102,38 @@ describe('useNextStepOutcomes', () => {
     expect(view.result.current.dismissedFingerprints.has('push-branch:mount-web:4')).toBe(false);
   });
 
+  it('fetches every event for the session, no time window', async () => {
+    listNudgeEvents.mockResolvedValue([]);
+    renderHook(() => useNextStepOutcomes({ sessionId }));
+
+    await waitFor(() => expect(listNudgeEvents).toHaveBeenCalledOnce());
+    expect(listNudgeEvents).toHaveBeenCalledWith({
+      db: {},
+      sessionId,
+      sinceTs: new Date(0).toISOString(),
+    });
+  });
+
+  it('keeps a dismissal in the set past 14 days, it only clears on acceptance', async () => {
+    listNudgeEvents.mockResolvedValue([
+      {
+        id: 'ev-1',
+        sessionId,
+        ts: '2020-01-01T00:00:00.000Z' as IsoDateTime,
+        kind: 'next:push-branch',
+        contextJson: JSON.stringify({ fingerprint: 'push-branch:mount-web:4' }),
+        outcome: 'dismissed',
+        outcomeTs: '2020-01-01T00:00:00.000Z' as IsoDateTime,
+      },
+    ] satisfies ReadonlyArray<NudgeEvent>);
+
+    const view = renderHook(() => useNextStepOutcomes({ sessionId }));
+
+    await waitFor(() =>
+      expect(view.result.current.dismissedFingerprints.has('push-branch:mount-web:4')).toBe(true),
+    );
+  });
+
   it('reloads when the session changes', async () => {
     listNudgeEvents.mockResolvedValue([]);
     const view = renderHook(
