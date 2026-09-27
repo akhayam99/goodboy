@@ -12,6 +12,75 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.11.3
+
+Report a bug from any screen with one shortcut, see your GitHub pull requests in the Inbox, and spot free disk space from the header.
+
+### New
+
+#### Report a bug from any screen
+<!-- gb area=app image=report-sheet -->
+
+Press `Cmd+I` (`Ctrl+Shift+I` on Windows and Linux) to open a one-line report sheet over whatever you are looking at. The footer chip, the command palette, Settings, the Help menu on macOS and Report this on a notification open the same sheet.
+
+Your version, system, screen and CLI versions ride along as chips you can remove, and What gets sent shows exactly what leaves. Secrets, home folders, emails and project names are stripped first. Goodboy files the issue through gh when you are signed in, or opens it prefilled on GitHub.
+
+If Goodboy crashed or hit an error last time, a toast offers to report it with the error attached. The crash and startup error screens show the same sheet.
+
+#### GitHub pull requests in the Inbox
+<!-- gb area=inbox screen=inbox -->
+
+Pull requests waiting on your review and your own open pull requests from the last week show in the Inbox, next to GitLab and Bitbucket, with the same detail pane and Pick up flow.
+
+#### Link an inbox item to a session
+<!-- gb area=inbox screen=inbox -->
+
+Link to a session sits next to Launch session on every inbox item. Pick one of the workspace's sessions to link the task without starting a new one. The Project filter folds projects with no items under Show N empty.
+
+#### Free space in the header
+<!-- gb area=storage screen=settings/app/storage image=storage-chip -->
+
+When at least 1 GB of worktree folders can go, the top bar shows a Free N GB chip. A click opens Storage on every workspace, scrolled to the folders.
+
+### Improved
+
+#### The context drawer shows what changed
+<!-- gb area=sessions image=context-drawer -->
+
+The Context chip shows a dot when something changed since you last looked, and the drawer lists added, removed and reworded decisions first. Every tab reads as labelled blocks with a count, the key line first and the rest folded. Summary lists open questions after Next.
+
+#### A Guide to how Goodboy works
+<!-- gb area=app -->
+
+The Guide has 18 short chapters that follow a task from setting up a workspace to keyboard shortcuts, with search and links that open the screen each chapter describes. Open it from the command palette.
+
+#### Storage in two groups
+<!-- gb area=storage screen=settings/app/storage -->
+
+Storage reads as Free up space and Clean up branches, each with its own group. The workspace picker sits in the page header next to Check again.
+
+#### Workspace settings in titled sections
+<!-- gb area=settings screen=settings/workspace/projects -->
+
+Projects, About you, New sessions and After a pull request merges each get a title and a one-line description, like Providers and Models. The auto-delete note folds into one line when more than one repo qualifies.
+
+#### Agent brief with the turn usage row
+<!-- gb area=agents -->
+
+The agent brief shows usage in the same row and detail popover as a turn in the transcript. Its header puts name, role and status on one line, with provider, model and effort under it.
+
+#### Theme in one click
+<!-- gb area=settings screen=settings/app -->
+
+The theme setting is a Light, Dark and System switch instead of a dropdown. In light mode the Goodboy mark in the footer sits on a dark chip.
+
+### Fixed
+
+- Board columns with no sessions line up at the same height. <!-- gb area=sessions -->
+- The inbox shows the linked session for merge requests, Bitbucket pull requests, looked-up codes and tasks linked from a pasted link. <!-- gb area=inbox -->
+- Linking a Sentry issue from a session lists the issues of every linked Sentry project. <!-- gb area=inbox -->
+- The Context chip no longer counts every past decision change as new on a session you never opened. <!-- gb area=sessions -->
+
 ## Goodboy v0.11.2
 
 Rewrite history opens again, reports leave out your personal details, and a report that failed to save no longer looks done.
