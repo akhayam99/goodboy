@@ -54,6 +54,7 @@ import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSe
 import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAttachments';
 import { useToast } from '../../../../app/components/Toast';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 
 type Props = {
   readonly session: Session;
@@ -114,6 +115,7 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
   const sendTurn = useAppStore((s) => s.sendTurn);
+  const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
   const events = useTranscript(selectedAgentId);
   const items = useMemo(() => reduceTranscript(events), [events]);
@@ -294,11 +296,15 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
           ...(attachments.length > 0 ? { attachments } : {}),
           ...(override !== undefined ? { override } : {}),
         });
+      } catch (error) {
+        if (!isReportedError(error)) {
+          void reportError({ title: "Couldn't retry the turn", error, sessionId: session.id });
+        }
       } finally {
         setRetryingRunId(null);
       }
     },
-    [events, selectedAgentId, sendTurn, session.id, showToast, worktreePath],
+    [events, reportError, selectedAgentId, sendTurn, session.id, showToast, worktreePath],
   );
 
   const mountProposals = useTranscriptMountProposals({ session });

@@ -1,3 +1,5 @@
+import { isTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
+
 export class ReportedError extends Error {
   constructor(message: string) {
     super(message);
@@ -5,4 +7,5 @@ export class ReportedError extends Error {
   }
 }
 
-export const isReportedError = (error: unknown): boolean => error instanceof ReportedError;
+export const isReportedError = (error: unknown): boolean =>
+  error instanceof ReportedError || isTranscriptOwnedTurnError({ error });
