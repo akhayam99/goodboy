@@ -37,7 +37,7 @@ export const HowToWorkOnIt = ({ workspaceId, goal, onStart, isStarting, error }:
   const loadPhaseTemplates = useAppStore((state) => state.loadPhaseTemplates);
 
   useEffect(() => {
-    void loadPhaseTemplates(workspaceId);
+    void loadPhaseTemplates(workspaceId).catch(() => undefined);
   }, [loadPhaseTemplates, workspaceId]);
 
   const workflows = useAppStore(

@@ -17,7 +17,7 @@ export const WorkflowStart = ({ workspaceId }: Props) => {
   const goal = useAppStore((state) => selectSessionDraft({ state, workspaceId }).workflowGoal);
 
   useEffect(() => {
-    void loadPhaseTemplates(workspaceId);
+    void loadPhaseTemplates(workspaceId).catch(() => undefined);
   }, [loadPhaseTemplates, workspaceId]);
 
   const kickoff: BuilderKickoff = {
