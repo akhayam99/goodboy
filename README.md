@@ -60,6 +60,7 @@ Below it, **Activity** draws the work as one tree: numbered steps growing from t
 - Once Goodboy has timed enough similar steps, a running step fills a ring with the time it has left
 - A step waiting on you, a failed one and a queued one look different at a glance, and the next thing to do sits on top
 - Click the colored line to open a workflow, click a row to open that agent, question or artifact
+- The suggested next step reads what the session is doing: approve a permission, fix failing checks, push, open or merge the pull request, clean up a merged worktree
 
 Come back after a day and you know where things stand.
 
@@ -94,6 +95,9 @@ Agents work in their own copy of the code, not in yours.
 - One session can work on more repositories, and on more branches of the same one, each with its own pull request
 - From each row you open a terminal, run a project script or open the code in your editor
 - Open **Rewrite history** on a branch to reword, squash, fold or drop commits, with conflicts flagged before you apply and a lease push you can undo
+- Choose what happens to a branch once its pull request merges: ask, delete it on this Mac, or on origin too, with 14 days to restore it
+- **Storage** lists every local branch, sorted into safe to delete and needs a look
+- Moved a project on disk? **Locate moved projects** finds it by repository identity and repairs its worktrees
 
 ![The Overview of a session: its decisions and summary, a ledger-core repository with three branches of a six part pull request series, one merged and one with its files kept, a notify-relay branch in review with its terminal and script actions, and pull requests opened and merged in Activity](./docs/images/mounts.png)
 
@@ -180,6 +184,8 @@ The **Impact** studio tracks what the agents spend.
 Connect your tools and the **Inbox** lists their issues, pull requests, threads and errors in one place.
 
 - Filter by tool or by kind
+- Paste an issue code or link to find it in the right tracker, even when it is not assigned to you
+- Star an issue to keep it at the top of the Inbox and of Pick up a task
 - Open an item and read it without leaving Goodboy
 - Start a session from an item and Goodboy drafts a short title and goal, with a link back to it
 - Keep the brief, edit it, or go back to the issue text before you press **Launch session**
@@ -210,6 +216,7 @@ Every agent in a session has its own chat, for when you want to steer it yoursel
 - Plans show up as cards that open the full artifact
 - File edits are grouped under one row
 - Open questions appear inline, including the ones another agent is answering for you
+- A Slack reply waiting for you shows as a card, ready to send, edit or discard
 
 ![A session chat: the agent's plan as its own card, three file edits under one row, a question answered by another agent and a blocking one an agent is answering right now](./docs/images/chat-shell.png)
 
@@ -247,6 +254,7 @@ Everything Goodboy knows about your work stays on your machine.
 - Task context, settings and usage records live in SQLite, in `~/.goodboy`
 - The routing that picks the next provider runs locally too
 - Prompts go to the provider you chose, and nothing else follows them
+- Export your setup in groups: keys never go in, folder paths only if you choose, and imported integrations ask you to sign in again
 
 If Goodboy disappeared tomorrow your data would be untouched, because it was
 never ours. [SECURITY.md](./SECURITY.md) has the detail.
