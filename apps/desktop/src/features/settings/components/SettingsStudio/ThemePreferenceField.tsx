@@ -1,12 +1,11 @@
-import { FieldRow, Listbox, type ListboxOption } from '@goodboy/ui';
+import { FieldRow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { useThemeStore, type ThemePreference } from '../../../../shared/lib/theme';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
-const THEME_OPTIONS: ReadonlyArray<ListboxOption<ThemePreference>> = [
-  { value: 'system', label: 'Match system', leading: <Monitor size={ICON_SIZE.row} /> },
-  { value: 'light', label: 'Light', leading: <Sun size={ICON_SIZE.row} /> },
-  { value: 'dark', label: 'Dark', leading: <Moon size={ICON_SIZE.row} /> },
+const THEME_OPTIONS: ReadonlyArray<SegmentedTabOption<ThemePreference>> = [
+  { value: 'light', label: 'Light', icon: Sun },
+  { value: 'dark', label: 'Dark', icon: Moon },
+  { value: 'system', label: 'System', icon: Monitor },
 ];
 
 export const ThemePreferenceField = () => {
@@ -15,7 +14,7 @@ export const ThemePreferenceField = () => {
 
   return (
     <FieldRow label="Theme" help="Applies to every window.">
-      <Listbox
+      <SegmentedTabs
         size="sm"
         value={preference}
         options={THEME_OPTIONS}
