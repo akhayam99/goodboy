@@ -8,6 +8,7 @@ export type RowPhase = 'queued' | 'running' | 'waiting' | 'failed' | 'done' | 'c
 export type RowStateReason =
   | { readonly kind: 'ready'; readonly stepLabel: string | null }
   | { readonly kind: 'question'; readonly stepLabel: string | null }
+  | { readonly kind: 'stepAsking' }
   | { readonly kind: 'budget'; readonly limitUsd: number | null }
   | { readonly kind: 'failed' }
   | { readonly kind: 'blocked' }
@@ -144,6 +145,7 @@ type RunParams = {
   readonly failedStep: RowFailedStep | null;
   readonly stoppedStep?: RowStoppedStep | null;
   readonly question: RowWaitingQuestion | null;
+  readonly isQuestionShown?: boolean;
   readonly readyStep: RowReadyStep | null;
   readonly chainedAfterTitle: string | null;
 };
@@ -156,6 +158,7 @@ const waitingRunState = ({
   failedStep,
   stoppedStep = null,
   question,
+  isQuestionShown = false,
   readyStep,
 }: WaitingParams): RowState | null => {
   const stop = run.orchestrationStop?.kind ?? null;
@@ -185,6 +188,9 @@ const waitingRunState = ({
       reason: { kind: 'question', stepLabel: question.stepLabel },
       ask: { kind: 'answer', question: question.question },
     };
+  }
+  if (isQuestionShown) {
+    return { phase: 'waiting', reason: { kind: 'stepAsking' }, ask: null };
   }
   if (stoppedStep != null) {
     return {

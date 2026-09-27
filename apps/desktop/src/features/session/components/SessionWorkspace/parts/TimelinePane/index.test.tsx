@@ -466,7 +466,7 @@ describe('TimelinePane run waiting on an answer', () => {
     expect(screen.queryByText(/Ecco il prompt/)).toBeNull();
   });
 
-  it('names the waiting step on the run row and offers a visible Answer there', () => {
+  it('renders the Answer for a step question once, on its question row, and keeps the run row quiet', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
@@ -476,23 +476,20 @@ describe('TimelinePane run waiting on an answer', () => {
     if (!(row instanceof HTMLElement)) {
       throw new Error('run row missing');
     }
-    const answer = within(row).getByRole('button', { name: 'Answer' });
 
-    expect(within(row).getByText('Needs your answer in step 1')).toBeDefined();
-    expect(answer.className).toContain('text-warning');
+    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
+    expect(within(row).queryByRole('button', { name: 'Answer' })).toBeNull();
+    expect(within(row).queryByText(/Needs your answer/)).toBeNull();
+    expect(screen.getByText(/Retry on 5xx only\?/)).toBeDefined();
   });
 
-  it('opens the exact question the run waits on', () => {
+  it('opens the exact question from its one Answer', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
 
     render(<TimelinePane session={SESSION} actions={null} />);
-    const row = runRow();
-    if (!(row instanceof HTMLElement)) {
-      throw new Error('run row missing');
-    }
-    fireEvent.click(within(row).getByRole('button', { name: 'Answer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
     expect(storeState.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),

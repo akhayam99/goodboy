@@ -317,6 +317,23 @@ describe('resolveRunRowState', () => {
     expect(state.reason?.kind).toBe('question');
   });
 
+  it('says nothing about a question its own step already shows', () => {
+    const state = runState({ isQuestionShown: true, advance: blocked('questions') });
+
+    expect(read(state)).toEqual({ node: 'queued', sentence: null, tone: 'neutral', ask: null });
+    expect(rowStateNode({ state }).label).toBe('Waiting on a step');
+    expect(isRowNeedingYou({ state })).toBe(false);
+  });
+
+  it('still answers a question no row on screen shows, even when another one is shown', () => {
+    const state = runState({
+      question: { question: QUESTION, stepLabel: '2' },
+      isQuestionShown: true,
+    });
+
+    expect(read(state).ask).toBe('answer');
+  });
+
   it('drops the chain sentence once the run it waits on has started its own work', () => {
     expect(runState({ chainedAfterTitle: 'Fix checkout', hasRunningStep: true }).reason).toBeNull();
   });
