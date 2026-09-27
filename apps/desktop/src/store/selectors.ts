@@ -9,6 +9,7 @@ import type {
   ContextSlot,
   ContextSlotHistoryEntry,
   DiffComment,
+  IntegrationDraft,
   OpenQuestion,
   PlanWithCount,
   Project,
@@ -753,6 +754,15 @@ export const useSessionAnsweredQuestions = (
     sessionId
       ? (s.sessionAnsweredQuestions[sessionId] ?? EMPTY_OPEN_QUESTIONS)
       : EMPTY_OPEN_QUESTIONS,
+  );
+
+const EMPTY_SLACK_DRAFTS: ReadonlyArray<IntegrationDraft> = [];
+
+export const useSessionSlackDrafts = (
+  sessionId: SessionId | null,
+): ReadonlyArray<IntegrationDraft> =>
+  useAppStore((s) =>
+    sessionId ? (s.sessionSlackDrafts[sessionId] ?? EMPTY_SLACK_DRAFTS) : EMPTY_SLACK_DRAFTS,
   );
 
 export const useSessionDismissedQuestions = (

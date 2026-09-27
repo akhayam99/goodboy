@@ -1,5 +1,9 @@
-import { decideIntegrationDraft, listPendingSlackDrafts } from '@goodboy/db';
-import type { IntegrationDraft, WorkspaceId } from '@goodboy/types';
+import {
+  decideIntegrationDraft,
+  listPendingSlackDrafts,
+  listPendingSlackDraftsForSession,
+} from '@goodboy/db';
+import type { IntegrationDraft, SessionId, WorkspaceId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 
 type ListParams = {
@@ -14,6 +18,11 @@ export const loadPendingSlackDrafts = ({
   threadTs,
 }: ListParams): Promise<ReadonlyArray<IntegrationDraft>> =>
   listPendingSlackDrafts({ db: tauriDatabase, workspaceId, channelId, threadTs });
+
+export const loadPendingSlackDraftsForSession = (
+  sessionId: SessionId,
+): Promise<ReadonlyArray<IntegrationDraft>> =>
+  listPendingSlackDraftsForSession({ db: tauriDatabase, sessionId });
 
 type DecideParams = {
   readonly id: string;

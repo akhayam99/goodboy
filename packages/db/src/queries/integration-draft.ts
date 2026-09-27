@@ -65,6 +65,24 @@ export const listPendingSlackDrafts = async ({
   return rows.map(toDomain);
 };
 
+type ListPendingSlackDraftsForSessionParams = {
+  readonly db: Database;
+  readonly sessionId: SessionId;
+};
+
+export const listPendingSlackDraftsForSession = async ({
+  db,
+  sessionId,
+}: ListPendingSlackDraftsForSessionParams): Promise<ReadonlyArray<IntegrationDraft>> => {
+  const rows = await db.select<Row>(
+    `SELECT * FROM integration_drafts
+      WHERE session_id = ? AND provider = 'slack' AND status = 'pending'
+      ORDER BY created_at ASC`,
+    [sessionId],
+  );
+  return rows.map(toDomain);
+};
+
 type ListPendingIntegrationDraftsForWorkspaceParams = {
   readonly db: Database;
   readonly workspaceId: WorkspaceId;

@@ -1,21 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 
-const { decideIntegrationDraft, listPendingSlackDrafts } = vi.hoisted(() => ({
-  decideIntegrationDraft: vi.fn(),
-  listPendingSlackDrafts: vi.fn(),
+const { decideIntegrationDraft, listPendingSlackDrafts, listPendingSlackDraftsForSession } =
+  vi.hoisted(() => ({
+    decideIntegrationDraft: vi.fn(),
+    listPendingSlackDrafts: vi.fn(),
+    listPendingSlackDraftsForSession: vi.fn(),
+  }));
+
+vi.mock('@goodboy/db', () => ({
+  decideIntegrationDraft,
+  listPendingSlackDrafts,
+  listPendingSlackDraftsForSession,
 }));
-
-vi.mock('@goodboy/db', () => ({ decideIntegrationDraft, listPendingSlackDrafts }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-import { decideSlackDraft, loadPendingSlackDrafts } from './drafts';
+import {
+  decideSlackDraft,
+  loadPendingSlackDrafts,
+  loadPendingSlackDraftsForSession,
+} from './drafts';
 
 const workspaceId = 'w1' as WorkspaceId;
 
 beforeEach(() => {
   decideIntegrationDraft.mockReset();
   listPendingSlackDrafts.mockReset();
+  listPendingSlackDraftsForSession.mockReset();
 });
 
 describe('loadPendingSlackDrafts', () => {
@@ -30,6 +41,17 @@ describe('loadPendingSlackDrafts', () => {
       channelId: 'C1',
       threadTs: '111.1',
     });
+  });
+});
+
+describe('loadPendingSlackDraftsForSession', () => {
+  it('scopes the lookup to the session', async () => {
+    listPendingSlackDraftsForSession.mockResolvedValueOnce([]);
+    const sessionId = 's1' as SessionId;
+
+    await loadPendingSlackDraftsForSession(sessionId);
+
+    expect(listPendingSlackDraftsForSession).toHaveBeenCalledWith({ db: {}, sessionId });
   });
 });
 
