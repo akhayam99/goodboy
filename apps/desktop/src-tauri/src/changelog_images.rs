@@ -7,6 +7,7 @@ use base64::Engine as _;
 use crate::integration_credentials::http_client;
 
 const REPO_SLUG: &str = "akhayam99/goodboy";
+const PRIMARY_REF: &str = "main";
 const CLIENT_USER_AGENT: &str = "goodboy-desktop";
 const CACHE_ROOT_SEGMENTS: [&str; 2] = [".goodboy", "cache"];
 const CACHE_DIR: &str = "changelog";
@@ -59,11 +60,42 @@ fn cache_file_path(home: &Path, version: &str, file: &str) -> PathBuf {
     cache_root(home).join(version).join(file)
 }
 
-fn raw_url(version: &str, file: &str) -> String {
+fn raw_url_for_ref(git_ref: &str, version: &str, file: &str) -> String {
     format!(
-        "https://raw.githubusercontent.com/{}/v{}/docs/changelog/{}/{}",
-        REPO_SLUG, version, version, file
+        "https://raw.githubusercontent.com/{}/{}/docs/changelog/{}/{}",
+        REPO_SLUG, git_ref, version, file
     )
+}
+
+fn candidate_urls(version: &str, file: &str) -> Vec<String> {
+    vec![
+        raw_url_for_ref(PRIMARY_REF, version, file),
+        raw_url_for_ref(&format!("v{version}"), version, file),
+    ]
+}
+
+async fn fetch_image(url: &str) -> Result<Vec<u8>, FetchFailure> {
+    let response = http_client()
+        .get(url)
+        .header(reqwest::header::USER_AGENT, CLIENT_USER_AGENT)
+        .send()
+        .await
+        .map_err(|_| FetchFailure::Network)?;
+    let status = response.status();
+    if !status.is_success() {
+        return Err(FetchFailure::Status(status.as_u16()));
+    }
+    response
+        .bytes()
+        .await
+        .map(|bytes| bytes.to_vec())
+        .map_err(|_| FetchFailure::Body)
+}
+
+enum FetchFailure {
+    Network,
+    Status(u16),
+    Body,
 }
 
 fn to_data_url(bytes: &[u8]) -> String {
@@ -143,24 +175,22 @@ pub async fn changelog_image(version: String, file: String) -> Result<String, St
         return Ok(to_data_url(&bytes));
     }
 
-    let url = raw_url(&version, &file);
-    let response = http_client()
-        .get(&url)
-        .header(reqwest::header::USER_AGENT, CLIENT_USER_AGENT)
-        .send()
-        .await
-        .map_err(|_| format!("could not load {file} for v{version}"))?;
-
-    let status = response.status();
-    if !status.is_success() {
-        return Err(format!("github answered {} for {file}", status.as_u16()));
+    let mut last_failure = FetchFailure::Network;
+    let mut fetched = None;
+    for url in candidate_urls(&version, &file) {
+        match fetch_image(&url).await {
+            Ok(bytes) => {
+                fetched = Some(bytes);
+                break;
+            }
+            Err(failure) => last_failure = failure,
+        }
     }
-
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|_| format!("could not read {file} for v{version}"))?
-        .to_vec();
+    let bytes = fetched.ok_or_else(|| match last_failure {
+        FetchFailure::Network => format!("could not load {file} for v{version}"),
+        FetchFailure::Status(code) => format!("github answered {code} for {file}"),
+        FetchFailure::Body => format!("could not read {file} for v{version}"),
+    })?;
 
     write_cache_file(&path, &bytes).map_err(|e| e.to_string())?;
     evict_oldest_versions(&cache_root(&home), CACHE_BUDGET_BYTES);
@@ -227,10 +257,25 @@ mod tests {
     }
 
     #[test]
-    fn builds_the_raw_githubusercontent_url_from_the_tag() {
+    fn changelog_image_builds_the_raw_url_for_a_given_ref() {
         assert_eq!(
-            raw_url("0.10.0", "scroll-fade-after-dark.webp"),
+            raw_url_for_ref("main", "0.5.0", "scroll-fade-after-dark.webp"),
+            "https://raw.githubusercontent.com/akhayam99/goodboy/main/docs/changelog/0.5.0/scroll-fade-after-dark.webp"
+        );
+        assert_eq!(
+            raw_url_for_ref("v0.10.0", "0.10.0", "scroll-fade-after-dark.webp"),
             "https://raw.githubusercontent.com/akhayam99/goodboy/v0.10.0/docs/changelog/0.10.0/scroll-fade-after-dark.webp"
+        );
+    }
+
+    #[test]
+    fn changelog_image_tries_main_first_then_the_release_tag() {
+        assert_eq!(
+            candidate_urls("0.5.0", "crumb-menu-before-light.webp"),
+            vec![
+                "https://raw.githubusercontent.com/akhayam99/goodboy/main/docs/changelog/0.5.0/crumb-menu-before-light.webp".to_string(),
+                "https://raw.githubusercontent.com/akhayam99/goodboy/v0.5.0/docs/changelog/0.5.0/crumb-menu-before-light.webp".to_string(),
+            ]
         );
     }
 
