@@ -96,7 +96,6 @@ export const useSuggestionActions = ({
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const proposalActions = useMountProposalActions({ sessionId });
   const runPlan = useAppStore((state) => state.runPlan);
-  const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
   const createPrForSession = useAppStore((state) => state.createPrForSession);
   const markPrReady = useAppStore((state) => state.markPrReady);
@@ -309,21 +308,6 @@ export const useSuggestionActions = ({
           label: 'Sign in',
           isDisabled: false,
           onAct: () => openProviderSignIn({ providerId: suggestion.payload.providerId }),
-        },
-        onDismiss: null,
-      };
-    }
-    if (suggestion.kind === 'unblock-step') {
-      return {
-        primary: {
-          label: 'Skip',
-          isDisabled: false,
-          requiresConfirm: true,
-          onAct: () => {
-            void skipStuckStepAndAdvance(sessionId, suggestion.payload.runId, {
-              onlyWhenBlocked: true,
-            });
-          },
         },
         onDismiss: null,
       };

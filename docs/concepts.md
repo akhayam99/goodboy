@@ -307,11 +307,11 @@ whether you clicked it on the board or in the session overview.
   whose **Answer the approval** opens the blocked agent. The approve-tool
   suggestion for that same agent stays out of Next steps; an approval the
   callout does not name (a second blocked agent) still shows there.
-- Eighteen suggestion kinds ship: the original six (answer open questions,
+- Seventeen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
-  project, run a ready plan, add a proposed project) plus twelve more that
+  project, run a ready plan, add a proposed project) plus eleven more that
   landed on the same engine, not a second one: approve a pending permission,
-  sign back in after `auth_required`, unblock a failed workflow step, retry
+  sign back in after `auth_required`, retry
   the last standalone agent that failed, fix a pull request's failing checks,
   push unpushed commits on a clean worktree, open a pull request once a
   mount is ahead with none yet, mark a green draft ready, merge an approved
@@ -321,15 +321,16 @@ whether you clicked it on the board or in the session overview.
   with a goal set and no workflow attached yet (a discarded run does not
   count as attached, so the offer comes back) - its "Set up" action attaches
   the workspace's first library workflow with the session's own goal in one
-  click, no form. Merge, close-worktree and unblock-step's Skip arm a
+  click, no form. Merge and close-worktree arm a
   confirm on the row before they act; the other new kinds run on one click,
   like the original six. Two simplifications from the design: the "never
   while an agent works on the same mount" rule (E7-6) is session-wide, not
   per-mount, for the new push/open-pr/mark-ready/merge-pr/fix-checks kinds
   only - rebase-project keeps its own narrower per-request check; and the
-  demotion window (above) reads the session, not the workspace. unblock-step
-  only ships Skip; retrying the step itself needs a per-step retry action the
-  workflow engine does not expose yet. approve-tool opens the agent's
+  demotion window (above) reads the session, not the workspace. A failed
+  workflow step has no suggestion: its own row in Activity carries the one
+  **Restart the step**, which opens the step where Check completion and Skip
+  step live. approve-tool opens the agent's
   chat rather than the permission card directly; sign-in dispatches the
   same `goodboy:open-settings` event the palette's "Connect a provider"
   uses. continue-with-workflow always offers the workspace's first library

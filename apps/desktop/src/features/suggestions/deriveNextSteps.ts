@@ -26,17 +26,11 @@ import type {
   SuggestionQuestion,
 } from './types';
 
-export type SuggestionFailedStep = {
-  readonly stepId: StepId;
-  readonly label: string | null;
-};
-
 export type SuggestionWorkflowRun = {
   readonly id: WorkflowRunId;
   readonly title: string;
   readonly advanceState: { readonly kind: string; readonly stepId?: StepId };
   readonly isRunning: boolean;
-  readonly failedStep?: SuggestionFailedStep | null;
 };
 
 export type SuggestionAgent = {
@@ -287,28 +281,6 @@ export const deriveNextSteps = ({
     });
   }
   for (const run of workflowRuns) {
-    if (run.failedStep != null) {
-      suggestions.push({
-        id: `unblock-step:${run.id}`,
-        kind: 'unblock-step',
-        priority: 3,
-        band: 0,
-        title:
-          run.failedStep.label == null
-            ? `Step failed: ${run.title}`
-            : `Step failed: ${run.failedStep.label}`,
-        detail: 'Tell the agent what to do next, or skip it',
-        sessionId,
-        targetKey: `workflow-run:${run.id}`,
-        fingerprint: `unblock-step:${run.id}:${run.failedStep.stepId}`,
-        payload: {
-          runId: run.id,
-          stepId: run.failedStep.stepId,
-          stepLabel: run.failedStep.label,
-        },
-      });
-      continue;
-    }
     if (run.advanceState.kind !== 'ready' || run.advanceState.stepId == null) {
       continue;
     }

@@ -40,7 +40,6 @@ const { storeState, spies } = vi.hoisted(() => {
   const navigate = vi.fn();
   const rebaseRun = vi.fn(async () => undefined);
   const runPlan = vi.fn(async () => 'agent-implementer');
-  const skipStuckStepAndAdvance = vi.fn(async () => undefined);
   const pushSessionBranch = vi.fn(async () => ({ ok: true as const }));
   const createPrForSession = vi.fn(async () => undefined);
   const markPrReady = vi.fn(async () => undefined);
@@ -60,7 +59,6 @@ const { storeState, spies } = vi.hoisted(() => {
       navigate,
       rebaseRun,
       runPlan,
-      skipStuckStepAndAdvance,
       pushSessionBranch,
       createPrForSession,
       markPrReady,
@@ -92,7 +90,6 @@ const { storeState, spies } = vi.hoisted(() => {
       setAgentConfig,
       runPlan,
       navigate,
-      skipStuckStepAndAdvance,
       pushSessionBranch,
       createPrForSession,
       markPrReady,
@@ -611,26 +608,6 @@ describe('useSuggestionActions', () => {
     const event = listener.mock.calls[0]?.[0] as CustomEvent;
     expect(event.detail).toEqual({ scope: 'providers', provider: 'anthropic', action: 'login' });
     window.removeEventListener('goodboy:open-settings', listener);
-  });
-
-  it('skips a blocked step behind a confirm', () => {
-    const actions = actionsFor({
-      suggestion: {
-        ...suggestionBase,
-        id: 'unblock-step:run-1',
-        kind: 'unblock-step',
-        band: 0,
-        payload: { runId: RUN_ID, stepId: STEP_ID, stepLabel: 'Tester' },
-      },
-    });
-
-    expect(actions.primary?.label).toBe('Skip');
-    expect(actions.primary?.requiresConfirm).toBe(true);
-    actions.primary?.onAct();
-
-    expect(spies.skipStuckStepAndAdvance).toHaveBeenCalledWith(SESSION_ID, RUN_ID, {
-      onlyWhenBlocked: true,
-    });
   });
 
   it('retries a failed standalone agent as the same role', () => {

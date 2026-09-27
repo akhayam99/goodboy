@@ -457,25 +457,6 @@ describe('deriveNextSteps eleven new kinds', () => {
     expect(suggestion?.detail).toBe('Implementer stopped: signed out');
   });
 
-  it('suggests unblocking a failed workflow step, ahead of the ready-step suggestion for the same run', () => {
-    const suggestions = deriveNextSteps({
-      ...BASE_PARAMS,
-      workflowRuns: [
-        {
-          id: 'run-1' as WorkflowRunId,
-          title: 'Settlement fix',
-          advanceState: { kind: 'ready', stepId: 'step-2' as StepId },
-          isRunning: false,
-          failedStep: { stepId: 'step-1' as StepId, label: 'Tester' },
-        },
-      ],
-    });
-    expect(suggestions.map((candidate) => candidate.kind)).toEqual(['unblock-step']);
-    const suggestion = suggestions[0];
-    expect(suggestion?.title).toBe('Step failed: Tester');
-    expect(suggestion?.band).toBe(0);
-  });
-
   it('suggests retrying the last standalone agent when it failed', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,

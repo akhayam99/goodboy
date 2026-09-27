@@ -23,7 +23,6 @@ export const SUGGESTION_KINDS = [
   'mount-project',
   'approve-tool',
   'sign-in',
-  'unblock-step',
   'retry-agent',
   'fix-checks',
   'push-branch',
@@ -117,14 +116,6 @@ export type SessionSuggestion =
         readonly agentId: AgentId;
         readonly agentLabel: string;
         readonly providerId: ProviderId;
-      };
-    })
-  | (SuggestionBase & {
-      readonly kind: 'unblock-step';
-      readonly payload: {
-        readonly runId: WorkflowRunId;
-        readonly stepId: StepId;
-        readonly stepLabel: string | null;
       };
     })
   | (SuggestionBase & {
