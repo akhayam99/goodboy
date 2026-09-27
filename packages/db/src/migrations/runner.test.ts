@@ -483,6 +483,52 @@ describe('migrate', () => {
     });
   });
 
+  describe('triggers', () => {
+    it('keeps a trigger body with several statements whole', async () => {
+      const database = makeTestDatabase();
+      const migration = {
+        version: 1004,
+        sql: `
+CREATE TABLE notes (id TEXT PRIMARY KEY, body TEXT NOT NULL);
+CREATE TABLE note_log (id TEXT NOT NULL, action TEXT NOT NULL);
+CREATE TRIGGER notes_insert AFTER INSERT ON notes BEGIN
+  DELETE FROM note_log WHERE id = NEW.id;
+  INSERT INTO note_log (id, action) VALUES (NEW.id, 'insert');
+END;
+CREATE TABLE after_trigger (id TEXT PRIMARY KEY);
+`,
+      } satisfies Migration;
+
+      await migrate(database, [migration]);
+      await database.execute("INSERT INTO notes (id, body) VALUES ('n1', 'Harborline')");
+
+      const log = await database.select<{ id: string; action: string }>(
+        'SELECT id, action FROM note_log',
+      );
+      const tables = await database.select<{ name: string }>(
+        "SELECT name FROM sqlite_master WHERE name = 'after_trigger'",
+      );
+      expect({ log, tables }).toEqual({
+        log: [{ id: 'n1', action: 'insert' }],
+        tables: [{ name: 'after_trigger' }],
+      });
+    });
+
+    it('refuses a trigger without END', async () => {
+      const database = makeTestDatabase();
+      const migration = {
+        version: 1005,
+        sql: `
+CREATE TABLE notes (id TEXT PRIMARY KEY);
+CREATE TRIGGER notes_insert AFTER INSERT ON notes BEGIN
+  DELETE FROM notes WHERE id = 'x';
+`,
+      } satisfies Migration;
+
+      await expect(migrate(database, [migration])).rejects.toThrow('has no END');
+    });
+  });
+
   describe('segment resume', () => {
     it('skips checkpointed work while replaying foreign key pragmas', async () => {
       const database = makeTestDatabase();
