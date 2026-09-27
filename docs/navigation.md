@@ -249,28 +249,40 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   `owner/repo#482`, a tracker URL; anything else stays a local filter). When
   no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
   right tracker once (300 ms after typing, cached two minutes): a key goes to
-  Jira when it matches the Jira project, otherwise to Linear and Jira;
-  `#N` goes to every GitHub or GitLab repo of the workspace's projects (four
-  GitHub calls at a time); a short id resolves across the Sentry organization
-  (`sentry_resolve_short_id`). Hits sit in a `Not in your inbox` group above
-  the list (`InboxLookupGroup`) and open or pick up like any other issue;
-  a miss is one row in that group that says why (not found or not visible,
-  key rejected with `Sign in again`, missing permission, rate limited or
-  unreachable with `Try again`, tracker not connected, no repo for `#N`).
-  The mobile companion resolves Linear, Sentry and GitLab issues through the
-  same direct lookups instead of searching only the issues assigned to you.
-  Issues can be starred (`StarToggle`, the same star as projects) from an
-  Inbox row, a lookup hit or `s` on the selected row. Stars live per
-  workspace (`workspace_starred_issues`, keyed by provider and external id;
-  GitHub keys by `owner/repo#N`) with the last copy of identifier, title and
-  state, so the `Starred` group draws before any tracker answers. In the
-  Inbox it sits under `Not in your inbox` and above the days, and a starred
-  issue leaves the days; open ones come first, closed ones at the bottom
-  with `Unstar closed` and `Undo`, and one the tracker no longer returns
-  reads `Can't reach NW-230 anymore`. Pick up a task shows only the open
-  starred issues, even ones a session already picked up. Opening the Inbox
-  or Pick up a task refreshes the stars through the same lookups, at most
-  every five minutes (`refreshStarredIssues`).
+  Jira when it matches the Jira project, to Linear alone when the prefix
+  matches a Linear team key (`linear_fetch_team_keys`, fetched once per
+  connection and cached, so a recognized team no longer also fires a Jira
+  call that was always going to 404), otherwise to Linear and Jira; `#N` goes
+  to every GitHub or GitLab repo of the workspace's projects (four GitHub
+  calls at a time); a short id resolves across the Sentry organization
+  (`sentry_resolve_short_id`). While a lookup is in flight, the row names the
+  trackers it asked (`Looking up CAS-231 in Linear and Jira`). Hits sit in a
+  `Not in your inbox` group above the list (`InboxLookupGroup`) and open or
+  pick up like any other issue, with a second line showing `Assigned to
+<name>` for a Linear or Jira hit with a known assignee, the project/repo
+  context otherwise; a miss is one row in that group that says why (not
+  found or not visible, key rejected with `Sign in again`, missing
+  permission, tracker not connected, no repo for `#N`), and a rate limit
+  shows a live countdown and retries once on its own when it ends, alongside
+  the manual `Try again`. The mobile companion resolves Linear, Sentry and
+  GitLab issues through the same direct lookups instead of searching only
+  the issues assigned to you. Issues can be starred (`StarToggle`, the same
+  star as projects) from an Inbox row, a lookup hit or `s` on the selected
+  row. Stars live per workspace (`workspace_starred_issues`, keyed by
+  provider and external id; GitHub keys by `owner/repo#N`) with the last
+  copy of identifier, title and state, so the `Starred` group draws before
+  any tracker answers; a row not refreshed since app start opens the detail
+  panel from that snapshot (`placeholderRecordOf`), not the tool's URL, and
+  gets replaced once the refresh lands a real record. In the Inbox it sits
+  under `Not in your inbox` and above the days, and a starred issue leaves
+  the days; open ones come first, closed ones at the bottom with `Unstar
+closed` and `Undo`, and one the tracker no longer returns reads `Can't
+reach NW-230 anymore`. Pick up a task shows only the open starred issues,
+  even ones a session already picked up. Opening the Inbox or Pick up a task
+  refreshes the stars at most every five minutes (`refreshStarredIssues`):
+  one request per tracker for Linear and Jira, one per project for GitLab,
+  and one per issue for GitHub and Sentry, which have no batch endpoint for
+  fetching by id.
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
 - **Ask an agent** (`AgentStart`) is the real chat composer's field: role and
