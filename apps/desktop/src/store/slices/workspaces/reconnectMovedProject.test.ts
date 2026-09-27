@@ -152,6 +152,48 @@ describe('reconnectMovedProject slice action', () => {
     expect(relocated?.disconnectedAt).toBeUndefined();
   });
 
+  it('leaves the workspace disconnected when the relocation fails', async () => {
+    h.listAllProjectsForWorkspace.mockResolvedValueOnce([project()]);
+    h.projectRelocate.mockRejectedValueOnce(new Error('writer lease active'));
+    const store = harness({});
+
+    await expect(
+      reconnectMovedProject(
+        store.set,
+        store.get,
+      )({
+        workspaceId: CASCADIA,
+        projectId: PROJECT_ID,
+        fromRoot: '/old/repos/ledger-core',
+        toRoot: '/new/repos/ledger-core',
+      }),
+    ).rejects.toThrow('writer lease active');
+    expect(h.reconnectWorkspaceAndProjects).not.toHaveBeenCalled();
+    expect(store.state.disconnectedWorkspaces.map((entry) => entry.id)).toEqual([CASCADIA]);
+  });
+
+  it('keeps the stored identity when the identity lookup fails', async () => {
+    h.listAllProjectsForWorkspace.mockResolvedValueOnce([project()]);
+    h.getWorkspaceById.mockResolvedValueOnce(disconnectedWorkspace());
+    h.repoIdentity.mockRejectedValueOnce(new Error('git unavailable'));
+    const store = harness({});
+
+    await reconnectMovedProject(
+      store.set,
+      store.get,
+    )({
+      workspaceId: CASCADIA,
+      projectId: PROJECT_ID,
+      fromRoot: '/old/repos/ledger-core',
+      toRoot: '/new/repos/ledger-core',
+    });
+
+    expect(h.updateProjectIdentity).not.toHaveBeenCalled();
+    const [relocated] = store.state.projects;
+    expect(relocated?.rootPath).toBe('/new/repos/ledger-core');
+    expect(relocated?.identityCheckedAt).toBeUndefined();
+  });
+
   it('throws when the workspace no longer exists', async () => {
     h.listAllProjectsForWorkspace.mockResolvedValueOnce([project()]);
     h.getWorkspaceById.mockResolvedValueOnce(null);

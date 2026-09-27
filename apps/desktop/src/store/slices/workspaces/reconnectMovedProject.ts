@@ -21,24 +21,26 @@ export const reconnectMovedProject = (set: SetFn, get: GetFn) => {
   return async ({ workspaceId, projectId, fromRoot, toRoot }: Input): Promise<Workspace> => {
     const now = new Date().toISOString() as IsoDateTime;
     const siblingProjects = await listAllProjectsForWorkspace({ db: tauriDatabase, workspaceId });
+    const relocationId = crypto.randomUUID();
+    await projectRelocate({ relocationId, projectId, fromRoot, toRoot });
     await reconnectWorkspaceAndProjects({
       db: tauriDatabase,
       id: workspaceId,
       projectIds: siblingProjects.map((project) => project.id),
       at: now,
     });
-    const relocationId = crypto.randomUUID();
-    await projectRelocate({ relocationId, projectId, fromRoot, toRoot });
     const identity = await repoIdentity({ path: toRoot }).catch(() => null);
     const rootCommit = identity?.rootCommits[0] ?? null;
     const remoteUrl = identity?.remoteUrl ?? null;
-    await updateProjectIdentity({
-      db: tauriDatabase,
-      projectId,
-      rootCommit,
-      remoteUrl,
-      checkedAt: now,
-    });
+    if (identity !== null) {
+      await updateProjectIdentity({
+        db: tauriDatabase,
+        projectId,
+        rootCommit,
+        remoteUrl,
+        checkedAt: now,
+      });
+    }
     const workspace = await getWorkspaceById({ db: tauriDatabase, id: workspaceId });
     if (workspace === null) {
       throw new Error('workspace no longer exists');
@@ -57,7 +59,7 @@ export const reconnectMovedProject = (set: SetFn, get: GetFn) => {
             rootPath: toRoot,
             ...(rootCommit === null ? {} : { rootCommit }),
             ...(remoteUrl === null ? {} : { remoteUrl }),
-            identityCheckedAt: now,
+            ...(identity === null ? {} : { identityCheckedAt: now }),
           }),
       disconnectedAt: undefined,
       updatedAt: now,
