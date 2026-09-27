@@ -170,6 +170,7 @@ beforeEach(() => {
     currentWorkspaceId: null,
     workspaces: [],
     currentWorkspace: null,
+    workspaceOverrides: {},
   });
 });
 
@@ -178,6 +179,31 @@ afterEach(() => {
 });
 
 describe('StoragePage', () => {
+  it('splits space from branches into two named clusters', () => {
+    render(<StoragePage />);
+
+    const space = screen.getByRole('region', { name: 'Free up space' });
+    const branches = screen.getByRole('region', { name: 'Clean up branches' });
+    expect(within(space).getByRole('region', { name: 'Storage summary' })).toBeDefined();
+    expect(within(space).getByRole('region', { name: 'Worktrees' })).toBeDefined();
+    expect(within(space).getByRole('region', { name: 'History and app data' })).toBeDefined();
+    expect(within(space).getByRole('region', { name: 'Cleanup' })).toBeDefined();
+    expect(within(branches).queryByRole('region', { name: 'Worktrees' })).toBeNull();
+  });
+
+  it('shows the after merge rule of the scoped workspace with the branches', () => {
+    Object.assign(state, {
+      storageScope: { kind: 'workspace', id: 'harborline' as WorkspaceId },
+      workspaces: [{ id: 'harborline', name: 'Harborline' }],
+      workspaceOverrides: { harborline: { afterMerge: 'local' } },
+    });
+    render(<StoragePage />);
+
+    const branches = screen.getByRole('region', { name: 'Clean up branches' });
+    expect(within(branches).getByText('After a merge')).toBeDefined();
+    expect(within(branches).getByText('Delete on this Mac')).toBeDefined();
+  });
+
   it('leads with what can go and states every folder with a word', () => {
     render(<StoragePage />);
 
