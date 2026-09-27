@@ -129,12 +129,12 @@ describe('RoutingPicker', () => {
     {
       provider: 'codex' as ProviderId,
       model: 'gpt-5.6-sol',
-      summary: 'Codex · GPT 5.6 Sol · High',
+      summary: 'Codex · GPT-5.6 Sol · High',
     },
     {
       provider: 'codex' as ProviderId,
       model: 'gpt-6-astra',
-      summary: 'Codex · GPT 6 Astra · High',
+      summary: 'Codex · Astra · High',
     },
     {
       provider: 'cursor' as ProviderId,
@@ -144,7 +144,7 @@ describe('RoutingPicker', () => {
     {
       provider: 'cursor' as ProviderId,
       model: 'gpt-5.3-codex',
-      summary: 'Cursor · GPT 5.3 Codex',
+      summary: 'Cursor · GPT-5.3 Codex',
     },
     {
       provider: 'cursor' as ProviderId,

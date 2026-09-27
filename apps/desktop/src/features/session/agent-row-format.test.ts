@@ -68,8 +68,8 @@ describe('shortModel', () => {
     expect(shortModel('cursor-fast')).toBe('cursor-fast');
   });
 
-  it('handles uppercase family in claude id', () => {
-    expect(shortModel('CLAUDE-HAIKU-4-5')).toBe('haiku');
+  it('passes an unknown uppercase model through', () => {
+    expect(shortModel('CLAUDE-HAIKU-4-5')).toBe('CLAUDE-HAIKU-4-5');
   });
 });
 

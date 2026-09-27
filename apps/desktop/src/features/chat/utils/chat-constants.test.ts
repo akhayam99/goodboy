@@ -7,20 +7,30 @@ describe('modelLabel', () => {
     expect(modelLabel('gpt-6-astra')).toBe('Astra');
   });
 
-  it('formats an unrecognized Astra effort suffix as an unknown id', () => {
+  it('humanizes an unrecognized Astra effort suffix', () => {
     expect(modelLabel('gpt-6-astra-high')).toBe('GPT 6 Astra High');
   });
 
-  it('keeps the version number intact for gpt effort variants', () => {
+  it('humanizes unknown gpt effort variants', () => {
     expect(modelLabel('gpt-5.6-high')).toBe('GPT 5.6 High');
   });
 
-  it('keeps the version number intact for gemini variants', () => {
+  it('humanizes unknown gemini variants', () => {
     expect(modelLabel('gemini-2.5-pro')).toBe('Gemini 2.5 Pro');
   });
 
-  it('keeps the version number intact for an unknown vendor-prefixed id', () => {
+  it('humanizes an unknown vendor-prefixed id', () => {
     expect(modelLabel('mistral-large-2.1')).toBe('Mistral Large 2.1');
+  });
+
+  it('strips the provider prefix from an unknown openrouter id', () => {
+    expect(modelLabel('openrouter/mistralai/mistral-large-2411')).toBe(
+      'Mistralai Mistral Large 2411',
+    );
+  });
+
+  it('matches the Claude shorthand against the provider-stripped id', () => {
+    expect(modelLabel('anthropic/claude-opus-4-1')).toBe('Opus 4.1');
   });
 });
 

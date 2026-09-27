@@ -1,4 +1,4 @@
-import type { EffortLevel, ModelCostTier, ModelFamily, ProviderId } from '@goodboy/types';
+import type { EffortLevel, ModelCostTier, ProviderId } from '@goodboy/types';
 import { getModelDescriptor, getProviderModelPrice } from '@goodboy/core';
 
 export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
@@ -20,161 +20,42 @@ export const TIER_TEXT: Record<ModelCostTier, string> = {
   expensive: 'text-danger',
 };
 
-const FAMILY_LABEL: Record<ModelFamily, string> = {
-  claude: 'Claude',
-  gpt: 'GPT',
-  codex: 'Codex',
-  gemini: 'Gemini',
-  composer: 'Composer',
-  'cursor-auto': 'Cursor',
-  other: '',
-};
+const ACRONYM_WORDS = new Set(['gpt', 'ai']);
 
-type SlugWordsParams = {
-  readonly slug: string;
-};
-
-const slugToWords = ({ slug }: SlugWordsParams): string =>
-  slug
-    .split(/[-_\s/]+/)
-    .filter((part) => part !== '')
-    .map((part) => (/^[a-z]/.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part))
-    .join(' ');
-
-export const modelLabel = (id: string): string => {
-  const descriptor = getModelDescriptor(id);
-  if (descriptor) {
-    return descriptor.label;
-  }
-  const m = id.match(/^claude-(opus|sonnet|haiku)-(\d+)-(\d+)/i);
-  if (m) {
-    const family = m[1]!.charAt(0).toUpperCase() + m[1]!.slice(1).toLowerCase();
-    return `${family} ${m[2]}.${m[3]}`;
-  }
-  const parsed = parseModelId(id);
-  const family = FAMILY_LABEL[parsed.family];
-  const isSubfamilyRedundant =
-    parsed.subfamily == null ||
-    family === '' ||
-    parsed.subfamily.toLowerCase().startsWith(family.toLowerCase());
-  const subfamily = isSubfamilyRedundant ? '' : slugToWords({ slug: parsed.subfamily });
-  const label = [family, subfamily, slugToWords({ slug: parsed.variantLabel })]
-    .filter((part) => part !== '')
-    .join(' ');
-  return label === '' ? id : label;
-};
-
-type ParsedModel = {
-  readonly family: ModelFamily;
-  readonly subfamily: string | null;
-  readonly variantLabel: string;
-};
-
-function stripProviderPrefix(id: string): string {
+const stripProviderPrefix = (id: string): string => {
   const slash = id.indexOf('/');
   return slash >= 0 ? id.slice(slash + 1) : id;
-}
-
-export const parseModelId = (id: string): ParsedModel => {
-  const local = stripProviderPrefix(id);
-  const catalogDescriptor = getModelDescriptor(local);
-  if (catalogDescriptor != null && catalogDescriptor.id === local) {
-    return {
-      family: catalogDescriptor.family,
-      subfamily: catalogDescriptor.subfamily,
-      variantLabel: catalogDescriptor.variantLabel,
-    };
-  }
-
-  let m = local.match(/^claude-(haiku|sonnet|opus|fable)-(\d+)(?:-(\d+))?(?:-(.+))?$/i);
-  if (m) {
-    const version = m[3] == null ? m[2]! : `${m[2]}.${m[3]}`;
-    const suffix = m[4]
-      ?.split('-')
-      .filter((part) => part !== 'thinking')
-      .join(' ');
-    return {
-      family: 'claude',
-      subfamily: m[1]!.toLowerCase(),
-      variantLabel: suffix != null && suffix !== '' ? `${version} ${suffix}` : version,
-    };
-  }
-
-  m = local.match(/^claude-(\d+\.\d+)-(haiku|sonnet|opus)(?:-(.+))?$/i);
-  if (m) {
-    const suffix = m[3] ? ` ${m[3].replace(/-/g, ' ')}` : '';
-    return {
-      family: 'claude',
-      subfamily: m[2]!.toLowerCase(),
-      variantLabel: `${m[1]}${suffix}`,
-    };
-  }
-
-  m = local.match(/^composer-(.+)$/i);
-  if (m) {
-    const variantLabel = m[1]!
-      .split('-')
-      .map((part) => (part === 'fast' ? 'Fast' : part))
-      .join(' ');
-    return { family: 'composer', subfamily: null, variantLabel };
-  }
-
-  if (local === 'auto') {
-    return { family: 'cursor-auto', subfamily: null, variantLabel: 'auto' };
-  }
-
-  m = local.match(/^gpt-(\d+\.\d+)-codex(?:-spark)?$/i);
-  if (m) {
-    return { family: 'gpt', subfamily: 'codex', variantLabel: m[1]! };
-  }
-
-  m = local.match(/^gpt-(\d+\.\d+)-mini$/i);
-  if (m) {
-    return { family: 'gpt', subfamily: 'mini', variantLabel: m[1]! };
-  }
-
-  m = local.match(/^gpt-(\d+\.\d+)-(low|medium|high|xhigh|max)$/i);
-  if (m) {
-    return {
-      family: 'gpt',
-      subfamily: 'gpt-5',
-      variantLabel: `${m[1]} ${m[2]!.toLowerCase()}`,
-    };
-  }
-
-  m = local.match(/^gpt-(\d+\.\d+)$/i);
-  if (m) {
-    return {
-      family: 'gpt',
-      subfamily: id.includes('/') ? m[1]! : 'gpt-5',
-      variantLabel: m[1]!,
-    };
-  }
-
-  const descriptor = getModelDescriptor(id);
-  if (descriptor != null) {
-    return {
-      family: descriptor.family,
-      subfamily: descriptor.subfamily,
-      variantLabel: descriptor.variantLabel,
-    };
-  }
-
-  m = local.match(/^gpt-(.+)$/i);
-  if (m) {
-    return { family: 'gpt', subfamily: null, variantLabel: m[1]! };
-  }
-
-  if (local.startsWith('gemini-')) {
-    return { family: 'gemini', subfamily: null, variantLabel: local.slice('gemini-'.length) };
-  }
-
-  if (local.startsWith('codex-')) {
-    return { family: 'codex', subfamily: null, variantLabel: local.slice('codex-'.length) };
-  }
-
-  return { family: 'other', subfamily: null, variantLabel: local };
 };
+
+const capitalizeWord = (part: string): string => {
+  if (ACRONYM_WORDS.has(part.toLowerCase())) {
+    return part.toUpperCase();
+  }
+  return /^[a-z]/.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part;
+};
+
+const humanizeUnknownId = (id: string): string => {
+  const words = stripProviderPrefix(id)
+    .split(/[-_\s/]+/)
+    .filter((part) => part !== '')
+    .map(capitalizeWord)
+    .join(' ');
+  return words === '' ? id : words;
+};
+
+const CLAUDE_VERSION_PATTERN = /^claude-(opus|sonnet|haiku|fable)-(\d+)-(\d+)$/i;
+
+const unknownModelLabel = (id: string): string => {
+  const claudeMatch = CLAUDE_VERSION_PATTERN.exec(stripProviderPrefix(id));
+  if (claudeMatch) {
+    const family = claudeMatch[1]!;
+    return `${family.charAt(0).toUpperCase()}${family.slice(1).toLowerCase()} ${claudeMatch[2]}.${claudeMatch[3]}`;
+  }
+  return humanizeUnknownId(id);
+};
+
+export const modelLabel = (id: string): string =>
+  getModelDescriptor(id)?.label ?? unknownModelLabel(id);
 
 export const modelTier = (model: string): ModelCostTier => {
   const descriptor = getModelDescriptor(model);

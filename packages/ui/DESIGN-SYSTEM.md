@@ -521,8 +521,8 @@ hovered or focused. What leaves the row stays in the routing tooltip, which
 always reads the whole route ("Claude · Opus 5.5 · High"). The routing column
 is `RoutingLabel isColumn`, with no fill and no chip. Its words come from
 `routingLabelParts`, the same function behind the model picker trigger, so a
-row, the trigger, the queue and a header say a route the same way: the Codex
-variant and the checkpoint belong to the name (`GPT 5.6 Sol`), the Cursor
+row, the trigger, the queue and a header say a route the same way: the catalog
+label is the model name (`GPT-5.6 Sol`), the Cursor
 modes and the effort are details. Planned routing (a step that has not
 started) is faint; routing that ran is muted. The detail is faint while the
 effort is only planned and takes the row tone once the run reports the effort
