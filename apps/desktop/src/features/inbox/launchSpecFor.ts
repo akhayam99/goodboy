@@ -17,6 +17,7 @@ import { bitbucketPrIdentifier } from '../integrations/bitbucket/bitbucketPrIden
 import { bitbucketPrUrl } from '../integrations/bitbucket/bitbucketPrUrl';
 import { issueIdentifier } from '../integrations/gitlab/client';
 import { issueBriefSourceFor } from './issueBriefSourceFor';
+import { recordSessionId } from './recordSessionId';
 import type { InboxRecord } from './types';
 
 export type LaunchExternalTask = {
@@ -40,6 +41,7 @@ type Params = {
 
 export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
   const payload = record.payload;
+  const linkedSessionId = recordSessionId({ record });
   switch (payload.provider) {
     case 'github': {
       const externalTask = {
@@ -50,7 +52,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
         title: payload.issue.title,
       } satisfies LaunchExternalTask;
       return {
-        linkedSessionId: payload.sessionId,
+        linkedSessionId,
         goalSeed: goalFromGithubIssue({ issue: payload.issue }),
         externalTask,
         briefSource: issueBriefSourceFor({ task: externalTask, body: payload.issue.body }),
@@ -59,7 +61,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
     case 'gitlab': {
       if (payload.kind === 'mr') {
         return {
-          linkedSessionId: null,
+          linkedSessionId,
           goalSeed: goalFromMergeRequest({ mergeRequest: payload.mr }),
           externalTask: {
             provider: 'gitlab',
@@ -79,7 +81,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
         title: payload.issue.title,
       } satisfies LaunchExternalTask;
       return {
-        linkedSessionId: payload.sessionId,
+        linkedSessionId,
         goalSeed: goalFromGitlabIssue({ issue: payload.issue }),
         externalTask,
         briefSource: issueBriefSourceFor({
@@ -97,7 +99,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
         title: payload.issue.title,
       } satisfies LaunchExternalTask;
       return {
-        linkedSessionId: payload.sessionId,
+        linkedSessionId,
         goalSeed: goalFromLinearIssue({ issue: payload.issue }),
         externalTask,
         briefSource: issueBriefSourceFor({
@@ -115,7 +117,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
         title: payload.issue.summary,
       } satisfies LaunchExternalTask;
       return {
-        linkedSessionId: payload.sessionId,
+        linkedSessionId,
         goalSeed: goalFromJiraIssue({ issue: payload.issue }),
         externalTask,
         briefSource: issueBriefSourceFor({ task: externalTask, body: payload.issue.description }),
@@ -131,7 +133,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
         title: payload.issue.title,
       } satisfies LaunchExternalTask;
       return {
-        linkedSessionId: payload.sessionId,
+        linkedSessionId,
         goalSeed,
         externalTask,
         briefSource: issueBriefSourceFor({ task: externalTask, body: goalSeed }),
@@ -154,7 +156,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
         title: slackThreadTitle({ text: payload.head.text }),
       } satisfies LaunchExternalTask;
       return {
-        linkedSessionId: payload.sessionId,
+        linkedSessionId,
         goalSeed,
         externalTask,
         briefSource: issueBriefSourceFor({ task: externalTask, body: goalSeed, noun: 'thread' }),
@@ -169,7 +171,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
         pullRequest: payload.pullRequest,
       });
       return {
-        linkedSessionId: null,
+        linkedSessionId,
         goalSeed: goalFromPullRequest({ pullRequest: payload.pullRequest }),
         externalTask: {
           provider: 'bitbucket',

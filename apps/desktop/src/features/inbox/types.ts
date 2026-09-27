@@ -88,5 +88,6 @@ export type InboxRecord = {
   readonly url: string;
   readonly context: string;
   readonly projectIds?: ReadonlyArray<ProjectId>;
+  readonly linkedSessionId?: SessionId | null;
   readonly payload: Payload;
 };

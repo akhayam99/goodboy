@@ -8,7 +8,8 @@ import { ghAssignedIssues, tauriGhRunner } from '../github/github';
 import { linearFetchAssignedIssues } from './linear/client';
 import { gitlabFetchAssignedIssues } from './gitlab/client';
 import { jiraListIssues } from './jira/client';
-import { sentryFetchIssues } from './sentry/client';
+import { sentryFetchIssues, type SentryIssuesPage } from './sentry/client';
+import { dedupById } from './sentry/SentryStudio/useSentryIssues';
 import { slackThreadCandidates } from './slack/slackThreadCandidates';
 import {
   githubIssueCandidate,
@@ -35,7 +36,10 @@ type Params = {
   readonly rootPath: string | null;
   readonly gitlabHost: string | null;
   readonly jiraConfig: JiraIntegrationConfig | null;
+  readonly sentryProjects?: ReadonlyArray<string>;
 };
+
+const EMPTY_SENTRY_PAGE: SentryIssuesPage = { issues: [], next_cursor: null };
 
 export const fetchIssueCandidates = async ({
   provider,
@@ -43,6 +47,7 @@ export const fetchIssueCandidates = async ({
   rootPath,
   gitlabHost,
   jiraConfig,
+  sentryProjects = [],
 }: Params): Promise<ReadonlyArray<IssueCandidate>> => {
   switch (provider) {
     case 'linear': {
@@ -83,8 +88,16 @@ export const fetchIssueCandidates = async ({
       return issues.map(jiraIssueCandidate);
     }
     case 'sentry': {
-      const page = await sentryFetchIssues(workspaceId);
-      return page.issues.map(sentryIssueCandidate);
+      const [page, ...linkedPages] = await Promise.all([
+        sentryFetchIssues(workspaceId),
+        ...[...new Set(sentryProjects)].map((slug) =>
+          sentryFetchIssues(workspaceId, undefined, undefined, undefined, slug).catch(
+            () => EMPTY_SENTRY_PAGE,
+          ),
+        ),
+      ]);
+      const issues = [page, ...linkedPages].flatMap((entry) => entry.issues);
+      return dedupById(issues).map(sentryIssueCandidate);
     }
     case 'slack': {
       return slackThreadCandidates({ workspaceId });
