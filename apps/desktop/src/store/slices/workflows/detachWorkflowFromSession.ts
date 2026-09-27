@@ -3,6 +3,7 @@ import {
   detachWorkflowFromSession as detachWorkflowFromSessionInDb,
   updateSessionState,
 } from '@goodboy/db';
+import { removeQuestionsFromSlot } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { invokeAgentList } from '../../../features/workflows/workflows';
@@ -79,14 +80,31 @@ export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
       purgedAgentIds.add(agentId);
     }
     const now = new Date().toISOString() as IsoDateTime;
+    let removedQuestions: ReadonlyArray<string> = [];
     try {
-      await detachWorkflowFromSessionInDb(tauriDatabase, sessionId, workflowRunId, now);
+      removedQuestions = await detachWorkflowFromSessionInDb(
+        tauriDatabase,
+        sessionId,
+        workflowRunId,
+        now,
+      );
     } catch (error) {
       for (const agentId of ownedIds) {
         purgedAgentIds.delete(agentId);
       }
       throw error;
     }
+    if (removedQuestions.length > 0) {
+      const slotChanged = await removeQuestionsFromSlot(
+        tauriDatabase,
+        sessionId,
+        removedQuestions,
+      ).catch(() => false);
+      if (slotChanged) {
+        await get().loadSessionSlots(sessionId);
+      }
+    }
+    await get().loadSessionOpenQuestions(sessionId);
 
     const refreshed = await invokeAgentList(sessionId);
     dropPendingTurnEvents({ agentIds: [...ownedIds] });

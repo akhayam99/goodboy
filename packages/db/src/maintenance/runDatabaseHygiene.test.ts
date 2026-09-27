@@ -272,6 +272,11 @@ describe('runDatabaseHygiene', () => {
       `INSERT INTO agents (id, session_id, ordinal, name, status, step_id)
        VALUES ('orphan', 'session-1', 1, 'Scout', 'completed', 'step-1')`,
     );
+    await db.execute(
+      `INSERT INTO open_questions (id, session_id, text, status, created_at, created_by_agent_id)
+       VALUES ('q-1', 'session-1', 'Which cache?', 'open', ?, 'orphan')`,
+      [NOW],
+    );
 
     const result = await runDatabaseHygiene({ db, now: NOW });
     const rows = await db.select<{ id: string; deleted_at: number | null }>(
@@ -279,6 +284,9 @@ describe('runDatabaseHygiene', () => {
     );
 
     expect(result.orphanedWorkflowAgentsDeleted).toBe(1);
+    expect(result.orphanedWorkflowQuestions).toEqual([
+      { sessionId: 'session-1', text: 'Which cache?' },
+    ]);
     expect(rows).toEqual([
       { id: 'agent-1', deleted_at: null },
       { id: 'orphan', deleted_at: NOW },

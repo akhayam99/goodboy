@@ -983,8 +983,31 @@ describe('session_workflows trigger-mode queries', () => {
       });
       await insertAgent({ id: 'other-run', workflowRunId: 'run-2' });
       await insertAgent({ id: 'standalone', workflowRunId: null });
+      for (const [index, agentId] of [
+        'step-agent',
+        'orchestrator-spawned',
+        'nested-child',
+        'other-run',
+        'standalone',
+      ].entries()) {
+        await db.execute(
+          `INSERT INTO open_questions (id, session_id, text, status, created_at, created_by_agent_id)
+           VALUES (?, ?, ?, 'open', ?, ?)`,
+          [`q-${agentId}`, sessionId, `Question from ${agentId}?`, index, agentId],
+        );
+      }
 
-      await detachWorkflowFromSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
+      const removed = await detachWorkflowFromSession(db, sessionId, 'run-1' as WorkflowRunId, NOW);
+
+      expect([...removed].sort()).toEqual([
+        'Question from nested-child?',
+        'Question from orchestrator-spawned?',
+        'Question from step-agent?',
+      ]);
+      const questions = await db.select<{ readonly id: string }>(
+        'SELECT id FROM open_questions ORDER BY id',
+      );
+      expect(questions.map((row) => row.id)).toEqual(['q-other-run', 'q-standalone']);
 
       expect(await readDeletedAt()).toEqual({
         'fanout-child': Date.parse(NOW),
@@ -1018,8 +1041,15 @@ describe('session_workflows trigger-mode queries', () => {
       await insertAgent({ id: 'kept', workflowRunId: 'run-1' });
       await insertAgent({ id: 'pruned', workflowRunId: 'run-2' });
       await insertAgent({ id: 'pruned-child', workflowRunId: null, parentAgentId: 'pruned' });
+      await db.execute(
+        `INSERT INTO open_questions (id, session_id, text, status, created_at, created_by_agent_id)
+         VALUES ('q-kept', ?, 'Keep?', 'open', 1, 'kept'), ('q-pruned', ?, 'Prune?', 'open', 2, 'pruned-child')`,
+        [sessionId, sessionId],
+      );
 
-      await updateWorkflowOrder(db, sessionId, ['run-1' as WorkflowRunId], NOW);
+      expect(await updateWorkflowOrder(db, sessionId, ['run-1' as WorkflowRunId], NOW)).toEqual([
+        'Prune?',
+      ]);
 
       expect(await readDeletedAt()).toEqual({
         kept: null,
@@ -1062,10 +1092,31 @@ describe('session_workflows trigger-mode queries', () => {
            ('standalone', ?, 4, 'standalone', 'completed', NULL, NULL, NULL)`,
         [sessionId, sessionId, sessionId, sessionId, sessionId],
       );
+      await db.execute(
+        `INSERT INTO open_questions (id, session_id, text, status, created_at, created_by_agent_id)
+         VALUES
+           ('q-orphan', ?, 'Which cache?', 'open', 1, 'orphan'),
+           ('q-child', ?, 'Which port?', 'open', 2, 'orphan-child'),
+           ('q-answered', ?, 'Which branch?', 'answered', 3, 'orphan'),
+           ('q-live', ?, 'Which region?', 'open', 4, 'live')`,
+        [sessionId, sessionId, sessionId, sessionId],
+      );
       await db.execute("DELETE FROM session_workflows WHERE workflow_run_id = 'run-gone'");
 
-      expect(await deleteOrphanedWorkflowAgents({ db, now: 42 })).toBe(2);
-      expect(await deleteOrphanedWorkflowAgents({ db, now: 99 })).toBe(0);
+      const first = await deleteOrphanedWorkflowAgents({ db, now: 42 });
+      expect(first.agentsDeleted).toBe(2);
+      expect([...first.removedQuestions].sort((a, b) => a.text.localeCompare(b.text))).toEqual([
+        { sessionId, text: 'Which cache?' },
+        { sessionId, text: 'Which port?' },
+      ]);
+      expect(await deleteOrphanedWorkflowAgents({ db, now: 99 })).toEqual({
+        agentsDeleted: 0,
+        removedQuestions: [],
+      });
+      const questions = await db.select<{ readonly id: string }>(
+        'SELECT id FROM open_questions ORDER BY id',
+      );
+      expect(questions.map((row) => row.id)).toEqual(['q-answered', 'q-live']);
 
       const rows = await db.select<{ readonly id: string; readonly deleted_at: number | null }>(
         'SELECT id, deleted_at FROM agents ORDER BY id',

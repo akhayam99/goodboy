@@ -1,7 +1,10 @@
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';
 import type { Database } from '../client';
 import { updateProviderRunStatusIfInFlight } from '../queries/provider-run';
-import { deleteOrphanedWorkflowAgents } from '../queries/session-workflow';
+import {
+  deleteOrphanedWorkflowAgents,
+  type RemovedOpenQuestion,
+} from '../queries/session-workflow';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PERMISSION_AUDIT_MAX_ROWS = 5000;
@@ -20,6 +23,7 @@ export type DatabaseHygieneResult = {
   readonly providerRunsCancelled: number;
   readonly providerRunsDeleted: number;
   readonly orphanedWorkflowAgentsDeleted: number;
+  readonly orphanedWorkflowQuestions: ReadonlyArray<RemovedOpenQuestion>;
 };
 
 type ProviderRunRow = {
@@ -85,7 +89,7 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
      WHERE status_kind IN ('pending', 'streaming') AND created_at < ?`,
     [providerRunCutoff],
   );
-  const orphanedWorkflowAgentsDeleted = await deleteOrphanedWorkflowAgents({ db, now });
+  const orphanedWorkflowAgents = await deleteOrphanedWorkflowAgents({ db, now });
 
   const finishedAt = new Date(now).toISOString() as IsoDateTime;
   let providerRunsCancelled = 0;
@@ -103,6 +107,7 @@ export const runDatabaseHygiene = async ({ db, now }: Params): Promise<DatabaseH
     githubPrCacheRowsDeleted: githubPrCacheRows.rowsAffected,
     providerRunsCancelled,
     providerRunsDeleted: orphanProviderRuns.rowsAffected,
-    orphanedWorkflowAgentsDeleted,
+    orphanedWorkflowAgentsDeleted: orphanedWorkflowAgents.agentsDeleted,
+    orphanedWorkflowQuestions: orphanedWorkflowAgents.removedQuestions,
   };
 };

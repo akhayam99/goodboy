@@ -10,18 +10,33 @@ import type {
 } from '@goodboy/types';
 import { purgedAgentIds } from '../../session-mutators';
 
-const { cancelTurnSpy, detachInDbSpy, invokeAgentListSpy, awaitRunStoppedSpy, emitSpy } =
-  vi.hoisted(() => ({
-    cancelTurnSpy: vi.fn(async () => undefined),
-    detachInDbSpy: vi.fn(async () => undefined),
-    invokeAgentListSpy: vi.fn(async (): Promise<ReadonlyArray<unknown>> => []),
-    awaitRunStoppedSpy: vi.fn(async () => true),
-    emitSpy: vi.fn(async () => undefined),
-  }));
+const {
+  cancelTurnSpy,
+  detachInDbSpy,
+  invokeAgentListSpy,
+  awaitRunStoppedSpy,
+  emitSpy,
+  removeQuestionsFromSlotSpy,
+  loadSessionSlotsSpy,
+  loadSessionOpenQuestionsSpy,
+} = vi.hoisted(() => ({
+  cancelTurnSpy: vi.fn(async () => undefined),
+  detachInDbSpy: vi.fn(async (): Promise<ReadonlyArray<string>> => []),
+  invokeAgentListSpy: vi.fn(async (): Promise<ReadonlyArray<unknown>> => []),
+  awaitRunStoppedSpy: vi.fn(async () => true),
+  emitSpy: vi.fn(async () => undefined),
+  removeQuestionsFromSlotSpy: vi.fn(async () => true),
+  loadSessionSlotsSpy: vi.fn(async () => undefined),
+  loadSessionOpenQuestionsSpy: vi.fn(async () => undefined),
+}));
 
 vi.mock('@goodboy/db', () => ({
   detachWorkflowFromSession: detachInDbSpy,
   updateSessionState: vi.fn(async () => undefined),
+}));
+
+vi.mock('@goodboy/core', () => ({
+  removeQuestionsFromSlot: removeQuestionsFromSlotSpy,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({
@@ -169,6 +184,8 @@ const buildHarness = ({ executionMode, isPreset, agents, runningId }: HarnessPar
     clusterStepStartAttempts: perAgent(1),
     decisionRestartMarks: { [RUN_ID]: 1, [OTHER_RUN_ID]: 1 },
     emitNotification: emitSpy,
+    loadSessionSlots: loadSessionSlotsSpy,
+    loadSessionOpenQuestions: loadSessionOpenQuestionsSpy,
   };
   invokeAgentListSpy.mockResolvedValueOnce(SURVIVORS.map(agent));
   const set = vi.fn((updater: (s: typeof state) => Partial<typeof state>) => {
@@ -216,6 +233,35 @@ describe('detachWorkflowFromSession', () => {
       expect([...purgedAgentIds].sort()).toEqual([...deletedIds].sort());
     },
   );
+
+  it.each(KIND_CASES)(
+    'removes the open questions of a $kind workflow run agents from the slot',
+    async ({ executionMode, isPreset, agents, deletedIds }) => {
+      const texts = deletedIds.map((id) => `Question from ${id}?`);
+      detachInDbSpy.mockResolvedValueOnce(texts);
+      const { detach } = buildHarness({ executionMode, isPreset, agents });
+
+      await detach(SESSION_ID, RUN_ID);
+
+      expect(removeQuestionsFromSlotSpy).toHaveBeenCalledWith({}, SESSION_ID, texts);
+      expect(loadSessionSlotsSpy).toHaveBeenCalledWith(SESSION_ID);
+      expect(loadSessionOpenQuestionsSpy).toHaveBeenCalledWith(SESSION_ID);
+    },
+  );
+
+  it('reloads open questions without touching the slot when the run asked none', async () => {
+    const { detach } = buildHarness({
+      executionMode: 'static',
+      isPreset: true,
+      agents: KIND_CASES[0]!.agents,
+    });
+
+    await detach(SESSION_ID, RUN_ID);
+
+    expect(removeQuestionsFromSlotSpy).not.toHaveBeenCalled();
+    expect(loadSessionSlotsSpy).not.toHaveBeenCalled();
+    expect(loadSessionOpenQuestionsSpy).toHaveBeenCalledWith(SESSION_ID);
+  });
 
   it('stops a running agent of the run before deleting it', async () => {
     const { detach } = buildHarness({

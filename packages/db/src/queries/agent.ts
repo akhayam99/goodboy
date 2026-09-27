@@ -16,7 +16,7 @@ import type {
   WorkflowTaskProfile,
 } from '@goodboy/types';
 import { isAgentStoppedBy } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, PlainStatement } from '../client';
 import { legacyAgentRoutingDecision, parseWorkflowRouting } from './workflowRoutingCodec';
 import { isJsonArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
@@ -229,6 +229,29 @@ export const updateAgentStatus = async (
 
 const OPEN_QUESTION_TEXTS_INDEX = 2;
 
+type OpenQuestionPurgeParams = {
+  readonly prefix: string;
+  readonly agentMatch: string;
+  readonly params: ReadonlyArray<unknown>;
+};
+
+export const openQuestionPurgeStatements = ({
+  prefix,
+  agentMatch,
+  params,
+}: OpenQuestionPurgeParams): readonly [PlainStatement, PlainStatement] => [
+  {
+    sql: `${prefix} SELECT session_id, text FROM open_questions
+          WHERE created_by_agent_id ${agentMatch} AND status = 'open'`,
+    params,
+  },
+  {
+    sql: `${prefix} DELETE FROM open_questions
+          WHERE created_by_agent_id ${agentMatch} AND status = 'open'`,
+    params,
+  },
+];
+
 export const purgeAgentForDelete = async ({
   db,
   id,
@@ -240,14 +263,7 @@ export const purgeAgentForDelete = async ({
     statements: [
       { sql: 'DELETE FROM messages WHERE agent_id = ?', params: [id] },
       { sql: 'DELETE FROM turn_events WHERE agent_id = ?', params: [id] },
-      {
-        sql: "SELECT text FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
-        params: [id],
-      },
-      {
-        sql: "DELETE FROM open_questions WHERE created_by_agent_id = ? AND status = 'open'",
-        params: [id],
-      },
+      ...openQuestionPurgeStatements({ prefix: '', agentMatch: '= ?', params: [id] }),
       {
         sql: 'UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?',
         params: [Date.now(), id],
