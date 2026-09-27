@@ -38,7 +38,12 @@ import {
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
 import { buildProviderSpendBreakdown } from '../budget';
-import { reconcileLoadedAgent, reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
+import {
+  reattachableTurn,
+  reconcileLoadedAgent,
+  reconcileLoadedSessions,
+} from '../sessions/reconcileSessionRuns';
+import { reattachLiveTurn } from '../turn/reattachLiveTurn';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import { hydrateWriteDestination } from '../project-mounts/hydrateWriteDestination';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
@@ -232,6 +237,16 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         agentKindOverride: { ...state.agentKindOverride, ...kindOverridesFromDb },
         sessionExternalTasks: { ...state.sessionExternalTasks, ...externalTasksMap },
       }));
+      for (const runs of Object.values(sessionPhaseRuns)) {
+        for (const agent of runs) {
+          const turn = reattachableTurn({ agent });
+          if (turn !== null) {
+            void reattachLiveTurn({ set, get, ...turn }).catch((error) =>
+              console.error('reattach live turn failed', error),
+            );
+          }
+        }
+      }
       if (get().currentWorkspaceId === id && Object.keys(sessionWorktrees).length === 0) {
         set({ boardReady: true });
       }

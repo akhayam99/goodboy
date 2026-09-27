@@ -176,6 +176,11 @@ export const RELOAD_GAP_MESSAGE =
   'Part of this output was written while the window reloaded and could not be recovered.';
 export const RUN_GONE_MESSAGE = 'This run ended while the window reloaded.';
 
+const activeStreams = new Set<string>();
+
+export const isTurnStreamActive = ({ runId }: { readonly runId: ProviderRunId }): boolean =>
+  activeStreams.has(runId);
+
 type QueuedEvent = {
   readonly event: TurnEvent;
   readonly seq: number | null;
@@ -382,6 +387,7 @@ async function* streamTurn({
     writeTurnCursor({ runId, cursor: { seq, index, owner } });
 
   writeCursor(resumeFrom ?? { seq: 0, index: -1 });
+  activeStreams.add(runId);
 
   try {
     await begin({
@@ -426,6 +432,7 @@ async function* streamTurn({
       }
     }
   } finally {
+    activeStreams.delete(runId);
     unlisten();
     clearTurnCursor({ runId });
     if (!ended) {
