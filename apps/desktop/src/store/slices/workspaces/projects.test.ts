@@ -266,6 +266,7 @@ describe('workspace and project slices', () => {
       workspaceName: 'Demo Team',
       disconnectedAt: NOW,
       sessionCount: 48,
+      moved: null,
     });
   });
 
