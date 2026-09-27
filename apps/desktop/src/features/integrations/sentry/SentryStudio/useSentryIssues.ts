@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { sentryFetchIssues, type SentryIssue, type SentryIssuesPage } from '../client';
@@ -51,6 +51,7 @@ export const useSentryIssues = (
   workspaceId: WorkspaceId,
   isEnabled = true,
   linkedProjects: ReadonlyArray<string> = NO_LINKED_PROJECTS,
+  isReady = true,
 ): UseSentryIssues => {
   const linkedKey = [...new Set(linkedProjects)].sort().join('\n');
   const linkedSessions = useLinkedExternalIds({ providers: SENTRY_PROVIDERS });
@@ -59,9 +60,13 @@ export const useSentryIssues = (
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const generation = useRef(0);
 
   const load = useCallback(
     async (nextCursor: string | null, reset: boolean) => {
+      const current = generation.current + 1;
+      generation.current = current;
+      const isStale = (): boolean => generation.current !== current;
       if (!isEnabled) {
         setIssues([]);
         setCursor(null);
@@ -72,6 +77,9 @@ export const useSentryIssues = (
       }
       setLoading(true);
       setError(null);
+      if (!isReady) {
+        return;
+      }
       try {
         const extraSlugs = reset && linkedKey !== '' ? linkedKey.split('\n') : [];
         const [page, ...extraPages] = await Promise.all([
@@ -82,17 +90,23 @@ export const useSentryIssues = (
             ),
           ),
         ]);
+        if (isStale()) {
+          return;
+        }
         const fetched = [...page.issues, ...extraPages.flatMap((extra) => extra.issues)];
         setIssues((prev) => dedupById(reset ? fetched : [...prev, ...fetched]));
         setCursor(page.next_cursor);
         setHasMore(page.next_cursor != null);
+        setLoading(false);
       } catch (err) {
+        if (isStale()) {
+          return;
+        }
         setError(formatError(err));
-      } finally {
         setLoading(false);
       }
     },
-    [isEnabled, linkedKey, workspaceId],
+    [isEnabled, isReady, linkedKey, workspaceId],
   );
 
   useEffect(() => {

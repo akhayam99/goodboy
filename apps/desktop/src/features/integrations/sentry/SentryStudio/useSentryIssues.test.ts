@@ -119,6 +119,49 @@ describe('useSentryIssues', () => {
     expect(fetchIssues).toHaveBeenCalledTimes(3);
   });
 
+  it('does not fetch until ready, and stays loading meanwhile', async () => {
+    fetchIssues.mockResolvedValue(page([makeIssue({ id: 'a' })]));
+    const { result, rerender } = renderHook(
+      ({ isReady }: { isReady: boolean }) => useSentryIssues(WS, true, [], isReady),
+      { initialProps: { isReady: false } },
+    );
+
+    await waitFor(() => expect(result.current.loading).toBe(true));
+    expect(fetchIssues).not.toHaveBeenCalled();
+
+    rerender({ isReady: true });
+
+    await waitFor(() => expect(result.current.rows).toHaveLength(1));
+    expect(result.current.loading).toBe(false);
+  });
+
+  it('ignores an older load that fails after a newer one succeeded', async () => {
+    let rejectFirst: (reason: unknown) => void = () => undefined;
+    fetchIssues
+      .mockImplementationOnce(
+        () =>
+          new Promise<SentryIssuesPage>((_resolve, reject) => {
+            rejectFirst = reject;
+          }),
+      )
+      .mockResolvedValue(page([makeIssue({ id: 'fresh' })]));
+    const { result, rerender } = renderHook(
+      ({ linked }: { linked: ReadonlyArray<string> }) => useSentryIssues(WS, true, linked),
+      { initialProps: { linked: [] as ReadonlyArray<string> } },
+    );
+
+    rerender({ linked: ['ledger-core'] });
+    await waitFor(() => expect(result.current.rows).toHaveLength(1));
+
+    await act(async () => {
+      rejectFirst({ kind: 'http', message: 'http error: status 429 Too Many Requests' });
+    });
+
+    expect(result.current.error).toBeNull();
+    expect(result.current.loading).toBe(false);
+    expect(result.current.rows.map((row) => row.issue.id)).toEqual(['fresh']);
+  });
+
   it('exposes hasMore and forwards the cursor on loadMore, deduping across pages', async () => {
     fetchIssues
       .mockResolvedValueOnce(page([makeIssue({ id: 'a' }), makeIssue({ id: 'b' })], 'cur-1'))
