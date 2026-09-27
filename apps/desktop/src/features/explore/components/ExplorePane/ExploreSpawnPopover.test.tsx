@@ -55,7 +55,14 @@ describe('ExploreSpawnPopover', () => {
         target: { value: 'Explain the backoff' },
       },
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Start agent' }));
+    const start = screen.getByRole('button', { name: 'Start agent' });
+    expect(start.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(
+      screen
+        .getByRole('dialog', { name: 'Ask an agent about retry.ts' })
+        .querySelector('[role="separator"]'),
+    ).toBeNull();
+    fireEvent.click(start);
 
     await vi.waitFor(() => expect(h.state.spawnAgent).toHaveBeenCalledTimes(1));
     const args = h.state.spawnAgent.mock.calls[0]?.[1];
