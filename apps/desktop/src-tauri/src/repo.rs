@@ -428,9 +428,19 @@ fn project_git_status_blocking(project_path: String) -> WorkspaceGitStatus {
             in_progress: crate::worktree::in_progress_operation(root),
         };
     }
-    let upstream = crate::worktree::resolve_upstream(root);
-    let upstream_distance =
-        crate::worktree::distance_from_upstream(root, branch.as_ref(), upstream.as_ref());
+    let configured = crate::worktree::resolve_upstream(root);
+    let remote = crate::branch_remote::branch_remote(
+        root,
+        branch.as_deref(),
+        configured
+            .as_deref()
+            .map(|name| crate::branch_remote::ConfiguredUpstream {
+                name,
+                distance: None,
+            }),
+    );
+    let upstream = remote.tracking;
+    let upstream_distance = remote.distance;
     WorkspaceGitStatus {
         state: "ready",
         branch,
