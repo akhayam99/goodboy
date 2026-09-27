@@ -1597,20 +1597,27 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           finishedAt: now(),
           error: rawMessage,
         });
-        get().appendTurnEvent(activeAgentId, sessionId, {
-          kind: 'error',
-          runId,
-          message,
-          retryable: false,
-          at: now(),
-        });
+        const isGenericPassthroughFailure =
+          failure.kind === 'rate_limit' ||
+          failure.kind === 'usage_limit' ||
+          failure.kind === 'unreachable' ||
+          failure.kind === 'other';
+        if (!isGenericPassthroughFailure) {
+          get().appendTurnEvent(activeAgentId, sessionId, {
+            kind: 'error',
+            runId,
+            message,
+            retryable: false,
+            at: now(),
+          });
+        }
         const isNamedInRefusal =
           maxModeFailure == null &&
           failure.kind === 'cli_too_old' &&
           fallbackPlan.provider === provider;
         if (!isNamedInRefusal) {
           get().appendTurnEvent(activeAgentId, sessionId, {
-            kind: 'error',
+            kind: 'decision_note',
             runId,
             message: fallbackNoticeMessage({
               provider,
