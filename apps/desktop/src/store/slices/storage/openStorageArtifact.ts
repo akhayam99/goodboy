@@ -1,10 +1,12 @@
 import type { ArtifactId } from '@goodboy/types';
-import { openArtifactWindow } from '../../../features/artifacts/openArtifactWindow';
+import { openArtifactMirror } from '../../../features/artifacts/artifactMirror/artifactMirrorInvoke';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
   readonly id: ArtifactId;
 };
+
+const MIRROR_INDEX_FILE = 'index.html';
 
 export const openStorageArtifact = (set: SetFn, get: GetFn) => {
   return async ({ id }: Params): Promise<void> => {
@@ -12,11 +14,10 @@ export const openStorageArtifact = (set: SetFn, get: GetFn) => {
     if (artifact === undefined) {
       return;
     }
-    await openArtifactWindow({
-      sessionId: artifact.sessionId,
-      artifactId: artifact.id,
-      title: artifact.title,
-      mode: 'read',
+    await openArtifactMirror({
+      workspaceSlug: artifact.workspaceSlug,
+      folder: artifact.folder,
+      file: MIRROR_INDEX_FILE,
     });
     const openedAt = Date.now();
     set((state) => ({

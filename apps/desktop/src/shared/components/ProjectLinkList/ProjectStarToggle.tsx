@@ -1,8 +1,6 @@
-import { Star } from 'lucide-react';
 import type { Project } from '@goodboy/types';
-import { FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
-import { ICON_SIZE } from '../conceptIcons';
+import { StarToggle } from '../StarToggle';
 
 type Props = {
   readonly project: Project;
@@ -23,24 +21,12 @@ export const ProjectStarToggle = ({ project, busy }: Props) => {
   };
 
   return (
-    <Tooltip content="Starred projects come first for agents" anchorClassName="shrink-0">
-      <button
-        type="button"
-        aria-label={`Starred: ${project.name}`}
-        aria-pressed={isStarred}
-        disabled={busy}
-        onClick={(event) => {
-          event.stopPropagation();
-          void toggle();
-        }}
-        className={cn(
-          'inline-flex size-6 items-center justify-center rounded-md hover:bg-hover disabled:opacity-50',
-          isStarred ? 'text-warning' : 'text-faint-foreground hover:text-foreground',
-          FOCUS_RING,
-        )}
-      >
-        <Star size={ICON_SIZE.row} aria-hidden className={isStarred ? 'fill-current' : undefined} />
-      </button>
-    </Tooltip>
+    <StarToggle
+      isStarred={isStarred}
+      label={`Starred: ${project.name}`}
+      tooltip="Starred projects come first for agents"
+      disabled={busy}
+      onToggle={() => void toggle()}
+    />
   );
 };

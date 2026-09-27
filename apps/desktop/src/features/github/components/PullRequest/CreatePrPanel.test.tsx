@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   Agent,
@@ -38,7 +37,11 @@ type Store = {
   sessionExternalTasks: Record<string, ReadonlyArray<SessionExternalTask>>;
   readonly workspaces: ReadonlyArray<{ id: string; rootPath: string; kind: 'repo' }>;
   workspaceOverrides: Record<string, { readonly taskModels: TaskModelPreferences | null }>;
+  readonly requestScribe: ReturnType<typeof vi.fn<RequestScribe>>;
+  scribeWork: Record<string, unknown>;
 };
+
+type RequestScribe = (input: Readonly<Record<string, unknown>>) => Promise<string>;
 
 type ConfigProps = {
   readonly value: AgentSpawnConfigValue;
@@ -81,6 +84,8 @@ const h = vi.hoisted(() => ({
     sessionExternalTasks: {} as Record<string, ReadonlyArray<SessionExternalTask>>,
     workspaces: [{ id: 'workspace-1', rootPath: '/repo', kind: 'repo' }],
     workspaceOverrides: {},
+    requestScribe: vi.fn<RequestScribe>(async () => 'pr:mount-1'),
+    scribeWork: {} as Record<string, unknown>,
   } satisfies Store,
 }));
 
@@ -104,6 +109,7 @@ vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({
     worktreePath: '/repo/.goodboy/worktrees/card-config',
     branch: 'ak/card-config',
     mountName: null,
+    mountId: 'mount-1',
     workspaceId: 'workspace-1',
   }),
 }));
@@ -157,7 +163,7 @@ const draftingAgent = (): Agent => ({
 });
 
 const switchToAgentMode = () => {
-  fireEvent.click(screen.getByRole('tab', { name: 'With an agent' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Write it for me' }));
 };
 
 beforeEach(() => {
@@ -166,6 +172,8 @@ beforeEach(() => {
   h.store.spawnAgent.mockClear();
   h.store.navigate.mockClear();
   h.store.sessionPhaseRuns = {};
+  h.store.requestScribe.mockClear();
+  h.store.scribeWork = {};
   h.showToast.mockClear();
   h.store.workspaceOverrides = {};
   h.store.sessionExternalTasks = {};
@@ -194,6 +202,7 @@ describe('CreatePrPanel', () => {
         body: 'Documents the change.',
         base: 'main',
         draft: true,
+        isScribeBody: false,
       }),
     );
   });
@@ -245,45 +254,56 @@ describe('CreatePrPanel', () => {
     expect(await screen.findByRole('combobox', { name: 'Branch' })).toBeDefined();
   });
 
-  it('spawns a PR agent with the chosen config and operator notes', async () => {
+  it('asks Scribe for the text with the chosen config and notes, and never spawns a generalist', async () => {
     renderPanel();
     switchToAgentMode();
     fireEvent.click(screen.getByRole('button', { name: 'Choose agent config' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write it for me' }));
 
-    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
-    const args = h.store.spawnAgent.mock.calls[0]![1];
-    expect(args).toMatchObject({
-      provider: 'codex',
-      model: 'gpt-5.6-luna',
-      effort: 'medium',
+    await waitFor(() => expect(h.store.requestScribe).toHaveBeenCalledOnce());
+    expect(h.store.requestScribe.mock.calls[0]![0]).toMatchObject({
+      sessionId: SESSION_ID,
+      mountId: 'mount-1',
+      task: { kind: 'pr', closedPrNumber: null, isDraft: true },
+      hint: 'Keep the public API stable.',
+      routing: { provider: 'codex', model: 'gpt-5.6-luna', effort: 'medium' },
     });
-    expect(args.initialPrompt).toContain(
-      '\n\nOperator notes:\n---\nKeep the public API stable.\n---',
-    );
-    expect(args).toMatchObject({ focus: 'none' });
+    expect(h.store.spawnAgent).not.toHaveBeenCalled();
   });
 
-  it('sends the operator back to the overview and follows the agent from the toast action', async () => {
+  it('fills the form with the text Scribe wrote and signs the body it did not change', async () => {
+    h.store.scribeWork = {
+      'pr:mount-1': {
+        status: 'ready',
+        output: {
+          prTitle: 'Make ledger postings idempotent',
+          prBody: 'Retried batches no longer post twice.',
+          commitMessages: [],
+          changelogEntry: '- Retried batches no longer double post',
+        },
+        error: null,
+      },
+    };
     renderPanel();
-    switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
+    await screen.findByRole('combobox', { name: 'Branch' });
 
-    await waitFor(() => expect(h.showToast).toHaveBeenCalledOnce());
-    expect(h.store.navigate).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: SESSION_ID }) });
-    const action = h.showToast.mock.calls[0]![0]?.action;
-    expect(action?.label).toBe('Open the agent');
-
-    action?.onClick();
+    expect(
+      (screen.getByRole('textbox', { name: 'Pull request title' }) as HTMLInputElement).value,
+    ).toBe('Make ledger postings idempotent');
+    expect(screen.getByText('- Retried batches no longer double post')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Create PR' }));
 
     await waitFor(() =>
-      expect(h.store.navigate).toHaveBeenCalledWith({
-        to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-2' },
-      }),
+      expect(h.store.createPrForSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: 'Retried batches no longer post twice.',
+          isScribeBody: true,
+        }),
+      ),
     );
   });
 
-  it('blocks both create actions while a drafting agent runs', async () => {
+  it('blocks both create actions while a drafting agent or Scribe works', async () => {
     h.store.sessionPhaseRuns = { 'session-2': [draftingAgent()] };
     renderPanel();
     await screen.findByRole('combobox', { name: 'Branch' });
@@ -293,56 +313,18 @@ describe('CreatePrPanel', () => {
       screen.getByText('An agent is already opening a pull request for this session.'),
     ).toBeDefined();
     switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write it for me' }));
 
-    expect(h.store.spawnAgent).not.toHaveBeenCalled();
+    expect(h.store.requestScribe).not.toHaveBeenCalled();
   });
 
-  it('preserves the prompt for a whitespace-only hint', async () => {
+  it('says Scribe is writing while its turn runs', async () => {
+    h.store.scribeWork = { 'pr:mount-1': { status: 'writing', output: null, error: null } };
     renderPanel();
-    switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Set whitespace hint' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
+    await screen.findByRole('combobox', { name: 'Branch' });
 
-    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
-    const args = h.store.spawnAgent.mock.calls[0]![1];
-    expect(args).toMatchObject({
-      provider: 'anthropic',
-      model: 'sonnet-5',
-      effort: 'medium',
-    });
-    expect(args.initialPrompt).toBe(
-      [
-        `Open a GitHub pull request for this session's branch.`,
-        `- Write a clear, conventional title and a concise description from the committed changes.`,
-        `- Session goal: "Refactor PR cards".`,
-        `- If this project defines a PR-creation skill, command, or template (look under .claude/), follow it.`,
-        `- Open it as a draft PR.`,
-        `Then run \`gh pr create\` to open it and report the PR URL.`,
-      ].join('\n'),
-    );
-  });
-
-  it('uses a workspace task model loaded after mount', async () => {
-    const { rerender } = render(
-      <CreatePrPanel sessionId={SESSION_ID} defaultTitle="Refactor PR cards" onCreated={vi.fn()} />,
-    );
-    h.store.workspaceOverrides = {
-      'workspace-1': {
-        taskModels: { pr_draft: { providerId: 'codex', model: 'gpt-5.6-luna' } },
-      },
-    };
-    rerender(
-      <CreatePrPanel sessionId={SESSION_ID} defaultTitle="Refactor PR cards" onCreated={vi.fn()} />,
-    );
-    switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
-
-    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
-    expect(h.store.spawnAgent.mock.calls[0]![1]).toMatchObject({
-      provider: 'codex',
-      model: 'gpt-5.6-luna',
-    });
+    expect(screen.getByText('Scribe is writing the title and description.')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Create PR' }).hasAttribute('disabled')).toBe(true);
   });
 
   it('previews the closing reference for an issue linked on the session branch, and only that one', async () => {
@@ -393,13 +375,15 @@ describe('CreatePrPanel', () => {
     expect(screen.queryByTestId('pr-issue-reference')).toBeNull();
   });
 
-  it('tells the drafting agent to write the closing references it previewed', async () => {
+  it('hands Scribe the closing references it must not repeat', async () => {
     h.store.sessionExternalTasks = { 'session-2': [linkedIssue({})] };
     renderPanel();
     switchToAgentMode();
-    fireEvent.click(screen.getByRole('button', { name: 'Draft with agent' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Write it for me' }));
 
-    await waitFor(() => expect(h.store.spawnAgent).toHaveBeenCalledOnce());
-    expect(h.store.spawnAgent.mock.calls[0]![1].initialPrompt).toContain('Closes #41');
+    await waitFor(() => expect(h.store.requestScribe).toHaveBeenCalledOnce());
+    expect(h.store.requestScribe.mock.calls[0]![0]).toMatchObject({
+      task: { references: ['Closes #41'] },
+    });
   });
 });

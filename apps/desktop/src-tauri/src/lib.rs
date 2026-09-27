@@ -5,8 +5,10 @@ mod attachment;
 mod aux_spawn;
 mod bitbucket;
 mod boot_breadcrumb;
+mod branch_cleanup;
 mod bridge;
 mod budget;
+mod changelog_images;
 mod codex_app_server;
 mod codex_rollout;
 mod config_export;
@@ -16,7 +18,9 @@ mod editor;
 mod explore;
 mod external_terminal;
 mod file_versions;
+mod frame_protocol;
 mod github;
+mod history;
 mod gitlab;
 mod goodboy_ignore;
 mod integration_credentials;
@@ -28,6 +32,7 @@ mod path_env;
 mod permissions;
 mod planner;
 mod process_group;
+mod project_relocation;
 mod project_scripts;
 mod provider_credentials;
 mod provider_lifecycle;
@@ -137,6 +142,10 @@ pub fn run() {
                 drain_child_processes(app);
             }
         })
+        .register_asynchronous_uri_scheme_protocol(
+            frame_protocol::FRAME_SCHEME,
+            frame_protocol::handle,
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init());
 
@@ -160,6 +169,7 @@ pub fn run() {
         .manage(jira_token_cache)
         .manage(bitbucket_token_cache)
         .manage(slack_token_cache)
+        .manage(frame_protocol::FrameStages::default())
         .setup(move |app| {
             use tauri::Manager;
             query_bridge::start(app.handle().clone());
@@ -194,6 +204,7 @@ pub fn run() {
             remote_image::load_tool_image,
             local_image::local_image_read,
             releases::releases_list,
+            changelog_images::changelog_image,
             explore::explore_list,
             explore::explore_read,
             explore::explore_open,
@@ -217,8 +228,12 @@ pub fn run() {
             artifact_mirror::artifact_mirror_pending,
             artifact_mirror::artifact_mirror_locate,
             artifact_mirror::artifact_mirror_reveal,
+            artifact_mirror::artifact_mirror_open,
+            artifact_mirror::artifact_mirror_open_root,
             artifact_mirror::artifact_mirror_measure,
             artifact_mirror::artifact_mirror_remove,
+            frame_protocol::frame_stage,
+            frame_protocol::frame_release,
             artifacts::export_artifact_to_file,
             session_dir::session_dir_create,
             session_dir::session_dir_remove,
@@ -254,8 +269,17 @@ pub fn run() {
             worktree::worktree_diff_range,
             worktree::worktree_scratch_add,
             worktree::worktree_scratch_remove,
-            worktree::worktree_amend_commit,
-            worktree::worktree_squash_commits,
+            history::history_plan_predict,
+            history::history_plan_try,
+            history::history_plan_apply,
+            history::history_restore,
+            history::history_backups_list,
+            history::history_git_supported,
+            history::history_rebase_plan,
+            history::history_origin_ahead,
+            history::history_rewriter_prepare,
+            history::history_rewriter_collect,
+            history::history_copy_discard,
             worktree::worktree_diff_working,
             worktree::worktree_status,
             worktree::checkout_fast_forward,
@@ -263,6 +287,11 @@ pub fn run() {
             worktree::worktree_list_branch_names,
             worktree::worktree_repo_default_base_branch,
             worktree::worktree_branch_merge_state,
+            branch_cleanup::branch_delete_checked,
+            branch_cleanup::branch_restore,
+            branch_cleanup::branch_forget_deleted,
+            branch_cleanup::branch_head_sha,
+            branch_cleanup::project_branches,
             worktree::worktree_change_branch,
             worktree::worktree_branch_holder,
             worktree::worktree_integrate_candidate,
@@ -320,6 +349,10 @@ pub fn run() {
             repo::repo_init_with_remote,
             repo::repo_init,
             repo::scan_child_repos,
+            repo::repo_identity,
+            repo::find_moved_projects,
+            project_relocation::project_relocate,
+            project_relocation::project_relocation_undo,
             budget::budget_rule_upsert,
             budget::budget_rule_list,
             budget::budget_rule_delete,
@@ -376,13 +409,16 @@ pub fn run() {
             settings_overrides::set_workspace_overrides,
             settings_overrides::get_session_overrides,
             scroller_style::system_scroller_style,
-            config_export::export_config_to_file,
-            config_export::import_config_from_file,
+            config_export::config_export_preview,
+            config_export::config_export_write,
+            config_export::config_import_preview,
+            config_export::config_import_apply,
             github::gh_status,
             github::gh_set_token,
             github::gh_clear_token,
             github::gh_run,
             github::git_push,
+            github::git_push_with_lease,
             github::gh_pr_diff,
             integration_credentials::integration_credentials_adopt,
             integration_credentials::integration_credential_forget,
@@ -396,12 +432,16 @@ pub fn run() {
             linear::linear_update_issue,
             linear::linear_fetch_team_states,
             linear::linear_update_issue_state,
+            linear::linear_fetch_team_members,
+            linear::linear_update_issue_assignee,
             sentry::sentry_validate_connection,
             sentry::sentry_connect,
             sentry::sentry_list_organizations,
             sentry::sentry_list_projects,
             sentry::sentry_list_code_mappings,
             sentry::sentry_fetch_issues,
+            sentry::sentry_fetch_issue,
+            sentry::sentry_resolve_short_id,
             sentry::sentry_fetch_issue_detail,
             gitlab::gitlab_validate_connection,
             gitlab::gitlab_connect,

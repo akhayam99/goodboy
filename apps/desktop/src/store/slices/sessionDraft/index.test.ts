@@ -131,8 +131,10 @@ describe('session draft slice', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'scout',
+        agentKind: 'scout',
         focus: 'Look at the importer. Then the exporter.',
         prompt: 'Read this project',
+        routing: null,
       },
     });
 
@@ -157,7 +159,13 @@ describe('session draft slice', () => {
 
     await h.slice.startSessionFromDraft({
       workspaceId: WORKSPACE_ID,
-      start: { kind: 'scout', focus: 'Find one small bug', prompt: 'Read this project' },
+      start: {
+        kind: 'scout',
+        agentKind: 'scout',
+        focus: 'Find one small bug',
+        prompt: 'Read this project',
+        routing: null,
+      },
     });
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
@@ -173,13 +181,61 @@ describe('session draft slice', () => {
   it('gives a Scout with no focus a plain title and no goal', async () => {
     await h.slice.startSessionFromDraft({
       workspaceId: WORKSPACE_ID,
-      start: { kind: 'scout', focus: '  ', prompt: 'Read this project' },
+      start: {
+        kind: 'scout',
+        agentKind: 'scout',
+        focus: '  ',
+        prompt: 'Read this project',
+        routing: null,
+      },
     });
 
     expect(h.spies.createSession).toHaveBeenCalledWith({
       workspaceId: WORKSPACE_ID,
       goal: 'Scout the project',
       title: 'Scout the project',
+      omitGoalSlot: true,
+    });
+  });
+
+  it('passes a pinned routing override to spawnAgent for any role', async () => {
+    await h.slice.startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'scout',
+        agentKind: 'implementer',
+        focus: 'Build the login page',
+        prompt: 'Build the login page',
+        routing: { provider: 'anthropic', model: 'claude-sonnet-5', effort: 'medium' },
+      },
+    });
+
+    expect(h.spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
+      kindOverride: 'implementer',
+      initialPrompt: 'Build the login page',
+      focus: 'agent',
+      provider: 'anthropic',
+      model: 'claude-sonnet-5',
+      effort: 'medium',
+    });
+  });
+
+  it('gives a non-Scout role a fallback title when there is no goal text', async () => {
+    await h.slice.startSessionFromDraft({
+      workspaceId: WORKSPACE_ID,
+      start: {
+        kind: 'scout',
+        agentKind: 'implementer',
+        focus: '  ',
+        prompt: 'Build something',
+        routing: null,
+      },
+    });
+
+    expect(h.spies.createSession).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      goal: 'Implement the project',
+      title: 'Implement the project',
       omitGoalSlot: true,
     });
   });

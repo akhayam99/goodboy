@@ -51,7 +51,6 @@ export const openReviewTarget = async ({
   get,
   sessionId,
   destination = REVIEW_HOME,
-  mode,
 }: Params): Promise<ReviewTargetOutcome> => {
   if (!get().sessions.some((candidate) => candidate.id === sessionId)) {
     return unavailable('no_session');
@@ -60,7 +59,6 @@ export const openReviewTarget = async ({
   const base = {
     requestId,
     destination,
-    mode: mode ?? null,
     reason: null,
     error: null,
   };

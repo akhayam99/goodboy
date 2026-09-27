@@ -7,6 +7,8 @@ import {
   extractMaterializeRequests,
   extractScoutDomains,
   hasBlockingQuestion,
+  isLedgerOverBudget,
+  loadDecisionLedger,
   planTaskModelFallback,
   SLOT_BUDGETS,
   Summarizer,
@@ -84,7 +86,6 @@ import {
 import { buildProviderSpendBreakdown } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
-import { decisionsDelta } from './slices/session-events';
 import {
   deferredMaterializeNote,
   materializationGate,
@@ -143,6 +144,8 @@ export const toRelPath = (absPath: string, workingDir: string): string => {
 type SummarizerQueueEntry = {
   readonly turnInput: string;
   readonly turnOutput: string;
+  readonly mode?: 'turn' | 'consolidate';
+  readonly consolidatedAfter?: string;
   readonly workingDir: string | null;
   readonly oversizeRetried: boolean;
   readonly parseRetried?: boolean;
@@ -250,8 +253,13 @@ const runQueuedSummarizer = ({ set, get, sessionId, entry }: Params): void => {
       void get().maybeAutoAdvanceWorkflow(sessionId);
       return;
     }
-    queue.queued = [];
-    const next = mergeQueuedSummarizerEntries(pending);
+    const turns = pending.filter((entry) => entry.mode !== 'consolidate');
+    const consolidation = pending.filter((entry) => entry.mode === 'consolidate').at(-1);
+    queue.queued = turns.length > 0 && consolidation !== undefined ? [consolidation] : [];
+    const next =
+      turns.length > 0 || consolidation === undefined
+        ? mergeQueuedSummarizerEntries(turns.length > 0 ? turns : pending)
+        : consolidation;
     scheduleIdle({ run: () => runQueuedSummarizer({ set, get, sessionId, entry: next }) });
   });
 };
@@ -310,6 +318,39 @@ export const enqueueSummarizer = ({
       workingDir,
       oversizeRetried: false,
       ...(taskModelOverride && { taskModelOverride }),
+    },
+  });
+};
+
+type ConsolidationParams = {
+  readonly set: SetFn;
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+  readonly after: string;
+};
+
+export const enqueueContextConsolidation = ({
+  set,
+  get,
+  sessionId,
+  after,
+}: ConsolidationParams): void => {
+  const queue = summarizerQueues.get(sessionId);
+  const isQueued = queue?.queued.some((entry) => entry.mode === 'consolidate') === true;
+  if (isQueued) {
+    return;
+  }
+  enqueueSummarizerEntry({
+    set,
+    get,
+    sessionId,
+    entry: {
+      turnInput: '',
+      turnOutput: '',
+      mode: 'consolidate',
+      consolidatedAfter: after,
+      workingDir: null,
+      oversizeRetried: false,
     },
   });
 };
@@ -398,10 +439,19 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
     });
     const prevSlots = get().sessionSlots[sessionId] ?? [];
     const slotValueSnapshot = new Map(prevSlots.map((slot) => [slot.key, slot.value]));
-    const result = await summarizer.summarize({ prevSlots, turnInput, turnOutput });
+    const decisions = await loadDecisionLedger({ db: tauriDatabase, sessionId });
+    const isConsolidation = entry.mode === 'consolidate';
+    const result = await summarizer.summarize({
+      prevSlots,
+      decisions,
+      turnInput,
+      turnOutput,
+      mode: isConsolidation ? 'consolidate' : 'turn',
+    });
 
+    const slotUpserts = result.delta.upserts.filter((upsert) => upsert.key !== 'decisions');
     const upsertResults = await Promise.all(
-      result.delta.upserts.map(async (upsert) => {
+      slotUpserts.map(async (upsert) => {
         const existing = (get().sessionSlots[sessionId] ?? []).find((s) => s.key === upsert.key);
         if (existing?.value !== slotValueSnapshot.get(upsert.key)) {
           return {
@@ -435,19 +485,21 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
           upsert.previousValue !== null,
       )
       .map((upsert) => upsert.key);
-    const decisionsUpsert = upsertResults.find(
-      (upsert) => upsert.key === 'decisions' && upsert.didChange && !upsert.hasConflict,
-    );
-    if (decisionsUpsert != null) {
-      const delta = decisionsDelta({
-        previous: decisionsUpsert.previousValue ?? '',
-        next: decisionsUpsert.value,
+    if (result.delta.decisionOps.length > 0) {
+      const applied = await get().applySessionDecisionOps({
+        sessionId,
+        ops: result.delta.decisionOps,
+        actor: { author: 'summarizer', agentId: null, turnOrdinal: null },
+        ...(entry.consolidatedAfter !== undefined && {
+          consolidatedAfter: entry.consolidatedAfter,
+        }),
       });
-      if (delta.added > 0 || delta.removed > 0) {
-        await get().recordSessionEvent({
+      if (!isConsolidation && isLedgerOverBudget({ ledger: applied.ledger })) {
+        enqueueContextConsolidation({
+          set,
+          get,
           sessionId,
-          kind: 'decisions_changed',
-          payload: { added: delta.added, removed: delta.removed },
+          after: 'decisions went over budget',
         });
       }
     }

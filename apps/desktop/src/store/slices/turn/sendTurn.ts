@@ -37,6 +37,7 @@ import {
   upsertContextSlot,
 } from '@goodboy/db';
 import type {
+  Agent,
   AgentId,
   AgentTurnSpan,
   AttachmentInput,
@@ -114,7 +115,6 @@ import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { buildScopeGuard } from '../../scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
 import { clearMaterializationBatch } from '../../materializationGate';
-import { decisionsDelta } from '../session-events';
 import { flushTurnEvents } from '../transcripts/buffer';
 import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
 import {
@@ -142,6 +142,8 @@ import {
   selectWritableMounts,
 } from '../project-mounts/selectors';
 import { selectAutomaticTurnMount } from '../project-mounts/selectAutomaticTurnMount';
+import { rewriterCopyFor } from '../history/rewriterCopyFor';
+import { rewriterWritableRoots } from '../history/rewriterWritableRoots';
 import { resolveWriteDestination } from '../project-mounts/writeDestination';
 import {
   mountContinuationPrompt,
@@ -274,9 +276,19 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     if (!isFrozenTargetHeld) {
       throw new Error('the branch mount this turn was queued on changed before it could start');
     }
-    const selectedMount = aimedMount ?? selectActiveMount({ state: before, sessionId });
+    const rewriterAgentId = agentId ?? before.selectedAgentId[sessionId] ?? null;
+    const rewriterCopy =
+      rewriterAgentId === null
+        ? null
+        : rewriterCopyFor({ state: before, sessionId, agentId: rewriterAgentId });
+    const selectedMount =
+      rewriterCopy !== null
+        ? null
+        : (aimedMount ?? selectActiveMount({ state: before, sessionId }));
     const activeMount =
-      selectedMount ?? selectAutomaticTurnMount({ state: before, sessionId }) ?? undefined;
+      rewriterCopy !== null
+        ? undefined
+        : (selectedMount ?? selectAutomaticTurnMount({ state: before, sessionId }) ?? undefined);
     const turnTarget =
       activeMount === undefined
         ? null
@@ -288,7 +300,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const turnMountId = turnTarget?.mountId ?? null;
     const turnMountRevision = turnTarget?.mountRevision ?? null;
     const workingDir =
-      activeMount !== undefined ? activeMount.worktreePath : await scratchDirPrepare({ sessionId });
+      rewriterCopy !== null
+        ? rewriterCopy.copyPath
+        : activeMount !== undefined
+          ? activeMount.worktreePath
+          : await scratchDirPrepare({ sessionId });
     const isPlainSessionDir =
       activeMount !== undefined && isBranchlessSession({ branch: activeMount.branch });
     if (isPlainSessionDir) {
@@ -655,6 +671,11 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       }
     }
 
+    if (turnAgentKind === 'rewriter' && rewriterCopy === null) {
+      throw new Error('The copy this rewrite worked in is gone. Retry the rewrite from Activity.');
+    }
+    const isScribeTurn =
+      turnAgentKind === 'scribe' && get().scribeAgents[activeAgentId] !== undefined;
     const isResolverTurn = turnAgentKind === 'resolver';
     const agentRowForLease = isResolverTurn
       ? ((get().sessionPhaseRuns[sessionId] ?? []).find((row) => row.id === activeAgentId) ??
@@ -774,14 +795,28 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         ? runsForWorkflowRun(runsForSession, phaseWorkflowRunId)
         : runsForSession;
       const reusable = findReusableAgent(scopedRuns, phaseDefinition.id);
-      const resolved = await resolvePhaseAgent({
-        sessionId,
-        definition: phaseDefinition,
-        workflowRunId: phaseWorkflowRunId,
-        reusable,
-        providerRunId: runId,
-        now,
-      });
+      let resolved: Agent | null = null;
+      try {
+        resolved =
+          (await resolvePhaseAgent({
+            sessionId,
+            definition: phaseDefinition,
+            workflowRunId: phaseWorkflowRunId,
+            reusable,
+            providerRunId: runId,
+            now,
+          })) ?? null;
+      } catch (error) {
+        console.error('resolvePhaseAgent failed', error);
+      }
+      if (resolved === null) {
+        await updateProviderRunStatus(tauriDatabase, runId, {
+          kind: 'failed',
+          finishedAt: now(),
+          error: 'could not resolve the agent for this step',
+        });
+        return NOT_BLOCKED;
+      }
       resolvedAgentId = resolved.id;
       const refreshedRuns = await invokeAgentList(sessionId);
       set((state) => ({
@@ -1003,7 +1038,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
 
     const kindSystemPrompt = AGENT_KIND_DEFAULTS[earlyAgentKind].systemPrompt;
 
-    const scopeMounts = selectWritableMounts({ state: get(), sessionId });
+    const scopeMounts =
+      rewriterCopy !== null ? [] : selectWritableMounts({ state: get(), sessionId });
     const activeProject =
       activeMount !== undefined
         ? get().projects.find((project) => project.id === activeMount.projectId)
@@ -1090,11 +1126,14 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
     const gitDirs = await resolveGitCommonDirs({
       repoRoots: repoRootsForTurn({ mounts: scopeMounts }),
     });
-    const writableRoots = buildTurnWritableRoots({
-      mounts: scopeMounts,
-      workingDir,
-      gitDirs,
-    });
+    const writableRoots =
+      rewriterCopy !== null
+        ? await rewriterWritableRoots({ copyPath: rewriterCopy.copyPath })
+        : buildTurnWritableRoots({
+            mounts: scopeMounts,
+            workingDir,
+            gitDirs,
+          });
 
     resolvedPrompt = renderedHandoff.message;
 
@@ -1183,6 +1222,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...(effortFlag !== undefined && { effort: effortFlag }),
           ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
           ...(writerLease !== undefined && { writerLease }),
+          ...((rewriterCopy !== null || isScribeTurn) && { blocksPush: true }),
           ...(apiKeyBinding ?? {}),
           ...claudeFlags,
         },
@@ -1410,9 +1450,6 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         } catch {
           turnOrdinal = transcriptTurnOrdinal;
         }
-        const decisionsBefore =
-          (get().sessionSlots[sessionId] ?? []).find((slot) => slot.key === 'decisions')?.value ??
-          '';
         const result = await autoPopulateContext({
           db: tauriDatabase,
           sessionId,
@@ -1433,18 +1470,8 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           set((state) => ({
             sessionSlots: { ...state.sessionSlots, [sessionId]: refreshedSlots },
           }));
-          const delta = decisionsDelta({
-            previous: decisionsBefore,
-            next: refreshedSlots.find((slot) => slot.key === 'decisions')?.value ?? '',
-          });
-          if (delta.added > 0 || delta.removed > 0) {
-            await get().recordSessionEvent({
-              sessionId,
-              kind: 'decisions_changed',
-              payload: { added: delta.added, removed: delta.removed },
-            });
-          }
         }
+        await get().noteDecisionChanges({ sessionId, changes: result.decisionChanges });
         if (result.openQuestionsChanged) {
           await get().loadSessionOpenQuestions(sessionId);
           if (resolveAttemptId !== undefined && agentRowEarly !== null && !wasCancelled) {
@@ -1730,6 +1757,28 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         }
       }
       clearMaterializationBatch({ sessionId, batchId: runId });
+    }
+
+    if (isScribeTurn && !turnWasCancelled) {
+      void get()
+        .settleScribe({
+          sessionId,
+          agentId: activeAgentId,
+          assistantText,
+          hasFailed: lastError !== null,
+        })
+        .catch(() => undefined);
+    }
+
+    if (rewriterCopy !== null && !turnWasCancelled) {
+      void get()
+        .settleHistoryRewriter({
+          sessionId,
+          agentId: activeAgentId,
+          assistantText,
+          hasFailed: lastError !== null,
+        })
+        .catch(() => undefined);
     }
 
     if (assistantText.length > 0 && !purgedAgentIds.has(activeAgentId)) {

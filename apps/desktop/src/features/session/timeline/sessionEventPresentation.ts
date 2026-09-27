@@ -29,6 +29,8 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   worktree_created: 'plain',
   branch_created: 'plain',
   branch_switched: 'plain',
+  branch_deleted: 'muted',
+  branch_restored: 'plain',
   issue_linked: 'plain',
   issue_unlinked: 'muted',
   pr_created: PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_created].tone,
@@ -55,6 +57,10 @@ const EMPHASIS: Record<SessionEventKind, SessionEventEmphasis> = {
   write_destination_changed: 'plain',
   question_dismissed: 'muted',
   question_restored: 'plain',
+  history_rewritten: 'plain',
+  history_pushed: 'success',
+  history_stopped: 'plain',
+  history_restored: 'muted',
 };
 
 export type SessionEventGlyph = {
@@ -71,6 +77,8 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
   },
   branch_created: { icon: GitBranch, tone: 'info', label: 'Branch' },
   branch_switched: { icon: GitBranch, tone: 'info', label: 'Branch' },
+  branch_deleted: { icon: CONCEPT_ICONS.delete, tone: 'neutral', label: 'Branch' },
+  branch_restored: { icon: CONCEPT_ICONS.restore, tone: 'info', label: 'Branch' },
   issue_linked: { icon: Link2, tone: 'neutral', label: 'Issue' },
   issue_unlinked: { icon: Link2Off, tone: 'neutral', label: 'Issue' },
   pr_created: { ...PULL_REQUEST_PRESENTATION[PR_EVENT_STATE.pr_created], label: 'Pull request' },
@@ -116,6 +124,10 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
     tone: CONCEPT_TONE.questions,
     label: 'Question',
   },
+  history_rewritten: { icon: CONCEPT_ICONS.history, tone: CONCEPT_TONE.history, label: 'History' },
+  history_pushed: { icon: CONCEPT_ICONS.history, tone: 'success', label: 'History' },
+  history_stopped: { icon: CONCEPT_ICONS.history, tone: 'warning', label: 'History' },
+  history_restored: { icon: CONCEPT_ICONS.history, tone: 'neutral', label: 'History' },
 };
 
 type TimelineValueVariant = 'project' | 'branch' | 'path' | 'pull-request' | 'issue' | 'workflow';
@@ -156,8 +168,99 @@ const workflowSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
 const decisionCount = ({ count }: { readonly count: number }): string =>
   count === 1 ? '1 decision' : `${count} decisions`;
 
+const LEDGER_PARTS = ['added', 'replaced', 'withdrawn', 'merged', 'restored'] as const;
+
+const ledgerParts = ({ payload }: PayloadParams): string =>
+  LEDGER_PARTS.flatMap((key) => {
+    const count = payload?.[key] ?? 0;
+    return count > 0 ? [`${count} ${key}`] : [];
+  }).join(', ');
+
+const isLedgerPayload = ({ payload }: PayloadParams): boolean =>
+  payload?.replaced !== undefined ||
+  payload?.withdrawn !== undefined ||
+  payload?.merged !== undefined;
+
+const decisionsChangedLabel = ({ payload }: PayloadParams): string => {
+  if (payload?.consolidatedAfter !== undefined) {
+    const parts = ledgerParts({ payload });
+    const head = `Context consolidated after ${payload.consolidatedAfter}`;
+    return parts === '' ? head : `${head} · ${parts}`;
+  }
+  if (isLedgerPayload({ payload })) {
+    const parts = ledgerParts({ payload });
+    return parts === '' ? 'Decisions' : `Decisions · ${parts}`;
+  }
+  return `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`;
+};
+
 type TitleParams = {
   readonly event: SessionEvent;
+};
+
+type HistoryEventKind = Extract<SessionEventKind, `history_${string}`>;
+
+const branchSegment = ({ payload }: PayloadParams): TimelineLabelSegment =>
+  payload?.branch == null
+    ? { kind: 'text', text: 'the branch' }
+    : { kind: 'value', text: payload.branch, variant: 'branch' };
+
+const stopDetail = ({ payload }: PayloadParams): string => {
+  const files = payload?.files ?? [];
+  if (payload?.reason === 'stuck' && files.length > 0) {
+    return ` · History rewriter couldn't merge ${files.join(', ')}, it needs you`;
+  }
+  if (files.length > 0) {
+    return ` · conflict in ${files.join(', ')}`;
+  }
+  return payload?.title == null ? '' : ` · ${payload.title}`;
+};
+
+const historyEventLabel = ({
+  kind,
+  payload,
+}: {
+  readonly kind: HistoryEventKind;
+  readonly payload: SessionEventPayload | null;
+}): ReadonlyArray<TimelineLabelSegment> => {
+  const isRebase = payload?.origin === 'rebase';
+  if (kind === 'history_rewritten') {
+    const summary =
+      payload?.summary == null || payload.summary === '' ? '' : ` · ${payload.summary}`;
+    const code =
+      payload?.isTreeEqual === true
+        ? ' · same code'
+        : payload?.isTreeEqual === false
+          ? ' · the code changes'
+          : '';
+    return isRebase
+      ? [
+          { kind: 'text', text: 'Rebased ' },
+          branchSegment({ payload }),
+          { kind: 'text', text: ' on main' },
+        ]
+      : [
+          { kind: 'text', text: 'Rewrote ' },
+          branchSegment({ payload }),
+          { kind: 'text', text: `${summary}${code}` },
+        ];
+  }
+  if (kind === 'history_pushed') {
+    const pr = payload?.prNumber == null ? '' : ` · PR #${payload.prNumber} updated`;
+    return [
+      { kind: 'text', text: 'Pushed the new history of ' },
+      branchSegment({ payload }),
+      { kind: 'text', text: pr },
+    ];
+  }
+  if (kind === 'history_stopped') {
+    return [
+      { kind: 'text', text: isRebase ? 'Rebase of ' : 'Rewrite of ' },
+      branchSegment({ payload }),
+      { kind: 'text', text: ` stopped${stopDetail({ payload })}` },
+    ];
+  }
+  return [{ kind: 'text', text: 'Restored the previous history of ' }, branchSegment({ payload })];
 };
 
 export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<TimelineLabelSegment> => {
@@ -186,6 +289,24 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
             { kind: 'value', text: payload.from, variant: 'branch' },
             { kind: 'text', text: ' → ' },
             { kind: 'value', text: payload.to, variant: 'branch' },
+          ];
+    case 'branch_deleted':
+      return payload?.branch == null
+        ? [{ kind: 'text', text: 'Branch deleted' }]
+        : [
+            { kind: 'text', text: 'Deleted ' },
+            { kind: 'value', text: payload.branch, variant: 'branch' },
+            {
+              kind: 'text',
+              text: payload.onOrigin === true ? ' on this Mac and on origin' : ' on this Mac',
+            },
+          ];
+    case 'branch_restored':
+      return payload?.branch == null
+        ? [{ kind: 'text', text: 'Branch restored' }]
+        : [
+            { kind: 'text', text: 'Restored ' },
+            { kind: 'value', text: payload.branch, variant: 'branch' },
           ];
     case 'issue_linked':
       return [{ kind: 'text', text: 'Linked ' }, ...issueSegments({ payload })];
@@ -230,12 +351,7 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
     case 'workflow_deleted':
       return [workflowSegment({ payload }), { kind: 'text', text: ' deleted' }];
     case 'decisions_changed':
-      return [
-        {
-          kind: 'text',
-          text: `${decisionCount({ count: payload?.added ?? 0 })} added, ${payload?.removed ?? 0} removed`,
-        },
-      ];
+      return [{ kind: 'text', text: decisionsChangedLabel({ payload }) }];
     case 'project_materialized': {
       const branch = payload?.branch ?? '';
       const onBranch: ReadonlyArray<TimelineLabelSegment> =
@@ -339,6 +455,11 @@ export const sessionEventLabel = ({ event }: TitleParams): ReadonlyArray<Timelin
       return payload?.title == null
         ? [{ kind: 'text', text: 'Question brought back' }]
         : [{ kind: 'text', text: `Question brought back: ${payload.title}` }];
+    case 'history_rewritten':
+    case 'history_pushed':
+    case 'history_stopped':
+    case 'history_restored':
+      return historyEventLabel({ kind: event.kind, payload });
     default: {
       const exhaustive: never = event.kind;
       return exhaustive;

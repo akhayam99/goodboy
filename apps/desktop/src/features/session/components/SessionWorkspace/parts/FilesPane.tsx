@@ -5,7 +5,8 @@ import { useAppStore } from '../../../../../store';
 import { DIFF_PANE_TITLE, SessionDiffPane } from '../../../../diff/components/SessionDiffPane';
 import { FileVersionsPane } from './FileVersionsPane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
-import { BranchSurgeryMenu } from './BranchSurgeryMenu';
+import { RewriteHistoryPage } from '../../../../history/components/RewriteHistoryPage';
+import { RewriteHistoryButton } from '../../../../history/components/RewriteHistoryButton';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -23,8 +24,8 @@ export const FilesPane = ({
   onClose,
 }: Props) => {
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
-  const amendSessionCommit = useAppStore((s) => s.amendSessionCommit);
-  const squashSessionCommits = useAppStore((s) => s.squashSessionCommits);
+  const diffPage = useAppStore((s) => s.diffPage[sessionId] ?? null);
+  const openRewriteHistory = useAppStore((s) => s.openRewriteHistory);
 
   if (isBranchless) {
     if (sessionDir == null) {
@@ -54,6 +55,10 @@ export const FilesPane = ({
     );
   }
 
+  if (diffPage === 'history') {
+    return <RewriteHistoryPage sessionId={sessionId} worktreePath={worktreePath} />;
+  }
+
   return (
     <SessionDiffPane
       sessionId={sessionId}
@@ -61,19 +66,11 @@ export const FilesPane = ({
       worktreePath={worktreePath}
       diffFocus={diffFocus}
       branchRevision={0}
-      renderBranchActions={({ mountId, commits, onRewritten }) =>
-        mountId === null ? null : (
-          <BranchSurgeryMenu
-            commits={commits}
-            headSha={commits[0]?.sha ?? null}
-            onAmend={async (sha, message) => {
-              await amendSessionCommit(sessionId, { mountId, sha, message });
-              onRewritten();
-            }}
-            onSquash={async (sha, message) => {
-              await squashSessionCommits(sessionId, { mountId, sha, message });
-              onRewritten();
-            }}
+      renderBranchActions={({ mountId, commits }) =>
+        mountId === null || commits.length === 0 ? null : (
+          <RewriteHistoryButton
+            count={commits.length}
+            onOpen={() => openRewriteHistory(sessionId, worktreePath)}
           />
         )
       }

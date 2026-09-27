@@ -19,6 +19,7 @@ export {
   useExecutedAgentRouting,
   useRunSpendUsd,
   useSessionPrFetchState,
+  useSessionSlackDrafts,
   useSessionSlots,
   useSessionSlotsLoad,
   useSessionStageInfo,

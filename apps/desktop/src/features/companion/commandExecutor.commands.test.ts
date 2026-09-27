@@ -147,6 +147,15 @@ const integ = vi.hoisted(() => {
 
 vi.mock('../integrations/linear/client', () => ({
   linearFetchAssignedIssues: integ.linearFetch,
+  linearFetchIssue: async ({ issueId }: { readonly issueId: string }) => {
+    const hit = (await integ.linearFetch()).find(
+      (issue) => (issue as { readonly identifier: string }).identifier === issueId,
+    );
+    if (hit === undefined) {
+      throw new Error('graphql error: Entity not found');
+    }
+    return hit;
+  },
 }));
 vi.mock('../integrations/linear/goal-from-issue', () => ({
   goalFromIssue: ({ issue }: { issue: { identifier: string; title: string } }) =>

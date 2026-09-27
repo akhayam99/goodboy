@@ -91,9 +91,11 @@ export const ReleaseBody = ({
           {release.sections.new.map((feature) => (
             <FeatureBlock
               key={feature.title}
+              version={release.version}
               feature={feature}
               showPrRef={!showPrInMeta}
               headingLevel={featureHeadingLevel}
+              hasBefore={false}
               onOpenScreen={onOpenScreen}
             />
           ))}
@@ -105,9 +107,11 @@ export const ReleaseBody = ({
           {release.sections.improved.map((feature) => (
             <FeatureBlock
               key={feature.title}
+              version={release.version}
               feature={feature}
               showPrRef={!showPrInMeta}
               headingLevel={featureHeadingLevel}
+              hasBefore={true}
               onOpenScreen={onOpenScreen}
             />
           ))}

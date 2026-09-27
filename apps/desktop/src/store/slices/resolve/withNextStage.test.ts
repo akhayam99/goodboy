@@ -9,6 +9,7 @@ const thread = (patch: Partial<ResolveThread> = {}): ResolveThread => ({
   prNumber: 12,
   threadId: 'PRRT_1',
   originKind: 'review_comment',
+  diffCommentId: null,
   state: 'open',
   stage: 'new',
   stateReason: null,

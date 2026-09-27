@@ -24,6 +24,8 @@ import { reopenResolveQueueItem } from './reopenResolveQueueItem';
 import { takeUpResolveQueueItem } from './takeUpResolveQueueItem';
 import { ensureReviewThread } from './ensureReviewThread';
 import { materializeReviewThreads } from './materializeReviewThreads';
+import { syncNoteThreads } from './syncNoteThreads';
+import { closeResolvedNote } from './closeResolvedNote';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type {
   ResolveActions,
@@ -153,6 +155,16 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       serialize({
         sessionId: params.sessionId,
         run: () => ensureReviewThread({ set, get, ...params }),
+      }),
+    syncNoteThreads: (params: SessionParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => syncNoteThreads({ set, get, ...params }),
+      }),
+    closeResolvedNote: (params: ThreadParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => closeResolvedNote({ set, get, ...params }),
       }),
     materializeReviewThreads: (params: MaterializeParams) =>
       serialize({

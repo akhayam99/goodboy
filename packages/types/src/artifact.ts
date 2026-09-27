@@ -98,12 +98,3 @@ export type ArtifactProvenance = Readonly<{
   executingWorkflowRunId: WorkflowRunId | null;
   createdAt: IsoDateTime;
 }>;
-
-export type ArtifactRendition = Readonly<{
-  artifactId: ArtifactId;
-  revision: number;
-  format: string;
-  rendererVersion: string;
-  bytes: Uint8Array;
-  createdAt: IsoDateTime;
-}>;

@@ -22,6 +22,7 @@ export const setActiveLens = (set: SetFn) => {
           : { ...s.focusedWorkflowRunId, [sessionId]: null },
       diffFocus: lens === 'files' ? s.diffFocus : { ...s.diffFocus, [sessionId]: null },
       diffMountPath: lens === 'files' ? s.diffMountPath : { ...s.diffMountPath, [sessionId]: null },
+      diffPage: lens === 'files' ? s.diffPage : { ...s.diffPage, [sessionId]: null },
       terminalMountPath:
         lens === 'terminal' ? s.terminalMountPath : { ...s.terminalMountPath, [sessionId]: null },
       focusedArtifactId:
@@ -87,7 +88,45 @@ export const openMountDiff = (get: GetFn) => {
       to: sessionPlace({
         sessionId,
         lens: 'files',
-        target: { kind: 'diff', mountPath: worktreePath, focus: null },
+        target: {
+          kind: 'diff',
+          mountPath: worktreePath,
+          focus: null,
+          page: get().diffPage[sessionId] ?? null,
+        },
+      }),
+    });
+  };
+};
+
+export const openRewriteHistory = (get: GetFn) => {
+  return (sessionId: SessionId, worktreePath: string | null): void => {
+    get().navigate({
+      to: sessionPlace({
+        sessionId,
+        lens: 'files',
+        target: {
+          kind: 'diff',
+          mountPath: worktreePath ?? get().diffMountPath[sessionId] ?? null,
+          focus: null,
+          page: 'history',
+        },
+      }),
+    });
+  };
+};
+
+export const closeRewriteHistory = (get: GetFn) => {
+  return (sessionId: SessionId): void => {
+    get().navigate({
+      to: sessionPlace({
+        sessionId,
+        lens: 'files',
+        target: {
+          kind: 'diff',
+          mountPath: get().diffMountPath[sessionId] ?? null,
+          focus: null,
+        },
       }),
     });
   };

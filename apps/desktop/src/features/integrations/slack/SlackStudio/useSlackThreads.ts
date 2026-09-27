@@ -64,7 +64,6 @@ export type UseSlackThreads = {
   readonly groups: ReadonlyArray<SlackThreadGroup>;
   readonly channels: ReadonlyArray<SlackChannel>;
   readonly users: ReadonlyArray<SlackUser>;
-  readonly hiddenChannelCount: number;
   readonly isLoading: boolean;
   readonly error: string | null;
   readonly refetch: () => void;
@@ -81,6 +80,25 @@ export const useSlackThreads = ({ workspaceId, isEnabled }: HookParams): UseSlac
   const channelsEntry = useAppStore((state) => state.slackChannels[workspaceId] ?? null);
   const threadHeads = useAppStore((state) => state.slackThreadHeads);
   const users = useAppStore((state) => state.slackUsers[workspaceId] ?? EMPTY_ARRAY);
+  const config = useAppStore(
+    (state) =>
+      state.workspaceIntegrations[workspaceId]?.find((entry) => entry.provider === 'slack')
+        ?.config ?? null,
+  );
+
+  const selectedChannelIds = useMemo(
+    () => new Set(config?.followedChannels.map((channel) => channel.id) ?? []),
+    [config],
+  );
+  const selectChannels = useCallback(
+    (channels: ReadonlyArray<SlackChannel>): ReadonlyArray<SlackChannel> => {
+      if (config?.hasSelectedChannels !== true) {
+        return channels.slice(0, CHANNEL_FETCH_CAP);
+      }
+      return channels.filter((channel) => selectedChannelIds.has(channel.id));
+    },
+    [config?.hasSelectedChannels, selectedChannelIds],
+  );
 
   const load = useCallback(async () => {
     if (!isEnabled) {
@@ -91,15 +109,15 @@ export const useSlackThreads = ({ workspaceId, isEnabled }: HookParams): UseSlac
       store.refreshSlackChannels({ workspaceId }),
       store.refreshSlackUsers({ workspaceId }),
     ]);
-    const channels = useAppStore.getState().slackChannels[workspaceId]?.channels ?? [];
-    await Promise.all(
-      channels
-        .slice(0, CHANNEL_FETCH_CAP)
-        .map((channel) =>
-          useAppStore.getState().refreshSlackThreadHeads({ workspaceId, channelId: channel.id }),
-        ),
+    const channels = selectChannels(
+      useAppStore.getState().slackChannels[workspaceId]?.channels ?? [],
     );
-  }, [workspaceId, isEnabled]);
+    await Promise.all(
+      channels.map((channel) =>
+        useAppStore.getState().refreshSlackThreadHeads({ workspaceId, channelId: channel.id }),
+      ),
+    );
+  }, [workspaceId, isEnabled, selectChannels]);
 
   useEffect(() => {
     void load();
@@ -110,8 +128,8 @@ export const useSlackThreads = ({ workspaceId, isEnabled }: HookParams): UseSlac
   }, [load]);
 
   const visibleChannels = useMemo(
-    () => (channelsEntry?.channels ?? EMPTY_ARRAY).slice(0, CHANNEL_FETCH_CAP),
-    [channelsEntry],
+    () => selectChannels(channelsEntry?.channels ?? EMPTY_ARRAY),
+    [channelsEntry, selectChannels],
   );
 
   const headsByChannelId = useMemo(() => {
@@ -139,10 +157,6 @@ export const useSlackThreads = ({ workspaceId, isEnabled }: HookParams): UseSlac
     groups,
     channels: channelsEntry?.channels ?? EMPTY_ARRAY,
     users,
-    hiddenChannelCount: Math.max(
-      0,
-      (channelsEntry?.channels ?? EMPTY_ARRAY).length - CHANNEL_FETCH_CAP,
-    ),
     isLoading:
       channelsEntry?.loading === true || headEntries.some((entry) => entry?.loading === true),
     error: channelsEntry?.error ?? headError,

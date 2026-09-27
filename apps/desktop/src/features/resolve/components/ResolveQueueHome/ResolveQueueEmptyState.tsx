@@ -1,24 +1,15 @@
-import { AlertTriangle, CheckCheck, Inbox } from 'lucide-react';
+import { AlertTriangle, CheckCheck, MessageSquare } from 'lucide-react';
 import { Button, EmptyState, FilledEmptyState } from '@goodboy/ui';
 
 export const NothingWaitingState = () => (
   <FilledEmptyState icon={CheckCheck} tone="neutral" title="No open comments on GitHub" />
 );
 
-type NoPullRequestProps = {
-  readonly onOpenReview: () => void;
-};
-
-export const NoResolveTargetState = ({ onOpenReview }: NoPullRequestProps) => (
+export const NoOpenNotesState = () => (
   <EmptyState
-    icon={Inbox}
-    title="No pull request"
-    description="Open Review to create or select a pull request."
-    action={
-      <Button size="sm" variant="secondary" onClick={onOpenReview}>
-        Open review
-      </Button>
-    }
+    icon={MessageSquare}
+    title="No open notes"
+    description="Leave a note on a line in the diff. It shows up here, ready to resolve."
   />
 );
 

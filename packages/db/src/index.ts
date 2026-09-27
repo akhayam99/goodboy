@@ -51,10 +51,12 @@ export {
   disconnectProject,
   reconnectProject,
   updateProjectKind,
+  updateProjectAfterMerge,
   updateProjectBaseBranch,
   updateProjectStar,
   updateProjectDescription,
   updateProjectGoodboyIgnore,
+  updateProjectIdentity,
 } from './queries/project';
 export {
   recordSecurityFindings,
@@ -64,6 +66,21 @@ export {
   dismissSecurityFinding,
   flagSecurityFindingAgain,
 } from './queries/security-finding';
+export {
+  getDraftHistoryPlan,
+  hasPushedHistoryPlan,
+  markHistoryPlan,
+  saveDraftHistoryPlan,
+} from './queries/history-plan';
+export {
+  insertDeletedBranch,
+  listDeletedBranches,
+  getDeletedBranch,
+  markDeletedBranchRestored,
+  listExpiredDeletedBranches,
+  forgetDeletedBranch,
+} from './queries/deleted-branch';
+export { listGoodboyBranches, type GoodboyBranch } from './queries/goodboy-branch';
 export {
   describeProjectAdoption,
   moveProjectToWorkspace,
@@ -110,6 +127,7 @@ export {
   type ArchivedSessionRef,
 } from './queries/session';
 export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/session-context-seen';
+export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
   attachWorkflowToSession,
   detachWorkflowFromSession,
@@ -314,9 +332,9 @@ export {
   insertDiffComment,
   listDiffCommentsForSession,
   resolveDiffComment,
-  consumeDiffComments,
   reopenDiffComment,
   deleteDiffComment,
+  type DiffCommentAuthor,
 } from './queries/diff-comment';
 export {
   insertPrReviewDraft,
@@ -343,9 +361,12 @@ export {
 } from './queries/notification';
 export {
   insertNudgeEvent,
+  listNudgeEvents,
   updateNudgeEventOutcome,
   type ListNudgeEventsOptions,
+  type NextStepNudgeKind,
   type NudgeEvent,
+  type NudgeEventKind,
   type NudgeKind,
   type NudgeOutcome,
 } from './queries/nudge-event';
@@ -394,6 +415,17 @@ export {
   type UpdateArtifactSourceInput,
 } from './queries/artifact';
 export {
+  annotateArtifactRevision,
+  listArtifactRevisions,
+  loadArtifactRevision,
+  type ArtifactRevision,
+  type ArtifactRevisionAuthor,
+  type ArtifactRevisionNote,
+  type ArtifactRevisionPin,
+  type ArtifactRevisionPinnedNode,
+  type ArtifactRevisionSummary,
+} from './queries/artifactRevision';
+export {
   putArtifactProvenance,
   getArtifactProvenance,
   updateArtifactRun,
@@ -431,6 +463,13 @@ export {
   type OpenQuestionAnswerProvenance,
   type MarkOpenQuestionAnswersDeliveredParams,
 } from './queries/open-question';
+
+export {
+  listPendingSlackDrafts,
+  listPendingSlackDraftsForSession,
+  listPendingIntegrationDraftsForWorkspace,
+  decideIntegrationDraft,
+} from './queries/integration-draft';
 
 export {
   listResolveThreads,
@@ -493,3 +532,10 @@ export {
   listProjectSentryLinks,
   removeProjectSentryLink,
 } from './queries/project-sentry-link';
+export {
+  listStarredIssues,
+  starIssue,
+  unstarIssue,
+  unstarClosedIssues,
+  updateStarredIssueSnapshots,
+} from './queries/starred-issue';

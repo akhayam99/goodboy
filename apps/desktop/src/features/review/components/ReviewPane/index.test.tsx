@@ -62,9 +62,10 @@ const h = vi.hoisted(() => {
     openDiffLens: vi.fn(),
     selectAgent: vi.fn(async () => undefined),
     reportError: vi.fn(async () => undefined),
-    reviewModes: {} as Record<string, string>,
-    setReviewMode: vi.fn(({ sessionId, mode }: { sessionId: string; mode: string }) => {
-      state.reviewModes = { ...state.reviewModes, [sessionId]: mode };
+    navigate: vi.fn(),
+    pullRequestModes: {} as Record<string, string>,
+    setPullRequestMode: vi.fn(({ sessionId, mode }: { sessionId: string; mode: string }) => {
+      state.pullRequestModes = { ...state.pullRequestModes, [sessionId]: mode };
       for (const listener of listeners) {
         listener();
       }
@@ -92,6 +93,7 @@ vi.mock('../../../../store', async () => {
     useCurrentWorkspace: () => ({ id: 'workspace-1', name: 'goodboy' }),
     useDiffComments: (sessionId: string) => h.state.diffComments[sessionId] ?? [],
     useSessionById: () => ({ id: 'session-1', workspaceId: 'workspace-1' }),
+    sessionPlace: (params: Record<string, unknown>) => ({ kind: 'session', ...params }),
   };
 });
 vi.mock('../../../../store/slices/github/activeProjectPrs', () => ({
@@ -261,7 +263,7 @@ const seed = () => {
   h.state.sessionExternalTasks = {};
   h.state.branchPrs = [];
   h.state.prWriteClaims = {};
-  h.state.reviewModes = {};
+  h.state.pullRequestModes = {};
 };
 
 const patchPr = (patch: Record<string, unknown>) => {
@@ -291,47 +293,6 @@ describe('ReviewPane', () => {
     expect(screen.queryByRole('listbox', { name: 'Review conversations' })).toBeNull();
   });
 
-  it('reaches PR details from the dock and comes back to the queue through the crumb', () => {
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR details' }));
-    expect(screen.queryByTestId('resolve-queue')).toBeNull();
-    expect(h.state.reviewModes[SESSION_ID]).toBe('pr_details');
-    expect(screen.getByRole('region', { name: 'PR details' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Back to conversations' })).toBeNull();
-
-    act(() => h.state.setReviewMode({ sessionId: SESSION_ID, mode: 'queue' }));
-    expect(screen.getByTestId('resolve-queue')).toBeDefined();
-  });
-
-  it('puts the mode body in the same page column as the pull request header', () => {
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR activity' }));
-
-    const title = screen.getByRole('heading', {
-      level: 1,
-      name: 'Retry failed requests before opening the connection',
-    });
-    const body = screen.getByRole('region', { name: 'PR activity' });
-    const widthOf = (node: HTMLElement) =>
-      (node.closest('[data-page-column]')?.className ?? '')
-        .split(' ')
-        .filter((entry) => entry === 'mx-auto' || entry.startsWith('max-w-'))
-        .join(' ');
-    expect(widthOf(title)).toContain('mx-auto');
-    expect(widthOf(body)).toBe(widthOf(title));
-  });
-
-  it('drops back to the queue when the pane unmounts', () => {
-    const { unmount } = render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR details' }));
-    unmount();
-
-    expect(h.state.reviewModes[SESSION_ID]).toBe('queue');
-  });
-
   it('leaves a thread target for the queue to consume', () => {
     h.state.reviewTargets = {
       [SESSION_ID]: {
@@ -346,28 +307,6 @@ describe('ReviewPane', () => {
     render(<ReviewPane session={SESSION} />);
 
     expect(h.state.consumeReviewTarget).not.toHaveBeenCalled();
-  });
-
-  it('opens the mode a target names and then releases it', () => {
-    h.state.reviewTargets = {
-      [SESSION_ID]: {
-        requestId: 'req-2',
-        status: 'ready',
-        destination: { kind: 'home' },
-        mode: 'checks',
-        reason: null,
-        error: null,
-      },
-    };
-    render(<ReviewPane session={SESSION} />);
-
-    expect(screen.getByRole('button', { name: 'Checks' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(h.state.consumeReviewTarget).toHaveBeenCalledWith({
-      sessionId: SESSION_ID,
-      requestId: 'req-2',
-    });
   });
 
   it('holds the queue on a pending target instead of switching mode early', () => {
@@ -403,186 +342,6 @@ describe('ReviewPane', () => {
     expect(h.state.consumeReviewTarget).not.toHaveBeenCalled();
   });
 
-  it('names the action on a pull request lifecycle failure', async () => {
-    h.state.markPrReady.mockRejectedValueOnce(new Error('branch is protected'));
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /^Mark ready/ }));
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Mark #248 ready for review?' })).getByRole(
-        'button',
-        { name: 'Mark ready' },
-      ),
-    );
-
-    await waitFor(() =>
-      expect(h.state.reportError).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "Couldn't mark #248 ready", sessionId: SESSION.id }),
-      ),
-    );
-    expect(h.showToast).not.toHaveBeenCalled();
-  });
-
-  it('says what marking a draft ready sends before it sends it', () => {
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /^Mark ready/ }));
-
-    expect(h.state.markPrReady).not.toHaveBeenCalled();
-    const confirm = screen.getByRole('group', { name: 'Mark #248 ready for review?' });
-    expect(within(confirm).getByText(/cannot be unsent/)).toBeDefined();
-
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Mark ready' }));
-
-    expect(h.state.markPrReady).toHaveBeenCalledWith(SESSION.id, 248);
-  });
-
-  it('names what closing sends to GitHub, and what survives it', () => {
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /^Close/ }));
-
-    expect(h.state.closePr).not.toHaveBeenCalled();
-    const confirm = screen.getByRole('group', { name: 'Close #248 without merging?' });
-    expect(within(confirm).getByText(/The branch and its commits stay/)).toBeDefined();
-
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Close it' }));
-
-    expect(h.state.closePr).toHaveBeenCalledWith(SESSION.id, 248);
-  });
-
-  it('names the branch pair the merge squashes, and what it leaves alone', () => {
-    patchPr({ isDraft: false });
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /^Merge/ }));
-
-    expect(h.state.mergePr).not.toHaveBeenCalled();
-    const confirm = screen.getByRole('group', { name: 'Squash merge #248?' });
-    expect(
-      within(confirm).getByText(
-        /Every commit on feature\/retry lands on main as one.*The branch is not deleted\./,
-      ),
-    ).toBeDefined();
-  });
-
-  it('refuses the merge before the press when the branch conflicts', () => {
-    patchPr({ isDraft: false, mergeable: false });
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
-
-    expect(merge.disabled).toBe(true);
-    expect(merge.textContent).toContain('Resolve the conflicts with main first');
-
-    fireEvent.click(merge);
-    expect(screen.queryByRole('group', { name: 'Squash merge #248?' })).toBeNull();
-  });
-
-  it('draws an uncomputed mergeable as unknown rather than as the good case', () => {
-    patchPr({ isDraft: false, mergeable: null, checks: 'pending' });
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
-
-    expect(merge.disabled).toBe(false);
-    fireEvent.click(merge);
-
-    const confirm = screen.getByRole('group', { name: 'Squash merge #248?' });
-    expect(
-      within(confirm).getByText('GitHub has not finished checking whether this branch merges'),
-    ).toBeDefined();
-    expect(within(confirm).getByText('Checks are still running')).toBeDefined();
-  });
-
-  it('names what GitHub may still refuse on a mergeable pull request', () => {
-    patchPr({ isDraft: false, mergeable: true, reviewDecision: 'review_required' });
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /^Merge/ }));
-
-    const confirm = screen.getByRole('group', { name: 'Squash merge #248?' });
-    expect(within(confirm).getByText('GitHub can still refuse this merge')).toBeDefined();
-    expect(within(confirm).getByText('A review is still requested')).toBeDefined();
-  });
-
-  it('holds back every write while another surface is already writing this pull request', () => {
-    patchPr({ isDraft: false });
-    h.state.prWriteClaims = {
-      'project-1#248': {
-        key: 'project-1#248',
-        windowLabel: 'win-other',
-        action: 'merge',
-        startedAt: Date.now(),
-      },
-    };
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
-    const close = screen.getByRole('menuitem', { name: /^Close/ }) as HTMLButtonElement;
-
-    expect(merge.disabled).toBe(true);
-    expect(close.disabled).toBe(true);
-    expect(merge.textContent).toContain('Goodboy is already merging #248');
-  });
-
-  it('says why a merged pull request cannot merge again', () => {
-    patchPr({ state: 'merged', isDraft: false });
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
-
-    expect(merge.disabled).toBe(true);
-    expect(merge.textContent).toContain('This pull request is already merged');
-  });
-
-  it('says a closed pull request has to come back before it merges', () => {
-    patchPr({ state: 'closed', isDraft: false });
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
-
-    expect(merge.disabled).toBe(true);
-    expect(merge.textContent).toContain('Reopen this pull request before merging');
-  });
-
-  it('says GitHub already owns the merge once it is set to go', () => {
-    patchPr({ state: 'queued', isDraft: false });
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
-
-    expect(merge.disabled).toBe(true);
-    expect(merge.textContent).toContain('GitHub is already set to merge this pull request');
-  });
-
-  it('backs out of a confirm without touching GitHub', () => {
-    render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: /^Close/ }));
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'Close #248 without merging?' })).getByRole(
-        'button',
-        { name: 'Cancel' },
-      ),
-    );
-
-    expect(h.state.closePr).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'PR actions' })).toBeDefined();
-  });
-
   it('offers one publication review anchor for work approved but not sent', () => {
     render(<ReviewPane session={SESSION} />);
 
@@ -608,47 +367,42 @@ describe('ReviewPane', () => {
     });
   });
 
-  it('drafts a pull request inline when the session has none', () => {
+  it('keeps Review on the notes when the session has no pull request', () => {
     h.state.sessionGithub = {
       [SESSION_ID]: { pr: null, detail: null, detailLoading: false, detailError: null },
     };
     render(<ReviewPane session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Draft a pull request' }));
-
-    expect(screen.getByTestId('create-pr')).toBeDefined();
+    expect(screen.getByTestId('resolve-queue')).toBeDefined();
+    expect(screen.getByText('No pull request')).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'PR details' })).toBeNull();
   });
 
-  it('submits the review from Write review and returns to the queue', async () => {
-    h.state.reviewDrafts = {
-      [SESSION_ID]: [{ id: 'draft-1', status: 'draft' } as unknown as never],
+  it('opens the new pull request page from the header when the session has none', () => {
+    h.state.sessionGithub = {
+      [SESSION_ID]: { pr: null, detail: null, detailLoading: false, detailError: null },
     };
     render(<ReviewPane session={SESSION} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Write review (1)' }));
-    expect(screen.getByTestId('write-review')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Open pull request' }));
 
-    expect(screen.getByRole('button', { name: '1 draft' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
-    await waitFor(() => expect(h.state.publishPrReview).toHaveBeenCalledTimes(1));
-
-    act(() => h.state.setReviewMode({ sessionId: SESSION_ID, mode: 'queue' }));
-    expect(screen.getByTestId('resolve-queue')).toBeDefined();
+    expect(h.state.setPullRequestMode).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mode: 'create_pr',
+    });
+    expect(h.state.navigate).toHaveBeenCalled();
   });
 
-  it('never opens a dialog on any primary path', async () => {
-    h.state.preparePublication.mockImplementation(async () => {
-      h.state.activePublicationPreview = { [SESSION_ID]: previewOf({}) };
-      return h.state.activePublicationPreview[SESSION_ID];
+  it('keeps the dock to the publication and links the pull request page from the header', () => {
+    render(<ReviewPane session={SESSION} />);
+
+    for (const name of [/Write review/, /PR details/, /PR activity/, /^Checks$/]) {
+      expect(screen.queryByRole('button', { name })).toBeNull();
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Open pull request #248' }));
+    expect(h.state.setPullRequestMode).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mode: 'overview',
     });
-    const { rerender } = render(<ReviewPane session={SESSION} />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Review publication' }));
-    await waitFor(() => expect(h.state.preparePublication).toHaveBeenCalled());
-    rerender(<ReviewPane session={SESSION} />);
-    fireEvent.click(screen.getByRole('button', { name: 'PR activity' }));
-
-    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

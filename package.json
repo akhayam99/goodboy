@@ -1,6 +1,6 @@
 {
   "name": "goodboy",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "description": "AI workspace orchestrator. Local-first, provider-agnostic.",
   "license": "FSL-1.1-MIT",
@@ -29,6 +29,7 @@
     "check:tauri-commands": "node scripts/check-tauri-commands.mjs",
     "check:doc-refs": "node scripts/check-doc-refs.mjs",
     "release:kind": "node scripts/release-kind.mjs",
+    "changelog:shots": "node scripts/changelog-shots.mjs",
     "codemod:type-roles": "node scripts/codemods/type-roles.mjs",
     "prepare": "lefthook install"
   },

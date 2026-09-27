@@ -12,6 +12,7 @@ const harness = () => {
     setSessionActiveMount: vi.fn(async () => undefined),
     navigate: vi.fn(),
     openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
+    setPullRequestMode: vi.fn(),
   };
   const get = vi.fn(() => state) as unknown as GetFn;
   const set = vi.fn() as unknown as SetFn;
@@ -36,16 +37,23 @@ describe('openMountRequest', () => {
     expect(state.navigate).not.toHaveBeenCalled();
   });
 
-  it('opens review on the create mode when the mount carries no request yet', async () => {
+  it('opens the new pull request form when the mount carries no request yet', async () => {
     const { state, run } = harness();
 
     await run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'github' });
 
-    expect(state.openReviewTarget).toHaveBeenCalledWith({
+    expect(state.setSessionActiveMount).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
-      destination: { kind: 'mount', mountId: MOUNT_ID },
+      mountId: MOUNT_ID,
+    });
+    expect(state.setPullRequestMode).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
       mode: 'create_pr',
     });
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'pr' }),
+    });
+    expect(state.openReviewTarget).not.toHaveBeenCalled();
   });
 
   it('carries a thread to the review target', async () => {
@@ -75,6 +83,27 @@ describe('openMountRequest', () => {
     await expect(
       run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'github', requestNumber: 12 }),
     ).resolves.toEqual({ kind: 'unavailable', reason: 'no_mount' });
+  });
+
+  it('reports a failed outcome instead of opening when the mount switch fails', async () => {
+    const { state, run } = harness();
+    state.setSessionActiveMount.mockRejectedValueOnce(new Error('mount is busy'));
+
+    await expect(
+      run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'github' }),
+    ).resolves.toEqual({ kind: 'failed', error: 'mount is busy' });
+    expect(state.navigate).not.toHaveBeenCalled();
+    expect(state.setPullRequestMode).not.toHaveBeenCalled();
+  });
+
+  it('reports a failed outcome for a non-github provider too', async () => {
+    const { state, run } = harness();
+    state.setSessionActiveMount.mockRejectedValueOnce(new Error('mount is busy'));
+
+    await expect(
+      run({ sessionId: SESSION_ID, mountId: MOUNT_ID, provider: 'gitlab' }),
+    ).resolves.toEqual({ kind: 'failed', error: 'mount is busy' });
+    expect(state.navigate).not.toHaveBeenCalled();
   });
 
   it('keeps gitlab and bitbucket on their own mount scoped studios, through navigate', async () => {

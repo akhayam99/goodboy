@@ -14,6 +14,7 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import type { Database } from '../client';
+import { artifactRevisionInsert, type ArtifactRevisionNote } from './artifactRevision';
 import { isWorkflowRoutingProposal } from './workflowRoutingCodec';
 
 type ArtifactRow = {
@@ -47,6 +48,7 @@ export type InsertArtifactInput = {
   readonly metadata: SessionArtifact['metadata'];
   readonly status?: ArtifactStatus;
   readonly sourceTurnId?: string | null;
+  readonly note?: ArtifactRevisionNote;
 };
 
 export type UpdateArtifactSourceInput = {
@@ -55,6 +57,7 @@ export type UpdateArtifactSourceInput = {
   readonly sourceFormat: ArtifactSourceFormat;
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
+  readonly note?: ArtifactRevisionNote;
 };
 
 type DatabaseParams = {
@@ -275,30 +278,43 @@ export const insertArtifact = async ({
   input,
 }: DatabaseParams & { readonly input: InsertArtifactInput }): Promise<SessionArtifact> => {
   const metadata = metadataForWrite({ kind: input.kind, value: input.metadata });
+  const metadataJson = JSON.stringify(metadata);
   const now = Date.now();
-  await db.execute(
-    `INSERT INTO session_artifacts (
+  await db.transaction({
+    statements: [
+      {
+        sql: `INSERT INTO session_artifacts (
        id, session_id, agent_id, workflow_run_id, kind, schema_version, title,
        source_format, source_text, metadata_json, status, revision, source_turn_id,
        created_at, updated_at
      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
-    [
-      input.id,
-      input.sessionId,
-      input.agentId,
-      input.workflowRunId ?? null,
-      input.kind,
-      input.schemaVersion,
-      input.title,
-      input.sourceFormat,
-      input.sourceText,
-      JSON.stringify(metadata),
-      input.status ?? 'active',
-      input.sourceTurnId ?? null,
-      now,
-      now,
+        params: [
+          input.id,
+          input.sessionId,
+          input.agentId,
+          input.workflowRunId ?? null,
+          input.kind,
+          input.schemaVersion,
+          input.title,
+          input.sourceFormat,
+          input.sourceText,
+          metadataJson,
+          input.status ?? 'active',
+          input.sourceTurnId ?? null,
+          now,
+          now,
+        ],
+      },
+      artifactRevisionInsert({
+        artifactId: input.id,
+        title: input.title,
+        sourceText: input.sourceText,
+        metadataJson,
+        note: input.note ?? { author: 'agent' },
+        createdAt: now,
+      }),
     ],
-  );
+  });
   const artifact = await selectArtifact({ db, artifactId: input.id });
   if (artifact === null) {
     throw new Error(`Artifact insert failed: ${input.id}`);
@@ -399,6 +415,7 @@ export const updateArtifactSource = async ({
     throw new Error(`Artifact not found: ${input.id}`);
   }
   const metadata = metadataForWrite({ kind: existing.kind, value: input.metadata });
+  const metadataJson = JSON.stringify(metadata);
   const now = Date.now();
   const outcome = await db.transaction({
     statements: [
@@ -407,18 +424,18 @@ export const updateArtifactSource = async ({
          SET title = ?, source_format = ?, source_text = ?, metadata_json = ?,
              revision = revision + 1, updated_at = ?
          WHERE id = ?`,
-        params: [
-          input.title,
-          input.sourceFormat,
-          input.sourceText,
-          JSON.stringify(metadata),
-          now,
-          input.id,
-        ],
+        params: [input.title, input.sourceFormat, input.sourceText, metadataJson, now, input.id],
         abortWhen: 'noChanges',
         abortCode: ARTIFACT_GONE,
       },
-      { sql: 'DELETE FROM artifact_renditions WHERE artifact_id = ?', params: [input.id] },
+      artifactRevisionInsert({
+        artifactId: input.id,
+        title: input.title,
+        sourceText: input.sourceText,
+        metadataJson,
+        note: input.note ?? { author: 'user' },
+        createdAt: now,
+      }),
     ],
   });
   if (outcome.status === 'aborted') {

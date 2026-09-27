@@ -16,7 +16,7 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'plan', status: 'active', isRunning: false })).toEqual({
       primary: 'runPlan',
       secondary: 'edit',
-      overflow: ['openWindow', 'print', 'copySource', 'saveSource', 'showInFinder', 'discard'],
+      overflow: ['openInBrowser', 'copySource', 'saveSource', 'showInFinder', 'discard'],
     });
   });
 
@@ -24,7 +24,7 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'plan', status: 'consumed', isRunning: false })).toEqual({
       primary: null,
       secondary: 'runAgain',
-      overflow: ['openWindow', 'print', 'copySource', 'saveSource', 'showInFinder'],
+      overflow: ['openInBrowser', 'copySource', 'saveSource', 'showInFinder'],
     });
   });
 
@@ -38,7 +38,7 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'plan', status: 'consumed', isRunning: true })).toEqual({
       primary: null,
       secondary: null,
-      overflow: ['openWindow', 'print', 'copySource', 'saveSource', 'showInFinder'],
+      overflow: ['openInBrowser', 'copySource', 'saveSource', 'showInFinder'],
     });
   });
 
@@ -54,15 +54,15 @@ describe('artifactActions', () => {
     expect(actionsOf({ kind: 'report', status: 'active' })).toEqual({
       primary: null,
       secondary: 'edit',
-      overflow: ['openWindow', 'print', 'regenerate', 'copySource', 'saveSource', 'showInFinder'],
+      overflow: ['openInBrowser', 'regenerate', 'copySource', 'saveSource', 'showInFinder'],
     });
   });
 
-  it('gives a wireframe Export as its secondary and the variant under More', () => {
+  it('gives a wireframe Open in browser as its secondary and the copies under More', () => {
     expect(actionsOf({ kind: 'wireframe', status: 'active' })).toEqual({
       primary: null,
-      secondary: 'export',
-      overflow: ['newVariant', 'openWindow', 'print', 'showInFinder'],
+      secondary: 'openInBrowser',
+      overflow: ['copySource', 'saveSource', 'showInFinder', 'newVariant'],
     });
   });
 

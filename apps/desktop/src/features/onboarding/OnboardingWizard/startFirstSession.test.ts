@@ -13,7 +13,7 @@ vi.mock('../../../store', () => ({
   useAppStore: { getState: () => store },
 }));
 
-import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/ScoutStart';
+import { scoutKickoffPrompt } from '../../session/components/SessionKickoff/AgentStart';
 import { handOffFirstSession, startFirstScout } from './startFirstSession';
 
 const WORKSPACE_ID = 'workspace-harborline' as WorkspaceId;
@@ -42,8 +42,10 @@ describe('startFirstScout', () => {
       workspaceId: WORKSPACE_ID,
       start: {
         kind: 'scout',
+        agentKind: 'scout',
         focus: 'Find one small bug',
         prompt: scoutKickoffPrompt({ focus: 'Find one small bug' }),
+        routing: null,
       },
     });
   });

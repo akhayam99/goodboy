@@ -1,7 +1,8 @@
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
-import { extractStepDone } from '@goodboy/core';
+import { extractStepDone, runsForWorkflowRun } from '@goodboy/core';
 import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { composeStepBoundary } from '../../kickoff';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
@@ -128,6 +129,20 @@ export const finalizeWorkflowStep = (set: SetFn, get: GetFn) => {
       };
     });
     void get().refreshUnreadWorkspaces();
+    const session = get().sessions.find((candidate) => candidate.id === sessionId);
+    const run = session?.workflowRuns.find((candidate) => candidate.id === workflowRunId);
+    const workflow =
+      run === undefined || session === undefined
+        ? null
+        : ((get().phaseTemplates[session.workspaceId] ?? []).find(
+            (template) => template.id === run.workflowId,
+          ) ?? null);
+    if (
+      run !== undefined &&
+      isWorkflowRunComplete({ run, workflow, agents: runsForWorkflowRun(refreshed, run.id) })
+    ) {
+      get().consolidateSessionContext({ sessionId, after: 'the run finished' });
+    }
     return { shouldAutoAdvance: true };
   };
 };

@@ -3,7 +3,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import type { DayGroup } from '../../../../shared/utils/groupByDay';
 import { integrationLabel } from '../../../integrations/components/IntegrationGlyph';
 import type { InboxProvider, InboxRecord } from '../../types';
-import { InboxRow, inboxOptionId } from './InboxRow';
+import { InboxRow, inboxOptionId, type InboxRowStar } from './InboxRow';
 
 export type InboxLoadFailure = {
   readonly provider: InboxProvider;
@@ -22,6 +22,7 @@ type Props = {
   readonly onRetry: () => void;
   readonly onOpenSettings: () => void;
   readonly onClearFilters: () => void;
+  readonly starOf?: (record: InboxRecord) => InboxRowStar | undefined;
 };
 
 type FailureTitleParams = {
@@ -48,6 +49,7 @@ export const InboxList = ({
   onRetry,
   onOpenSettings,
   onClearFilters,
+  starOf,
 }: Props) => {
   const visibleCount = days.reduce((sum, day) => sum + day.items.length, 0);
   const isShowingSkeleton = isLoading && totalCount === 0;
@@ -163,6 +165,7 @@ export const InboxList = ({
                       record={record}
                       selected={record.key === selectedKey}
                       onSelect={onSelect}
+                      star={starOf?.(record)}
                     />
                   </li>
                 ))}

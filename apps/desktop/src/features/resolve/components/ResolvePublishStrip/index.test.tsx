@@ -12,6 +12,7 @@ const SESSION_ID = 'session-1' as SessionId;
 
 const h = vi.hoisted(() => {
   const state = {
+    diffComments: {},
     sessionResolveQueueItems: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolvePublications: {} as Record<string, ReadonlyArray<unknown>>,
     sessionResolveAttempts: {} as Record<string, ReadonlyArray<unknown>>,

@@ -239,6 +239,13 @@ const firstMeaningfulLine = (value: string): string => {
   return line === undefined ? '' : line.trim();
 };
 
+const BAR_NUMBER_RE = /-?\d+(?:\.\d+)?/;
+
+const barMagnitude = (value: string): number => {
+  const match = value.match(BAR_NUMBER_RE);
+  return match === null ? 0 : Math.abs(Number(match[0]));
+};
+
 type RenderParams = {
   readonly block: Block;
   readonly id: string;
@@ -542,6 +549,79 @@ const renderBlock = ({ block, id, variant, depth }: RenderParams): ReactNode => 
             </li>
           ))}
         </ol>
+      );
+    }
+    case 'compare': {
+      if (variant === 'preview') {
+        return (
+          <div key={key} className={PREVIEW_LINE_CLASS}>
+            Before / After
+          </div>
+        );
+      }
+      return (
+        <div key={key} data-block="compare" className="grid grid-cols-2 gap-4">
+          <div
+            data-block="compare-col"
+            data-side="before"
+            className="flex min-w-0 flex-col gap-1.5"
+          >
+            <Eyebrow label="Before" />
+            <div className="flex flex-col gap-2">
+              {block.before.map((child, ci) =>
+                renderBlock({ block: child, id: `${key}-be${ci}`, variant, depth: depth + 1 }),
+              )}
+            </div>
+          </div>
+          <div data-block="compare-col" data-side="after" className="flex min-w-0 flex-col gap-1.5">
+            <Eyebrow label="After" />
+            <div className="flex flex-col gap-2">
+              {block.after.map((child, ci) =>
+                renderBlock({ block: child, id: `${key}-af${ci}`, variant, depth: depth + 1 }),
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+    case 'bars': {
+      if (variant === 'preview') {
+        return renderKitPreview({ key, entries: block.entries });
+      }
+      const max = Math.max(1, ...block.entries.map((entry) => barMagnitude(entry.value)));
+      return (
+        <div key={key} data-block="bars" className="flex flex-col gap-2.5">
+          {block.entries.map((entry, ei) => {
+            const width = Math.max(4, Math.round((barMagnitude(entry.value) / max) * 300));
+            return (
+              <div key={`${key}-ba${ei}`} data-block="bar" className="flex flex-col gap-1">
+                <span className="text-eyebrow text-muted-foreground">
+                  {renderInline(entry.label, `${key}-ba${ei}-l`, variant)}
+                </span>
+                <svg
+                  width="100%"
+                  height="10"
+                  viewBox="0 0 300 10"
+                  preserveAspectRatio="none"
+                  role="img"
+                  aria-label={entry.value}
+                >
+                  <rect data-block="bar-track" width="300" height="10" rx="3" />
+                  <rect data-block="bar-fill" width={width} height="10" rx="3" />
+                </svg>
+                <span className="text-secondary text-muted-foreground">
+                  {renderInline(entry.value, `${key}-ba${ei}-v`, variant)}
+                  {entry.hint !== null && (
+                    <>
+                      {' · '}
+                      {renderInline(entry.hint, `${key}-ba${ei}-h`, variant)}
+                    </>
+                  )}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       );
     }
     case 'pagebreak':

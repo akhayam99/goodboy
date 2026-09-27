@@ -69,6 +69,100 @@ const HOT_SLICE_KEYS: ReadonlySet<string> = new Set([
 
 const WHOLE_SLICE_TAIL = /^(?:state|s|store)\.([A-Za-z_$][\w$]*)$/;
 
+const OPENERS: Readonly<Record<string, string>> = { '(': ')', '[': ']', '{': '}' };
+
+const skipString = (source: string, start: number): number => {
+  const quote = source[start];
+  for (let i = start + 1; i < source.length; i++) {
+    if (source[i] === '\\') {
+      i++;
+      continue;
+    }
+    if (source[i] === quote) {
+      return i;
+    }
+  }
+  return source.length;
+};
+
+const matchingClose = (source: string, start: number): number => {
+  const stack: string[] = [];
+  for (let i = start; i < source.length; i++) {
+    const ch = source[i] ?? '';
+    if (ch === "'" || ch === '"' || ch === '`') {
+      i = skipString(source, i);
+      continue;
+    }
+    const closer = OPENERS[ch];
+    if (closer !== undefined) {
+      stack.push(closer);
+      continue;
+    }
+    if (ch === stack[stack.length - 1]) {
+      stack.pop();
+      if (stack.length === 0) {
+        return i;
+      }
+    }
+  }
+  return -1;
+};
+
+const isWholeLiteral = (expr: string): boolean => {
+  const trimmed = expr.trim();
+  const opener = trimmed[0];
+  if (opener !== '[' && opener !== '{') {
+    return false;
+  }
+  const close = matchingClose(trimmed, 0);
+  return close !== -1 && /^[\s;]*$/.test(trimmed.slice(close + 1));
+};
+
+const unwrapParens = (expr: string): string => {
+  const trimmed = expr.trim();
+  if (!trimmed.startsWith('(')) {
+    return trimmed;
+  }
+  const close = matchingClose(trimmed, 0);
+  if (close === -1 || trimmed.slice(close + 1).trim() !== '') {
+    return trimmed;
+  }
+  return unwrapParens(trimmed.slice(1, close));
+};
+
+const RETURN_LITERAL = /\breturn\s*(?=[[{(])/g;
+
+const blockReturnsLiteral = (block: string): boolean => {
+  let match: RegExpExecArray | null;
+  RETURN_LITERAL.lastIndex = 0;
+  while ((match = RETURN_LITERAL.exec(block)) !== null) {
+    const start = match.index + match[0].length;
+    const close = matchingClose(block, start);
+    if (close === -1) {
+      continue;
+    }
+    const expr = unwrapParens(block.slice(start, close + 1));
+    const after = block.slice(close + 1).trimStart();
+    if (isWholeLiteral(expr) && /^(?:[;}]|$)/.test(after)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const selectorReturnsLiteral = (body: string): boolean => {
+  const arrow = body.indexOf('=>');
+  if (arrow === -1) {
+    return false;
+  }
+  const expr = body.slice(arrow + 2).trim();
+  if (expr.startsWith('{')) {
+    const close = matchingClose(expr, 0);
+    return close !== -1 && blockReturnsLiteral(expr.slice(1, close));
+  }
+  return isWholeLiteral(unwrapParens(expr));
+};
+
 type BadCall = {
   readonly file: string;
   readonly line: number;
@@ -127,7 +221,8 @@ function checkFile(path: string): FileReport {
       continue;
     }
     const tail = selectorTail(body);
-    const isUnstable = UNSTABLE_TAIL_PATTERNS.some((re) => re.test(tail));
+    const isUnstable =
+      selectorReturnsLiteral(body) || UNSTABLE_TAIL_PATTERNS.some((re) => re.test(tail));
     if (!isUnstable) {
       continue;
     }
@@ -135,6 +230,30 @@ function checkFile(path: string): FileReport {
   }
   return { unstable, wholeSlice };
 }
+
+describe('the literal selector detector', () => {
+  it.each([
+    '(state) => ({ sessions: state.sessions, agents: state.agents })',
+    '(state) => [state.sessions, state.agents]',
+    's => ({ ...s.drafts })',
+    '(state) => { const id = state.currentSessionId; return { id, busy: state.busy }; }',
+    '(state) => { if (!state.ready) { return null; } return [state.a, state.b]; }',
+    "(state) => ({ label: 'a) b', count: state.count })",
+  ])('flags %s', (body) => {
+    expect(selectorReturnsLiteral(body)).toBe(true);
+  });
+
+  it.each([
+    '(state) => state.sessions',
+    '(state) => state.sessions.find((session) => session.id === id) ?? null',
+    '(state) => [...state.ids].sort().join(",")',
+    '(state) => { const ids = [state.a]; return ids.length; }',
+    '(state) => { return [state.a, state.b].join("|"); }',
+    '(state) => state.drafts[id]?.text ?? ""',
+  ])('passes %s', (body) => {
+    expect(selectorReturnsLiteral(body)).toBe(false);
+  });
+});
 
 describe('no unstable useAppStore selectors without useShallow', () => {
   const files = listSourceFiles(SRC_ROOT);

@@ -1,4 +1,3 @@
-export { resolveDetailFields, type ResolvedDetailFields } from './resolveDetailFields';
 export { resolveFacts } from './resolveFacts';
 export { recordByline, relativeTimeNode } from './recordByline';
 export { linearIssueFields } from './linearIssueFields';

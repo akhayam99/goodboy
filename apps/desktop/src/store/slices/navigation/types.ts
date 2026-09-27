@@ -19,6 +19,7 @@ export type SessionTarget =
       readonly kind: 'diff';
       readonly mountPath: string | null;
       readonly focus: DiffFocus | null;
+      readonly page?: 'history' | null;
     }
   | { readonly kind: 'terminal'; readonly mountPath: string }
   | { readonly kind: 'thread'; readonly threadId: string };

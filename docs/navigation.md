@@ -237,22 +237,54 @@ dot with `Draft in progress` while a written draft waits. `Discard draft` in
 the header empties it; Esc never does. Back returns to the draft like any
 other place.
 
-The draft asks one question, "How do you want to start?", with three options
-in a single-select list.
+The draft asks one question, "How do you want to start?", with three choices
+on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
 
 - **Pick up a task** shows the open issues of the connected trackers with a
   search field. Picking one and pressing **Pick up** proposes the brief under
   the list, as the issue brief flow in [concepts.md](concepts.md) describes.
   Use brief, Edit or Use issue text starts the session. Without a tracker it
-  shows the connect links.
+  shows the connect links. The search, like the Inbox search, reads an issue
+  code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
+  `owner/repo#482`, a tracker URL; anything else stays a local filter). When
+  no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
+  right tracker once (300 ms after typing, cached two minutes): a key goes to
+  Jira when it matches the Jira project, otherwise to Linear and Jira;
+  `#N` goes to every GitHub or GitLab repo of the workspace's projects (four
+  GitHub calls at a time); a short id resolves across the Sentry organization
+  (`sentry_resolve_short_id`). Hits sit in a `Not in your inbox` group above
+  the list (`InboxLookupGroup`) and open or pick up like any other issue;
+  a miss is one row in that group that says why (not found or not visible,
+  key rejected with `Sign in again`, missing permission, rate limited or
+  unreachable with `Try again`, tracker not connected, no repo for `#N`).
+  The mobile companion resolves Linear, Sentry and GitLab issues through the
+  same direct lookups instead of searching only the issues assigned to you.
+  Issues can be starred (`StarToggle`, the same star as projects) from an
+  Inbox row, a lookup hit or `s` on the selected row. Stars live per
+  workspace (`workspace_starred_issues`, keyed by provider and external id;
+  GitHub keys by `owner/repo#N`) with the last copy of identifier, title and
+  state, so the `Starred` group draws before any tracker answers. In the
+  Inbox it sits under `Not in your inbox` and above the days, and a starred
+  issue leaves the days; open ones come first, closed ones at the bottom
+  with `Unstar closed` and `Undo`, and one the tracker no longer returns
+  reads `Can't reach NW-230 anymore`. Pick up a task shows only the open
+  starred issues, even ones a session already picked up. Opening the Inbox
+  or Pick up a task refreshes the stars through the same lookups, at most
+  every five minutes (`refreshStarredIssues`).
 - **Run a workflow** asks for the goal and a preset, then **Run workflow**
   starts it with that goal.
-- **Not sure yet** takes an optional focus, then **Start Scout** starts a Scout
-  that reads the project and suggests where to start.
+- **Ask an agent** (`AgentStart`) is the real chat composer's field: role and
+  model sit below it as chips (`AgentStartFields`), opening the same role grid
+  and model picker `Start agent` uses. The role defaults to Scout every time,
+  never the last one picked, because a habitual Implementer writes code you
+  did not ask for. Scout alone can start with an empty field ("Start Scout on
+  the whole project", which reads the project and changes nothing); every
+  other role needs a prompt first. The model chip reads Auto until pinned.
 
-Only the selected option's primary shows. The list preselects Pick up a task
-when a tracker has open issues and Run a workflow otherwise, and it never
-remembers the last choice. Opening the draft puts focus on the question.
+Only the selected tab's panel, and only its primary, shows. The tabs
+preselect Pick up a task when a tracker has open issues and Run a workflow
+otherwise, and they never remember the last choice. Opening the draft puts
+focus on the selected tab.
 
 **Start is the only way a session is born from the draft.** The primary
 creates the session and starts the work in one gesture
@@ -332,12 +364,16 @@ activity yet show the plain overview with its actions.
   and `New artifact` (opens the kind picker) on their pages, `Stop this step`
   while a step runs and `Retry step` when it failed or is blocked
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
-  artifact. An attempt offers no `Resolve again`: a new attempt needs the
-  instruction the Review page asks for.
+  artifact. An attempt offers `Resolve again` once no attempt on that comment
+  is queued or running: it starts a new attempt with the Review page's default
+  instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
   that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
-N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. It never
+N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. A
+  branch whose pull request merged reads `Merged` even with no git ancestry
+  (a squash merge), in the menu and in the Diff header alike
+  (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
 - **The resolver's page reads Review, the comment, Agent.** The comment segment
   (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
@@ -345,7 +381,9 @@ N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. It neve
   that comment.
 - **Settings claims its studio band** with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
-  Tools; the section segment lists the App sections. The first segment of a
+  Tools; the section segment lists the App sections. Neither carries an
+  action: Settings has no project scope, so there is no `Use workspace values`
+  to offer. The first segment of a
   studio has no menu: studios change from the footer.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
@@ -505,12 +543,14 @@ items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
 ticks when an agent finishes a turn, not when a session row exists.
 
-Right: Inbox, Workflows and Settings. Settings always opens App > General,
-with or without a workspace; Workspace settings opens only from the gear on
-the current-workspace row of the workspace popover. Providers & models is a Settings scope, reached from the
-Settings rail and the palette, so it has no footer launcher. Impact opens from
-the spend figure and the palette, Changelog from the Goodboy chip and the
-palette, so neither earns a footer entry.
+Right: Inbox, Workflows, Impact and Settings. Settings always opens App >
+General, with or without a workspace; Workspace settings opens only from the
+gear on the current-workspace row of the workspace popover. Impact is a
+destination, so it has a launcher; the launcher opens its Overview tab, while
+the spend figure in the top bar and the `Impact: Spend` palette entry open its
+Spend tab. Providers & models is a Settings scope, reached from the Settings
+rail and the palette, so it has no footer launcher. Changelog opens from the
+Goodboy chip and the palette, so it earns no footer entry either.
 
 The footer is an `@container/footer` on the same `chrome-labels` step as the
 top bar. Below it, every launcher label and the **Link integration** label
@@ -666,7 +706,26 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  Below the worktrees, "Artifacts from deleted sessions" lists plans, reports
+  Below the worktrees, `Branches` (`BranchesSection`) lists local branches
+  only, in the same scope, grouped by project. It scans only when it opens:
+  one `git for-each-ref` per project (`project_branches`), with the merge
+  test cached by both tips. A filter picks `Made by Goodboy` (the default,
+  branch names from `session_worktrees` and `retained_worktree_paths`),
+  `Yours` (plus branches whose tip is authored by the repo's `user.email`,
+  shown `By you`) or `All local`; protected branches never show. Tabs split
+  `Safe to delete` (merged by merge commit, rebase or squash, or never
+  used), `Needs a look` (unmerged and gone on origin, local only for over 30
+  days, or older than 90 days; never preselected) and `All`. Each row has
+  the session chip (`SessionChip`: stage dot, title, stage word, opens the
+  session), `On origin` / `Local only` / `Gone on origin`, the verdict and
+  the last commit's age. Delete goes through an InlineConfirm in the bulk
+  bar that counts the commits an unmerged branch takes with it and offers
+  `Also delete N on origin` only for Goodboy's own pushed branches in repos
+  where GitHub does not already delete merged branches. Deletes use the
+  same compare-and-delete and 14-day restore as the after-merge rule; a
+  success Notice carries `Undo` for the batch. A branch another worktree
+  holds reads Protected, so its folder goes first from Worktrees.
+  Below that, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
@@ -696,7 +755,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   an undismissed finding (`selectSecurityFindingsAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
   `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). Danger zone reads in `text-danger`. Panel sections sit on
+  workspace). Integrations carries a faint inventory subtitle with no dot,
+  "N of M connected" over the whole integration catalog
+  (`connectedInventory`). Danger zone reads in `text-danger`. Panel sections sit on
   bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,
@@ -704,9 +765,10 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   a 32px grid row (star, kind, name, description, a base-branch chip only
   when set by hand, a Folder-not-found flag) with Open in editor, Copy path
   and Unlink in a reserved column, dim at rest; clicking the name opens an
-  inline editor below the row for the rest (description, base branch,
-  folder, facts, footer actions). New session defaults sit in a
-  two-column grid with each help behind an info mark, and disconnecting is a
+  inline editor below the row for the rest (description, base branch, After
+  merge for repos, folder, facts, footer actions). New session defaults sit in a
+  two-column grid with each help behind an info mark, followed by the
+  `After a pull request merges` segmented control, and disconnecting is a
   ghost row at the bottom that asks with `InlineConfirm`. Onboarding keeps the
   comfortable rows.
 - **Master-detail is not the dual-sidebar anti-pattern.** A narrow list rail
@@ -779,23 +841,28 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   Creating or configuring stays in a popover, navigating stays in the sidebar,
   and an object you work on is a child page in the trail. See
   [The right drawer](#the-right-drawer).
-- **Review is the pull request destination for GitHub, and it has no second
-  copy.** The lens is Review, its list of review threads is Conversations
-  (heading, back links and the overview action say so), and Resolve stays a
-  verb on the actions that settle a thread. One lens holds the review conversations, the PR details, the PR
-  activity, the checks, the create-a-PR form and the reviewer's own draft
-  review. They are detail modes of that one surface, switched from its dock,
-  and each mode swaps in for the conversation list like any other detail. An
-  open mode is a child crumb (`Overview > Review > PR details`), and the Review
-  crumb is the way back to the conversations: there is no second back bar. The
-  mode lives in the store per session and drops back to the conversations when
-  the lens closes. There
-  is no GitHub studio layered over a session: a saved `pr` lens on a GitHub
-  session lands on Review. The code-host lens still serves GitLab and
-  Bitbucket, which open their own studios. Everything the lens shows comes from
-  one durable conversation model. Everything it sends goes out through one
-  publisher. So a restart finds the same rows in the same states, and no second
-  path pushes a reply or closes a thread.
+- **Review is where the session's code is discussed; the pull request page is
+  where it ships.** The lens is Review, its list is Conversations (heading,
+  back links and the overview action say so), and Resolve stays a verb on the
+  actions that settle a thread. Review exists with or without a pull request:
+  without one it is one root with a `No pull request` header and the session's
+  notes (see Pull request review in `docs/concepts.md`). Its dock holds only the
+  publication, and its header links the pull request page (`PR #528 ›`).
+  The `pr` lens is the pull request page on GitHub too (`Merge request` on
+  GitLab, still their own studios there). Its trail is
+  `Overview › Pull request › #528`, and `#528` opens a menu of the session's
+  pull requests by branch, with `New pull request`. The page header carries the
+  state action (`Merge`, `Mark ready for review`), `Write review` and `GitHub`.
+  The body reads, in order: one warning with `Resolve in Review` when
+  conversations wait or a reviewer asked for changes, otherwise the merge
+  readiness note; then Details, Checks and Activity. `Write review` is a child
+  page (`Overview › Pull request › #528 › Write review`) with the submit dock;
+  without a pull request the page is the creation form
+  (`Overview › Pull request › New`). The child page lives in the store per
+  session and drops back to the page when the lens closes. Everything Review
+  shows comes from one durable conversation model and everything it sends goes
+  out through one publisher, so a restart finds the same rows in the same
+  states, and no second path pushes a reply or closes a thread.
 - **The resolver stays in Review.** A resolver exists for one comment, so its
   home is that comment, never the Agents lens. The conversation panel has two
   tabs, `Comment` and `Agent`; `Agent` shows the resolver's live transcript and
@@ -877,13 +944,38 @@ on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U op
 Decisions and Summary. The first open shows Summary, later ones the last tab
 used in that session. The chip says `2 new` when decisions were added since the
 Decisions tab was last shown (`sessions.context_seen_at`, counted from the
-`added` of `decisions_changed` events), and opens on Decisions then; it shows
+`added` and `replaced` of `decisions_changed` events; withdrawals never count),
+and opens on Decisions then; it shows
 a pulsing dot while the summarizer writes and a danger glyph when it failed,
 with Retry in the drawer's status line. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary` resolve in
 `canonicalLocation` to the overview with this drawer open on the matching tab.
 The drawer header has one action, **Copy as brief**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
+
+The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)):
+active decisions newest first, each with its number, at most two lines of
+text, and who settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
+`replaces 5`). A row added or replaced since the previous look carries `New`
+until the next open (`sessionDecisionsBaseline`, the `context_seen_at` before
+this one). A row the summarizer reworded says `Reworded by Goodboy` with
+**Show previous**. On hover a row offers edit (a reword of yours) and
+Withdraw, with no confirm because the bottom group, **Replaced and withdrawn**,
+offers Restore; its rows are struck through, point at the decision that
+replaced them (`→ 7` scrolls there and highlights it), and quote the reason.
+The dock adds a decision of yours on Enter. While the summarizer writes, rows
+stay readable and every edit waits. A row that arrives while the drawer is open
+comes in with `Reveal` (200ms), and a reworded text fades in (180ms,
+`animate-text-swap`); both are `motion-safe`, so reduced motion swaps at once.
+
+In Activity, a `decisions_changed` row that carries `decisionChanges` is a
+disclosure: the row toggles (`Show changes` / `Hide changes`, `aria-expanded`)
+a diff under it, `+ D12`, `D3 → D12` with the reason, `− D5` with the
+withdrawal reason, at most six lines, and **Open in Context**, which opens the
+drawer on Decisions with those numbers in `payload.highlight` (highlighted for
+2.4s, the closed group opened when one of them is there). The expanded row
+adds the diff's fixed height (`decisionChangeDetail`) to its item before
+`layoutTimelineRail`, so the rail and lanes run through it.
 
 The `artifact` kind carries `{ artifactId, tab }`, with `tab` either `details`
 or `chat`. The artifact shell opens it from its `Chat` and `Details` buttons;
@@ -939,9 +1031,43 @@ The Diff lens shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. The header speaks only for that branch:
 meta `repo · N commits · state word`, one primary chosen from the branch state
 (`Rebase on main` when it is behind main, `Push branch` when it is local only
-with commits, none otherwise), the history rewrite menu and `⋯` (Refresh, Open
+with commits, none otherwise), `Rewrite history` with the commit count and `⋯` (Refresh, Open
 all in editor, Copy branch name, Copy patch). Every rewrite takes the shown
-mount's `mountId`, never the active mount. `Branch vs main` sits in the file
+mount's `mountId`, never the active mount. `Rebase on main` replays the
+branch on origin with the history engine and runs no agent. The engine first
+predicts the replay in memory; when it conflicts, the button reads
+`Rebase on main · N conflicts` and the tooltip names the files, and only then
+the hidden History rewriter merges the edits in a throwaway copy. The branch
+moves only after the engine checks the result, with a backup ref and a push
+with lease.
+
+`Rewrite history` is a child page of the branch: the trail reads
+`Overview › Diff › <branch> › Rewrite history`, the branch segment leads back
+to the Diff, and picking another branch from its popover keeps you on Rewrite
+history. The page lists the commits since main, newest first, split into
+`Only here` and `On origin`, over the merge base that is not editable. Each
+row has a verb column (Pick, Reword, Squash into the one below, Fold into,
+Drop, Move up or down) and every verb carries one line that says what happens
+to the code and to the message; the word fixup never shows. The keys are the
+ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move; a row can also be dragged onto another by its grip, and it lands where that row was.
+Nothing touches git while you edit: the plan is a draft saved per worktree in
+`history_plans`, and once the plan rests for a second the engine predicts it in memory
+with `git merge-tree`. The dock says what changes (`1 reword · 1 dropped`),
+whether the code changes, and `No conflicts expected`; when an edit breaks
+the plan it names that edit (`Moving 5b3e91f above 7c2d8a1 will conflict`)
+and offers `Rewrite with an agent` or undoing the change. `Apply and push`
+first replays the plan in a throwaway copy, then moves the branch with a
+backup ref and pushes with a lease; `Apply here, push later` stops before the
+push. Commits already on origin can be rewritten too: the dock counts them,
+names the pull request that updates, and the first push that rewrites origin
+on a branch asks once in an `InlineConfirm`. The push always carries
+`--force-with-lease` on the origin sha read at apply, never a bare force; if
+origin moved, nothing is pushed and the dock offers `Bring them into the plan`, which fetches the commits origin gained, replays them on top of the rewrite in a copy and leaves `Push with lease` on the new origin sha. After an apply the dock
+reads `Rewritten here · origin has the old history` with `Push with lease`
+and `Undo rewrite`. Every move leaves a backup under `refs/goodboy/backup/`,
+kept 30 days; `Backups` in the page menu lists them with `Restore previous
+history`, which moves the branch back and, on a branch with an upstream,
+pushes it with a lease. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
@@ -952,8 +1078,8 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The Diff lens docks `N open notes`, the resolver routing chip and
-`Propose fixes`; Write review docks `N drafts` and `Submit review`, whose
+The Diff lens docks `N notes` and `Resolve in Review`, which opens Review on
+the same notes; Write review docks `N drafts` and `Submit review`, whose
 popover holds the summary and the verdict. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 

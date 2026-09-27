@@ -112,6 +112,7 @@ enum SlackCallSpec<'a> {
         channel: &'a str,
         thread_ts: &'a str,
         text: &'a str,
+        signature: Option<&'a str>,
     },
     AddReaction {
         channel: &'a str,
@@ -190,14 +191,11 @@ fn slack_call(base: &str, spec: &SlackCallSpec<'_>) -> SlackCall {
             channel,
             thread_ts,
             text,
+            signature,
         } => SlackCall {
             method: reqwest::Method::POST,
             url: format!("{base}/chat.postMessage"),
-            body: Some(serde_json::json!({
-                "channel": channel,
-                "thread_ts": thread_ts,
-                "text": text
-            })),
+            body: Some(post_reply_body(channel, thread_ts, text, *signature)),
         },
         SlackCallSpec::AddReaction {
             channel,
@@ -248,10 +246,12 @@ fn with_cursor_spec<'a>(spec: &SlackCallSpec<'a>, cursor: Option<&'a str>) -> Sl
             channel,
             thread_ts,
             text,
+            signature,
         } => SlackCallSpec::PostReply {
             channel,
             thread_ts,
             text,
+            signature: *signature,
         },
         SlackCallSpec::AddReaction {
             channel,
@@ -263,6 +263,22 @@ fn with_cursor_spec<'a>(spec: &SlackCallSpec<'a>, cursor: Option<&'a str>) -> Sl
             name,
         },
     }
+}
+
+fn post_reply_body(channel: &str, thread_ts: &str, text: &str, signature: Option<&str>) -> Value {
+    let mut body = serde_json::json!({
+        "channel": channel,
+        "thread_ts": thread_ts,
+        "text": text
+    });
+    let Some(signature) = signature.filter(|value| !value.trim().is_empty()) else {
+        return body;
+    };
+    body["blocks"] = serde_json::json!([
+        {"type": "section", "text": {"type": "mrkdwn", "text": text}},
+        {"type": "context", "elements": [{"type": "mrkdwn", "text": signature}]}
+    ]);
+    body
 }
 
 fn error_for_status(status: u16, retry_after: Option<&str>, body: &str) -> Option<SlackError> {
@@ -467,18 +483,18 @@ struct SlackAuthTestRaw {
 pub struct SlackConnection {
     pub team_id: String,
     pub team_name: String,
-    pub bot_user_id: String,
-    pub bot_user_name: String,
+    pub user_id: String,
+    pub user_name: String,
 }
 
 fn map_connection(raw: SlackAuthTestRaw) -> SlackConnection {
     let team_id = raw.team_id.unwrap_or_default();
-    let bot_user_id = raw.user_id.unwrap_or_default();
+    let user_id = raw.user_id.unwrap_or_default();
     SlackConnection {
         team_name: raw.team.clone().unwrap_or_else(|| team_id.clone()),
         team_id,
-        bot_user_name: raw.user.unwrap_or_else(|| bot_user_id.clone()),
-        bot_user_id,
+        user_name: raw.user.unwrap_or_else(|| user_id.clone()),
+        user_id,
     }
 }
 
@@ -807,6 +823,7 @@ async fn post_reply(
     channel: &str,
     thread_ts: &str,
     text: &str,
+    signature: Option<&str>,
 ) -> Result<SlackMessage, SlackError> {
     let envelope = send_call(
         token,
@@ -816,6 +833,7 @@ async fn post_reply(
                 channel,
                 thread_ts,
                 text,
+                signature,
             },
         ),
     )
@@ -848,24 +866,24 @@ async fn add_reaction(
 #[tauri::command]
 pub async fn slack_validate_connection(
     credential_id: String,
-    bot_token: Option<String>,
+    user_token: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<SlackConnection, SlackError> {
-    let bot_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, bot_token, &cache.0)?;
-    reject_bot_token(&bot_token)?;
-    validate_connection(API_BASE, &bot_token).await
+    let user_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, user_token, &cache.0)?;
+    reject_bot_token(&user_token)?;
+    validate_connection(API_BASE, &user_token).await
 }
 
 #[tauri::command]
 pub async fn slack_connect(
     credential_id: String,
-    bot_token: Option<String>,
+    user_token: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<(), SlackError> {
-    let bot_token =
-        integration_credentials::secret_to_verify(PROVIDER, &credential_id, bot_token, &cache.0)?;
-    integration_credentials::store_secret(&credential_id, &bot_token, &cache.0)?;
+    let user_token =
+        integration_credentials::secret_to_verify(PROVIDER, &credential_id, user_token, &cache.0)?;
+    integration_credentials::store_secret(&credential_id, &user_token, &cache.0)?;
     Ok(())
 }
 
@@ -931,10 +949,19 @@ pub async fn slack_post_reply(
     channel_id: String,
     thread_ts: String,
     text: String,
+    signature: Option<String>,
     cache: State<'_, SlackTokenCache>,
 ) -> Result<SlackMessage, SlackError> {
     let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
-    post_reply(API_BASE, &token, &channel_id, &thread_ts, &text).await
+    post_reply(
+        API_BASE,
+        &token,
+        &channel_id,
+        &thread_ts,
+        &text,
+        signature.as_deref(),
+    )
+    .await
 }
 
 #[tauri::command]
@@ -1262,6 +1289,7 @@ mod tests {
                 channel: "C0EN",
                 thread_ts: "1723456789.123456",
                 text: "on it",
+                signature: None,
             },
         );
         assert_eq!(call.method, reqwest::Method::POST);
@@ -1270,6 +1298,22 @@ mod tests {
         assert_eq!(body["channel"], "C0EN");
         assert_eq!(body["thread_ts"], "1723456789.123456");
         assert_eq!(body["text"], "on it");
+    }
+
+    #[test]
+    fn an_agent_signature_is_a_context_block_under_the_reply() {
+        let body = post_reply_body(
+            "C0EN",
+            "1723456789.123456",
+            "on it",
+            Some("Written with Goodboy"),
+        );
+
+        assert_eq!(body["blocks"][0]["text"]["text"], "on it");
+        assert_eq!(
+            body["blocks"][1]["elements"][0]["text"],
+            "Written with Goodboy"
+        );
     }
 
     #[test]
@@ -1403,7 +1447,7 @@ mod tests {
         assert_eq!(request.authorization.as_deref(), Some("Bearer xoxp-secret"));
         assert_eq!(connection.team_id, "T01");
         assert_eq!(connection.team_name, "Acme");
-        assert_eq!(connection.bot_user_id, "U09");
+        assert_eq!(connection.user_id, "U09");
     }
 
     #[tokio::test]
@@ -1582,6 +1626,7 @@ mod tests {
             "C0EN",
             "1723456789.123456",
             "on it",
+            None,
         )
         .await
         .unwrap();

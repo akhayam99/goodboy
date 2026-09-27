@@ -496,6 +496,44 @@ pub async fn sentry_fetch_issues(
     })
 }
 
+#[derive(Deserialize)]
+struct SentryShortIdResolution {
+    group: SentryIssue,
+}
+
+fn short_id_url(org: &str, short_id: &str) -> String {
+    format!(
+        "{}/organizations/{}/shortids/{}/",
+        BASE_URL,
+        org,
+        short_id.trim().to_uppercase()
+    )
+}
+
+#[tauri::command]
+pub async fn sentry_resolve_short_id(
+    workspace_id: String,
+    project_id: Option<String>,
+    short_id: String,
+    cache: State<'_, SentryTokenCache>,
+) -> Result<SentryIssue, SentryError> {
+    let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
+    let res = http_client()
+        .get(short_id_url(&cfg.org, &short_id))
+        .bearer_auth(&cfg.token)
+        .send()
+        .await?;
+    let status = res.status();
+    if !status.is_success() {
+        let body = res.text().await.unwrap_or_default();
+        return Err(SentryError::Http(format!("status {}: {}", status, body)));
+    }
+    let body = res.text().await?;
+    let resolved: SentryShortIdResolution = serde_json::from_str(&body)?;
+    Ok(resolved.group)
+}
+
+#[tauri::command]
 pub async fn sentry_fetch_issue(
     workspace_id: String,
     project_id: Option<String>,
@@ -569,6 +607,20 @@ mod tests {
             org: "northwind".to_string(),
             project: project.to_string(),
         }
+    }
+
+    #[test]
+    fn short_id_resolution_reads_the_group_across_the_organization() {
+        assert_eq!(
+            short_id_url("northwind", " notify-3f "),
+            "https://sentry.io/api/0/organizations/northwind/shortids/NOTIFY-3F/"
+        );
+        let body = format!(
+            r#"{{"organizationSlug":"northwind","projectSlug":"payments-api","groupId":"91","shortId":"PAYMENTS-API-3","group":{ISSUE_WITH_PROJECT}}}"#
+        );
+        let resolved: SentryShortIdResolution = serde_json::from_str(&body).expect("parses");
+        assert_eq!(resolved.group.id, "91");
+        assert_eq!(resolved.group.short_id.as_deref(), Some("PAYMENTS-API-3"));
     }
 
     #[test]

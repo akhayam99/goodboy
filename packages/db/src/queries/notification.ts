@@ -46,7 +46,8 @@ export type NotificationAction =
   | { readonly kind: 'retry-publication'; readonly sessionId: SessionId }
   | { readonly kind: 'retry-update' }
   | { readonly kind: 'update-provider-cli'; readonly providerId: ProviderId }
-  | { readonly kind: 'open-lens'; readonly sessionId: SessionId; readonly lens: 'scripts' };
+  | { readonly kind: 'open-lens'; readonly sessionId: SessionId; readonly lens: 'scripts' }
+  | { readonly kind: 'open-activity'; readonly sessionId: SessionId };
 
 export type Notification = {
   readonly id: string;
@@ -87,6 +88,7 @@ const NOTIFICATION_ACTION_KINDS = {
   'retry-update': true,
   'update-provider-cli': true,
   'open-lens': true,
+  'open-activity': true,
 } satisfies Record<NotificationAction['kind'], true>;
 
 const isNotificationAction = (value: unknown): value is NotificationAction =>

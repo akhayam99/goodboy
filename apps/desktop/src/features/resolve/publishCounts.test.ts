@@ -15,6 +15,7 @@ const thread: ResolveThread = {
   prNumber: 1,
   threadId: 'thread',
   originKind: 'review_comment',
+  diffCommentId: null,
   state: 'fixed',
   stage: 'new',
   stateReason: null,

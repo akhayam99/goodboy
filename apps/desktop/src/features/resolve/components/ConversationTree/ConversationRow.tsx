@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check, MessageSquare } from 'lucide-react';
 import {
   Checkbox,
+  Chip,
   InteractiveRow,
   WORK_META_COLUMN,
   WORK_NODE_GLYPH_SIZE,
@@ -18,6 +19,8 @@ import { heldBackChipLabel } from '../../resolvePublishCopy';
 import type { HeldBackKind } from '../../heldBackByThreadId';
 import type { ResolveUiState } from '../../resolveRowState';
 import { firstSentence } from './firstSentence';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { NOTE_LABEL } from '../../../review/components/ReviewThreadContent';
 
 type Props = {
   readonly row: ResolveQueueRow;
@@ -122,6 +125,14 @@ export const ConversationRow = ({
           <span className="shrink-0 font-mono text-secondary text-faint-foreground">
             :{note.line}
           </span>
+        )}
+        {note?.source === 'note' && (
+          <Chip
+            tone="neutral"
+            size="xs"
+            icon={<MessageSquare size={ICON_SIZE.row} aria-hidden />}
+            label={NOTE_LABEL}
+          />
         )}
         {heldBack !== null && (
           <span className={cn(WORK_ROW.state, 'shrink-0 text-secondary text-warning')}>

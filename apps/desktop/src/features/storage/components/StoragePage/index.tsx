@@ -7,6 +7,7 @@ import { StorageHistory } from './StorageHistory';
 import { StorageScopePicker } from './StorageScopePicker';
 import { StorageSummary } from './StorageSummary';
 import { WorktreeSection } from './WorktreeSection';
+import { BranchesSection } from '../BranchesSection';
 
 export const StoragePage = () => {
   const loadStorage = useAppStore((state) => state.loadStorage);
@@ -29,6 +30,7 @@ export const StoragePage = () => {
       </div>
       <StorageSummary scope={scope} onScopeToAll={() => setStorageScope({ kind: 'all' })} />
       <WorktreeSection scope={scope} />
+      <BranchesSection scope={scope} />
       <ArtifactSection scope={scope} />
       <StorageHistory />
       <StorageCleanupSettings />

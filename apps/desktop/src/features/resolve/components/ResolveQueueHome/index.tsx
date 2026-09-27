@@ -10,27 +10,29 @@ import {
   type UIEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, ErrorStrip, SectionHeader, Skeleton, useEscapeLayer } from '@goodboy/ui';
+import {
+  Button,
+  ErrorStrip,
+  OverflowMenu,
+  SectionHeader,
+  SegmentedTabs,
+  Skeleton,
+  useEscapeLayer,
+} from '@goodboy/ui';
 import { openUrl } from '../../../../shared/lib/editor';
 import type {
+  DiffComment,
   PrCheckRun,
-  PrComment,
   ResolveAttempt,
   ResolvePublicationDrift,
   ResolveThread,
   Session,
   SessionId,
 } from '@goodboy/types';
-import { useShallow } from 'zustand/react/shallow';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { replyVoiceOf } from '../../../../store/sessionReplySettings';
+import { useAppStore } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
-import { groupThreads } from '../../../github/comment-threads';
-import { kindRouting } from '../../../session/agent-kind';
-import { startFixAttempt } from '../../../review/startFixAttempt';
 import { openReview } from '../../../review/openReview';
 import {
   REVIEW_TARGET_REASON_COPY,
@@ -41,6 +43,7 @@ import { reviewThreadId } from '../../../../store/slices/review-navigation';
 import { eligibleReviewThreads } from '../../../suggestions/eligibleThreads';
 import type { CommentThread } from '../../../github/comment-threads';
 import { useResolveQueueRows } from '../../hooks/useResolveQueueRows';
+import { useResolveAgain } from '../../hooks/useResolveAgain';
 import { hasActiveResolveRun } from '../../hasActiveResolveRun';
 import { heldBackByThreadId } from '../../heldBackByThreadId';
 import { resolvableThread } from '../../resolvableThread';
@@ -68,10 +71,19 @@ import { ConversationTree } from '../ConversationTree';
 import { ResolveQueueFooter } from './ResolveQueueFooter';
 import { threadIdAfterDecision, threadIdAtStep } from './queueTraversal';
 import {
-  NoResolveTargetState,
+  NoOpenNotesState,
   NothingWaitingState,
   ResolveQueueErrorState,
 } from './ResolveQueueEmptyState';
+import {
+  conversationSourceOf,
+  conversationSourceOptions,
+  rowsFromSource,
+  type ConversationSourceFilter,
+} from '../../notes/conversationSource';
+import { isOpenNote } from '../../notes/noteThread';
+import { POST_NOTES_LABEL, postNotesResultMessage, postNotesToPr } from '../../notes/postNotesToPr';
+import { useToast } from '../../../../app/components/Toast';
 
 export const CONVERSATION_DRAWER_LABEL = 'Conversation';
 export const OPEN_CONVERSATIONS_LABEL = 'Open conversations';
@@ -93,15 +105,15 @@ const EMPTY_DRIFT: ReadonlyArray<ResolvePublicationDrift> = [];
 const EMPTY_THREADS: ReadonlyArray<ResolveThread> = [];
 const EMPTY_SELECTION: ReadonlySet<string> = new Set();
 
-type AskForChangesParams = {
-  readonly threadId: string;
-  readonly instruction: string;
-};
-
 type FocusRowParams = {
   readonly threadId: string;
 };
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
+const EMPTY_NOTES: ReadonlyArray<DiffComment> = [];
+export const NOTES_COUNTER_EMPTY = 'No open notes';
+
+const notesCounter = ({ count }: { readonly count: number }): string =>
+  count === 0 ? NOTES_COUNTER_EMPTY : `${count} open ${count === 1 ? 'note' : 'notes'}`;
 const SKELETON_ROWS = [0, 1, 2];
 
 const scrollableAncestor = (node: HTMLElement | null): HTMLElement | null => {
@@ -122,10 +134,6 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
   const reportError = useAppStore((s) => s.reportError);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const now = useNow(5_000);
-  const comments = useAppStore(
-    (s) =>
-      s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
-  );
   const checks = useAppStore((s) => s.sessionGithub[sessionId]?.detail?.checks ?? EMPTY_CHECKS);
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
   const view = useAppStore((s) => s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW);
@@ -151,15 +159,21 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
   const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
   const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
   const openResolveDiff = useAppStore((s) => s.openResolveDiff);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const setAgentConfig = useAppStore((s) => s.setAgentConfig);
-  const replyVoice = useAppStore(useShallow((s) => replyVoiceOf({ state: s, sessionId })));
   const openResolvePublication = useAppStore((s) => s.openResolvePublication);
   const resolveThreads = useAppStore((s) => s.sessionResolveThreads[sessionId] ?? EMPTY_THREADS);
+  const notes = useAppStore((s) => s.diffComments[sessionId] ?? EMPTY_NOTES);
+  const addReviewDraft = useAppStore((s) => s.addReviewDraft);
+  const resolveDiffComment = useAppStore((s) => s.resolveDiffComment);
+  const { showToast } = useToast();
+  const hasPr = github?.pr != null;
 
-  const rows = useResolveQueueRows({ sessionId });
+  const allRows = useResolveQueueRows({ sessionId });
+  const rows = useMemo(
+    () => (hasPr ? allRows : allRows.filter((row) => conversationSourceOf({ row }) === 'note')),
+    [allRows, hasPr],
+  );
+  const [sourceFilter, setSourceFilter] = useState<ConversationSourceFilter>('all');
   const repo = useSessionRepo({ sessionId });
-  const roleModels = useSessionRoleModels({ sessionId });
   const [checkedThreadIds, setCheckedThreadIds] = useState<ReadonlySet<string>>(EMPTY_SELECTION);
 
   const newThreads = useMemo(
@@ -201,9 +215,26 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     void loadResolveSession({ sessionId });
   }, [loadResolveSession, sessionId]);
 
-  const openRows = useMemo(() => rows.filter((row) => isConversationOpen({ row })), [rows]);
-  const laterRows = useMemo(() => rows.filter((row) => row.status === 'later'), [rows]);
-  const resolvedRows = useMemo(() => rows.filter((row) => row.status === 'resolved'), [rows]);
+  const allOpenRows = useMemo(() => rows.filter((row) => isConversationOpen({ row })), [rows]);
+  const sourceOptions = useMemo(
+    () => conversationSourceOptions({ rows: allOpenRows }),
+    [allOpenRows],
+  );
+  const shownSource = sourceOptions === null ? 'all' : sourceFilter;
+  const shownRows = useMemo(
+    () => rowsFromSource({ rows, filter: shownSource }),
+    [rows, shownSource],
+  );
+  const openRows = useMemo(
+    () => shownRows.filter((row) => isConversationOpen({ row })),
+    [shownRows],
+  );
+  const laterRows = useMemo(() => shownRows.filter((row) => row.status === 'later'), [shownRows]);
+  const resolvedRows = useMemo(
+    () => shownRows.filter((row) => row.status === 'resolved'),
+    [shownRows],
+  );
+  const openNotes = useMemo(() => notes.filter((note) => isOpenNote({ note })), [notes]);
   const listed = useMemo(
     () => groupConversationsByFile({ rows: openRows }).flatMap((group) => group.rows),
     [openRows],
@@ -224,16 +255,6 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     }
     node.scrollTop = view.scrollTop;
   }, [view.scrollTop]);
-
-  const threadsByThreadId = useMemo(
-    () =>
-      new Map(
-        groupThreads(comments.filter((comment) => comment.source === 'review')).flatMap((thread) =>
-          thread.head.threadId == null ? [] : [[thread.head.threadId, thread] as const],
-        ),
-      ),
-    [comments],
-  );
 
   const onSelect = useCallback(
     (threadId: string | null): void => {
@@ -319,7 +340,6 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     void openReview({
       sessionId,
       destination: reviewTarget.destination,
-      ...(reviewTarget.mode !== null && { mode: reviewTarget.mode }),
     });
   }, [reviewTarget, sessionId]);
 
@@ -346,58 +366,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     [listed, openResolveDiff, sessionId],
   );
 
-  const onAskForChanges = useCallback(
-    async ({ threadId, instruction }: AskForChangesParams): Promise<boolean> => {
-      const pr = github?.pr ?? null;
-      const thread = threadsByThreadId.get(threadId);
-      if (pr === null || thread === undefined) {
-        return false;
-      }
-      const routing = kindRouting({ kind: 'resolver', roleModels });
-      const row = rows.find((candidate) => candidate.thread.threadId === threadId) ?? null;
-      try {
-        await startFixAttempt({
-          sessionId,
-          threads: [thread],
-          pr,
-          choice: {
-            provider: routing.provider,
-            model: routing.model,
-            ...(routing.effort !== undefined &&
-              routing.effort !== null && { effort: routing.effort }),
-          },
-          instructions: instruction,
-          mode: 'retry',
-          priorContext: [
-            {
-              threadId,
-              reply: row?.thread.replyDraft ?? null,
-              ...(row?.thread.commitShas != null && { commitShas: row.thread.commitShas }),
-              intent: 'retry',
-            },
-          ],
-          style: replyVoice,
-          spawnAgent,
-          setAgentConfig,
-        });
-        return true;
-      } catch (error) {
-        void reportError({ title: "Couldn't retry the fix", error, sessionId });
-        return false;
-      }
-    },
-    [
-      github,
-      replyVoice,
-      reportError,
-      roleModels,
-      rows,
-      sessionId,
-      setAgentConfig,
-      spawnAgent,
-      threadsByThreadId,
-    ],
-  );
+  const onAskForChanges = useResolveAgain({ sessionId, rows });
 
   const onResume = useCallback(
     ({ itemId }: { readonly itemId: string }): void => {
@@ -573,17 +542,13 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     );
   };
 
-  if (github?.pr == null) {
-    return queuePane({
-      children: <NoResolveTargetState onOpenReview={() => void openReview({ sessionId })} />,
-    });
-  }
-
-  const refreshError = github.detailError ?? null;
-  const errorPlacement = resolveQueueErrorPlacement({
-    error: refreshError,
-    hasLoadedComments: github.detail !== null,
-  });
+  const refreshError = hasPr ? (github.detailError ?? null) : null;
+  const errorPlacement = hasPr
+    ? resolveQueueErrorPlacement({
+        error: refreshError,
+        hasLoadedComments: github.detail !== null,
+      })
+    : null;
 
   if (errorPlacement === 'whole_surface' && refreshError !== null) {
     return queuePane({
@@ -596,15 +561,46 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     });
   }
 
-  const isLoading = github.detail === null && github.detailLoading;
+  const isLoading = hasPr && github.detail === null && github.detailLoading;
   const isRunLive = hasActiveResolveRun({ attempts });
-  const counter = conversationsCounter({
-    comments: github.detail?.comments ?? null,
-    fetchedAt: github.detailFetchedAt ?? null,
-    error: refreshError,
-    now,
-  });
-  const isReadTrusted = github.detail !== null && refreshError === null;
+  const counter = hasPr
+    ? conversationsCounter({
+        comments: github.detail?.comments ?? null,
+        fetchedAt: github.detailFetchedAt ?? null,
+        error: refreshError,
+        now,
+      })
+    : notesCounter({ count: openNotes.length });
+  const isReadTrusted = !hasPr || (github.detail !== null && refreshError === null);
+  const onPostNotes = (): void => {
+    void postNotesToPr({ sessionId, notes: openNotes, addReviewDraft, resolveDiffComment })
+      .then((result) => showToast({ kind: 'success', message: postNotesResultMessage(result) }))
+      .catch((error: unknown) =>
+        reportError({ title: "Couldn't post the notes to the pull request", error, sessionId }),
+      );
+  };
+  const noteMenu =
+    hasPr && openNotes.length > 0 ? (
+      <OverflowMenu
+        label="Conversation actions"
+        items={[{ kind: 'item', key: 'post-notes', label: POST_NOTES_LABEL, onClick: onPostNotes }]}
+      />
+    ) : null;
+  const headerActions =
+    newThreads.length === 0 && noteMenu === null ? null : (
+      <div className="flex items-center gap-2">
+        {newThreads.length > 0 && (
+          <ResolveWithPopover
+            sessionId={sessionId}
+            threads={newThreads}
+            label={resolveNewLabel({ count: newThreads.length })}
+            isDisabled={isRunLive}
+            disabledReason={RESOLVE_RUN_IN_PROGRESS}
+          />
+        )}
+        {noteMenu}
+      </div>
+    );
 
   const renderAction = (row: QueueRow): ReactNode => {
     const action = row.rowState.action;
@@ -675,18 +671,18 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     <div className="h-full min-h-0 min-w-0">
       {queuePane({
         meta: counter,
-        actions:
-          newThreads.length === 0 ? null : (
-            <ResolveWithPopover
-              sessionId={sessionId}
-              threads={newThreads}
-              label={resolveNewLabel({ count: newThreads.length })}
-              isDisabled={isRunLive}
-              disabledReason={RESOLVE_RUN_IN_PROGRESS}
-            />
-          ),
+        actions: headerActions,
         children: (
           <div className="flex min-w-0 flex-col gap-4" ref={listRef} onKeyDown={onListKeyDown}>
+            {sourceOptions !== null && (
+              <SegmentedTabs
+                ariaLabel="Conversation source"
+                size="sm"
+                options={sourceOptions}
+                value={shownSource}
+                onChange={setSourceFilter}
+              />
+            )}
             {checkedThreadIds.size > 0 && (
               <ResolveSelectionBar
                 sessionId={sessionId}
@@ -728,7 +724,10 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
                 ))}
               </div>
             )}
-            {!isLoading && isReadTrusted && listed.length === 0 && <NothingWaitingState />}
+            {!isLoading &&
+              isReadTrusted &&
+              listed.length === 0 &&
+              (hasPr ? <NothingWaitingState /> : <NoOpenNotesState />)}
             {!isLoading &&
               listed.length > 0 &&
               renderTree({ rows: openRows, label: OPEN_CONVERSATIONS_LABEL })}
@@ -795,7 +794,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
           <ResolveItemContainer
             key={selectedRow.thread.threadId}
             sessionId={sessionId}
-            prNumber={github.pr.number}
+            prNumber={github?.pr?.number ?? 0}
             row={selectedRow}
             allRows={rows}
             worktreePath={repo?.worktreePath ?? null}

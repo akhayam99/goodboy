@@ -20,6 +20,8 @@ export type RolePresentationKey =
   | 'debugger'
   | 'tester'
   | 'resolver'
+  | 'rewriter'
+  | 'scribe'
   | 'docs'
   | 'report'
   | 'wireframe'
@@ -170,6 +172,43 @@ export const ROLE_REGISTRY = {
     selectionEligible: true,
     pickerEligible: true,
     description: 'address a review comment with one local commit',
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
+  rewriter: {
+    id: 'rewriter',
+    summary: 'Replays a history plan in a throwaway copy and settles its conflicts.',
+    aliases: ['history rewriter'],
+    presentationKey: 'rewriter',
+    defaultRoutingTaskType: 'implementation',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'replay a branch history plan in a copy and merge the conflicting edits',
+    fanOut: {
+      mode: 'never',
+      partitionKey: null,
+      condition: null,
+    },
+  },
+  scribe: {
+    id: 'scribe',
+    summary:
+      'Writes text about the code, never the code: pull requests, commit messages, changelog.',
+    aliases: [],
+    presentationKey: 'scribe',
+    defaultRoutingTaskType: 'writing',
+    outputKind: 'none',
+    workflowEligible: false,
+    classifierEligible: false,
+    selectionEligible: false,
+    pickerEligible: false,
+    description: 'write pull request text, commit messages and changelog entries from the diff',
     fanOut: {
       mode: 'never',
       partitionKey: null,

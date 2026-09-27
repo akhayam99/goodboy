@@ -12,9 +12,10 @@ import {
   getWorkspaceById,
   insertProject,
   reconnectProject,
+  updateProjectIdentity,
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { validateGitRepo } from '../../../shared/lib/repo';
+import { repoIdentity, validateGitRepo } from '../../../shared/lib/repo';
 import type { GetFn, SetFn } from './types';
 
 export type ProjectAttachConflict = {
@@ -51,6 +52,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 type BuildConflictParams = {
@@ -98,6 +100,7 @@ export const addProject = (set: SetFn, get: GetFn) => {
     if (resolvedRoot == null || resolvedRoot === '') {
       throw new Error(check.error ?? 'folder not found');
     }
+    const identity = isRepo ? await repoIdentity({ path: resolvedRoot }).catch(() => null) : null;
     const existing = await findProjectByRootPath({ db: tauriDatabase, rootPath: resolvedRoot });
     if (existing !== null) {
       if (existing.workspaceId !== workspaceId) {
@@ -107,8 +110,23 @@ export const addProject = (set: SetFn, get: GetFn) => {
       if (existing.disconnectedAt !== undefined) {
         const at = new Date().toISOString() as IsoDateTime;
         await reconnectProject({ db: tauriDatabase, id: existing.id, at });
+        if (identity !== null) {
+          await updateProjectIdentity({
+            db: tauriDatabase,
+            projectId: existing.id,
+            rootCommit: identity.rootCommits[0] ?? null,
+            remoteUrl: identity.remoteUrl,
+            checkedAt: at,
+          });
+        }
         const reconnected: Project = {
           ...existing,
+          ...(identity?.rootCommits[0] === undefined
+            ? {}
+            : { rootCommit: identity.rootCommits[0] }),
+          ...(identity?.remoteUrl === null || identity?.remoteUrl === undefined
+            ? {}
+            : { remoteUrl: identity.remoteUrl }),
           updatedAt: at,
           lastAccessedAt: at,
           disconnectedAt: undefined,
@@ -142,6 +160,11 @@ export const addProject = (set: SetFn, get: GetFn) => {
       createdAt: now,
       updatedAt: now,
       lastAccessedAt: now,
+      ...(identity?.rootCommits[0] === undefined ? {} : { rootCommit: identity.rootCommits[0] }),
+      ...(identity?.remoteUrl === null || identity?.remoteUrl === undefined
+        ? {}
+        : { remoteUrl: identity.remoteUrl }),
+      ...(identity === null ? {} : { identityCheckedAt: now }),
     };
     await insertProject({ db: tauriDatabase, project });
     set((state) => ({ projects: [...state.projects, project] }));

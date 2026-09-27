@@ -1,8 +1,8 @@
-import { parseWireframeSource } from '@goodboy/core';
 import type { SessionArtifact } from '@goodboy/types';
 import type { ArtifactFolderFile } from '../artifactFile';
 import { artifactFolderName } from '../artifactFolderName';
-import { buildWireframeExport } from '../../wireframes/wireframeExport/buildWireframeExport';
+import { buildWireframeMirror } from '../../wireframes/wireframePages/buildWireframeMirror';
+import type { WireframeVersion } from '../../wireframes/wireframeVersion';
 import { artifactMirrorMeta } from './artifactMirrorMeta';
 import {
   ARTIFACT_DOCUMENT_CSS_FILE,
@@ -19,6 +19,7 @@ type Params = {
   readonly artifact: SessionArtifact;
   readonly workspaceSlug: string;
   readonly appVersion: string | null;
+  readonly versions?: ReadonlyArray<WireframeVersion>;
 };
 
 const metaFile = ({ artifact, workspaceSlug, appVersion }: Params): ArtifactFolderFile => ({
@@ -30,24 +31,14 @@ export const artifactMirrorFiles = ({
   artifact,
   workspaceSlug,
   appVersion,
+  versions = [],
 }: Params): ArtifactMirrorFiles => {
   const folder = artifactFolderName({ artifact });
   if (artifact.kind === 'wireframe') {
-    const parsed = parseWireframeSource({ source: artifact.sourceText });
-    if (parsed.status !== 'valid') {
-      return {
-        folder,
-        files: [
-          { path: 'wireframe.json', contents: artifact.sourceText },
-          metaFile({ artifact, workspaceSlug, appVersion }),
-        ],
-      };
-    }
-    const built = buildWireframeExport({ artifact, document: parsed.document, appVersion });
     return {
       folder,
       files: [
-        ...built.files.filter((file) => file.path !== 'meta.json'),
+        ...buildWireframeMirror({ artifact, versions, workspaceName: workspaceSlug }),
         metaFile({ artifact, workspaceSlug, appVersion }),
       ],
     };
@@ -55,7 +46,10 @@ export const artifactMirrorFiles = ({
   return {
     folder,
     files: [
-      { path: 'index.html', contents: renderArtifactFile({ artifact }) },
+      {
+        path: 'index.html',
+        contents: renderArtifactFile({ artifact, workspaceName: workspaceSlug }),
+      },
       { path: ARTIFACT_DOCUMENT_CSS_FILE, contents: artifactDocumentCss() },
       { path: 'source.md', contents: `${artifact.sourceText}\n` },
       metaFile({ artifact, workspaceSlug, appVersion }),

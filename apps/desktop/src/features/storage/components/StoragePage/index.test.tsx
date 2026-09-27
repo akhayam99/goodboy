@@ -62,6 +62,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 }));
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(async () => null) }));
+vi.mock('../BranchesSection', () => ({ BranchesSection: () => null }));
 
 import { StoragePage } from './index';
 
@@ -208,6 +209,26 @@ describe('StoragePage', () => {
       paths: [safeIdle.path],
       mode: 'safe',
     });
+  });
+
+  it('names the scope on the bulk buttons', () => {
+    const { unmount } = render(<StoragePage />);
+    expect(
+      screen.getByRole('button', { name: /Remove 1 safe folder in all workspaces ·/ }),
+    ).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: /Delete 1 unused in all workspaces ·/ }),
+    ).toBeDefined();
+    unmount();
+
+    Object.assign(state, {
+      storageFocus: { filter: 'review', workspaceId: 'harborline' as WorkspaceId },
+      storageScope: { kind: 'workspace', id: 'harborline' as WorkspaceId },
+      workspaces: [{ id: 'harborline', name: 'Harborline' }],
+    });
+    render(<StoragePage />);
+    fireEvent.click(screen.getByRole('button', { name: /Remove 1 safe folder in Harborline ·/ }));
+    expect(screen.getByRole('group', { name: /Remove 1 folder in Harborline/ })).toBeDefined();
   });
 
   it('asks before removing a dirty folder anyway and uses the confirmed mode', () => {

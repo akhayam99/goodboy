@@ -10,11 +10,18 @@ import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/ut
 import { recordSessionId } from '../../recordSessionId';
 import type { InboxRecord } from '../../types';
 import { InboxStateLabel } from '../InboxStateLabel';
+import { StarToggle } from '../../../../shared/components/StarToggle';
+
+export type InboxRowStar = {
+  readonly isStarred: boolean;
+  readonly onToggle: () => void;
+};
 
 type Props = {
   readonly record: InboxRecord;
   readonly selected: boolean;
   readonly onSelect: (record: InboxRecord) => void;
+  readonly star?: InboxRowStar;
 };
 
 type OptionIdParams = {
@@ -24,7 +31,7 @@ type OptionIdParams = {
 export const inboxOptionId = ({ key }: OptionIdParams): string =>
   `inbox-option-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
-export const InboxRow = ({ record, selected, onSelect }: Props) => {
+export const InboxRow = ({ record, selected, onSelect, star }: Props) => {
   const relativeTime = formatRelativeAge({ fromIso: record.updatedAt });
   const hasSession = recordSessionId({ record }) != null;
   const toolLabel = integrationLabel({ provider: record.provider });
@@ -35,7 +42,7 @@ export const InboxRow = ({ record, selected, onSelect }: Props) => {
       data-inbox-key={record.key}
       data-selected={selected}
       className={cn(
-        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_40px] items-center gap-2.5 rounded-md px-2.5 text-muted-foreground motion-safe:transition-colors @2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_40px]',
+        'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_48px] items-center gap-2.5 rounded-md px-2.5 text-muted-foreground motion-safe:transition-colors @2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_48px]',
         selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',
       )}
     >
@@ -77,6 +84,18 @@ export const InboxRow = ({ record, selected, onSelect }: Props) => {
         className="pointer-events-none relative hidden text-2xs text-muted-foreground @2xl:flex"
       />
       <span className="relative flex h-5 items-center justify-end">
+        {star === undefined ? null : (
+          <StarToggle
+            isStarred={star.isStarred}
+            label={`Star ${record.identifier}`}
+            tooltip={star.isStarred ? 'Unstar' : 'Star to keep it at the top'}
+            onToggle={star.onToggle}
+            className={cn(
+              'size-5',
+              !star.isStarred && !selected && 'hidden group-hover:inline-flex',
+            )}
+          />
+        )}
         <time
           dateTime={record.updatedAt}
           title={formatAbsoluteDateTime({ iso: record.updatedAt })}

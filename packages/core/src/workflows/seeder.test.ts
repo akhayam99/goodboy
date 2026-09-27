@@ -44,6 +44,7 @@ async function setup() {
         replyTemplateNoChange: null,
         resolveOnGithub: null,
         resolveCommitStyle: null,
+        afterMerge: null,
       },
       createdAt: now(),
       updatedAt: now(),

@@ -59,6 +59,7 @@ const OVERRIDES = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 const WORKSPACE: Workspace = {
@@ -148,6 +149,7 @@ const buildThread = (seed: ThreadSeed): ResolveThread => ({
   prNumber: PR.number,
   threadId: seed.threadId,
   originKind: 'review_comment',
+  diffCommentId: null,
   state: seed.state,
   stage: seed.stage,
   stateReason: null,

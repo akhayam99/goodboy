@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolveUiState } from './resolveRowState';
-import { resolveItemActions, type ResolveItemActionId } from './resolveItemActions';
+import { noteActions, resolveItemActions, type ResolveItemActionId } from './resolveItemActions';
 
 const DECISIONS: ReadonlySet<ResolveItemActionId> = new Set([
   'fix_it',
@@ -91,5 +91,23 @@ describe('the actions a comment offers', () => {
 
   it('removes header decisions while an editor is open', () => {
     expect(build({ isEditing: true })).toEqual({ primary: null, secondary: null, overflow: [] });
+  });
+});
+
+describe('the actions a note offers', () => {
+  it('never offers GitHub, a public discussion or a publication check', () => {
+    const ids = (['new', 'ready', 'resolved', 'failed'] as const).flatMap((status) => {
+      const set = noteActions({ set: build({ status, failedStep: 'uncertain' }) });
+      return [set.primary, set.secondary, ...set.overflow].flatMap((action) =>
+        action === null ? [] : [action.id],
+      );
+    });
+    expect(ids).not.toContain('open_github');
+    expect(ids).not.toContain('discuss');
+    expect(ids).not.toContain('check_publication');
+  });
+
+  it('keeps Resolve as the primary on a ready note', () => {
+    expect(noteActions({ set: build() }).primary?.id).toBe('resolve');
   });
 });

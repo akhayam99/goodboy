@@ -205,3 +205,38 @@ The README's feature guide is captured from these scenes. The images live in
 command with no lookup. To crop a short surface, use a `--window-size` height
 shorter than 900. The layout keeps its own proportions and the footer stays
 pinned.
+
+## Pictures for the changelog
+
+A changelog entry can carry a before/after picture (`image=<name>` in
+`CHANGELOG.md`, see `docs/release-command.md` Format). These come from the
+same mock scenes, captured a different way: `scripts/changelog-shots.mjs
+<scene> <name> <before|after>` drives headless Chrome over CDP against the
+scene at `http://localhost:1421/?scene=<scene>&theme=<dark|light>` (start
+`pnpm dev` in `apps/desktop` first, same as everywhere else on this page), and
+saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
+
+- **`[data-shot]` marks the capture target.** The scene's own root element
+  needs this attribute; nothing else does. It is not the same target as a
+  README screenshot, which captures the whole viewport. The script clips to
+  this element's box, at 680×425 CSS pixels, DPR 2 (1360×850 physical), and
+  converts through `cwebp -q 80`.
+- **Both themes, one command each.** The script captures dark and light in
+  one run; a scene that renders differently per theme needs no extra work,
+  the `&theme=` query param already switches it (`MockScene/index.tsx`).
+- **Timing.** A PR that changes an existing screen photographs the scene on
+  `main`, before the change, as `-before-`; after the change, the same scene,
+  same name, as `-after-`. A brand-new screen only ever gets `-after-`: there
+  is nothing to be "before".
+- **Promotion at the version bump.** `docs/changelog/next/*` holds
+  work-in-progress pictures across PRs in the same release. The PR that bumps
+  the version numbers renames the `next` folder to `docs/changelog/<version>/` and sets
+  `image=<name>` on the entry. `changelogImageBudget.test.ts` then checks
+  names, complete dark/light pairs, that a `before` has a matching `after`,
+  at most 3 images and 1 MB per release, and no orphan file.
+- **Retroactive from the release's own code.** A release that already
+  shipped can gain pictures, but never capture today's app under an old
+  entry's name: the picture would show a screen the release never had.
+  Capture `-after-` from a checkout of that release's tag and `-before-`
+  from the previous release's tag. The app loads pictures from `main` first
+  and falls back to the tag, so files committed after the tag still show.

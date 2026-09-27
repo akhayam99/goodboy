@@ -6,6 +6,7 @@ export type ArtifactMirrorEntry = Readonly<{
   folder: string;
   revision: number;
   updatedAt: string;
+  rendererVersion: string;
 }>;
 
 export type ArtifactMirrorLocation = Readonly<{
@@ -66,3 +67,16 @@ export const revealArtifactMirror = async ({
   folder,
 }: FolderParams): Promise<void> =>
   invoke<void>('artifact_mirror_reveal', { workspaceSlug, folder });
+
+export const openArtifactMirror = async ({
+  workspaceSlug,
+  folder,
+  file,
+}: FolderParams & { readonly file: string }): Promise<void> =>
+  invoke<void>('artifact_mirror_open', { workspaceSlug, folder, file });
+
+export const openArtifactsFolder = async ({
+  workspaceSlug,
+}: {
+  readonly workspaceSlug: string;
+}): Promise<void> => invoke<void>('artifact_mirror_open_root', { workspaceSlug });

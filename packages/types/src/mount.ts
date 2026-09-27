@@ -2,6 +2,8 @@ import type { IsoDateTime, MountId, ProjectId, SessionId, WorkspaceId } from './
 
 export type MountDiskState = 'unchecked' | 'present' | 'missing' | 'removed';
 
+export type BranchOrigin = 'created' | 'adopted' | 'unknown';
+
 export type SessionMount = Readonly<{
   id: MountId;
   sessionId: SessionId;
@@ -16,6 +18,7 @@ export type SessionMount = Readonly<{
   isAttached: boolean;
   diskState: MountDiskState;
   revision: number;
+  branchOrigin?: BranchOrigin;
   createdAt: IsoDateTime;
   updatedAt: IsoDateTime;
 }>;
@@ -197,5 +200,6 @@ export type MountCleanupProposal = Readonly<{
   branch: string;
   sizeBytes: number | null;
   request: MountPullRequestIdentity | null;
+  keptBecause?: string;
   createdAt: IsoDateTime;
 }>;

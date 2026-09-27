@@ -12,15 +12,12 @@ import {
   gitlabIssueFields,
   gitlabMergeRequestFields,
   linearIssueFields,
-  resolveDetailFields,
   resolveFacts,
   sentryIssueFields,
   slackThreadFields,
-  type ResolvedDetailFields,
 } from '.';
 import type { ResolvedFact } from './factTypes';
 import type { SentryIssueProperties } from './sentryIssueFields';
-import type { DetailEntry } from './types';
 
 type NodeChildren = {
   readonly children?: ReactNode;
@@ -36,9 +33,8 @@ const nodeText = (node: ReactNode): string => {
   return '';
 };
 
-type ForgedDetailFields = ReadonlyArray<DetailEntry> & {
-  readonly __brand: 'ResolvedDetailFields';
-};
+const stateLabel = (node: ReactNode): string | null =>
+  isValidElement<{ readonly label?: string }>(node) ? (node.props.label ?? null) : null;
 
 const LINEAR_ISSUE: LinearIssue = {
   id: 'issue-1',
@@ -241,37 +237,34 @@ describe('fact registries', () => {
   });
 });
 
-describe('detail field registries', () => {
-  it('pins the pull request fields in order', () => {
-    expect(githubPullRequestFields.map((field) => field.key)).toEqual([
-      'baseBranch',
-      'review',
-      'updated',
+describe('the pull request registry', () => {
+  const checks = [
+    { name: 'typecheck', conclusion: 'success' as const, detailsUrl: null, durationMs: 1 },
+    { name: 'unit', conclusion: 'failure' as const, detailsUrl: null, durationMs: 1 },
+  ];
+
+  it('reads status, review, branch and checks as label and value rows', () => {
+    const facts = resolveFacts({
+      registry: githubPullRequestFields,
+      entity: { pr: { ...GITHUB_PR, reviewDecision: 'changes_requested' }, checks },
+    });
+
+    expect(facts.map((fact) => fact.label)).toEqual(['Status', 'Review', 'Branch', 'Checks']);
+    expect(stateLabel(facts[0]?.node)).toBe('In review');
+    expect(facts.slice(1).map((fact) => nodeText(fact.node))).toEqual([
+      'Changes requested',
+      'ak/refactor-detail-anatomy › main',
+      '1 of 2 passing',
     ]);
-    expect(
-      resolveDetailFields({ registry: githubPullRequestFields, entity: GITHUB_PR }).map(
-        (entry) => entry.label,
-      ),
-    ).toEqual(['Base branch', 'Review', 'Updated']);
   });
 
-  it('only a resolver run carries the resolved brand', () => {
-    const forgedIsAssignable: ForgedDetailFields extends ResolvedDetailFields ? true : false =
-      false;
-    const resolvedIsAssignable: ReturnType<typeof resolveDetailFields> extends ResolvedDetailFields
-      ? true
-      : false = true;
+  it('says draft for a draft and leaves out what is not known yet', () => {
+    const facts = resolveFacts({
+      registry: githubPullRequestFields,
+      entity: { pr: { ...GITHUB_PR, isDraft: true }, checks: [] },
+    });
 
-    expect(forgedIsAssignable).toBe(false);
-    expect(resolvedIsAssignable).toBe(true);
-  });
-
-  it('drops a blank value the registry wrapped in an element', () => {
-    expect(
-      resolveDetailFields({
-        registry: githubPullRequestFields,
-        entity: { ...GITHUB_PR, baseBranch: '' },
-      }).map((entry) => entry.label),
-    ).toEqual(['Review', 'Updated']);
+    expect(facts.map((fact) => fact.label)).toEqual(['Status', 'Branch']);
+    expect(stateLabel(facts[0]?.node)).toBe('Draft');
   });
 });

@@ -9,6 +9,7 @@ import { formatRelativeDuration } from '../../utils/relativeDate';
 import { ICON_SIZE } from '../conceptIcons';
 import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
+import { ProjectAfterMergeField } from './ProjectAfterMergeField';
 import { ProjectDescriptionField } from './ProjectDescriptionField';
 
 type Props = {
@@ -70,6 +71,7 @@ export const ProjectRowEditor = ({ project, busy, onArmUnlink, ignoreField }: Pr
           />
         </div>
       ) : null}
+      {isRepo ? <ProjectAfterMergeField project={project} busy={busy} /> : null}
       <div className="flex flex-col gap-1">
         <span className="text-label text-muted-foreground">Folder</span>
         <div className="flex items-center gap-2">

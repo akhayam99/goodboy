@@ -42,6 +42,7 @@ const { state, openQuestions, answeredQuestions, transcriptItems } = vi.hoisted(
     resolveMergeConflicts: vi.fn(async () => undefined),
     loadSessionOpenQuestions: vi.fn(async () => undefined),
     loadSessionAnsweredQuestions: vi.fn(async () => undefined),
+    loadSessionSlackDrafts: vi.fn(async () => undefined),
     openQuestionScrollTarget: null as { agentId: string; questionId: string } | null,
     clearOpenQuestionScroll: vi.fn(() => undefined),
     requestOpenQuestionScroll: vi.fn(() => undefined),
@@ -56,6 +57,7 @@ vi.mock('../../../../store', async () => ({
   useSessionLoading: () => ({ transcript: false }),
   useSessionOpenQuestions: () => openQuestions.current,
   useSessionAnsweredQuestions: () => answeredQuestions.current,
+  useSessionSlackDrafts: () => [],
   useTranscript: () => [],
 }));
 

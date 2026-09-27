@@ -1,4 +1,5 @@
 import type { MountId, MountPullRequestProvider, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import type { ReviewTargetOutcome } from '../review-navigation';
 import type { SessionStudio } from '../session-view/types';
 import { sessionPlace } from '../navigation/place';
@@ -29,18 +30,23 @@ export const openMountRequest = (_set: SetFn, get: GetFn) => {
     threadId,
   }: OpenMountRequestInput): Promise<ReviewTargetOutcome> => {
     if (provider !== 'github') {
-      await get()
-        .setSessionActiveMount({ sessionId, mountId })
-        .catch(() => undefined);
+      try {
+        await get().setSessionActiveMount({ sessionId, mountId });
+      } catch (error) {
+        return { kind: 'failed', error: formatError(error) };
+      }
       get().navigate({ to: sessionPlace({ sessionId, studio: studioFor({ mountId, provider }) }) });
       return { kind: 'opened' };
     }
     if (requestNumber === undefined) {
-      return get().openReviewTarget({
-        sessionId,
-        destination: { kind: 'mount', mountId },
-        mode: 'create_pr',
-      });
+      try {
+        await get().setSessionActiveMount({ sessionId, mountId });
+      } catch (error) {
+        return { kind: 'failed', error: formatError(error) };
+      }
+      get().setPullRequestMode({ sessionId, mode: 'create_pr' });
+      get().navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
+      return { kind: 'opened' };
     }
     return get().openReviewTarget({
       sessionId,

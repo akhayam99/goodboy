@@ -98,19 +98,26 @@ box, weight and tracking together. `cn` reads every role as a font size, so a
 later role or grade replaces an earlier one and a text colour never drops it.
 The list is `TYPE_ROLES` in `typeRoles.ts`.
 
-| role             | measure                       | used for                                                   |
-| ---------------- | ----------------------------- | ---------------------------------------------------------- |
-| `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title |
-| `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                       |
-| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question  |
-| `text-row`       | 14/20, 500                    | a top-level row label, a card title                        |
-| `text-body`      | 14/20                         | running text; text with no class inherits it from the body |
-| `text-prose`     | 14/22                         | messages, markdown, artifacts                              |
-| `text-label`     | 12/16                         | controls, a nested row, a status label                     |
-| `text-secondary` | 11/16                         | a secondary line, a chip, an option description            |
-| `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                    |
-| `text-meta`      | 10/14, tabular                | time, ordinal, cost, count                                 |
-| `text-code`      | mono 12/18                    | branch, path, command, inline code                         |
+| role             | measure                       | used for                                                                               |
+| ---------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
+| `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
+| `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
+| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
+| `text-row`       | 14/20, 500                    | a top-level row label, a card title                                                    |
+| `text-body`      | 14/20                         | running text; text with no class inherits it from the body                             |
+| `text-prose`     | 14/22                         | messages, markdown, artifacts                                                          |
+| `text-label`     | 12/16                         | controls, a nested row, a status label                                                 |
+| `text-secondary` | 11/16                         | a secondary line, a chip, an option description                                        |
+| `text-eyebrow`   | 11/16, 600, 0.08em, uppercase | a section label, only through `Eyebrow`                                                |
+| `text-meta`      | 10/14, tabular                | time, ordinal, cost, count                                                             |
+| `text-code`      | mono 12/18                    | branch, path, command, inline code                                                     |
+| `document`       | 15/25                         | the report document body (screen and file); a reading exception, not a `--text-*` role |
+
+`document` is the one exception to "a role, never a size": it lives in
+`artifactDocument.css`'s own `--print-*` tokens, not `typeRoles.ts`, because
+the report reads the same way in the app, on disk and on paper, and the paper
+medium shrinks every one of its tokens under `@media print`. It never appears
+outside `ArtifactDocument`.
 
 A role with no weight inherits one: `text-label font-medium` is a control label
 at 500, `text-secondary font-medium` a chip. Weights are 400, 500 and 600, and
@@ -453,6 +460,12 @@ carries a dot instead of a number, and a fact row (plan, artifact, event,
 issue, question) carries its concept glyph. A state that asks something or
 broke replaces the number with its glyph, so colour never speaks alone.
 
+A comparison of two versions (the wireframe Compare) marks each change with a
+glyph and a word, never a colour: `+ Added`, `~ Changed`, `− Removed`,
+`= Same`. On the pages, added nodes get a solid outline with `+`, changed nodes
+a dashed outline with `~`, and removed nodes, on the older side, an outline
+with `−`.
+
 What a row is doing is computed once, as a `RowState` (phase, reason, ask), in
 `apps/desktop/src/features/workTreeModel/rowState.ts`. Every surface reads that
 value: the node comes from `rowStateNode`, the short status sentence after the
@@ -716,7 +729,8 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. `SplitButton` joins the primary half, which its owner renders through `primary({ className })` so a popover can anchor to it, with a chevron half that opens the less frequent starts as a menu. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon. `OverflowMenu` and `SplitButton` render items through the same `MenuItems`.
-- The new session draft follows the same rule. It asks one question with a single-select list of rows (glyph, title, one line), and only the selected row's primary shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is not an action zone.
+- The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
+- The session overview's actions carry a second exception: a frequent alternative to the primary sits as one secondary button beside it, not folded into the menu. `OverviewActions` shows a secondary Run workflow (Open run once one is active) next to the primary Start agent, with `OverflowMenu` labeled Create holding only the rarer starts (Report, Wireframe). Still one primary; the secondary is the one alternative common enough to earn its own button.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
 

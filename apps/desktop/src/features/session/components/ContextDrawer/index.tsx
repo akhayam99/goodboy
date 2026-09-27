@@ -37,6 +37,8 @@ type SlotValueParams = {
   readonly key: string;
 };
 
+const NO_HIGHLIGHT: ReadonlyArray<number> = [];
+
 const slotValue = ({ slots, key }: SlotValueParams): string =>
   slots.find((slot) => slot.key === key)?.value ?? '';
 
@@ -44,10 +46,17 @@ type Props = {
   readonly sessionId: SessionId;
   readonly tab: ContextDrawerTab;
   readonly view: ContextDrawerView;
+  readonly highlight?: ReadonlyArray<number>;
   readonly onClose: () => void;
 };
 
-export const ContextDrawer = ({ sessionId, tab, view, onClose }: Props) => {
+export const ContextDrawer = ({
+  sessionId,
+  tab,
+  view,
+  highlight = NO_HIGHLIGHT,
+  onClose,
+}: Props) => {
   const slots = useSessionSlots(sessionId);
   const loading = useSessionLoading(sessionId);
   const slotsLoad = useSessionSlotsLoad(sessionId);
@@ -69,7 +78,14 @@ export const ContextDrawer = ({ sessionId, tab, view, onClose }: Props) => {
   const decisions = slotValue({ slots, key: 'decisions' });
   const summary = slotValue({ slots, key: 'last_output_summary' });
   const value = slotValue({ slots, key: slotKey });
-  const decisionCount = useMemo(() => parseDecisions({ text: decisions }).rows.length, [decisions]);
+  const ledger = useAppStore((state) => state.sessionDecisions[sessionId]);
+  const decisionCount = useMemo(
+    () =>
+      ledger === undefined
+        ? parseDecisions({ text: decisions }).rows.length
+        : ledger.filter((row) => row.status === 'active').length,
+    [decisions, ledger],
+  );
   const hasSlot = slots.some((slot) => slot.key === slotKey);
   const isLoading = !hasSlot && (loading.slots || slotsLoad === null);
   const hasFailed = !hasSlot && !isLoading && slotsLoad === 'failed';
@@ -151,31 +167,15 @@ export const ContextDrawer = ({ sessionId, tab, view, onClose }: Props) => {
         />
       );
     }
-    if (tab === 'decisions' && value.trim() === '' && !isLoading && !isRawEditing) {
-      return (
-        <div className="flex flex-col gap-3">
-          <p className="text-body text-muted-foreground">
-            No decisions yet. Agents record one when they settle a choice; you can add your own.
-          </p>
-          <DecisionsSection
-            value={value}
-            isLoading={false}
-            isLocked={isLocked}
-            isRawEditing={false}
-            onWrite={onWrite}
-            onCloseRawEditor={() => setIsRawEditing(false)}
-          />
-        </div>
-      );
-    }
     if (tab === 'decisions') {
       return (
         <DecisionsSection
-          value={value}
-          isLoading={isLoading}
+          sessionId={sessionId}
+          highlight={highlight}
           isLocked={isLocked}
           isRawEditing={isRawEditing}
-          onWrite={onWrite}
+          sourceValue={value}
+          onWriteSource={onWrite}
           onCloseRawEditor={() => setIsRawEditing(false)}
         />
       );

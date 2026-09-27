@@ -63,7 +63,22 @@ const BINDINGS = [
   {
     ...LINEAR,
     provider: 'slack',
-    config: { teamName: 'Acme', teamId: 'acme', botUserId: 'ada', botUserName: 'Ada' },
+    config: {
+      teamName: 'Acme',
+      teamId: 'acme',
+      userId: 'ada',
+      userName: 'Ada',
+      followedChannels: [],
+      hasSelectedChannels: true,
+      includePrivate: false,
+      agentPolicy: {
+        readFollowed: 'allow',
+        readOthers: 'off',
+        reply: 'ask',
+        react: 'allow',
+      },
+      signature: { agents: true, own: false, text: 'Written with Goodboy' },
+    },
   },
 ] satisfies ReadonlyArray<IntegrationBinding>;
 
@@ -120,6 +135,9 @@ const store = create(() => ({
   loadProjectSentryLinks: vi.fn(async () => undefined),
   linkSentryProject: vi.fn(async () => undefined),
   unlinkSentryProject: vi.fn(async () => undefined),
+  slackChannels: {} as Record<string, { channels: ReadonlyArray<unknown> }>,
+  refreshSlackChannels: vi.fn(async () => undefined),
+  updateSlackConfig: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../../store', () => ({
@@ -278,7 +296,7 @@ describe('ToolSettingsScope', () => {
       secondary: 'acme/desktop',
       label: 'Sentry',
     },
-    { provider: 'slack', identity: 'Connected to Acme', secondary: 'as Ada', label: 'Slack' },
+    { provider: 'slack', identity: 'Connected as Ada', secondary: 'Acme', label: 'Slack' },
   ] satisfies ReadonlyArray<{
     provider: 'gitlab' | 'bitbucket' | 'jira' | 'sentry' | 'slack';
     identity: string;

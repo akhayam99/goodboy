@@ -452,6 +452,7 @@ export const purgeSessionForDelete = async ({
       { sql: 'DELETE FROM file_versions WHERE session_id = ?', params: [id] },
       { sql: 'DELETE FROM context_slots WHERE session_id = ?', params: [id] },
       { sql: 'DELETE FROM context_slot_history WHERE session_id = ?', params: [id] },
+      { sql: 'DELETE FROM session_decisions WHERE session_id = ?', params: [id] },
       {
         sql: `DELETE FROM goal_attachments
          WHERE session_id = ?

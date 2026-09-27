@@ -27,6 +27,7 @@ type Params = {
   readonly currentPath: string | null;
   readonly statOf: (mount: SessionProjectMount) => BranchStat | null;
   readonly statusOf: (mount: SessionProjectMount) => WorktreeStatus | null;
+  readonly isRequestMergedOf: (mount: SessionProjectMount) => boolean;
   readonly actions: ReadonlyArray<CrumbMenuAction>;
   readonly onSelect: (mount: SessionProjectMount) => void;
 };
@@ -46,20 +47,26 @@ export type BranchPlace = Pick<SessionProjectMount, 'baseBranch' | 'worktreePath
 type BranchStateParams = {
   readonly status: WorktreeStatus | null;
   readonly mount: BranchPlace | null;
+  readonly isRequestMerged: boolean;
 };
 
-export const branchStateOf = ({ status, mount }: BranchStateParams): CrumbState | null => {
+export const branchStateOf = ({
+  status,
+  mount,
+  isRequestMerged,
+}: BranchStateParams): CrumbState | null => {
   if (status === null) {
     return null;
   }
   const isMerged =
-    mount !== null &&
-    isBranchMergedOf({
-      status,
-      baseBranch: mount.baseBranch,
-      isMainCheckout: mount.worktreePath === mount.repoRoot,
-      isRequestMerged: false,
-    });
+    isRequestMerged ||
+    (mount !== null &&
+      isBranchMergedOf({
+        status,
+        baseBranch: mount.baseBranch,
+        isMainCheckout: mount.worktreePath === mount.repoRoot,
+        isRequestMerged: false,
+      }));
   const priority = branchPriorityOf({
     presence: branchPresenceOf({ status, isMerged }),
     main: mainPresenceOf({ status, isRebasingAgent: false }),
@@ -72,6 +79,7 @@ export const branchMenu = ({
   currentPath,
   statOf,
   statusOf,
+  isRequestMergedOf,
   actions,
   onSelect,
 }: Params): CrumbMenuModel => {
@@ -89,7 +97,11 @@ export const branchMenu = ({
         ) : (
           <span className="text-faint-foreground">No changes</span>
         ),
-      state: branchStateOf({ status: statusOf(mount), mount }),
+      state: branchStateOf({
+        status: statusOf(mount),
+        mount,
+        isRequestMerged: isRequestMergedOf(mount),
+      }),
       isCurrent: mount.worktreePath === currentPath,
       isDisabled: false,
       indent: 0,

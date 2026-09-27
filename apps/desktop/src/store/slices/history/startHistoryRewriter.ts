@@ -1,0 +1,179 @@
+import type { AgentId, AuxTaskId, SessionId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
+import { prepareHistoryRewrite } from '../../../features/history/historyEngine';
+import { taskModelAgentSpawnConfig } from '../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { historyTargetOf } from './historyTargetOf';
+import { reportHistoryStop } from './reportHistoryStop';
+import { rewriterKickoff } from './rewriterKickoff';
+import { setHistoryRun } from './setHistoryRun';
+import type {
+  ApplyHistoryRewriteOutcome,
+  GetFn,
+  HistoryStop,
+  SetFn,
+  StartHistoryRewriterInput,
+} from './types';
+
+export const HISTORY_REWRITER_NAME = 'History rewriter';
+
+const REWRITER_TASK: AuxTaskId = 'rebase';
+
+type ConfigParams = {
+  readonly get: GetFn;
+  readonly sessionId: SessionId;
+};
+
+const rewriterConfig = ({ get, sessionId }: ConfigParams) => {
+  const state = get();
+  const session = state.sessions.find((candidate) => candidate.id === sessionId) ?? null;
+  const overrides =
+    session === null ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
+  return taskModelAgentSpawnConfig({
+    task: REWRITER_TASK,
+    preferences: overrides?.taskModels,
+    workspaceDefaultProviderId: overrides?.defaultProviderId,
+    sessionDefaultProviderId: session?.providerPreference.defaultProvider ?? 'anthropic',
+    limitContext: autoLimitContext({ state }),
+  });
+};
+
+export type StartHistoryRewriterOutcome = ApplyHistoryRewriteOutcome | 'rewriting' | 'rewritten';
+
+export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
+  return async ({
+    sessionId,
+    mountId,
+    plan,
+    origin,
+    planId,
+    note,
+  }: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome> => {
+    const target = historyTargetOf({ get, sessionId, mountId });
+    const stopWith = async (stop: HistoryStop): Promise<StartHistoryRewriterOutcome> => {
+      setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop, planId } });
+      await reportHistoryStop({ get, set, target, origin, stop, planId });
+      return 'stopped';
+    };
+    setHistoryRun({
+      set,
+      sessionId,
+      mountId,
+      origin,
+      patch: { phase: 'trying', planId, stop: null, result: null, agentId: null },
+    });
+    const prepared = await prepareHistoryRewrite({
+      plan,
+      slug: `${mountId}-${Date.now()}`,
+    }).catch((error: unknown) => formatError(error));
+    if (typeof prepared === 'string') {
+      return stopWith({ reason: 'failed', message: prepared, files: [], sha: null });
+    }
+    if (prepared.stop === null && prepared.head !== null) {
+      if (origin === 'rebase') {
+        return get().applyHistoryRewrite({
+          sessionId,
+          mountId,
+          origin,
+          planId,
+          newHead: prepared.head,
+          expectedHead: plan.head,
+          map: prepared.map,
+          shouldPush: true,
+          byAgent: false,
+        });
+      }
+      setHistoryRun({
+        set,
+        sessionId,
+        mountId,
+        origin,
+        patch: {
+          phase: 'rewritten',
+          result: {
+            head: prepared.head,
+            expectedHead: plan.head,
+            map: prepared.map,
+            isTreeEqual: prepared.isTreeEqual,
+            changedFiles: prepared.changedFiles,
+            byAgent: false,
+          },
+        },
+      });
+      return 'rewritten';
+    }
+    if (prepared.stop === null || prepared.copyPath === null) {
+      return stopWith({
+        reason: 'failed',
+        message: 'The copy for the rewrite could not be kept.',
+        files: [],
+        sha: null,
+      });
+    }
+    const config = rewriterConfig({ get, sessionId });
+    if (config.provider === '') {
+      return stopWith({
+        reason: prepared.stop.kind === 'hook' ? 'hook' : 'conflict',
+        message: 'No provider is connected to hand the conflict to History rewriter.',
+        files: prepared.stop.files,
+        sha: prepared.stop.sha,
+      });
+    }
+    const copyPath = prepared.copyPath;
+    let agentId: AgentId;
+    try {
+      agentId = await get().spawnAgent(sessionId, {
+        name: HISTORY_REWRITER_NAME,
+        kindOverride: 'rewriter',
+        model: config.model,
+        provider: config.provider,
+        effort: config.effort,
+        focus: 'none',
+      });
+    } catch (error) {
+      return stopWith({ reason: 'failed', message: formatError(error), files: [], sha: null });
+    }
+    set((state) => ({
+      historyRewriters: {
+        ...state.historyRewriters,
+        [agentId]: { sessionId, mountId, copyPath, plan, origin, planId },
+      },
+    }));
+    setHistoryRun({
+      set,
+      sessionId,
+      mountId,
+      origin,
+      patch: {
+        phase: 'rewriting',
+        agentId,
+        copyPath,
+        stop: {
+          reason: prepared.stop.kind === 'hook' ? 'hook' : 'conflict',
+          message: prepared.stop.message,
+          files: prepared.stop.files,
+          sha: prepared.stop.sha,
+        },
+      },
+    });
+    const kickoff = rewriterKickoff({
+      branch: target.branch,
+      base: plan.base,
+      copyPath,
+      order: prepared.order,
+      stop: prepared.stop,
+      ...(note !== undefined && { note }),
+    });
+    void get()
+      .sendTurn({
+        sessionId,
+        agentId,
+        content: kickoff,
+        handoff: { instruction: kickoff, plan: null },
+      })
+      .catch((error: unknown) =>
+        stopWith({ reason: 'failed', message: formatError(error), files: [], sha: null }),
+      );
+    return 'rewriting';
+  };
+};

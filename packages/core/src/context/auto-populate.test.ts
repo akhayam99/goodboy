@@ -80,7 +80,7 @@ describe('autoPopulateContext', () => {
     const engine = new ContextEngine({ db });
     const slots = await engine.load(sessionId);
     expect(slots.find((s) => s.key === 'files_touched')?.value).toBe('src/auth.ts\nsrc/db.ts');
-    expect(slots.find((s) => s.key === 'decisions')?.value).toBe('switching to OAuth2 PKCE');
+    expect(slots.find((s) => s.key === 'decisions')?.value).toBe('- D1 switching to OAuth2 PKCE');
     expect(slots.find((s) => s.key === 'open_questions')?.value).toBe(
       'do we still support legacy session cookies?',
     );

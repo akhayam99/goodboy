@@ -26,6 +26,7 @@ const EMPTY_OVERRIDES: OverrideSettings = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 export const mergeWorkspaceOverrides = ({
@@ -53,6 +54,7 @@ export const mergeWorkspaceOverrides = ({
     replyTemplateNoChange: pick('replyTemplateNoChange'),
     resolveOnGithub: pick('resolveOnGithub'),
     resolveCommitStyle: pick('resolveCommitStyle'),
+    afterMerge: pick('afterMerge'),
   };
 };
 

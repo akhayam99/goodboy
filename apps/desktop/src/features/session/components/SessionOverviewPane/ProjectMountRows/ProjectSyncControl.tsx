@@ -14,7 +14,7 @@ import { useAppStore } from '../../../../../store';
 import { distanceAhead } from '../../../../../shared/lib/gitStatus';
 import { mainPresenceOf, type MainPresence } from '../../../../../shared/lib/branchPresence';
 import { BaseBranchSelect } from '../../../../worktree/BaseBranchSelect';
-import { useRebaseAgent } from '../../../hooks/useRebaseAgent';
+import { useRebaseBranch } from '../../../hooks/useRebaseBranch';
 import { usePushBranch } from '../../../hooks/usePushBranch';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 
@@ -88,7 +88,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
   const notify = ({ title, message }: NotifyParams) => {
     void reportError({ title, error: message, sessionId });
   };
-  const rebase = useRebaseAgent({
+  const rebase = useRebaseBranch({
     sessionId,
     mountId,
     status,

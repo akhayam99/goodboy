@@ -8,6 +8,20 @@ type Params = {
 export const configFromSlackConnection = ({ connection }: Params): SlackIntegrationConfig => ({
   teamId: connection.teamId,
   teamName: connection.teamName,
-  botUserId: connection.botUserId,
-  botUserName: connection.botUserName,
+  userId: connection.userId,
+  userName: connection.userName,
+  followedChannels: [],
+  hasSelectedChannels: true,
+  includePrivate: false,
+  agentPolicy: {
+    readFollowed: 'allow',
+    readOthers: 'off',
+    reply: 'ask',
+    react: 'allow',
+  },
+  signature: {
+    agents: true,
+    own: false,
+    text: 'Written with Goodboy',
+  },
 });

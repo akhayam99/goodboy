@@ -50,6 +50,14 @@ const surfaceChanges = ({
         target?.kind === 'diff' ? target.mountPath : null,
       ),
     },
+    diffPage: {
+      ...state.diffPage,
+      [sessionId]: keep(
+        lens === 'files',
+        state.diffPage[sessionId] ?? null,
+        target?.kind === 'diff' ? (target.page ?? null) : null,
+      ),
+    },
     terminalMountPath: {
       ...state.terminalMountPath,
       [sessionId]: keep(

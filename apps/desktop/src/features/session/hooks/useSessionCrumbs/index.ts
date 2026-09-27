@@ -26,10 +26,11 @@ import { openLens } from '../../openLens';
 import { AGENT_KIND_PALETTE, classifyAgent, resolveRootAgent } from '../../agent-kind';
 import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
 import { useSelectedAgentHome } from '../useSelectedAgentHome';
-import { REVIEW_MODE_LABEL } from '../../../review/reviewModeLabel';
+import { PULL_REQUEST_MODE_LABEL } from '../../../review/pullRequestModeLabel';
 import { focusedArtifactTitleOf } from '../../../artifacts/focusedArtifactTitleOf';
 import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolveDiffMount';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
+import { REWRITE_HISTORY_TITLE } from '../../../history/rewriteHistoryTitle';
 
 type Params = {
   readonly session: Session;
@@ -55,9 +56,13 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
   const setFocusedWorkflowRun = useAppStore((s) => s.setFocusedWorkflowRun);
   const setFocusedArtifactId = useAppStore((s) => s.setFocusedArtifactId);
   const navigate = useAppStore((s) => s.navigate);
-  const reviewMode = useAppStore((s) => s.reviewModes[sessionId] ?? 'queue');
-  const setReviewMode = useAppStore((s) => s.setReviewMode);
-  const reviewModeLabel = REVIEW_MODE_LABEL[reviewMode];
+  const pullRequestMode = useAppStore((s) => s.pullRequestModes?.[sessionId] ?? 'overview');
+  const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
+  const pullRequestModeLabel = PULL_REQUEST_MODE_LABEL[pullRequestMode];
+  const pullRequestNumber = useAppStore(
+    (s) =>
+      s.sessionSelectedPrNumber?.[sessionId] ?? s.sessionGithub?.[sessionId]?.pr?.number ?? null,
+  );
   const resolverThreadId = useAppStore((s) =>
     selectedAgentId == null || selectedChildHome !== 'review'
       ? null
@@ -84,6 +89,11 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
     }
     return mount.branch === '' ? mount.mountName : `${mount.mountName} ${mount.branch}`;
   });
+
+  const diffPageLabel = useAppStore((s) =>
+    s.diffPage?.[sessionId] === 'history' ? REWRITE_HISTORY_TITLE : null,
+  );
+  const closeRewriteHistory = useAppStore((s) => s.closeRewriteHistory);
 
   const selectedAgent = useMemo(
     () => phaseRuns.find((agent) => agent.id === selectedAgentId) ?? null,
@@ -178,8 +188,13 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
         selectedParentTone,
         selectedRootTone,
         selectedQuestionLabel,
-        reviewModeLabel,
+        pullRequestModeLabel:
+          pullRequestMode === 'create_pr' || pullRequestNumber !== null
+            ? pullRequestModeLabel
+            : null,
+        pullRequestNumber: pullRequestMode === 'create_pr' ? null : pullRequestNumber,
         diffBranchLabel,
+        diffPageLabel,
         selectedThreadLabel,
         lensLabel: (kind: LensKind) => lensLabelFor({ lens: kind, isBranchless }),
         handlers: {
@@ -212,7 +227,8 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
             }
             navigate({ to: agentPlace({ sessionId, agentId: rootAgentId }) });
           },
-          toReviewHome: () => setReviewMode({ sessionId, mode: 'queue' }),
+          toDiffBranch: () => closeRewriteHistory(sessionId),
+          toPullRequestHome: () => setPullRequestMode({ sessionId, mode: 'overview' }),
           toThread: () => {
             if (resolverThreadId === null) {
               return;
@@ -244,8 +260,12 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       selectedParentTone,
       selectedRootTone,
       selectedQuestionLabel,
-      reviewModeLabel,
+      pullRequestModeLabel,
+      pullRequestMode,
+      pullRequestNumber,
       diffBranchLabel,
+      diffPageLabel,
+      closeRewriteHistory,
       selectedThreadLabel,
       resolverThreadId,
       parentAgentId,
@@ -255,7 +275,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       setFocusedWorkflowRun,
       setFocusedArtifactId,
       navigate,
-      setReviewMode,
+      setPullRequestMode,
     ],
   );
 };

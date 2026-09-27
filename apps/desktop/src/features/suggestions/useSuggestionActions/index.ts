@@ -2,20 +2,28 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { formatError } from '@goodboy/ui';
 import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, sessionPlace } from '../../../store';
+import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
 import { sessionResolveStyle } from '../../../store/sessionReplySettings';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceBehind } from '../../../shared/lib/gitStatus';
+import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast';
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
 import { startResolve } from '../../resolve/startResolve';
 import { kindRouting } from '../../session/agent-kind';
-import { useRebaseAgent } from '../../session/hooks/useRebaseAgent';
+import { useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
 import { resolveNewLabel } from '../../resolve/resolveQueueCopy';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
+
+const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
+  window.dispatchEvent(
+    new CustomEvent('goodboy:open-settings', {
+      detail: { scope: 'providers', provider: providerId, action: 'login' },
+    }),
+  );
 
 type Params = {
   readonly session: Session;
@@ -28,6 +36,7 @@ export type SuggestionAction = {
   readonly isDisabled: boolean;
   readonly onAct: () => void;
   readonly choices?: ReadonlyArray<SuggestionActionChoice>;
+  readonly requiresConfirm?: boolean;
 };
 
 export type SuggestionActionChoice = {
@@ -85,6 +94,14 @@ export const useSuggestionActions = ({
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const proposalActions = useMountProposalActions({ sessionId });
   const runPlan = useAppStore((state) => state.runPlan);
+  const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
+  const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
+  const createPrForSession = useAppStore((state) => state.createPrForSession);
+  const markPrReady = useAppStore((state) => state.markPrReady);
+  const mergePr = useAppStore((state) => state.mergePr);
+  const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
+  const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
+  const announceAgentStarted = useAgentStartedToast();
 
   const reportError = (title: string) => (message: string) => {
     void emitNotification({
@@ -121,7 +138,7 @@ export const useSuggestionActions = ({
     }
     return null;
   }, [rebaseMounts, statuses]);
-  const rebase = useRebaseAgent({
+  const rebase = useRebaseBranch({
     sessionId,
     mountId: behind?.mountId ?? null,
     status: behind?.status ?? null,
@@ -234,7 +251,14 @@ export const useSuggestionActions = ({
           label: 'Start implementer',
           isDisabled: false,
           onAct: () => {
-            void runPlan(sessionId, suggestion.payload.planId);
+            void runPlan(sessionId, suggestion.payload.planId).then((agentId) => {
+              announceAgentStarted({
+                sessionId,
+                agentId,
+                title: 'Implementer started',
+                message: 'An agent is running this plan. You can keep working.',
+              });
+            });
           },
         },
         onDismiss: null,
@@ -256,6 +280,201 @@ export const useSuggestionActions = ({
           },
         },
         onDismiss: () => proposalActions.dismiss(proposalTarget({ suggestion })),
+      };
+    }
+    if (suggestion.kind === 'approve-tool') {
+      return {
+        primary: {
+          label: 'Review',
+          isDisabled: false,
+          onAct: () =>
+            navigate({ to: agentPlace({ sessionId, agentId: suggestion.payload.agentId }) }),
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'sign-in') {
+      return {
+        primary: {
+          label: 'Sign in',
+          isDisabled: false,
+          onAct: () => openProviderSignIn({ providerId: suggestion.payload.providerId }),
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'unblock-step') {
+      return {
+        primary: {
+          label: 'Skip',
+          isDisabled: false,
+          requiresConfirm: true,
+          onAct: () => {
+            void skipStuckStepAndAdvance(sessionId, suggestion.payload.runId, {
+              onlyWhenBlocked: true,
+            });
+          },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'retry-agent') {
+      return {
+        primary: {
+          label: 'Retry',
+          isDisabled: false,
+          onAct: () => {
+            void spawnAgent(sessionId, {
+              kindOverride: suggestion.payload.agentKind,
+              focus: 'none',
+            }).catch((error: unknown) => reportError("Couldn't retry")(formatError(error)));
+          },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'check-changes') {
+      return {
+        primary: {
+          label: 'Start reviewer',
+          isDisabled: false,
+          onAct: () => {
+            void spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none' }).catch(
+              (error: unknown) => reportError("Couldn't start the reviewer")(formatError(error)),
+            );
+          },
+          choices: [
+            {
+              id: 'start-tester',
+              label: 'Start tester instead',
+              description: 'Writes tests for the changes',
+              detail: '',
+              onAct: () => {
+                void spawnAgent(sessionId, { kindOverride: 'tester', focus: 'none' }).catch(
+                  (error: unknown) => reportError("Couldn't start the tester")(formatError(error)),
+                );
+              },
+            },
+          ],
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'fix-checks') {
+      return {
+        primary: {
+          label: 'Start debugger',
+          isDisabled: false,
+          onAct: () => {
+            void spawnAgent(sessionId, {
+              kindOverride: 'debugger',
+              mountId: suggestion.payload.mountId,
+              focus: 'none',
+            }).catch((error: unknown) =>
+              reportError("Couldn't start the debugger")(formatError(error)),
+            );
+          },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'push-branch') {
+      return {
+        primary: {
+          label: 'Push',
+          isDisabled: false,
+          onAct: () => {
+            void pushSessionBranch({ sessionId, mountId: suggestion.payload.mountId }).then(
+              (result) => {
+                if (!result.ok) {
+                  reportError("Couldn't push the branch")(result.error);
+                }
+              },
+            );
+          },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'open-pr') {
+      return {
+        primary: {
+          label: 'Open PR',
+          isDisabled: false,
+          onAct: () => {
+            void createPrForSession({
+              sessionId,
+              mountId: suggestion.payload.mountId,
+            }).catch((error: unknown) =>
+              reportError("Couldn't create the pull request")(formatError(error)),
+            );
+          },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'mark-ready') {
+      return {
+        primary: {
+          label: 'Mark ready',
+          isDisabled: false,
+          onAct: () => {
+            void markPrReady(sessionId, suggestion.payload.prNumber);
+          },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'merge-pr') {
+      return {
+        primary: {
+          label: 'Merge',
+          isDisabled: false,
+          requiresConfirm: true,
+          onAct: () => {
+            void mergePr(sessionId, suggestion.payload.prNumber, suggestion.payload.defaultMethod);
+          },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'close-worktree') {
+      return {
+        primary: {
+          label: 'Close worktree',
+          isDisabled: false,
+          requiresConfirm: true,
+          onAct: () => {
+            void resolveMountCleanup({
+              sessionId,
+              requestId: suggestion.payload.requestId,
+              decision: 'remove',
+            });
+          },
+        },
+        onDismiss: () =>
+          void resolveMountCleanup({
+            sessionId,
+            requestId: suggestion.payload.requestId,
+            decision: 'keep',
+          }),
+      };
+    }
+    if (suggestion.kind === 'continue-with-workflow') {
+      return {
+        primary: {
+          label: 'Set up',
+          isDisabled: false,
+          onAct: () => {
+            void attachWorkflowToSession(sessionId, suggestion.payload.workflowId, {
+              goal: session.goal,
+              navigate: true,
+            }).catch((error: unknown) =>
+              reportError("Couldn't attach the workflow")(formatError(error)),
+            );
+          },
+        },
+        onDismiss: null,
       };
     }
     return NO_ACTIONS;

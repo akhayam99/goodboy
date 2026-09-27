@@ -16,6 +16,8 @@ export {
   extractAllCommentReplies,
   extractAllCommentResolved,
   extractAllCommentWontfix,
+  extractHistoryReport,
+  extractScribeText,
   extractClusterDone,
   extractClustersFromMarker,
   extractCommentAnalysis,
@@ -46,6 +48,8 @@ export {
   type ExtractedCommentReply,
   type ExtractedCommentResolution,
   type ExtractedCommentWontfix,
+  type ExtractedHistoryReport,
+  type ExtractedScribeText,
   type ExtractedHandoff,
   type ExtractedMaterializeRequest,
   type ExtractedPlan,
@@ -53,6 +57,31 @@ export {
   type PlanReadinessInput,
   type PlanReadinessResult,
 } from './extractors';
+export { extractDecisionOps, type ExtractedDecisionOp } from './marker-parsing';
+export {
+  activeDecisionsNewestFirst,
+  applyDecisionOps,
+  CONSOLIDATION_OP_KINDS,
+  countDecisionChanges,
+  hasVisibleDecisionChange,
+  isLedgerOverBudget,
+  normalizeDecisionText,
+  reconcileDecisionsText,
+  renderDecisionsSlot,
+  seedDecisionLedger,
+  type ApplyDecisionOpsResult,
+  type DecisionActor,
+  type DecisionChange,
+  type DecisionChangeCounts,
+  type DecisionOp,
+  type DecisionRejection,
+  type DecisionRejectionReason,
+} from './decisions-ledger';
+export {
+  applyDecisionOpsToSession,
+  loadDecisionLedger,
+  type AppliedDecisionOps,
+} from './decisions-ledger-store';
 export { extractProseQuestion } from './prose-question';
 export {
   autoPopulateContext,

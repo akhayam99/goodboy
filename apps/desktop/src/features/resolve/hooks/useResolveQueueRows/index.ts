@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type {
+  DiffComment,
   PrComment,
   ResolveAttempt,
   ResolvePublication,
@@ -23,6 +24,9 @@ export const useResolveQueueRows = ({ sessionId }: Params): ReadonlyArray<Resolv
     (s) =>
       s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
   );
+  const notes = useAppStore(
+    (s) => s.diffComments[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<DiffComment>),
+  );
   const queueItems = useAppStore((s) => s.sessionResolveQueueItems[sessionId] ?? EMPTY_QUEUE_ITEMS);
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
   const publications = useAppStore(
@@ -37,7 +41,8 @@ export const useResolveQueueRows = ({ sessionId }: Params): ReadonlyArray<Resolv
         attempts,
         deliveryReceipts,
         comments,
+        notes,
       }),
-    [attempts, comments, deliveryReceipts, queueItems],
+    [attempts, comments, deliveryReceipts, notes, queueItems],
   );
 };

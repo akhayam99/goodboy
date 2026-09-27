@@ -14,6 +14,8 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   worktree_created: { lens: 'files', label: 'Open files' },
   branch_created: { lens: 'files', label: 'Open files' },
   branch_switched: { lens: 'files', label: 'Open files' },
+  branch_deleted: null,
+  branch_restored: { lens: 'files', label: 'Open files' },
   issue_linked: { lens: null, label: 'Open overview' },
   issue_unlinked: { lens: null, label: 'Open overview' },
   pr_created: { lens: 'pr', label: 'Open PR' },
@@ -40,6 +42,10 @@ const EVENT_TARGET: Record<SessionEventKind, EventTarget | null> = {
   write_destination_changed: { lens: 'files', label: 'Open files' },
   question_dismissed: { lens: 'questions', label: 'Open questions' },
   question_restored: { lens: 'questions', label: 'Open questions' },
+  history_rewritten: { lens: 'files', label: 'Open' },
+  history_pushed: { lens: 'files', label: 'Open' },
+  history_stopped: { lens: 'files', label: 'Open' },
+  history_restored: { lens: 'files', label: 'Open' },
 };
 
 const eventOpenTarget = ({ kind }: { readonly kind: SessionEventKind }): EventTarget | null =>
@@ -128,10 +134,35 @@ export const useTimelineOpen = ({
           open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'files' }) }),
         };
       }
+      if (entry.kind === 'event' && entry.event.kind === 'branch_deleted') {
+        const deletedBranchId = entry.event.payload?.deletedBranchId;
+        if (deletedBranchId === undefined) {
+          return null;
+        }
+        return {
+          label: 'Restore',
+          open: () => {
+            void store
+              .restoreDeletedBranch({ id: deletedBranchId })
+              .catch((error: unknown) =>
+                store.reportError({ title: "Couldn't restore the branch", error, sessionId }),
+              );
+          },
+        };
+      }
       if (entry.kind === 'event') {
         const target = eventOpenTarget({ kind: entry.event.kind });
         if (target == null) {
           return null;
+        }
+        const historyPath = entry.event.kind.startsWith('history_')
+          ? (entry.event.payload?.worktreePath ?? null)
+          : null;
+        if (historyPath !== null) {
+          return {
+            label: target.label,
+            open: () => store.openRewriteHistory(sessionId, historyPath),
+          };
         }
         return {
           label: target.label,

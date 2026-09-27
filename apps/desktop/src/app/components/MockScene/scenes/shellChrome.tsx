@@ -10,6 +10,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { AppFooter } from '../../AppFooter';
+import { DrawerHost } from '../../DrawerHost';
+import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
 import { AppTopBar } from '../../AppTopBar';
 import { ToastProvider } from '../../Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
@@ -102,6 +104,7 @@ type ShellFrameProps = {
 };
 
 export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameProps) => {
+  const isDrawerOpen = useAppStore((state) => selectOpenDrawer(state) !== null);
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: true,
@@ -112,6 +115,7 @@ export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameP
     <ToastProvider>
       <AppShell
         topBar={<AppTopBar onOpenSpend={noop} onOpenScript={noop} />}
+        drawer={isDrawerOpen ? <DrawerHost /> : null}
         leftHidden={arrangement.leftHidden}
         leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
         leftSidebar={
@@ -193,6 +197,7 @@ export const mockWorkspace = ({ id, name }: MockWorkspaceParams): Workspace => (
     replyTemplateNoChange: null,
     resolveOnGithub: null,
     resolveCommitStyle: null,
+    afterMerge: null,
   },
   createdAt: clock.iso({ at: '2026-08-01T09:00:00.000Z' }),
   updatedAt: clock.iso({ at: '2026-09-20T09:00:00.000Z' }),

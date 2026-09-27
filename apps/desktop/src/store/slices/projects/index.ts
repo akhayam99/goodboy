@@ -12,6 +12,7 @@ import { previewProjectAdoption } from './previewProjectAdoption';
 import { removeProject } from './removeProject';
 import { saveGoodboyIgnore } from './saveGoodboyIgnore';
 import { setProjectStarred } from './setProjectStarred';
+import { updateProjectAfterMerge } from './updateProjectAfterMerge';
 import { updateProjectBaseBranch } from './updateProjectBaseBranch';
 import type { GetFn, SetFn } from './types';
 
@@ -27,6 +28,7 @@ export const createProjectsSlice = (set: SetFn, get: GetFn) => ({
   fetchProjectCheckouts: fetchProjectCheckouts(set, get),
   fastForwardProjectCheckouts: fastForwardProjectCheckouts(set, get),
   updateProjectBaseBranch: updateProjectBaseBranch(set, get),
+  updateProjectAfterMerge: updateProjectAfterMerge(set, get),
   setProjectStarred: setProjectStarred(set, get),
   describeProject: describeProject(set, get),
   checkGoodboyIgnore: checkGoodboyIgnore(set, get),

@@ -14,18 +14,16 @@ import {
 } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight, GitBranch, PenLine } from 'lucide-react';
 import { ghBaseBranches } from '../../github';
-import { PR_DRAFT_AGENT_NAME } from '../../prDraftAgent';
 import { usePrDraftAgentRunning } from '../../usePrDraftAgentRunning';
 import { closingIssueReferences } from '../../closingIssueReferences';
-import { appendOperatorNotes } from '../../../session/utils/appendOperatorNotes';
 import { AgentSpawnConfig } from '../../../session/components/AgentSpawnConfig';
 import type { AgentSpawnConfigValue } from '../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
 import { taskModelAgentSpawnConfig } from '../../../session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
 import { BranchCombobox } from '../../../worktree/BranchCombobox';
 import type { LocalBranchInfo } from '../../../worktree/worktree';
-import { EMPTY_ARRAY, useAppStore, sessionPlace } from '../../../../store';
-import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { scribeKeyOf } from '../../../../store/slices/scribe/scribeKeyOf';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { openUrl } from '../../../../shared/lib/editor';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -51,9 +49,6 @@ export const CreatePrPanel = ({
   onCancel,
 }: Props) => {
   const createPrForSession = useAppStore((s) => s.createPrForSession);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const navigate = useAppStore((s) => s.navigate);
-  const announceAgentStarted = useAgentStartedToast();
   const isDraftAgentRunning = usePrDraftAgentRunning({ sessionId });
   const repo = useSessionRepo({ sessionId });
   const branch = repo?.branch ?? null;
@@ -88,6 +83,32 @@ export const CreatePrPanel = ({
   const [error, setError] = useState<string | null>(null);
   const [agentConfig, setAgentConfig] = useState<AgentSpawnConfigValue>(resolvedAgentConfig);
   const [agentConfigUserTouched, setAgentConfigUserTouched] = useState(false);
+  const [scribeBody, setScribeBody] = useState<string | null>(null);
+  const requestScribe = useAppStore((s) => s.requestScribe);
+  const scribeMountId = mountId ?? repo?.mountId ?? null;
+  const scribeWork = useAppStore((s) =>
+    scribeMountId === null
+      ? null
+      : (s.scribeWork[scribeKeyOf({ mountId: scribeMountId, kind: 'pr' })] ?? null),
+  );
+  const isScribeWriting = scribeWork?.status === 'writing';
+  const scribeOutput = scribeWork?.status === 'ready' ? scribeWork.output : null;
+  const scribeFailure = scribeWork?.status === 'failed' ? scribeWork.error : null;
+  const changelogEntry = scribeOutput?.changelogEntry ?? null;
+
+  useEffect(() => {
+    if (scribeOutput === null) {
+      return;
+    }
+    if (scribeOutput.prTitle !== null) {
+      setTitle(scribeOutput.prTitle);
+    }
+    if (scribeOutput.prBody !== null) {
+      setBody(scribeOutput.prBody);
+      setScribeBody(scribeOutput.prBody);
+    }
+    setMode('manual');
+  }, [scribeOutput]);
 
   const branchOptions = useMemo<ReadonlyArray<LocalBranchInfo>>(
     () => branches.map((name) => ({ name, inUse: false, hasUncommitted: false })),
@@ -139,7 +160,7 @@ export const CreatePrPanel = ({
   }, [projectId, projectRoot, workspaceId]);
 
   const onCreate = async () => {
-    if (busy !== null || isDraftAgentRunning || title.trim().length === 0) {
+    if (busy !== null || isDraftAgentRunning || isScribeWriting || title.trim().length === 0) {
       return;
     }
     setBusy('create');
@@ -152,6 +173,7 @@ export const CreatePrPanel = ({
         body,
         base,
         draft,
+        isScribeBody: scribeBody !== null && body === scribeBody,
       });
       onCreated();
     } catch (err) {
@@ -162,45 +184,27 @@ export const CreatePrPanel = ({
   };
 
   const onCreateWithAi = async () => {
-    if (busy !== null || isDraftAgentRunning) {
+    if (busy !== null || isDraftAgentRunning || isScribeWriting || scribeMountId === null) {
       return;
     }
     setBusy('ai');
     setError(null);
     try {
-      const prompt = [
-        `Open a GitHub pull request for this session's branch.`,
-        ...(closedPr
-          ? [
-              `- IMPORTANT: a previous PR #${closedPr.number} (${closedPr.url}) on this branch was CLOSED on purpose. Open a brand new pull request. Do NOT reopen #${closedPr.number}, and do not be confused if you find that closed PR while checking.`,
-            ]
-          : []),
-        `- Write a clear, conventional title and a concise description from the committed changes.`,
-        `- Session goal: "${defaultTitle}".`,
-        ...(references.length > 0
-          ? [
-              `- End the description with these lines exactly, so GitHub links the issues:\n${references.map((reference) => reference.line).join('\n')}`,
-            ]
-          : []),
-        `- If this project defines a PR-creation skill, command, or template (look under .claude/), follow it.`,
-        `- Open it as a ${draft ? 'draft' : 'ready-for-review'} PR.`,
-        `Then run \`gh pr create\` to open it and report the PR URL.`,
-      ].join('\n');
-      const agentId = await spawnAgent(sessionId, {
-        ...(mountId === null ? {} : { mountId }),
-        name: PR_DRAFT_AGENT_NAME,
-        initialPrompt: appendOperatorNotes({ prompt, hint: agentConfig.hint }),
-        model: agentConfig.model,
-        ...(agentConfig.provider !== '' && { provider: agentConfig.provider }),
-        effort: agentConfig.effort,
-        focus: 'none',
-      });
-      navigate({ to: sessionPlace({ sessionId }) });
-      announceAgentStarted({
+      await requestScribe({
         sessionId,
-        agentId,
-        title: 'Agent started',
-        message: 'An agent is drafting the pull request. You can keep working.',
+        mountId: scribeMountId,
+        task: {
+          kind: 'pr',
+          closedPrNumber: closedPr?.number ?? null,
+          references: references.map((reference) => reference.line),
+          isDraft: draft,
+        },
+        hint: agentConfig.hint,
+        routing: {
+          provider: agentConfig.provider,
+          model: agentConfig.model,
+          effort: agentConfig.effort,
+        },
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -225,14 +229,14 @@ export const CreatePrPanel = ({
           <section className="flex flex-col">
             <SectionHeader
               label="How"
-              hint="Fill the pull request yourself, or hand it to an agent that drafts and opens it."
+              hint="Fill the pull request yourself, or let Scribe write the title and description for you to check."
               action={
                 <SegmentedTabs
                   ariaLabel="Creation mode"
                   size="sm"
                   options={[
                     { value: 'manual', label: 'Manual', icon: PenLine },
-                    { value: 'agent', label: 'With an agent', icon: CONCEPT_ICONS.agents },
+                    { value: 'agent', label: 'Write it for me', icon: CONCEPT_ICONS.agents },
                   ]}
                   value={mode}
                   onChange={setMode}
@@ -287,7 +291,7 @@ export const CreatePrPanel = ({
               <FieldRow
                 label="Agent"
                 layout="stacked"
-                help="Routing and optional notes for the agent that drafts the title and description, then opens the pull request."
+                help="Routing and optional notes for Scribe. It writes the title and description, never code, and you open the pull request."
               >
                 <AgentSpawnConfig
                   value={agentConfig}
@@ -296,7 +300,7 @@ export const CreatePrPanel = ({
                     setAgentConfig(value);
                   }}
                   disabled={busy !== null}
-                  role={{ label: 'Pull request author', hint: 'Fixed by this panel' }}
+                  role={{ label: 'Scribe', hint: 'Fixed by this panel' }}
                 />
               </FieldRow>
             )}
@@ -329,6 +333,18 @@ export const CreatePrPanel = ({
                 </FieldRow>
               </>
             )}
+            {changelogEntry !== null && (
+              <>
+                <FieldRow
+                  label="Changelog entry"
+                  help="Scribe wrote it in the format of the repository changelog. Copy it where it belongs."
+                >
+                  <pre className="w-full whitespace-pre-wrap rounded-md bg-muted px-2 py-1.5 font-mono text-secondary text-foreground sm:w-96">
+                    {changelogEntry}
+                  </pre>
+                </FieldRow>
+              </>
+            )}
             <Divider />
             <FieldRow
               label="Open as draft"
@@ -345,6 +361,21 @@ export const CreatePrPanel = ({
       <footer className="shrink-0 px-6 py-3">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
+            {error == null && isScribeWriting && (
+              <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
+                <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                Scribe is writing the title and description.
+              </span>
+            )}
+            {error == null && scribeFailure !== null && (
+              <span
+                role="status"
+                className="inline-flex min-w-0 items-center gap-1 truncate text-label text-warning"
+              >
+                <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                {scribeFailure}
+              </span>
+            )}
             {error == null && isDraftAgentRunning && (
               <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
                 <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
@@ -370,7 +401,9 @@ export const CreatePrPanel = ({
           {mode === 'manual' ? (
             <Button
               onClick={() => void onCreate()}
-              disabled={busy !== null || isDraftAgentRunning || title.trim().length === 0}
+              disabled={
+                busy !== null || isDraftAgentRunning || isScribeWriting || title.trim().length === 0
+              }
             >
               {busy === 'create' ? (
                 <span className="text-shimmer">Creating…</span>
@@ -384,14 +417,16 @@ export const CreatePrPanel = ({
           ) : (
             <Button
               onClick={() => void onCreateWithAi()}
-              disabled={busy !== null || isDraftAgentRunning}
+              disabled={
+                busy !== null || isDraftAgentRunning || isScribeWriting || scribeMountId === null
+              }
             >
-              {busy === 'ai' ? (
-                <span className="text-shimmer">Drafting…</span>
+              {busy === 'ai' || isScribeWriting ? (
+                <span className="text-shimmer">Writing…</span>
               ) : (
                 <>
                   <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden />
-                  Draft with agent
+                  Write it for me
                 </>
               )}
             </Button>

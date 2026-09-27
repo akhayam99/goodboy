@@ -34,6 +34,7 @@ async function makeSeededDb(): Promise<DbInterface> {
         replyTemplateNoChange: null,
         resolveOnGithub: null,
         resolveCommitStyle: null,
+        afterMerge: null,
       },
       createdAt: FIXED_NOW,
       updatedAt: FIXED_NOW,

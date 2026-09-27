@@ -67,23 +67,64 @@ on macOS and Linux.
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
 
-### Document windows
+### Opening an artifact outside the app
 
-- **A document window loads only a route of the bundle.** `Open in window` and
-  `Print` open the same hash route (`#print=artifact&session=…&artifact=…`),
-  rendered by `ArtifactReaderView` with `ArtifactDocument`. `mode=read` shows
-  the document with a Print and Copy toolbar; without it the window opens the
-  print dialog once. Reader windows are labelled `win-reader-*` and print
-  windows `win-print-*`.
-- **Every `win-*` window gets the full IPC grant** of
-  `apps/desktop/src-tauri/capabilities/default.json`. So no `win-*` window may
-  ever load remote content or a file from disk. A future window that shows
-  remote pages needs its own label outside `win-*`, no capability, and its
-  own CSP.
+- **There is no reader window and no print window.** A plan, a report and a
+  wireframe render in the app through `ArtifactDocument` (`medium="screen"`,
+  themed) and on disk through the same component (`medium="file"`, always
+  light). `Open in browser` (`artifact_mirror_open`) opens that file with the
+  OS default web browser, never with a `.html` file's default app: macOS
+  resolves the `https` handler from `LaunchServices`, Windows reads the
+  `UrlAssociations` registry key for `https`, and both fall back to the
+  platform opener (`spawn_open`) if resolution fails; Linux always uses that
+  opener. `⌘P` from there prints, with the browser's own print dialog.
+- **The file is never stale.** `meta.json` carries `rendererVersion`
+  (`ARTIFACT_RENDERER_VERSION`) beside `revision` and `updatedAt`. Rust's
+  `is_current` compares all three, so a restyle that bumps the version alone,
+  with no artifact change, marks every mirrored file pending and the
+  post-boot backfill rewrites the whole archive.
 - **The document carries no runtime style.** No `<style>` element and no
   `style` string built at runtime: Tauri adds a nonce to the CSP and the
   webview then drops `unsafe-inline`. The styles live in `artifactDocument.css`,
-  keyed on `data-medium` (`window` for the reader, `paper` for print).
+  keyed on `data-medium` (`screen` in the app, `file` on disk; `@media print`
+  inside `file` covers paper). Every file on disk also carries its own
+  `Content-Security-Policy` meta tag (`default-src 'none'; …`), so opening it
+  in a browser makes no network call.
+- **The artifacts folder is one command away.** The lens's `More` menu opens
+  `~/.goodboy/workspaces/<slug>/artifacts/` in the OS file manager
+  (`artifact_mirror_open_root`), since `~/.goodboy` itself is hidden.
+
+### Frames
+
+- **A wireframe is shown as its real pages, in an isolated frame.** The app
+  never renders a wireframe in its own DOM. The viewer compiles the spec with
+  the same renderer that writes the folder (`features/wireframes/wireframePages/`),
+  hands the pages to Rust with `frame_stage`, and shows them in an
+  `<iframe sandbox="allow-scripts">` on the custom `gbframe` scheme
+  (`gbframe://localhost/<stage>/<page>`, `http://gbframe.localhost/...` on
+  Windows). `frame_release` drops a stage when the viewer unmounts; stages
+  live in memory, at most 16 MB, least recently used out first.
+- **The frame has no same origin.** Without `allow-same-origin` its origin is
+  opaque: no access to the parent, no cookies, no top navigation, no forms, no
+  popups, and no Tauri capability covers it. Every `gbframe` response carries
+  its own CSP (`default-src 'none'`, styles and scripts only from `gbframe`,
+  `connect-src 'none'`, `form-action 'none'`) and `Cache-Control: no-store`.
+  The app CSP only adds `frame-src gbframe: http://gbframe.localhost`.
+- **One script of ours, only on the stage.** Rust serves the staged pages with
+  one difference from the file on disk: `/_gb/stage.css` and `/_gb/stage.js`
+  (`src-tauri/src/frame_stage.*`) in `<head>`. The file never holds them. The
+  stylesheet hides the page chrome (`.wf-page-chrome`) so the stage shows the
+  screen alone. The script talks to the parent only with `postMessage`:
+  `navigated { path, height }` on load, `picked { nodeId, label }` and
+  `pickEnded` while Pick is on; from the parent, `pick { isOn }`, `reveal { nodeId }`
+  and `variant { variantId }` (sets `data-variant` on the page, which the
+  generated stylesheet uses to hide nodes outside that release cut).
+  The parent accepts a message only when `event.source` is that iframe's
+  `contentWindow` and its shape parses (`frame/frameMessage.ts`). Pages mark
+  each node with `data-node` so the script can find it.
+- **Agent text reaches the page only escaped.** The renderer escapes every
+  string of the spec; no agent string becomes a script, a `style` or an `on*`
+  attribute.
 
 ### Git status reads
 
@@ -172,7 +213,12 @@ Everything the app saves for itself lives in `~/.goodboy`.
 - `workspaces/<slug>/artifacts/<date>-<title>-<id>/`: a copy of each plan,
   report and wireframe of that workspace (`artifacts-dev/` for debug builds).
   A plan or a report gets `index.html`, `document.css`, `source.md` and
-  `meta.json`; a wireframe gets the folder its export writes. The folder is
+  `meta.json`. A wireframe gets one subfolder per version (`v1/`, `v2/`, ...:
+  `index.html`, one page per screen and per state under `screens/`,
+  `wireframe.css` and the version's `wireframe.json`), an `index.html` at the
+  root that lists every version with what was asked, one
+  `wireframe.schema.json`, a `README.md` and `meta.json`. Versions come from
+  `artifact_revisions` and are never pruned; only Storage deletes the folder. The folder is
   keyed by the last 6 characters of the artifact id and keeps its name when
   the title changes; `meta.json` holds the id, kind, title, status, revision,
   session, workspace and dates. It is a mirror: the database is the truth, the
@@ -186,9 +232,9 @@ Everything the app saves for itself lives in `~/.goodboy`.
   `artifact_mirror_remove` (confined to the mirror root) before it deletes the
   row. If the row survives a failed delete, the next backfill writes its copy
   again. `session_artifacts`
-  also stores `opened_at` (written when the artifact shell or the reader
-  window opens it, at most once per artifact every 10 minutes), `kept_at` and
-  `kept_until` for the Storage Keep action.
+  also stores `opened_at` (written when the artifact shell opens it, at most
+  once per artifact every 10 minutes), `kept_at` and `kept_until` for the
+  Storage Keep action.
 - `file-versions/`: saved versions of files.
 - `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
 - `boot-breadcrumbs.log`: how long each startup step took.
@@ -209,3 +255,65 @@ in `<project-root>/.kay/skills/` or `<project-root>/.claude/skills/`.
 
 The mount table, the operation log, recovery and cleanup are described in
 [mounts.md](mounts.md).
+
+### Moving a project's folder
+
+`projects.root_path`, `session_worktrees.worktree_path` and
+`last_worktree_path`, `retained_worktree_paths`, `worktree_roots`,
+`resolve_candidates`/`resolve_attempts`/`resolve_publications`,
+`skills.file_path` and `mount_operations` all store absolute paths. Moving a
+project's folder on disk (a new drive, `~/nerd` to `~/github`) does not touch
+the database: every saved path still points at the old location, so the
+project reads as `missing` and its sessions read as `unavailable`, the same
+non-destructive state as a disconnected disk (see
+[mounts.md](mounts.md)). Nothing is lost; git's own worktree links inside the
+repo point at the old absolute path too, until `git worktree repair` runs
+again from the new root.
+
+`projects.root_commit` and `projects.remote_url` hold the repository's
+identity (`repo_identity`: the root commit(s) from
+`git rev-list --max-parents=0 HEAD`, and `origin`'s URL normalized without
+credentials or a trailing `.git`), written when a project is linked, when it
+is reconnected, and once in the background the first time its git status
+comes back `ready` after boot. It never leaves the local database.
+
+Relocating a project (`project_relocate` in
+`apps/desktop/src-tauri/src/project_relocation.rs`) rewrites every table
+above by path prefix inside one transaction, checks the `UNIQUE` constraints
+on `projects.root_path` and `session_worktrees.worktree_path` first, and
+calls `git worktree repair` from the new root once the commit lands. Finding
+candidate folders (`find_moved_projects`) reads one level under a chosen
+parent, computes `repo_identity` for each, and matches saved projects by
+identity first and by folder name second; the desktop UI is
+`features/workspace/components/LocateMovedProjects/`, backed by the
+`project-relocation` store slice. `Undo move` reverses the same rewrite
+through `project_relocation_undo`.
+
+### Backup and setup export
+
+Settings › App › Backup reads and writes a JSON bundle, schema version 3
+(`apps/desktop/src-tauri/src/config_export.rs`, mirrored in
+`packages/types/src/config-bundle.ts`). What goes in is chosen per group
+(`ExportGroups`): workspaces, projects, folder paths, profile, workflows you
+made, workflows the orchestrator wrote, saved scripts, permission rules,
+budget rules, linked integrations and app preferences. Folder paths and
+orchestrator-written workflows are off by default; every other group is on.
+Never included, in any bundle: API keys and tokens, sign-ins, sessions and
+transcripts, artifacts, worktree folders, usage history, notifications.
+
+Before a write, `config_export_preview` reports which open security findings
+(`security_findings`, see [SECURITY.md](../SECURITY.md)) fall inside the
+selected groups; `config_export_write` takes an explicit `leaveOut` list of
+fingerprints and skips that finding's subject (a script, a permission rule,
+a workspace's profile) entirely. The file is written with `0600` permissions.
+
+Import is a read-only preview followed by an explicit apply, never one step:
+`config_import_preview` matches each bundle workspace to an existing one by
+id then by name, and matches each project without a folder path against
+candidate folders under a chosen parent, reusing `find_moved_projects` from
+project relocation (one matching engine, two call sites). The caller then
+picks, per workspace, `merge into <existing>` or `add as a new workspace`,
+and resolves a folder for projects the engine could not place, before calling
+`config_import_apply`. Import only inserts and updates; it never deletes a
+row, and a project it cannot resolve a folder for is skipped and counted,
+not dropped from the file.

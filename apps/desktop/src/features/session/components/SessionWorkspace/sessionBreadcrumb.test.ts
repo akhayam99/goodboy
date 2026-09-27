@@ -11,7 +11,7 @@ const makeHandlers = (): SessionBreadcrumbHandlers => ({
   toArtifactsList: vi.fn(),
   toParentAgent: vi.fn(),
   toRootAgent: vi.fn(),
-  toReviewHome: vi.fn(),
+  toPullRequestHome: vi.fn(),
 });
 
 const lensLabel = (lens: LensKind) => lens;
@@ -31,7 +31,7 @@ const base = (
   selectedParentLabel: null,
   selectedRootLabel: null,
   selectedQuestionLabel: null,
-  reviewModeLabel: null,
+  pullRequestModeLabel: null,
   lensLabel,
   handlers,
   ...overrides,
@@ -64,6 +64,29 @@ describe('buildSessionBreadcrumb', () => {
     );
     expect(crumbs.map((crumb) => crumb.id)).toEqual(['overview', 'lens-files', 'diff-branch']);
     expect(last(crumbs)?.label).toBe('ledger-core fix/ledger-reconcile-postings');
+  });
+
+  it('puts Rewrite history under the branch, and the branch leads back to the Diff', () => {
+    const toDiffBranch = vi.fn();
+    const crumbs = buildSessionBreadcrumb(
+      base(
+        {
+          lens: 'files',
+          diffBranchLabel: 'ledger-core fix/ledger-reconcile-postings',
+          diffPageLabel: 'Rewrite history',
+        },
+        { ...makeHandlers(), toDiffBranch },
+      ),
+    );
+    expect(crumbs.map((crumb) => crumb.id)).toEqual([
+      'overview',
+      'lens-files',
+      'diff-branch',
+      'rewrite-history',
+    ]);
+    expect(last(crumbs)?.label).toBe('Rewrite history');
+    crumbs[2]?.onClick?.();
+    expect(toDiffBranch).toHaveBeenCalledOnce();
   });
 
   it('gives every crumb of a deep trail an icon, and agents their kind colour', () => {
@@ -116,15 +139,27 @@ describe('buildSessionBreadcrumb', () => {
     expect(last(crumbs)?.onClick).toBeUndefined();
   });
 
-  it('names the open review mode as a child of Review, which leads back home', () => {
+  it('puts Write review under the pull request, which leads back to its page', () => {
     const h = makeHandlers();
     const crumbs = buildSessionBreadcrumb(
-      base({ lens: 'review', reviewModeLabel: 'PR details' }, h),
+      base({ lens: 'pr', pullRequestNumber: 528, pullRequestModeLabel: 'Write review' }, h),
     );
-    expect(labels(crumbs)).toEqual(['Overview', 'review', 'PR details']);
-    crumbs[1]!.onClick!();
-    expect(h.toReviewHome).toHaveBeenCalledOnce();
+    expect(labels(crumbs)).toEqual(['Overview', 'pr', '#528', 'Write review']);
+    crumbs[2]!.onClick!();
+    expect(h.toPullRequestHome).toHaveBeenCalledOnce();
     expect(last(crumbs)?.onClick).toBeUndefined();
+  });
+
+  it('names the new pull request form under a pull request with no number', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(base({ lens: 'pr', pullRequestModeLabel: 'New' }, h));
+    expect(labels(crumbs)).toEqual(['Overview', 'pr', 'New']);
+  });
+
+  it('keeps the pull request a leaf on its own page', () => {
+    const h = makeHandlers();
+    const crumbs = buildSessionBreadcrumb(base({ lens: 'pr', pullRequestNumber: 528 }, h));
+    expect(labels(crumbs)).toEqual(['Overview', 'pr', '#528']);
   });
 
   it('keeps Review a leaf when the queue is showing', () => {

@@ -61,7 +61,6 @@ export const ProjectLinkCompactRow = ({
           </button>
         </Tooltip>
         <span className="flex min-w-0 items-center gap-1.5">
-          {badge}
           <span className="min-w-0 truncate text-label text-muted-foreground">
             {description !== '' ? (
               description
@@ -72,13 +71,14 @@ export const ProjectLinkCompactRow = ({
             )}
           </span>
         </span>
-        {project.baseBranch != null && project.baseBranch !== '' ? (
-          <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-code text-muted-foreground">
-            {project.baseBranch}
-          </span>
-        ) : (
-          <span />
-        )}
+        <span className="flex shrink-0 items-center gap-2">
+          {badge}
+          {project.baseBranch != null && project.baseBranch !== '' ? (
+            <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-code text-muted-foreground">
+              {project.baseBranch}
+            </span>
+          ) : null}
+        </span>
         {isFolderMissing ? (
           <span className="flex shrink-0 items-center gap-1 text-label text-warning">
             <AlertTriangle size={ICON_SIZE.control} aria-hidden />

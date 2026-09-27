@@ -26,6 +26,8 @@ export const PROFILE_ACCESS: Readonly<Record<ProfileAudience, ReadonlyArray<Prof
   docs: BUILDING,
   reviewer: EXPLAINING,
   resolver: EXPLAINING,
+  rewriter: BUILDING,
+  scribe: WRITING,
   report: WRITING,
   wireframe: WRITING,
   custom: EVERYTHING,

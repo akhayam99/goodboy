@@ -16,7 +16,7 @@ export const ResolveOverviewAction = ({ sessionId }: Props) => {
   }
 
   return (
-    <Button variant="ghost" size="sm" onClick={() => void openReview({ sessionId, mode: 'queue' })}>
+    <Button variant="ghost" size="sm" onClick={() => void openReview({ sessionId })}>
       {RESOLVE_QUEUE_TITLE}
     </Button>
   );

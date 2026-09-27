@@ -9,7 +9,12 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 import {
+  type ArtifactRevision,
+  type ArtifactRevisionNote,
+  annotateArtifactRevision as dbAnnotateArtifactRevision,
   deleteArtifact as dbDeleteArtifact,
+  listArtifactRevisions as dbListArtifactRevisions,
+  loadArtifactRevision as dbLoadArtifactRevision,
   getArtifactBySourceTurn as dbGetArtifactBySourceTurn,
   insertArtifact as dbInsertArtifact,
   listArtifactsForSession as dbListArtifactsForSession,
@@ -30,6 +35,7 @@ export type CreateArtifactArgs = {
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
   readonly sourceTurnId: string;
+  readonly note?: ArtifactRevisionNote;
 };
 
 export const createArtifact = async (args: CreateArtifactArgs): Promise<SessionArtifact> => {
@@ -53,6 +59,7 @@ export const createArtifact = async (args: CreateArtifactArgs): Promise<SessionA
         sourceText: args.sourceText,
         metadata: args.metadata,
         sourceTurnId: args.sourceTurnId,
+        ...(args.note === undefined ? {} : { note: args.note }),
       },
     });
   } catch (error) {
@@ -70,6 +77,7 @@ export type UpdateArtifactSourceArgs = {
   readonly sourceFormat: ArtifactSourceFormat;
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
+  readonly note?: ArtifactRevisionNote;
 };
 
 export const listArtifactsForSession = async (
@@ -88,6 +96,7 @@ export const updateArtifactSource = async (
       sourceFormat: args.sourceFormat,
       sourceText: args.sourceText,
       metadata: args.metadata,
+      ...(args.note === undefined ? {} : { note: args.note }),
     },
   });
 
@@ -105,3 +114,28 @@ export const discardArtifact = async (artifactId: ArtifactId): Promise<void> => 
 export const restoreArtifact = async (artifactId: ArtifactId): Promise<void> => {
   await dbRestoreArtifact({ db: tauriDatabase, artifactId });
 };
+
+export const listArtifactRevisions = async (
+  artifactId: ArtifactId,
+): Promise<ReadonlyArray<ArtifactRevision>> =>
+  dbListArtifactRevisions({ db: tauriDatabase, artifactId });
+
+export const loadArtifactRevision = async ({
+  artifactId,
+  revision,
+}: {
+  readonly artifactId: ArtifactId;
+  readonly revision: number;
+}): Promise<ArtifactRevision | null> =>
+  dbLoadArtifactRevision({ db: tauriDatabase, artifactId, revision });
+
+export const annotateArtifactRevision = async ({
+  artifactId,
+  revision,
+  note,
+}: {
+  readonly artifactId: ArtifactId;
+  readonly revision: number;
+  readonly note: ArtifactRevisionNote;
+}): Promise<boolean> =>
+  dbAnnotateArtifactRevision({ db: tauriDatabase, artifactId, revision, note });

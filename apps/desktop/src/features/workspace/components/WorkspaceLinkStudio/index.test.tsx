@@ -6,6 +6,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 const { state, repoMocks, dialogMock, onboarding } = vi.hoisted(() => ({
   state: {
     addWorkspace: vi.fn(async () => ({ id: 'ws-new', name: 'repo' })),
+    checkReconnectCandidate: vi.fn<
+      (input: { rootPath: string }) => Promise<{
+        workspaceId: string;
+        workspaceName: string;
+        disconnectedAt: string;
+        sessionCount: number;
+      } | null>
+    >(async () => null),
     createWorkspace: vi.fn(async ({ name }: { name: string }) => ({
       id: 'ws-created',
       name,

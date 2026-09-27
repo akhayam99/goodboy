@@ -3,9 +3,10 @@ import { createReviewNavigationSlice } from './slices/review-navigation';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
-import { type SlotKey } from '@goodboy/core';
+import { type AppliedDecisionOps, type SlotKey } from '@goodboy/core';
 import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
 import type {
+  AfterMergeRule,
   AgentId,
   AgentSourceKind,
   ArtifactId,
@@ -71,13 +72,13 @@ import type {
   PrMergeMethod,
   SessionViewPrefs,
   SessionSortKey,
+  SlackIntegrationConfig,
   SessionGroupKey,
   TaskModelPreference,
   PrReviewDraft,
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList } from '../features/providers/providers';
-import { type RewrittenHead } from '../features/worktree/worktree';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import type { ScriptRunResult } from '../features/scripts/scripts';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
@@ -92,6 +93,8 @@ import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
+import { createSlackDraftsSlice } from './slices/slack-drafts';
+import type { DecideSessionSlackDraftParams } from './slices/slack-drafts';
 import type {
   QuestionDelegateOutcome,
   SpawnQuestionDelegatesParams,
@@ -209,6 +212,8 @@ import type {
 } from './slices/workflows/addStepToWorkflowRun';
 import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWorkflowAgent';
 import { createSettingsSlice } from './slices/settings';
+import { createBackupSlice } from './slices/backup';
+import { backupInitialState } from './slices/backup/state';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import type { BulkSessionResult } from './slices/sessions/types';
@@ -220,7 +225,26 @@ import type { AddProjectsResult } from './slices/projects/addProjects';
 import type { AdoptProjectResult } from './slices/projects/adoptProject';
 import { createProjectMountsSlice } from './slices/project-mounts';
 import { projectMountsInitialState } from './slices/project-mounts/state';
+import { createProjectRelocationSlice } from './slices/project-relocation';
+import { projectRelocationInitialState } from './slices/project-relocation/state';
 import { createMountCleanupSlice, mountCleanupInitialState } from './slices/mount-cleanup';
+import { createHistorySlice, historyInitialState } from './slices/history';
+import { createScribeSlice, scribeInitialState } from './slices/scribe';
+import type { RequestScribeInput, SettleScribeInput } from './slices/scribe/types';
+import type {
+  ApplyHistoryDraftInput,
+  ApplyHistoryRewriteInput,
+  ApplyHistoryRewriteOutcome,
+  EditHistoryDraftInput,
+  HistoryMountInput,
+  HistoryRunOrigin,
+  RebaseBranchOutcome,
+  SettleHistoryRewriterInput,
+  StartHistoryRewriterInput,
+} from './slices/history/types';
+import type { StartHistoryRewriterOutcome } from './slices/history/startHistoryRewriter';
+import type { RestoreHistoryInput, RestoreHistoryOutcome } from './slices/history/restoreHistory';
+import type { BringOriginOutcome } from './slices/history/bringOriginIntoHistory';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
@@ -234,6 +258,8 @@ import { createSentryLinksSlice } from './slices/sentryLinks';
 import { sentryLinksInitialState } from './slices/sentryLinks/state';
 import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
+import { createBranchCleanupSlice } from './slices/branch-cleanup';
+import { createStarredIssuesSlice } from './slices/starred-issues';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -290,6 +316,11 @@ import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
 import { initialContextDrawerState } from './slices/contextDrawer/state';
+import { createDecisionsSlice } from './slices/decisions';
+import { initialDecisionsState } from './slices/decisions/state';
+import type { ApplySessionDecisionOpsParams } from './slices/decisions/applySessionDecisionOps';
+import type { NoteDecisionChangesParams } from './slices/decisions/noteDecisionChanges';
+import type { ConsolidateSessionContextParams } from './slices/decisions/consolidateSessionContext';
 import type { OpenContextDrawerParams } from './slices/contextDrawer/openContextDrawer';
 import { initialSessionDraftState } from './slices/sessionDraft/state';
 import type { PatchSessionDraftParams } from './slices/sessionDraft/patchSessionDraft';
@@ -380,6 +411,10 @@ type AppActions = {
   toggleContextDrawer(params: OpenContextDrawerParams): void;
   loadSessionContextSeen(sessionId: SessionId): Promise<void>;
   markSessionContextSeen(sessionId: SessionId): Promise<void>;
+  loadSessionDecisions(sessionId: SessionId): Promise<void>;
+  applySessionDecisionOps(params: ApplySessionDecisionOpsParams): Promise<AppliedDecisionOps>;
+  noteDecisionChanges(params: NoteDecisionChangesParams): Promise<void>;
+  consolidateSessionContext(params: ConsolidateSessionContextParams): void;
   patchSessionDraft(params: PatchSessionDraftParams): void;
   discardSessionDraft(params: DiscardSessionDraftParams): void;
   startSessionFromDraft(params: StartSessionFromDraftParams): Promise<Session>;
@@ -414,6 +449,9 @@ type AppActions = {
   hydrateCliRequirements(): Promise<void>;
   learnCliRequirement(params: LearnCliRequirementParams): Promise<void>;
   addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
+  checkReconnectCandidate(input: {
+    rootPath: string;
+  }): Promise<import('./slices/workspaces/checkReconnectCandidate').ReconnectCandidate | null>;
   createWorkspace(input: { name: string }): Promise<Workspace>;
   addProject(input: {
     workspaceId: WorkspaceId;
@@ -438,6 +476,10 @@ type AppActions = {
   updateProjectBaseBranch(input: {
     projectId: ProjectId;
     baseBranch: string | null;
+  }): Promise<void>;
+  updateProjectAfterMerge(input: {
+    projectId: ProjectId;
+    afterMerge: AfterMergeRule | null;
   }): Promise<void>;
   setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
   describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
@@ -510,9 +552,13 @@ type AppActions = {
   }): Promise<BitbucketConnection>;
   connectSlack(params: {
     workspaceId: WorkspaceId;
-    botToken: string | null;
+    userToken: string | null;
     credentialId: IntegrationCredentialId | null;
   }): Promise<SlackConnection>;
+  updateSlackConfig(params: {
+    workspaceId: WorkspaceId;
+    config: SlackIntegrationConfig;
+  }): Promise<void>;
   createSession(input: {
     workspaceId: WorkspaceId;
     projectId?: ProjectId;
@@ -560,6 +606,29 @@ type AppActions = {
     input: SessionCleanupKeyInput,
   ): Promise<ReadonlyArray<MountCleanupProposal>>;
   resolveMountCleanup(input: ResolveMountCleanupInput): Promise<void>;
+  rebaseBranch(input: HistoryMountInput): Promise<RebaseBranchOutcome>;
+  applyHistoryRewrite(input: ApplyHistoryRewriteInput): Promise<ApplyHistoryRewriteOutcome>;
+  pushHistoryRewrite(input: {
+    sessionId: SessionId;
+    mountId: MountId;
+    origin: HistoryRunOrigin;
+    planId: string | null;
+    expectedRemoteSha: string | null;
+  }): Promise<ApplyHistoryRewriteOutcome>;
+  startHistoryRewriter(input: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome>;
+  settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;
+  loadHistoryDraft(input: HistoryMountInput): Promise<void>;
+  editHistoryDraft(input: EditHistoryDraftInput): Promise<void>;
+  discardHistoryDraft(input: HistoryMountInput): Promise<void>;
+  applyHistoryDraft(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
+  applyRewrittenHistory(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
+  rewriteDraftWithAgent(input: HistoryMountInput & { note?: string }): Promise<void>;
+  restoreHistory(input: RestoreHistoryInput): Promise<RestoreHistoryOutcome>;
+  bringOriginIntoHistory(input: HistoryMountInput): Promise<BringOriginOutcome>;
+  hasPushedHistoryBefore(input: { mountId: MountId; branch: string }): Promise<boolean>;
+  requestScribe(input: RequestScribeInput): Promise<string>;
+  settleScribe(input: SettleScribeInput): Promise<void>;
+  refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;
   createPrSeries(input: CreatePrSeriesInput): Promise<PrSeries>;
   setPrSeriesMember(input: SetPrSeriesMemberInput): Promise<PrSeriesMember>;
   loadPrSeries(input: LoadPrSeriesInput): Promise<ReadonlyArray<PrSeriesView>>;
@@ -578,14 +647,6 @@ type AppActions = {
     args: { mountId: MountId; branch: string; createNew: boolean },
   ): Promise<void>;
   reconcileSessionBranch(input: ReconcileSessionBranchInput): Promise<void>;
-  amendSessionCommit(
-    sessionId: SessionId,
-    args: { mountId: MountId; sha: string; message: string },
-  ): Promise<RewrittenHead>;
-  squashSessionCommits(
-    sessionId: SessionId,
-    args: { mountId: MountId; sha: string; message: string },
-  ): Promise<RewrittenHead>;
   setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   renameWorkflowRun(
     sessionId: SessionId,
@@ -839,8 +900,6 @@ type AppActions = {
   setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
   refreshUnreadWorkspaces(): Promise<void>;
   setPanelSectionExpanded(sessionId: SessionId, section: PanelSection, expanded: boolean): void;
-  exportConfig(): Promise<string | null>;
-  importConfig(): Promise<import('@goodboy/types').ConfigBundleImportResult | null>;
   refreshGithubStatus(): Promise<void>;
   refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
   setGithubToken(params: {
@@ -948,13 +1007,9 @@ type AppActions = {
     filePath: string,
     body: string,
     anchor?: import('@goodboy/types').DiffCommentAnchor,
+    author?: import('@goodboy/db').DiffCommentAuthor,
   ): Promise<void>;
   resolveDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
-  consumeDiffComments(
-    sessionId: SessionId,
-    commentIds: ReadonlyArray<string>,
-    agentId: AgentId,
-  ): Promise<void>;
   reopenDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   deleteDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   loadSessionEvents(params: { sessionId: SessionId; force?: boolean }): Promise<void>;
@@ -1017,6 +1072,8 @@ type AppActions = {
   ): Promise<ReadonlyArray<QuestionDelegateOutcome>>;
   resolveQuestionDelegate(params: ResolveQuestionDelegateParams): Promise<void>;
   takeQuestionBack(params: TakeQuestionBackParams): Promise<void>;
+  loadSessionSlackDrafts(sessionId: SessionId): Promise<void>;
+  decideSessionSlackDraft(params: DecideSessionSlackDraftParams): Promise<void>;
   loadSessionPlans(sessionId: SessionId): Promise<void>;
   setPlanStatus(sessionId: SessionId, planId: PlanId, status: PlanStatus): Promise<void>;
   updatePlanBody(
@@ -1058,6 +1115,8 @@ type AppActions = {
   setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
   openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
   openMountDiff(sessionId: SessionId, worktreePath: string): void;
+  openRewriteHistory(sessionId: SessionId, worktreePath: string | null): void;
+  closeRewriteHistory(sessionId: SessionId): void;
   openMountTerminal(sessionId: SessionId, worktreePath: string): void;
   setResolveQueueView(params: {
     readonly sessionId: SessionId;
@@ -1105,10 +1164,14 @@ export type AppStore = AppState &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
+  ReturnType<typeof createProjectRelocationSlice> &
+  ReturnType<typeof createBackupSlice> &
   ReturnType<typeof createSentryLinksSlice> &
   ReturnType<typeof createStorageSlice> &
   ReturnType<typeof createHandoffsSlice> &
-  ReturnType<typeof createSecurityFindingsSlice>;
+  ReturnType<typeof createSecurityFindingsSlice> &
+  ReturnType<typeof createBranchCleanupSlice> &
+  ReturnType<typeof createStarredIssuesSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1116,9 +1179,12 @@ export const initialState: AppState = {
   ...initialBugReportDraftState,
   ...initialSessionDraftState,
   ...initialContextDrawerState,
+  ...initialDecisionsState,
   ...initialDrawerState,
   ...initialNavigationState,
   ...initialScriptsState,
+  ...projectRelocationInitialState,
+  ...backupInitialState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
   workspaces: [],
@@ -1172,6 +1238,8 @@ export const initialState: AppState = {
   sessionProjectMounts: {},
   ...projectMountsInitialState,
   ...mountCleanupInitialState,
+  ...historyInitialState,
+  ...scribeInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
   ...issueBriefsInitialState,
@@ -1277,6 +1345,7 @@ export const initialState: AppState = {
   sessionAnsweredQuestions: {},
   sessionDismissedQuestions: {},
   sessionQuestionsLoadError: {},
+  sessionSlackDrafts: {},
   openQuestionScrollTarget: null,
   sessionLoading: {},
   boardReady: true,
@@ -1292,6 +1361,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createArtifactsSlice(set, get),
   ...createPlansSlice(set, get),
   ...createOpenQuestionsSlice(set, get),
+  ...createSlackDraftsSlice(set),
   ...createBudgetSlice(set, get),
   ...createSkillsSlice(set, get),
   ...createStorageSlice(set, get),
@@ -1324,14 +1394,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createOverridesSlice(set, get),
   ...createCredentialsSlice(set, get),
   ...createWorkflowsSlice(set, get),
-  ...createSettingsSlice(set, get),
+  ...createSettingsSlice(set),
+  ...createBackupSlice(set, get),
   ...createTranscriptsSlice(set, get),
   ...createSummariesSlice(set, get),
   ...createSessionsSlice(set, get),
   ...createWorkspacesSlice(set, get),
   ...createProjectsSlice(set, get),
+  ...createProjectRelocationSlice(set, get),
   ...createProjectMountsSlice(set, get),
   ...createMountCleanupSlice(set, get),
+  ...createHistorySlice(set, get),
+  ...createScribeSlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
   ...createIssueBriefsSlice(set, get),
@@ -1340,6 +1414,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSentryLinksSlice(set, get),
   ...createHandoffsSlice(set, get),
   ...createSecurityFindingsSlice(set, get),
+  ...createBranchCleanupSlice(set, get),
+  ...createStarredIssuesSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),
@@ -1349,6 +1425,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBugReportDraftSlice(set, get),
   ...createSessionDraftSlice(set, get),
   ...createContextDrawerSlice(set, get),
+  ...createDecisionsSlice(set, get),
   ...createDrawerSlice(set, get),
   ...createNavigationSlice(set, get),
 }));

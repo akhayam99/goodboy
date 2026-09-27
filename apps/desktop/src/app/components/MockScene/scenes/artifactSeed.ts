@@ -77,6 +77,7 @@ const OVERRIDES = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 };
 
 const WORKSPACE: Workspace = {
@@ -663,6 +664,14 @@ const batchesScreen = ({
   title: 'Settlement batches',
   viewport: 'desktop',
   note: 'The operator lands here after signing in.',
+  states: {
+    showSettled: {
+      label: 'Settled shown',
+      hide: [],
+      show: [],
+      text: { 'batches-toggle-settled': 'Hide settled' },
+    },
+  },
   root: {
     id: 'batches-root',
     kind: 'stack',
@@ -678,6 +687,14 @@ const REVIEW_SCREEN: WireframeScreen = {
   title: 'Review batch',
   viewport: 'desktop',
   note: 'Opened from a batch row.',
+  states: {
+    error: {
+      label: 'Error',
+      hide: [],
+      show: [],
+      text: { 'review-title': 'Batch 4471 could not load' },
+    },
+  },
   root: {
     id: 'review-root',
     kind: 'stack',
@@ -856,10 +873,9 @@ const HIGH_THEME: WireframeTheme = {
 };
 
 const WIREFRAME_LOW_DOCUMENT: WireframeDocument = {
-  version: 1,
+  version: 2,
   initialScreenId: 'batches',
   theme: { name: 'generic', font: 'sans', radius: 'md' },
-  mockState: { showSettled: false },
   screens: [
     batchesScreen({ children: BATCHES_CHILDREN }),
     REVIEW_SCREEN,

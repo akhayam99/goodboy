@@ -38,6 +38,7 @@ const overrides = {
   replyTemplateNoChange: null,
   resolveOnGithub: null,
   resolveCommitStyle: null,
+  afterMerge: null,
 } as const;
 
 const project = ({

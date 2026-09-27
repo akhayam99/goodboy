@@ -70,6 +70,7 @@ export const proposeMountCleanup = (set: SetFn, get: GetFn) => {
     reason,
     expectedBranch,
     request = null,
+    keptBecause,
   }: ProposeMountCleanupInput): Promise<MountCleanupProposal | null> => {
     const views =
       get().sessionMounts[sessionId] ?? (await loadMountViews({ get, sessionId }).catch(() => []));
@@ -80,7 +81,9 @@ export const proposeMountCleanup = (set: SetFn, get: GetFn) => {
     if (expectedBranch !== undefined && view.branch !== expectedBranch) {
       return null;
     }
-    const proposal = await buildCleanupProposal({ get, view, reason, request });
+    const built = await buildCleanupProposal({ get, view, reason, request });
+    const proposal =
+      built === null || keptBecause === undefined ? built : { ...built, keptBecause };
     if (proposal === null) {
       return null;
     }

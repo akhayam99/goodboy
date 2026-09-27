@@ -8,7 +8,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { mergeSessionEvents, type SetFn } from './types';
+import { mergeSessionEvents, type GetFn, type SetFn } from './types';
 
 type Params = Readonly<{
   sessionId: SessionId;
@@ -16,7 +16,7 @@ type Params = Readonly<{
   payload?: SessionEventPayload;
 }>;
 
-export const recordSessionEvent = (set: SetFn) => {
+export const recordSessionEvent = (set: SetFn, get: GetFn) => {
   return async ({ sessionId, kind, payload }: Params): Promise<void> => {
     const event: SessionEvent = {
       id: crypto.randomUUID() as SessionEventId,
@@ -43,5 +43,11 @@ export const recordSessionEvent = (set: SetFn) => {
         },
       };
     });
+    if (kind !== 'pr_merged') {
+      return;
+    }
+    const after =
+      payload?.number === undefined ? 'the pull request merged' : `#${payload.number} merged`;
+    get().consolidateSessionContext({ sessionId, after });
   };
 };

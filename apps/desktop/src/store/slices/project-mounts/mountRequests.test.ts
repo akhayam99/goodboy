@@ -10,6 +10,7 @@ import type {
 } from '@goodboy/types';
 import { observeMountRequestTransition } from './mountRequests';
 import type { GetFn } from '../../slice-types';
+import type { AfterMergeOutcome } from '../branch-cleanup/types';
 
 const sessionId = 'session-1' as SessionId;
 const projectId = 'project-1' as ProjectId;
@@ -69,12 +70,21 @@ type RecordParams = {
 
 const record = vi.fn(async (_params: RecordParams) => undefined);
 const proposeMountCleanup = vi.fn(async () => null);
-const get = (() => ({ recordSessionEventOnce: record, proposeMountCleanup })) as unknown as GetFn;
+const runAfterMergeCleanup = vi.fn(async (): Promise<AfterMergeOutcome> => ({
+  kind: 'ask',
+  keptBecause: null,
+}));
+const get = (() => ({
+  recordSessionEventOnce: record,
+  proposeMountCleanup,
+  runAfterMergeCleanup,
+})) as unknown as GetFn;
 
 describe('observeMountRequestTransition', () => {
   beforeEach(() => {
     record.mockClear();
     proposeMountCleanup.mockClear();
+    runAfterMergeCleanup.mockClear();
   });
 
   it('records an approval observed between two polls', async () => {
@@ -122,6 +132,50 @@ describe('observeMountRequestTransition', () => {
         mountId,
         reason: 'merge_cleanup',
         expectedBranch: 'ak/feat-session-events',
+      }),
+    );
+  });
+
+  it('skips the proposal when the after-merge rule already cleaned up', async () => {
+    runAfterMergeCleanup.mockResolvedValueOnce({ kind: 'skipped' });
+
+    await observeMountRequestTransition({
+      get,
+      sessionId,
+      projectId,
+      previous: makeLink({ state: 'approved' }),
+      next: makeLink({ state: 'merged' }),
+      title: 'Persist the session trace',
+      url: 'https://github.com/acme/web/pull/42',
+    });
+
+    expect(runAfterMergeCleanup).toHaveBeenCalledWith({
+      sessionId,
+      mountId,
+      expectedBranch: 'ak/feat-session-events',
+    });
+    expect(proposeMountCleanup).not.toHaveBeenCalled();
+  });
+
+  it('asks with the reason when the rule kept the branch', async () => {
+    runAfterMergeCleanup.mockResolvedValueOnce({
+      kind: 'ask',
+      keptBecause: 'Kept ak/feat-session-events: 2 new commits after the merge.',
+    });
+
+    await observeMountRequestTransition({
+      get,
+      sessionId,
+      projectId,
+      previous: makeLink({ state: 'approved' }),
+      next: makeLink({ state: 'merged' }),
+      title: 'Persist the session trace',
+      url: 'https://github.com/acme/web/pull/42',
+    });
+
+    expect(proposeMountCleanup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keptBecause: 'Kept ak/feat-session-events: 2 new commits after the merge.',
       }),
     );
   });

@@ -60,6 +60,7 @@ const row: ResolveThread = {
   prNumber: 12,
   threadId: 'PRRT_1',
   originKind: 'review_comment',
+  diffCommentId: null,
   state: 'fixed',
   stage: 'new',
   stateReason: null,

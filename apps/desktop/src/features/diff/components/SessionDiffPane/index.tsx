@@ -14,6 +14,7 @@ import {
 import type { BranchCommit, DiffView as DiffViewKind, MountId, SessionId } from '@goodboy/types';
 import { useAppStore, type DiffFocus } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
@@ -25,7 +26,8 @@ import {
   SETTING_DEFAULT_EDITOR,
   SETTING_EDITOR_BINARY,
 } from '../../../settings/settings';
-import { useRebaseAgent } from '../../../session/hooks/useRebaseAgent';
+import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
+import { useRebasePrediction } from '../../../history/useRebasePrediction';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
 import { ResolveOverviewAction } from '../../../resolve/components/ResolveOverviewAction';
 import { useDiffNotes } from '../../hooks/useDiffNotes';
@@ -95,7 +97,10 @@ export const SessionDiffPane = ({
   const mountId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
   );
-  const rebase = useRebaseAgent({ sessionId, mountId, status: diff.status });
+  const isRequestMerged = useAppStore((s) =>
+    mountId === null ? false : isMountRequestMerged({ state: s, mountId }),
+  );
+  const rebase = useRebaseBranch({ sessionId, mountId, status: diff.status });
   const editorBinary = useAppStore(
     (s) =>
       s.settings[SETTING_DEFAULT_EDITOR] ??
@@ -117,6 +122,14 @@ export const SessionDiffPane = ({
   const mountBranch = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.branch ?? null,
   );
+  const baseBranch = useAppStore((s) => {
+    const mount = selectMountForPath({ state: s, sessionId, path: worktreePath });
+    return (
+      mount?.baseBranch ??
+      s.projects.find((project) => project.id === mount?.projectId)?.baseBranch ??
+      'main'
+    );
+  });
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -162,6 +175,7 @@ export const SessionDiffPane = ({
       mountRepoRoot === null
         ? null
         : { baseBranch: mountBaseBranch, worktreePath, repoRoot: mountRepoRoot },
+    isRequestMerged,
   });
   const meta = (
     <span className="flex flex-wrap items-center gap-1.5">
@@ -192,6 +206,12 @@ export const SessionDiffPane = ({
   );
   const isLocalOnly = diff.status !== null && diff.status.upstream === null;
   const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
+  const rebasePrediction = useRebasePrediction({
+    worktreePath,
+    baseBranch,
+    head: diff.status?.head ?? null,
+    isEnabled: canRebase && !rebase.isRunning,
+  });
 
   const overflow: OverflowMenuItem[] = [
     {
@@ -240,6 +260,12 @@ export const SessionDiffPane = ({
       : []),
   ];
 
+  const conflictCount = rebasePrediction?.conflictFiles.length ?? 0;
+  const rebaseTitle = rebase.isRunning
+    ? `Rebasing on ${baseBranch}`
+    : conflictCount > 0
+      ? `Replaying this branch on ${baseBranch} conflicts in ${rebasePrediction?.conflictFiles.join(', ')}. History rewriter merges it in a copy.`
+      : `Replay this branch on ${baseBranch}. No agent runs when nothing conflicts.`;
   const primary = canRebase ? (
     <Button
       variant="primary"
@@ -251,10 +277,14 @@ export const SessionDiffPane = ({
         void rebase.run({ mountId });
       }}
       disabled={rebase.isRunning}
-      title={rebase.isRunning ? 'Rebase agent is still running' : 'Rebase onto main'}
+      title={rebaseTitle}
     >
       <GitBranch size={ICON_SIZE.row} aria-hidden />
-      Rebase on main
+      {rebase.isRunning
+        ? `Rebasing on ${baseBranch}`
+        : conflictCount > 0
+          ? `Rebase on ${baseBranch} · ${conflictCount} ${conflictCount === 1 ? 'conflict' : 'conflicts'}`
+          : `Rebase on ${baseBranch}`}
     </Button>
   ) : isLocalOnly && mountId !== null && (ahead ?? diff.commits.length) > 0 ? (
     <PushBranchButton sessionId={sessionId} mountId={mountId} />
@@ -350,7 +380,7 @@ export const SessionDiffPane = ({
       scroll="self"
       dock={
         openNotes.length > 0 && !isEmpty ? (
-          <DiffNotesDock sessionId={sessionId} mountId={mountId} openNotes={openNotes} />
+          <DiffNotesDock sessionId={sessionId} openNotes={openNotes} />
         ) : null
       }
     >

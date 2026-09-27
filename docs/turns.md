@@ -333,8 +333,15 @@ the session's context slots, which the next turn reads as its preamble. It is
 the chat's handoff, as the post-step summarizer is a workflow's
 ([workflows.md](workflows.md#the-post-step-summarizer)).
 
-- One summarization runs per session, and at most one waits: a newer turn
-  replaces the waiting one. It runs when the app is idle.
+- One summarization runs per session. Turns that finish while it runs wait
+  together and the next pass reads them all (the oldest drop out past 20,000
+  characters, with a note saying how many). It runs when the app is idle.
+- A consolidation pass waits behind them, at most one per session. It is
+  queued when a run finishes, when a pull request merges (`pr_merged`), and
+  when the active decisions go over their budget after a pass. It applies its
+  operations like any pass and records `decisions_changed` with
+  `consolidatedAfter` (`#612 merged`, `the run finished`, `decisions went over
+budget`).
 - It runs on the summarizer task model, routed around cooldowns. When every
   candidate is cooling down it pauses and offers a retry.
 - Slot writes are compare-and-set against the snapshot it read. A slot the
@@ -346,6 +353,54 @@ the chat's handoff, as the post-step summarizer is a workflow's
   sets the error state and offers a retry. The turn itself never fails because
   its summary did.
 - Its spend is recorded as summarizer telemetry, apart from turn spend.
+
+## The decisions ledger
+
+Decisions live in a ledger (`session_decisions`, m197), not in the text of the
+`decisions` slot. Every decision has a number per session (`D7`), a status
+(`active`, `replaced` or `withdrawn`), who wrote it (an agent, the summarizer
+or you), the agent and turn it came from, and the reason it left. The slot is
+derived: the active decisions, newest first, one `- D7 text` line each,
+rewritten after every change, so the preamble, the mobile companion and the
+snapshot keep reading one string.
+
+- `packages/core/src/context/decisions-ledger.ts` is pure:
+  `applyDecisionOps` takes `add`, `reword`, `merge`, `replace`, `withdraw`
+  and `restore`, and returns the ledger, the changes and the refused
+  operations. `decisions-ledger-store.ts` loads, applies, saves and rewrites
+  the slot.
+- A decision nobody names stays as it is. Withdrawing or replacing needs a
+  reason from the summarizer; an agent's withdrawal carries its reason as the
+  marker body. Reword and merge keep the number; a merge keeps the lowest and
+  marks the others `replaced` by it.
+- Agents add with `<<ctx-decision>>`, replace with
+  `<<ctx-decision replaces="D3">>` (optional `reason="..."`) and withdraw with
+  `<<ctx-decision withdraw="D5">>why<</ctx-decision>>`. An addition that
+  matches an active decision after normalizing (case, bullets, spaces) is a
+  no-op.
+- What you withdrew is a tomb: a marker with the same text does not bring it
+  back. What you wrote or edited the summarizer can only replace with a
+  reason, never reword, merge or withdraw.
+- A session made before the ledger is seeded from its slot the first time the
+  ledger is read, numbered in the slot's order.
+- The summarizer never writes the `decisions` slot (an upsert of it is
+  dropped). It answers `{ upserts, decisionOps }` and names decisions by
+  number; an `add` without a `why` is dropped, because a line with no reason
+  is state, not a decision. Operations that do not parse fail the answer, which
+  is asked again once. Its summary is three sections, `Learned`, `State`,
+  `Next`; an old `Problem` section is dropped on the next pass.
+- The desktop applies every write through `applySessionDecisionOps`
+  (`store/slices/decisions/`), which records one `decisions_changed` event with
+  `{ added, replaced, withdrawn, merged, restored, decisionChanges }`. A reword
+  records no event. Writing the `decisions` slot from the editor or the mobile
+  companion goes through `reconcileDecisionsText`: numbered lines keep their
+  decision, a missing number is a withdrawal of yours, a new line an addition.
+- The preamble shows the decisions with their numbers and teaches the two
+  attributes. Over budget it keeps the top lines, which are the newest.
+- A consolidation pass (`mode: 'consolidate'`) has no turn and keeps only
+  `merge` and `withdraw`. `packages/core/src/summarizer/decisions-eval.test.ts`
+  is the fixed eval: rewording, merge, contradiction, state dressed as a
+  decision, an Italian marker, a list over budget.
 
 ## Composer
 

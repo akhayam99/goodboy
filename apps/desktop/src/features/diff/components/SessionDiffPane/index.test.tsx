@@ -8,6 +8,7 @@ const h = vi.hoisted(() => ({
   status: null as unknown,
   commits: [] as ReadonlyArray<unknown>,
   canRebase: false,
+  prediction: null as null | { conflictFiles: ReadonlyArray<string>; isClean: boolean },
 }));
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -20,7 +21,7 @@ const MOUNT = {
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
-    selector({ settings: {}, emitNotification: vi.fn() }),
+    selector({ settings: {}, projects: [], emitNotification: vi.fn() }),
 }));
 
 vi.mock('../../../../store/slices/project-mounts/selectors', () => ({
@@ -49,8 +50,12 @@ vi.mock('../../hooks/useDiffNotes', () => ({
   useDiffNotes: () => ({ comments: [], openNotes: [] }),
 }));
 
-vi.mock('../../../session/hooks/useRebaseAgent', () => ({
-  useRebaseAgent: () => ({ canRebase: h.canRebase, isRunning: false, error: null, run: vi.fn() }),
+vi.mock('../../../session/hooks/useRebaseBranch', () => ({
+  useRebaseBranch: () => ({ canRebase: h.canRebase, isRunning: false, error: null, run: vi.fn() }),
+}));
+
+vi.mock('../../../history/useRebasePrediction', () => ({
+  useRebasePrediction: () => h.prediction,
 }));
 
 vi.mock('../../../permissions/components/DiffViewSelector', () => ({
@@ -96,6 +101,7 @@ afterEach(() => {
   h.status = null;
   h.commits = [];
   h.canRebase = false;
+  h.prediction = null;
 });
 
 describe('SessionDiffPane header', () => {
@@ -107,6 +113,16 @@ describe('SessionDiffPane header', () => {
     expect(screen.getByRole('button', { name: /Rebase on main/ })).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Push branch' })).toBeNull();
     expect(screen.getByText('Behind main by 18')).toBeDefined();
+  });
+
+  it('names the predicted conflict on the rebase button before anything runs', () => {
+    h.status = statusOf({ upstream: 'origin/fix', behind: 18 });
+    h.canRebase = true;
+    h.prediction = { conflictFiles: ['src/ledger/postings.ts'], isClean: false };
+    renderPane();
+
+    const button = screen.getByRole('button', { name: /Rebase on main · 1 conflict/ });
+    expect(button.getAttribute('title')).toContain('src/ledger/postings.ts');
   });
 
   it('pushes a local-only branch that has commits', () => {

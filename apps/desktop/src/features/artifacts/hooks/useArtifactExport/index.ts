@@ -1,23 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
-import { parseWireframeSource } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { exportArtifactToFile } from '../../artifactFile';
-import { openArtifactWindow } from '../../openArtifactWindow';
-import type { ArtifactWindowMode } from '../../../reports/artifactPrintRequest';
 import { artifactFileSlug } from './artifactFileSlug';
 import { artifactExportContents, artifactSourceExport } from './artifactSourceExport';
 
-export type ArtifactExportAction = 'copy' | 'source' | 'pdf' | 'window';
-
-export const PDF_READY_HINT = 'Open a print window and save as PDF';
-
-export const PDF_BLOCKED_HINT =
-  'This wireframe does not match the schema, so the print sheet has no page to lay out';
-
-export const WINDOW_BLOCKED_HINT =
-  'This wireframe does not match the schema, so the window has no page to show';
+export type ArtifactExportAction = 'copy' | 'source';
 
 export type ArtifactExportStatus =
   | Readonly<{ kind: 'idle' }>
@@ -25,18 +14,13 @@ export type ArtifactExportStatus =
   | Readonly<{ kind: 'copied' }>
   | Readonly<{ kind: 'cancelled' }>
   | Readonly<{ kind: 'saved'; path: string }>
-  | Readonly<{ kind: 'printing' }>
   | Readonly<{ kind: 'failed'; action: ArtifactExportAction; message: string }>;
 
 export type ArtifactExport = Readonly<{
   status: ArtifactExportStatus;
   sourceActionLabel: string;
-  canSavePdf: boolean;
-  pdfHint: string;
   copySource: () => Promise<void>;
   saveSource: () => Promise<void>;
-  savePdf: () => Promise<void>;
-  openWindow: () => Promise<void>;
 }>;
 
 type Params = {
@@ -46,12 +30,6 @@ type Params = {
 export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
   const [status, setStatus] = useState<ArtifactExportStatus>({ kind: 'idle' });
   const isBusy = useRef(false);
-  const canSavePdf = useMemo(
-    () =>
-      artifact.sourceFormat === 'markdown' ||
-      parseWireframeSource({ source: artifact.sourceText }).status === 'valid',
-    [artifact.sourceFormat, artifact.sourceText],
-  );
   const descriptor = artifactSourceExport({ sourceFormat: artifact.sourceFormat });
   const contents = artifactExportContents({
     sourceFormat: artifact.sourceFormat,
@@ -108,47 +86,10 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
     run,
   ]);
 
-  const openDocumentWindow = useCallback(
-    async ({ mode }: { readonly mode: ArtifactWindowMode }): Promise<void> =>
-      openArtifactWindow({
-        sessionId: artifact.sessionId,
-        artifactId: artifact.id,
-        title: artifact.title,
-        mode,
-      }),
-    [artifact.id, artifact.sessionId, artifact.title],
-  );
-
-  const savePdf = useCallback(async () => {
-    if (!canSavePdf) {
-      setStatus({ kind: 'failed', action: 'pdf', message: PDF_BLOCKED_HINT });
-      return;
-    }
-    await run('pdf', async () => {
-      await openDocumentWindow({ mode: 'print' });
-      return { kind: 'printing' };
-    });
-  }, [canSavePdf, openDocumentWindow, run]);
-
-  const openWindow = useCallback(async () => {
-    if (!canSavePdf) {
-      setStatus({ kind: 'failed', action: 'window', message: WINDOW_BLOCKED_HINT });
-      return;
-    }
-    await run('window', async () => {
-      await openDocumentWindow({ mode: 'read' });
-      return { kind: 'idle' };
-    });
-  }, [canSavePdf, openDocumentWindow, run]);
-
   return {
     status,
     sourceActionLabel: descriptor.actionLabel,
-    canSavePdf,
-    pdfHint: canSavePdf ? PDF_READY_HINT : PDF_BLOCKED_HINT,
     copySource,
     saveSource,
-    savePdf,
-    openWindow,
   };
 };

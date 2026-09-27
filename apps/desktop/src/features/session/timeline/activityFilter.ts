@@ -217,6 +217,8 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   worktree_created: 'worktree',
   branch_created: 'worktree',
   branch_switched: 'worktree',
+  branch_deleted: 'worktree',
+  branch_restored: 'worktree',
   issue_linked: 'issues',
   issue_unlinked: 'issues',
   pr_created: 'pullRequests',
@@ -243,6 +245,10 @@ const CATEGORY_BY_EVENT_KIND: Record<SessionEventKind, ActivityCategory> = {
   write_destination_changed: 'worktree',
   question_dismissed: 'questions',
   question_restored: 'questions',
+  history_rewritten: 'worktree',
+  history_pushed: 'worktree',
+  history_stopped: 'worktree',
+  history_restored: 'worktree',
 };
 
 type EntryParams = {
@@ -304,6 +310,9 @@ const isHiddenByFilter = ({
   readonly entry: TimelineTopLevelEntry;
   readonly filter: ActivityFilter;
 }): boolean => {
+  if (entry.kind === 'event' && entry.event.kind === 'history_stopped') {
+    return false;
+  }
   const category = activityCategoryOf({ entry });
   if (category != null && !filter[category]) {
     return true;

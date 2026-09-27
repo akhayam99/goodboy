@@ -92,6 +92,19 @@ item, Add workspace) now opens that workspace's own window instead of
 touching this one. `⌘Enter` on a workspace row always opens a new window,
 no question asked.
 
+**Disconnect** keeps a workspace and its projects in the database with
+everything they hold, it only hides them. Re-adding the same folder through
+Add workspace, or a project through Add project, reconnects it and its
+sessions instead of creating a duplicate. If the folder moved since it was
+disconnected, Goodboy recognizes it by repository identity and offers to
+locate it the same way a moved project is located while connected.
+
+Moving a project's folder on disk does not lose anything either: the
+database keeps its rows, but every saved path still points at the old
+location, so the project reads `Folder not found` until you **locate** it
+(pick the new folder, or its parent to locate several at once). See
+[architecture.md](architecture.md#moving-a-projects-folder).
+
 ## Sessions
 
 A **session** holds one goal. It has its own budget and notes
@@ -204,6 +217,17 @@ It includes:
 - Changes to the decisions
 - Projects materialized, with their reason, and refused ones, with the error
 - Tasks created in other tools from Goodboy
+- History outcomes of Rewrite history and Rebase on main: `history_rewritten`,
+  `history_pushed`, `history_stopped` and `history_restored`
+
+History rows are the only event rows with verbs, one primary and the rest in
+the row menu, and only while no later outcome of the same branch settled
+them: a rewrite offers `Undo rewrite`, a stopped one `Retry` (or `Retry with
+a note` when History rewriter needs you) with `Rewrite with an agent`,
+`Change the plan` and `Discard plan` behind it, a push `Restore previous
+history`. A stopped rewrite never hides behind the filter. Every notification
+of the engine points at the row with `Open in Activity`, so closing it loses
+nothing.
 
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
@@ -250,20 +274,54 @@ whether you clicked it on the board or in the session overview.
   suggestion per target key survives per render: `dedupeByTargetKey` keeps
   whichever has the lower band number.
 - A suggestion you acted on does not come back for the same fingerprint;
-  "Not now" is scoped the same way. Three "Not now" on the same kind inside
-  a workspace in 14 days, with no acceptance between them, moves that kind
-  behind everything else instead of leading (`shouldDemote`,
-  `nextStepGates.ts`): the only learning this engine does, and it resets
-  the moment one of that kind is accepted.
-- Six suggestion kinds ship today: answer open questions, continue a
-  workflow's ready step, fix review conversations, rebase a project, run a
-  ready plan, add a proposed project. Eleven more (approve a permission,
-  sign in, retry a failed run, fix CI, push, open or ready a pull request,
-  merge, close a finished worktree, and more) are a later addition to the
-  same engine, not a second one.
+  "Not now" is scoped the same way, and both persist: the fingerprint rides
+  along in the same `next:<kind>` row's `contextJson`
+  (`dismissedFingerprintsFromEvents`, `nextStepOutcomes.ts`), so a reload
+  or a remount does not resurrect what you just dismissed or acted on,
+  inside the same 14-day window the demotion rule below reads. Three "Not
+  now" on the same kind inside a session in 14 days, with no acceptance
+  between them, moves that kind behind everything else instead of leading
+  (`shouldDemote`, `nextStepGates.ts`): the only learning this engine does,
+  and it resets the moment one of that kind is accepted. Every act or
+  dismiss writes a `next:<kind>` row to `nudge_events`
+  (`useNextStepOutcomes`); the demotion window reads the session's own
+  history, not the workspace's.
+- Eighteen suggestion kinds ship: the original six (answer open questions,
+  continue a workflow's ready step, fix review conversations, rebase a
+  project, run a ready plan, add a proposed project) plus twelve more that
+  landed on the same engine, not a second one: approve a pending permission,
+  sign back in after `auth_required`, unblock a failed workflow step, retry
+  the last standalone agent that failed, fix a pull request's failing checks,
+  push unpushed commits on a clean worktree, open a pull request once a
+  mount is ahead with none yet, mark a green draft ready, merge an approved
+  and green pull request, review the changes once a standalone implementer
+  finishes clean, close a merged worktree's cleanup proposal, and continue
+  with a workflow once a standalone scout or generic agent finishes clean
+  with a goal set and no workflow attached yet - its "Set up" action attaches
+  the workspace's first library workflow with the session's own goal in one
+  click, no form. Merge, close-worktree and unblock-step's Skip arm a
+  confirm on the row before they act; the other new kinds run on one click,
+  like the original six. Two simplifications from the design: the "never
+  while an agent works on the same mount" rule (E7-6) is session-wide, not
+  per-mount, for the new push/open-pr/mark-ready/merge-pr/fix-checks kinds
+  only - rebase-project keeps its own narrower per-request check; and the
+  demotion window (above) reads the session, not the workspace. unblock-step
+  only ships Skip; retrying the step itself needs a per-step retry action the
+  workflow engine does not expose yet. approve-tool opens the agent's
+  chat rather than the permission card directly; sign-in dispatches the
+  same `goodboy:open-settings` event the palette's "Connect a provider"
+  uses. continue-with-workflow always offers the workspace's first library
+  workflow, not a goal-aware recommendation - `recommendPreset.ts` (design's
+  name for that ranking) was not built, since nothing else in this pass
+  needed it.
 - The board card's "Continue" and the Next surface's primary action for a
   ready workflow step both call `activateWorkflowAgent` on the same pending
   agent; neither one just opens a panel and leaves starting the step to you.
+- Accepting plan-ready announces the started implementer with the same
+  `useAgentStartedToast` every other spawn-and-open flow uses ("Implementer
+  started", with an "Open the agent" action) - the toast the standalone
+  PlanReadySuggestion component used to show before the unified resolver
+  replaced it in E7-5, restored here.
 
 ## Agents
 
@@ -320,6 +378,24 @@ pick it when you start the agent.
 - **Report** and **Wireframe** run as workflow steps
 - **PR reviewer** opens a session that reviews someone else's pull request
 - **Resolve** starts from the **Review** lens and fixes review comments
+- **History rewriter** is hidden: nobody picks it. Goodboy starts it only
+  when replaying a branch history hits a conflict git cannot settle alone
+  (a rebase on main, or a Rewrite history plan). It works in a throwaway
+  copy of the branch, never in a mount. Its turn carries a git config that
+  points `origin` at a push URL that always fails, it has no GitHub token and
+  no bridge mount. It reports with `<<history-step>>`, `<<history-done>>` or
+  `<<history-stuck>>`; the engine rebuilds its commits with the plan messages
+  and authors, checks the count, and moves the branch itself
+- **Scribe** is hidden too: it writes text about the code and never code.
+  `Write it for me` in the pull request panel asks it for the title and
+  body, which fill the form for you to check before `Create PR`; it can also
+  write a commit message for a squash or a reword and a changelog entry. It
+  answers only with `<<pr-title>>`, `<<pr-body>>`, `<<commit-message>>` and
+  `<<changelog-entry>>` blocks, runs with push blocked like History rewriter,
+  and Goodboy opens or edits the pull request itself. A body Scribe wrote
+  ends with an invisible `goodboy-scribe` signature; after Goodboy pushes new
+  history to the branch it rewrites the body only while that signature still
+  matches, so a body you edited stays yours
 
 A kind is worked out in the same order on every screen:
 
@@ -395,13 +471,21 @@ used which plan. The Artifacts page lists plans, reports and wireframes as one
 list, newest first, and opens each of them in the same page: a small header
 with at most one main action, the document at reading size, and a right panel
 for its details and for a chat with the agent that wrote it. **Open in
-window**, under `⋯`, shows the same document as a light page in its own
-window, with Print and Copy; **Print** opens that page straight in the print
-dialog, where the system saves the PDF. Goodboy also keeps a copy of every
-artifact on disk, under the workspace folder described in
+browser** opens the file Goodboy keeps on disk with the system's default web
+browser, never with an editor; from there `⌘P` prints and the system saves
+the PDF. Goodboy also keeps a copy of every artifact on disk, under the
+workspace folder described in
 [architecture.md](architecture.md#on-disk-data-layout): the Details panel
-shows its path under **Saved copy**, and **Show in Finder**, under `⋯` or
-next to the path, opens its folder.
+shows its path under **File**, with **Open in browser** and **Show in
+Finder** next to it. The lens's `⋯` also has **Open artifacts folder**, for
+the whole workspace folder at once. Every write to a plan, report or
+wireframe keeps its own row in `artifact_revisions`
+([architecture.md](architecture.md#on-disk-data-layout)): the Details panel
+lists them newest first once there is more than one, names who wrote each
+(the agent, by name, or "You"), and **Restore** on an older one writes it
+back as a new revision, never over the history; the current row carries no
+Restore button. The wireframe viewer's own version pill and its node-level
+diff are a richer view of the same table, not a second one.
 
 The planner splits a plan into **parts** (the `clusters` of the plan). The plan
 page lists them after its goal, says who split them, and shows for each one its
@@ -417,16 +501,64 @@ when the part is done.
 
 A wireframe opens on its **Flow**: the graph of its screens, a one line legend
 (`next`, `back`, `same screen`, told apart by line style and glyph, never by
-colour) and the screens as a grid under it. A node or a tile opens
-**Screens**, the clickable canvas with a screen picker, previous and next, and
-zoom. **Export** says what each copy gives: a folder, a JSON file, the JSON on
-the clipboard, or only the open screen. **Export as a folder** writes, into a
+colour) and the screens as a grid of page previews under it. A node or a tile
+opens **Screens**: the screens on a rail, the real page of the open screen in
+the middle, inside the frame of its device, with a Fit or 100% zoom, and a
+**Notes** panel with the screen note, the numbered notes of its nodes (a click
+shows the node on the page) and where the screen goes. The pages are the same
+ones the saved copy holds, shown in an isolated frame
+([architecture.md](architecture.md#frames)); links inside them work, and the
+rail follows. **Open in browser** opens the screen you are looking at, or the
+index on the Flow, from the saved copy. Under `⋯`, **Copy spec** copies the
+JSON and **Save a copy to…** writes, into a
 folder you pick, `index.html` with the flow and the screens, one page per
 screen under `screens/` linked by plain links, one `wireframe.css`, the
 validated `wireframe.json`, its `wireframe.schema.json` (built from the code
 constants by `buildWireframeJsonSchema`), a `README.md` with a prompt to
 rebuild it elsewhere, and `meta.json`. The pages hold no script and no inline
 style. Goodboy never reads that folder back.
+
+The wireframe spec is version 2. It can define **patterns** once and reuse
+them (`{ "use": "posting-row", "with": { ... } }`), give a screen up to 4
+**states** (empty, loading, error or a name of its own, each a set of nodes to
+hide, show or retext), cut the same flow into release **variants** with
+`only`, set the **device** (desktop, tablet or phone), and use the kinds card,
+tabs, badge, toggle, sheet and chart. A note on a node becomes a numbered
+marker on the page. A version 1 spec is upgraded when it is read: its
+`mockState` toggles become states. Every revision is kept in
+`artifact_revisions` (who made it, what was asked, the nodes picked), and the
+saved copy holds one folder per version.
+
+You change a wireframe from the **Screens** view, not from a chat. Under the
+stage, **Ask for a change** takes a request; **Pick** outlines the element under
+the pointer and turns a click into a chip, and the scope is **This screen** or
+**All screens**. ⌘↵ sends the spec, the request, the picked node ids and the
+scope to the agent that drew it. While it works, the version pill reads
+`v4 · Drafting` and the stage stays on the current version. A version that
+lands takes the request as its label; a spec that fails the checks is **not
+kept**: a warning says why, the request stays, and **Ask again** resends it.
+The version pill opens every version (who, when, what was asked and what
+changed) with **View**, **Compare** and **Restore**. Viewing an older one says
+so above the stage, and Restore writes it back as a new version, `Restored vN`,
+so the history is never rewritten.
+
+**Compare** lays two versions side by side on the same screen. The diff is
+computed from the two specs by node id, never from the HTML: the rail marks
+each screen Added, Changed, Removed or Same with a glyph and the word, the
+newer page outlines added nodes with `+` and changed ones with a dashed `~`,
+the older one outlines removed nodes with `−`, and the **Changes** list says
+what moved in words. A click on a change shows the node in both pages. A node
+that kept its kind, text and place under a new id counts as changed. When a
+version lands, the notice offers `N changes · Compare` for 10 seconds; after
+that Compare stays in the versions popover.
+
+A spec made or edited outside comes back in. On the Artifacts page, **New ▾ >
+Import wireframe JSON…** picks a file (or drop a `.json` on the page); inside a
+wireframe, **Replace spec with JSON…** in the versions popover does the same
+for that wireframe. The validator answers inline, never in a dialog: what it
+adjusted, with **Import anyway** and **Cancel**, or why the file cannot be
+read. An import gets an idle Wireframe agent that owns it, the same agent you
+then ask for changes, and its version reads `Imported JSON`.
 
 A plan also says which projects the work touches. When a step that writes
 code starts, Goodboy materializes those projects.
@@ -444,7 +576,10 @@ is the **session record** on the **Overview**:
 
 Goodboy updates the decisions and the summary when the summarizer runs after a
 turn, and writes the goal when the session starts. You can edit all three
-yourself too.
+yourself too. Each decision keeps a number for the life of the session: agents
+and the summarizer replace or withdraw it by that number, with a reason, and
+one nobody names stays as it is. When a run finishes or a pull request merges,
+Goodboy consolidates the decisions and the summary once more.
 
 Each of those sections is a **lens**, a view of the session. You open it from
 rows and chips on the **Overview**. It opens in place or in a side panel, and
@@ -460,11 +595,26 @@ everything that streams in between.
 
 ## Pull request review
 
-A **diff comment** is your note on a line of the code under review.
+A **note** is a comment on a line of the diff that stays in Goodboy: yours, or
+one an agent reviewer left. A note never publishes on its own.
 
 A **review conversation** is Goodboy's saved record of one review, issue or
-diff comment. It keeps its state, its verdict, its draft reply and the commits
-that answer it.
+note. It keeps its state, its verdict, its draft reply and the commits that
+answer it.
+
+Review exists with or without a pull request. Without one, its header reads the
+session title and `branch → base · No pull request`, with `Open pull request`,
+and Conversations lists the notes. With a pull request, Conversations mixes the
+GitHub threads and the notes, and a filter `All · GitHub · Notes` appears when
+both are there. Every open note gets a conversation, and deleting or resolving
+the note closes it. An agent reviewer's comments on a branch without a pull
+request are kept as notes. When a pull request arrives the notes stay notes;
+`Post open notes to the PR` in the Conversations menu turns them into draft
+review comments, never on its own.
+
+A note resolves like a review thread, with the same resolver and the same
+panel, but there is no reply to write: `Resolve` keeps the fix on the branch
+and closes the note, and `Close note` closes it without a change.
 
 Every open review thread on the pull request gets a conversation as soon as
 Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
@@ -488,7 +638,9 @@ with a local commit and never pushes.
   shows `Fixed in 7c1e0aa · replaces 4f21c8b`
 - With the fixup commit style, Goodboy blames the commented line and asks the
   agent for `git commit --fixup=<sha>` of the commit that introduced it. The
-  default is a new commit for every fix. Goodboy never squashes or force-pushes
+  default is a new commit for every fix. Resolve never squashes or
+  force-pushes; history changes only when you press Apply or Push in Rewrite
+  history
 - Approving a fix fast-forwards the branch to it. When the branch moved on
   since the fix started, the fix is cherry-picked onto the new head and that
   commit becomes the sha on the branch. If it no longer applies, the pick is
@@ -826,20 +978,22 @@ Session stages, in `SessionStage`: `attention` (**needs you**), `running`,
 
 Agent kinds, in `AGENT_KIND_ORDER`:
 
-| Kind          | Label       | Started from      |
-| ------------- | ----------- | ----------------- |
-| `planner`     | Plan        | spawn menu        |
-| `scout`       | Scout       | spawn menu        |
-| `implementer` | Implement   | spawn menu        |
-| `debugger`    | Debug       | spawn menu        |
-| `tester`      | Test        | spawn menu        |
-| `reviewer`    | Review      | spawn menu        |
-| `pr-reviewer` | PR reviewer | PR review session |
-| `docs`        | Docs        | spawn menu        |
-| `report`      | Report      | workflow step     |
-| `wireframe`   | Wireframe   | workflow step     |
-| `resolver`    | Resolve     | Review lens       |
-| `generic`     | Generalist  | spawn menu        |
+| Kind          | Label            | Started from                    |
+| ------------- | ---------------- | ------------------------------- |
+| `planner`     | Plan             | spawn menu                      |
+| `scout`       | Scout            | spawn menu                      |
+| `implementer` | Implement        | spawn menu                      |
+| `debugger`    | Debug            | spawn menu                      |
+| `tester`      | Test             | spawn menu                      |
+| `reviewer`    | Review           | spawn menu                      |
+| `pr-reviewer` | PR reviewer      | PR review session               |
+| `docs`        | Docs             | spawn menu                      |
+| `report`      | Report           | workflow step                   |
+| `wireframe`   | Wireframe        | workflow step                   |
+| `resolver`    | Resolve          | Review lens                     |
+| `rewriter`    | History rewriter | a history replay that conflicts |
+| `scribe`      | Scribe           | pull request panel              |
+| `generic`     | Generalist       | spawn menu                      |
 
 Other identifiers:
 

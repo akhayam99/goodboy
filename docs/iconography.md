@@ -137,6 +137,7 @@ Never build a colored role word or an outlined kind chip by hand.
 | `workspace`     | `LayoutGrid`        | info    | A workspace                                 |
 | `branch`        | `GitBranch`         | info    | A branch, and the branch chip               |
 | `commits`       | `GitCommit`         | info    | Commits                                     |
+| `history`       | `GitGraph`          | info    | Rewrite history of a branch, never a clock  |
 | `timeline`      | `GitCommitVertical` | neutral | The activity rail                           |
 | `pr`            | `GitPullRequest`    | primary | Pull and merge requests                     |
 | `diff`          | `FileDiff`          | info    | A diff, and the changes cell of a mount row |

@@ -27,6 +27,7 @@ export type SecurityFindingId = string & { readonly __brand: 'SecurityFindingId'
 
 export type OpenQuestionId = string & { readonly __brand: 'OpenQuestionId' };
 export type IntegrationBindingId = string & { readonly __brand: 'IntegrationBindingId' };
+export type IntegrationDraftId = string & { readonly __brand: 'IntegrationDraftId' };
 
 export type CredentialId = string & { readonly __brand: 'CredentialId' };
 export type IntegrationCredentialId = string & { readonly __brand: 'IntegrationCredentialId' };

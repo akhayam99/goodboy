@@ -103,7 +103,6 @@ describe('m158 artifact provenance', () => {
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('session_artifacts', 'artifact_renditions', 'plan_consumptions')",
     );
     expect(artifacts.map((row) => row.name).sort()).toEqual([
-      'artifact_renditions',
       'plan_consumptions',
       'session_artifacts',
     ]);

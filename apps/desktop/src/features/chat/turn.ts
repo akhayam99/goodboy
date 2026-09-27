@@ -145,6 +145,7 @@ type SpawnArgs = {
   readonly apiKeyEnv?: string;
   readonly credentialId?: string;
   readonly cursorMaxMode?: boolean;
+  readonly blocksPush?: boolean;
   readonly writerLease?: {
     readonly path: string;
     readonly holder: string;

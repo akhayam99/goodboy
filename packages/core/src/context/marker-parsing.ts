@@ -40,6 +40,9 @@ const HANDOFF_OPEN = '<<handoff';
 const COMMENT_ANALYSIS_OPEN = '<<comment-analysis';
 const COMMENT_RESOLVED_OPEN = '<<comment-resolved';
 const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
+const HISTORY_STEP_OPEN = '<<history-step';
+const HISTORY_DONE_OPEN = '<<history-done';
+const HISTORY_STUCK_OPEN = '<<history-stuck';
 const COMMENT_REPLY_OPEN_RE = /<<comment-reply((?:\s+[\w-]+="[^"]*")*)\s*>>/g;
 const COMMENT_REPLY_CLOSE = '<</comment-reply>>';
 const CLUSTER_DONE_OPEN = '<<cluster-done';
@@ -137,6 +140,84 @@ export const extractMarkers = (
   const questions = extractQuestions(assistantText);
   const resolved = extractBlockContents(assistantText, RESOLVED_OPEN, RESOLVED_CLOSE);
   return { decisions, questions, resolved };
+};
+
+const DECISION_OPEN_PREFIX = '<<ctx-decision';
+const DECISION_REFERENCE_RE = /^\s*D?(\d+)\s*$/i;
+
+export type ExtractedDecisionOp =
+  | { readonly kind: 'add'; readonly text: string }
+  | {
+      readonly kind: 'replace';
+      readonly number: number;
+      readonly text: string;
+      readonly reason: string | null;
+    }
+  | { readonly kind: 'withdraw'; readonly number: number; readonly reason: string };
+
+type DecisionReferenceParams = {
+  readonly raw: string | undefined;
+};
+
+const decisionReference = ({ raw }: DecisionReferenceParams): number | null => {
+  if (raw === undefined) {
+    return null;
+  }
+  const match = DECISION_REFERENCE_RE.exec(raw);
+  return match === null ? null : Number(match[1]);
+};
+
+type DecisionMarkerParams = {
+  readonly attrs: Readonly<Record<string, string>>;
+  readonly body: string;
+};
+
+const decisionOpOf = ({ attrs, body }: DecisionMarkerParams): ExtractedDecisionOp | null => {
+  const withdrawn = decisionReference({ raw: attrs.withdraw });
+  if (withdrawn !== null) {
+    return body === '' ? null : { kind: 'withdraw', number: withdrawn, reason: body };
+  }
+  if (body === '') {
+    return null;
+  }
+  const replaced = decisionReference({ raw: attrs.replaces });
+  if (replaced !== null) {
+    const reason = (attrs.reason ?? '').trim();
+    return { kind: 'replace', number: replaced, text: body, reason: reason === '' ? null : reason };
+  }
+  return { kind: 'add', text: body };
+};
+
+export const extractDecisionOps = (text: string): ReadonlyArray<ExtractedDecisionOp> => {
+  const out: ExtractedDecisionOp[] = [];
+  let cursor = 0;
+  while (cursor < text.length) {
+    const start = text.indexOf(DECISION_OPEN_PREFIX, cursor);
+    if (start === -1) {
+      break;
+    }
+    const headEnd = text.indexOf('>>', start + DECISION_OPEN_PREFIX.length);
+    if (headEnd === -1) {
+      break;
+    }
+    const head = text.slice(start + DECISION_OPEN_PREFIX.length, headEnd);
+    const isHead = head === '' || /^\s/.test(head);
+    const bodyStart = headEnd + 2;
+    const close = isHead ? text.indexOf(DECISION_CLOSE, bodyStart) : -1;
+    if (close === -1) {
+      cursor = start + DECISION_OPEN_PREFIX.length;
+      continue;
+    }
+    const op = decisionOpOf({
+      attrs: parseQuestionAttrs(head),
+      body: text.slice(bodyStart, close).trim(),
+    });
+    if (op !== null) {
+      out.push(op);
+    }
+    cursor = close + DECISION_CLOSE.length;
+  }
+  return out;
 };
 
 function parseQuestionAttrs(raw: string): Record<string, string> {
@@ -346,6 +427,126 @@ export const extractAllCommentResolved = (
     markers.push({ threadId, commitSha });
   }
   return markers;
+};
+
+export type ExtractedHistoryStep = {
+  readonly from: string;
+  readonly to: string | null;
+};
+
+export type ExtractedHistoryStuck = {
+  readonly from: string;
+  readonly files: ReadonlyArray<string>;
+  readonly reason: string;
+};
+
+export type ExtractedHistoryReport = {
+  readonly steps: ReadonlyArray<ExtractedHistoryStep>;
+  readonly doneHead: string | null;
+  readonly stuck: ExtractedHistoryStuck | null;
+};
+
+const SKIPPED_STEP_TARGETS: ReadonlySet<string> = new Set(['', 'none', 'skipped', 'empty']);
+
+export const extractHistoryReport = (assistantText: string): ExtractedHistoryReport => {
+  const steps: Array<ExtractedHistoryStep> = [];
+  for (const inner of extractSelfClosingInner(assistantText, HISTORY_STEP_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
+    const from = (attrs.from ?? '').trim();
+    if (from.length === 0) {
+      continue;
+    }
+    const to = (attrs.to ?? '').trim();
+    steps.push({ from, to: SKIPPED_STEP_TARGETS.has(to.toLowerCase()) ? null : to });
+  }
+  let doneHead: string | null = null;
+  for (const inner of extractSelfClosingInner(assistantText, HISTORY_DONE_OPEN)) {
+    const head = (parseHandoffAttrs(inner).head ?? '').trim();
+    if (head.length > 0) {
+      doneHead = head;
+    }
+  }
+  let stuck: ExtractedHistoryStuck | null = null;
+  for (const inner of extractSelfClosingInner(assistantText, HISTORY_STUCK_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
+    const from = (attrs.from ?? '').trim();
+    const reason = (attrs.reason ?? '').trim();
+    if (from.length === 0 && reason.length === 0) {
+      continue;
+    }
+    stuck = {
+      from,
+      reason,
+      files: (attrs.files ?? '')
+        .split(',')
+        .map((file) => file.trim())
+        .filter((file) => file.length > 0),
+    };
+  }
+  return { steps, doneHead, stuck };
+};
+
+export type ExtractedCommitMessage = {
+  readonly sha: string;
+  readonly message: string;
+};
+
+export type ExtractedScribeText = {
+  readonly prTitle: string | null;
+  readonly prBody: string | null;
+  readonly commitMessages: ReadonlyArray<ExtractedCommitMessage>;
+  readonly changelogEntry: string | null;
+};
+
+const scribeBlocks = ({
+  text,
+  tag,
+}: {
+  readonly text: string;
+  readonly tag: string;
+}): ReadonlyArray<{ readonly attrs: Record<string, string>; readonly body: string }> => {
+  const open = new RegExp(`<<${tag}((?:\\s+[\\w-]+="[^"]*")*)\\s*>>`, 'g');
+  const close = `<</${tag}>>`;
+  const blocks: Array<{ readonly attrs: Record<string, string>; readonly body: string }> = [];
+  let match: RegExpExecArray | null;
+  while ((match = open.exec(text)) !== null) {
+    const bodyStart = open.lastIndex;
+    const closeIndex = text.indexOf(close, bodyStart);
+    if (closeIndex === -1) {
+      break;
+    }
+    open.lastIndex = closeIndex + close.length;
+    blocks.push({
+      attrs: parseQuestionAttrs(match[1] ?? ''),
+      body: text.slice(bodyStart, closeIndex).trim(),
+    });
+  }
+  return blocks;
+};
+
+const lastBody = ({
+  text,
+  tag,
+}: {
+  readonly text: string;
+  readonly tag: string;
+}): string | null => {
+  const found = scribeBlocks({ text, tag })
+    .map((block) => block.body)
+    .filter((body) => body.length > 0);
+  return found.length === 0 ? null : (found[found.length - 1] ?? null);
+};
+
+export const extractScribeText = (assistantText: string): ExtractedScribeText => {
+  const title = lastBody({ text: assistantText, tag: 'pr-title' });
+  return {
+    prTitle: title === null ? null : (title.split('\n')[0]?.trim() ?? null),
+    prBody: lastBody({ text: assistantText, tag: 'pr-body' }),
+    commitMessages: scribeBlocks({ text: assistantText, tag: 'commit-message' })
+      .map((block) => ({ sha: (block.attrs.for ?? '').trim(), message: block.body }))
+      .filter((entry) => entry.message.length > 0),
+    changelogEntry: lastBody({ text: assistantText, tag: 'changelog-entry' }),
+  };
 };
 
 const REVIEW_THREAD_ID_RE = /^PRRT_/;
@@ -915,9 +1116,9 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 };
 
 const BLOCK_MARKER_ALT =
-  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer';
+  'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|pr-title|pr-body|commit-message|changelog-entry';
 const SELF_MARKER_ALT =
-  'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|materialize:';
+  'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
 
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,

@@ -1,5 +1,6 @@
 import type { ChangelogFeature } from '../../parseChangelog';
 import type { ChangelogScreen } from '../../changelogScreens';
+import { ReleaseImage } from '../ReleaseImage';
 import { AreaTag } from './AreaTag';
 import { OpenScreenLink } from './OpenScreenLink';
 import { PrRef } from './PrRef';
@@ -10,13 +11,22 @@ const HEADING_TAG = {
 } as const satisfies Record<2 | 3, 'h2' | 'h3'>;
 
 type Props = {
+  readonly version: string;
   readonly feature: ChangelogFeature;
   readonly showPrRef: boolean;
   readonly headingLevel: 2 | 3;
+  readonly hasBefore: boolean;
   readonly onOpenScreen?: (params: { readonly screen: ChangelogScreen }) => void;
 };
 
-export const FeatureBlock = ({ feature, showPrRef, headingLevel, onOpenScreen }: Props) => {
+export const FeatureBlock = ({
+  version,
+  feature,
+  showPrRef,
+  headingLevel,
+  hasBefore,
+  onOpenScreen,
+}: Props) => {
   const Heading = HEADING_TAG[headingLevel];
   return (
     <div className="flex flex-col gap-1.5">
@@ -32,6 +42,14 @@ export const FeatureBlock = ({ feature, showPrRef, headingLevel, onOpenScreen }:
           {paragraph}
         </p>
       ))}
+      {feature.image !== null ? (
+        <ReleaseImage
+          version={version}
+          image={feature.image}
+          hasBefore={hasBefore}
+          alt={feature.title}
+        />
+      ) : null}
       <OpenScreenLink screen={feature.screen} onOpenScreen={onOpenScreen} />
     </div>
   );

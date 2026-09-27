@@ -25,7 +25,7 @@
   },
   "features/session/hooks/useRebaseAgent/index.ts": {
     "count": 1,
-    "reason": "agent-facing: rebase agent prompt"
+    "reason": "agent-facing: rebase prompt names the mount to work in"
   },
   "features/session/mountQueryBridge/index.ts": {
     "count": 8,

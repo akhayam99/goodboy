@@ -35,6 +35,8 @@ pub struct SettingsOverrides {
     pub resolve_on_github: Option<bool>,
     #[serde(rename = "resolveCommitStyle", default)]
     pub resolve_commit_style: Option<String>,
+    #[serde(rename = "afterMerge", default)]
+    pub after_merge: Option<String>,
 }
 
 fn bool_to_int(value: Option<bool>) -> Option<i64> {
@@ -70,7 +72,7 @@ pub async fn get_workspace_overrides(
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     let mut stmt = conn.prepare(
         "SELECT default_provider_id, default_branch_prefix, default_verbosity, provider_bindings, task_models, role_models, parallel_agents, provider_pool, attribution_footer,
-                reply_voice, reply_style_note, reply_template_fixed, reply_template_no_change, resolve_on_github, resolve_commit_style
+                reply_voice, reply_style_note, reply_template_fixed, reply_template_no_change, resolve_on_github, resolve_commit_style, after_merge
          FROM workspaces WHERE id = ?1",
     )?;
     let mut rows = stmt.query_map(rusqlite::params![workspace_id], |row| {
@@ -93,6 +95,7 @@ pub async fn get_workspace_overrides(
             reply_template_no_change: row.get(12)?,
             resolve_on_github: resolve_on_github_raw.map(|v| v != 0),
             resolve_commit_style: row.get(14)?,
+            after_merge: row.get(15)?,
         })
     })?;
     match rows.next() {
@@ -129,8 +132,9 @@ pub async fn set_workspace_overrides(
              reply_template_no_change = ?13,
              resolve_on_github = ?14,
              resolve_commit_style = ?15,
-             updated_at = ?16
-         WHERE id = ?17",
+             after_merge = ?16,
+             updated_at = ?17
+         WHERE id = ?18",
         rusqlite::params![
             overrides.default_provider_id,
             overrides.default_branch_prefix,
@@ -147,6 +151,7 @@ pub async fn set_workspace_overrides(
             overrides.reply_template_no_change,
             bool_to_int(overrides.resolve_on_github),
             overrides.resolve_commit_style,
+            overrides.after_merge,
             now,
             workspace_id,
         ],
@@ -181,6 +186,7 @@ pub async fn get_session_overrides(
             reply_template_no_change: None,
             resolve_on_github: None,
             resolve_commit_style: None,
+            after_merge: None,
         })
     })?;
     match rows.next() {

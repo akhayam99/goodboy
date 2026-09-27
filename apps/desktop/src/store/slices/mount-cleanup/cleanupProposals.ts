@@ -61,6 +61,7 @@ export const toCleanupProposal = (operation: MountOperation): MountCleanupPropos
     branch: candidate.branch,
     sizeBytes: candidate.sizeBytes ?? null,
     request: candidate.request ?? null,
+    ...(typeof candidate.keptBecause === 'string' ? { keptBecause: candidate.keptBecause } : {}),
     createdAt: operation.createdAt,
   };
 };

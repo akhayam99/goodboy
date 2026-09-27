@@ -11,8 +11,9 @@ type ItemRow = ResolveQueueItem;
 type JoinedRow = ItemRow & {
   readonly threadRowId: string;
   readonly projectId: ResolveThread['projectId'];
-  readonly prNumber: number;
+  readonly prNumber: number | null;
   readonly originKind: ResolveThread['originKind'];
+  readonly diffCommentId: string | null;
   readonly state: ResolveThread['state'];
   readonly stage: ResolveThread['stage'];
   readonly stateReason: string | null;
@@ -96,7 +97,7 @@ export const listResolveQueueItems = async ({
        q.delivered_at AS deliveredAt, q.superseded_at AS supersededAt,
        q.created_at AS createdAt, q.updated_at AS updatedAt,
        r.id AS threadRowId, r.project_id AS projectId, r.pr_number AS prNumber,
-       r.origin_kind AS originKind, r.state, r.stage, r.state_reason AS stateReason,
+       r.origin_kind AS originKind, r.diff_comment_id AS diffCommentId, r.state, r.stage, r.state_reason AS stateReason,
        r.revision, r.active_attempt_id AS activeAttemptId, r.disposition,
        r.reply_draft AS replyDraft, r.commit_shas_json AS commitShas,
        r.fixup_of_sha AS fixupOfSha, r.replaces_sha AS replacesSha, r.question,
@@ -135,6 +136,7 @@ export const listResolveQueueItems = async ({
       prNumber: row.prNumber,
       threadId: row.threadId,
       originKind: row.originKind,
+      diffCommentId: row.diffCommentId,
       state: row.state,
       stage: row.stage,
       stateReason: row.stateReason,

@@ -5,7 +5,8 @@ type Params = {
   readonly threadId: string;
   readonly agent?: Agent;
   readonly projectId?: ProjectId | null;
-  readonly prNumber?: number;
+  readonly prNumber?: number | null;
+  readonly diffCommentId?: string | null;
 };
 
 export const createResolveThread = ({
@@ -13,7 +14,8 @@ export const createResolveThread = ({
   threadId,
   agent,
   projectId = null,
-  prNumber,
+  prNumber = null,
+  diffCommentId = null,
 }: Params): ResolveThread => {
   const numberFromUrl = agent?.sourceCommentUrl?.match(/\/pull\/(\d+)/)?.[1];
   const now = Date.now();
@@ -22,8 +24,9 @@ export const createResolveThread = ({
     sessionId,
     threadId,
     projectId,
-    prNumber: numberFromUrl === undefined ? (prNumber ?? 0) : Number(numberFromUrl),
-    originKind: agent?.sourceKind ?? 'review_comment',
+    prNumber: numberFromUrl === undefined ? prNumber : Number(numberFromUrl),
+    originKind: diffCommentId === null ? (agent?.sourceKind ?? 'review_comment') : 'diff_comment',
+    diffCommentId,
     state: 'open',
     stage: 'new',
     stateReason: null,

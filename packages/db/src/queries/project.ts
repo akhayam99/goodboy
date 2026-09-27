@@ -1,4 +1,5 @@
 import type {
+  AfterMergeRule,
   GoodboyIgnoreMode,
   IsoDateTime,
   OverrideSettings,
@@ -19,6 +20,9 @@ type ProjectRow = OverrideRow & {
   readonly workspace_id: string;
   readonly name: string;
   readonly root_path: string;
+  readonly root_commit: string | null;
+  readonly remote_url: string | null;
+  readonly identity_checked_at: number | null;
   readonly kind: 'repo' | 'folder';
   readonly base_branch: string | null;
   readonly description: string | null;
@@ -41,6 +45,11 @@ const toDomain = ({ row }: ToDomainParams): Project => ({
   workspaceId: row.workspace_id as WorkspaceId,
   name: row.name,
   rootPath: row.root_path,
+  ...(row.root_commit === null ? {} : { rootCommit: row.root_commit }),
+  ...(row.remote_url === null ? {} : { remoteUrl: row.remote_url }),
+  ...(row.identity_checked_at === null
+    ? {}
+    : { identityCheckedAt: new Date(row.identity_checked_at).toISOString() as IsoDateTime }),
   kind: row.kind,
   baseBranch: row.base_branch,
   description: row.description,
@@ -92,8 +101,9 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
        default_branch_prefix, created_at, updated_at, disconnected_at,
        default_verbosity, last_accessed_at, provider_bindings, parallel_agents, kind,
        task_models, role_models, provider_pool, base_branch, attribution_footer,
-       description, starred_at, ${REPLY_SETTING_COLUMNS}
-     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       description, starred_at, root_commit, remote_url, identity_checked_at,
+       ${REPLY_SETTING_COLUMNS}, after_merge
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       project.id,
       project.workspaceId,
@@ -120,8 +130,34 @@ export const insertProject = async ({ db, project }: InsertProjectParams): Promi
           : 0,
       project.description ?? null,
       project.starredAt === undefined ? null : Date.parse(project.starredAt),
+      project.rootCommit ?? null,
+      project.remoteUrl ?? null,
+      project.identityCheckedAt === undefined ? null : Date.parse(project.identityCheckedAt),
       ...replySettingValues({ overrides: project.overrides }),
+      project.overrides.afterMerge,
     ],
+  );
+};
+
+type UpdateProjectIdentityParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly rootCommit: string | null;
+  readonly remoteUrl: string | null;
+  readonly checkedAt: IsoDateTime;
+};
+
+export const updateProjectIdentity = async ({
+  db,
+  projectId,
+  rootCommit,
+  remoteUrl,
+  checkedAt,
+}: UpdateProjectIdentityParams): Promise<void> => {
+  const timestamp = Date.parse(checkedAt);
+  await db.execute(
+    'UPDATE projects SET root_commit = ?, remote_url = ?, identity_checked_at = ?, updated_at = ? WHERE id = ?',
+    [rootCommit, remoteUrl, timestamp, timestamp, projectId],
   );
 };
 
@@ -257,6 +293,24 @@ export const updateProjectBaseBranch = async ({
 }: UpdateProjectBaseBranchParams): Promise<void> => {
   await db.execute('UPDATE projects SET base_branch = ?, updated_at = ? WHERE id = ?', [
     baseBranch,
+    Date.now(),
+    projectId,
+  ]);
+};
+
+type UpdateProjectAfterMergeParams = {
+  readonly db: Database;
+  readonly projectId: ProjectId;
+  readonly afterMerge: AfterMergeRule | null;
+};
+
+export const updateProjectAfterMerge = async ({
+  db,
+  projectId,
+  afterMerge,
+}: UpdateProjectAfterMergeParams): Promise<void> => {
+  await db.execute('UPDATE projects SET after_merge = ?, updated_at = ? WHERE id = ?', [
+    afterMerge,
     Date.now(),
     projectId,
   ]);

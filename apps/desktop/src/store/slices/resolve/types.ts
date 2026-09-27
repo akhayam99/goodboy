@@ -78,7 +78,7 @@ export type UpdateParams = SessionParams & {
   >;
   readonly initialPatch?: UpdateParams['patch'];
   readonly revision?: number;
-  readonly prNumber?: number;
+  readonly prNumber?: number | null;
 };
 
 export type ResolveUpdates = ReadonlyArray<Pick<UpdateParams, 'threadId' | 'revision' | 'patch'>>;
@@ -147,4 +147,6 @@ export type ResolveActions = {
     params: EnsureReviewThreadParams,
   ) => Promise<EnsureReviewThreadResult>;
   readonly materializeReviewThreads: (params: MaterializeParams) => Promise<number>;
+  readonly syncNoteThreads: (params: SessionParams) => Promise<number>;
+  readonly closeResolvedNote: (params: ThreadParams) => Promise<void>;
 };

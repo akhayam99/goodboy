@@ -128,6 +128,15 @@ on delete); a directory that was meant to stay lets a `drop-row` delete the
 row; any other directory still there closes the operation `failed` and stays
 on disk for the user to retry. Recovery never deletes a directory.
 
+A mount can also go `unavailable` because its project's whole folder moved,
+not because the mount itself was touched. That is not a recovery case: the
+fix is `Locate moved projects` (`features/workspace/components/
+LocateMovedProjects/`), which rewrites the project's and its mounts' paths
+and repairs git's worktree links; see
+[architecture.md](architecture.md#moving-a-projects-folder). Once the
+project's `root_path` is corrected, the next git status read clears the
+mount's `disk_state` on its own.
+
 ## Cleanup proposals
 
 When a lifecycle step must continue but a directory cannot go (dirty, locked,
@@ -218,8 +227,28 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   with a reason. Archive, delete, storage settings, merge cleanup, unmount and
   orphan cleanup share one refusal policy: a running agent, a bound terminal,
   a writer lease, a lock, a git operation in progress, or dirty tracked or
-  untracked work. The local branch always survives, and `mount attach`
-  recreates a worktree from it.
+  untracked work. The local branch survives every one of them except the
+  after-merge rule below, and `mount attach` recreates a worktree from it.
+- **After a pull request merges, a rule decides.** Workspace settings carry
+  `After a pull request merges` (`workspaces.after_merge`): `Ask me`,
+  `Delete folder and branch on this Mac` or `Also delete the branch on
+origin`. A repo project can override it from its row editor
+  (`projects.after_merge`, `Same as workspace · …` first). Workspaces from
+  before the rule stay on `Ask me`; a workspace that never chose deletes on
+  this Mac. When polling sees the merge and the rule is not `Ask me`,
+  `runAfterMergeCleanup` deletes only a branch Goodboy created
+  (`session_worktrees.branch_origin = 'created'`; older rows read `unknown`
+  and are never deleted by the rule), only if `branch_merge_state` says it
+  is merged (merge commit, rebase, or squash by patch-id) or has no commits
+  of its own, and only after the folder unmounts cleanly. The tip is parked
+  under `refs/goodboy/deleted/<branch>`, then `git update-ref -d` deletes
+  the branch only if it still points at the checked sha. The origin choice
+  runs `git push origin --delete` with `--force-with-lease` and is off when
+  GitHub already deletes merged branches (`delete_branch_on_merge`, read
+  once a day). Anything kept falls back to the merge cleanup proposal with
+  the reason (`Kept goodboy/fx-rates: 2 new commits after the merge.`).
+  Each deletion is a `deleted_branches` row and a `branch_deleted` Activity
+  row with `Restore`; the parked ref and the row go after 14 days.
 - **Request identity is verified, never guessed.** A request missing from the
   database is attached to a mount only after a provider lookup confirms its
   provider, host, repository, number and head branch. A branch name alone

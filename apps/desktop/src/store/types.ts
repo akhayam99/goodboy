@@ -16,11 +16,15 @@ import type {
   StorageStats,
 } from './slices/storage/types';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
+import type { HistoryState } from './slices/history/state';
+import type { ScribeState } from './slices/scribe/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
 import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { DurationEstimatesState } from './slices/durationEstimates/state';
 import type { ProviderLimitsState } from './slices/providerLimits/state';
+import type { ProjectRelocationState } from './slices/project-relocation/state';
+import type { BackupState } from './slices/backup/state';
 import type { SentryLinksState } from './slices/sentryLinks/state';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type {
@@ -39,6 +43,7 @@ import type {
   IntegrationBinding,
   IntegrationCredential,
   IntegrationCredentialUsage,
+  IntegrationDraft,
   IsoDateTime,
   LinkedIssue,
   Message,
@@ -107,6 +112,7 @@ import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { SessionDraftState } from './slices/sessionDraft/state';
 import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
+import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
@@ -252,6 +258,8 @@ type AppSliceState = ArtifactsState &
   IssueBriefsState &
   DurationEstimatesState &
   ProviderLimitsState &
+  ProjectRelocationState &
+  BackupState &
   SentryLinksState &
   UpdaterState &
   ChangelogState &
@@ -259,6 +267,7 @@ type AppSliceState = ArtifactsState &
   BugReportDraftState &
   SessionDraftState &
   ContextDrawerSliceState &
+  DecisionsSliceState &
   DrawerSliceState &
   NavigationSliceState;
 
@@ -313,6 +322,11 @@ export type AppState = AppSliceState & {
   readonly agentTurnDestination: Readonly<Record<AgentId, WriteDestination>>;
   readonly mountCleanupProposals: MountCleanupState['mountCleanupProposals'];
   readonly retainedWorktreePaths: MountCleanupState['retainedWorktreePaths'];
+  readonly historyRuns: HistoryState['historyRuns'];
+  readonly historyRewriters: HistoryState['historyRewriters'];
+  readonly historyDrafts: HistoryState['historyDrafts'];
+  readonly scribeWork: ScribeState['scribeWork'];
+  readonly scribeAgents: ScribeState['scribeAgents'];
   readonly prSeries: PrSeriesState['prSeries'];
   readonly sessionLanguageAnchor: Readonly<Record<SessionId, string>>;
   readonly sessionActiveProject: Readonly<Record<string, ProjectId>>;
@@ -430,6 +444,7 @@ export type AppState = AppSliceState & {
   readonly sessionAnsweredQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   readonly sessionDismissedQuestions: Readonly<Record<SessionId, ReadonlyArray<OpenQuestion>>>;
   readonly sessionQuestionsLoadError: Readonly<Record<SessionId, string | undefined>>;
+  readonly sessionSlackDrafts: Readonly<Record<SessionId, ReadonlyArray<IntegrationDraft>>>;
   readonly openQuestionScrollTarget: {
     readonly agentId: AgentId;
     readonly questionId: OpenQuestionId;
@@ -444,6 +459,7 @@ export type AppState = AppSliceState & {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly diffMountPath: Readonly<Record<SessionId, string | null>>;
+  readonly diffPage: Readonly<Record<SessionId, 'history' | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
   readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;

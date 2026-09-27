@@ -68,7 +68,7 @@ export const SessionCrumbs = ({ session }: SessionCrumbsProps) => {
       accessory,
       ...(crumb.onClick !== undefined && { onSelect: crumb.onClick }),
       menu,
-      ...(crumb.id === 'diff-branch' && { isPinned: true }),
+      ...((crumb.id === 'diff-branch' || crumb.id === 'pr-number') && { isPinned: true }),
     };
   });
 

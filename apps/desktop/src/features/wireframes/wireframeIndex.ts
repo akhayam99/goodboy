@@ -1,4 +1,9 @@
-import type { WireframeAction, WireframeDocument, WireframeNode } from '@goodboy/core';
+import {
+  wireframeNodeChildren,
+  type WireframeAction,
+  type WireframeDocument,
+  type WireframeNode,
+} from '@goodboy/core';
 
 export type WireframeIndex = Readonly<{
   screenByNodeId: ReadonlyMap<string, string>;
@@ -18,8 +23,8 @@ const walk = ({
   readonly actionByNodeId: Map<string, WireframeAction>;
 }): void => {
   screenByNodeId.set(node.id, screenId);
-  if (node.kind === 'stack' || node.kind === 'grid') {
-    for (const child of node.children) {
+  if (wireframeNodeChildren({ node }).length > 0) {
+    for (const child of wireframeNodeChildren({ node })) {
       walk({ node: child, screenId, screenByNodeId, actionByNodeId });
     }
     return;
@@ -39,7 +44,7 @@ const walk = ({
     }
     return;
   }
-  if (node.kind === 'navigation') {
+  if (node.kind === 'navigation' || node.kind === 'tabs') {
     for (const item of node.items) {
       screenByNodeId.set(item.id, screenId);
       if (item.action !== undefined) {

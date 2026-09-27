@@ -29,6 +29,7 @@ import {
   useSessionAnsweredQuestions,
   useSessionLoading,
   useSessionOpenQuestions,
+  useSessionSlackDrafts,
   useTranscript,
 } from '../../../../store';
 import { reduceTranscript } from '../../utils/transcript-items';
@@ -364,6 +365,13 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
     void loadSessionAnsweredQuestions(session.id);
   }, [session.id, loadSessionAnsweredQuestions]);
 
+  const slackDrafts = useSessionSlackDrafts(session.id);
+  const loadSessionSlackDrafts = useAppStore((s) => s.loadSessionSlackDrafts);
+
+  useEffect(() => {
+    void loadSessionSlackDrafts(session.id);
+  }, [session.id, loadSessionSlackDrafts]);
+
   const oqByTurnOrdinal = useMemo(() => {
     const map = new Map<number | null, OpenQuestion[]>();
     for (const q of [...openQuestions, ...answeredQuestions]) {
@@ -447,7 +455,10 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
         <ScrollFade className="flex-1" fadeSize="h-12" viewportClassName="px-6 pb-4 pt-6">
           {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
             <TranscriptSkeleton />
-          ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 && isProviderDisconnected ? (
+          ) : deferredItems.length === 0 &&
+            oqByTurnOrdinal.size === 0 &&
+            slackDrafts.length === 0 &&
+            isProviderDisconnected ? (
             <div className="flex h-full items-center justify-center">
               <div className={cn(PANE_RHYTHM.column)}>
                 <AuthRequiredCallout
@@ -457,7 +468,9 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
                 />
               </div>
             </div>
-          ) : deferredItems.length === 0 && oqByTurnOrdinal.size === 0 ? (
+          ) : deferredItems.length === 0 &&
+            oqByTurnOrdinal.size === 0 &&
+            slackDrafts.length === 0 ? (
             <div className="flex h-full items-center justify-center">
               <ChatEmptyState
                 sessionId={session.id}
@@ -476,6 +489,7 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
                 <TranscriptRows
                   rows={rows}
                   oqByTurnOrdinal={oqByTurnOrdinal}
+                  slackDrafts={slackDrafts}
                   sessionId={session.id}
                   selectedAgentId={selectedAgentId}
                   workingDir={worktreePath}

@@ -1,9 +1,12 @@
 import type { IsoDateTime, SessionEventId, SessionId } from './ids';
+import type { SessionDecisionChange } from './session-decision';
 
 export const SESSION_EVENT_KINDS = [
   'worktree_created',
   'branch_created',
   'branch_switched',
+  'branch_deleted',
+  'branch_restored',
   'issue_linked',
   'issue_unlinked',
   'pr_created',
@@ -30,6 +33,10 @@ export const SESSION_EVENT_KINDS = [
   'write_destination_changed',
   'question_dismissed',
   'question_restored',
+  'history_rewritten',
+  'history_pushed',
+  'history_stopped',
+  'history_restored',
 ] as const;
 
 export type SessionEventKind = (typeof SESSION_EVENT_KINDS)[number];
@@ -52,6 +59,12 @@ export type SessionEventPayload = Readonly<{
   runId?: string;
   added?: number;
   removed?: number;
+  replaced?: number;
+  withdrawn?: number;
+  merged?: number;
+  restored?: number;
+  decisionChanges?: ReadonlyArray<SessionDecisionChange>;
+  consolidatedAfter?: string;
   projectId?: string;
   mountId?: string;
   host?: string;
@@ -65,6 +78,15 @@ export type SessionEventPayload = Readonly<{
   turnRunId?: string;
   deferralCause?: MaterializationDeferralCause;
   questionId?: string;
+  planId?: string;
+  summary?: string;
+  origin?: 'plan' | 'rebase';
+  files?: ReadonlyArray<string>;
+  isTreeEqual?: boolean;
+  prNumber?: number;
+  backupRef?: string;
+  deletedBranchId?: string;
+  onOrigin?: boolean;
 }>;
 
 export type SessionEvent = Readonly<{

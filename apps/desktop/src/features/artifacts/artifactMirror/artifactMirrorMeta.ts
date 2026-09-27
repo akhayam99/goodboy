@@ -1,5 +1,7 @@
 import type { SessionArtifact } from '@goodboy/types';
 
+export const ARTIFACT_RENDERER_VERSION = '2';
+
 export type ArtifactMirrorMeta = Readonly<{
   id: string;
   kind: SessionArtifact['kind'];
@@ -11,6 +13,7 @@ export type ArtifactMirrorMeta = Readonly<{
   createdAt: string;
   updatedAt: string;
   appVersion: string | null;
+  rendererVersion: string;
 }>;
 
 type Params = {
@@ -34,4 +37,5 @@ export const artifactMirrorMeta = ({
   createdAt: artifact.createdAt,
   updatedAt: artifact.updatedAt,
   appVersion,
+  rendererVersion: ARTIFACT_RENDERER_VERSION,
 });

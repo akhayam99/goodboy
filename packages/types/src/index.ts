@@ -25,6 +25,7 @@ export type {
   WorkflowRunId,
   WorkspaceId,
   IntegrationBindingId,
+  IntegrationDraftId,
 } from './ids';
 export type {
   MountBranchObservation,
@@ -33,6 +34,7 @@ export type {
   MountCleanupDecision,
   MountCleanupDisposition,
   MountCleanupProposal,
+  BranchOrigin,
   MountDiskState,
   MountOperation,
   MountOperationKind,
@@ -63,7 +65,19 @@ export type {
 export type { FileVersion, FileVersionChangeKind, FileVersionSnapshotSource } from './file-version';
 export type { IntegrationCredential, IntegrationCredentialUsage } from './integration-credential';
 export type { OpenQuestion, OpenQuestionSelectMode, OpenQuestionStatus } from './open-question';
+export type {
+  IntegrationDraft,
+  IntegrationDraftStatus,
+  IntegrationDraftTarget,
+} from './integration-draft';
 export { MATERIALIZATION_DEFERRAL_CAUSES, SESSION_EVENT_KINDS } from './session-event';
+export { SESSION_DECISION_AUTHORS, SESSION_DECISION_STATUSES } from './session-decision';
+export type {
+  SessionDecision,
+  SessionDecisionAuthor,
+  SessionDecisionChange,
+  SessionDecisionStatus,
+} from './session-decision';
 export type {
   MaterializationDeferralCause,
   SessionEvent,
@@ -247,6 +261,7 @@ export type {
   ProviderBindings,
   ReplyVoice,
   ResolveCommitStyle,
+  AfterMergeRule,
   ResolvedSettings,
   RoleModelFallback,
   RoleModelPreference,
@@ -257,7 +272,30 @@ export type {
   TaskModelPreferences,
   VerbosityLevel,
 } from './settings';
-export { REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
+export { AFTER_MERGE_RULES, REPLY_VOICES, RESOLVE_COMMIT_STYLES } from './settings';
+export type {
+  HistoryBackup,
+  HistoryMoveOutcome,
+  HistoryOriginAhead,
+  HistoryPlan,
+  HistoryPlanArgs,
+  HistoryPlanState,
+  HistoryPlanPrediction,
+  HistoryPlannedStep,
+  HistoryRebaseCommit,
+  HistoryRebasePlan,
+  HistoryRewriterCheck,
+  HistoryShaMove,
+  HistoryStep,
+  HistoryStepOutcome,
+  HistoryStepPrediction,
+  HistoryStopKind,
+  HistoryTrialResult,
+  HistoryTrialStop,
+  HistoryVerb,
+  LeasePushOutcome,
+} from './history';
+export { HISTORY_PLAN_STATES, HISTORY_VERBS } from './history';
 export type {
   BranchCommit,
   BranchIntegration,
@@ -278,18 +316,33 @@ export type {
 } from './worktree';
 export type {
   ConfigBundle,
+  ConfigBundleAppPreferences,
   ConfigBundleBudgetRule,
   ConfigBundleImportResult,
+  ConfigBundleImportStats,
   ConfigBundlePermissionRule,
+  ConfigBundleProfile,
   ConfigBundleProject,
-  ConfigBundleSettings,
+  ConfigBundleScript,
   ConfigBundleSkill,
   ConfigBundleStep,
+  ConfigBundleToolBinding,
   ConfigBundleValidationError,
   ConfigBundleWorkflow,
   ConfigBundleWorkspace,
+  ConfigBundleWorkspaceOverrides,
+  ExportCounts,
+  ExportGroups,
+  ExportPreview,
+  ImportManifest,
+  ImportPreview,
+  LeftOutFinding,
+  ProjectMatch,
+  ProjectMatchVerdict,
+  WorkspaceMatch,
+  WorkspaceMatchAction,
 } from './config-bundle';
-export { CONFIG_BUNDLE_SCHEMA_VERSION } from './config-bundle';
+export { CONFIG_BUNDLE_SCHEMA_VERSION, DEFAULT_EXPORT_GROUPS } from './config-bundle';
 export type {
   ClaudePermissionMode,
   PermissionAuditEntry,
@@ -307,6 +360,7 @@ export { CLAUDE_PERMISSION_MODES, isClaudePermissionMode } from './permission';
 export type {
   DiffComment,
   DiffCommentAnchor,
+  DiffCommentAuthorKind,
   DiffCommentSide,
   DiffCommentStatus,
 } from './diff-comment';
@@ -316,7 +370,6 @@ export type {
   ArtifactId,
   ArtifactKind,
   ArtifactProvenance,
-  ArtifactRendition,
   ArtifactRunPhase,
   ArtifactRunTarget,
   ArtifactScoutPlanEntry,
@@ -414,3 +467,6 @@ export type {
 } from './resolve';
 export type { SecurityFinding, SecurityFindingSubjectKind, SecretKind } from './security-finding';
 export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentry-link';
+export type { DeletedBranch } from './deleted-branch';
+export { DELETED_BRANCH_KEEP_DAYS } from './deleted-branch';
+export type { StarredIssue, StarredIssueState } from './starred-issue';

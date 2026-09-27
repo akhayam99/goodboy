@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import type { PrDetail, PullRequestState, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { LensKind } from '../../../../../store';
-import { DetailProperties } from '../../../../../shared/components/StudioDetail/DetailProperties';
-import { githubPullRequestFields, resolveDetailFields } from '../../../../../shared/detail-fields';
+import { RecordProperties } from '../../../../../shared/components/StudioDetail/RecordProperties';
+import { githubPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { closingIssueReferences } from '../../../../github/closingIssueReferences';
 import { closingReferenceLines } from '../../../../github/closingReferenceLines';
@@ -31,9 +31,10 @@ export const PrDetailsMode = ({ sessionId, pr, detail, onSelectLens, onMutated }
   const repo = useSessionRepo({ sessionId });
   const branch = repo?.branch ?? null;
 
+  const checks = detail?.checks ?? EMPTY_ARRAY;
   const properties = useMemo(
-    () => resolveDetailFields({ registry: githubPullRequestFields, entity: pr }),
-    [pr],
+    () => resolveFacts({ registry: githubPullRequestFields, entity: { pr, checks } }),
+    [checks, pr],
   );
   const linkedIssueNumbers = useMemo(
     () => new Set(linkedIssues.map((issue) => issue.number)),
@@ -70,6 +71,7 @@ export const PrDetailsMode = ({ sessionId, pr, detail, onSelectLens, onMutated }
 
   return (
     <section aria-label="PR details" className="flex flex-col gap-6">
+      <RecordProperties facts={properties} />
       <PrOverview pr={pr} sessionId={sessionId} onMutated={onMutated} />
       <LinkedIssuesSection
         issues={linkedIssues}
@@ -97,7 +99,6 @@ export const PrDetailsMode = ({ sessionId, pr, detail, onSelectLens, onMutated }
         {...(repo?.projectId !== undefined && { projectId: repo.projectId })}
         onAddReviewers={onAddReviewers}
       />
-      <DetailProperties entries={properties} />
     </section>
   );
 };

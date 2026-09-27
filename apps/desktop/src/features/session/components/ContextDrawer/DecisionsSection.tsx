@@ -1,67 +1,236 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { SkeletonText } from '@goodboy/ui';
-import { appendDecision, parseDecisions, removeDecision, replaceDecision } from '@goodboy/core';
+import { activeDecisionsNewestFirst, type DecisionOp } from '@goodboy/core';
+import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../../../store';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { AddDecisionRow } from './AddDecisionRow';
+import { ClosedDecisionRow } from './ClosedDecisionRow';
 import { DecisionRowItem } from './DecisionRowItem';
+import { EnteringRow } from './EnteringRow';
 import { RawDocumentEditor } from './RawDocumentEditor';
+import {
+  activeDecisionByline,
+  closedDecisionByline,
+  decisionAge,
+  isAfterBaseline,
+} from './decisionByline';
+
+const HIGHLIGHT_MS = 1200;
+const OPENED_HIGHLIGHT_MS = 2400;
+const EMPTY_LEDGER: ReadonlyArray<SessionDecision> = [];
+const NO_NUMBERS: ReadonlySet<number> = new Set();
 
 type Props = {
-  readonly value: string;
-  readonly isLoading: boolean;
+  readonly sessionId: SessionId;
+  readonly highlight: ReadonlyArray<number>;
   readonly isLocked: boolean;
   readonly isRawEditing: boolean;
-  readonly onWrite: (next: string) => void;
+  readonly sourceValue: string;
+  readonly onWriteSource: (next: string) => void;
   readonly onCloseRawEditor: () => void;
 };
 
 export const DecisionsSection = ({
-  value,
-  isLoading,
+  sessionId,
+  highlight,
   isLocked,
   isRawEditing,
-  onWrite,
+  sourceValue,
+  onWriteSource,
   onCloseRawEditor,
 }: Props) => {
-  const document = useMemo(() => parseDecisions({ text: value }), [value]);
+  const ledger = useAppStore((state) => state.sessionDecisions[sessionId]);
+  const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
+  const agents = useAppStore((state) => state.sessionPhaseRuns[sessionId]);
+  const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
+  const applySessionDecisionOps = useAppStore((state) => state.applySessionDecisionOps);
+  const [isClosedOpen, setIsClosedOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState<ReadonlySet<number>>(NO_NUMBERS);
+  const [highlightMs, setHighlightMs] = useState(HIGHLIGHT_MS);
+  const rows = useRef(new Map<number, HTMLDivElement>());
+  const firstNumbers = useRef<ReadonlySet<number> | null>(null);
+
+  useEffect(() => {
+    void loadSessionDecisions(sessionId);
+  }, [loadSessionDecisions, sessionId]);
+
+  useEffect(() => {
+    if (highlighted.size === 0) {
+      return;
+    }
+    const timer = window.setTimeout(() => setHighlighted(NO_NUMBERS), highlightMs);
+    return () => window.clearTimeout(timer);
+  }, [highlighted, highlightMs]);
+
+  const hasLedger = ledger !== undefined;
+  useEffect(() => {
+    if (highlight.length === 0 || !hasLedger) {
+      return;
+    }
+    const wanted = new Set(highlight);
+    const hasClosed = (ledger ?? EMPTY_LEDGER).some(
+      (row) => wanted.has(row.number) && row.status !== 'active',
+    );
+    if (hasClosed) {
+      setIsClosedOpen(true);
+    }
+    setHighlightMs(OPENED_HIGHLIGHT_MS);
+    setHighlighted(wanted);
+    const frame = window.requestAnimationFrame(() => {
+      const first = [...wanted]
+        .map((number) => rows.current.get(number))
+        .find((element) => element !== undefined);
+      first?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [highlight, hasLedger]);
+
+  const decisions = ledger ?? EMPTY_LEDGER;
+  const agentNames = useMemo(
+    () => new Map<AgentId, string>((agents ?? []).map((agent) => [agent.id, agent.name])),
+    [agents],
+  );
+  const active = useMemo(() => activeDecisionsNewestFirst({ ledger: decisions }), [decisions]);
+  const closed = useMemo(
+    () =>
+      decisions
+        .filter((row) => row.status !== 'active')
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [decisions],
+  );
+  const replacedBy = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const row of decisions) {
+      if (row.replacedBy !== null && row.replacedBy > row.number) {
+        map.set(row.replacedBy, row.number);
+      }
+    }
+    return map;
+  }, [decisions]);
 
   if (isRawEditing) {
     return (
       <RawDocumentEditor
-        value={value}
+        value={sourceValue}
         label="Decisions source"
-        onWrite={onWrite}
+        onWrite={onWriteSource}
         onClose={onCloseRawEditor}
       />
     );
   }
 
-  if (isLoading) {
+  if (ledger === undefined) {
     return <SkeletonText lines={2} />;
   }
 
+  if (firstNumbers.current === null) {
+    firstNumbers.current = new Set(ledger.map((row) => row.number));
+  }
+  const seenAtFirst = firstNumbers.current;
+  const nowMs = Date.now();
+  const write = (op: DecisionOp) => {
+    void applySessionDecisionOps({
+      sessionId,
+      ops: [op],
+      actor: { author: 'user', agentId: null, turnOrdinal: null },
+    });
+  };
+  const jumpTo = (number: number) => {
+    rows.current.get(number)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    setHighlightMs(HIGHLIGHT_MS);
+    setHighlighted(new Set([number]));
+  };
+  const refFor = (number: number) => (element: HTMLDivElement | null) => {
+    if (element === null) {
+      rows.current.delete(number);
+      return;
+    }
+    rows.current.set(number, element);
+  };
+
   return (
-    <div className="flex flex-col gap-2">
-      {document.rows.map((row, position) => (
-        <DecisionRowItem
-          key={row.index}
-          text={row.text}
-          position={position + 1}
-          isLocked={isLocked}
-          onCommit={(decision) =>
-            onWrite(replaceDecision({ text: value, index: row.index, decision }))
-          }
-          onDelete={() => onWrite(removeDecision({ text: value, index: row.index }))}
-        />
-      ))}
-      <AddDecisionRow
-        isLocked={isLocked}
-        onAdd={(decision) => onWrite(appendDecision({ text: value, decision }))}
-      />
-      {document.hasContentOutsideRows ? (
-        <p className="text-secondary text-muted-foreground">
-          This document also holds text that no row covers. Edit the source to reach it.
+    <div className="flex flex-col gap-3">
+      {active.length === 0 ? (
+        <p className="text-body text-muted-foreground">
+          No decisions yet. Agents record one when they settle a choice; you can add your own.
         </p>
-      ) : null}
+      ) : (
+        <div className="flex flex-col gap-0.5">
+          {active.map((row) => (
+            <EnteringRow key={row.id} isEntering={!seenAtFirst.has(row.number)}>
+              <DecisionRowItem
+                number={row.number}
+                text={row.text}
+                byline={activeDecisionByline({
+                  decision: row,
+                  agentNames,
+                  replaces: replacedBy.get(row.number) ?? null,
+                  nowMs,
+                })}
+                isNew={row.author !== 'user' && isAfterBaseline({ iso: row.createdAt, baseline })}
+                reworded={
+                  row.previousText !== null &&
+                  row.rewordedAt !== null &&
+                  (baseline === null ||
+                    baseline === undefined ||
+                    isAfterBaseline({ iso: row.rewordedAt, baseline }))
+                    ? {
+                        age: decisionAge({ iso: row.rewordedAt, nowMs }),
+                        previousText: row.previousText,
+                      }
+                    : null
+                }
+                isLocked={isLocked}
+                isHighlighted={highlighted.has(row.number)}
+                rowRef={refFor(row.number)}
+                onReword={(text) => write({ kind: 'reword', number: row.number, text })}
+                onWithdraw={() => write({ kind: 'withdraw', number: row.number, reason: null })}
+              />
+            </EnteringRow>
+          ))}
+        </div>
+      )}
+      {closed.length === 0 ? null : (
+        <div className="flex flex-col gap-0.5">
+          <button
+            type="button"
+            aria-expanded={isClosedOpen}
+            onClick={() => setIsClosedOpen(!isClosedOpen)}
+            className="flex items-center gap-1.5 self-start rounded-md px-2 py-1 text-label text-muted-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            {isClosedOpen ? (
+              <ChevronDown size={ICON_SIZE.row} aria-hidden />
+            ) : (
+              <ChevronRight size={ICON_SIZE.row} aria-hidden />
+            )}
+            Replaced and withdrawn
+            <span className="text-faint-foreground tabular-nums">{closed.length}</span>
+          </button>
+          {isClosedOpen
+            ? closed.map((row) => (
+                <ClosedDecisionRow
+                  key={row.id}
+                  number={row.number}
+                  isHighlighted={highlighted.has(row.number)}
+                  rowRef={refFor(row.number)}
+                  text={row.text}
+                  reason={row.reason}
+                  byline={closedDecisionByline({ decision: row, agentNames })}
+                  isLocked={isLocked}
+                  onJump={jumpTo}
+                  onRestore={
+                    row.status === 'withdrawn'
+                      ? () => write({ kind: 'restore', number: row.number })
+                      : null
+                  }
+                />
+              ))
+            : null}
+        </div>
+      )}
+      <AddDecisionRow isLocked={isLocked} onAdd={(text) => write({ kind: 'add', text })} />
     </div>
   );
 };

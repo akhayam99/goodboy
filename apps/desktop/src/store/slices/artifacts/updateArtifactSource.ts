@@ -1,3 +1,4 @@
+import type { ArtifactRevisionNote } from '@goodboy/db';
 import type { ArtifactId, ArtifactSourceFormat, SessionArtifact, SessionId } from '@goodboy/types';
 import { updateArtifactSource as invokeUpdateArtifactSource } from '../../../features/artifacts/artifacts';
 import { refreshSessionArtifacts } from './refresh';
@@ -10,6 +11,7 @@ export type UpdateArtifactSourceParams = {
   readonly sourceFormat: ArtifactSourceFormat;
   readonly sourceText: string;
   readonly metadata: SessionArtifact['metadata'];
+  readonly note?: ArtifactRevisionNote;
 };
 
 export const updateArtifactSource = (set: SetFn) => {
@@ -20,6 +22,7 @@ export const updateArtifactSource = (set: SetFn) => {
       sourceFormat: params.sourceFormat,
       sourceText: params.sourceText,
       metadata: params.metadata,
+      ...(params.note === undefined ? {} : { note: params.note }),
     });
     await refreshSessionArtifacts(set, params.sessionId);
   };

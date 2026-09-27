@@ -39,7 +39,13 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
   if (lens === 'files') {
     const mountPath = state.diffMountPath[sessionId] ?? null;
     const focus = state.diffFocus[sessionId] ?? null;
-    return mountPath === null && focus === null ? null : { kind: 'diff', mountPath, focus };
+    const page = state.diffPage[sessionId] ?? null;
+    if (mountPath === null && focus === null && page === null) {
+      return null;
+    }
+    return page === null
+      ? { kind: 'diff', mountPath, focus }
+      : { kind: 'diff', mountPath, focus, page };
   }
   if (lens === 'terminal') {
     const mountPath = state.terminalMountPath[sessionId] ?? null;

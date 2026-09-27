@@ -15,6 +15,7 @@ vi.mock('../../../../../../store', () => {
   const state = {
     replyToSlackThread: (params: Record<string, unknown>) => h.reply(params),
     addSlackReaction: (params: Record<string, unknown>) => h.react(params),
+    workspaceIntegrations: {},
   };
   return {
     EMPTY_ARRAY: Object.freeze([]),

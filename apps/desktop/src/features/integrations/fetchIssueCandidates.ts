@@ -4,21 +4,19 @@ import type {
   SessionExternalTaskProvider,
   WorkspaceId,
 } from '@goodboy/types';
-import { slugifyBranch } from '../../shared/utils/slugifyBranch';
 import { ghAssignedIssues, tauriGhRunner } from '../github/github';
-import { goalFromIssue as goalFromGithubIssue } from '../github/goal-from-issue';
-import { githubBranchSlug } from '../github/components/PullRequest/useGithubIssues';
 import { linearFetchAssignedIssues } from './linear/client';
-import { goalFromIssue as goalFromLinearIssue } from './linear/goal-from-issue';
-import { gitlabFetchAssignedIssues, issueIdentifier } from './gitlab/client';
-import { goalFromIssue as goalFromGitlabIssue } from './gitlab/goal-from-issue';
-import { gitlabBranchSlug } from './gitlab/MergeRequest/useGitlabIssues';
+import { gitlabFetchAssignedIssues } from './gitlab/client';
 import { jiraListIssues } from './jira/client';
-import { goalFromIssue as goalFromJiraIssue } from './jira/goal-from-issue';
-import { jiraBranchSlug } from './jira/JiraStudio/useJiraIssues';
 import { sentryFetchIssues } from './sentry/client';
-import { goalFromSentry } from './sentry/goal-from-sentry';
 import { slackThreadCandidates } from './slack/slackThreadCandidates';
+import {
+  githubIssueCandidate,
+  gitlabIssueCandidate,
+  jiraIssueCandidate,
+  linearIssueCandidate,
+  sentryIssueCandidate,
+} from './issueCandidateOf';
 
 export type IssueCandidate = {
   readonly provider: SessionExternalTaskProvider;
@@ -39,8 +37,6 @@ type Params = {
   readonly jiraConfig: JiraIntegrationConfig | null;
 };
 
-const SENTRY_SLUG_MAX_LEN = 30;
-
 export const fetchIssueCandidates = async ({
   provider,
   workspaceId,
@@ -51,16 +47,7 @@ export const fetchIssueCandidates = async ({
   switch (provider) {
     case 'linear': {
       const issues = await linearFetchAssignedIssues(workspaceId);
-      return issues.map((issue) => ({
-        provider,
-        externalId: issue.id,
-        identifier: issue.identifier,
-        title: issue.title,
-        url: issue.url,
-        goal: goalFromLinearIssue({ issue }),
-        body: issue.description ?? '',
-        branchSlug: slugifyBranch({ input: issue.title, maxLength: 48 }),
-      }));
+      return issues.map(linearIssueCandidate);
     }
     case 'github': {
       if (rootPath == null) {
@@ -73,32 +60,14 @@ export const fetchIssueCandidates = async ({
         );
       }
       const issues = await ghAssignedIssues(slug, { cwd: rootPath, workspaceId });
-      return issues.map((issue) => ({
-        provider,
-        externalId: String(issue.number),
-        identifier: `#${issue.number}`,
-        title: issue.title,
-        url: issue.url,
-        goal: goalFromGithubIssue({ issue }),
-        body: issue.body,
-        branchSlug: githubBranchSlug({ issue }),
-      }));
+      return issues.map(githubIssueCandidate);
     }
     case 'gitlab': {
       if (gitlabHost == null) {
         return [];
       }
       const issues = await gitlabFetchAssignedIssues(workspaceId, gitlabHost);
-      return issues.map((issue) => ({
-        provider,
-        externalId: String(issue.id),
-        identifier: issueIdentifier(issue),
-        title: issue.title,
-        url: issue.webUrl,
-        goal: goalFromGitlabIssue({ issue }),
-        body: issue.description ?? '',
-        branchSlug: gitlabBranchSlug(issue),
-      }));
+      return issues.map(gitlabIssueCandidate);
     }
     case 'jira': {
       if (jiraConfig == null) {
@@ -111,32 +80,11 @@ export const fetchIssueCandidates = async ({
         projectKey: jiraConfig.projectKey,
         assignedOnly: true,
       });
-      return issues.map((issue) => ({
-        provider,
-        externalId: issue.id,
-        identifier: issue.key,
-        title: issue.summary,
-        url: issue.url,
-        goal: goalFromJiraIssue({ issue }),
-        body: issue.description,
-        branchSlug: jiraBranchSlug({ issue }),
-      }));
+      return issues.map(jiraIssueCandidate);
     }
     case 'sentry': {
       const page = await sentryFetchIssues(workspaceId);
-      return page.issues.map((issue) => {
-        const goal = goalFromSentry({ issue });
-        return {
-          provider,
-          externalId: issue.id,
-          identifier: issue.shortId ?? issue.id,
-          title: issue.title,
-          url: issue.permalink ?? '',
-          goal,
-          body: goal,
-          branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
-        };
-      });
+      return page.issues.map(sentryIssueCandidate);
     }
     case 'slack': {
       return slackThreadCandidates({ workspaceId });

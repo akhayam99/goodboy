@@ -8,6 +8,7 @@ import { disconnectIntegration } from './disconnectIntegration';
 import { forgetIntegrationCredential } from './forgetIntegrationCredential';
 import { loadIntegrationCredentials } from './loadIntegrationCredentials';
 import { loadIntegrations } from './loadIntegrations';
+import { updateSlackConfig } from './updateSlackConfig';
 import type { GetFn, SetFn } from './types';
 
 export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
@@ -22,5 +23,6 @@ export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
     connectJira: connectJira(set, get),
     connectBitbucket: connectBitbucket(set, get),
     connectSlack: connectSlack(set),
+    updateSlackConfig: updateSlackConfig(set, get),
   };
 };

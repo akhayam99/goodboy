@@ -232,6 +232,8 @@ export const maybeAutoAdvanceWorkflow = (set: SetFn, get: GetFn) => {
     advanceInFlight.add(sessionId);
     try {
       await runAdvance({ set, get, sessionId });
+    } catch (error) {
+      console.error('workflow auto-advance failed', error);
     } finally {
       advanceInFlight.delete(sessionId);
       const pendingAdvanceSessions = get().pendingAdvanceSessions ?? new Set<SessionId>();

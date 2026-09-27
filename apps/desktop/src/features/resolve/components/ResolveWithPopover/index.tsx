@@ -1,3 +1,4 @@
+import { areNotesOnly } from '../../notes/noteThread';
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
@@ -85,7 +86,8 @@ export const ResolveWithPopover = ({
   const isStartingRef = useRef(false);
   const chosen = draft ?? suggested.routing;
   const count = threads.length;
-  const canStart = pr !== null && count > 0 && !isDisabled && !isStarting;
+  const hasTarget = pr !== null || areNotesOnly({ threads });
+  const canStart = hasTarget && count > 0 && !isDisabled && !isStarting;
 
   useEffect(() => {
     if (open) {
@@ -102,7 +104,7 @@ export const ResolveWithPopover = ({
     readonly routing: AgentKindRouting;
     readonly hint: string;
   }): Promise<void> => {
-    if (pr === null || count === 0 || isStartingRef.current) {
+    if (!hasTarget || count === 0 || isStartingRef.current) {
       return;
     }
     isStartingRef.current = true;
@@ -137,7 +139,7 @@ export const ResolveWithPopover = ({
     });
 
   const agents =
-    pr === null || count === 0 ? 1 : resolveAgentCount({ threads, pr, routing: chosen, note });
+    !hasTarget || count === 0 ? 1 : resolveAgentCount({ threads, pr, routing: chosen, note });
 
   return (
     <div className="inline-flex min-w-0 items-stretch">

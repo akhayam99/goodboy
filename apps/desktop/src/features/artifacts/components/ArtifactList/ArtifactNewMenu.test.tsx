@@ -21,7 +21,7 @@ afterEach(cleanup);
 
 describe('ArtifactNewMenu', () => {
   it('opens its kinds when the trail asks for a new artifact', () => {
-    render(<ArtifactNewMenu sessionId={SESSION_ID} />);
+    render(<ArtifactNewMenu sessionId={SESSION_ID} onImportWireframe={() => undefined} />);
     expect(screen.queryByText('Wireframe')).toBeNull();
 
     act(() => {

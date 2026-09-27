@@ -38,6 +38,7 @@ export type ProposeMountCleanupInput = {
   readonly reason: RetainedWorktreeReason;
   readonly expectedBranch?: string;
   readonly request?: MountCleanupProposal['request'];
+  readonly keptBecause?: string;
 };
 
 export type ResolveMountCleanupInput = {
