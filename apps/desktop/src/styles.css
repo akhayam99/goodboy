@@ -420,6 +420,12 @@
   animation-timing-function: var(--ease-default);
 }
 
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+  transition: none !important;
+}
+
 /* Light palette, applied when html[data-theme="light"].
    Ink on paper, read on two axes.
    Elevation (what sits in front): chrome < background < elevated = floating.

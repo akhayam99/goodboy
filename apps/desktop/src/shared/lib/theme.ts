@@ -34,12 +34,26 @@ export const resolveTheme = ({
   return preference;
 };
 
-const applyTheme = ({ theme }: { readonly theme: Theme }): void => {
+const SWITCHING_ATTRIBUTE = 'data-theme-switching';
+
+const setThemeAttribute = ({ theme }: { readonly theme: Theme }): void => {
   if (theme === 'light') {
     document.documentElement.setAttribute('data-theme', 'light');
     return;
   }
   document.documentElement.removeAttribute('data-theme');
+};
+
+const applyTheme = ({ theme }: { readonly theme: Theme }): void => {
+  const root = document.documentElement;
+  const current: Theme = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  if (current === theme) {
+    return;
+  }
+  root.setAttribute(SWITCHING_ATTRIBUTE, '');
+  setThemeAttribute({ theme });
+  void window.getComputedStyle(document.body).opacity;
+  window.setTimeout(() => root.removeAttribute(SWITCHING_ATTRIBUTE), 1);
 };
 
 const resolveAndApply = ({ preference }: { readonly preference: ThemePreference }): Theme => {

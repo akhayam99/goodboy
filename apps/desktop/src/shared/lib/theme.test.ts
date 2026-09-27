@@ -122,6 +122,36 @@ describe('theme store', () => {
   });
 });
 
+describe('theme switch paint', () => {
+  const isSwitching = () => document.documentElement.hasAttribute('data-theme-switching');
+
+  afterEach(() => {
+    vi.useRealTimers();
+    document.documentElement.removeAttribute('data-theme-switching');
+  });
+
+  it('holds element transitions off while the palette swaps, then releases them', () => {
+    vi.useFakeTimers();
+
+    useThemeStore.getState().setPreference('light');
+
+    expect(isLightApplied()).toBe(true);
+    expect(isSwitching()).toBe(true);
+    vi.runAllTimers();
+    expect(isSwitching()).toBe(false);
+  });
+
+  it('leaves transitions alone when the resolved theme does not change', () => {
+    vi.useFakeTimers();
+    mockSystem({ isLight: false });
+
+    useThemeStore.getState().setPreference('system');
+
+    expect(isLightApplied()).toBe(false);
+    expect(isSwitching()).toBe(false);
+  });
+});
+
 type MutableDocument = { startViewTransition?: unknown };
 
 const setStartViewTransition = (value: unknown): void => {
