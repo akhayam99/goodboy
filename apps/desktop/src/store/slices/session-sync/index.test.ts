@@ -29,6 +29,7 @@ const h = vi.hoisted(() => ({
   tasks: [] as Array<SessionExternalTask>,
   refreshWorktreeStatuses: vi.fn(async () => undefined),
   invalidateLocalBranchesCache: vi.fn(),
+  worktreeSyncBranchRef: vi.fn(async () => false),
 }));
 
 vi.mock('@goodboy/core', () => ({
@@ -72,6 +73,7 @@ vi.mock('../../../features/session/hooks/useWorktreeStatuses/cache', () => ({
 
 vi.mock('../../../features/worktree/worktree', () => ({
   invalidateLocalBranchesCache: h.invalidateLocalBranchesCache,
+  worktreeSyncBranchRef: h.worktreeSyncBranchRef,
 }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -252,6 +254,8 @@ beforeEach(() => {
   h.ghRun.mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 });
   h.refreshWorktreeStatuses.mockClear();
   h.invalidateLocalBranchesCache.mockClear();
+  h.worktreeSyncBranchRef.mockReset();
+  h.worktreeSyncBranchRef.mockResolvedValue(false);
 });
 
 describe('owner case: a pull request opened for the session worktree', () => {
@@ -406,12 +410,60 @@ describe('recheckSessionMounts', () => {
     expect(h.listPrsForBranch.mock.calls.map((call) => call[2])).toEqual([OTHER_BRANCH]);
   });
 
-  it('does nothing while GitHub is not connected', async () => {
+  it('asks GitHub nothing while it is not connected', async () => {
     const { slice } = harness({ githubAvailable: false });
 
     await slice.recheckSessionMounts({ sessionId: SESSION_ID, reason: 'focus' });
 
     expect(h.listPrsForBranch).not.toHaveBeenCalled();
+  });
+
+  it('re-reads local git at turn end, so a push by the agent or the terminal clears the count', async () => {
+    const { slice } = harness({ githubAvailable: false });
+
+    await slice.recheckSessionMounts({ sessionId: SESSION_ID, reason: 'turn-end' });
+
+    expect(h.refreshWorktreeStatuses).toHaveBeenCalledWith({
+      worktreePaths: [
+        `/repo/.goodboy/worktrees/${WORKTREE_MOUNT}`,
+        `/repo/.goodboy/worktrees/${OTHER_MOUNT}`,
+      ],
+    });
+  });
+
+  it('fetches the branch ref once the pull request head moved past it, then re-reads git', async () => {
+    h.listPrsForBranch.mockImplementation(async (_runner, _repo, branch) =>
+      branch === BRANCH ? [{ ...makePr({ number: 42, branch }), headSha: 'remote-head' }] : [],
+    );
+    h.worktreeSyncBranchRef.mockResolvedValue(true);
+    const { slice } = harness();
+
+    await slice.recheckSessionMounts({ sessionId: SESSION_ID, reason: 'focus' });
+
+    await vi.waitFor(() =>
+      expect(h.refreshWorktreeStatuses).toHaveBeenCalledWith({
+        worktreePaths: [`/repo/.goodboy/worktrees/${WORKTREE_MOUNT}`],
+      }),
+    );
+    expect(h.worktreeSyncBranchRef).toHaveBeenCalledTimes(1);
+    expect(h.worktreeSyncBranchRef).toHaveBeenCalledWith(
+      expect.objectContaining({
+        worktreePath: `/repo/.goodboy/worktrees/${WORKTREE_MOUNT}`,
+        branch: BRANCH,
+        expectedSha: 'remote-head',
+      }),
+    );
+  });
+
+  it('leaves the ref alone when the pull request carries no head', async () => {
+    h.listPrsForBranch.mockImplementation(async (_runner, _repo, branch) =>
+      branch === BRANCH ? [makePr({ number: 42, branch })] : [],
+    );
+    const { slice } = harness();
+
+    await slice.recheckSessionMounts({ sessionId: SESSION_ID, reason: 'focus' });
+
+    expect(h.worktreeSyncBranchRef).not.toHaveBeenCalled();
   });
 });
 
