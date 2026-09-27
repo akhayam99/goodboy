@@ -202,12 +202,12 @@ An empty session asks how you want to begin: from a task in your tracker, with a
 Plans, reports and wireframes open in the same view, with details and chat in a side drawer. A plan lists its parts with what done means and which files each one touches, and a wireframe opens on its flow.
 
 #### An inbox you can scan
-<!-- gb area=inbox screen=inbox pr=1882 -->
+<!-- gb area=inbox screen=inbox image=inbox pr=1882 -->
 
 The inbox lists items by day, newest first, with filters on the side and keyboard shortcuts. Each item has the same header and one main action, with the rest under `⋯`. Merge, Close and Decline ask before acting.
 
 #### Workflows as a tree of steps
-<!-- gb area=workflows screen=workflows pr=1882 -->
+<!-- gb area=workflows screen=workflows image=workflow-tree pr=1882 -->
 
 The Workflows page shows each workflow as a tree of steps you edit in place, and imports several workflows from other workspaces at once.
 
@@ -235,14 +235,14 @@ A new top bar and footer, one reading column in each pane, and time left on the 
 ### New
 
 #### Time left on agents and runs
-<!-- gb area=agents pr=1880 -->
+<!-- gb area=agents image=time-left pr=1880 -->
 
 A running agent or workflow run shows how much time it has left, with the time spent in the tooltip. Start agent and the workflow run banner show an estimate before you launch, and a finished run says when it took longer than usual.
 
 ### Improved
 
 #### A top bar for what is happening now
-<!-- gb area=app pr=1880 -->
+<!-- gb area=app image=top-bar pr=1880 -->
 
 On macOS the window buttons sit in the top bar, and you can drag the window from anywhere on it. The search box in the middle opens the palette, also with `⌘K`. The Now chip lists what needs you, what is running and the scripts in progress, and Spend opens Impact.
 
@@ -283,7 +283,7 @@ After Goodboy replies to a review comment, it resolves the thread on GitHub when
 Conversations shows the open review threads of the whole pull request, not only the first page. If GitHub cannot be reached, you see the error and a Retry button instead of an empty list.
 
 #### Resolve from a selection
-<!-- gb area=review pr=1878 -->
+<!-- gb area=review image=resolve-selection pr=1878 -->
 
 Tick the comments you want and press Resolve, or resolve the new comments from the header. Both open one menu with your connected providers and models.
 
@@ -298,7 +298,7 @@ Removing a leftover worktree folder skips folders with uncommitted changes or un
 If you open an older Goodboy after a newer one updated your data, it stops and offers the backup made before the update, instead of opening data it cannot read.
 
 #### Done and Archived in the board dock
-<!-- gb area=sessions pr=1878 -->
+<!-- gb area=sessions image=board-dock pr=1878 -->
 
 Done and Archived fold into two icons with a count at the side of the board. Hover to preview, click to open.
 
@@ -334,7 +334,7 @@ When a model needs a newer CLI than the one installed, Goodboy shows both versio
 ### Improved
 
 #### One tree for sessions, runs and agents
-<!-- gb area=sessions pr=1875 -->
+<!-- gb area=sessions image=work-tree pr=1875 -->
 
 The overview, a workflow run, an agent's subagents and the workflow builder draw work the same way: numbered steps with provider, model, effort, time and cost in the same columns. Click the colored line to open the workflow, or a row to open that agent, question or artifact.
 
@@ -346,7 +346,7 @@ A step waiting on your answer, a failed step and a queued one look different at 
 The builder shows the plan as a tree before the run starts. In custom and preset plans you change each step's provider, model, effort, role and instructions in place. Autorun is a toggle, and each run gets a generated title.
 
 #### Notifications you can scan
-<!-- gb area=inbox screen=notifications pr=1875 -->
+<!-- gb area=inbox screen=notifications image=notifications pr=1875 -->
 
 Notifications show as one compact row each, with filters and counts. The list opens on this workspace, and `j`, `k` and `e` move through it.
 
