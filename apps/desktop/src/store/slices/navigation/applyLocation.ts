@@ -121,7 +121,6 @@ export const applyLocation = ({ set, get, location, isRestore }: Params): void =
   set((state) => ({
     ...surfaceChanges({ state, sessionId, view: resolved, isRestore }),
     drawer,
-    openSessionDraftWorkspaceId: null,
   }));
   if (resolved.agentId !== null && resolved.studio === null) {
     void get()
