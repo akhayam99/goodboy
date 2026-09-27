@@ -5,12 +5,14 @@ type Params = {
   readonly channelName: string;
   readonly messages: ReadonlyArray<SlackMessage>;
   readonly userNames: ReadonlyMap<string, string>;
+  readonly selfUserId: string | null;
 };
 
 export const buildThreadProperties = ({
   channelName,
   messages,
   userNames,
+  selfUserId,
 }: Params): SlackThreadProperties => {
   const participants: string[] = [];
   for (const message of messages) {
@@ -30,5 +32,9 @@ export const buildThreadProperties = ({
     participants,
     replyCount: Math.max(0, messages.length - 1),
     lastActivityAt: lastReply?.postedAt ?? root?.postedAt ?? null,
+    isAnswered:
+      selfUserId === null || selfUserId === '' || lastReply === null
+        ? null
+        : lastReply.userId === selfUserId,
   };
 };

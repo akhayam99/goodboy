@@ -210,6 +210,24 @@ describe('StoragePage', () => {
     });
   });
 
+  it('names the scope on the bulk buttons', () => {
+    const { unmount } = render(<StoragePage />);
+    expect(
+      screen.getByRole('button', { name: /Remove 1 safe folder in all workspaces ·/ }),
+    ).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: /Delete 1 unused in all workspaces ·/ }),
+    ).toBeDefined();
+    unmount();
+
+    Object.assign(state, {
+      storageFocus: { filter: 'review', workspaceId: 'harborline' as WorkspaceId },
+    });
+    render(<StoragePage />);
+    fireEvent.click(screen.getByRole('button', { name: /Remove 1 safe folder in Harborline ·/ }));
+    expect(screen.getByRole('group', { name: /Remove 1 folder in Harborline/ })).toBeDefined();
+  });
+
   it('asks before removing a dirty folder anyway and uses the confirmed mode', () => {
     render(<StoragePage />);
     const row = screen

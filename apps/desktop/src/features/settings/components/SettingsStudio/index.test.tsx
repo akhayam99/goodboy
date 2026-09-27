@@ -196,11 +196,11 @@ describe('SettingsStudio', () => {
         .getByRole('button', { name: /^Linear/ })
         .getAttribute('aria-current'),
     ).toBe('true');
-    expect(
-      within(screen.getByRole('navigation', { name: 'Settings scopes' }))
-        .getByRole('button', { name: 'Integrations' })
-        .getAttribute('aria-current'),
-    ).toBe('false');
+    const integrations = within(
+      screen.getByRole('navigation', { name: 'Settings scopes' }),
+    ).getByRole('button', { name: /^Integrations/ });
+    expect(integrations.getAttribute('aria-current')).toBe('false');
+    expect(integrations.textContent).toContain('0 of 7 connected');
   });
 
   const renderApp = ({

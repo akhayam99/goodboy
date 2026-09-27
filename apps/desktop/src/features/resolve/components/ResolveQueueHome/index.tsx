@@ -23,23 +23,16 @@ import { openUrl } from '../../../../shared/lib/editor';
 import type {
   DiffComment,
   PrCheckRun,
-  PrComment,
   ResolveAttempt,
   ResolvePublicationDrift,
   ResolveThread,
   Session,
   SessionId,
 } from '@goodboy/types';
-import { useShallow } from 'zustand/react/shallow';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { replyVoiceOf } from '../../../../store/sessionReplySettings';
+import { useAppStore } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
-import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
-import { groupThreads } from '../../../github/comment-threads';
-import { kindRouting } from '../../../session/agent-kind';
-import { startFixAttempt } from '../../../review/startFixAttempt';
 import { openReview } from '../../../review/openReview';
 import {
   REVIEW_TARGET_REASON_COPY,
@@ -50,6 +43,7 @@ import { reviewThreadId } from '../../../../store/slices/review-navigation';
 import { eligibleReviewThreads } from '../../../suggestions/eligibleThreads';
 import type { CommentThread } from '../../../github/comment-threads';
 import { useResolveQueueRows } from '../../hooks/useResolveQueueRows';
+import { useResolveAgain } from '../../hooks/useResolveAgain';
 import { hasActiveResolveRun } from '../../hasActiveResolveRun';
 import { heldBackByThreadId } from '../../heldBackByThreadId';
 import { resolvableThread } from '../../resolvableThread';
@@ -111,11 +105,6 @@ const EMPTY_DRIFT: ReadonlyArray<ResolvePublicationDrift> = [];
 const EMPTY_THREADS: ReadonlyArray<ResolveThread> = [];
 const EMPTY_SELECTION: ReadonlySet<string> = new Set();
 
-type AskForChangesParams = {
-  readonly threadId: string;
-  readonly instruction: string;
-};
-
 type FocusRowParams = {
   readonly threadId: string;
 };
@@ -145,10 +134,6 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
   const reportError = useAppStore((s) => s.reportError);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const now = useNow(5_000);
-  const comments = useAppStore(
-    (s) =>
-      s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
-  );
   const checks = useAppStore((s) => s.sessionGithub[sessionId]?.detail?.checks ?? EMPTY_CHECKS);
   const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
   const view = useAppStore((s) => s.resolveQueueView[sessionId] ?? EMPTY_RESOLVE_QUEUE_VIEW);
@@ -174,9 +159,6 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
   const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
   const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
   const openResolveDiff = useAppStore((s) => s.openResolveDiff);
-  const spawnAgent = useAppStore((s) => s.spawnAgent);
-  const setAgentConfig = useAppStore((s) => s.setAgentConfig);
-  const replyVoice = useAppStore(useShallow((s) => replyVoiceOf({ state: s, sessionId })));
   const openResolvePublication = useAppStore((s) => s.openResolvePublication);
   const resolveThreads = useAppStore((s) => s.sessionResolveThreads[sessionId] ?? EMPTY_THREADS);
   const notes = useAppStore((s) => s.diffComments[sessionId] ?? EMPTY_NOTES);
@@ -192,7 +174,6 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
   );
   const [sourceFilter, setSourceFilter] = useState<ConversationSourceFilter>('all');
   const repo = useSessionRepo({ sessionId });
-  const roleModels = useSessionRoleModels({ sessionId });
   const [checkedThreadIds, setCheckedThreadIds] = useState<ReadonlySet<string>>(EMPTY_SELECTION);
 
   const newThreads = useMemo(
@@ -274,16 +255,6 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     }
     node.scrollTop = view.scrollTop;
   }, [view.scrollTop]);
-
-  const threadsByThreadId = useMemo(
-    () =>
-      new Map(
-        groupThreads(comments.filter((comment) => comment.source === 'review')).flatMap((thread) =>
-          thread.head.threadId == null ? [] : [[thread.head.threadId, thread] as const],
-        ),
-      ),
-    [comments],
-  );
 
   const onSelect = useCallback(
     (threadId: string | null): void => {
@@ -395,59 +366,7 @@ export const ResolveQueueHome = ({ session, header = null, dock = null }: Props)
     [listed, openResolveDiff, sessionId],
   );
 
-  const onAskForChanges = useCallback(
-    async ({ threadId, instruction }: AskForChangesParams): Promise<boolean> => {
-      const pr = github?.pr ?? null;
-      const row = rows.find((candidate) => candidate.thread.threadId === threadId) ?? null;
-      const isNote = row !== null && conversationSourceOf({ row }) === 'note';
-      const thread = threadsByThreadId.get(threadId) ?? (isNote ? row.commentThread : null);
-      if ((pr === null && !isNote) || thread == null) {
-        return false;
-      }
-      const routing = kindRouting({ kind: 'resolver', roleModels });
-      try {
-        await startFixAttempt({
-          sessionId,
-          threads: [thread],
-          pr,
-          choice: {
-            provider: routing.provider,
-            model: routing.model,
-            ...(routing.effort !== undefined &&
-              routing.effort !== null && { effort: routing.effort }),
-          },
-          instructions: instruction,
-          mode: 'retry',
-          priorContext: [
-            {
-              threadId,
-              reply: row?.thread.replyDraft ?? null,
-              ...(row?.thread.commitShas != null && { commitShas: row.thread.commitShas }),
-              intent: 'retry',
-            },
-          ],
-          style: replyVoice,
-          spawnAgent,
-          setAgentConfig,
-        });
-        return true;
-      } catch (error) {
-        void reportError({ title: "Couldn't retry the fix", error, sessionId });
-        return false;
-      }
-    },
-    [
-      github,
-      replyVoice,
-      reportError,
-      roleModels,
-      rows,
-      sessionId,
-      setAgentConfig,
-      spawnAgent,
-      threadsByThreadId,
-    ],
-  );
+  const onAskForChanges = useResolveAgain({ sessionId, rows });
 
   const onResume = useCallback(
     ({ itemId }: { readonly itemId: string }): void => {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Eyebrow, SegmentedTabs, type SegmentedTabOption } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
+import { useAppStore, useWorkspaces } from '../../../../store';
 import { isStorageFolderSuggested } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFilter, StorageScope } from '../../../../store/slices/storage/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -30,6 +30,11 @@ export const WorktreeSection = ({ scope }: Props) => {
   const roots = useAppStore((state) => state.storageRoots);
   const focus = useAppStore((state) => state.storageFocus);
   const focusStorage = useAppStore((state) => state.focusStorage);
+  const workspaces = useWorkspaces();
+  const workspaceName =
+    scope.kind === 'workspace'
+      ? (workspaces.find((workspace) => workspace.id === scope.id)?.name ?? null)
+      : null;
   const { summary, suggestAfterDays, now } = useStorageSummary({ scope });
   const [filter, setFilter] = useState<StorageFilter>(focus?.filter ?? 'review');
   const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
@@ -114,6 +119,7 @@ export const WorktreeSection = ({ scope }: Props) => {
         <BulkRemoveBar
           suggested={suggested}
           suggestAfterDays={suggestAfterDays}
+          workspaceName={workspaceName}
           selected={selected}
           onStart={() => setSelected(new Set(suggested.map((folder) => folder.path)))}
           onCancel={() => setSelected(null)}

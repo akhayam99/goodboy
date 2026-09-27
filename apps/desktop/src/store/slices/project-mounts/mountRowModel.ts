@@ -191,6 +191,9 @@ const isCompletedRequest = ({ request }: CompletedParams): boolean =>
 export const isMountCompleted = ({ state, mountId }: RequestParams): boolean =>
   isCompletedRequest({ request: mountRequestOf({ state, mountId }) });
 
+export const isMountRequestMerged = ({ state, mountId }: RequestParams): boolean =>
+  mountRequestOf({ state, mountId })?.state === 'merged';
+
 const seriesPositionOf = ({
   series,
   mountId,

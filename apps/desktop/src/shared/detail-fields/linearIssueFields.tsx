@@ -14,6 +14,20 @@ type StateTypeParams = {
 export const linearStateCategory = ({ type }: StateTypeParams): InboxState =>
   type === 'completed' || type === 'canceled' ? 'done' : type === 'started' ? 'active' : 'open';
 
+export const linearEditableAssigneeFact: NonNullable<FactRegistry<LinearIssue>['person']> = ({
+  entity,
+}) => ({
+  key: 'assignee',
+  label: 'Assignee',
+  icon: UserRound,
+  node:
+    entity.assignee == null ? (
+      <span className="text-faint-foreground">Unassigned</span>
+    ) : (
+      entity.assignee.name
+    ),
+});
+
 export const linearIssueFields: FactRegistry<LinearIssue> = {
   state: ({ entity }) => ({
     key: 'state',

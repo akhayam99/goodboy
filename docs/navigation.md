@@ -338,12 +338,16 @@ activity yet show the plain overview with its actions.
   and `New artifact` (opens the kind picker) on their pages, `Stop this step`
   while a step runs and `Retry step` when it failed or is blocked
   (`recoverStuckStep`), `Show saved copy` and `Copy folder path` on the open
-  artifact. An attempt offers no `Resolve again`: a new attempt needs the
-  instruction the Review page asks for.
+  artifact. An attempt offers `Resolve again` once no attempt on that comment
+  is queued or running: it starts a new attempt with the Review page's default
+  instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
   that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
-N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. It never
+N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. A
+  branch whose pull request merged reads `Merged` even with no git ancestry
+  (a squash merge), in the menu and in the Diff header alike
+  (`isMountRequestMerged`). It never
   turns into an icon. A Diff opened without a branch lands on the active mount.
 - **The resolver's page reads Review, the comment, Agent.** The comment segment
   (`retryPolicy.ts:42`) lists the open conversations by file, resolved ones
@@ -351,7 +355,9 @@ N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. It neve
   that comment.
 - **Settings claims its studio band** with Settings, the scope and the App
   section. The scope segment lists App, the workspace, Providers & models and
-  Tools; the section segment lists the App sections. The first segment of a
+  Tools; the section segment lists the App sections. Neither carries an
+  action: Settings has no project scope, so there is no `Use workspace values`
+  to offer. The first segment of a
   studio has no menu: studios change from the footer.
 - **Every menu row has five slots**: lead, label with a faint second part,
   meta, a state that is always a word (from `agentStateWord`, the same reading
@@ -702,7 +708,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   an undismissed finding (`selectSecurityFindingsAttention`), and warning on
   Workspace with "N folders not found" once one of its projects reads
   `missing` in `projectGitStatus` (otherwise the row just names the
-  workspace). Danger zone reads in `text-danger`. Panel sections sit on
+  workspace). Integrations carries a faint inventory subtitle with no dot,
+  "N of M connected" over the whole integration catalog
+  (`connectedInventory`). Danger zone reads in `text-danger`. Panel sections sit on
   bands (`Band`, eyebrow outside) with gap between them and no `Divider`; a danger zone
   is an inline danger `Notice`. The workspace page is the exception: one
   column of eyebrow sections 24px apart. Its title is the workspace name,

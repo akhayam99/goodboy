@@ -14,6 +14,7 @@ import {
 import type { BranchCommit, DiffView as DiffViewKind, MountId, SessionId } from '@goodboy/types';
 import { useAppStore, type DiffFocus } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
+import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
@@ -96,6 +97,9 @@ export const SessionDiffPane = ({
   const mountId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
   );
+  const isRequestMerged = useAppStore((s) =>
+    mountId === null ? false : isMountRequestMerged({ state: s, mountId }),
+  );
   const rebase = useRebaseBranch({ sessionId, mountId, status: diff.status });
   const editorBinary = useAppStore(
     (s) =>
@@ -171,6 +175,7 @@ export const SessionDiffPane = ({
       mountRepoRoot === null
         ? null
         : { baseBranch: mountBaseBranch, worktreePath, repoRoot: mountRepoRoot },
+    isRequestMerged,
   });
   const meta = (
     <span className="flex flex-wrap items-center gap-1.5">

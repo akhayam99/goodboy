@@ -6,6 +6,8 @@ import { APP_SECTIONS, type AppSection } from './appSections';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useAppStore } from '../../../../store';
 import { railSubtitles } from './railSubtitles';
+import { useToolConnections } from '../../../integrations/useToolConnections';
+import { connectedInventory } from '../../../integrations/connectedInventory';
 
 export type NestedScope = 'providers' | 'tools';
 
@@ -68,6 +70,8 @@ export const SettingsRail = ({
   onSelect,
 }: Props) => {
   const rail = useAppStore(useShallow((state) => railSubtitles({ state, workspaceId })));
+  const { connected } = useToolConnections({ workspaceId });
+  const integrationsInventory = connectedInventory({ connected });
 
   return (
     <nav aria-label="Settings scopes" className={`flex flex-col gap-3 ${PANE_RHYTHM.navRail.body}`}>
@@ -135,7 +139,13 @@ export const SettingsRail = ({
               <StatusRailItem
                 icon={<Icon size={ICON_SIZE.control} />}
                 label={item.label}
-                subtitle={item.scope === 'workspace' ? workspaceSubtitle : attentionText}
+                subtitle={
+                  item.scope === 'workspace'
+                    ? workspaceSubtitle
+                    : item.scope === 'tools'
+                      ? integrationsInventory
+                      : attentionText
+                }
                 tone={item.scope === 'workspace' ? rail.workspaceTone : attentionTone}
                 selected={isActive && nested === null}
                 onClick={() => onSelect({ scope: item.scope })}

@@ -6,6 +6,7 @@ import type { StorageArtifact } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { pluralize } from '../../../../shared/utils/pluralize';
+import { storageScopeLabel } from '../../storageScopeLabel';
 
 type Props = {
   readonly suggested: ReadonlyArray<StorageArtifact>;
@@ -47,7 +48,7 @@ export const ArtifactBulkDeleteBar = ({
       <div className="flex flex-wrap items-center gap-3 px-2 py-1.5">
         <Button variant="secondary" size="sm" onClick={onStart}>
           <Trash2 size={ICON_SIZE.row} aria-hidden />
-          Delete {suggested.length} unused ·{' '}
+          Delete {suggested.length} unused {storageScopeLabel({ workspaceName: null })} ·{' '}
           {formatBytes({ bytes: bytesOf({ artifacts: suggested }) })}
         </Button>
         <span className="text-secondary text-faint-foreground">
