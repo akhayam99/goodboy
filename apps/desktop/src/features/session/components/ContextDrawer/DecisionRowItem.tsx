@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Minus, Pencil } from 'lucide-react';
-import { CardAction, CardActionSlot, Chip, Markdown, cn } from '@goodboy/ui';
+import { CardAction, CardActionSlot, Chip, ClampedProse, Markdown, cn } from '@goodboy/ui';
 import { BlockEditor } from './BlockEditor';
 import { DecisionNumber } from './DecisionNumber';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -13,6 +13,7 @@ const REVEAL_GROUP =
 type Props = {
   readonly number: number;
   readonly text: string;
+  readonly why: string | null;
   readonly byline: string;
   readonly isNew: boolean;
   readonly reworded: { readonly age: string; readonly previousText: string } | null;
@@ -26,6 +27,7 @@ type Props = {
 export const DecisionRowItem = ({
   number,
   text,
+  why,
   byline,
   isNew,
   reworded,
@@ -87,6 +89,11 @@ export const DecisionRowItem = ({
         >
           <Markdown text={text} className="text-label" />
         </div>
+        {why === null ? null : (
+          <div data-decision-why={number} className="[overflow-wrap:anywhere]">
+            <ClampedProse text={why} lines={2} className="text-secondary text-muted-foreground" />
+          </div>
+        )}
         <p className="flex flex-wrap items-center gap-1.5 text-secondary text-faint-foreground">
           {isNew ? <Chip tone="primary" size="3xs" label="New" /> : null}
           {byline}

@@ -999,7 +999,9 @@ the `context_seen_at` captured when the drawer opened), it starts with
 (`Replaced by 7` or `Withdrawn`), a pencil for reworded, and a click scrolls to
 the row and highlights it. Then **Active**, with its count: active decisions
 newest first, each with its number, at most two lines of
-text, and who settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
+text, its why as one muted line under the text when the row has one (clamped
+to two lines, **Show more** when longer; older rows show nothing), and who
+settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
 `replaces 5`). An added row also carries `New` until the next open. A row the summarizer reworded says `Reworded by Goodboy` with
 **Show previous**. On hover a row offers edit (a reword of yours) and
 Withdraw, with no confirm because the bottom group, **Replaced and withdrawn**,

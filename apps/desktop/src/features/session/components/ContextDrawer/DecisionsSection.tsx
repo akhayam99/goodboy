@@ -185,6 +185,7 @@ export const DecisionsSection = ({
                 <DecisionRowItem
                   number={row.number}
                   text={row.text}
+                  why={row.why}
                   byline={activeDecisionByline({
                     decision: row,
                     agentNames,
