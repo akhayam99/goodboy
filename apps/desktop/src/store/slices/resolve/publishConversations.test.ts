@@ -316,6 +316,7 @@ const makeStore = ({ sessionId = SESSION_ID }: { readonly sessionId?: SessionId 
     agentRunHistory: {},
     emitNotification: vi.fn(async () => undefined),
     refreshSessionPrDetail: vi.fn(async () => undefined),
+    refreshSessionPr: vi.fn(async () => undefined),
   }));
   const set = store.setState as unknown as SetFn;
   const get = store.getState as unknown as GetFn;

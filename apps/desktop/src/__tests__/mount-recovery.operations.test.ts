@@ -231,6 +231,9 @@ const makeState = (): State => ({
   mountBitbucketPr: {},
   mountSelectedBitbucketPr: {},
   recordSessionEvent: vi.fn(async () => undefined),
+  refreshSessionPr: vi.fn(async () => undefined),
+  refreshSessionMr: vi.fn(async () => undefined),
+  refreshSessionBitbucketPr: vi.fn(async () => undefined),
 });
 
 const recovery = () => {
