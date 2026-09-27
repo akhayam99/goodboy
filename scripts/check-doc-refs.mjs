@@ -19,7 +19,6 @@ const ALLOWLIST_REASON_BY_REF = new Map([
   ['UpsertSessionParams', { kind: 'vocabulary', reason: 'illustrative params type' }],
   ['defaultProps', { kind: 'vocabulary', reason: 'react api named as forbidden' }],
   ['mNNNName', { kind: 'vocabulary', reason: 'migration name placeholder' }],
-  ['mergedAt', { kind: 'vocabulary', reason: 'gh json field' }],
   ['MoreHorizontal', { kind: 'vocabulary', reason: 'retired lucide alias named on purpose' }],
   [
     'dangerousDisableAssetCspModification',
