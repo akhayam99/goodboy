@@ -47,7 +47,7 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
     case 'github': {
       if (payload.kind === 'pr') {
         return {
-          linkedSessionId: payload.sessionId,
+          linkedSessionId,
           goalSeed: goalFromGithubPullRequest({ pr: payload.pr }),
           externalTask: {
             provider: 'github',

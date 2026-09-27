@@ -330,4 +330,22 @@ describe('launchSpecFor', () => {
     expect(spec?.goalSeed).toContain('GitHub pull request #12: Retry ledger sync');
     expect(spec?.goalSeed).toContain('Retries the sync on timeout.');
   });
+
+  it('opens the session a GitHub pull request was linked to from the inbox', () => {
+    const github = RECORDS.find((record) => record.key === 'github:pr:12');
+    if (github?.payload.provider !== 'github' || github.payload.kind !== 'pr') {
+      throw new Error('missing github pr fixture');
+    }
+    const linked = 'session-linked' as SessionId;
+
+    const spec = launchSpecFor({
+      record: {
+        ...github,
+        linkedSessionId: linked,
+        payload: { ...github.payload, sessionId: null },
+      },
+    });
+
+    expect(spec?.linkedSessionId).toBe(linked);
+  });
 });

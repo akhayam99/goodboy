@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useToast } from '../../../../app/components/Toast';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
@@ -78,6 +78,7 @@ export const ReportSheetHost = () => {
   const { showToast } = useToast();
   const [opened, setOpened] = useState<Opened | null>(null);
   const [parts, setParts] = useState<ReadonlyArray<ReportPart>>(NO_PARTS);
+  const openCount = useRef(0);
 
   const open = useCallback((detail: OpenReportSheetDetail) => {
     const state = useAppStore.getState();
@@ -87,7 +88,12 @@ export const ReportSheetHost = () => {
     }
     setParts(lead);
     setOpened((current) => ({ key: (current?.key ?? 0) + 1, heading: headingFor({ detail }) }));
+    openCount.current += 1;
+    const openedAs = openCount.current;
     void collectReportContext({ state }).then((context) => {
+      if (openCount.current !== openedAs) {
+        return;
+      }
       setParts([...lead, ...contextParts({ context })]);
     });
   }, []);
