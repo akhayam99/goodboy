@@ -122,6 +122,8 @@ export type GitlabMergeRequest = {
   hasConflicts: boolean;
   mergeStatus: GitlabMergeStatus;
   updatedAt: string;
+  sha?: string | null;
+  mergedAt?: string | null;
   author?: GitlabMrAuthor | null;
   reviewers?: ReadonlyArray<GitlabMrAuthor> | null;
 };

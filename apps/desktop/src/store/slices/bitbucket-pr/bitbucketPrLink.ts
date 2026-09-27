@@ -95,6 +95,7 @@ export const toMountBitbucketPrLink = ({
     url: bitbucketRequestUrl({ repo, pullRequestId: pr.id, url: pr.webUrl }),
     state: LINK_STATE[pr.state],
     snapshot: pr,
+    headSha: pr.sourceCommit,
     existing,
     observedAt,
   });

@@ -117,6 +117,8 @@ export const mountRequestFixture = ({
   url: `https://${host}/${repository}/requests/${number}`,
   state,
   snapshot: { number, state },
+  mergedHeadSha: null,
+  mergedAt: null,
   lastObservedAt: RECOVERY_NOW,
   createdAt: RECOVERY_NOW,
   updatedAt: RECOVERY_NOW,

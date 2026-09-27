@@ -231,8 +231,11 @@ origin`. A repo project can override it from its row editor
   (`session_worktrees.branch_origin = 'created'`; older rows read `unknown`
   and are never deleted by the rule), only if `branch_merge_state` says it
   is merged or has no commits of its own, and only after the folder
-  unmounts cleanly. A squash merge is read only from the pull request
-  record: its `merged_head_sha` is merged when the local tip (and
+  unmounts cleanly. Polling stores the head at merge on the request link
+  (`mount_pr_links.merged_head_sha` and `merged_at`: GitHub `headRefOid`
+  and `mergedAt`, GitLab `sha` and `merged_at`, Bitbucket the source
+  commit), and a later poll without it keeps the stored one. A squash merge
+  is read only from that record: its `merged_head_sha` is merged when the local tip (and
   `origin/<branch>`, if any) is an ancestor of it, and `Merged, then N new
 commits` otherwise. Without a record, only a merge commit or a rebase
   counts. The tip is parked

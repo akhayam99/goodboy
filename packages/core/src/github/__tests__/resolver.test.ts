@@ -237,6 +237,20 @@ describe('resolvePrForBranch', () => {
     expect(result?.state).toBe('merged');
   });
 
+  it('MERGED carries the head sha and merge time', async () => {
+    const pr = {
+      ...BASE_RAW,
+      number: 1,
+      state: 'MERGED' as const,
+      headRefOid: 'abc123',
+      mergedAt: '2026-09-20T10:00:00Z',
+    };
+    const runner = makeJsonRunner([pr]);
+    const result = await resolvePrForBranch(runner, 'org/repo', 'feature');
+    expect(result?.headSha).toBe('abc123');
+    expect(result?.mergedAt).toBe('2026-09-20T10:00:00Z');
+  });
+
   it('CLOSED + autoMergeRequest → closed (terminal wins)', async () => {
     const pr = { ...BASE_RAW, number: 1, state: 'CLOSED' as const, autoMergeRequest: {} };
     const runner = makeJsonRunner([pr]);

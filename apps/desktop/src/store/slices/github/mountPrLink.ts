@@ -50,6 +50,8 @@ export const toMountPullRequestLink = ({
     url: pr.url,
     state: pr.state,
     snapshot: pr,
+    headSha: pr.headSha ?? null,
+    mergedAt: pr.mergedAt ?? null,
     existing,
     observedAt,
   });
