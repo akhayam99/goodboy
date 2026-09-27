@@ -15,6 +15,7 @@ import { WorkflowFollowToastBridge } from './features/workflows/components/Workf
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
+import { SessionRefreshBridge } from './features/session/components/SessionRefreshBridge';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
@@ -219,6 +220,7 @@ export const App = () => {
       <WorkflowFollowToastBridge />
       <NewSessionBridge />
       <SessionArchiveBridge />
+      <SessionRefreshBridge />
       <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
       <AppShell
         topBar={

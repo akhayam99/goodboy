@@ -19,6 +19,8 @@ const { state, hooks, toastMock } = vi.hoisted(() => ({
     loadAgentTranscript: vi.fn(async () => undefined),
     setScriptsLensScope: vi.fn(),
     runScript: vi.fn(async () => ({ exitCode: 0 })),
+    resyncSession: vi.fn(async () => undefined),
+    reportError: vi.fn(async () => undefined),
   },
   hooks: {
     currentSession: null as { readonly id: string } | null,
@@ -162,6 +164,26 @@ describe('CommandPalette', () => {
 
     expect(state.toggleContextDrawer).toHaveBeenCalledWith({ sessionId: 'session-1' });
     expect(state.navigate).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the open session with the chord the header teaches', () => {
+    hooks.currentSession = { id: 'session-1' };
+    render(<CommandPalette onClose={vi.fn()} initialQuery="refresh" />);
+
+    expect(screen.getByText(shortcutGlyphs('session.refresh'))).toBeDefined();
+    fireEvent.mouseDown(screen.getByText('Refresh session'));
+
+    expect(state.resyncSession).toHaveBeenCalledWith({ sessionId: 'session-1' });
+  });
+
+  it('offers no refresh outside a session or on an archived one', () => {
+    const { unmount } = render(<CommandPalette onClose={vi.fn()} initialQuery="refresh" />);
+    expect(screen.queryByText('Refresh session')).toBeNull();
+    unmount();
+
+    hooks.currentSession = { id: 'session-1', archivedAt: '2026-09-01T00:00:00.000Z' } as never;
+    render(<CommandPalette onClose={vi.fn()} initialQuery="refresh" />);
+    expect(screen.queryByText('Refresh session')).toBeNull();
   });
 
   it('keeps the session pages in the empty palette behind a wall of sessions', () => {
