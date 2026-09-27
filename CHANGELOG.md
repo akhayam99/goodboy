@@ -64,6 +64,8 @@ Rewrite history previews a long plan in a fraction of the time, so editing the p
 - A dismissed next step no longer comes back after two weeks. <!-- gb area=sessions -->
 - Clicking a starred issue opens its details in Goodboy instead of the tracker in the browser. <!-- gb area=inbox -->
 - Opening an artifact in your browser uses your default browser more reliably on macOS and Windows. <!-- gb area=artifacts -->
+- A turn that falls back to another provider after hitting a limit no longer shows two stop errors for the same turn. <!-- gb area=sessions -->
+- The security findings page describes only what it actually checks: a saved project script. <!-- gb area=settings -->
 
 ## Goodboy v0.10.0
 
