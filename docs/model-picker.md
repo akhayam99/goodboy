@@ -60,8 +60,8 @@ guards two rules. `order` is unique within a provider. All entries that share a
 `group` also share a `family`.
 
 One trap the types do not catch: `presentation.version` is the only source of
-the chip text you see. The `label` field next to it looks the same but is not.
-It carries only the accessible name and the tooltip.
+the version chip text you see. The `label` field is the canonical display name
+for the model everywhere outside the picker axes.
 
 ## Axes: one shape for every provider
 

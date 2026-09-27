@@ -38,7 +38,7 @@ describe('RoutingLabel', () => {
       <RoutingLabel provider="codex" model="gpt-5.6-sol" effort="high" />,
     );
 
-    expect(partOf(container, 'name')).toBe('GPT 5.6 Sol');
+    expect(partOf(container, 'name')).toBe('GPT-5.6 Sol');
     expect(partOf(container, 'detail')).toBe('High');
   });
 
@@ -63,11 +63,11 @@ describe('RoutingLabel', () => {
     expect(screen.getByText('Model not chosen yet')).toBeDefined();
   });
 
-  it('keeps the whole route in the tooltip', () => {
+  it('keeps the whole route in the tooltip for an unknown model', () => {
     render(<RoutingLabel provider="anthropic" model="claude-opus-4-5" effort="high" />);
 
-    expect(tooltipTextOf({ element: screen.getByText('Opus 4.5').parentElement! })).toBe(
-      'Claude · Opus 4.5 · High',
+    expect(tooltipTextOf({ element: screen.getByText('claude-opus-4-5').parentElement! })).toBe(
+      'Claude · claude-opus-4-5 · High',
     );
   });
 

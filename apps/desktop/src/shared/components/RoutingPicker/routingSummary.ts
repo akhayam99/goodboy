@@ -59,12 +59,7 @@ const modelNames = ({ model, modelId }: NameParams): ReadonlyArray<string> => {
   if (model == null) {
     return [modelLabel(modelId)];
   }
-  const { group, version, checkpoint } = model.presentation;
-  return [
-    ...(group === PROVIDER_LABEL[model.provider] ? [] : [group]),
-    ...(version === group ? [] : [version]),
-    ...(checkpoint == null ? [] : [checkpoint]),
-  ];
+  return [model.label];
 };
 
 export const routingTriggerLabel = ({

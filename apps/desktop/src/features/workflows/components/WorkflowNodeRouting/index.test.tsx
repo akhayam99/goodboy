@@ -126,7 +126,7 @@ describe('WorkflowNodeRouting', () => {
       'Heavy refactor area, so a stronger reasoning model was chosen.',
     );
     expect(section.textContent).toContain('Heavy work');
-    expect(section.textContent).toContain('GPT 5.6 Sol');
+    expect(section.textContent).toContain('GPT-5.6 Sol');
     expect(section.outerHTML).toContain(brandColor('codex'));
   });
 

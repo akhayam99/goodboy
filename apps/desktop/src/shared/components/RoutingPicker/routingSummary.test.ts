@@ -18,7 +18,7 @@ const catalogModel = ({ provider, key }: FindParams): CatalogModel => {
 };
 
 describe('routingSummary', () => {
-  it('names a model the catalog does not carry by its plain label', () => {
+  it('leaves a model the catalog does not carry unchanged', () => {
     const label = routingTriggerLabel({
       model: null,
       modelId: 'claude-opus-4-1',
@@ -26,8 +26,10 @@ describe('routingSummary', () => {
       effort: 'high',
       showEffort: true,
     });
-    expect(label.name).toEqual(['Opus 4.1']);
-    expect(routingSummary({ provider: 'anthropic', label })).toBe('Claude · Opus 4.1 · High');
+    expect(label.name).toEqual(['claude-opus-4-1']);
+    expect(routingSummary({ provider: 'anthropic', label })).toBe(
+      'Claude · claude-opus-4-1 · High',
+    );
   });
 
   it('drops the version segment when it repeats the family name', () => {
@@ -49,8 +51,20 @@ describe('routingSummary', () => {
       effort: 'medium',
       showEffort: true,
     });
-    expect(label.name).toEqual(['3.8', 'Flash']);
+    expect(label.name).toEqual(['3.8 Flash']);
     expect(routingSummary({ provider: 'gemini', label })).toBe('Gemini · 3.8 Flash · Medium');
+  });
+
+  it('uses the catalog display name without rebuilding it from picker axes', () => {
+    const label = routingTriggerLabel({
+      model: catalogModel({ provider: 'codex', key: 'gpt-5.6-sol' }),
+      modelId: 'gpt-5.6-sol',
+      selection: { key: 'gpt-5.6-sol' },
+      effort: 'high',
+      showEffort: true,
+    });
+    expect(label.name).toEqual(['GPT-5.6 Sol']);
+    expect(routingSummary({ provider: 'codex', label })).toBe('Codex · GPT-5.6 Sol · High');
   });
 
   it('says the mode the model offers and skips the toggle it cannot honor', () => {

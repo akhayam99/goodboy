@@ -7,20 +7,20 @@ describe('modelLabel', () => {
     expect(modelLabel('gpt-6-astra')).toBe('Astra');
   });
 
-  it('formats an unrecognized Astra effort suffix as an unknown id', () => {
-    expect(modelLabel('gpt-6-astra-high')).toBe('GPT 6 Astra High');
+  it('leaves an unrecognized Astra effort suffix unchanged', () => {
+    expect(modelLabel('gpt-6-astra-high')).toBe('gpt-6-astra-high');
   });
 
-  it('keeps the version number intact for gpt effort variants', () => {
-    expect(modelLabel('gpt-5.6-high')).toBe('GPT 5.6 High');
+  it('leaves unknown gpt effort variants unchanged', () => {
+    expect(modelLabel('gpt-5.6-high')).toBe('gpt-5.6-high');
   });
 
-  it('keeps the version number intact for gemini variants', () => {
-    expect(modelLabel('gemini-2.5-pro')).toBe('Gemini 2.5 Pro');
+  it('leaves unknown gemini variants unchanged', () => {
+    expect(modelLabel('gemini-2.5-pro')).toBe('gemini-2.5-pro');
   });
 
-  it('keeps the version number intact for an unknown vendor-prefixed id', () => {
-    expect(modelLabel('mistral-large-2.1')).toBe('Mistral Large 2.1');
+  it('leaves an unknown vendor-prefixed id unchanged', () => {
+    expect(modelLabel('mistral-large-2.1')).toBe('mistral-large-2.1');
   });
 });
 
