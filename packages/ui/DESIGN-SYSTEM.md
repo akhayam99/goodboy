@@ -801,15 +801,17 @@ and answers again when the work ends. The product rules live in
 - **Failure is one log row.** The error goes to `reportError` with a title
   that names the action ("Couldn't push the branch") and the real message as
   its body. The toast is its preview. The control comes back enabled, so the
-  click is the retry. Never a toast, an inline banner and a suggestion for the
-  same outcome.
+  click is the retry. A form the user is still looking at keeps its error next
+  to its footer instead, as DESIGN.md says. Never a toast, an inline banner and
+  a suggestion for the same outcome.
 
 `usePendingAction` (`apps/desktop/src/shared/hooks/usePendingAction`) is the
 one runner: `run({ key, failureTitle, task })` keeps `key` in `pendingKeys`
 until `task` settles, drops a second run of the same key, reports a thrown
 error once through `reportError` and resolves to whether it worked. A store
-action that already logged its failure throws `ReportedError` so the runner
-does not log it twice. Every next-step suggestion runs through it:
+action that already logged its failure throws `ReportedError`, and a turn error
+the transcript already shows counts the same (`isReportedError`), so the runner
+never logs one failure twice. Every next-step suggestion runs through it:
 `SuggestionAction.run` returns a promise and carries its `failureTitle`, and
 `NextStepSlot` owns the runner (`useSuggestionActions` test guards every kind).
 

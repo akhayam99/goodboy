@@ -26,4 +26,12 @@ describe('IconButton', () => {
     const button = getByRole('button', { name: 'Delete session' });
     expect(button.className).toMatch(/\bborder-danger\/\d+/);
   });
+
+  it('reads busy and refuses a second click while its action runs', () => {
+    const { getByRole } = render(<IconButton icon={Trash2} label="Refresh session" busy />);
+
+    const button = getByRole('button', { name: 'Refresh session' });
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    expect(button.hasAttribute('disabled')).toBe(true);
+  });
 });
