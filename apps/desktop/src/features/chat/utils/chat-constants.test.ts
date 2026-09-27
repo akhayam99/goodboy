@@ -7,20 +7,26 @@ describe('modelLabel', () => {
     expect(modelLabel('gpt-6-astra')).toBe('Astra');
   });
 
-  it('leaves an unrecognized Astra effort suffix unchanged', () => {
-    expect(modelLabel('gpt-6-astra-high')).toBe('gpt-6-astra-high');
+  it('humanizes an unrecognized Astra effort suffix', () => {
+    expect(modelLabel('gpt-6-astra-high')).toBe('GPT 6 Astra High');
   });
 
-  it('leaves unknown gpt effort variants unchanged', () => {
-    expect(modelLabel('gpt-5.6-high')).toBe('gpt-5.6-high');
+  it('humanizes unknown gpt effort variants', () => {
+    expect(modelLabel('gpt-5.6-high')).toBe('GPT 5.6 High');
   });
 
-  it('leaves unknown gemini variants unchanged', () => {
-    expect(modelLabel('gemini-2.5-pro')).toBe('gemini-2.5-pro');
+  it('humanizes unknown gemini variants', () => {
+    expect(modelLabel('gemini-2.5-pro')).toBe('Gemini 2.5 Pro');
   });
 
-  it('leaves an unknown vendor-prefixed id unchanged', () => {
-    expect(modelLabel('mistral-large-2.1')).toBe('mistral-large-2.1');
+  it('humanizes an unknown vendor-prefixed id', () => {
+    expect(modelLabel('mistral-large-2.1')).toBe('Mistral Large 2.1');
+  });
+
+  it('strips the provider prefix from an unknown openrouter id', () => {
+    expect(modelLabel('openrouter/mistralai/mistral-large-2411')).toBe(
+      'Mistralai Mistral Large 2411',
+    );
   });
 });
 

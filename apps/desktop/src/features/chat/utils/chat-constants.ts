@@ -20,7 +20,42 @@ export const TIER_TEXT: Record<ModelCostTier, string> = {
   expensive: 'text-danger',
 };
 
-export const modelLabel = (id: string): string => getModelDescriptor(id)?.label ?? id;
+const ACRONYM_WORDS = new Set(['gpt', 'ai']);
+
+const stripProviderPrefix = (id: string): string => {
+  const slash = id.indexOf('/');
+  return slash >= 0 ? id.slice(slash + 1) : id;
+};
+
+const capitalizeWord = (part: string): string => {
+  if (ACRONYM_WORDS.has(part.toLowerCase())) {
+    return part.toUpperCase();
+  }
+  return /^[a-z]/.test(part) ? part.charAt(0).toUpperCase() + part.slice(1) : part;
+};
+
+const humanizeUnknownId = (id: string): string => {
+  const words = stripProviderPrefix(id)
+    .split(/[-_\s/]+/)
+    .filter((part) => part !== '')
+    .map(capitalizeWord)
+    .join(' ');
+  return words === '' ? id : words;
+};
+
+const CLAUDE_VERSION_PATTERN = /^claude-(opus|sonnet|haiku|fable)-(\d+)-(\d+)$/i;
+
+const unknownModelLabel = (id: string): string => {
+  const claudeMatch = CLAUDE_VERSION_PATTERN.exec(id);
+  if (claudeMatch) {
+    const family = claudeMatch[1]!;
+    return `${family.charAt(0).toUpperCase()}${family.slice(1).toLowerCase()} ${claudeMatch[2]}.${claudeMatch[3]}`;
+  }
+  return humanizeUnknownId(id);
+};
+
+export const modelLabel = (id: string): string =>
+  getModelDescriptor(id)?.label ?? unknownModelLabel(id);
 
 export const modelTier = (model: string): ModelCostTier => {
   const descriptor = getModelDescriptor(model);

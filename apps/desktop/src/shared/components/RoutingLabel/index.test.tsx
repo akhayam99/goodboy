@@ -66,8 +66,8 @@ describe('RoutingLabel', () => {
   it('keeps the whole route in the tooltip for an unknown model', () => {
     render(<RoutingLabel provider="anthropic" model="claude-opus-4-5" effort="high" />);
 
-    expect(tooltipTextOf({ element: screen.getByText('claude-opus-4-5').parentElement! })).toBe(
-      'Claude · claude-opus-4-5 · High',
+    expect(tooltipTextOf({ element: screen.getByText('Opus 4.5').parentElement! })).toBe(
+      'Claude · Opus 4.5 · High',
     );
   });
 

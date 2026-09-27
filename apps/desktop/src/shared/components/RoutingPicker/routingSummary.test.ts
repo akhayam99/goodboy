@@ -18,7 +18,7 @@ const catalogModel = ({ provider, key }: FindParams): CatalogModel => {
 };
 
 describe('routingSummary', () => {
-  it('leaves a model the catalog does not carry unchanged', () => {
+  it('humanizes a model the catalog does not carry', () => {
     const label = routingTriggerLabel({
       model: null,
       modelId: 'claude-opus-4-1',
@@ -26,10 +26,8 @@ describe('routingSummary', () => {
       effort: 'high',
       showEffort: true,
     });
-    expect(label.name).toEqual(['claude-opus-4-1']);
-    expect(routingSummary({ provider: 'anthropic', label })).toBe(
-      'Claude · claude-opus-4-1 · High',
-    );
+    expect(label.name).toEqual(['Opus 4.1']);
+    expect(routingSummary({ provider: 'anthropic', label })).toBe('Claude · Opus 4.1 · High');
   });
 
   it('drops the version segment when it repeats the family name', () => {
