@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Button, cn, formatError, Textarea, inlineMarkdownText } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
-import type { SessionExternalTaskProvider, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  ProjectId,
+  SessionExternalTaskProvider,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { issueBriefKey } from '../../../../store/slices/issue-briefs/issueBriefKey';
@@ -10,6 +15,8 @@ import type { IssueBriefSource } from '../../../../store/slices/issue-briefs/typ
 import { briefGoalText } from '../../shared/briefGoalText';
 import { LaunchedNotice } from './LaunchedNotice';
 import { BriefStrip } from './BriefStrip';
+import { LaunchMountRow } from './LaunchMountRow';
+import type { LaunchMount } from '../../../inbox/launchMountFor';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type ExternalTask = {
@@ -28,6 +35,7 @@ type Props = {
   readonly briefSource: IssueBriefSource | null;
   readonly onClose: () => void;
   readonly focusRequest?: number;
+  readonly mount?: LaunchMount | null;
 };
 
 export const LaunchSessionPanel = ({
@@ -38,6 +46,7 @@ export const LaunchSessionPanel = ({
   briefSource,
   onClose,
   focusRequest = 0,
+  mount = null,
 }: Props) => {
   const createSession = useAppStore((state) => state.createSession);
   const requestIssueBrief = useAppStore((state) => state.requestIssueBrief);
@@ -55,6 +64,9 @@ export const LaunchSessionPanel = ({
   const [goal, setGoal] = useState(seed);
   const [isBusy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mountSeed = mount?.selectedId ?? null;
+  const [projectId, setProjectId] = useState<ProjectId | null>(mountSeed);
+  const [isProjectPicked, setIsProjectPicked] = useState(false);
   const goalSeedRef = useRef(seed);
   const sectionRef = useRef<HTMLElement | null>(null);
 
@@ -65,6 +77,12 @@ export const LaunchSessionPanel = ({
     const goalField = sectionRef.current?.querySelector('textarea') ?? null;
     goalField?.focus();
   }, [focusRequest]);
+
+  useEffect(() => {
+    if (!isProjectPicked) {
+      setProjectId(mountSeed);
+    }
+  }, [isProjectPicked, mountSeed]);
 
   useEffect(() => {
     const previousSeed = goalSeedRef.current;
@@ -109,6 +127,7 @@ export const LaunchSessionPanel = ({
         workspaceId,
         goal,
         ...(briefTitle !== null && { title: briefTitle }),
+        ...(mount !== null && projectId !== null && { projectId, projectReason: mount.reason }),
         externalTasks: [externalTask],
       });
       showToast({
@@ -155,6 +174,17 @@ export const LaunchSessionPanel = ({
       )}
       {briefTitle !== null && (
         <p className="px-2 text-label font-semibold text-foreground">{briefTitle}</p>
+      )}
+      {mount !== null && (
+        <LaunchMountRow
+          mount={mount}
+          selectedId={projectId}
+          disabled={isBusy}
+          onChange={(next) => {
+            setIsProjectPicked(true);
+            setProjectId(next);
+          }}
+        />
       )}
       <Textarea
         value={goal}
