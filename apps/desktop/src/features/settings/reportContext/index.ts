@@ -17,24 +17,6 @@ export type ReportContext = {
   readonly cliVersions: string;
 };
 
-export type ReportContextField = keyof ReportContext;
-
-export const REPORT_CONTEXT_FIELDS = [
-  'version',
-  'build',
-  'system',
-  'screen',
-  'cliVersions',
-] as const satisfies ReadonlyArray<ReportContextField>;
-
-export const REPORT_CONTEXT_LABELS: Readonly<Record<ReportContextField, string>> = {
-  version: 'Version',
-  build: 'Build',
-  system: 'System',
-  screen: 'Screen',
-  cliVersions: 'CLI versions',
-};
-
 const UNKNOWN = 'unknown';
 
 const NO_CLI = 'none detected';
@@ -101,13 +83,3 @@ export const collectReportContext = async ({ state }: CollectParams): Promise<Re
     providers: state.providers,
   });
 };
-
-type FormatParams = {
-  readonly context: ReportContext;
-  readonly omit?: ReadonlyArray<ReportContextField>;
-};
-
-export const formatReportContext = ({ context, omit = [] }: FormatParams): string =>
-  REPORT_CONTEXT_FIELDS.filter((field) => !omit.includes(field))
-    .map((field) => `${REPORT_CONTEXT_LABELS[field]}: ${context[field]}`)
-    .join('\n');

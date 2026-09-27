@@ -45,7 +45,3 @@ export const recordScreen = ({ label }: ScreenParams): void =>
   push({ name: screenActionName({ label }) });
 
 export const recentActions = (): ReadonlyArray<string> => ring;
-
-export const clearActions = (): void => {
-  ring = [];
-};

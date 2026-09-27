@@ -12,12 +12,20 @@ import {
 import {
   buildReportContext,
   collectReportContext,
-  formatReportContext,
-  REPORT_CONTEXT_FIELDS,
-  type ReportContextField,
+  type ReportContext,
   type ReportContextSources,
 } from '.';
 import type { AppPlatform } from './appPlatform';
+
+type ReportContextField = keyof ReportContext;
+
+const REPORT_CONTEXT_FIELDS = [
+  'version',
+  'build',
+  'system',
+  'screen',
+  'cliVersions',
+] as const satisfies ReadonlyArray<ReportContextField>;
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../../store/storyHarness')).tauriCoreModuleMock(),
@@ -79,7 +87,6 @@ describe('buildReportContext', () => {
   it('carries exactly the approved fields', () => {
     const context = buildReportContext(BASE_SOURCES);
     expect(Object.keys(context)).toEqual([...REPORT_CONTEXT_FIELDS]);
-    expect(REPORT_CONTEXT_FIELDS).toEqual(['version', 'build', 'system', 'screen', 'cliVersions']);
   });
 
   it.each(REPORT_CONTEXT_FIELDS)('passes %s through redactReport', (field) => {
@@ -111,15 +118,6 @@ describe('buildReportContext', () => {
     expect(context.build).toBe('dev');
     expect(context.system).toBe('unknown');
     expect(context.cliVersions).toBe('none detected');
-  });
-});
-
-describe('formatReportContext', () => {
-  it('drops the fields the reporter removed', () => {
-    const context = buildReportContext(BASE_SOURCES);
-    expect(formatReportContext({ context, omit: ['screen', 'cliVersions'] })).toBe(
-      'Version: 0.11.1\nBuild: fc2f08994a1b\nSystem: macOS 15.1 arm64',
-    );
   });
 });
 
