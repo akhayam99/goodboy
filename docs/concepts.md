@@ -870,7 +870,8 @@ same header, facts and sections for every tool, and the source's own actions. Fr
 to it.
 
 With two or more projects in the workspace, the rail also filters by project.
-Code host records belong to the project at the workspace root. A Sentry error
+Projects with no records hide behind a quiet "Show N empty" toggle at the end
+of the section; the selected project stays listed even at zero. Code host records belong to the project at the workspace root. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
