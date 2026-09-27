@@ -119,16 +119,17 @@ describe('WorkspaceLinkForm', () => {
 
   it('draws no action row before a setup shape is picked', () => {
     const { container } = renderForm();
-    expect(container.querySelector('footer')).toBeNull();
+    expect(container.querySelector('[data-slot="form-actions"]')).toBeNull();
   });
 
   it('keeps its actions inline at the end of the form', () => {
-    renderForm();
+    const { container } = renderForm();
     fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
 
     const submit = screen.getByRole('button', { name: 'Create workspace' });
-    expect(submit.closest('form')).not.toBeNull();
-    expect(submit.closest('footer')?.parentElement?.tagName).toBe('FORM');
+    expect(submit.closest('[data-slot="form-actions"]')?.parentElement?.tagName).toBe('FORM');
+    expect(container.querySelector('footer')).toBeNull();
+    expect(container.querySelector('[role="separator"]')).toBeNull();
   });
 
   it('links a picked git repository directly as a project-shaped workspace', async () => {

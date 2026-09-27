@@ -4,7 +4,7 @@ import {
   Button,
   Chip,
   cn,
-  Divider,
+  FormActions,
   formatError,
   Input,
   Notice,
@@ -330,24 +330,22 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         : null;
 
   const actions = (
-    <>
-      {error != null ? (
-        <span
-          role="alert"
-          className="flex min-w-0 flex-1 items-center gap-1 text-label text-danger"
-        >
-          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          {error}
-        </span>
-      ) : (
-        <span className="min-w-0 flex-1" aria-hidden />
-      )}
+    <FormActions
+      leading={
+        error == null ? null : (
+          <span role="alert" className="flex min-w-0 items-center gap-1 text-label text-danger">
+            <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            {error}
+          </span>
+        )
+      }
+    >
       {primary !== null ? (
         <Button type="submit" form={formId} disabled={primary.disabled} aria-busy={busy}>
           {primary.label}
         </Button>
       ) : null}
-    </>
+    </FormActions>
   );
 
   return (
@@ -593,12 +591,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         </section>
       )}
 
-      {primary !== null || error != null ? (
-        <>
-          <Divider />
-          <footer className="flex items-center justify-end gap-2">{actions}</footer>
-        </>
-      ) : null}
+      {primary !== null || error != null ? actions : null}
     </form>
   );
 };
