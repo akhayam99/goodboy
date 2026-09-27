@@ -87,6 +87,7 @@ import { BrandSecurityFindingsScene } from './scenes/brand/SecurityFindingsScene
 import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
+import { AgentBriefScene } from './scenes/AgentBriefScene';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -166,6 +167,7 @@ export const MOCK_SCENES = {
   'brand-storage': BrandStorageScene,
   'brand-security-findings': BrandSecurityFindingsScene,
   'brand-tools': BrandToolsScene,
+  'agent-brief': AgentBriefScene,
 };
 
 const BRAND_HIDDEN_TOASTS = ['File drop is unavailable'];

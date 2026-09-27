@@ -37,7 +37,7 @@ type Props = {
   readonly contextWindow: number | null;
   readonly duration: string | null;
   readonly startedAt: IsoDateTime | null;
-  readonly endedAt: IsoDateTime;
+  readonly endedAt: IsoDateTime | null;
 };
 
 export const TurnFooterDetail = ({
@@ -85,6 +85,7 @@ export const TurnFooterDetail = ({
           })}
         {duration != null &&
           startedAt != null &&
+          endedAt != null &&
           detailRow({
             label: 'Duration',
             value: `${duration}  (${formatClockTime({ iso: startedAt })} to ${formatClockTime({ iso: endedAt })})`,
