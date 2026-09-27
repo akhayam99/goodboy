@@ -94,6 +94,19 @@ describe('ConvertWorkspaceDialog', () => {
     await waitFor(() => screen.getByRole('button', { name: 'Done' }));
   });
 
+  it('ends the body with cancel and the primary inline, never in a footer bar', () => {
+    const onClose = vi.fn();
+    render(<ConvertWorkspaceDialog open workspace={workspace} onClose={onClose} />);
+
+    const primary = screen.getByRole('button', { name: 'Create repository' });
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    expect(primary.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(primary.closest('footer')).toBeNull();
+    expect(cancel.parentElement).toBe(primary.parentElement);
+    fireEvent.click(cancel);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
   it('blocks the conversion until the chosen host is connected', () => {
     state.githubStatus = { available: false };
     render(<ConvertWorkspaceDialog open workspace={workspace} onClose={vi.fn()} />);
