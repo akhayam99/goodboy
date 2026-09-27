@@ -17,6 +17,10 @@ const { invokeSpy, state } = vi.hoisted(() => ({
     providerLimits: {},
     projects: [],
     projectGitStatus: {},
+    workspaceIntegrations: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
+    githubWorkspaceStatus: {} as Record<string, Record<string, unknown>>,
+    refreshGithubConnection: vi.fn(async () => undefined),
+    githubStatus: null as Record<string, unknown> | null,
   },
 }));
 

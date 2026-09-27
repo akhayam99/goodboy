@@ -16,6 +16,7 @@ vi.mock('../../../../store', () => {
     slackThreads: {},
     slackUsers: {},
     slackChannels: {},
+    workspaceIntegrations: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     refreshSlackThread: vi.fn(async () => undefined),
     refreshSlackUsers: vi.fn(async () => undefined),
     refreshSlackChannels: vi.fn(async () => undefined),

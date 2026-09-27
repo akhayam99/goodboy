@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
   IntegrationDraft,
@@ -11,6 +11,11 @@ import type {
 } from '@goodboy/types';
 import type { SlackChannel, SlackMessage, SlackUser } from '../../../integrations/slack/client';
 import { overridesWithAttribution } from '../../../../__tests__/helpers/attributionOverrides';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  type StoryStore,
+} from '../../../../store/storyHarness';
 
 const client = vi.hoisted(() => ({
   slackGetThread: vi.fn(),
@@ -26,8 +31,13 @@ const drafts = vi.hoisted(() => ({ decideSlackDraft: vi.fn(async () => true) }))
 
 vi.mock('../../../integrations/slack/drafts', () => drafts);
 
-const { useAppStore } = await import('../../../../store');
-const { TranscriptRows } = await import('./TranscriptRows');
+let useAppStore: StoryStore;
+let TranscriptRows: typeof import('./TranscriptRows').TranscriptRows;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+  ({ TranscriptRows } = await import('./TranscriptRows'));
+}, STORE_IMPORT_TIMEOUT_MS);
 
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 's1' as SessionId;

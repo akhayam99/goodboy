@@ -65,7 +65,7 @@ export const SlackDraftCard = ({ draft, sessionId }: Props) => {
         <span className={cn('flex shrink-0 items-center', tint.icon)} aria-hidden>
           <CONCEPT_ICONS.slack size={ICON_SIZE.row} />
         </span>
-        <span className="font-medium text-foreground">Reply ready for #{thread.channelName}</span>
+        <span className="text-row text-foreground">Reply ready for #{thread.channelName}</span>
         <span className="text-secondary text-muted-foreground">waiting for you</span>
       </div>
       {quote == null ? null : (

@@ -61,7 +61,6 @@ export const ProjectLinkCompactRow = ({
           </button>
         </Tooltip>
         <span className="flex min-w-0 items-center gap-1.5">
-          {badge}
           <span className="min-w-0 truncate text-label text-muted-foreground">
             {description !== '' ? (
               description

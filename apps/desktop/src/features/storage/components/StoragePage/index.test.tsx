@@ -223,6 +223,8 @@ describe('StoragePage', () => {
 
     Object.assign(state, {
       storageFocus: { filter: 'review', workspaceId: 'harborline' as WorkspaceId },
+      storageScope: { kind: 'workspace', id: 'harborline' as WorkspaceId },
+      workspaces: [{ id: 'harborline', name: 'Harborline' }],
     });
     render(<StoragePage />);
     fireEvent.click(screen.getByRole('button', { name: /Remove 1 safe folder in Harborline ·/ }));

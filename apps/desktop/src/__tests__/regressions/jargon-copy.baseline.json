@@ -23,6 +23,10 @@
     "count": 1,
     "reason": "technical: exhaustive-check error"
   },
+  "features/session/hooks/useRebaseAgent/index.ts": {
+    "count": 1,
+    "reason": "agent-facing: rebase prompt names the mount to work in"
+  },
   "features/session/mountQueryBridge/index.ts": {
     "count": 8,
     "reason": "agent-facing: bridge mount verb errors returned to the CLI"
