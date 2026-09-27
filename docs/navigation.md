@@ -706,8 +706,14 @@ one is open at a time.
   contents and Linear's settings sidebar.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
-  under three filters: To review, In use and Kept. A scope picker
-  (`StorageScopePicker`, `Listbox`) sits above the summary: the current
+  under three filters: To review, In use and Kept. The page is two clusters
+  (`StorageCluster`), each with its own accent on a tinted icon and a left
+  rail: `Free up space` (primary: the summary, Worktrees, Artifacts from
+  deleted sessions, History and app data, Cleanup) and `Clean up branches`
+  (merged: Branches, then the scoped workspace's after-merge rule with a
+  `Change` link to Workspace settings). A scope picker
+  (`StorageScopePicker`, `Listbox`) sits in the page header row next to
+  `Check again` (`StorageHeaderActions`): the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
   and `All workspaces` with the machine total. The scope drives the summary
@@ -730,7 +736,7 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  Below the worktrees, `Branches` (`BranchesSection`) lists local branches
+  In the branches cluster, `Branches` (`BranchesSection`) lists local branches
   only, in the same scope, grouped by project. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
   test cached by both tips and fed each branch's merged pull request head
@@ -752,7 +758,7 @@ look` (`Merged, then N new commits`, unmerged and gone on origin, local
   same compare-and-delete and 14-day restore as the after-merge rule; a
   success Notice carries `Undo` for the batch. A branch another worktree
   holds reads Protected, so its folder goes first from Worktrees.
-  Below that, "Artifacts from deleted sessions" lists plans, reports
+  In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.

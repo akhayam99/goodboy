@@ -130,7 +130,11 @@ describe('storage chip in the app header on the real store', () => {
     );
     await settle();
 
-    const space = screen.getByRole('region', { name: 'Storage summary' });
+    const space = screen.getByRole('region', { name: 'Free up space' });
+    const headerRow = screen.getByRole('button', { name: /Check again/ }).parentElement!
+      .parentElement!;
+    expect(within(headerRow).getByLabelText('Storage scope')).toBeDefined();
+    expect(within(space).queryByLabelText('Storage scope')).toBeNull();
     expect(within(space).getByText('7.2 GB can go')).toBeDefined();
     const scrolled = scrollIntoView.mock.contexts.map((element) => (element as HTMLElement).id);
     expect(scrolled).toContain('storage-worktrees');
