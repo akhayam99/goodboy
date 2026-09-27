@@ -246,9 +246,12 @@ export const findDisconnectedProjectByIdentity = async ({
     `SELECT projects.* FROM projects
      JOIN workspaces ON workspaces.id = projects.workspace_id
      WHERE workspaces.disconnected_at IS NOT NULL
-       AND ((? IS NOT NULL AND projects.root_commit = ?) OR (? IS NOT NULL AND projects.remote_url = ?))
-     ORDER BY projects.updated_at DESC`,
-    [rootCommit, rootCommit, remoteUrl, remoteUrl],
+       AND (projects.root_commit = ? OR projects.remote_url = ?)
+       AND NOT (? IS NOT NULL AND projects.root_commit IS NOT NULL AND projects.root_commit <> ?)
+       AND NOT (? IS NOT NULL AND projects.remote_url IS NOT NULL AND projects.remote_url <> ?)
+     ORDER BY ((projects.root_commit = ?) IS 1) + ((projects.remote_url = ?) IS 1) DESC,
+       projects.updated_at DESC`,
+    [rootCommit, remoteUrl, rootCommit, rootCommit, remoteUrl, remoteUrl, rootCommit, remoteUrl],
   );
   const row = rows[0];
   return row === undefined ? null : toDomain({ row });
