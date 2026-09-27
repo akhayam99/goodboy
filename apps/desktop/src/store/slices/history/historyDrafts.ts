@@ -8,7 +8,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { historyTargetOf } from './historyTargetOf';
 import type { EditHistoryDraftInput, GetFn, HistoryDraft, HistoryMountInput, SetFn } from './types';
 
-const PREDICT_DELAY_MS = 1_000;
+const PREDICT_DELAY_MS = 250;
 
 const timers = new Map<MountId, ReturnType<typeof setTimeout>>();
 const sequence = new Map<MountId, number>();

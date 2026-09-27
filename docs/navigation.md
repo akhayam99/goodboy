@@ -1051,8 +1051,10 @@ Drop, Move up or down) and every verb carries one line that says what happens
 to the code and to the message; the word fixup never shows. The keys are the
 ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move; a row can also be dragged onto another by its grip, and it lands where that row was.
 Nothing touches git while you edit: the plan is a draft saved per worktree in
-`history_plans`, and once the plan rests for a second the engine predicts it in memory
-with `git merge-tree`. The dock says what changes (`1 reword · 1 dropped`),
+`history_plans`, and once the plan rests for a quarter of a second the engine predicts it in memory
+with one `git merge-tree --stdin` process for every commit and one `git fast-import` that writes
+the predicted commits (git 2.45 or newer; older git spawns one merge and one commit per step).
+The dock says what changes (`1 reword · 1 dropped`),
 whether the code changes, and `No conflicts expected`; when an edit breaks
 the plan it names that edit (`Moving 5b3e91f above 7c2d8a1 will conflict`)
 and offers `Rewrite with an agent` or undoing the change. `Apply and push`
