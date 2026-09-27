@@ -133,7 +133,7 @@ import type {
 import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
 import type { NewerDatabase } from '../shared/lib/newerDatabase';
-import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import type { WorkflowBuilderDraft, WorkflowDraftKey } from './slices/workflowDrafts/types';
 import type { SessionArtifactDrafts } from './slices/artifactDrafts/types';
 import type { WorkflowGeneration, WorkflowStudioDraft } from './slices/workflowStudio/types';
 
@@ -418,7 +418,7 @@ export type AppState = AppSliceState & {
   readonly agentEffortOverride: Readonly<Record<AgentId, EffortLevel>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
-  readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
+  readonly workflowDrafts: Readonly<Record<WorkflowDraftKey, WorkflowBuilderDraft | undefined>>;
   readonly artifactDrafts: Readonly<Record<SessionId, SessionArtifactDrafts>>;
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;

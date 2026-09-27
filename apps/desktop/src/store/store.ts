@@ -180,7 +180,7 @@ import type {
 import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
-import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import type { WorkflowBuilderDraft, WorkflowDraftKey } from './slices/workflowDrafts/types';
 import type {
   ClearArtifactDraftParams,
   HydrateArtifactDraftsParams,
@@ -849,8 +849,8 @@ type AppActions = {
   setArtifactDraft(params: SetArtifactDraftParams): void;
   clearArtifactDraft(params: ClearArtifactDraftParams): void;
   hydrateArtifactDrafts(params: HydrateArtifactDraftsParams): void;
-  setWorkflowDraft(sessionId: SessionId, draft: WorkflowBuilderDraft): void;
-  clearWorkflowDraft(sessionId: SessionId): void;
+  setWorkflowDraft(draftKey: WorkflowDraftKey, draft: WorkflowBuilderDraft): void;
+  clearWorkflowDraft(draftKey: WorkflowDraftKey): void;
   setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
   clearWorkflowStudioDraft(params: { workspaceId: WorkspaceId }): void;
   setWorkflowStudioVisible(params: { workspaceId: WorkspaceId | null }): void;
