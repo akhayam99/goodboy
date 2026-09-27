@@ -157,6 +157,9 @@ export const switchMount = (set: SetFn, get: GetFn) => {
               : state.sessionBranches,
           };
         });
+        void get().refreshSessionPr(sessionId, { mountId, force: true, silent: true });
+        void get().refreshSessionMr(sessionId, { mountId, force: true, silent: true });
+        void get().refreshSessionBitbucketPr(sessionId, { mountId, force: true, silent: true });
         await get().recordSessionEvent({
           sessionId,
           kind: 'branch_switched',

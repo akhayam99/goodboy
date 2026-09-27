@@ -42,6 +42,7 @@ import {
   useWorkspaces,
 } from './store';
 import { useGithubPolling } from './features/github/hooks/useGithubPolling';
+import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';
 import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
@@ -121,6 +122,7 @@ export const App = () => {
   }, [hydrate, checkForUpdates]);
 
   useGithubPolling();
+  useSessionFocusRecheck();
   useProviderRefreshOnFocus();
   useProviderLimitsProbe();
   useUpdaterPolling();

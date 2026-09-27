@@ -29,6 +29,7 @@ const makeState = (): State => ({
   sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
   sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
   sessionMounts: {},
+  refreshSessionPr: vi.fn(async () => undefined),
   sessionProjectMounts: {
     [SESSION_ID]: [
       {
@@ -87,6 +88,25 @@ describe('pushSessionBranch', () => {
       'workspace-1',
       PROJECT_ID,
     );
+    expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
+      mountId: SIBLING_MOUNT_ID,
+      force: true,
+      silent: true,
+    });
+  });
+
+  it('leaves the pull request alone when the push fails', async () => {
+    const state = makeState();
+    h.gitPush.mockResolvedValue({ exitCode: 1, stdout: '', stderr: 'rejected' });
+
+    const result = await pushSessionBranch({
+      get: (() => state) as never,
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+    });
+
+    expect(result).toEqual({ ok: false, error: 'rejected' });
+    expect(state.refreshSessionPr).not.toHaveBeenCalled();
   });
 
   it('refuses a mount the session does not hold', async () => {

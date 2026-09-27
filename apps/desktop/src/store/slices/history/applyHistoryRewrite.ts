@@ -193,6 +193,7 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
       void get()
         .refreshPrDescription({ sessionId, mountId })
         .catch(() => false);
+      void get().refreshSessionPr(sessionId, { mountId, force: true, silent: true });
       return 'pushed';
     }
     const stop: HistoryStop =

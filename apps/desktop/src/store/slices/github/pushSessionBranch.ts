@@ -34,5 +34,6 @@ export const pushSessionBranch = async ({
   if (push.exitCode !== 0) {
     return { ok: false, error: push.stderr.trim() || `git push exited with ${push.exitCode}` };
   }
+  void get().refreshSessionPr(sessionId, { mountId, force: true, silent: true });
   return { ok: true };
 };
