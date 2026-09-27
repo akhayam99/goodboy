@@ -134,6 +134,44 @@ describe('BootSplash issue report', () => {
     expect(decodeURIComponent(url)).toContain('cannot open ~/.goodboy/data.db');
     expect(decodeURIComponent(url)).not.toContain('/Users/dev');
   });
+
+  it('keeps secrets, emails and link queries out of the issue link', () => {
+    render(
+      <BootSplash
+        phase="migrating"
+        error="sync https://api.github.com/graphql?access_token=abc123def456 for rowan@example.dev with ghp_AbCdEfGhIjKlMnOpQrSt1234"
+        onRetry={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
+
+    const decoded = decodeURIComponent(String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]));
+    expect(decoded).toContain('sync https://api.github.com/graphql for');
+    for (const leak of ['access_token', 'rowan@example.dev', 'ghp_AbCd']) {
+      expect(decoded).not.toContain(leak);
+    }
+  });
+
+  it('cuts a runaway error so the link stays inside the length the shell will open', () => {
+    render(<BootSplash phase="migrating" error={'e'.repeat(20000)} onRetry={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
+
+    const url = String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]);
+    expect(url.length).toBeLessThanOrEqual(4096);
+    expect(decodeURIComponent(url)).toContain('the rest of the error did not fit the report link');
+  });
+
+  it('opens a plain new issue form without a template the repo does not have', () => {
+    render(<BootSplash phase="migrating" error="boom" onRetry={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /report on github/i }));
+
+    const url = String(vi.mocked(openUrl).mock.calls.at(-1)?.[0]);
+    expect(url).not.toContain('template=');
+    expect(url).not.toContain('breadcrumbs');
+    expect(
+      url.startsWith('https://github.com/akhayam99/goodboy/issues/new?title=Boot%20failure'),
+    ).toBe(true);
+  });
 });
 
 describe('BootSplash failed phase', () => {
