@@ -70,6 +70,8 @@ type LinkParams = {
   readonly url: string;
   readonly state: MountPullRequestState;
   readonly snapshot: unknown;
+  readonly headSha?: string | null;
+  readonly mergedAt?: string | null;
   readonly existing: MountPullRequestLink | null;
   readonly observedAt: IsoDateTime;
 };
@@ -203,6 +205,14 @@ export const requestHost = ({ url, fallback }: HostParams): string => {
   }
 };
 
+const isoOrNull = (value: string | null): IsoDateTime | null => {
+  if (value === null) {
+    return null;
+  }
+  const ms = Date.parse(value);
+  return Number.isNaN(ms) ? null : (new Date(ms).toISOString() as IsoDateTime);
+};
+
 export const buildMountRequestLink = ({
   mountId,
   identity,
@@ -211,6 +221,8 @@ export const buildMountRequestLink = ({
   url,
   state,
   snapshot,
+  headSha = null,
+  mergedAt = null,
   existing,
   observedAt,
 }: LinkParams): MountPullRequestLink => ({
@@ -222,6 +234,8 @@ export const buildMountRequestLink = ({
   url,
   state,
   snapshot,
+  mergedHeadSha: state === 'merged' ? (headSha ?? existing?.mergedHeadSha ?? null) : null,
+  mergedAt: state === 'merged' ? (isoOrNull(mergedAt) ?? existing?.mergedAt ?? null) : null,
   lastObservedAt: observedAt,
   createdAt: existing?.createdAt ?? observedAt,
   updatedAt: observedAt,
@@ -279,7 +293,12 @@ export const observeMountRequestTransition = async ({
     return;
   }
   const afterMerge = await get()
-    .runAfterMergeCleanup({ sessionId, mountId: next.mountId, expectedBranch: next.headBranch })
+    .runAfterMergeCleanup({
+      sessionId,
+      mountId: next.mountId,
+      expectedBranch: next.headBranch,
+      mergedHeadSha: next.mergedHeadSha ?? null,
+    })
     .catch(() => ({ kind: 'ask', keptBecause: null }) as const);
   if (afterMerge.kind !== 'ask') {
     return;

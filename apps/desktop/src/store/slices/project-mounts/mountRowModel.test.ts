@@ -97,6 +97,7 @@ const githubState = ({ mountId, state }: GithubStateParams): MountGithubState =>
     reviewDecision: 'approved',
     body: '',
     updatedAt: NOW,
+    headSha: `sha-${mountId}`,
   } satisfies NonNullable<MountGithubState['pr']>;
   return {
     mountId,
@@ -197,6 +198,8 @@ describe('buildMountRows', () => {
     expect(
       [FIRST, SECOND, THIRD].map((mountId) => isMountRequestMerged({ state, mountId })),
     ).toEqual([true, false, false]);
+    expect(rows.find((row) => row.mountId === FIRST)?.request?.mergedHeadSha).toBe(`sha-${FIRST}`);
+    expect(rows.find((row) => row.mountId === THIRD)?.request?.mergedHeadSha).toBeNull();
   });
 
   it('names the mount that already holds the observed branch', () => {

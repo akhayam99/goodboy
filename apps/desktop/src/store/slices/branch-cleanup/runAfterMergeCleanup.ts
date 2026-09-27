@@ -26,6 +26,7 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
     sessionId,
     mountId,
     expectedBranch,
+    mergedHeadSha = null,
   }: RunAfterMergeCleanupParams): Promise<AfterMergeOutcome> => {
     const views = await loadMountViews({ get, sessionId });
     const view = views.find((candidate) => candidate.id === mountId);
@@ -69,6 +70,7 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
       repoPath: view.repoRoot,
       branch,
       base: view.baseBranch ?? project.baseBranch ?? null,
+      mergedHead: mergedHeadSha,
     }).catch(() => ({ kind: 'unknown' }) as const);
     const mergeReason = keptBecauseOfMerge({ branch, state });
     if (mergeReason !== null) {
@@ -93,6 +95,7 @@ export const runAfterMergeCleanup = (set: SetFn, get: GetFn) => {
       branch,
       expectedSha: sha,
       alsoOrigin,
+      ...(mergedHeadSha === null ? {} : { originLeaseSha: mergedHeadSha }),
     }).catch(
       (error: unknown) => asBranchCleanupError(error) ?? { kind: 'git' as const, message: '' },
     );

@@ -1,3 +1,4 @@
+import { checkMergedThen } from './checkMergedThen';
 import { deleteBranches, restoreDeletedBranches } from './deleteBranches';
 import { loadDeletedBranches } from './loadDeletedBranches';
 import { loadProjectBranches } from './loadProjectBranches';
@@ -17,4 +18,5 @@ export const createBranchCleanupSlice = (set: SetFn, get: GetFn): BranchCleanupS
   loadProjectBranches: loadProjectBranches(set, get),
   deleteBranches: deleteBranches(set, get),
   restoreDeletedBranches: restoreDeletedBranches(set, get),
+  checkMergedThen: checkMergedThen(set, get),
 });

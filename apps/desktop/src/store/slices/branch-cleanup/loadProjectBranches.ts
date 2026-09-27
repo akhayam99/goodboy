@@ -1,4 +1,4 @@
-import { listGoodboyBranches } from '@goodboy/db';
+import { listGoodboyBranches, listMergedRequestHeads } from '@goodboy/db';
 import type { ProjectId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { listProjectBranches } from '../../../features/worktree/branchCleanup';
@@ -18,10 +18,15 @@ export const loadProjectBranches = (set: SetFn, get: GetFn) => {
       projects.map(async (project) => {
         put(set, project.id, { status: 'loading' });
         try {
-          const [scan, goodboy] = await Promise.all([
-            listProjectBranches({ repoRoot: project.rootPath, base: project.baseBranch ?? null }),
+          const [mergedHeads, goodboy] = await Promise.all([
+            listMergedRequestHeads({ db: tauriDatabase, projectId: project.id }),
             listGoodboyBranches({ db: tauriDatabase, projectId: project.id }),
           ]);
+          const scan = await listProjectBranches({
+            repoRoot: project.rootPath,
+            base: project.baseBranch ?? null,
+            mergedHeads,
+          });
           put(set, project.id, { status: 'ready', scan, goodboy });
         } catch (error) {
           put(set, project.id, { status: 'failed', message: formatError(error) });

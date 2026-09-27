@@ -374,6 +374,10 @@ pub struct GitlabMergeRequest {
     #[serde(rename = "updatedAt", alias = "updated_at", default)]
     pub updated_at: String,
     #[serde(default)]
+    pub sha: Option<String>,
+    #[serde(rename = "mergedAt", alias = "merged_at", default)]
+    pub merged_at: Option<String>,
+    #[serde(default)]
     pub author: Option<GitlabMrAuthor>,
     #[serde(default)]
     pub reviewers: Option<Vec<GitlabMrAuthor>>,

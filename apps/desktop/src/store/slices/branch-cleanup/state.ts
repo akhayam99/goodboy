@@ -1,5 +1,5 @@
 import type { GoodboyBranch } from '@goodboy/db';
-import type { DeletedBranch, ProjectId, WorkspaceId } from '@goodboy/types';
+import type { DeletedBranch, MountId, ProjectId, WorkspaceId } from '@goodboy/types';
 import type { ProjectBranchScan } from '../../../features/worktree/branchCleanup';
 
 export type BranchScanEntry =
@@ -11,12 +11,20 @@ export type BranchScanEntry =
     }
   | { readonly status: 'failed'; readonly message: string };
 
+export type MergedThenEntry = {
+  readonly head: string;
+  readonly mergedHead: string;
+  readonly newCommits: number;
+};
+
 export type BranchCleanupState = {
   readonly deletedBranches: Readonly<Record<WorkspaceId, ReadonlyArray<DeletedBranch>>>;
   readonly branchScans: Readonly<Record<ProjectId, BranchScanEntry>>;
+  readonly mergedThen: Readonly<Record<MountId, MergedThenEntry>>;
 };
 
 export const branchCleanupInitialState: BranchCleanupState = {
   deletedBranches: {},
   branchScans: {},
+  mergedThen: {},
 };

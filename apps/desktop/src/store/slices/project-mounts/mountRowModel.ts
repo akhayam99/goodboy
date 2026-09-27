@@ -34,6 +34,7 @@ export type MountRequestView = Readonly<{
   url: string;
   title: string;
   label: string;
+  mergedHeadSha?: string | null;
 }>;
 
 export type MountSeriesPosition = Readonly<{
@@ -115,6 +116,14 @@ const BITBUCKET_STATE: Readonly<Record<string, PullRequestStateKind>> = {
 
 const isTerminal = ({ state }: TerminalParams): boolean => state === 'merged' || state === 'closed';
 
+type MergedHeadParams = {
+  readonly state: PullRequestStateKind;
+  readonly sha: string | null | undefined;
+};
+
+const mergedHeadOf = ({ state, sha }: MergedHeadParams): string | null =>
+  state === 'merged' && sha != null && sha !== '' ? sha : null;
+
 export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestView | null => {
   const github = (state.mountGithub ?? {})[mountId];
   const githubPr = github?.pr ?? null;
@@ -136,6 +145,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       url: githubPr.url,
       title: githubPr.title,
       label: `PR #${githubPr.number}`,
+      mergedHeadSha: mergedHeadOf({ state: githubPr.state, sha: githubPr.headSha }),
     };
   }
   const gitlab = (state.mountGitlabMr ?? {})[mountId];
@@ -158,6 +168,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       url: mapped.url,
       title: mapped.title,
       label: `MR !${mapped.number}`,
+      mergedHeadSha: mergedHeadOf({ state: mapped.state, sha: gitlab?.mr?.sha }),
     };
   }
   const bitbucket = (state.mountBitbucketPr ?? {})[mountId];
@@ -165,6 +176,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
   if (bitbucketPr === null || bitbucketPr === undefined) {
     return null;
   }
+  const bitbucketState = BITBUCKET_STATE[bitbucketPr.state] ?? 'open';
   return {
     provider: 'bitbucket',
     identity:
@@ -177,11 +189,12 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
             prNumber: bitbucketPr.id,
           },
     number: bitbucketPr.id,
-    state: BITBUCKET_STATE[bitbucketPr.state] ?? 'open',
+    state: bitbucketState,
     isDraft: false,
     url: bitbucketPr.webUrl ?? '',
     title: bitbucketPr.title,
     label: `PR #${bitbucketPr.id}`,
+    mergedHeadSha: mergedHeadOf({ state: bitbucketState, sha: bitbucketPr.sourceCommit }),
   };
 };
 

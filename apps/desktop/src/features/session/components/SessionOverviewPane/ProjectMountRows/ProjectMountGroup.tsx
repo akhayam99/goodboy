@@ -12,6 +12,7 @@ import { isBranchMergedOf } from '../../../../../shared/lib/branchPresence';
 import { NewBranchMountAction } from './NewBranchMountAction';
 import { MountActionsMenu } from './MountActionsMenu';
 import { ProjectMountRow } from './ProjectMountRow';
+import { useMergedThen } from './useMergedThen';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -40,6 +41,10 @@ export const ProjectMountGroup = ({
   const [isCompletedShown, setIsCompletedShown] = useState(false);
   const statusOf = (row: MountRowView): WorktreeStatus | null =>
     row.worktreePath === null ? null : (worktreeStatuses.get(row.worktreePath) ?? null);
+  const commitsAfterMergeOf = useMergedThen({
+    rows: [...group.rows, ...group.completedRows],
+    statusOf,
+  });
   const isMergedRow = (row: MountRowView): boolean =>
     row.projectKind === 'repo' &&
     isBranchMergedOf({
@@ -47,11 +52,16 @@ export const ProjectMountGroup = ({
       baseBranch: row.baseBranch,
       isMainCheckout: row.isMainCheckout,
       isRequestMerged: row.request?.state === 'merged',
+      commitsAfterMerge: commitsAfterMergeOf(row),
     });
-  const openRows = group.rows.filter((row) => !isMergedRow(row));
+  const isMovedPastMerge = (row: MountRowView): boolean => commitsAfterMergeOf(row) !== null;
+  const openRows = [
+    ...group.rows.filter((row) => !isMergedRow(row)),
+    ...group.completedRows.filter(isMovedPastMerge).map((row) => ({ ...row, isCompleted: false })),
+  ];
   const completedRows = [
     ...group.rows.filter(isMergedRow).map((row) => ({ ...row, isCompleted: true })),
-    ...group.completedRows,
+    ...group.completedRows.filter((row) => !isMovedPastMerge(row)),
   ];
   const canFork = group.projectKind === 'repo';
   const GlyphIcon = projectGlyph({ kind: group.projectKind });
@@ -70,6 +80,7 @@ export const ProjectMountGroup = ({
       diffStat={row.worktreePath === null ? null : (diffStats.get(row.worktreePath) ?? null)}
       worktreeStatus={statusOf(row)}
       isMerged={isMergedRow(row)}
+      commitsAfterMerge={commitsAfterMergeOf(row)}
       isStatusPending={row.worktreePath !== null && pendingWorktrees.has(row.worktreePath)}
       onSelectLens={onSelectLens}
     />

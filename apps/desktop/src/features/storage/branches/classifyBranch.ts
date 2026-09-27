@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import type { ProjectBranch } from '../../worktree/branchCleanup';
+import { isMergedState, type ProjectBranch } from '../../worktree/branchCleanup';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const LOCAL_ONLY_STALE_DAYS = 30;
@@ -40,15 +40,14 @@ const verdictOf = ({ branch, now }: { readonly branch: ProjectBranch; readonly n
   if (state.kind === 'protected') {
     return 'protected';
   }
-  if (
-    state.kind === 'merged-via-merge' ||
-    state.kind === 'merged-via-rebase' ||
-    state.kind === 'merged-via-squash'
-  ) {
+  if (isMergedState(state)) {
     return 'safe-merged';
   }
   if (state.kind === 'no-own-commits') {
     return 'safe-no-commits';
+  }
+  if (state.kind === 'merged-then') {
+    return 'needs-look';
   }
   const age = ageDays({ at: branch.lastCommitAt, now });
   const isGoneWithWork = branch.location === 'gone-on-origin' && state.kind === 'not-merged';
@@ -115,5 +114,10 @@ export const matchesBranchTab = ({
   return true;
 };
 
-export const unmergedCommits = (entry: ClassifiedBranch): number =>
-  entry.branch.mergeState.kind === 'not-merged' ? entry.branch.mergeState.ahead : 0;
+export const unmergedCommits = (entry: ClassifiedBranch): number => {
+  const state = entry.branch.mergeState;
+  if (state.kind === 'not-merged') {
+    return state.ahead;
+  }
+  return state.kind === 'merged-then' ? state.newCommits : 0;
+};

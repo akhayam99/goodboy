@@ -45,6 +45,7 @@ type Props = {
   readonly worktreeStatus: WorktreeStatus | null;
   readonly isStatusPending?: boolean;
   readonly isMerged?: boolean;
+  readonly commitsAfterMerge?: number | null;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
@@ -78,6 +79,7 @@ export const ProjectMountRow = ({
   worktreeStatus,
   isStatusPending: isStatusPendingProp = false,
   isMerged = false,
+  commitsAfterMerge = null,
   onSelectLens,
 }: Props) => {
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
@@ -211,7 +213,11 @@ export const ProjectMountRow = ({
             />
           )}
           {isRepo && row.branch !== '' ? (
-            <BranchPresenceLabel status={worktreeStatus} isMerged={isMerged} />
+            <BranchPresenceLabel
+              status={worktreeStatus}
+              isMerged={isMerged}
+              commitsAfterMerge={commitsAfterMerge}
+            />
           ) : null}
           {isRepo && row.branch !== '' ? (
             <AlsoInChip sessionId={sessionId} projectId={row.projectId} branch={row.branch} />

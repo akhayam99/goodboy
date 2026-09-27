@@ -37,7 +37,7 @@ pub struct ProjectBranchScan {
     pub branches: Vec<ProjectBranch>,
 }
 
-type MergeCacheKey = (String, String, String, String);
+type MergeCacheKey = (String, String, String, String, String);
 
 static MERGE_STATE_CACHE: Mutex<Option<HashMap<MergeCacheKey, BranchMergeState>>> =
     Mutex::new(None);
@@ -83,19 +83,21 @@ fn cached_merge_state(
     sha: &str,
     base: Option<&str>,
     base_sha: &str,
+    merged_head: Option<&str>,
 ) -> BranchMergeState {
     let key = (
         cwd.to_string_lossy().into_owned(),
         name.to_string(),
         sha.to_string(),
         base_sha.to_string(),
+        merged_head.unwrap_or_default().to_string(),
     );
     if let Ok(guard) = MERGE_STATE_CACHE.lock() {
         if let Some(found) = guard.as_ref().and_then(|cache| cache.get(&key)) {
             return found.clone();
         }
     }
-    let state = branch_merge_state(cwd, name, base);
+    let state = branch_merge_state(cwd, name, base, merged_head);
     if !matches!(state, BranchMergeState::Unknown) {
         if let Ok(mut guard) = MERGE_STATE_CACHE.lock() {
             guard
@@ -109,6 +111,7 @@ fn cached_merge_state(
 pub(crate) fn scan_project_branches(
     repo_root: &str,
     base: Option<&str>,
+    merged_heads: &HashMap<String, String>,
 ) -> Result<ProjectBranchScan, BranchCleanupError> {
     let cwd = repo_path(repo_root)?;
     let user_email = git(cwd, &["config", "user.email"])
@@ -135,7 +138,8 @@ pub(crate) fn scan_project_branches(
             let [name, sha, email, date, upstream, track] = parts.as_slice() else {
                 return None;
             };
-            let merge_state = cached_merge_state(cwd, name, sha, base, &base_sha);
+            let merged_head = merged_heads.get(*name).map(String::as_str);
+            let merge_state = cached_merge_state(cwd, name, sha, base, &base_sha, merged_head);
             let behind = match (&merge_state, base_ref.as_deref()) {
                 (BranchMergeState::NotMerged { .. }, Some(reference)) => git(
                     cwd,
@@ -364,10 +368,17 @@ pub async fn branch_head_sha(
 pub async fn project_branches(
     repo_root: String,
     base: Option<String>,
+    merged_heads: Option<HashMap<String, String>>,
 ) -> Result<ProjectBranchScan, BranchCleanupError> {
-    tauri::async_runtime::spawn_blocking(move || scan_project_branches(&repo_root, base.as_deref()))
-        .await
-        .map_err(join_error)?
+    tauri::async_runtime::spawn_blocking(move || {
+        scan_project_branches(
+            &repo_root,
+            base.as_deref(),
+            &merged_heads.unwrap_or_default(),
+        )
+    })
+    .await
+    .map_err(join_error)?
 }
 
 fn join_error(error: tauri::Error) -> BranchCleanupError {
@@ -575,7 +586,12 @@ mod tests {
         git_ok(&root, &["fetch", "--prune", "origin"]);
         git_ok(&root, &["branch", "goodboy/unused"]);
 
-        let scan = scan_project_branches(&root.to_string_lossy(), Some("main")).unwrap();
+        let merged_heads = HashMap::from([(
+            "goodboy/pushed".to_string(),
+            git_ok(&root, &["rev-parse", "goodboy/pushed"]),
+        )]);
+        let scan =
+            scan_project_branches(&root.to_string_lossy(), Some("main"), &merged_heads).unwrap();
         let find = |name: &str| {
             scan.branches
                 .iter()
@@ -592,6 +608,10 @@ mod tests {
             BranchMergeState::NotMerged { ahead: 1 }
         );
         assert_eq!(find("goodboy/local").behind, Some(0));
+        assert_eq!(
+            find("goodboy/pushed").merge_state,
+            BranchMergeState::MergedViaPr
+        );
         assert_eq!(
             find("goodboy/unused").merge_state,
             BranchMergeState::NoOwnCommits

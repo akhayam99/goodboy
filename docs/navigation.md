@@ -716,13 +716,16 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   Below the worktrees, `Branches` (`BranchesSection`) lists local branches
   only, in the same scope, grouped by project. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
-  test cached by both tips. A filter picks `Made by Goodboy` (the default,
+  test cached by both tips and fed each branch's merged pull request head
+  (`listMergedRequestHeads`). A filter picks `Made by Goodboy` (the default,
   branch names from `session_worktrees` and `retained_worktree_paths`),
   `Yours` (plus branches whose tip is authored by the repo's `user.email`,
   shown `By you`) or `All local`; protected branches never show. Tabs split
-  `Safe to delete` (merged by merge commit, rebase or squash, or never
-  used), `Needs a look` (unmerged and gone on origin, local only for over 30
-  days, or older than 90 days; never preselected) and `All`. Each row has
+  `Safe to delete` (merged by merge commit or rebase, merged by its pull
+  request with nothing after the merged head, or never used), `Needs a
+look` (`Merged, then N new commits`, unmerged and gone on origin, local
+  only for over 30 days, or older than 90 days; never preselected) and
+  `All`. Each row has
   the session chip (`SessionChip`: stage dot, title, stage word, opens the
   session), `On origin` / `Local only` / `Gone on origin`, the verdict and
   the last commit's age. Delete goes through an InlineConfirm in the bulk
