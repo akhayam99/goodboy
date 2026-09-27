@@ -21,7 +21,7 @@ export const LaunchMountRow = ({ mount, selectedId, disabled, onChange }: Props)
   const ProjectIcon = CONCEPT_ICONS.projectRepo;
 
   return (
-    <div className="flex min-w-0 items-center gap-2 px-2 text-secondary text-muted-foreground">
+    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 px-2 text-secondary text-muted-foreground">
       <Listbox
         trigger="chip"
         size="sm"
@@ -40,7 +40,7 @@ export const LaunchMountRow = ({ mount, selectedId, disabled, onChange }: Props)
         onChange={(value) => onChange(value === NO_PROJECT ? null : (value as ProjectId))}
       />
       {selected !== null ? (
-        <span className="min-w-0 truncate text-faint-foreground">{mount.reason}</span>
+        <span className="min-w-0 text-faint-foreground">{mount.reason}</span>
       ) : null}
     </div>
   );
