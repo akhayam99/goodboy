@@ -18,3 +18,18 @@ export const setSetting = async (db: Database, key: string, value: string): Prom
     [key, value, Date.now()],
   );
 };
+
+export const deleteSetting = async (db: Database, key: string): Promise<void> => {
+  await db.execute('DELETE FROM settings WHERE key = ?', [key]);
+};
+
+export const listSettingsWithPrefix = async (
+  db: Database,
+  prefix: string,
+): Promise<ReadonlyArray<{ readonly key: string; readonly value: string }>> => {
+  const rows = await db.select<SettingsRow>(
+    'SELECT * FROM settings WHERE substr(key, 1, ?) = ? ORDER BY key',
+    [prefix.length, prefix],
+  );
+  return rows.map((row) => ({ key: row.key, value: row.value }));
+};

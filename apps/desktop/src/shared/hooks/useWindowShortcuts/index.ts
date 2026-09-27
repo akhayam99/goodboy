@@ -3,6 +3,7 @@ import { applyStoredZoom, zoomIn, zoomOut, zoomReset } from '../../lib/zoom';
 import { writeReloadIntent } from '../../../features/workspace/windowView';
 import { useShortcut } from '../../keyboard/useShortcut';
 import { useAppStore } from '../../../store';
+import { captureWindowLocation } from '../../../store/slices/navigation/captureWindowLocation';
 
 export const useWindowShortcuts = (): void => {
   useEffect(() => {
@@ -18,6 +19,7 @@ export const useWindowShortcuts = (): void => {
         workspaceId: s.currentWorkspaceId,
         sessionId,
         agentId: sessionId ? (s.selectedAgentId[sessionId] ?? null) : null,
+        location: captureWindowLocation({ state: s }),
       });
     }
     window.location.reload();

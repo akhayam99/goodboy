@@ -99,3 +99,15 @@ export const writeRestartReason = async ({
   const value: StoredReason = { reason, at: Date.now() };
   await setSetting(tauriDatabase, RESTART_REASON_KEY, JSON.stringify(value));
 };
+
+export const readRecentRestartReason = async ({
+  nowMs,
+}: {
+  readonly nowMs: number;
+}): Promise<RestartReason | null> => {
+  const reason = parseJson({ raw: await getSetting(tauriDatabase, RESTART_REASON_KEY) });
+  if (!isStoredReason(reason) || nowMs - reason.at > REASON_WINDOW_MS) {
+    return null;
+  }
+  return reason.reason;
+};
