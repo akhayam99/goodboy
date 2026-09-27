@@ -159,6 +159,17 @@ fails silently at runtime.
   launch check that heals such a file needs a missing core table too, on
   purpose: a broken view alone is not proof of a wipe, and resetting on it
   would erase a live database.
+- The search index (m211) is kept current by triggers on eleven source
+  tables (`sessions`, `messages`, `agents`, `session_artifacts`,
+  `session_decisions`, `open_questions`, `session_external_tasks`,
+  `workspace_starred_issues`, `github_pr_cache`, `mount_pr_links`,
+  `session_worktrees`). A table rebuild (`CREATE ..._new`, `DROP`, `RENAME`)
+  drops the triggers of the table it drops, so the rebuilding migration must
+  create them again; `m211-search-index.test.ts` fails when one is missing
+  from the latest schema. A trigger body reads only its own row and the
+  `search_*` tables, never another source table: a trigger that names a
+  table breaks the next `ALTER TABLE ... RENAME` of that table's rebuild,
+  exactly like a view does.
 - `cargo fmt` formats the whole crate, whatever file you give it, and `main`
   is not fmt-clean (`rust.yml` runs the check as advisory). A local run
   rewrites files the change never touched. Revert those hunks before you

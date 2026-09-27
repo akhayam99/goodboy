@@ -160,6 +160,10 @@ to `schema_version` and clears the checkpoints. If a statement fails with
 "already exists" or "duplicate column name", the runner treats it as done. It
 logs a warning and keeps going.
 
+The runner splits a migration into statements on semicolons, but keeps a
+`CREATE TRIGGER ... BEGIN ... END` whole, so a trigger body may hold several
+statements. A trigger without its closing `END` fails the migration.
+
 `registry.test.ts` guards all of this. It fails CI when two migrations share a
 version, when a version number is skipped, or when a filename does not match
 its registered version. It also checks that upgrading from every older

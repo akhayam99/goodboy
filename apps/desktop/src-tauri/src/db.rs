@@ -592,6 +592,35 @@ mod tests {
     }
 
     #[test]
+    fn the_bundled_sqlite_runs_the_search_index_and_its_triggers() {
+        let conn = memory_db();
+        conn.execute_batch(
+            "CREATE VIRTUAL TABLE search_index USING fts5(
+               title, body, tokenize = 'unicode61 remove_diacritics 2', prefix = '2 3'
+             );
+             CREATE TRIGGER search_workspace_insert AFTER INSERT ON workspaces BEGIN
+               DELETE FROM search_index WHERE title = NEW.id;
+               INSERT INTO search_index (title, body) VALUES (NEW.id, NEW.name);
+             END;",
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO workspaces (id, name) VALUES ('harborline', 'Payout export café')",
+            [],
+        )
+        .unwrap();
+        let hit: String = conn
+            .query_row(
+                "SELECT snippet(search_index, 1, '[', ']', '', 8) FROM search_index
+                 WHERE search_index MATCH 'cafe OR pay*' ORDER BY bm25(search_index, 4.0, 1.0)",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(hit, "[Payout] export [café]");
+    }
+
+    #[test]
     fn commits_every_statement_and_reports_changes() {
         let mut conn = memory_db();
         let outcome = run_transaction(&mut conn, &[insert("a"), insert("b")]).unwrap();

@@ -114,6 +114,8 @@ only when your task reaches the case it covers.
 - [architecture.md](architecture.md): when you change the systems that run
   behind the app, like the environment agents run in, how a provider gets
   picked, the boot path, git status reads, or DB migrations.
+- [search.md](search.md): when you change what ⌘F finds, the local search
+  index and its triggers, or how a hit lands in its view.
 - [model-picker.md](model-picker.md): when you change how a user picks a
   model or effort.
 - [event-bus.md](event-bus.md): when you send or listen for a `goodboy:`
