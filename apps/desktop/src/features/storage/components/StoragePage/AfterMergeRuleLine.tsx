@@ -31,7 +31,7 @@ export const AfterMergeRuleLine = ({ workspaceId }: Props) => {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => openSettings({ scope: 'workspace', section: 'general' })}
+        onClick={() => openSettings({ scope: 'workspace', section: 'after-merge' })}
       >
         <Settings size={ICON_SIZE.row} aria-hidden />
         Change

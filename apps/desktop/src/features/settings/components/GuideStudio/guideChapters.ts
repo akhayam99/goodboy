@@ -340,7 +340,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         label: 'Open workspace settings',
         target: {
           kind: 'studio',
-          studio: { kind: 'settings', focus: { scope: 'workspace', section: 'general' } },
+          studio: { kind: 'settings', focus: { scope: 'workspace', section: 'after-merge' } },
         },
       },
     ],
