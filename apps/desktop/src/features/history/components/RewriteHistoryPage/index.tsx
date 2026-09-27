@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, SquareTerminal } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import {
   Button,
   Eyebrow,
@@ -52,7 +53,7 @@ const EMPTY_COMMITS: ReadonlyArray<BranchCommit> = [];
 
 export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
   const mount = useAppStore(
-    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath }) ?? null,
+    useShallow((s) => selectMountForPath({ state: s, sessionId, path: worktreePath })),
   );
   const mountId = mount?.mountId ?? null;
   const draft = useAppStore((s) => (mountId === null ? null : (s.historyDrafts[mountId] ?? null)));
