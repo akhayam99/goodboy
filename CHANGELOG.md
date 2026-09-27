@@ -14,21 +14,19 @@ onto its own paragraph.
 
 ## Goodboy v0.11.4
 
-New sessions open blank on their overview and set up in three short steps, with every kind of workflow one pick away.
+Start a session blank from the goal, and pick orchestrated, custom or preset right in the kickoff.
 
 ### New
 
-#### Start blank, set it up step by step
-<!-- gb area=sessions image=session-start -->
+#### Start blank, straight from the goal
+<!-- gb area=sessions -->
 
-New opens a session right away, with nothing to fill in first, and lands on its Overview. Set up this session walks you through Goal, Project and Start the work, one step at a time. Skip any step and reopen it later from the same list.
+The kickoff keeps Pick up a task, Run a workflow and Ask an agent. Start blank, next to them, creates the session and lands on its Overview, where you add the goal, projects and work from the usual controls. Nothing is required first.
 
-Press New again before you touch the session and you land back on it, so empty sessions do not pile up. Picking up an issue stays in the Inbox.
+#### Orchestrated, custom or preset in Run a workflow
+<!-- gb area=workflows -->
 
-#### Pick any workflow to start the work
-<!-- gb area=workflows image=workflow-picker -->
-
-Start the work lists your workflows, the built-in ones, and an orchestrated or custom workflow. Picking any of them opens the workflow form filled in with your goal, so you can change the steps before it starts. Start agent runs one agent instead.
+Run a workflow now offers the same Orchestrated, Custom and Preset choice as the workflow form. A preset runs from the first screen. Orchestrated, Custom and Edit steps open the workflow form with your goal filled in.
 
 ### Fixed
 

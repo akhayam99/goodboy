@@ -122,7 +122,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     group: 'task',
     title: 'New session and kickoff',
     concept: 'sessions',
-    lead: 'A session is one task: a goal, the agents working on it, and a branch for each project they edit. It starts as a draft and becomes a session only when you press Start.',
+    lead: 'A session is one task: a goal, the agents working on it, and a branch for each project they edit. It starts as a draft and becomes a session only when you press Start or Start blank.',
     points: [
       {
         term: 'Pick up a task',
@@ -130,11 +130,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run a workflow',
-        desc: 'Write a goal, pick a built-in or saved workflow, and run it from the first screen.',
+        desc: 'Write a goal and pick Orchestrated, Custom or Preset. A preset runs from the first screen. The other two open the workflow form with your goal filled in.',
       },
       {
         term: 'Ask an agent',
         desc: 'Ask a question about the code. Scout is the default and maps an unfamiliar repo before you plan.',
+      },
+      {
+        term: 'Start blank',
+        desc: 'Start from the goal: the session opens on its Overview, where you add the goal, projects and work when you are ready.',
       },
       {
         term: 'Named for you',
