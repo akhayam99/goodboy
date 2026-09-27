@@ -16,6 +16,7 @@ export type LookupContext = {
   readonly sentryProjects: ReadonlyArray<string>;
   readonly githubRepos: ReadonlyArray<string>;
   readonly gitlabProjects: ReadonlyArray<string>;
+  readonly linearTeamKeys?: ReadonlyArray<string> | null;
 };
 
 export type LookupRoute =
@@ -55,6 +56,14 @@ const routeKey = (
       kind: 'lookup',
       label: parsed.code,
       targets: [{ provider: 'jira', key: parsed.code }],
+    };
+  }
+  const knownLinearTeam = context.linearTeamKeys?.includes(parsed.prefix) === true;
+  if (connected.has('linear') && knownLinearTeam) {
+    return {
+      kind: 'lookup',
+      label: parsed.code,
+      targets: [{ provider: 'linear', identifier: parsed.code }],
     };
   }
   const targets: LookupTarget[] = [];

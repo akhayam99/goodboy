@@ -155,6 +155,39 @@ export const linearFetchIssue = async ({
   });
 };
 
+type FetchByIdsParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly issueIds: ReadonlyArray<string>;
+  readonly projectId?: ProjectId;
+};
+
+export const linearFetchIssuesByIds = async ({
+  workspaceId,
+  issueIds,
+  projectId,
+}: FetchByIdsParams): Promise<LinearIssue[]> => {
+  return invoke<LinearIssue[]>('linear_fetch_issues_by_ids', {
+    workspaceId,
+    issueIds,
+    ...(projectId != null ? { projectId } : {}),
+  });
+};
+
+type FetchTeamKeysParams = {
+  readonly workspaceId: WorkspaceId;
+  readonly projectId?: ProjectId;
+};
+
+export const linearFetchTeamKeys = async ({
+  workspaceId,
+  projectId,
+}: FetchTeamKeysParams): Promise<ReadonlyArray<string>> => {
+  return invoke<ReadonlyArray<string>>('linear_fetch_team_keys', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+  });
+};
+
 export const linearFetchIssueComments = async ({
   workspaceId,
   issueId,

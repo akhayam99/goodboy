@@ -11,6 +11,7 @@ import { openUrl } from '../../../../shared/lib/editor';
 import { groupByDay } from '../../../../shared/utils/groupByDay';
 import { useAppStore, useSessionById, type InboxStudioFocus } from '../../../../store';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
+import { placeholderRecordOf } from '../../../integrations/starred/placeholderRecordOf';
 import { recordSessionId } from '../../recordSessionId';
 import { useInboxRecords } from '../../useInboxRecords';
 import { orderInboxRecords } from '../../orderInboxRecords';
@@ -194,7 +195,13 @@ export const InboxStudio = ({
         row.issue.title.toLowerCase().includes(needle)
       : filterInboxRecords({ records: [row.record], query, filters }).length > 0,
   );
-  const starredRecords = starredRows.flatMap((row) => (row.record === null ? [] : [row.record]));
+  const starredRecords = starredRows.flatMap((row) => {
+    if (row.record !== null) {
+      return [row.record];
+    }
+    const placeholder = placeholderRecordOf(row.issue);
+    return placeholder === null ? [] : [placeholder];
+  });
   const orderedRecords = [...starredRecords, ...days.flatMap((day) => day.items)];
   const counts = inboxFacetCounts({ records: scopedRecords, query, filters });
 

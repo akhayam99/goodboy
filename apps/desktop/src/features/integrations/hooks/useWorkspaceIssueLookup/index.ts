@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { detectRepoSlug } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
@@ -6,6 +6,7 @@ import { useAppStore } from '../../../../store';
 import { tauriGhRunner } from '../../../github/github';
 import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../../../shared/lib/remoteHost';
 import { worktreeRemoteUrl } from '../../../worktree/worktree';
+import { linearFetchTeamKeys } from '../../linear/client';
 import { lookupIssueByCode, type LookupResult } from '../../issueCode/lookupIssueByCode';
 import { parseIssueCode } from '../../issueCode/parseIssueCode';
 import {
@@ -16,6 +17,7 @@ import {
 } from '../../issueCode/routeIssueCode';
 import { useJiraConfig } from '../../jira/useJiraConfig';
 import { useToolConnections } from '../../useToolConnections';
+import { targetProvider } from '../../issueCode/lookupCopy';
 import { useIssueLookup, type IssueLookupState } from '../useIssueLookup';
 
 export type WorkspaceLookup = {
@@ -26,10 +28,15 @@ export type WorkspaceLookup = {
 export type WorkspaceIssueLookup = {
   readonly code: string | null;
   readonly state: IssueLookupState<WorkspaceLookup>;
+  readonly loadingProviders: ReadonlyArray<LookupProvider>;
+  readonly retryAt: number | null;
   readonly retry: () => void;
 };
 
+export const RATE_LIMIT_RETRY_MS = 20_000;
+
 const EMPTY_RESULT: LookupResult = { hits: [], misses: [] };
+const EMPTY_PROVIDERS: ReadonlyArray<LookupProvider> = [];
 
 type RepoRemote = {
   readonly github: string | null;
@@ -37,6 +44,18 @@ type RepoRemote = {
 };
 
 const remoteCache = new Map<string, Promise<RepoRemote>>();
+
+const teamKeysCache = new Map<string, Promise<ReadonlyArray<string>>>();
+
+const teamKeysOf = (workspaceId: WorkspaceId): Promise<ReadonlyArray<string>> => {
+  const cached = teamKeysCache.get(workspaceId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const pending = linearFetchTeamKeys({ workspaceId }).catch(() => []);
+  teamKeysCache.set(workspaceId, pending);
+  return pending;
+};
 
 const remoteOf = ({
   rootPath,
@@ -124,10 +143,43 @@ export const useWorkspaceIssueLookup = ({
     ],
   );
 
+  const [linearTeamKeys, setLinearTeamKeys] = useState<ReadonlyArray<string> | null>(null);
+  useEffect(() => {
+    if (!connected.has('linear')) {
+      setLinearTeamKeys(null);
+      return;
+    }
+    let active = true;
+    void teamKeysOf(workspaceId).then((keys) => {
+      if (active) {
+        setLinearTeamKeys(keys);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [connected, workspaceId]);
+
   const parsed = parseIssueCode(query);
   const code =
     parsed.kind === 'key' || parsed.kind === 'shortId' ? parsed.code : query.trim().toUpperCase();
   const key = parsed.kind === 'text' || isKnown?.(code) === true ? null : `${code}#${attempt}`;
+
+  const previewRoute = routeIssueCode(parsed, {
+    connected,
+    jiraProjectKey: jiraConfig?.projectKey ?? null,
+    sentryProjects,
+    githubRepos: [],
+    gitlabProjects: [],
+    linearTeamKeys,
+  });
+  const loadingProviders =
+    previewRoute.kind === 'lookup'
+      ? [...new Set(previewRoute.targets.map((target) => targetProvider(target)))]
+      : EMPTY_PROVIDERS;
+
+  const [retryAt, setRetryAt] = useState<number | null>(null);
+  const autoRetriedCodeRef = useRef<string | null>(null);
 
   const state = useIssueLookup<WorkspaceLookup>({
     key,
@@ -150,6 +202,7 @@ export const useWorkspaceIssueLookup = ({
         gitlabProjects: [
           ...new Set(remotes.flatMap((remote) => (remote.gitlab === null ? [] : [remote.gitlab]))),
         ],
+        linearTeamKeys,
       };
       const route = routeIssueCode(parsed, context);
       if (route.kind !== 'lookup') {
@@ -164,9 +217,35 @@ export const useWorkspaceIssueLookup = ({
       return { route, result };
     },
   });
+
+  useEffect(() => {
+    if (state.status !== 'done') {
+      return;
+    }
+    const hasRateLimited = state.value.result.misses.some(
+      (miss) => miss.failure === 'rate-limited',
+    );
+    if (!hasRateLimited) {
+      setRetryAt(null);
+      return;
+    }
+    if (autoRetriedCodeRef.current === code) {
+      return;
+    }
+    autoRetriedCodeRef.current = code;
+    setRetryAt(Date.now() + RATE_LIMIT_RETRY_MS);
+    const timer = setTimeout(() => {
+      setRetryAt(null);
+      setAttempt((current) => current + 1);
+    }, RATE_LIMIT_RETRY_MS);
+    return () => clearTimeout(timer);
+  }, [state, code]);
+
   return {
     code: key === null ? null : code,
     state,
+    loadingProviders,
+    retryAt,
     retry: () => setAttempt((current) => current + 1),
   };
 };

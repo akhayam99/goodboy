@@ -318,6 +318,32 @@ pub async fn gitlab_fetch_issue(
     .await
 }
 
+fn issues_by_iids_path(project_path: &str, issue_iids: &[i64]) -> String {
+    let mut path = format!("/projects/{}/issues", encode_project_path(project_path));
+    for (index, iid) in issue_iids.iter().enumerate() {
+        path.push(if index == 0 { '?' } else { '&' });
+        path.push_str(&format!("iids[]={}", iid));
+    }
+    path
+}
+
+#[tauri::command]
+pub async fn gitlab_fetch_issues(
+    workspace_id: String,
+    project_id: Option<String>,
+    host: String,
+    project_path: String,
+    issue_iids: Vec<i64>,
+    cache: State<'_, GitlabTokenCache>,
+) -> Result<Vec<GitlabIssue>, GitlabError> {
+    if issue_iids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let token = read_token(&workspace_id, project_id.as_deref(), &cache)?;
+    let path = issues_by_iids_path(&project_path, &issue_iids);
+    get_json_paged(&host, &token, &path).await
+}
+
 #[tauri::command]
 pub async fn gitlab_update_issue(
     workspace_id: String,
@@ -1071,6 +1097,22 @@ mod tests {
         assert_eq!(
             api_base("http://gitlab.internal:8080").unwrap(),
             "http://gitlab.internal:8080/api/v4"
+        );
+    }
+
+    #[test]
+    fn issues_by_iids_path_repeats_the_iids_param_for_each_issue() {
+        assert_eq!(
+            issues_by_iids_path("payments/api", &[12, 44]),
+            "/projects/payments%2Fapi/issues?iids[]=12&iids[]=44"
+        );
+    }
+
+    #[test]
+    fn issues_by_iids_path_handles_a_single_issue() {
+        assert_eq!(
+            issues_by_iids_path("payments/api", &[12]),
+            "/projects/payments%2Fapi/issues?iids[]=12"
         );
     }
 

@@ -144,6 +144,25 @@ export const jiraGetIssue = async ({
     issueKey,
   });
 
+type GetIssuesParams = JiraSite & {
+  readonly issueKeys: ReadonlyArray<string>;
+};
+
+export const jiraGetIssues = async ({
+  workspaceId,
+  projectId,
+  siteUrl,
+  email,
+  issueKeys,
+}: GetIssuesParams): Promise<ReadonlyArray<JiraIssue>> =>
+  invoke<ReadonlyArray<JiraIssue>>('jira_get_issues', {
+    workspaceId,
+    ...(projectId != null ? { projectId } : {}),
+    siteUrl,
+    email,
+    issueKeys,
+  });
+
 export const jiraListComments = async ({
   workspaceId,
   projectId,
