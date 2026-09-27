@@ -641,6 +641,140 @@ describe('completeResolvedAgent', () => {
     expect(run?.orchestrationStop?.kind).toBe('needs-approval');
   });
 
+  describe('artifact outcome', () => {
+    const reportAgent: Agent = {
+      ...agent,
+      name: 'weekly report',
+      kind: 'report',
+      sourceThreadIds: undefined,
+    };
+    const reportStepAgent: Agent = {
+      ...reportAgent,
+      stepId: 'step-1' as StepId,
+      workflowRunId: 'run-1' as WorkflowRunId,
+    };
+    const header = JSON.stringify({ title: 'Acme weekly', format: 'markdown' });
+    const capturedReport = `<<artifact v=1 kind=report>>\n${header}\n## Week\nAll "green".\n<</artifact>>`;
+    const brokenReport = '<<artifact v=1 kind=report>>\ntitle: Acme weekly\n<</artifact>>';
+
+    const run = async ({
+      rows,
+      assistantText,
+      artifacts = [],
+    }: {
+      readonly rows: ReadonlyArray<Agent>;
+      readonly assistantText: string;
+      readonly artifacts?: ReadonlyArray<{ readonly agentId: AgentId }>;
+    }) => {
+      const harness = createHarness({ sessionOverride: sessionWithWorkflowRun });
+      const finalizeWorkflowStep = vi.fn(async () => ({ shouldAutoAdvance: true }));
+      Object.assign(harness.state, {
+        finalizeWorkflowStep,
+        sessionArtifacts: { [SESSION_ID]: artifacts },
+      });
+      harness.state.sessionPhaseRuns = { [SESSION_ID]: rows };
+      const advance = await completeResolvedAgent({
+        set: harness.set,
+        get: harness.get,
+        sessionId: SESSION_ID,
+        resolvedAgentId: AGENT_ID,
+        assistantText,
+        now: () => NOW,
+      });
+      return { advance, finalizeWorkflowStep };
+    };
+
+    it('blocks a report agent whose block could not be captured instead of completing it', async () => {
+      const { advance } = await run({ rows: [reportAgent], assistantText: brokenReport });
+
+      expect(advance).toBeNull();
+      expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+        AGENT_ID,
+        expect.objectContaining({ status: 'blocked' }),
+      );
+      expect(h.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+        AGENT_ID,
+        expect.objectContaining({ status: 'completed' }),
+      );
+    });
+
+    it('blocks a report agent that ended its first turn without any artifact block', async () => {
+      await run({ rows: [reportAgent], assistantText: 'here is the report in prose' });
+
+      expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+        AGENT_ID,
+        expect.objectContaining({ status: 'blocked' }),
+      );
+    });
+
+    it('completes a report agent whose follow-up turn has no block once it owns an artifact', async () => {
+      await run({
+        rows: [reportAgent],
+        assistantText: 'the numbers come from the settle batch',
+        artifacts: [{ agentId: AGENT_ID }],
+      });
+
+      expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+        AGENT_ID,
+        expect.objectContaining({ status: 'completed' }),
+      );
+    });
+
+    it('completes a report agent whose artifact was captured', async () => {
+      await run({ rows: [reportAgent], assistantText: capturedReport });
+
+      expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+        AGENT_ID,
+        expect.objectContaining({ status: 'completed' }),
+      );
+    });
+
+    it('blocks a report step that claims done without a captured artifact', async () => {
+      const { advance, finalizeWorkflowStep } = await run({
+        rows: [reportStepAgent],
+        assistantText: `${brokenReport}\n<<step-done id="${AGENT_ID}">>`,
+      });
+
+      expect(advance).toBe(false);
+      expect(finalizeWorkflowStep).not.toHaveBeenCalled();
+      expect(h.invokeAgentUpdateStatus).toHaveBeenCalledWith(
+        AGENT_ID,
+        expect.objectContaining({ status: 'blocked' }),
+      );
+    });
+
+    it('lets a captured report satisfy its step even when the repair turn has no step marker', async () => {
+      const { advance, finalizeWorkflowStep } = await run({
+        rows: [reportStepAgent],
+        assistantText: capturedReport,
+      });
+
+      expect(advance).toBe(true);
+      expect(finalizeWorkflowStep).toHaveBeenCalledWith(
+        SESSION_ID,
+        AGENT_ID,
+        expect.any(String),
+        true,
+        { didAgentDie: false },
+      );
+    });
+
+    it('leaves a report step without a block and without a marker to the continue path', async () => {
+      const { finalizeWorkflowStep } = await run({
+        rows: [reportStepAgent],
+        assistantText: 'still reading the evidence',
+      });
+
+      expect(finalizeWorkflowStep).toHaveBeenCalledWith(
+        SESSION_ID,
+        AGENT_ID,
+        expect.any(String),
+        false,
+        { didAgentDie: false },
+      );
+    });
+  });
+
   it('leaves a plain blocked agent alone instead of marking it completed', async () => {
     const { state, set, get } = createHarness({});
     state.agentTurnState[AGENT_ID] = { kind: 'blocked' };
