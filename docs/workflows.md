@@ -358,6 +358,14 @@ Close is offered once the run has started and until it ends. A queued run has
 nothing to close; discard it instead. **Discard** and **Delete** sit in the
 run menu next to it.
 
+**Delete** removes the run and every agent it owns, for preset, custom and
+orchestrated runs alike: its step agents, the agents the orchestrator spawned,
+and their fan-out children. A running agent is stopped first. The agents drop
+out of the session, the board and the per-agent cost rows at once, and there
+is no undo. What they already spent stays in the session total, as it does for
+a deleted agent. Discard is the verb that keeps the run and its agents
+restorable.
+
 ### Hands-free runs
 
 **Autorun** makes a run hands-free. Each next step starts without you
