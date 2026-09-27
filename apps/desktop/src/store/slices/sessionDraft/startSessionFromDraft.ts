@@ -5,7 +5,12 @@ import {
   type AgentKind,
   type AgentKindRouting,
 } from '../../../features/session/agent-kind';
+import {
+  builderDraftFor,
+  type WorkflowStartChoice,
+} from '../../../features/session/components/WorkflowBuilderView/builderDraftFor';
 import { discardUncreatedSession } from '../sessions/discardUncreatedSession';
+import { sessionPlace } from '../navigation/place';
 import { draftGoalText } from './draftGoalText';
 import type { GetFn, SetFn } from './types';
 
@@ -29,6 +34,11 @@ export type SessionDraftStart =
       readonly then?: SessionDraftThen;
     }
   | { readonly kind: 'workflow'; readonly workflowId: WorkflowId; readonly goal: string }
+  | {
+      readonly kind: 'workflow-builder';
+      readonly choice: WorkflowStartChoice;
+      readonly goal: string;
+    }
   | {
       readonly kind: 'scout';
       readonly agentKind: AgentKind;
@@ -55,7 +65,8 @@ const seedOf = ({ start }: SeedParams): Seed => {
   switch (start.kind) {
     case 'task':
       return { title: start.title.trim(), goal: start.goal.trim() };
-    case 'workflow': {
+    case 'workflow':
+    case 'workflow-builder': {
       const goal = start.goal.trim();
       return { title: draftGoalText({ text: goal }), goal };
     }
@@ -141,6 +152,13 @@ const launch = async ({ get, session, start }: LaunchParams): Promise<void> => {
       return;
     case 'workflow':
       await attachWorkflow({ get, session, workflowId: start.workflowId, goal: start.goal });
+      return;
+    case 'workflow-builder':
+      get().setWorkflowDraft(
+        session.id,
+        builderDraftFor({ choice: start.choice, goal: start.goal.trim() }),
+      );
+      get().navigate({ to: sessionPlace({ sessionId: session.id, studio: { kind: 'workflow' } }) });
       return;
     case 'scout':
       await spawnStartAgent({

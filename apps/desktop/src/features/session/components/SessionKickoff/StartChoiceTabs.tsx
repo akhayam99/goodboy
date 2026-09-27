@@ -16,7 +16,7 @@ const START_OPTIONS: Readonly<Record<StartChoice, ChoiceOption>> = {
   },
   workflow: {
     title: 'Run a workflow',
-    line: 'Preset or orchestrated.',
+    line: 'Orchestrated, custom or preset.',
     icon: CONCEPT_ICONS.workflows,
   },
   scout: {
