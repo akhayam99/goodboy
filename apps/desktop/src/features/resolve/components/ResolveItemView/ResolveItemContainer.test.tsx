@@ -4,9 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { SessionId } from '@goodboy/types';
 
-const { acceptResolveQueueItem, publishResolveThread } = vi.hoisted(() => ({
+const { acceptResolveQueueItem, publishResolveThread, reportError } = vi.hoisted(() => ({
   acceptResolveQueueItem: vi.fn(),
   publishResolveThread: vi.fn(async () => undefined),
+  reportError: vi.fn(async (_params: unknown) => undefined),
 }));
 
 vi.mock('../../../../store', async () => {
@@ -24,6 +25,7 @@ vi.mock('../../../../store', async () => {
       resolveItemDrafts: {},
       acceptResolveQueueItem,
       publishResolveThread,
+      reportError,
       discussResolveThread: vi.fn(async () => undefined),
       takeUpResolveQueueItem: vi.fn(async () => undefined),
       openResolveAgent: vi.fn(),
@@ -155,6 +157,7 @@ beforeEach(() => {
   acceptResolveQueueItem.mockReset();
   publishResolveThread.mockReset();
   publishResolveThread.mockImplementation(async () => undefined);
+  reportError.mockClear();
 });
 
 afterEach(cleanup);
@@ -241,6 +244,32 @@ describe('an asynchronous resolve decision', () => {
 
     expect(screen.getByText('The parser swallows the error here.')).toBeDefined();
     expect(screen.queryByText('The branch moved under the approval')).toBeNull();
+    await vi.waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith({
+        title: "Couldn't resolve the comment",
+        error: new Error('The branch moved under the approval'),
+        sessionId,
+      }),
+    );
+  });
+
+  it('keeps the confirm busy while the decision runs', async () => {
+    let finish: () => void = () => undefined;
+    acceptResolveQueueItem.mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderContainer({ row: RETRY });
+
+    confirmResolve();
+
+    const confirm = screen.getAllByRole('button', { name: /^Resolve/ }).at(-1) as HTMLElement;
+    expect(confirm.getAttribute('aria-busy')).toBe('true');
+    expect(confirm.hasAttribute('disabled')).toBe(true);
+    finish();
+    await vi.waitFor(() => expect(publishResolveThread).toHaveBeenCalledOnce());
   });
 
   it('moves to the comment below once the approval has landed', async () => {
