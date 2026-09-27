@@ -27,7 +27,7 @@ export type LoadProjectBranchesParams = {
   readonly projectIds: ReadonlyArray<ProjectId>;
 };
 
-export type DeleteBranchTarget = {
+type DeleteBranchTarget = {
   readonly projectId: ProjectId;
   readonly branch: string;
   readonly sha: string;

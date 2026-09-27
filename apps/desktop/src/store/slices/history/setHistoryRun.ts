@@ -40,19 +40,3 @@ export const setHistoryRun = ({ set, sessionId, mountId, origin, patch }: Params
     };
   });
 };
-
-type ClearParams = {
-  readonly set: SetFn;
-  readonly mountId: MountId;
-};
-
-export const clearHistoryRunOf = ({ set, mountId }: ClearParams): void => {
-  set((state) => {
-    if (state.historyRuns[mountId] === undefined) {
-      return state;
-    }
-    const next = { ...state.historyRuns };
-    delete next[mountId];
-    return { historyRuns: next };
-  });
-};

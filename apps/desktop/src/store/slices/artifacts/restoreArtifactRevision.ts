@@ -1,5 +1,5 @@
 import type { SessionArtifact, SessionId } from '@goodboy/types';
-import { listArtifactRevisions, updateArtifactSource } from '../../../features/artifacts/artifacts';
+import { loadArtifactRevision, updateArtifactSource } from '../../../features/artifacts/artifacts';
 import { refreshSessionArtifacts } from './refresh';
 import type { SetFn } from './types';
 
@@ -11,8 +11,7 @@ export type RestoreArtifactRevisionParams = {
 
 export const restoreArtifactRevision = (set: SetFn) => {
   return async ({ sessionId, artifact, revision }: RestoreArtifactRevisionParams) => {
-    const revisions = await listArtifactRevisions(artifact.id);
-    const target = revisions.find((entry) => entry.revision === revision) ?? null;
+    const target = await loadArtifactRevision({ artifactId: artifact.id, revision });
     if (target === null) {
       throw new Error(`v${revision} is not in the history of this artifact`);
     }

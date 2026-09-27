@@ -82,11 +82,6 @@ export const asBranchCleanupError = (error: unknown): BranchCleanupError | null 
     : null;
 };
 
-export const isMergedState = (state: BranchMergeState): boolean =>
-  state.kind === 'merged-via-merge' ||
-  state.kind === 'merged-via-rebase' ||
-  state.kind === 'merged-via-squash';
-
 export type BranchLocation = 'on-origin' | 'local-only' | 'gone-on-origin';
 
 export type ProjectBranch = {

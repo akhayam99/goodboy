@@ -10,7 +10,7 @@ import type {
 } from '@goodboy/types';
 import { observeMountRequestTransition } from './mountRequests';
 import type { GetFn } from '../../slice-types';
-import type { AfterMergeOutcome } from '../branch-cleanup';
+import type { AfterMergeOutcome } from '../branch-cleanup/types';
 
 const sessionId = 'session-1' as SessionId;
 const projectId = 'project-1' as ProjectId;

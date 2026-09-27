@@ -320,8 +320,8 @@ whether you clicked it on the board or in the session overview.
 - Accepting plan-ready announces the started implementer with the same
   `useAgentStartedToast` every other spawn-and-open flow uses ("Implementer
   started", with an "Open the agent" action) - the toast the standalone
-  `PlanReadySuggestion` used to show before the unified resolver replaced it
-  in E7-5, restored here.
+  PlanReadySuggestion component used to show before the unified resolver
+  replaced it in E7-5, restored here.
 
 ## Agents
 
