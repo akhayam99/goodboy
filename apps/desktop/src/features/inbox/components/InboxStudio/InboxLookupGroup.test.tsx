@@ -147,6 +147,35 @@ describe('InboxLookupGroup', () => {
     expect(onSelect).toHaveBeenCalledWith(hit);
   });
 
+  it('shows the assignee as the second line when known', () => {
+    const assigned = {
+      ...hit,
+      record: {
+        ...hit.record,
+        payload: { provider: 'linear', kind: 'issue', issue: { assignee: { name: 'Priya Moss' } } },
+      },
+    } as unknown as LookupHit;
+    render(
+      <InboxLookupGroup
+        lookup={lookup({
+          state: {
+            status: 'done',
+            key: 'CAS-231#0',
+            value: {
+              route: { kind: 'lookup', label: 'CAS-231', targets: [assigned.target] },
+              result: { hits: [assigned], misses: [] },
+            },
+          },
+        })}
+        workspaceName="Harborline"
+        selectedKey={null}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Assigned to Priya Moss')).toBeDefined();
+  });
+
   it('offers Sign in again for a rejected key and Try again for a network failure', () => {
     const retry = vi.fn();
     render(

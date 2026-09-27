@@ -1,7 +1,11 @@
 import { Eyebrow, WorkNode } from '@goodboy/ui';
 import type { WorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import type { LookupHit } from '../../../integrations/issueCode/lookupIssueByCode';
-import { lookingUpText, lookupStatuses } from '../../../integrations/issueCode/lookupCopy';
+import {
+  lookingUpText,
+  lookupHitSecondLine,
+  lookupStatuses,
+} from '../../../integrations/issueCode/lookupCopy';
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { InboxRow, type InboxRowStar } from './InboxRow';
 import type { InboxRecord } from '../../types';
@@ -43,21 +47,24 @@ export const InboxLookupGroup = ({
           {lookingUpText({ code, providers: lookup.loadingProviders })}
         </div>
       ) : null}
-      {hits.map((hit) => (
-        <div key={hit.record.key} className="flex flex-col">
-          <InboxRow
-            record={hit.record}
-            selected={selectedKey === hit.record.key}
-            onSelect={() => onSelect(hit)}
-            star={starOf?.(hit.record)}
-          />
-          {hit.record.context === '' ? null : (
-            <span className="h-4 truncate pl-[122px] text-secondary text-faint-foreground">
-              {hit.record.context}
-            </span>
-          )}
-        </div>
-      ))}
+      {hits.map((hit) => {
+        const secondLine = lookupHitSecondLine(hit.record);
+        return (
+          <div key={hit.record.key} className="flex flex-col">
+            <InboxRow
+              record={hit.record}
+              selected={selectedKey === hit.record.key}
+              onSelect={() => onSelect(hit)}
+              star={starOf?.(hit.record)}
+            />
+            {secondLine === '' ? null : (
+              <span className="h-4 truncate pl-[122px] text-secondary text-faint-foreground">
+                {secondLine}
+              </span>
+            )}
+          </div>
+        );
+      })}
       {statuses.map((status) => (
         <LookupStatusRow
           key={status.key}
