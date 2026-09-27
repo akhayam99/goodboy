@@ -364,11 +364,11 @@ describe('stopped agents', () => {
     expect(isRowNeedingYou({ state })).toBe(false);
   });
 
-  it('says Goodboy quit when the app stopped the agent', () => {
+  it('says a restart stopped the agent when the app stopped it', () => {
     const state = agentState({ agent: { status: 'stopped', stoppedBy: 'app' } });
 
-    expect(rowStateSentence({ state })).toBe('Stopped when Goodboy quit');
-    expect(rowStateNode({ state }).label).toBe('Stopped when Goodboy quit');
+    expect(rowStateSentence({ state })).toBe('Stopped by restart');
+    expect(rowStateNode({ state }).label).toBe('Stopped by restart');
   });
 
   it('names the stopped step on the run and asks to continue it', () => {

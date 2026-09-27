@@ -44,6 +44,7 @@ import {
   reconcileLoadedSessions,
 } from '../sessions/reconcileSessionRuns';
 import { reattachLiveTurn } from '../turn/reattachLiveTurn';
+import { resumeInterruptedAgents } from '../turn/resumeInterruptedAgents';
 import { buildSessionProjectMounts } from '../worktrees/buildSessionProjectMounts';
 import { hydrateWriteDestination } from '../project-mounts/hydrateWriteDestination';
 import { verifyAvailableWorktrees } from '../project-mounts/verifyAvailableWorktrees';
@@ -308,6 +309,9 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           phaseTemplates: { ...state.phaseTemplates, [id]: mergedTemplates },
           stepLibrary: { ...state.stepLibrary, [id]: stepLibrary },
         }));
+        void resumeInterruptedAgents({ get }).catch((error) =>
+          console.error('resume interrupted agents failed', error),
+        );
         for (const session of get().sessions) {
           const hasQueuedChain = session.workflowRuns.some(
             (run) =>

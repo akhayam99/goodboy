@@ -1,7 +1,7 @@
-import { relaunch } from '@tauri-apps/plugin-process';
+import { relaunchWithResume } from './prepareRestart';
 
 export const relaunchApp = () => {
   return async (): Promise<void> => {
-    await relaunch();
+    await relaunchWithResume({ reason: 'restart' });
   };
 };

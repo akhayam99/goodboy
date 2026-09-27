@@ -240,6 +240,29 @@ describe('updater slice', () => {
     expect(getState().updaterStatus).toBe('downloading');
   });
 
+  it('marks the running agents for resume before the update relaunches', async () => {
+    const downloadAndInstall = vi.fn(async () => undefined);
+    checkMock.mockResolvedValue({ version: '0.2.0', downloadAndInstall });
+    const { slice } = harness();
+    await slice.checkForUpdates();
+    await slice.applyUpdate();
+    const prepareOrder = invokeMock.mock.calls.findIndex(
+      (call: ReadonlyArray<unknown>) => call[0] === 'restart_prepare',
+    );
+    expect(prepareOrder).toBeGreaterThanOrEqual(0);
+    expect(invokeMock.mock.invocationCallOrder[prepareOrder]).toBeLessThan(
+      relaunchMock.mock.invocationCallOrder[0] ?? 0,
+    );
+    expect(invokeMock).toHaveBeenCalledWith('db_execute', expect.anything());
+  });
+
+  it('lets the next run go on when the relaunch fails', async () => {
+    relaunchMock.mockRejectedValueOnce(new Error('relaunch refused'));
+    const { slice } = harness();
+    await expect(slice.relaunchApp()).rejects.toThrow('relaunch refused');
+    expect(invokeMock).toHaveBeenCalledWith('restart_abort');
+  });
+
   it('relaunches the app on request', async () => {
     const { slice } = harness();
     await slice.relaunchApp();
