@@ -895,6 +895,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
         sessionId: SESSION_ID,
         number: 1,
         text: 'kept decision',
+        why: null,
         status: 'active',
         replacedBy: null,
         author: 'agent',

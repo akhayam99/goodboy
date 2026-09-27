@@ -11,6 +11,7 @@ const decision = (overrides: Partial<SessionDecision>): SessionDecision => ({
   sessionId: 'session' as SessionId,
   number: 9,
   text: 'Show the banner after the third failed retry',
+  why: null,
   status: 'active',
   replacedBy: null,
   author: 'agent',
