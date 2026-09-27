@@ -1,8 +1,8 @@
 import { AlertTriangle, CircleStop, Link2, Pause } from 'lucide-react';
 import type { Agent, Workflow, WorkflowRun } from '@goodboy/types';
 import { isAgentStatusSettled } from '@goodboy/core';
-import { StatusDot, cn, tintClasses } from '@goodboy/ui';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { Chip, StatusDot, cn, tintClasses } from '@goodboy/ui';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { WorkflowBlockReason } from '../../../workflows/advanceGate';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 
@@ -14,6 +14,13 @@ type Props = {
   readonly isOrchestrating: boolean;
   readonly hasOrchestratorStrip?: boolean;
   readonly blockReason?: WorkflowBlockReason | null;
+  readonly question?: WorkflowRunStatusQuestion | null;
+};
+
+export type WorkflowRunStatusQuestion = {
+  readonly count: number;
+  readonly isInView: boolean;
+  readonly onReveal: () => void;
 };
 
 export const WorkflowRunStatus = ({
@@ -24,6 +31,7 @@ export const WorkflowRunStatus = ({
   isOrchestrating,
   hasOrchestratorStrip = false,
   blockReason = null,
+  question = null,
 }: Props) => {
   const completedSteps = agents.filter((agent) =>
     isAgentStatusSettled({ status: agent.status }),
@@ -129,6 +137,29 @@ export const WorkflowRunStatus = ({
         <StatusDot tone="info" size="sm" pulsing />
         Running
       </span>
+    );
+  }
+  if (blockReason === 'questions' && !hasOrchestratorStrip && question !== null) {
+    if (question.isInView) {
+      return null;
+    }
+    const label =
+      question.count === 1
+        ? '1 question waits on you, show the agent that asked'
+        : `${question.count} questions wait on you, show the agents that asked`;
+    return (
+      <Chip
+        as="button"
+        tone="warning"
+        size="control"
+        emphasis="subtle"
+        testId="workflow-run-needs-you"
+        ariaLabel={label}
+        title={label}
+        icon={<CONCEPT_ICONS.questions size={ICON_SIZE.row} aria-hidden className="shrink-0" />}
+        label={question.count}
+        onClick={question.onReveal}
+      />
     );
   }
   if (blockReason === 'questions' && !hasOrchestratorStrip) {
