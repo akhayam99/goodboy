@@ -3,7 +3,7 @@ import type { Agent, AgentId, SessionId } from '@goodboy/types';
 
 const { cancelTurn, invokeAgentUpdateStatus, applyAgentTurnState, updateSessionState } = vi.hoisted(
   () => ({
-    cancelTurn: vi.fn(async () => undefined),
+    cancelTurn: vi.fn(async (_runId: string): Promise<void> => undefined),
     invokeAgentUpdateStatus: vi.fn(),
     applyAgentTurnState: vi.fn(() => 'idle'),
     updateSessionState: vi.fn(async () => undefined),
@@ -30,8 +30,11 @@ type Harness = {
   readonly cancel: ReturnType<typeof cancelCurrentTurn>;
 };
 
+const reportError = vi.fn(async (_params: unknown) => undefined);
+
 const harness = (): Harness => {
   const state: Record<string, unknown> = {
+    reportError,
     selectedAgentId: {},
     agentTurnState: { [AGENT_ID]: { kind: 'running', runId: 'run-1' } },
     sessionPhaseRuns: { [SESSION_ID]: [{ id: AGENT_ID, status: 'running' }] },
@@ -67,6 +70,28 @@ describe('cancelCurrentTurn', () => {
     );
     const runs = (state.sessionPhaseRuns as Record<string, ReadonlyArray<Agent>>)[SESSION_ID];
     expect(runs?.[0]?.status).toBe('stopped');
+  });
+
+  it('logs a stop the process refused', async () => {
+    cancelTurn.mockRejectedValueOnce(new Error('the process did not exit'));
+    const { cancel } = harness();
+
+    await cancel(SESSION_ID, AGENT_ID, 'user');
+
+    expect(reportError).toHaveBeenCalledWith({
+      title: "Couldn't stop the agent",
+      error: new Error('the process did not exit'),
+      sessionId: SESSION_ID,
+    });
+  });
+
+  it('stays quiet when a teardown cancel fails', async () => {
+    cancelTurn.mockRejectedValueOnce(new Error('the process did not exit'));
+    const { cancel } = harness();
+
+    await cancel(SESSION_ID, AGENT_ID, 'teardown');
+
+    expect(reportError).not.toHaveBeenCalled();
   });
 
   it.each<CancelTurnReason>(['handoff', 'teardown'])(
