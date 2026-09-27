@@ -20,6 +20,9 @@ export const starIdentityOf = (record: InboxRecord): Identity | null => {
     case 'sentry':
       return { provider: 'sentry', externalId: payload.issue.id, container: null };
     case 'github': {
+      if (payload.kind !== 'issue') {
+        return null;
+      }
       const repo = githubRepoOf(payload.issue.url);
       return repo === null
         ? null

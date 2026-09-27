@@ -1,6 +1,7 @@
 import type { SessionExternalTaskProvider, SessionId } from '@goodboy/types';
 import type { IssueBriefSource } from '../../store/slices/issue-briefs/types';
 import { goalFromIssue as goalFromGithubIssue } from '../github/goal-from-issue';
+import { goalFromPullRequest as goalFromGithubPullRequest } from '../github/goal-from-pull-request';
 import { goalFromIssue as goalFromGitlabIssue } from '../integrations/gitlab/goal-from-issue';
 import { goalFromMergeRequest } from '../integrations/gitlab/goal-from-merge-request';
 import { goalFromIssue as goalFromLinearIssue } from '../integrations/linear/goal-from-issue';
@@ -42,6 +43,20 @@ export const launchSpecFor = ({ record }: Params): LaunchSpec | null => {
   const payload = record.payload;
   switch (payload.provider) {
     case 'github': {
+      if (payload.kind === 'pr') {
+        return {
+          linkedSessionId: payload.sessionId,
+          goalSeed: goalFromGithubPullRequest({ pr: payload.pr }),
+          externalTask: {
+            provider: 'github',
+            externalId: String(payload.pr.number),
+            identifier: `#${payload.pr.number}`,
+            url: payload.pr.url,
+            title: payload.pr.title,
+          },
+          briefSource: null,
+        };
+      }
       const externalTask = {
         provider: 'github',
         externalId: String(payload.issue.number),

@@ -86,7 +86,7 @@ describe('InboxFacetRail', () => {
     expect(within(type).getByRole('button', { name: /Issues/ })).toBeDefined();
     expect(within(type).getByRole('button', { name: /Errors/ })).toBeDefined();
     expect(within(type).queryByRole('button', { name: /Threads/ })).toBeNull();
-    expect(within(type).queryByRole('button', { name: /Pull requests/ })).toBeNull();
+    expect(within(type).getByRole('button', { name: /Pull requests/ })).toBeDefined();
   });
 
   it('picks one source at a time and clears it on a second click', () => {

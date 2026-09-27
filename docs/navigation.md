@@ -806,7 +806,10 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
 - **A code-host record keeps its verbs outside a session.** A GitLab merge
   request opened from the inbox approves, merges, closes and reopens through
   the workspace's GitLab host. A Bitbucket pull request shows its verbs too,
-  blocked with the reason until Goodboy has resolved it for a session. Merge
+  blocked with the reason until Goodboy has resolved it for a session. A GitHub
+  pull request opens read only: description, review state, branches and its
+  comments, with Launch session as the primary and Open in GitHub for the rest.
+  Merge
   always asks first, and so does every destructive verb. The mount reads
   through the workspace's first repo project, so a workspace with no repo
   project stops at an empty state.

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { GithubIssue, SessionId } from '@goodboy/types';
+import type { GithubIssue, PullRequestState, SessionId } from '@goodboy/types';
 import type { GithubIssueGroup } from '../../github/components/PullRequest/useGithubIssues';
-import { adaptGithubIssues } from './github';
+import type { GithubPrGroup } from '../../github/components/PullRequest/useGithubPrs';
+import { adaptGithubIssues, adaptGithubPrs } from './github';
 
 const issue = (overrides: Partial<GithubIssue> = {}): GithubIssue => ({
   number: 41,
@@ -52,5 +53,75 @@ describe('adaptGithubIssues', () => {
 
     expect(records.map((record) => record.key)).toEqual(['github:issue:1', 'github:issue:2']);
     expect(records[0]).toMatchObject({ payload: { sessionId: null } });
+  });
+});
+
+const pr = (overrides: Partial<PullRequestState> = {}): PullRequestState => ({
+  number: 12,
+  title: 'Retry ledger sync',
+  url: 'https://github.com/harborline/ledger-core/pull/12',
+  state: 'open',
+  mergeable: true,
+  checks: null,
+  baseBranch: 'main',
+  headBranch: 'retry-sync',
+  isDraft: false,
+  reviewDecision: null,
+  body: '',
+  updatedAt: '2026-09-25T10:00:00Z',
+  ...overrides,
+});
+
+describe('adaptGithubPrs', () => {
+  it('maps a GitHub pull request row into a pr record', () => {
+    const groups: ReadonlyArray<GithubPrGroup> = [
+      {
+        key: 'review-requested',
+        label: 'Review requested',
+        rows: [{ pr: pr(), role: 'review-requested', sessionId: null }],
+      },
+    ];
+
+    const [record] = adaptGithubPrs({ groups });
+
+    expect(record).toEqual({
+      key: 'github:pr:12',
+      provider: 'github',
+      kind: 'pr',
+      identifier: '#12',
+      title: 'Retry ledger sync',
+      state: 'open',
+      stateLabel: 'In review',
+      updatedAt: '2026-09-25T10:00:00Z',
+      url: 'https://github.com/harborline/ledger-core/pull/12',
+      context: 'harborline/ledger-core',
+      payload: {
+        provider: 'github',
+        kind: 'pr',
+        pr: pr(),
+        role: 'review-requested',
+        sessionId: null,
+      },
+    });
+  });
+
+  it.each([
+    ['draft', 'open', 'Draft'],
+    ['approved', 'open', 'Approved'],
+    ['queued', 'open', 'Queued'],
+    ['merged', 'done', 'Merged'],
+    ['closed', 'done', 'Closed'],
+  ] as const)('maps the %s state like the other pr sources', (state, category, label) => {
+    const [record] = adaptGithubPrs({
+      groups: [
+        {
+          key: 'author',
+          label: 'Your pull requests',
+          rows: [{ pr: pr({ state }), role: 'author', sessionId: null }],
+        },
+      ],
+    });
+
+    expect(record).toMatchObject({ state: category, stateLabel: label });
   });
 });

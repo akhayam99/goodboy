@@ -5,11 +5,17 @@ import {
   detectRepoSlug,
   ghRunJson,
   listAssignedIssues,
+  listInboxPullRequests,
   listIssueComments,
   updateIssueBody,
 } from '@goodboy/core';
 import type { GhRunner, GhResult, GhRunOptions } from '@goodboy/core';
-import type { GhTokenStatus, GithubIssue, GithubIssueComment } from '@goodboy/types';
+import type {
+  GhTokenStatus,
+  GithubInboxPullRequest,
+  GithubIssue,
+  GithubIssueComment,
+} from '@goodboy/types';
 
 type RawGhRunResult = {
   stdout: string;
@@ -108,6 +114,12 @@ export const ghAssignedIssues = async (
   slug: string,
   opts: GhRunOptions = {},
 ): Promise<ReadonlyArray<GithubIssue>> => listAssignedIssues(tauriGhRunner, slug, opts);
+
+export const ghInboxPullRequests = async (
+  slug: string,
+  opts: GhRunOptions = {},
+): Promise<ReadonlyArray<GithubInboxPullRequest>> =>
+  listInboxPullRequests({ runner: tauriGhRunner, repoSlug: slug, now: new Date(), opts });
 
 const ISSUE_VIEW_FIELDS = 'number,title,body,url,state,labels,author,updatedAt';
 

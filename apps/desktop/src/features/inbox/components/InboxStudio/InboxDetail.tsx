@@ -1,5 +1,6 @@
 import type { WorkspaceId } from '@goodboy/types';
 import { GithubIssueDetail } from '../../../github/GithubIssueDetail';
+import { GithubPrDetail } from '../../../github/GithubPrDetail';
 import { GitlabIssueDetail } from '../../../integrations/gitlab/GitlabIssueDetail';
 import { MrDetailPanel } from '../../../integrations/gitlab/MergeRequest/MrDetailPanel';
 import { LinearIssueDetail } from '../../../integrations/linear/LinearIssueDetail';
@@ -47,6 +48,18 @@ export const InboxDetail = ({
 
   switch (payload.provider) {
     case 'github':
+      if (payload.kind === 'pr') {
+        return (
+          <GithubPrDetail
+            pr={payload.pr}
+            role={payload.role}
+            workspaceId={workspaceId}
+            rootPath={rootPath}
+            frame={frame}
+            onRefresh={onRefresh}
+          />
+        );
+      }
       return (
         <GithubIssueDetail
           issue={payload.issue}
