@@ -1,4 +1,10 @@
-import type { GithubIssue, ProjectId, SessionId } from '@goodboy/types';
+import type {
+  GithubInboxPrRole,
+  GithubIssue,
+  ProjectId,
+  PullRequestState,
+  SessionId,
+} from '@goodboy/types';
 import type { BitbucketPullRequest, BitbucketRepo } from '../integrations/bitbucket/client';
 import type { GitlabIssue, GitlabMergeRequest } from '../integrations/gitlab/client';
 import type { JiraIssue } from '../integrations/jira/client';
@@ -30,6 +36,13 @@ type Payload =
       readonly provider: 'github';
       readonly kind: 'issue';
       readonly issue: GithubIssue;
+      readonly sessionId: SessionId | null;
+    }
+  | {
+      readonly provider: 'github';
+      readonly kind: 'pr';
+      readonly pr: PullRequestState;
+      readonly role: GithubInboxPrRole;
       readonly sessionId: SessionId | null;
     }
   | {
