@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  DiffComment,
   PrComment,
   ResolveAttempt,
   ResolveQueueItem,
@@ -57,6 +58,8 @@ const thread = ({
   stage: 'new',
   stateReason: null,
   revision: 1,
+  generation: 0,
+  reopenedFromThreadId: null,
   activeAttemptId,
   disposition: null,
   replyDraft,
@@ -133,6 +136,38 @@ describe('buildResolveQueueRows', () => {
       location: 'src/index.ts:12',
       path: 'src/index.ts',
     });
+  });
+
+  it('attaches the reviewer note of a reopened note generation by its diff comment id', () => {
+    const note: DiffComment = {
+      id: 'rounding',
+      sessionId,
+      filePath: 'src/ledger.ts',
+      body: 'Round half even',
+      status: 'open',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      authorKind: 'user',
+    };
+    const entries: ReadonlyArray<ResolveQueueItemWithThread> = [
+      {
+        item: item({ threadId: 'note:rounding:g1' }),
+        thread: {
+          ...thread({ threadId: 'note:rounding:g1' }),
+          originKind: 'diff_comment',
+          diffCommentId: 'rounding',
+          generation: 1,
+          reopenedFromThreadId: 'row-note:rounding',
+        },
+      },
+    ];
+    const rows = buildResolveQueueRows({
+      entries,
+      attempts: [],
+      deliveryReceipts: [],
+      comments: [],
+      notes: [note],
+    });
+    expect(rows[0]?.reviewerNote).toMatchObject({ source: 'note', body: 'Round half even' });
   });
 
   it('marks threads that share an active attempt as covered by each other', () => {

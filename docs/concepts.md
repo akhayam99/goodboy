@@ -614,7 +614,9 @@ review comments, never on its own.
 
 A note resolves like a review thread, with the same resolver and the same
 panel, but there is no reply to write: `Resolve` keeps the fix on the branch
-and closes the note, and `Close note` closes it without a change.
+and closes the note, and `Close note` closes it without a change. Reopening a
+closed note opens a new conversation generation instead of reviving the
+closed one, so the resolved history stays next to the reopened conversation.
 
 Every open review thread on the pull request gets a conversation as soon as
 Goodboy reads the pull request, even if no agent has touched it yet. Goodboy

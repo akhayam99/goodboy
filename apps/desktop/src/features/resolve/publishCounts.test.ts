@@ -20,6 +20,8 @@ const thread: ResolveThread = {
   stage: 'new',
   stateReason: null,
   revision: 2,
+  generation: 0,
+  reopenedFromThreadId: null,
   activeAttemptId: null,
   disposition: 'fix',
   replyDraft: 'Fixed',

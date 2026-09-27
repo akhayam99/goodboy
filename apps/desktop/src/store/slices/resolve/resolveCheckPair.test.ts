@@ -193,6 +193,8 @@ const makeThread = ({ threadId }: { readonly threadId: string }): ResolveThread 
   stage: 'new',
   stateReason: null,
   revision: 0,
+  generation: 0,
+  reopenedFromThreadId: null,
   activeAttemptId: null,
   disposition: 'fix',
   replyDraft: `Reply for ${threadId}`,
