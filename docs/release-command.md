@@ -40,6 +40,11 @@ Below, `X` is the new version and `X-1` is the current latest.
    "Release notes" below). The build reads its body from there, and fails if
    the section is missing. In the same commit, align the in-app Guide with the
    release (see "Align the in-app Guide" below).
+   Give the main visible changes before/after pictures in the same PR. Mount
+   the `X-1` tag for `before` and the release branch for `after`, shoot each
+   scene with `scripts/changelog-shots.mjs`, and add `image=<name>` to the
+   entries. How to shoot, name and cap them is in
+   [mock-screenshots.md](mock-screenshots.md) → Pictures for the changelog.
    Then align the public pages with the release, in the same PR:
    - Update `README.md`, `FEATURES.md` and `website/`: drop what is no longer
      true and add what is new. Edit them in place, never rewrite them from
