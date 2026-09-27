@@ -15,4 +15,4 @@ For codebase conventions (file layout, naming, tests, git workflow, dependency p
 - Before you finish, apply [AGENTS.md](./AGENTS.md) → Docs move with the code. Auto-memory does not replace the doc that owns the fact.
 - Background Bash commands can be killed when a turn ends. Poll CI and release builds with a foreground until-loop, never `run_in_background`.
 - Product direction and the autonomous delivery organization live in the private `goodboy-atlas` repository, not here. Do not rebuild either one from this repo. Ask the owner.
-- When you are asked for a plan, a report, an audit or a review page, use the house style in `goodboy-atlas`. It lives in `docs/house-style.md`, the templates are in `house-style/` and the skill is in `skills/house-style`. Do not write a new page format. The owner reviews the page before any product code.
+- When you are asked for a plan, a report, an audit or a review page, use the house style in the goodboy-atlas repository: its docs/house-style.md guide, its house-style folder of templates and its house-style skill. Do not write a new page format. The owner reviews the page before any product code.
