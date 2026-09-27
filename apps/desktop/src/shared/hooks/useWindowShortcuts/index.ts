@@ -4,6 +4,19 @@ import { writeReloadIntent } from '../../../features/workspace/windowView';
 import { useShortcut } from '../../keyboard/useShortcut';
 import { useAppStore } from '../../../store';
 import { captureWindowLocation } from '../../../store/slices/navigation/captureWindowLocation';
+import type { Location } from '../../../store/slices/navigation/types';
+
+const safeCapture = ({
+  state,
+}: {
+  readonly state: ReturnType<typeof useAppStore.getState>;
+}): Location | undefined => {
+  try {
+    return captureWindowLocation({ state });
+  } catch {
+    return undefined;
+  }
+};
 
 export const useWindowShortcuts = (): void => {
   useEffect(() => {
@@ -14,12 +27,13 @@ export const useWindowShortcuts = (): void => {
     const s = useAppStore.getState();
     if (s.currentWorkspaceId) {
       const sessionId = s.currentSessionId;
+      const location = safeCapture({ state: s });
       writeReloadIntent({
         mode: 'restore',
         workspaceId: s.currentWorkspaceId,
         sessionId,
         agentId: sessionId ? (s.selectedAgentId[sessionId] ?? null) : null,
-        location: captureWindowLocation({ state: s }),
+        ...(location !== undefined && { location }),
       });
     }
     window.location.reload();
