@@ -155,7 +155,8 @@ render, before the snapshot is taken.
 A layout change is also captured at `--window-size=1100,800`, close to the
 window's minimum width, where a second rail or a fixed-width control is the
 first thing to clip. Capture both themes at both widths: `&theme=light` after
-the scene key renders the light theme.
+the scene key renders the light theme. `&storage=reclaimable` on `board-shell`
+seeds the Settings storage folders, so the top bar shows its storage chip.
 
 ## Data hygiene
 

@@ -9,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import type { ProviderDisplayInfo } from '../../../../../features/providers/providers';
 import { useAppStore } from '../../../../../store';
+import type { StorageFolder } from '../../../../../store/slices/storage/types';
 import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-22T10:12:00.000Z' });
@@ -169,6 +170,67 @@ export const SETTINGS_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
   },
 ];
 
+export const SETTINGS_STORAGE_FOLDERS: ReadonlyArray<StorageFolder> = [
+  {
+    path: '/mock/harborline/ledger-core/.goodboy/worktrees/refund-retry-a1',
+    repoRoot: '/mock/harborline/ledger-core',
+    branch: 'hb/refund-retry',
+    origin: 'archived',
+    why: 'archived-session',
+    sessionId: 'mock-settings-archived-1' as SessionId,
+    sessionGoal: 'Refund webhooks retry',
+    mountId: 'mock-settings-archived-mount-1' as MountId,
+    revision: 1,
+    ledgerId: null,
+    workspaceId: SETTINGS_WORKSPACE_ID,
+    sessionActivityAt: clock.ms({ at: '2026-08-10T10:00:00.000Z' }),
+    sizeBytes: 4_402_341_478,
+    sizedAt: Date.parse(SETTINGS_NOW),
+    facts: {
+      path: '/mock/harborline/ledger-core/.goodboy/worktrees/refund-retry-a1',
+      exists: true,
+      isRegistered: true,
+      branch: 'hb/refund-retry',
+      lastCommitAt: clock.ms({ at: '2026-08-10T10:00:00.000Z' }),
+      localOnlyCommits: 2,
+      changedFiles: 0,
+      changedSample: null,
+      reasons: [],
+    },
+    keptAt: null,
+    keptUntil: null,
+  },
+  {
+    path: '/mock/northwind/notify-relay/.goodboy/worktrees/old-spike-b2',
+    repoRoot: '/mock/northwind/notify-relay',
+    branch: 'hb/old-spike',
+    origin: 'ledger',
+    why: 'no-session',
+    sessionId: null,
+    sessionGoal: null,
+    mountId: null,
+    revision: null,
+    ledgerId: 'mock-settings-ledger-1',
+    workspaceId: null,
+    sessionActivityAt: null,
+    sizeBytes: 3_328_599_654,
+    sizedAt: Date.parse(SETTINGS_NOW),
+    facts: {
+      path: '/mock/northwind/notify-relay/.goodboy/worktrees/old-spike-b2',
+      exists: true,
+      isRegistered: false,
+      branch: null,
+      lastCommitAt: null,
+      localOnlyCommits: null,
+      changedFiles: 0,
+      changedSample: null,
+      reasons: ['not-registered'],
+    },
+    keptAt: null,
+    keptUntil: null,
+  },
+];
+
 export const seedSettingsBase = (): void => {
   useAppStore.setState({
     workspaces: [SETTINGS_WORKSPACE],
@@ -215,66 +277,7 @@ export const seedSettingsBase = (): void => {
         isDisconnected: true,
       },
     ],
-    storageFolders: [
-      {
-        path: '/mock/harborline/ledger-core/.goodboy/worktrees/refund-retry-a1',
-        repoRoot: '/mock/harborline/ledger-core',
-        branch: 'hb/refund-retry',
-        origin: 'archived',
-        why: 'archived-session',
-        sessionId: 'mock-settings-archived-1' as SessionId,
-        sessionGoal: 'Refund webhooks retry',
-        mountId: 'mock-settings-archived-mount-1' as MountId,
-        revision: 1,
-        ledgerId: null,
-        workspaceId: SETTINGS_WORKSPACE_ID,
-        sessionActivityAt: clock.ms({ at: '2026-08-10T10:00:00.000Z' }),
-        sizeBytes: 4_402_341_478,
-        sizedAt: Date.parse(SETTINGS_NOW),
-        facts: {
-          path: '/mock/harborline/ledger-core/.goodboy/worktrees/refund-retry-a1',
-          exists: true,
-          isRegistered: true,
-          branch: 'hb/refund-retry',
-          lastCommitAt: clock.ms({ at: '2026-08-10T10:00:00.000Z' }),
-          localOnlyCommits: 2,
-          changedFiles: 0,
-          changedSample: null,
-          reasons: [],
-        },
-        keptAt: null,
-        keptUntil: null,
-      },
-      {
-        path: '/mock/northwind/notify-relay/.goodboy/worktrees/old-spike-b2',
-        repoRoot: '/mock/northwind/notify-relay',
-        branch: 'hb/old-spike',
-        origin: 'ledger',
-        why: 'no-session',
-        sessionId: null,
-        sessionGoal: null,
-        mountId: null,
-        revision: null,
-        ledgerId: 'mock-settings-ledger-1',
-        workspaceId: null,
-        sessionActivityAt: null,
-        sizeBytes: 3_328_599_654,
-        sizedAt: Date.parse(SETTINGS_NOW),
-        facts: {
-          path: '/mock/northwind/notify-relay/.goodboy/worktrees/old-spike-b2',
-          exists: true,
-          isRegistered: false,
-          branch: null,
-          lastCommitAt: null,
-          localOnlyCommits: null,
-          changedFiles: 0,
-          changedSample: null,
-          reasons: ['not-registered'],
-        },
-        keptAt: null,
-        keptUntil: null,
-      },
-    ],
+    storageFolders: [...SETTINGS_STORAGE_FOLDERS],
     loadStorage: async () => undefined,
     orphanWorktrees: {
       [SETTINGS_WORKSPACE_ID]: [

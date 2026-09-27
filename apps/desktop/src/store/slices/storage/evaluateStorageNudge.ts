@@ -33,7 +33,7 @@ type GbParams = {
   readonly bytes: number;
 };
 
-export const wholeGb = ({ bytes }: GbParams): string => `${Math.max(1, Math.round(bytes / GB))} GB`;
+const wholeGb = ({ bytes }: GbParams): string => `${Math.max(1, Math.round(bytes / GB))} GB`;
 
 export const isLowDisk = ({
   diskFreeBytes,
