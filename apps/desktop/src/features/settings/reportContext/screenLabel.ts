@@ -42,7 +42,6 @@ const APP_STUDIO_LABELS: Readonly<Record<string, string>> = {
   workflows: 'Workflows',
   'add-workspace': 'Add workspace',
   guide: 'Guide',
-  report: 'Report a bug',
   companion: 'Companion',
   changelog: 'Changelog',
   notifications: 'Notifications',

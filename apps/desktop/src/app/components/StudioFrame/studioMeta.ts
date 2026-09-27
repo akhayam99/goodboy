@@ -27,13 +27,6 @@ export const STUDIO_META = {
     closeLabel: 'close getting started',
     skeleton: 'grid',
   },
-  report: {
-    icon: CONCEPT_ICONS.reportIssue,
-    tone: CONCEPT_TONE.reportIssue,
-    title: 'Report an issue',
-    closeLabel: 'close report an issue',
-    skeleton: 'list',
-  },
   companion: {
     icon: Smartphone,
     title: 'Pair device',

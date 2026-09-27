@@ -3,7 +3,6 @@ import { CHANGELOG_STUDIO_EVENT } from '../../../features/changelog/changelogStu
 import { IMPACT_STUDIO_EVENT } from '../../../features/impact/openImpactStudio';
 import { NOTIFICATIONS_STUDIO_EVENT } from '../../../features/notifications/studioEvent';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../features/onboarding/openCommandPaletteEvent';
-import { REPORT_ISSUE_STUDIO_EVENT } from '../../../features/settings/reportIssueStudioEvent';
 import { useAppStore } from '../../../store';
 import {
   eventValue,
@@ -47,7 +46,6 @@ export const useStudioEvents = ({ open, close, openPalette }: Params) => {
     const listeners: ReadonlyArray<Listener> = [
       ['goodboy:open-settings', (event) => open({ overlay: settingsOverlayFromEvent(event) })],
       ['goodboy:open-guide', () => open({ overlay: { kind: 'guide' } })],
-      [REPORT_ISSUE_STUDIO_EVENT, () => open({ overlay: { kind: 'report' } })],
       [NOTIFICATIONS_STUDIO_EVENT, () => open({ overlay: { kind: 'notifications' } })],
       [IMPACT_STUDIO_EVENT, (event) => open({ overlay: impactOverlayFromEvent(event) })],
       ['goodboy:open-inbox', openInbox],

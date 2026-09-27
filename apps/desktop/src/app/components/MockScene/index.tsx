@@ -71,6 +71,7 @@ import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
 import { ListboxScene } from './scenes/ListboxScene';
+import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 
 export const MOCK_SCENES = {
   workspace: WorkspaceScene,
@@ -159,6 +160,7 @@ export const MockScene = () => {
   return (
     <ToastProvider>
       <Scene />
+      <ReportSheetHost />
     </ToastProvider>
   );
 };

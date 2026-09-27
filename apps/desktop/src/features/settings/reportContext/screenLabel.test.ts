@@ -17,7 +17,6 @@ describe('screenLabel', () => {
     ['board+settings/providers/anthropic', 'Board · Settings › Providers'],
     ['board+inbox/linear/NW-142', 'Board · Inbox › Linear'],
     [`s/${SESSION_ID}/diff+changelog`, 'Session › Diff · Changelog'],
-    ['board+report', 'Board · Report a bug'],
   ])('reads %s as %s', (key, expected) => {
     expect(screenLabel({ locationKey: key })).toBe(expected);
   });
