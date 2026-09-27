@@ -130,7 +130,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Run a workflow',
-        desc: 'Write a goal and pick Orchestrated, Custom or Preset. A preset runs from the first screen. The other two open the workflow form with your goal filled in.',
+        desc: 'The same workflow builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, then Start workflow creates the session and starts the run.',
       },
       {
         term: 'Ask an agent',

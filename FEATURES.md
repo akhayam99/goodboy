@@ -107,7 +107,7 @@ Map an unfamiliar repo before you plan: **Scout** is the default and can start w
 
 ### Run a workflow
 
-Write a goal and pick **Orchestrated**, **Custom** or **Preset**. A built-in or saved preset runs from the first screen. Orchestrated, Custom and **Edit steps** open the workflow form with your goal filled in.
+The full workflow builder, right in the kickoff: pick **Orchestrated**, **Custom** or **Preset**, see the plan you will run, edit the steps, choose which providers it can use, and set Starts, Autorun and a spend cap. **Start workflow** creates the session and starts the run in one step.
 
 ### Named by Goodboy
 

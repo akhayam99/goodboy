@@ -291,15 +291,21 @@ reach NW-230 anymore`. Pick up a task shows only the open starred issues,
   one request per tracker for Linear and Jira, one per project for GitLab,
   and one per issue for GitHub and Sentry, which have no batch endpoint for
   fetching by id.
-- **Run a workflow** asks for the goal, then the approach with the workflow
-  builder's own switch (`ModeSwitch`: Orchestrated, Custom, Preset). The pick
-  is kept in the draft (`workflowMode`) and in the builder's last-mode key, so
-  both open on the same approach next time. **Preset** lists built-in and
-  saved presets: **Run workflow** starts one with that goal, **Edit steps**
-  opens it in the builder first. **Orchestrated** (Set up orchestration) and
-  **Custom** (Set up the steps) create the session, seed its builder draft
-  (`builderDraftFor`) with the approach and the goal, and open the shared
-  workflow builder (studio `workflow`) on it, where Start workflow runs it.
+- **Run a workflow** is the workflow builder itself (`WorkflowBuilderView`
+  with a `kickoff` target), the same one Overview > Workflows > Create opens:
+  title, goal card with Add files and Polish, the Orchestrated / Custom /
+  Preset switch, Can use, the plan preview with the orchestrator row or the
+  editable steps, guidance, Starts, Autorun, Spend cap and Start workflow with
+  its reason. Its goal field is the kickoff goal (`workflowGoal` in the
+  draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
+  in `workflowDrafts`, so it survives leaving the kickoff, and Discard draft
+  clears it with the rest. Start workflow runs `startSessionFromDraft` with
+  kind `workflow-run`: the session is created first, then the builder saves
+  the workflow and attaches the run to it in the same action, and the view
+  lands on the run. A failure removes the half-created session and keeps the
+  draft. Before a session exists the builder leaves out Use session goal, the
+  title suggestion (the orchestrated title is generated after start, as in a
+  session) and the worktree as the planner's working folder.
 - **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
   model and project sit below it as chips (`AgentStartFields`), opening the
   same role grid and model picker `Start agent` uses. The role defaults to
