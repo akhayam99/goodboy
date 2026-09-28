@@ -223,7 +223,7 @@ const PULL_REQUEST_ACTIONS: ReadonlyArray<ActionDefinition<PullRequestFacts>> = 
       title: `Squash and merge ${numberLabel({ facts })} into ${baseOf({ facts })}?`,
       description: `Every commit on ${facts.pr?.headBranch ?? 'the branch'} lands on ${baseOf({ facts })} as one, and GitHub closes the pull request.`,
       confirmLabel: 'Squash and merge',
-      role: 'alert',
+      role: 'primary',
     }),
     run: ({ facts, env }) =>
       write({

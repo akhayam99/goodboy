@@ -1,5 +1,6 @@
 import { mockIPC } from '@tauri-apps/api/mocks';
 import type {
+  AgentId,
   MountId,
   PrCheckRun,
   Project,
@@ -51,7 +52,7 @@ const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 const NOW = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const PROJECT_ID = 'mock-code-layers-project-payments-api' as ProjectId;
 const MOUNT_ID = 'mock-code-layers-mount-payments-api' as MountId;
-const WORKTREE = '~/code/harborline/payments-api-duplicate-credit';
+const WORKTREE = '~/code/harborline/payments-api-backfill';
 const BRANCH = 'hl/fix-duplicate-credit';
 
 const PROJECT: Project = {
@@ -278,6 +279,34 @@ export const seedCodeLayers = ({ layer, prState, worktreeState }: SeedParams): v
     projects: [PROJECT],
     sessionProjectMounts: { [SESSION_ID]: [MOUNT] },
     sessionMounts: { [SESSION_ID]: [view] },
+    sessionPhaseRuns: {
+      [SESSION_ID]: [
+        {
+          id: 'mock-code-layers-agent-implementer' as AgentId,
+          sessionId: SESSION_ID,
+          ordinal: 1,
+          name: 'Implementer',
+          status: 'completed',
+        },
+      ],
+    },
+    loadSessionMounts: async () => [view],
+    loadPrSeries: async () => [],
+    sessionWorktreeRecords: {
+      [SESSION_ID]: [
+        {
+          id: 'mock-code-layers-worktree-payments-api',
+          sessionId: SESSION_ID,
+          worktreePath: WORKTREE,
+          branch: BRANCH,
+          parallelIndex: 0,
+          projectId: PROJECT_ID,
+          mountName: 'payments-api',
+          repoSlug: 'harborline/payments-api',
+          createdAt: Date.parse(NOW),
+        },
+      ],
+    },
     sessionActiveMount: { [SESSION_ID]: MOUNT_ID },
     sessionActiveProject: { [SESSION_ID]: PROJECT_ID },
     githubStatus: { mode: 'gh-cli', available: true, user: 'mara-l' },

@@ -103,6 +103,7 @@ vi.mock('../../../../store', async () => {
     }),
     useCurrentWorkspace: () => ({ id: 'workspace-1', name: 'goodboy' }),
     useDiffComments: (sessionId: string) => h.state.diffComments[sessionId] ?? [],
+    useMountDiffStats: () => new Map(),
     useSessionById: () => ({ id: 'session-1', workspaceId: 'workspace-1' }),
     sessionPlace: (params: Record<string, unknown>) => ({ kind: 'session', ...params }),
   };

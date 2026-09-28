@@ -39,7 +39,7 @@ export const ACTION_SLOTS = [
 
 export type ActionSlot = (typeof ACTION_SLOTS)[number];
 
-export type ActionConfirmRole = 'alert' | 'danger';
+export type ActionConfirmRole = 'primary' | 'alert' | 'danger';
 
 export type ActionConfirm = {
   readonly title: string;

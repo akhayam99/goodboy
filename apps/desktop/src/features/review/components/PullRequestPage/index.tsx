@@ -8,7 +8,7 @@ import type {
   Session,
   SessionId,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, sessionPlace } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore, useMountDiffStats, sessionPlace } from '../../../../store';
 import { selectActiveProjectPrs } from '../../../../store/slices/github/activeProjectPrs';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { useToast } from '../../../../app/components/Toast';
@@ -29,6 +29,7 @@ import { CreatePrMode } from '../ReviewPane/modes/CreatePrMode';
 import { PrDetailsMode } from '../ReviewPane/modes/PrDetailsMode';
 import { WriteReview } from '../ReviewPane/WriteReview';
 import { PublishBar } from '../ReviewPane/WriteReview/PublishBar';
+import { DiffStat } from '../../../session/components/DiffStat';
 import { PullRequestHeader } from './PullRequestHeader';
 
 type Props = {
@@ -68,6 +69,8 @@ export const PullRequestPage = ({ session }: Props) => {
   const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
 
   const repo = useSessionRepo({ sessionId });
+  const diffStats = useMountDiffStats(sessionId);
+  const diffStat = repo?.worktreePath == null ? null : (diffStats.get(repo.worktreePath) ?? null);
   const githubConnection = useGithubConnection({ workspaceId: session.workspaceId });
   const isDraftAgentRunning = usePrDraftAgentRunning({ sessionId });
 
@@ -236,7 +239,18 @@ export const PullRequestPage = ({ session }: Props) => {
         scroll="body"
       >
         <div className="flex min-w-0 flex-col gap-8">
-          <ActionNudgeList controls={controls} />
+          <ActionNudgeList
+            controls={controls}
+            details={
+              diffStat === null
+                ? undefined
+                : {
+                    'pullRequest.openDiff': (
+                      <DiffStat additions={diffStat.additions} deletions={diffStat.deletions} />
+                    ),
+                  }
+            }
+          />
           <PrDetailsMode
             sessionId={sessionId}
             pr={pr}
