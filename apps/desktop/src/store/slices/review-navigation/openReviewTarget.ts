@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId } from '../project-mounts/selectors';
 import { sessionPlace } from '../navigation/place';
+import { setPullRequestMode } from './setPullRequestMode';
 import { REVIEW_HOME, reviewMountId, reviewPrNumber, reviewThreadId } from './destination';
 import type {
   GetFn,
@@ -75,6 +76,14 @@ export const openReviewTarget = async ({
   const settle = (outcome: ReviewTargetOutcome): ReviewTargetOutcome => {
     if (!isCurrent()) {
       return unavailable('superseded');
+    }
+    if (destination.kind === 'pull_request') {
+      writeTarget({ set, sessionId, target: null });
+      if (outcome.kind === 'opened') {
+        setPullRequestMode({ set, sessionId, mode: 'overview' });
+        get().navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
+      }
+      return outcome;
     }
     const target: ReviewTarget =
       outcome.kind === 'opened'

@@ -45,11 +45,14 @@ export type Focus = {
   readonly revealed: ReadonlyArray<string>;
 };
 
+export type LayerKind = 'pr' | 'review' | 'diff' | 'history';
+
 export type Location = {
   readonly workspaceId: WorkspaceId | null;
   readonly place: Place;
   readonly studio: StudioPlace | null;
   readonly focus: Focus;
+  readonly layers?: ReadonlyArray<LayerKind>;
 };
 
 export type NavigationStack = {

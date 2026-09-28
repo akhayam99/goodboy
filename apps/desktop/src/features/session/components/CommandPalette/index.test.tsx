@@ -35,7 +35,6 @@ vi.mock('../../hooks/useLensDestinations', async () => {
     useLensDestinations: () =>
       lensDestinations({
         isBranchless: false,
-        isGithubCodeHost: false,
         connectedTools: { linear: true, gitlab: true, jira: true, slack: true },
       }),
   };

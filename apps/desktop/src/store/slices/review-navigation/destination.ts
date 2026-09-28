@@ -9,6 +9,11 @@ export type ReviewDestination =
       readonly prNumber: number;
     }
   | {
+      readonly kind: 'comments';
+      readonly mountId: MountId | null;
+      readonly prNumber: number;
+    }
+  | {
       readonly kind: 'thread';
       readonly mountId: MountId | null;
       readonly prNumber: number;
@@ -25,7 +30,9 @@ export const reviewMountId = ({ destination }: Params): MountId | null =>
   destination.kind === 'home' ? null : destination.mountId;
 
 export const reviewPrNumber = ({ destination }: Params): number | null =>
-  destination.kind === 'pull_request' || destination.kind === 'thread'
+  destination.kind === 'pull_request' ||
+  destination.kind === 'comments' ||
+  destination.kind === 'thread'
     ? destination.prNumber
     : null;
 

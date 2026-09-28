@@ -18,6 +18,7 @@ export type DiffThread = {
   readonly canEdit: boolean;
   readonly canResolve: boolean;
   readonly canReopen: boolean;
+  readonly canDelete?: boolean;
 };
 
 export type DiffLineTarget = {

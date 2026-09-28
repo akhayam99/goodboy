@@ -19,6 +19,7 @@ import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
 import { MountPresence } from './MountPresence';
 import { MountRequestLink } from './MountRequestLink';
+import { MountResolveLink } from './MountResolveLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { RebaseStoppedNotice } from './RebaseStoppedNotice';
 import { WorktreeRowAction } from './WorktreeRowAction';
@@ -175,7 +176,10 @@ export const ProjectMountRow = ({
         )}
         <div className={CELL}>
           {row.isAttached ? (
-            <MountRequestLink sessionId={sessionId} row={row} label={label} />
+            <span className="flex min-w-0 items-center gap-1">
+              <MountRequestLink sessionId={sessionId} row={row} label={label} />
+              <MountResolveLink sessionId={sessionId} row={row} label={label} />
+            </span>
           ) : (
             <Chip
               tone="neutral"

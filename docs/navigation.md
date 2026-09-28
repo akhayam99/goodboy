@@ -114,9 +114,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   `shared/` calls `setActiveLens`, `setCurrentSession`, `selectAgent` or
   `setSessionStudio`.
 - **Aliases live in `canonicalLocation`, and only there.** An agent resolves
-  to its home lens (an unknown agent to Agents). `pr` on a GitHub session
-  becomes `review` before it is recorded, so no view redirects after it
-  mounts.
+  to its home lens (an unknown agent to Agents), before it is recorded, so no
+  view redirects after it mounts. The pull request and Review are two lenses
+  and never alias each other: a door to the pull request lands on `pr`, a door
+  to comments lands on `review`.
 - **Push, amend, replace.** A new place pushes: board and session, session to
   session, lens, a child, a sibling from a switcher, a session studio. Pushing
   the place you are on replaces it. Page state amends the current entry and
@@ -311,7 +312,24 @@ the Inbox (Launch session).
   was, so that lens only ever records where the user came from. The activity
   feed, the palette, a notification, a linked-work chip and a restored session
   are shortcuts into a place that already has a parent. None of them may
-  rewrite it. History is what Back is for.
+  rewrite it. History is what Back is for. The code host layers are the one
+  exception, below.
+- **The code host layers are a path, not a structure.** The pull request,
+  Review, the Diff and Rewrite history are layers of one page. Each entry of
+  the stack carries `layers`, the kinds to its left (`layers.ts`). Opening a
+  layer from the Overview puts it under the Overview alone; opening one from
+  inside another layer stacks it to the right (`Overview > Diff > Pull request
+  > #318`, `Overview > PR #318 > Review`). A kind already in the trail pops
+  > back to its entry instead of stacking a copy, so the stack never loops and
+  > is at most four deep; a crumb pops to itself the same way, and Back removes
+  > one layer. A request that carries a focus (a diff on one file) pushes
+  > instead. A jump from outside the page (board card, palette from another
+  > place, notification, sidebar) gets the canonical path of its target: Review
+  > sits under its pull request when the session has one, everything else under
+  > the Overview. Rewrite history stays a child of its Diff (the branch crumb
+  > between them). Opening a page that is not a layer drops the path, and Back
+  > finds it again. A reload carries the path in the reload intent and replays
+  > it from the Overview, so the trail comes back as it was.
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
@@ -875,7 +893,12 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   notes (see Pull request review in `docs/concepts.md`). Its dock holds only the
   publication, and its header links the pull request page (`PR #528 ›`).
   The `pr` lens is the pull request page on GitHub too (`Merge request` on
-  GitLab, still their own studios there). Its trail is
+  GitLab, still their own studios there). Every door to a pull request lands
+  here: the worktree row chip, the board card badge, the context strip, the
+  Review header link and its Checks chip. `Resolve N comments` on the board
+  card and `N to resolve` on the worktree row open Review. The Overview
+  attention callout routes by cause: requested changes open Review, failed
+  checks and an approval open the pull request. Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
   pull requests by branch, with `New pull request`. The page shows the pull
   request only. Its controls come from the `pullRequest` kind of the action
@@ -913,8 +936,8 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed and
   browses the active working directory. Diff and the other branch lenses need a
-  branch. The code-host lens hides on GitHub. A tool lens appears once that
-  tool is connected.
+  branch. Pull request is listed on every code host, GitHub included. A tool
+  lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from the trail's
   destination switcher, never from a rail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts
@@ -1085,13 +1108,16 @@ the action registry (`features/actions/kinds/diff.ts`): one primary chosen
 from the branch state (`Rebase on main` when it is behind main, `Push N
 commits` when commits wait on a branch with a pull request, `Create PR` when
 the branch has commits and no pull request, `Open terminal` while a rebase is
-stopped), up to three secondaries (`PR #528`, `Rewrite history`, `Abort
+stopped), up to three secondaries (`PR #528`, which opens the pull request
+with the trail `Overview › Diff › PR #528`, `Rewrite history`, `Abort
 rebase`) and `⋯` with every available action (Open in editor, Open terminal,
 Change base branch…, Restore a backup…, Copy branch name, Copy patch). A
 blocked control stays visible and disabled, with its reason on the line under
 the header; Abort rebase confirms there inline. Change base branch opens the
 base picker in place, and Restore a backup opens Rewrite history on its
-Backups. Every rewrite takes the shown
+Backups. The Diff has no Review door of its own: a line that carries an open
+review comment of that pull request shows it read only, marked `To resolve`,
+with `Open in Review` on that comment. Every rewrite takes the shown
 mount's `mountId`, never the active mount. `Rebase on main` replays the
 branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads

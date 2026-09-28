@@ -32,7 +32,7 @@ import { useResolveAgain } from '../../../resolve/hooks/useResolveAgain';
 import { RESOLVE_ITEM_LABEL } from '../../../resolve/resolveItemCopy';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 import { openUrl } from '../../../../shared/lib/editor';
-import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
+import { LAYER_CRUMB_PREFIX, type BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import {
   AGENT_KIND_PALETTE,
   KIND_TO_ROLE,
@@ -321,8 +321,11 @@ export const useTrailMenus = ({
       plans: [newArtifact],
     };
 
+    const pageIndex = crumbs.findIndex(
+      (crumb, index) => index > 0 && !crumb.id.startsWith(LAYER_CRUMB_PREFIX),
+    );
     crumbs.forEach((crumb, index) => {
-      const isDepthOne = crumbs.length === 1 ? index === 0 : index === 1;
+      const isDepthOne = crumbs.length === 1 ? index === 0 : index === pageIndex;
       if (isDepthOne) {
         menus.set(
           crumb.id,

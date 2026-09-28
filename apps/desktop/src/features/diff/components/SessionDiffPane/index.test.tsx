@@ -34,6 +34,8 @@ const baseStore = () => ({
   mountGithub: {} as Record<string, unknown>,
   mountGitlabMr: {},
   mountBitbucketPr: {},
+  sessionGithub: {},
+  sessionResolveThreads: {},
   sessionMounts: {
     [SESSION_ID]: [
       {
@@ -71,6 +73,7 @@ vi.mock('../../../../store', () => ({
 vi.mock('../../../../store/slices/project-mounts/selectors', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../../store/slices/project-mounts/selectors')>()),
   selectMountForPath: () => MOUNT,
+  selectActiveMountId: () => MOUNT.mountId,
 }));
 
 vi.mock('../../hooks/useSessionDiff', () => ({
@@ -89,6 +92,10 @@ vi.mock('../../hooks/useSessionDiff', () => ({
     focusPath: null,
     clearFocus: vi.fn(),
   }),
+}));
+
+vi.mock('../../hooks/useDiffReviewThreads', () => ({
+  useDiffReviewThreads: () => [],
 }));
 
 vi.mock('../../hooks/useDiffNotes', () => ({
@@ -266,6 +273,13 @@ describe('SessionDiffPane header', () => {
         requestNumber: 318,
       }),
     );
+  });
+
+  it('shows no pull request link when the branch has none', () => {
+    h.status = statusOf({});
+    renderPane();
+
+    expect(screen.queryByRole('button', { name: /^Open PR/ })).toBeNull();
   });
 
   it('offers the terminal and Abort rebase while a rebase is stopped, and confirms the abort inline', () => {

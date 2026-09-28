@@ -24,8 +24,9 @@ import {
   selectActiveMountId,
   selectTurnMountCount,
 } from '../../../store/slices/project-mounts/selectors';
-import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
 import { isPrDraftAgentRunning } from '../../github/prDraftAgent';
+import { mountReviewGithub } from '../../review/mountReviewGithub';
+import { eligibleReviewThreadCount } from '../../suggestions/eligibleThreads';
 import { BLOCKER_SENTENCE } from '../../session/components/SessionOverviewPane/ProjectMountRows/detachPlan';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type {
@@ -140,8 +141,19 @@ const WORKTREE_ACTIONS: ReadonlyArray<ActionDefinition<WorktreeFacts>> = [
     shortcut: 'lens.review',
     when: ({ facts }) => facts.comments > 0 && !facts.isClosed,
     slot: () => 'inline',
-    run: ({ facts, env }) => {
-      void env.getState().openReviewTarget({ sessionId: facts.sessionId });
+    run: async ({ facts, env }) => {
+      settleRequest({
+        outcome: await env.getState().openReviewTarget({
+          sessionId: facts.sessionId,
+          ...(facts.requestNumber !== null && {
+            destination: {
+              kind: 'comments',
+              mountId: facts.mountId,
+              prNumber: facts.requestNumber,
+            },
+          }),
+        }),
+      });
     },
   },
   {
@@ -418,7 +430,7 @@ export const worktreeFactsFor = ({
   }
   const project = state.projects.find((candidate) => candidate.id === view.projectId) ?? null;
   const request = mountRequestOf({ state, mountId });
-  const detail = state.mountGithub[mountId]?.detail ?? null;
+  const github = mountReviewGithub({ state, sessionId, mountId });
   const isAttached = view.isAttached && view.worktreePath !== null;
   const path = view.worktreePath ?? view.lastWorktreePath ?? '';
   const agents = state.sessionPhaseRuns[sessionId] ?? null;
@@ -440,9 +452,12 @@ export const worktreeFactsFor = ({
     status,
     remoteKind,
     comments:
-      request === null || detail === null || detail.prNumber !== request.number
+      request === null || request.provider !== 'github' || github?.pr?.number !== request.number
         ? 0
-        : openReviewThreadIds({ comments: detail.comments }).length,
+        : eligibleReviewThreadCount({
+            github,
+            rows: state.sessionResolveThreads[sessionId] ?? [],
+          }),
     canStartTurnsHere:
       selectTurnMountCount({ state, sessionId }) > 1 &&
       selectActiveMountId({ state, sessionId }) !== mountId,
