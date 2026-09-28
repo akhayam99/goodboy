@@ -24,7 +24,28 @@ import { sceneClock } from '../../sceneClock';
 const clock = sceneClock({ anchor: '2026-09-27T10:00:00.000Z' });
 const NOW = clock.iso({ at: '2026-09-27T10:00:00.000Z' });
 
-const FORM = sceneParam({ key: 'form' }) ?? 'pr';
+const FORM_KEYS = [
+  'pr',
+  'mr',
+  'link',
+  'convert',
+  'skills',
+  'agent',
+  'spend-run',
+  'spend-session',
+  'script',
+  'saved-step',
+  'import',
+  'locate',
+] as const;
+
+type FormKey = (typeof FORM_KEYS)[number];
+
+const isFormKey = (params: { value: string }): params is { value: FormKey } =>
+  FORM_KEYS.some((key) => key === params.value);
+
+const requestedForm = { value: sceneParam({ key: 'form' }) ?? 'pr' };
+const FORM: FormKey = isFormKey(requestedForm) ? requestedForm.value : 'pr';
 const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
 
 const noop = () => undefined;
@@ -73,120 +94,136 @@ const PROJECTS = [
   },
 ] as unknown as ReadonlyArray<ReturnType<typeof useAppStore.getState>['projects'][number]>;
 
-const column = (content: ReactNode): ReactNode => (
-  <PageColumn className="flex flex-col gap-6 py-8">{content}</PageColumn>
-);
-
 const workspaceOf = (): Workspace | null =>
   useAppStore.getState().workspaces.find((workspace) => workspace.id === WORKSPACE_ID) ?? null;
 
-const FORMS = {
-  pr: () => (
-    <div className="flex h-full min-h-0 flex-col">
-      <CreatePrPanel
-        sessionId={SESSION_ID}
-        defaultTitle={SESSION.goal}
-        onCreated={noop}
-        onCancel={noop}
-      />
-    </div>
-  ),
-  mr: () => (
-    <div className="flex h-full min-h-0 flex-col">
-      <CreateMrForm
-        sessionId={SESSION_ID}
-        branch="hl/fix-duplicate-credit"
-        error={null}
-        onClose={noop}
-      />
-    </div>
-  ),
-  link: () => column(<WorkspaceLinkForm onComplete={noop} />),
-  convert: () => {
-    const workspace = workspaceOf();
-    return workspace === null ? null : (
-      <ConvertWorkspaceDialog open workspace={workspace} onClose={noop} />
-    );
-  },
-  skills: () => column(<SkillsPanel workspaceId={WORKSPACE_ID} />),
-  agent: () =>
-    column(
-      <div className="flex justify-center">
-        <CreateAgentPopover sessionId={SESSION_ID} />
-      </div>,
-    ),
-  'spend-run': () =>
-    column(
-      <div className="flex justify-center">
-        <RunSpendLimitPopover sessionId={SESSION_ID} run={RUN} variant="meta" />
-      </div>,
-    ),
-  'spend-session': () =>
-    column(
-      <div className="w-80 rounded-lg border border-border bg-floating p-3">
-        <SpendLimitEditor sessionId={SESSION_ID} limit={LIMIT} onDone={noop} />
-      </div>,
-    ),
-  script: () =>
-    column(
-      <ScriptEditor
-        label="New script"
-        name="Replay dead letters"
-        body={
-          '#!/usr/bin/env bash\nset -euo pipefail\npnpm --filter notify-relay exec node ./tools/replay.mjs'
-        }
-        projects={PROJECTS}
-        projectId={RELAY_ID}
-        error={null}
-        isSaving={false}
-        onNameChange={noop}
-        onBodyChange={noop}
-        onProjectChange={noop}
-        onSave={noop}
-        onCancel={noop}
-      />,
-    ),
-  'saved-step': () =>
-    column(
-      <div className="rounded-lg bg-subtle">
-        <SavedStepEditor
-          mode="new"
-          draft={{ ...blankStepDraft(), name: 'Replay dead letters' }}
-          recommendedProvider="anthropic"
-          recommendedModel="sonnet-5"
-          connectedProviders={['anthropic', 'codex']}
-          isBusy={false}
-          error={null}
-          onChange={noop}
-          onSaveCopy={noop}
-          onRemove={noop}
-          onDone={noop}
-        />
-      </div>,
-    ),
-  import: () =>
-    column(
-      <div className="flex justify-end">
-        <ImportPopover workspaceId={WORKSPACE_ID} takenNames={new Set<string>()} />
-      </div>,
-    ),
-  locate: () => column(<LocateMovedProjects workspaceId={WORKSPACE_ID} onChoose={noop} />),
-} satisfies Readonly<Record<string, () => ReactNode>>;
-
-const FORM_RENDERERS: ReadonlyMap<string, () => ReactNode> = new Map([
-  ['pr', FORMS.pr],
-  ['mr', FORMS.mr],
-  ['link', FORMS.link],
-  ['convert', FORMS.convert],
-  ['skills', FORMS.skills],
-  ['agent', FORMS.agent],
-  ['spend-run', FORMS['spend-run']],
-  ['spend-session', FORMS['spend-session']],
-  ['script', FORMS.script],
-  ['saved-step', FORMS['saved-step']],
-  ['import', FORMS.import],
-  ['locate', FORMS.locate],
-]);
+const renderForm = ({ form }: { form: FormKey }): ReactNode => {
+  switch (form) {
+    case 'pr':
+      return (
+        <div className="flex h-full min-h-0 flex-col">
+          <CreatePrPanel
+            sessionId={SESSION_ID}
+            defaultTitle={SESSION.goal}
+            onCreated={noop}
+            onCancel={noop}
+          />
+        </div>
+      );
+    case 'mr':
+      return (
+        <div className="flex h-full min-h-0 flex-col">
+          <CreateMrForm
+            sessionId={SESSION_ID}
+            branch="hl/fix-duplicate-credit"
+            error={null}
+            onClose={noop}
+          />
+        </div>
+      );
+    case 'link':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <WorkspaceLinkForm onComplete={noop} />
+        </PageColumn>
+      );
+    case 'convert': {
+      const workspace = workspaceOf();
+      return workspace === null ? null : (
+        <ConvertWorkspaceDialog open workspace={workspace} onClose={noop} />
+      );
+    }
+    case 'skills':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <SkillsPanel workspaceId={WORKSPACE_ID} />
+        </PageColumn>
+      );
+    case 'agent':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <div className="flex justify-center">
+            <CreateAgentPopover sessionId={SESSION_ID} />
+          </div>
+        </PageColumn>
+      );
+    case 'spend-run':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <div className="flex justify-center">
+            <RunSpendLimitPopover sessionId={SESSION_ID} run={RUN} variant="meta" />
+          </div>
+        </PageColumn>
+      );
+    case 'spend-session':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <div className="w-80 rounded-lg border border-border bg-floating p-3">
+            <SpendLimitEditor sessionId={SESSION_ID} limit={LIMIT} onDone={noop} />
+          </div>
+        </PageColumn>
+      );
+    case 'script':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <ScriptEditor
+            label="New script"
+            name="Replay dead letters"
+            body={
+              '#!/usr/bin/env bash\nset -euo pipefail\npnpm --filter notify-relay exec node ./tools/replay.mjs'
+            }
+            projects={PROJECTS}
+            projectId={RELAY_ID}
+            error={null}
+            isSaving={false}
+            onNameChange={noop}
+            onBodyChange={noop}
+            onProjectChange={noop}
+            onSave={noop}
+            onCancel={noop}
+          />
+        </PageColumn>
+      );
+    case 'saved-step':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <div className="rounded-lg bg-subtle">
+            <SavedStepEditor
+              mode="new"
+              draft={{ ...blankStepDraft(), name: 'Replay dead letters' }}
+              recommendedProvider="anthropic"
+              recommendedModel="sonnet-5"
+              connectedProviders={['anthropic', 'codex']}
+              isBusy={false}
+              error={null}
+              onChange={noop}
+              onSaveCopy={noop}
+              onRemove={noop}
+              onDone={noop}
+            />
+          </div>
+        </PageColumn>
+      );
+    case 'import':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <div className="flex justify-end">
+            <ImportPopover workspaceId={WORKSPACE_ID} takenNames={new Set<string>()} />
+          </div>
+        </PageColumn>
+      );
+    case 'locate':
+      return (
+        <PageColumn className="flex flex-col gap-6 py-8">
+          <LocateMovedProjects workspaceId={WORKSPACE_ID} onChoose={noop} />
+        </PageColumn>
+      );
+    default: {
+      const exhaustive: never = form;
+      return exhaustive;
+    }
+  }
+};
 
 export const FormsAuditScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -236,6 +273,5 @@ export const FormsAuditScene = () => {
     return null;
   }
 
-  const render = FORM_RENDERERS.get(FORM) ?? FORMS.pr;
-  return <ShellFrame session={SESSION} main={render()} />;
+  return <ShellFrame session={SESSION} main={renderForm({ form: FORM })} />;
 };
