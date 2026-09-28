@@ -12,7 +12,6 @@ import {
 import { STAGE_ORDER } from '../../../../store/slices/session-view/types';
 import { DogMascot } from '../../../../shared/components/DogMascot';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { DeleteSessionConfirm } from '../../../session/components/DeleteSessionConfirm';
 import { BulkActionBar } from '../BulkActionBar';
 import { useProjectGitStatuses } from '../../hooks/useProjectGitStatuses';
 import { useDragLasso } from '../../../../shared/hooks/useDragLasso';
@@ -28,8 +27,6 @@ import { useBoardSelection } from './useBoardSelection';
 import { ProjectFilter } from '../ProjectFilter';
 import { ProjectGitPills } from '../ProjectGitPill';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-
-type Confirm = { readonly kind: 'delete'; readonly session: Session };
 
 const STAGES: ReadonlyArray<SessionStage> = (
   Object.entries(STAGE_ORDER) as Array<[SessionStage, number]>
@@ -105,14 +102,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
   );
   const hasProjects = workspaceProjects.length > 0;
   const projectGitStatuses = useProjectGitStatuses({ workspaceId });
-  const [confirm, setConfirm] = useState<Confirm | null>(null);
   const sessionArchive = useSessionArchive();
 
-  const onArchive = useCallback(
-    (session: Session) => void sessionArchive.archive({ sessions: [session] }),
-    [sessionArchive],
-  );
-  const onDelete = useCallback((session: Session) => setConfirm({ kind: 'delete', session }), []);
   const onRestore = useCallback(
     (session: Session) => void sessionArchive.restore({ sessions: [session] }),
     [sessionArchive],
@@ -135,6 +126,10 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
     [byStage],
   );
   const selection = useBoardSelection({ activeSessions, archivedSessions: filteredArchived });
+  const selectedIds = useMemo(
+    () => selection.selectedSessions.map((session) => session.id as SessionId),
+    [selection.selectedSessions],
+  );
   const columnsRef = useRef<HTMLDivElement | null>(null);
   const onLassoSelect = useCallback(
     (ids: ReadonlyArray<SessionId>, mode: 'replace' | 'add') => {
@@ -359,8 +354,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 sessions={byStage.get(stage) ?? EMPTY_ARRAY}
                 nav={nav}
                 selection={selection.active}
-                onArchive={onArchive}
-                onDelete={onDelete}
+                selectedIds={selectedIds}
+                onClearSelection={selection.clearAll}
                 onRestore={onRestore}
                 collapse={stage === 'done' ? collapseFor('done') : undefined}
               />
@@ -372,8 +367,8 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
                 sessions={filteredArchived}
                 nav={nav}
                 selection={selection.archived}
-                onArchive={onArchive}
-                onDelete={onDelete}
+                selectedIds={selectedIds}
+                onClearSelection={selection.clearAll}
                 onRestore={onRestore}
                 collapse={collapseFor('archived')}
               />
@@ -416,14 +411,6 @@ export const StageBoard = ({ workspaceId, sessions }: Props) => {
           }
           onClear={selection.clearAll}
           className="shrink-0"
-        />
-      )}
-
-      {confirm?.kind === 'delete' && (
-        <DeleteSessionConfirm
-          session={confirm.session}
-          onClose={() => setConfirm(null)}
-          className="mx-auto w-full max-w-lg shrink-0"
         />
       )}
     </div>

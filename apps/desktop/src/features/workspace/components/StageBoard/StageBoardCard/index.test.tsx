@@ -269,7 +269,7 @@ describe('StageBoardCard selection', () => {
     const onModifierClick = vi.fn();
     render(<StageBoardCard session={session} nav={nav} onModifierClick={onModifierClick} />);
     const card = cardTitle();
-    expect(card.getAttribute('aria-keyshortcuts')).toBe('Alt+Enter');
+    expect(card.getAttribute('aria-keyshortcuts')).toBe('Alt+Enter Shift+F10');
     fireEvent.keyDown(card, { key: 'Enter', altKey: true });
     expect(onModifierClick).toHaveBeenCalledWith(SESSION_ID, expect.anything());
     expect(nav.selectCard).not.toHaveBeenCalled();
@@ -448,56 +448,12 @@ describe('StageBoardCard actions visibility', () => {
     expect(screen.getByRole('button', { name: 'Session actions' })).toBeDefined();
   });
 
-  it('lists editor, terminal and the extra actions, then archive and delete, in the overflow', () => {
-    const run = vi.fn();
-    useDynamicActionsMock.mockReturnValue([
-      {
-        key: 'questions',
-        icon: HelpCircle,
-        tone: 'warning',
-        label: '1 open question',
-        onClick: vi.fn(),
-      },
-      {
-        key: 'run',
-        icon: Play,
-        tone: 'primary',
-        label: 'run next step',
-        onClick: run,
-      },
-    ]);
-    render(<StageBoardCard session={session} nav={nav} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Session actions' }));
-
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-      'Open in editor',
-      'Open terminal',
-      'run next step',
-      'Archive',
-      'Delete',
-    ]);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'run next step' }));
-    expect(run).toHaveBeenCalledOnce();
-    expect(nav.selectCard).not.toHaveBeenCalled();
-  });
-
-  it('deletes through the card delete path', () => {
-    const onDelete = vi.fn();
-    render(<StageBoardCard session={session} nav={nav} onDelete={onDelete} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Session actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
-
-    expect(onDelete).toHaveBeenCalledWith(session);
-  });
-
   it('shows restore as the one visible action on an archived card', () => {
     render(<StageBoardCard session={session} nav={nav} archived />);
     const restore = screen.getByLabelText('Restore');
     expect(restore.className).not.toContain('opacity-0');
     const group = screen.getByRole('group', { name: 'Session quick actions' });
     expect(group.contains(restore)).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Session actions' }));
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Delete']);
   });
 });
 
