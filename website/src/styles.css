@@ -8,11 +8,27 @@
   --gray1: #f1f3f5;
   --gray0: #f8f9fa;
 
+  --surface: #ffffff;
   --brand-tile: #0b0b0d;
+  --tile-ring: transparent;
+  --btn-bg: #101113;
+  --btn-ink: #ffffff;
+  --btn-hover: #000000;
+  --sel-bg: oklch(0.9 0.05 200);
+  --sel-ink: oklch(0.35 0.09 200);
 
-  --stage-a: #173239;
-  --stage-b: #101b1f;
-  --stage-c: #0b0e11;
+  --stage-a: #dde7e9;
+  --stage-b: #e8eef0;
+  --stage-c: #f1f4f6;
+  --stage-sheen: rgb(255 255 255 / 0.45);
+  --stage-line: rgb(16 17 19 / 0.05);
+  --stage-shadow: 0 30px 60px -44px rgb(12 20 22 / 0.3);
+  --win-bg: #ffffff;
+  --win-bar: #f1f3f5;
+  --win-line: rgb(16 17 19 / 0.07);
+  --win-dot: #d5d9de;
+  --win-edge: rgb(16 17 19 / 0.1);
+  --win-shadow: 0 40px 80px -34px rgb(16 17 19 / 0.28), 0 12px 24px -14px rgb(16 17 19 / 0.14);
 
   --accent: oklch(0.5 0.13 200);
   --accent-deep: oklch(0.44 0.12 200);
@@ -55,6 +71,70 @@
   --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --mono: ui-monospace, 'SF Mono', Menlo, Monaco, monospace;
   --window-shadow: 0 24px 48px -24px rgb(16 17 19 / 0.22), 0 2px 6px -2px rgb(16 17 19 / 0.06);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #0d0f11;
+  --ink: #eceef1;
+  --gray7: #b3bbc3;
+  --gray6: #939ca6;
+  --gray5: #5f6872;
+  --gray3: #2b3036;
+  --gray1: #1d2126;
+  --gray0: #131619;
+  --surface: #171a1e;
+  --tile-ring: rgb(255 255 255 / 0.12);
+  --btn-bg: #eceef1;
+  --btn-ink: #0d0f11;
+  --btn-hover: #ffffff;
+  --sel-bg: oklch(0.38 0.07 200);
+  --sel-ink: #ffffff;
+
+  --stage-a: #173239;
+  --stage-b: #101b1f;
+  --stage-c: #0b0e11;
+  --stage-sheen: rgb(255 255 255 / 0.05);
+  --stage-line: rgb(255 255 255 / 0.04);
+  --stage-shadow: 0 30px 60px -40px rgb(0 0 0 / 0.7);
+  --win-bg: #16181c;
+  --win-bar: #1c1e22;
+  --win-line: rgb(255 255 255 / 0.06);
+  --win-dot: #3b3e44;
+  --win-edge: rgb(255 255 255 / 0.1);
+  --win-shadow: 0 44px 80px -28px rgb(0 0 0 / 0.7), 0 14px 28px -14px rgb(0 0 0 / 0.55);
+
+  --accent: oklch(0.72 0.12 200);
+  --accent-deep: oklch(0.8 0.11 200);
+  --accent-bright: oklch(0.78 0.12 200);
+  --accent-soft: oklch(0.3 0.05 200);
+
+  --ok: oklch(0.7 0.14 148);
+  --ok-text: oklch(0.76 0.13 148);
+  --warn: oklch(0.75 0.14 60);
+  --warn-text: oklch(0.8 0.13 60);
+  --danger: oklch(0.68 0.18 22);
+  --danger-text: oklch(0.74 0.16 22);
+  --info: oklch(0.7 0.13 238);
+  --info-text: oklch(0.76 0.12 238);
+  --merged: oklch(0.72 0.15 305);
+  --merged-text: oklch(0.76 0.14 305);
+
+  --cursor: oklch(0.72 0.14 290);
+  --codex: oklch(0.72 0.14 148);
+  --gemini: oklch(0.72 0.14 240);
+  --openrouter: #8f92ff;
+  --moonshot: #5aa8ff;
+  --github: oklch(0.93 0 0);
+  --gitlab: oklch(0.7 0.17 45);
+  --bitbucket: #5b9bff;
+  --linear: oklch(0.74 0.13 277);
+  --jira: #5b9bff;
+  --sentry: oklch(0.72 0.15 320);
+  --slack: #e3b4e6;
+
+  --window-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.6), 0 2px 6px -2px rgb(0 0 0 / 0.3);
+  color-scheme: dark;
 }
 
 * {
@@ -67,7 +147,6 @@ html {
   scroll-behavior: smooth;
   scroll-padding-top: 76px;
   background: var(--bg);
-  color-scheme: light;
 }
 
 body {
@@ -80,8 +159,8 @@ body {
 }
 
 ::selection {
-  background: oklch(0.9 0.05 200);
-  color: oklch(0.35 0.09 200);
+  background: var(--sel-bg);
+  color: var(--sel-ink);
 }
 
 a {
@@ -195,33 +274,76 @@ h3 {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: color-mix(in srgb, var(--bg) 86%, transparent);
-  -webkit-backdrop-filter: saturate(1.4) blur(14px);
-  backdrop-filter: saturate(1.4) blur(14px);
-  border-bottom: 1px solid color-mix(in srgb, var(--gray3) 70%, transparent);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: saturate(1.5) blur(16px);
+  backdrop-filter: saturate(1.5) blur(16px);
+  border-bottom: 1px solid color-mix(in srgb, var(--gray3) 55%, transparent);
 }
 
 #top .wrap {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  height: 60px;
 }
 
 #top nav {
   display: flex;
   align-items: center;
-  gap: 26px;
-  font-size: 14.5px;
-  color: var(--gray7);
+  gap: 28px;
 }
 
-#top nav a:hover {
+.navLinks {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  color: var(--gray6);
+}
+
+.navLinks a {
+  transition: color 0.15s ease;
+}
+
+.navLinks a:hover {
   color: var(--ink);
 }
 
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 #top nav .btn.small:hover {
-  color: #fff;
+  color: var(--btn-ink);
+}
+
+.themeToggle {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: var(--gray6);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.themeToggle:hover {
+  color: var(--ink);
+  background: var(--gray1);
+}
+
+.themeToggle svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .logo {
@@ -231,6 +353,7 @@ h3 {
   font-family: var(--display);
   font-weight: 600;
   font-size: 19px;
+  letter-spacing: -0.01em;
   color: var(--ink);
 }
 
@@ -239,6 +362,7 @@ h3 {
   place-items: center;
   flex-shrink: 0;
   background: var(--brand-tile);
+  box-shadow: inset 0 0 0 1px var(--tile-ring);
 }
 
 .btn {
@@ -249,8 +373,8 @@ h3 {
   height: 46px;
   padding: 0 22px;
   border-radius: 12px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-ink);
   font-weight: 600;
   font-size: 15.5px;
   transition:
@@ -260,7 +384,7 @@ h3 {
 
 .btn:hover {
   transform: translateY(-1px);
-  background: #000;
+  background: var(--btn-hover);
 }
 
 .btn.ghost {
@@ -278,7 +402,7 @@ h3 {
   padding: 0 14px;
   border-radius: 9px;
   font-size: 14px;
-  color: #fff;
+  color: var(--btn-ink);
 }
 
 .ctaRow {
@@ -385,7 +509,7 @@ h3 {
   padding: 0 18px;
   border-radius: 999px;
   border: 1px solid var(--gray3);
-  background: #fff;
+  background: var(--surface);
   font-weight: 600;
   font-size: 15px;
 }
@@ -519,7 +643,7 @@ section.block.alt {
   padding: 6px 18px 6px 14px;
   border-radius: 999px;
   border: 1px solid var(--gray3);
-  background: #fff;
+  background: var(--surface);
   font-weight: 600;
   font-size: 15px;
 }
@@ -780,8 +904,12 @@ footer a:hover {
   .wrap {
     padding: 0 16px;
   }
-  #top nav {
-    gap: 16px;
+  #top nav,
+  .navLinks {
+    gap: 14px;
+  }
+  .navActions {
+    gap: 6px;
   }
   .beltMore {
     padding: 0 16px;

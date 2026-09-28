@@ -10,6 +10,7 @@ import { openReportSheet } from '../../../../../features/bug-report/openReportSh
 import { useAppStore } from '../../../../../store';
 import { CrashThrower } from './CrashThrower';
 import { sceneParam } from './sceneParams';
+import { SETTINGS_PROVIDERS } from './settingsSeed';
 
 const OPEN_DELAY_MS = 400;
 
@@ -27,6 +28,13 @@ export const useReportSheetParam = (): void => {
     if (sceneParam({ key: 'gh' }) === 'connected') {
       useAppStore.setState({
         githubStatus: { available: true, mode: 'gh-cli', user: 'rowan', scopes: [] },
+      });
+    }
+    if (sceneParam({ key: 'cli' }) === 'known') {
+      useAppStore.setState({
+        providers: SETTINGS_PROVIDERS.filter(
+          (provider) => provider.id === 'anthropic' || provider.id === 'codex',
+        ),
       });
     }
     const timer = window.setTimeout(() => {

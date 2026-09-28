@@ -11,6 +11,7 @@ export const Artifacts = () => (
     headingId="h2-artifacts"
     heading="Plans, reports and wireframes"
     sub="The plan does not scroll away. It lives next to the task, with who made it and what it came from."
+    isAlt
   >
     <Shot figure={COMPARE} />
     <div className="stackText">

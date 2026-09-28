@@ -9,7 +9,7 @@
 }
 
 .bill {
-  background: #fff;
+  background: var(--surface);
   border: 1px solid var(--gray3);
   border-radius: 16px;
   padding: 22px;

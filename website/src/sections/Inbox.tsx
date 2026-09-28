@@ -11,6 +11,7 @@ export const Inbox = () => (
     headingId="h2-integrations"
     heading="Inbox"
     sub="Issues, pull requests, Slack threads and Sentry errors in one list. The cards write themselves."
+    isAlt
   >
     <Shot figure={INBOX} />
     <div className="stackText">

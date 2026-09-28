@@ -33,6 +33,7 @@ export const Leads = () => (
     headingId="h2-leads"
     heading="For leads and project managers"
     sub="Look once and you know where every task stands, without asking anyone."
+    isAlt
   >
     <Shot figure={BOARD} />
     <Benefits items={ITEMS} />

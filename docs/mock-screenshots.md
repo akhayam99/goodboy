@@ -152,6 +152,11 @@ shell against the same localhost URL:
 gives the mock scene's `useEffect` time to fill the store, and React time to
 render, before the snapshot is taken.
 
+A wireframe or a report renders in a sandboxed frame, which Chrome runs in its
+own process. That process ignores a device scale factor set over the DevTools
+protocol, so the frame comes out soft while the rest of the picture is sharp.
+Add `--disable-site-isolation-trials` when you capture through CDP.
+
 A layout change is also captured at `--window-size=1100,800`, close to the
 window's minimum width, where a second rail or a fixed-width control is the
 first thing to clip. Capture both themes at both widths: `&theme=light` after

@@ -1,21 +1,25 @@
 # Goodboy features
 
-The full feature guide, in the order a task lives: set up, start, run, review, ship, clean up. Each entry says what it does for you, and sometimes how.
+The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai.dev): set up, start a task, move between tasks, ship the code, then keep an eye on cost and disk. Each entry says what it does for you, and sometimes how.
 
 - [Set up](#set-up)
 - [Start a task](#start-a-task)
-- [The board](#the-board)
 - [Inside a session](#inside-a-session)
-- [Agents and chat](#agents-and-chat)
+- [Switch between tasks](#switch-between-tasks)
+- [Go anywhere, find anything](#go-anywhere-find-anything)
+- [Workspace and projects](#workspace-and-projects)
+- [Branch history](#branch-history)
+- [Review, resolve and pull requests](#review-resolve-and-pull-requests)
+- [The board](#the-board)
 - [Workflows](#workflows)
-- [Shared context](#shared-context)
 - [Inbox and your tools](#inbox-and-your-tools)
 - [Plans, reports and wireframes](#plans-reports-and-wireframes)
-- [Review, resolve and pull requests](#review-resolve-and-pull-requests)
-- [Branch history](#branch-history)
+- [Shared context](#shared-context)
 - [Providers, limits and cost](#providers-limits-and-cost)
 - [Storage](#storage)
 - [Security, backup and updates](#security-backup-and-updates)
+- [Agents and chat](#agents-and-chat)
+- [Support Goodboy](#support-goodboy)
 - [Keyboard and terminal](#keyboard-and-terminal)
 - [Also there](#also-there)
 
@@ -45,34 +49,6 @@ Find out when a model needs a newer CLI, and update it from the provider page on
 ### Permissions for each provider
 
 See which permission modes a provider can honor before you pick one: **Read only**, **Ask first**, **Edits allowed** and **Full access**, each marked as working, partly working or not available, with the reason. A mode a provider cannot honor runs as a stricter one, so **Ask first** on Codex runs as **Read only**.
-
-### Workspace with several projects
-
-Keep your repos together as one workspace, and let one session work across several of them. A project gets a branch only when an agent needs to edit it, and the timeline records why.
-
-### Starred projects, descriptions and base branch
-
-Point agents at the right repo without naming it. Starred projects and their one-line descriptions go into each agent's brief, and each project shows its base branch, read from origin.
-
-### Open in new window
-
-Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice. After a reload or an update, and on every launch with **Reopen last** on, every window comes back on the screen, tab and panel it showed.
-
-### Locate moved projects
-
-Moved your repos to a new folder? Pick the parent folder and Goodboy finds them, fixes the stored paths and repairs the worktrees, with **Undo move**. Repos are matched by their first commit and remote, not by folder name.
-
-### Workspace switcher and Reconnect
-
-Jump between workspaces and projects from one search. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect**.
-
-### Keep .goodboy out of git
-
-Keep Goodboy's own folder out of your commits with one click. The card shows up only when git does not already ignore `.goodboy`, your global rules included.
-
-### Repo status across projects
-
-See which repos are behind, uncommitted or diverged from the board's **N repos** popover, and update the safe ones together. Updates are fast-forward only and leave dirty or diverged repos to you.
 
 ### Integrations
 
@@ -113,38 +89,11 @@ The full workflow builder, right in the kickoff: pick **Orchestrated**, **Custom
 
 Get a short title without writing one. A new session is named for you and marked "Named by Goodboy" until you rename it.
 
-## The board
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s01-board-dark.webp">
-  <img src="./docs/readme/s01-board-light.webp" alt="The Harborline board: eleven sessions across building, running, needs you and in review, with the webhook fix in review on pull request 318">
-</picture>
-
-### Stage board
-
-See where each task stands without moving cards around. Each session sits in **building**, **running**, **needs you**, **in review** or **done**, based on what is happening in it.
-
-### Session card
-
-Read a task at a glance: pull request, issue and project chips, step progress, agent count, age and cost, plus one suggested action.
-
-### Done and Archived dock
-
-Keep finished work out of the way but close by. Done and archived sessions fold into two icons at the side of the board, and hovering previews them.
-
-### Bulk select
-
-Tidy many sessions at once. Lasso or modifier-click cards across columns, then archive, restore or delete them together.
-
-### Now chip
-
-Know what needs you from any screen. A top-bar chip counts sessions that need you, running sessions and running scripts.
-
 ## Inside a session
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s03-activity-dark.webp">
-  <img src="./docs/readme/s03-activity-light.webp" alt="A session overview with payments-api and notify-relay, and the Activity timeline with one open question on its own row">
+  <img src="./docs/readme/s03-activity-light.webp" alt="A session overview with payments-api and notify-relay, the Activity timeline with one open question on its own row, and the activity bar with every task by stage">
 </picture>
 
 ### Session overview
@@ -171,6 +120,72 @@ See how long a step has left, learned from your own past runs. Queued steps show
 
 Undo an agent's edit in a session without a branch: each file it changed is kept as it was, with **Restore**.
 
+## Switch between tasks
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s30-notifications-dark.webp">
+  <img src="./docs/readme/s30-notifications-light.webp" alt="The notifications page: a pull request opened, a session at 80% of its cap, a handoff to retry and a folder left on disk, grouped by severity, source and workspace">
+</picture>
+
+### Activity bar
+
+Move between tasks without losing your place. The bar on the left of every session lists all the sessions of the workspace, grouped by where they stand: **building**, **running**, **needs you** and **in review**, with done work folded away. Each row says what it is waiting on, like **1 to answer** or **draft PR #90**, so you open the one that needs you, and its Overview shows what ran, what was decided and what comes next. Group it by stage or by pull request, or filter it to one project.
+
+### Now chip
+
+Know what needs you from any screen. A top-bar chip counts sessions that need you, running sessions and running scripts.
+
+### Notifications
+
+Catch up in one place. Everything Goodboy has to tell you, from a pull request opened to a session close to its spending cap, lands in one list: a bell with an unread count, and a page grouped by severity, source and workspace. **Unread** and **Needs action** cut it down, and a row that needs you carries its next step, like **Open spend** or **Review storage**.
+
+### Open in new window
+
+Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice. After a reload or an update, and on every launch with **Reopen last** on, every window comes back on the screen, tab and panel it showed.
+
+## Go anywhere, find anything
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s28-search-dark.webp">
+  <img src="./docs/readme/s28-search-light.webp" alt="Search for credit across the webhook session: a message, a plan, the session, an issue and pull request 318, with the actions of the picked hit on the right">
+</picture>
+
+### Go anywhere
+
+Reach any screen without the mouse. **⌘K** opens on what you are looking at, and typing a few letters finds any session of any workspace, an agent, a plan or a page. **⌘F** switches the same window to search.
+
+### Command palette
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s29-palette-dark.webp">
+  <img src="./docs/readme/s29-palette-light.webp" alt="The command palette on the resolver agent of payments-api 318: its actions first, then Go to">
+</picture>
+
+Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too.
+
+### Search
+
+Find a message, a plan, a decision, an issue or a branch with **⌘F**, across every session, filtered by type, project, provider, status or date. Pick a hit to land on it in context, then walk the other matches in that view with **⌘G**. The index stays on your computer.
+
+### Right click menus
+
+Right click a session, agent, run, artifact, pull request, worktree row, diff file or message to see every action it has, at the pointer. The **⋯** menu and the palette list the same actions in the same order, and one that cannot run says why. **Shift+F10** opens the menu on the focused row.
+
+## Workspace and projects
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s27-workspace-dark.webp">
+  <img src="./docs/readme/s27-workspace-light.webp" alt="The Harborline workspace settings: ledger-core, notify-relay and payments-api, and what agents know about you">
+</picture>
+
+### Workspace with several projects
+
+Keep your repos together as one workspace, and let one session work across several of them. A project gets a branch only when an agent needs to edit it, and the timeline records why.
+
+### Starred projects, descriptions and base branch
+
+Point agents at the right repo without naming it. Starred projects and their one-line descriptions go into each agent's brief, and each project shows its base branch, read from origin.
+
 ### Worktrees
 
 <picture>
@@ -184,64 +199,152 @@ Let agents edit in parallel without touching your checkout. When an agent needs 
 
 Work on several branches of one repo in the same session. If a worktree drifts to another branch, Goodboy offers **Use this branch here** or **Keep both branches**.
 
-## Agents and chat
+### Workspace switcher and Reconnect
+
+Jump between workspaces and projects from one search. Disconnecting a workspace keeps its history, and adding its folder again offers **Reconnect**.
+
+### Repo status across projects
+
+See which repos are behind, uncommitted or diverged from the board's **N repos** popover, and update the safe ones together. Updates are fast-forward only and leave dirty or diverged repos to you.
+
+### Locate moved projects
+
+Moved your repos to a new folder? Pick the parent folder and Goodboy finds them, fixes the stored paths and repairs the worktrees, with **Undo move**. Repos are matched by their first commit and remote, not by folder name.
+
+### Keep .goodboy out of git
+
+Keep Goodboy's own folder out of your commits with one click. The card shows up only when git does not already ignore `.goodboy`, your global rules included.
+
+## Branch history
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s09-transcript-dark.webp">
-  <img src="./docs/readme/s09-transcript-light.webp" alt="The Test agent chat on Haiku 4.5: the ask, four operations, and the redelivery test posting one credit for three deliveries">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s22-history-dark.webp">
+  <img src="./docs/readme/s22-history-light.webp" alt="Rewrite history for hl/ledger-export: the branch Now with a fold, a combine, a removal, a move and a rename, next to the four commits it becomes After Apply">
 </picture>
 
-### Roles
+### Rewrite history
 
-Give each agent the job it is good at. Nine roles come with the app, **Scout**, **Debug**, **Plan**, **Implement**, **Review**, **Test**, **Resolve**, **Docs** and **Generalist**, and a role sets the agent's instructions, its default model and what it hands back.
+Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename, squash or remove it, or start the branch from today's main. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change, and every planned change can be undone on its own. Each row's buttons, its `⋯` menu, a right click and `Cmd+K` on the focused row offer the same actions.
 
-### What the agent received
+### Safe apply
 
-Check exactly what an agent was told. The top of each chat shows who sent it and a chip for each part of its brief, and **View as sent** shows the exact text, with Copy.
+Apply tries the whole plan on a temporary copy first and checks the result before your branch moves. If a step stops, it says which one and why, and your branch stays exactly as it was. A backup is saved before anything changes.
 
-### Agent chat
+### Conflict prediction
 
-Follow one agent's work: grouped file edits, questions, permission cards and chips for the plans and reports it writes.
+See which files would conflict while you edit the plan, or read "No conflicts expected". The plan is merged in memory, so your checkout stays as it is.
 
-### Queue or send now
+### Conflicts merged in a copy
 
-Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** interrupts and sends it now, and the queue survives a restart.
+Let the History rewriter merge a conflicting rewrite in a copy, and have Goodboy check the result before anything moves.
 
-### Stop and Continue
+### Push with lease and restore
 
-Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you reload, restart or update Goodboy keeps going: a reload finds it still running, and after a restart it picks up where it stopped, with a note in its chat. One that cannot pick up says **Stopped by restart** and offers **Resume**.
+**Apply and update online** replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten. Every rewrite saves a backup first: **Restore it** on the result takes it back, and **Backups** lists the older ones for 30 days.
 
-### Turn footer
+### Suggest a message
 
-See what each turn cost: provider, model, duration, tokens, cache share, estimated cost and a context meter.
+Get a commit message drafted for a squash or a reword. Scribe writes it in place, and you can edit it before you apply.
 
-### Tool call states
+### Bring them into the plan
 
-Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Needs approval**, **Stopped** or **Denied**, with elapsed time and readable input and output.
+Someone pushed after you applied? Goodboy lists their new commits and offers to add them to the plan and push again.
 
-### Composer plus menu
+### Rebase on main
 
-Do more from the message box: attach files, run a script (`$`), start a workflow (`~`) or ask another agent (`@`). `$` lists your saved scripts and your `package.json` scripts, across pnpm and yarn workspaces.
+Rebase on main with the same engine, and bring in an agent only when there is a conflict.
 
-### Attach files
+### After a pull request merges
 
-Hand an agent images, PDFs, CSV and text files, up to 10 at a time, by paste, drop or pick.
+Decide what happens to a merged branch, **Ask me**, **Delete on this Mac** or **Also on origin**, per workspace or project, with 14 days to restore it. A branch with later commits, uncommitted changes, or one Goodboy did not create is left alone.
 
-### Drift warning
+## Review, resolve and pull requests
 
-Hear about it when an agent steps outside its role, like a planner editing files. Goodboy checks each turn against the role and sends a notification.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s12-resolve-dark.webp">
+  <img src="./docs/readme/s12-resolve-light.webp" alt="Review comments on payments-api #318 grouped as open, waiting for the push and done, with the picked one on the right">
+</picture>
 
-### Subagents from plan parts
+### Resolve
 
-Run a plan part by part. An implementer given a plan splits into one sub-agent per part, shown as 3.1 and 3.2, and a plan can give each part done-when checks and the files it expects to touch.
+Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Draft fixes for N** and an agent writes each fix as a local commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment.
 
-### History rewriter and Scribe
+### Comment states
 
-Let two helpers work on your history and your pull request text without the power to push. Their git points at a push address that goes nowhere, and their GitHub tokens are removed.
+Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Waiting for the push** and **Done**.
 
-### One language per session
+### Close on GitHub
 
-Get agents and summaries in the language of your goal.
+Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.
+
+### Review replies in your voice
+
+Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit.
+
+### Fixes on a branch that moved
+
+Accept a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.
+
+### Notes before a pull request
+
+Review your own diff before anyone else does. Leave notes, resolve them like review comments, and post the open ones to the pull request later.
+
+### GitHub pull request page
+
+Know whether a GitHub pull request can merge, in plain words, with details and checks, and merge, mark ready, draft or close it from there. The next step is the one main action, such as **Mark ready for review** on a draft or **Squash and merge** once it is approved and green. **Merge** and **Close** confirm right under the header, and **N comments to resolve** opens Review.
+
+### Pull request, Diff and Review as layers
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s31-pull-request-dark.webp">
+  <img src="./docs/readme/s31-pull-request-light.webp" alt="The page of payments-api 318: 9 comments to resolve with Open Review, the changes on the branch with Open diff, approved and 3 of 3 checks passing">
+</picture>
+
+Move between a pull request, its Diff and its Review without losing your place. They open as one path in the trail from the worktree row, and Back walks it. Every link to a pull request lands on its page.
+
+### Write it for me
+
+Get a pull request title, description and changelog entry in your repo's format when you open a pull request. Linked issues become closing references.
+
+### PR description follows the push
+
+Keep a pull request description in step with its branch. After a history push, a description Goodboy wrote is updated to match, unless you edited it.
+
+### Diff
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s17-diff-dark.webp">
+  <img src="./docs/readme/s17-diff-light.webp" alt="The session diff for payments-api with one file viewed, a note on a line, and 1 note and Resolve in Review in the toolbar">
+</picture>
+
+Read changes with syntax colors, word-level highlights, split or unified view and a **Viewed** tick per file, and quote a line into a note or a question for an agent. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**.
+
+### Write review
+
+Review someone else's pull request in a form under the diff: your line comments, the verdict and a summary, sent with **Approve**, **Request changes** or **Submit comments**. Outdated drafts are marked **Stale**.
+
+## The board
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s01-board-dark.webp">
+  <img src="./docs/readme/s01-board-light.webp" alt="The Harborline board: eleven sessions across building, running, needs you and in review, with the webhook fix in review on pull request 318">
+</picture>
+
+### Stage board
+
+See where each task stands without moving cards around. Each session sits in **building**, **running**, **needs you**, **in review** or **done**, based on what is happening in it.
+
+### Session card
+
+Read a task at a glance: pull request, issue and project chips, step progress, agent count, age and cost, plus one suggested action.
+
+### Done and Archived dock
+
+Keep finished work out of the way but close by. Done and archived sessions fold into two icons at the side of the board, and hovering previews them.
+
+### Bulk select
+
+Tidy many sessions at once. Lasso or modifier-click cards across columns, then archive, restore or delete them together.
 
 ## Workflows
 
@@ -323,37 +426,6 @@ Hand a question to another agent with a hint and a model, and its answer counts 
 ### Import workflows
 
 Bring custom workflows over from your other workspaces.
-
-## Shared context
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s08-context-dark.webp">
-  <img src="./docs/readme/s08-context-light.webp" alt="The context drawer on Decisions, with D3 replacing D1, and the brief as sent to Codex">
-</picture>
-
-### Decisions
-
-Record a decision once and have the agents after it read it. Each one gets a number and a byline, and replacing or withdrawing it needs a reason that stays next to it.
-
-### See why each decision was made
-
-Read the reason behind a decision without opening the run. When Goodboy records a decision from a session, it keeps the reason that came with it, and the context drawer shows it as a muted line under the decision, with **Show more** when it runs long.
-
-### Running summary
-
-Hand the next agent where things stand. After each turn a summary of **State**, **Next** and **Learned** is updated, and an edit you made in the meantime is kept.
-
-### Context drawer
-
-Open goal, decisions and summary from any session page, with **Copy as brief**. A dot on **Context** says something changed since you last looked, and the drawer lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one. Each tab reads as labelled blocks, the key line first and the rest folded.
-
-### Context budgets
-
-Keep prompts small as a session grows. Each part of the shared brief has its own size, and when decisions run over, the newest are kept.
-
-### Plans handed to the next agent
-
-Hand a plan straight to the implementer. The plan goes from **Ready to run** to **Ran** and shows which agent used it.
 
 ## Inbox and your tools
 
@@ -501,114 +573,42 @@ Bring back an earlier plan, report or wireframe as a new revision, with its auth
 
 Export a wireframe as a folder of pages, or redraw it at the other fidelity.
 
-## Review, resolve and pull requests
+## Shared context
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s12-resolve-dark.webp">
-  <img src="./docs/readme/s12-resolve-light.webp" alt="Review comments on payments-api #318 grouped as open, waiting for the push and done, with the picked one on the right">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s08-context-dark.webp">
+  <img src="./docs/readme/s08-context-light.webp" alt="The context drawer on Decisions, with D3 replacing D1, and the brief as sent to Codex">
 </picture>
 
-### Resolve
+### Decisions
 
-Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Draft fixes for N** and an agent writes each fix as a local commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment.
+Record a decision once and have the agents after it read it. Each one gets a number and a byline, and replacing or withdrawing it needs a reason that stays next to it.
 
-### Comment states
+### See why each decision was made
 
-Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Waiting for the push** and **Done**.
+Read the reason behind a decision without opening the run. When Goodboy records a decision from a session, it keeps the reason that came with it, and the context drawer shows it as a muted line under the decision, with **Show more** when it runs long.
 
-### Close on GitHub
+### Running summary
 
-Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.
+Hand the next agent where things stand. After each turn a summary of **State**, **Next** and **Learned** is updated, and an edit you made in the meantime is kept.
 
-### Review replies in your voice
+### Context drawer
 
-Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit.
+Open goal, decisions and summary from any session page, with **Copy as brief**. A dot on **Context** says something changed since you last looked, and the drawer lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one. Each tab reads as labelled blocks, the key line first and the rest folded.
 
-### Fixes on a branch that moved
+### Context budgets
 
-Accept a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.
+Keep prompts small as a session grows. Each part of the shared brief has its own size, and when decisions run over, the newest are kept.
 
-### Notes before a pull request
+### Plans handed to the next agent
 
-Review your own diff before anyone else does. Leave notes, resolve them like review comments, and post the open ones to the pull request later.
-
-### GitHub pull request page
-
-Know whether a GitHub pull request can merge, in plain words, with details and checks, and merge, mark ready, draft or close it from there. The next step is the one main action, such as **Mark ready for review** on a draft or **Squash and merge** once it is approved and green. **Merge** and **Close** confirm right under the header, and **N comments to resolve** opens Review.
-
-### Pull request, Diff and Review as layers
-
-Move between a pull request, its Diff and its Review without losing your place. They open as one path in the trail from the worktree row, and Back walks it. Every link to a pull request lands on its page.
-
-### Write it for me
-
-Get a pull request title, description and changelog entry in your repo's format when you open a pull request. Linked issues become closing references.
-
-### PR description follows the push
-
-Keep a pull request description in step with its branch. After a history push, a description Goodboy wrote is updated to match, unless you edited it.
-
-### Diff
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s17-diff-dark.webp">
-  <img src="./docs/readme/s17-diff-light.webp" alt="The session diff for payments-api with one file viewed, a note on a line, and 1 note and Resolve in Review in the toolbar">
-</picture>
-
-Read changes with syntax colors, word-level highlights, split or unified view and a **Viewed** tick per file, and quote a line into a note or a question for an agent. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**.
-
-### Write review
-
-Review someone else's pull request in a form under the diff: your line comments, the verdict and a summary, sent with **Approve**, **Request changes** or **Submit comments**. Outdated drafts are marked **Stale**.
-
-## Branch history
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s22-history-dark.webp">
-  <img src="./docs/readme/s22-history-light.webp" alt="Rewrite history for hl/ledger-export: the branch Now with a fold, a combine, a removal, a move and a rename, next to the four commits it becomes After Apply">
-</picture>
-
-### Rewrite history
-
-Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename, squash or remove it, or start the branch from today's main. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change, and every planned change can be undone on its own. Each row's buttons, its `⋯` menu, a right click and `Cmd+K` on the focused row offer the same actions.
-
-### Safe apply
-
-Apply tries the whole plan on a temporary copy first and checks the result before your branch moves. If a step stops, it says which one and why, and your branch stays exactly as it was. A backup is saved before anything changes.
-
-### Conflict prediction
-
-See which files would conflict while you edit the plan, or read "No conflicts expected". The plan is merged in memory, so your checkout stays as it is.
-
-### Conflicts merged in a copy
-
-Let the History rewriter merge a conflicting rewrite in a copy, and have Goodboy check the result before anything moves.
-
-### Push with lease and restore
-
-**Apply and update online** replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten. Every rewrite saves a backup first: **Restore it** on the result takes it back, and **Backups** lists the older ones for 30 days.
-
-### Suggest a message
-
-Get a commit message drafted for a squash or a reword. Scribe writes it in place, and you can edit it before you apply.
-
-### Bring them into the plan
-
-Someone pushed after you applied? Goodboy lists their new commits and offers to add them to the plan and push again.
-
-### Rebase on main
-
-Rebase on main with the same engine, and bring in an agent only when there is a conflict.
-
-### After a pull request merges
-
-Decide what happens to a merged branch, **Ask me**, **Delete on this Mac** or **Also on origin**, per workspace or project, with 14 days to restore it. A branch with later commits, uncommitted changes, or one Goodboy did not create is left alone.
+Hand a plan straight to the implementer. The plan goes from **Ready to run** to **Ran** and shows which agent used it.
 
 ## Providers, limits and cost
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s15-limits-dark.webp">
-  <img src="./docs/readme/s15-limits-light.webp" width="480" alt="The Claude limits popover from the top bar: out until 14:20 and 84% of the week used">
+  <img src="./docs/readme/s15-limits-light.webp" width="480" alt="The Claude limits card from the top bar: about to run out, with 84% of the week used">
 </picture>
 
 ### Usage limits chip
@@ -661,6 +661,11 @@ Set a monthly cap per provider and hear about it before you reach it. Past the t
 Free disk space without guessing: worktree folders by repo, with their size, why each exists and whether it is safe to remove. Folders with changes, running agents or a git operation in progress are skipped, with the reason.
 
 ### Branches
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s33-branches-dark.webp">
+  <img src="./docs/readme/s33-branches-light.webp" alt="Clean up branches: nine local branches Goodboy made, seven safe to delete after their merge, grouped by repo">
+</picture>
 
 Delete old branches with confidence. They are sorted into **Safe to delete** and **Needs a look**, each with its session and whether it still exists on origin, and squash-merged branches are spotted too.
 
@@ -719,29 +724,85 @@ Read release notes inside the app, searchable, with links into the screen each c
 
 See a change instead of reading about it. Release notes can show **Before** and **After** pictures, with a lightbox, in light and dark.
 
-### Report a bug
-
-Tell us what broke in one line. **⌘I** (**Ctrl+Shift+I** on Windows and Linux) opens a report sheet from any screen, and so do the footer chip, the palette, Settings, the macOS Help menu and **Report this** on a notification. Version, system, screen and CLI versions come along as chips you can remove, **What gets sent** shows exactly what leaves, and secrets, paths and emails are stripped. It files through gh, or opens the issue on GitHub. After a crash, the next launch offers to report it.
-
 ### Guide
 
 Learn how Goodboy works in 18 short chapters that follow a task, with search and links that open each screen. Open **Guide** from the palette.
 
+## Agents and chat
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s09-transcript-dark.webp">
+  <img src="./docs/readme/s09-transcript-light.webp" alt="The Test agent chat on Haiku 4.5: the ask, four operations, and the redelivery test posting one credit for three deliveries">
+</picture>
+
+### Roles
+
+Give each agent the job it is good at. Nine roles come with the app, **Scout**, **Debug**, **Plan**, **Implement**, **Review**, **Test**, **Resolve**, **Docs** and **Generalist**, and a role sets the agent's instructions, its default model and what it hands back.
+
+### What the agent received
+
+Check exactly what an agent was told. The top of each chat shows who sent it and a chip for each part of its brief, and **View as sent** shows the exact text, with Copy.
+
+### Agent chat
+
+Follow one agent's work: grouped file edits, questions, permission cards and chips for the plans and reports it writes.
+
+### Queue or send now
+
+Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** interrupts and sends it now, and the queue survives a restart.
+
+### Stop and Continue
+
+Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you reload, restart or update Goodboy keeps going: a reload finds it still running, and after a restart it picks up where it stopped, with a note in its chat. One that cannot pick up says **Stopped by restart** and offers **Resume**.
+
+### Turn footer
+
+See what each turn cost: provider, model, duration, tokens, cache share, estimated cost and a context meter.
+
+### Tool call states
+
+Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Needs approval**, **Stopped** or **Denied**, with elapsed time and readable input and output.
+
+### Composer plus menu
+
+Do more from the message box: attach files, run a script (`$`), start a workflow (`~`) or ask another agent (`@`). `$` lists your saved scripts and your `package.json` scripts, across pnpm and yarn workspaces.
+
+### Attach files
+
+Hand an agent images, PDFs, CSV and text files, up to 10 at a time, by paste, drop or pick.
+
+### Drift warning
+
+Hear about it when an agent steps outside its role, like a planner editing files. Goodboy checks each turn against the role and sends a notification.
+
+### Subagents from plan parts
+
+Run a plan part by part. An implementer given a plan splits into one sub-agent per part, shown as 3.1 and 3.2, and a plan can give each part done-when checks and the files it expects to touch.
+
+### History rewriter and Scribe
+
+Let two helpers work on your history and your pull request text without the power to push. Their git points at a push address that goes nowhere, and their GitHub tokens are removed.
+
+### One language per session
+
+Get agents and summaries in the language of your goal.
+
+## Support Goodboy
+
+The best support is running Goodboy on the work you already have. When something feels off, or you have an idea, report it from inside the app in one line.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s32-report-bug-dark.webp">
+  <img src="./docs/readme/s32-report-bug-light.webp" alt="Report a bug over the Harborline board: one line typed, the version, system, screen and CLI versions as chips, and Send">
+</picture>
+
+### Report a bug
+
+Tell us what broke in one line. **⌘I** (**Ctrl+Shift+I** on Windows and Linux) opens a report sheet from any screen, and so do the footer chip, the palette, Settings, the macOS Help menu and **Report this** on a notification. Version, system, screen and CLI versions come along as chips you can remove, **What gets sent** shows exactly what leaves, and secrets, paths and emails are stripped. It files through gh, or opens the issue on GitHub. After a crash, the next launch offers to report it.
+
 <a id="keyboard-and-terminal"></a>
 <details>
 <summary><h2>Keyboard and terminal</h2></summary>
-
-### Right click menus
-
-Right click a session, agent, run, artifact, pull request, worktree row, diff file or message to see every action it has, at the pointer. The **⋯** menu and the palette list the same actions in the same order, and one that cannot run says why. **Shift+F10** opens the menu on the focused row.
-
-### Command palette
-
-Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too.
-
-### Search
-
-Find a message, a plan, a decision, an issue or a branch with **⌘F**, across every session, filtered by type, project, provider, status or date. Pick a hit to land on it in context, then walk the other matches in that view with **⌘G**. The index stays on your computer.
 
 ### Terminal
 
@@ -750,10 +811,6 @@ Open a real login shell in the session's worktree with **⌘T**, and find it sti
 ### Keyboard shortcuts, back and forward
 
 Drive Goodboy from the keyboard: about 40 shortcuts, a key for each view, workspaces 1 to 9, and **⌘[** and **⌘]** through history. One registry drives the keys, the help screen and the tooltips. **Esc** closes what is open inside the app and never takes the window out of macOS full screen.
-
-### Notifications
-
-Catch up in one place: a bell with an unread count, and a page filtered by severity and source.
 
 ### Script drawer
 

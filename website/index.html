@@ -1,7 +1,25 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function () {
+        var theme = null;
+        try {
+          theme = window.localStorage.getItem('goodboy-site:theme');
+        } catch (e) {
+          theme = null;
+        }
+        if (theme !== 'light' && theme !== 'dark') {
+          theme =
+            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+        }
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
 
     <!-- Google Tag Manager -->
     <script>
@@ -64,10 +82,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Goodboy" />
     <meta property="og:url" content="https://goodboy-ai.dev/" />
-    <meta
-      property="og:title"
-      content="Goodboy: stop re-explaining yourself to coding agents"
-    />
+    <meta property="og:title" content="Goodboy: stop re-explaining yourself to coding agents" />
     <meta
       property="og:description"
       content="Goodboy is a free ADE, an agentic development environment: agents from the providers you connect do the work, and Goodboy gives it structure. Each task keeps its goal, decisions and summary, so the next agent starts briefed."
@@ -75,20 +90,14 @@
     <meta property="og:image" content="https://goodboy-ai.dev/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta
-      property="og:image:alt"
-      content="Goodboy: stop re-explaining yourself to coding agents"
-    />
+    <meta property="og:image:alt" content="Goodboy: stop re-explaining yourself to coding agents" />
     <meta property="og:locale" content="en_US" />
 
     <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@GoodboyWorks" />
     <meta name="twitter:creator" content="@GoodboyWorks" />
-    <meta
-      name="twitter:title"
-      content="Goodboy: stop re-explaining yourself to coding agents"
-    />
+    <meta name="twitter:title" content="Goodboy: stop re-explaining yourself to coding agents" />
     <meta
       name="twitter:description"
       content="Goodboy is a free ADE, an agentic development environment: agents from the providers you connect do the work, and Goodboy gives it structure. Each task keeps its goal, decisions and summary, so the next agent starts briefed."
@@ -100,8 +109,9 @@
     />
 
     <!-- Theme / PWA hints -->
-    <meta name="theme-color" content="#ffffff" />
-    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d0f11" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
 
     <!-- JSON-LD: SoftwareApplication -->
     <script type="application/ld+json">
@@ -213,7 +223,6 @@
         ]
       }
     </script>
-
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->
