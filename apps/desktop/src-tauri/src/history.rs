@@ -2117,6 +2117,9 @@ pub(crate) fn run_plan(
     if !cwd.exists() {
         return Err(WorktreeError::RepoNotFound(args.plan.worktree_path.clone()));
     }
+    if let Some(reason) = recover_journal(cwd)? {
+        return Ok(RunOutcome::Blocked { reason });
+    }
     if let Some(reason) = preflight(cwd, &args.branch, &args.plan.head) {
         return Ok(RunOutcome::Blocked { reason });
     }
@@ -2126,10 +2129,28 @@ pub(crate) fn run_plan(
 
 #[tauri::command]
 pub async fn history_plan_run(
+    leases: State<'_, WriterLeases>,
     args: HistoryRunArgs,
     on_progress: tauri::ipc::Channel<TrialProgress>,
 ) -> Result<RunOutcome, WorktreeError> {
+    let registry = leases.0.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&args.plan.worktree_path);
+        if journal_of(&cwd).is_some_and(|journal| journal.exists()) {
+            let path = args.plan.worktree_path.clone();
+            let status = acquire_lease(&registry, &path, LEASE_HOLDER, None);
+            if !status.is_granted {
+                cancel_lease(&registry, &path, LEASE_HOLDER);
+                return Ok(RunOutcome::Blocked {
+                    reason: "An agent is writing here, so an interrupted rewrite cannot be settled yet. Try again when it finishes.".to_string(),
+                });
+            }
+            let recovered = recover_journal(&cwd);
+            release_lease(&registry, &path, LEASE_HOLDER, status.token.as_deref());
+            if let Some(reason) = recovered? {
+                return Ok(RunOutcome::Blocked { reason });
+            }
+        }
         let slug = format!("{TRIAL_SLUG_PREFIX}{}", now_nanos());
         run_plan(&args, &slug, &|event| {
             let _ = on_progress.send(event);
@@ -4780,5 +4801,30 @@ mod tests {
             "the other worktree's registration was pruned"
         );
         assert!(!copy_path_of(&slug("no-global-prune")).exists());
+    }
+
+    #[test]
+    fn a_crash_after_the_files_moved_is_settled_before_the_next_run_checks_cleanliness() {
+        let l = ledger("run-after-crash");
+        let mut steps = picks(&[&l.export, &l.batch, &l.webhook, &l.retries, &l.logging]);
+        steps.push(step(&l.tests, HistoryVerb::Drop));
+        steps.push(step(&l.typo, HistoryVerb::Pick));
+        let head = run_ok(&l, steps, "run-after-crash").head.unwrap();
+        git_ok(&l.root, &["read-tree", "-m", "-u", &l.typo, &head]);
+        let journal = journal_of(&l.root).unwrap();
+        std::fs::write(&journal, format!("{}\n{head}\nref\nfeature\n", l.typo)).unwrap();
+        let outcome = run_plan(
+            &run_args(&l.root, ledger_plan(&l, picks(&[&l.export]))),
+            &slug("run-after-crash-next"),
+            &|_| {},
+        )
+        .unwrap();
+        let RunOutcome::Blocked { reason } = outcome else {
+            panic!("the plan was made before the finished rewrite, so it should not run");
+        };
+        assert!(!reason.contains("not committed"), "{reason}");
+        assert!(!journal.exists());
+        assert_eq!(git_ok(&l.root, &["rev-parse", "refs/heads/feature"]), head);
+        assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
     }
 }
