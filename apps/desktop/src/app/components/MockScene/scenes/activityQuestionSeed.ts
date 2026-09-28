@@ -197,6 +197,39 @@ const SESSION_EVENTS = [
   },
 ] as unknown as ReadonlyArray<SessionEvent>;
 
+const WAITING_AGENTS: ReadonlyArray<Agent> = AGENTS.map((agent) => ({
+  ...agent,
+  status: 'running',
+  outputSummary: null,
+  lastFinishedAt: null,
+}));
+
+const WAITING_QUESTIONS: ReadonlyArray<OpenQuestion> = [
+  ...OPEN_QUESTIONS,
+  {
+    id: 'mock-oq-question-fee-lines' as OpenQuestionId,
+    sessionId: SESSION_ID,
+    workflowRunId: WORKFLOW_RUN_ID,
+    createdByAgentId: AGENT_ID,
+    text: 'Keep the fee lines exact, or round them with the total?',
+    suggestedAnswers: ['Keep them exact', 'Round them with the total'],
+    recommendedAnswer: 'Keep them exact',
+    selectMode: 'one',
+    isBlocking: true,
+    userAnswer: null,
+    status: 'open',
+    createdAt: at({ time: '09:53:00' }),
+  },
+];
+
+export const seedOneWaitingAgentScene = () => {
+  seedActivityQuestionScene();
+  useAppStore.setState({
+    sessionPhaseRuns: { [SESSION_ID]: WAITING_AGENTS },
+    sessionOpenQuestions: { [SESSION_ID]: WAITING_QUESTIONS },
+  });
+};
+
 export const seedActivityQuestionScene = () => {
   useAppStore.setState({
     workspaces: [WORKSPACE],
