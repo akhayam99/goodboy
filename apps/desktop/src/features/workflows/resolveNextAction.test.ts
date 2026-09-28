@@ -197,28 +197,25 @@ describe('resolveNextAction', () => {
     expect(resolve({ agents, subjectAgentId: 'a-2' as AgentId })).toEqual({ kind: 'none' });
   });
 
-  it('puts an open question before a failed step in the run scope', () => {
+  it('leaves a question to the asking agent row the run tree already draws', () => {
     const action = resolve({
       agents: stepAgents('completed', 'failed'),
       questions: [question()],
     });
 
-    expect(action).toMatchObject({
-      kind: 'answer',
-      subjectAgentId: 'a-1',
-      sentence: 'Implement agent asks: Keep the legacy validateCart export?',
-      cause: 'This step waits on your answer.',
-    });
+    expect(action.kind).toBe('recover');
   });
 
-  it('names the waiting step when another agent asks', () => {
+  it('puts a question no agent row shows before a failed step in the run scope', () => {
     const action = resolve({
       agents: stepAgents('completed', 'failed'),
-      questions: [question({ createdByAgentId: 'a-0' as AgentId })],
+      questions: [question({ createdByAgentId: undefined })],
     });
 
     expect(action).toMatchObject({
       kind: 'answer',
+      subjectAgentId: null,
+      sentence: 'An agent asks: Keep the legacy validateCart export?',
       cause: 'Implement waits on your answer.',
     });
   });
@@ -236,11 +233,14 @@ describe('resolveNextAction', () => {
   it('says how many questions are open when there is more than one', () => {
     const action = resolve({
       agents: stepAgents('completed', 'running'),
-      questions: [question(), question({ id: 'q-2' as OpenQuestionId })],
+      questions: [
+        question({ createdByAgentId: undefined }),
+        question({ id: 'q-2' as OpenQuestionId, createdByAgentId: undefined }),
+      ],
     });
 
     expect(action).toMatchObject({
-      cause: 'This step waits on your answer. 2 questions are open.',
+      cause: 'Implement waits on your answer. 2 questions are open.',
     });
   });
 

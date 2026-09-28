@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { sessionPlace } from '../../../../../../store/slices/navigation/place';
+import { agentPlace, sessionPlace } from '../../../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { ArtifactId, OpenQuestion, Session, SessionId } from '@goodboy/types';
+import type { AgentId, ArtifactId, OpenQuestion, Session, SessionId } from '@goodboy/types';
 
 type Worktree = {
   readonly id: string;
@@ -60,6 +60,7 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns } =
     setFocusedArtifactId: vi.fn(),
     openMountDiff: vi.fn(),
     closeWorkflowRun: vi.fn(async () => undefined),
+    requestOpenQuestionScroll: vi.fn(),
   },
 }));
 
@@ -104,6 +105,7 @@ vi.mock('./ActivityFilterPanel', () => ({
 import { TimelinePane } from './index';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
 import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
+import { DEFAULT_ACTIVITY_FILTER, writeActivityFilter } from '../../../../timeline/activityFilter';
 
 const SESSION = {
   id: 'session-1',
@@ -466,7 +468,7 @@ describe('TimelinePane run waiting on an answer', () => {
     expect(screen.queryByText(/Ecco il prompt/)).toBeNull();
   });
 
-  it('names the waiting step on the run row and offers a visible Answer there', () => {
+  it('renders the Answer for a step question once, on its question row, and keeps the run row quiet', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
@@ -476,16 +478,41 @@ describe('TimelinePane run waiting on an answer', () => {
     if (!(row instanceof HTMLElement)) {
       throw new Error('run row missing');
     }
-    const answer = within(row).getByRole('button', { name: 'Answer' });
 
-    expect(within(row).getByText('Needs your answer in step 1')).toBeDefined();
-    expect(answer.className).toContain('text-warning');
+    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
+    expect(within(row).queryByRole('button', { name: 'Answer' })).toBeNull();
+    expect(within(row).queryByText(/Needs your answer/)).toBeNull();
+    expect(screen.getByText(/Retry on 5xx only\?/)).toBeDefined();
   });
 
-  it('opens the exact question the run waits on', () => {
+  it('opens the exact question from its one Answer', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
     questions.open = [STEP_QUESTION];
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+
+    expect(storeState.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+    });
+    expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-step');
+  });
+
+  it('jumps from the run row to the asking agent when neither it nor its question shows', () => {
+    writeActivityFilter({
+      filter: { ...DEFAULT_ACTIVITY_FILTER, questions: false, workflowSubagents: false },
+    });
+    const child = {
+      ...STEP,
+      id: 'agent-child',
+      stepId: null,
+      parentAgentId: 'agent-step',
+      name: 'Probe the gateway',
+    };
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP, child] };
+    questions.open = [{ ...STEP_QUESTION, createdByAgentId: 'agent-child' } as OpenQuestion];
 
     render(<TimelinePane session={SESSION} actions={null} />);
     const row = runRow();
@@ -493,11 +520,16 @@ describe('TimelinePane run waiting on an answer', () => {
       throw new Error('run row missing');
     }
     fireEvent.click(within(row).getByRole('button', { name: 'Answer' }));
+    writeActivityFilter({ filter: DEFAULT_ACTIVITY_FILTER });
 
+    expect(screen.getAllByRole('button', { name: 'Answer' })).toHaveLength(1);
     expect(storeState.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
+      to: agentPlace({ sessionId: 'session-1' as SessionId, agentId: 'agent-child' as AgentId }),
     });
-    expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-step');
+    expect(storeState.requestOpenQuestionScroll).toHaveBeenCalledWith({
+      agentId: 'agent-child',
+      questionId: 'question-step',
+    });
   });
 });
 

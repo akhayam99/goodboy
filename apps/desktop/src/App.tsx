@@ -20,6 +20,7 @@ import { SessionRefreshBridge } from './features/session/components/SessionRefre
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
 import { useWindowPresence } from './features/workspace/hooks/useWindowPresence';
+import { useWindowLayout } from './features/workspace/hooks/useWindowLayout';
 import { isMainWindow } from './features/workspace/window';
 import { primaryProjectRoot } from './features/workspace/primaryProjectRoot';
 import { ReleaseNoticeBridge } from './features/changelog/components/ReleaseNoticeBridge';
@@ -131,6 +132,7 @@ export const App = () => {
   useProviderLimitsProbe();
   useUpdaterPolling();
   useWindowPresence();
+  useWindowLayout();
   useWindowShortcuts();
   useArtifactMirror({ isReady: hydrated });
   useTitlebarInset();

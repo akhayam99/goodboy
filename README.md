@@ -93,7 +93,7 @@ The review comes back with seven comments. Select them and press **Resolve**. An
 
 ## Chat
 
-Every agent still has its own chat when you want to steer by hand. Type while it works and your message waits for its turn, or send it now and interrupt.
+Every agent still has its own chat when you want to steer by hand. Type while it works and your message waits for its turn, or send it now and interrupt. Restart Goodboy or install an update, and the agents that were working pick up where they stopped.
 
 The inbox, plans and wireframes, history rewriting, storage cleanup, security findings and the rest are in [FEATURES.md](./FEATURES.md), with screenshots. Something broke? Press **⌘I** in the app and report it in one line. [goodboy-ai.dev](https://goodboy-ai.dev) tells the story in a minute.
 

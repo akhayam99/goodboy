@@ -26,7 +26,6 @@ export type DialogProps = {
   title?: ReactNode;
   description?: ReactNode;
   children: ReactNode;
-  footer?: ReactNode;
   size?: DialogSize;
   surface?: DialogSurface;
   className?: string;
@@ -66,7 +65,6 @@ export const Dialog = ({
   title,
   description,
   children,
-  footer,
   size = 'md',
   surface = 'floating',
   className,
@@ -237,14 +235,6 @@ export const Dialog = ({
             </ScrollFade>
           </div>
         )}
-        {footer ? (
-          <>
-            <Divider />
-            <footer className="flex shrink-0 items-center justify-end gap-2 px-6 py-3">
-              {footer}
-            </footer>
-          </>
-        ) : null}
       </div>
     </dialog>
   );

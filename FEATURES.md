@@ -56,7 +56,7 @@ Point agents at the right repo without naming it. Starred projects and their one
 
 ### Open in new window
 
-Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice.
+Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice. After a reload or an update, and on every launch with **Reopen last** on, every window comes back on the screen, tab and panel it showed.
 
 ### Locate moved projects
 
@@ -99,7 +99,7 @@ Start from the goal instead: **Start blank** in the kickoff header opens the ses
 
 ### Pick up a task, with a drafted brief
 
-Turn an issue into a briefed session in one pick. Goodboy drafts a short title and goal linked back to the issue, and you keep it, edit it, or use the issue text.
+Turn an issue into a briefed session in one pick. Goodboy drafts a short title and goal linked back to the issue, and you keep it, edit it, or use the issue text. Then run it through the same workflow builder as **Run a workflow**, or ask an agent. A Sentry error or a GitHub issue opens in the project it belongs to, and one Start links the issue, creates the session and starts the work.
 
 ### Ask an agent
 
@@ -144,7 +144,7 @@ Know what needs you from any screen. A top-bar chip counts sessions that need yo
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s03-activity-dark.webp">
-  <img src="./docs/readme/s03-activity-light.webp" alt="A session overview with payments-api and notify-relay, a suggestion to answer an open question, and the Activity timeline">
+  <img src="./docs/readme/s03-activity-light.webp" alt="A session overview with payments-api and notify-relay, and the Activity timeline with one open question on its own row">
 </picture>
 
 ### Session overview
@@ -209,7 +209,7 @@ Keep talking while an agent works. **Enter** queues your message for its next tu
 
 ### Stop and Continue
 
-Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**, and quitting Goodboy mid-turn does the same.
+Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you reload, restart or update Goodboy keeps going: a reload finds it still running, and after a restart it picks up where it stopped, with a note in its chat. One that cannot pick up says **Stopped by restart** and offers **Resume**.
 
 ### Turn footer
 
@@ -314,7 +314,7 @@ Start each step from a short brief instead of the whole previous chat. If the su
   <img src="./docs/readme/s07-questions-light.webp" alt="An open question from the stuck-delivery banner agent with suggested answers, two picked, and Let an agent answer">
 </picture>
 
-Get questions as cards instead of lines buried in a chat. An agent can mark a question as blocking, which holds its step until you answer, and a question can include suggested answers next to free text.
+Get questions as cards instead of lines buried in a chat. An agent can mark a question as blocking, which holds its step until you answer, and a question can include suggested answers next to free text. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
 
 ### Let an agent answer
 

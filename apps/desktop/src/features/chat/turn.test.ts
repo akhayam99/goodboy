@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ProviderRunId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
 
 type TurnEnvelope = {
   readonly runId: string;
+  readonly seq?: number;
 } & (
   | {
       readonly type: 'line';
@@ -32,11 +33,29 @@ vi.mock('@tauri-apps/api/event', () => ({
   }),
 }));
 
-import { runTurn } from './turn';
+import { RELOAD_GAP_MESSAGE, RUN_GONE_MESSAGE, attachTurn, runTurn } from './turn';
+import { readTurnCursor, type TurnOwner } from './turnCursor';
+
+const OWNER: TurnOwner = {
+  agentId: 'agent-1' as AgentId,
+  sessionId: 'session-1' as SessionId,
+  workspaceId: 'workspace-1' as WorkspaceId,
+  workflowRunId: null,
+  stepRole: 'implementer',
+  provider: 'codex',
+  model: 'gpt-5.6-sol',
+  effort: null,
+  startedAt: '2026-09-27T10:00:00.000Z' as IsoDateTime,
+  workingDir: '/tmp/worktree',
+  mountId: null,
+};
+
+const errorLine = (message: string): string => JSON.stringify({ type: 'error', message });
 
 afterEach(() => {
   capturedListeners.length = 0;
   vi.clearAllMocks();
+  sessionStorage.clear();
 });
 
 describe('runTurn', () => {
@@ -288,5 +307,115 @@ describe('runTurn', () => {
       done: false,
       value: { kind: 'error', message: 'stream\ndropped' },
     });
+  });
+
+  it('keeps a cursor per handled line and clears it when the run ends', async () => {
+    const runId = 'cursor-provider-run' as ProviderRunId;
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_spawn') {
+        capturedListeners[0]?.({ runId, seq: 1, type: 'line', line: errorLine('one') });
+        capturedListeners[0]?.({ runId, seq: 2, type: 'line', line: errorLine('two') });
+        capturedListeners[0]?.({ runId, seq: 3, type: 'end', exit_code: 0, stderr: '' });
+      }
+      return runId;
+    });
+
+    const iterator = runTurn(
+      {
+        runId,
+        provider: 'codex',
+        model: 'gpt-5.6-sol',
+        workingDir: '/tmp/worktree',
+        writableRoots: [],
+        prompt: 'hello',
+      },
+      undefined,
+      { owner: OWNER },
+    )[Symbol.asyncIterator]();
+
+    await iterator.next();
+    expect(readTurnCursor({ runId })).toEqual({ seq: 0, index: -1, owner: OWNER });
+    await iterator.next();
+    expect(readTurnCursor({ runId })).toEqual({ seq: 1, index: 0, owner: OWNER });
+    await expect(iterator.next()).resolves.toMatchObject({ done: true });
+    expect(readTurnCursor({ runId })).toBeNull();
+    expect(invokeMock).toHaveBeenCalledWith('turn_release', { runId });
+  });
+});
+
+describe('attachTurn', () => {
+  it('replays only what came after the cursor and drops live duplicates', async () => {
+    const runId = 'attached-run' as ProviderRunId;
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'turn_attach') {
+        capturedListeners[0]?.({ runId, seq: 3, type: 'line', line: errorLine('three') });
+        return {
+          hasGap: false,
+          isLive: true,
+          events: [
+            { seq: 2, type: 'line', line: errorLine('two') },
+            { seq: 3, type: 'line', line: errorLine('three') },
+          ],
+        };
+      }
+      return undefined;
+    });
+
+    const iterator = attachTurn({
+      runId,
+      provider: 'codex',
+      cursor: { seq: 2, index: 0, owner: OWNER },
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: { kind: 'error', message: 'three' },
+    });
+    expect(invokeMock).toHaveBeenCalledWith('turn_attach', { runId, afterSeq: 1 });
+    capturedListeners[0]?.({ runId, seq: 4, type: 'line', line: errorLine('four') });
+    capturedListeners[0]?.({ runId, seq: 5, type: 'end', exit_code: 0, stderr: '' });
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: { kind: 'error', message: 'four' },
+    });
+    await expect(iterator.next()).resolves.toMatchObject({ done: true });
+  });
+
+  it('says when part of the output was evicted before the window came back', async () => {
+    const runId = 'gap-run' as ProviderRunId;
+    invokeMock.mockImplementation(async (command: string) =>
+      command === 'turn_attach'
+        ? {
+            hasGap: true,
+            isLive: false,
+            events: [{ seq: 9, type: 'end', exit_code: 0, stderr: '' }],
+          }
+        : undefined,
+    );
+
+    const iterator = attachTurn({
+      runId,
+      provider: 'codex',
+      cursor: { seq: 1, index: 0, owner: OWNER },
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).resolves.toMatchObject({
+      done: false,
+      value: { kind: 'decision_note', message: RELOAD_GAP_MESSAGE },
+    });
+    await expect(iterator.next()).resolves.toMatchObject({ done: true });
+  });
+
+  it('fails when the run is no longer known', async () => {
+    const runId = 'gone-run' as ProviderRunId;
+    invokeMock.mockImplementation(async () => null);
+
+    const iterator = attachTurn({
+      runId,
+      provider: 'anthropic',
+      cursor: { seq: 4, index: 0, owner: OWNER },
+    })[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).rejects.toThrow(RUN_GONE_MESSAGE);
   });
 });

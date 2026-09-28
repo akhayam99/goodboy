@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Button, Eyebrow, FieldRow, Notice } from '@goodboy/ui';
+import { Button, Eyebrow, FieldRow, FormActions, Notice } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useToast } from '../../../../app/components/Toast';
 import { ExportGroupsSection } from './ExportGroupsSection';
@@ -120,7 +120,15 @@ export const BackupPage = () => {
               onChooseProjectParent={() => void chooseImportProjectParent()}
               disabled={isImporting}
             />
-            <div className="flex items-center gap-2">
+            <FormActions>
+              <Button
+                variant="ghost"
+                disabled={isImporting}
+                onClick={resetImport}
+                className="text-muted-foreground"
+              >
+                Cancel
+              </Button>
               <Button
                 isBusy={isImporting}
                 busyLabel="Importing…"
@@ -128,10 +136,7 @@ export const BackupPage = () => {
               >
                 Import now
               </Button>
-              <Button variant="ghost" size="sm" disabled={isImporting} onClick={resetImport}>
-                Cancel
-              </Button>
-            </div>
+            </FormActions>
           </>
         )}
         {importResult !== null && importResult.ok && (

@@ -29,6 +29,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return reason.stepLabel == null
         ? 'Needs your answer'
         : `Needs your answer in step ${reason.stepLabel}`;
+    case 'stepAsking':
+      return null;
     case 'budget':
       return reason.limitUsd == null
         ? 'Paused at the spend limit'
@@ -52,7 +54,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
     case 'stopped':
       return 'Stopped by you';
     case 'agentStopped':
-      return reason.by === 'app' ? 'Stopped when Goodboy quit' : 'Stopped by you';
+      return reason.by === 'app' ? 'Stopped by restart' : 'Stopped by you';
     case 'stepStopped':
       return reason.stepLabel == null
         ? 'A step was stopped'
@@ -86,6 +88,8 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
       return reason.stepLabel == null ? 'Ready' : `Step ${reason.stepLabel} ready`;
     case 'question':
       return 'Needs you';
+    case 'stepAsking':
+      return null;
     case 'budget':
       return 'At spend limit';
     case 'orchestratorFailed':
@@ -148,6 +152,7 @@ export const rowStateShortSentence = ({ state }: StateParams): string | null =>
 
 const NEUTRAL_REASONS: ReadonlySet<RowStateReason['kind']> = new Set([
   'discarded',
+  'stepAsking',
   'agentStopped',
   'stepStopped',
 ]);
@@ -177,6 +182,9 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
       }
       if (state.reason?.kind === 'ready') {
         return 'ready';
+      }
+      if (state.reason?.kind === 'stepAsking') {
+        return 'queued';
       }
       if (state.reason?.kind === 'budget') {
         return 'budget';
@@ -212,6 +220,9 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
   if (state.reason?.kind === 'discarded') {
     return { state: node, label: 'Discarded' };
   }
+  if (state.reason?.kind === 'stepAsking') {
+    return { state: node, label: 'Waiting on a step' };
+  }
   if (state.reason?.kind === 'blocked' || state.reason?.kind === 'stepBlocked') {
     return { state: node, label: 'Blocked' };
   }
@@ -222,7 +233,7 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
     return { state: node, label: 'Needs approval' };
   }
   if (state.reason?.kind === 'agentStopped' && state.reason.by === 'app') {
-    return { state: node, label: 'Stopped when Goodboy quit' };
+    return { state: node, label: 'Stopped by restart' };
   }
   return { state: node, label: ROW_NODE_LABEL[node] };
 };

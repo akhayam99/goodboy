@@ -42,7 +42,12 @@ file holds those explanations. Everything below has been "fixed" at least once a
   `resolveRowState`). Only `nextStage` computes it: thread writes go through
   `saveResolveThread`, queue decisions through `advanceResolveStage`. A write
   that calls `upsertResolveThread` directly skips the stage and leaves the row
-  lying. Verdicts in
+  lying. The Resolve lens reads its rows from `sessionResolveQueueItems`,
+  whose entries carry a copy of the thread row. `projectResolveRows` swaps
+  those copies for the fresh rows by thread id, so every thread write shows
+  on the queue at once. A projection that sets `sessionResolveThreads` alone
+  leaves the queue on the old row: a started resolver stays invisible until a
+  reload. Verdicts in
   memory are derived from the row through `threadOutcome`. They are never
   rebuilt by replaying assistant messages. Marker parsing writes rows, but it
   does not own them. `resolve_publications` and `resolve_publication_threads`
@@ -55,6 +60,11 @@ file holds those explanations. Everything below has been "fixed" at least once a
   60s is closed as failed with the error `The app stopped while publishing`:
   a reply caught in `sending` turns `uncertain`, and retry checks GitHub before
   posting again. The in-memory map in `publicationLock.ts` is only a fast lane.
+  Taking a comment back up (`undeferResolveQueueItem`) only moves a
+  `deferred` or `wont_fix` item; the database refuses an `accepted` one.
+  Undoing an approval is a reopen (`reopenResolveQueueItem`, stage event
+  `user_unapproved`). `resolveDecisionVerb` maps each row action to the
+  verb its state allows, and its test walks the decision matrix.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider
@@ -67,6 +77,17 @@ file holds those explanations. Everything below has been "fixed" at least once a
   a ref instead of adding a provider parameter to `onModel`. This matters for
   more than passing UI state when the consumer persists the pair, as
   `step_def_upsert` does into the SQLite `step_library` table.
+- A push count never reads `@{upstream}` or the `branch.ab` line of `git
+status` directly. A branch cut from a remote-tracking ref (`worktree add -b
+<b> <path> origin/main`) tracks that ref under git's default
+  `branch.autoSetupMerge`, and `git push origin <b>` does not move it, so
+  `@{u}..HEAD` counts the branch's own commits against main forever. That is
+  how a suggestion kept asking to push 8 commits already on origin.
+  `branch_remote::branch_remote` compares HEAD with `<remote>/<branch>` and is
+  the one reader for `worktree_status`, `worktree_commits` (`pushed`) and
+  `project_git_status`; `upstream` is that ref or null. New branches are cut
+  with `--no-track` and the in-app push passes `--set-upstream`, but old
+  branches still track main, so do not "simplify" back to `@{u}`.
 
 ## Hand-maintained lists the compiler does not check
 

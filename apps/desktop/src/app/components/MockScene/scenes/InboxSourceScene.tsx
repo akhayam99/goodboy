@@ -189,7 +189,12 @@ const LINEAR_ISSUES: ReadonlyArray<LinearIssue> = [
   }),
 ];
 
-const CONNECTED: ReadonlyArray<InboxProvider> = ['github', 'linear', 'sentry'];
+const DEFAULT_CONNECTED: ReadonlyArray<InboxProvider> = ['github', 'linear', 'sentry'];
+
+const PROJECT_BY_SLUG: Readonly<Record<string, ProjectId>> = {
+  'payments-api': 'mock-board-project-payments-api' as ProjectId,
+  'notify-relay': 'mock-board-project-notify-relay' as ProjectId,
+};
 
 const installIpc = (): void => {
   mockIPC((cmd) => {
@@ -216,14 +221,30 @@ const installIpc = (): void => {
 };
 
 type Variant = {
-  readonly source: 'sentry' | 'linear';
+  readonly source: 'sentry' | 'linear' | null;
+  readonly project: ProjectId | null;
+  readonly connected: ReadonlyArray<InboxProvider>;
   readonly isLaunching: boolean;
+};
+
+const SOURCE_TITLE = { sentry: 'Sentry', linear: 'Linear' } as const;
+
+const readSource = ({ value }: { readonly value: string | null }): Variant['source'] => {
+  if (value === 'linear' || value === 'sentry') {
+    return value;
+  }
+  return value === 'all' ? null : 'sentry';
 };
 
 const readVariant = (): Variant => {
   const params = new URLSearchParams(window.location.search);
+  const connected = (params.get('connected') ?? '')
+    .split(',')
+    .filter((entry): entry is InboxProvider => DEFAULT_CONNECTED.includes(entry as InboxProvider));
   return {
-    source: params.get('source') === 'linear' ? 'linear' : 'sentry',
+    source: readSource({ value: params.get('source') }),
+    project: PROJECT_BY_SLUG[params.get('project') ?? ''] ?? null,
+    connected: connected.length === 0 ? DEFAULT_CONNECTED : connected,
     isLaunching: params.get('launch') === '1',
   };
 };
@@ -231,6 +252,11 @@ const readVariant = (): Variant => {
 export const InboxSourceScene = () => {
   const [isReady, setIsReady] = useState(false);
   const [variant] = useState(readVariant);
+  const [filters, setFilters] = useState<InboxFilters>(() => ({
+    ...NO_INBOX_FILTERS,
+    source: variant.source,
+    project: variant.project,
+  }));
   const projects = useAppStore((state) => state.projects);
 
   useEffect(() => {
@@ -271,7 +297,6 @@ export const InboxSourceScene = () => {
     return null;
   }
 
-  const filters: InboxFilters = { ...NO_INBOX_FILTERS, source: variant.source };
   const visible = filterInboxRecords({ records, query: '', filters });
   const selected = visible[0] ?? null;
 
@@ -292,18 +317,22 @@ export const InboxSourceScene = () => {
                 <InboxFacetRail
                   filters={filters}
                   counts={inboxFacetCounts({ records, query: '', filters })}
-                  connected={CONNECTED}
+                  connected={variant.connected}
                   loading={NOT_LOADING}
                   errors={NO_ERRORS}
                   projects={projects}
-                  onFiltersChange={noop}
-                  onClearFilters={noop}
+                  onFiltersChange={setFilters}
+                  onClearFilters={() => setFilters(NO_INBOX_FILTERS)}
                 />
               }
               list={
                 <PaneShell
                   scroll="body"
-                  title={variant.source === 'sentry' ? 'Sentry' : 'Linear'}
+                  title={
+                    filters.source === 'sentry' || filters.source === 'linear'
+                      ? SOURCE_TITLE[filters.source]
+                      : 'Inbox'
+                  }
                   meta={`${visible.length} items`}
                   actions={<IconButton icon={RefreshCw} label="Refresh inbox" onClick={noop} />}
                 >
@@ -314,7 +343,7 @@ export const InboxSourceScene = () => {
                       now: new Date(),
                     })}
                     totalCount={records.length}
-                    connectedCount={CONNECTED.length}
+                    connectedCount={variant.connected.length}
                     isLoading={false}
                     failures={[]}
                     hasFiltersActive

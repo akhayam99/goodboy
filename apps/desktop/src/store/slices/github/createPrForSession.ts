@@ -20,6 +20,7 @@ import { mountRequestEventPayload } from '../project-mounts/mountRequests';
 import { githubRequestHost } from './mountPrLink';
 import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
+import { ReportedError } from '../notifications/reportedError';
 
 export type CreatePrReferenceMode = 'closing' | 'part-of' | 'none';
 
@@ -176,7 +177,7 @@ export const createPrForSession = (_set: SetFn, get: GetFn) => {
         sessionId,
         workspaceId: workspace.id,
       });
-      throw new Error(errMsg);
+      throw new ReportedError(errMsg);
     }
     const url = parseCreatedPrUrl({ stdout: res.stdout });
     const number = url === null ? null : Number(PR_URL.exec(url)?.[1] ?? Number.NaN);

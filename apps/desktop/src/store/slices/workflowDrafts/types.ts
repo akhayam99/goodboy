@@ -6,7 +6,9 @@ export type { SetFn, GetFn } from '../../slice-types';
 
 export type Mode = 'preset' | 'custom' | 'dynamic';
 
-export type KickoffDraftKey = `kickoff:${WorkspaceId}`;
+export type KickoffLane = 'workflow' | 'task';
+
+export type KickoffDraftKey = `kickoff:${WorkspaceId}` | `kickoff-task:${WorkspaceId}`;
 
 export type WorkflowDraftKey = SessionId | KickoffDraftKey;
 

@@ -6,8 +6,11 @@ import { NudgeCard } from '../../NudgeCard';
 import { RightSizeCard } from '../../RightSizeCard';
 import { SuggestionRow } from '../../../../suggestions/components/SuggestionRow';
 import { useSessionSuggestions } from '../../../../suggestions';
+import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
 import type { ScopePending } from './useScopeNudge';
 import type { RightSizePending, RightSizeSuggestion } from './useRightSizeNudge';
+
+const PLAN_READY_KEY = 'plan-ready';
 
 type UseSuggestionCardsArgs = {
   readonly session: Session;
@@ -49,6 +52,7 @@ export const useSuggestionCards = ({
 }: UseSuggestionCardsArgs): { readonly key: string; readonly node: ReactNode }[] => {
   const suggestions: { readonly key: string; readonly node: ReactNode }[] = [];
   const sessionSuggestions = useSessionSuggestions({ session, withRebase: false });
+  const handoff = usePendingAction({ sessionId: session.id });
   const planReady =
     sessionSuggestions.find((suggestion) => suggestion.kind === 'plan-ready') ?? null;
 
@@ -60,7 +64,14 @@ export const useSuggestionCards = ({
           suggestion={planReady}
           size="card"
           actionLabel="Start implementer"
-          onAction={() => void acceptSessionNudgeHandoff(session.id)}
+          isBusy={handoff.pendingKeys.has(PLAN_READY_KEY)}
+          onAction={() =>
+            void handoff.run({
+              key: PLAN_READY_KEY,
+              failureTitle: "Couldn't start the implementer",
+              task: () => acceptSessionNudgeHandoff(session.id),
+            })
+          }
           onDismiss={() => void dismissSessionNudge(session.id, 'dismissed')}
         />
       ),

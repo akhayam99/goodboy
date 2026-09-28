@@ -1024,6 +1024,7 @@ describe('publishConversations over a real git repository', () => {
     const entries = await listResolveQueueItems({ db: tauriDatabase, sessionId: SESSION_ID });
     expect(entries[0]?.item.approvalState).toBe('wont_fix');
     expect(entries[0]?.item.deliveredAt).not.toBeNull();
+    expect(get().sessionResolveQueueItems[SESSION_ID]?.[0]?.item.deliveredAt).not.toBeNull();
   });
 
   it('closes the healthy threads and marks only the failing one as a failed publication', async () => {

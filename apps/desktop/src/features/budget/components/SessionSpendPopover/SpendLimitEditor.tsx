@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, formatError } from '@goodboy/ui';
+import { Button, FormActions, formatError } from '@goodboy/ui';
 import type { SessionBudget, SessionBudgetOnExceed, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { SpendLimitFields } from '../SpendLimitFields';
@@ -67,25 +67,33 @@ export const SpendLimitEditor = ({ sessionId, limit, onDone }: Props) => {
             : 'Counts everything this session spends, context updates included.'}
         </p>
       )}
-      <div className="flex items-center justify-end gap-1.5">
-        {limit !== null ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={isSaving}
-            onClick={() => void run(() => clearSessionBudget(sessionId))}
-          >
-            Remove limit
-          </Button>
-        ) : null}
-        <span className="flex-1" />
-        <Button variant="ghost" size="sm" disabled={isSaving} onClick={onDone}>
+      <FormActions
+        leading={
+          limit === null ? null : (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isSaving}
+              onClick={() => void run(() => clearSessionBudget(sessionId))}
+            >
+              Remove limit
+            </Button>
+          )
+        }
+      >
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isSaving}
+          onClick={onDone}
+          className="text-muted-foreground"
+        >
           Cancel
         </Button>
         <Button size="sm" disabled={isSaving || isInvalid} isBusy={isSaving} onClick={save}>
           Save
         </Button>
-      </div>
+      </FormActions>
     </div>
   );
 };

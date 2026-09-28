@@ -1,12 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MountId, ProjectId, SessionId } from '@goodboy/types';
+import type { MountId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
+
+const statusAhead = (ahead: number): WorktreeStatus => ({
+  branch: 'ak/sibling',
+  head: 'head-sha',
+  headSubject: 'work',
+  upstreamDistance: { kind: 'known', ahead, behind: 0 },
+  mainDistance: { kind: 'known', ahead: 8, behind: 0 },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  upstream: 'origin/ak/sibling',
+  inProgress: null,
+});
 
 const h = vi.hoisted(() => ({
   gitPush: vi.fn(async () => ({ exitCode: 0, stdout: '', stderr: '' })),
+  worktreeStatus: vi.fn<() => Promise<WorktreeStatus>>(),
 }));
 
 vi.mock('../../../features/github/github', () => ({ gitPush: h.gitPush }));
+vi.mock('../../../features/worktree/worktree', () => ({ worktreeStatus: h.worktreeStatus }));
 
+import {
+  ensure,
+  readWorktreeStatus,
+  resetWorktreeStatusCache,
+  worktreeStatusKey,
+} from '../../../features/session/hooks/useWorktreeStatuses/cache';
+import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { pushSessionBranch } from './pushSessionBranch';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -68,6 +88,7 @@ const makeState = (): State => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  resetWorktreeStatusCache();
   h.gitPush.mockResolvedValue({ exitCode: 0, stdout: '', stderr: '' });
 });
 
@@ -92,6 +113,32 @@ describe('pushSessionBranch', () => {
       mountId: SIBLING_MOUNT_ID,
       force: true,
       silent: true,
+    });
+  });
+
+  it('re-reads the pushed worktree, so the push count drops to zero right away', async () => {
+    const state = makeState();
+    const key = worktreeStatusKey({ worktreePath: '/worktrees/task-2' });
+    h.worktreeStatus.mockResolvedValue(statusAhead(3));
+    await ensure({ key, worktreePath: '/worktrees/task-2', maxAgeMs: 60_000 });
+    const before = readWorktreeStatus(key);
+    expect(before === null ? null : branchPushStateOf({ status: before })).toEqual({
+      kind: 'ahead',
+      ahead: 3,
+    });
+    h.worktreeStatus.mockResolvedValue(statusAhead(0));
+
+    await pushSessionBranch({
+      get: (() => state) as never,
+      sessionId: SESSION_ID,
+      mountId: SIBLING_MOUNT_ID,
+    });
+
+    await vi.waitFor(() => {
+      const after = readWorktreeStatus(key);
+      expect(after === null ? null : branchPushStateOf({ status: after })).toEqual({
+        kind: 'in-sync',
+      });
     });
   });
 

@@ -35,6 +35,7 @@ const resetTheme = (): void => {
   root.removeAttribute('data-theme-switching');
   root.classList.remove('light', 'dark');
   root.style.removeProperty('color-scheme');
+  Reflect.deleteProperty(document, 'startViewTransition');
   useThemeStore.setState({ preference: 'dark' });
 };
 
@@ -119,6 +120,32 @@ describe('theme switch is a class swap on the html element', () => {
     expect(changed).toEqual([]);
     expect(screen.getByRole('button', { name: 'Start agent' })).toBe(startAgent);
     expect(surface.textContent).toBe(textBefore);
+  });
+
+  it('re-renders nothing on the session detail page while the switch cross-fades', async () => {
+    const startViewTransition = vi.fn((update: () => void) => {
+      update();
+      return {
+        ready: Promise.resolve(),
+        updateCallbackDone: Promise.resolve(),
+        finished: Promise.resolve(),
+        skipTransition: () => undefined,
+      };
+    });
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      writable: true,
+      value: startViewTransition,
+    });
+    const sessionId = seedSessionWithMounts({ useAppStore });
+    const counts = await mountMeasured({
+      tree: <KeepAliveWorkSurface sessionId={sessionId} isActive />,
+    });
+
+    await toggleThreeTimes();
+
+    expect(startViewTransition).toHaveBeenCalledTimes(3);
+    expect(counts.tree).toBe(0);
   });
 
   it('re-renders nothing on the board', async () => {

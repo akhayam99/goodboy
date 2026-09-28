@@ -16,4 +16,11 @@ describe('color scheme', () => {
       /html\[data-theme-switching\] \*,\s*html\[data-theme-switching\] \*::before,\s*html\[data-theme-switching\] \*::after \{\s*transition: none !important;/,
     );
   });
+
+  it('names the toggle icon for the view transition only while a switch runs', () => {
+    expect(STYLES).toMatch(
+      /html\[data-theme-switching\] \[data-theme-icon\] \{\s*view-transition-name: theme-icon;/,
+    );
+    expect(STYLES).toMatch(/::view-transition-old\(root\),\s*::view-transition-new\(root\) \{/);
+  });
 });

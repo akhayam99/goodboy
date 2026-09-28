@@ -27,6 +27,7 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
@@ -71,6 +72,7 @@ import { CompanionScene } from './scenes/audit/CompanionScene';
 import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
 import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
 import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
+import { FormsAuditScene } from './scenes/audit/FormsAuditScene';
 import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
@@ -117,6 +119,7 @@ export const MOCK_SCENES = {
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
+  'activity-question': ActivityQuestionScene,
   'context-drawer': ContextDrawerScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
@@ -157,6 +160,7 @@ export const MOCK_SCENES = {
   'review-modes': ReviewModesScene,
   'workflow-studio': WorkflowStudioScene,
   'workflow-builder-modes': WorkflowBuilderModesScene,
+  forms: FormsAuditScene,
   'impact-scopes': ImpactScopesScene,
   explore: ExploreScene,
   'design-scale': DesignScaleScene,

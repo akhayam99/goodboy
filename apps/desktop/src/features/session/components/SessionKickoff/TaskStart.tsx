@@ -13,7 +13,6 @@ import { StartFooter } from './StartFooter';
 import { DraftIssueBrief } from './DraftIssueBrief';
 import { HowToWorkOnIt } from './HowToWorkOnIt';
 import { issueBriefSource } from './issueBriefSource';
-import { useDraftStart } from './useDraftStart';
 import { useWorkspaceIssueLookup } from '../../../integrations/hooks/useWorkspaceIssueLookup';
 import { InboxLookupGroup } from '../../../inbox/components/InboxStudio/InboxLookupGroup';
 import { ISSUE_SEARCH_PLACEHOLDER } from '../../../integrations/issueCode/lookupCopy';
@@ -59,7 +58,6 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
   const pickedIssue = useAppStore(
     (state) => selectSessionDraft({ state, workspaceId }).pickedIssue,
   );
-  const { start, isStarting, error } = useDraftStart({ workspaceId });
   const [acceptedBrief, setAcceptedBrief] = useState<{
     readonly title: string;
     readonly goal: string;
@@ -178,7 +176,6 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
                   <IssueCandidateRow
                     candidate={candidate}
                     isSelected={key === selectedKey}
-                    disabled={isStarting}
                     onSelect={() => select({ key })}
                     onPickUp={() => pickUp({ candidate })}
                   />
@@ -196,7 +193,6 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
               <IssueCandidateRow
                 candidate={candidate}
                 isSelected={key === selectedKey}
-                disabled={isStarting}
                 onSelect={() => select({ key })}
                 onPickUp={() => pickUp({ candidate })}
               />
@@ -238,18 +234,9 @@ export const TaskStart = ({ workspaceId, issues }: Props) => {
           {acceptedBrief == null ? null : (
             <HowToWorkOnIt
               workspaceId={workspaceId}
+              candidate={pickedIssue}
+              title={acceptedBrief.title}
               goal={acceptedBrief.goal}
-              isStarting={isStarting}
-              error={error}
-              onStart={(then) =>
-                void start({
-                  kind: 'task',
-                  candidate: pickedIssue,
-                  title: acceptedBrief.title,
-                  goal: acceptedBrief.goal,
-                  then,
-                })
-              }
             />
           )}
         </div>

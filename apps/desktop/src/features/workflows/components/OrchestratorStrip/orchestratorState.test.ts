@@ -253,7 +253,7 @@ describe('resolveOrchestratorState', () => {
       agents: [makeAgent(0, 'stopped', { stoppedBy: 'app' })],
     });
 
-    expect(state.sentence).toBe('Step 1 stopped when Goodboy quit · step 0');
+    expect(state.sentence).toBe('Step 1 stopped by restart · step 0');
   });
 
   it('waits on a pending step without a running agent', () => {

@@ -3,12 +3,10 @@ import {
   Button,
   Chip,
   EmptyState,
+  FormPage,
   Notice,
-  PANE_RHYTHM,
-  ScrollFade,
   Switch,
   Tooltip,
-  cn,
   formatError,
 } from '@goodboy/ui';
 import {
@@ -48,6 +46,7 @@ import { workflowStartGate } from './workflowStartGate';
 import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';
 import type {
+  KickoffLane,
   Mode,
   WorkflowBuilderDraft,
   WorkflowDraftKey,
@@ -105,6 +104,7 @@ import { usePlanEstimates } from './usePlanEstimates';
 
 export type BuilderKickoff = {
   readonly workspaceId: WorkspaceId;
+  readonly lane?: KickoffLane;
   readonly goal: string;
   readonly goalPlaceholder: string;
   readonly onGoalChange: (goal: string) => void;
@@ -177,7 +177,9 @@ export const WorkflowBuilderView = (props: Props) => {
   const workspaceId: WorkspaceId =
     props.session !== undefined ? props.session.workspaceId : props.kickoff.workspaceId;
   const draftKey: WorkflowDraftKey =
-    props.session !== undefined ? props.session.id : kickoffDraftKey({ workspaceId });
+    props.session !== undefined
+      ? props.session.id
+      : kickoffDraftKey({ workspaceId, lane: props.kickoff.lane ?? 'workflow' });
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const deleteWorkflow = useAppStore((s) => s.deleteWorkflow);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
@@ -1159,13 +1161,8 @@ export const WorkflowBuilderView = (props: Props) => {
     </>
   );
 
-  const body = (
-    <div
-      className={cn(
-        kickoff === null && [PANE_RHYTHM.column, PANE_RHYTHM.body],
-        'flex flex-col gap-8',
-      )}
-    >
+  const fields = (
+    <>
       <div className="flex flex-col gap-3">
         <BuilderTitleField
           value={title}
@@ -1262,11 +1259,11 @@ export const WorkflowBuilderView = (props: Props) => {
         />
       </div>
       <DragGhost ghost={ghost} />
-    </div>
+    </>
   );
 
   if (kickoff !== null) {
-    return body;
+    return <div className="flex flex-col gap-8">{fields}</div>;
   }
 
   return (
@@ -1277,7 +1274,7 @@ export const WorkflowBuilderView = (props: Props) => {
       onClose={handleClose}
       variant="slot"
     >
-      {() => <ScrollFade className="min-h-0 w-full flex-1">{body}</ScrollFade>}
+      {() => <FormPage>{fields}</FormPage>}
     </StudioShell>
   );
 };

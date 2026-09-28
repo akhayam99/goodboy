@@ -40,9 +40,6 @@ export const attachInboxProjects = ({
     const host = repoHostOf({ provider: record.provider });
     if (host !== null) {
       const candidates = byHost[host];
-      if (candidates.length < 2) {
-        return record;
-      }
       const path = recordRepoPath({ host, url: record.url });
       const projectIds = candidates
         .filter((candidate) => candidate.path === path)

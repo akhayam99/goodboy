@@ -1,6 +1,7 @@
 import type {
   AgentId,
   MountId,
+  OpenQuestionId,
   PlanId,
   PrMergeMethod,
   ProjectId,
@@ -22,7 +23,6 @@ export const SUGGESTION_KINDS = [
   'mount-project',
   'approve-tool',
   'sign-in',
-  'unblock-step',
   'retry-agent',
   'fix-checks',
   'push-branch',
@@ -35,6 +35,11 @@ export const SUGGESTION_KINDS = [
 ] as const;
 
 export type SuggestionKind = (typeof SUGGESTION_KINDS)[number];
+
+export type SuggestionQuestion = {
+  readonly id: OpenQuestionId;
+  readonly createdByAgentId: AgentId | null;
+};
 
 export type NextStepBand = 0 | 1 | 2 | 3;
 
@@ -81,7 +86,10 @@ export type SessionSuggestion =
     })
   | (SuggestionBase & {
       readonly kind: 'answer-questions';
-      readonly payload: { readonly count: number };
+      readonly payload: {
+        readonly count: number;
+        readonly firstQuestion: SuggestionQuestion | null;
+      };
     })
   | (SuggestionBase & {
       readonly kind: 'mount-project';
@@ -111,14 +119,6 @@ export type SessionSuggestion =
       };
     })
   | (SuggestionBase & {
-      readonly kind: 'unblock-step';
-      readonly payload: {
-        readonly runId: WorkflowRunId;
-        readonly stepId: StepId;
-        readonly stepLabel: string | null;
-      };
-    })
-  | (SuggestionBase & {
       readonly kind: 'retry-agent';
       readonly payload: { readonly agentId: AgentId; readonly agentKind: AgentKind };
     })
@@ -138,7 +138,9 @@ export type SessionSuggestion =
         readonly projectName: string;
         readonly branch: string;
         readonly worktreePath: string;
+        readonly state: 'ahead' | 'not-pushed' | 'diverged';
         readonly ahead: number;
+        readonly behind: number;
       };
     })
   | (SuggestionBase & {

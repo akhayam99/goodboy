@@ -1,7 +1,10 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { prWriteContext } from './prWriteContext';
 import type { GetFn, SetFn } from './types';
+import { ReportedError } from '../notifications/reportedError';
+
+const REQUEST_REVIEW_FAILURE_TITLE = "Couldn't request a review";
 
 export const requestReview = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, reviewers: ReadonlyArray<string>) => {
@@ -9,18 +12,12 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
     if (logins.length === 0) {
       return;
     }
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) {
-      return;
-    }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) {
-      return;
-    }
-    const repo = getSessionRepo({ get, sessionId });
-    if (repo == null) {
-      return;
-    }
+    const { session, repo } = prWriteContext({
+      get,
+      sessionId,
+      prNumber,
+      failureTitle: () => REQUEST_REVIEW_FAILURE_TITLE,
+    });
 
     const res = await tauriGhRunner.run(
       ['pr', 'edit', String(prNumber), '--add-reviewer', logins.join(',')],
@@ -35,12 +32,12 @@ export const requestReview = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: "Couldn't request a review",
+        title: REQUEST_REVIEW_FAILURE_TITLE,
         body: errMsg,
         sessionId,
-        workspaceId: workspace.id,
+        workspaceId: session.workspaceId,
       });
-      throw new Error(errMsg);
+      throw new ReportedError(errMsg);
     }
     await get().refreshSessionPrDetail(sessionId, { force: true });
   };

@@ -34,6 +34,7 @@ import {
 } from '../../kindFilter';
 import { INBOX_PROVIDERS, type InboxProvider } from '../../types';
 import { InboxProjectFacets } from './InboxProjectFacets';
+import { projectFilterNote, projectFilterScope } from '../../projectFilterScope';
 
 type Props = {
   readonly filters: InboxFilters;
@@ -108,6 +109,15 @@ export const InboxFacetRail = ({
     (provider) => connected.includes(provider) || filters.source === provider,
   );
   const hasActiveFilter = activeFilterCount({ filters }) > 0;
+  const scope = projectFilterScope({ connected, filters });
+  const isProjectFacetShown =
+    scope.mapped.length > 0 &&
+    projects.length > 1 &&
+    (counts.hasProjectMapping || filters.project != null);
+  const change = (next: InboxFilters) => {
+    const nextScope = projectFilterScope({ connected, filters: next });
+    onFiltersChange(nextScope.mapped.length === 0 ? { ...next, project: null } : next);
+  };
 
   return (
     <FacetRail ariaLabel="Filter the inbox">
@@ -120,7 +130,7 @@ export const InboxFacetRail = ({
             count={counts.view[view]}
             isSelected={filters.view === view}
             onClick={() =>
-              onFiltersChange({
+              change({
                 ...filters,
                 view: filters.view === view && view !== 'all' ? 'all' : view,
               })
@@ -137,9 +147,7 @@ export const InboxFacetRail = ({
               label={TYPE_PRESENTATION[type].label}
               count={counts.kind[type]}
               isSelected={filters.kind === type}
-              onClick={() =>
-                onFiltersChange({ ...filters, kind: filters.kind === type ? 'all' : type })
-              }
+              onClick={() => change({ ...filters, kind: filters.kind === type ? 'all' : type })}
             />
           ))}
         </FacetSection>
@@ -158,7 +166,7 @@ export const InboxFacetRail = ({
               })}
               isSelected={filters.source === provider}
               onClick={() =>
-                onFiltersChange({
+                change({
                   ...filters,
                   source: filters.source === provider ? null : provider,
                 })
@@ -167,12 +175,13 @@ export const InboxFacetRail = ({
           ))}
         </FacetSection>
       ) : null}
-      {projects.length > 1 && (counts.hasProjectMapping || filters.project != null) ? (
+      {isProjectFacetShown ? (
         <InboxProjectFacets
           projects={projects}
           filters={filters}
           counts={counts}
-          onFiltersChange={onFiltersChange}
+          note={filters.project == null ? null : projectFilterNote({ scope })}
+          onFiltersChange={change}
         />
       ) : null}
       <FacetKeyHints hints={INBOX_KEY_HINTS} />

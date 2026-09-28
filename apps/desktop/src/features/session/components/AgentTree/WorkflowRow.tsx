@@ -22,7 +22,13 @@ import type {
   WorkflowRun,
   WorkflowRunId,
 } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useRunSpendUsd } from '../../../../store';
+import {
+  EMPTY_ARRAY,
+  useAppStore,
+  useRunSpendUsd,
+  useSessionOpenQuestions,
+} from '../../../../store';
+import { workflowRunOpenQuestions } from '../../../context/openQuestionsGate';
 import type { AppStore } from '../../../../store/store';
 import { selectWritableMounts } from '../../../../store/slices/project-mounts/selectors';
 import type { AgentKind } from '../../agent-kind';
@@ -166,6 +172,11 @@ export const WorkflowRow = ({
     focusedWorkflowRunId != null
       ? run.id === focusedWorkflowRunId
       : (workflowExpand?.[run.id] ?? true);
+  const openQuestions = useSessionOpenQuestions(task.id);
+  const runQuestionCount = workflowRunOpenQuestions({
+    questions: openQuestions,
+    run: { id: run.id, workflowId: run.workflowId ?? null },
+  }).length;
   const hasStarted = wfAgents.length > 0;
   const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
   const predecessorName = run.chainAfterId
@@ -264,6 +275,11 @@ export const WorkflowRow = ({
                       isOrchestrating={isOrchestrating}
                       hasOrchestratorStrip={hasOrchestratorStrip}
                       blockReason={wfBlockReason}
+                      question={{
+                        count: Math.max(1, runQuestionCount),
+                        isInView: expanded,
+                        onReveal: () => toggleWorkflowExpand(task.id, run.id, expanded),
+                      }}
                     />
                   </div>
                   <WorkflowRunMeta

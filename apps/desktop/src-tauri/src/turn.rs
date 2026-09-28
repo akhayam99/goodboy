@@ -1,5 +1,6 @@
 use std::io::{BufRead, BufReader};
 use std::process::{Child, ChildStderr, ChildStdout, Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread;
 
@@ -10,6 +11,7 @@ use thiserror::Error;
 use crate::live_child::{
     drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
 };
+use crate::turn_backlog::{AttachSnapshot, TurnBacklog};
 
 const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
 
@@ -41,7 +43,7 @@ impl TurnError {
 type ChildRegistry = LiveChildRegistry;
 
 #[derive(Default)]
-pub struct TurnRegistry(pub ChildRegistry);
+pub struct TurnRegistry(pub ChildRegistry, pub TurnBacklog);
 
 impl TurnRegistry {
     pub fn new() -> Self {
@@ -49,8 +51,33 @@ impl TurnRegistry {
     }
 }
 
+static IS_EXITING: AtomicBool = AtomicBool::new(false);
+
+fn is_exiting() -> bool {
+    IS_EXITING.load(Ordering::SeqCst)
+}
+
 pub fn shutdown(registry: &TurnRegistry) {
     crate::live_child::shutdown(&registry.0);
+}
+
+pub fn live_run_ids(registry: &TurnRegistry) -> Vec<String> {
+    match registry.0.lock() {
+        Ok(map) => {
+            let mut ids: Vec<String> = map.keys().cloned().collect();
+            ids.sort();
+            ids
+        }
+        Err(_) => Vec::new(),
+    }
+}
+
+pub fn mark_exiting() {
+    IS_EXITING.store(true, Ordering::SeqCst);
+}
+
+pub fn clear_exiting() {
+    IS_EXITING.store(false, Ordering::SeqCst);
 }
 
 #[derive(Debug, Deserialize)]
@@ -106,7 +133,7 @@ pub struct WriterLeaseBinding {
     pub token: String,
 }
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum TurnEventPayload {
     Line {
@@ -125,6 +152,7 @@ pub enum TurnEventPayload {
 pub struct TurnEventEnvelope {
     #[serde(rename = "runId")]
     pub run_id: String,
+    pub seq: u64,
     #[serde(flatten)]
     pub event: TurnEventPayload,
 }
@@ -403,6 +431,7 @@ fn spawn_leased_child(
 fn spawn_one(
     app: &AppHandle,
     registry: &ChildRegistry,
+    backlog: &TurnBacklog,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
     args: SpawnOneArgs<'_>,
 ) -> Result<String, TurnError> {
@@ -474,6 +503,7 @@ fn spawn_one(
         .ok_or_else(|| TurnError::Io(std::io::Error::other("no stderr")))?;
 
     let live = LiveChild::new(child);
+    backlog.open(args.run_id);
     registry
         .lock()
         .map_err(|_| TurnError::Poisoned)?
@@ -481,6 +511,7 @@ fn spawn_one(
 
     let app_clone = app.clone();
     let registry_clone = Arc::clone(registry);
+    let backlog_clone = backlog.clone();
     let run_id_owned = args.run_id.to_string();
 
     // Drain stderr on its own thread so it runs concurrently with stdout
@@ -490,19 +521,21 @@ fn spawn_one(
     let stderr_handle = thread::spawn(move || capture_stderr(stderr));
 
     thread::spawn(move || {
-        forward_lines(&app_clone, &run_id_owned, &live, stdout);
+        let sink = TurnSink {
+            app: &app_clone,
+            backlog: &backlog_clone,
+            run_id: &run_id_owned,
+        };
+        forward_lines(&sink, &live, stdout);
         let stderr_buf = stderr_handle.join().unwrap_or_default();
         let exit_code = wait_and_remove(&live, &registry_clone, &run_id_owned);
-        let _ = app_clone.emit(
-            EVENT_NAME,
-            TurnEventEnvelope {
-                run_id: run_id_owned.clone(),
-                event: TurnEventPayload::End {
-                    exit_code,
-                    stderr: stderr_buf,
-                },
-            },
-        );
+        if !is_exiting() {
+            sink.send(TurnEventPayload::End {
+                exit_code,
+                stderr: stderr_buf,
+            });
+            backlog_clone.finish(&run_id_owned);
+        }
         drop(lease_guard);
     });
 
@@ -526,6 +559,7 @@ pub async fn turn_spawn(
     spawn_one(
         &app,
         &state.0,
+        &state.1,
         &leases.0,
         SpawnOneArgs {
             run_id: &args.run_id,
@@ -561,6 +595,21 @@ pub async fn turn_spawn(
 pub async fn turn_list_live(state: State<'_, TurnRegistry>) -> Result<Vec<String>, TurnError> {
     let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
     Ok(map.keys().cloned().collect())
+}
+
+#[tauri::command]
+pub async fn turn_attach(
+    state: State<'_, TurnRegistry>,
+    run_id: String,
+    after_seq: u64,
+) -> Result<Option<AttachSnapshot>, TurnError> {
+    Ok(state.1.snapshot(&run_id, after_seq))
+}
+
+#[tauri::command]
+pub async fn turn_release(state: State<'_, TurnRegistry>, run_id: String) -> Result<(), TurnError> {
+    state.1.release(&run_id);
+    Ok(())
 }
 
 #[tauri::command]
@@ -623,17 +672,30 @@ fn strip_line_ending(buf: &mut Vec<u8>) {
     }
 }
 
-fn emit_turn_event(app: &AppHandle, run_id: &str, event: TurnEventPayload) {
-    let _ = app.emit(
-        EVENT_NAME,
-        TurnEventEnvelope {
-            run_id: run_id.to_string(),
-            event,
-        },
-    );
+struct TurnSink<'a> {
+    app: &'a AppHandle,
+    backlog: &'a TurnBacklog,
+    run_id: &'a str,
 }
 
-fn forward_lines(app: &AppHandle, run_id: &str, live: &LiveChild, stdout: ChildStdout) {
+impl TurnSink<'_> {
+    fn send(&self, event: TurnEventPayload) {
+        if is_exiting() && !matches!(event, TurnEventPayload::Line { .. }) {
+            return;
+        }
+        let seq = self.backlog.record(self.run_id, event.clone());
+        let _ = self.app.emit(
+            EVENT_NAME,
+            TurnEventEnvelope {
+                run_id: self.run_id.to_string(),
+                seq,
+                event,
+            },
+        );
+    }
+}
+
+fn forward_lines(sink: &TurnSink<'_>, live: &LiveChild, stdout: ChildStdout) {
     let mut reader = BufReader::new(stdout);
     let mut buf: Vec<u8> = Vec::new();
     loop {
@@ -641,27 +703,19 @@ fn forward_lines(app: &AppHandle, run_id: &str, live: &LiveChild, stdout: ChildS
             Ok(CappedLine::Eof) => break,
             Ok(CappedLine::Line) => {
                 let line = String::from_utf8_lossy(&buf).into_owned();
-                emit_turn_event(app, run_id, TurnEventPayload::Line { line });
+                sink.send(TurnEventPayload::Line { line });
             }
             Ok(CappedLine::Overflow) => {
-                emit_turn_event(
-                    app,
-                    run_id,
-                    TurnEventPayload::Error {
-                        message: "agent output line exceeded 64 MiB".to_string(),
-                    },
-                );
+                sink.send(TurnEventPayload::Error {
+                    message: "agent output line exceeded 64 MiB".to_string(),
+                });
                 crate::process_group::terminate(live.pid);
                 break;
             }
             Err(err) => {
-                emit_turn_event(
-                    app,
-                    run_id,
-                    TurnEventPayload::Error {
-                        message: err.to_string(),
-                    },
-                );
+                sink.send(TurnEventPayload::Error {
+                    message: err.to_string(),
+                });
                 break;
             }
         }

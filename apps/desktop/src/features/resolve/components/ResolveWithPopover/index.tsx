@@ -7,8 +7,8 @@ import {
   AnchoredPopover,
   Button,
   cn,
+  FormActions,
   PopoverBody,
-  PopoverFooter,
   Textarea,
   Tooltip,
   useDropdown,
@@ -247,20 +247,24 @@ export const ResolveWithPopover = ({
               disabled={isStarting}
             />
           </div>
-        </PopoverBody>
-        <PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">
-          <span className="min-w-0 flex-1 truncate text-secondary text-faint-foreground">
-            {resolveAgentsLine({ agents, count })}
-          </span>
-          <Button
-            size="sm"
-            disabled={!canStart}
-            isBusy={isStarting}
-            onClick={() => void start({ routing: chosen, hint: note })}
+          <FormActions
+            className="px-2.5 pb-2 pt-1"
+            leading={
+              <span className="min-w-0 truncate text-secondary text-faint-foreground">
+                {resolveAgentsLine({ agents, count })}
+              </span>
+            }
           >
-            {resolveCountLabel({ count })}
-          </Button>
-        </PopoverFooter>
+            <Button
+              size="sm"
+              disabled={!canStart}
+              isBusy={isStarting}
+              onClick={() => void start({ routing: chosen, hint: note })}
+            >
+              {resolveCountLabel({ count })}
+            </Button>
+          </FormActions>
+        </PopoverBody>
       </AnchoredPopover>
     </div>
   );

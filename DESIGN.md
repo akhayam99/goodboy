@@ -265,6 +265,10 @@ about its effect is a worse defect than one that reads badly.
   alert, and it clears the moment routing changes.
 - **Unknown is never zero.** A failed load draws a dash with a muted "not
   loaded" hint, or an error state with Retry. Never 0, and never "nothing".
+- **Every action answers twice.** Pending shows at once on the control that
+  started it, then the new state shows without a reload, or the failure lands
+  in the log. `packages/ui/DESIGN-SYSTEM.md` → Action feedback has the
+  mechanics.
 - **No echo toasts.** A control that already shows its new value (switch,
   select, a field saved on blur) saves silently, like VS Code and Linear
   settings.
@@ -308,8 +312,10 @@ Actions sit with the object they affect. The slots that carry each zone are in
 - **The focused object's primary action sits in the fixed header.** It is the
   action that moves the object forward.
 - **A creation or edit flow commits in the flow.** Its one action row follows
-  the last section, at the width of the content it commits. A dock has to be
-  argued for at review. It is never the default.
+  the last section, at the width of the content it commits, the way the new
+  workflow form ends with Discard and Start workflow on the right. There is no
+  footer bar and no divider above it. A chat composer is the only row that
+  stays pinned under content.
 - **Section actions stay in their section.** Row and card actions follow the
   card action grammar.
 

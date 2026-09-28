@@ -788,5 +788,10 @@
     "apps/desktop/src/features/session/components/sessionCardShell.ts": 1,
     "apps/desktop/src/features/workflows/components/NextActionStrip/index.tsx": 1,
     "apps/desktop/src/features/workflows/components/OrchestratorStrip/index.tsx": 1
+  },
+  "footer-cta-bar": {
+    "apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx": 1,
+    "apps/desktop/src/features/history/components/RewriteHistoryPage/index.tsx": 1,
+    "apps/desktop/src/features/scripts/components/ScriptRunDrawer/index.tsx": 1
   }
 }

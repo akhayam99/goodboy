@@ -180,7 +180,10 @@ describe('ResolvePublishStrip', () => {
     };
     render(<ResolvePublishStrip sessionId={SESSION_ID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /^Send \d+ repl/ }));
+    const send = screen.getByRole('button', { name: /^Send \d+ repl/ });
+    expect(send.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Cancel' }).parentElement).toBe(send.parentElement);
+    fireEvent.click(send);
 
     await waitFor(() => expect(h.state.publishConversations).toHaveBeenCalledTimes(1));
   });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Input, Textarea } from '@goodboy/ui';
+import { Button, FormActions, Input, Textarea } from '@goodboy/ui';
 import type { IssueBriefSource } from '../../../../../store/slices/issue-briefs/types';
 import { BriefHeader } from './BriefHeader';
 
@@ -39,8 +39,8 @@ export const BriefEditor = ({ source, initialTitle, initialGoal, onSave, onCance
         aria-label="Brief goal"
         className="text-xs leading-relaxed"
       />
-      <footer className="flex items-center justify-end gap-1.5">
-        <Button variant="ghost" size="sm" onClick={onCancel}>
+      <FormActions>
+        <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onCancel}>
           Cancel
         </Button>
         <Button
@@ -50,7 +50,7 @@ export const BriefEditor = ({ source, initialTitle, initialGoal, onSave, onCance
         >
           Save
         </Button>
-      </footer>
+      </FormActions>
     </>
   );
 };

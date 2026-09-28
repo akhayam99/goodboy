@@ -7,6 +7,7 @@ import { currentPlatform } from '../../shared/platform';
 
 export const MAIN_WINDOW_LABEL = 'main';
 const WORKSPACE_HASH_KEY = 'ws';
+const RESTORE_HASH_KEY = 'restore';
 const PRESENCE_EVENT = 'goodboy:presence';
 const PRESENCE_REQUEST_EVENT = 'goodboy:presence-request';
 const WINDOW_CLOSING_EVENT = 'goodboy:window-closing';
@@ -38,6 +39,13 @@ export const targetWorkspaceFromHash = (): WorkspaceId | null => {
   const params = new URLSearchParams(raw.replace(/^#/, ''));
   const id = params.get(WORKSPACE_HASH_KEY);
   return id ? (id as WorkspaceId) : null;
+};
+
+export const restoreKeyFromHash = (): string | null => {
+  const raw = globalThis.location?.hash ?? '';
+  const params = new URLSearchParams(raw.replace(/^#/, ''));
+  const key = params.get(RESTORE_HASH_KEY);
+  return key !== null && key !== '' ? key : null;
 };
 
 export const focusWindow = async (label: string): Promise<boolean> => {
@@ -121,7 +129,15 @@ const sourceOwnsItsSpace = async (): Promise<boolean> => {
     .catch(() => false);
 };
 
-export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Promise<void> => {
+type SpawnOptions = {
+  readonly restoreKey?: string;
+};
+
+export const spawnWorkspaceWindow = async (
+  id: WorkspaceId,
+  title: string,
+  { restoreKey }: SpawnOptions = {},
+): Promise<void> => {
   if (!inTauri()) {
     return;
   }
@@ -134,7 +150,10 @@ export const spawnWorkspaceWindow = async (id: WorkspaceId, title: string): Prom
     ? null
     : await placementOnPrimaryMonitor({ openWindowCount: openWindows.length });
   const win = new WebviewWindow(freshWindowLabel(), {
-    url: `index.html#${WORKSPACE_HASH_KEY}=${id}`,
+    url:
+      restoreKey === undefined
+        ? `index.html#${WORKSPACE_HASH_KEY}=${id}`
+        : `index.html#${WORKSPACE_HASH_KEY}=${id}&${RESTORE_HASH_KEY}=${encodeURIComponent(restoreKey)}`,
     title: brandTitle(title),
     width: WINDOW_WIDTH,
     height: WINDOW_HEIGHT,

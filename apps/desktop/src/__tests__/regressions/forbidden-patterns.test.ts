@@ -130,6 +130,8 @@ const RAW_SCROLLER = /(?<![\w-])(?:[\w-]+:)*overflow-(?:x-|y-)?(?:auto|scroll)(?
 const TONE_BORDER_RAIL = /(?<![\w-])(?:[\w-]+:)*border-l-(?:2|4)(?![\w-])/;
 const ROUNDED = /(?<![\w-])(?:[\w-]+:)*rounded(?:-|\b)/;
 const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade/index.tsx';
+const FOOTER_CTA_BAR =
+  /<footer\b|\bPopoverFooter\b|\bPANE_RHYTHM\.dock\b|\bdock=\{(?![^}]*\bconversation\.composer\b)/;
 
 type ClassLineParams = {
   readonly file: SourceFile;
@@ -265,6 +267,12 @@ const RULES: ReadonlyArray<Rule> = [
       }),
     hint: 'a tone on a rounded box is a bar inside it, not a side border',
   },
+  {
+    id: 'footer-cta-bar',
+    kinds: ['ts'],
+    count: (file) => countLines({ file, matches: (line) => FOOTER_CTA_BAR.test(line) }),
+    hint: 'a form or creation ends with FormActions inline after its content, never a footer bar with a divider (DESIGN-SYSTEM.md, Form actions)',
+  },
 ];
 
 const HINTS: Readonly<Record<string, string>> = Object.fromEntries(
@@ -311,6 +319,23 @@ describe('forbidden code patterns only ever shrink', () => {
     expect(scanned.some((file) => file.kind === 'ts')).toBe(true);
     expect(scanned.some((file) => file.kind === 'rust')).toBe(true);
     expect(scanned.some((file) => file.kind === 'config')).toBe(true);
+  });
+
+  it('flags every footer CTA bar shape the form actions replaced', () => {
+    const bars = [
+      '<footer className="shrink-0 px-6 py-3">',
+      '<PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">',
+      "<div className={cn('flex items-center', PANE_RHYTHM.column, PANE_RHYTHM.dock)}>",
+      'dock={<PublishConversationsBar sessionId={sessionId} />}',
+      '      dock={',
+    ];
+    const allowed = [
+      'dock={conversation.composer}',
+      'dock={editContext != null ? conversation.composer : null}',
+      '<FormActions leading={controls}>',
+    ];
+    expect(bars.filter((line) => !FOOTER_CTA_BAR.test(line))).toEqual([]);
+    expect(allowed.filter((line) => FOOTER_CTA_BAR.test(line))).toEqual([]);
   });
 
   it('adds no forbidden pattern to any file beyond its baseline', () => {

@@ -183,21 +183,13 @@ describe('MrDetailPanel', () => {
     );
   });
 
-  it('keeps the create button outside the scrolling region', () => {
+  it('ends the form with the create button inline, never in a footer bar', () => {
     render(<MrDetailPanel sessionId={SESSION_ID} onClose={vi.fn()} />);
 
     const button = screen.getByRole('button', { name: 'Create MR' });
-    const scrollAncestors: Array<HTMLElement> = [];
-    let current: HTMLElement | null = button.parentElement;
-    while (current != null) {
-      if (current.className.includes('overflow-y-auto')) {
-        scrollAncestors.push(current);
-      }
-      current = current.parentElement;
-    }
-
-    expect(scrollAncestors).toEqual([]);
-    expect(button.closest('footer')).not.toBeNull();
+    expect(button.closest('[data-slot="form-page"]')).not.toBeNull();
+    expect(button.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(button.closest('footer')).toBeNull();
   });
 
   it('respects the draft toggle on manual create', async () => {

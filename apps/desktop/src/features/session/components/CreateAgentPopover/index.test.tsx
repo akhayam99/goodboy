@@ -426,14 +426,16 @@ describe('CreateAgentPopover', () => {
     expect(trigger.parentElement?.className).not.toContain('pl-2');
   });
 
-  it('keeps the spawn action in the fixed footer at a short window height', () => {
+  it('ends the popover with the spawn action inline, never in a footer bar', () => {
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 220 });
     renderControl();
     openPopover();
     const action = screen.getByRole('button', { name: 'Open Generalist' });
-    const footer = action.closest('footer');
-    expect(footer?.className).toContain('shrink-0');
-    expect(footer?.previousElementSibling?.getAttribute('role')).toBe('separator');
+    expect(action.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(action.closest('footer')).toBeNull();
+    expect(
+      screen.getByRole('dialog', { name: 'Start agent' }).querySelector('[role="separator"]'),
+    ).toBeNull();
   });
   it('keeps routing collapsed until the user asks for it', () => {
     renderControl();

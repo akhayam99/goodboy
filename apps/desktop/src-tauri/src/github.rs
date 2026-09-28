@@ -459,6 +459,7 @@ pub async fn git_push(
         let token = read_token(workspace_id.as_deref(), project_id.as_deref());
         let mut args: Vec<&str> = vec!["push"];
         if let Some(b) = branch.as_deref().filter(|b| !b.is_empty()) {
+            args.push("--set-upstream");
             args.push("origin");
             args.push(b);
         }

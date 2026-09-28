@@ -128,9 +128,15 @@ const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
   },
   {
     file: 'session-workflow.ts',
-    contains: ['WITH RECURSIVE owned(id)', 'UPDATE agents SET deleted_at = ?'],
+    contains: ['WITH RECURSIVE owned(id)', 'SELECT a.id FROM agents a JOIN owned o'],
     reason:
-      'a run delete walks the children of agents deleted earlier too, then tombstones only the live rows',
+      'a run delete walks the children of agents deleted earlier too, then purges each one as a single agent delete does',
+  },
+  {
+    file: 'session-workflow.ts',
+    contains: ['SELECT COUNT(*) AS purged FROM agents', 'WHERE deleted_at IS NULL'],
+    reason:
+      'a run delete counts only the agents it newly tombstones, filtering on deleted_at itself',
   },
 ];
 

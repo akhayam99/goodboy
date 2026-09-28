@@ -6,9 +6,8 @@ import {
   AnchoredPopover,
   Button,
   cn,
-  Divider,
+  FormActions,
   PopoverBody,
-  PopoverFooter,
   formatError,
   useDropdown,
 } from '@goodboy/ui';
@@ -261,34 +260,37 @@ export const CreateAgentPopover = ({ sessionId, className, onSpawned, openEvent 
             />
           </div>
         )}
-      </PopoverBody>
-      <Divider />
-      <PopoverFooter className="flex items-center justify-end gap-2 px-2.5 py-2">
-        {spawnError === null ? (
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="text-secondary text-faint-foreground">{actionNote}</span>
-            <LaunchEstimateNote
-              workspaceId={session?.workspaceId ?? null}
-              kind={selectedKind}
-              routing={effective}
-              isShown={open && planToStart != null}
-            />
-          </span>
-        ) : (
-          <span role="alert" className="min-w-0 flex-1 text-secondary text-danger">
-            {spawnError}
-          </span>
-        )}
-        <Button
-          size="sm"
-          onClick={() => void onCreate()}
-          disabled={isSpawning}
-          isBusy={isSpawning}
-          busyLabel={`Starting ${kindLabel}`}
+        <FormActions
+          className="px-2.5 pb-2 pt-3"
+          leading={
+            spawnError === null ? (
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="text-secondary text-faint-foreground">{actionNote}</span>
+                <LaunchEstimateNote
+                  workspaceId={session?.workspaceId ?? null}
+                  kind={selectedKind}
+                  routing={effective}
+                  isShown={open && planToStart != null}
+                />
+              </span>
+            ) : (
+              <span role="alert" className="min-w-0 text-secondary text-danger">
+                {spawnError}
+              </span>
+            )
+          }
         >
-          {actionLabel}
-        </Button>
-      </PopoverFooter>
+          <Button
+            size="sm"
+            onClick={() => void onCreate()}
+            disabled={isSpawning}
+            isBusy={isSpawning}
+            busyLabel={`Starting ${kindLabel}`}
+          >
+            {actionLabel}
+          </Button>
+        </FormActions>
+      </PopoverBody>
     </AnchoredPopover>
   );
 };

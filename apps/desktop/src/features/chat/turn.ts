@@ -18,6 +18,7 @@ import {
   type TurnEvent,
 } from '@goodboy/types';
 import { classifyProviderError } from './classifyProviderError';
+import { clearTurnCursor, writeTurnCursor, type TurnCursor, type TurnOwner } from './turnCursor';
 
 function parseForProvider(
   provider: ProviderId,
@@ -154,26 +155,68 @@ type SpawnArgs = {
 };
 
 type RawTurnEnvelope =
-  | { runId: string; type: 'line'; line: string }
-  | { runId: string; type: 'end'; exit_code: number | null; stderr: string }
-  | { runId: string; type: 'error'; message: string };
+  | { runId: string; seq?: number; type: 'line'; line: string }
+  | { runId: string; seq?: number; type: 'end'; exit_code: number | null; stderr: string }
+  | { runId: string; seq?: number; type: 'error'; message: string };
+
+type WithoutRunId<T> = T extends unknown ? Omit<T, 'runId'> : never;
+
+type TurnAttachSnapshot = {
+  readonly events: ReadonlyArray<WithoutRunId<RawTurnEnvelope>>;
+  readonly hasGap: boolean;
+  readonly isLive: boolean;
+};
 
 export type RunTurnHooks = {
   readonly onProviderLimits?: (limits: ProviderLimits) => void;
+  readonly owner?: TurnOwner;
 };
 
-export async function* runTurn(
-  args: SpawnArgs,
-  now: () => IsoDateTime = () => new Date().toISOString() as IsoDateTime,
-  hooks: RunTurnHooks = {},
-): AsyncIterable<TurnEvent> {
+export const RELOAD_GAP_MESSAGE =
+  'Part of this output was written while the window reloaded and could not be recovered.';
+export const RUN_GONE_MESSAGE = 'This run ended while the window reloaded.';
+
+const activeStreams = new Set<string>();
+
+export const isTurnStreamActive = ({ runId }: { readonly runId: ProviderRunId }): boolean =>
+  activeStreams.has(runId);
+
+type QueuedEvent = {
+  readonly event: TurnEvent;
+  readonly seq: number | null;
+  readonly index: number;
+};
+
+type BeginParams = {
+  readonly deliver: (envelopes: ReadonlyArray<RawTurnEnvelope>) => void;
+  readonly note: (message: string) => void;
+};
+
+type StreamParams = {
+  readonly runId: ProviderRunId;
+  readonly provider: ProviderId;
+  readonly now: () => IsoDateTime;
+  readonly hooks: RunTurnHooks;
+  readonly resumeFrom: TurnCursor | null;
+  readonly begin: (params: BeginParams) => Promise<void>;
+};
+
+async function* streamTurn({
+  runId,
+  provider,
+  now,
+  hooks,
+  resumeFrom,
+  begin,
+}: StreamParams): AsyncIterable<TurnEvent> {
   const ctx: ParseContext = {
-    runId: args.runId,
+    runId,
     now,
     ...(hooks.onProviderLimits !== undefined && { onProviderLimits: hooks.onProviderLimits }),
   };
-  const queue: TurnEvent[] = [];
-  let resolver: ((value: IteratorResult<TurnEvent>) => void) | null = null;
+  const owner = hooks.owner ?? null;
+  const queue: QueuedEvent[] = [];
+  let resolver: ((value: IteratorResult<QueuedEvent>) => void) | null = null;
   let rejector: ((err: unknown) => void) | null = null;
   let ended = false;
   let error: unknown = null;
@@ -202,14 +245,29 @@ export async function* runTurn(
     }
   };
 
-  let receivedAnyEvent = false;
-  let receivedResponseEvent = false;
+  const isResumed = resumeFrom !== null && resumeFrom.seq > 0;
+  let receivedAnyEvent = isResumed;
+  let receivedResponseEvent = isResumed;
   const unparsedOutput: string[] = [];
+  let lastSeq = resumeFrom === null ? 0 : resumeFrom.seq - 1;
+  let currentSeq: number | null = null;
+  let indexInSeq = 0;
 
   const assembler = createJsonLineAssembler();
 
+  const push = ({ event }: { readonly event: TurnEvent }) => {
+    const index = indexInSeq;
+    indexInSeq += 1;
+    const isAlreadyHandled =
+      resumeFrom !== null && currentSeq === resumeFrom.seq && index <= resumeFrom.index;
+    if (isAlreadyHandled) {
+      return;
+    }
+    queue.push({ event, seq: currentSeq, index });
+  };
+
   const handleLine = ({ line }: { readonly line: string }) => {
-    const parsedEvents = parseForProvider(args.provider, line, ctx);
+    const parsedEvents = parseForProvider(provider, line, ctx);
     if (parsedEvents.length > 0) {
       receivedAnyEvent = true;
     }
@@ -229,18 +287,22 @@ export async function* runTurn(
       if (ev.kind === 'assistant_text' || ev.kind === 'done' || ev.kind === 'error') {
         receivedResponseEvent = true;
       }
-      queue.push(ev);
+      push({ event: ev });
     }
   };
 
-  const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
-    if (event.payload.runId !== args.runId) {
-      return;
+  const handleEnvelope = (envelope: RawTurnEnvelope) => {
+    if (envelope.seq !== undefined) {
+      if (envelope.seq <= lastSeq) {
+        return;
+      }
+      lastSeq = envelope.seq;
     }
-
-    switch (event.payload.type) {
+    currentSeq = envelope.seq ?? null;
+    indexInSeq = 0;
+    switch (envelope.type) {
       case 'line': {
-        const assembled = assembler.push({ line: event.payload.line });
+        const assembled = assembler.push({ line: envelope.line });
         switch (assembled.kind) {
           case 'line':
             handleLine({ line: assembled.line });
@@ -265,11 +327,11 @@ export async function* runTurn(
           handleLine({ line });
         }
         if (!receivedAnyEvent) {
-          const stderrMessage = event.payload.stderr.trim();
+          const stderrMessage = envelope.stderr.trim();
           const stdoutMessage = unparsedOutput
             .filter((line) => !isJsonProviderFrame({ line }))
             .join('\n');
-          const hasFailedExit = event.payload.exit_code !== null && event.payload.exit_code !== 0;
+          const hasFailedExit = envelope.exit_code !== null && envelope.exit_code !== 0;
           const stdoutClassification = classifyProviderError({ message: stdoutMessage });
           const providerMessage = [
             hasFailedExit || stdoutClassification.kind !== 'other' ? stdoutMessage : '',
@@ -283,10 +345,10 @@ export async function* runTurn(
         if (
           receivedAnyEvent &&
           !receivedResponseEvent &&
-          event.payload.exit_code !== null &&
-          event.payload.exit_code !== 0
+          envelope.exit_code !== null &&
+          envelope.exit_code !== 0
         ) {
-          const stderrMessage = event.payload.stderr.trim();
+          const stderrMessage = envelope.stderr.trim();
           const stdoutMessage = unparsedOutput
             .filter((line) => !isJsonProviderFrame({ line }))
             .join('\n');
@@ -301,43 +363,139 @@ export async function* runTurn(
         break;
       }
       case 'error':
-        error = new Error(event.payload.message);
+        error = new Error(envelope.message);
         ended = true;
         flush();
         break;
     }
+  };
+
+  let isHolding = true;
+  const held: RawTurnEnvelope[] = [];
+  const unlisten: UnlistenFn = await listen<RawTurnEnvelope>(EVENT_NAME, (event) => {
+    if (event.payload.runId !== runId) {
+      return;
+    }
+    if (isHolding) {
+      held.push(event.payload);
+      return;
+    }
+    handleEnvelope(event.payload);
   });
 
-  await invoke<string>('turn_spawn', { args });
+  const writeCursor = ({ seq, index }: { readonly seq: number; readonly index: number }) =>
+    writeTurnCursor({ runId, cursor: { seq, index, owner } });
+
+  writeCursor(resumeFrom ?? { seq: 0, index: -1 });
+  activeStreams.add(runId);
 
   try {
+    await begin({
+      deliver: (envelopes) => {
+        for (const envelope of envelopes) {
+          handleEnvelope(envelope);
+        }
+      },
+      note: (message) => {
+        queue.push({
+          event: { kind: 'decision_note', runId, message, at: now() },
+          seq: null,
+          index: 0,
+        });
+      },
+    });
+    isHolding = false;
+    for (const envelope of held.splice(0)) {
+      handleEnvelope(envelope);
+    }
+    flush();
+
     while (true) {
-      if (queue.length > 0) {
-        yield queue.shift()!;
-        continue;
-      }
-      if (ended) {
+      const next =
+        queue.length > 0
+          ? queue.shift()!
+          : ended
+            ? null
+            : await new Promise<IteratorResult<QueuedEvent>>((resolve, reject) => {
+                resolver = resolve;
+                rejector = reject;
+              }).then((result) => (result.done === true ? null : result.value));
+      if (next === null) {
         if (error) {
           throw error;
         }
         return;
       }
-      const value = await new Promise<IteratorResult<TurnEvent>>((resolve, reject) => {
-        resolver = resolve;
-        rejector = reject;
-      });
-      if (value.done) {
-        return;
+      yield next.event;
+      if (next.seq !== null) {
+        writeCursor({ seq: next.seq, index: next.index });
       }
-      yield value.value;
     }
   } finally {
+    activeStreams.delete(runId);
     unlisten();
+    clearTurnCursor({ runId });
     if (!ended) {
-      await invoke('turn_cancel', { runId: args.runId }).catch(() => undefined);
+      await invoke('turn_cancel', { runId }).catch(() => undefined);
+    }
+    if (ended) {
+      await invoke('turn_release', { runId }).catch(() => undefined);
     }
   }
 }
+
+export const runTurn = (
+  args: SpawnArgs,
+  now: () => IsoDateTime = () => new Date().toISOString() as IsoDateTime,
+  hooks: RunTurnHooks = {},
+): AsyncIterable<TurnEvent> =>
+  streamTurn({
+    runId: args.runId,
+    provider: args.provider,
+    now,
+    hooks,
+    resumeFrom: null,
+    begin: async () => {
+      await invoke<string>('turn_spawn', { args });
+    },
+  });
+
+type AttachParams = {
+  readonly runId: ProviderRunId;
+  readonly provider: ProviderId;
+  readonly cursor: TurnCursor;
+  readonly now?: () => IsoDateTime;
+  readonly hooks?: RunTurnHooks;
+};
+
+export const attachTurn = ({
+  runId,
+  provider,
+  cursor,
+  now = () => new Date().toISOString() as IsoDateTime,
+  hooks = {},
+}: AttachParams): AsyncIterable<TurnEvent> =>
+  streamTurn({
+    runId,
+    provider,
+    now,
+    hooks: { ...hooks, ...(cursor.owner !== null && { owner: cursor.owner }) },
+    resumeFrom: cursor,
+    begin: async ({ deliver, note }) => {
+      const snapshot = await invoke<TurnAttachSnapshot | null>('turn_attach', {
+        runId,
+        afterSeq: Math.max(cursor.seq - 1, 0),
+      });
+      if (snapshot === null) {
+        deliver([{ runId, type: 'error', message: RUN_GONE_MESSAGE }]);
+        return;
+      }
+      if (snapshot.hasGap) {
+        note(RELOAD_GAP_MESSAGE);
+      }
+      deliver(snapshot.events.map((event): RawTurnEnvelope => ({ ...event, runId })));
+    },
+  });
 
 export const cancelTurn = async (runId: ProviderRunId): Promise<void> => {
   await invoke('turn_cancel', { runId });

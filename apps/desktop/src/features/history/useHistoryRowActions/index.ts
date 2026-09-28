@@ -24,6 +24,21 @@ export type HistoryRowActions = {
   readonly menu: ReadonlyArray<OverflowMenuItem>;
 };
 
+type AttemptParams = {
+  readonly task: () => Promise<unknown>;
+};
+
+const HISTORY_FAILURE_TITLE: Readonly<Record<HistoryRowVerb, string>> = {
+  undo: "Couldn't undo the rewrite",
+  'bring-origin': "Couldn't bring origin into the history",
+  retry: "Couldn't retry the rebase",
+  'retry-with-note': "Couldn't open the agent",
+  'rewrite-with-agent': "Couldn't start the history rewriter",
+  'discard-plan': "Couldn't discard the plan",
+  'change-plan': "Couldn't load the history plan",
+  'restore-previous': "Couldn't load the history plan",
+};
+
 type RowParams = {
   readonly event: SessionEvent;
   readonly events: ReadonlyArray<SessionEvent>;
@@ -42,19 +57,27 @@ export const useHistoryRowActions = ({
       const worktreePath = event.payload?.worktreePath ?? null;
       const run = (verb: HistoryRowVerb) => {
         const store = useAppStore.getState();
+        const attempt = ({ task }: AttemptParams): void => {
+          void task().catch((error: unknown) =>
+            store.reportError({ title: HISTORY_FAILURE_TITLE[verb], error, sessionId }),
+          );
+        };
         if (verb === 'undo') {
           const backupRef = event.payload?.backupRef ?? null;
           if (backupRef !== null) {
-            void store.restoreHistory({ sessionId, mountId, backupRef, shouldPush: false });
+            attempt({
+              task: () =>
+                store.restoreHistory({ sessionId, mountId, backupRef, shouldPush: false }),
+            });
           }
           return;
         }
         if (verb === 'bring-origin') {
-          void store.bringOriginIntoHistory({ sessionId, mountId });
+          attempt({ task: () => store.bringOriginIntoHistory({ sessionId, mountId }) });
           return;
         }
         if (verb === 'retry' && event.payload?.origin === 'rebase') {
-          void store.rebaseBranch({ sessionId, mountId });
+          attempt({ task: () => store.rebaseBranch({ sessionId, mountId }) });
           return;
         }
         if (verb === 'retry-with-note') {
@@ -65,18 +88,24 @@ export const useHistoryRowActions = ({
           }
         }
         if (verb === 'rewrite-with-agent') {
-          void store
-            .loadHistoryDraft({ sessionId, mountId })
-            .then(() => store.rewriteDraftWithAgent({ sessionId, mountId }));
+          attempt({
+            task: () =>
+              store
+                .loadHistoryDraft({ sessionId, mountId })
+                .then(() => store.rewriteDraftWithAgent({ sessionId, mountId })),
+          });
           return;
         }
         if (verb === 'discard-plan') {
-          void store
-            .loadHistoryDraft({ sessionId, mountId })
-            .then(() => store.discardHistoryDraft({ sessionId, mountId }));
+          attempt({
+            task: () =>
+              store
+                .loadHistoryDraft({ sessionId, mountId })
+                .then(() => store.discardHistoryDraft({ sessionId, mountId })),
+          });
           return;
         }
-        void store.loadHistoryDraft({ sessionId, mountId });
+        attempt({ task: () => store.loadHistoryDraft({ sessionId, mountId }) });
         store.openRewriteHistory(sessionId, worktreePath);
       };
       return {

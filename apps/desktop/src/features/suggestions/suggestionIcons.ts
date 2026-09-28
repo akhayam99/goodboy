@@ -11,7 +11,6 @@ export const SUGGESTION_ICONS: Record<SuggestionKind, LucideIcon> = {
   'mount-project': CONCEPT_ICONS.mount,
   'approve-tool': CONCEPT_ICONS.approval,
   'sign-in': CONCEPT_ICONS.signIn,
-  'unblock-step': CONCEPT_ICONS.errors,
   'retry-agent': CONCEPT_ICONS.retry,
   'fix-checks': CONCEPT_ICONS.errors,
   'push-branch': CONCEPT_ICONS.push,

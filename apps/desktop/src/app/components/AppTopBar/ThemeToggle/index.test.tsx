@@ -48,6 +48,19 @@ describe('ThemeToggle', () => {
     expect(container.querySelector('.lucide-sun')).not.toBeNull();
   });
 
+  it('turns a fresh icon in on every switch, inside the part the cross-fade leaves out', () => {
+    setTheme({ preference: 'dark', theme: 'dark' });
+    const { container } = render(<ThemeToggle />);
+    const moon = container.querySelector('.lucide-moon');
+
+    fireEvent.click(screen.getByRole('button'));
+
+    const sun = container.querySelector('.lucide-sun');
+    expect(moon?.isConnected).toBe(false);
+    expect(sun?.getAttribute('class')).toContain('motion-safe:animate-theme-icon-in');
+    expect(sun?.parentElement?.hasAttribute('data-theme-icon')).toBe(true);
+  });
+
   it('turns Match system into an explicit choice on click', () => {
     setTheme({ preference: 'system', theme: 'dark' });
     render(<ThemeToggle />);

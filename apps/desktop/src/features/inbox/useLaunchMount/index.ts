@@ -3,12 +3,11 @@ import { useShallow } from 'zustand/react/shallow';
 import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { sentryListCodeMappings, type SentryCodeMapping } from '../../integrations/sentry/client';
-import { launchMountFor, type LaunchMount } from '../launchMountFor';
-import type { InboxRecord } from '../types';
+import { launchMountFor, type LaunchMount, type LaunchMountSource } from '../launchMountFor';
 
 type Params = {
   readonly workspaceId: WorkspaceId;
-  readonly record: InboxRecord;
+  readonly source: LaunchMountSource | null;
 };
 
 type MappingsParams = {
@@ -34,8 +33,11 @@ const mappingsOf = ({ workspaceId }: MappingsParams): Promise<ReadonlyArray<Sent
   return pending;
 };
 
-export const useLaunchMount = ({ workspaceId, record }: Params): LaunchMount | null => {
-  const isSentry = record.provider === 'sentry';
+export const useLaunchMount = ({ workspaceId, source }: Params): LaunchMount | null => {
+  const provider = source?.provider ?? null;
+  const url = source?.url ?? '';
+  const sentryProject = source?.sentryProject ?? null;
+  const isSentry = provider === 'sentry';
   const projects = useAppStore(
     useShallow((state) =>
       state.projects.filter(
@@ -72,7 +74,16 @@ export const useLaunchMount = ({ workspaceId, record }: Params): LaunchMount | n
   }, [isSentry, workspaceId]);
 
   return useMemo(
-    () => launchMountFor({ record, projects, links, mappings, gitlabHosts }),
-    [gitlabHosts, links, mappings, projects, record],
+    () =>
+      provider === null
+        ? null
+        : launchMountFor({
+            source: { provider, url, sentryProject },
+            projects,
+            links,
+            mappings,
+            gitlabHosts,
+          }),
+    [gitlabHosts, links, mappings, projects, provider, sentryProject, url],
   );
 };

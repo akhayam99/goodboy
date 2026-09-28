@@ -437,6 +437,14 @@ describe('ArtifactCreationPane', () => {
     expect(screen.getByText('Connect a provider to generate')).toBeTruthy();
   });
 
+  it('ends the form with its actions inline, never in a footer bar', () => {
+    renderPane();
+    const generate = screen.getByTestId('artifact-generate');
+    expect(generate.closest('[data-slot="form-page"]')).not.toBeNull();
+    expect(generate.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(generate.closest('footer')).toBeNull();
+  });
+
   it('keeps the draft on back and clears it on a confirmed cancel', () => {
     renderPane();
     fireEvent.change(screen.getByTestId('artifact-brief'), { target: { value: 'keep me' } });

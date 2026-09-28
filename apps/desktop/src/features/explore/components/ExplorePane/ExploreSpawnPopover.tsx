@@ -1,6 +1,6 @@
 import { clampEffortForModel } from '@goodboy/core';
 import { useEffect, useMemo, useState } from 'react';
-import { AnchoredPopover, Button, Divider, Textarea, useDropdown } from '@goodboy/ui';
+import { AnchoredPopover, Button, FormActions, Textarea, useDropdown } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -119,7 +119,6 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
         <p className="text-row text-foreground">Ask an agent about this file</p>
         <p className="truncate font-mono text-secondary text-muted-foreground">{entry.relPath}</p>
       </div>
-      <Divider />
       <div className="flex flex-col gap-2">
         <Textarea
           aria-label="What should the agent do with this file?"
@@ -138,14 +137,14 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
           className="gap-1.5"
           role={{ label: AGENT_KIND_META.generic.label, hint: 'Fixed by the explore panel' }}
         />
-        {spawnError != null ? <p className="text-label text-danger">{spawnError}</p> : null}
       </div>
-      <Divider />
-      <div className="flex items-center justify-end">
+      <FormActions
+        error={spawnError == null ? null : <span className="text-label">{spawnError}</span>}
+      >
         <Button size="sm" onClick={() => void spawnFromFile()} disabled={!canSpawn}>
           {isSpawning ? 'Starting…' : 'Start agent'}
         </Button>
-      </div>
+      </FormActions>
     </AnchoredPopover>
   );
 };

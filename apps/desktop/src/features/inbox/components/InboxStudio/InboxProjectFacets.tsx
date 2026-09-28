@@ -9,10 +9,11 @@ type Props = {
   readonly projects: ReadonlyArray<Project>;
   readonly filters: InboxFilters;
   readonly counts: InboxFacetCounts;
+  readonly note: string | null;
   readonly onFiltersChange: (filters: InboxFilters) => void;
 };
 
-export const InboxProjectFacets = ({ projects, filters, counts, onFiltersChange }: Props) => {
+export const InboxProjectFacets = ({ projects, filters, counts, note, onFiltersChange }: Props) => {
   const [isShowingEmpty, setIsShowingEmpty] = useState(false);
   const isVisible = (project: Project) =>
     counts.project(project.id) > 0 || filters.project === project.id;
@@ -46,6 +47,9 @@ export const InboxProjectFacets = ({ projects, filters, counts, onFiltersChange 
           {isShowingEmpty ? 'Hide empty' : `Show ${hiddenCount} empty`}
         </button>
       ) : null}
+      {note === null ? null : (
+        <p className="px-2 py-1 text-secondary text-faint-foreground">{note}</p>
+      )}
     </FacetSection>
   );
 };

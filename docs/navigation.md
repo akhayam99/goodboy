@@ -135,6 +135,20 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   falls back to its home lens.
 - **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
   back and forward buttons walk the stack.
+- **A window comes back where it was.** `captureWindowLocation` reads the
+  current entry, focus included, and `restoreLocation({ location })` replaces
+  the top entry with it and applies it as a restore (a session that is gone
+  falls back to the board, an agent that is gone to its lens). Cmd+R writes
+  it into the reload intent in session storage. Each window also saves it as
+  `window.layout.<window label>` in the settings table half a second after it
+  moves (`useWindowLayout`), and forgets it when you close that window.
+  After an update or an app restart, and on any launch with **Reopen last**
+  on, the main window restores its own layout and reopens every other saved
+  window with `#restore=<old label>`, one per workspace; each one reads its
+  old layout and forgets it (`restoreLaunchLayout`). On a plain launch with
+  Reopen last off, the launcher opens and the saved windows are forgotten.
+  The history stack itself stays in memory: a restored window starts with one
+  entry.
 
 ## Surfaces
 
@@ -201,7 +215,9 @@ workflow progress when a run is active (one segment per step, then
 `Implement · 3 of 5`, counted from the steps that started, never estimated),
 otherwise the stage reason. At most two marks follow it, in this order: what
 waits on you (open questions, then review drafts), the first linked task with a
-`+n` for the rest, the agent count. The row starts with a 20px node: the pull
+`+n` for the rest, the agent count. When open questions are the stage reason,
+the row says it once, as the "1 to answer" mark, and leaves the reason blank.
+The row starts with a 20px node: the pull
 request glyph in its state colour when there is a request, otherwise the stage
 icon, a ring while an agent runs, and `?` or `!` when the session needs you.
 Every row carries a `ToneBar`, the same tone primitive as its card
@@ -250,8 +266,17 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   Use brief, Edit or Use issue text settles the title and goal and opens
   **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
   or Ask an agent choice as the other two tabs, precompiled with that goal,
-  Run a workflow preselected. Its own primary links the issue, creates the
-  session and starts the workflow or agent in one gesture. Without a tracker
+  Run a workflow preselected. Run a workflow is the same embedded
+  `WorkflowBuilderView` as the Workflow tab (Orchestrated, Custom or Preset,
+  the plan, guidance, Can use, Starts, Autorun, Spend cap), with the issue as
+  its goal and its own draft under `kickoff-task:<workspace>`. When the issue
+  maps to a project (`launchMountFor`, the Inbox rule: a GitHub or GitLab repo
+  path, or a Sentry project linked or code-mapped to a project) a
+  `LaunchMountRow` above the choice says which project the session works in
+  and why, and lets you pick another or none. Start workflow, or Start on the
+  agent side, links the issue, mounts that project, creates the session and
+  starts the run or agent in one gesture (`startSessionFromDraft`, kind
+  `task` with a `mount` and a `then`). Without a tracker
   it shows the connect links. The search, like the Inbox search, reads an issue
   code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
   `owner/repo#482`, a tracker URL; anything else stays a local filter). When
@@ -405,8 +430,11 @@ activity yet show the plain overview with its actions.
   instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
-  that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
-N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. A
+  that applies of `Merged`, `Gone on origin`, `Local only`, `Diverged from
+origin`, `Behind main by N` and `On origin` (`branchPriorityOf`), and `All
+branches in Overview`. `Local only` and `Diverged from origin` read the
+  branch's own remote copy (`branchPushStateOf`), never the base it was cut
+  from. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the menu and in the Diff header alike
   (`isMountRequestMerged`). It never
@@ -602,9 +630,9 @@ before anything moves, so Settings stays open under it.
 First-run setup is a full-screen wizard in one shell that never moves: a top
 bar with a labelled stepper (Provider, Project, Code host, Tasks, First
 session) and Skip setup, a body that starts at the same line on every step,
-and a footer pinned at the bottom (Back left, Skip for now and the primary
-right). Steps crossfade in place (240 ms, 80 ms of opacity with reduced
-motion); the footer is disabled while they do. Welcome says what the five
+and the form actions inline at the end of the step (Back, Skip for now and
+the primary, right-aligned, no divider). Steps crossfade in place (240 ms,
+80 ms of opacity with reduced motion); the actions are disabled while they do. Welcome says what the five
 steps take. Provider needs one usable route (a CLI login, a saved key or
 OpenCode's free models). Project picks one folder, with or without version
 control, names the workspace after its parent folder and finds the
@@ -952,8 +980,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   back links and the overview action say so), and Resolve stays a verb on the
   actions that settle a thread. Review exists with or without a pull request:
   without one it is one root with a `No pull request` header and the session's
-  notes (see Pull request review in `docs/concepts.md`). Its dock holds only the
-  publication, and its header links the pull request page (`PR #528 ›`).
+  notes (see Pull request review in `docs/concepts.md`). The publication is the
+  one action row at the end of the list (`FormActions`, no footer bar), and its
+  header links the pull request page (`PR #528 ›`).
   The `pr` lens is the pull request page on GitHub too (`Merge request` on
   GitLab, still their own studios there). Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
@@ -962,7 +991,8 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   The body reads, in order: one warning with `Resolve in Review` when
   conversations wait or a reviewer asked for changes, otherwise the merge
   readiness note; then Details, Checks and Activity. `Write review` is a child
-  page (`Overview › Pull request › #528 › Write review`) with the submit dock;
+  page (`Overview › Pull request › #528 › Write review`) with the drafts count
+  and Submit review in the diff toolbar;
   without a pull request the page is the creation form
   (`Overview › Pull request › New`). The child page lives in the store per
   session and drops back to the page when the lens closes. Everything Review
@@ -1143,7 +1173,8 @@ GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Diff`, which opens the Diff lens on that mount with the file in focus.
 `diff-notes` lists the open notes of the Diff lens by file, and `review-drafts`
-lists the review drafts of Write review; the dock count opens each one.
+lists the review drafts of Write review; the count in the diff toolbar opens
+each one.
 
 ## The Diff lens
 
@@ -1206,9 +1237,10 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The Diff lens docks `N notes` and `Resolve in Review`, which opens Review on
-the same notes; Write review docks `N drafts` and `Submit review`, whose
-popover holds the summary and the verdict. Files mount in batches of 20 as the
+The diff toolbar carries `N notes` and `Resolve in Review` in the Diff lens,
+which opens Review on the same notes, and `N drafts` and `Submit review` in
+Write review, whose popover holds the summary and the verdict. Neither is a
+footer bar. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 
 ## The Scripts lens

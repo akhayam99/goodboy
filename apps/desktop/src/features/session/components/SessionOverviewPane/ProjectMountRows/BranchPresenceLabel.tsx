@@ -1,4 +1,4 @@
-import { Cloud, CloudOff, GitMerge, House } from 'lucide-react';
+import { Cloud, CloudOff, GitCompare, GitMerge, House } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import type { WorktreeStatus } from '@goodboy/types';
 import { branchPresenceOf, type BranchPresence } from '../../../../../shared/lib/branchPresence';
@@ -21,6 +21,8 @@ const presenceGlyphOf = ({ kind }: GlyphParams) => {
       return <CloudOff size={11} aria-hidden />;
     case 'on-origin':
       return <Cloud size={11} aria-hidden />;
+    case 'diverged':
+      return <GitCompare size={11} aria-hidden />;
     case 'merged':
     case 'merged-then':
       return <GitMerge size={11} aria-hidden />;
@@ -51,7 +53,9 @@ export const BranchPresenceLabel = ({
     <span
       className={cn(
         'flex shrink-0 items-center gap-1 text-secondary',
-        presence.kind === 'gone-on-origin' ? 'text-warning' : 'text-muted-foreground',
+        presence.kind === 'gone-on-origin' || presence.kind === 'diverged'
+          ? 'text-warning'
+          : 'text-muted-foreground',
       )}
       title={presence.label}
     >

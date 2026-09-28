@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { ErrorStrip, LensEmptyState, PageColumn, RefreshIconButton, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
@@ -10,9 +10,10 @@ import { useReviewDiff } from './useReviewDiff';
 
 type Props = {
   readonly session: Session;
+  readonly publishBar: ReactNode;
 };
 
-export const WriteReview = ({ session }: Props) => {
+export const WriteReview = ({ session, publishBar }: Props) => {
   const sessionId = session.id as SessionId;
   const drafts = useAppStore(
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
@@ -108,13 +109,16 @@ export const WriteReview = ({ session }: Props) => {
       files={files}
       comments={comments}
       toolbarEnd={
-        <RefreshIconButton
-          label="Refresh diff"
-          isLoading={loading}
-          onClick={refresh}
-          iconSize={12}
-          className="size-6 border-transparent p-0"
-        />
+        <>
+          <RefreshIconButton
+            label="Refresh diff"
+            isLoading={loading}
+            onClick={refresh}
+            iconSize={12}
+            className="size-6 border-transparent p-0"
+          />
+          {publishBar}
+        </>
       }
     />
   );

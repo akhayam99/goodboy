@@ -184,19 +184,56 @@ describe('activeFilterCount', () => {
 });
 
 describe('project filter', () => {
-  const withProjects = (key: string, projectIds?: ReadonlyArray<ProjectId>) =>
-    ({ key, projectIds }) as unknown as InboxRecord;
+  const ledger = 'ledger' as ProjectId;
+  const withProjects = (
+    key: string,
+    provider: InboxRecord['provider'],
+    projectIds?: ReadonlyArray<ProjectId>,
+  ) => ({ key, provider, projectIds }) as unknown as InboxRecord;
 
-  it('keeps records of the project and records no project claims', () => {
-    const ledger = 'ledger' as ProjectId;
-    expect(matchesProject({ record: withProjects('a', [ledger]), project: ledger })).toBe(true);
+  it('keeps only the items of the project from a source that maps to projects', () => {
+    expect(matchesProject({ record: withProjects('a', 'sentry', [ledger]), project: ledger })).toBe(
+      true,
+    );
     expect(
-      matchesProject({ record: withProjects('b', ['store' as ProjectId]), project: ledger }),
+      matchesProject({
+        record: withProjects('b', 'sentry', ['store' as ProjectId]),
+        project: ledger,
+      }),
     ).toBe(false);
-    expect(matchesProject({ record: withProjects('c'), project: ledger })).toBe(true);
-    expect(matchesProject({ record: withProjects('d', []), project: ledger })).toBe(true);
+    expect(matchesProject({ record: withProjects('c', 'sentry'), project: ledger })).toBe(false);
+    expect(matchesProject({ record: withProjects('d', 'github', []), project: ledger })).toBe(
+      false,
+    );
+    expect(matchesProject({ record: withProjects('e', 'gitlab', [ledger]), project: ledger })).toBe(
+      true,
+    );
     expect(
-      matchesProject({ record: withProjects('e', ['store' as ProjectId]), project: null }),
+      matchesProject({
+        record: withProjects('f', 'sentry', ['store' as ProjectId]),
+        project: null,
+      }),
     ).toBe(true);
+  });
+
+  it('keeps every item of a source with no project link', () => {
+    for (const provider of ['linear', 'jira', 'slack', 'bitbucket'] as const) {
+      expect(matchesProject({ record: withProjects(provider, provider), project: ledger })).toBe(
+        true,
+      );
+    }
+  });
+
+  it('counts only the items tied to a project', () => {
+    const counts = inboxFacetCounts({
+      records: [
+        record({ key: 'a', provider: 'sentry', projectIds: [ledger] }),
+        record({ key: 'b', provider: 'sentry', projectIds: ['store' as ProjectId] }),
+        record({ key: 'c', provider: 'linear' }),
+      ],
+      query: '',
+      filters: NO_INBOX_FILTERS,
+    });
+    expect(counts.project(ledger)).toBe(1);
   });
 });

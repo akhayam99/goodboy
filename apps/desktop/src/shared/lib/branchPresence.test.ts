@@ -47,6 +47,16 @@ describe('branchPresenceOf', () => {
     });
   });
 
+  it('reports a force-pushed remote as diverged, with nothing to push', () => {
+    const status = statusOf({ upstreamDistance: { kind: 'known', ahead: 2, behind: 3 } });
+
+    expect(branchPresenceOf({ status, isMerged: false })).toEqual({
+      kind: 'diverged',
+      label: 'Diverged from origin',
+      toPush: null,
+    });
+  });
+
   it('reports a pruned upstream as gone on origin', () => {
     const status = statusOf({
       upstreamDistance: { kind: 'unknown', reason: 'upstream-gone' },

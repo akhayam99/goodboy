@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import { Button, ClampedProse } from '@goodboy/ui';
+import { Button, ClampedProse, FormActions } from '@goodboy/ui';
 import type {
   IssueBriefEntry,
   IssueBriefSource,
@@ -77,21 +77,23 @@ export const BriefReady = ({
       <p className="text-secondary text-faint-foreground">
         The full {source.noun} stays linked to this session.
       </p>
-      <footer className="flex items-center gap-1.5">
-        <Button size="sm" onClick={onUseBrief}>
-          Use brief
+      <FormActions
+        leading={
+          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onDismiss}>
+            Dismiss
+          </Button>
+        }
+      >
+        <Button variant="ghost" size="sm" onClick={onUseIssueText}>
+          Use issue text
         </Button>
         <Button variant="secondary" size="sm" onClick={onEdit}>
           Edit
         </Button>
-        <Button variant="ghost" size="sm" onClick={onUseIssueText}>
-          Use issue text
+        <Button size="sm" onClick={onUseBrief}>
+          Use brief
         </Button>
-        <span className="flex-1" />
-        <Button variant="ghost" size="sm" onClick={onDismiss}>
-          Dismiss
-        </Button>
-      </footer>
+      </FormActions>
     </>
   );
 };

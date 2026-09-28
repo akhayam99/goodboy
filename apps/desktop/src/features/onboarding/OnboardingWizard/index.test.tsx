@@ -492,10 +492,30 @@ describe('OnboardingWizard', () => {
       expect(screen.getByTestId('CodeHostStep')).toBeDefined();
     });
 
-    it('offers Skip, open the board instead of a footer primary', async () => {
+    it('keeps Back right-aligned beside the step action', async () => {
+      await reachFirstSession();
+      const back = screen.getByRole('button', { name: /^back$/i });
+      const skip = screen.getByRole('button', { name: /skip, open the board/i });
+      expect(back.parentElement).toBe(skip.parentElement);
+    });
+
+    it('offers Skip, open the board instead of a primary in the action row', async () => {
       await reachFirstSession();
       expect(screen.queryByRole('button', { name: /^continue$/i })).toBeNull();
       click(/skip, open the board/i);
+      await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
+    });
+  });
+
+  describe('action row', () => {
+    it('ends each step with Back and the primary inline, never in a footer bar', async () => {
+      tools.connected.linear = true;
+      setHook({ ...readyState({ kind: 'repo' }), mode: 'single', start: 'tasks' });
+      const { container } = render(<OnboardingWizard />);
+      const done = screen.getByRole('button', { name: /^done$/i });
+      expect(done.closest('[data-slot="form-actions"]')).not.toBeNull();
+      expect(container.querySelector('footer')).toBeNull();
+      click(/^done$/i);
       await waitFor(() => expect(finishWizard).toHaveBeenCalledOnce(), { timeout: 1000 });
     });
   });

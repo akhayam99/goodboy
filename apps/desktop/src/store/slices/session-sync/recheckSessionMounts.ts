@@ -1,3 +1,4 @@
+import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';
 import type { GetFn, RecheckReason, RecheckSessionMountsParams } from './types';
 
@@ -9,11 +10,15 @@ export const RECHECK_MIN_AGE_MS: Readonly<Record<RecheckReason, number>> = {
 export const recheckSessionMounts = (get: GetFn) => {
   return async ({ sessionId, reason }: RecheckSessionMountsParams): Promise<void> => {
     const state = get();
-    if (state.githubStatus?.available !== true) {
-      return;
-    }
     const session = state.sessions.find((candidate) => candidate.id === sessionId);
     if (session === undefined || session.archivedAt != null) {
+      return;
+    }
+    const localRefresh = refreshWorktreeStatuses({
+      worktreePaths: listSessionPrFetches({ state, sessionId }).map(({ cwd }) => cwd),
+    });
+    if (state.githubStatus?.available !== true) {
+      await localRefresh;
       return;
     }
     const now = Date.now();
@@ -32,8 +37,9 @@ export const recheckSessionMounts = (get: GetFn) => {
       }
       return [mount.id];
     });
-    await Promise.all(
-      mountIds.map((mountId) => get().refreshSessionPr(sessionId, { mountId, silent: true })),
-    );
+    await Promise.all([
+      localRefresh,
+      ...mountIds.map((mountId) => get().refreshSessionPr(sessionId, { mountId, silent: true })),
+    ]);
   };
 };

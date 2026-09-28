@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Project, ProjectId, ProjectSentryLink } from '@goodboy/types';
 import type { SentryCodeMapping } from '../integrations/sentry/client';
 import { launchMountFor } from './launchMountFor';
+import { launchMountSourceOf } from './launchMountSourceOf';
 import type { InboxRecord } from './types';
 
 const project = (id: string, name: string, remoteUrl?: string): Project =>
@@ -68,7 +69,7 @@ const resolve = (
   } = {},
 ) =>
   launchMountFor({
-    record,
+    source: launchMountSourceOf({ record }),
     projects: PROJECTS,
     links: extra.links ?? [],
     mappings: extra.mappings ?? [],

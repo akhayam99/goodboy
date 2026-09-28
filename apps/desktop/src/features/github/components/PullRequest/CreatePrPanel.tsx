@@ -3,10 +3,10 @@ import type { MountId, SessionExternalTask, SessionId } from '@goodboy/types';
 import {
   Button,
   Checkbox,
-  Divider,
   FieldRow,
+  FormActions,
+  FormPage,
   Input,
-  ScrollFade,
   SectionHeader,
   SegmentedTabs,
   Skeleton,
@@ -27,7 +27,6 @@ import { scribeKeyOf } from '../../../../store/slices/scribe/scribeKeyOf';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { openUrl } from '../../../../shared/lib/editor';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '@goodboy/ui';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -215,8 +214,8 @@ export const CreatePrPanel = ({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-        <section className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <FormPage>
+        <section className="flex flex-col gap-6">
           <SectionHeader
             label="Open a pull request"
             action={
@@ -256,7 +255,6 @@ export const CreatePrPanel = ({
                     autoFocus
                   />
                 </FieldRow>
-                <Divider />
                 <FieldRow label="Description" help="What changed and why. Markdown supported.">
                   <Textarea
                     value={body}
@@ -270,7 +268,6 @@ export const CreatePrPanel = ({
                     aria-label="Pull request description"
                   />
                 </FieldRow>
-                <Divider />
                 <FieldRow label="Base branch" help="The branch this pull request merges into.">
                   <div className="w-full sm:w-96">
                     {branchesLoading ? (
@@ -306,7 +303,6 @@ export const CreatePrPanel = ({
             )}
             {references.length > 0 && (
               <>
-                <Divider />
                 <FieldRow
                   label="Issue links"
                   help="Added to the description so GitHub closes these issues when this merges."
@@ -345,7 +341,6 @@ export const CreatePrPanel = ({
                 </FieldRow>
               </>
             )}
-            <Divider />
             <FieldRow
               label="Open as draft"
               help="Creates the pull request in GitHub's draft state."
@@ -354,47 +349,51 @@ export const CreatePrPanel = ({
             </FieldRow>
           </section>
         </section>
-      </ScrollFade>
-
-      <Divider />
-
-      <footer className="shrink-0 px-6 py-3">
-        <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            {error == null && isScribeWriting && (
-              <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
-                <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-                Scribe is writing the title and description.
-              </span>
-            )}
-            {error == null && scribeFailure !== null && (
-              <span
-                role="status"
-                className="inline-flex min-w-0 items-center gap-1 truncate text-label text-warning"
-              >
-                <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-                {scribeFailure}
-              </span>
-            )}
-            {error == null && isDraftAgentRunning && (
-              <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
-                <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-                An agent is already opening a pull request for this session.
-              </span>
-            )}
-            {error != null && (
-              <span
-                role="alert"
-                className="inline-flex min-w-0 items-center gap-1 truncate text-label text-danger"
-                title={error}
-              >
-                <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-                {error}
-              </span>
-            )}
-          </div>
+        <FormActions
+          leading={
+            <>
+              {error == null && isScribeWriting && (
+                <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
+                  <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                  Scribe is writing the title and description.
+                </span>
+              )}
+              {error == null && scribeFailure !== null && (
+                <span
+                  role="status"
+                  className="inline-flex min-w-0 items-center gap-1 truncate text-label text-warning"
+                >
+                  <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                  {scribeFailure}
+                </span>
+              )}
+              {error == null && isDraftAgentRunning && (
+                <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-label text-muted-foreground">
+                  <CONCEPT_ICONS.agents size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                  An agent is already opening a pull request for this session.
+                </span>
+              )}
+              {error != null && (
+                <span
+                  role="alert"
+                  className="inline-flex min-w-0 items-center gap-1 truncate text-label text-danger"
+                  title={error}
+                >
+                  <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+                  {error}
+                </span>
+              )}
+            </>
+          }
+        >
           {onCancel != null && (
-            <Button variant="ghost" onClick={onCancel} disabled={busy !== null}>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={onCancel}
+              disabled={busy !== null}
+              className="text-muted-foreground"
+            >
               Cancel
             </Button>
           )}
@@ -431,8 +430,8 @@ export const CreatePrPanel = ({
               )}
             </Button>
           )}
-        </div>
-      </footer>
+        </FormActions>
+      </FormPage>
     </div>
   );
 };
