@@ -318,18 +318,23 @@ the Inbox (Launch session).
   Review, the Diff and Rewrite history are layers of one page. Each entry of
   the stack carries `layers`, the kinds to its left (`layers.ts`). Opening a
   layer from the Overview puts it under the Overview alone; opening one from
-  inside another layer stacks it to the right (`Overview > Diff > Pull request
-  > #318`, `Overview > PR #318 > Review`). A kind already in the trail pops
-  > back to its entry instead of stacking a copy, so the stack never loops and
-  > is at most four deep; a crumb pops to itself the same way, and Back removes
-  > one layer. A request that carries a focus (a diff on one file) pushes
-  > instead. A jump from outside the page (board card, palette from another
-  > place, notification, sidebar) gets the canonical path of its target: Review
-  > sits under its pull request when the session has one, everything else under
-  > the Overview. Rewrite history stays a child of its Diff (the branch crumb
-  > between them). Opening a page that is not a layer drops the path, and Back
-  > finds it again. A reload carries the path in the reload intent and replays
-  > it from the Overview, so the trail comes back as it was.
+  inside another layer stacks it to the right
+  (`Overview > Diff > Pull request > #318`, `Overview > PR #318 > Review`). A
+  kind already in the trail pops back to its entry instead of stacking a copy,
+  so the stack never loops and is at most four deep; a crumb pops to itself the
+  same way, and Back removes one layer. A request that carries a focus (a diff
+  on one file) pushes instead. A jump from outside the page (board card,
+  palette from another place, notification, sidebar) gets the canonical path of
+  its target: Review sits under its pull request when the session has one,
+  everything else under the Overview. Rewrite history stays a child of its Diff
+  (the branch crumb between them). Opening a page that is not a layer drops the
+  path, and Back finds it again. A reload carries the path in the reload intent
+  and replays it from the Overview, so the trail comes back as it was. A layer
+  never renders another layer's controls; it links to it in one quiet line. The
+  `code-layers` mock scene (`?scene=code-layers&layer=pr&pr=failing&wt=behind`)
+  shows every layer in any pull request and worktree state, and the navigation
+  flows walk every arrow between the layers with a guard that fails when a
+  layer header carries another layer's controls.
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
@@ -1109,7 +1114,7 @@ from the branch state (`Rebase on main` when it is behind main, `Push N
 commits` when commits wait on a branch with a pull request, `Create PR` when
 the branch has commits and no pull request, `Open terminal` while a rebase is
 stopped), up to three secondaries (`PR #528`, which opens the pull request
-with the trail `Overview › Diff › PR #528`, `Rewrite history`, `Abort
+with the trail `Overview › Diff › Pull request › #528`, `Rewrite history`, `Abort
 rebase`) and `⋯` with every available action (Open in editor, Open terminal,
 Change base branch…, Restore a backup…, Copy branch name, Copy patch). A
 blocked control stays visible and disabled, with its reason on the line under

@@ -17,6 +17,7 @@ import { openUrl } from '../../../shared/lib/editor';
 import { selectActiveProjectPrs } from '../../../store/slices/github/activeProjectPrs';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { selectPrWrite } from '../../../store/slices/pr-writes/selectPrWrite';
+import { sessionMountViews } from '../../../store/slices/project-mounts/mountRowModel';
 import { resolveSessionRepo } from '../../../store/slices/worktrees/resolveSessionRepo';
 import { isPrDraftAgentRunning } from '../../github/prDraftAgent';
 import { describePrWriteInFlight } from '../../review/prLifecycle';
@@ -369,8 +370,16 @@ export const PULL_REQUEST_KIND: ObjectKindDefinition<PullRequestActionTarget, Pu
         ? canonical
         : (findPr({ prs: candidates, number: target.prNumber }) ??
           (canonical?.number === target.prNumber ? canonical : null));
-    const detail = github?.detail ?? null;
-    const detailMatches = detail !== null && pr !== null && detail.prNumber === pr.number;
+    const detail =
+      pr === null
+        ? null
+        : ([
+            github?.detail ?? null,
+            ...sessionMountViews({ state, sessionId: target.sessionId }).map(
+              (view) => state.mountGithub[view.id]?.detail ?? null,
+            ),
+          ].find((candidate) => candidate !== null && candidate.prNumber === pr.number) ?? null);
+    const detailMatches = detail !== null;
     const repo = resolveSessionRepo({ state, sessionId: target.sessionId });
     const claim =
       pr === null || repo === null
