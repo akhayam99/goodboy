@@ -16,9 +16,17 @@ deployed by Vercel from `website/vercel.json`.
 - `pnpm dev` serves the page locally; `pnpm build` typechecks and builds
   `dist/`.
 
+## Pages
+
+- `/`, the landing page, from `website/index.html` and `website/src/App.tsx`.
+- `/features`, every feature group with the release picker and the supported
+  tools, from `website/features.html` and `website/src/pages/features/`. Vite
+  builds both as inputs, `vercel.json` serves them without `.html`, and the
+  dev and preview servers rewrite `/features` the same way.
+
 ## FAQ and structured data
 
-The questions in `website/src/sections/Faq.tsx` are mirrored by hand into the
+The questions in `website/src/data/faqs.ts` are mirrored by hand into the
 `FAQPage` JSON-LD block in `website/index.html`. Change both in the same
 commit: nothing checks that they agree, and search engines read the JSON-LD,
 not the section.

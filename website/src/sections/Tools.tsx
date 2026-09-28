@@ -1,18 +1,12 @@
-import { Block } from '../components/Block';
-import { More } from '../components/More';
-import { SeeHow } from '../components/SeeHow';
+import './Tools.css';
+import { PROVIDERS } from '../components/BrandIcons';
 import { ToolRow, type Tool } from '../components/ToolRow';
 import { SITE } from '../site';
 
-const PROVIDERS: readonly Tool[] = [
-  { brand: 'anthropic', name: 'Claude' },
-  { brand: 'codex', name: 'Codex' },
-  { brand: 'cursor', name: 'Cursor' },
-  { brand: 'gemini', name: 'Gemini' },
-  { brand: 'opencode', name: 'OpenCode' },
-  { brand: 'openrouter', name: 'OpenRouter' },
-  { brand: 'moonshot', name: 'Moonshot' },
-];
+const PROVIDER_TOOLS: readonly Tool[] = PROVIDERS.map((provider) => ({
+  brand: provider.id,
+  name: provider.name,
+}));
 
 const TOOLS: readonly Tool[] = [
   { brand: 'github', name: 'GitHub', use: 'Issues and pull requests' },
@@ -25,20 +19,14 @@ const TOOLS: readonly Tool[] = [
 ];
 
 export const Tools = () => (
-  <Block
-    id="tools"
-    headingId="h2-tools"
-    heading="Supported tools"
-    sub="Seven providers for the agents, and the tools your team already works in."
-    isAlt
-  >
-    <div className="toolGroups">
-      <ToolRow label="Providers" items={PROVIDERS} />
-      <ToolRow label="Your tools" items={TOOLS} />
-    </div>
-    <div className="linkRow">
-      <More href={SITE.providersDoc}>Set up a provider</More>
-      <SeeHow anchor="supported-tools" />
-    </div>
-  </Block>
+  <section className="tools" id="tools" aria-labelledby="tools-title">
+    <h2 id="tools-title" className="sectionTitle">
+      Supported tools
+    </h2>
+    <ToolRow label="Providers" items={PROVIDER_TOOLS} />
+    <ToolRow label="Your tools" items={TOOLS} />
+    <a className="textLink" href={SITE.providersDoc}>
+      Set up a provider <span aria-hidden="true">→</span>
+    </a>
+  </section>
 );

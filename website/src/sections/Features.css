@@ -1,0 +1,122 @@
+.features {
+  display: grid;
+  justify-items: start;
+  gap: 24px;
+  padding: 0 36px;
+}
+
+.featBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.featVersion select {
+  appearance: none;
+  height: 32px;
+  padding: 0 28px 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-btn);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--t3) 50%) right 14px center / 4px 4px no-repeat,
+    linear-gradient(135deg, var(--t3) 50%, transparent 50%) right 10px center / 4px 4px no-repeat,
+    var(--bg);
+  font: 500 13px/20px var(--mono);
+  color: var(--t1);
+  cursor: pointer;
+}
+
+.featCount {
+  font: var(--t-caption);
+  color: var(--t3);
+}
+
+.featSummary {
+  max-width: 72ch;
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  color: var(--t3);
+}
+
+.featSummary b {
+  font-weight: 500;
+  color: var(--t1);
+}
+
+.featGrid {
+  width: 100%;
+  columns: 4 240px;
+  column-gap: 16px;
+}
+
+.featGroup {
+  break-inside: avoid;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-frame);
+}
+
+.featGroup summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.featGroup summary::-webkit-details-marker {
+  display: none;
+}
+
+.featGroup h2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+}
+
+.featGroup[open] h2 {
+  margin-bottom: 10px;
+}
+
+.featGroup h2 span {
+  font: 400 12px/16px var(--mono);
+  color: var(--t4);
+}
+
+.featGroup ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  font: 400 13px/18px var(--sans);
+  color: var(--t2);
+}
+
+.featGroup li {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--raise);
+}
+
+.featGroup li.isNew {
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--t1);
+}
+
+.featGroup li.isNew::after {
+  content: 'new';
+  margin-left: 6px;
+  font: 500 11px/16px var(--mono);
+  color: var(--t3);
+}
+
+@media (max-width: 600px) {
+  .features {
+    padding: 0;
+  }
+  .featGroup {
+    padding: 14px 16px;
+  }
+}

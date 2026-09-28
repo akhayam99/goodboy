@@ -17,7 +17,7 @@ export const ToolRow = ({ label, items }: Props) => (
     <ul className="toolRow" aria-label={label}>
       {items.map((tool) => (
         <li key={tool.brand}>
-          <BrandMark brand={tool.brand} size={20} />
+          <BrandMark brand={tool.brand} size={18} />
           <span>
             {tool.name}
             {tool.use === undefined ? null : <small>{tool.use}</small>}

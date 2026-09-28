@@ -56,7 +56,11 @@ const launchChrome = async () => {
   );
   const close = () => {
     chrome.kill('SIGKILL');
-    rmSync(profile, { recursive: true, force: true });
+    try {
+      rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    } catch {
+      console.warn(`check-page: could not remove ${profile}`);
+    }
   };
   const readTargets = async () => {
     try {
@@ -142,10 +146,12 @@ const PAGE_PROBE = `(async () => {
     .map((node) => String(node.className || node.tagName));
   const images = [...document.querySelectorAll('picture img')].map((image) => {
     const box = image.getBoundingClientRect();
+    const file = image.currentSrc.split('/').pop();
+    const pixels = Number((file.match(/-(\\d+)(?:-light)?\\.webp$/) ?? [])[1] ?? image.naturalWidth);
     return {
-      src: image.currentSrc.split('/').pop(),
+      src: file,
       isLoaded: image.complete && image.naturalWidth > 0,
-      density: box.width > 0 ? image.naturalWidth / box.width : null,
+      density: box.width > 0 ? pixels / box.width : null,
     };
   });
   const heroFrame = document.querySelector('.hero .frame');

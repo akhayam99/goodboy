@@ -38,7 +38,7 @@
 
 @media (max-width: 600px) {
   .frameBlock {
-    gap: 28px;
+    gap: 24px;
   }
   .frame {
     padding: 6px;

@@ -17,9 +17,9 @@
 @media (max-width: 600px) {
   .chapterInner {
     gap: 40px;
-    padding: 72px 0;
+    padding: 64px 0;
   }
   .chapterBody {
-    gap: 64px;
+    gap: 56px;
   }
 }

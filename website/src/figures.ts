@@ -157,33 +157,3 @@ export const CHAT_PLAIN = fragment({
   displayWidth: 591,
   alt: 'One exchange in a plain chat: the first message, its plan, the operations and the reply',
 });
-
-export type Detail = {
-  readonly id: string;
-  readonly width: number;
-  readonly height: number;
-  readonly caption: string;
-};
-
-export type Figure = {
-  readonly id: string;
-  readonly width: number;
-  readonly height: number;
-  readonly alt: string;
-  readonly details: readonly Detail[];
-};
-
-export const SUPPORT: Figure = {
-  id: 'support',
-  width: 3840,
-  height: 2400,
-  alt: 'Report a bug open over the Harborline board: one line typed, the version, system, screen and CLI versions as chips, and Send',
-  details: [
-    {
-      id: 'support-d1',
-      width: 2256,
-      height: 888,
-      caption: 'One line, and what gets sent is shown before it goes',
-    },
-  ],
-};

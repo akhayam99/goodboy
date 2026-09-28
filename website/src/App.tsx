@@ -6,8 +6,6 @@ import { Sessions } from './sections/Sessions';
 import { Teams } from './sections/Teams';
 import { Workflows } from './sections/Workflows';
 import { Routing } from './sections/Routing';
-import { Features } from './sections/Features';
-import { Tools } from './sections/Tools';
 import { Faq } from './sections/Faq';
 import { Install } from './sections/Install';
 import { Support } from './sections/Support';
@@ -24,8 +22,6 @@ export const App = () => (
       <Teams />
       <Workflows />
       <Routing />
-      <Features />
-      <Tools />
       <Faq />
       <Install />
       <Support />

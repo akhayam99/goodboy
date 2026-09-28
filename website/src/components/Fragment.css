@@ -104,6 +104,19 @@
     order: 0;
     padding: 0;
   }
+  .frag,
+  .frag.capped,
+  .frag.closed {
+    max-height: 260px;
+    -webkit-mask-image:
+      linear-gradient(to right, #000 80%, transparent),
+      linear-gradient(to bottom, #000 70%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image:
+      linear-gradient(to right, #000 80%, transparent),
+      linear-gradient(to bottom, #000 70%, transparent);
+    mask-composite: intersect;
+  }
   .sectionTitle {
     font-size: 24px;
     line-height: 30px;

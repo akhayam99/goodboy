@@ -1,0 +1,75 @@
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(16px);
+  backdrop-filter: saturate(1.4) blur(16px);
+  box-shadow: 0 1px 0 transparent;
+  transition: box-shadow 0.16s ease-out;
+}
+
+.nav.scrolled {
+  box-shadow: 0 1px 0 var(--line);
+}
+
+.navInner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 64px;
+  padding: 0 36px;
+}
+
+.navLinks {
+  display: flex;
+  gap: 2px;
+  margin-left: 16px;
+}
+
+.navLinks a,
+.iconButton {
+  padding: 6px 12px;
+  border-radius: var(--r-btn);
+  font: var(--t-nav);
+  color: var(--t3);
+  transition:
+    background 0.16s ease-out,
+    color 0.16s ease-out;
+}
+
+.navLinks a:hover,
+.iconButton:hover {
+  color: var(--t1);
+  background: var(--hover);
+  transition: none;
+}
+
+.navSpacer {
+  flex: 1;
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.nav .btn.small {
+  margin-left: 4px;
+}
+
+@media (max-width: 860px) {
+  .navLinks,
+  .navGithub {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .navInner {
+    padding: 0;
+  }
+}

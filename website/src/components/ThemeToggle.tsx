@@ -7,9 +7,9 @@ export const ThemeToggle = () => {
   return (
     <button
       type="button"
-      className="themeToggle"
-      aria-label={`Switch to ${next} theme`}
-      title={`Switch to ${next} theme`}
+      className="iconButton themeToggle"
+      aria-label={`Switch to the ${next} theme`}
+      title={`Switch to the ${next} theme`}
       onClick={() => setTheme({ theme: next })}
     >
       {theme === 'dark' ? (
