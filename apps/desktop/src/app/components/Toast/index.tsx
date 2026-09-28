@@ -10,44 +10,22 @@ import {
   type RefObject,
 } from 'react';
 import { ToastStack } from './ToastStack';
+import {
+  ToastContext,
+  type PreviewNotificationParams,
+  type ShowToastParams,
+  type ToastContextValue,
+} from './toastContext';
 import type { ToastAction, ToastItem, ToastKind } from './types';
 
 export type { ToastAction, ToastItem, ToastKind } from './types';
 
-type ShowToastKind = Exclude<ToastKind, 'error'>;
-
-type ShowToastParams = {
-  readonly kind: ShowToastKind;
-  readonly message: string;
-  readonly title?: string;
-  readonly context?: string;
-  readonly persist?: boolean;
-  readonly action?: ToastAction;
-  readonly onDismiss?: () => void;
-};
-
-export type ShowToast = (params: ShowToastParams) => void;
-
-export type PreviewNotificationParams = {
-  readonly severity: ToastKind;
-  readonly title: string;
-  readonly message: string;
-  readonly context?: string;
-  readonly action?: ToastAction;
-  readonly persist: boolean;
-  readonly onDismiss?: () => void;
-};
-
-type ToastContextValue = {
-  showToast: ShowToast;
-  previewNotification: (params: PreviewNotificationParams) => void;
-};
+export type { PreviewNotificationParams, ShowToast } from './toastContext';
 
 type ToastLiftValue = {
   setLift: (params: { id: string; bottom: number | null }) => void;
 };
 
-const ToastContext = createContext<ToastContextValue | null>(null);
 const ToastLiftContext = createContext<ToastLiftValue | null>(null);
 
 const LIFT_GAP_PX = 8;

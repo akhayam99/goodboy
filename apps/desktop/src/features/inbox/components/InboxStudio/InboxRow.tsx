@@ -11,6 +11,7 @@ import { recordSessionId } from '../../recordSessionId';
 import type { InboxRecord } from '../../types';
 import { InboxStateLabel } from '../InboxStateLabel';
 import { StarToggle } from '../../../../shared/components/StarToggle';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 export type InboxRowStar = {
   readonly isStarred: boolean;
@@ -22,6 +23,7 @@ type Props = {
   readonly selected: boolean;
   readonly onSelect: (record: InboxRecord) => void;
   readonly star?: InboxRowStar;
+  readonly onActivate?: (record: InboxRecord) => void;
 };
 
 type OptionIdParams = {
@@ -31,16 +33,40 @@ type OptionIdParams = {
 export const inboxOptionId = ({ key }: OptionIdParams): string =>
   `inbox-option-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
-export const InboxRow = ({ record, selected, onSelect, star }: Props) => {
+export const InboxRow = ({ record, selected, onSelect, star, onActivate }: Props) => {
   const relativeTime = formatRelativeAge({ fromIso: record.updatedAt });
-  const hasSession = recordSessionId({ record }) != null;
+  const sessionId = recordSessionId({ record }) ?? null;
+  const hasSession = sessionId != null;
   const toolLabel = integrationLabel({ provider: record.provider });
   const canOpen = record.url !== '';
+  const menu = useObjectMenuTrigger({
+    target: {
+      kind: 'record',
+      facts: {
+        identifier: record.identifier,
+        title: record.title,
+        url: record.url,
+        providerLabel: toolLabel,
+        sessionId,
+        isStarred: star?.isStarred ?? null,
+        onOpen: () => onSelect(record),
+        onLaunch: onActivate === undefined ? null : () => onActivate(record),
+        onToggleStar: star?.onToggle ?? null,
+        onRefresh: null,
+        verbs: [],
+        sessionVerbs: [],
+        destructive: [],
+      },
+    },
+    anchorKey: `inbox:${record.key}`,
+  });
 
   return (
     <div
       data-inbox-key={record.key}
       data-selected={selected}
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
       className={cn(
         'group relative grid h-8 grid-cols-[6px_14px_76px_minmax(0,1fr)_48px] items-center gap-2.5 rounded-md px-2.5 text-muted-foreground motion-safe:transition-colors @2xl:grid-cols-[6px_14px_76px_minmax(0,1fr)_120px_88px_48px]',
         selected ? 'bg-selected text-foreground' : 'hover:bg-hover hover:text-foreground',

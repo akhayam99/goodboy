@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { Archive, Cpu, Trash2 } from 'lucide-react';
 import { ContextMenu } from '../components/ContextMenu/ContextMenu';
@@ -10,11 +10,13 @@ import type { MenuEntry } from '../components/ContextMenu/menuTypes';
 
 afterEach(cleanup);
 
+type Select = (choice: string | null) => void;
+
 type Spies = {
-  readonly archive: ReturnType<typeof vi.fn>;
-  readonly remove: ReturnType<typeof vi.fn>;
-  readonly model: ReturnType<typeof vi.fn>;
-  readonly blocked: ReturnType<typeof vi.fn>;
+  readonly archive: Mock<Select>;
+  readonly remove: Mock<Select>;
+  readonly model: Mock<Select>;
+  readonly blocked: Mock<Select>;
 };
 
 const entriesFor = (spies: Spies): ReadonlyArray<MenuEntry> => [
@@ -62,7 +64,12 @@ const entriesFor = (spies: Spies): ReadonlyArray<MenuEntry> => [
 ];
 
 const renderMenu = () => {
-  const spies: Spies = { archive: vi.fn(), remove: vi.fn(), model: vi.fn(), blocked: vi.fn() };
+  const spies: Spies = {
+    archive: vi.fn<Select>(),
+    remove: vi.fn<Select>(),
+    model: vi.fn<Select>(),
+    blocked: vi.fn<Select>(),
+  };
   const onClose = vi.fn();
   render(
     <ContextMenu

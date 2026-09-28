@@ -1,7 +1,11 @@
 import { Copy } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import { AGENT_KIND } from './kinds/agent';
+import { ARTIFACT_KIND } from './kinds/artifact';
 import { LINK_KIND } from './kinds/link';
+import { PLAN_PART_KIND } from './kinds/planPart';
+import { PULL_REQUEST_KIND } from './kinds/pullRequest';
+import { RECORD_KIND } from './kinds/record';
 import { SESSION_KIND } from './kinds/session';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
@@ -15,6 +19,10 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['sessions', SESSIONS_KIND.actions],
   ['agent', AGENT_KIND.actions],
   ['workflowRun', WORKFLOW_RUN_KIND.actions],
+  ['planPart', PLAN_PART_KIND.actions],
+  ['artifact', ARTIFACT_KIND.actions],
+  ['record', RECORD_KIND.actions],
+  ['pullRequest', PULL_REQUEST_KIND.actions],
   ['link', LINK_KIND.actions],
 ];
 

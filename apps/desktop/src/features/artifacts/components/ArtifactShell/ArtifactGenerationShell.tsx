@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { MetaRow, SectionHeader, Skeleton, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
+import { useSessionOpenQuestions } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
 import { OpenQuestionCluster } from '../../../chat/components/ChatView/OpenQuestionCluster';
@@ -12,7 +12,6 @@ import {
   type ArtifactGeneration,
 } from '../../artifactCollection';
 import { ArtifactScouts } from '../ArtifactStudio/ArtifactScouts';
-import { artifactActions } from './artifactActions';
 import { ArtifactShellActions } from './ArtifactShellActions';
 import { ArtifactShellHeader } from './ArtifactShellHeader';
 import { ArtifactStateChip } from './ArtifactStateChip';
@@ -25,8 +24,6 @@ type Props = {
 const SKELETON_WIDTHS = ['w-2/3', 'w-full', 'w-5/6', 'w-3/4'] as const;
 
 export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
-  const stopArtifactGeneration = useAppStore((s) => s.stopArtifactGeneration);
-  const navigate = useAppStore((s) => s.navigate);
   const sessionQuestions = useSessionOpenQuestions(sessionId);
   const questions = useMemo(
     () =>
@@ -36,7 +33,6 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
       ),
     [sessionQuestions, generation.agentId],
   );
-  const set = artifactActions({ subject: { kind: 'generation', canStop: generation.canStop } });
   const provider = generation.provider === null ? null : PROVIDER_LABEL[generation.provider];
 
   return (
@@ -52,17 +48,8 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
           }
           actions={
             <ArtifactShellActions
-              set={set}
-              handles={{
-                stop: {
-                  onClick: () =>
-                    void stopArtifactGeneration({ sessionId, agentId: generation.agentId }),
-                },
-                openAgent: {
-                  onClick: () =>
-                    navigate({ to: agentPlace({ sessionId, agentId: generation.agentId }) }),
-                },
-              }}
+              target={{ kind: 'artifact', sessionId, subject: { kind: 'generation', generation } }}
+              onArm={({ run }) => void run()}
             />
           }
           toggles={null}

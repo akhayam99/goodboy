@@ -186,7 +186,7 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       label: 'Start run',
       icon: Play,
       group: 'act',
-      when: ({ facts }) => facts.state === 'queued',
+      when: ({ facts }) => facts.state === 'queued' && facts.run.triggerMode === 'manual',
       run: ({ facts, env }) => env.getState().startWorkflowRun(facts.sessionId, facts.run.id),
     },
     {
