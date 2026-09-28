@@ -1,6 +1,7 @@
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
-import type { TimelineStreamItem } from './buildTimelineStream';
+import type { TimelineRowItem, TimelineStreamItem } from './buildTimelineStream';
 import { isRowNeedingYou } from '../../workTreeModel/rowState';
+import { rowStateTone } from '../../workTreeModel/rowStateCopy';
 
 type RootsParams = {
   readonly items: ReadonlyArray<TimelineStreamItem>;
@@ -15,6 +16,41 @@ export const needsYouRootIds = ({ items }: RootsParams): ReadonlySet<string> => 
   }
   return roots;
 };
+
+const needKeysOf = ({ item }: { readonly item: TimelineRowItem }): ReadonlyArray<string> => {
+  const { entry, rowState } = item;
+  if (entry.kind === 'question') {
+    return entry.questions.map((question) => question.id);
+  }
+  if (rowState.ask?.kind !== 'answer' || rowState.ask.question == null) {
+    return [item.id];
+  }
+  if (entry.kind === 'agent') {
+    return entry.openQuestions.map((question) => question.id);
+  }
+  return [rowState.ask.question.id];
+};
+
+export const needsYouCount = ({ items }: RootsParams): number => {
+  const keys = new Set<string>();
+  for (const item of items) {
+    if (item.kind === 'row' && isRowNeedingYou({ state: item.rowState })) {
+      for (const key of needKeysOf({ item })) {
+        keys.add(key);
+      }
+    }
+  }
+  return keys.size;
+};
+
+export const hasWaitingRow = ({ items }: RootsParams): boolean =>
+  items.some(
+    (item) =>
+      item.kind === 'row' &&
+      (isRowNeedingYou({ state: item.rowState }) ||
+        (item.rowState.phase === 'waiting' &&
+          rowStateTone({ state: item.rowState }) === 'warning')),
+  );
 
 type FirstRowParams = RootsParams;
 

@@ -13,7 +13,7 @@ export const NeedsYouChip = ({ count, onReveal }: Props) => {
   return (
     <Chip
       as="button"
-      tone="warning"
+      tone="neutral"
       size="control"
       emphasis="subtle"
       icon={<CONCEPT_ICONS.questions size={ICON_SIZE.row} aria-hidden className="shrink-0" />}

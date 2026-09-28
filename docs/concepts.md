@@ -232,8 +232,9 @@ nothing.
 Every event has a reason. If an action cannot say why it happened, Goodboy
 refuses it instead of saving a blank entry.
 
-The header counts the rows that wait on you ("2 need you") and jumps to the
-first one. **Filter** opens one panel with every kind of row at once, in three
+The header shows a neutral needs-you chip ("2 need you") only when no row
+that waits on you is on screen, because the filter hides it. It counts each open question once, the same number the Questions
+chip shows, and one per other ask, and a click switches to Needs you. **Filter** opens one panel with every kind of row at once, in three
 groups: Work (agents, workflows, questions, resolvers), Outputs (artifacts
 with plans, reports and wireframes, pull requests, issues) and Session log
 (branches and worktrees, decisions, session events). Each row shows how many
@@ -255,8 +256,9 @@ and Filter keeps its icon. Suggestions live in **Next steps**, above Activity
 and outside its filter, not as a row inside the feed.
 
 An open question shows once on screen, on the agent that asked it. Its
-question row, on that agent's lane, carries the text and the one **Answer**;
-the agent row keeps its "Needs you" state without a second button, and takes
+question row, on that agent's lane, carries the text and the one **Answer**,
+all neutral: the waiting agent row is the one amber mark in the activity. The
+agent row keeps its "Needs you" state without a second button, and takes
 the Answer back when the filter hides question rows. The workflow row says
 nothing about a question its step or the question row already shows: no
 sentence, no Answer, only a neutral "Waiting on a step" node. It names the

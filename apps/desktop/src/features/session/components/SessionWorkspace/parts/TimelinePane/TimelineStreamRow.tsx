@@ -9,7 +9,7 @@ import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
-import { isRowStoppedByUser } from '../../../../../workTreeModel/rowStateCopy';
+import { rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import { eventMatches } from '../../../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../../../../shared/keyboard/registry';
 import { TIMELINE_GUTTER } from './timelineLayout';
@@ -20,7 +20,7 @@ import { TimelineRowMarker } from './TimelineRowMarker';
 export type TimelineRowAction = {
   readonly label: string;
   readonly onAct: () => void;
-  readonly asksUser?: boolean;
+  readonly variant?: 'secondary' | 'warning';
   readonly isBusy?: boolean;
 };
 
@@ -77,7 +77,7 @@ export const TimelineStreamRow = ({
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
   const isWaiting =
-    item.rowState.phase === 'waiting' && !isRowStoppedByUser({ state: item.rowState });
+    item.rowState.phase === 'waiting' && rowStateTone({ state: item.rowState }) === 'warning';
   const isLaneLit = runLane !== null && lanes?.hoveredLaneId === runLane.laneId;
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (runLane === null) {
@@ -188,8 +188,8 @@ export const TimelineStreamRow = ({
           >
             {action == null ? null : (
               <Button
-                variant={action.asksUser === true ? 'warning' : 'ghost'}
-                emphasis={action.asksUser === true ? 'outline' : 'solid'}
+                variant={action.variant ?? 'ghost'}
+                emphasis={action.variant === 'warning' ? 'outline' : 'solid'}
                 size="sm"
                 className="h-6"
                 isBusy={action.isBusy === true}

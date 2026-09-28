@@ -9,7 +9,7 @@ import {
   ARTIFACT_KIND_MARKER_LABEL,
 } from '../../../../../artifacts/artifactPresentation';
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
-import { rowStateNode } from '../../../../../workTreeModel/rowStateCopy';
+import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
 
@@ -117,9 +117,9 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
     if (isOpen) {
       return conceptNode({
         icon: CONCEPT_ICONS.questions,
-        tone: CONCEPT_TONE.questions,
+        tone: rowStateTone({ state: item.rowState }),
         label: 'Question',
-        isEmphasized: true,
+        isEmphasized: false,
       });
     }
     return conceptNode({

@@ -16,7 +16,7 @@ type Params = {
 export type HistoryRowAction = {
   readonly label: string;
   readonly onAct: () => void;
-  readonly asksUser: boolean;
+  readonly variant?: 'warning';
 };
 
 export type HistoryRowActions = {
@@ -115,7 +115,7 @@ export const useHistoryRowActions = ({
             : {
                 label: HISTORY_ROW_LABEL[controls.primary],
                 onAct: () => run(controls.primary ?? 'change-plan'),
-                asksUser: event.kind === 'history_stopped',
+                ...(event.kind === 'history_stopped' && { variant: 'warning' as const }),
               },
         menu: controls.secondary.map((verb) => ({
           kind: 'item' as const,

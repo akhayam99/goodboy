@@ -357,7 +357,6 @@ describe('TimelineStreamRow', () => {
 
   it('lights the run chip while its lane is hovered', () => {
     const openRun = vi.fn();
-    const identity = runIdentity({ laneIndex: 0, seed: 0 });
     const runLane = { laneId: 'lane:run:one', title: 'Orchestrated workflow 3', open: openRun };
     const { rerender } = render(
       <TimelineStreamRow
@@ -373,7 +372,7 @@ describe('TimelineStreamRow', () => {
     );
     const chip = () => screen.getByText('Workflow').parentElement ?? document.body;
 
-    expect(chip().className).toContain(identity.chip);
+    expect(chip().className).toContain('bg-fill');
 
     rerender(
       <TimelineStreamRow
@@ -388,6 +387,7 @@ describe('TimelineStreamRow', () => {
       />,
     );
 
-    expect(chip().className).toContain(identity.litChip);
+    expect(chip().className).toContain('bg-hover');
+    expect(chip().className).not.toContain('identity-');
   });
 });

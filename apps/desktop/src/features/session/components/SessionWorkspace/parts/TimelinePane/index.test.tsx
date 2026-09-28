@@ -375,19 +375,24 @@ describe('TimelinePane questions', () => {
     expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-open');
   });
 
-  it('counts what needs you on a chip that lands on the row and its Answer', () => {
+  it('holds the needs-you chip back while the asking row is on screen', () => {
     questions.open = [OPEN_QUESTION];
     questions.answered = [ANSWERED_QUESTION];
-    const scrollIntoView = vi
-      .spyOn(Element.prototype, 'scrollIntoView')
-      .mockImplementation(() => undefined);
 
     render(<TimelinePane session={SESSION} actions={null} />);
-    fireEvent.click(screen.getByRole('button', { name: '1 needs you' }));
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' });
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Answer' }));
-    scrollIntoView.mockRestore();
+    expect(screen.getByRole('button', { name: 'Answer' })).toBeDefined();
+    expect(screen.queryByRole('button', { name: /needs? you/ })).toBeNull();
+  });
+
+  it('keeps the Answer on the question row a neutral secondary button', () => {
+    questions.open = [OPEN_QUESTION];
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const { className } = screen.getByRole('button', { name: 'Answer' });
+
+    expect(className).toContain('bg-fill');
+    expect(className).not.toContain('warning');
   });
 
   it('switches to Needs you when the filter hides every row that asks', () => {
@@ -398,7 +403,9 @@ describe('TimelinePane questions', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
     expect(screen.queryByText(/Question: Which database/)).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: '1 needs you' }));
+    const chip = screen.getByRole('button', { name: '1 needs you' });
+    expect(chip.className).not.toContain('warning');
+    fireEvent.click(chip);
 
     expect(screen.getByText(/Question: Which database should we use\?/)).toBeDefined();
     expect(screen.queryByText('1 question answered')).toBeNull();
@@ -497,6 +504,60 @@ describe('TimelinePane run waiting on an answer', () => {
       to: sessionPlace({ sessionId: 'session-1' as SessionId, lens: 'questions' }),
     });
     expect(useOpenQuestions.getState().focusedQuestionId).toBe('question-step');
+  });
+
+  const SECOND_STEP_QUESTION = {
+    ...STEP_QUESTION,
+    id: 'question-step-two',
+    text: 'Cap the retries at three?',
+    createdAt: '2026-08-20T10:41:00.000Z',
+  } as OpenQuestion;
+
+  const amberElementsOf = ({ root }: { readonly root: HTMLElement }) =>
+    Array.from(root.querySelectorAll<HTMLElement>('*')).filter((element) =>
+      (element.getAttribute('class') ?? '').includes('warning'),
+    );
+
+  it('marks one waiting agent once, on its own row, and keeps its two questions quiet', () => {
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
+    questions.open = [STEP_QUESTION, SECOND_STEP_QUESTION];
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const activity = screen.getByRole('region', { name: 'Activity' });
+    const agentRow = activity.querySelector<HTMLElement>('[data-row-id="agent:agent-step"]');
+    if (agentRow === null) {
+      throw new Error('agent row missing');
+    }
+    const amber = amberElementsOf({ root: activity });
+
+    expect(screen.getByText('2 questions')).toBeDefined();
+    expect(within(agentRow).getByText('Needs you')).toBeDefined();
+    expect(amber.length).toBeGreaterThan(0);
+    expect(amber.every((element) => agentRow.contains(element))).toBe(true);
+    expect(screen.queryByRole('button', { name: /needs? you/ })).toBeNull();
+  });
+
+  it('shows the neutral needs-you chip only once the filter hides the waiting agent', () => {
+    writeActivityFilter({
+      filter: { ...DEFAULT_ACTIVITY_FILTER, workflows: false, questions: false },
+    });
+    attachedRuns.list = [RUN];
+    storeState.sessionPhaseRuns = { 'session-1': [STEP] };
+    questions.open = [STEP_QUESTION, SECOND_STEP_QUESTION];
+
+    render(<TimelinePane session={SESSION} actions={null} />);
+    const chip = screen.getByRole('button', { name: '2 need you' });
+    const activity = screen.getByRole('region', { name: 'Activity' });
+
+    expect(screen.queryByText('Implement retries')).toBeNull();
+    expect(amberElementsOf({ root: activity })).toHaveLength(0);
+
+    fireEvent.click(chip);
+    writeActivityFilter({ filter: DEFAULT_ACTIVITY_FILTER });
+
+    expect(screen.getByText('Implement retries')).toBeDefined();
+    expect(screen.queryByRole('button', { name: /needs? you/ })).toBeNull();
   });
 
   it('jumps from the run row to the asking agent when neither it nor its question shows', () => {

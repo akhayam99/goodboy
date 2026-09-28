@@ -74,7 +74,7 @@
   --color-identity-2: oklch(0.7 0.09 262);
   --color-identity-3: oklch(0.7 0.09 292);
   --color-identity-4: oklch(0.7 0.09 350);
-  --color-identity-5: oklch(0.7 0.09 70);
+  --color-identity-5: oklch(0.7 0.09 311);
   --color-identity-6: oklch(0.7 0.09 130);
   --color-identity-7: oklch(0.7 0.09 330);
   --color-identity-8: oklch(0.7 0.09 225);
@@ -535,7 +535,7 @@ html[data-theme='light'] {
   --color-identity-2: oklch(0.522 0.09 262);
   --color-identity-3: oklch(0.528 0.09 292);
   --color-identity-4: oklch(0.532 0.09 350);
-  --color-identity-5: oklch(0.524 0.09 70);
+  --color-identity-5: oklch(0.524 0.09 311);
   --color-identity-6: oklch(0.512 0.09 130);
   --color-identity-7: oklch(0.532 0.09 330);
   --color-identity-8: oklch(0.514 0.09 225);
