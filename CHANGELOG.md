@@ -21,7 +21,7 @@ Rewrite history is rebuilt: drag commits to fold, squash or move them, and see w
 #### Rewrite history as two graphs
 <!-- gb area=review image=history-plan -->
 
-The branch is drawn as it is Now, next to what it becomes After Apply, with a color for each kind of change. Drag a commit between two others to move it, or onto another to fold it in, and rename, squash or remove it from the row, its menu or a right click. Every planned change is listed and can be undone on its own.
+The branch is drawn as it is Now, next to what it becomes After Apply, with a color for each kind of change. Drag a commit between two others to move it, or onto another to fold it in, and rename, squash or remove it from the row, its menu, a right click or `Cmd+K`. Every planned change is listed and can be undone on its own.
 
 #### Every rewrite is tried on a copy first
 <!-- gb area=review image=history-trial -->

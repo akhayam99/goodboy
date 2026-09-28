@@ -570,7 +570,7 @@ Review someone else's pull request in a form under the diff: your line comments,
 
 ### Rewrite history
 
-Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename, squash or remove it, or start the branch from today's main. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change, and every planned change can be undone on its own. Each row's buttons, its `⋯` menu and a right click offer the same actions.
+Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename, squash or remove it, or start the branch from today's main. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change, and every planned change can be undone on its own. Each row's buttons, its `⋯` menu, a right click and `Cmd+K` on the focused row offer the same actions.
 
 ### Safe apply
 
