@@ -155,7 +155,10 @@ verbatim, an audience eyebrow a `README.md` section, and the few page eyebrows
 rule itself lives in [docs/tone-of-voice.md](../docs/tone-of-voice.md). `--shots <dir>` also saves every heading, and
 `--verify-icons` compares the provider mark paths with their pinned
 simple-icons files over the network; the fill is free, since the marks
-carry brand colours. Tag Manager is blocked during the run.
+carry brand colours. It also fails a `.textLink` (a "learn more" or "How X
+works" link) that points anywhere in the repo's docs other than
+`FEATURES.md`, or whose anchor is not a heading in the current
+`FEATURES.md`. Tag Manager is blocked during the run.
 
 ## One invented world
 

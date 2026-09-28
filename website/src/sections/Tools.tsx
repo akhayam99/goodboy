@@ -25,7 +25,7 @@ export const Tools = () => (
     </h2>
     <ToolRow label="Providers" items={PROVIDER_TOOLS} />
     <ToolRow label="Your tools" items={TOOLS} />
-    <a className="textLink" href={SITE.providersDoc}>
+    <a className="textLink" href={`${SITE.featureGuide}#provider-connection`}>
       Set up a provider <span aria-hidden="true">→</span>
     </a>
   </section>
