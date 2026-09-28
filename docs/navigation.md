@@ -431,8 +431,11 @@ the Inbox (Launch session).
   instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
-  that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
-N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. A
+  that applies of `Rebase stopped` (or `Rebasing on main` while the rewriter
+  works), `Merged`, `Gone on origin`, `Local only`, `Behind main by N` and
+  `On origin` (`branchPriorityOf`), and `All branches in Overview`. The Diff
+  header reads the same word, so a stopped rebase never reads `On origin`
+  next to Open terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the menu and in the Diff header alike
   (`isMountRequestMerged`). It never
