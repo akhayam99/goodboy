@@ -68,22 +68,6 @@ const isAlnum = (ch: string): boolean => ch.length > 0 && ALNUM.test(ch);
 
 const isUpper = (ch: string): boolean => ch !== ch.toLowerCase() && ch === ch.toUpperCase();
 
-const isWordPrefix = ({ token, text }: WordPrefixParams): boolean => {
-  const lower = text.toLowerCase();
-  for (let index = 0; index < text.length; index += 1) {
-    const current = text[index] ?? '';
-    const previous = text[index - 1] ?? '';
-    const isStart =
-      index === 0 ||
-      (!isAlnum(previous) && isAlnum(current)) ||
-      (isUpper(current) && isAlnum(previous) && !isUpper(previous));
-    if (isStart && lower.startsWith(token, index)) {
-      return true;
-    }
-  }
-  return false;
-};
-
 const positionBonus = ({ text, index }: IndexParams): number => {
   if (index === 0) {
     return WORD_START + FIRST_CHAR;
@@ -97,6 +81,16 @@ const positionBonus = ({ text, index }: IndexParams): number => {
     return CAMEL;
   }
   return 0;
+};
+
+const isWordPrefix = ({ token, text }: WordPrefixParams): boolean => {
+  const lower = text.toLowerCase();
+  for (let index = lower.indexOf(token); index >= 0; index = lower.indexOf(token, index + 1)) {
+    if (positionBonus({ text, index }) >= CAMEL) {
+      return true;
+    }
+  }
+  return false;
 };
 
 const isSubsequence = ({ token, lower }: SubsequenceParams): boolean => {
