@@ -1,6 +1,6 @@
 # Goodboy features
 
-The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai.dev): set up, start a task, move between tasks, ship the code, then keep an eye on cost and disk. Each entry says what it does for you, and sometimes how.
+The full feature guide, in the order a task lives: set up, start a task, move between tasks, ship the code, then keep an eye on cost and disk. Each entry says what it does for you, and sometimes how. [goodboy-ai.dev](https://goodboy-ai.dev) shows the core in a minute and links here for the rest.
 
 - [Set up](#set-up)
 - [Start a task](#start-a-task)

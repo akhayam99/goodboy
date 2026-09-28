@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-hero-dark.webp">
-  <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy, a development environment that structures agent work: the overview of a Harborline session with its tasks by stage, its projects and its pull requests" width="880">
+  <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy runs many coding agents at once: the overview of a Harborline session with its tasks by stage, its projects and its pull requests" width="880">
 </picture>
 
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)

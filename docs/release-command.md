@@ -50,12 +50,11 @@ Below, `X` is the new version and `X-1` is the current latest.
      true and add what is new. Edit them in place, never rewrite them from
      scratch.
    - Every user-facing feature the release adds or changes gets its website
-     section updated in the same PR, text and figure, or a new section when
-     none tells it yet. Re-shoot every figure the change made stale, in
-     `website/public/img/` and `docs/readme/`, from the mock scenes as
-     [mock-screenshots.md](mock-screenshots.md) describes, at a scale of 4 or
-     more, at every width, in both themes, with the phone crop of a frame. A
-     release that only fixes bugs changes no figure.
+     section or its Also in Goodboy row updated in the same PR, text and HTML
+     picture. Re-shoot every figure the change made stale in `docs/readme/`,
+     from the mock scenes as [mock-screenshots.md](mock-screenshots.md)
+     describes, at a scale of 4 or more, in both themes. A release that only
+     fixes bugs changes no figure.
    - Run `node scripts/snapshot-features.mjs X`. It reads `FEATURES.md` and the
      `## Goodboy vX` entry in `CHANGELOG.md`, and writes one JSON file named
      after the version into `website/src/data/releases/`: the feature map the

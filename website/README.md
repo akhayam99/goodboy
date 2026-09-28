@@ -18,47 +18,42 @@ deployed by Vercel from `website/vercel.json`.
 
 ## Pages
 
-- `/`, the landing page, from `website/index.html` and `website/src/App.tsx`.
+- `/`, the landing page, from `website/index.html` and `website/src/App.tsx`:
+  the hero with the Works with row, three sections (jobs and models, what
+  needs you, Stop re-explaining yourself), Also in Goodboy, Install and the
+  footer. Its title, meta description and Open Graph text follow the hero,
+  and so does the OG image in `website/scripts/build-brand-assets.mjs`.
 - `/features`, every feature group with the release picker and the supported
   tools, from `website/features.html` and `website/src/pages/features/`. Vite
   builds both as inputs, `vercel.json` serves them without `.html`, and the
   dev and preview servers rewrite `/features` the same way.
 
-## FAQ and structured data
+## Structured data
 
-The questions in `website/src/data/faqs.ts` are mirrored by hand into the
-`FAQPage` JSON-LD block in `website/index.html`. Change both in the same
-commit: nothing checks that they agree, and search engines read the JSON-LD,
-not the section.
+`website/index.html` carries one `SoftwareApplication` JSON-LD block. Its
+description matches the meta description; change both in the same commit. The
+page has no FAQ section, so it carries no `FAQPage` block: search engines
+expect every answer in it to be visible on the page.
 
-## Figures
+## Product pictures
 
-Product figures are real app screenshots from the mock scenes (see
-[docs/mock-screenshots.md](../docs/mock-screenshots.md), Landing crops),
-captured at a device scale factor of 4 or more, in both app themes. They live
-in `website/public/img/` as WebP, each at three widths and never upscaled.
-The widths are exactly 1, 2 and 3 times the size the image is drawn at, so a
-screen at 1x, 2x or 3x shows the file pixel for pixel and the browser never
-resamples it:
+The product pictures are HTML, not screenshots, so they stay sharp at any
+density and re-lay out on a phone instead of being cropped. Each one lives in
+`website/src/components/mocks/` (`Board`, `RunList`, `Activity`, `Handoff`),
+takes its words and numbers from `website/src/data/harborline.ts`, and sits
+on a `Stage`. Their rules:
 
-- `<id>-<width>.webp` in the dark theme and `<id>-<width>-light.webp` in the
-  light one.
-- A frame is drawn 1144 CSS pixels wide at 1440, inside its stage, so its
-  files are 1144, 2288 and 3432 wide. A 1024 pixel app window lands at 1.12
-  times its size; the board keeps a 1250 pixel window so its four columns fit,
-  and draws at 0.92.
-- A frame has a `<id>-phone` twin, a 4:5 cut of 288 by 360 app pixels that a
-  390 phone draws 366 wide, at 1.27 times the app, instead of the whole
-  window shrunk. Its files are 732, 1098 and 1464 wide.
-- A fragment is one component, drawn at its `displayWidth`, at least 1.18
-  times its size in the app, with files at 1, 2 and 3 times that width. App
-  text never draws below its size in the app.
+- Rows are grids with `minmax(0, 1fr)` for the title. A title never wraps; it
+  ends in an ellipsis. Below 520 px of container width each row turns into two
+  clean lines, never a word per line. The breakpoints are container queries,
+  so they hold inside any stage.
+- On a phone every visible text is 13 px or larger; on a desktop 12 px is the
+  floor, for chips and eyebrows only.
+- The window is a hairline box on the page background, with no shadow.
 
-`website/src/figures.ts` holds each figure's id, pixel size, display width and
-alt text. `Picture` loads only the active theme and lets the browser pick the
-width through `srcset`, and `pnpm check:page` fails when any image draws below
-twice its displayed size. When a scene changes, reshoot every width and both
-themes of its figures in one pass.
+The site keeps no raster product images. A raster image added later is
+exported at exactly 1, 2 and 3 times the width it is drawn at, and checked at
+100%.
 
 ## Theme
 
@@ -101,65 +96,96 @@ loads twice.
 
 ## Page kit
 
-The page is built from five formats in `website/src/components/`, each with
-its own CSS file:
+- `Beat`, a section with a muted lead-in (optional, always smaller than the
+  heading: 20 against 44 px, 17 against 30 on a phone), an h2, one body
+  paragraph, `.textLink` links to `FEATURES.md` anchors, optional fine print,
+  then one picture on a `Stage`. `isBand` puts it on `--band` with a hairline
+  above and below; the first and third sections are banded.
+- `Stage`, the colored stage behind a picture: the flat 160 degree gradient,
+  radius 28, 48 px around the picture (32 below 1100 px, 20 below 860, 12 on a
+  phone). No sheen, glow or shadow.
+- Also in Goodboy, one row per feature that the page does not tell, each a
+  link to its `FEATURES.md` section, in two columns (one below 760 px). A new
+  feature gets at most a row here; `FEATURES.md` explains it.
+- Install, with the Homebrew command, the downloads and three facts. It takes
+  the place of a FAQ, a support block and a closer.
 
-- `Chapter`, a section with a `Statement` head, then its blocks 96 px apart
-  (64 on a phone). `isBand` puts it on `--band` with a hairline above and
-  below; How it works, Workflows, Questions and the closer are banded, the
-  chapters between them are not.
-- `Statement`, an eyebrow, a heading and a lead of 20 words or fewer. The
-  hero and the closer use it too. No h1, h2 or h3 ends with a period.
-- `Frame`, one full product view on a stage: 64 px of stage around the view
-  (40 below 1100 px), radius 28, the view capped at 600 px (640 in the hero)
-  and faded out over 140 px. Below 860 px the stage runs edge to edge with 12
-  px around the view, and a phone shows a 4:5 crop of its own. `isCanvas`
-  fades the view's top and bottom into the stage and adds a soft neutral
-  shadow above and below it: the one shadow on the page, used only for the
-  workflow step graph and marked `data-shadow-exception` for the check.
-- `Fragment`, a split of text beside one or two components on a smaller
-  stage (radius 20), the component bleeding off its right and bottom edge
-  where the screen continues. It stacks below 900 px.
-- `Grid`, two or three cells, each a stage with a component bleeding off it,
-  then a title and one line. No box around the cells.
+No h1, h2 or h3 ends with a period.
 
-Motion: the hero rises in on load. Below it, every frame, fragment, grid
-image and frame note fades and rises 14 px as it scrolls into view
-(`useReveal`, which marks `[data-reveal]` nodes shown), and the cost bars grow
-from zero when their pair appears. The provider marks in the Works with row are in their
-brand colours (Claude orange, OpenRouter slate, the Gemini gradient from its
-2025 mark, Codex the OpenAI green, Cursor its orange, OpenCode and Moonshot
-their own accent blues, each hex sourced and recorded in
-`brandIcons.source.json`), with the names in tier 3. They scroll as a marquee
-on a phone and sit still on wider screens. `prefers-reduced-motion` turns all
-of it off.
+## Phones
 
-`Picture` serves every image as a `srcset` of its three widths, so a browser
-downloads only what its screen needs.
+A touch device is told by its pointer, not by its width:
+`@media (hover: none) and (pointer: coarse)`, as the site did before 0.1.75. A
+narrow desktop window keeps its downloads, a tablet with a trackpad reports a
+fine pointer and sees them too. `.onlyFine` hides an element on a touch device
+and `.onlyCoarse` shows it only there, both in `website/src/styles.css`, so
+the right buttons show on the first paint without JavaScript.
+
+- A touch device sees no download button, no Homebrew command and no Download
+  in the nav. The hero and Install show a "Star on GitHub" button instead, a
+  static link with no live count, next to a line that says to open the page on
+  a computer.
+- Every download link and the Homebrew block carry `data-download`, and the
+  star button `data-star`, so `check-page` can find them.
+- The footer stacks on a phone: the brand on its 40 px dark tile, then the link
+  groups in two columns, each link a 44 px row at 16 px.
+
+## Motion
+
+- Below the hero, every lead-in, heading, body, picture, row and fact fades
+  and rises 12 px over 450 ms as it scrolls into view, 60 ms apart within a
+  block (`useReveal`, which marks `[data-reveal]` nodes shown). Content stays
+  visible until the observer is armed.
+- The hero copy rises in on load; the hero picture is there on the first
+  paint.
+- Each picture plays one calm change once, when 40% of it is in view
+  (`useAlive`): a task moves to Needs you, a run finishes step by step while
+  its total counts up, an agent stops to ask, a turn moves from Claude to Codex
+  with the same brief. Transitions run 200 to 450 ms and move 12 px at most.
+  Nothing loops, scales, glows or blurs.
+- The provider marks in the Works with row are in their brand colours (Claude
+  orange, OpenRouter slate, the Gemini gradient from its 2025 mark, Codex the
+  OpenAI green, Cursor its orange, OpenCode and Moonshot their own accent
+  blues, each hex sourced and recorded in `brandIcons.source.json`), with the
+  names in tier 3. They scroll as a marquee on a phone and sit still on wider
+  screens.
+- `prefers-reduced-motion` turns all of it off: every picture shows its final
+  state and nothing fades.
 
 ## Check the page
 
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
 `http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
-both themes, at twice the pixel density. It fails on horizontal overflow, an
-image drawn below 2x, a frame, fragment or grid with a shadow (outside
-`data-shadow-exception`), a page taller
-than 13,500 px at 1440 or 14,000 on a phone, an em dash or a middot triplet in
-visible text, a heading that ends with a period, a section that runs into the
-next one or whose content spills below it, Inter not loaded, a hero frame that
-starts below the first screen at 1440, and a consent card over the h1, and an
-eyebrow outside the one register: a feature
-eyebrow (`kind="group"`, the default) must be a `FEATURES.md` group name
-verbatim, an audience eyebrow a `README.md` section, and the few page eyebrows
-(hero, Questions, Install, All features) are listed in the script. The heading
-rule itself lives in [docs/tone-of-voice.md](../docs/tone-of-voice.md). `--shots <dir>` also saves every heading, and
-`--verify-icons` compares the provider mark paths with their pinned
-simple-icons files over the network; the fill is free, since the marks
-carry brand colours. It also fails a `.textLink` (a "learn more" or "How X
-works" link), a nav link or a footer Docs-column link that points anywhere in
-the repo's docs other than `FEATURES.md`, or whose anchor is not a heading in
-the current `FEATURES.md`; the GitHub repo, releases, changelog, security and
-legal links are unaffected. Tag Manager is blocked during the run.
+both themes, at twice the pixel density, with reduced motion on so every
+picture shows its final state. The 390 run emulates touch, so it gets a coarse
+pointer. It fails on:
+
+- horizontal overflow, an image drawn below 2x, or a shadow on a stage or
+  anything inside it;
+- a home page taller than 5,500 px at 1440 or 7,500 on a phone;
+- an em dash or a middot triplet in visible text, or a heading that ends with
+  a period;
+- a section that runs into the next one or whose content spills below it;
+- Inter not loaded, a hero stage that starts below the first screen at 1440,
+  or a consent card over the h1;
+- on the touch run, a visible download link or Homebrew block, no Star on
+  GitHub button, or any visible text under 13 px; on the other runs, a visible
+  star button or no download link;
+- a lead-in that is not smaller than its heading;
+- an eyebrow outside the one register: a feature eyebrow (`kind="group"`, the
+  default) must be a `FEATURES.md` group name verbatim, an audience eyebrow a
+  `README.md` section, and the few page eyebrows (hero, Install, All
+  features) are listed in the script;
+- a `.textLink`, a nav link or an Also in Goodboy row that points anywhere in
+  the repo's docs other than `FEATURES.md`, or whose anchor is not a heading
+  in the current `FEATURES.md`. The GitHub repo, releases, changelog, security
+  and legal links are unaffected.
+
+The heading rule itself lives in
+[docs/tone-of-voice.md](../docs/tone-of-voice.md). `--shots <dir>` also saves
+every heading, and `--verify-icons` compares the provider mark paths with
+their pinned simple-icons files over the network; the fill is free, since the
+marks carry brand colours. Tag Manager is blocked during the run.
 
 ## One invented world
 
@@ -172,5 +198,7 @@ HBL-412 "Stop retried webhooks posting a second credit" on branch
 `notify-relay` #57, while `ledger-core` is only read; $3.47 spent so far; the
 people Dana R., Kenji W., Marta L. and Omar T. A repo the story only reads has
 no branch or pull request in any figure, and any number in the copy matches the
-figure next to it. Nothing on the page names a real person, customer or
+figure next to it. The site's pictures take their words and numbers from
+`website/src/data/harborline.ts`; the run total, $3.07 against $9.80 on one
+heavy model, is labelled an example run. Nothing on the page names a real person, customer or
 repository. When the canon changes, it changes everywhere in one pass.
