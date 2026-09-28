@@ -22,7 +22,12 @@ export const AgentHeaderActions = ({
   allowInterrupt = false,
   onDeleted,
 }: Props) => {
-  const env = useActionEnv({ origin: 'button', anchorKey: `agent-header:${agent.id}` });
+  const viewing = { kind: 'agent', id: agent.id } as const;
+  const env = useActionEnv({
+    origin: 'button',
+    anchorKey: `agent-header:${agent.id}`,
+    viewing,
+  });
   const target = { kind: 'agent', sessionId, agentId: agent.id } as const;
   const { actions, run } = useObjectActions({ target, env });
   const [armed, setArmed] = useState<ResolvedAction | null>(null);
@@ -31,7 +36,6 @@ export const AgentHeaderActions = ({
     (action) =>
       HEADER_BUTTONS.includes(action.id) && (allowInterrupt || action.id !== 'agent.interrupt'),
   );
-  const shown = buttons.map((action) => action.id);
 
   const runArmed = async (action: ResolvedAction) => {
     try {
@@ -69,7 +73,7 @@ export const AgentHeaderActions = ({
           target={target}
           label="More agent actions"
           anchorKey={`agent-header:${agent.id}`}
-          omit={shown}
+          viewing={viewing}
         />
       </div>
       {armed !== null && armed.confirm !== null ? (

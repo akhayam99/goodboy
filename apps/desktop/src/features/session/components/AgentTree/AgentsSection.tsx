@@ -69,6 +69,7 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
                 actionableStepIdByRunId={section.actionableStepIdByRunId}
                 blockReasonByRunId={section.blockReasonByRunId}
                 focusedWorkflowRunId={section.focusedWorkflowRunId}
+                viewedWorkflowRunId={workflowRunId ?? null}
                 workflowExpand={section.workflowExpand}
                 workflowNameByRunId={section.workflowNameByRunId}
                 toggleWorkflowExpand={section.toggleWorkflowExpand}

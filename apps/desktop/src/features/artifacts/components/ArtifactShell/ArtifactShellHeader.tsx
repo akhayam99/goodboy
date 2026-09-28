@@ -1,8 +1,12 @@
-import { useCallback, useRef, type ReactNode } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import type { ArtifactKind } from '@goodboy/types';
 import type { ArtifactActionTarget } from '../../../actions/types';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { ARTIFACT_HEADER_ANCHOR, ArtifactHeaderMenuContext } from './artifactHeaderMenu';
+import {
+  ARTIFACT_HEADER_ANCHOR,
+  ArtifactHeaderMenuContext,
+  artifactViewingOf,
+} from './artifactHeaderMenu';
 import { ArtifactKindGlyph } from '../ArtifactList/ArtifactKindGlyph';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -17,14 +21,17 @@ type Props = {
 
 export const ArtifactShellHeader = ({ kind, title, chip, actions, toggles, meta }: Props) => {
   const targetRef = useRef<ArtifactActionTarget | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
   const register = useCallback((target: ArtifactActionTarget | null) => {
     targetRef.current = target;
+    setViewingId(target === null ? null : (artifactViewingOf({ target })?.id ?? null));
   }, []);
   const readTarget = useCallback(() => targetRef.current, []);
   const menu = useObjectMenuTrigger({
     target: null,
     anchorKey: ARTIFACT_HEADER_ANCHOR,
     onBeforeOpen: readTarget,
+    viewing: viewingId === null ? null : { kind: 'artifact', id: viewingId },
   });
 
   return (

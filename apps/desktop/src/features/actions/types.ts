@@ -58,16 +58,23 @@ export type ActionChoice = {
 
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
+export type ActionViewing = {
+  readonly kind: 'artifact' | 'agent' | 'workflowRun';
+  readonly id: string;
+};
+
 export type ActionEnv = {
   readonly getState: () => AppStore;
   readonly showToast: ShowToast;
   readonly copyText: (params: { readonly text: string }) => Promise<void>;
   readonly origin: ActionOrigin;
   readonly anchorKey: string | null;
+  readonly viewing: ActionViewing | null;
 };
 
 export type FactsParams<F> = {
   readonly facts: F;
+  readonly viewing?: ActionViewing | null;
 };
 
 export type ActionRunParams<F> = {

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { MoreVertical } from 'lucide-react';
 import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { ObjectTarget } from '../../types';
+import type { ActionViewing, ObjectTarget } from '../../types';
 import { ObjectOverflowList } from './ObjectOverflowList';
 
 const NO_OMISSIONS: ReadonlyArray<string> = [];
@@ -16,6 +16,7 @@ type Props = {
   readonly align?: 'left' | 'right';
   readonly anchorKey?: string | null;
   readonly omit?: ReadonlyArray<string>;
+  readonly viewing?: ActionViewing | null;
   readonly disabled?: boolean;
 };
 
@@ -29,6 +30,7 @@ export const ObjectOverflowMenu = ({
   anchorKey = null,
   omit = NO_OMISSIONS,
   disabled = false,
+  viewing = null,
 }: Props) => {
   const dropdown = useDropdown({
     disabled,
@@ -70,6 +72,7 @@ export const ObjectOverflowMenu = ({
         label={label}
         anchorKey={anchorKey}
         omit={omit}
+        viewing={viewing}
         onClose={dropdown.close}
       />
     </AnchoredPopover>

@@ -29,15 +29,21 @@ import { RecordHeader } from '../../shared/components/StudioDetail/RecordHeader'
 import { ArtifactShellHeader } from '../../features/artifacts/components/ArtifactShell/ArtifactShellHeader';
 import { ArtifactShellActions } from '../../features/artifacts/components/ArtifactShell/ArtifactShellActions';
 import { bindTarget } from '../../features/actions/registry';
+import { WorkflowRunDetail } from '../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
+import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
 import type { ArtifactActionTarget } from '../../features/actions/types';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';
 import {
   AGENT,
   FIXTURE_NOW,
+  RUN,
   SESSION,
+  agentFixture,
   mountFixture,
+  runFixture,
   seedActionState,
   sessionFixture,
+  workflowFixture,
 } from '../helpers/actionFixtures';
 
 let useAppStore: StoryStore;
@@ -225,10 +231,11 @@ describe('every ⋯ menu and its right click list the same actions in the same o
         meta={null}
       />,
     );
-    const registry = (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map(
-      (action) => action.label,
-    );
-    const buttoned = (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? [])
+    const viewing = { kind: 'artifact', id: 'artifact-payout' } as const;
+    const resolved =
+      bindTarget({ state: useAppStore.getState(), target })?.resolve({ viewing }) ?? [];
+    const registry = resolved.map((action) => action.label);
+    const buttoned = resolved
       .filter((action) => action.slot === 'primary' || action.slot === 'secondary')
       .map((action) => action.label);
     const { fromOverflow, fromContext } = await overflowThenContext({
@@ -237,8 +244,49 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     });
 
     expect(buttoned.length).toBeGreaterThan(0);
+    expect(fromOverflow).not.toContain('Open');
     expect(fromOverflow).toEqual(registry);
     expect(fromContext).toEqual(fromOverflow);
+  });
+
+  it('run page: the ⋯ and the right click list every action, buttons included, never Open run', async () => {
+    const session = sessionFixture({ workflowRuns: [runFixture()] });
+    seedActionState({
+      useAppStore,
+      seed: { session, workflows: [workflowFixture()], mounts: [mountFixture()] },
+    });
+    withMenus(<WorkflowRunDetail session={session} workflowRunId={RUN} />);
+    const registry = (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'workflowRun', sessionId: SESSION, runId: RUN },
+      })?.resolve({ viewing: { kind: 'workflowRun', id: RUN } }) ?? []
+    ).map((action) => action.label);
+    const { fromOverflow, fromContext } = await overflowThenContext({
+      overflow: screen.getByRole('button', { name: /workflow actions$/ }),
+      context: screen.getByRole('heading', { name: 'Settlement export' }),
+    });
+
+    expect(fromOverflow).not.toContain('Open run');
+    expect(fromOverflow).toEqual(registry);
+    expect(fromContext).toEqual(fromOverflow);
+  });
+
+  it('agent header: the ⋯ lists every action, buttons included, never Open agent', async () => {
+    const agent = agentFixture({ status: 'failed' });
+    seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
+    withMenus(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
+    const registry = (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'agent', sessionId: SESSION, agentId: AGENT },
+      })?.resolve({ viewing: { kind: 'agent', id: AGENT } }) ?? []
+    ).map((action) => action.label);
+    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+
+    expect(menuLabels()).not.toContain('Open agent');
+    expect(menuLabels()).toContain('Delete agent');
+    expect(menuLabels()).toEqual(registry);
   });
 
   it('record header: the ⋯ plus its Open in tool button make the right click list', async () => {

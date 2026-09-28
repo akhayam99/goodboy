@@ -93,6 +93,7 @@ const env: ActionEnv = {
   },
   origin: 'menu',
   anchorKey: null,
+  viewing: null,
 };
 
 const run = (target: ObjectTarget, actionId: string, choice: string | null = null) =>
@@ -1742,6 +1743,55 @@ describe('transcript message menu', () => {
     expect(useAppStore.getState().agentDraft[AGENT]).toBe(
       '> The **ledger-core** join is `unindexed`.\n\n',
     );
+  });
+});
+
+describe('Open is never offered for the object already on screen', () => {
+  it('drops Open on the artifact the viewer shows, and keeps it elsewhere', () => {
+    seed({});
+    useAppStore.setState({ sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'report' })] } });
+    const bound = bindTarget({ state: useAppStore.getState(), target: storedTarget() });
+    const viewed = (
+      bound?.resolve({ viewing: { kind: 'artifact', id: 'artifact-payout' } }) ?? []
+    ).map((action) => action.id);
+    const elsewhere = (
+      bound?.resolve({ viewing: { kind: 'artifact', id: 'artifact-other' } }) ?? []
+    ).map((action) => action.id);
+    expect(viewed).not.toContain('artifact.open');
+    expect(elsewhere).toContain('artifact.open');
+  });
+
+  it('drops Open agent on the agent page, and keeps it elsewhere', () => {
+    seed({ agents: [agentFixture()] });
+    const bound = bindTarget({ state: useAppStore.getState(), target: AGENT_TARGET });
+    expect(
+      (bound?.resolve({ viewing: { kind: 'agent', id: AGENT } }) ?? []).map((action) => action.id),
+    ).not.toContain('agent.open');
+    expect((bound?.resolve() ?? []).map((action) => action.id)).toContain('agent.open');
+  });
+
+  it('drops Open run on the run page, and keeps it elsewhere', () => {
+    seed(withRun({}));
+    const bound = bindTarget({ state: useAppStore.getState(), target: RUN_TARGET });
+    expect(
+      (bound?.resolve({ viewing: { kind: 'workflowRun', id: RUN } }) ?? []).map(
+        (action) => action.id,
+      ),
+    ).not.toContain('workflowRun.open');
+    expect(
+      (bound?.resolve({ viewing: { kind: 'agent', id: AGENT } }) ?? []).map((action) => action.id),
+    ).toContain('workflowRun.open');
+  });
+
+  it('never runs Open on the object on screen', async () => {
+    seed({ agents: [agentFixture()] });
+    const before = useAppStore.getState().navigation;
+    await runObjectAction({
+      target: AGENT_TARGET,
+      actionId: 'agent.open',
+      env: { ...env, viewing: { kind: 'agent', id: AGENT } },
+    });
+    expect(useAppStore.getState().navigation).toBe(before);
   });
 });
 

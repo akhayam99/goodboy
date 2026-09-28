@@ -92,7 +92,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       label: 'Open agent',
       icon: CONCEPT_ICONS.agents,
       group: 'open',
-      when: () => true,
+      when: ({ facts, viewing }) => !(viewing?.kind === 'agent' && viewing.id === facts.agent.id),
       run: ({ facts, env }) => openAgent({ env, facts }),
     },
     {

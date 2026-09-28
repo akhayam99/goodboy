@@ -5,7 +5,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
-import { ArtifactHeaderMenuContext } from './artifactHeaderMenu';
+import { ArtifactHeaderMenuContext, artifactViewingOf } from './artifactHeaderMenu';
 import type { ActionSlot, ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 
 type Props = {
@@ -19,7 +19,8 @@ type Props = {
 const BUTTON_ORDER: Readonly<Partial<Record<ActionSlot, number>>> = { secondary: 0, primary: 1 };
 
 export const ArtifactShellActions = ({ target, onArm }: Props) => {
-  const env = useActionEnv({ origin: 'button' });
+  const viewing = artifactViewingOf({ target });
+  const env = useActionEnv({ origin: 'button', viewing });
   const { actions, run } = useObjectActions({ target, env });
   const registerMenu = useContext(ArtifactHeaderMenuContext);
 
@@ -62,6 +63,7 @@ export const ArtifactShellActions = ({ target, onArm }: Props) => {
           tooltip="More actions"
           trigger={<Ellipsis size={ICON_SIZE.control} aria-hidden />}
           triggerClassName="p-1.5"
+          viewing={viewing}
         />
       ) : null}
     </span>
