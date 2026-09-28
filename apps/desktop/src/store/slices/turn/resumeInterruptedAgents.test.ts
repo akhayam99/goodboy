@@ -8,6 +8,18 @@ vi.mock('@goodboy/db', () => ({
   setSetting: vi.fn(async (_db: unknown, key: string, value: string) => {
     h.settings.set(key, value);
   }),
+  replaceSettingIfUnchanged: vi.fn(
+    async (
+      _db: unknown,
+      { key, expected, value }: { key: string; expected: string; value: string },
+    ) => {
+      if (h.settings.get(key) !== expected) {
+        return false;
+      }
+      h.settings.set(key, value);
+      return true;
+    },
+  ),
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
@@ -130,6 +142,20 @@ describe('resumeInterruptedAgents', () => {
     await resumeInterruptedAgents({ get: store.get });
 
     expect(store.appended[0]?.event).toMatchObject({ message: 'Resumed after Goodboy updated.' });
+  });
+
+  it('resumes an interrupted agent once when two windows load at the same time', async () => {
+    writeMarker(['run-a']);
+    const first = buildStore({ agents: [agentOf('agent-a', 'run-a')] });
+    const second = buildStore({ agents: [agentOf('agent-a', 'run-a')] });
+
+    await Promise.all([
+      resumeInterruptedAgents({ get: first.get }),
+      resumeInterruptedAgents({ get: second.get }),
+    ]);
+
+    expect(first.sendTurn.mock.calls.length + second.sendTurn.mock.calls.length).toBe(1);
+    expect(JSON.parse(h.settings.get(INTERRUPTED_RUNS_KEY) ?? '{}').runIds).toEqual([]);
   });
 
   it('keeps the agent stopped when its provider is not connected', async () => {

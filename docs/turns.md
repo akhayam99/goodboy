@@ -201,7 +201,10 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   `stopped_by = app`.
 - **The next launch resumes them.** When a workspace loads,
   `resumeInterruptedAgents` resumes every `stopped_by = app` agent whose run
-  the marker names and takes it off the marker. `planRestartResume` picks how:
+  the marker names and takes it off the marker. Taking is a compare-and-swap
+  on the settings row (`replaceSettingIfUnchanged`), so when several windows
+  or overlapping loads read the same marker, each run is claimed and resumed
+  by exactly one of them. `planRestartResume` picks how:
   Claude and the opencode family resume their own session with a short
   "check before you run it again" prompt; Codex, Cursor and Antigravity get
   the same prompt plus the prior turns block; a turn cut before Claude opened

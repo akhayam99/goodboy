@@ -1,4 +1,4 @@
-import { getSetting, setSetting } from '@goodboy/db';
+import { getSetting, replaceSettingIfUnchanged, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import type { RestartReason } from './planRestartResume';
 
@@ -74,21 +74,45 @@ export const readInterruptedRuns = async (): Promise<InterruptedRuns | null> => 
   return { runIds: new Set(runs.runIds), at: runs.at, reason: isUpdate ? 'update' : 'restart' };
 };
 
-type TakeParams = {
-  readonly marker: InterruptedRuns;
+const CLAIM_ATTEMPTS = 5;
+
+const NOTHING_CLAIMED: ReadonlySet<string> = new Set();
+
+type ClaimParams = {
   readonly runIds: ReadonlyArray<string>;
 };
 
-export const takeInterruptedRuns = async ({ marker, runIds }: TakeParams): Promise<void> => {
+export const claimInterruptedRuns = async ({
+  runIds,
+}: ClaimParams): Promise<ReadonlySet<string>> => {
   if (runIds.length === 0) {
-    return;
+    return NOTHING_CLAIMED;
   }
-  const current = await readInterruptedRuns();
-  const base = current ?? marker;
-  const taken = new Set(runIds);
-  const remaining = [...base.runIds].filter((id) => !taken.has(id));
-  const value: StoredRuns = { runIds: remaining, at: base.at };
-  await setSetting(tauriDatabase, INTERRUPTED_RUNS_KEY, JSON.stringify(value));
+  const wanted = new Set(runIds);
+  for (let attempt = 0; attempt < CLAIM_ATTEMPTS; attempt += 1) {
+    const raw = await getSetting(tauriDatabase, INTERRUPTED_RUNS_KEY);
+    const stored = parseJson({ raw });
+    if (raw === null || !isStoredRuns(stored)) {
+      return NOTHING_CLAIMED;
+    }
+    const claimed = stored.runIds.filter((id) => wanted.has(id));
+    if (claimed.length === 0) {
+      return NOTHING_CLAIMED;
+    }
+    const value: StoredRuns = {
+      runIds: stored.runIds.filter((id) => !wanted.has(id)),
+      at: stored.at,
+    };
+    const isWon = await replaceSettingIfUnchanged(tauriDatabase, {
+      key: INTERRUPTED_RUNS_KEY,
+      expected: raw,
+      value: JSON.stringify(value),
+    });
+    if (isWon) {
+      return new Set(claimed);
+    }
+  }
+  return NOTHING_CLAIMED;
 };
 
 export const writeRestartReason = async ({

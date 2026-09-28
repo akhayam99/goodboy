@@ -1,5 +1,5 @@
 import type { Agent, SessionId } from '@goodboy/types';
-import { readInterruptedRuns, takeInterruptedRuns, type InterruptedRuns } from './restartMarker';
+import { claimInterruptedRuns, readInterruptedRuns, type InterruptedRuns } from './restartMarker';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import type { GetFn } from './types';
 
@@ -50,12 +50,12 @@ export const resumeInterruptedAgents = async ({ get }: Params): Promise<void> =>
   if (candidates.length === 0) {
     return;
   }
-  await takeInterruptedRuns({
-    marker,
+  const claimed = await claimInterruptedRuns({
     runIds: candidates.flatMap(({ agent }) => (agent.runId == null ? [] : [agent.runId])),
   });
+  const owned = candidates.filter(({ agent }) => agent.runId != null && claimed.has(agent.runId));
   await Promise.all(
-    candidates.map(async ({ sessionId, agent }) => {
+    owned.map(async ({ sessionId, agent }) => {
       try {
         await resumeAfterRestart({
           get,
