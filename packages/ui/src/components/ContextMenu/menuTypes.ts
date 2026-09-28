@@ -13,6 +13,7 @@ export type MenuConfirm = {
   readonly description: string;
   readonly confirmLabel: string;
   readonly role: MenuConfirmRole;
+  readonly notes?: ReadonlyArray<string>;
   readonly alt?: {
     readonly label: string;
     readonly onSelect: () => void | Promise<void>;

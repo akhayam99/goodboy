@@ -1,8 +1,11 @@
 import type { AppStore } from '../../store/store';
 import { resolveActions } from './resolveActions';
 import { AGENT_KIND } from './kinds/agent';
+import { ARTIFACT_KIND } from './kinds/artifact';
 import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
+import { RECORD_KIND } from './kinds/record';
+import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { SESSION_KIND } from './kinds/session';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
@@ -40,8 +43,8 @@ export const definitionsFor = <T, F>({
   readonly definition: ObjectKindDefinition<T, F>;
   readonly facts: F;
 }): ReadonlyArray<ActionDefinition<F>> => [
-  ...definition.actions,
   ...(definition.adapted?.({ facts }) ?? []),
+  ...definition.actions,
 ];
 
 const bind = <T, F extends object>({
@@ -88,6 +91,12 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: WORKFLOW_RUN_KIND, state, target });
     case 'planPart':
       return bind({ definition: PLAN_PART_KIND, state, target });
+    case 'artifact':
+      return bind({ definition: ARTIFACT_KIND, state, target });
+    case 'record':
+      return bind({ definition: RECORD_KIND, state, target });
+    case 'pullRequest':
+      return bind({ definition: PULL_REQUEST_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
     default: {

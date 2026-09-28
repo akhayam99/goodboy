@@ -56,6 +56,7 @@ export const toMenuEntries = ({ actions, env, run }: Params): ReadonlyArray<Menu
                 description: action.confirm.description,
                 confirmLabel: action.confirm.confirmLabel,
                 role: action.confirm.role,
+                ...(action.confirm.notes !== undefined && { notes: action.confirm.notes }),
                 ...(alt !== undefined && {
                   alt: {
                     label: `${alt.label} instead`,

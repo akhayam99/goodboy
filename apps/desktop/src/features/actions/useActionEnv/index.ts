@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../../../store';
-import { useShowToast } from '../../../app/components/Toast';
+import { useShowToast } from '../../../app/components/Toast/useShowToast';
 import { copyText } from '../copyText';
 import type { ActionEnv, ActionOrigin } from '../types';
 

@@ -7,20 +7,20 @@ import { useWireframeRespawn } from '../../../wireframes/useWireframeRespawn';
 import { useWireframeFolderExport } from '../../../wireframes/useWireframeFolderExport';
 import { folderExportNote } from '../../../wireframes/useWireframeFolderExport/folderExportNote';
 import { openWireframeInBrowser } from '../../../wireframes/openWireframeInBrowser';
-import {
-  WIREFRAME_FIDELITY_VARIANT_LABEL,
-  type WireframeFidelity,
-} from '../../../wireframes/wireframeFidelity';
-import type { ArtifactActionSet } from './artifactActions';
-import { ArtifactShellActions, type ArtifactActionHandles } from './ArtifactShellActions';
+import type { WireframeFidelity } from '../../../wireframes/wireframeFidelity';
+import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
+import { ArtifactShellActions } from './ArtifactShellActions';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly artifact: WireframeArtifact;
-  readonly set: ArtifactActionSet;
-  readonly handles: ArtifactActionHandles;
+  readonly target: ArtifactActionTarget;
   readonly exporter: ArtifactExport;
   readonly screenId: string | null;
+  readonly onArm: (params: {
+    readonly action: ResolvedAction;
+    readonly run: () => Promise<void>;
+  }) => void;
 };
 
 type Note = Readonly<{ text: string; isError: boolean }>;
@@ -28,10 +28,10 @@ type Note = Readonly<{ text: string; isError: boolean }>;
 export const WireframeShellActions = ({
   sessionId,
   artifact,
-  set,
-  handles,
+  target,
   exporter,
   screenId,
+  onArm,
 }: Props) => {
   const { fidelity, isRespawning, error, respawn } = useWireframeRespawn({ sessionId, artifact });
   const folderExport = useWireframeFolderExport({ artifact });
@@ -73,35 +73,37 @@ export const WireframeShellActions = ({
         </span>
       )}
       <ArtifactShellActions
-        set={set}
-        handles={{
-          ...handles,
-          openInBrowser: {
-            onClick: openInBrowser,
-            isBusy: isOpening,
-            isDisabled: workspaceSlug === null || isOpening,
-            hint:
-              screenId === null
-                ? 'Opens the saved folder in your browser'
-                : 'Opens this screen from the saved folder in your browser',
-          },
-          copySource: {
-            onClick: () => void exporter.copySource(),
-            label: 'Copy spec',
-            isDisabled: isBusy,
-          },
-          saveSource: {
-            onClick: () => {
-              setNote(null);
-              void folderExport.exportFolder();
+        onArm={onArm}
+        target={{
+          ...target,
+          ports: {
+            ...target.ports,
+            openInBrowser: {
+              run: openInBrowser,
+              isBusy: isOpening,
+              blockedReason: workspaceSlug === null ? 'This session has no workspace' : null,
+              description:
+                screenId === null
+                  ? 'Opens the saved folder in your browser'
+                  : 'Opens this screen from the saved folder in your browser',
             },
-            label: 'Save a copy to…',
-            isDisabled: isBusy,
-          },
-          newVariant: {
-            onClick: () => respawn({ fidelity: other }),
-            isDisabled: isRespawning,
-            hint: `Runs the wireframe again as a separate ${WIREFRAME_FIDELITY_VARIANT_LABEL[other]}, leaving this one untouched`,
+            copySource: {
+              run: exporter.copySource,
+              label: 'Copy spec',
+              isBusy,
+            },
+            saveSource: {
+              run: () => {
+                setNote(null);
+                void folderExport.exportFolder();
+              },
+              label: 'Save a copy to…',
+              isBusy,
+            },
+            newVariant: {
+              run: () => respawn({ fidelity: other }),
+              isBusy: isRespawning,
+            },
           },
         }}
       />

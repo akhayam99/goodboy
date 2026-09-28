@@ -19,6 +19,7 @@ type Props = {
   readonly hasFiltersActive: boolean;
   readonly selectedKey: string | null;
   readonly onSelect: (record: InboxRecord) => void;
+  readonly onActivate?: (record: InboxRecord) => void;
   readonly onRetry: () => void;
   readonly onOpenSettings: () => void;
   readonly onClearFilters: () => void;
@@ -46,6 +47,7 @@ export const InboxList = ({
   hasFiltersActive,
   selectedKey,
   onSelect,
+  onActivate,
   onRetry,
   onOpenSettings,
   onClearFilters,
@@ -165,6 +167,7 @@ export const InboxList = ({
                       record={record}
                       selected={record.key === selectedKey}
                       onSelect={onSelect}
+                      onActivate={onActivate}
                       star={starOf?.(record)}
                     />
                   </li>

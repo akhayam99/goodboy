@@ -1,5 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import type { AgentId, ArtifactId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { ArtifactGeneration } from '../artifacts/artifactCollection';
+import type { RecordFacts } from './kinds/record';
+import type { PullRequestFacts } from './kinds/pullRequest';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -15,6 +18,7 @@ export type ActionConfirm = {
   readonly description: string;
   readonly confirmLabel: string;
   readonly role: ActionConfirmRole;
+  readonly notes?: ReadonlyArray<string>;
   readonly altActionId?: string;
 };
 
@@ -23,6 +27,8 @@ export type ActionChoice = {
   readonly label: string;
   readonly isCurrent: boolean;
 };
+
+export type ActionEmphasis = 'primary' | 'secondary';
 
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
@@ -56,6 +62,8 @@ export type ActionDefinition<F> = {
   readonly confirm?: (params: FactsParams<F>) => ActionConfirm | null;
   readonly isUndoable?: boolean;
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
+  readonly emphasis?: (params: FactsParams<F>) => ActionEmphasis | null;
+  readonly isBusy?: (params: FactsParams<F>) => boolean;
   readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
 };
 
@@ -82,6 +90,8 @@ export type ResolvedAction = {
   readonly confirm: ActionConfirm | null;
   readonly isUndoable: boolean;
   readonly choices: ReadonlyArray<ActionChoice> | null;
+  readonly emphasis: ActionEmphasis | null;
+  readonly isBusy: boolean;
 };
 
 export type SessionActionTarget = {
@@ -115,6 +125,54 @@ export type PlanPartActionTarget = {
   readonly agentId: AgentId | null;
 };
 
+export type ArtifactPortId =
+  | 'runPlan'
+  | 'runAgain'
+  | 'restore'
+  | 'edit'
+  | 'regenerate'
+  | 'newVariant'
+  | 'copySource'
+  | 'saveSource'
+  | 'openInBrowser'
+  | 'showInFinder'
+  | 'discard';
+
+export type ArtifactPort = {
+  readonly run: () => void | Promise<void>;
+  readonly label?: string;
+  readonly description?: string | null;
+  readonly blockedReason?: string | null;
+  readonly isBusy?: boolean;
+};
+
+export type ArtifactPorts = Readonly<Partial<Record<ArtifactPortId, ArtifactPort>>>;
+
+export type ArtifactActionSubject =
+  | {
+      readonly kind: 'stored';
+      readonly artifactId: ArtifactId;
+      readonly isPlanRunning: boolean;
+    }
+  | { readonly kind: 'generation'; readonly generation: ArtifactGeneration };
+
+export type ArtifactActionTarget = {
+  readonly kind: 'artifact';
+  readonly sessionId: SessionId;
+  readonly subject: ArtifactActionSubject;
+  readonly ports?: ArtifactPorts;
+};
+
+export type RecordActionTarget = {
+  readonly kind: 'record';
+  readonly facts: RecordFacts;
+};
+
+export type PullRequestActionTarget = {
+  readonly kind: 'pullRequest';
+  readonly facts: PullRequestFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -126,6 +184,9 @@ export type ObjectTarget =
   | AgentActionTarget
   | WorkflowRunActionTarget
   | PlanPartActionTarget
+  | ArtifactActionTarget
+  | RecordActionTarget
+  | PullRequestActionTarget
   | LinkActionTarget;
 
 export type ObjectKindId = ObjectTarget['kind'];

@@ -595,6 +595,376 @@ describe('plan part menu', () => {
   });
 });
 
+const storedArtifact = (fields: {
+  readonly kind: 'plan' | 'report' | 'wireframe';
+  readonly status?: string;
+}) =>
+  ({
+    id: 'artifact-payout',
+    sessionId: SESSION,
+    agentId: AGENT,
+    workflowRunId: null,
+    kind: fields.kind,
+    schemaVersion: 1,
+    title: 'Speed up the payout export',
+    sourceFormat: fields.kind === 'wireframe' ? 'json' : 'markdown',
+    sourceText: '# Speed up the payout export',
+    metadata: fields.kind === 'report' ? { reportType: 'session-summary' } : {},
+    status: fields.status ?? 'active',
+    revision: 1,
+    createdAt: FIXTURE_NOW,
+    updatedAt: FIXTURE_NOW,
+  }) as never;
+
+const storedTarget = ({ isPlanRunning = false } = {}): ObjectTarget => ({
+  kind: 'artifact',
+  sessionId: SESSION,
+  subject: { kind: 'stored', artifactId: 'artifact-payout' as never, isPlanRunning },
+});
+
+const generationTarget = (state: 'generating' | 'waiting' | 'unproduced', canStop: boolean) =>
+  ({
+    kind: 'artifact',
+    sessionId: SESSION,
+    subject: {
+      kind: 'generation',
+      generation: {
+        agentId: AGENT,
+        kind: 'report',
+        title: 'Session summary',
+        state,
+        startedAt: FIXTURE_NOW,
+        provider: null,
+        model: null,
+        isTurnRunning: state === 'generating',
+        scouts: [],
+        canStop,
+      },
+    },
+  }) as ObjectTarget;
+
+const EXPORTS = [
+  'artifact.copySource',
+  'artifact.saveSource',
+  'artifact.openInBrowser (This session has no workspace folder)',
+  'artifact.showInFinder (This session has no workspace folder)',
+];
+
+const ARTIFACT_STATES: ReadonlyArray<
+  readonly [string, ReturnType<typeof storedArtifact> | null, ObjectTarget, ReadonlyArray<string>]
+> = [
+  [
+    'plan ready to run',
+    storedArtifact({ kind: 'plan' }),
+    storedTarget(),
+    [
+      'artifact.open',
+      'artifact.openAgent',
+      'artifact.runPlan',
+      'artifact.edit',
+      ...EXPORTS,
+      'artifact.discard',
+    ],
+  ],
+  [
+    'plan running',
+    storedArtifact({ kind: 'plan' }),
+    storedTarget({ isPlanRunning: true }),
+    ['artifact.open', 'artifact.openAgent', ...EXPORTS],
+  ],
+  [
+    'plan that already ran',
+    storedArtifact({ kind: 'plan', status: 'consumed' }),
+    storedTarget(),
+    ['artifact.open', 'artifact.openAgent', 'artifact.runAgain', ...EXPORTS],
+  ],
+  [
+    'plan replaced by a newer one',
+    storedArtifact({ kind: 'plan', status: 'superseded' }),
+    storedTarget(),
+    ['artifact.open', 'artifact.openAgent', 'artifact.runAgain', ...EXPORTS, 'artifact.discard'],
+  ],
+  [
+    'plan discarded',
+    storedArtifact({ kind: 'plan', status: 'discarded' }),
+    storedTarget(),
+    ['artifact.open', 'artifact.openAgent', 'artifact.restore', ...EXPORTS],
+  ],
+  [
+    'report ready, its evidence gone',
+    storedArtifact({ kind: 'report' }),
+    storedTarget(),
+    [
+      'artifact.open',
+      'artifact.edit',
+      'artifact.regenerate (The evidence pack this report was built from is no longer in memory, so regenerating would build a different report)',
+      ...EXPORTS,
+    ],
+  ],
+  [
+    'wireframe ready',
+    storedArtifact({ kind: 'wireframe' }),
+    storedTarget(),
+    ['artifact.open', 'artifact.newVariant', ...EXPORTS],
+  ],
+  [
+    'generating',
+    null,
+    generationTarget('generating', true),
+    ['artifact.openAgent', 'artifact.stop'],
+  ],
+  ['waiting on you', null, generationTarget('waiting', false), ['artifact.openAgent']],
+  [
+    'failed to produce',
+    null,
+    generationTarget('unproduced', false),
+    ['artifact.openAgent', 'artifact.retry'],
+  ],
+];
+
+describe('artifact menu in every state', () => {
+  it.each(ARTIFACT_STATES)('%s', (_state, artifact, target, expected) => {
+    seed({});
+    useAppStore.setState({ sessionArtifacts: { [SESSION]: artifact === null ? [] : [artifact] } });
+    expect(matrixOf(target)).toEqual(expected);
+  });
+
+  it('shows nothing for an artifact that is gone', () => {
+    seed({});
+    expect(matrixOf(storedTarget())).toEqual([]);
+  });
+
+  it('asks before a plan runs again and before a discard', () => {
+    seed({});
+    useAppStore.setState({
+      sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'plan', status: 'superseded' })] },
+    });
+    const actions = bindTarget({
+      state: useAppStore.getState(),
+      target: storedTarget(),
+    })?.resolve();
+    expect(actions?.find((action) => action.id === 'artifact.runAgain')?.confirm?.role).toBe(
+      'alert',
+    );
+    expect(actions?.find((action) => action.id === 'artifact.discard')?.confirm?.role).toBe(
+      'danger',
+    );
+  });
+
+  it('discards and restores a plan on the real store', async () => {
+    seed({});
+    const deletePlan = vi.fn(async () => undefined);
+    const restorePlan = vi.fn(async () => undefined);
+    useAppStore.setState({
+      sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'plan' })] },
+      deletePlan,
+      restorePlan,
+    });
+    await run(storedTarget(), 'artifact.discard');
+    expect(deletePlan).toHaveBeenCalledWith(SESSION, 'artifact-payout');
+    useAppStore.setState({
+      sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'plan', status: 'discarded' })] },
+    });
+    await run(storedTarget(), 'artifact.restore');
+    expect(restorePlan).toHaveBeenCalledWith(SESSION, 'artifact-payout');
+  });
+
+  it('copies the source of a stored artifact', async () => {
+    seed({});
+    useAppStore.setState({ sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'report' })] } });
+    copies.length = 0;
+    await run(storedTarget(), 'artifact.copySource');
+    expect(copies).toEqual(['# Speed up the payout export']);
+  });
+});
+
+const pullRequest = (
+  fields: Partial<{
+    state: 'open' | 'merged' | 'closed' | 'queued';
+    isDraft: boolean;
+    readiness: 'ready' | 'blocked' | 'unknown';
+    writeInFlight: string | null;
+    canCreateNew: boolean;
+  }>,
+): ObjectTarget => ({
+  kind: 'pullRequest',
+  facts: {
+    number: 482,
+    state: fields.state ?? 'open',
+    isDraft: fields.isDraft ?? false,
+    url: 'https://github.com/harborline/ledger-core/pull/482',
+    headBranch: 'hl/payout-export',
+    baseBranch: 'main',
+    mergeReadiness: {
+      status: fields.readiness ?? 'ready',
+      reason:
+        fields.readiness === 'blocked'
+          ? 'Resolve the conflicts with main first'
+          : 'Squash merge this pull request',
+      caveats: [],
+    },
+    writeInFlight: fields.writeInFlight ?? null,
+    isBusy: (fields.writeInFlight ?? null) !== null,
+    canCreateNew: fields.canCreateNew ?? true,
+    onMerge: async () => undefined,
+    onMarkReady: () => undefined,
+    onConvertDraft: () => undefined,
+    onClose: () => undefined,
+    onReopen: () => undefined,
+    onCreateNew: () => undefined,
+  },
+});
+
+const PR_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<string>]> = [
+  [
+    'draft',
+    pullRequest({ isDraft: true, readiness: 'blocked' }),
+    [
+      'pullRequest.openOnGithub',
+      'pullRequest.merge (Resolve the conflicts with main first)',
+      'pullRequest.markReady',
+      'pullRequest.createNew',
+      'pullRequest.copyLink',
+      'pullRequest.copyBranch',
+      'pullRequest.close',
+    ],
+  ],
+  [
+    'open',
+    pullRequest({}),
+    [
+      'pullRequest.openOnGithub',
+      'pullRequest.merge',
+      'pullRequest.convertDraft',
+      'pullRequest.createNew',
+      'pullRequest.copyLink',
+      'pullRequest.copyBranch',
+      'pullRequest.close',
+    ],
+  ],
+  [
+    'open, another window writing it',
+    pullRequest({ writeInFlight: 'Goodboy is already merging #482' }),
+    [
+      'pullRequest.openOnGithub',
+      'pullRequest.merge (Goodboy is already merging #482)',
+      'pullRequest.convertDraft (Goodboy is already merging #482)',
+      'pullRequest.createNew (Goodboy is already merging #482)',
+      'pullRequest.copyLink',
+      'pullRequest.copyBranch',
+      'pullRequest.close (Goodboy is already merging #482)',
+    ],
+  ],
+  [
+    'merged',
+    pullRequest({ state: 'merged', readiness: 'blocked' }),
+    [
+      'pullRequest.openOnGithub',
+      'pullRequest.merge (Resolve the conflicts with main first)',
+      'pullRequest.createNew',
+      'pullRequest.copyLink',
+      'pullRequest.copyBranch',
+    ],
+  ],
+  [
+    'closed',
+    pullRequest({ state: 'closed', readiness: 'blocked' }),
+    [
+      'pullRequest.openOnGithub',
+      'pullRequest.merge (Resolve the conflicts with main first)',
+      'pullRequest.reopen',
+      'pullRequest.createNew',
+      'pullRequest.copyLink',
+      'pullRequest.copyBranch',
+    ],
+  ],
+  [
+    'open while an agent drafts a new one',
+    pullRequest({ canCreateNew: false }),
+    [
+      'pullRequest.openOnGithub',
+      'pullRequest.merge',
+      'pullRequest.convertDraft',
+      'pullRequest.createNew (An agent is already opening a pull request for this session)',
+      'pullRequest.copyLink',
+      'pullRequest.copyBranch',
+      'pullRequest.close',
+    ],
+  ],
+];
+
+describe('pull request menu in every state', () => {
+  it.each(PR_STATES)('%s', (_state, target, expected) => {
+    expect(matrixOf(target)).toEqual(expected);
+  });
+});
+
+const record = (
+  fields: Partial<{ sessionId: string | null; isStarred: boolean | null; url: string }>,
+): ObjectTarget => ({
+  kind: 'record',
+  facts: {
+    identifier: 'HAR-231',
+    title: 'Payout export times out for Northwind',
+    url: fields.url ?? 'https://linear.app/harborline/issue/HAR-231',
+    providerLabel: 'Linear',
+    sessionId: (fields.sessionId ?? null) as never,
+    isStarred: fields.isStarred === undefined ? false : fields.isStarred,
+    onOpen: () => undefined,
+    onLaunch: () => undefined,
+    onToggleStar: () => undefined,
+    onRefresh: null,
+    verbs: [],
+    sessionVerbs: [],
+    destructive: [],
+  },
+});
+
+describe('inbox record menu in every state', () => {
+  it.each([
+    [
+      'new, not starred',
+      record({}),
+      [
+        'record.open',
+        'record.openInProvider',
+        'record.launch',
+        'record.star',
+        'record.copyLink',
+        'record.copyKey',
+      ],
+    ],
+    [
+      'linked to a session, starred',
+      record({ sessionId: SESSION, isStarred: true }),
+      [
+        'record.open',
+        'record.openSession',
+        'record.openInProvider',
+        'record.star',
+        'record.copyLink',
+        'record.copyKey',
+      ],
+    ],
+    [
+      'with no link in its tool',
+      record({ url: '' }),
+      ['record.open', 'record.launch', 'record.star', 'record.copyKey'],
+    ],
+  ] as const)('%s', (_state, target, expected) => {
+    expect(matrixOf(target)).toEqual(expected);
+  });
+
+  it('labels the star by its state', () => {
+    const labels = (target: ObjectTarget) =>
+      (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map(
+        (action) => action.label,
+      );
+    expect(labels(record({ isStarred: true }))).toContain('Unstar');
+    expect(labels(record({ isStarred: false }))).toContain('Star');
+  });
+});
+
 describe('actions run against the real store', () => {
   it('archives a session with an undo toast, and restores it', async () => {
     seed({});
