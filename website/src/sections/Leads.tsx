@@ -1,7 +1,7 @@
+import './Leads.css';
 import { Benefits, type Benefit } from '../components/Benefits';
-import { Block } from '../components/Block';
-import { SeeHow } from '../components/SeeHow';
-import { Shot } from '../components/Shot';
+import { Frame } from '../components/Frame';
+import { Statement } from '../components/Statement';
 import { BOARD } from '../figures';
 
 const ITEMS: readonly Benefit[] = [
@@ -10,35 +10,25 @@ const ITEMS: readonly Benefit[] = [
     text: 'The board sorts sessions into building, running, needs you and in review, and moves them as the work changes.',
   },
   {
-    lead: 'What it cost.',
-    text: 'Each card shows its pull request and its spend so far. Impact adds it up by provider and model.',
+    lead: 'What it cost so far.',
+    text: 'Each card carries its pull request and what its agents have spent, updated as they run.',
   },
   {
-    lead: 'No surprise bills.',
-    text: 'Set a monthly cap per provider, and Goodboy warns you before you cross it, not after.',
-  },
-  {
-    lead: 'Work starts from your tracker.',
-    text: 'Pick an issue from Linear, Jira, GitHub or Sentry and the session opens with its brief drafted.',
-  },
-  {
-    lead: 'Decisions you can read.',
-    text: 'Plans, decisions and reports are written down next to the task, not buried in a chat.',
+    lead: 'What needs you.',
+    text: 'A task waiting on an answer moves to Needs you, with its open question on the card.',
   },
 ];
 
 export const Leads = () => (
-  <Block
-    id="leads"
-    headingId="h2-leads"
-    heading="For leads and project managers"
-    sub="Look once and you know where every task stands, without asking anyone."
-    isAlt
-  >
-    <Shot figure={BOARD} />
-    <Benefits items={ITEMS} />
-    <div className="linkRow">
-      <SeeHow anchor="the-board" />
-    </div>
-  </Block>
+  <section className="leads" id="leads" aria-labelledby="leads-title">
+    <Statement
+      headingId="leads-title"
+      eyebrow="For leads and project managers"
+      eyebrowKind="audience"
+      heading="See what is building, running or waiting on you"
+    />
+    <Frame figure={BOARD}>
+      <Benefits items={ITEMS} />
+    </Frame>
+  </section>
 );

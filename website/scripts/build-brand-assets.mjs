@@ -32,6 +32,9 @@ const DEV_ICON_CORNER_RADIUS_RATIO = 0.2237;
 const DEV_ICON_FILES = ['icon.png', '32x32.png', '128x128.png', '128x128@2x.png'];
 const PNG_WIDTH_OFFSET_BYTES = 16;
 
+const INTER_FONT_PATH = resolve(WEBSITE_DIRECTORY, 'public/fonts/InterVariable-latin-v19.woff2');
+const INTER_FONT_BASE64 = readFileSync(INTER_FONT_PATH).toString('base64');
+
 const readSource = (relativePath) =>
   readFileSync(resolve(REPOSITORY_DIRECTORY, relativePath), 'utf8');
 
@@ -259,9 +262,10 @@ const createBaseHtml = ({
 <meta charset="utf-8">
 <style>
   @page { size: ${width}px ${height}px; margin: 0 }
+  @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; src: url(data:font/woff2;base64,${INTER_FONT_BASE64}) format("woff2-variations") }
   * { margin: 0; padding: 0; box-sizing: border-box }
   html, body { width: ${width}px; height: ${height}px }
-  body { background: #fff; color: #101113; font-family: "Avenir Next", "Avenir", -apple-system, BlinkMacSystemFont, sans-serif; overflow: hidden }
+  body { background: #fff; color: #101113; font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; font-optical-sizing: auto; font-feature-settings: "calt" 1; overflow: hidden }
   .mascot { display: block; background: ${accent} }
   ${extraCss}
 </style>

@@ -1,37 +1,34 @@
+import './Nav.css';
+import { BrandMark } from '../components/BrandIcons';
 import { Logo } from '../components/Logo';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { useScrolled } from '../hooks/useScrolled';
 import { SITE } from '../site';
 
-export const Nav = () => (
-  <header id="top">
-    <div className="wrap">
-      <Logo />
-      <nav aria-label="Primary">
-        <div className="navLinks">
-          <a className="hidesm" href="#how">
-            How it works
+export const Nav = () => {
+  const isScrolled = useScrolled();
+
+  return (
+    <header className={isScrolled ? 'nav scrolled' : 'nav'} id="top">
+      <div className="shell">
+        <div className="navInner">
+          <Logo />
+          <nav className="navLinks" aria-label="Primary">
+            <a href="/#how">How it works</a>
+            <a href="/#teams">For teams</a>
+            <a href="/#workflows">Workflows</a>
+            <a href={SITE.docs}>Docs</a>
+          </nav>
+          <span className="navSpacer" />
+          <a className="iconButton navGithub" href={SITE.repo} aria-label="Goodboy on GitHub">
+            <BrandMark brand="github" size={18} />
           </a>
-          <a className="hidesm" href="#developers">
-            Developers
-          </a>
-          <a className="hidesm" href="#leads">
-            Leads
-          </a>
-          <a className="hidesm" href="#integrations">
-            Integrations
-          </a>
-          <a className="hidesm" href="#privacy">
-            Privacy
-          </a>
-          <a href={SITE.repo}>GitHub</a>
-        </div>
-        <div className="navActions">
           <ThemeToggle />
-          <a className="btn small" href="#install">
-            Install
+          <a className="btn small" href={SITE.latest}>
+            Download
           </a>
         </div>
-      </nav>
-    </div>
-  </header>
-);
+      </div>
+    </header>
+  );
+};

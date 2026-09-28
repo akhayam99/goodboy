@@ -1,62 +1,69 @@
+import './Install.css';
 import { useEffect, useRef, useState } from 'react';
-import { SeeHow } from '../components/SeeHow';
+import { Chapter } from '../components/Chapter';
 import { SITE } from '../site';
 
+const COPIED_MS = 1500;
+
 export const Install = () => {
-  const [copied, setCopied] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
     () => () => {
-      if (timeoutRef.current != null) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current !== null) {
+        clearTimeout(timeoutRef.current);
+      }
     },
     [],
   );
 
   const handleCopy = () => {
-    if (typeof navigator === 'undefined' || navigator.clipboard == null) return;
+    if (typeof navigator === 'undefined' || navigator.clipboard === undefined) {
+      return;
+    }
     navigator.clipboard
       .writeText(SITE.brew)
       .then(() => {
-        setCopied(true);
-        if (timeoutRef.current != null) clearTimeout(timeoutRef.current);
-        timeoutRef.current = setTimeout(() => setCopied(false), 1500);
+        setIsCopied(true);
+        if (timeoutRef.current !== null) {
+          clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => setIsCopied(false), COPIED_MS);
       })
-      .catch(() => {});
+      .catch(() => setIsCopied(false));
   };
 
   return (
-    <section className="block alt" id="install" aria-labelledby="h2-install">
-      <div className="wrap duo">
-        <div className="duoText">
-          <h2 id="h2-install">Setup is a folder and a provider</h2>
-          <p className="sub">
-            Install it on macOS or Linux, connect a provider, and point it at a folder you already
-            work in.
-          </p>
+    <Chapter
+      id="install"
+      head={{
+        eyebrow: 'Install',
+        eyebrowKind: 'page',
+        heading: 'Set up with a folder and a provider',
+        lead: 'Download the app, sign in to a tool you already pay for, and point it at code you work on.',
+      }}
+    >
+      <div className="install">
+        <div className="cmd">
+          <span className="cmdPrompt" aria-hidden="true">
+            $
+          </span>
+          <code>{SITE.brew}</code>
+          <button type="button" onClick={handleCopy}>
+            {isCopied ? 'Copied' : 'Copy'}
+          </button>
         </div>
-        <div>
-          <div className="cmd">
-            <span className="p">$</span>
-            <span>{SITE.brew}</span>
-            <button id="copyBtn" type="button" onClick={handleCopy}>
-              {copied ? 'copied' : 'copy'}
-            </button>
-          </div>
-          <div className="ctaRow">
-            <a className="btn" href={SITE.latest}>
-              Download for macOS
-            </a>
-            <a className="btn ghost" href={SITE.linux}>
-              Linux builds on the release page
-            </a>
-          </div>
-          <p className="reassure">
-            <b>No account, no waitlist. You are working in about five minutes.</b>
-          </p>
-          <SeeHow anchor="set-up" />
+        <div className="ctaRow">
+          <a className="btn" href={SITE.latest}>
+            Download for macOS
+          </a>
+          <a className="btn ghost" href={SITE.linux}>
+            Linux builds
+          </a>
         </div>
+        <p className="installNote">Most people are working in five minutes.</p>
       </div>
-    </section>
+    </Chapter>
   );
 };

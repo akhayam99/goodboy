@@ -1,29 +1,14 @@
-import { Block } from '../components/Block';
-import { More } from '../components/More';
-import { SeeHow } from '../components/SeeHow';
-import { Shot } from '../components/Shot';
-import { CONTEXT } from '../figures';
+import { Fragment } from '../components/Fragment';
+import { CONTEXT_CHANGES } from '../figures';
 import { SITE } from '../site';
 
 export const Context = () => (
-  <Block
+  <Fragment
     id="context"
-    headingId="h2-context"
-    heading="Shared context"
-    sub="The briefing belongs to the task, not the chat. Every agent reads the same goal, the decisions so far and a summary that updates after each turn."
-  >
-    <Shot figure={CONTEXT} />
-    <div className="stackText">
-      <p>
-        Decisions are numbered and signed, and the ones Goodboy records show why they were made.
-        When one changes, the reason stays next to it. Hand the task from Claude to Codex and the
-        next agent picks up where the last one stopped.
-      </p>
-      <p>Curious what an agent was told? Open it and read exactly what it was sent.</p>
-      <div className="linkRow">
-        <More href={`${SITE.concepts}#shared-context-and-lenses`}>How shared context works</More>
-        <SeeHow anchor="shared-context" />
-      </div>
-    </div>
-  </Block>
+    eyebrow="Shared context"
+    heading="Decisions live inside the task"
+    body="Every agent reads the same goal and the same list of what was agreed. When a decision changes, the panel shows what was added, replaced or withdrawn since you last looked, and the next agent is briefed on the current set."
+    link={{ href: `${SITE.concepts}#shared-context-and-lenses`, label: 'How shared context works' }}
+    figures={[CONTEXT_CHANGES]}
+  />
 );

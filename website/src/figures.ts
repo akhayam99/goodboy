@@ -1,289 +1,157 @@
-export type Detail = {
-  readonly id: string;
-  readonly width: number;
-  readonly height: number;
-  readonly caption: string;
-};
+import type { Source } from './components/Picture';
 
-export type Figure = {
-  readonly id: string;
-  readonly width: number;
-  readonly height: number;
+export type FrameFigure = {
+  readonly source: Source;
+  readonly phone: Source;
   readonly alt: string;
-  readonly details: readonly Detail[];
 };
 
-export const SESSION: Figure = {
-  id: 'session',
-  width: 3840,
-  height: 2400,
-  alt: 'A Harborline session: the activity bar with every task by stage on the left, the webhook fix with its projects, pull requests 318 and 57, an open question and the Activity timeline with each agent and its model',
-  details: [
-    {
-      id: 'session-d1',
-      width: 1380,
-      height: 1312,
-      caption: 'Every task sorted by where it stands, and what it waits on',
-    },
-    {
-      id: 'session-d2',
-      width: 3880,
-      height: 1500,
-      caption: 'Each step names its agent, its model and its cost',
-    },
-  ],
+export type FragmentFigure = {
+  readonly source: Source;
+  readonly displayWidth: number;
+  readonly cap?: number;
+  readonly isClosed?: boolean;
+  readonly alt: string;
 };
 
-export const AGENTS: Figure = {
-  id: 'agents',
-  width: 3840,
-  height: 2400,
-  alt: 'A workflow run on the webhook fix: eight agents, scouts on Composer, GPT-5.6 Terra and Haiku, a planner on Opus 5.5, implementers on GPT-5.6 Sol and Kimi K3 and a tester on Haiku, each with its own cost',
-  details: [
-    {
-      id: 'agents-d1',
-      width: 3940,
-      height: 1248,
-      caption: 'Eight chats on one task, each with a role and its own model',
-    },
-  ],
+const FRAME_WIDTHS = [1144, 2288, 3432] as const;
+const PHONE_WIDTHS = [732, 1098, 1464] as const;
+
+type FrameParams = {
+  readonly id: string;
+  readonly height?: number;
+  readonly alt: string;
 };
 
-export const SWITCH: Figure = {
-  id: 'switch',
-  width: 3840,
-  height: 2400,
-  alt: 'The notifications page: a pull request opened, a session at 80 percent of its cap, a handoff to retry and a folder left on disk, filtered by severity, source and workspace',
-  details: [
-    {
-      id: 'switch-d1',
-      width: 1540,
-      height: 984,
-      caption: 'The bell keeps the latest, unread first',
-    },
-  ],
+type FragmentParams = {
+  readonly id: string;
+  readonly height: number;
+  readonly displayWidth: number;
+  readonly cap?: number;
+  readonly isClosed?: boolean;
+  readonly alt: string;
 };
 
-export const FIND: Figure = {
-  id: 'find',
-  width: 3840,
-  height: 2400,
-  alt: 'Search for credit inside the webhook session: a message, a plan, the session, an issue and pull request 318, with the actions of the picked result on the right',
-  details: [
-    {
-      id: 'find-d1',
-      width: 3280,
-      height: 2000,
-      caption: '⌘K on an agent: its actions first, then every place to go',
-    },
-  ],
-};
+const frame = ({ id, height = 2145, alt }: FrameParams): FrameFigure => ({
+  source: { id, widths: FRAME_WIDTHS, width: 3432, height },
+  phone: { id: `${id}-phone`, widths: PHONE_WIDTHS, width: 1464, height: 1830 },
+  alt,
+});
 
-export const WORKSPACE: Figure = {
-  id: 'workspace',
-  width: 3840,
-  height: 2400,
-  alt: 'The Harborline workspace settings with its three projects, ledger-core, notify-relay and payments-api, and what agents know about you',
-  details: [
-    {
-      id: 'workspace-d1',
-      width: 3228,
-      height: 1044,
-      caption: 'One task, a branch and a pull request in each repo it touches',
-    },
-  ],
-};
+const fragment = ({
+  id,
+  height,
+  displayWidth,
+  cap,
+  isClosed = false,
+  alt,
+}: FragmentParams): FragmentFigure => ({
+  source: {
+    id,
+    widths: [displayWidth, displayWidth * 2, displayWidth * 3],
+    width: displayWidth * 3,
+    height,
+  },
+  displayWidth,
+  cap,
+  isClosed,
+  alt,
+});
 
-export const DEVELOPERS: Figure = {
-  id: 'developers',
-  width: 3840,
-  height: 2400,
-  alt: 'Rewrite history on a payments-api branch: the branch as it is now, with a fold, a combine, a removal, a move and a rename, next to the four commits it becomes after Apply',
-  details: [
-    {
-      id: 'developers-d1',
-      width: 2600,
-      height: 1380,
-      caption: 'The pull request page, with Review and Diff one click away',
-    },
-    {
-      id: 'developers-d2',
-      width: 2560,
-      height: 1560,
-      caption: 'The diff, with a note left on a line',
-    },
-    {
-      id: 'developers-d3',
-      width: 3800,
-      height: 1760,
-      caption: 'Branches Goodboy made, and which are safe to delete',
-    },
-  ],
-};
+export const HERO_SESSION = frame({
+  id: 'hero-session',
+  alt: 'The overview of a Harborline session: tasks by stage on the left, the webhook fix with its projects, branches and pull requests 318, 311 and 57, and the first rows of its activity',
+});
 
-export const CHAT: Figure = {
-  id: 'chat',
-  width: 3840,
-  height: 2400,
-  alt: 'An implementer chat on Codex: the ask, three groups of operations, both pull requests up and a Slack reply for #payments-oncall waiting to be sent',
-  details: [],
-};
+export const RUN_AGENTS = frame({
+  id: 'run-agents',
+  alt: 'A workflow run on the duplicate credit fix: the run header, the orchestrator and the agents by role, each with its model and cost',
+});
 
-export const BOARD: Figure = {
+export const BOARD = frame({
   id: 'board',
-  width: 3840,
-  height: 1600,
-  alt: 'The Harborline board: eleven sessions across building, running, needs you and in review, each card with its pull request and its cost',
-  details: [
-    {
-      id: 'board-d1',
-      width: 1152,
-      height: 448,
-      caption: 'Where it stands, its pull request, its cost',
-    },
-    {
-      id: 'board-d2',
-      width: 3844,
-      height: 1400,
-      caption: 'Claude spend this month against its cap',
-    },
-  ],
-};
+  height: 1430,
+  alt: 'The Harborline board: sessions in Building, Running, Needs you and In review, each card with its pull request and its cost',
+});
 
-export const BUILDER: Figure = {
-  id: 'builder',
-  width: 3840,
-  height: 2508,
-  alt: 'A new orchestrated workflow for the duplicate credit fix, with its goal, the orchestrator on GPT-5.6 Sol and guidance to ask before any change to ledger-core',
-  details: [
-    {
-      id: 'builder-d1',
-      width: 2740,
-      height: 1460,
-      caption: 'Orchestrated, custom or preset, with an orchestrator on the model you set',
-    },
-  ],
-};
+export const SWITCH_BELL = fragment({
+  id: 'switch-bell',
+  height: 1092,
+  displayWidth: 520,
+  isClosed: true,
+  alt: 'The notification bell with four unread rows and Open all notifications',
+});
 
-export const INBOX: Figure = {
-  id: 'inbox',
-  width: 3840,
-  height: 2400,
-  alt: 'The Inbox with HBL-412 pasted in the search and open on the right, with Launch session',
-  details: [
-    {
-      id: 'inbox-d1',
-      width: 1600,
-      height: 1296,
-      caption: 'HBL-412, one press away from a session',
-    },
-    {
-      id: 'inbox-d2',
-      width: 1000,
-      height: 640,
-      caption: 'GitHub, Linear, Sentry and Slack in one list',
-    },
-  ],
-};
+export const FIND_SEARCH = fragment({
+  id: 'find-search',
+  height: 1390,
+  displayWidth: 656,
+  alt: 'Search inside the webhook session: the field, five filters and the top three results',
+});
 
-export const RESOLVE: Figure = {
-  id: 'resolve',
-  width: 3840,
-  height: 2400,
-  alt: 'Review for pull request 318: comments grouped as open, waiting for the push and done, one reply open on the right, and Push 1 in the header',
-  details: [
-    {
-      id: 'resolve-d1',
-      width: 2520,
-      height: 1160,
-      caption: 'A drafted reply with Redraft, Accept, Reply and Skip',
-    },
-  ],
-};
+export const WORKSPACE_PROJECTS = fragment({
+  id: 'workspace-projects',
+  height: 1092,
+  displayWidth: 780,
+  alt: 'The projects of the webhook session: payments-api with pull requests 318 and 311, notify-relay with pull request 57',
+});
 
-export const COMPARE: Figure = {
-  id: 'compare',
-  width: 3840,
-  height: 2400,
-  alt: 'Wireframe compare for the deliveries screen, v2 to v3, where v3 adds a stuck delivery banner and an attempts column',
-  details: [
-    {
-      id: 'compare-d1',
-      width: 2260,
-      height: 1280,
-      caption: 'v3 adds a stuck-delivery banner and an attempts column',
-    },
-    {
-      id: 'compare-d2',
-      width: 3400,
-      height: 1960,
-      caption: 'The session report, as a document',
-    },
-  ],
-};
+export const DEV_DIFF = fragment({
+  id: 'dev-diff',
+  height: 1833,
+  displayWidth: 754,
+  cap: 320,
+  alt: 'One hunk of applyWebhook.ts in the diff, where the fix passes the event id along',
+});
 
-export const CONTEXT: Figure = {
-  id: 'context',
-  width: 3840,
-  height: 2400,
-  alt: 'The brief an implementer received on Codex, next to the Context drawer where decision 3 replaced decision 1 with its reason',
-  details: [
-    {
-      id: 'context-d1',
-      width: 1608,
-      height: 1900,
-      caption: 'Decision 3 replaced decision 1, and says why',
-    },
-    {
-      id: 'context-d2',
-      width: 3760,
-      height: 1320,
-      caption: 'The brief the agent received, part by part',
-    },
-  ],
-};
+export const DEV_HISTORY = frame({
+  id: 'dev-history',
+  alt: 'Rewrite history on payments-api hl/fix-duplicate-credit: a backup to restore, the branch as it is now with two fixups folding into their commits, and the three commits it becomes after Apply',
+});
 
-export const IMPACT: Figure = {
+export const RUN_CANVAS = frame({
+  id: 'run-canvas',
+  height: 1841,
+  alt: 'The step graph of the duplicate credit fix run: the orchestrator waiting on step 1, three scouts working at the same time with one done, and the plan, two implementers and the tester still to come',
+});
+
+export const IMPACT = frame({
   id: 'impact',
-  width: 3840,
-  height: 2400,
-  alt: 'Claude spend for the last 30 days: $151.72 of a $170 cap, a warning at 80 percent, and the spend by model',
-  details: [
-    {
-      id: 'impact-d1',
-      width: 3860,
-      height: 1280,
-      caption: 'What is left of the Codex plan, with a free reset',
-    },
-  ],
-};
+  alt: 'Impact for the last 7 days: Claude spend against its monthly cap with the cap ring at 42 percent, spent, cap and remaining',
+});
 
-export const STORAGE: Figure = {
-  id: 'storage',
-  width: 3840,
-  height: 2400,
-  alt: 'Storage settings: working copies of old sessions with what each weighs, 5.0 GB in all, and one button to remove the three that are safe',
-  details: [
-    {
-      id: 'storage-d1',
-      width: 3840,
-      height: 1328,
-      caption: 'What each working copy weighs, and which are safe to remove',
-    },
-  ],
-};
+export const INBOX_ISSUE = fragment({
+  id: 'inbox-issue',
+  height: 1311,
+  displayWidth: 541,
+  alt: 'Issue HBL-412 open in the Inbox, with its fields, Launch session and Link to a session',
+});
 
-export const SUPPORT: Figure = {
-  id: 'support',
-  width: 3840,
-  height: 2400,
-  alt: 'Report a bug open over the Harborline board: one line typed, the version, system, screen and CLI versions as chips, and Send',
-  details: [
-    {
-      id: 'support-d1',
-      width: 2256,
-      height: 888,
-      caption: 'One line, and what gets sent is shown before it goes',
-    },
-  ],
-};
+export const ARTIFACTS_COMPARE = fragment({
+  id: 'artifacts-compare',
+  height: 1240,
+  displayWidth: 416,
+  alt: 'Version 3 of the deliveries wireframe, with the stuck delivery banner above the deliveries table',
+});
+
+export const CONTEXT_CHANGES = fragment({
+  id: 'context-changes',
+  height: 1717,
+  displayWidth: 510,
+  isClosed: true,
+  alt: 'The Decisions tab of the Context panel: four changes since you last looked, one decision added, one replaced, one withdrawn and one reworded, above the five active decisions',
+});
+
+export const STORAGE_LOCAL = fragment({
+  id: 'storage-local',
+  height: 1064,
+  displayWidth: 686,
+  alt: 'The storage summary: 5.1 GB used, 5.0 GB that can go, and the usage bar with its legend',
+});
+
+export const CHAT_PLAIN = fragment({
+  id: 'chat-plain',
+  height: 603,
+  displayWidth: 591,
+  alt: 'One exchange in a plain chat: the first message, its plan, the operations and the reply',
+});

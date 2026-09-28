@@ -1,0 +1,26 @@
+.contrastCols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.contrastCols > div {
+  padding: 0 36px;
+}
+
+.contrastCols .cellText {
+  max-width: 48ch;
+}
+
+.cellTitle.was {
+  color: var(--t3);
+}
+
+@media (max-width: 600px) {
+  .contrastCols {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .contrastCols > div {
+    padding: 0;
+  }
+}
