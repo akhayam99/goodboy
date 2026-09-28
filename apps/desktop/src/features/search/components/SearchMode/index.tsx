@@ -50,10 +50,13 @@ export const SearchMode = ({ initialText, onSwitchMode, onClose }: OverlayModePr
   const loadStatus = useAppStore((state) => state.loadSearchIndexStatus);
   const reportError = useAppStore((state) => state.reportError);
   const [scope, setScope] = useState<SearchScope>(context.initialScope);
-  const [chips, setChips] = useState<ReadonlyArray<SearchChip>>([]);
-  const [text, setText] = useState(initialText);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
+  const [initial] = useState(() =>
+    extractQualifiers({ text: initialText, projects: context.projects, now, isFinal: true }),
+  );
+  const [chips, setChips] = useState<ReadonlyArray<SearchChip>>(initial.chips);
+  const [text, setText] = useState(initial.text);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
   const listboxId = useId();

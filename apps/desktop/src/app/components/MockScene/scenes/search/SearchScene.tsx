@@ -1,0 +1,70 @@
+import { useEffect, useState } from 'react';
+import { PANE_RHYTHM } from '@goodboy/ui';
+import { useAppStore } from '../../../../../store';
+import { ToastProvider } from '../../../Toast';
+import { SearchOverlayHost } from '../../../../../features/search/components/SearchOverlayHost';
+import { TranscriptFeed } from '../flow-audit/TranscriptFeed';
+import { seedChatSurfaces } from '../flow-audit/seeds';
+import { sceneParam } from '../audit/sceneParams';
+import { mockRunSearch } from './searchFixtures';
+
+const VIEW = sceneParam({ key: 'view' }) ?? 'overlay';
+
+const OPEN_TEXT: Readonly<Record<string, string>> = {
+  overlay: 'credit',
+  filters: 'credit type:message from:claude ',
+};
+
+const JUMP_TARGET = 'The second credit is not in ledger-core.';
+
+export const SearchScene = () => {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    seedChatSurfaces();
+    useAppStore.setState({
+      runSearch: mockRunSearch,
+      loadSearchIndexStatus: async () => undefined,
+      searchIndexStatus: {
+        docs: 18_406,
+        bytes: 15_204_352,
+        scanned: 62,
+        total: 100,
+        isBackfillDone: false,
+        excludedProjectIds: [],
+      },
+      navigate: () => undefined,
+    });
+    setIsReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+    const id = window.setTimeout(() => {
+      const state = useAppStore.getState();
+      if (VIEW === 'jump') {
+        state.startViewFind({ query: 'credit', target: JUMP_TARGET });
+        return;
+      }
+      state.openSearchOverlay({ text: OPEN_TEXT[VIEW] ?? '' });
+    }, 30);
+    return () => window.clearTimeout(id);
+  }, [isReady]);
+
+  if (!isReady) {
+    return null;
+  }
+
+  return (
+    <ToastProvider>
+      <main data-shot className="h-screen overflow-auto bg-background text-foreground">
+        <div data-find-root className={PANE_RHYTHM.body}>
+          <TranscriptFeed />
+        </div>
+        <SearchOverlayHost />
+      </main>
+    </ToastProvider>
+  );
+};

@@ -32,6 +32,7 @@ import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
 import { OpenQuestionsScene } from './scenes/flow-audit/OpenQuestionsScene';
 import { TranscriptScene } from './scenes/flow-audit/TranscriptScene';
 import { CommandPaletteScene } from './scenes/flow-audit/CommandPaletteScene';
+import { SearchScene } from './scenes/search/SearchScene';
 import {
   ScriptsLensScene,
   ResolveQueueShellScene,
@@ -120,6 +121,7 @@ export const MOCK_SCENES = {
   'open-questions': OpenQuestionsScene,
   transcript: TranscriptScene,
   'command-palette': CommandPaletteScene,
+  search: SearchScene,
   'scripts-lens': ScriptsLensScene,
   'resolve-queue-shell': ResolveQueueShellScene,
   'resolve-publish-blocked': ResolvePublishBlockedScene,
