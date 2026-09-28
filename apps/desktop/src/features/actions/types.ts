@@ -204,6 +204,13 @@ export type ScriptActionTarget = {
   readonly facts: ScriptFacts;
 };
 
+export type MessageActionTarget = {
+  readonly kind: 'message';
+  readonly text: string;
+  readonly sessionId: SessionId | null;
+  readonly agentId: AgentId | null;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -223,4 +230,5 @@ export type ObjectTarget =
   | MountActionTarget
   | WorktreeActionTarget
   | ScriptActionTarget
+  | MessageActionTarget
   | LinkActionTarget;

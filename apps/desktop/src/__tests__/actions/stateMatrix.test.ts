@@ -1215,6 +1215,49 @@ describe('git surface menus in every state', () => {
   });
 });
 
+describe('transcript message menu', () => {
+  const message = (fields: {
+    readonly agentId: string | null;
+    readonly text: string;
+  }): ObjectTarget => ({
+    kind: 'message',
+    text: fields.text,
+    sessionId: SESSION,
+    agentId: fields.agentId as never,
+  });
+
+  it('offers open, quote and both copies on a message of a live agent', () => {
+    seed(standalone({ status: 'completed' }));
+    expect(
+      matrixOf(message({ agentId: AGENT, text: 'The **ledger-core** join is unindexed.' })),
+    ).toEqual(['message.openAgent', 'message.quote', 'message.copy', 'message.copyMarkdown']);
+  });
+
+  it('offers only the copies when no agent can take a reply', () => {
+    seed({});
+    expect(matrixOf(message({ agentId: null, text: 'Northwind asked for half even.' }))).toEqual([
+      'message.copy',
+      'message.copyMarkdown',
+    ]);
+  });
+
+  it('copies plain text or the markdown source, and quotes into the draft', async () => {
+    seed(standalone({ status: 'completed' }));
+    copies.length = 0;
+    const target = message({ agentId: AGENT, text: 'The **ledger-core** join is `unindexed`.' });
+    await run(target, 'message.copy');
+    await run(target, 'message.copyMarkdown');
+    expect(copies).toEqual([
+      'The ledger-core join is unindexed.',
+      'The **ledger-core** join is `unindexed`.',
+    ]);
+    await run(target, 'message.quote');
+    expect(useAppStore.getState().agentDraft[AGENT]).toBe(
+      '> The **ledger-core** join is `unindexed`.\n\n',
+    );
+  });
+});
+
 describe('actions run against the real store', () => {
   it('archives a session with an undo toast, and restores it', async () => {
     seed({});

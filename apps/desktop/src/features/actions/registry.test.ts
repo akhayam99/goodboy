@@ -8,6 +8,7 @@ import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { COMMIT_KIND } from './kinds/commit';
 import { DIFF_FILE_KIND } from './kinds/diffFile';
 import { MOUNT_KIND } from './kinds/mount';
+import { MESSAGE_KIND } from './kinds/message';
 import { SCRIPT_KIND } from './kinds/script';
 import { WORKTREE_KIND } from './kinds/worktree';
 import { RECORD_KIND } from './kinds/record';
@@ -33,6 +34,7 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['mount', MOUNT_KIND.actions],
   ['worktree', WORKTREE_KIND.actions],
   ['script', SCRIPT_KIND.actions],
+  ['message', MESSAGE_KIND.actions],
   ['link', LINK_KIND.actions],
 ];
 
