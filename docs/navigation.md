@@ -1080,8 +1080,12 @@ The Diff lens shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. The header speaks only for that branch:
 meta `repo · N commits · state word`, one primary chosen from the branch state
 (`Rebase on main` when it is behind main, `Push branch` when it is local only
-with commits, none otherwise), `Rewrite history` with the commit count and `⋯` (Refresh, Open
-all in editor, Copy branch name, Copy patch). Every rewrite takes the shown
+with commits, none otherwise), `PR #318` when the branch has a pull request
+(it opens the pull request, trail `Overview › Diff › PR #318`; the Diff has
+no Review door of its own), `Rewrite history` with the commit count and `⋯`
+(Refresh, Open all in editor, Copy branch name, Copy patch). A line that
+carries an open review comment of that pull request shows it read only,
+marked `To resolve`, with `Open in Review` on that comment. Every rewrite takes the shown
 mount's `mountId`, never the active mount. `Rebase on main` replays the
 branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads

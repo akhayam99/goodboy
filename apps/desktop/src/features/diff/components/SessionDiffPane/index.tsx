@@ -29,8 +29,9 @@ import {
 import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
 import { useRebasePrediction } from '../../../history/useRebasePrediction';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
-import { ResolveOverviewAction } from '../../../resolve/components/ResolveOverviewAction';
+import { DiffPullRequestLink } from './DiffPullRequestLink';
 import { useDiffNotes } from '../../hooks/useDiffNotes';
+import { useDiffReviewThreads } from '../../hooks/useDiffReviewThreads';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
 import { DiffView } from '../DiffView';
 import { DiffNotesDock } from '../DiffNotesDock';
@@ -93,9 +94,17 @@ export const SessionDiffPane = ({
   renderBranchActions,
 }: Props) => {
   const diff = useSessionDiff({ sessionId, worktreePath, diffFocus, branchRevision });
-  const { comments, openNotes } = useDiffNotes({ sessionId });
+  const { comments: noteComments, openNotes } = useDiffNotes({ sessionId });
   const mountId = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountId ?? null,
+  );
+  const reviewThreads = useDiffReviewThreads({ sessionId, mountId });
+  const comments = useMemo(
+    () =>
+      reviewThreads.length === 0
+        ? noteComments
+        : { ...noteComments, threads: [...noteComments.threads, ...reviewThreads] },
+    [noteComments, reviewThreads],
   );
   const isRequestMerged = useAppStore((s) =>
     mountId === null ? false : isMountRequestMerged({ state: s, mountId }),
@@ -292,7 +301,7 @@ export const SessionDiffPane = ({
 
   const actions = (
     <>
-      <ResolveOverviewAction sessionId={sessionId} />
+      {mountId === null ? null : <DiffPullRequestLink sessionId={sessionId} mountId={mountId} />}
       {renderBranchActions?.({ mountId, commits: diff.commits, onRewritten: diff.refresh })}
       {primary}
       <OverflowMenu items={overflow} label="More diff actions" align="right" />

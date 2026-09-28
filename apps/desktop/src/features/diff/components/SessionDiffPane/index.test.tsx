@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 
 const h = vi.hoisted(() => ({
@@ -9,6 +9,8 @@ const h = vi.hoisted(() => ({
   commits: [] as ReadonlyArray<unknown>,
   canRebase: false,
   prediction: null as null | { conflictFiles: ReadonlyArray<string>; isClean: boolean },
+  mountGithub: {} as Record<string, unknown>,
+  openMountRequest: vi.fn(async () => ({ kind: 'opened' as const })),
 }));
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -21,11 +23,21 @@ const MOUNT = {
 
 vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) =>
-    selector({ settings: {}, projects: [], emitNotification: vi.fn() }),
+    selector({
+      settings: {},
+      projects: [],
+      emitNotification: vi.fn(),
+      mountGithub: h.mountGithub,
+      sessionGithub: {},
+      sessionResolveThreads: {},
+      openReviewTarget: vi.fn(),
+      openMountRequest: h.openMountRequest,
+    }),
 }));
 
 vi.mock('../../../../store/slices/project-mounts/selectors', () => ({
   selectMountForPath: () => MOUNT,
+  selectActiveMountId: () => MOUNT.mountId,
 }));
 
 vi.mock('../../hooks/useSessionDiff', () => ({
@@ -60,10 +72,6 @@ vi.mock('../../../history/useRebasePrediction', () => ({
 
 vi.mock('../../../permissions/components/DiffViewSelector', () => ({
   DiffViewSelector: () => <button type="button">Branch vs main</button>,
-}));
-
-vi.mock('../../../resolve/components/ResolveOverviewAction', () => ({
-  ResolveOverviewAction: () => null,
 }));
 
 vi.mock('./PushBranchButton', () => ({
@@ -102,6 +110,35 @@ afterEach(() => {
   h.commits = [];
   h.canRebase = false;
   h.prediction = null;
+  h.mountGithub = {};
+  h.openMountRequest.mockClear();
+});
+
+describe('SessionDiffPane pull request link', () => {
+  it('links the pull request of the branch it shows and opens its page', () => {
+    h.mountGithub = {
+      [MOUNT.mountId]: {
+        pr: { number: 318, state: 'open', isDraft: false, url: '', title: 'Stop retried webhooks' },
+      },
+    };
+    renderPane();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open PR #318' }));
+
+    expect(h.openMountRequest).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT.mountId,
+      provider: 'github',
+      requestNumber: 318,
+    });
+  });
+
+  it('shows no pull request link and no Review door when the branch has none', () => {
+    renderPane();
+
+    expect(screen.queryByRole('button', { name: /^Open PR/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Conversations' })).toBeNull();
+  });
 });
 
 describe('SessionDiffPane header', () => {

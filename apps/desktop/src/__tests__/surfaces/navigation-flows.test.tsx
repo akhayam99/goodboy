@@ -806,6 +806,15 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => heading('Rewrite history'),
   },
   {
+    name: 'diff to its pull request',
+    covers: ['openMountRequest', 'lens:pr'],
+    open: async () => {
+      await openCrumb(/^Diff/);
+      await clickButton(/^Open PR #\d+$/);
+    },
+    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+  },
+  {
     name: 'review header pull request link',
     covers: ['navigate', 'lens:pr'],
     open: async () => {

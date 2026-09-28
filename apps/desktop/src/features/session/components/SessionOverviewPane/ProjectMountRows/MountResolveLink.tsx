@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import type { ResolveThread, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { selectActiveMountId } from '../../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { eligibleReviewThreadCount } from '../../../../suggestions/eligibleThreads';
 import { REVIEW_TARGET_REASON_COPY } from '../../../../review/reviewTargetCopy';
+import { mountReviewGithub } from '../../../../review/mountReviewGithub';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -17,15 +17,9 @@ const EMPTY_ROWS: ReadonlyArray<ResolveThread> = [];
 
 export const MountResolveLink = ({ sessionId, row, label }: Props) => {
   const openReviewTarget = useAppStore((state) => state.openReviewTarget);
-  const github = useAppStore((state) => {
-    const own = state.mountGithub[row.mountId] ?? null;
-    if (own?.detail != null) {
-      return own;
-    }
-    return selectActiveMountId({ state, sessionId }) === row.mountId
-      ? (state.sessionGithub[sessionId] ?? null)
-      : null;
-  });
+  const github = useAppStore((state) =>
+    mountReviewGithub({ state, sessionId, mountId: row.mountId }),
+  );
   const rows = useAppStore((state) => state.sessionResolveThreads[sessionId] ?? EMPTY_ROWS);
   const [error, setError] = useState<string | null>(null);
   const request = row.request;
