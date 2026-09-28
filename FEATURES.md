@@ -565,7 +565,7 @@ Review someone else's pull request in a form under the diff: your line comments,
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s22-history-dark.webp">
-  <img src="./docs/readme/s22-history-light.webp" alt="Rewrite history for hl/fix-duplicate-credit with two fixups squashed and no conflicts expected">
+  <img src="./docs/readme/s22-history-light.webp" alt="Rewrite history for hl/ledger-export: the branch Now with a fold, a combine, a removal, a move and a rename, next to the four commits it becomes After Apply">
 </picture>
 
 ### Rewrite history
