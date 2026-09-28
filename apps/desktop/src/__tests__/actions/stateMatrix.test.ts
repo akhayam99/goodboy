@@ -1514,26 +1514,26 @@ describe('inbox record menu in every state', () => {
 
 const noop = () => undefined;
 
-const commitTarget = (older: number): ObjectTarget => ({
+const commitTarget = (fields: {
+  readonly isFolded?: boolean;
+  readonly isRemoved?: boolean;
+  readonly canRemove?: boolean;
+  readonly canFoldDown?: boolean;
+}): ObjectTarget => ({
   kind: 'commit',
   facts: {
     sha: 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1',
     shortSha: 'b2c3d4e',
     subject: 'Keep trailing-comma rows in the ledger-core importer',
-    older: Array.from({ length: older }, (_, index) => ({
-      sha: `a${index}`,
-      shortSha: `a${index}`,
-      subject: 'Add a failing importer fixture',
-      author: 'Robin Vale',
-      timestamp: 1_787_890_000,
-      pushed: false,
-      parentSha: null,
-    })),
-    onPick: noop,
-    onReword: noop,
-    onSquash: noop,
-    onFold: noop,
-    onDrop: noop,
+    isFolded: fields.isFolded ?? false,
+    isRemoved: fields.isRemoved ?? false,
+    canRemove: fields.canRemove ?? true,
+    canFoldDown: fields.canFoldDown ?? true,
+    onRename: noop,
+    onFoldDown: noop,
+    onSquashDown: noop,
+    onToggleRemove: noop,
+    onSeparate: noop,
     onMove: noop,
   },
 });
@@ -1578,33 +1578,50 @@ const scriptTarget = (fields: {
 
 const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<string>]> = [
   [
-    'commit with older commits',
-    commitTarget(1),
+    'commit with one below',
+    commitTarget({}),
     [
-      'commit.pick',
-      'commit.reword',
-      'commit.squash',
-      'commit.fold',
+      'commit.rename',
+      'commit.foldDown',
+      'commit.squashDown',
       'commit.moveUp',
       'commit.moveDown',
       'commit.copySha',
       'commit.copySubject',
-      'commit.drop',
+      'commit.remove',
     ],
   ],
   [
-    'oldest commit',
-    commitTarget(0),
+    'oldest commit that takes others in',
+    commitTarget({ canFoldDown: false, canRemove: false }),
     [
-      'commit.pick',
-      'commit.reword',
-      'commit.squash (No older commit below this one)',
-      'commit.fold (No older commit below this one)',
+      'commit.rename',
+      'commit.foldDown (Nothing below to combine with)',
+      'commit.squashDown (Nothing below to combine with)',
       'commit.moveUp',
       'commit.moveDown',
       'commit.copySha',
       'commit.copySubject',
-      'commit.drop',
+      'commit.remove (Separate what it takes in first)',
+    ],
+  ],
+  [
+    'commit folded into another',
+    commitTarget({ isFolded: true }),
+    ['commit.separate', 'commit.copySha', 'commit.copySubject'],
+  ],
+  [
+    'removed commit',
+    commitTarget({ isRemoved: true }),
+    [
+      'commit.rename',
+      'commit.foldDown',
+      'commit.squashDown',
+      'commit.moveUp',
+      'commit.moveDown',
+      'commit.keep',
+      'commit.copySha',
+      'commit.copySubject',
     ],
   ],
   [
@@ -1696,14 +1713,18 @@ describe('git surface menus in every state', () => {
     expect(matrixOf(target)).toEqual(expected);
   });
 
-  it('folds into the chosen older commit from the submenu', async () => {
-    const onFold = vi.fn();
-    const target = commitTarget(2);
+  it('squashes into the one below and moves one place older', async () => {
+    const onSquashDown = vi.fn();
+    const onMove = vi.fn();
+    const target = commitTarget({});
     if (target.kind !== 'commit') {
       throw new Error('expected a commit');
     }
-    await run({ ...target, facts: { ...target.facts, onFold } }, 'commit.fold', 'a1');
-    expect(onFold).toHaveBeenCalledWith('a1');
+    const wired = { ...target, facts: { ...target.facts, onSquashDown, onMove } };
+    await run(wired, 'commit.squashDown', null);
+    await run(wired, 'commit.moveDown', null);
+    expect(onSquashDown).toHaveBeenCalledTimes(1);
+    expect(onMove).toHaveBeenCalledWith('older');
   });
 });
 

@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, HistoryPlanArgs, MountId, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  BranchCommit,
+  HistoryPlanArgs,
+  HistoryStep,
+  HistoryTrialProgress,
+  MountId,
+  ProjectId,
+  SessionId,
+} from '@goodboy/types';
 
 const engine = vi.hoisted(() => ({
   readRebasePlan: vi.fn(),
@@ -11,6 +20,10 @@ const engine = vi.hoisted(() => ({
   pushWithLease: vi.fn(),
   restoreHistoryBackup: vi.fn(),
   readOriginAhead: vi.fn(),
+  runHistoryPlan: vi.fn(),
+  readHistoryGraph: vi.fn(),
+  readRemoteLease: vi.fn(),
+  discardHistoryCopy: vi.fn(),
 }));
 
 const worktree = vi.hoisted(() => ({
@@ -25,6 +38,8 @@ vi.mock('@goodboy/db', () => ({
   listResolvePublicationsForSession: vi.fn(async () => []),
   setResolvePublicationPhase: vi.fn(async () => undefined),
   markHistoryPlan: vi.fn(async () => undefined),
+  saveDraftHistoryPlan: vi.fn(async () => ({ id: 'plan-1' })),
+  getDraftHistoryPlan: vi.fn(async () => null),
 }));
 vi.mock('../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({
@@ -42,6 +57,11 @@ import { rewriterKickoff } from './rewriterKickoff';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-ledger' as SessionId;
+const IDENTITY = {
+  worktreePath: '/w/ledger',
+  branch: 'fix/ledger-postings',
+  projectId: 'project-ledger' as ProjectId,
+};
 const MOUNT_ID = 'mount-ledger' as MountId;
 const AGENT_ID = 'agent-rewriter' as AgentId;
 
@@ -129,6 +149,8 @@ beforeEach(() => {
     backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
   });
   engine.pushWithLease.mockResolvedValue({ kind: 'pushed' });
+  engine.readRemoteLease.mockResolvedValue({ kind: 'included', sha: 'remote-sha' });
+  engine.discardHistoryCopy.mockResolvedValue(undefined);
 });
 
 describe('rebase on main', () => {
@@ -171,6 +193,126 @@ describe('rebase on main', () => {
       force: true,
       silent: true,
     });
+  });
+
+  it('refuses a rebase the check on the copy did not pass', async () => {
+    const { slice, read } = harness();
+    engine.predictHistoryPlan.mockResolvedValue({
+      isSupported: true,
+      steps: [],
+      head: 'predicted',
+      isTreeEqual: false,
+      changedFiles: [],
+    });
+    engine.tryHistoryPlan.mockResolvedValue({
+      head: 'new-head',
+      map: [],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: null,
+      copyPath: null,
+      order: [],
+      check: {
+        isPassed: false,
+        expectsSameCode: false,
+        problems: ['The result contains a merge commit.'],
+        unexpectedFiles: [],
+        removedFiles: [],
+      },
+    });
+
+    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
+      'stopped',
+    );
+
+    expect(engine.tryHistoryPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ base: 'base-sha', onto: 'onto-sha' }),
+    );
+    expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('unverified');
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+  });
+
+  it('never applies or pushes a replay whose check failed, even without a conflict', async () => {
+    const { slice, read } = harness();
+    engine.predictHistoryPlan.mockResolvedValue({
+      isSupported: true,
+      steps: [{ sha: 'a1', outcome: 'conflict', files: ['ledger.ts'], newSha: null }],
+      head: null,
+      isTreeEqual: false,
+      changedFiles: [],
+    });
+    engine.prepareHistoryRewrite.mockResolvedValue({
+      head: 'replayed-head',
+      map: [],
+      isTreeEqual: false,
+      changedFiles: ['ledger.ts'],
+      stop: null,
+      copyPath: null,
+      order: [],
+      check: {
+        isPassed: false,
+        expectsSameCode: false,
+        problems: ['The result differs from what the plan should make in 1 file: ledger.ts.'],
+        unexpectedFiles: ['ledger.ts'],
+        removedFiles: [],
+      },
+    });
+
+    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
+      'stopped',
+    );
+    expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('unverified');
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+
+    await slice.startHistoryRewriter({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      plan: { worktreePath: '/w/ledger', base: 'base-sha', head: 'head-sha', steps: [] },
+      origin: 'plan',
+      planId: 'plan-1',
+    });
+    expect(read().historyRuns[MOUNT_ID]?.phase).toBe('stopped');
+    expect(read().historyRuns[MOUNT_ID]?.result).toBeNull();
+  });
+
+  it('removes the conflicted copy when the rewriter cannot start or cannot be told', async () => {
+    const { slice, read } = harness();
+    engine.prepareHistoryRewrite.mockResolvedValue({
+      head: null,
+      map: [],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: { sha: 'a1', index: 0, kind: 'merge', files: ['ledger.ts'], message: '' },
+      copyPath: '/tmp/goodboy-history-copy',
+      order: [],
+      check: null,
+    });
+    const plan = { worktreePath: '/w/ledger', base: 'base-sha', head: 'head-sha', steps: [] };
+    const spawn = read().spawnAgent as unknown as ReturnType<typeof vi.fn>;
+    spawn.mockRejectedValueOnce(new Error('no room for another agent'));
+    await slice.startHistoryRewriter({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      plan,
+      origin: 'plan',
+      planId: 'plan-1',
+    });
+    expect(engine.discardHistoryCopy).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      copyPath: '/tmp/goodboy-history-copy',
+    });
+    const send = read().sendTurn as unknown as ReturnType<typeof vi.fn>;
+    send.mockRejectedValueOnce(new Error('the provider is offline'));
+    await slice.startHistoryRewriter({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      plan,
+      origin: 'plan',
+      planId: 'plan-1',
+    });
+    await vi.waitFor(() => expect(engine.discardHistoryCopy).toHaveBeenCalledTimes(2));
+    expect(read().historyRewriters[AGENT_ID]).toBeUndefined();
   });
 
   it('hands a predicted conflict to the hidden history rewriter working in a copy', async () => {
@@ -237,6 +379,7 @@ describe('rebase on main', () => {
         plan,
         origin: 'rebase',
         planId: null,
+        identity: IDENTITY,
       },
     };
     engine.collectHistoryRewrite.mockResolvedValue({
@@ -311,6 +454,7 @@ describe('rebase on main', () => {
         map: [],
         shouldPush: true,
         byAgent: false,
+        identity: IDENTITY,
       }),
     ).resolves.toBe('stopped');
 
@@ -333,7 +477,429 @@ describe('rebase on main', () => {
   });
 });
 
+const PLAN_COMMITS: ReadonlyArray<BranchCommit> = [
+  {
+    sha: 'b2',
+    shortSha: 'b2',
+    subject: 'Retry duplicate events',
+    author: 'Robin Vale',
+    timestamp: 1_790_000_000,
+    pushed: false,
+    parentSha: 'a1',
+  },
+  {
+    sha: 'a1',
+    shortSha: 'a1',
+    subject: 'Guard the settlement batch',
+    author: 'Robin Vale',
+    timestamp: 1_789_990_000,
+    pushed: true,
+    parentSha: 'base-sha',
+  },
+];
+
+const PLAN_ITEMS: ReadonlyArray<HistoryStep> = [
+  { sha: 'a1', verb: 'pick' },
+  { sha: 'b2', verb: 'fixup', target: 'a1' },
+];
+
+const seedDraft = ({
+  harnessed,
+  onto = null,
+}: {
+  readonly harnessed: ReturnType<typeof harness>;
+  readonly onto?: string | null;
+}) => {
+  const state = harnessed.read() as unknown as Record<string, unknown>;
+  Object.assign(state, {
+    historyDrafts: {
+      [MOUNT_ID]: {
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        planId: 'plan-1',
+        branch: 'fix/ledger-postings',
+        baseSha: 'base-sha',
+        headSha: 'head-sha',
+        commits: PLAN_COMMITS,
+        items: PLAN_ITEMS,
+        onto,
+        graph: null,
+        undo: [],
+        prediction: null,
+        isPredicting: false,
+        loadError: null,
+      },
+    },
+  });
+};
+
+const TRIED = {
+  head: 'new-head',
+  map: [
+    { from: 'a1', to: 'x1' },
+    { from: 'b2', to: 'x1' },
+  ],
+  isTreeEqual: true,
+  changedFiles: [],
+  stop: null,
+  copyPath: null,
+  order: [],
+  check: {
+    isPassed: true,
+    expectsSameCode: true,
+    problems: [],
+    unexpectedFiles: [],
+    removedFiles: [],
+  },
+};
+
+describe('apply a planned rewrite', () => {
+  it('tries the plan on a copy step by step, then moves the branch with a backup', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed, onto: 'main-sha' });
+    const seen: Array<HistoryTrialProgress | null | undefined> = [];
+    engine.runHistoryPlan.mockImplementation(
+      async ({ onProgress }: { onProgress: (progress: HistoryTrialProgress) => void }) => {
+        expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+        onProgress({ stage: 'step', index: 1, total: 2, sha: 'a1' });
+        seen.push(harnessed.read().historyRuns[MOUNT_ID]?.progress);
+        return { kind: 'tried', result: TRIED };
+      },
+    );
+
+    await expect(
+      harnessed.slice.applyHistoryDraft({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        shouldPush: false,
+      }),
+    ).resolves.toBe('applied');
+
+    expect(engine.runHistoryPlan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branch: 'fix/ledger-postings',
+        plan: expect.objectContaining({ base: 'base-sha', head: 'head-sha', onto: 'main-sha' }),
+      }),
+    );
+    expect(seen).toEqual([{ stage: 'step', index: 1, total: 2, sha: 'a1' }]);
+    expect(engine.applyHistoryPlan).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      branch: 'fix/ledger-postings',
+      expectedHead: 'head-sha',
+      newHead: 'new-head',
+    });
+    const run = harnessed.read().historyRuns[MOUNT_ID];
+    expect(run?.backupRef).toBe('refs/goodboy/backup/fix-ledger-postings/1');
+    expect(run?.applied).toEqual(
+      expect.objectContaining({
+        before: 2,
+        after: 1,
+        includes: { x1: ['Retry duplicate events'] },
+        lines: [
+          {
+            action: 'fixup',
+            text: 'Folded “Retry duplicate events” into “Guard the settlement batch”, keeping its title',
+          },
+          { action: 'rebase', text: "Started the branch from today's main" },
+        ],
+      }),
+    );
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+
+  it('stops before the copy when the worktree is dirty and moves nothing', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({
+      kind: 'blocked',
+      reason: '2 files here have changes that are not committed.',
+    });
+
+    await expect(
+      harnessed.slice.applyHistoryDraft({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(harnessed.read().historyRuns[MOUNT_ID]?.stop).toEqual({
+      reason: 'blocked',
+      message: '2 files here have changes that are not committed.',
+      files: [],
+      sha: null,
+    });
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+  });
+
+  it('names the step that conflicted on the copy and says the branch is as it was', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({
+      kind: 'tried',
+      result: {
+        ...TRIED,
+        head: null,
+        check: null,
+        stop: { sha: 'b2', index: 1, kind: 'merge', files: ['ledger.ts'], message: 'conflict' },
+      },
+    });
+
+    await harnessed.slice.applyHistoryDraft({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      shouldPush: false,
+    });
+
+    const stop = harnessed.read().historyRuns[MOUNT_ID]?.stop;
+    expect(stop?.reason).toBe('conflict');
+    expect(stop?.message).toBe(
+      'Step 2 of 2, “Retry duplicate events”, conflicts in ledger.ts. The temporary copy was removed. Your branch is exactly as it was.',
+    );
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+  });
+
+  it('refuses a result the check on the copy did not pass', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({
+      kind: 'tried',
+      result: {
+        ...TRIED,
+        check: {
+          isPassed: false,
+          expectsSameCode: true,
+          problems: ['The result differs from what the plan should make in 1 file: ledger.ts.'],
+          unexpectedFiles: ['ledger.ts'],
+          removedFiles: [],
+        },
+      },
+    });
+
+    await harnessed.slice.applyHistoryDraft({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      shouldPush: true,
+    });
+
+    const run = harnessed.read().historyRuns[MOUNT_ID];
+    expect(run?.stop?.reason).toBe('unverified');
+    expect(run?.stop?.files).toEqual(['ledger.ts']);
+    expect(run?.applied).toBeNull();
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+  });
+
+  it('keeps the rewrite here and reports it when the remote moved before the push', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
+    engine.pushWithLease.mockResolvedValue({ kind: 'stale', message: 'stale info' });
+
+    await expect(
+      harnessed.slice.applyHistoryDraft({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    const run = harnessed.read().historyRuns[MOUNT_ID];
+    expect(run?.stop?.reason).toBe('origin-moved');
+    expect(run?.applied).not.toBeNull();
+    expect(engine.pushWithLease).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedRemoteSha: 'remote-sha' }),
+    );
+  });
+
+  it('stops before moving anything when a teammate pushed during the trial', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
+    engine.readRemoteLease.mockResolvedValue({ kind: 'not-included', sha: 'teammate-sha' });
+
+    await expect(
+      harnessed.slice.applyHistoryDraft({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(engine.readRemoteLease).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedHead: 'head-sha', incorporated: null }),
+    );
+    expect(harnessed.read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('origin-moved');
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+
+  it('pushes with the online sha the plan includes', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
+    engine.readRemoteLease.mockResolvedValue({ kind: 'included', sha: 'included-sha' });
+
+    await harnessed.slice.applyHistoryDraft({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      shouldPush: true,
+    });
+
+    expect(engine.pushWithLease).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedRemoteSha: 'included-sha' }),
+    );
+  });
+
+  it('refuses to apply to another branch when the place switched during the trial', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockImplementation(async () => {
+      const state = harnessed.read() as unknown as Record<string, unknown>;
+      const mounts = state['sessionProjectMounts'] as Record<
+        string,
+        Array<Record<string, unknown>>
+      >;
+      mounts[SESSION_ID] = (mounts[SESSION_ID] ?? []).map((mount) => ({
+        ...mount,
+        branch: 'fix/other-branch',
+      }));
+      return { kind: 'tried', result: TRIED };
+    });
+
+    await expect(
+      harnessed.slice.applyHistoryDraft({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+    expect(harnessed.read().historyRuns[MOUNT_ID]?.stop?.message).toContain('fix/ledger-postings');
+  });
+
+  it('forgets a finished run when you are done', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
+    await harnessed.slice.applyHistoryDraft({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      shouldPush: false,
+    });
+    harnessed.slice.dismissHistoryRun({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+    expect(harnessed.read().historyRuns[MOUNT_ID]).toBeUndefined();
+  });
+});
+
+describe('plan editing', () => {
+  it('keeps each edit on an undo stack that command Z walks back', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    const next: ReadonlyArray<HistoryStep> = [
+      { sha: 'a1', verb: 'pick' },
+      { sha: 'b2', verb: 'drop' },
+    ];
+    await harnessed.slice.editHistoryDraft({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      items: next,
+    });
+    expect(harnessed.read().historyDrafts[MOUNT_ID]?.items).toEqual(next);
+    expect(harnessed.read().historyDrafts[MOUNT_ID]?.undo).toEqual([
+      { items: PLAN_ITEMS, onto: null },
+    ]);
+    await expect(
+      harnessed.slice.undoHistoryDraft({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toBe(true);
+    expect(harnessed.read().historyDrafts[MOUNT_ID]?.items).toEqual(PLAN_ITEMS);
+    await expect(
+      harnessed.slice.undoHistoryDraft({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toBe(false);
+  });
+});
+
 describe('restore previous history', () => {
+  it('restores here but never pushes over online commits newer than the backup', async () => {
+    const { slice, read } = harness();
+    const backupRef = 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000000';
+    engine.readRemoteLease.mockImplementation(async ({ expectedHead }: { expectedHead: string }) =>
+      expectedHead === backupRef
+        ? { kind: 'not-included', sha: 'teammate-sha' }
+        : { kind: 'included', sha: 'teammate-sha' },
+    );
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'backup-sha',
+      backupRef: 'refs/goodboy/backup/b-6669782f6c6564676572/keep-1790000000000000001',
+    });
+
+    await expect(
+      slice.restoreHistory({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        backupRef,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(engine.restoreHistoryBackup).toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+    expect(read().historyRuns[MOUNT_ID]?.stop?.message).toContain('nothing was pushed');
+  });
+
+  it('checks an older backup against the remote seen when the last rewrite was applied', async () => {
+    const { slice, read } = harness();
+    const state = read() as unknown as Record<string, unknown>;
+    const backupRef = 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000000';
+    state['historyRuns'] = {
+      [MOUNT_ID]: {
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        origin: 'plan',
+        phase: 'pushed',
+        planId: 'plan-2',
+        agentId: null,
+        copyPath: null,
+        stop: null,
+        result: null,
+        backupRef: 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000001',
+        remoteSha: 'teammate-sha',
+        holder: null,
+        progress: null,
+        applied: null,
+        identity: null,
+        movedHead: 'rewrite-two',
+        updatedAt: 1,
+      },
+    };
+    engine.readRemoteLease.mockResolvedValue({ kind: 'not-included', sha: 'rewrite-two' });
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'backup-sha',
+      backupRef: 'refs/goodboy/backup/b-6669782f6c6564676572/keep-1790000000000000002',
+    });
+
+    await expect(
+      slice.restoreHistory({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        backupRef,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(engine.readRemoteLease).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expectedHead: backupRef,
+        incorporated: 'rewrite-two',
+        incorporatedSince: 'teammate-sha',
+      }),
+    );
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+
   it('moves the branch back to the backup and pushes it with the lease read before', async () => {
     const { slice, read } = harness();
     engine.restoreHistoryBackup.mockResolvedValue({
@@ -441,7 +1007,7 @@ describe('bring origin into the plan', () => {
 });
 
 describe('rewriterKickoff', () => {
-  it('numbers the plan, names the stopped step and asks for markers on skips', () => {
+  it('numbers the plan, names the stopped step and asks to keep empty steps as commits', () => {
     const text = rewriterKickoff({
       branch: 'fix/ledger-postings',
       base: 'onto-sha-1234567',
@@ -457,7 +1023,9 @@ describe('rewriterKickoff', () => {
     expect(text).toContain('1. pick a1');
     expect(text).toContain('2. squash into the step above b2');
     expect(text).toContain('Step 2 (b2) stopped on a conflict in src/ledger/postings.ts');
-    expect(text).toContain('to="none"');
+    expect(text).toContain('git commit --allow-empty');
+    expect(text).toContain('never run git worktree, git stash');
+    expect(text).not.toContain('skip it');
     expect(text).toContain('keep the retry key from main');
   });
 });

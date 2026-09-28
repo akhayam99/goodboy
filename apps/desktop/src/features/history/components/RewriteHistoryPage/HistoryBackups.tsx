@@ -72,9 +72,18 @@ export const HistoryBackups = ({
                   nowMs: Date.now(),
                 })}
               </span>
-              <Button size="sm" variant="ghost" onClick={() => setConfirming(backup.refName)}>
-                Restore previous history
-              </Button>
+              {backup.isLegacy ? (
+                <span
+                  title="Made by an older Goodboy before backups named their branch, so it is shown read-only."
+                  className="shrink-0 text-meta text-faint-foreground"
+                >
+                  Older backup, read-only
+                </span>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => setConfirming(backup.refName)}>
+                  Restore previous history
+                </Button>
+              )}
             </div>
             {confirming === backup.refName ? (
               <InlineConfirm
@@ -83,8 +92,8 @@ export const HistoryBackups = ({
                 title="Put this history back on the branch?"
                 description={
                   hasUpstream
-                    ? 'The branch moves back here and origin gets it with a lease. The history you leave stays as a backup.'
-                    : 'The branch moves back here. The history you leave stays as a backup.'
+                    ? 'The branch moves back here. It goes online only if the online copy has nothing newer than this backup; otherwise it stays here and you are told. The history you leave is kept as a backup.'
+                    : 'The branch moves back here. The history you leave is kept as a backup.'
                 }
                 confirmLabel="Restore"
                 onConfirm={() => {

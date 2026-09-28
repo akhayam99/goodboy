@@ -570,7 +570,11 @@ Review someone else's pull request in a form under the diff: your line comments,
 
 ### Rewrite history
 
-Clean up a branch without holding your breath: reword, squash, drop or reorder commits, then **Apply**. The plan is replayed in a throwaway copy, and your branch moves only when the replay comes out clean.
+Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename or remove it, or start the branch from today's main. The branch is drawn as a graph with main and where you left it, next to what it becomes after Apply, and every planned change can be undone on its own.
+
+### Safe apply
+
+Apply tries the whole plan on a temporary copy first and checks the result before your branch moves. If a step stops, it says which one and why, and your branch stays exactly as it was. A backup is saved before anything changes.
 
 ### Conflict prediction
 

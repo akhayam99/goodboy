@@ -72,6 +72,20 @@ const BRIDGE: Readonly<Record<string, unknown>> = {
     numstat: '12\t3\tsrc/importer.ts',
   },
   history_backups_list: [],
+  history_graph: {
+    baseRef: 'origin/main',
+    mergeBase: {
+      sha: 'f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6a7f8e9',
+      subject: 'Release 2.14',
+      author: 'Robin Vale',
+      timestamp: 1_787_880_000,
+    },
+    mainHead: 'f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6a7f8e9',
+    mainCommits: [],
+    behind: 0,
+    remoteSha: null,
+    files: [],
+  },
 };
 
 const SELECTS: ReadonlyArray<readonly [RegExp, unknown]> = [[/FROM history_plans /, []]];
@@ -738,6 +752,15 @@ const ROWS: ReadonlyArray<Row> = [
     covers: ['openRewriteHistory'],
     open: openDiffHistory,
     lands: () => heading('Rewrite history'),
+  },
+  {
+    name: 'rewrite history draws the branch and its planned changes',
+    covers: ['openRewriteHistory'],
+    open: openDiffHistory,
+    lands: both(
+      () => visible('list', 'Commits'),
+      () => heading('Planned changes'),
+    ),
   },
   {
     name: 'branch history backups inside rewrite history',

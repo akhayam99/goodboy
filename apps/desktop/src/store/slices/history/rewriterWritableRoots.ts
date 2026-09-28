@@ -1,4 +1,4 @@
-import { gitCommonDirectory } from '../../../features/worktree/worktree';
+import { readHistoryCopyGitDirs } from '../../../features/history/historyEngine';
 
 type Params = {
   readonly copyPath: string;
@@ -7,6 +7,6 @@ type Params = {
 export const rewriterWritableRoots = async ({
   copyPath,
 }: Params): Promise<ReadonlyArray<string>> => {
-  const common = await gitCommonDirectory({ repoPath: copyPath }).catch(() => null);
-  return common === null || common === '' ? [] : [common];
+  const dirs = await readHistoryCopyGitDirs({ copyPath }).catch(() => null);
+  return dirs === null ? [copyPath] : [copyPath, dirs.gitDir, dirs.objectsDir, dirs.packedRefsLock];
 };

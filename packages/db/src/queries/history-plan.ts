@@ -166,21 +166,3 @@ export const markHistoryPlan = async ({
     [state, backupRef ?? null, remoteShaAtApply ?? null, state, at, state, at, at, id],
   );
 };
-
-type BranchParams = {
-  readonly db: Database;
-  readonly mountId: MountId;
-  readonly branch: string;
-};
-
-export const hasPushedHistoryPlan = async ({
-  db,
-  mountId,
-  branch,
-}: BranchParams): Promise<boolean> => {
-  const rows = await db.select<{ readonly id: string }>(
-    "SELECT id FROM history_plans WHERE mount_id = ? AND branch = ? AND state = 'pushed' LIMIT 1",
-    [mountId, branch],
-  );
-  return rows.length > 0;
-};

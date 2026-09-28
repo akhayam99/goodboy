@@ -90,6 +90,20 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   with `--no-track` and the in-app push passes `--set-upstream`, but old
   branches still track main, so do not "simplify" back to `@{u}`.
 
+- Rewrite history drags rows with pointer events and its own hit testing
+  (`useHistoryDrag`), not HTML5 drag and drop. In the Tauri window the native
+  file drop handler owns every drag session while `dragDropEnabled` is on, so
+  WebKit never sends `dragover` or `drop` to the page: an HTML5 drag starts and
+  then does nothing, while jsdom tests stay green. Turning `dragDropEnabled`
+  off is not the fix, because the composer's file drop listens through
+  `onDragDropEvent`. `history-drag-keeps-file-drop.test.ts` holds both.
+- The query socket sits in `~/.goodboy/query/`, not in `~/.goodboy`. Codex
+  and Claude turns get the socket folder as a writable directory
+  (`--add-dir`), so they can connect. Moving the socket back beside the
+  database hands every agent write access to `data.db`, `file-versions/` and
+  `history-copies/`. `turn.rs` has a test that fails when any provider gets a
+  writable directory containing those paths.
+
 ## Hand-maintained lists the compiler does not check
 
 Each of these is a set or array written out by hand next to an exhaustive

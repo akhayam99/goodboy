@@ -240,6 +240,7 @@ import type {
   ApplyHistoryRewriteOutcome,
   EditHistoryDraftInput,
   HistoryMountInput,
+  HistoryIdentity,
   HistoryRunOrigin,
   RebaseBranchOutcome,
   SettleHistoryRewriterInput,
@@ -626,18 +627,20 @@ type AppActions = {
     origin: HistoryRunOrigin;
     planId: string | null;
     expectedRemoteSha: string | null;
+    identity: HistoryIdentity | null;
   }): Promise<ApplyHistoryRewriteOutcome>;
   startHistoryRewriter(input: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome>;
   settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;
   loadHistoryDraft(input: HistoryMountInput): Promise<void>;
   editHistoryDraft(input: EditHistoryDraftInput): Promise<void>;
+  undoHistoryDraft(input: HistoryMountInput): Promise<boolean>;
   discardHistoryDraft(input: HistoryMountInput): Promise<void>;
+  dismissHistoryRun(input: HistoryMountInput): void;
   applyHistoryDraft(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
   applyRewrittenHistory(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
   rewriteDraftWithAgent(input: HistoryMountInput & { note?: string }): Promise<void>;
   restoreHistory(input: RestoreHistoryInput): Promise<RestoreHistoryOutcome>;
   bringOriginIntoHistory(input: HistoryMountInput): Promise<BringOriginOutcome>;
-  hasPushedHistoryBefore(input: { mountId: MountId; branch: string }): Promise<boolean>;
   requestScribe(input: RequestScribeInput): Promise<string>;
   settleScribe(input: SettleScribeInput): Promise<void>;
   refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;

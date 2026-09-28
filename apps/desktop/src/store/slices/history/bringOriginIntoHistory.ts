@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import { readOriginAhead, tryHistoryPlan } from '../../../features/history/historyEngine';
 import { worktreeStatus } from '../../../features/worktree/worktree';
 import { historyTargetOf } from './historyTargetOf';
+import { identityOf } from './historyIdentity';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
 import type {
@@ -66,6 +67,14 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
     if (typeof trial === 'string') {
       return stopWith({ reason: 'failed', message: trial, files: [], sha: null });
     }
+    if (trial.check?.isPassed === false) {
+      return stopWith({
+        reason: 'unverified',
+        message: `Bringing origin in did not check out on the copy: ${trial.check.problems.join(' ')} Nothing was changed.`,
+        files: trial.check.unexpectedFiles,
+        sha: null,
+      });
+    }
     if (trial.stop !== null || trial.head === null) {
       const started = await get().startHistoryRewriter({
         sessionId,
@@ -86,7 +95,9 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
       map: trial.map,
       shouldPush: false,
       byAgent: false,
+      identity: identityOf({ target }),
       summary: `${ahead.commits.length} from origin brought in`,
+      incorporatedRemoteSha: ahead.remoteSha,
     });
     await get().loadHistoryDraft({ sessionId, mountId });
     return outcome;

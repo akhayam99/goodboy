@@ -1,12 +1,16 @@
-import { invoke } from '@tauri-apps/api/core';
+import { Channel, invoke } from '@tauri-apps/api/core';
 import type {
   HistoryBackup,
+  HistoryGraph,
   HistoryMoveOutcome,
   HistoryOriginAhead,
   HistoryPlanArgs,
   HistoryPlanPrediction,
   HistoryRebasePlan,
+  HistoryRemoteLease,
   HistoryRewriterCheck,
+  HistoryRunOutcome,
+  HistoryTrialProgress,
   HistoryTrialResult,
   LeasePushOutcome,
 } from '@goodboy/types';
@@ -48,6 +52,7 @@ const toArgs = (plan: HistoryPlanArgs) => ({
     message: step.message ?? null,
     target: step.target ?? null,
   })),
+  onto: plan.onto ?? null,
 });
 
 export const predictHistoryPlan = async (plan: HistoryPlanArgs): Promise<HistoryPlanPrediction> =>
@@ -55,6 +60,38 @@ export const predictHistoryPlan = async (plan: HistoryPlanArgs): Promise<History
 
 export const tryHistoryPlan = async (plan: HistoryPlanArgs): Promise<HistoryTrialResult> =>
   invoke<HistoryTrialResult>('history_plan_try', { args: toArgs(plan) });
+
+type RunPlanParams = {
+  readonly plan: HistoryPlanArgs;
+  readonly branch: string;
+  readonly onProgress: (progress: HistoryTrialProgress) => void;
+};
+
+export const runHistoryPlan = async ({
+  plan,
+  branch,
+  onProgress,
+}: RunPlanParams): Promise<HistoryRunOutcome> => {
+  const channel = new Channel<HistoryTrialProgress>();
+  channel.onmessage = onProgress;
+  return invoke<HistoryRunOutcome>('history_plan_run', {
+    args: { plan: toArgs(plan), branch },
+    onProgress: channel,
+  });
+};
+
+type GraphParams = {
+  readonly worktreePath: string;
+  readonly baseBranch: string;
+  readonly branch: string;
+};
+
+export const readHistoryGraph = async ({
+  worktreePath,
+  baseBranch,
+  branch,
+}: GraphParams): Promise<HistoryGraph> =>
+  invoke<HistoryGraph>('history_graph', { worktreePath, baseBranch, branch });
 
 export const applyHistoryPlan = async (params: MoveBranchParams): Promise<HistoryMoveOutcome> =>
   invoke<HistoryMoveOutcome>('history_plan_apply', { args: params });
@@ -82,6 +119,35 @@ export const pushWithLease = async ({
     cwd: worktreePath,
     branch,
     expectedRemoteSha,
+    workspaceId,
+    projectId,
+  });
+
+type RemoteLeaseParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly expectedHead: string;
+  readonly incorporated: string | null;
+  readonly incorporatedSince: string | null;
+  readonly workspaceId: string | null;
+  readonly projectId: string | null;
+};
+
+export const readRemoteLease = async ({
+  worktreePath,
+  branch,
+  expectedHead,
+  incorporated,
+  incorporatedSince,
+  workspaceId,
+  projectId,
+}: RemoteLeaseParams): Promise<HistoryRemoteLease> =>
+  invoke<HistoryRemoteLease>('history_remote_lease', {
+    worktreePath,
+    branch,
+    expectedHead,
+    incorporated,
+    incorporatedSince,
     workspaceId,
     projectId,
   });
@@ -126,6 +192,19 @@ export const collectHistoryRewrite = async ({
   invoke<HistoryRewriterCheck>('history_rewriter_collect', {
     args: { plan: toArgs(plan), copyPath, skipped, keepsCopy },
   });
+
+export type HistoryCopyGitDirs = {
+  readonly gitDir: string;
+  readonly objectsDir: string;
+  readonly packedRefsLock: string;
+};
+
+export const readHistoryCopyGitDirs = async ({
+  copyPath,
+}: {
+  readonly copyPath: string;
+}): Promise<HistoryCopyGitDirs | null> =>
+  invoke<HistoryCopyGitDirs | null>('history_copy_git_dirs', { copyPath });
 
 type DiscardCopyParams = {
   readonly worktreePath: string;
