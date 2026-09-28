@@ -26,13 +26,16 @@ export const GridCell = ({ cell }: Props) => {
       <div
         className={cell.figure.isClosed === true ? 'cellMedia closed' : 'cellMedia'}
         style={style}
+        data-reveal=""
       >
-        <Picture
-          source={cell.figure.source}
-          theme={theme}
-          sizes={`${cell.figure.displayWidth}px`}
-          alt={cell.figure.alt}
-        />
+        <div className="cellView">
+          <Picture
+            source={cell.figure.source}
+            theme={theme}
+            sizes={`${cell.figure.displayWidth}px`}
+            alt={cell.figure.alt}
+          />
+        </div>
       </div>
       <div>
         <h3 className="cellTitle">{cell.title}</h3>

@@ -2,7 +2,11 @@
   display: grid;
   gap: 64px;
   padding: 112px 0;
-  border-top: 1px solid var(--line);
+}
+
+.chapter.band {
+  background: var(--band);
+  border-block: 1px solid var(--line-soft);
 }
 
 .chapterBody {

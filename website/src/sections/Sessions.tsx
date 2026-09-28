@@ -8,10 +8,11 @@ import { Workspace } from './Workspace';
 export const Sessions = () => (
   <Chapter
     id="how"
+    isBand
     head={{
       eyebrow: 'Inside a session',
-      heading: 'One session, many chats.',
-      dim: 'Each chat has one job, and all of them read the same goal and decisions.',
+      heading: 'One session, many chats',
+      lead: 'A task gets one session, and inside it each chat has one job.',
     }}
   >
     <Frame figure={RUN_AGENTS}>
@@ -27,7 +28,7 @@ export const Sessions = () => (
           <h3 className="cellTitle">With Goodboy</h3>
           <p className="cellText">
             A scout reads, a planner decides, implementers write and a tester checks. Each chat
-            stays short, and each one reads the same brief.
+            stays short, so the model keeps all of it.
           </p>
         </div>
       </div>

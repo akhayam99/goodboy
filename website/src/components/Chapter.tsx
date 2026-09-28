@@ -7,7 +7,6 @@ type Head = {
   readonly eyebrow: string;
   readonly eyebrowKind?: EyebrowKind;
   readonly heading: string;
-  readonly dim?: string;
   readonly lead?: ReactNode;
 };
 
@@ -15,12 +14,13 @@ type Props = {
   readonly id: string;
   readonly label?: string;
   readonly head?: Head;
+  readonly isBand?: boolean;
   readonly children: ReactNode;
 };
 
-export const Chapter = ({ id, label, head, children }: Props) => (
+export const Chapter = ({ id, label, head, isBand = false, children }: Props) => (
   <section
-    className="chapter"
+    className={isBand ? 'chapter band' : 'chapter'}
     id={id}
     aria-label={head === undefined ? label : undefined}
     aria-labelledby={head === undefined ? undefined : `${id}-title`}

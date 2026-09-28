@@ -49,6 +49,13 @@
   }
 }
 
+@media (max-width: 760px) {
+  .heroMeta {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 600px) {
   .hero {
     padding-top: 64px;
@@ -58,10 +65,6 @@
   }
   .heroCopy .ctaRow .btn {
     height: 44px;
-  }
-  .heroMeta {
-    flex-basis: 100%;
-    margin-left: 0;
   }
   .heroFrame {
     margin-top: 40px;

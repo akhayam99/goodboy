@@ -1,7 +1,11 @@
+.footer {
+  border-top: 1px solid var(--line-soft);
+}
+
 .footerInner {
   display: grid;
   gap: 72px;
-  padding: 0 36px 40px;
+  padding: 80px 36px 40px;
 }
 
 .footerGrid {
@@ -62,6 +66,9 @@
 }
 
 @media (max-width: 860px) {
+  .footerInner {
+    padding-top: 64px;
+  }
   .footerGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 28px 16px;
@@ -74,6 +81,6 @@
 @media (max-width: 600px) {
   .footerInner {
     gap: 48px;
-    padding: 0 0 32px;
+    padding: 56px 0 32px;
   }
 }

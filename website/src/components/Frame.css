@@ -5,10 +5,10 @@
 
 .frame {
   position: relative;
-  padding: 8px;
+  padding: 10px;
   border-radius: var(--r-frame);
-  background: var(--raise);
-  border: 1px solid var(--line);
+  background: var(--plate);
+  border: 1px solid var(--plate-line);
 }
 
 .view {
@@ -16,9 +16,7 @@
   overflow: hidden;
   border-radius: var(--r-view);
   background: var(--bg);
-  box-shadow:
-    0 0 0 1px var(--line-soft),
-    var(--ring);
+  box-shadow: 0 0 0 1px var(--view-line);
 }
 
 .view img {
@@ -29,9 +27,6 @@
 
 .frame.capped .view {
   max-height: var(--cap);
-}
-
-.frame.capped {
   -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
   mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
 }
@@ -42,18 +37,16 @@
   }
   .frame {
     padding: 6px;
-    border-radius: var(--r-frag);
+    border-radius: 12px;
   }
   .view {
-    border-radius: 6px;
+    border-radius: 7px;
     -webkit-mask-image: linear-gradient(to right, #000 86%, transparent);
     mask-image: linear-gradient(to right, #000 86%, transparent);
   }
   .frame.capped .view {
     max-height: none;
-  }
-  .frame.capped {
-    -webkit-mask-image: none;
-    mask-image: none;
+    -webkit-mask-image: linear-gradient(to right, #000 86%, transparent);
+    mask-image: linear-gradient(to right, #000 86%, transparent);
   }
 }

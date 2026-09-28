@@ -2,7 +2,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   border: 1px solid var(--line);
-  border-radius: var(--r-frame);
+  border-radius: var(--r-card);
   overflow: hidden;
   list-style: none;
 }
@@ -24,11 +24,18 @@
 }
 
 .cellMedia {
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--plate);
+  border: 1px solid var(--plate-line);
+}
+
+.cellView {
   height: 236px;
   overflow: hidden;
-  border-radius: var(--r-view);
-  border: 1px solid var(--line);
+  border-radius: 7px;
   background: var(--bg);
+  box-shadow: 0 0 0 1px var(--view-line);
   -webkit-mask-image:
     linear-gradient(to right, #000 72%, transparent),
     linear-gradient(to bottom, #000 66%, transparent);
@@ -39,12 +46,12 @@
   mask-composite: intersect;
 }
 
-.cellMedia.closed {
+.cellMedia.closed .cellView {
   -webkit-mask-image: linear-gradient(to bottom, #000 66%, transparent);
   mask-image: linear-gradient(to bottom, #000 66%, transparent);
 }
 
-.cellMedia img {
+.cellView img {
   display: block;
   width: var(--w);
   max-width: none;
@@ -85,7 +92,7 @@
     border-left: 0;
     border-top: 1px solid var(--line);
   }
-  .cellMedia {
+  .cellView {
     height: 168px;
   }
 }

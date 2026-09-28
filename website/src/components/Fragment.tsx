@@ -74,13 +74,16 @@ export const Fragment = ({
               .join(' ')}
             key={figure.source.id}
             style={widthStyle(figure)}
+            data-reveal=""
           >
-            <Picture
-              source={figure.source}
-              theme={theme}
-              sizes={`${figure.displayWidth}px`}
-              alt={figure.alt}
-            />
+            <div className="fragView">
+              <Picture
+                source={figure.source}
+                theme={theme}
+                sizes={`${figure.displayWidth}px`}
+                alt={figure.alt}
+              />
+            </div>
           </div>
         ))}
       </div>

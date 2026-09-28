@@ -9,6 +9,10 @@
   grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
 }
 
+.split.mirrored .splitMedia {
+  justify-items: end;
+}
+
 .split.mirrored .splitText {
   order: 2;
   padding: 0 36px 0 0;
@@ -54,22 +58,31 @@
 
 .splitMedia {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   min-width: 0;
 }
 
 .frag {
   width: fit-content;
+  min-width: 0;
   max-width: 100%;
+  padding: 8px;
+  border-radius: 14px;
+  background: var(--plate);
+  border: 1px solid var(--plate-line);
+}
+
+.fragView {
   overflow: hidden;
-  border-radius: var(--r-frag);
-  border: 1px solid var(--line);
+  border-radius: var(--r-view);
   background: var(--bg);
+  box-shadow: 0 0 0 1px var(--view-line);
   -webkit-mask-image: linear-gradient(to right, #000 80%, transparent);
   mask-image: linear-gradient(to right, #000 80%, transparent);
 }
 
-.frag.capped {
+.frag.capped .fragView {
   max-height: var(--cap);
   -webkit-mask-image:
     linear-gradient(to right, #000 80%, transparent),
@@ -81,7 +94,7 @@
   mask-composite: intersect;
 }
 
-.frag.closed {
+.frag.closed .fragView {
   -webkit-mask-image: none;
   mask-image: none;
 }
@@ -93,20 +106,38 @@
   height: auto;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 900px) {
   .split,
   .split.mirrored {
     grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
+    gap: 32px;
   }
   .splitText,
   .split.mirrored .splitText {
     order: 0;
+    padding: 0 36px;
+  }
+  .split.mirrored .splitMedia {
+    justify-items: start;
+  }
+}
+
+@media (max-width: 600px) {
+  .split,
+  .split.mirrored {
+    gap: 28px;
+  }
+  .splitText,
+  .split.mirrored .splitText {
     padding: 0;
   }
-  .frag,
-  .frag.capped,
-  .frag.closed {
+  .frag {
+    padding: 6px;
+    border-radius: 12px;
+  }
+  .fragView,
+  .frag.capped .fragView,
+  .frag.closed .fragView {
     max-height: 260px;
     -webkit-mask-image:
       linear-gradient(to right, #000 80%, transparent),

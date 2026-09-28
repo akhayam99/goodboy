@@ -1,5 +1,7 @@
 .closer {
   padding: 152px 0 136px;
+  background: var(--band);
+  border-top: 1px solid var(--line-soft);
 }
 
 .closer .ctaRow {
