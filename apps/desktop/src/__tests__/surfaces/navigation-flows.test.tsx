@@ -28,6 +28,8 @@ import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { App } from '../../App';
 import { sessionPlace } from '../../store/slices/navigation/place';
 import { APP_SECTIONS } from '../../features/settings/components/SettingsStudio/appSections';
+import { currentPlatform } from '../../shared/platform';
+import type { AgentId, IsoDateTime, MountId, SearchHit } from '@goodboy/types';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
   {
@@ -400,6 +402,98 @@ const LENS_ROWS: ReadonlyArray<{
   { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 
+const pressCommand = async (code: string): Promise<void> => {
+  const isMac = currentPlatform() === 'darwin';
+  fireEvent.keyDown(window, { code, metaKey: isMac, ctrlKey: !isMac });
+  await settle();
+};
+
+type SearchHitParams = {
+  readonly ctx: Ctx;
+  readonly overrides: Partial<SearchHit>;
+};
+
+const searchHit = ({ ctx, overrides }: SearchHitParams): SearchHit => ({
+  docId: `${overrides.kind ?? 'session'}:hit`,
+  kind: 'session',
+  refId: 'hit',
+  workspaceId: useAppStore.getState().currentWorkspaceId,
+  sessionId: ctx.sessionId,
+  sessionTitle: 'Stop retried webhooks',
+  agentId: null,
+  agentName: null,
+  mountId: null,
+  provider: null,
+  container: null,
+  status: null,
+  ordinal: null,
+  url: null,
+  isArchived: false,
+  occurredAt: STORY_NOW as IsoDateTime,
+  title: [{ text: 'Retried webhook ledger', isMatch: false }],
+  snippet: [{ text: 'ledger', isMatch: true }],
+  ...overrides,
+});
+
+type SearchJumpParams = {
+  readonly ctx: Ctx;
+  readonly overrides: (ctx: Ctx) => Partial<SearchHit>;
+};
+
+const searchAndOpen = async ({ ctx, overrides }: SearchJumpParams): Promise<void> => {
+  const hit = searchHit({ ctx, overrides: overrides(ctx) });
+  useAppStore.setState({ runSearch: async () => [hit] } as never);
+  await pressCommand('KeyF');
+  const input = await screen.findByRole('combobox', { name: 'Search' });
+  fireEvent.change(input, { target: { value: 'ledger' } });
+  await settle(8);
+  fireEvent.keyDown(input, { key: 'Enter' });
+  await settle(6);
+};
+
+const firstMountId = (ctx: Ctx): MountId =>
+  useAppStore.getState().sessionMounts[ctx.sessionId]?.[0]?.id ?? ('none' as MountId);
+
+const SEARCH_JUMPS: ReadonlyArray<{
+  readonly kind: string;
+  readonly overrides: (ctx: Ctx) => Partial<SearchHit>;
+  readonly lands: (ctx: Ctx) => Promise<void>;
+}> = [
+  { kind: 'session', overrides: () => ({ kind: 'session' }), lands: lens(null) },
+  {
+    kind: 'message',
+    overrides: () => ({ kind: 'message', agentId: 'agent-gone' as AgentId, status: 'user' }),
+    lands: lens('agents'),
+  },
+  { kind: 'plan', overrides: () => ({ kind: 'plan', refId: 'plan-1' }), lands: lens('plans') },
+  {
+    kind: 'decision',
+    overrides: () => ({ kind: 'decision', ordinal: 1 }),
+    lands: async (ctx) => {
+      await waitFor(
+        () =>
+          expect(useAppStore.getState().drawer).toMatchObject({
+            kind: 'context',
+            sessionId: ctx.sessionId,
+            payload: { tab: 'decisions', highlight: [1] },
+          }),
+        WAIT,
+      );
+    },
+  },
+  {
+    kind: 'question',
+    overrides: () => ({ kind: 'question', refId: 'q-1' }),
+    lands: lens('questions'),
+  },
+  { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: lens('review') },
+  {
+    kind: 'branch',
+    overrides: (ctx) => ({ kind: 'branch', mountId: firstMountId(ctx), status: 'attached' }),
+    lands: lens('files'),
+  },
+];
+
 const ROWS: ReadonlyArray<Row> = [
   ...LENS_ROWS.map((row): Row => ({
     name: `crumb menu: ${row.label}`,
@@ -762,6 +856,21 @@ const ROWS: ReadonlyArray<Row> = [
       await click(await screen.findByRole('menuitem', { name: new RegExp(`^${kind}`) }));
     },
     lands: () => heading(`Create ${kind.toLowerCase()}`),
+  })),
+  {
+    name: 'search: Cmd+F opens search scoped to the session',
+    covers: ['openSearchOverlay'],
+    open: () => pressCommand('KeyF'),
+    lands: async () => {
+      await visible('dialog', 'Search');
+      expect(await screen.findByText('In session')).toBeDefined();
+    },
+  },
+  ...SEARCH_JUMPS.map((jump): Row => ({
+    name: `search: a ${jump.kind} hit lands in context`,
+    covers: ['navigate', `search:${jump.kind}`],
+    open: (ctx) => searchAndOpen({ ctx, overrides: jump.overrides }),
+    lands: jump.lands,
   })),
   {
     name: 'back arrow history menu jumps to an entry',

@@ -45,7 +45,7 @@ export const createSearchIndexSlice = (set: SetFn, get: GetFn): SearchIndexSlice
   stepViewFind: ({ delta }) => {
     const current = get().viewFind;
     if (current !== null) {
-      set({ viewFind: { ...current, target: null, steps: current.steps + delta } });
+      set({ viewFind: { ...current, steps: current.steps + delta } });
       return;
     }
     const text = get().lastSearchText;
