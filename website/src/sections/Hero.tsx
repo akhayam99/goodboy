@@ -15,7 +15,7 @@ export const Hero = () => (
   <section className="hero" aria-labelledby="hero-title">
     <div className="shell">
       <div className="heroCopy">
-        <Eyebrow text="Desktop app for macOS and Linux" kind="page" className="rise" />
+        <Eyebrow text="Desktop ADE for macOS and Linux" kind="page" className="rise" />
         <h1 id="hero-title" className="display rise" style={rise(1)}>
           A development environment that structures agent work
         </h1>

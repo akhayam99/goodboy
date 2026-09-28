@@ -34,7 +34,7 @@ const VIEWPORTS = [
 ];
 const OVERLAP_TOLERANCE_PX = 1;
 const THEMES = ['dark', 'light'];
-const PAGE_EYEBROWS = ['Desktop app for macOS and Linux', 'Questions', 'Install', 'All features'];
+const PAGE_EYEBROWS = ['Desktop ADE for macOS and Linux', 'Questions', 'Install', 'All features'];
 
 const parseArgs = ({ argv }) => {
   const shotsIndex = argv.indexOf('--shots');
