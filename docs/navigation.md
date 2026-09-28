@@ -1465,7 +1465,11 @@ toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
 saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
-previous and next file. Each file has a sticky header (status letter, path,
+previous and next file. A jump is instant, not smooth: file bodies keep
+`content-visibility` with estimated heights, so for a few frames the view
+measures the picked header and snaps it back to the top until the heights
+settle. The picked file stays the active one until you scroll, so `[` and `]`
+start from it, and the jump cursor starts on it inside the filtered list. Each file has a sticky header (status letter, path,
 changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
 on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line

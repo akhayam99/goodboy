@@ -295,6 +295,97 @@ describe('DiffView navigation', () => {
     );
   });
 
+  describe('landing with estimated heights', () => {
+    const PLACEHOLDER = 480;
+    const VIEWPORT = 600;
+    const MANY = Array.from({ length: 30 }, (_, index): FileDiff => ({
+      ...RELAY,
+      path: `ledger-core/src/f${String(index).padStart(2, '0')}.ts`,
+    }));
+    const realHeight = (index: number) => 120 + ((index * 337) % 1100);
+    let scrollTop = 0;
+    let painted = new Set<number>();
+    const indexOf = (element: Element) =>
+      MANY.findIndex((entry) => entry.path === element.getAttribute('data-file-path'));
+    const heightOf = (index: number) => (painted.has(index) ? realHeight(index) : PLACEHOLDER);
+    const offsetOf = (index: number) =>
+      Array.from({ length: index }, (_, k) => heightOf(k)).reduce((sum, h) => sum + h, 0);
+    const paint = (from: number, to: number) => {
+      let top = 0;
+      MANY.forEach((_, index) => {
+        if (top < to + VIEWPORT && top + heightOf(index) > from) {
+          painted.add(index);
+        }
+        top += heightOf(index);
+      });
+    };
+    const headerTop = (path: string) =>
+      document.querySelector(`[data-file-path="${path}"]`)?.getBoundingClientRect().top;
+
+    beforeEach(() => {
+      vi.useFakeTimers({
+        toFake: ['setTimeout', 'clearTimeout', 'requestAnimationFrame', 'cancelAnimationFrame'],
+      });
+      scrollTop = 0;
+      painted = new Set();
+      paint(0, 0);
+      (Element.prototype as unknown as { scrollIntoView: unknown }).scrollIntoView = vi.fn(
+        function (this: Element) {
+          const index = indexOf(this);
+          if (index < 0) {
+            return;
+          }
+          const from = scrollTop;
+          const target = offsetOf(index);
+          scrollTop = target;
+          paint(Math.min(from, target), Math.max(from, target));
+        },
+      );
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: Element,
+      ) {
+        const index = indexOf(this);
+        const top = index < 0 ? 0 : offsetOf(index) - scrollTop;
+        const height = index < 0 ? VIEWPORT : heightOf(index);
+        return new DOMRect(0, top, 800, height);
+      });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    const pick = (query: string) => {
+      fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
+      const filter = screen.getByRole('combobox', { name: 'Filter files' });
+      fireEvent.change(filter, { target: { value: query } });
+      fireEvent.keyDown(filter, { key: 'Enter' });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+    };
+
+    it('puts the picked file header at the top once the heights settle', () => {
+      render(<DiffView files={MANY} />);
+      pick('f17');
+      expect(headerTop(MANY[17]?.path ?? '')).toBe(0);
+      pick('f25');
+      expect(headerTop(MANY[25]?.path ?? '')).toBe(0);
+      pick('f03');
+      expect(headerTop(MANY[3]?.path ?? '')).toBe(0);
+    });
+
+    it('steps with ] from the picked file', () => {
+      render(<DiffView files={MANY} />);
+      pick('f17');
+      fireEvent.keyDown(window, { code: 'BracketRight', key: ']' });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(headerTop(MANY[18]?.path ?? '')).toBe(0);
+    });
+  });
+
   it('ignores shortcuts while typing', () => {
     render(<DiffView files={[LEDGER]} comments={commentsWith([])} />);
     fireEvent.keyDown(screen.getByRole('button', { name: 'Comment on new line 39' }), {

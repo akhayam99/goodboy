@@ -86,7 +86,7 @@ import { BrandLookupScene } from './scenes/brand/LookupScene';
 import { BrandSlackScene } from './scenes/brand/SlackScene';
 import { BrandContextScene } from './scenes/brand/ContextScene';
 import { BrandCompareScene } from './scenes/brand/CompareScene';
-import { BrandDiffScene } from './scenes/brand/DiffScene';
+import { BrandDiffManyFilesScene, BrandDiffScene } from './scenes/brand/DiffScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
@@ -182,6 +182,7 @@ export const MOCK_SCENES = {
   'brand-context': BrandContextScene,
   'brand-compare': BrandCompareScene,
   'brand-diff': BrandDiffScene,
+  'brand-diff-many': BrandDiffManyFilesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,
   'brand-history-trial': BrandHistoryTrialScene,
