@@ -521,18 +521,35 @@ worktree. It has its own pipeline next to the session turn:
 `apps/desktop/src/features/workspace-chat/runChatTurn.ts` reads the stream,
 and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 
-- **Always read-only.** `chat_turn` reuses the session turn's argument builder
-  but pins the read-only shape, and takes no permission mode, writable roots,
-  allowed tools or resume id from the frontend (unknown fields are refused).
-  Claude runs in plan mode with only Read, Grep and Glob and without session
-  persistence; codex runs with the read-only sandbox; cursor and Gemini run in
-  plan mode. opencode, OpenRouter and Moonshot cannot be limited to reading,
-  so a chat on them is refused with a clear error. A check on the final
-  argument list refuses any write flag outside the prompt, and the binary must
-  be the provider's own CLI. The Rust tests in `chat.rs` pin all of this.
-- **Where it reads.** The CLI runs in the folder that holds every project of
-  the workspace, or the first project when that folder would be the home
-  folder or wider; the other projects are extra read roots for Claude.
+- **Always read-only, Claude or Codex only.** `chat_turn` reuses the session
+  turn's argument builder but pins the read-only shape. The frontend sends only
+  the chat id, provider, model, effort and text: unknown fields are refused,
+  model and effort must match `[A-Za-z0-9._:-]` with no leading dash, the
+  provider must match the chat row, and the binary is the provider's own CLI
+  name resolved on the Rust side.
+  - Claude runs with `--restricted` (file tools confined to the chat folders,
+    no user, project or local settings), `--setting-sources ""`,
+    `--settings {"disableAllHooks":true}`, `--strict-mcp-config` with an
+    empty `--mcp-config`, plan mode, only Read, Grep and Glob, no session
+    persistence, and a deny list for secrets such as `~/.ssh`, `~/.aws`,
+    `~/.config`, `~/.goodboy`, `~/.claude`, `~/.codex`, keychains and `.env`
+    files. The question goes after `--`, so a question that looks like a flag
+    stays text.
+  - Codex runs with the read-only sandbox, `--ignore-user-config`,
+    `--ignore-rules`, `--ephemeral` and `-c mcp_servers={}`. Its read-only
+    sandbox can still read any file on disk; only Claude is scoped to the
+    project folders.
+  - Cursor, Gemini, opencode, OpenRouter and Moonshot are refused with "Chat
+    needs a provider that can run read-only: Claude or Codex". m212 keeps
+    `chats.provider` to `anthropic` and `codex`, and `CHAT_PROVIDER_IDS` in
+    `@goodboy/types` lists them for the model picker.
+  - A check on the final argument list refuses any write flag before the
+    prompt and any missing read-only flag. The Rust tests in `chat.rs` pin
+    all of this.
+- **Where it reads.** Rust reads the chat's connected projects from the
+  database by chat id. The CLI runs in the first project (oldest first) and the
+  other projects are extra read roots for Claude. It never widens to a shared
+  parent folder, and never uses `/`, the home folder or a parent of it.
 - **Its own channel.** Output streams as `chat_event` with the chat id, never
   as `turn_event`, so no session sees it. There is no reload backlog: a reply
   still streaming when the window closes is marked stopped at the next load.
