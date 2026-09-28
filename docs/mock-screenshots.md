@@ -204,7 +204,9 @@ Scenes that share one seed live in a folder, with one file per scene, a
 `fixtures.ts` for the data and a `seeds.ts` that writes it into the store.
 `scenes/flow-audit/` covers the workflow builder, a workflow run, the open
 questions cluster, the transcript and the command palette over one Harborline
-session.
+session. `?scene=workflow-run&run=parallel` shows the same run earlier, on its
+first step: three scouts working side by side, one done, and the orchestrator
+waiting on the step (`scenes/flow-audit/parallelRun.ts`).
 
 The README, `FEATURES.md` and the website are captured from these scenes. The
 `brand-*` scenes in `scenes/brand/` tell one Harborline story (issue HBL-412,
