@@ -3,6 +3,8 @@ import type { AgentId, ArtifactId, SessionId, WorkflowRunId } from '@goodboy/typ
 import type { ArtifactGeneration } from '../artifacts/artifactCollection';
 import type { RecordFacts } from './kinds/record';
 import type { PullRequestFacts } from './kinds/pullRequest';
+import type { CommitFacts } from './kinds/commit';
+import type { DiffFileFacts } from './kinds/diffFile';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -173,6 +175,16 @@ export type PullRequestActionTarget = {
   readonly facts: PullRequestFacts;
 };
 
+export type CommitActionTarget = {
+  readonly kind: 'commit';
+  readonly facts: CommitFacts;
+};
+
+export type DiffFileActionTarget = {
+  readonly kind: 'diffFile';
+  readonly facts: DiffFileFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -187,6 +199,6 @@ export type ObjectTarget =
   | ArtifactActionTarget
   | RecordActionTarget
   | PullRequestActionTarget
+  | CommitActionTarget
+  | DiffFileActionTarget
   | LinkActionTarget;
-
-export type ObjectKindId = ObjectTarget['kind'];
