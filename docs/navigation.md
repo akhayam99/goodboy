@@ -1159,8 +1159,8 @@ history`, which moves the branch back and, on a branch with an upstream,
 pushes it with a lease only when the online copy has nothing newer than that
 backup; otherwise it stays restored here and the page says nothing was pushed.
 The backup a restore leaves is never pruned. Backups made before the current
-naming move to their branch when exactly one local branch matches, and show
-read-only as older backups otherwise. History rewriter may write only its
+naming never move: they show read-only as older backups under every branch
+whose name matches, can't be restored from the page and are never pruned. History rewriter may write only its
 copy, that copy's own git admin folder, the object store and the packed-refs lock
 file git takes when it clears a rebase marker. Temporary copies left by a crash are removed when the
 app starts. Each copy lives in a folder Goodboy reserves atomically, with an

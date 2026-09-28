@@ -2052,8 +2052,6 @@ fn created_at_of(ref_name: &str) -> u64 {
         .unwrap_or_default()
 }
 
-const ZERO_OID: &str = "0000000000000000000000000000000000000000";
-
 fn legacy_backup_of(ref_name: &str) -> Option<(&str, &str)> {
     let rest = ref_name.strip_prefix(&format!("{BACKUP_PREFIX}/"))?;
     let (slug, stamp) = rest.split_once('/')?;
@@ -2084,41 +2082,7 @@ fn backup_refs(cwd: &Path) -> Result<Vec<(String, String, String)>, WorktreeErro
         .collect())
 }
 
-fn local_branches(cwd: &Path) -> Vec<String> {
-    git(
-        cwd,
-        &["for-each-ref", "--format=%(refname:short)", "refs/heads"],
-    )
-    .map(|raw| lines_of(&raw))
-    .unwrap_or_default()
-}
-
-pub(crate) fn migrate_legacy_backups(cwd: &Path) {
-    let Ok(refs) = backup_refs(cwd) else {
-        return;
-    };
-    let branches = local_branches(cwd);
-    for (ref_name, sha, _) in &refs {
-        let Some((slug, stamp)) = legacy_backup_of(ref_name) else {
-            continue;
-        };
-        let owners: Vec<&String> = branches
-            .iter()
-            .filter(|branch| sanitize_slug(branch) == slug)
-            .collect();
-        let [owner] = owners.as_slice() else {
-            continue;
-        };
-        let migrated = format!("{}/{stamp}", backup_namespace(owner));
-        let created = git_run(cwd, &["update-ref", &migrated, sha, ZERO_OID], None, None);
-        if created.is_ok_and(|run| run.status == 0) {
-            let _ = git_run(cwd, &["update-ref", "-d", ref_name, sha], None, None);
-        }
-    }
-}
-
 pub(crate) fn list_backups(cwd: &Path, branch: &str) -> Result<Vec<HistoryBackup>, WorktreeError> {
-    migrate_legacy_backups(cwd);
     let slug = sanitize_slug(branch);
     let mut backups: Vec<HistoryBackup> = backup_refs(cwd)?
         .into_iter()
@@ -2145,7 +2109,6 @@ pub(crate) fn prune_backups(cwd: &Path) {
 }
 
 fn prune_backups_before(cwd: &Path, cutoff: u64) {
-    migrate_legacy_backups(cwd);
     let Ok(refs) = backup_refs(cwd) else {
         return;
     };
@@ -5029,41 +4992,31 @@ mod tests {
     }
 
     #[test]
-    fn an_older_backup_moves_to_its_one_branch_and_an_ambiguous_one_stays_read_only() {
+    fn an_older_backup_stays_read_only_and_never_moves_onto_a_later_branch_with_its_slug() {
         let b = branch("legacy-backups");
-        git_ok(&b.root, &["branch", "hl/ledger-export"]);
-        git_ok(&b.root, &["branch", "team/a"]);
-        git_ok(&b.root, &["branch", "team-a"]);
-        let unique = "refs/goodboy/backup/hl-ledger-export/1000000000000000000";
-        let shared = "refs/goodboy/backup/team-a/1000000000000000001";
-        git_ok(&b.root, &["update-ref", unique, &b.a]);
-        git_ok(&b.root, &["update-ref", shared, &b.b]);
+        let deleted = "refs/goodboy/backup/feature-ledger/1000000000000000000";
+        git_ok(&b.root, &["update-ref", deleted, &b.a]);
+        git_ok(&b.root, &["checkout", "-q", "-b", "feature-ledger"]);
+        git_ok(&b.root, &["branch", "team/other"]);
 
-        let mine = list_backups(&b.root, "hl/ledger-export").unwrap();
-        assert_eq!(mine.len(), 1);
-        assert!(!mine[0].is_legacy);
-        assert!(is_backup_of("hl/ledger-export", &mine[0].ref_name));
-        assert_eq!(mine[0].sha, b.a);
-        assert!(
-            git_run(
-                &b.root,
-                &["rev-parse", "--verify", "--quiet", unique],
-                None,
-                None
-            )
-            .unwrap()
-            .status
-                != 0
-        );
-
-        for owner in ["team/a", "team-a"] {
+        for owner in ["feature-ledger", "Feature/Ledger"] {
             let listed = list_backups(&b.root, owner).unwrap();
             assert_eq!(listed.len(), 1, "{owner}");
             assert!(listed[0].is_legacy);
-            assert_eq!(listed[0].ref_name, shared);
+            assert_eq!(listed[0].ref_name, deleted);
         }
-        prune_backups(&b.root);
-        assert_eq!(git_ok(&b.root, &["rev-parse", shared]), b.b);
+        assert!(list_backups(&b.root, "team/other").unwrap().is_empty());
+        assert!(restore_blocking(&b.root, "feature-ledger", &b.c, deleted).is_err());
+        assert_eq!(git_ok(&b.root, &["rev-parse", "HEAD"]), b.c);
+        prune_backups_before(&b.root, u64::MAX);
+        assert_eq!(git_ok(&b.root, &["rev-parse", deleted]), b.a);
+        assert_eq!(
+            git_ok(
+                &b.root,
+                &["for-each-ref", "--format=%(refname)", BACKUP_PREFIX]
+            ),
+            deleted
+        );
     }
 
     #[test]
