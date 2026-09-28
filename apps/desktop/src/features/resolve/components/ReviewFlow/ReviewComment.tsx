@@ -182,7 +182,7 @@ export const ReviewComment = ({
 
       {state === 'needs' && row.thread.question != null && row.thread.question !== '' && (
         <div className="flex min-w-0 flex-col gap-2">
-          <SectionHeader label={REVIEW_FLOW_LABEL.agentAsks} headingLevel={3} />
+          <SectionHeader label={REVIEW_FLOW_LABEL.agentAsks} headingLevel={2} />
           <Markdown
             text={row.thread.question}
             variant="preview"
@@ -223,7 +223,7 @@ export const ReviewComment = ({
         <div className="group/reply flex min-w-0 flex-col gap-2">
           <SectionHeader
             label={replyHeading({ author })}
-            headingLevel={3}
+            headingLevel={2}
             meta={
               state === 'edited' ? (
                 <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.edited} />
@@ -312,7 +312,7 @@ export const ReviewComment = ({
 
       {compose !== null ? (
         <div className="flex min-w-0 flex-col gap-2">
-          <SectionHeader label={COMPOSE_COPY[compose.mode].label} headingLevel={3} />
+          <SectionHeader label={COMPOSE_COPY[compose.mode].label} headingLevel={2} />
           <Textarea
             aria-label={COMPOSE_COPY[compose.mode].label}
             placeholder={COMPOSE_COPY[compose.mode].placeholder}
