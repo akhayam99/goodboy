@@ -1145,8 +1145,9 @@ conversation is the wrapped sheet, and "Turn into work" is the
 - **The conversation** is one `max-w-2xl` column. The question is a `bg-subtle`
   bubble on the right in `text-prose`; the answer is `Markdown` in
   `text-prose` with no bubble. Under it, in order: `Read N files` (a quiet
-  disclosure listing paths in `text-code`), then Copy and "Start work from
-  here". A streaming answer with no text yet shows a pulsing `StatusDot` and
+  disclosure listing paths in `text-code`), then Copy (`CopyButton` with
+  `tone="faint"`) and "Start work from here", quiet `text-secondary` actions
+  in the same faint tone as the disclosure. A streaming answer with no text yet shows a pulsing `StatusDot` and
   "Reading {workspace}", never a spinner.
 - **The header** holds the chat title as `text-heading`, three
   `border-soft` chips (workspace and project count, Read-only, the model with

@@ -148,6 +148,19 @@ describe('ChatRoom', () => {
     });
   });
 
+  it('sizes and tones Copy like the other quiet actions under an answer', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    const copy = screen.getByRole('button', { name: 'Copy the answer' });
+    const startHere = screen.getByRole('button', { name: 'Start work from here' });
+    for (const token of ['text-secondary', 'text-faint-foreground', 'h-6', 'px-1.5']) {
+      expect(copy.classList.contains(token)).toBe(true);
+      expect(startHere.classList.contains(token)).toBe(true);
+    }
+    expect(copy.classList.contains('text-muted-foreground')).toBe(false);
+  });
+
   it('keeps Start work off until an answer is done', () => {
     store.chatMessages = { [CHAT_ID]: [ANSWERED[0]!] };
     renderRoom({ chat: CHAT });

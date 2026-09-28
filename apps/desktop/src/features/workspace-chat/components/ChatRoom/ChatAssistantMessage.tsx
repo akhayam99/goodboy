@@ -47,6 +47,7 @@ const ChatAssistantMessageView = ({ message, workspaceName, onStartWork }: Props
             value={message.content}
             label="Copy the answer"
             presentation="icon"
+            tone="faint"
             size={ICON_SIZE.row}
             className="h-6 gap-1 px-1.5 text-secondary"
           >
