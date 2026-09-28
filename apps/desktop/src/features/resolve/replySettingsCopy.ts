@@ -1,5 +1,4 @@
 import type { ReplyVoice, ResolveCommitStyle } from '@goodboy/types';
-import type { ReplySettings } from './replySettings';
 
 export const REVIEW_REPLIES_SECTION_ID = 'review-replies';
 

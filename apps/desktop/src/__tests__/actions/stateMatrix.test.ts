@@ -1101,6 +1101,56 @@ describe('review and comment menus in every state', () => {
   });
 });
 
+describe('write review menu in every state', () => {
+  const WRITE_REVIEW: ObjectTarget = { kind: 'writeReview', sessionId: SESSION, draftId: null };
+  const draft = {
+    id: 'draft-1',
+    sessionId: SESSION,
+    provider: 'github',
+    repo: 'harborline/ledger-core',
+    prNumber: 482,
+    path: 'src/payouts/export.ts',
+    line: 40,
+    startLine: null,
+    side: 'new',
+    body: 'Stream the rows instead of buffering them.',
+    status: 'draft',
+    stale: false,
+    origin: 'user',
+    createdAt: FIXTURE_NOW,
+  };
+
+  it('blocks an empty comment review with its reason', () => {
+    expect(matrixOf(WRITE_REVIEW)).toEqual([
+      'writeReview.submit (Add a line comment or a summary first.)',
+    ]);
+  });
+
+  it('submits and discards once a line comment is written', () => {
+    useAppStore.setState({ reviewDrafts: { [SESSION]: [draft] } } as never);
+    expect(matrixOf(WRITE_REVIEW)).toEqual(['writeReview.submit', 'writeReview.discard']);
+    expect(matrixOf({ ...WRITE_REVIEW, draftId: 'draft-1' })).toEqual([
+      'writeReview.submit',
+      'writeReview.editDraft',
+      'writeReview.deleteDraft',
+      'writeReview.discard',
+    ]);
+  });
+
+  it('says it is submitting while the review goes out', () => {
+    useAppStore.setState({
+      reviewDrafts: { [SESSION]: [draft] },
+      reviewSubmission: {
+        [SESSION]: { verdict: 'approve', summary: 'Looks right.', isSubmitting: true },
+      },
+    } as never);
+    expect(matrixOf(WRITE_REVIEW)).toEqual([
+      'writeReview.submit (Submitting now.)',
+      'writeReview.discard',
+    ]);
+  });
+});
+
 describe('actions run against the real store', () => {
   it('archives a session with an undo toast, and restores it', async () => {
     seed({});

@@ -890,7 +890,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   The body reads, in order: one warning with `Resolve in Review` when
   conversations wait or a reviewer asked for changes, otherwise the merge
   readiness note; then Details, Checks and Activity. `Write review` is a child
-  page (`Overview › Pull request › #528 › Write review`) with the submit dock;
+  page (`Overview › Pull request › #528 › Write review`) and a form with no
+  dock: the diff to comment on, then Line comments, Verdict and Summary in one
+  column, and the action row at the end;
   without a pull request the page is the creation form
   (`Overview › Pull request › New`). The child page lives in the store per
   session and drops back to the page when the lens closes. Everything Review
@@ -1062,8 +1064,8 @@ page. The source is a worktree (a file opened from the chat) or a commit (a
 GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Diff`, which opens the Diff lens on that mount with the file in focus.
-`diff-notes` lists the open notes of the Diff lens by file, and `review-drafts`
-lists the review drafts of Write review; the dock count opens each one.
+`diff-notes` lists the open notes of the Diff lens by file; the dock count
+opens it.
 
 ## The Diff lens
 
@@ -1127,8 +1129,12 @@ collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
 The Diff lens docks `N notes` and `Resolve in Review`, which opens Review on
-the same notes; Write review docks `N drafts` and `Submit review`, whose
-popover holds the summary and the verdict. Files mount in batches of 20 as the
+the same notes. Write review puts its form under the last file: the line
+comments with Edit and Delete on hover (Delete offers Undo), the verdict,
+the summary, and one primary that says the verdict (`Approve`,
+`Request changes`, `Submit comments`), ⌘↵ from the summary. The form's `⋯`
+in the diff toolbar holds Discard review, which confirms. The actions are
+the `writeReview` kind of the action registry. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 
 ## The Scripts lens

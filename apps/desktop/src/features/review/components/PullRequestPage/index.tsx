@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { PullRequestActionTarget } from '../../../actions/types';
 import { ObjectMenuArea } from '../../../actions/components/ObjectMenuArea';
 import { PencilLine } from 'lucide-react';
@@ -46,7 +46,6 @@ import { CreatePrMode } from '../ReviewPane/modes/CreatePrMode';
 import { PrActivityMode } from '../ReviewPane/modes/PrActivityMode';
 import { PrDetailsMode } from '../ReviewPane/modes/PrDetailsMode';
 import { WriteReview } from '../ReviewPane/WriteReview';
-import { PublishBar } from '../ReviewPane/WriteReview/PublishBar';
 
 type LifecycleRun = {
   readonly kind: PrLifecycleAction;
@@ -73,7 +72,6 @@ export const PullRequestPage = ({ session }: Props) => {
       setPullRequestMode({ sessionId, mode: next }),
     [sessionId, setPullRequestMode],
   );
-  const [isBusy, setIsBusy] = useState(false);
   const checksRef = useRef<HTMLDivElement | null>(null);
   const lifecycle = usePendingAction({ sessionId });
   const lifecycleBusy: PrLifecycleBusy =
@@ -103,8 +101,6 @@ export const PullRequestPage = ({ session }: Props) => {
   const reopenPr = useAppStore((s) => s.reopenPr);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const navigate = useAppStore((s) => s.navigate);
-  const publishPrReview = useAppStore((s) => s.publishPrReview);
-  const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
 
   const repo = useSessionRepo({ sessionId });
   const worktreePath = repo?.worktreePath ?? null;
@@ -186,33 +182,6 @@ export const PullRequestPage = ({ session }: Props) => {
       );
     },
     [pr, reportError, roleModels, sessionId, showToast, spawnAgent, worktreePath],
-  );
-
-  const onWriteReviewPublish = useCallback(
-    async (opts: {
-      readonly verdict: Parameters<typeof publishPrReview>[1]['verdict'];
-      readonly body: string;
-    }) => {
-      setIsBusy(true);
-      try {
-        const result = await publishPrReview(sessionId, opts);
-        await loadReviewDrafts(sessionId);
-        if (result.failed.length > 0) {
-          void reportError({
-            title: `Couldn't publish ${result.failed.length} review comments`,
-            error: result.failed.map((failure) => failure.error).join('\n'),
-            sessionId,
-          });
-          return;
-        }
-        showToast({ kind: 'success', message: 'Review submitted' });
-      } catch (error) {
-        void reportError({ title: "Couldn't submit the review", error, sessionId });
-      } finally {
-        setIsBusy(false);
-      }
-    },
-    [loadReviewDrafts, publishPrReview, reportError, sessionId, showToast],
   );
 
   const openDrafts = useMemo(() => drafts.filter((draft) => draft.status === 'draft'), [drafts]);
@@ -339,19 +308,7 @@ export const PullRequestPage = ({ session }: Props) => {
 
   if (mode === 'write_review') {
     return (
-      <PaneShell
-        header={header}
-        scroll="self"
-        dock={
-          <PublishBar
-            sessionId={sessionId}
-            provider="github"
-            draftCount={openDrafts.length}
-            publishing={isBusy}
-            onPublish={(opts) => void onWriteReviewPublish(opts)}
-          />
-        }
-      >
+      <PaneShell header={header} scroll="self">
         <WriteReview session={session} />
       </PaneShell>
     );

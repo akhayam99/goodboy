@@ -220,6 +220,12 @@ export type ReviewCommentActionTarget = {
   readonly threadId: string;
 };
 
+export type WriteReviewActionTarget = {
+  readonly kind: 'writeReview';
+  readonly sessionId: SessionId;
+  readonly draftId: string | null;
+};
+
 export type ObjectTarget =
   | SessionActionTarget
   | SessionsActionTarget
@@ -233,4 +239,5 @@ export type ObjectTarget =
   | DiffFileActionTarget
   | LinkActionTarget
   | ReviewActionTarget
-  | ReviewCommentActionTarget;
+  | ReviewCommentActionTarget
+  | WriteReviewActionTarget;

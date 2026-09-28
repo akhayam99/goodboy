@@ -483,7 +483,7 @@ describe('PullRequestPage', () => {
     expect(screen.getByRole('region', { name: 'PR activity' })).toBeDefined();
   });
 
-  it('opens Write review as a child page and submits from its dock', async () => {
+  it('opens Write review as a child page with no dock of its own', () => {
     h.state.reviewDrafts = {
       [SESSION_ID]: [{ id: 'draft-1', status: 'draft' } as unknown as never],
     };
@@ -492,10 +492,8 @@ describe('PullRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write review (1)' }));
     expect(h.state.pullRequestModes[SESSION_ID]).toBe('write_review');
     expect(screen.getByTestId('write-review')).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
-    await waitFor(() => expect(h.state.publishPrReview).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('button', { name: /^Submit/ })).toBeNull();
+    expect(document.querySelector('[data-slot="pane-dock"]')).toBeNull();
   });
 
   it('shows the new pull request form when the session has none', () => {

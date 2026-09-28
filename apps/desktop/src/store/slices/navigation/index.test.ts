@@ -446,7 +446,7 @@ describe('navigation slice', () => {
 });
 
 const DRAFTS: DrawerRequest = {
-  kind: 'review-drafts',
+  kind: 'diff-notes',
   sessionId: S1,
   payload: {},
 };

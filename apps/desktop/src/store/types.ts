@@ -120,6 +120,7 @@ import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
+import type { ReviewSubmission } from './slices/review-drafts/reviewSubmission';
 import type { WriteDestination } from './slices/project-mounts/writeDestination';
 import type {
   ArtifactCreationTarget,
@@ -413,6 +414,7 @@ export type AppState = AppSliceState & {
   readonly sessionBitbucketPr: Readonly<Record<SessionId, SessionBitbucketPrEntry>>;
   readonly sessionBitbucketRepo: Readonly<Record<SessionId, BitbucketRepo>>;
   readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
+  readonly reviewSubmission: Readonly<Record<SessionId, ReviewSubmission>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
   readonly agentProviderOverride: Readonly<Record<AgentId, ProviderId>>;

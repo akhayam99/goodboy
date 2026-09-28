@@ -13,6 +13,7 @@ import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
 import { REVIEW_KIND } from './kinds/review';
 import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
+import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import type {
   ActionDefinition,
   ActionEnv,
@@ -111,6 +112,8 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: REVIEW_KIND, state, target });
     case 'reviewComment':
       return bind({ definition: REVIEW_COMMENT_KIND, state, target });
+    case 'writeReview':
+      return bind({ definition: WRITE_REVIEW_KIND, state, target });
     default: {
       const exhaustive: never = target;
       return exhaustive;

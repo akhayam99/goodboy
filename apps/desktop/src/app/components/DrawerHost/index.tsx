@@ -7,7 +7,6 @@ import { PlanPartDrawer } from '../../../features/plans/components/PlanParts/Pla
 import { ScriptRunDrawer } from '../../../features/scripts/components/ScriptRunDrawer';
 import { DiffNotesDrawer } from '../../../features/diff/components/DiffNotesDrawer';
 import { FileDiffDrawer } from '../../../features/diff/components/FileDiffDrawer';
-import { ReviewDraftsDrawer } from '../../../features/review/components/ReviewDraftsDrawer';
 import { drawerKey } from '../../../store/slices/drawer/drawerKey';
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
@@ -69,8 +68,6 @@ export const DrawerHost = () => {
       );
     case 'diff-notes':
       return <DiffNotesDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
-    case 'review-drafts':
-      return <ReviewDraftsDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
     case 'file-diff':
       return (
         <FileDiffDrawer

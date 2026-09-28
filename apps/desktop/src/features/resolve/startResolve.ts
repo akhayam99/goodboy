@@ -9,7 +9,6 @@ import type { CommentThread } from '../github/comment-threads';
 import type { AgentKindRouting } from '../session/agent-kind';
 import { contextWindowFor } from '../session/contextWindowFor';
 import {
-  fixAttemptChunks,
   startFixAttempt,
   type SetAgentConfigFn,
   type SpawnAgentFn,
@@ -32,13 +31,6 @@ type Params = {
   readonly style?: ResolveStartStyle;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
-};
-
-type CountParams = {
-  readonly threads: ReadonlyArray<CommentThread>;
-  readonly pr: PullRequestState | null;
-  readonly routing: AgentKindRouting;
-  readonly note?: string;
 };
 
 export const startResolve = async ({
