@@ -140,7 +140,7 @@ describe('AppTopBar', () => {
     window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, spy);
 
     const center = screen.getByRole('button', {
-      name: `Search Harborline (${shortcutGlyphs('palette.open')})`,
+      name: `Search or ask in Harborline (${shortcutGlyphs('palette.open')})`,
     });
     fireEvent.click(center);
 

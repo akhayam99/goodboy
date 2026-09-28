@@ -22,6 +22,7 @@ type Params = {
   readonly scopeKey: string | null;
   readonly frecency: FrecencyState;
   readonly now: number;
+  readonly ask?: PaletteEntry | null;
 };
 
 type ActionsParams = {
@@ -32,6 +33,27 @@ type ActionsParams = {
 };
 
 export const RECENT_LIMIT = 5;
+
+export const JUMP_TO_TITLE = 'Jump to';
+
+const QUESTION_WORDS = 4;
+
+type DefaultKeyParams = {
+  readonly query: string;
+  readonly rows: ReadonlyArray<CommandRow>;
+  readonly askKey: string;
+};
+
+export const defaultCommandKey = ({ query, rows, askKey }: DefaultKeyParams): string | null => {
+  const first = rows[0]?.item.key ?? null;
+  const next = rows[1]?.item.key ?? null;
+  if (first !== askKey || next === null) {
+    return first;
+  }
+  const text = query.trim();
+  const isQuestion = text.endsWith('?') || text.split(/\s+/).length >= QUESTION_WORDS;
+  return isQuestion ? first : next;
+};
 
 const RESULT_LIMIT = 50;
 
@@ -70,6 +92,7 @@ export const buildCommandList = ({
   scopeKey,
   frecency,
   now,
+  ask = null,
 }: Params): ReadonlyArray<CommandSection> => {
   const parsed = parseQuery(query);
   const pool = [...scopeVerbs, ...entries];
@@ -93,7 +116,13 @@ export const buildCommandList = ({
       now,
       limit: RESULT_LIMIT,
     });
-    return [{ title: null, rows }];
+    if (ask === null) {
+      return [{ title: null, rows }];
+    }
+    return [
+      { title: null, rows: [plain(ask)] },
+      ...(rows.length === 0 ? [] : [{ title: JUMP_TO_TITLE, rows }]),
+    ];
   }
   const verbs = scopeVerbs.filter((entry) => isRunnable(entry) && !isScopeOpen(entry));
   const byKey = new Map(entries.map((entry) => [entry.key, entry] as const));

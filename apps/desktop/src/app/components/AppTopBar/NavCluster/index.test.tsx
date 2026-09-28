@@ -18,6 +18,7 @@ const { store } = vi.hoisted(() => ({
     goToHistory: vi.fn(),
     navigate: vi.fn(),
     closeStudio: vi.fn(),
+    openStudio: vi.fn(),
   },
 }));
 
@@ -71,6 +72,25 @@ afterEach(() => {
 });
 
 describe('NavCluster', () => {
+  it('opens a new chat from the Chat button right of Board', () => {
+    render(<NavCluster />);
+
+    const buttons = screen.getAllByRole('button').map((button) => button.textContent);
+    expect(buttons.indexOf('Chat')).toBe(buttons.indexOf('Board') + 1);
+    fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
+    expect(store.openStudio).toHaveBeenCalledWith({ studio: { kind: 'chat', chatId: null } });
+  });
+
+  it('marks Chat current while the chat studio is open', () => {
+    store.appStudio = { kind: 'chat' };
+    render(<NavCluster />);
+
+    const chat = screen.getByRole('button', { name: 'Chat' });
+    expect(chat.getAttribute('aria-current')).toBe('page');
+    fireEvent.click(chat);
+    expect(store.openStudio).not.toHaveBeenCalled();
+  });
+
   it('shows Board with its word, current and inert on the board', () => {
     render(<NavCluster />);
 

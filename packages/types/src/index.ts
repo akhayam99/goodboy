@@ -1,5 +1,7 @@
 export type {
   AgentId,
+  ChatId,
+  ChatMessageId,
   CredentialId,
   FileVersionId,
   IntegrationCredentialId,
@@ -71,6 +73,22 @@ export type {
   IntegrationDraftTarget,
 } from './integration-draft';
 export { MATERIALIZATION_DEFERRAL_CAUSES, SESSION_EVENT_KINDS } from './session-event';
+export {
+  CHAT_IDLE_AFTER_MS,
+  CHAT_MESSAGE_ROLES,
+  CHAT_MESSAGE_STATUSES,
+  CHAT_PROVIDER_IDS,
+  CHAT_PROVIDER_REFUSAL,
+  isChatProvider,
+} from './chat';
+export type {
+  Chat,
+  ChatMessage,
+  ChatMessageRole,
+  ChatMessageStatus,
+  ChatProviderId,
+  ChatSummary,
+} from './chat';
 export { SESSION_DECISION_AUTHORS, SESSION_DECISION_STATUSES } from './session-decision';
 export type {
   SessionDecision,

@@ -11,6 +11,7 @@ mod branch_remote;
 mod bridge;
 mod budget;
 mod changelog_images;
+mod chat;
 mod codex_app_server;
 mod codex_rollout;
 mod config_export;
@@ -103,6 +104,7 @@ pub(crate) fn drain_child_processes(app: &tauri::AppHandle, is_app_exit: bool) {
 pub(crate) fn stop_running_work(app: &tauri::AppHandle) {
     use tauri::Manager;
     turn::shutdown(&app.state::<turn::TurnRegistry>());
+    chat::shutdown(&app.state::<chat::ChatRegistry>());
     summarize::shutdown(&app.state::<summarize::SummarizeRegistry>());
     planner::shutdown(&app.state::<planner::PlannerRegistry>());
     scripts::shutdown(&app.state::<scripts::ScriptRegistry>());
@@ -129,6 +131,7 @@ pub fn run() {
     };
     let bridge_state = bridge::BridgeState::new().expect("failed to init companion bridge");
     let turn_registry = turn::TurnRegistry::new();
+    let chat_registry = chat::ChatRegistry::new();
     let summarize_registry = summarize::SummarizeRegistry::new();
     let planner_registry = planner::PlannerRegistry::new();
     let script_registry = scripts::ScriptRegistry::new();
@@ -173,6 +176,7 @@ pub fn run() {
     builder
         .manage(bridge_state)
         .manage(turn_registry)
+        .manage(chat_registry)
         .manage(writer_leases)
         .manage(summarize_registry)
         .manage(planner_registry)
@@ -347,6 +351,8 @@ pub fn run() {
             restart_marker::restart_prepare,
             restart_marker::restart_abort,
             turn::turn_list_live,
+            chat::chat_turn,
+            chat::chat_cancel,
             worktree_writer::worktree_writer_acquire,
             worktree_writer::worktree_writer_release,
             worktree_writer::worktree_writer_cancel,

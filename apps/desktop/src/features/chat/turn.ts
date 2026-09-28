@@ -1,14 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import {
-  createJsonLineAssembler,
-  parseStreamJsonLine,
-  parseCursorStreamLine,
-  parseCodexJsonLine,
-  parseGeminiJsonLine,
-  parseOpenCodeJsonLine,
-  type ParseContext,
-} from '@goodboy/core';
+import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
 import {
   PROVIDER_IDS,
   type IsoDateTime,
@@ -18,33 +10,8 @@ import {
   type TurnEvent,
 } from '@goodboy/types';
 import { classifyProviderError } from './classifyProviderError';
+import { parseProviderLine } from './parseProviderLine';
 import { clearTurnCursor, writeTurnCursor, type TurnCursor, type TurnOwner } from './turnCursor';
-
-function parseForProvider(
-  provider: ProviderId,
-  line: string,
-  ctx: ParseContext,
-): ReadonlyArray<TurnEvent> {
-  switch (provider) {
-    case 'anthropic':
-      return parseStreamJsonLine(line, ctx);
-    case 'cursor':
-      return parseCursorStreamLine(line, ctx);
-    case 'codex':
-      return parseCodexJsonLine(line, ctx);
-    case 'gemini':
-      return parseGeminiJsonLine(line, ctx);
-    case 'opencode':
-    case 'openrouter':
-    case 'moonshot':
-      return parseOpenCodeJsonLine({ line, ctx });
-    default: {
-      const _exhaustive: never = provider;
-      void _exhaustive;
-      return parseStreamJsonLine(line, ctx);
-    }
-  }
-}
 
 const AUTH_REQUIRED_PREFIX = '__auth_required__:';
 
@@ -268,7 +235,7 @@ async function* streamTurn({
   };
 
   const handleLine = ({ line }: { readonly line: string }) => {
-    const parsedEvents = parseForProvider(provider, line, ctx);
+    const parsedEvents = parseProviderLine({ provider, line, ctx });
     if (parsedEvents.length > 0) {
       receivedAnyEvent = true;
     }

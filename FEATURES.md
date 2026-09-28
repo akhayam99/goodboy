@@ -161,7 +161,7 @@ Reach any screen without the mouse. **⌘K** opens on what you are looking at, a
   <img src="./docs/readme/s29-palette-light.webp" alt="The command palette on the resolver agent of payments-api 318: its actions first, then Go to">
 </picture>
 
-Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too.
+Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
 
 ### Search
 
@@ -734,6 +734,12 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s09-transcript-dark.webp">
   <img src="./docs/readme/s09-transcript-light.webp" alt="The Test agent chat on Haiku 4.5: the ask, four operations, and the redelivery test posting one credit for three deliveries">
 </picture>
+
+### Workspace chat
+
+Ask about the workspace without starting a session. **Chat**, right of **Board**, opens a list of your chats next to one conversation. Each chat reads every project of the workspace and never changes a file: the answer streams in, **Read N files** lists what it opened, and the model is picked per chat, from Claude or Codex, the two providers that can be held to reading. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you.
+
+**Start work** turns a chat into work in a panel beside it: the chat's model drafts a title, a goal, what the chat established and the files it named, you edit any of it, then start a new session with that goal or send it into a session that is already running.
 
 ### Roles
 

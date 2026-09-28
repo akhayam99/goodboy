@@ -53,6 +53,11 @@ const NotificationsStudio = lazy(() =>
     default: module.NotificationsStudio,
   })),
 );
+const ChatStudio = lazy(() =>
+  import('../../../features/workspace-chat/components/ChatStudio').then((module) => ({
+    default: module.ChatStudio,
+  })),
+);
 const CompanionStudio = lazy(() =>
   import('../../../features/companion/components/CompanionStudio').then((module) => ({
     default: module.CompanionStudio,
@@ -156,6 +161,10 @@ const renderStudio = ({
       );
     case 'notifications':
       return currentWorkspace === null ? null : <NotificationsStudio onClose={close} />;
+    case 'chat':
+      return currentWorkspace === null ? null : (
+        <ChatStudio workspaceId={currentWorkspace.id} chatId={overlay.chatId} onClose={close} />
+      );
     default: {
       const unreachable: never = overlay;
       return unreachable;

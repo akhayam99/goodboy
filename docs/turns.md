@@ -3,7 +3,8 @@
 > **Read this when** changing what happens between a sent message and its
 > recorded outcome: where a turn runs, which provider and model it runs on,
 > how the CLI is spawned and read, what a turn event means, how a failure
-> falls back, or the session summarizer that follows. **Not for** installing or
+> falls back, the session summarizer that follows, or a read-only workspace
+> chat turn. **Not for** installing or
 > connecting a provider CLI ([providers.md](providers.md)), how a workflow run
 > advances ([workflows.md](workflows.md)), or mount lifecycle
 > ([mounts.md](mounts.md)).
@@ -511,3 +512,64 @@ for {role}` while a turn runs, `{role}` being the agent's own name over its
 A workflow agent's own handoff (`summarizeAgentOutput`) runs once per agent at
 a time with a 90 second timeout, and a failure falls back to the deterministic
 summary flagged `degraded`.
+
+## Workspace chat turns
+
+A workspace chat asks the provider a question without a session, an agent or a
+worktree. It has its own pipeline next to the session turn:
+`apps/desktop/src/store/slices/chats/` drives it,
+`apps/desktop/src/features/workspace-chat/runChatTurn.ts` reads the stream,
+and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
+
+- **Always read-only, Claude or Codex only.** `chat_turn` reuses the session
+  turn's argument builder but pins the read-only shape. The frontend sends only
+  the chat id, provider, model, effort and text: unknown fields are refused,
+  model and effort must match `[A-Za-z0-9._:-]` with no leading dash, the
+  provider must match the chat row, and the binary is the provider's own CLI
+  name resolved on the Rust side.
+  - Claude runs with `--restricted` (file tools confined to the chat folders,
+    no user, project or local settings), `--setting-sources ""`,
+    `--settings {"disableAllHooks":true}`, `--strict-mcp-config` with an
+    empty `--mcp-config`, plan mode, only Read, Grep and Glob, no session
+    persistence, and a deny list for secrets such as `~/.ssh`, `~/.aws`,
+    `~/.config`, `~/.goodboy`, `~/.claude`, `~/.codex`, keychains and `.env`
+    files. The question goes after `--`, so a question that looks like a flag
+    stays text.
+  - Codex runs with the read-only sandbox, `--ignore-user-config`,
+    `--ignore-rules`, `--ephemeral` and `-c mcp_servers={}`. Its read-only
+    sandbox can still read any file on disk; only Claude is scoped to the
+    project folders.
+  - Cursor, Gemini, opencode, OpenRouter and Moonshot are refused with "Chat
+    needs a provider that can run read-only: Claude or Codex". m212 keeps
+    `chats.provider` to `anthropic` and `codex`, and `CHAT_PROVIDER_IDS` in
+    `@goodboy/types` lists them for the model picker.
+  - A check on the final argument list refuses any write flag before the
+    prompt and any missing read-only flag. The Rust tests in `chat.rs` pin
+    all of this.
+- **Where it reads.** Rust reads the chat's connected projects from the
+  database by chat id. The CLI runs in the first project (oldest first) and the
+  other projects are extra read roots for Claude. It never widens to a shared
+  parent folder, and never uses `/`, the home folder or a parent of it.
+- **Its own channel.** Output streams as `chat_event` with the chat id, never
+  as `turn_event`, so no session sees it. There is no reload backlog: a reply
+  still streaming when the window closes is marked stopped at the next load.
+- **What it carries.** Each turn sends the workspace system prompt and the
+  last turns of the chat as text; Goodboy owns the conversation, not the CLI.
+  The files a read tool opened are kept on the reply for the "Read N files"
+  trace.
+- **Storage.** `chats` and `chat_messages` (m212). A chat stores its model as a
+  catalog key. Idle is derived: a chat with no activity for seven days moves
+  to the idle group, and only the user archives it.
+- **Turn into work.** "Start work" drafts a brief (title, goal, what we know,
+  files, project) with one `summarize_session` call through `runAuxOneShot`
+  on the chat's own provider and model, with no tools and no working folder
+  (`summarizeChatForWork.ts`). The model must answer one JSON object; anything
+  else, a failure or 45 seconds without an answer falls back to a brief drafted
+  from the last answer (`draftWorkBrief`). The brief then starts a session
+  (`createSession` with the goal and a `generic` first agent whose kickoff is
+  the brief) or goes into an existing session as the next message
+  (`sendTurn`). Nothing runs until the user presses the button.
+- **Mock mode.** With `VITE_GOODBOY_MOCK=1` the slice runs on an in-memory
+  backend with Harborline chats, a fake streaming responder and a canned
+  brief for the consent and retry chats, so scenes can send, stop and turn a
+  chat into work.

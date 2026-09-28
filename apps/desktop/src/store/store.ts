@@ -267,6 +267,7 @@ import { createSecurityFindingsSlice } from './slices/security-findings';
 import { createBranchCleanupSlice } from './slices/branch-cleanup';
 import { createStarredIssuesSlice } from './slices/starred-issues';
 import { createSearchIndexSlice } from './slices/search-index';
+import { createChatsSlice } from './slices/chats';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -1196,7 +1197,8 @@ export type AppStore = AppState &
   ReturnType<typeof createSecurityFindingsSlice> &
   ReturnType<typeof createBranchCleanupSlice> &
   ReturnType<typeof createStarredIssuesSlice> &
-  ReturnType<typeof createSearchIndexSlice>;
+  ReturnType<typeof createSearchIndexSlice> &
+  ReturnType<typeof createChatsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1445,6 +1447,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBranchCleanupSlice(set, get),
   ...createStarredIssuesSlice(set, get),
   ...createSearchIndexSlice(set, get),
+  ...createChatsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),
