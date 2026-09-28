@@ -1,0 +1,134 @@
+import { parseQuery } from '../quick-actions/grammar';
+import { ACTION_GROUPS, type ActionGroup } from './interimActions/types';
+import { recentKeys, type FrecencyState } from './frecency';
+import { rankCandidates } from './rank';
+import type { PaletteEntry, PaletteKind } from './types';
+
+export type CommandRow = {
+  readonly item: PaletteEntry;
+  readonly positions: ReadonlyArray<number>;
+};
+
+export type CommandSection = {
+  readonly title: string | null;
+  readonly rows: ReadonlyArray<CommandRow>;
+};
+
+type Params = {
+  readonly query: string;
+  readonly entries: ReadonlyArray<PaletteEntry>;
+  readonly scopeVerbs: ReadonlyArray<PaletteEntry>;
+  readonly scopeTitle: string | null;
+  readonly scopeKey: string | null;
+  readonly frecency: FrecencyState;
+  readonly now: number;
+};
+
+type ActionsParams = {
+  readonly query: string;
+  readonly verbs: ReadonlyArray<PaletteEntry>;
+  readonly frecency: FrecencyState;
+  readonly now: number;
+};
+
+export const RECENT_LIMIT = 5;
+
+const RESULT_LIMIT = 50;
+
+const RECENT_KINDS: ReadonlySet<PaletteKind> = new Set<PaletteKind>([
+  'session',
+  'agent',
+  'artifact',
+  'workspace',
+]);
+
+const EMPTY_SECTION_KINDS: ReadonlyArray<readonly [string, ReadonlySet<PaletteKind>]> = [
+  ['Go to', new Set<PaletteKind>(['goto'])],
+  ['Actions', new Set<PaletteKind>(['action'])],
+  ['Help', new Set<PaletteKind>(['help'])],
+];
+
+const GROUP_TITLES: Readonly<Record<ActionGroup, string>> = {
+  open: 'Open',
+  act: 'Act',
+  copy: 'Copy and export',
+  danger: 'Danger',
+};
+
+const plain = (item: PaletteEntry): CommandRow => ({ item, positions: [] });
+
+const isRunnable = (entry: PaletteEntry): boolean => entry.isBlocked !== true;
+
+const isScopeOpen = (entry: PaletteEntry): boolean =>
+  entry.action !== undefined && entry.action.group === 'open' && entry.action.id.endsWith('.open');
+
+export const buildCommandList = ({
+  query,
+  entries,
+  scopeVerbs,
+  scopeTitle,
+  scopeKey,
+  frecency,
+  now,
+}: Params): ReadonlyArray<CommandSection> => {
+  const parsed = parseQuery(query);
+  const pool = [...scopeVerbs, ...entries];
+  if (parsed.prefix !== null) {
+    const group = parsed.prefix.group;
+    const inGroup = pool.filter((entry) => entry.group === group);
+    const rows = rankCandidates({
+      items: inGroup,
+      query: parsed.query,
+      frecency,
+      now,
+      limit: RESULT_LIMIT,
+    });
+    return [{ title: null, rows }];
+  }
+  if (parsed.query.length > 0) {
+    const rows = rankCandidates({
+      items: pool,
+      query: parsed.query,
+      frecency,
+      now,
+      limit: RESULT_LIMIT,
+    });
+    return [{ title: null, rows }];
+  }
+  const verbs = scopeVerbs.filter((entry) => isRunnable(entry) && !isScopeOpen(entry));
+  const byKey = new Map(entries.map((entry) => [entry.key, entry] as const));
+  const recents = recentKeys({ state: frecency, now, limit: RECENT_LIMIT * 4 })
+    .filter((key) => key !== scopeKey)
+    .flatMap((key) => {
+      const entry = byKey.get(key);
+      return entry !== undefined && RECENT_KINDS.has(entry.kind) ? [entry] : [];
+    })
+    .slice(0, RECENT_LIMIT);
+  const sections: Array<CommandSection> = [
+    { title: scopeTitle, rows: verbs.map(plain) },
+    { title: 'Recent', rows: recents.map(plain) },
+    ...EMPTY_SECTION_KINDS.map(([title, kinds]) => ({
+      title,
+      rows: entries.filter((entry) => kinds.has(entry.kind)).map(plain),
+    })),
+  ];
+  return sections.filter((section) => section.rows.length > 0);
+};
+
+export const buildActionList = ({
+  query,
+  verbs,
+  frecency,
+  now,
+}: ActionsParams): ReadonlyArray<CommandSection> => {
+  if (query.trim().length > 0) {
+    return [{ title: null, rows: rankCandidates({ items: verbs, query, frecency, now }) }];
+  }
+  return ACTION_GROUPS.map((group) => ({
+    title: GROUP_TITLES[group],
+    rows: verbs.filter((entry) => entry.action?.group === group && isRunnable(entry)).map(plain),
+  })).filter((section) => section.rows.length > 0);
+};
+
+export const flattenRows = (sections: ReadonlyArray<CommandSection>): ReadonlyArray<CommandRow> =>
+  sections.flatMap((section) => section.rows);
