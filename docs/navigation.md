@@ -84,9 +84,12 @@ moves to the next mode with the same text, and `openPalette({ mode, query })`
 opens it on a mode. Commands is the first mode.
 
 - **Scope first.** It opens on a scope chip that names what you are on: the
-  agent in view, else the session, else the workspace on the board
-  (`resolvePaletteScope`). Backspace in an empty input removes the chip.
-- **Empty input.** The verbs of the scope under For this session (or agent),
+  focused commit row on Rewrite history, else the agent in view, else the
+  session, else the workspace on the board (`resolvePaletteScope`). A row
+  offers itself with `useHeldPaletteScope`, and the palette reads it only while
+  focus is inside that row (`heldPaletteScope.ts`), so its verbs come first in
+  the same order as the row's `⋯`. Backspace in an empty input removes the chip.
+- **Empty input.** The verbs of the scope under For this session (or agent, or commit),
   then Recent, then Go to, Actions and Help. Go to reaches studios by name:
   Back to board inside a session, Inbox, Workflows, Impact, Changelog,
   Notifications and Workspace settings inside a workspace, and Add workspace

@@ -535,6 +535,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     return (
       <HistoryCommitRow
         key={commit.sha}
+        sessionId={sessionId}
         commit={commit}
         view={view}
         mark={mark}

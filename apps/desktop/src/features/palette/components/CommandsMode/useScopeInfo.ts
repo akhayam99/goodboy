@@ -19,6 +19,9 @@ export const useScopeInfo = (scope: PaletteScope | null): ScopeInfo | null => {
     if (scope.kind === 'workspace') {
       return s.workspaces.find((workspace) => workspace.id === scope.workspaceId)?.name ?? null;
     }
+    if (scope.kind === 'commit') {
+      return scope.facts.subject === '' ? scope.facts.shortSha : scope.facts.subject;
+    }
     if (scope.kind === 'agent') {
       return (
         (s.sessionPhaseRuns[scope.sessionId] ?? EMPTY_ARRAY).find(
@@ -54,6 +57,13 @@ export const useScopeInfo = (scope: PaletteScope | null): ScopeInfo | null => {
       };
     case 'agent':
       return { title, noun: 'agent', icon: CONCEPT_ICONS.agents, key: `agent:${scope.agentId}` };
+    case 'commit':
+      return {
+        title,
+        noun: 'commit',
+        icon: CONCEPT_ICONS.commits,
+        key: `commit:${scope.facts.sha}`,
+      };
     default: {
       const exhaustive: never = scope;
       return exhaustive;

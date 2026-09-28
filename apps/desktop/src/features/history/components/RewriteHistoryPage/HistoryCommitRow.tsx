@@ -1,7 +1,7 @@
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { Cloud, GitMerge, GripVertical } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
-import type { BranchCommit } from '@goodboy/types';
+import type { BranchCommit, SessionId } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
@@ -19,6 +19,7 @@ import { HistoryRowPlanLine } from './HistoryRowPlanLine';
 import { historyRowLine, type HistoryRowView } from './historyRowLine';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { CommitActionTarget } from '../../../actions/types';
+import { useHeldPaletteScope } from '../../../palette/useHeldPaletteScope';
 
 export type HistoryTakenInRow = {
   readonly commit: BranchCommit;
@@ -26,6 +27,7 @@ export type HistoryTakenInRow = {
 };
 
 type Props = {
+  readonly sessionId: SessionId;
   readonly commit: BranchCommit;
   readonly view: HistoryRowView;
   readonly mark: HistoryRowMark | null;
@@ -53,6 +55,7 @@ type Props = {
 };
 
 export const HistoryCommitRow = ({
+  sessionId,
   commit,
   view,
   mark,
@@ -98,8 +101,12 @@ export const HistoryCommitRow = ({
   const showExpanded = view === 'planned' && isExpanded && takenIn.length > 0;
   const anchorKey = `commit:${commit.sha}`;
   const menu = useObjectMenuTrigger({ target, anchorKey });
+  const rowRef = useHeldPaletteScope<HTMLDivElement>({
+    scope: target === null ? null : { ...target, sessionId },
+  });
   return (
     <div
+      ref={rowRef}
       role="listitem"
       tabIndex={isInteractive ? 0 : undefined}
       data-history-row={commit.sha}
