@@ -136,7 +136,8 @@ describe('AgentBriefQuestions', () => {
 
     render(<AgentBriefQuestions session={session} agent={agent} />);
 
-    expect(screen.getByText('Waiting on you').parentElement?.textContent).toBe('Waiting on you2');
+    const heading = screen.getByRole('heading', { level: 2, name: 'Waiting on you' });
+    expect(heading.parentElement?.parentElement?.textContent).toBe('Waiting on you2');
     screen.getByText('1 of 2');
   });
 });

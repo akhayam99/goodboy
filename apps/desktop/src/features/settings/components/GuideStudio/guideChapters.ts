@@ -211,7 +211,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Open questions',
-        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions lens lists what waits on you, and the same card sits in the transcript and on the Brief. A blocking question holds its step until you answer, and Let an agent decide hands it to another agent.',
+        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions view lists what waits on you, and the same card sits in the transcript and on the Brief. A blocking question holds its step until you answer, and Let an agent decide hands it to another agent.',
       },
     ],
     links: [{ label: 'Open Workflows', target: { kind: 'studio', studio: { kind: 'workflow' } } }],
