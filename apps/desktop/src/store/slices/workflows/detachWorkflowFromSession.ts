@@ -53,11 +53,14 @@ export const detachWorkflowFromSession = (set: SetFn, get: GetFn) => {
       workflowRunId,
     });
     const stopped = await Promise.all(
-      [...ownedIds].map((agentId) => stopAgentForDelete({ get, agentId })),
+      [...ownedIds].map(async (agentId) => ({
+        agentId,
+        isRunStopped: await stopAgentForDelete({ get, agentId }),
+      })),
     );
-    const isEveryRunStopped = stopped.every((isStopped) => isStopped);
-    for (const agentId of ownedIds) {
-      await releaseAgentFiles({ get, sessionId, agentId });
+    const isEveryRunStopped = stopped.every(({ isRunStopped }) => isRunStopped);
+    for (const { agentId, isRunStopped } of stopped) {
+      await releaseAgentFiles({ get, sessionId, agentId, isRunStopped });
     }
 
     for (const agentId of ownedIds) {
