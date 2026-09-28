@@ -294,3 +294,60 @@ code {
   opacity: 1;
   transform: none;
 }
+
+.themeIcon {
+  display: flex;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .themeIcon svg {
+    animation: theme-icon-in 420ms cubic-bezier(0.3, 0, 0.2, 1) both;
+  }
+}
+
+@keyframes theme-icon-in {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+  transition: none !important;
+}
+
+html[data-theme-switching] [data-theme-icon] {
+  view-transition-name: theme-icon;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+::view-transition-group(theme-icon),
+::view-transition-new(theme-icon) {
+  animation: none;
+}
+
+::view-transition-old(theme-icon) {
+  animation: theme-icon-out 300ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes theme-icon-out {
+  from {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.6);
+  }
+}
