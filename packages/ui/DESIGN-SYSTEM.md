@@ -348,8 +348,8 @@ anywhere on it opens the workflow, however far the origin row has scrolled
 away. A click on the row text still opens the row's own leaf (the agent, the
 question, the artifact). The node on the lane lets the pointer through to the
 lane. Hovering a lane thickens every segment and join of that run to 3px in
-every row, washes its column in the run hue at 12%, lights the run chip
-(`litChip`) and shows "Open workflow: <name> (⇧↵)". The hover state lives in
+every row, washes its column in the run hue at 12%, lights the neutral run
+chip one step stronger and shows "Open workflow: <name> (⇧↵)". The hover state lives in
 the activity pane, never in the store. The hit areas stay out of the tab
 order: from the keyboard, Shift+Enter on a focused row opens the run of its
 lane (`activity.openRun` in the shortcut registry). The spine, a standalone
@@ -366,7 +366,7 @@ else, on any line, at any depth. A dashed stretch always points toward NOW.
 
 A discarded run keeps its pattern and its identity hue, and dims to
 `TERMINAL_DIM` on every lane segment and join it owns. That is the same dim a
-finished row uses. Its chip switches to the `mutedChip` version.
+finished row uses. Its chip turns hollow and faint.
 
 The stub exists because identity names a run and nothing else. A standalone
 agent's children are still session work. So their offset line stays in the

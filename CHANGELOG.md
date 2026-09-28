@@ -14,7 +14,14 @@ onto its own paragraph.
 
 ## Goodboy v0.12.2
 
-Typing the start of any word in `Cmd+K` finds the action you meant.
+Typing the start of any word in `Cmd+K` finds the action you meant, and a waiting agent is the one thing marked in the activity.
+
+### Improved
+
+#### One question, one signal in the activity
+<!-- gb area=sessions image=one-signal -->
+
+When an agent asks you something, its own row is the only thing marked in the activity, instead of the whole list lighting up. Its questions row stays quiet and keeps a plain Answer, and the needs-you count appears only when the filter hides the agent, counting questions the same way everywhere.
 
 ### Fixed
 
