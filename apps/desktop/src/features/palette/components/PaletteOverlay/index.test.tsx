@@ -22,6 +22,8 @@ import { seedBoardScene } from '../../../../app/components/MockScene/scenes/Boar
 import { ToastProvider } from '../../../../app/components/Toast';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { agentPlace, sessionPlace } from '../../../../store/slices/navigation/place';
+import { holdPaletteScope } from '../../heldPaletteScope';
+import type { CommitScope } from '../../types';
 import { PaletteOverlay } from './index';
 
 const elsewhere = vi.hoisted(() => ({ refs: [] as ReadonlyArray<SessionTitleRef> }));
@@ -299,5 +301,108 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     expect(optionNames().length).toBeGreaterThan(0);
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(setAgentConfig).toHaveBeenCalledOnce();
+  });
+});
+
+const IMPORTER_SHA = 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1';
+
+const commitScope = (fields: {
+  readonly isFolded?: boolean;
+  readonly canFoldDown?: boolean;
+  readonly onRename?: () => void;
+}): CommitScope => ({
+  kind: 'commit',
+  sessionId: PAYOUT,
+  facts: {
+    sha: IMPORTER_SHA,
+    shortSha: 'b2c3d4e',
+    subject: 'Keep trailing-comma rows in the ledger-core importer',
+    isFolded: fields.isFolded ?? false,
+    isRemoved: false,
+    canRemove: true,
+    canFoldDown: fields.canFoldDown ?? true,
+    onRename: fields.onRename ?? vi.fn(),
+    onFoldDown: vi.fn(),
+    onSquashDown: vi.fn(),
+    onToggleRemove: vi.fn(),
+    onSeparate: vi.fn(),
+    onMove: vi.fn(),
+  },
+});
+
+const focusCommitRow = (scope: CommitScope): (() => void) => {
+  const row = document.createElement('div');
+  row.tabIndex = 0;
+  document.body.append(row);
+  const release = holdPaletteScope({ element: row, scope });
+  row.focus();
+  return () => {
+    release();
+    row.remove();
+  };
+};
+
+describe('PaletteOverlay on a focused commit row', () => {
+  it('opens on the commit with its verbs first, in the order of its ⋯ menu', () => {
+    const release = focusCommitRow(commitScope({}));
+    openIn(PAYOUT);
+
+    expect(screen.getByTitle('Backspace removes the scope').textContent).toBe(
+      'Keep trailing-comma rows in the ledger-core importer',
+    );
+    expect(screen.getByText('For this commit')).toBeDefined();
+    expect(optionNames().slice(0, 8)).toEqual([
+      'Rename',
+      'Fold down',
+      'Squash down',
+      'Move up',
+      'Move down',
+      'Copy SHA',
+      'Copy subject',
+      'Remove',
+    ]);
+    release();
+  });
+
+  it('runs the verb on that commit', () => {
+    const onRename = vi.fn();
+    const release = focusCommitRow(commitScope({ onRename }));
+    const { input } = openIn(PAYOUT);
+
+    type(input, 'rename');
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onRename).toHaveBeenCalledTimes(1);
+    release();
+  });
+
+  it('offers only Separate and the copies on a folded commit', () => {
+    const release = focusCommitRow(commitScope({ isFolded: true }));
+    openIn(PAYOUT);
+
+    expect(optionNames().slice(0, 3)).toEqual(['Separate', 'Copy SHA', 'Copy subject']);
+    expect(optionNames()).not.toContain('Rename');
+    release();
+  });
+
+  it('hides Squash down on the oldest commit until it is searched, then gives the reason', () => {
+    const release = focusCommitRow(commitScope({ canFoldDown: false }));
+    const { input } = openIn(PAYOUT);
+
+    expect(optionNames()).not.toContain('Squash down');
+    type(input, 'squash');
+    const blocked = screen.getByRole('option', { name: 'Squash down' });
+    expect(blocked.getAttribute('aria-disabled')).toBe('true');
+    expect(blocked.getAttribute('aria-description')).toBe('Nothing below to combine with');
+    release();
+  });
+
+  it('falls back to the session once focus leaves the commit row', () => {
+    const release = focusCommitRow(commitScope({}));
+    (document.activeElement as HTMLElement).blur();
+    openIn(PAYOUT);
+
+    expect(screen.getByText('For this session')).toBeDefined();
+    release();
   });
 });

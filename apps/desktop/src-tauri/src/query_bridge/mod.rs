@@ -20,6 +20,7 @@ use protocol::{
 pub(crate) use cli::dispatch as run_cli;
 
 const APP_DIR: &str = ".goodboy";
+const SOCKET_DIR: &str = "query";
 const SWEEP_SUFFIX: &str = ".sweep-";
 
 static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -43,6 +44,7 @@ fn socket_path() -> Option<&'static Path> {
         .get_or_init(|| {
             dirs::home_dir().map(|home| {
                 home.join(APP_DIR)
+                    .join(SOCKET_DIR)
                     .join(socket_file_name(std::process::id()))
             })
         })
@@ -208,6 +210,66 @@ fn sweep_abandoned_sockets(dir: &Path) {
 }
 
 #[cfg(unix)]
+fn is_private_dir(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::symlink_metadata(path)
+        .is_ok_and(|meta| meta.file_type().is_dir() && meta.permissions().mode() & 0o077 == 0)
+}
+
+#[cfg(unix)]
+fn prepare_socket_dir(dir: &Path) -> std::io::Result<()> {
+    prepare_socket_dir_racing(dir, &|| {})
+}
+
+#[cfg(unix)]
+fn tolerate(outcome: std::io::Result<()>, kind: std::io::ErrorKind) -> std::io::Result<()> {
+    match outcome {
+        Err(error) if error.kind() == kind => Ok(()),
+        other => other,
+    }
+}
+
+#[cfg(unix)]
+fn is_real_dir(path: &Path) -> bool {
+    std::fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_dir())
+}
+
+#[cfg(unix)]
+fn prepare_socket_dir_racing(dir: &Path, between: &dyn Fn()) -> std::io::Result<()> {
+    use std::io::ErrorKind;
+    use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+
+    match std::fs::symlink_metadata(dir) {
+        Ok(meta) if meta.file_type().is_dir() => {}
+        Ok(_) => {
+            between();
+            let removed = tolerate(std::fs::remove_file(dir), ErrorKind::NotFound);
+            if removed.is_err() && !is_real_dir(dir) {
+                return removed;
+            }
+            tolerate(std::fs::create_dir(dir), ErrorKind::AlreadyExists)?;
+        }
+        Err(error) if error.kind() == ErrorKind::NotFound => {
+            if let Some(parent) = dir.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            between();
+            tolerate(std::fs::create_dir(dir), ErrorKind::AlreadyExists)?;
+        }
+        Err(error) => return Err(error),
+    }
+    let opened = std::fs::OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_DIRECTORY)
+        .open(dir)?;
+    opened.set_permissions(std::fs::Permissions::from_mode(0o700))?;
+    if !is_private_dir(dir) {
+        return Err(std::io::Error::other("the socket folder is not private"));
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
 pub(crate) fn start(app: tauri::AppHandle) {
     use std::os::unix::fs::PermissionsExt;
     use tokio::net::UnixListener;
@@ -215,12 +277,16 @@ pub(crate) fn start(app: tauri::AppHandle) {
     let Some(path) = socket_path() else {
         return;
     };
-    if let Some(parent) = path.parent() {
-        if let Err(error) = std::fs::create_dir_all(parent) {
-            log::warn!("query bridge: state directory unavailable: {error}");
-            return;
-        }
-        sweep_abandoned_sockets(parent);
+    let Some(parent) = path.parent() else {
+        return;
+    };
+    if let Err(error) = prepare_socket_dir(parent) {
+        log::warn!("query bridge: socket directory unavailable: {error}");
+        return;
+    }
+    sweep_abandoned_sockets(parent);
+    if let Some(state) = parent.parent() {
+        sweep_abandoned_sockets(state);
     }
     let _ = std::fs::remove_file(path);
     tauri::async_runtime::spawn(async move {
@@ -300,15 +366,114 @@ async fn answer(app: &tauri::AppHandle, line: &str) -> QueryResponse {
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
+    fn race_scratch(name: &str) -> PathBuf {
+        let scratch = std::env::temp_dir().join(format!(
+            "goodboy-query-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|elapsed| elapsed.as_nanos())
+                .unwrap_or_default()
+        ));
+        std::fs::create_dir_all(&scratch).unwrap();
+        scratch
+    }
+
+    #[cfg(unix)]
+    fn assert_private(folder: &Path) {
+        use std::os::unix::fs::PermissionsExt;
+        let meta = std::fs::symlink_metadata(folder).unwrap();
+        assert!(meta.file_type().is_dir());
+        assert_eq!(meta.permissions().mode() & 0o777, 0o700);
+    }
+
+    #[cfg(unix)]
     #[test]
-    fn the_socket_lives_beside_the_database_in_the_state_directory() {
+    fn two_starts_that_both_create_the_socket_folder_both_bind() {
+        let scratch = race_scratch("create-race");
+        let folder = scratch.join("state").join(SOCKET_DIR);
+        prepare_socket_dir_racing(&folder, &|| {
+            prepare_socket_dir(&folder).unwrap();
+        })
+        .unwrap();
+        prepare_socket_dir(&folder).unwrap();
+        assert_private(&folder);
+        std::fs::remove_dir_all(&scratch).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn two_starts_that_both_replace_a_planted_link_both_bind() {
+        let scratch = race_scratch("link-race");
+        let target = scratch.join("projects");
+        std::fs::create_dir_all(&target).unwrap();
+        let folder = scratch.join(SOCKET_DIR);
+        for other_finishes in [false, true] {
+            let _ = std::fs::remove_dir(&folder);
+            std::os::unix::fs::symlink(&target, &folder).unwrap();
+            prepare_socket_dir_racing(&folder, &|| {
+                std::fs::remove_file(&folder).unwrap();
+                if other_finishes {
+                    std::fs::create_dir(&folder).unwrap();
+                }
+            })
+            .unwrap();
+            assert_private(&folder);
+        }
+        std::fs::remove_dir_all(&scratch).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_planted_link_for_the_socket_folder_is_replaced_and_its_target_never_chmodded() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let scratch = std::env::temp_dir().join(format!(
+            "goodboy-query-link-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|elapsed| elapsed.as_nanos())
+                .unwrap_or_default()
+        ));
+        let target = scratch.join("projects");
+        let state = scratch.join("state");
+        std::fs::create_dir_all(&target).unwrap();
+        std::fs::create_dir_all(&state).unwrap();
+        std::fs::set_permissions(&target, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::write(target.join("keep.txt"), "mine\n").unwrap();
+        let folder = state.join(SOCKET_DIR);
+        std::os::unix::fs::symlink(&target, &folder).unwrap();
+
+        prepare_socket_dir(&folder).unwrap();
+
+        let target_mode = std::fs::metadata(&target).unwrap().permissions().mode() & 0o777;
+        assert_eq!(target_mode, 0o755);
+        assert_eq!(
+            std::fs::read_to_string(target.join("keep.txt")).unwrap(),
+            "mine\n"
+        );
+        let meta = std::fs::symlink_metadata(&folder).unwrap();
+        assert!(meta.file_type().is_dir());
+        assert_eq!(meta.permissions().mode() & 0o777, 0o700);
+        std::fs::remove_dir_all(&scratch).unwrap();
+    }
+
+    #[test]
+    fn the_socket_lives_in_its_own_folder_inside_the_state_directory() {
         let path = socket_path().expect("a home directory");
 
         assert!(path.ends_with(format!(
-            "{}/{}",
+            "{}/{}/{}",
             APP_DIR,
+            SOCKET_DIR,
             socket_file_name(std::process::id())
         )));
+        assert_eq!(
+            socket_directory().and_then(Path::file_name),
+            Some(std::ffi::OsStr::new(SOCKET_DIR))
+        );
     }
 
     #[test]

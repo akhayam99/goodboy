@@ -1,97 +1,94 @@
 import {
   ArrowDown,
   ArrowUp,
-  Check,
   Combine,
   Copy,
-  GitCommit,
+  GitMerge,
   Hash,
-  Pencil,
+  PenLine,
   Trash2,
+  Undo2,
 } from 'lucide-react';
-import type { BranchCommit } from '@goodboy/types';
-import { VERB_LINE } from '../../history/historyPlan';
 import type { CommitActionTarget, ObjectKindDefinition } from '../types';
 
 export type CommitFacts = {
   readonly sha: string;
   readonly shortSha: string;
   readonly subject: string;
-  readonly older: ReadonlyArray<BranchCommit>;
-  readonly onPick: () => void;
-  readonly onReword: () => void;
-  readonly onSquash: () => void;
-  readonly onFold: (target: string) => void;
-  readonly onDrop: () => void;
+  readonly isFolded: boolean;
+  readonly isRemoved: boolean;
+  readonly canRemove: boolean;
+  readonly canFoldDown: boolean;
+  readonly onRename: () => void;
+  readonly onFoldDown: () => void;
+  readonly onSquashDown: () => void;
+  readonly onToggleRemove: () => void;
+  readonly onSeparate: () => void;
   readonly onMove: (direction: 'newer' | 'older') => void;
 };
 
-const NO_OLDER = 'No older commit below this one';
+const NOTHING_BELOW = 'Nothing below to combine with';
+const SEPARATE_FIRST = 'Separate what it takes in first';
 
 type FactsOnly = { readonly facts: CommitFacts };
 
-const olderBlocked = ({ facts }: FactsOnly): string | null =>
-  facts.older.length === 0 ? NO_OLDER : null;
+const isStanding = ({ facts }: FactsOnly): boolean => !facts.isFolded;
+
+const belowBlocked = ({ facts }: FactsOnly): string | null =>
+  facts.canFoldDown ? null : NOTHING_BELOW;
 
 export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> = {
   noun: 'commit',
   facts: ({ target }) => target.facts,
   actions: [
     {
-      id: 'commit.pick',
-      label: 'Pick',
-      icon: Check,
+      id: 'commit.rename',
+      label: 'Rename',
+      icon: PenLine,
       group: 'act',
-      description: () => VERB_LINE.pick,
-      when: () => true,
-      run: ({ facts }) => facts.onPick(),
+      slot: () => 'hover',
+      description: () => 'Rename (reword) · R',
+      when: isStanding,
+      run: ({ facts }) => facts.onRename(),
     },
     {
-      id: 'commit.reword',
-      label: 'Reword',
-      icon: Pencil,
+      id: 'commit.foldDown',
+      label: 'Fold down',
+      icon: GitMerge,
       group: 'act',
-      description: () => VERB_LINE.reword,
-      when: () => true,
-      run: ({ facts }) => facts.onReword(),
+      slot: () => 'hover',
+      description: () => 'Fold into the one below, keeping its title (fixup) · C',
+      when: isStanding,
+      blockedReason: belowBlocked,
+      run: ({ facts }) => facts.onFoldDown(),
     },
     {
-      id: 'commit.squash',
-      label: 'Squash into the one below',
+      id: 'commit.squashDown',
+      label: 'Squash down',
       icon: Combine,
       group: 'act',
-      description: () => VERB_LINE.squash,
-      when: () => true,
-      blockedReason: olderBlocked,
-      run: ({ facts }) => facts.onSquash(),
+      description: () => 'Combine with the one below, keeping both messages (squash) · S',
+      when: isStanding,
+      blockedReason: belowBlocked,
+      run: ({ facts }) => facts.onSquashDown(),
     },
     {
-      id: 'commit.fold',
-      label: 'Fold into',
-      icon: GitCommit,
+      id: 'commit.separate',
+      label: 'Separate',
+      icon: Undo2,
       group: 'act',
-      description: () => VERB_LINE.fixup,
-      when: () => true,
-      blockedReason: olderBlocked,
-      choices: ({ facts }) =>
-        facts.older.map((commit) => ({
-          id: commit.sha,
-          label: `${commit.shortSha} ${commit.subject}`,
-          isCurrent: false,
-        })),
-      run: ({ facts, choice }) => {
-        if (choice !== null) {
-          facts.onFold(choice);
-        }
-      },
+      slot: () => 'hover',
+      description: () => 'Make it its own commit again',
+      when: ({ facts }) => facts.isFolded,
+      run: ({ facts }) => facts.onSeparate(),
     },
     {
       id: 'commit.moveUp',
       label: 'Move up',
       icon: ArrowUp,
       group: 'act',
-      description: () => VERB_LINE.move,
-      when: () => true,
+      description: () => 'Move it one place newer · Alt+Up',
+      when: isStanding,
       run: ({ facts }) => facts.onMove('newer'),
     },
     {
@@ -99,8 +96,19 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
       label: 'Move down',
       icon: ArrowDown,
       group: 'act',
-      when: () => true,
+      description: () => 'Move it one place older · Alt+Down',
+      when: isStanding,
       run: ({ facts }) => facts.onMove('older'),
+    },
+    {
+      id: 'commit.keep',
+      label: 'Keep',
+      icon: Undo2,
+      group: 'act',
+      slot: () => 'hover',
+      description: () => 'Keep it',
+      when: ({ facts }) => facts.isRemoved,
+      run: ({ facts }) => facts.onToggleRemove(),
     },
     {
       id: 'commit.copySha',
@@ -119,14 +127,16 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
       run: ({ facts, env }) => env.copyText({ text: facts.subject }),
     },
     {
-      id: 'commit.drop',
-      label: 'Drop',
+      id: 'commit.remove',
+      label: 'Remove',
       icon: Trash2,
       group: 'danger',
-      description: () => VERB_LINE.drop,
+      slot: () => 'hover',
+      description: () => 'Remove (drop) · Delete',
       isUndoable: true,
-      when: () => true,
-      run: ({ facts }) => facts.onDrop(),
+      when: ({ facts }) => !facts.isFolded && !facts.isRemoved,
+      blockedReason: ({ facts }) => (facts.canRemove ? null : SEPARATE_FIRST),
+      run: ({ facts }) => facts.onToggleRemove(),
     },
   ],
 };

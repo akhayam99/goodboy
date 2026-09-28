@@ -1,8 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import type {
   AgentActionTarget,
+  CommitActionTarget,
   ObjectTarget,
   ResolvedAction,
   SessionActionTarget,
@@ -14,7 +15,11 @@ export type WorkspaceScope = {
   readonly workspaceId: WorkspaceId;
 };
 
-export type PaletteScope = WorkspaceScope | SessionActionTarget | AgentActionTarget;
+export type CommitScope = CommitActionTarget & {
+  readonly sessionId: SessionId;
+};
+
+export type PaletteScope = WorkspaceScope | SessionActionTarget | AgentActionTarget | CommitScope;
 
 export type PaletteGroup = 'agent' | 'session' | 'workspace' | 'script' | 'action' | 'help';
 

@@ -4,6 +4,7 @@ import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PALETTE_MODES } from '../../paletteModes';
 import type { PaletteModeId } from '../../paletteModeTypes';
+import { focusedPaletteScope } from '../../heldPaletteScope';
 import { resolvePaletteScope } from '../../resolvePaletteScope';
 import type { PaletteScope } from '../../types';
 import { ModeSwitch } from './ModeSwitch';
@@ -22,6 +23,7 @@ const scopeNow = (): PaletteScope | null => {
     currentSessionId: sessionId,
     selectedAgentId: sessionId === null ? null : (state.selectedAgentId[sessionId] ?? null),
     hasStudio: sessionId !== null && (state.sessionStudio[sessionId] ?? null) !== null,
+    heldScope: focusedPaletteScope(),
   });
 };
 

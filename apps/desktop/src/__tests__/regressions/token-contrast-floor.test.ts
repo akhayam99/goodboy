@@ -250,6 +250,28 @@ describe.each(Object.entries(readThemes()))('%s palette', (_theme, palette) => {
     expect(failures).toEqual([]);
   });
 
+  it.each(SURFACES)('keeps history action colours readable on %s and on their mark', (surface) => {
+    const tokens = Object.keys(palette).filter((token) => token.startsWith('history-'));
+    expect(tokens).toEqual(['history-fixup', 'history-squash', 'history-move']);
+    const failures = tokens
+      .flatMap((token) => [
+        { token, ratio: contrast(swatch(palette, token), swatch(palette, surface)) },
+        {
+          token: `${token} on its mark`,
+          ratio: contrast(
+            swatch(palette, token),
+            composite({
+              foreground: swatch(palette, token),
+              background: swatch(palette, surface),
+              alpha: 0.12,
+            }),
+          ),
+        },
+      ])
+      .filter(({ ratio }) => ratio < BODY_FLOOR);
+    expect(failures).toEqual([]);
+  });
+
   it.each(SURFACES)('keeps identity labels readable on %s', (surface) => {
     const failures = Object.keys(palette)
       .filter((token) => token.startsWith('identity-'))

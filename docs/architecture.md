@@ -243,7 +243,8 @@ Everything the app saves for itself lives in `~/.goodboy`.
   once per artifact every 10 minutes), `kept_at` and `kept_until` for the
   Storage Keep action.
 - `file-versions/`: saved versions of files.
-- `query-<pid>.sock`: the socket a running app uses for the query bridge (see [query-bridge.md](query-bridge.md)).
+- `query/query-<pid>.sock`: the socket a running app uses for the query bridge, in its own owner-only folder (see [query-bridge.md](query-bridge.md)).
+- `history-copies/`: the temporary copies Rewrite history replays a plan in.
 - `boot-breadcrumbs.log`: how long each startup step took.
 
 When a session works on a repository, it gets its own git worktree in the

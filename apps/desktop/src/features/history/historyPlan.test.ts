@@ -1,90 +1,146 @@
 import { describe, expect, it } from 'vitest';
-import type { BranchCommit, HistoryStep } from '@goodboy/types';
+import type { HistoryStep } from '@goodboy/types';
 import {
-  editPhrase,
-  foldInto,
+  canRemove,
+  combineDown,
+  combineInto,
   initialPlanItems,
-  isContiguous,
-  moveStep,
-  moveStepOnto,
-  planSummary,
+  keptOrder,
+  moveAbove,
+  moveBy,
+  normalizePlanItems,
+  planOrder,
   rewordStep,
+  setCombineMode,
   setVerb,
-  squashSteps,
-  summaryLine,
+  slotAnchorIsNoop,
 } from './historyPlan';
+import { LEDGER, LEDGER_COMMITS } from './testing/ledgerFixture';
 
-const commit = (sha: string): BranchCommit => ({
-  sha,
-  shortSha: sha.slice(0, 7),
-  subject: `subject ${sha}`,
-  author: 'You',
-  timestamp: 0,
-  pushed: false,
-  parentSha: null,
-});
-
-const newestFirst = [commit('ccc3333'), commit('bbb2222'), commit('aaa1111')];
-const base = initialPlanItems({ commits: newestFirst });
-const original = base.map((step) => step.sha);
+const base = initialPlanItems({ commits: LEDGER_COMMITS });
+const { a, b, c, d, x, e, f } = LEDGER;
 
 describe('history plan', () => {
-  it('replays the branch oldest first, every commit picked', () => {
-    expect(base).toEqual([
-      { sha: 'aaa1111', verb: 'pick' },
-      { sha: 'bbb2222', verb: 'pick' },
-      { sha: 'ccc3333', verb: 'pick' },
+  it('starts oldest first with every commit kept', () => {
+    expect(base.map((step) => step.sha)).toEqual([a, b, c, d, x, e, f]);
+    expect(base.every((step) => step.verb === 'pick')).toBe(true);
+  });
+
+  it('moves a commit directly above the anchor of a slot', () => {
+    const moved = moveAbove({ items: base, sha: d, anchor: b });
+    expect(planOrder({ items: moved })).toEqual([a, b, d, c, x, e, f]);
+    const bottom = moveAbove({ items: base, sha: f, anchor: null });
+    expect(planOrder({ items: bottom })[0]).toBe(f);
+  });
+
+  it('replaces an earlier move of the same commit instead of stacking it', () => {
+    const once = moveAbove({ items: base, sha: d, anchor: b });
+    const twice = moveAbove({ items: once, sha: d, anchor: e });
+    expect(planOrder({ items: twice })).toEqual([a, b, c, x, e, d, f]);
+  });
+
+  it('reports a slot that would leave the commit where it is as a no-op', () => {
+    expect(slotAnchorIsNoop({ items: base, sha: d, anchor: c })).toBe(true);
+    expect(slotAnchorIsNoop({ items: base, sha: d, anchor: b })).toBe(false);
+    expect(moveAbove({ items: base, sha: d, anchor: c })).toBe(base);
+  });
+
+  it('moves one place newer or older with the arrow keys', () => {
+    expect(planOrder({ items: moveBy({ items: base, sha: d, direction: 'newer' }) })).toEqual([
+      a,
+      b,
+      c,
+      x,
+      d,
+      e,
+      f,
     ]);
-    expect(summaryLine({ summary: planSummary({ items: base, original }) })).toBe('No changes yet');
-  });
-
-  it('rewords, drops and folds into a commit you pick', () => {
-    const reworded = rewordStep({ items: base, sha: 'aaa1111', message: ' Guard postings ' });
-    const dropped = setVerb({ items: reworded, sha: 'bbb2222', verb: 'drop' });
-    const folded = foldInto({ items: dropped, sha: 'ccc3333', target: 'aaa1111' });
-
-    expect(folded).toEqual<ReadonlyArray<HistoryStep>>([
-      { sha: 'aaa1111', verb: 'reword', message: 'Guard postings' },
-      { sha: 'bbb2222', verb: 'drop' },
-      { sha: 'ccc3333', verb: 'fixup', target: 'aaa1111' },
+    expect(planOrder({ items: moveBy({ items: base, sha: d, direction: 'older' }) })).toEqual([
+      a,
+      b,
+      d,
+      c,
+      x,
+      e,
+      f,
     ]);
-    expect(summaryLine({ summary: planSummary({ items: folded, original }) })).toBe(
-      '1 reword · 1 folded · 1 dropped',
-    );
+    expect(moveBy({ items: base, sha: a, direction: 'older' })).toBe(base);
+    expect(moveBy({ items: base, sha: f, direction: 'newer' })).toBe(base);
   });
 
-  it('squashes only neighbouring commits and keeps the message on the newest', () => {
-    expect(isContiguous({ items: base, shas: ['aaa1111', 'ccc3333'] })).toBe(false);
-    expect(squashSteps({ items: base, shas: ['aaa1111', 'ccc3333'], message: 'x' })).toBe(base);
+  it('folds into a target with fixup by default and switches to squash', () => {
+    const folded = combineInto({ items: base, sha: f, target: a, mode: 'fixup' });
+    expect(folded.find((step) => step.sha === f)).toEqual({ sha: f, verb: 'fixup', target: a });
+    expect(keptOrder({ items: folded })).not.toContain(f);
+    const squashed = setCombineMode({ items: folded, sha: f, mode: 'squash' });
+    expect(squashed.find((step) => step.sha === f)?.verb).toBe('squash');
+    expect(setCombineMode({ items: squashed, sha: f, mode: 'squash' })).toBe(squashed);
+  });
 
-    expect(squashSteps({ items: base, shas: ['bbb2222', 'aaa1111'], message: 'Both' })).toEqual([
-      { sha: 'aaa1111', verb: 'pick' },
-      { sha: 'bbb2222', verb: 'squash', message: 'Both' },
-      { sha: 'ccc3333', verb: 'pick' },
+  it('re-points commits folded into a commit that folds elsewhere', () => {
+    const first = combineInto({ items: base, sha: e, target: d, mode: 'squash' });
+    const chained = combineInto({ items: first, sha: d, target: c, mode: 'fixup' });
+    expect(chained.find((step) => step.sha === e)).toEqual({ sha: e, verb: 'squash', target: c });
+  });
+
+  it('refuses to combine into itself, a removed commit, or a folded one', () => {
+    const removed = setVerb({ items: base, sha: c, verb: 'drop' });
+    expect(combineInto({ items: removed, sha: d, target: c, mode: 'fixup' })).toBe(removed);
+    expect(combineInto({ items: base, sha: d, target: d, mode: 'fixup' })).toBe(base);
+    const folded = combineInto({ items: base, sha: e, target: d, mode: 'fixup' });
+    expect(combineInto({ items: folded, sha: f, target: e, mode: 'fixup' })).toBe(folded);
+  });
+
+  it('combines down into the next older commit that stays, skipping removed ones', () => {
+    const removed = setVerb({ items: base, sha: x, verb: 'drop' });
+    const folded = combineDown({ items: removed, sha: e, mode: 'squash' });
+    expect(folded.find((step) => step.sha === e)).toEqual({ sha: e, verb: 'squash', target: d });
+    expect(combineDown({ items: base, sha: a, mode: 'fixup' })).toBe(base);
+  });
+
+  it('will not remove a commit that others fold into', () => {
+    const folded = combineInto({ items: base, sha: f, target: a, mode: 'fixup' });
+    expect(canRemove({ items: folded, sha: a })).toBe(false);
+    expect(setVerb({ items: folded, sha: a, verb: 'drop' })).toBe(folded);
+  });
+
+  it('renames with a new message and goes back to keep when the title is the original', () => {
+    const renamed = rewordStep({
+      items: base,
+      sha: c,
+      message: ' Verify webhook signatures ',
+      original: 'Fix webhook signature check',
+    });
+    expect(renamed.find((step) => step.sha === c)).toEqual({
+      sha: c,
+      verb: 'reword',
+      message: 'Verify webhook signatures',
+    });
+    const back = rewordStep({
+      items: renamed,
+      sha: c,
+      message: 'Fix webhook signature check',
+      original: 'Fix webhook signature check',
+    });
+    expect(back.find((step) => step.sha === c)?.verb).toBe('pick');
+    expect(rewordStep({ items: base, sha: c, message: '  ', original: 'x' })).toBe(base);
+  });
+
+  it('gives an older plan with neighbour squashes an explicit target', () => {
+    const legacy: ReadonlyArray<HistoryStep> = [
+      { sha: a, verb: 'pick' },
+      { sha: b, verb: 'squash' },
+      { sha: c, verb: 'drop' },
+      { sha: d, verb: 'fixup', target: c },
+      { sha: e, verb: 'squash', target: b },
+    ];
+    expect(normalizePlanItems({ items: legacy })).toEqual([
+      { sha: a, verb: 'pick' },
+      { sha: b, verb: 'squash', target: a },
+      { sha: c, verb: 'drop' },
+      { sha: d, verb: 'pick' },
+      { sha: e, verb: 'squash', target: a },
     ]);
-  });
-
-  it('drops a dragged commit where the target row was, in either direction', () => {
-    const up = moveStepOnto({ items: base, sha: 'aaa1111', onto: 'ccc3333' });
-    expect(up.items.map((step) => step.sha)).toEqual(['bbb2222', 'ccc3333', 'aaa1111']);
-    expect(up.direction).toBe('newer');
-
-    const down = moveStepOnto({ items: base, sha: 'ccc3333', onto: 'aaa1111' });
-    expect(down.items.map((step) => step.sha)).toEqual(['ccc3333', 'aaa1111', 'bbb2222']);
-    expect(down.direction).toBe('older');
-
-    expect(moveStepOnto({ items: base, sha: 'bbb2222', onto: 'bbb2222' }).direction).toBeNull();
-  });
-
-  it('moves a commit and names the move that could break', () => {
-    const moved = moveStep({ items: base, sha: 'aaa1111', direction: 'newer' });
-
-    expect(moved.items.map((step) => step.sha)).toEqual(['bbb2222', 'aaa1111', 'ccc3333']);
-    expect(moved.other).toBe('bbb2222');
-    expect(planSummary({ items: moved.items, original }).moved).toBe(2);
-    expect(editPhrase({ edit: { kind: 'move', sha: 'aaa1111', other: 'bbb2222' } })).toBe(
-      'Moving aaa1111 above bbb2222',
-    );
-    expect(moveStep({ items: base, sha: 'ccc3333', direction: 'newer' }).other).toBeNull();
+    expect(normalizePlanItems({ items: base })).toBe(base);
   });
 });

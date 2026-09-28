@@ -1,9 +1,8 @@
-import { hasPushedHistoryPlan } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { pushWithLease, restoreHistoryBackup } from '../../../features/history/historyEngine';
-import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/worktree';
-import { tauriDatabase } from '../../../shared/lib/db';
+import { worktreeStatus } from '../../../features/worktree/worktree';
 import { historyTargetOf } from './historyTargetOf';
+import { remoteForPush } from './remoteForPush';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
@@ -39,13 +38,16 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
         sha: null,
       });
     }
-    const remoteSha =
-      shouldPush && status.upstream !== null
-        ? await worktreeRemoteHead({
-            worktreePath: target.worktreePath,
-            branch: target.branch,
-          }).catch(() => null)
-        : null;
+    const run = get().historyRuns[mountId];
+    const isPushed = run?.phase === 'pushed';
+    const remote = await remoteForPush({
+      target,
+      expectedHead: backupRef,
+      incorporated: isPushed ? run.movedHead : null,
+      incorporatedSince: isPushed ? run.remoteSha : null,
+      shouldPush,
+    });
+    const remoteSha = remote.sha;
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'applying', stop: null } });
     const moved = await restoreHistoryBackup({
       worktreePath: target.worktreePath,
@@ -80,7 +82,7 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       sessionId,
       mountId,
       origin,
-      patch: { phase: 'restored', backupRef: moved.backupRef, result: null },
+      patch: { phase: 'restored', backupRef: moved.backupRef, result: null, applied: null },
     });
     await recordHistoryEvent({
       get,
@@ -91,8 +93,19 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       extra: { backupRef },
     });
     await get().loadHistoryDraft({ sessionId, mountId });
-    if (!shouldPush || status.upstream === null) {
+    if (!shouldPush || !remote.hasUpstream) {
       return 'restored';
+    }
+    if (remote.stop !== null) {
+      return stopWith({
+        reason: remote.stop.reason,
+        message:
+          remote.stop.reason === 'origin-moved'
+            ? 'Restored here. The online copy has newer commits than this backup, so nothing was pushed.'
+            : `Restored here, but the online copy could not be checked, so nothing was pushed.`,
+        files: [],
+        sha: remote.stop.sha,
+      });
     }
     const pushed = await pushWithLease({
       worktreePath: target.worktreePath,
@@ -114,14 +127,4 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       sha: null,
     });
   };
-};
-
-type BranchInput = {
-  readonly mountId: HistoryMountInput['mountId'];
-  readonly branch: string;
-};
-
-export const hasPushedHistoryBefore = () => {
-  return async ({ mountId, branch }: BranchInput): Promise<boolean> =>
-    hasPushedHistoryPlan({ db: tauriDatabase, mountId, branch }).catch(() => false);
 };

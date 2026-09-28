@@ -25,6 +25,7 @@ mod github;
 mod gitlab;
 mod goodboy_ignore;
 mod history;
+mod history_graph;
 mod integration_credentials;
 mod jira;
 mod last_crash;
@@ -188,6 +189,7 @@ pub fn run() {
         .setup(move |app| {
             use tauri::Manager;
             query_bridge::start(app.handle().clone());
+            std::thread::spawn(history::clean_stale_copies);
             #[cfg(target_os = "macos")]
             help_menu::install(app.handle())?;
             #[cfg(desktop)]
@@ -294,6 +296,9 @@ pub fn run() {
             worktree::worktree_scratch_remove,
             history::history_plan_predict,
             history::history_plan_try,
+            history::history_plan_run,
+            history::history_remote_lease,
+            history_graph::history_graph,
             history::history_plan_apply,
             history::history_restore,
             history::history_backups_list,
@@ -303,6 +308,7 @@ pub fn run() {
             history::history_rewriter_prepare,
             history::history_rewriter_collect,
             history::history_copy_discard,
+            history::history_copy_git_dirs,
             worktree::worktree_diff_working,
             worktree::worktree_status,
             branch_remote::worktree_sync_branch_ref,

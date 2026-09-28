@@ -6,6 +6,7 @@ import {
   tryHistoryPlan,
 } from '../../../features/history/historyEngine';
 import { historyTargetOf } from './historyTargetOf';
+import { identityOf } from './historyIdentity';
 import { isHistoryRunActive } from './isHistoryRunActive';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
@@ -18,9 +19,10 @@ type PlanParams = {
 
 export const rebasePlanArgs = ({ worktreePath, rebase }: PlanParams): HistoryPlanArgs => ({
   worktreePath,
-  base: rebase.onto,
+  base: rebase.mergeBase,
   head: rebase.head,
   steps: rebase.commits.map((commit) => ({ sha: commit.sha, verb: 'pick' as const })),
+  onto: rebase.onto,
 });
 
 export const rebaseBranch = (set: SetFn, get: GetFn) => {
@@ -73,6 +75,14 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
       if (typeof trial === 'string') {
         return stopWith({ reason: 'failed', message: trial, files: [], sha: null });
       }
+      if (trial.stop === null && trial.head !== null && trial.check?.isPassed === false) {
+        return stopWith({
+          reason: 'unverified',
+          message: `The rebase on the copy did not match the branch: ${trial.check.problems.join(' ')} Nothing was changed.`,
+          files: trial.check.unexpectedFiles,
+          sha: null,
+        });
+      }
       if (trial.stop === null && trial.head !== null) {
         const applied = await get().applyHistoryRewrite({
           sessionId,
@@ -84,6 +94,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
           map: trial.map,
           shouldPush: true,
           byAgent: false,
+          identity: identityOf({ target }),
         });
         return applied === 'stopped' || applied === 'busy' ? applied : 'rebased';
       }

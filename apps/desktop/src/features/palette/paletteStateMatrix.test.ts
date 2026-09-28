@@ -3,6 +3,7 @@ import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { buildCommandList, flattenRows } from './commandList';
 import { EMPTY_FRECENCY } from './frecency';
 import { AGENT_KIND, type AgentFacts } from '../actions/kinds/agent';
+import { COMMIT_KIND, type CommitFacts } from '../actions/kinds/commit';
 import { resolveActions } from '../actions/resolveActions';
 import { SESSION_KIND, type SessionFacts } from '../actions/kinds/session';
 import type { ObjectTarget } from '../actions/types';
@@ -94,6 +95,34 @@ const agentView = ({ facts, query }: ViewParams<AgentFacts>) => {
   });
 };
 
+const noop = () => undefined;
+
+const COMMIT: CommitFacts = {
+  sha: 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1',
+  shortSha: 'b2c3d4e',
+  subject: 'Keep trailing-comma rows in the ledger-core importer',
+  isFolded: false,
+  isRemoved: false,
+  canRemove: true,
+  canFoldDown: true,
+  onRename: noop,
+  onFoldDown: noop,
+  onSquashDown: noop,
+  onToggleRemove: noop,
+  onSeparate: noop,
+  onMove: noop,
+};
+
+const commitView = ({ facts, query }: ViewParams<CommitFacts>) => {
+  const target: ObjectTarget = { kind: 'commit', facts };
+  const actions = resolveActions({ definitions: COMMIT_KIND.actions, facts });
+  return view({
+    target,
+    verbs: verbEntries({ target, actions, isScope: true, noun: 'commit', select: noop }),
+    query,
+  });
+};
+
 describe('palette verbs follow the session state', () => {
   it('offers every live verb on a session with a project, a worktree and a pull request', () => {
     expect(sessionView({ facts: LIVE, query: '' })).toEqual([
@@ -178,5 +207,61 @@ describe('palette verbs follow the agent state', () => {
   it('never offers Close to an agent that is running or already closed', () => {
     expect(agentView({ facts: { ...AGENT, isTurnRunning: true }, query: 'close' })).toEqual([]);
     expect(agentView({ facts: { ...AGENT, isClosedByUser: true }, query: 'close' })).toEqual([]);
+  });
+});
+
+describe('palette verbs follow the commit state, in the order of its ⋯ menu', () => {
+  it.each([
+    [
+      'commit with one below',
+      COMMIT,
+      [
+        'Rename',
+        'Fold down',
+        'Squash down',
+        'Move up',
+        'Move down',
+        'Copy SHA',
+        'Copy subject',
+        'Remove',
+      ],
+    ],
+    [
+      'oldest commit that takes others in',
+      { ...COMMIT, canFoldDown: false, canRemove: false },
+      ['Rename', 'Move up', 'Move down', 'Copy SHA', 'Copy subject'],
+    ],
+    [
+      'commit folded into another',
+      { ...COMMIT, isFolded: true },
+      ['Separate', 'Copy SHA', 'Copy subject'],
+    ],
+    [
+      'removed commit',
+      { ...COMMIT, isRemoved: true },
+      [
+        'Rename',
+        'Fold down',
+        'Squash down',
+        'Move up',
+        'Move down',
+        'Keep',
+        'Copy SHA',
+        'Copy subject',
+      ],
+    ],
+  ] as const)('%s', (_state, facts, expected) => {
+    expect(commitView({ facts, query: '' })).toEqual(expected);
+  });
+
+  it('shows a blocked verb with its reason once it is searched', () => {
+    const facts = { ...COMMIT, canFoldDown: false, canRemove: false };
+
+    expect(commitView({ facts, query: 'squash' })).toEqual([
+      'Squash down (Nothing below to combine with)',
+    ]);
+    expect(commitView({ facts, query: 'remove' })).toEqual([
+      'Remove (Separate what it takes in first)',
+    ]);
   });
 });

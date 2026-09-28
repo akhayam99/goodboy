@@ -50,6 +50,10 @@
   --color-find-match: oklch(0.76 0.13 78 / 0.28);
   --color-find-current: oklch(0.76 0.13 78 / 0.62);
 
+  --color-history-fixup: oklch(0.79 0.1 222);
+  --color-history-squash: oklch(0.86 0.13 98);
+  --color-history-move: oklch(0.75 0.13 300);
+
   /* Per-provider accent. */
   --color-provider-anthropic: oklch(0.74 0.15 55);
   --color-provider-cursor: oklch(0.7 0.16 290);
@@ -189,6 +193,15 @@
      prefers-reduced-motion: no-preference (see below). */
   --animate-fade-in: fade-in 120ms cubic-bezier(0.2, 0, 0, 1);
   --animate-text-swap: fade-in 180ms ease-out;
+  --animate-history-arrive: history-arrive 1400ms cubic-bezier(0.2, 0, 0, 1) both;
+  @keyframes history-arrive {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
 
   /* Sidebar stepper swap: the incoming pane slides against the direction of
      travel so list -> detail reads as a step forward and back reads as a step
@@ -501,6 +514,9 @@ html[data-theme='light'] {
   --color-draft: oklch(0.49 0.17 277);
   --color-find-match: oklch(0.86 0.15 88 / 0.55);
   --color-find-current: oklch(0.8 0.16 75 / 0.9);
+  --color-history-fixup: oklch(0.47 0.12 232);
+  --color-history-squash: oklch(0.485 0.12 85);
+  --color-history-move: oklch(0.5 0.16 300);
   --color-provider-anthropic: oklch(0.54 0.16 55);
   --color-provider-cursor: oklch(0.5 0.17 290);
   --color-provider-codex: oklch(0.48 0.15 148);

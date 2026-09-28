@@ -31,7 +31,10 @@ import { ArtifactShellActions } from '../../features/artifacts/components/Artifa
 import { bindTarget } from '../../features/actions/registry';
 import { WorkflowRunDetail } from '../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
 import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
-import type { ArtifactActionTarget } from '../../features/actions/types';
+import type { ArtifactActionTarget, CommitActionTarget } from '../../features/actions/types';
+import { HistoryCommitRow } from '../../features/history/components/RewriteHistoryPage/HistoryCommitRow';
+import { PaletteOverlay } from '../../features/palette/components/PaletteOverlay';
+import { ToastProvider } from '../../app/components/Toast';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';
 import {
   AGENT,
@@ -336,6 +339,95 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     });
     expect(fromContext.filter((label) => label !== 'Open in GitLab')).toEqual(fromOverflow);
     expect(fromContext[0]).toBe('Open in GitLab');
+  });
+
+  it('commit row: the ⋯, the right click and Cmd+K on the focused row list the same actions in the same order', async () => {
+    seedActionState({ useAppStore, seed: {} });
+    const target: CommitActionTarget = {
+      kind: 'commit',
+      facts: {
+        sha: 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1',
+        shortSha: 'b2c3d4e',
+        subject: 'Keep trailing-comma rows in the ledger-core importer',
+        isFolded: false,
+        isRemoved: false,
+        canRemove: true,
+        canFoldDown: true,
+        onRename: vi.fn(),
+        onFoldDown: vi.fn(),
+        onSquashDown: vi.fn(),
+        onToggleRemove: vi.fn(),
+        onSeparate: vi.fn(),
+        onMove: vi.fn(),
+      },
+    };
+    withMenus(
+      <HistoryCommitRow
+        sessionId={SESSION}
+        commit={{
+          sha: target.facts.sha,
+          shortSha: target.facts.shortSha,
+          subject: target.facts.subject,
+          author: 'Mara Quill',
+          timestamp: 1_790_000_000,
+          pushed: false,
+          parentSha: null,
+        }}
+        view="now"
+        mark={null}
+        titleOf={(sha) => sha}
+        conflictFiles={[]}
+        includes={[]}
+        takenIn={[]}
+        pills={{ isHead: true, remote: null, prNumber: null }}
+        isNew={false}
+        isHighlighted={false}
+        isLifted={false}
+        isDropInto={false}
+        arrival={null}
+        isInteractive
+        isEditing={false}
+        isExpanded={false}
+        editor={null}
+        nowMs={1_790_000_000_000}
+        target={target}
+        onPointerDown={vi.fn()}
+        onHover={vi.fn()}
+        onSeparate={vi.fn()}
+        onModeChange={vi.fn()}
+        onToggleExpanded={vi.fn()}
+      />,
+    );
+    const row = document.querySelector(`[data-history-row="${target.facts.sha}"]`) as HTMLElement;
+    const { fromOverflow, fromContext } = await overflowThenContext({
+      overflow: screen.getByRole('button', { name: 'More for b2c3d4e' }),
+      context: row,
+    });
+    await closeMenus();
+    act(() => row.focus());
+    render(
+      <ToastProvider>
+        <PaletteOverlay onClose={vi.fn()} />
+      </ToastProvider>,
+    );
+    const fromPalette = screen
+      .getAllByRole('option')
+      .map((option) => option.getAttribute('aria-label') ?? '')
+      .slice(0, fromOverflow.length);
+
+    expect(fromOverflow).toEqual([
+      'Rename',
+      'Fold down',
+      'Squash down',
+      'Move up',
+      'Move down',
+      'Copy SHA',
+      'Copy subject',
+      'Remove',
+    ]);
+    expect(fromContext).toEqual(fromOverflow);
+    expect(screen.getByText('For this commit')).toBeDefined();
+    expect(fromPalette).toEqual(fromOverflow);
   });
 
   it('opens the same menu from the keyboard with Shift+F10 and gives focus back on Escape', async () => {
