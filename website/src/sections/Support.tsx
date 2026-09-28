@@ -16,8 +16,8 @@ export const Support = () => (
     <div className="stackText">
       <p>
         Press ⌘I on any screen, or Report a bug in the footer, and write one line. The version, your
-        system and the screen you were on come along as chips you can remove, and What gets sent
-        shows everything before it leaves.
+        system, the screen you were on and your CLI versions come along as chips you can remove, and
+        What gets sent shows everything before it leaves.
       </p>
       <p>
         <b>&quot;This feels off&quot; is a valid bug report.</b> So is an idea.

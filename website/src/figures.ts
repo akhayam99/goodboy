@@ -277,12 +277,12 @@ export const SUPPORT: Figure = {
   id: 'support',
   width: 3840,
   height: 2400,
-  alt: 'Report a bug open over the Harborline board: one line typed, the version, system and screen as chips, and Send',
+  alt: 'Report a bug open over the Harborline board: one line typed, the version, system, screen and CLI versions as chips, and Send',
   details: [
     {
       id: 'support-d1',
-      width: 1494,
-      height: 515,
+      width: 1504,
+      height: 592,
       caption: 'One line, and what gets sent is shown before it goes',
     },
   ],

@@ -793,7 +793,7 @@ The best support is running Goodboy on the work you already have. When something
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s32-report-bug-dark.webp">
-  <img src="./docs/readme/s32-report-bug-light.webp" alt="Report a bug over the Harborline board: one line typed, the version, system and screen as chips, and Send">
+  <img src="./docs/readme/s32-report-bug-light.webp" alt="Report a bug over the Harborline board: one line typed, the version, system, screen and CLI versions as chips, and Send">
 </picture>
 
 ### Report a bug
