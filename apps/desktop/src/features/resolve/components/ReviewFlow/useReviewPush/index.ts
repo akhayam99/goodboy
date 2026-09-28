@@ -1,11 +1,16 @@
 import { useCallback, useState } from 'react';
 import { formatError } from '@goodboy/ui';
 import type { ResolvePublicationPreview, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { agentPlace } from '../../../../store/slices/navigation/place';
-import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import type { BlockerCopy } from '../../resolvePublishCopy';
-import { PUSH_BUSY, pushFailedSentence, pushResultOf, type PushResult } from '../../reviewPushCopy';
+import { useAppStore } from '../../../../../store';
+import { agentPlace } from '../../../../../store/slices/navigation/place';
+import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
+import type { BlockerCopy } from '../../../resolvePublishCopy';
+import {
+  PUSH_BUSY,
+  pushFailedSentence,
+  pushResultOf,
+  type PushResult,
+} from '../../../reviewPushCopy';
 
 export type ReviewPushPhase =
   | { readonly kind: 'idle' }

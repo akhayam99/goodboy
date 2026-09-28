@@ -18,7 +18,6 @@ export const REVIEW_FLOW_LABEL = {
   keysHint: '↵ sends, ⇧↵ new line, Esc cancels',
   previous: 'Previous comment',
   next: 'Next comment',
-  openInDiff: 'Open in diff',
   noChangeCaptured: 'The agent changed no code for this comment.',
   tooLarge: 'The change is too large to show here.',
 } as const;

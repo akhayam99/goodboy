@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import type { SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import type { ResolveItemDraft } from '../../resolveItemDraft';
-import type { ResolveQueueRow } from '../../buildResolveQueueRows';
-import { groupConversationsByFile } from '../../groupConversationsByFile';
-import { useResolveQueueRows } from '../../hooks/useResolveQueueRows';
-import { conversationSourceOf } from '../../notes/conversationSource';
-import { isReplyEdited } from '../../reviewRows';
+import { useAppStore } from '../../../../../store';
+import type { ResolveItemDraft } from '../../../resolveItemDraft';
+import type { ResolveQueueRow } from '../../../buildResolveQueueRows';
+import { groupConversationsByFile } from '../../../groupConversationsByFile';
+import { useResolveQueueRows } from '../../../hooks/useResolveQueueRows';
+import { conversationSourceOf } from '../../../notes/conversationSource';
+import { isReplyEdited } from '../../../reviewRows';
 import {
   REVIEW_COMMENT_GROUPS,
   reviewCommentGroup,
@@ -14,7 +14,7 @@ import {
   reviewCommentWord,
   type ReviewCommentGroup,
   type ReviewCommentState,
-} from '../../reviewCommentState';
+} from '../../../reviewCommentState';
 
 export type ReviewEntry = {
   readonly row: ResolveQueueRow;

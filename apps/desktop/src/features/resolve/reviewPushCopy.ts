@@ -5,7 +5,7 @@ import { closingThreadCount } from './closingThreadCount';
 const plural = (count: number, one: string, many: string): string =>
   `${count} ${count === 1 ? one : many}`;
 
-export const pushedCount = ({ preview }: { readonly preview: ResolvePublicationPreview }): number =>
+const pushedCount = ({ preview }: { readonly preview: ResolvePublicationPreview }): number =>
   new Set([
     ...preview.replies.map((reply) => reply.threadId),
     ...preview.notes.map((note) => note.threadId),

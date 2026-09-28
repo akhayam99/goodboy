@@ -686,7 +686,7 @@ with a local commit and never pushes.
   chat log
 
 Nothing reaches GitHub until you push. `Push N` in the Review header is the
-one way out: the per-comment publish and the publication dock are gone. It
+one way out, for every accepted comment at once. It
 confirms inline under the header with exactly what goes out (`Push 2 to
 hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
 resolved on GitHub.`), naming the commit style set in Review replies. A
