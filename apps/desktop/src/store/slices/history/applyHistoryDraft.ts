@@ -93,7 +93,13 @@ const appliedSummary = ({ draft, trial, prHeadSha }: SummaryParams): HistoryAppl
       text: historyEditText({ edit, titleOf }),
     })),
     includes,
-    newShas: [...new Set(trial.map.flatMap((moved) => (moved.to === null ? [] : [moved.to])))],
+    newShas: [
+      ...new Set(
+        trial.map.flatMap((moved) =>
+          moved.to === null || moved.to === moved.from ? [] : [moved.to],
+        ),
+      ),
+    ],
     touchedOnline: model.touchedOnline,
     isSameCode: trial.isTreeEqual,
     isOnMain: draft.onto !== null,

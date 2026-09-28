@@ -607,6 +607,29 @@ describe('apply a planned rewrite', () => {
     expect(engine.pushWithLease).not.toHaveBeenCalled();
   });
 
+  it('counts as new only the commits the rewrite made, never one it kept as it was', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({
+      kind: 'tried',
+      result: {
+        ...TRIED,
+        map: [
+          { from: 'a1', to: 'a1' },
+          { from: 'b2', to: 'x2' },
+        ],
+      },
+    });
+
+    await harnessed.slice.applyHistoryDraft({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      shouldPush: false,
+    });
+
+    expect(harnessed.read().historyRuns[MOUNT_ID]?.applied?.newShas).toEqual(['x2']);
+  });
+
   it('stops before the copy when the worktree is dirty and moves nothing', async () => {
     const harnessed = harness();
     seedDraft({ harnessed });
