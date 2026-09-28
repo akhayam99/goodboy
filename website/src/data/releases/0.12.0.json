@@ -1,11 +1,46 @@
 {
   "version": "0.12.0",
-  "summary": "Decisions in the context drawer now show why they were made, in a quiet line right under each one.",
+  "summary": "Right click any object, reach any action from Cmd+K, find anything with Cmd+F, and take review comments from draft to push in one flow.",
   "new": [
+    {
+      "title": "Right click on everything",
+      "area": "app",
+      "copy": "Sessions, agents, workflow runs, artifacts, pull requests, worktree rows, diff files and messages open a menu at the pointer with every action they have."
+    },
+    {
+      "title": "A command palette built around actions",
+      "area": "app",
+      "copy": "Cmd+K opens on what you are looking at, named in a chip, with its actions first."
+    },
+    {
+      "title": "Search sessions, messages, plans and more",
+      "area": "app",
+      "copy": "Cmd+F searches sessions, messages, agents, plans, reports, decisions, questions, issues, pull requests, branches, workflows and diff comments."
+    },
     {
       "title": "See why each decision was made",
       "area": "sessions",
       "copy": "When Goodboy records a decision from a session, it now keeps the reason that came with it."
+    },
+    {
+      "title": "Pull request, Diff and Review open as layers",
+      "area": "review",
+      "copy": "From a session, the pull request, its Diff and its Review open as one path in the trail, and Back walks it."
+    },
+    {
+      "title": "Review as one flow with one push",
+      "area": "review",
+      "copy": "Review lists the comments on the left, grouped as Open, Waiting for the push and Done, with the one you picked on the right."
+    },
+    {
+      "title": "Write a review as a form",
+      "area": "review",
+      "copy": "Write review puts its form under the diff: your line comments with Edit and Delete, the verdict and the summary, then one button named after the verdict (Approve, Request changes, Submit comments)."
+    },
+    {
+      "title": "A quieter changelog list",
+      "area": "app",
+      "copy": "The release list drops the date on every row."
     }
   ],
   "groups": [
@@ -120,16 +155,23 @@
       "image": "s02-kickoff",
       "features": [
         {
-          "id": "start-blank-set-it-up-step-by-step",
-          "title": "Start blank, set it up step by step",
-          "copy": "New opens a fresh session right away, with nothing to fill in first.",
+          "id": "how-do-you-want-to-start",
+          "title": "How do you want to start?",
+          "copy": "Start from an issue, a workflow or a question, in one draft with three tabs: Pick up a task, Run a workflow and Ask an agent.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "start-blank",
+          "title": "Start blank",
+          "copy": "Start from the goal instead: Start blank in the kickoff header opens the session straight on its Overview, and you add the goal, projects and work from there.",
           "image": null,
           "isNew": false
         },
         {
           "id": "pick-up-a-task-with-a-drafted-brief",
           "title": "Pick up a task, with a drafted brief",
-          "copy": "Turn an issue into a briefed session from the Inbox.",
+          "copy": "Turn an issue into a briefed session in one pick.",
           "image": null,
           "isNew": false
         },
@@ -143,7 +185,7 @@
         {
           "id": "run-a-workflow",
           "title": "Run a workflow",
-          "copy": "Start the work lists your own workflows, the built-in ones, an orchestrated workflow and a custom one.",
+          "copy": "The full workflow builder, right in the kickoff: pick Orchestrated, Custom or Preset, see the plan you will run, edit the steps, choose which providers it can use, and set Starts, Autorun and a spend cap.",
           "image": null,
           "isNew": false
         },
@@ -207,6 +249,13 @@
           "id": "session-overview",
           "title": "Session overview",
           "copy": "Find the goal, linked issues, projects, cost and the buttons to start an agent or a workflow on one screen.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "refresh-a-session",
+          "title": "Refresh a session",
+          "copy": "See pull requests made outside Goodboy without reloading.",
           "image": null,
           "isNew": false
         },
@@ -738,7 +787,7 @@
         {
           "id": "close-on-github",
           "title": "Close on GitHub",
-          "copy": "Finish a review in one action: push the fixes, post the replies and resolve the threads.",
+          "copy": "Finish a review in one action: Push N in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm right under the header.",
           "image": null,
           "isNew": false
         },
@@ -752,7 +801,7 @@
         {
           "id": "fixes-on-a-branch-that-moved",
           "title": "Fixes on a branch that moved",
-          "copy": "Approve a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.",
+          "copy": "Accept a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.",
           "image": null,
           "isNew": false
         },
@@ -766,7 +815,14 @@
         {
           "id": "github-pull-request-page",
           "title": "GitHub pull request page",
-          "copy": "Know whether a GitHub pull request can merge, in plain words, with details, checks and activity, and merge, mark ready, draft or close it from there.",
+          "copy": "Know whether a GitHub pull request can merge, in plain words, with details and checks, and merge, mark ready, draft or close it from there.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "pull-request-diff-and-review-as-layers",
+          "title": "Pull request, Diff and Review as layers",
+          "copy": "Move between a pull request, its Diff and its Review without losing your place.",
           "image": null,
           "isNew": false
         },
@@ -794,7 +850,7 @@
         {
           "id": "write-review",
           "title": "Write review",
-          "copy": "Draft line comments on a GitHub pull request and publish them with Comment, Approve or Request changes.",
+          "copy": "Review someone else's pull request in a form under the diff: your line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.",
           "image": null,
           "isNew": false
         }
@@ -1051,9 +1107,23 @@
       "image": null,
       "features": [
         {
+          "id": "right-click-menus",
+          "title": "Right click menus",
+          "copy": "Right click a session, agent, run, artifact, pull request, worktree row, diff file or message to see every action it has, at the pointer.",
+          "image": null,
+          "isNew": false
+        },
+        {
           "id": "command-palette",
           "title": "Command palette",
-          "copy": "Find workspaces, sessions, agents, pages, scripts and actions with ⌘K, using the same prefixes as the composer.",
+          "copy": "Press ⌘K to act on what you are looking at: the verbs of the open session or agent come first, and → shows every action of any row.",
+          "image": null,
+          "isNew": false
+        },
+        {
+          "id": "search",
+          "title": "Search",
+          "copy": "Find a message, a plan, a decision, an issue or a branch with ⌘F, across every session, filtered by type, project, provider, status or date.",
           "image": null,
           "isNew": false
         },
