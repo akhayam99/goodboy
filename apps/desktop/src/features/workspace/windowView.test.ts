@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
-import { consumeReloadIntent, writeReloadIntent } from './windowView';
+import { consumeReloadIntent, restoredLayers, writeReloadIntent } from './windowView';
 
 const KEY = 'goodboy:window-reload-intent';
 
@@ -83,6 +83,34 @@ describe('windowView reload intent', () => {
       sessionId: null,
       agentId: null,
     });
+  });
+
+  it('carries the layer path of the session and drops one that names another session', () => {
+    const layers = [
+      {
+        at: 'session',
+        sessionId: session,
+        view: { lens: 'pr', agentId: null, studio: null, target: null },
+      },
+      {
+        at: 'session',
+        sessionId: session,
+        view: { lens: 'review', agentId: null, studio: null, target: null },
+      },
+    ] as const;
+    writeReloadIntent({
+      mode: 'restore',
+      workspaceId: ws,
+      sessionId: session,
+      agentId: null,
+      layers,
+    });
+    const intent = consumeReloadIntent();
+
+    expect(intent === null ? [] : restoredLayers({ intent, sessionId: session })).toEqual(layers);
+    expect(
+      intent === null ? [] : restoredLayers({ intent, sessionId: 'sess-2' as SessionId }),
+    ).toEqual([]);
   });
 
   it('round-trips a fresh intent', () => {

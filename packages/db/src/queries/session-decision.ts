@@ -13,6 +13,7 @@ type Row = {
   session_id: string;
   number: number;
   text: string;
+  why: string | null;
   status: string;
   replaced_by: number | null;
   author: string;
@@ -40,6 +41,7 @@ const toDomain = (row: Row): SessionDecision => ({
   sessionId: row.session_id as SessionId,
   number: row.number,
   text: row.text,
+  why: row.why,
   status: isStatus(row.status) ? row.status : 'active',
   replacedBy: row.replaced_by,
   author: isAuthor(row.author) ? row.author : 'summarizer',
@@ -55,7 +57,7 @@ const toDomain = (row: Row): SessionDecision => ({
 });
 
 const COLUMNS =
-  'id, session_id, number, text, status, replaced_by, author, agent_id, turn_ordinal, reason, closed_by, closed_by_agent_id, previous_text, reworded_at, created_at, updated_at';
+  'id, session_id, number, text, why, status, replaced_by, author, agent_id, turn_ordinal, reason, closed_by, closed_by_agent_id, previous_text, reworded_at, created_at, updated_at';
 
 type SessionParams = {
   readonly db: Database;
@@ -85,9 +87,10 @@ export const saveSessionDecisions = async ({ db, decisions }: SaveParams): Promi
   await db.transaction({
     statements: decisions.map((decision) => ({
       sql: `INSERT INTO session_decisions (${COLUMNS})
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           text = excluded.text,
+          why = excluded.why,
           status = excluded.status,
           replaced_by = excluded.replaced_by,
           author = excluded.author,
@@ -102,6 +105,7 @@ export const saveSessionDecisions = async ({ db, decisions }: SaveParams): Promi
         decision.sessionId,
         decision.number,
         decision.text,
+        decision.why,
         decision.status,
         decision.replacedBy,
         decision.author,

@@ -51,6 +51,7 @@ export type PullRequestState = {
   mergeQueue?: { position: number | null } | null;
   headSha?: string | null;
   mergedAt?: string | null;
+  author?: string | null;
 };
 
 export type GithubInboxPrRole = 'review-requested' | 'author';

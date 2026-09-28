@@ -534,6 +534,88 @@ describe('publishConversations over a real git repository', () => {
     expect(receipts[0]?.resolvedAt).not.toBeNull();
   });
 
+  it('accepts two fixes and one resolve-only comment, then pushes them once in one commit', async () => {
+    const fix = commit({ text: 'export const retry = () => 3;\n', message: 'fix: cap retries' });
+    const { actions, get } = makeStore();
+    const queue = async ({ threadId }: { readonly threadId: string }): Promise<string> => {
+      const row = (await listResolveThreads({ db: tauriDatabase, sessionId: SESSION_ID })).find(
+        (candidate) => candidate.threadId === threadId,
+      );
+      const itemId = `item-${threadId}`;
+      await insertResolveQueueItem({
+        db: tauriDatabase,
+        item: {
+          id: itemId,
+          sessionId: SESSION_ID,
+          threadId,
+          generation: 0,
+          reopenedFromItemId: null,
+          candidateRevision: row?.revision ?? 0,
+          approvalState: 'none',
+          approvedRevision: null,
+          approvedReplyHash: null,
+          integratedSha: null,
+          deferredAt: null,
+          deliveredAt: null,
+          supersededAt: null,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      });
+      return itemId;
+    };
+    for (const threadId of ['PRRT_1', 'PRRT_2']) {
+      await actions.updateResolveThread({
+        sessionId: SESSION_ID,
+        threadId,
+        prNumber: 248,
+        patch: { state: 'fixed', disposition: 'fix', commitShas: [fix], replyDraft: 'Capped at 6' },
+      });
+      const itemId = await queue({ threadId });
+      const revision =
+        (await listResolveThreads({ db: tauriDatabase, sessionId: SESSION_ID })).find(
+          (row) => row.threadId === threadId,
+        )?.revision ?? 0;
+      await actions.acceptResolveQueueItem({
+        sessionId: SESSION_ID,
+        itemId,
+        revision,
+        reply: 'Capped at 6',
+      });
+    }
+    await actions.updateResolveThread({
+      sessionId: SESSION_ID,
+      threadId: 'PRRT_3',
+      prNumber: 248,
+      patch: { state: 'open' },
+    });
+    await actions.resolveWithoutReply({
+      sessionId: SESSION_ID,
+      itemId: await queue({ threadId: 'PRRT_3' }),
+    });
+    expect(h.run.mock.calls).toEqual([]);
+    expect(h.pushedFrom).toEqual([]);
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    expect(preview.blocker).toBeNull();
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([fix]);
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'done', pushedHead: fix, total: 3, resolved: 3 });
+    expect(h.pushedFrom).toHaveLength(1);
+    const replies = h.run.mock.calls.filter(([args]) =>
+      args.join(' ').includes('addPullRequestReviewThreadReply'),
+    );
+    expect(replies).toHaveLength(2);
+    expect(replies.some(([args]) => args.join(' ').includes('PRRT_3'))).toBe(false);
+    expect(get().sessionResolveThreads[SESSION_ID]?.every((row) => row.state === 'closed')).toBe(
+      true,
+    );
+  });
+
   it('leaves the thread open on GitHub when the viewer cannot resolve it', async () => {
     const { actions, get, store } = makeStore();
     await seedAnswerRow({ actions, threadId: 'PRRT_1', reply: 'Already handled elsewhere' });

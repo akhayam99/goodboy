@@ -57,6 +57,9 @@ const { notify, state, showToast, subscribers } = vi.hoisted(() => {
       stopArtifactGeneration: vi.fn(async () => undefined),
       wireframeScoutVerification: {},
       plans: [] as ReadonlyArray<unknown>,
+      get sessionPlans(): Record<string, ReadonlyArray<unknown>> {
+        return { 'sess-1': this.plans };
+      },
       openQuestions: [] as ReadonlyArray<unknown>,
     },
   };
@@ -75,6 +78,12 @@ vi.mock('../../../../store', async () => {
     return selector(state);
   };
   useAppStore.getState = () => state;
+  useAppStore.subscribe = (listener: () => void) => {
+    subscribers.add(listener);
+    return () => {
+      subscribers.delete(listener);
+    };
+  };
   return {
     ...(await import('../../../../store/slices/navigation/place')),
     EMPTY_ARRAY: [] as readonly never[],
@@ -353,7 +362,7 @@ describe('ArtifactStudio shell', () => {
     expect(screen.getByText('Each posting rounded its own share.')).toBeDefined();
   });
 
-  it('keeps every export behind More, with a label on each row', () => {
+  it('lists every action behind More, the buttoned Edit included and Open left out, in the registry order', () => {
     state.sessionArtifacts = { 'sess-1': [report] };
     focus('artifact-report');
     renderStudio();
@@ -364,10 +373,11 @@ describe('ArtifactStudio shell', () => {
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
     ).toEqual([
-      expect.stringContaining('Open in browser'),
+      'Edit',
       expect.stringContaining('Regenerate'),
       'Copy markdown',
       'Save markdown to…',
+      expect.stringContaining('Open in browser'),
       expect.stringContaining('Show in Finder'),
     ]);
   });

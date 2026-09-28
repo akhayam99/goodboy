@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { SectionHeader } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import type { LensKind } from '../../../../../store';
 import { useAppStore, useMountDiffStats } from '../../../../../store';
 import { MountCleanupProposals } from '../MountCleanupProposals';
 import { MountProjectAction } from './MountProjectAction';
@@ -18,15 +17,16 @@ import {
 
 type Props = {
   readonly session: Session;
-  readonly onSelectLens: (lens: LensKind) => void;
 };
 
 const NO_PROJECT_HINT = 'No project yet. Turns run in the session folder until you add one.';
 
-export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
+export const ProjectMountRows = ({ session }: Props) => {
   const groups = useMountRows({ sessionId: session.id });
   const loadSessionMounts = useAppStore((state) => state.loadSessionMounts);
   const loadPrSeries = useAppStore((state) => state.loadPrSeries);
+  const hasDetectedEditors = useAppStore((state) => state.detectedEditors.length > 0);
+  const loadDetectedEditors = useAppStore((state) => state.loadDetectedEditors);
   const diffStats = useMountDiffStats(session.id);
   const settings = useAppStore((state) => state.settings);
   const saveSetting = useAppStore((state) => state.saveSetting);
@@ -48,6 +48,12 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
   const pendingWorktrees = useWorktreeStatusPending({ targets: worktreeTargets });
   const worktreeCount = worktreeTargets.length;
   const showProjectsHint = shouldShowProjectsHint({ settings, worktreeCount });
+
+  useEffect(() => {
+    if (!hasDetectedEditors) {
+      void loadDetectedEditors();
+    }
+  }, [hasDetectedEditors, loadDetectedEditors]);
 
   useEffect(() => {
     void loadSessionMounts({ sessionId: session.id }).catch(() => undefined);
@@ -90,7 +96,6 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
                 diffStats={diffStats}
                 worktreeStatuses={worktreeStatuses}
                 pendingWorktrees={pendingWorktrees}
-                onSelectLens={onSelectLens}
               />
             ))}
           </div>

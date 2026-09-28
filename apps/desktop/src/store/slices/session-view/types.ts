@@ -88,11 +88,6 @@ export type ResolveQueueView = {
   readonly lastRouting: AgentKindRouting | null;
 };
 
-export type ResolvePublicationRequest = {
-  readonly reconcile: boolean;
-  readonly requestId: number;
-};
-
 export const EMPTY_RESOLVE_QUEUE_VIEW: ResolveQueueView = {
   order: [],
   scrollTop: 0,
@@ -172,7 +167,6 @@ type SessionViewSliceState = {
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;
   readonly diffFocus: Readonly<Record<SessionId, DiffFocus | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;
@@ -222,10 +216,6 @@ type SessionViewSliceActions = {
     readonly path: string | null;
     readonly order: ReadonlyArray<string>;
     readonly scrollTop: number;
-  }): void;
-  openResolvePublication(params: {
-    readonly sessionId: SessionId;
-    readonly reconcile: boolean;
   }): void;
   setResolveItemDraft(params: {
     readonly sessionId: SessionId;

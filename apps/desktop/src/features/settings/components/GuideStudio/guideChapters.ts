@@ -221,7 +221,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Decisions',
-        desc: 'Each decision gets a number and a byline. Replacing or withdrawing one needs a reason that stays next to it.',
+        desc: 'Each decision gets a number and a byline. A decision Goodboy records keeps why it was made, shown under it in the context drawer. Replacing or withdrawing one needs a reason that stays next to it.',
       },
       {
         term: 'Running summary',
@@ -286,19 +286,27 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Diff',
-        desc: 'Split or unified, with word-level highlights and a Viewed tick per file. Quote a line into a note or a question for an agent.',
+        desc: 'Split or unified, with word-level highlights and a Viewed tick per file. Quote a line into a note or a question for an agent. The header offers the next step for the branch.',
       },
       {
-        term: 'Resolve',
-        desc: 'Select review comments and press Resolve. An agent writes each fix as a local commit and drafts the reply, and you approve, ask for a revision or mark it Will not fix.',
+        term: 'Review',
+        desc: 'The comments on the left, grouped as Open, Waiting for the push and Done, and the one you picked on the right. Draft fixes for N writes each fix as a local commit and drafts the reply, and you accept, edit or skip it.',
       },
       {
-        term: 'Close on GitHub',
-        desc: 'Push the fixes, post the replies and resolve the threads in one action.',
+        term: 'Push',
+        desc: 'Push N in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm under the header.',
       },
       {
         term: 'Pull request page',
-        desc: 'Whether a GitHub pull request can merge, in plain words, with checks and activity. Merge asks for confirmation.',
+        desc: 'Whether a GitHub pull request can merge, in plain words, with details and checks. The next step is the one main action, and Merge and Close confirm under the header.',
+      },
+      {
+        term: 'Layers',
+        desc: 'The pull request, its Diff and its Review open as one path in the trail, and Back walks it.',
+      },
+      {
+        term: 'Write review',
+        desc: 'A form under the diff: line comments, the verdict and a summary, sent with Approve, Request changes or Submit comments.',
       },
       {
         term: 'Refresh',
@@ -474,7 +482,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Changelog',
-        desc: 'Searchable release notes inside the app. After an update, one page covers the releases you skipped.',
+        desc: 'Searchable release notes inside the app. After an update, one page covers the releases you skipped. Only releases that update your data in one direction carry a mark in the list.',
       },
       {
         term: 'Links into the app',
@@ -498,7 +506,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Command palette',
-        desc: 'Find workspaces, sessions, agents, pages, scripts and actions, with the same prefixes as the message box: $ for scripts, ~ for workflows, @ for agents.',
+        desc: 'Opens on what you are looking at, with its actions first. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row.',
+      },
+      {
+        term: 'Search',
+        desc: 'Finds sessions, messages, agents, plans, decisions, questions, issues, pull requests, branches, workflows and diff comments, filtered by type, project, provider, status or date. Walk the matches in a view with ⌘G. In a focused terminal it finds in the scrollback.',
+      },
+      {
+        term: 'Right click',
+        desc: 'Any session, agent, run, artifact, pull request, worktree row, diff file or message opens a menu with every action it has. Shift+F10 opens it on the focused row.',
       },
       {
         term: 'Esc',

@@ -4,6 +4,7 @@ import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
 import { applyDecisionOpsToSession, loadDecisionLedger } from './decisions-ledger-store';
 import { autoPopulateContext } from './auto-populate';
+import { parseDecisionOps } from '../summarizer/decision-ops';
 
 const SESSION = 'session_ledger' as SessionId;
 
@@ -57,6 +58,41 @@ describe('decision ledger store', () => {
     expect(applied.previousSlotValue).toBe('');
     expect(applied.slotValue).toBe('- D1 Key on the event id');
     expect(await decisionsSlot(db)).toBe('- D1 Key on the event id');
+  });
+
+  it('persists the why of a summarizer decision and reads it back', async () => {
+    const db = await makeSession();
+    const parsed = parseDecisionOps({
+      value: [
+        {
+          op: 'add',
+          text: 'Retry notify-relay deliveries with backoff',
+          why: ' The relay drops events during deploys ',
+        },
+      ],
+    });
+    if (parsed.kind !== 'ok') {
+      throw new Error(parsed.message);
+    }
+
+    await applyDecisionOpsToSession({
+      db,
+      sessionId: SESSION,
+      ops: parsed.ops,
+      actor: { author: 'summarizer', agentId: null, turnOrdinal: 2 },
+    });
+    await applyDecisionOpsToSession({
+      db,
+      sessionId: SESSION,
+      ops: [{ kind: 'add', text: 'Keep processed ids for 30 days' }],
+      actor: { author: 'user', agentId: null, turnOrdinal: null },
+    });
+
+    const ledger = await loadDecisionLedger({ db, sessionId: SESSION });
+    expect(ledger.map((row) => [row.number, row.why])).toEqual([
+      [1, 'The relay drops events during deploys'],
+      [2, null],
+    ]);
   });
 
   it('lets an agent replace and withdraw by number through its markers', async () => {

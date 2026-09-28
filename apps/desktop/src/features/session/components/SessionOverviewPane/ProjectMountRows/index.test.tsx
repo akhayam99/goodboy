@@ -7,9 +7,16 @@ import type { Session } from '@goodboy/types';
 const { store, useWorktreeStatuses, useWorktreeStatusPending } = vi.hoisted(() => ({
   store: {
     projects: [] as ReadonlyArray<Record<string, unknown>>,
+    sessions: [] as ReadonlyArray<Record<string, unknown>>,
+    sessionResolveAttempts: {},
+    sessionActiveMount: {},
     sessionMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     mountGithub: {} as Record<string, Record<string, unknown>>,
+    sessionGithub: {},
+    sessionResolveThreads: {},
+    openReviewTarget: async () => ({ kind: 'opened' as const }),
+    openRewriteHistory: () => undefined,
     mountGitlabMr: {},
     mountBitbucketPr: {},
     mountBranchObservations: {},
@@ -48,7 +55,10 @@ const { store, useWorktreeStatuses, useWorktreeStatusPending } = vi.hoisted(() =
 
 vi.mock('../../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
+  useAppStore: Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
+    getState: () => store,
+    subscribe: () => () => undefined,
+  }),
   useMountDiffStats: () => new Map([['/api-one', { additions: 3, deletions: 1 }]]),
 }));
 vi.mock('../../../../worktree/useMountRemoteHostKind', () => ({
@@ -67,13 +77,11 @@ vi.mock('./MountProjectAction', () => ({
 vi.mock('./ProjectBranchChip', () => ({
   ProjectBranchChip: ({ branch }: { readonly branch: string }) => <span>{branch}</span>,
 }));
-vi.mock('./ProjectSyncControl', () => ({ ProjectSyncControl: () => null }));
 vi.mock('./MountActionsMenu', () => ({ MountActionsMenu: () => null }));
 vi.mock('./RemoveWorktreeAction', () => ({ RemoveWorktreeAction: () => null }));
 vi.mock('./NewBranchMountAction', () => ({
   NewBranchMountAction: () => <button>New worktree</button>,
 }));
-vi.mock('../useEditorMenuItems', () => ({ useEditorMenuItems: () => [] }));
 vi.mock('../MountCleanupProposals', () => ({
   MountCleanupProposals: () => null,
 }));
@@ -194,7 +202,7 @@ describe('ProjectMountRows', () => {
         },
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(screen.getByRole('list', { name: 'API worktrees' })).toBeDefined();
     expect(screen.getByRole('list', { name: 'WEB worktrees' })).toBeDefined();
@@ -213,7 +221,7 @@ describe('ProjectMountRows', () => {
         { ...mountView({ id: 'mount-2', branch: 'feat/two', path: '/web-one' }), projectId: 'web' },
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     const blocks = ['API', 'WEB'].map(
       (name) => screen.getByRole('list', { name: `${name} worktrees` }).parentElement,
@@ -240,7 +248,7 @@ describe('ProjectMountRows', () => {
         mountView({ id: 'mount-2', branch: 'feat/two', path: '/api-two' }),
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     const rows = screen.getAllByTestId('project-mount-row');
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
@@ -260,11 +268,11 @@ describe('ProjectMountRows', () => {
       'mount-1': githubState({ number: 11, state: 'open' }),
       'mount-2': githubState({ number: 12, state: 'open' }),
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     const [first, second] = screen.getAllByTestId('project-mount-row');
-    expect(within(first as HTMLElement).getByText('#11')).toBeDefined();
-    expect(within(second as HTMLElement).getByText('#12')).toBeDefined();
+    expect(within(first as HTMLElement).getByText('PR #11')).toBeDefined();
+    expect(within(second as HTMLElement).getByText('PR #12')).toBeDefined();
   });
 
   it('creates a request for a row that is not the active mount', async () => {
@@ -274,9 +282,33 @@ describe('ProjectMountRows', () => {
         mountView({ id: 'mount-2', branch: 'feat/two', path: '/api-two' }),
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    useWorktreeStatuses.mockReturnValue(
+      new Map([
+        [
+          '/api-one',
+          {
+            branch: 'feat/one',
+            head: 'aaa',
+            headSubject: 'work',
+            upstream: null,
+            upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+            mainDistance: { kind: 'known', ahead: 2, behind: 0 },
+            workingTree: {
+              kind: 'known',
+              staged: 0,
+              unstaged: 0,
+              untracked: 0,
+              unmerged: 0,
+              changed: 0,
+            },
+            inProgress: null,
+          },
+        ],
+      ]),
+    );
+    render(<ProjectMountRows session={session} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create a PR for API on feat/one' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create PR for API on feat/one' }));
 
     await waitFor(() =>
       expect(store.openMountRequest).toHaveBeenCalledWith({
@@ -294,9 +326,9 @@ describe('ProjectMountRows', () => {
         mountView({ id: 'mount-2', branch: 'feat/two', path: null, isAttached: false }),
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reopen API on feat/two' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen for API on feat/two' }));
 
     await waitFor(() =>
       expect(store.attachMount).toHaveBeenCalledWith({
@@ -315,7 +347,7 @@ describe('ProjectMountRows', () => {
     };
     store.mountGithub = { 'mount-1': githubState({ number: 11, state: 'merged' }) };
     store.prSeries = { 'session-1': [seriesOfTwo()] };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(screen.getAllByTestId('project-mount-row')).toHaveLength(1);
     const toggle = screen.getByRole('button', { name: /Show completed \(1\)/ });
@@ -363,7 +395,7 @@ describe('ProjectMountRows', () => {
         ],
       ]),
     );
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(
       screen.getAllByTestId('project-mount-row').map((row) => row.getAttribute('aria-label')),
@@ -413,7 +445,7 @@ describe('ProjectMountRows', () => {
         ],
       ]),
     );
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(
       screen.getAllByTestId('project-mount-row').map((row) => row.getAttribute('aria-label')),
@@ -433,7 +465,7 @@ describe('ProjectMountRows', () => {
       ],
     };
     store.prSeries = { 'session-1': [seriesOfTwo()] };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     const rows = screen.getAllByTestId('project-mount-row');
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
@@ -450,7 +482,7 @@ describe('ProjectMountRows', () => {
       ],
     };
     store.prSeries = { 'session-1': [seriesOfTwo()] };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(screen.getByText('restyle')).toBeDefined();
     expect(screen.getByText('Part 2/6')).toBeDefined();
@@ -464,12 +496,12 @@ describe('ProjectMountRows', () => {
         mountView({ id: 'mount-2', branch: 'feat/two', path: '/api-two' }),
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
-    const terminal = screen.getByRole('button', { name: 'Open terminal for API on feat/two' });
-    terminal.focus();
+    const menu = screen.getByRole('button', { name: 'API on feat/two actions' });
+    menu.focus();
 
-    expect(document.activeElement).toBe(terminal);
+    expect(document.activeElement).toBe(menu);
   });
 
   it('keeps an unmounted branch with open work out of the completed disclosure', () => {
@@ -479,7 +511,7 @@ describe('ProjectMountRows', () => {
         mountView({ id: 'mount-2', branch: 'feat/two', path: null, isAttached: false }),
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(screen.queryByRole('button', { name: /Completed/ })).toBeNull();
     expect(screen.getAllByTestId('project-mount-row')).toHaveLength(2);
@@ -487,7 +519,7 @@ describe('ProjectMountRows', () => {
 
   it('says where turns run once it knows the session has no project', () => {
     store.sessionProjectMounts = { 'session-1': [] };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(screen.getByText('Projects')).toBeDefined();
     expect(
@@ -497,7 +529,7 @@ describe('ProjectMountRows', () => {
   });
 
   it('stays quiet while the projects of the session are still loading', () => {
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(screen.queryByText(/No project yet/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
@@ -516,7 +548,7 @@ describe('ProjectMountRows', () => {
         },
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(screen.getByRole('button', { name: 'Add project' })).toBeDefined();
     expect(screen.getByTestId('project-mount-row')).toBeDefined();
@@ -527,7 +559,7 @@ describe('ProjectMountRows', () => {
     store.sessionMounts = {
       'session-1': [mountView({ id: 'mount-1', branch: 'feat/one', path: '/api-one' })],
     };
-    const view = render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    const view = render(<ProjectMountRows session={session} />);
     expect(screen.getByText(/Where this session works/)).toBeDefined();
     expect(store.saveSetting).not.toHaveBeenCalled();
 
@@ -538,7 +570,7 @@ describe('ProjectMountRows', () => {
         mountView({ id: 'mount-2', branch: 'feat/two', path: '/api-two' }),
       ],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
     expect(store.saveSetting).toHaveBeenCalledWith('projects.hint.dismissed', 'true');
   });
 
@@ -547,7 +579,7 @@ describe('ProjectMountRows', () => {
     store.sessionMounts = {
       'session-1': [mountView({ id: 'mount-1', branch: 'feat/one', path: '/api-one' })],
     };
-    render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
+    render(<ProjectMountRows session={session} />);
 
     expect(screen.queryByText(/Where this session works/)).toBeNull();
   });

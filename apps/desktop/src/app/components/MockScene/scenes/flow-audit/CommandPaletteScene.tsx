@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PANE_RHYTHM } from '@goodboy/ui';
-import { CommandPalette } from '../../../../../features/session/components/CommandPalette';
+import { PaletteOverlay } from '../../../../../features/palette/components/PaletteOverlay';
 import { TranscriptFeed } from './TranscriptFeed';
 import { noop } from './fixtures';
 import { seedChatSurfaces } from './seeds';
@@ -22,7 +22,7 @@ export const CommandPaletteScene = () => {
       <div className={PANE_RHYTHM.body}>
         <TranscriptFeed />
       </div>
-      <CommandPalette onClose={noop} />
+      <PaletteOverlay onClose={noop} />
     </main>
   );
 };

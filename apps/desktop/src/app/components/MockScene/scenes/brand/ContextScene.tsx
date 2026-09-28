@@ -87,6 +87,7 @@ const decision = (
   sessionId: CTX_SESSION_ID,
   number: entry.number,
   text: entry.text,
+  why: null,
   status: entry.state === 'replaced' ? 'replaced' : 'active',
   replacedBy: entry.state === 'replaced' ? 3 : null,
   author: 'agent',

@@ -133,6 +133,26 @@ describe('mainPresenceOf', () => {
 });
 
 describe('branchPriorityOf', () => {
+  it('orders a stopped rebase above everything, merged and on origin included', () => {
+    const status = statusOf({ inProgress: 'rebase' });
+    const main = mainPresenceOf({ status, isRebasingAgent: false });
+
+    expect(
+      branchPriorityOf({ presence: branchPresenceOf({ status, isMerged: true }), main }),
+    ).toEqual({ kind: 'rebase-stopped', word: 'Rebase stopped' });
+    expect(
+      branchPriorityOf({ presence: branchPresenceOf({ status, isMerged: false }), main }).word,
+    ).toBe('Rebase stopped');
+  });
+
+  it('says the branch is rebasing while the rewriter works on it', () => {
+    const status = statusOf({ mainDistance: { kind: 'known', ahead: 0, behind: 3 } });
+    const presence = branchPresenceOf({ status, isMerged: false });
+    const main = mainPresenceOf({ status, isRebasingAgent: true });
+
+    expect(branchPriorityOf({ presence, main }).word).toBe('Rebasing on main');
+  });
+
   it('orders merged above everything else', () => {
     const presence = branchPresenceOf({ status: statusOf(), isMerged: true });
     const main = mainPresenceOf({ status: statusOf(), isRebasingAgent: false });

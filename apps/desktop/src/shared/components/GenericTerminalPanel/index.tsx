@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
+import { SearchAddon } from '@xterm/addon-search';
 import '@xterm/xterm/css/xterm.css';
 import { RotateCcw } from 'lucide-react';
 import { getAppliedTheme, subscribeAppliedTheme } from '../../lib/theme';
@@ -12,6 +13,9 @@ import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
 import { MAX_CACHE_CHUNKS, outputCache } from './outputCache';
 import { Tooltip } from '@goodboy/ui';
+import { terminalFindKey } from './terminalFindKey';
+import { terminalFindOptions } from './terminalFindDecorations';
+import { TerminalFindBar, type TerminalFindController } from './TerminalFindBar';
 
 export type TerminalDriver = {
   write(data: string): void;
@@ -44,6 +48,10 @@ export const GenericTerminalPanel = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitAndSyncRef = useRef<(() => void) | null>(null);
+  const searchRef = useRef<SearchAddon | null>(null);
+  const isFindOpenRef = useRef(false);
+  const findTermRef = useRef('');
+  const [findStep, setFindStep] = useState<number | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -68,6 +76,30 @@ export const GenericTerminalPanel = ({
     term.unicode.activeVersion = '11';
     term.loadAddon(new ClipboardAddon());
     term.loadAddon(new WebLinksAddon((_event, uri) => void openUrl(uri)));
+    const searchAddon = new SearchAddon();
+    term.loadAddon(searchAddon);
+    searchRef.current = searchAddon;
+    term.attachCustomKeyEventHandler((event) => {
+      const key = terminalFindKey({ event, isOpen: isFindOpenRef.current });
+      if (key === null) {
+        return true;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      if (key === 'open') {
+        setFindStep((previous) => (previous ?? 0) + 1);
+        return false;
+      }
+      const findTerm = findTermRef.current;
+      const options = terminalFindOptions({ theme: getAppliedTheme() });
+      if (findTerm.length > 0 && key === 'next') {
+        searchAddon.findNext(findTerm, options);
+      }
+      if (findTerm.length > 0 && key === 'previous') {
+        searchAddon.findPrevious(findTerm, options);
+      }
+      return false;
+    });
     term.open(container);
 
     let webgl: WebglAddon | null = null;
@@ -166,6 +198,7 @@ export const GenericTerminalPanel = ({
       ro.disconnect();
       term.dispose();
       termRef.current = null;
+      searchRef.current = null;
       fitAndSyncRef.current = null;
     };
   }, [terminalId]);
@@ -194,6 +227,41 @@ export const GenericTerminalPanel = ({
     }
   }, [isActive, readOnly]);
 
+  const findController = useMemo(
+    (): TerminalFindController => ({
+      findNext: (findTerm) => {
+        findTermRef.current = findTerm;
+        searchRef.current?.findNext(findTerm, terminalFindOptions({ theme: getAppliedTheme() }));
+      },
+      findPrevious: (findTerm) => {
+        findTermRef.current = findTerm;
+        searchRef.current?.findPrevious(
+          findTerm,
+          terminalFindOptions({ theme: getAppliedTheme() }),
+        );
+      },
+      clear: () => {
+        findTermRef.current = '';
+        searchRef.current?.clearDecorations();
+      },
+      onResults: (listener) => {
+        const disposable = searchRef.current?.onDidChangeResults((event) =>
+          listener({ index: event.resultIndex, count: event.resultCount }),
+        );
+        return () => disposable?.dispose();
+      },
+    }),
+    [],
+  );
+
+  const closeFind = () => {
+    isFindOpenRef.current = false;
+    setFindStep(null);
+    termRef.current?.focus();
+  };
+
+  isFindOpenRef.current = findStep !== null;
+
   return (
     <div className="relative size-full overflow-hidden" inert={!isActive} aria-hidden={!isActive}>
       <div
@@ -202,7 +270,10 @@ export const GenericTerminalPanel = ({
         aria-label="Terminal"
         className="size-full overflow-hidden"
       />
-      {onRestart ? (
+      {findStep === null ? null : (
+        <TerminalFindBar controller={findController} step={findStep} onClose={closeFind} />
+      )}
+      {onRestart && findStep === null ? (
         <Tooltip content="Restart shell">
           <button
             type="button"

@@ -1,13 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
-import {
-  Button,
-  InlineConfirm,
-  LensEmptyState,
-  formatError,
-  useCopyLink,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
+import type { ScriptActionTarget } from '../../../actions/types';
+import { Plus } from 'lucide-react';
+import { Button, LensEmptyState, formatError, useCopyLink } from '@goodboy/ui';
 import type { MountId, ProjectScriptId, SessionId, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { PaneShell } from '../../../../shared/components/PaneShell';
@@ -53,11 +47,6 @@ type Props = {
 type RowParams = {
   readonly group: SessionScriptGroup;
   readonly script: RunnableScript;
-};
-
-type ArmedDelete = {
-  readonly savedId: ProjectScriptId;
-  readonly mountId: MountId;
 };
 
 const RUNNING_TICK_MS = 1_000;
@@ -113,7 +102,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     () => readPackagesCollapsedOverrides({ workspaceId }),
   );
   const [scopedProjectId] = useState(() => scriptsLensScope?.projectId ?? null);
-  const [armedDelete, setArmedDelete] = useState<ArmedDelete | null>(null);
   const [pageError, setPageError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const draft = useScriptDraft({ workspaceId });
@@ -269,78 +257,55 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
       } catch (caughtError) {
         setPageError(formatError(caughtError));
       }
-      setArmedDelete(null);
     },
     [deleteScript, workspaceId],
   );
 
-  const menuItemsFor = ({ group, script }: RowParams): ReadonlyArray<OverflowMenuItem> => {
+  const targetFor = ({ group, script }: RowParams): ScriptActionTarget => {
     const savedId = script.savedId;
-    if (savedId === null) {
-      return [
-        {
-          kind: 'item',
-          key: 'save-as',
-          label: 'Save as script',
-          onClick: () =>
-            draft.open({
-              mountId: group.mountId,
-              savedId: null,
-              projectId: group.projectId,
-              name: script.name,
-              body: workspaceInvocation({
-                manager: script.manager,
-                packageName: script.packageName,
-                relDir: script.relDir,
-                name: script.name,
-              }),
-            }),
-        },
-        {
-          kind: 'item',
-          key: 'copy',
-          label: 'Copy command',
-          onClick: () =>
-            void copy({
-              text: workspaceInvocation({
-                manager: script.manager,
-                packageName: script.packageName,
-                relDir: script.relDir,
-                name: script.name,
-              }),
-              key: script.key,
-            }),
-        },
-      ];
-    }
-    return [
-      {
-        kind: 'item',
-        key: 'edit',
-        label: 'Edit',
-        onClick: () =>
-          draft.open({
-            mountId: group.mountId,
-            savedId,
-            projectId: group.projectId,
-            name: script.name,
-            body: saved.find((candidate) => candidate.id === savedId)?.body ?? script.invocation,
-          }),
+    const invocation = workspaceInvocation({
+      manager: script.manager,
+      packageName: script.packageName,
+      relDir: script.relDir,
+      name: script.name,
+    });
+    return {
+      kind: 'script',
+      facts: {
+        name: script.name,
+        command: savedId === null ? invocation : script.invocation,
+        isRunning: recordFor({ runs, group, script })?.status === 'pending',
+        runBlockedReason: group.isReady ? null : `${group.projectName} is still preparing`,
+        onShowOutput: () => onOpen({ group, script }),
+        onRun: () => onRun({ group, script }),
+        onStop: () => onStop({ script }),
+        onEdit:
+          savedId === null
+            ? null
+            : () =>
+                draft.open({
+                  mountId: group.mountId,
+                  savedId,
+                  projectId: group.projectId,
+                  name: script.name,
+                  body:
+                    saved.find((candidate) => candidate.id === savedId)?.body ?? script.invocation,
+                }),
+        onDuplicate: savedId === null ? null : () => onDuplicate({ group, script }),
+        onSaveAs:
+          savedId === null
+            ? () =>
+                draft.open({
+                  mountId: group.mountId,
+                  savedId: null,
+                  projectId: group.projectId,
+                  name: script.name,
+                  body: invocation,
+                })
+            : null,
+        onDelete: savedId === null ? null : () => onDelete({ savedId }),
       },
-      {
-        kind: 'item',
-        key: 'duplicate',
-        label: 'Duplicate',
-        onClick: () => onDuplicate({ group, script }),
-      },
-      {
-        kind: 'item',
-        key: 'delete',
-        label: 'Delete',
-        destructive: true,
-        onClick: () => setArmedDelete({ savedId, mountId: group.mountId }),
-      },
-    ];
+    };
   };
 
   const editorNode =
@@ -412,26 +377,6 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
     if (isEditing) {
       return <div key={script.key}>{editorNode}</div>;
     }
-    const isArmed =
-      script.savedId !== null &&
-      armedDelete?.savedId === script.savedId &&
-      armedDelete.mountId === group.mountId;
-    if (isArmed && script.savedId !== null) {
-      const savedId = script.savedId;
-      return (
-        <InlineConfirm
-          key={script.key}
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={`Delete "${script.name}"?`}
-          description="Removes it from every session of this workspace."
-          confirmLabel="Delete"
-          autoDisarmMs={4000}
-          onConfirm={() => onDelete({ savedId })}
-          onCancel={() => setArmedDelete(null)}
-        />
-      );
-    }
     return (
       <ScriptRow
         key={script.key}
@@ -445,7 +390,7 @@ export const ScriptsPanel = ({ workspaceId, sessionId }: Props) => {
           (openPayload.mountId === null || openPayload.mountId === group.mountId)
         }
         blockedReason={group.isReady ? null : `${group.projectName} is still preparing`}
-        menuItems={menuItemsFor({ group, script })}
+        target={targetFor({ group, script })}
         onOpen={() => onOpen({ group, script })}
         onRun={() => onRun({ group, script })}
         onStop={() => onStop({ script })}

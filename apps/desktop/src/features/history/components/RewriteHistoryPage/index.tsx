@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { CommitActionTarget } from '../../../actions/types';
 import { RefreshCw, SquareTerminal } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import {
@@ -14,6 +15,7 @@ import {
   type OverflowMenuItem,
 } from '@goodboy/ui';
 import type { BranchCommit, HistoryStep, SessionId } from '@goodboy/types';
+import { HISTORY_SHOW_BACKUPS_EVENT, diffEventName } from '../../../actions/kinds/diff';
 import { useAppStore } from '../../../../store';
 import { usePendingAction, type PendingActionRun } from '../../../../shared/hooks/usePendingAction';
 import { useWorktreeStatuses } from '../../../session/hooks/useWorktreeStatuses';
@@ -94,6 +96,13 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     mountId === null ? null : (s.mountGithub[mountId]?.pr?.number ?? null),
   );
   const branchName = mount?.branch ?? null;
+
+  useEffect(() => {
+    const name = diffEventName({ name: HISTORY_SHOW_BACKUPS_EVENT, sessionId });
+    const onShow = () => setIsShowingBackups(true);
+    window.addEventListener(name, onShow);
+    return () => window.removeEventListener(name, onShow);
+  }, [sessionId]);
 
   useEffect(() => {
     if (mountId === null || branchName === null) {
@@ -331,6 +340,33 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
       run.phase !== 'pushed' &&
       run.phase !== 'applied' &&
       run.phase !== 'rewritten';
+    const commitTarget: CommitActionTarget = {
+      kind: 'commit',
+      facts: {
+        sha: commit.sha,
+        shortSha: commit.shortSha,
+        subject: commit.subject,
+        older: olderThan({ sha: step.sha }),
+        onPick: () =>
+          apply({
+            next: resetStep({ items, sha: step.sha }),
+            edit: { kind: 'verb', sha: step.sha, verb: 'pick' },
+          }),
+        onReword: () => setEditingSha(step.sha),
+        onSquash: () => squashWithBelow({ sha: step.sha }),
+        onFold: (target) =>
+          apply({
+            next: foldInto({ items, sha: step.sha, target }),
+            edit: { kind: 'fold', sha: step.sha, target },
+          }),
+        onDrop: () =>
+          apply({
+            next: setVerb({ items, sha: step.sha, verb: 'drop' }),
+            edit: { kind: 'verb', sha: step.sha, verb: 'drop' },
+          }),
+        onMove: (direction) => move({ sha: step.sha, direction }),
+      },
+    };
     return (
       <HistoryCommitRow
         key={step.sha}
@@ -366,33 +402,13 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
             onCancel={() => setEditingSha(null)}
           />
         }
+        contextMenu={{ target: commitTarget, anchorKey: `commit:${step.sha}` }}
         verbControl={
           <VerbMenu
             step={step}
-            older={olderThan({ sha: step.sha })}
+            target={commitTarget}
             isOnOrigin={commit.pushed}
             disabled={isBusy}
-            onPick={() =>
-              apply({
-                next: resetStep({ items, sha: step.sha }),
-                edit: { kind: 'verb', sha: step.sha, verb: 'pick' },
-              })
-            }
-            onReword={() => setEditingSha(step.sha)}
-            onSquash={() => squashWithBelow({ sha: step.sha })}
-            onFold={(target) =>
-              apply({
-                next: foldInto({ items, sha: step.sha, target }),
-                edit: { kind: 'fold', sha: step.sha, target },
-              })
-            }
-            onDrop={() =>
-              apply({
-                next: setVerb({ items, sha: step.sha, verb: 'drop' }),
-                edit: { kind: 'verb', sha: step.sha, verb: 'drop' },
-              })
-            }
-            onMove={(direction) => move({ sha: step.sha, direction })}
           />
         }
       />

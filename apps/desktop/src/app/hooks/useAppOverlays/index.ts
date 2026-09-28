@@ -15,6 +15,7 @@ import {
 import { AppOverlayRouter, AppStudio } from '../../components/AppOverlayRouter';
 import { clearCurrentSessionStudio } from './clearCurrentSessionStudio';
 import { footerTarget, type ConnectedIntegrations } from './overlayState';
+import type { OpenPaletteParams, PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { useCommitDiff } from './useCommitDiff';
 import { useSessionSurfaceEvents } from './useSessionSurfaceEvents';
 import { useStudioEvents } from './useStudioEvents';
@@ -53,8 +54,7 @@ export const useAppOverlays = ({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteSessionId, setDeleteSessionId] = useState<SessionId | null>(null);
   const deleteTargetSession = useSessionById(deleteSessionId);
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const [palettePrefix, setPalettePrefix] = useState('');
+  const [palette, setPalette] = useState<PaletteRequest | null>(null);
   const [convertWorkspaceOpen, setConvertWorkspaceOpen] = useState(false);
   useCommitDiff();
 
@@ -64,9 +64,8 @@ export const useAppOverlays = ({
   );
   const close = useCallback(() => closeStudio(), [closeStudio]);
 
-  const openPalette = useCallback((prefix = '') => {
-    setPalettePrefix(prefix);
-    setPaletteOpen(true);
+  const openPalette = useCallback(({ mode = 'commands', query = '' }: OpenPaletteParams = {}) => {
+    setPalette((current) => (current === null ? { mode, query } : { ...current, mode }));
   }, []);
 
   useStudioEvents({ open, close, openPalette });
@@ -164,7 +163,7 @@ export const useAppOverlays = ({
     setDeleteOpen(true);
   }, [currentSession]);
 
-  const closePalette = useCallback(() => setPaletteOpen(false), []);
+  const closePalette = useCallback(() => setPalette(null), []);
   const offerWorkspaceRepo = useCallback(() => setConvertWorkspaceOpen(true), []);
   const closeConvertWorkspace = useCallback(() => setConvertWorkspaceOpen(false), []);
   const closeDeleteConfirm = useCallback(() => {
@@ -198,8 +197,7 @@ export const useAppOverlays = ({
     isWorkspaceLauncherBranch,
     deleteOpen,
     deleteTargetSession,
-    paletteOpen,
-    palettePrefix,
+    palette,
     convertWorkspaceOpen,
     closePalette,
     offerWorkspaceRepo,

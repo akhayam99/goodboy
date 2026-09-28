@@ -87,6 +87,7 @@ import type {
   Workspace,
   WorkspaceGitStatus,
   WorkspaceId,
+  WorkflowId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
 import type { AgentKind } from '../features/session/agent-kind';
@@ -120,13 +121,13 @@ import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
+import type { ReviewSubmission } from './slices/review-drafts/reviewSubmission';
 import type { WriteDestination } from './slices/project-mounts/writeDestination';
 import type {
   ArtifactCreationTarget,
   DiffFocus,
   FocusedExternalTask,
   LensKind,
-  ResolvePublicationRequest,
   ResolveQueueView,
   SessionCreation,
   SessionStudio,
@@ -414,6 +415,7 @@ export type AppState = AppSliceState & {
   readonly sessionBitbucketPr: Readonly<Record<SessionId, SessionBitbucketPrEntry>>;
   readonly sessionBitbucketRepo: Readonly<Record<SessionId, BitbucketRepo>>;
   readonly reviewDrafts: Readonly<Record<SessionId, ReadonlyArray<PrReviewDraft>>>;
+  readonly reviewSubmission: Readonly<Record<SessionId, ReviewSubmission>>;
   readonly volatilePermissionAllows: ReadonlySet<string>;
   readonly agentModelOverride: Readonly<Record<AgentId, string>>;
   readonly agentProviderOverride: Readonly<Record<AgentId, ProviderId>>;
@@ -425,6 +427,7 @@ export type AppState = AppSliceState & {
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;
   readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
+  readonly workflowStudioFocus: WorkflowId | null;
   readonly workflowNodeRoutingPending: Readonly<Record<string, boolean>>;
   readonly workflowNodeRoutingErrors: Readonly<Record<string, string | null>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;
@@ -464,7 +467,6 @@ export type AppState = AppSliceState & {
   readonly diffPage: Readonly<Record<SessionId, 'history' | null>>;
   readonly terminalMountPath: Readonly<Record<SessionId, string | null>>;
   readonly resolveQueueView: Readonly<Record<SessionId, ResolveQueueView>>;
-  readonly resolvePublicationRequest: Readonly<Record<SessionId, ResolvePublicationRequest | null>>;
   readonly resolveItemDrafts: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveItemDraft>>>
   >;

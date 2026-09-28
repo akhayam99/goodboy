@@ -158,8 +158,11 @@ pr=<numbers> -->` (`area` required, the rest optional, no spaces inside a
   "coming soon", "will".
 - `image=<name>` names a before/after pair in
   `docs/changelog/<version>/<name>-{before,after}-{dark,light}.webp`, captured
-  with `scripts/changelog-shots.mjs` from a mock scene's `[data-shot]`
-  element (`docs/mock-screenshots.md`, "Pictures for the changelog"). A
+  with `scripts/changelog-shots.mjs <scene> <name> <before|after>` from a
+  mock scene: the full 1360×850 window, or the scene's `[data-shot]` element
+  when it has one (`docs/mock-screenshots.md`, "Pictures for the changelog").
+  Run it once per checkout with `pnpm dev` up in `apps/desktop`, then move
+  the files from the `next` staging folder to `docs/changelog/<version>/`. A
   brand-new screen only ever gets an `after` pair. A release that already
   shipped can gain pictures later, in the same folder and under the same
   caps. The app fetches each file from `main` at

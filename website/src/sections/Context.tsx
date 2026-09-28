@@ -16,8 +16,9 @@ export const Context = () => (
     <Shot figure={CONTEXT} />
     <div className="stackText">
       <p>
-        Decisions are numbered and signed, and when one changes, the reason stays next to it. Hand
-        the task from Claude to Codex and the next agent picks up where the last one stopped.
+        Decisions are numbered and signed, and the ones Goodboy records show why they were made.
+        When one changes, the reason stays next to it. Hand the task from Claude to Codex and the
+        next agent picks up where the last one stopped.
       </p>
       <p>Curious what an agent was told? Open it and read exactly what it was sent.</p>
       <div className="linkRow">

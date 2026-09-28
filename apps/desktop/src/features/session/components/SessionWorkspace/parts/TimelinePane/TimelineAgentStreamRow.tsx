@@ -1,3 +1,4 @@
+import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type {
   EffortLevel,
   ProviderId,
@@ -54,6 +55,10 @@ export const TimelineAgentStreamRow = ({
   costUsd,
   isRevealed = false,
 }: Props) => {
+  const contextMenu = useObjectMenuTrigger({
+    target: { kind: 'agent', sessionId, agentId: entry.agent.id },
+    anchorKey: `activity:${item.id}`,
+  });
   const work = useAgentRowWork({
     agent: entry.agent,
     kind: entry.agentKind,
@@ -65,6 +70,7 @@ export const TimelineAgentStreamRow = ({
   });
   return (
     <TimelineStreamRow
+      contextMenu={contextMenu}
       item={item}
       rail={rail}
       railWidth={railWidth}

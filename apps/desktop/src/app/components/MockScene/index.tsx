@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ToastProvider } from '../Toast';
+import { ObjectMenuProvider } from '../../../features/actions/components/ObjectMenuProvider';
 import { finish as finishOnboarding } from '../../../features/onboarding/onboarding-store';
 import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
@@ -34,6 +35,7 @@ import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
 import { OpenQuestionsScene } from './scenes/flow-audit/OpenQuestionsScene';
 import { TranscriptScene } from './scenes/flow-audit/TranscriptScene';
 import { CommandPaletteScene } from './scenes/flow-audit/CommandPaletteScene';
+import { SearchScene } from './scenes/search/SearchScene';
 import {
   ScriptsLensScene,
   ResolveQueueShellScene,
@@ -70,6 +72,7 @@ import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
 import { InboxStatesScene } from './scenes/audit/InboxStatesScene';
 import { CompanionScene } from './scenes/audit/CompanionScene';
 import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
+import { CodeLayersScene } from './scenes/CodeLayersScene';
 import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
 import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
 import { FormsAuditScene } from './scenes/audit/FormsAuditScene';
@@ -126,6 +129,7 @@ export const MOCK_SCENES = {
   'open-questions': OpenQuestionsScene,
   transcript: TranscriptScene,
   'command-palette': CommandPaletteScene,
+  search: SearchScene,
   'scripts-lens': ScriptsLensScene,
   'resolve-queue-shell': ResolveQueueShellScene,
   'resolve-publish-blocked': ResolvePublishBlockedScene,
@@ -158,6 +162,7 @@ export const MOCK_SCENES = {
   'inbox-states': InboxStatesScene,
   companion: CompanionScene,
   'review-modes': ReviewModesScene,
+  'code-layers': CodeLayersScene,
   'workflow-studio': WorkflowStudioScene,
   'workflow-builder-modes': WorkflowBuilderModesScene,
   forms: FormsAuditScene,
@@ -224,8 +229,10 @@ export const MockScene = () => {
 
   return (
     <ToastProvider>
-      <Scene />
-      <ReportSheetHost />
+      <ObjectMenuProvider>
+        <Scene />
+        <ReportSheetHost />
+      </ObjectMenuProvider>
     </ToastProvider>
   );
 };

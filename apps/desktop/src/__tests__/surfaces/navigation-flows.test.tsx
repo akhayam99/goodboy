@@ -27,6 +27,8 @@ import type { MountGithubState } from '../../store/types';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { App } from '../../App';
 import { APP_SECTIONS } from '../../features/settings/components/SettingsStudio/appSections';
+import { currentPlatform } from '../../shared/platform';
+import type { AgentId, IsoDateTime, MountId, SearchHit } from '@goodboy/types';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
   {
@@ -175,7 +177,6 @@ const EXEMPT: Readonly<Record<string, string>> = {
   openArtifactConversation: 'an effect of the artifact studio, no control calls it',
   openDiffLens: 'only resolver thread cards and the resolve publish strip call it',
   openResolveDiff: 'resolve queue control, covered by the resolve flows in main-flows',
-  openResolvePublication: 'resolve queue control, covered by the resolve flows in main-flows',
   openStorageArtifact:
     'storage rows list artifacts read from disk, which the bridge mock has none of',
 };
@@ -183,6 +184,7 @@ const EXEMPT: Readonly<Record<string, string>> = {
 let useAppStore: StoryStore;
 let consoleErrors: Array<string> = [];
 let calls: Set<string> = new Set();
+let clipboardWrites: Array<string> = [];
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -366,13 +368,162 @@ const both =
     }
   };
 
+const trailNav = (): HTMLElement => screen.getByRole('navigation', { name: 'Breadcrumb' });
+
+const trailReads =
+  (...labels: ReadonlyArray<string>) =>
+  async (): Promise<void> => {
+    const pattern = new RegExp(labels.map((label) => label.replace('#', '#\\d*')).join('.*'));
+    await waitFor(() => expect(trailNav().textContent ?? '').toMatch(pattern), WAIT);
+  };
+
+const clickCrumb = async (label: RegExp): Promise<void> => {
+  await click(within(trailNav()).getByRole('button', { name: label }));
+};
+
+const stackDepth = (): number => {
+  const state = useAppStore.getState();
+  return state.navigation[state.currentWorkspaceId ?? '']?.entries.length ?? 0;
+};
+
+const openDiffThenPr = async (): Promise<void> => {
+  await openCrumb(/^Diff/);
+  await clickButton(/^Open PR #\d+$/);
+};
+
+const openPrThenReview = async (): Promise<void> => {
+  await clickFirstButton(/^Open PR #\d+ of /);
+  await openPalette(/^Open Review/);
+};
+
+const seedReviewComment = ({ sessionId }: Ctx): void => {
+  const state = useAppStore.getState();
+  const mount = state.sessionProjectMounts[sessionId]?.[0];
+  const github = mount === undefined ? undefined : state.mountGithub[mount.mountId];
+  if (mount === undefined || github === undefined || github.pr === null) {
+    throw new Error('the pr seed has no mount pull request');
+  }
+  const comment = {
+    id: 'navigation-comment-1',
+    source: 'review',
+    threadId: 'PRRT_navigation_1',
+    resolved: false,
+    inReplyToId: null,
+    author: 'kenji-w',
+    body: 'Cap the retries at three.',
+    createdAt: STORY_NOW,
+    path: 'src/importer.ts',
+    line: 12,
+  } as unknown as NonNullable<typeof github.detail>['comments'][number];
+  useAppStore.setState({
+    mountGithub: {
+      ...state.mountGithub,
+      [mount.mountId]: {
+        ...github,
+        detail: {
+          ...(github.detail ?? { reviews: [], checks: [], reviewRequests: [] }),
+          prNumber: github.pr.number,
+          comments: [comment],
+        },
+      } as typeof github,
+    },
+  });
+};
+
+const openPullRequestPage = async (): Promise<void> => {
+  await clickFirstButton(/^Open PR #\d+ of /);
+};
+
+const markPullRequestForeign = ({ sessionId }: Ctx): void => {
+  const state = useAppStore.getState();
+  const github = state.sessionGithub[sessionId];
+  if (github === undefined || github.pr === null) {
+    throw new Error('the pr seed has no session pull request');
+  }
+  const pr = { ...github.pr, author: 'kenji-w' };
+  useAppStore.setState({
+    githubStatus: { mode: 'gh-cli', available: true, user: 'mara-l' },
+    sessionGithub: { ...state.sessionGithub, [sessionId]: { ...github, pr } },
+    mountGithub: Object.fromEntries(
+      Object.entries(state.mountGithub).map(([mountId, entry]) => [
+        mountId,
+        entry.pr?.number === pr.number
+          ? {
+              ...entry,
+              pr,
+              prs: entry.prs.map((candidate) => (candidate.number === pr.number ? pr : candidate)),
+            }
+          : entry,
+      ]),
+    ),
+    sessionProjectPrs: Object.fromEntries(
+      Object.entries(state.sessionProjectPrs).map(([key, byProject]) => [
+        key,
+        Object.fromEntries(
+          Object.entries(byProject).map(([projectId, prs]) => [
+            projectId,
+            prs.map((candidate) => (candidate.number === pr.number ? pr : candidate)),
+          ]),
+        ),
+      ]),
+    ),
+  });
+};
+
+const FOREIGN_CONTROLS: Readonly<Record<string, ReadonlyArray<RegExp>>> = {
+  pr: [/^Conversations/, /^Draft fixes/, /^Rebase on /, /^Rewrite history/, /^Fix$/, /^Push \d+$/],
+  files: [/^Squash and merge/, /^Mark ready/, /^Conversations/, /^Draft fixes/, /^Write review/],
+  review: [/^Squash and merge/, /^Mark ready/, /^Rebase on /, /^Rewrite history/],
+};
+
+const expectOwnControlsOnly = ({ sessionId }: Ctx): void => {
+  const layer = useAppStore.getState().activeLens[sessionId] ?? null;
+  const foreign = layer === null ? [] : (FOREIGN_CONTROLS[layer] ?? []);
+  const header = document.querySelector('[data-slot="pane-header"]');
+  if (header === null || foreign.length === 0) {
+    return;
+  }
+  const names = within(header as HTMLElement)
+    .queryAllByRole('button')
+    .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '');
+  expect(names.filter((name) => foreign.some((pattern) => pattern.test(name)))).toEqual([]);
+};
+
 const openDiffHistory = async (): Promise<void> => {
   await openCrumb(/^Diff/);
   await clickButton(/Rewrite history/);
 };
 
+const openObjectMenu = async (element: Element): Promise<void> => {
+  fireEvent.contextMenu(element);
+  await settle();
+};
+
+const runMenuItem = async (label: RegExp): Promise<void> => {
+  await click(await screen.findByRole('menuitem', { name: label }));
+};
+
+const sessionRow = async (ctx: Ctx): Promise<Element> => {
+  await waitFor(
+    () => expect(document.querySelector(`[data-select-id="${ctx.sessionId}"]`)).not.toBeNull(),
+    WAIT,
+  );
+  return document.querySelector(`[data-select-id="${ctx.sessionId}"]`) as Element;
+};
+
+const RIGHT_CLICK_SESSION_ROWS: ReadonlyArray<{
+  readonly label: string;
+  readonly lens: string | null;
+  readonly lands: (ctx: Ctx) => Promise<void>;
+}> = [
+  { label: 'Review', lens: 'review', lands: () => heading('Review') },
+  { label: 'Diff', lens: 'files', lands: () => heading('Diff') },
+  { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
+];
+
 const LENS_ROWS: ReadonlyArray<{
   readonly label: string;
+  readonly note?: string;
   readonly lens: string | null;
   readonly seed?: Seed;
   readonly lands: (ctx: Ctx) => Promise<void>;
@@ -386,10 +537,16 @@ const LENS_ROWS: ReadonlyArray<{
   { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
   { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
-  { label: 'Review', lens: 'review', lands: () => heading('Conversations') },
+  { label: 'Review', lens: 'review', lands: () => heading('Review') },
   { label: 'Diff', lens: 'files', lands: () => heading('Diff') },
   {
     label: 'Pull request',
+    lens: 'pr',
+    lands: () => heading(/Stop retried webhooks/),
+  },
+  {
+    label: 'Pull request',
+    note: 'no pull request yet',
     lens: 'pr',
     seed: 'issue',
     lands: () => heading(/^(Code host work|GitHub|GitLab|Bitbucket)$/),
@@ -399,16 +556,178 @@ const LENS_ROWS: ReadonlyArray<{
   { label: 'Terminal', lens: 'terminal', lands: () => heading('Terminal') },
 ];
 
+const pressCommand = async (code: string): Promise<void> => {
+  const isMac = currentPlatform() === 'darwin';
+  fireEvent.keyDown(window, { code, metaKey: isMac, ctrlKey: !isMac });
+  await settle();
+};
+
+type SearchHitParams = {
+  readonly ctx: Ctx;
+  readonly overrides: Partial<SearchHit>;
+};
+
+const searchHit = ({ ctx, overrides }: SearchHitParams): SearchHit => ({
+  docId: `${overrides.kind ?? 'session'}:hit`,
+  kind: 'session',
+  refId: 'hit',
+  workspaceId: useAppStore.getState().currentWorkspaceId,
+  sessionId: ctx.sessionId,
+  sessionTitle: 'Stop retried webhooks',
+  agentId: null,
+  agentName: null,
+  mountId: null,
+  provider: null,
+  container: null,
+  status: null,
+  ordinal: null,
+  url: null,
+  isArchived: false,
+  occurredAt: STORY_NOW as IsoDateTime,
+  title: [{ text: 'Retried webhook ledger', isMatch: false }],
+  snippet: [{ text: 'ledger', isMatch: true }],
+  ...overrides,
+});
+
+type SearchJumpParams = {
+  readonly ctx: Ctx;
+  readonly overrides: (ctx: Ctx) => Partial<SearchHit>;
+};
+
+const searchAndOpen = async ({ ctx, overrides }: SearchJumpParams): Promise<void> => {
+  const hit = searchHit({ ctx, overrides: overrides(ctx) });
+  useAppStore.setState({ runSearch: async () => [hit] } as never);
+  await pressCommand('KeyF');
+  const input = await screen.findByRole('combobox', { name: 'Search' });
+  fireEvent.change(input, { target: { value: 'ledger' } });
+  await settle(8);
+  fireEvent.keyDown(input, { key: 'Enter' });
+  await settle(6);
+};
+
+const firstMountId = (ctx: Ctx): MountId =>
+  useAppStore.getState().sessionMounts[ctx.sessionId]?.[0]?.id ?? ('none' as MountId);
+
+const SEARCH_JUMPS: ReadonlyArray<{
+  readonly kind: string;
+  readonly overrides: (ctx: Ctx) => Partial<SearchHit>;
+  readonly lands: (ctx: Ctx) => Promise<void>;
+}> = [
+  { kind: 'session', overrides: () => ({ kind: 'session' }), lands: lens(null) },
+  {
+    kind: 'message',
+    overrides: () => ({ kind: 'message', agentId: 'agent-gone' as AgentId, status: 'user' }),
+    lands: lens('agents'),
+  },
+  { kind: 'plan', overrides: () => ({ kind: 'plan', refId: 'plan-1' }), lands: lens('plans') },
+  {
+    kind: 'decision',
+    overrides: () => ({ kind: 'decision', ordinal: 1 }),
+    lands: async (ctx) => {
+      await waitFor(
+        () =>
+          expect(useAppStore.getState().drawer).toMatchObject({
+            kind: 'context',
+            sessionId: ctx.sessionId,
+            payload: { tab: 'decisions', highlight: [1] },
+          }),
+        WAIT,
+      );
+    },
+  },
+  {
+    kind: 'question',
+    overrides: () => ({ kind: 'question', refId: 'q-1' }),
+    lands: lens('questions'),
+  },
+  { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: lens('pr') },
+  {
+    kind: 'comment',
+    overrides: () => ({ kind: 'comment', refId: 'c-1' }),
+    lands: async (ctx) => {
+      await lens('files')(ctx);
+      await waitFor(
+        () =>
+          expect(useAppStore.getState().drawer).toMatchObject({
+            kind: 'diff-notes',
+            sessionId: ctx.sessionId,
+          }),
+        WAIT,
+      );
+    },
+  },
+  {
+    kind: 'workflow',
+    overrides: () => {
+      const state = useAppStore.getState();
+      const workspaceId = state.currentWorkspaceId;
+      const first = workspaceId === null ? undefined : state.phaseTemplates[workspaceId]?.[0];
+      return { kind: 'workflow', sessionId: null, refId: first?.id ?? 'workflow-none' };
+    },
+    lands: () => band('Workflows'),
+  },
+  {
+    kind: 'branch',
+    overrides: (ctx) => ({ kind: 'branch', mountId: firstMountId(ctx), status: 'attached' }),
+    lands: lens('files'),
+  },
+];
+
 const ROWS: ReadonlyArray<Row> = [
+  ...RIGHT_CLICK_SESSION_ROWS.map((row): Row => ({
+    name: `right click sidebar session: ${row.label}`,
+    covers: ['navigate', `rightclick:session:${row.label}`],
+    open: async (ctx) => {
+      await openObjectMenu(await sessionRow(ctx));
+      await runMenuItem(new RegExp(`^${row.label}`));
+    },
+    lands: both(lens(row.lens), row.lands),
+  })),
+  {
+    name: 'right click board card: Open',
+    covers: ['navigate', 'rightclick:session:Open'],
+    open: async (ctx) => {
+      await clickButton(/^Board/);
+      await openObjectMenu(await sessionRow(ctx));
+      await runMenuItem(/^Open$/);
+    },
+    lands: lens(null),
+  },
+  {
+    name: 'right click agent row: Open agent',
+    covers: ['navigate', 'rightclick:agent:Open agent'],
+    open: async (ctx) => {
+      await openCrumb(/^Agents/);
+      const agent = (useAppStore.getState().sessionPhaseRuns[ctx.sessionId] ?? []).find(
+        (candidate) => candidate.workflowRunId == null && candidate.deletedAt == null,
+      );
+      if (agent === undefined) {
+        throw new Error('the seeded session has no standalone agent');
+      }
+      const [name] = await screen.findAllByText(agent.name, undefined, WAIT);
+      const card = name?.closest('[data-agent-card]');
+      if (card === null || card === undefined) {
+        throw new Error('the agents lens shows no agent card');
+      }
+      await openObjectMenu(card);
+      await runMenuItem(/^Open agent/);
+    },
+    lands: async (ctx) => {
+      await waitFor(
+        () => expect(useAppStore.getState().selectedAgentId[ctx.sessionId] ?? null).not.toBeNull(),
+        WAIT,
+      );
+    },
+  },
   ...LENS_ROWS.map((row): Row => ({
-    name: `crumb menu: ${row.label}`,
+    name: `crumb menu: ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `crumb:${row.label}`, `lens:${row.lens ?? 'overview'}`],
     ...(row.seed !== undefined && { seed: row.seed }),
     open: () => openCrumb(new RegExp(`^${row.label}`)),
     lands: both(lens(row.lens), row.lands),
   })),
   ...LENS_ROWS.map((row): Row => ({
-    name: `palette: Open ${row.label}`,
+    name: `palette: Open ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `palette:Open ${row.label}`],
     ...(row.seed !== undefined && { seed: row.seed }),
     open: () => openPalette(new RegExp(`^Open ${row.label}`)),
@@ -624,6 +943,54 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => band('Guide'),
   },
   {
+    name: 'palette verb: Rename',
+    covers: ['palette:Rename'],
+    open: () => openPalette(/^Rename$/),
+    lands: () => visible('textbox', 'Session title'),
+  },
+  {
+    name: 'palette verb: Start agent',
+    covers: ['navigate', 'palette:Start agent'],
+    open: () => openPalette(/^Start agent$/),
+    lands: both(lens('agents'), () => heading('Agents')),
+  },
+  {
+    name: 'palette verb: Link an issue',
+    covers: ['palette:Link an issue'],
+    open: () => openPalette(/^Link an issue$/),
+    lands: () => visible('dialog', 'Link an issue'),
+  },
+  ...(['Copy title', 'Copy branch name', 'Copy PR link'] as const).map((label): Row => ({
+    name: `palette verb: ${label}`,
+    covers: [`palette:${label}`],
+    open: async () => {
+      clipboardWrites = [];
+      vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(async (text: string) => {
+        clipboardWrites.push(text);
+      });
+      await openPalette(new RegExp(`^${label}$`));
+    },
+    lands: async () => {
+      await waitFor(() => expect(clipboardWrites).toHaveLength(1), WAIT);
+      expect(clipboardWrites[0]?.trim()).not.toBe('');
+    },
+  })),
+  {
+    name: 'palette verb: Archive',
+    covers: ['palette:Archive'],
+    open: async () => {
+      useAppStore.setState({ archiveTask: async () => undefined } as never);
+      await openPalette(/^Archive$/);
+    },
+    lands: async () => expect(await screen.findByText('Session archived', {}, WAIT)).toBeDefined(),
+  },
+  {
+    name: 'palette verb: Delete asks first',
+    covers: ['palette:Delete…'],
+    open: () => openPalette(/^Delete/),
+    lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
+  },
+  {
     name: 'palette: Add workspace',
     covers: ['openStudio', 'studio:addWorkspace', 'openAddWorkspace', 'palette:Add workspace'],
     open: () => openPalette(/^Add workspace/, 'Add workspace'),
@@ -742,15 +1109,21 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => visible('list', 'Integrations settings'),
   },
   {
-    name: 'mount row: scripts',
+    name: 'mount row menu: scripts',
     covers: ['navigate', 'lens:scripts'],
-    open: () => clickFirstButton(/^Open scripts for/),
+    open: async () => {
+      await clickFirstButton(/ on .+ actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Open scripts/ }));
+    },
     lands: both(lens('scripts'), () => heading('Scripts')),
   },
   {
-    name: 'mount row: terminal',
+    name: 'mount row menu: terminal',
     covers: ['openMountTerminal', 'lens:terminal'],
-    open: () => clickFirstButton(/^Open terminal for/),
+    open: async () => {
+      await clickFirstButton(/ on .+ actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
+    },
     lands: lens('terminal'),
   },
   {
@@ -783,7 +1156,166 @@ const ROWS: ReadonlyArray<Row> = [
     name: 'pull request page from the mount row',
     covers: ['openMountRequest', 'openReviewTarget'],
     open: () => clickFirstButton(/^Open PR #\d+ of /),
-    lands: both(lens('review'), () => heading(/Stop retried webhooks/)),
+    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+  },
+  {
+    name: 'mount row: comments to resolve open Review',
+    covers: ['openReviewTarget', 'lens:review'],
+    open: async (ctx) => {
+      seedReviewComment(ctx);
+      await settle();
+      await clickFirstButton(/^Open Review for .+, 1 to resolve$/);
+    },
+    lands: both(lens('review'), () => heading('Review')),
+  },
+  {
+    name: 'mount row menu: rewrite history',
+    covers: ['openRewriteHistory'],
+    open: async () => {
+      const [row] = await screen.findAllByTestId('project-mount-row');
+      await click(within(row!).getByRole('button', { name: / on .+ actions$/ }));
+      await click(await screen.findByRole('menuitem', { name: /^Rewrite history/ }));
+    },
+    lands: () => heading('Rewrite history'),
+  },
+  {
+    name: 'diff to its pull request',
+    covers: ['openMountRequest', 'lens:pr'],
+    open: async () => {
+      await openCrumb(/^Diff/);
+      await clickButton(/^Open PR #\d+$/);
+    },
+    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+  },
+  {
+    name: 'layers: the diff then its pull request read Overview, Diff, Pull request',
+    covers: ['navigate', 'layer:diff>pr'],
+    open: openDiffThenPr,
+    lands: both(lens('pr'), trailReads('Overview', 'Diff', 'Pull request', '#')),
+  },
+  {
+    name: 'layers: the Diff crumb pops back from the pull request',
+    covers: ['navigate', 'layer:crumb-pop'],
+    open: async () => {
+      await openDiffThenPr();
+      await clickCrumb(/^Diff$/);
+    },
+    lands: both(lens('files'), () => heading('Diff'), trailReads('Overview', 'Diff')),
+  },
+  {
+    name: 'layers: Back removes the pull request layer from the diff',
+    covers: ['back', 'layer:back'],
+    open: async () => {
+      await openDiffThenPr();
+      await clickButton(/^Back/);
+    },
+    lands: both(lens('files'), () => heading('Diff')),
+  },
+  {
+    name: 'layers: Review opened on the pull request stacks on it',
+    covers: ['navigate', 'layer:pr>review'],
+    open: openPrThenReview,
+    lands: both(lens('review'), trailReads('Overview', 'PR #', 'Review')),
+  },
+  {
+    name: 'layers: the pull request link inside Review pops to it, no copy',
+    covers: ['navigate', 'layer:pop-to-kind'],
+    open: async () => {
+      await openPrThenReview();
+      const depth = stackDepth();
+      await clickButton(/^Open pull request #\d+/);
+      expect(stackDepth()).toBe(depth);
+    },
+    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+  },
+  {
+    name: 'layers: the pull request crumb pops back from Review',
+    covers: ['navigate', 'layer:crumb-pop'],
+    open: async () => {
+      await openPrThenReview();
+      await clickCrumb(/^PR #\d+$/);
+    },
+    lands: lens('pr'),
+  },
+  {
+    name: 'layers: comments to resolve open Review under the Overview alone',
+    covers: ['openReviewTarget', 'layer:overview>review'],
+    open: async (ctx) => {
+      seedReviewComment(ctx);
+      await settle();
+      await clickFirstButton(/^Open Review for .+, 1 to resolve$/);
+    },
+    lands: async () => {
+      await waitFor(() => expect(trailNav().textContent ?? '').not.toMatch(/PR #/), WAIT);
+    },
+  },
+  {
+    name: 'layers: the pull request quiet line opens Review on top of it',
+    covers: ['openReviewTarget', 'layer:pr>review'],
+    open: async (ctx) => {
+      seedReviewComment(ctx);
+      await settle();
+      await openPullRequestPage();
+      await clickButton(/^1 comment to resolve/);
+    },
+    lands: both(lens('review'), trailReads('Overview', 'PR #', 'Review')),
+  },
+  {
+    name: 'layers: the pull request quiet line opens its diff',
+    covers: ['navigate', 'layer:pr>diff'],
+    open: async () => {
+      await openPullRequestPage();
+      await clickButton(/^Changes on this branch/);
+    },
+    lands: both(lens('files'), () => heading('Diff')),
+  },
+  {
+    name: "layers: Write review on someone else's pull request",
+    covers: ['navigate', 'layer:pr>write-review'],
+    open: async (ctx) => {
+      markPullRequestForeign(ctx);
+      await settle();
+      await openPullRequestPage();
+      await clickButton(/^Write review$/);
+    },
+    lands: async (ctx) => {
+      await lens('pr')(ctx);
+      await waitFor(
+        () => expect(useAppStore.getState().pullRequestModes[ctx.sessionId]).toBe('write_review'),
+        WAIT,
+      );
+    },
+  },
+  {
+    name: 'layers: Restore a backup in the Diff menu opens the Backups of Rewrite history',
+    covers: ['openRewriteHistory', 'layer:diff>history'],
+    open: async () => {
+      await openCrumb(/^Diff/);
+      await clickButton(/^Diff actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Restore a backup/ }));
+    },
+    lands: () => visible('region', 'Backups'),
+  },
+  {
+    name: 'diff menu: Change base branch opens the picker in place',
+    covers: ['layer:diff-base'],
+    open: async () => {
+      await openCrumb(/^Diff/);
+      await clickButton(/^Diff actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Change base branch/ }));
+    },
+    lands: async () => {
+      expect(await screen.findByText('Compare with', undefined, WAIT)).toBeDefined();
+    },
+  },
+  {
+    name: 'review header pull request link',
+    covers: ['navigate', 'lens:pr'],
+    open: async () => {
+      await openCrumb(/^Review/);
+      await clickButton(/^Open pull request #\d+/);
+    },
+    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
   },
   {
     name: 'mount row: changes to the mount diff',
@@ -799,6 +1331,21 @@ const ROWS: ReadonlyArray<Row> = [
       await click(await screen.findByRole('menuitem', { name: new RegExp(`^${kind}`) }));
     },
     lands: () => heading(`Create ${kind.toLowerCase()}`),
+  })),
+  {
+    name: 'search: Cmd+F opens search scoped to the session',
+    covers: ['search.open'],
+    open: () => pressCommand('KeyF'),
+    lands: async () => {
+      await visible('dialog', 'Search');
+      expect(await screen.findByText('In session')).toBeDefined();
+    },
+  },
+  ...SEARCH_JUMPS.map((jump): Row => ({
+    name: `search: a ${jump.kind} hit lands in context`,
+    covers: [jump.kind === 'workflow' ? 'openStudio' : 'navigate', `search:${jump.kind}`],
+    open: (ctx) => searchAndOpen({ ctx, overrides: jump.overrides }),
+    lands: jump.lands,
   })),
   {
     name: 'back arrow history menu jumps to an entry',
@@ -835,6 +1382,7 @@ describe('navigation entries render their destination on the real store', () => 
 
       await row.open(ctx);
       await row.lands(ctx);
+      expectOwnControlsOnly(ctx);
 
       const tracedActions = row.covers.filter((token) => STORE_ACTIONS.includes(token));
       expect(tracedActions.filter((name) => !calls.has(name))).toEqual([]);

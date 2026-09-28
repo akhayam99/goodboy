@@ -1,5 +1,4 @@
 import type { ReplyVoice, ResolveCommitStyle } from '@goodboy/types';
-import type { ReplySettings } from './replySettings';
 
 export const REVIEW_REPLIES_SECTION_ID = 'review-replies';
 
@@ -31,10 +30,3 @@ export const COMMIT_STYLE_LABEL: Record<ResolveCommitStyle, string> = {
   new: 'New commit',
   fixup: 'Fixup of the commit that added the line',
 };
-
-export const replySettingsSummary = ({ settings }: { readonly settings: ReplySettings }): string =>
-  [
-    VOICE_LABEL[settings.voice],
-    settings.isSigned ? 'signed' : 'not signed',
-    settings.resolveOnGithub ? 'resolves the thread on GitHub' : 'leaves the thread open',
-  ].join(' · ');

@@ -137,6 +137,7 @@ import type {
   AddReviewDraftInput,
   PublishPrReviewOpts,
   PublishPrReviewResult,
+  ReviewSubmission,
 } from './slices/review-drafts';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
@@ -189,6 +190,7 @@ import type {
 } from './slices/artifactDrafts/types';
 import { createWorkflowStudioSlice } from './slices/workflowStudio';
 import { initialWorkflowStudioState } from './slices/workflowStudio/state';
+import type { SetWorkflowStudioFocusParams } from './slices/workflowStudio/setWorkflowStudioFocus';
 import type {
   StartWorkflowGenerationParams,
   WorkflowStudioDraft,
@@ -263,6 +265,7 @@ import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
 import { createBranchCleanupSlice } from './slices/branch-cleanup';
 import { createStarredIssuesSlice } from './slices/starred-issues';
+import { createSearchIndexSlice } from './slices/search-index';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -859,6 +862,7 @@ type AppActions = {
   setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
   clearWorkflowStudioDraft(params: { workspaceId: WorkspaceId }): void;
   setWorkflowStudioVisible(params: { workspaceId: WorkspaceId | null }): void;
+  setWorkflowStudioFocus(params: SetWorkflowStudioFocusParams): void;
   startWorkflowGeneration(params: StartWorkflowGenerationParams): Promise<boolean>;
   consumeWorkflowGeneration(params: { workspaceId: WorkspaceId }): void;
   undoWorkflowGeneration(params: { workspaceId: WorkspaceId }): Promise<void>;
@@ -947,6 +951,12 @@ type AppActions = {
     markers: ReadonlyArray<ExtractedReviewComment>,
   ): Promise<void>;
   publishPrReview(sessionId: SessionId, opts: PublishPrReviewOpts): Promise<PublishPrReviewResult>;
+  setReviewSubmission(params: {
+    readonly sessionId: SessionId;
+    readonly patch: Partial<ReviewSubmission>;
+  }): void;
+  submitReview(params: { readonly sessionId: SessionId }): Promise<PublishPrReviewResult>;
+  discardReview(params: { readonly sessionId: SessionId }): Promise<void>;
   createMrForSession(input: CreateMrInput): Promise<void>;
   mergeMrForSession(input: MergeMrInput): Promise<void>;
   refreshSessionBitbucketPr(
@@ -1148,10 +1158,6 @@ type AppActions = {
     readonly order: ReadonlyArray<string>;
     readonly scrollTop: number;
   }): void;
-  openResolvePublication(params: {
-    readonly sessionId: SessionId;
-    readonly reconcile: boolean;
-  }): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   beginSessionCreation(
     sessionId: SessionId,
@@ -1186,7 +1192,8 @@ export type AppStore = AppState &
   ReturnType<typeof createHandoffsSlice> &
   ReturnType<typeof createSecurityFindingsSlice> &
   ReturnType<typeof createBranchCleanupSlice> &
-  ReturnType<typeof createStarredIssuesSlice>;
+  ReturnType<typeof createStarredIssuesSlice> &
+  ReturnType<typeof createSearchIndexSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1328,6 +1335,7 @@ export const initialState: AppState = {
   ...initialBitbucketPrState,
   ...initialSlackThreadsState,
   reviewDrafts: {},
+  reviewSubmission: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
   agentProviderOverride: {},
@@ -1433,6 +1441,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSecurityFindingsSlice(set, get),
   ...createBranchCleanupSlice(set, get),
   ...createStarredIssuesSlice(set, get),
+  ...createSearchIndexSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

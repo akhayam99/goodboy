@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { PullRequestChip } from '../../../../github/components/PullRequestChip';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { PullRequestChip, pullRequestMeta } from '../../../../github/components/PullRequestChip';
 import { REVIEW_TARGET_REASON_COPY } from '../../../../review/reviewTargetCopy';
 
 type Props = {
@@ -19,6 +20,8 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
   if (request === null) {
     return null;
   }
+
+  const state = request.isDraft ? 'draft' : request.state;
 
   return (
     <span className="flex min-w-0 shrink-0 items-center gap-1">
@@ -42,14 +45,13 @@ export const MountRequestLink = ({ sessionId, row, label }: Props) => {
             }
           });
         }}
-        className="flex min-w-0 shrink-0 items-center rounded-md px-1 py-1 hover:bg-hover"
+        className="flex min-w-0 shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-label hover:bg-hover"
       >
-        <PullRequestChip
-          state={request.isDraft ? 'draft' : request.state}
-          variant="badge"
-          number={request.number}
-          iconSize={9}
-        />
+        <PullRequestChip state={state} iconSize={ICON_SIZE.row} />
+        <span className="shrink-0 text-foreground tabular-nums">{request.label}</span>
+        <span className="truncate text-muted-foreground @max-md:hidden">
+          {pullRequestMeta({ state }).label}
+        </span>
       </button>
       {error !== null && (
         <span role="status" className="min-w-0 truncate text-secondary text-danger">

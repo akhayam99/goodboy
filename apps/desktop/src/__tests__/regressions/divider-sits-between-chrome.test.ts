@@ -49,6 +49,10 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
+  'apps/desktop/src/features/palette/components/CommandsMode/index.tsx': {
+    count: 2,
+    reason: 'chrome',
+  },
   'apps/desktop/src/features/github/components/PullRequest/ThreadReplies.tsx': {
     count: 1,
     reason: 'debt',
@@ -71,17 +75,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/resolve/components/ResolvePanelHeader/index.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/session/components/CommandPalette/index.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/DetachDetails.tsx':
-    { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectSyncControl.tsx':
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },

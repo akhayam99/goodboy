@@ -10,6 +10,7 @@ type Props = {
   readonly selectedKey: string | null;
   readonly unstarredCount: number;
   readonly onSelect: (record: InboxRecord) => void;
+  readonly onActivate?: (record: InboxRecord) => void;
   readonly onUnstar: (row: StarredRow) => void;
   readonly onUnstarClosed: () => void;
   readonly onUndoUnstar: () => void;
@@ -20,6 +21,7 @@ export const InboxStarredGroup = ({
   selectedKey,
   unstarredCount,
   onSelect,
+  onActivate,
   onUnstar,
   onUnstarClosed,
   onUndoUnstar,
@@ -59,6 +61,7 @@ export const InboxStarredGroup = ({
               record={row.record}
               selected={selectedKey === row.record.key}
               onSelect={onSelect}
+              onActivate={onActivate}
               star={{ isStarred: true, onToggle: () => onUnstar(row) }}
             />
           );

@@ -68,6 +68,8 @@ import { m206ProjectRelocations } from './m206-project-relocations';
 import { m207MergedBranchCleanup } from './m207-merged-branch-cleanup';
 import { m208WorkspaceStarredIssues } from './m208-workspace-starred-issues';
 import { m209ResolveThreadGenerations } from './m209-resolve-thread-generations';
+import { m210SessionDecisionWhy } from './m210-session-decision-why';
+import { m211SearchIndex } from './m211-search-index';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -423,4 +425,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 207, sql: m207MergedBranchCleanup },
   { version: 208, sql: m208WorkspaceStarredIssues },
   { version: 209, sql: m209ResolveThreadGenerations },
+  { version: 210, sql: m210SessionDecisionWhy },
+  { version: 211, sql: m211SearchIndex },
 ];

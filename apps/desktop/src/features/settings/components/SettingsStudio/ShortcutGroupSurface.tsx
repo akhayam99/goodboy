@@ -11,6 +11,7 @@ const GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
   navigate: 'Navigate',
   session: 'Session',
   views: 'Views',
+  review: 'Review',
   window: 'Window',
 };
 
@@ -20,6 +21,7 @@ const GROUP_ICON: Readonly<Record<ShortcutGroup, LucideIcon>> = {
   navigate: Compass,
   session: CONCEPT_ICONS.sessions,
   views: PanelsTopLeft,
+  review: CONCEPT_ICONS.review,
   window: AppWindow,
 };
 

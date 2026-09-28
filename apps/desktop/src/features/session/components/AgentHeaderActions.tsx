@@ -1,19 +1,18 @@
 import { useState } from 'react';
-import { formatError } from '@goodboy/ui';
-import { CircleCheck, CircleDot, OctagonX, Trash2 } from 'lucide-react';
-import { InlineConfirm } from '@goodboy/ui';
+import { GhostActionButton, InlineConfirm, formatError } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
-import { useAppStore } from '../../../store';
-import { isAgentClosable, isAgentClosedByUser, isTurnStateLive } from '../agent-lifecycle';
-import { GhostActionButton } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { ObjectOverflowMenu } from '../../actions/components/ObjectOverflowMenu';
+import { useActionEnv } from '../../actions/useActionEnv';
+import { useObjectActions } from '../../actions/useObjectActions';
+import type { ResolvedAction } from '../../actions/types';
+
+const HEADER_BUTTONS = ['agent.close', 'agent.reopen', 'agent.interrupt', 'agent.delete'];
 
 type Props = {
   readonly agent: Agent;
   readonly sessionId: SessionId;
   readonly allowInterrupt?: boolean;
-  readonly deleteTitle?: string;
-  readonly deleteDescription?: string;
   readonly onDeleted?: () => void;
 };
 
@@ -21,88 +20,80 @@ export const AgentHeaderActions = ({
   agent,
   sessionId,
   allowInterrupt = false,
-  deleteTitle = 'Delete agent?',
-  deleteDescription = 'Removes this agent and its transcript from the session.',
   onDeleted,
 }: Props) => {
-  const setAgentDone = useAppStore((state) => state.setAgentDone);
-  const clearAgentDone = useAppStore((state) => state.clearAgentDone);
-  const cancelCurrentTurn = useAppStore((state) => state.cancelCurrentTurn);
-  const deleteAgent = useAppStore((state) => state.deleteAgent);
-  const isTurnRunning = useAppStore((state) => state.agentTurnState[agent.id]?.kind === 'running');
-  const isTurnLive = useAppStore((state) =>
-    isTurnStateLive({ turnState: state.agentTurnState[agent.id] }),
+  const viewing = { kind: 'agent', id: agent.id } as const;
+  const env = useActionEnv({
+    origin: 'button',
+    anchorKey: `agent-header:${agent.id}`,
+    viewing,
+  });
+  const target = { kind: 'agent', sessionId, agentId: agent.id } as const;
+  const { actions, run } = useObjectActions({ target, env });
+  const [armed, setArmed] = useState<ResolvedAction | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const buttons = actions.filter(
+    (action) =>
+      HEADER_BUTTONS.includes(action.id) && (allowInterrupt || action.id !== 'agent.interrupt'),
   );
-  const hasOpenQuestion = useAppStore((state) =>
-    (state.sessionOpenQuestions[sessionId] ?? []).some(
-      (question) => question.status === 'open' && question.createdByAgentId === agent.id,
-    ),
-  );
-  const isClosable = isAgentClosable({ agent, hasOpenQuestion, isTurnLive });
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const armDelete = () => {
-    setDeleteError(null);
-    setIsConfirmingDelete(true);
-  };
-
-  const remove = async () => {
+  const runArmed = async (action: ResolvedAction) => {
     try {
-      await deleteAgent(sessionId, agent.id);
-    } catch (error) {
-      setDeleteError(`Couldn't delete this agent. ${formatError(error)}`);
+      await run({ actionId: action.id });
+    } catch (cause) {
+      setError(`Couldn't finish that. ${formatError(cause)}`);
       return;
     }
-    setIsConfirmingDelete(false);
-    onDeleted?.();
+    setArmed(null);
+    if (action.id === 'agent.delete') {
+      onDeleted?.();
+    }
   };
 
   return (
     <div className="flex shrink-0 flex-col items-end gap-2">
       <div className="flex flex-wrap items-center gap-1.5">
-        {isClosable && (
+        {buttons.map((action) => (
           <GhostActionButton
-            icon={CircleCheck}
-            label="Close"
-            title="Stop waiting on this agent"
-            onClick={() => void setAgentDone(sessionId, agent.id)}
+            key={action.id}
+            icon={action.icon}
+            label={action.label.replace(/ agent$/, '')}
+            tone={action.confirm?.role === 'danger' ? 'danger' : 'neutral'}
+            onClick={() => {
+              setError(null);
+              if (action.confirm !== null) {
+                setArmed(action);
+                return;
+              }
+              void run({ actionId: action.id });
+            }}
           />
-        )}
-        {isAgentClosedByUser({ agent }) && (
-          <GhostActionButton
-            icon={CircleDot}
-            label="Reopen"
-            onClick={() => void clearAgentDone(sessionId, agent.id)}
-          />
-        )}
-        {allowInterrupt && isTurnRunning ? (
-          <GhostActionButton
-            icon={OctagonX}
-            label="Interrupt"
-            onClick={() => void cancelCurrentTurn(sessionId, agent.id, 'user')}
-          />
-        ) : null}
-        <GhostActionButton icon={Trash2} label="Delete" tone="danger" onClick={armDelete} />
+        ))}
+        <ObjectOverflowMenu
+          target={target}
+          label="More agent actions"
+          anchorKey={`agent-header:${agent.id}`}
+          viewing={viewing}
+        />
       </div>
-      {isConfirmingDelete && (
+      {armed !== null && armed.confirm !== null ? (
         <InlineConfirm
-          role="danger"
-          icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-          title={deleteTitle}
-          description={deleteDescription}
-          confirmLabel="Delete"
+          role={armed.confirm.role}
+          icon={<armed.icon size={ICON_SIZE.row} aria-hidden />}
+          title={armed.confirm.title}
+          description={armed.confirm.description}
+          confirmLabel={armed.confirm.confirmLabel}
           note={
-            deleteError !== null ? (
+            error !== null ? (
               <p role="alert" className="text-secondary text-danger">
-                {deleteError}
+                {error}
               </p>
             ) : null
           }
-          onConfirm={remove}
-          onCancel={() => setIsConfirmingDelete(false)}
+          onConfirm={() => runArmed(armed)}
+          onCancel={() => setArmed(null)}
         />
-      )}
+      ) : null}
     </div>
   );
 };

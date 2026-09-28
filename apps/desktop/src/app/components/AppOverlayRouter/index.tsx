@@ -10,6 +10,7 @@ import type { InboxStudioFocus, StudioPlace } from '../../../store';
 import type { ChangelogScreen } from '../../../features/changelog/changelogScreens';
 import { StudioFrame } from '../StudioFrame';
 import { isAppScopeOverlay } from '../../hooks/useAppOverlays/overlayState';
+import type { PaletteRequest } from '../../../features/palette/paletteModeTypes';
 import { AppScopeOverlays } from './AppScopeOverlays';
 
 const SettingsStudio = lazy(() =>
@@ -69,8 +70,7 @@ type Props = {
   readonly isWorkspaceLauncherBranch: boolean;
   readonly deleteOpen: boolean;
   readonly deleteTargetSession: Session | null;
-  readonly paletteOpen: boolean;
-  readonly palettePrefix: string;
+  readonly palette: PaletteRequest | null;
   readonly convertWorkspaceOpen: boolean;
   readonly closePalette: () => void;
   readonly offerWorkspaceRepo: () => void;
@@ -205,8 +205,7 @@ export const AppOverlayRouter = ({
   isWorkspaceLauncherBranch,
   deleteOpen,
   deleteTargetSession,
-  paletteOpen,
-  palettePrefix,
+  palette,
   convertWorkspaceOpen,
   closePalette,
   offerWorkspaceRepo,
@@ -239,24 +238,14 @@ export const AppOverlayRouter = ({
         ) : (
           <WorkspaceLauncher />
         )}
-        <AppScopeOverlays
-          studio={launcherStudio}
-          paletteOpen={paletteOpen}
-          palettePrefix={palettePrefix}
-          closePalette={closePalette}
-        />
+        <AppScopeOverlays studio={launcherStudio} palette={palette} closePalette={closePalette} />
       </Suspense>
     );
   }
 
   return (
     <Suspense fallback={null}>
-      <AppScopeOverlays
-        studio={null}
-        paletteOpen={paletteOpen}
-        palettePrefix={palettePrefix}
-        closePalette={closePalette}
-      />
+      <AppScopeOverlays studio={null} palette={palette} closePalette={closePalette} />
       {currentWorkspace !== null ? (
         <ConvertWorkspaceDialog
           open={convertWorkspaceOpen}

@@ -1,12 +1,5 @@
 import { Play, Square, Terminal } from 'lucide-react';
-import {
-  IconButton,
-  InteractiveRow,
-  OverflowMenu,
-  Tooltip,
-  cn,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
+import { IconButton, InteractiveRow, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { RunnableScript } from '../../buildSessionScripts';
 import { SCRIPT_CATEGORIES } from '../../classifyScript';
@@ -14,6 +7,9 @@ import { SCRIPT_SOURCE_LABEL } from '../../scriptSourceLabel';
 import type { ScriptRunRecord } from '../../scripts';
 import { describeLastRun } from './describeLastRun';
 import { LastRunCell } from './LastRunCell';
+import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import type { ScriptActionTarget } from '../../../actions/types';
 
 type Props = {
   readonly script: RunnableScript;
@@ -22,7 +18,7 @@ type Props = {
   readonly isSelected: boolean;
   readonly showSource: boolean;
   readonly blockedReason: string | null;
-  readonly menuItems: ReadonlyArray<OverflowMenuItem>;
+  readonly target: ScriptActionTarget;
   readonly onOpen: (script: RunnableScript) => void;
   readonly onRun: (script: RunnableScript) => void;
   readonly onStop: (script: RunnableScript) => void;
@@ -40,7 +36,7 @@ export const ScriptRow = ({
   isSelected,
   showSource,
   blockedReason,
-  menuItems,
+  target,
   onOpen,
   onRun,
   onStop,
@@ -50,12 +46,14 @@ export const ScriptRow = ({
   const isRunning = record?.status === 'pending';
   const lastRun = describeLastRun({ record, now });
   const sourceLabel = SCRIPT_SOURCE_LABEL[script.source];
+  const menu = useObjectMenuTrigger({ target, anchorKey: `script:${script.key}` });
 
   return (
     <InteractiveRow
       label={`Show ${script.name} output`}
       isSelected={isSelected}
       onOpen={() => onOpen(script)}
+      menu={menu}
       dataAttributes={{ 'data-script-key': script.key }}
       className="flex h-8 items-center gap-2 px-2"
     >
@@ -106,7 +104,11 @@ export const ScriptRow = ({
         )}
       </span>
       <span className="flex w-6 shrink-0 justify-center">
-        <OverflowMenu label={`More for ${script.name}`} items={menuItems} />
+        <ObjectOverflowMenu
+          target={target}
+          label={`More for ${script.name}`}
+          anchorKey={`script:${script.key}`}
+        />
       </span>
     </InteractiveRow>
   );

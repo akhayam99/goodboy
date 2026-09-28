@@ -6,7 +6,16 @@ import type {
   CrumbMenuRow,
   CrumbState,
 } from '@goodboy/ui';
-import { ArrowDown, Cloud, CloudOff, GitCompare, GitMerge, Laptop } from 'lucide-react';
+import {
+  ArrowDown,
+  Cloud,
+  CloudOff,
+  GitCompare,
+  GitMerge,
+  Laptop,
+  RefreshCw,
+  TriangleAlert,
+} from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
   branchPresenceOf,
@@ -41,6 +50,8 @@ const PRIORITY_LOOK = {
   diverged: { tone: 'warning', glyph: GitCompare },
   'local-only': { tone: 'warning', glyph: Laptop },
   'behind-main': { tone: 'warning', glyph: ArrowDown },
+  'rebase-stopped': { tone: 'warning', glyph: TriangleAlert },
+  'rebasing-on-main': { tone: 'info', glyph: RefreshCw },
   'on-origin': { tone: 'neutral', glyph: Cloud },
 } satisfies Record<BranchPriorityKind, BranchLook>;
 

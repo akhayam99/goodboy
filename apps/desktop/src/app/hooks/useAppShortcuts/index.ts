@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
+import { isTerminalFocused } from '../../../shared/keyboard/isTerminalFocused';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import {
   useAppStore,
@@ -12,13 +13,14 @@ import {
 } from '../../../store';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
+import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
 import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useGoToBoard } from '../useGoToBoard';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
-  readonly openPalette: (prefix?: string) => void;
+  readonly openPalette: (params?: OpenPaletteParams) => void;
   readonly openSettings: () => void;
   readonly openShortcutHelp: () => void;
   readonly toggleSidebar: () => void;
@@ -145,6 +147,12 @@ export const useAppShortcuts = ({
   useShortcut('settings.open', openSettings);
   useShortcut('settings.shortcuts', openShortcutHelp);
   useShortcut('palette.open', () => openPalette());
+  useShortcut('search.open', () => {
+    if (isTerminalFocused()) {
+      return;
+    }
+    openPalette({ mode: 'search' });
+  });
   useShortcut('session.new', openNewSession);
   useShortcut('workspace.switcher', () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),

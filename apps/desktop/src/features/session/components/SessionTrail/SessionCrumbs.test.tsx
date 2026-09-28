@@ -36,7 +36,6 @@ vi.mock('../../hooks/useLensDestinations', async () => {
           (h.state.sessionBranches as Readonly<Record<string, string>> | undefined)?.[
             'session-1'
           ] === '',
-        isGithubCodeHost: false,
         connectedTools: { linear: true, gitlab: true, jira: true, slack: true },
       }),
   };

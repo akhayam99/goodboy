@@ -28,27 +28,6 @@ type Params = {
   readonly pushError: string | null;
 };
 
-export const RESOLVE_ROW_ACTION_LABEL: Record<ResolveRowAction, string> = {
-  resolve: 'Resolve',
-  answer: 'Answer',
-  review: 'Review',
-  retry: 'Retry',
-  retry_reply: 'Retry reply',
-  open_github: 'Open on GitHub',
-  resume: 'Resume',
-};
-
-export const RESOLVE_UI_STATE_LABEL: Record<ResolveUiState, string> = {
-  new: 'New',
-  working: 'Working',
-  needs_you: 'Needs you',
-  ready: 'Ready to review',
-  approved: 'Approved',
-  resolved: 'Resolved',
-  failed: 'Failed',
-  later: 'Later',
-};
-
 const uiStateOf = ({ stage }: { readonly stage: ResolveStage }): ResolveUiState => {
   switch (stage) {
     case 'new':

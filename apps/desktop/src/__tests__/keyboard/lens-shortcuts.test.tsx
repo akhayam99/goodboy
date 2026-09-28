@@ -58,7 +58,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   AppShell: () => null,
 }));
 vi.mock('../../app/components/AppFooter', () => ({ AppFooter: () => null }));
-vi.mock('../../features/session/components/CommandPalette', () => ({ CommandPalette: () => null }));
+vi.mock('../../features/palette/components/PaletteOverlay', () => ({ PaletteOverlay: () => null }));
 vi.mock('../../app/components/BootSplash', () => ({ BootSplash: () => null }));
 vi.mock('../../app/components/KeepAliveWorkSurface', () => ({ KeepAliveWorkSurface: () => null }));
 vi.mock('../../app/components/AppTopBar', () => ({ AppTopBar: () => null }));

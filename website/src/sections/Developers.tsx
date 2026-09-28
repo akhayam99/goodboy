@@ -23,7 +23,11 @@ const ITEMS: readonly Benefit[] = [
   },
   {
     lead: 'Review comments come back as commits.',
-    text: 'An agent fixes each one and drafts the reply in your voice. You approve.',
+    text: 'An agent fixes each one and drafts the reply in your voice. You accept or edit it.',
+  },
+  {
+    lead: 'Find anything, act on anything.',
+    text: '⌘F searches every session, message and plan, on your machine. Right click any object, or press ⌘K, for every action it has.',
   },
   {
     lead: 'Nothing lost when a plan runs out.',

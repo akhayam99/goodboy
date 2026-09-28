@@ -48,18 +48,3 @@ export const openResolveDiff = (set: SetFn, get: GetFn) => {
     get().openDiffLens(sessionId, { kind: 'commit', sha, path });
   };
 };
-
-export const openResolvePublication = (set: SetFn, get: GetFn) => {
-  return ({ sessionId, reconcile }: PublicationParams): void => {
-    get().closeDrawer();
-    set((s) => ({
-      resolvePublicationRequest: {
-        ...s.resolvePublicationRequest,
-        [sessionId]: {
-          reconcile,
-          requestId: (s.resolvePublicationRequest[sessionId]?.requestId ?? 0) + 1,
-        },
-      },
-    }));
-  };
-};

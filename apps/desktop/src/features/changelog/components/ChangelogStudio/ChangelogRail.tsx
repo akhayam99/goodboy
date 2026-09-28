@@ -63,7 +63,6 @@ const groupReleases = ({
 
 type Props = {
   readonly releases: ReadonlyArray<ReleaseEntry>;
-  readonly dates: Readonly<Record<string, string>>;
   readonly selectedVersion: string | null;
   readonly installedVersion: string | null;
   readonly query: string;
@@ -76,7 +75,6 @@ type Props = {
 
 export const ChangelogRail = ({
   releases,
-  dates,
   selectedVersion,
   installedVersion,
   query,
@@ -145,7 +143,6 @@ export const ChangelogRail = ({
                       key={release.version}
                       release={release}
                       isActive={release.version === selectedVersion}
-                      dates={dates}
                       installedVersion={installedVersion}
                       onSelect={onSelect}
                     />
@@ -162,7 +159,6 @@ export const ChangelogRail = ({
                 key={release.version}
                 release={release}
                 isActive={release.version === selectedVersion}
-                dates={dates}
                 installedVersion={installedVersion}
                 onSelect={onSelect}
               />

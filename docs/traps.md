@@ -63,8 +63,9 @@ file holds those explanations. Everything below has been "fixed" at least once a
   Taking a comment back up (`undeferResolveQueueItem`) only moves a
   `deferred` or `wont_fix` item; the database refuses an `accepted` one.
   Undoing an approval is a reopen (`reopenResolveQueueItem`, stage event
-  `user_unapproved`). `resolveDecisionVerb` maps each row action to the
-  verb its state allows, and its test walks the decision matrix.
+  `user_unapproved`). `reviewComment.undo` in the action registry picks the
+  verb from the approval (reopen for `accepted`, take up for `deferred` and
+  `wont_fix`), and `reviewComment.matrix.test.ts` walks every state.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider
@@ -181,6 +182,18 @@ fails silently at runtime.
   launch check that heals such a file needs a missing core table too, on
   purpose: a broken view alone is not proof of a wipe, and resetting on it
   would erase a live database.
+- The search index (m211) is kept current by triggers on fourteen source
+  tables (`sessions`, `messages`, `agents`, `session_artifacts`,
+  `session_decisions`, `open_questions`, `session_external_tasks`,
+  `workspace_starred_issues`, `github_pr_cache`, `mount_pr_links`,
+  `session_worktrees`, `workflows`, `steps`, `diff_comments`). A table
+  rebuild (`CREATE ..._new`, `DROP`, `RENAME`) drops the triggers of the
+  table it drops, so the rebuilding migration must
+  create them again; `m211-search-index.test.ts` fails when one is missing
+  from the latest schema. A trigger body reads only its own row and the
+  `search_*` tables, never another source table: a trigger that names a
+  table breaks the next `ALTER TABLE ... RENAME` of that table's rebuild,
+  exactly like a view does.
 - `cargo fmt` formats the whole crate, whatever file you give it, and `main`
   is not fmt-clean (`rust.yml` runs the check as advisory). A local run
   rewrites files the change never touched. Revert those hunks before you

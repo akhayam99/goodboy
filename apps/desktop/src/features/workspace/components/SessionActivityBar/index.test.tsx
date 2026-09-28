@@ -263,7 +263,7 @@ describe('SessionActivityBar, bulk selection', () => {
   it('carries selection on the row itself, with no checkbox in either tab', () => {
     renderBar([makeSession('s-1', 'archived one')], [makeSession('a-1', 'active one')]);
     expect(screen.queryByRole('checkbox')).toBeNull();
-    expect(rowAt(0).getAttribute('aria-keyshortcuts')).toBe('Alt+Enter Alt+Space');
+    expect(rowAt(0).getAttribute('aria-keyshortcuts')).toBe('Alt+Enter Alt+Space Shift+F10');
     toggleArchivedTab();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(rowAt(0).getAttribute('data-select-id')).toBe('s-1');

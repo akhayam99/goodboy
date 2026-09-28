@@ -54,6 +54,7 @@ const decision = (
   id: `d-${row.number}`,
   sessionId: SESSION_ID,
   text: `Decision ${row.number}`,
+  why: null,
   status: 'active',
   replacedBy: null,
   author: 'agent',

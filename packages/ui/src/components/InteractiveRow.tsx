@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { KeyboardEventHandler, MouseEventHandler, ReactNode } from 'react';
 import { cn } from '../cn';
 import { FOCUS_RING } from '../focusRing';
 import { SELECTED_ROW_CLASSES } from '../selectedRow';
@@ -11,6 +11,10 @@ export type InteractiveRowProps = {
   readonly dataAttributes?: Readonly<Record<`data-${string}`, string>>;
   readonly frameClassName?: string;
   readonly className?: string;
+  readonly menu?: {
+    readonly onContextMenu: MouseEventHandler<HTMLElement>;
+    readonly onKeyDown: KeyboardEventHandler<HTMLElement>;
+  };
 };
 
 export const InteractiveRow = ({
@@ -21,9 +25,12 @@ export const InteractiveRow = ({
   dataAttributes,
   frameClassName,
   className,
+  menu,
 }: InteractiveRowProps) => (
   <div
     data-selected={isSelected}
+    onContextMenu={menu?.onContextMenu}
+    onKeyDown={menu?.onKeyDown}
     className={cn(
       'relative rounded-md text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground',
       SELECTED_ROW_CLASSES,

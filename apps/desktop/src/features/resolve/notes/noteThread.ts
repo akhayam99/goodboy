@@ -44,11 +44,3 @@ export const noteCommentThread = ({ note }: { readonly note: DiffComment }): Com
   },
   replies: [],
 });
-
-export const areNotesOnly = ({
-  threads,
-}: {
-  readonly threads: ReadonlyArray<CommentThread>;
-}): boolean =>
-  threads.length > 0 &&
-  threads.every((thread) => isNoteThreadId({ threadId: thread.head.threadId ?? '' }));

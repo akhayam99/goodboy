@@ -1,6 +1,6 @@
 import { useEffect, useState, type ClipboardEvent, type MouseEvent } from 'react';
 import type { PullRequestState, SessionId } from '@goodboy/types';
-import { formatError, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
+import { cn, formatError, Markdown, SectionHeader, Textarea } from '@goodboy/ui';
 import { ImagePlus, Pencil } from 'lucide-react';
 import { useAppStore, useSessionById } from '../../../../store';
 import { isInteractiveClick } from '../../../../shared/utils/isInteractiveClick';
@@ -10,6 +10,8 @@ import { SaveCancel } from './SaveCancel';
 type Props = {
   readonly pr: PullRequestState;
   readonly sessionId: SessionId;
+  readonly canEdit: boolean;
+  readonly editEventName: string;
   readonly onMutated: () => void;
 };
 
@@ -18,7 +20,7 @@ type Editing = 'title' | 'body' | null;
 const IMG_URL_RE =
   /^https?:\/\/\S+(?:\.(?:png|jpe?g|gif|webp|svg)(?:\?\S*)?|\/user-attachments\/\S+|githubusercontent\.com\/\S+)$/i;
 
-export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
+export const PrOverview = ({ pr, sessionId, canEdit, editEventName, onMutated }: Props) => {
   const editPr = useAppStore((s) => s.editPr);
   const workspaceId = useSessionById(sessionId)?.workspaceId ?? null;
   const [editing, setEditing] = useState<Editing>(null);
@@ -33,6 +35,15 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
     setBodyDraft(pr.body);
     setError(null);
   }, [pr.number, pr.title, pr.body]);
+
+  useEffect(() => {
+    if (!canEdit) {
+      return;
+    }
+    const onEdit = () => setEditing('title');
+    window.addEventListener(editEventName, onEdit);
+    return () => window.removeEventListener(editEventName, onEdit);
+  }, [canEdit, editEventName]);
 
   const save = async (field: 'title' | 'body') => {
     if (busy != null) {
@@ -75,7 +86,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
   };
 
   const onDescClick = (e: MouseEvent<HTMLDivElement>) => {
-    if (isInteractiveClick({ target: e.target })) {
+    if (!canEdit || isInteractiveClick({ target: e.target })) {
       return;
     }
     setEditing('body');
@@ -87,7 +98,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
         <SectionHeader
           label="Title"
           action={
-            editing !== 'title' ? (
+            canEdit && editing !== 'title' ? (
               <button
                 type="button"
                 onClick={() => setEditing('title')}
@@ -123,6 +134,8 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               onCancel={cancel}
             />
           </div>
+        ) : !canEdit ? (
+          <p className="px-3 py-2 text-body text-foreground">{pr.title}</p>
         ) : (
           <button
             type="button"
@@ -138,7 +151,7 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
         <SectionHeader
           label="Description"
           action={
-            editing === 'body' ? (
+            !canEdit ? null : editing === 'body' ? (
               <span className="inline-flex items-center gap-1 text-meta text-faint-foreground">
                 <ImagePlus size={11} aria-hidden />
                 paste an image url to embed it
@@ -179,7 +192,10 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
         ) : pr.body.trim() !== '' ? (
           <div
             onClick={onDescClick}
-            className="cursor-text rounded-md border border-transparent px-3 py-2 transition-colors hover:border-border-soft hover:bg-hover"
+            className={cn(
+              'rounded-md border border-transparent px-3 py-2',
+              canEdit && 'cursor-text transition-colors hover:border-border-soft hover:bg-hover',
+            )}
           >
             {workspaceId === null ? (
               <Markdown text={pr.body} className="text-prose" />
@@ -189,6 +205,8 @@ export const PrOverview = ({ pr, sessionId, onMutated }: Props) => {
               </ToolImageScope>
             )}
           </div>
+        ) : !canEdit ? (
+          <p className="px-3 py-2 text-body text-faint-foreground">No description.</p>
         ) : (
           <button
             type="button"

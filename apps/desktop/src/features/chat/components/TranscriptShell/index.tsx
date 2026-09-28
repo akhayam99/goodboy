@@ -16,6 +16,7 @@ type Props = {
   readonly 'aria-label'?: string;
   readonly 'aria-expanded'?: boolean;
   readonly 'data-testid'?: string;
+  readonly onContextMenu?: MouseEventHandler<HTMLElement>;
 };
 
 export const TranscriptShell = ({
@@ -31,6 +32,7 @@ export const TranscriptShell = ({
   'aria-label': ariaLabel,
   'aria-expanded': ariaExpanded,
   'data-testid': testId,
+  onContextMenu,
 }: Props) => {
   const accent = tintClasses(tone);
   const hasRail = tone !== 'neutral';
@@ -63,7 +65,7 @@ export const TranscriptShell = ({
   }
 
   return (
-    <div className={shellClassName} data-testid={testId}>
+    <div className={shellClassName} data-testid={testId} onContextMenu={onContextMenu}>
       {children}
     </div>
   );

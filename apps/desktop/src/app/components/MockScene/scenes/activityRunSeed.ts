@@ -235,6 +235,7 @@ const decision = (
 ): SessionDecision => ({
   id: `mock-run-decision-${row.number}`,
   sessionId: SESSION_ID,
+  why: null,
   status: 'active',
   replacedBy: null,
   author: 'agent',
@@ -258,6 +259,7 @@ const DECISIONS: ReadonlyArray<SessionDecision> = [
     text: "Key idempotency on the processor's event id; the payload changes between retries",
     agentId: SCOUT_EVENTS_AGENT_ID,
     turnOrdinal: 1,
+    why: 'Northwind resends the same event with a new payload on every retry',
     previousText: "Use the processor's event id as the key because the payload differs per retry",
     rewordedAt: at({ day: DAY_TWO, time: '10:00:00' }),
   }),
@@ -266,6 +268,7 @@ const DECISIONS: ReadonlyArray<SessionDecision> = [
     text: 'Write the dedupe check inside the same transaction as the credit',
     agentId: DEDUPE_AGENT_ID,
     turnOrdinal: 4,
+    why: 'A check outside the transaction lets two workers credit the same invoice',
   }),
   decision({
     number: 3,
@@ -301,6 +304,7 @@ const DECISIONS: ReadonlyArray<SessionDecision> = [
     text: 'Keep the retry state store on payments-api, so notify-relay stays a read only view',
     agentId: PLANNER_AGENT_ID,
     turnOrdinal: 6,
+    why: 'payments-api already owns the ledger-core transaction, and notify-relay reads from it. A second store would need its own migration, its own backfill and a sync job that Harborline has no one to watch.',
   }),
   decision({
     number: 7,

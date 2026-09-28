@@ -132,7 +132,6 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
             <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
               <ChangelogRail
                 releases={filteredReleases}
-                dates={dates}
                 selectedVersion={showCatchUp ? null : (selected?.version ?? null)}
                 installedVersion={installedVersion}
                 query={query}

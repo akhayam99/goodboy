@@ -1,5 +1,5 @@
-import { useEffect, useMemo, type ReactNode } from 'react';
-import { ErrorStrip, LensEmptyState, PageColumn, RefreshIconButton, Skeleton } from '@goodboy/ui';
+import { useEffect, useMemo } from 'react';
+import { ErrorStrip, LensEmptyState, PageColumn, Skeleton } from '@goodboy/ui';
 import type { PrReviewDraft, Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
@@ -7,14 +7,21 @@ import { DiffView, type DiffComments } from '../../../../diff/components/DiffVie
 import { useAskAgent } from '../../../../diff/hooks/useAskAgent';
 import { draftThread } from './draftThreads';
 import { useReviewDiff } from './useReviewDiff';
+import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
+import { WriteReviewForm } from './WriteReviewForm';
 
 type Props = {
   readonly session: Session;
-  readonly publishBar: ReactNode;
 };
 
-export const WriteReview = ({ session, publishBar }: Props) => {
+export const WRITE_REVIEW_ACTIONS_LABEL = 'Review actions';
+
+export const WriteReview = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
+  const menuTarget = useMemo(
+    () => ({ kind: 'writeReview' as const, sessionId, draftId: null }),
+    [sessionId],
+  );
   const drafts = useAppStore(
     (s) => s.reviewDrafts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<PrReviewDraft>),
   );
@@ -99,8 +106,9 @@ export const WriteReview = ({ session, publishBar }: Props) => {
           tone={CONCEPT_TONE.diff}
           icon={CONCEPT_ICONS.diff}
           title="No changes in this pull request"
-          description="The diff is empty, nothing to review."
+          description="The diff is empty. The verdict and the summary still go out."
         />
+        <WriteReviewForm sessionId={sessionId} />
       </PageColumn>
     );
   }
@@ -108,18 +116,8 @@ export const WriteReview = ({ session, publishBar }: Props) => {
     <DiffView
       files={files}
       comments={comments}
-      toolbarEnd={
-        <>
-          <RefreshIconButton
-            label="Refresh diff"
-            isLoading={loading}
-            onClick={refresh}
-            iconSize={12}
-            className="size-6 border-transparent p-0"
-          />
-          {publishBar}
-        </>
-      }
+      footer={<WriteReviewForm sessionId={sessionId} />}
+      toolbarEnd={<ObjectOverflowMenu target={menuTarget} label={WRITE_REVIEW_ACTIONS_LABEL} />}
     />
   );
 };

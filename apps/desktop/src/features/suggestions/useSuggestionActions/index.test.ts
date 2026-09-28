@@ -241,7 +241,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    expect(actions.primary?.label).toBe('Resolve 1 new');
+    expect(actions.primary?.label).toBe('Draft a fix');
     actions.primary?.run();
     await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(1));
     expect(spies.spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual(['thread-1']);

@@ -2,7 +2,8 @@ import { currentPlatform } from '../platform';
 
 export type ShortcutPlane = 'app' | 'session' | 'lens';
 
-export type ShortcutGroup = 'general' | 'workspaces' | 'navigate' | 'session' | 'views' | 'window';
+export type ShortcutGroup =
+  'general' | 'workspaces' | 'navigate' | 'session' | 'views' | 'review' | 'window';
 
 export type ShortcutFamily = 'workspace-digit';
 
@@ -17,6 +18,7 @@ export type ShortcutEntry = {
 
 export const SHORTCUTS = {
   'palette.open': { combo: 'cmd+KeyK', label: 'Command palette', plane: 'app', group: 'general' },
+  'search.open': { combo: 'cmd+KeyF', label: 'Search', plane: 'app', group: 'general' },
   'settings.open': { combo: 'cmd+Comma', label: 'Settings', plane: 'app', group: 'general' },
   'settings.shortcuts': {
     combo: 'cmd+Slash',
@@ -106,6 +108,13 @@ export const SHORTCUTS = {
 
   'nav.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app', group: 'navigate' },
   'nav.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app', group: 'navigate' },
+  'find.next': { combo: 'cmd+KeyG', label: 'Next match', plane: 'app', group: 'navigate' },
+  'find.previous': {
+    combo: 'cmd+shift+KeyG',
+    label: 'Previous match',
+    plane: 'session',
+    group: 'navigate',
+  },
   'column.toggle': {
     combo: 'cmd+KeyB',
     label: 'Show or hide the session sidebar',
@@ -145,9 +154,15 @@ export const SHORTCUTS = {
   },
   'composer.submit': {
     combo: 'cmd+Enter',
-    label: 'Submit comment',
+    label: 'Submit, or push in Review',
     plane: 'app',
     group: 'session',
+  },
+  'menu.open': {
+    combo: 'shift+F10',
+    label: 'Open the menu of the focused row',
+    plane: 'session',
+    group: 'general',
   },
   'activity.openRun': {
     combo: 'shift+Enter',
@@ -225,6 +240,20 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'views',
   },
+
+  'review.next': { combo: 'KeyJ', label: 'Next comment', plane: 'app', group: 'review' },
+  'review.previous': {
+    combo: 'KeyK',
+    label: 'Previous comment',
+    plane: 'app',
+    group: 'review',
+  },
+  'review.accept': { combo: 'KeyA', label: 'Accept', plane: 'app', group: 'review' },
+  'review.edit': { combo: 'KeyE', label: 'Edit or answer', plane: 'app', group: 'review' },
+  'review.reply': { combo: 'KeyR', label: 'Reply', plane: 'app', group: 'review' },
+  'review.skip': { combo: 'KeyS', label: 'Skip', plane: 'app', group: 'review' },
+  'review.undo': { combo: 'KeyU', label: 'Undo', plane: 'app', group: 'review' },
+  'review.draft': { combo: 'KeyD', label: 'Draft fixes', plane: 'app', group: 'review' },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },

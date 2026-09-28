@@ -1,4 +1,3 @@
-import type { SessionId } from '@goodboy/types';
 import type { AppState } from '../../types';
 import { agentHomeFor } from './agentHomeFor';
 import { resolverPagePlace, sessionPlace } from './place';
@@ -7,16 +6,6 @@ import { resolveActiveMountPath } from '../worktrees/resolveActiveMountPath';
 import { CONTEXT_LENS_TAB } from './contextLensTab';
 import { DEFAULT_CONTEXT_TAB } from '../contextDrawer/state';
 import type { CanonicalPlace, Place, PlaceRequest } from './types';
-
-type GithubParams = {
-  readonly state: AppState;
-  readonly sessionId: SessionId;
-};
-
-const isGithubReviewSession = ({ state, sessionId }: GithubParams): boolean =>
-  (state.sessionGithub[sessionId]?.pr ?? null) !== null &&
-  (state.sessionGitlabMr[sessionId]?.mr ?? null) === null &&
-  (state.sessionBitbucketPr[sessionId]?.pr ?? null) === null;
 
 type Params = {
   readonly state: AppState;
@@ -42,10 +31,7 @@ const canonicalAgent = ({
   if (threadId === null) {
     return { place: sessionPlace({ sessionId, lens: 'review', agentId }), drawer: null };
   }
-  return {
-    place: sessionPlace({ sessionId, lens: 'review' }),
-    drawer: { kind: 'conversation', sessionId, payload: { threadId, tab: 'agent' } },
-  };
+  return { place: resolverPagePlace({ sessionId, agentId, threadId }), drawer: null };
 };
 
 type PlaceParams = {
@@ -58,9 +44,6 @@ const canonicalPlace = ({ state, request }: PlaceParams): Place => {
     return request;
   }
   const { view, sessionId } = request;
-  if (view.lens === 'pr' && isGithubReviewSession({ state, sessionId })) {
-    return { ...request, view: { ...view, lens: 'review', target: null } };
-  }
   if (
     view.lens === 'files' &&
     (view.target === null || (view.target.kind === 'diff' && view.target.mountPath === null))

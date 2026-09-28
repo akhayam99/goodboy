@@ -376,48 +376,6 @@ describe('AgentsSection collapse defaults', () => {
     ]);
   });
 
-  it('deletes a workflow run through the store action', () => {
-    const runId = 'run-delete' as WorkflowRunId;
-    h.state.sessionWorkflows = {
-      [SESSION_ID]: [
-        {
-          id: 'wf-delete',
-          workspaceId: WS_ID,
-          name: 'delete me',
-          description: '',
-          steps: [],
-          createdAt: NOW,
-          updatedAt: NOW,
-        },
-      ],
-    };
-
-    render(
-      <AgentsSection
-        task={buildSession({
-          workflowRuns: [
-            {
-              id: runId,
-              workflowId: 'wf-delete',
-              ordinal: 0,
-              currentStep: 0,
-              triggerMode: 'immediate',
-              autoRun: false,
-            } as never,
-          ],
-        })}
-        only="workflows"
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: /workflow actions$/ }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete workflow run' }));
-    const confirm = screen.getByRole('group', { name: 'Delete workflow run?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
-
-    expect(h.detachWorkflowFromSession).toHaveBeenCalledWith(SESSION_ID, runId);
-  });
-
   it('picking an agent selects it and reveals the chat (full-width swap trigger)', () => {
     const navigate = vi.fn();
     h.state.navigate = navigate;

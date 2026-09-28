@@ -2,6 +2,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { REVIEW_KIND } from '../actions/kinds/review';
+import { REVIEW_COMMENT_KIND } from '../actions/kinds/reviewComment';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const GUARD_FILE_NAME = 'resolveQueueCopyGuard.test.ts';
@@ -80,7 +82,7 @@ describe('resolve queue copy guard', () => {
     const sentences = prose({
       contents: readFileSync(join(HERE, 'resolvePublishCopy.ts'), 'utf8'),
     });
-    expect(sentences).toContain('Update branch and review again');
+    expect(sentences).toContain('Worktree has uncommitted changes');
     expect(sentences).toContain('The branch carries a commit you did not approve');
   });
 
@@ -101,5 +103,44 @@ describe('resolve queue copy guard', () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it('keeps no copy nobody reads in the Review copy files', () => {
+    const copyFiles = [
+      'resolveQueueCopy.ts',
+      'resolvePublishCopy.ts',
+      'reviewFlowCopy.ts',
+      'reviewPushCopy.ts',
+      'resolveItemCopy.ts',
+    ];
+    const desktopSrc = join(HERE, '..', '..');
+    const readers = collectSourceFiles({ root: desktopSrc }).filter(
+      (file) => !file.includes('.test.') && !copyFiles.some((copy) => file.endsWith(copy)),
+    );
+    const sources = readers.map((file) => readFileSync(file, 'utf8'));
+    const isRead = (pattern: RegExp): boolean => sources.some((source) => pattern.test(source));
+    const unused = copyFiles.flatMap((copy) => {
+      const contents = readFileSync(join(HERE, copy), 'utf8');
+      const names = [...contents.matchAll(/^export const (\w+)/gm)].map((match) => match[1] ?? '');
+      const labels = [
+        ...contents.matchAll(/^export const (\w+) = \{\n([\s\S]*?)\n\} as const;/gm),
+      ].flatMap((match) =>
+        [...(match[2] ?? '').matchAll(/^ {2}(\w+):/gm)].map(
+          (key) => `${match[1] ?? ''}.${key[1] ?? ''}`,
+        ),
+      );
+      return [
+        ...names.filter((name) => !isRead(new RegExp(`\\b${name}\\b`))),
+        ...labels.filter((label) => !isRead(new RegExp(`\\b${label.replace('.', '\\.')}\\b`))),
+      ].map((name) => `${copy}: ${name}`);
+    });
+    expect(unused).toEqual([]);
+  });
+
+  it('never names a Review button Resolve', () => {
+    const labels = [...REVIEW_KIND.actions, ...REVIEW_COMMENT_KIND.actions].map((action) =>
+      typeof action.label === 'string' ? action.label : action.id,
+    );
+    expect(labels.filter((label) => label === 'Resolve' || /^Resolve \d/.test(label))).toEqual([]);
   });
 });

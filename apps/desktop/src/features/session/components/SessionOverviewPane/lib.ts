@@ -53,11 +53,13 @@ export const resolveAttentionTarget = ({ stage, agent }: TargetParams): Attentio
   if (attention === 'open-question') {
     return { kind: 'lens', lens: 'questions', label: 'Answer it' };
   }
-  if (
-    attention === 'ci-failed' ||
-    attention === 'changes-requested' ||
-    attention === 'pr-approved'
-  ) {
+  if (attention === 'changes-requested') {
+    return { kind: 'lens', lens: 'review', label: 'Open Review' };
+  }
+  if (attention === 'ci-failed') {
+    return { kind: 'lens', lens: 'pr', label: 'Open the checks' };
+  }
+  if (attention === 'pr-approved') {
     return { kind: 'lens', lens: 'pr', label: 'Open the pull request' };
   }
   if (attention === 'agent-error') {

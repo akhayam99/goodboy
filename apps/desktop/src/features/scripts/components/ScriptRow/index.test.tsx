@@ -66,7 +66,22 @@ const renderRow = ({
       isSelected={isSelected}
       showSource={showSource}
       blockedReason={blockedReason}
-      menuItems={[{ kind: 'item', key: 'copy', label: 'Copy command', onClick: vi.fn() }]}
+      target={{
+        kind: 'script',
+        facts: {
+          name: script.name,
+          command: script.invocation,
+          isRunning: false,
+          runBlockedReason: blockedReason,
+          onShowOutput: vi.fn(),
+          onRun: vi.fn(),
+          onStop: vi.fn(),
+          onEdit: null,
+          onDuplicate: null,
+          onSaveAs: null,
+          onDelete: null,
+        },
+      }}
       onOpen={onOpen}
       onRun={onRun}
       onStop={onStop}

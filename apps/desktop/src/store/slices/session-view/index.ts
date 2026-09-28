@@ -20,7 +20,7 @@ import {
   setSessionStudio,
   toggleWorkflowExpand,
 } from './workSurface';
-import { openResolveDiff, openResolvePublication, setResolveQueueView } from './resolveSurface';
+import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
 import { revealActivityRow } from './revealActivityRow';
@@ -39,7 +39,6 @@ export type {
   LensKind,
   DiffFocus,
   ResolveQueueView,
-  ResolvePublicationRequest,
   SessionCreation,
   SessionCreationId,
   SessionCreationKind,
@@ -67,7 +66,6 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     openDiffLens: openDiffLens(get),
     setResolveQueueView: setResolveQueueView(set),
     openResolveDiff: openResolveDiff(set, get),
-    openResolvePublication: openResolvePublication(set, get),
     setResolveItemDraft: setResolveItemDraft(set),
     openMountDiff: openMountDiff(get),
     openRewriteHistory: openRewriteHistory(get),

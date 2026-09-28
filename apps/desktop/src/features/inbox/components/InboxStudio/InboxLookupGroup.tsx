@@ -16,6 +16,7 @@ type Props = {
   readonly workspaceName: string;
   readonly selectedKey: string | null;
   readonly onSelect: (hit: LookupHit) => void;
+  readonly onActivate?: (record: InboxRecord) => void;
   readonly starOf?: (record: InboxRecord) => InboxRowStar | undefined;
 };
 
@@ -24,6 +25,7 @@ export const InboxLookupGroup = ({
   workspaceName,
   selectedKey,
   onSelect,
+  onActivate,
   starOf,
 }: Props) => {
   const { state, code } = lookup;
@@ -55,6 +57,7 @@ export const InboxLookupGroup = ({
               record={hit.record}
               selected={selectedKey === hit.record.key}
               onSelect={() => onSelect(hit)}
+              onActivate={onActivate}
               star={starOf?.(hit.record)}
             />
             {secondLine === '' ? null : (

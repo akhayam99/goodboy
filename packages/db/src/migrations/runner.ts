@@ -90,11 +90,44 @@ export const migrate = async (
   return { applied: newlyApplied, skipped, currentVersion };
 };
 
+const TRIGGER_START = /^CREATE\s+(?:TEMP\s+|TEMPORARY\s+)?TRIGGER\b/i;
+const TRIGGER_END = /^END$/i;
+
+type JoinTriggerBodiesInput = {
+  readonly chunks: ReadonlyArray<string>;
+};
+
+const joinTriggerBodies = ({ chunks }: JoinTriggerBodiesInput): ReadonlyArray<string> => {
+  const statements: string[] = [];
+  let openTrigger: string[] = [];
+  for (const chunk of chunks) {
+    if (openTrigger.length > 0) {
+      openTrigger.push(chunk);
+      if (TRIGGER_END.test(chunk)) {
+        statements.push(openTrigger.join(';\n'));
+        openTrigger = [];
+      }
+      continue;
+    }
+    if (TRIGGER_START.test(chunk)) {
+      openTrigger = [chunk];
+      continue;
+    }
+    statements.push(chunk);
+  }
+  if (openTrigger.length > 0) {
+    throw new Error(`Migration trigger has no END: ${truncate({ value: openTrigger[0] ?? '' })}`);
+  }
+  return statements;
+};
+
 const splitMigration = ({ sql }: SplitMigrationInput): ReadonlyArray<MigrationPart> => {
-  const statements = sql
-    .split(';')
-    .map((statement) => statement.trim())
-    .filter((statement) => statement.length > 0);
+  const statements = joinTriggerBodies({
+    chunks: sql
+      .split(';')
+      .map((statement) => statement.trim())
+      .filter((statement) => statement.length > 0),
+  });
   const parts: MigrationPart[] = [];
   let segmentStatements: string[] = [];
   let segmentIndex = 0;

@@ -84,7 +84,7 @@ describe('RecordHeader', () => {
     ).toEqual(['Launch session', 'Merge']);
   });
 
-  it('orders the overflow: tool verbs, refresh, copy link, session, then destructive', () => {
+  it('orders the overflow from the registry: tool verbs, session, refresh, copies, then destructive', () => {
     render(
       <RecordHeader
         provider="gitlab"
@@ -98,12 +98,15 @@ describe('RecordHeader', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'More actions for !87' }));
 
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+    expect(
+      screen.getAllByRole('menuitem').map((item) => item.getAttribute('data-menu-label')),
+    ).toEqual([
       'Convert to draft',
+      'Unlink session',
       'Refresh',
       'Copy link',
-      'Unlink session',
-      'Close merge request…',
+      'Copy !87',
+      'Close merge request',
     ]);
   });
 
@@ -119,7 +122,7 @@ describe('RecordHeader', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'More actions for !87' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Close merge request…' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Close merge request' }));
     expect(onRun).not.toHaveBeenCalled();
     expect(screen.getByRole('group', { name: 'Close !87?' })).toBeDefined();
 
@@ -168,6 +171,5 @@ describe('RecordHeader', () => {
 
     render(<RecordHeader provider="linear" identifier="CAS-231" title="Refunds" />);
     expect(screen.queryByRole('button', { name: 'Close the item' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'More actions for CAS-231' })).toBeNull();
   });
 });

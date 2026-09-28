@@ -110,6 +110,7 @@ const T5 = 'PRRT_thread_log_redact';
 const T6 = 'PRRT_thread_timeout_config';
 const T7 = 'PRRT_thread_flaky_test';
 const T8 = 'PRRT_thread_typo';
+const T9 = 'PRRT_thread_retry_constant';
 
 export const EXPANDED_THREAD_ID = T1;
 
@@ -121,6 +122,7 @@ const ITEM5_ID = 'mock-resolve-item-log-redact';
 const ITEM6_ID = 'mock-resolve-item-timeout-config';
 const ITEM7_ID = 'mock-resolve-item-flaky-test';
 const ITEM8_ID = 'mock-resolve-item-typo';
+const ITEM9_ID = 'mock-resolve-item-retry-constant';
 
 const ATTEMPT_RETRY_ID = 'mock-resolve-attempt-retry';
 const ATTEMPT_IDEMPOTENCY_ID = 'mock-resolve-attempt-idempotency';
@@ -291,6 +293,18 @@ const THREAD_TYPO = buildThread({
   createdMinutesAgo: 500,
 });
 
+const THREAD_RETRY_CONSTANT = buildThread({
+  threadId: T9,
+  state: 'open',
+  stage: 'new',
+  revision: 1,
+  activeAttemptId: null,
+  disposition: null,
+  replyDraft: null,
+  question: null,
+  createdMinutesAgo: 12,
+});
+
 const ITEM_RETRY_BACKOFF = buildItem({
   id: ITEM1_ID,
   threadId: T1,
@@ -366,12 +380,23 @@ const ITEM_FLAKY_TEST = buildItem({
 const ITEM_TYPO = buildItem({
   id: ITEM8_ID,
   threadId: T8,
-  approvalState: 'accepted',
-  approvedRevision: 1,
+  approvalState: 'none',
+  approvedRevision: null,
   deferredAt: null,
   deliveredAt: null,
-  candidateRevision: 2,
+  candidateRevision: 1,
   createdMinutesAgo: 500,
+});
+
+const ITEM_RETRY_CONSTANT = buildItem({
+  id: ITEM9_ID,
+  threadId: T9,
+  approvalState: 'none',
+  approvedRevision: null,
+  deferredAt: null,
+  deliveredAt: null,
+  candidateRevision: 1,
+  createdMinutesAgo: 12,
 });
 
 const QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [
@@ -383,6 +408,7 @@ const QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [
   { item: ITEM_TIMEOUT_CONFIG, thread: THREAD_TIMEOUT_CONFIG },
   { item: ITEM_FLAKY_TEST, thread: THREAD_FLAKY_TEST },
   { item: ITEM_TYPO, thread: THREAD_TYPO },
+  { item: ITEM_RETRY_CONSTANT, thread: THREAD_RETRY_CONSTANT },
 ];
 
 type NoteSeed = {
@@ -459,12 +485,28 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     body: 'The request timeout is hardcoded to 30 seconds. Can it come from config instead?',
   }),
   buildNote({
+    threadId: T7,
+    author: 'nadia-p',
+    path: 'src/webhooks/retryPolicy.test.ts',
+    line: 31,
+    createdMinutesAgo: 300,
+    body: 'This test sleeps for real between retries and flakes on a loaded runner. Can it use fake timers?',
+  }),
+  buildNote({
     threadId: T8,
     author: 'kenji-w',
     path: 'src/webhooks/config.ts',
     line: 3,
     createdMinutesAgo: 500,
     body: "Typo: 'shoudl' should be 'should' in the comment above the retry constant.",
+  }),
+  buildNote({
+    threadId: T9,
+    author: 'nadia-p',
+    path: 'src/webhooks/retryPolicy.ts',
+    line: 7,
+    createdMinutesAgo: 12,
+    body: 'MAX_RETRY_ATTEMPTS now lives here and in config.ts. Can config own it so the two never drift?',
   }),
 ];
 
@@ -703,7 +745,7 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
         : {
             kind: 'conversation',
             sessionId: SESSION_ID,
-            payload: { threadId: expandedThreadId, tab: 'comment' },
+            payload: { threadId: expandedThreadId },
           },
     sessionGithub: {
       [SESSION_ID]: {

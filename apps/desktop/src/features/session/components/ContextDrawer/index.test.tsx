@@ -80,6 +80,7 @@ const decision = (overrides: Partial<SessionDecision>): SessionDecision => ({
   sessionId: SID,
   number: 1,
   text: 'Key redeliveries by event id',
+  why: null,
   status: 'active',
   replacedBy: null,
   author: 'agent',
@@ -156,6 +157,27 @@ describe('ContextDrawer', () => {
     expect(numbers).toEqual(['2', '1']);
     expect(screen.getByText(/^Implementer · turn 9/)).toBeDefined();
     expect(screen.getByText(/^You · /)).toBeDefined();
+  });
+
+  it('explains a decision with its why and shows nothing when there is none', () => {
+    const longWhy = [
+      'Northwind retries every webhook on a 5xx and Acme replays the whole day on a restart.',
+      'Keying on the event id is the only guard that holds for both providers at once.',
+    ].join(' ');
+    store.sessionDecisions = {
+      [SID]: [
+        decision({ number: 1, text: 'Fix only payments-api' }),
+        decision({ number: 2, text: 'Return 200 on a duplicate delivery', why: longWhy }),
+      ],
+    };
+    const { container } = renderDrawer('decisions');
+
+    const whys = [...container.querySelectorAll('[data-decision-why]')];
+    expect(whys.map((node) => node.getAttribute('data-decision-why'))).toEqual(['2']);
+    expect(whys[0]?.querySelector('[data-clamped="true"]')).not.toBeNull();
+    fireEvent.click(within(whys[0] as HTMLElement).getByRole('button', { name: 'Show more' }));
+    expect(whys[0]?.querySelector('[data-clamped="false"]')).not.toBeNull();
+    expect(within(whys[0] as HTMLElement).getByRole('button', { name: 'Show less' })).toBeDefined();
   });
 
   it('tags what arrived since the last look and says when Goodboy reworded one', () => {

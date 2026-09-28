@@ -63,7 +63,7 @@ That is also where the money goes. In the run below, a scout read the posting pa
 
 ## Shared context
 
-Every agent on the task reads the same **goal**, the numbered **decisions** and a **summary** that updates after each turn. When the plan changes its mind, the new decision says what it replaced and why, and the next agent starts from there. Open any agent and **View as sent** shows the exact text it received.
+Every agent on the task reads the same **goal**, the numbered **decisions** and a **summary** that updates after each turn. Decisions Goodboy records keep why they were made, shown right under them in the context drawer. When the plan changes its mind, the new decision says what it replaced and why, and the next agent starts from there. Open any agent and **View as sent** shows the exact text it received.
 
 Claude runs out halfway through? With another eligible provider connected, the turn can move there, and the chat says where it went. The top bar shows how much of your Claude and Codex plans is left before you start.
 
@@ -80,13 +80,13 @@ Claude runs out halfway through? With another eligible provider connected, the t
 
 ## Pull request review
 
-The review comes back with seven comments. Select them and press **Resolve**. An agent writes each fix as a local commit and drafts the reply in your voice, and you approve it, send it back, or mark it **Will not fix**. One more action pushes the fixes, posts the replies and resolves the threads on GitHub.
+The review comes back with seven comments. Review lists them next to the one you picked. Press **Draft fixes** and an agent writes each fix as a local commit and drafts the reply in your voice, and you accept it, edit it or skip the comment. One **Push** pushes the fixes, posts the replies and resolves the threads on GitHub.
 
 [See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#resolve)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s12-resolve-dark.webp">
-  <img src="./docs/readme/s12-resolve-light.webp" alt="Seven review comments on pull request 318 grouped by file, with replies ready to review, one fix committed and one comment waiting for an answer">
+  <img src="./docs/readme/s12-resolve-light.webp" alt="Review for pull request 318: comments grouped as open, waiting for the push and done, one outdated reply open on the right, and Push 1 in the header">
 </picture>
 
 <br>
@@ -95,7 +95,7 @@ The review comes back with seven comments. Select them and press **Resolve**. An
 
 Every agent still has its own chat when you want to steer by hand. Type while it works and your message waits for its turn, or send it now and interrupt. Restart Goodboy or install an update, and the agents that were working pick up where they stopped.
 
-The inbox, plans and wireframes, history rewriting, storage cleanup, security findings and the rest are in [FEATURES.md](./FEATURES.md), with screenshots. Something broke? Press **⌘I** in the app and report it in one line. [goodboy-ai.dev](https://goodboy-ai.dev) tells the story in a minute.
+Right click anything for its actions, press **⌘K** to run one from the keyboard, and **⌘F** searches every session, message and plan. The inbox, plans and wireframes, history rewriting, storage cleanup, security findings and the rest are in [FEATURES.md](./FEATURES.md), with screenshots. Something broke? Press **⌘I** in the app and report it in one line. [goodboy-ai.dev](https://goodboy-ai.dev) tells the story in a minute.
 
 [See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#agents-and-chat)
 

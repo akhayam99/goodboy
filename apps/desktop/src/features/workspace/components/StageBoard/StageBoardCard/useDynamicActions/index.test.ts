@@ -38,7 +38,8 @@ import { useDynamicActions } from './index';
 const nav = {
   openWorkflows: vi.fn(),
   openQuestions: vi.fn(),
-  openGithub: vi.fn(),
+  openPullRequest: vi.fn(),
+  openReview: vi.fn(),
   openAgent: vi.fn(),
 } as unknown as BoardNavigation;
 
@@ -110,7 +111,7 @@ beforeEach(() => {
   state.emitNotification.mockClear();
   (nav.openWorkflows as ReturnType<typeof vi.fn>).mockClear();
   (nav.openQuestions as ReturnType<typeof vi.fn>).mockClear();
-  (nav.openGithub as ReturnType<typeof vi.fn>).mockClear();
+  (nav.openReview as ReturnType<typeof vi.fn>).mockClear();
   (nav.openAgent as ReturnType<typeof vi.fn>).mockClear();
 });
 afterEach(() => vi.clearAllMocks());
@@ -210,7 +211,7 @@ describe('useDynamicActions', () => {
     expect(action?.icon).toBe(SUGGESTION_ICONS['resolve-threads']);
 
     action?.onClick();
-    expect(nav.openGithub).toHaveBeenCalledWith(sessionWith());
+    expect(nav.openReview).toHaveBeenCalledWith(sessionWith());
   });
 
   it('leaves a thread a running fix attempt already owns out of the count', () => {

@@ -14,6 +14,8 @@ import { AttentionChips } from './AttentionChips';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
 import { ArchivedRestore } from './ArchivedRestore';
+import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 
 type Props = {
   readonly session: Session;
@@ -24,6 +26,11 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
   const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
+  useRenameRequest({
+    objectKey: sessionObjectKey({ sessionId }),
+    anchorKeys: [null, SESSION_HEADER_ANCHOR],
+    onRename: rename.start,
+  });
   const hasLinkedWork = useAppStore((s) => {
     const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
     const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
@@ -96,7 +103,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
           </div>
         </div>
       </div>
-      <ProjectMountRows session={session} onSelectLens={onSelectLens} />
+      <ProjectMountRows session={session} />
     </div>
   );
 };

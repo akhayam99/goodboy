@@ -13,6 +13,7 @@ import {
 } from '../../../integrations/issueSources';
 import { LinkIssueForm } from '../SessionWorkspace/parts/IntegrationPane/LinkIssueForm';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { linkIssueEventName } from '../../../actions/kinds/session';
 
 const TRACKER_KINDS: ReadonlyArray<IssueSourceKind> = ['issue'];
 
@@ -37,6 +38,7 @@ export const LinkIssueAction = ({ session, presentation = 'icon', isCollapsed = 
     expectedHeight: 280,
     expectedWidth: 384,
     width: 'w-96 max-w-[calc(100vw-2rem)]',
+    openEvent: linkIssueEventName({ sessionId: session.id }),
   });
 
   const connected = resolveIssueSources({
