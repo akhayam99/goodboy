@@ -60,6 +60,10 @@ Next step actions, pull request and Resolve verbs, Continue, Start step and Rest
 - A branch whose remote was force-pushed reads diverged and opens its history, instead of offering a push that fails. <!-- gb area=sessions -->
 - A resolver you start shows on its queue row right away, without a reload. <!-- gb area=review -->
 - When an agent process refuses to stop, Stop logs it instead of showing the agent idle. <!-- gb area=agents -->
+- A next step with alternatives shows its choices beside the main action again. <!-- gb area=sessions -->
+- Mark ready and Merge from a next step act on the project and branch the suggestion names. <!-- gb area=review -->
+- Change decision on a resolved comment reopens the decision so you can pick again. <!-- gb area=review -->
+- A pull request action that cannot reach its pull request says so, instead of looking like it worked. <!-- gb area=review -->
 
 ## Goodboy v0.11.5
 
