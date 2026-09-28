@@ -12,10 +12,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import {
-  buildCommentAgentArgs,
-  buildResolverAgentArgs,
-} from '../../../features/chat/spawn-from-comment';
+import { buildResolverAgentArgs } from '../../../features/chat/spawn-from-comment';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
@@ -467,7 +464,9 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
   it('persists a queued request instead of sending the resolver kickoff itself', async () => {
     const { drainResolveQueue, recordResolveAttempt, sendTurn, spawn } = buildHarness([]);
-    const args = buildCommentAgentArgs(COMMENT, PR, {
+    const args = buildResolverAgentArgs({
+      threads: [{ head: COMMENT, replies: [] }],
+      pr: PR,
       hint: 'Avoid schema changes.',
     });
 

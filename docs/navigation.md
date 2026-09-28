@@ -877,11 +877,19 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   The `pr` lens is the pull request page on GitHub too (`Merge request` on
   GitLab, still their own studios there). Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
-  pull requests by branch, with `New pull request`. The page header carries the
-  state action (`Merge`, `Mark ready for review`), `Write review` and `GitHub`.
-  The body reads, in order: one warning with `Resolve in Review` when
-  conversations wait or a reviewer asked for changes, otherwise the merge
-  readiness note; then Details, Checks and Activity. `Write review` is a child
+  pull requests by branch, with `New pull request`. The page shows the pull
+  request only. Its controls come from the `pullRequest` kind of the action
+  registry (`features/actions/kinds/pullRequest.ts`), whose `slot` says which
+  available actions also get a visible control (`⋯`, the right click and ⌘K
+  ignore it and list every one): at most one primary that
+  names the next step (`Mark ready for review` on a draft, `Squash and merge`
+  once approved and green), up to three secondaries (`GitHub`, a blocked
+  `Squash and merge` with its reason on the line under the header, `Reopen`,
+  `Write review` on someone else's pull request), and `⋯` with every available
+  action. Merge and Close confirm inline under the header. Two quiet lines
+  point elsewhere: `N comments to resolve` opens Review and `Open diff` the
+  Diff. Then Details and Checks; general comments live in Review, and the page
+  has no Activity or Fix. `Write review` is a child
   page (`Overview › Pull request › #528 › Write review`) with the submit dock;
   without a pull request the page is the creation form
   (`Overview › Pull request › New`). The child page lives in the store per

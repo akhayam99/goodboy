@@ -24,6 +24,7 @@ export const PR_FIELDS = [
   'autoMergeRequest',
   'headRefOid',
   'mergedAt',
+  'author',
 ] as const;
 
 type RawStatusCheck = {
@@ -48,6 +49,7 @@ export type RawPullRequest = {
   autoMergeRequest: Record<string, unknown> | null;
   headRefOid?: string | null;
   mergedAt?: string | null;
+  author?: { readonly login?: string | null } | null;
 };
 
 type ClosingIssueRef = {
@@ -187,6 +189,7 @@ export const toPullRequestState = ({
   mergeQueue,
   headSha: raw.headRefOid ?? null,
   mergedAt: raw.mergedAt ?? null,
+  author: raw.author?.login ?? null,
 });
 
 export const resolvePrForBranch = async (

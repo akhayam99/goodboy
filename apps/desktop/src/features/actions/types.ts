@@ -8,6 +8,22 @@ export const ACTION_GROUPS = ['open', 'act', 'copy', 'danger'] as const;
 
 export type ActionGroup = (typeof ACTION_GROUPS)[number];
 
+export const ACTION_SLOTS = [
+  'primary',
+  'secondary',
+  'inline',
+  'link',
+  'nudge',
+  'notice',
+  'hover',
+  'section',
+  'chip',
+  'empty',
+  'menu',
+] as const;
+
+export type ActionSlot = (typeof ACTION_SLOTS)[number];
+
 export type ActionConfirmRole = 'alert' | 'danger';
 
 export type ActionConfirm = {
@@ -47,6 +63,7 @@ export type ActionRunParams<F> = {
 export type ActionDefinition<F> = {
   readonly id: string;
   readonly label: string | ((params: FactsParams<F>) => string);
+  readonly shortLabel?: (params: FactsParams<F>) => string;
   readonly icon: LucideIcon;
   readonly group: ActionGroup;
   readonly shortcut?: ShortcutId;
@@ -56,6 +73,8 @@ export type ActionDefinition<F> = {
   readonly confirm?: (params: FactsParams<F>) => ActionConfirm | null;
   readonly isUndoable?: boolean;
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
+  readonly slot?: (params: FactsParams<F>) => ActionSlot;
+  readonly pendingLabel?: (params: FactsParams<F>) => string;
   readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
 };
 
@@ -74,8 +93,11 @@ export type ObjectKindDefinition<T, F> = {
 export type ResolvedAction = {
   readonly id: string;
   readonly label: string;
+  readonly shortLabel: string;
   readonly icon: LucideIcon;
   readonly group: ActionGroup;
+  readonly slot: ActionSlot;
+  readonly pendingLabel: string | null;
   readonly shortcut: ShortcutId | null;
   readonly description: string | null;
   readonly blockedReason: string | null;
@@ -106,6 +128,12 @@ export type WorkflowRunActionTarget = {
   readonly runId: WorkflowRunId;
 };
 
+export type PullRequestActionTarget = {
+  readonly kind: 'pullRequest';
+  readonly sessionId: SessionId;
+  readonly prNumber: number | null;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -116,6 +144,7 @@ export type ObjectTarget =
   | SessionsActionTarget
   | AgentActionTarget
   | WorkflowRunActionTarget
+  | PullRequestActionTarget
   | LinkActionTarget;
 
 export type ObjectKindId = ObjectTarget['kind'];

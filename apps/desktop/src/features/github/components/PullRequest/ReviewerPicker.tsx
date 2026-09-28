@@ -11,16 +11,33 @@ type Props = {
   readonly projectRoot: string | null;
   readonly projectId?: ProjectId;
   readonly exclude: ReadonlySet<string>;
+  readonly openEventName: string;
   readonly onAdd: (logins: ReadonlyArray<string>) => void;
 };
 
-export const ReviewerPicker = ({ projectRoot, projectId, exclude, onAdd }: Props) => {
+export const ReviewerPicker = ({
+  projectRoot,
+  projectId,
+  exclude,
+  openEventName,
+  onAdd,
+}: Props) => {
   const [query, setQuery] = useState('');
   const [logins, setLogins] = useState<ReadonlyArray<string> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const workspaceId = useCurrentWorkspace()?.id;
   const dropdown = useDropdown({ width: 'w-52', expectedHeight: 220 });
   const { open: isOpen, close, toggle } = dropdown;
+
+  useEffect(() => {
+    const onOpen = () => {
+      if (!isOpen) {
+        toggle();
+      }
+    };
+    window.addEventListener(openEventName, onOpen);
+    return () => window.removeEventListener(openEventName, onOpen);
+  }, [isOpen, openEventName, toggle]);
 
   useEffect(() => {
     if (isOpen === false || logins !== null || projectRoot == null || projectRoot === '') {

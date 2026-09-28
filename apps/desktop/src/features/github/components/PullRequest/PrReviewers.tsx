@@ -13,10 +13,19 @@ type Props = {
   readonly detail: PrDetail | null;
   readonly projectRoot: string | null;
   readonly projectId?: ProjectId;
+  readonly canRequest: boolean;
+  readonly requestEventName: string;
   readonly onAddReviewers: (logins: ReadonlyArray<string>) => void;
 };
 
-export const PrReviewers = ({ detail, projectRoot, projectId, onAddReviewers }: Props) => {
+export const PrReviewers = ({
+  detail,
+  projectRoot,
+  projectId,
+  canRequest,
+  requestEventName,
+  onAddReviewers,
+}: Props) => {
   const requests = detail?.reviewRequests ?? [];
   const reviewed = useMemo(
     () => latestTerminalReviewsByAuthor(detail?.reviews ?? []),
@@ -33,12 +42,15 @@ export const PrReviewers = ({ detail, projectRoot, projectId, onAddReviewers }: 
 
   return (
     <RailBlock label="Reviewers">
-      <ReviewerPicker
-        projectRoot={projectRoot}
-        projectId={projectId}
-        exclude={known}
-        onAdd={onAddReviewers}
-      />
+      {canRequest && (
+        <ReviewerPicker
+          projectRoot={projectRoot}
+          projectId={projectId}
+          exclude={known}
+          openEventName={requestEventName}
+          onAdd={onAddReviewers}
+        />
+      )}
       {reviewed.length === 0 && requests.length === 0 ? (
         <EmptyState
           icon={CONCEPT_ICONS.review}
