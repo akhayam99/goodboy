@@ -19,6 +19,23 @@ export const setSetting = async (db: Database, key: string, value: string): Prom
   );
 };
 
+type ReplaceParams = {
+  readonly key: string;
+  readonly expected: string;
+  readonly value: string;
+};
+
+export const replaceSettingIfUnchanged = async (
+  db: Database,
+  { key, expected, value }: ReplaceParams,
+): Promise<boolean> => {
+  const result = await db.execute(
+    'UPDATE settings SET value = ?, updated_at = ? WHERE key = ? AND value = ?',
+    [value, Date.now(), key, expected],
+  );
+  return result.rowsAffected === 1;
+};
+
 export const deleteSetting = async (db: Database, key: string): Promise<void> => {
   await db.execute('DELETE FROM settings WHERE key = ?', [key]);
 };

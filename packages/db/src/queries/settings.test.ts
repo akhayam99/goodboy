@@ -1,8 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { deleteSetting, getSetting, listSettingsWithPrefix, setSetting } from './settings';
+import {
+  deleteSetting,
+  getSetting,
+  listSettingsWithPrefix,
+  replaceSettingIfUnchanged,
+  setSetting,
+} from './settings';
 
 describe('settings queries', () => {
+  it('replaces a value only while it still holds what the caller read', async () => {
+    const db = await makeMigratedTestDatabase();
+    await setSetting(db, 'restart.interrupted_runs', 'old');
+
+    expect(
+      await replaceSettingIfUnchanged(db, {
+        key: 'restart.interrupted_runs',
+        expected: 'old',
+        value: 'first',
+      }),
+    ).toBe(true);
+    expect(
+      await replaceSettingIfUnchanged(db, {
+        key: 'restart.interrupted_runs',
+        expected: 'old',
+        value: 'second',
+      }),
+    ).toBe(false);
+    expect(await getSetting(db, 'restart.interrupted_runs')).toBe('first');
+  });
+
   it('lists only the keys under a prefix, taking a percent sign literally', async () => {
     const db = await makeMigratedTestDatabase();
     await setSetting(db, 'window.layout.main', 'a');
