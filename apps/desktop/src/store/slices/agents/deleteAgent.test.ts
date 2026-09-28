@@ -359,6 +359,26 @@ describe('deleteAgent', () => {
     );
   });
 
+  it('keeps the worktree lease while a run that refused to stop is still alive', async () => {
+    const { get, set } = makeStore();
+    hoisted.invokeAgentList.mockResolvedValue([]);
+    hoisted.listResolveAttempts.mockResolvedValue([
+      attemptOn({ mountId: MOUNT_TWO, worktreePath: PATH_TWO }),
+    ]);
+    hoisted.listLiveRunIds.mockResolvedValue(new Set<string>([RUN]));
+
+    vi.useFakeTimers();
+    try {
+      const pending = deleteAgent(set, get)(SID, DOOMED);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await pending;
+    } finally {
+      vi.useRealTimers();
+    }
+
+    expect(hoisted.abandonWorktreeWriter).not.toHaveBeenCalled();
+  });
+
   it('gags the agent before the purge so a late write cannot repopulate it', async () => {
     const { get, set } = makeStore();
     hoisted.invokeAgentList.mockResolvedValue([]);

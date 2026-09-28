@@ -14,7 +14,7 @@ export const deleteAgent = (set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, agentId: AgentId) => {
     const workspaceId = get().sessions.find((sess) => sess.id === sessionId)?.workspaceId;
     const runStopped = await stopAgentForDelete({ get, agentId });
-    await releaseAgentFiles({ get, sessionId, agentId });
+    await releaseAgentFiles({ get, sessionId, agentId, isRunStopped: runStopped });
 
     purgedAgentIds.add(agentId);
     let removedQuestions: ReadonlyArray<string> = [];

@@ -10,11 +10,19 @@ type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
+  readonly isRunStopped: boolean;
 };
 
-export const releaseAgentFiles = async ({ get, sessionId, agentId }: Params): Promise<void> => {
-  for (const path of await agentWritePaths({ get, sessionId, agentId })) {
-    await abandonWorktreeWriter({ path, holder: agentId });
+export const releaseAgentFiles = async ({
+  get,
+  sessionId,
+  agentId,
+  isRunStopped,
+}: Params): Promise<void> => {
+  if (isRunStopped) {
+    for (const path of await agentWritePaths({ get, sessionId, agentId })) {
+      await abandonWorktreeWriter({ path, holder: agentId });
+    }
   }
   const sole = recoverSoleMount({ mounts: selectWritableMounts({ state: get(), sessionId }) });
   const worktree = agentDestinationPath({ get, agentId }) ?? sole?.worktreePath ?? null;
