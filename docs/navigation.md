@@ -73,14 +73,46 @@ A second entry point reuses the existing mount and never builds a parallel one.
 The palette dispatches an event that the owning component listens for. The
 keyboard path calls the same hook method as the button.
 
-The palette renders one ordered list: the current session's agents, sessions,
-workspaces, a **Go to** group, scripts, actions and help. Workspaces are rows
-of its own that open the chosen workspace. Go to reaches studios by name: Back
-to board inside a session, then Inbox, Workflows, Impact, Changelog,
-Notifications and Workspace settings inside a workspace, and Add workspace
-everywhere. It never lists archive or delete, which are lifecycle, not
-navigation. The first row is highlighted on open, and the highlighted row is
-the one Enter runs.
+### The ⌘K palette
+
+The palette is one overlay (`features/palette/`), the accepted exception to
+no modals: it is transit, not a flow, and Escape or a click on the scrim
+closes it. It has a mode slot (`PALETTE_MODES` in
+`features/palette/paletteModes.ts`): each mode draws its own input row
+(`PaletteInputRow`) and body, the overlay keeps the query and the scope, ⇥
+moves to the next mode with the same text, and `openPalette({ mode, query })`
+opens it on a mode. Commands is the first mode.
+
+- **Scope first.** It opens on a scope chip that names what you are on: the
+  agent in view, else the session, else the workspace on the board
+  (`resolvePaletteScope`). Backspace in an empty input removes the chip.
+- **Empty input.** The verbs of the scope under For this session (or agent),
+  then Recent, then Go to, Actions and Help. Go to reaches studios by name:
+  Back to board inside a session, Inbox, Workflows, Impact, Changelog,
+  Notifications and Workspace settings inside a workspace, and Add workspace
+  everywhere.
+- **Typing gives one ranked list, never regrouped.** A fuzzy subsequence match
+  with bonuses for word starts, camel boundaries and runs, so `pay export`
+  finds "Speed up the payout export" (`score.ts`); then frecency, uses halved
+  every seven days and capped so it only reorders close matches
+  (`frecency.ts`); then a boost for the scope's verbs (`rank.ts`). Matched
+  letters are marked, and each row shows its shortcut or its kind on the right.
+- **Every workspace.** Sessions of every workspace are listed
+  (`listSessionTitlesAcrossWorkspaces`); one from another workspace names it
+  and opens that workspace first.
+- **Verbs come from the action registry** (`features/actions/`) and follow its
+  state rules. A verb whose `when` is false never shows. A blocked verb shows
+  only when searched by name (every word a word prefix of its label), dimmed
+  with its reason, and Enter does nothing. Delete and the other confirmed verbs
+  swap the list for an InlineConfirm; Archive runs at once with Undo. The
+  registry owns Review, Diff and Terminal of a session in scope, so the lens
+  rows with the same names step aside.
+- **Keys.** ↑↓ move, ↵ runs the row (an object row opens it), → opens every
+  verb of an object row, grouped Open, Act, Copy and export, Danger, and ← or
+  Backspace goes back. A verb with choices, such as Change model, opens them as
+  a level. A preview pane describes the highlighted row.
+- **Prefixes stay**: `@` agents, `#` sessions, `:` workspaces, `$` scripts,
+  `>` actions, `?` help.
 
 In the composer, `$` lists every script of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then `package.json` and
