@@ -224,6 +224,45 @@ const SOURCES: ReadonlyArray<IndexedSource> = [
     title: 'NEW.branch',
     body: `COALESCE(NEW.mount_name, '')`,
   },
+  {
+    name: 'workflow',
+    table: 'workflows',
+    docId: `'workflow:' || ROW.id`,
+    watched: 'name, description, goal, deleted_at, workspace_id',
+    kind: `'workflow'`,
+    refId: 'NEW.id',
+    workspaceId: 'NEW.workspace_id',
+    status: `CASE WHEN NEW.deleted_at IS NOT NULL THEN 'deleted' END`,
+    occurredAt: 'NEW.created_at',
+    title: 'NEW.name',
+    body: `TRIM(COALESCE(NEW.description, '') || ' ' || COALESCE(NEW.goal, ''))`,
+  },
+  {
+    name: 'workflow_step',
+    table: 'steps',
+    docId: `'step:' || ROW.id`,
+    watched: 'name, expected_output, deleted_at, workflow_id',
+    kind: `'workflow'`,
+    refId: 'NEW.workflow_id',
+    status: `CASE WHEN NEW.deleted_at IS NOT NULL THEN 'deleted' END`,
+    occurredAt: '0',
+    title: 'NEW.name',
+    body: `COALESCE(NEW.expected_output, '')`,
+  },
+  {
+    name: 'diff_comment',
+    table: 'diff_comments',
+    docId: `'comment:' || ROW.id`,
+    watched: 'body, status, file_path',
+    kind: `'comment'`,
+    refId: 'NEW.id',
+    sessionId: 'NEW.session_id',
+    container: 'NEW.file_path',
+    status: 'NEW.status',
+    occurredAt: 'NEW.created_at',
+    title: 'NEW.file_path',
+    body: 'NEW.body',
+  },
 ];
 
 export const m211SearchIndex = `
@@ -238,7 +277,7 @@ CREATE TABLE search_docs (
   fts_rowid INTEGER NOT NULL UNIQUE,
   kind TEXT NOT NULL CHECK (kind IN (
     'session', 'message', 'agent', 'plan', 'report', 'wireframe',
-    'decision', 'question', 'issue', 'pr', 'branch'
+    'decision', 'question', 'issue', 'pr', 'branch', 'workflow', 'comment'
   )),
   ref_id TEXT NOT NULL,
   workspace_id TEXT NULL,

@@ -21,4 +21,6 @@ export const SEARCH_KIND_META: Readonly<Record<SearchKind, KindMeta>> = {
   issue: { label: 'Issue', icon: CONCEPT_ICONS.issues, tone: CONCEPT_TONE.issues },
   pr: { label: 'Pull request', icon: CONCEPT_ICONS.pr, tone: CONCEPT_TONE.pr },
   branch: { label: 'Branch', icon: CONCEPT_ICONS.branch, tone: CONCEPT_TONE.branch },
+  workflow: { label: 'Workflow', icon: CONCEPT_ICONS.workflows, tone: CONCEPT_TONE.workflows },
+  comment: { label: 'Comment', icon: CONCEPT_ICONS.comments, tone: CONCEPT_TONE.comments },
 };

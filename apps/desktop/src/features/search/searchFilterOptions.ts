@@ -17,6 +17,8 @@ export const TYPE_OPTIONS: ReadonlyArray<{
   { value: 'issue', label: 'Issues', kinds: ['issue'] },
   { value: 'pr', label: 'Pull requests', kinds: ['pr'] },
   { value: 'branch', label: 'Branches', kinds: ['branch'] },
+  { value: 'workflow', label: 'Workflows', kinds: ['workflow'] },
+  { value: 'comment', label: 'Comments', kinds: ['comment'] },
 ];
 
 export const PROVIDER_OPTIONS: ReadonlyArray<{ readonly value: string; readonly label: string }> = [

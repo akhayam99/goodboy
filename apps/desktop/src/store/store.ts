@@ -188,6 +188,7 @@ import type {
 } from './slices/artifactDrafts/types';
 import { createWorkflowStudioSlice } from './slices/workflowStudio';
 import { initialWorkflowStudioState } from './slices/workflowStudio/state';
+import type { SetWorkflowStudioFocusParams } from './slices/workflowStudio/setWorkflowStudioFocus';
 import type {
   StartWorkflowGenerationParams,
   WorkflowStudioDraft,
@@ -854,6 +855,7 @@ type AppActions = {
   setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
   clearWorkflowStudioDraft(params: { workspaceId: WorkspaceId }): void;
   setWorkflowStudioVisible(params: { workspaceId: WorkspaceId | null }): void;
+  setWorkflowStudioFocus(params: SetWorkflowStudioFocusParams): void;
   startWorkflowGeneration(params: StartWorkflowGenerationParams): Promise<boolean>;
   consumeWorkflowGeneration(params: { workspaceId: WorkspaceId }): void;
   undoWorkflowGeneration(params: { workspaceId: WorkspaceId }): Promise<void>;

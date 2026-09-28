@@ -46,6 +46,14 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
     return true;
   }
   await enterWorkspace({ workspaceId: target.workspaceId });
+  if (target.kind === 'workflow') {
+    if (useAppStore.getState().currentWorkspaceId !== target.workspaceId) {
+      return false;
+    }
+    useAppStore.getState().setWorkflowStudioFocus({ workflowId: target.workflowId });
+    window.dispatchEvent(new CustomEvent('goodboy:open-workflow-studio'));
+    return true;
+  }
   const store = useAppStore.getState();
   if (!store.sessions.some((session) => session.id === target.sessionId)) {
     return false;
@@ -86,6 +94,12 @@ const runTarget = async ({ target }: RunParams): Promise<boolean> => {
       return true;
     case 'review':
       store.navigate({ to: sessionPlace({ sessionId, lens: 'pr' }) });
+      return true;
+    case 'comment':
+      store.navigate({
+        to: sessionPlace({ sessionId, lens: 'files' }),
+        drawer: { kind: 'diff-notes', sessionId, payload: {} },
+      });
       return true;
     case 'diff': {
       const mount = (store.sessionMounts[sessionId] ?? []).find(

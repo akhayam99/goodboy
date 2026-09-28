@@ -74,7 +74,7 @@ describe('search backfill', () => {
     expect(state).toEqual({ id: 'session', cursor: SEARCH_WORLD.sessionId, isDone: 0 });
 
     const steps = await backfillAll({ db, batchSize: 1 });
-    expect(steps).toBeGreaterThan(11);
+    expect(steps).toBeGreaterThan(14);
     expect(await snapshot({ db })).toEqual(fromTriggers);
   });
 
@@ -136,6 +136,8 @@ describe('search backfill', () => {
       'message:msg-relay',
       'session:s-relay',
       'starred:ws-harborline:jira:jira-88',
+      'step:step-scout',
+      'workflow:wf-settle',
     ]);
   });
 

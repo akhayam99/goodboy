@@ -57,6 +57,12 @@ INSERT INTO session_worktrees (id, session_id, branch, project_id, repo_slug, mo
   ('${w.mountId}', '${w.sessionId}', 'ak/feat-payout-stream', '${w.projectId}', 'harborline/ledger-core', 'ledger-core', ${at});
 INSERT INTO github_pr_cache (branch, repo_slug, pr_json, fetched_at) VALUES
   ('ak/feat-payout-stream', 'harborline/ledger-core', '{"number":482,"title":"Stream the payout export","url":"https://github.com/harborline/ledger-core/pull/482","state":"open","updatedAt":"2026-09-20T10:00:00.000Z"}', ${at});
+INSERT INTO workflows (id, workspace_id, name, description, goal, is_preset, created_at, updated_at) VALUES
+  ('wf-settle', '${w.workspaceId}', 'Settlement hardening', 'Harden the settlement export', NULL, 1, ${at}, ${at});
+INSERT INTO steps (id, workflow_id, ordinal, name, expected_output) VALUES
+  ('step-scout', 'wf-settle', 0, 'Scout the ledger rounding', 'A map of the rounding paths');
+INSERT INTO diff_comments (id, session_id, file_path, body, status, created_at) VALUES
+  ('c-1', '${w.sessionId}', 'src/export/stream.ts', 'Page size should come from the merchant tier', 'open', ${at});
 INSERT INTO mount_pr_links (id, mount_id, provider, host, repo_slug, pr_number, head_branch, url, state, snapshot_json, last_observed_at, created_at, updated_at) VALUES
   ('mpr-1', '${w.mountId}', 'gitlab', 'gitlab.example', 'harborline/ledger-core', 17, 'ak/feat-payout-stream', 'https://gitlab.example/mr/17', 'open', '{"title":"Payout stream merge request"}', ${at}, ${at}, ${at});
 `);

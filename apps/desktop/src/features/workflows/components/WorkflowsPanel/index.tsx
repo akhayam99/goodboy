@@ -48,6 +48,20 @@ export const WorkflowsPanel = ({ workspaceId }: Props) => {
   );
   const workspaceName = workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null;
   const editor = useWorkflowEditor({ workspaceId, presets, workingDir });
+  const focusedWorkflowId = useAppStore((state) => state.workflowStudioFocus);
+  const setWorkflowStudioFocus = useAppStore((state) => state.setWorkflowStudioFocus);
+  const openEditor = editor.open;
+
+  useEffect(() => {
+    const focused = templates.find((template) => template.id === focusedWorkflowId);
+    if (focused === undefined) {
+      return;
+    }
+    setWorkflowStudioFocus({ workflowId: null });
+    openEditor(focused);
+  }, [focusedWorkflowId, templates, openEditor, setWorkflowStudioFocus]);
+
+  useEffect(() => () => setWorkflowStudioFocus({ workflowId: null }), [setWorkflowStudioFocus]);
   const removedBuiltinIds = useRemovedBuiltins({ workspaceId, workflows: templates });
 
   useEffect(() => {

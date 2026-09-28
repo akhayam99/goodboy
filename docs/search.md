@@ -23,20 +23,27 @@ m211 adds three tables.
   workspace), its provider, container and status, and the time it
   happened. `fts_rowid` ties it to its `search_index` row. Deleting a doc
   deletes its index row through a trigger.
+- A workflow step has no time of its own, so its doc's time is 0 and a
+  date filter leaves steps out; the workflow row itself carries its
+  creation time. A deleted workflow or step keeps its doc, marked
+  `deleted`, and the query hides it together with every step of a deleted
+  workflow.
 - `search_index_state` keeps the backfill cursor per source, and
   `search_excluded_projects` the projects left out of search.
 
-| Kind                          | Source                                               | Title            | Body                                                |
-| ----------------------------- | ---------------------------------------------------- | ---------------- | --------------------------------------------------- |
-| `session`                     | `sessions`                                           | Goal             |                                                     |
-| `message`                     | `messages`, user and assistant only                  |                  | Text                                                |
-| `agent`                       | `agents`                                             | Name             | Output summary                                      |
-| `plan`, `report`, `wireframe` | `session_artifacts`                                  | Title            | Markdown source (a wireframe's JSON is not indexed) |
-| `decision`                    | `session_decisions`                                  | Text             | Why                                                 |
-| `question`                    | `open_questions`                                     | Question         | Your answer                                         |
-| `issue`                       | `session_external_tasks`, `workspace_starred_issues` | Key and title    | Container                                           |
-| `pr`                          | `github_pr_cache`, `mount_pr_links`                  | Number and title | Branch and repo                                     |
-| `branch`                      | `session_worktrees`                                  | Branch           | Mount name                                          |
+| Kind                          | Source                                               | Title              | Body                                                |
+| ----------------------------- | ---------------------------------------------------- | ------------------ | --------------------------------------------------- |
+| `session`                     | `sessions`                                           | Goal               |                                                     |
+| `message`                     | `messages`, user and assistant only                  |                    | Text                                                |
+| `agent`                       | `agents`                                             | Name               | Output summary                                      |
+| `plan`, `report`, `wireframe` | `session_artifacts`                                  | Title              | Markdown source (a wireframe's JSON is not indexed) |
+| `decision`                    | `session_decisions`                                  | Text               | Why                                                 |
+| `question`                    | `open_questions`                                     | Question           | Your answer                                         |
+| `issue`                       | `session_external_tasks`, `workspace_starred_issues` | Key and title      | Container                                           |
+| `pr`                          | `github_pr_cache`, `mount_pr_links`                  | Number and title   | Branch and repo                                     |
+| `branch`                      | `session_worktrees`                                  | Branch             | Mount name                                          |
+| `workflow`                    | `workflows`, and `steps` as their own docs           | Name, or step name | Description and goal, or expected output            |
+| `comment`                     | `diff_comments`                                      | File path          | Comment                                             |
 
 Never indexed: tool output (`turn_events`), system messages, terminal
 output, settings, credentials and tokens.
@@ -162,12 +169,12 @@ results and its preview.
   action registry (`features/actions`), resolved on the live store so they
   match the object's current state: a session and an agent get their full
   menu, a plan, report or wireframe gets the artifact menu (Run plan only
-  while it is ready, dimmed with its reason otherwise). An issue or a pull
+  while the plan is ready to run). An issue or a pull
   request gets Open link and Copy link: their record and pull request
   menus read facts that only the Inbox and Review pages hold (merge
   readiness, the provider's verbs), so search opens those pages instead of
-  guessing. Decisions, questions and branches have no registry kind and
-  show only Open. → moves into the actions. `hitActionTarget.ts` owns the
+  guessing. Decisions, questions, branches, workflows and comments have no
+  registry kind and show only Open. → moves into the actions. `hitActionTarget.ts` owns the
   mapping; search never builds its own verb list.
 
 ## Landing on a hit
@@ -176,17 +183,19 @@ results and its preview.
 one target from its kind and its state, and `openSearchHit` runs it through
 the one door (`navigate`, or the opener the rest of the app uses).
 
-| Kind                    | Lands on                                                              | Refuses when                               |
-| ----------------------- | --------------------------------------------------------------------- | ------------------------------------------ |
-| Session                 | The session                                                           | It is archived                             |
-| Message                 | Its agent's transcript, scrolled to the message                       | The session is archived, the agent is gone |
-| Agent                   | The agent                                                             | Same                                       |
-| Plan, report, wireframe | The artifact viewer                                                   | The session is archived                    |
-| Decision                | The Context drawer on its number, highlighted                         | The decision is gone                       |
-| Question                | The Questions lens with the question focused                          | The session is archived                    |
-| Issue                   | The issue lens of its session, or the Inbox record when it is starred | Nothing to open                            |
-| Pull request            | Review, or its page on the code host when no session has the branch   | No session and no link                     |
-| Branch                  | The Diff of its mount                                                 | The branch left the session                |
+| Kind                    | Lands on                                                                    | Refuses when                               |
+| ----------------------- | --------------------------------------------------------------------------- | ------------------------------------------ |
+| Session                 | The session                                                                 | It is archived                             |
+| Message                 | Its agent's transcript, scrolled to the message                             | The session is archived, the agent is gone |
+| Agent                   | The agent                                                                   | Same                                       |
+| Plan, report, wireframe | The artifact viewer                                                         | The session is archived                    |
+| Decision                | The Context drawer on its number, highlighted                               | The decision is gone                       |
+| Question                | The Questions lens with the question focused                                | The session is archived                    |
+| Issue                   | The issue lens of its session, or the Inbox record when it is starred       | Nothing to open                            |
+| Pull request            | Review, or its page on the code host when no session has the branch         | No session and no link                     |
+| Branch                  | The Diff of its mount                                                       | The branch left the session                |
+| Workflow                | The workflow studio with that workflow open (a step hit opens its workflow) | Its workspace is gone                      |
+| Comment                 | The Diff lens with the Diff notes drawer open                               | The session is archived                    |
 
 A refused hit stays in the list, dimmed, and the preview says why; Enter
 does nothing on it. A hit in another workspace switches to it first, the

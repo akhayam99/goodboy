@@ -126,6 +126,10 @@ const filterClauses = ({ query, hasExclusions }: FilterParams): ReadonlyArray<Cl
     },
     { sql: '(d.agent_id IS NULL OR a.id IS NOT NULL)', params: [] },
     { sql: '(ws.id IS NULL OR ws.deleted_at IS NULL)', params: [] },
+    {
+      sql: "(d.kind <> 'workflow' OR (wf.deleted_at IS NULL AND COALESCE(d.status, '') <> 'deleted'))",
+      params: [],
+    },
   ];
   if (hasExclusions) {
     clauses.push({ sql: `NOT ${docTouchesExcludedProjectSql({ doc: 'd' })}`, params: [] });
@@ -203,7 +207,8 @@ const SELECTED = `d.id AS docId, d.fts_rowid AS ftsRowid, d.kind, d.ref_id AS re
 const JOINS = `LEFT JOIN sessions s ON s.id = d.owner_session_id
   LEFT JOIN live_agents a ON a.id = d.agent_id
   LEFT JOIN provider_runs pr ON pr.id = a.provider_run_id
-  LEFT JOIN workspaces ws ON ws.id = COALESCE(d.workspace_id, s.workspace_id)`;
+  LEFT JOIN workflows wf ON d.kind = 'workflow' AND wf.id = d.ref_id
+  LEFT JOIN workspaces ws ON ws.id = COALESCE(d.workspace_id, s.workspace_id, wf.workspace_id)`;
 
 type SearchParams = {
   readonly db: Database;

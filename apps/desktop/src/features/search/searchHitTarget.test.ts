@@ -138,6 +138,29 @@ describe('search hit target', () => {
     ).toMatchObject({ kind: 'blocked', label: 'Open in Diff' });
   });
 
+  it('opens a workflow in the workflow studio and a comment in the Diff notes', () => {
+    expect(
+      searchHitTarget({
+        hit: hit({ kind: 'workflow', docId: 'step:s1', refId: 'wf-1', sessionId: null }),
+      }),
+    ).toEqual({
+      kind: 'workflow',
+      workspaceId: WORKSPACE,
+      workflowId: 'wf-1',
+      label: 'Open workflow',
+    });
+    expect(
+      searchHitTarget({
+        hit: hit({ kind: 'workflow', refId: 'wf-1', sessionId: null, workspaceId: null }),
+      }),
+    ).toMatchObject({ kind: 'blocked' });
+    expect(searchHitTarget({ hit: hit({ kind: 'comment', refId: 'c-1' }) })).toMatchObject({
+      kind: 'comment',
+      sessionId: SESSION,
+      label: 'Open in Diff notes',
+    });
+  });
+
   it('never offers to open inside an archived session', () => {
     for (const kind of ['session', 'message', 'plan', 'decision', 'pr'] as const) {
       expect(searchHitTarget({ hit: hit({ kind, isArchived: true, ordinal: 1 }) })).toMatchObject({

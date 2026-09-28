@@ -15,6 +15,8 @@ const { invokeMock, state } = vi.hoisted(() => ({
     cliRequirements: [] as ReadonlyArray<unknown>,
     workflowStudioDrafts: {} as Record<string, unknown>,
     workflowGenerations: {} as Record<string, unknown>,
+    workflowStudioFocus: null as string | null,
+    setWorkflowStudioFocus: vi.fn() as ReturnType<typeof vi.fn>,
     loadPhaseTemplates: vi.fn(async () => undefined),
     loadStepLibrary: vi.fn(async () => undefined),
     copyWorkflowsFromWorkspaces: vi.fn(async (_input: unknown): Promise<unknown> => undefined),
@@ -69,6 +71,10 @@ beforeEach(() => {
   state.workspaceOverrides = {};
   state.workflowStudioDrafts = {};
   state.workflowGenerations = {};
+  state.workflowStudioFocus = null;
+  state.setWorkflowStudioFocus = vi.fn(({ workflowId }: { workflowId: string | null }) => {
+    state.workflowStudioFocus = workflowId;
+  });
   state.loadPhaseTemplates = vi.fn(async () => undefined);
   state.loadStepLibrary = vi.fn(async () => undefined);
   state.copyWorkflowsFromWorkspaces = vi.fn(async (_input: unknown): Promise<unknown> => undefined);
@@ -219,6 +225,16 @@ describe('WorkflowsPanel editor', () => {
       }),
     );
     expect(screen.getByRole('button', { name: 'Open Plan and build' })).toBeDefined();
+  });
+
+  it('opens the workflow a search hit points at, then forgets it', () => {
+    state.phaseTemplates = { 'ws-1': [makeWorkflow({ name: 'Plan and build' })] };
+    state.workflowStudioFocus = 'wf-1';
+    renderPanel();
+
+    const name = screen.getByRole('textbox', { name: 'Workflow name' }) as HTMLTextAreaElement;
+    expect(name.value).toBe('Plan and build');
+    expect(state.setWorkflowStudioFocus).toHaveBeenCalledWith({ workflowId: null });
   });
 
   it('starts a new workflow on an empty plan with Draft steps', async () => {

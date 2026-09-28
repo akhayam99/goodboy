@@ -51,6 +51,9 @@ const EXPECTED_TRIGGER_TABLES = [
   'github_pr_cache',
   'mount_pr_links',
   'session_worktrees',
+  'workflows',
+  'steps',
+  'diff_comments',
 ];
 
 describe('m211 search index', () => {
@@ -63,6 +66,7 @@ describe('m211 search index', () => {
       ['artifact:art-plan', 'plan'],
       ['artifact:art-wire', 'wireframe'],
       ['branch:m-ledger', 'branch'],
+      ['comment:c-1', 'comment'],
       ['decision:dec-1', 'decision'],
       ['ghpr:harborline/ledger-core:ak/feat-payout-stream', 'pr'],
       ['message:msg-assistant', 'message'],
@@ -73,7 +77,9 @@ describe('m211 search index', () => {
       ['session:s-payout', 'session'],
       ['session:s-relay', 'session'],
       ['starred:ws-harborline:jira:jira-88', 'issue'],
+      ['step:step-scout', 'workflow'],
       ['task:s-payout:linear:lin-231', 'issue'],
+      ['workflow:wf-settle', 'workflow'],
     ]);
     expect(
       rows.find((row) => row.id === 'ghpr:harborline/ledger-core:ak/feat-payout-stream'),
@@ -155,12 +161,17 @@ describe('m211 search index', () => {
       DELETE FROM github_pr_cache;
       DELETE FROM mount_pr_links;
       DELETE FROM session_artifacts WHERE id = 'art-plan';
+      DELETE FROM steps WHERE id = 'step-scout';
+      DELETE FROM workflows WHERE id = 'wf-settle';
+      DELETE FROM diff_comments WHERE id = 'c-1';
     `);
     const ids = (await docs({ db })).map((row) => row.id);
     expect(ids).not.toContain('message:msg-relay');
-    expect(ids.filter((id) => /^(decision|question|task|starred|ghpr|mountpr):/.test(id))).toEqual(
-      [],
-    );
+    expect(
+      ids.filter((id) =>
+        /^(decision|question|task|starred|ghpr|mountpr|workflow|step|comment):/.test(id),
+      ),
+    ).toEqual([]);
     expect(ids).not.toContain('artifact:art-plan');
     const [orphans] = await db.select<{ count: number }>(
       'SELECT COUNT(*) AS count FROM search_index WHERE rowid NOT IN (SELECT fts_rowid FROM search_docs)',
@@ -178,11 +189,13 @@ describe('m211 search index', () => {
       'message:msg-relay',
       'session:s-relay',
       'starred:ws-harborline:jira:jira-88',
+      'step:step-scout',
+      'workflow:wf-settle',
     ]);
     const [count] = await db.select<{ count: number }>(
       'SELECT COUNT(*) AS count FROM search_index',
     );
-    expect(count?.count).toBe(5);
+    expect(count?.count).toBe(7);
   });
 
   it('cascades a deleted workspace to its starred issues', async () => {

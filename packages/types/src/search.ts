@@ -12,6 +12,8 @@ export const SEARCH_KINDS = [
   'issue',
   'pr',
   'branch',
+  'workflow',
+  'comment',
 ] as const;
 
 export type SearchKind = (typeof SEARCH_KINDS)[number];

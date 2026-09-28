@@ -8,6 +8,7 @@ import {
   type SessionExternalTask,
   type SessionExternalTaskProvider,
   type SessionId,
+  type WorkflowId,
   type WorkspaceId,
 } from '@goodboy/types';
 
@@ -71,6 +72,18 @@ export type SearchHitTarget =
       readonly workspaceId: WorkspaceId | null;
       readonly sessionId: SessionId;
       readonly mountId: MountId;
+      readonly label: string;
+    }
+  | {
+      readonly kind: 'comment';
+      readonly workspaceId: WorkspaceId | null;
+      readonly sessionId: SessionId;
+      readonly label: string;
+    }
+  | {
+      readonly kind: 'workflow';
+      readonly workspaceId: WorkspaceId;
+      readonly workflowId: WorkflowId;
       readonly label: string;
     }
   | { readonly kind: 'url'; readonly url: string; readonly label: string }
@@ -184,6 +197,10 @@ const sessionBound = ({ hit }: Params): SearchHitTarget | null => {
             label: 'Open in Diff',
           }
         : { kind: 'diff', ...base, mountId: hit.mountId, label: 'Open in Diff' };
+    case 'comment':
+      return { kind: 'comment', ...base, label: 'Open in Diff notes' };
+    case 'workflow':
+      return null;
     default: {
       const exhaustive: never = hit.kind;
       return exhaustive;
@@ -211,6 +228,16 @@ export const searchHitTarget = ({ hit }: Params): SearchHitTarget => {
       recordKey: `${hit.provider}:${RECORD_KIND[hit.provider]}:${hit.refId}`,
       label: 'Open in Inbox',
     };
+  }
+  if (hit.kind === 'workflow') {
+    return hit.workspaceId === null
+      ? { kind: 'blocked', reason: 'This workflow is gone.', label: 'Open workflow' }
+      : {
+          kind: 'workflow',
+          workspaceId: hit.workspaceId,
+          workflowId: hit.refId as WorkflowId,
+          label: 'Open workflow',
+        };
   }
   if (hit.kind === 'pr' || hit.kind === 'issue') {
     return viaUrl({ hit });

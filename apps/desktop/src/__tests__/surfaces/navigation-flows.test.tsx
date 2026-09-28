@@ -489,6 +489,31 @@ const SEARCH_JUMPS: ReadonlyArray<{
   },
   { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: lens('review') },
   {
+    kind: 'comment',
+    overrides: () => ({ kind: 'comment', refId: 'c-1' }),
+    lands: async (ctx) => {
+      await lens('files')(ctx);
+      await waitFor(
+        () =>
+          expect(useAppStore.getState().drawer).toMatchObject({
+            kind: 'diff-notes',
+            sessionId: ctx.sessionId,
+          }),
+        WAIT,
+      );
+    },
+  },
+  {
+    kind: 'workflow',
+    overrides: () => {
+      const state = useAppStore.getState();
+      const workspaceId = state.currentWorkspaceId;
+      const first = workspaceId === null ? undefined : state.phaseTemplates[workspaceId]?.[0];
+      return { kind: 'workflow', sessionId: null, refId: first?.id ?? 'workflow-none' };
+    },
+    lands: () => band('Workflows'),
+  },
+  {
     kind: 'branch',
     overrides: (ctx) => ({ kind: 'branch', mountId: firstMountId(ctx), status: 'attached' }),
     lands: lens('files'),
@@ -917,7 +942,7 @@ const ROWS: ReadonlyArray<Row> = [
   },
   ...SEARCH_JUMPS.map((jump): Row => ({
     name: `search: a ${jump.kind} hit lands in context`,
-    covers: ['navigate', `search:${jump.kind}`],
+    covers: [jump.kind === 'workflow' ? 'openStudio' : 'navigate', `search:${jump.kind}`],
     open: (ctx) => searchAndOpen({ ctx, overrides: jump.overrides }),
     lands: jump.lands,
   })),

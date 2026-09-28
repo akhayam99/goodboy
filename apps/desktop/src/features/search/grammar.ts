@@ -34,6 +34,10 @@ const TYPE_ALIASES: Readonly<
   prs: { kinds: ['pr'], label: 'Pull requests' },
   branch: { kinds: ['branch'], label: 'Branches' },
   branches: { kinds: ['branch'], label: 'Branches' },
+  workflow: { kinds: ['workflow'], label: 'Workflows' },
+  workflows: { kinds: ['workflow'], label: 'Workflows' },
+  comment: { kinds: ['comment'], label: 'Comments' },
+  comments: { kinds: ['comment'], label: 'Comments' },
 };
 
 const PROVIDER_ALIASES: Readonly<
@@ -76,6 +80,7 @@ const STATUS_LABELS: Readonly<Record<string, string>> = {
   ended: 'Ended',
   done: 'Done',
   attached: 'Attached',
+  resolved: 'Resolved',
   detached: 'Detached',
 };
 

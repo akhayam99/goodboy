@@ -67,6 +67,8 @@ export const hitActionTarget = ({ hit, isPlanRunning }: TargetParams): ObjectTar
     case 'decision':
     case 'question':
     case 'branch':
+    case 'workflow':
+    case 'comment':
       return null;
     default: {
       const exhaustive: never = hit.kind;

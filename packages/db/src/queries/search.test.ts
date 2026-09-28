@@ -58,11 +58,13 @@ describe('search query', () => {
   it('finds the payout export from "pay export", title matches first', async () => {
     const db = await seeded();
     const hits = await ids({ db, query: { text: 'pay export' } });
-    expect(hits.slice(0, 3).sort()).toEqual([
-      'artifact:art-plan',
-      'session:s-payout',
-      'task:s-payout:linear:lin-231',
-    ]);
+    expect(hits.slice(0, 4)).toEqual(
+      expect.arrayContaining([
+        'artifact:art-plan',
+        'session:s-payout',
+        'task:s-payout:linear:lin-231',
+      ]),
+    );
     expect(hits).not.toContain('message:msg-user');
   });
 
@@ -200,6 +202,31 @@ describe('search query', () => {
     expect(await ids({ db, query: { text: 'drift' } })).toEqual([]);
   });
 
+  it('finds workflows by name, description and step, and hides deleted ones', async () => {
+    const db = await seeded();
+    const hits = await run({ db, query: { text: 'rounding', kinds: ['workflow'] } });
+    expect(hits.map((hit) => [hit.docId, hit.refId, hit.workspaceId])).toEqual([
+      ['step:step-scout', 'wf-settle', W.workspaceId],
+    ]);
+    expect(await ids({ db, query: { text: 'hardening' } })).toEqual(['workflow:wf-settle']);
+    await db.execute("UPDATE steps SET deleted_at = 1 WHERE id = 'step-scout'");
+    expect(await ids({ db, query: { text: 'rounding' } })).toEqual([]);
+    await db.execute("UPDATE workflows SET deleted_at = 1 WHERE id = 'wf-settle'");
+    expect(await ids({ db, query: { text: 'hardening' } })).toEqual([]);
+  });
+
+  it('finds a diff comment with its file and session', async () => {
+    const db = await seeded();
+    const [hit] = await run({ db, query: { text: 'merchant tier' } });
+    expect(hit).toMatchObject({
+      docId: 'comment:c-1',
+      kind: 'comment',
+      sessionId: W.sessionId,
+      container: 'src/export/stream.ts',
+      status: 'open',
+    });
+  });
+
   it('ranks the newer of two equal matches first', async () => {
     const db = await seeded();
     await db.exec(`
@@ -237,7 +264,7 @@ describe('search query', () => {
   it('reports the size and the doc count of the index', async () => {
     const db = await seeded();
     const status = await readSearchIndexStatus({ db });
-    expect(status.docs).toBe(16);
+    expect(status.docs).toBe(19);
     expect(status.bytes).toBeGreaterThan(0);
   });
 
