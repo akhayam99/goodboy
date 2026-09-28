@@ -35,7 +35,7 @@ Every rewrite saves a backup first. The result shows it with Restore it, and Bac
 
 ### Fixed
 
-- Agents can no longer write into Goodboy's own data folder. <!-- gb area=agents -->
+- Goodboy no longer grants Codex in workspace-write mode or Claude outside bypass mode write access to its data folder. The query socket now has a folder of its own. <!-- gb area=agents -->
 
 ## Goodboy v0.12.0
 
