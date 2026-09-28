@@ -13,6 +13,7 @@ import type {
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
 import { useAppStore } from '../../../../store';
 import { sceneClock } from '../sceneClock';
+import { installWorkspaceInboxIpc, workspaceTrackerBindings } from './workspaceInboxSeed';
 
 const clock = sceneClock({ anchor: '2026-08-25T10:30:00.000Z' });
 
@@ -188,6 +189,7 @@ export const WorkspaceScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    installWorkspaceInboxIpc();
     useAppStore.setState({
       workspaces: [WORKSPACE],
       currentWorkspaceId: WORKSPACE_ID,
@@ -273,7 +275,9 @@ export const WorkspaceScene = () => {
         },
       },
       activeLens: { [SESSION_ID]: null },
-      workspaceIntegrations: { [WORKSPACE_ID]: [] },
+      workspaceIntegrations: {
+        [WORKSPACE_ID]: workspaceTrackerBindings({ workspaceId: WORKSPACE_ID, now: NOW }),
+      },
       sessionAttachments: { [SESSION_ID]: [] },
       slotHistory: { [SESSION_ID]: {} },
       slotHistoryCounts: { [SESSION_ID]: {} },
