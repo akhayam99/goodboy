@@ -16,10 +16,8 @@ export type ChatTurnRequest = {
   readonly model: string;
   readonly effort?: string;
   readonly workingDir: string;
-  readonly readRoots: ReadonlyArray<string>;
   readonly prompt: string;
   readonly systemPrompt: string;
-  readonly binary?: string;
 };
 
 export type ChatTurnOutcome =
@@ -178,12 +176,9 @@ export const runChatTurn = async ({
             chatId: request.chatId,
             provider: request.provider,
             model: request.model,
-            workingDir: request.workingDir,
-            readRoots: request.readRoots,
             prompt: request.prompt,
             systemPrompt: request.systemPrompt,
             ...(request.effort !== undefined && { effort: request.effort }),
-            ...(request.binary !== undefined && { binary: request.binary }),
           },
         });
       })

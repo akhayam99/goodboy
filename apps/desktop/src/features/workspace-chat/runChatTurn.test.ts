@@ -31,7 +31,6 @@ const request = (patch: Partial<ChatTurnRequest>): ChatTurnRequest => ({
   provider: 'anthropic',
   model: 'claude-sonnet-5',
   workingDir: '/code/harborline',
-  readRoots: [],
   prompt: 'Where is the consent step defined?',
   systemPrompt: 'Answer from the Harborline code.',
   ...patch,
@@ -87,7 +86,7 @@ describe('runChatTurn', () => {
     const reads: string[] = [];
 
     const outcome = await runChatTurn({
-      request: request({ effort: 'medium', readRoots: ['/elsewhere/ledger-core'] }),
+      request: request({ effort: 'medium' }),
       onText: (delta) => text.push(delta),
       onRead: (path) => reads.push(path),
     });
@@ -102,8 +101,6 @@ describe('runChatTurn', () => {
         chatId: 'chat-consent',
         provider: 'anthropic',
         model: 'claude-sonnet-5',
-        workingDir: '/code/harborline',
-        readRoots: ['/elsewhere/ledger-core'],
         prompt: 'Where is the consent step defined?',
         systemPrompt: 'Answer from the Harborline code.',
         effort: 'medium',
@@ -115,18 +112,18 @@ describe('runChatTurn', () => {
   it('fails with the refusal when the provider cannot be read-only', async () => {
     invokeMock.mockRejectedValue({
       kind: 'not_read_only',
-      message: 'opencode cannot be limited to reading files',
+      message: 'Chat needs a provider that can run read-only: Claude or Codex',
     });
 
     const outcome = await runChatTurn({
-      request: request({ provider: 'opencode' }),
+      request: request({ provider: 'cursor' }),
       onText: () => undefined,
       onRead: () => undefined,
     });
 
     expect(outcome).toEqual({
       status: 'failed',
-      error: 'opencode cannot be limited to reading files',
+      error: 'Chat needs a provider that can run read-only: Claude or Codex',
     });
   });
 

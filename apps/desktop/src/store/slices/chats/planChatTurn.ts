@@ -1,4 +1,10 @@
-import type { ChatMessage, ChatSummary, ProviderRunId } from '@goodboy/types';
+import {
+  CHAT_PROVIDER_REFUSAL,
+  isChatProvider,
+  type ChatMessage,
+  type ChatSummary,
+  type ProviderRunId,
+} from '@goodboy/types';
 import { buildChatSystemPrompt } from '../../../features/workspace-chat/buildChatSystemPrompt';
 import { buildChatTurnPrompt } from '../../../features/workspace-chat/buildChatTurnPrompt';
 import { chatWorkingFolder } from '../../../features/workspace-chat/chatWorkingFolder';
@@ -41,9 +47,17 @@ const planModel = ({ chat }: ModelPlanParams): ModelPlan => {
 };
 
 export const planChatTurn = ({ state, chat, history, question, runId }: Params): ChatTurnPlan => {
-  const projects = state.projects.filter(
-    (project) => project.workspaceId === chat.workspaceId && project.disconnectedAt === undefined,
-  );
+  if (!isChatProvider(chat.provider)) {
+    return { kind: 'blocked', error: CHAT_PROVIDER_REFUSAL };
+  }
+  const projects = state.projects
+    .filter(
+      (project) => project.workspaceId === chat.workspaceId && project.disconnectedAt === undefined,
+    )
+    .sort((left, right) => {
+      const byCreation = left.createdAt.localeCompare(right.createdAt);
+      return byCreation !== 0 ? byCreation : left.id.localeCompare(right.id);
+    });
   const folder = chatWorkingFolder({ roots: projects.map((project) => project.rootPath) });
   if (folder === null) {
     return { kind: 'blocked', error: NO_PROJECT_MESSAGE };
@@ -53,7 +67,6 @@ export const planChatTurn = ({ state, chat, history, question, runId }: Params):
     return model;
   }
   const workspace = state.workspaces.find((candidate) => candidate.id === chat.workspaceId);
-  const binary = state.providers.find((provider) => provider.id === chat.provider)?.binary;
   return {
     kind: 'ready',
     request: {
@@ -63,7 +76,6 @@ export const planChatTurn = ({ state, chat, history, question, runId }: Params):
       model: model.args.model,
       ...(model.args.effort !== undefined && { effort: model.args.effort }),
       workingDir: folder.workingDir,
-      readRoots: folder.readRoots,
       prompt: buildChatTurnPrompt({ history, question }),
       systemPrompt: buildChatSystemPrompt({
         workspaceName: workspace?.name ?? 'current',
@@ -73,7 +85,6 @@ export const planChatTurn = ({ state, chat, history, question, runId }: Params):
           description: project.description ?? null,
         })),
       }),
-      ...(binary !== undefined && { binary }),
     },
   };
 };

@@ -81,7 +81,6 @@ const harness = ({ projects }: HarnessParams) => {
       }),
     ],
     workspaces: [WORKSPACE_ROW],
-    providers: [{ id: 'anthropic', binary: '/opt/homebrew/bin/claude' }],
   };
   return { slice, read: () => state as unknown as ReturnType<typeof createChatsSlice> };
 };
@@ -166,10 +165,8 @@ describe('chats slice', () => {
     expect(started.request).toMatchObject({
       provider: 'anthropic',
       model: 'claude-sonnet-5',
-      workingDir: '/Users/mara/code/harborline',
-      readRoots: [],
+      workingDir: '/Users/mara/code/harborline/ledger-core',
       prompt: 'Where is the consent step?',
-      binary: '/opt/homebrew/bin/claude',
     });
     expect(started.request.systemPrompt).toContain('Harborline workspace');
 
@@ -312,6 +309,23 @@ describe('chats slice', () => {
     expect(read().chatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([fresh]);
     await slice.restoreChats({ workspaceId: WORKSPACE, chatIds: archived });
     expect(read().chatsByWorkspace[WORKSPACE]).toHaveLength(2);
+  });
+
+  it('refuses a chat on a provider that cannot run read-only', async () => {
+    const { slice, read } = harness({});
+
+    await expect(
+      slice.createChat({ workspaceId: WORKSPACE, provider: 'cursor', model: 'auto' }),
+    ).rejects.toThrow('Chat needs a provider that can run read-only: Claude or Codex');
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    await expect(
+      slice.setChatModel({ chatId, provider: 'gemini', model: 'gemini-3' }),
+    ).rejects.toThrow('Claude or Codex');
+    expect(read().chatsByWorkspace[WORKSPACE]?.[0]?.provider).toBe('anthropic');
   });
 
   it('pins, renames and switches the model of a chat', async () => {

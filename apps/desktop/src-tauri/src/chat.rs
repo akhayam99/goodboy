@@ -1,14 +1,16 @@
 use std::io::BufReader;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{ChildStdout, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::thread;
 
+use rusqlite::{Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 use thiserror::Error;
 
+use crate::db::Db;
 use crate::live_child::{
     drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
 };
@@ -23,7 +25,7 @@ const READ_ONLY_MODE: &str = "plan";
 
 const CLAUDE_READ_TOOLS: [&str; 3] = ["Read", "Grep", "Glob"];
 
-const CLAUDE_WRITE_TOOLS: [&str; 9] = [
+const CLAUDE_DENIED: [&str; 26] = [
     "Bash",
     "Edit",
     "Write",
@@ -33,11 +35,36 @@ const CLAUDE_WRITE_TOOLS: [&str; 9] = [
     "WebFetch",
     "WebSearch",
     "KillShell",
+    "ExitPlanMode",
+    "Read(~/.ssh/**)",
+    "Read(~/.aws/**)",
+    "Read(~/.gnupg/**)",
+    "Read(~/.config/**)",
+    "Read(~/.goodboy/**)",
+    "Read(~/.claude/**)",
+    "Read(~/.codex/**)",
+    "Read(~/.kube/**)",
+    "Read(~/.docker/**)",
+    "Read(~/.netrc)",
+    "Read(~/.npmrc)",
+    "Read(~/Library/Keychains/**)",
+    "Read(**/.env)",
+    "Read(**/.env.*)",
+    "Read(**/*.pem)",
+    "Read(**/id_rsa*)",
 ];
 
-const WRITE_FLAGS: [&str; 12] = [
+const CLAUDE_NO_SETTINGS: &str = "";
+const CLAUDE_NO_HOOKS: &str = "{\"disableAllHooks\":true}";
+const CLAUDE_NO_MCP: &str = "{\"mcpServers\":{}}";
+const CODEX_NO_MCP: &str = "mcp_servers={}";
+
+const READ_ONLY_REFUSAL: &str = "Chat needs a provider that can run read-only: Claude or Codex";
+
+const WRITE_FLAGS: [&str; 13] = [
     "--dangerously-skip-permissions",
     "--allow-dangerously-skip-permissions",
+    "--dangerously-bypass-approvals-and-sandbox",
     "--force",
     "--yolo",
     "--full-auto",
@@ -54,19 +81,23 @@ const WRITE_FLAGS: [&str; 12] = [
 pub enum ChatError {
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+    #[error("database error: {0}")]
+    Database(#[from] rusqlite::Error),
     #[error("chat registry mutex poisoned")]
     Poisoned,
-    #[error("{0} cannot be limited to reading files, so it cannot answer in a chat. Pick another provider for this chat.")]
+    #[error("{READ_ONLY_REFUSAL}")]
     NotReadOnly(String),
     #[error("unknown provider: {0}")]
     UnknownProvider(String),
-    #[error("the {provider} chat cannot run {binary}")]
-    BinaryMismatch { provider: String, binary: String },
-    #[error("the chat folder is missing: {0}")]
-    MissingFolder(String),
+    #[error("the chat uses {stored}, not {requested}")]
+    ProviderMismatch { stored: String, requested: String },
+    #[error("{field} is not a valid value: {value}")]
+    InvalidValue { field: &'static str, value: String },
+    #[error("Add a project to this workspace to ask about its code.")]
+    MissingFolder,
     #[error("the chat turn would not be read-only: {0}")]
     WriteArgument(String),
-    #[error("chat turn not found: {0}")]
+    #[error("chat not found: {0}")]
     NotFound(String),
 }
 
@@ -76,11 +107,13 @@ impl ChatError {
     fn kind(&self) -> &'static str {
         match self {
             ChatError::Io(_) => "io",
+            ChatError::Database(_) => "database",
             ChatError::Poisoned => "poisoned",
             ChatError::NotReadOnly(_) => "not_read_only",
             ChatError::UnknownProvider(_) => "unknown_provider",
-            ChatError::BinaryMismatch { .. } => "binary_mismatch",
-            ChatError::MissingFolder(_) => "missing_folder",
+            ChatError::ProviderMismatch { .. } => "provider_mismatch",
+            ChatError::InvalidValue { .. } => "invalid_value",
+            ChatError::MissingFolder => "missing_folder",
             ChatError::WriteArgument(_) => "write_argument",
             ChatError::NotFound(_) => "not_found",
         }
@@ -107,16 +140,11 @@ pub struct ChatTurnArgs {
     pub chat_id: String,
     pub provider: String,
     pub model: String,
-    pub working_dir: String,
-    #[serde(default)]
-    pub read_roots: Vec<String>,
     pub prompt: String,
     #[serde(default)]
     pub system_prompt: Option<String>,
     #[serde(default)]
     pub effort: Option<String>,
-    #[serde(default)]
-    pub binary: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -130,56 +158,133 @@ pub struct ChatEventEnvelope {
     pub event: TurnEventPayload,
 }
 
+#[derive(Debug, PartialEq, Eq)]
+struct ChatRoots {
+    working_dir: String,
+    read_roots: Vec<String>,
+}
+
+struct ChatScope {
+    provider: String,
+    roots: Vec<String>,
+}
+
 fn cli_shape_for(provider: &str) -> Result<&'static str, ChatError> {
     match provider {
         "anthropic" => Ok("claude"),
         "codex" => Ok("codex"),
-        "cursor" => Ok("cursor-agent"),
-        "gemini" => Ok("agy"),
-        "opencode" | "openrouter" | "moonshot" => Err(ChatError::NotReadOnly(provider.to_string())),
+        "cursor" | "gemini" | "opencode" | "openrouter" | "moonshot" => {
+            Err(ChatError::NotReadOnly(provider.to_string()))
+        }
         other => Err(ChatError::UnknownProvider(other.to_string())),
     }
 }
 
-fn resolve_binary(provider: &str, shape: &str, binary: Option<&str>) -> Result<String, ChatError> {
-    let chosen = binary
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or(shape);
-    let stem = Path::new(chosen)
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .unwrap_or("");
-    if stem != shape {
-        return Err(ChatError::BinaryMismatch {
-            provider: provider.to_string(),
-            binary: chosen.to_string(),
-        });
-    }
-    Ok(chosen.to_string())
+fn is_safe_value(value: &str) -> bool {
+    !value.is_empty()
+        && !value.starts_with('-')
+        && value
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | ':' | '-'))
 }
 
-fn folded_prompt(shape: &str, args: &ChatTurnArgs) -> String {
-    match (shape, args.system_prompt.as_deref()) {
-        ("claude", _) | (_, None) => args.prompt.clone(),
-        (_, Some(system_prompt)) => format!("{system_prompt}\n\n{}", args.prompt),
+fn require_safe_value(field: &'static str, value: &str) -> Result<(), ChatError> {
+    if is_safe_value(value) {
+        return Ok(());
     }
+    Err(ChatError::InvalidValue {
+        field,
+        value: value.to_string(),
+    })
 }
 
-fn build_chat_cli_args(shape: &str, args: &ChatTurnArgs) -> Vec<String> {
+fn trim_root(root: &str) -> String {
+    let trimmed = root.trim();
+    let without_slash = trimmed.trim_end_matches('/');
+    if without_slash.is_empty() {
+        return trimmed.to_string();
+    }
+    without_slash.to_string()
+}
+
+fn is_too_wide(root: &Path, home: Option<&Path>) -> bool {
+    if root.parent().is_none() {
+        return true;
+    }
+    home.is_some_and(|home| home.starts_with(root))
+}
+
+fn is_inside(root: &str, folder: &str) -> bool {
+    root == folder || root.starts_with(&format!("{folder}/"))
+}
+
+fn select_chat_roots(roots: &[String], home: Option<&Path>) -> Result<ChatRoots, ChatError> {
+    let mut usable: Vec<String> = Vec::new();
+    for root in roots.iter().map(|root| trim_root(root)) {
+        let path = Path::new(&root);
+        if !path.is_absolute() || is_too_wide(path, home) || usable.contains(&root) {
+            continue;
+        }
+        usable.push(root);
+    }
+    let Some(working_dir) = usable.first().cloned() else {
+        return Err(ChatError::MissingFolder);
+    };
+    let read_roots = usable
+        .into_iter()
+        .filter(|root| !is_inside(root, &working_dir))
+        .collect();
+    Ok(ChatRoots {
+        working_dir,
+        read_roots,
+    })
+}
+
+fn existing_roots(roots: Vec<String>) -> Vec<String> {
+    roots
+        .into_iter()
+        .filter(|root| Path::new(root.trim()).is_dir())
+        .collect()
+}
+
+fn load_chat_scope(conn: &Connection, chat_id: &str) -> Result<ChatScope, ChatError> {
+    let provider: Option<String> = conn
+        .query_row(
+            "SELECT provider FROM chats WHERE id = ?1",
+            [chat_id],
+            |row| row.get(0),
+        )
+        .optional()?;
+    let Some(provider) = provider else {
+        return Err(ChatError::NotFound(chat_id.to_string()));
+    };
+    let mut stmt = conn.prepare(
+        "SELECT p.root_path FROM chats c
+         JOIN projects p ON p.workspace_id = c.workspace_id
+         WHERE c.id = ?1 AND p.disconnected_at IS NULL
+         ORDER BY p.created_at, p.id",
+    )?;
+    let roots = stmt
+        .query_map([chat_id], |row| row.get::<_, String>(0))?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(ChatScope { provider, roots })
+}
+
+fn build_chat_cli_args(shape: &str, args: &ChatTurnArgs, roots: &ChatRoots) -> Vec<String> {
     let allowed_tools: Vec<String> = CLAUDE_READ_TOOLS
         .iter()
         .map(|tool| tool.to_string())
         .collect();
-    let disallowed_tools: Vec<String> = CLAUDE_WRITE_TOOLS
-        .iter()
-        .map(|tool| tool.to_string())
-        .collect();
-    let prompt = folded_prompt(shape, args);
+    let disallowed_tools: Vec<String> = CLAUDE_DENIED.iter().map(|tool| tool.to_string()).collect();
+    let prompt = match (shape, args.system_prompt.as_deref()) {
+        ("codex", Some(system_prompt)) => format!("{system_prompt}\n\n{}", args.prompt),
+        _ => args.prompt.clone(),
+    };
     let spawn = SpawnOneArgs {
         run_id: &args.run_id,
         binary: shape,
         model: &args.model,
-        working_dir: &args.working_dir,
+        working_dir: &roots.working_dir,
         writable_roots: &[],
         query_socket_directory: None,
         prompt: &prompt,
@@ -199,82 +304,153 @@ fn build_chat_cli_args(shape: &str, args: &ChatTurnArgs) -> Vec<String> {
         blocks_push: true,
         excludes_tmp: true,
     };
-    let mut cli = build_provider_cli_args(shape, &spawn);
-    if shape != "claude" {
-        return cli;
+    let cli = build_provider_cli_args(shape, &spawn);
+    if shape == "codex" {
+        return harden_codex(cli);
     }
-    cli.push("--tools".to_string());
-    cli.push(CLAUDE_READ_TOOLS.join(","));
-    cli.push("--no-session-persistence".to_string());
-    for root in &args.read_roots {
-        cli.push("--add-dir".to_string());
-        cli.push(root.to_string());
+    harden_claude(cli, &prompt, &roots.read_roots)
+}
+
+fn harden_codex(mut cli: Vec<String>) -> Vec<String> {
+    let at = cli.iter().position(|arg| arg == "--").unwrap_or(cli.len());
+    let extra = [
+        "--ignore-user-config",
+        "--ignore-rules",
+        "--ephemeral",
+        "-c",
+        CODEX_NO_MCP,
+    ];
+    for (offset, arg) in extra.iter().enumerate() {
+        cli.insert(at + offset, arg.to_string());
     }
     cli
 }
 
-fn prompt_index(shape: &str, cli: &[String]) -> Option<usize> {
-    let marker = if shape == "codex" { "--" } else { "-p" };
-    cli.iter()
-        .position(|arg| arg == marker)
-        .map(|index| index + 1)
+fn harden_claude(cli: Vec<String>, prompt: &str, read_roots: &[String]) -> Vec<String> {
+    let mut hardened: Vec<String> = Vec::with_capacity(cli.len() + 16);
+    let mut skip_next = false;
+    let mut replace_next = false;
+    for arg in cli {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        if replace_next {
+            replace_next = false;
+            hardened.push(CLAUDE_NO_SETTINGS.to_string());
+            continue;
+        }
+        if arg == "-p" {
+            skip_next = true;
+        }
+        if arg == "--setting-sources" {
+            replace_next = true;
+        }
+        hardened.push(arg);
+    }
+    for arg in [
+        "--restricted",
+        "--settings",
+        CLAUDE_NO_HOOKS,
+        "--strict-mcp-config",
+        "--mcp-config",
+        CLAUDE_NO_MCP,
+        "--tools",
+    ] {
+        hardened.push(arg.to_string());
+    }
+    hardened.push(CLAUDE_READ_TOOLS.join(","));
+    hardened.push("--no-session-persistence".to_string());
+    for root in read_roots {
+        hardened.push("--add-dir".to_string());
+        hardened.push(root.to_string());
+    }
+    hardened.push("--".to_string());
+    hardened.push(prompt.to_string());
+    hardened
 }
 
-fn flag_value<'a>(cli: &'a [String], flag: &str) -> Option<&'a str> {
-    cli.iter()
-        .position(|arg| arg == flag)
-        .and_then(|index| cli.get(index + 1))
-        .map(|value| value.as_str())
+fn has_pair(cli: &[String], flag: &str, value: &str) -> bool {
+    cli.windows(2)
+        .any(|pair| pair[0] == flag && pair[1] == value)
 }
 
 fn assert_read_only(shape: &str, cli: &[String]) -> Result<(), ChatError> {
-    let prompt_at = prompt_index(shape, cli)
-        .ok_or_else(|| ChatError::WriteArgument("no prompt position".to_string()))?;
-    let offending = cli
+    let prompt_at = cli.len().saturating_sub(1);
+    let separators = cli.iter().filter(|arg| arg.as_str() == "--").count();
+    if cli.len() < 2 || cli[prompt_at - 1] != "--" || separators != 1 {
+        return Err(ChatError::WriteArgument(
+            "the prompt must follow a single --".to_string(),
+        ));
+    }
+    let offending = cli[..prompt_at]
         .iter()
-        .enumerate()
-        .filter(|(index, _)| *index != prompt_at)
-        .find(|(_, arg)| WRITE_FLAGS.contains(&arg.as_str()));
-    if let Some((_, arg)) = offending {
+        .find(|arg| WRITE_FLAGS.contains(&arg.as_str()));
+    if let Some(arg) = offending {
         return Err(ChatError::WriteArgument(arg.to_string()));
     }
     let required: &[(&str, &str)] = match shape {
-        "claude" => &[("--permission-mode", "plan"), ("--tools", "Read,Grep,Glob")],
-        "codex" => &[("-s", "read-only")],
-        "cursor-agent" => &[("--mode", "plan")],
-        "agy" => &[("--mode", "plan")],
+        "claude" => &[
+            ("--permission-mode", READ_ONLY_MODE),
+            ("--tools", "Read,Grep,Glob"),
+            ("--setting-sources", CLAUDE_NO_SETTINGS),
+            ("--settings", CLAUDE_NO_HOOKS),
+            ("--mcp-config", CLAUDE_NO_MCP),
+        ],
+        "codex" => &[("-s", "read-only"), ("-c", CODEX_NO_MCP)],
         _ => return Err(ChatError::NotReadOnly(shape.to_string())),
     };
     for (flag, value) in required {
-        if flag_value(cli, flag) != Some(value) {
+        if !has_pair(&cli[..prompt_at], flag, value) {
             return Err(ChatError::WriteArgument(format!("{flag} is not {value}")));
         }
     }
-    if shape == "agy" && !cli.iter().any(|arg| arg == "--sandbox") {
-        return Err(ChatError::WriteArgument("--sandbox is missing".to_string()));
+    let switches: &[&str] = match shape {
+        "claude" => &[
+            "--restricted",
+            "--strict-mcp-config",
+            "--no-session-persistence",
+        ],
+        _ => &["--ignore-user-config", "--ephemeral"],
+    };
+    for switch in switches {
+        if !cli[..prompt_at].iter().any(|arg| arg == switch) {
+            return Err(ChatError::WriteArgument(format!("{switch} is missing")));
+        }
     }
     Ok(())
 }
 
 struct PreparedChatTurn {
-    binary: String,
+    binary: &'static str,
     cli: Vec<String>,
+    working_dir: String,
 }
 
-fn prepare_chat_turn(args: &ChatTurnArgs) -> Result<PreparedChatTurn, ChatError> {
-    let shape = cli_shape_for(&args.provider)?;
-    let binary = resolve_binary(&args.provider, shape, args.binary.as_deref())?;
-    let cli = build_chat_cli_args(shape, args);
-    assert_read_only(shape, &cli)?;
-    Ok(PreparedChatTurn { binary, cli })
-}
-
-fn require_folder(path: &str) -> Result<(), ChatError> {
-    let folder = Path::new(path);
-    if !folder.is_absolute() || !folder.is_dir() {
-        return Err(ChatError::MissingFolder(path.to_string()));
+fn prepare_chat_turn(
+    args: &ChatTurnArgs,
+    scope: &ChatScope,
+    home: Option<&Path>,
+) -> Result<PreparedChatTurn, ChatError> {
+    if scope.provider != args.provider {
+        return Err(ChatError::ProviderMismatch {
+            stored: scope.provider.clone(),
+            requested: args.provider.clone(),
+        });
     }
-    Ok(())
+    let shape = cli_shape_for(&args.provider)?;
+    require_safe_value("model", &args.model)?;
+    if let Some(effort) = args.effort.as_deref() {
+        require_safe_value("effort", effort)?;
+    }
+    let roots = select_chat_roots(&scope.roots, home)?;
+    let cli = build_chat_cli_args(shape, args, &roots);
+    assert_read_only(shape, &cli)?;
+    Ok(PreparedChatTurn {
+        binary: shape,
+        cli,
+        working_dir: roots.working_dir,
+    })
 }
 
 struct ChatSink {
@@ -332,8 +508,8 @@ fn spawn_chat_turn(
     args: &ChatTurnArgs,
     prepared: PreparedChatTurn,
 ) -> Result<String, ChatError> {
-    let mut command = crate::path_env::command(&prepared.binary);
-    command.current_dir(&args.working_dir);
+    let mut command = crate::path_env::command(prepared.binary);
+    command.current_dir(&prepared.working_dir);
     crate::aux_spawn::scrub_nested_session_env(&mut command);
     crate::process_group::isolate(&mut command);
     crate::turn::apply_push_block(&mut command);
@@ -382,10 +558,19 @@ fn spawn_chat_turn(
 pub async fn chat_turn(
     app: AppHandle,
     state: State<'_, ChatRegistry>,
+    db: State<'_, Db>,
     args: ChatTurnArgs,
 ) -> Result<String, ChatError> {
-    let prepared = prepare_chat_turn(&args)?;
-    require_folder(&args.working_dir)?;
+    let scope = {
+        let conn = db.0.lock().map_err(|_| ChatError::Poisoned)?;
+        load_chat_scope(&conn, &args.chat_id)?
+    };
+    let scope = ChatScope {
+        provider: scope.provider,
+        roots: existing_roots(scope.roots),
+    };
+    let home: Option<PathBuf> = dirs::home_dir();
+    let prepared = prepare_chat_turn(&args, &scope, home.as_deref())?;
     spawn_chat_turn(&app, &state.0, &args, prepared)
 }
 
@@ -401,25 +586,44 @@ pub async fn chat_cancel(state: State<'_, ChatRegistry>, run_id: String) -> Resu
 mod tests {
     use super::*;
 
-    const PROVIDERS: [&str; 4] = ["anthropic", "codex", "cursor", "gemini"];
+    fn flag_value<'a>(cli: &'a [String], flag: &str) -> Option<&'a str> {
+        cli.iter()
+            .position(|arg| arg == flag)
+            .and_then(|index| cli.get(index + 1))
+            .map(|value| value.as_str())
+    }
+
+    const PROVIDERS: [&str; 2] = ["anthropic", "codex"];
+    const HOME: &str = "/Users/mara";
 
     fn args_for(provider: &str) -> ChatTurnArgs {
         ChatTurnArgs {
             run_id: "run-1".to_string(),
             chat_id: "chat-1".to_string(),
             provider: provider.to_string(),
-            model: "sonnet".to_string(),
-            working_dir: "/code/harborline".to_string(),
-            read_roots: vec!["/code/harborline/payments-api".to_string()],
+            model: "claude-sonnet-5".to_string(),
             prompt: "Where is the consent step defined?".to_string(),
             system_prompt: Some("Answer from the Harborline code.".to_string()),
             effort: Some("medium".to_string()),
-            binary: None,
         }
     }
 
+    fn scope_for(provider: &str) -> ChatScope {
+        ChatScope {
+            provider: provider.to_string(),
+            roots: vec![
+                "/Users/mara/code/harborline/payments-api".to_string(),
+                "/Users/mara/code/harborline/ledger-core/".to_string(),
+            ],
+        }
+    }
+
+    fn prepare(args: &ChatTurnArgs) -> Result<PreparedChatTurn, ChatError> {
+        prepare_chat_turn(args, &scope_for(&args.provider), Some(Path::new(HOME)))
+    }
+
     fn cli_for(provider: &str) -> Vec<String> {
-        prepare_chat_turn(&args_for(provider))
+        prepare(&args_for(provider))
             .expect("read-only provider")
             .cli
     }
@@ -428,17 +632,32 @@ mod tests {
     fn no_write_argument_reaches_any_supported_cli() {
         for provider in PROVIDERS {
             let cli = cli_for(provider);
-            let prompt_at = prompt_index(cli_shape_for(provider).unwrap(), &cli).unwrap();
-            for (index, arg) in cli.iter().enumerate() {
-                if index == prompt_at {
-                    continue;
-                }
+            let prompt_at = cli.len() - 1;
+            assert_eq!(cli[prompt_at - 1], "--", "{provider}: {cli:?}");
+            for arg in &cli[..prompt_at] {
                 assert!(
                     !WRITE_FLAGS.contains(&arg.as_str()),
                     "{provider} carries {arg}: {cli:?}"
                 );
             }
         }
+    }
+
+    #[test]
+    fn claude_ignores_project_settings_hooks_and_mcp_servers() {
+        let cli = cli_for("anthropic");
+        assert_eq!(flag_value(&cli, "--setting-sources"), Some(""));
+        assert_eq!(
+            flag_value(&cli, "--settings"),
+            Some("{\"disableAllHooks\":true}")
+        );
+        assert!(cli.contains(&"--strict-mcp-config".to_string()));
+        assert_eq!(
+            flag_value(&cli, "--mcp-config"),
+            Some("{\"mcpServers\":{}}")
+        );
+        assert!(cli.contains(&"--restricted".to_string()));
+        assert!(!cli.iter().any(|arg| arg == "project,local"));
     }
 
     #[test]
@@ -469,90 +688,144 @@ mod tests {
     }
 
     #[test]
-    fn claude_reads_the_other_project_roots_without_a_write_tool() {
+    fn claude_denies_reading_secrets_outside_the_projects() {
         let cli = cli_for("anthropic");
-        assert_eq!(
-            flag_value(&cli, "--add-dir"),
-            Some("/code/harborline/payments-api")
-        );
-        let tools = flag_value(&cli, "--tools").unwrap();
-        assert!(tools
-            .split(',')
-            .all(|tool| CLAUDE_READ_TOOLS.contains(&tool)));
+        let denied = flag_value(&cli, "--disallowedTools").unwrap();
+        for rule in [
+            "Read(~/.ssh/**)",
+            "Read(~/.aws/**)",
+            "Read(~/.gnupg/**)",
+            "Read(~/.config/**)",
+            "Read(~/.goodboy/**)",
+            "Read(~/.claude/**)",
+            "Read(~/.codex/**)",
+            "Read(~/Library/Keychains/**)",
+            "Read(**/.env)",
+        ] {
+            assert!(
+                denied.split(',').any(|entry| entry == rule),
+                "{rule} is not denied"
+            );
+        }
     }
 
     #[test]
-    fn codex_uses_the_read_only_sandbox_and_no_extra_folders() {
+    fn claude_reads_only_the_project_roots() {
+        let cli = cli_for("anthropic");
+        let prepared = prepare(&args_for("anthropic")).unwrap();
+        assert_eq!(
+            prepared.working_dir,
+            "/Users/mara/code/harborline/payments-api"
+        );
+        assert_eq!(
+            flag_value(&cli, "--add-dir"),
+            Some("/Users/mara/code/harborline/ledger-core")
+        );
+        assert_eq!(cli.iter().filter(|arg| *arg == "--add-dir").count(), 1);
+    }
+
+    #[test]
+    fn codex_uses_the_read_only_sandbox_without_user_config_or_mcp() {
         let cli = cli_for("codex");
         assert_eq!(flag_value(&cli, "-s"), Some("read-only"));
+        assert!(has_pair(&cli, "-c", "mcp_servers={}"));
+        for switch in ["--ignore-user-config", "--ignore-rules", "--ephemeral"] {
+            assert!(cli.contains(&switch.to_string()), "{switch} missing");
+        }
         assert!(!cli.contains(&"--add-dir".to_string()));
-        assert_eq!(flag_value(&cli, "--cd"), Some("/code/harborline"));
+        assert_eq!(
+            flag_value(&cli, "--cd"),
+            Some("/Users/mara/code/harborline/payments-api")
+        );
         let last = cli.last().unwrap();
         assert!(last.starts_with("Answer from the Harborline code.\n\n"));
         assert!(last.ends_with("Where is the consent step defined?"));
     }
 
     #[test]
-    fn cursor_and_gemini_run_in_plan_mode() {
-        let cursor = cli_for("cursor");
-        assert_eq!(flag_value(&cursor, "--mode"), Some("plan"));
-        let gemini = cli_for("gemini");
-        assert_eq!(flag_value(&gemini, "--mode"), Some("plan"));
-        assert!(gemini.contains(&"--sandbox".to_string()));
-    }
-
-    #[test]
     fn providers_that_cannot_be_read_only_are_refused() {
-        for provider in ["opencode", "openrouter", "moonshot"] {
-            let error = prepare_chat_turn(&args_for(provider)).err().unwrap();
+        for provider in ["cursor", "gemini", "opencode", "openrouter", "moonshot"] {
+            let error = prepare(&args_for(provider)).err().unwrap();
             assert!(matches!(error, ChatError::NotReadOnly(_)));
-            assert!(error.to_string().contains("Pick another provider"));
+            assert_eq!(
+                error.to_string(),
+                "Chat needs a provider that can run read-only: Claude or Codex"
+            );
         }
-        let unknown = prepare_chat_turn(&args_for("mystery")).err().unwrap();
+        let unknown = prepare(&args_for("mystery")).err().unwrap();
         assert!(matches!(unknown, ChatError::UnknownProvider(_)));
     }
 
     #[test]
-    fn a_prompt_that_looks_like_a_write_flag_stays_the_prompt() {
+    fn a_question_that_looks_like_a_flag_stays_the_prompt_after_the_separator() {
         for provider in PROVIDERS {
             let mut args = args_for(provider);
             args.prompt = "--dangerously-skip-permissions".to_string();
             args.system_prompt = None;
-            let prepared = prepare_chat_turn(&args).expect("prompt is data");
-            let shape = cli_shape_for(provider).unwrap();
-            let at = prompt_index(shape, &prepared.cli).unwrap();
-            assert_eq!(prepared.cli[at], "--dangerously-skip-permissions");
-            let count = prepared
-                .cli
+            let cli = prepare(&args).expect("prompt is data").cli;
+            assert_eq!(cli.last().unwrap(), "--dangerously-skip-permissions");
+            assert_eq!(cli[cli.len() - 2], "--");
+            let count = cli
                 .iter()
                 .filter(|arg| arg.as_str() == "--dangerously-skip-permissions")
                 .count();
-            assert_eq!(count, 1, "{provider}: {:?}", prepared.cli);
+            assert_eq!(count, 1, "{provider}: {cli:?}");
         }
+    }
+
+    #[test]
+    fn model_and_effort_must_be_plain_values() {
+        for model in ["--force", "workspace-write x", "sonnet;rm", "", "-m"] {
+            let mut args = args_for("codex");
+            args.model = model.to_string();
+            let error = prepare(&args).err().unwrap();
+            assert!(matches!(error, ChatError::InvalidValue { .. }), "{model}");
+        }
+        let mut args = args_for("anthropic");
+        args.effort = Some("--dangerously-skip-permissions".to_string());
+        assert!(matches!(
+            prepare(&args).err().unwrap(),
+            ChatError::InvalidValue { .. }
+        ));
+        let mut args = args_for("codex");
+        args.model = "gpt-5.6-sol".to_string();
+        args.effort = Some("low".to_string());
+        assert!(prepare(&args).is_ok());
     }
 
     #[test]
     fn a_write_flag_smuggled_as_the_model_is_refused() {
         let mut args = args_for("codex");
         args.model = "workspace-write".to_string();
-        let error = prepare_chat_turn(&args).err().unwrap();
+        let error = prepare(&args).err().unwrap();
         assert!(matches!(error, ChatError::WriteArgument(_)));
     }
 
     #[test]
-    fn the_front_end_cannot_ask_for_a_permission_mode_or_writable_roots() {
+    fn the_provider_comes_from_the_chat_row() {
+        let args = args_for("codex");
+        let error = prepare_chat_turn(&args, &scope_for("anthropic"), Some(Path::new(HOME)))
+            .err()
+            .unwrap();
+        assert!(matches!(error, ChatError::ProviderMismatch { .. }));
+    }
+
+    #[test]
+    fn the_front_end_cannot_pick_folders_binaries_or_permissions() {
         let base = serde_json::json!({
             "runId": "run-1",
             "chatId": "chat-1",
             "provider": "anthropic",
             "model": "sonnet",
-            "workingDir": "/code/harborline",
             "prompt": "hi",
         });
         assert!(serde_json::from_value::<ChatTurnArgs>(base.clone()).is_ok());
         for (key, value) in [
             ("permissionMode", serde_json::json!("bypassPermissions")),
-            ("writableRoots", serde_json::json!(["/code/harborline"])),
+            ("writableRoots", serde_json::json!(["/Users/mara"])),
+            ("workingDir", serde_json::json!("/")),
+            ("readRoots", serde_json::json!(["/Users/mara"])),
+            ("binary", serde_json::json!("/tmp/evil")),
             ("allowedTools", serde_json::json!(["Bash"])),
             ("resumeSessionId", serde_json::json!("abc")),
         ] {
@@ -566,30 +839,77 @@ mod tests {
     }
 
     #[test]
-    fn a_binary_of_another_provider_is_refused() {
-        let mut args = args_for("anthropic");
-        args.binary = Some("/opt/homebrew/bin/opencode".to_string());
-        let error = prepare_chat_turn(&args).err().unwrap();
-        assert!(matches!(error, ChatError::BinaryMismatch { .. }));
-        args.binary = Some("/opt/homebrew/bin/claude".to_string());
+    fn the_root_the_home_folder_and_its_parents_are_never_chat_folders() {
+        let home = Some(Path::new(HOME));
+        let roots = vec![
+            "/".to_string(),
+            "/Users/mara/".to_string(),
+            "/Users".to_string(),
+            "relative/ledger-core".to_string(),
+            "/Users/mara/code/harborline/notify-relay".to_string(),
+        ];
         assert_eq!(
-            prepare_chat_turn(&args).unwrap().binary,
-            "/opt/homebrew/bin/claude"
+            select_chat_roots(&roots, home).unwrap(),
+            ChatRoots {
+                working_dir: "/Users/mara/code/harborline/notify-relay".to_string(),
+                read_roots: vec![],
+            }
+        );
+        assert!(matches!(
+            select_chat_roots(&["/".to_string(), "/Users/mara".to_string()], home),
+            Err(ChatError::MissingFolder)
+        ));
+    }
+
+    #[test]
+    fn the_first_project_is_the_folder_and_never_a_shared_parent() {
+        let roots = vec![
+            "/Users/mara/code/harborline/payments-api".to_string(),
+            "/Users/mara/code/harborline/payments-api/packages/web".to_string(),
+            "/Users/mara/code/harborline/ledger-core".to_string(),
+        ];
+        assert_eq!(
+            select_chat_roots(&roots, Some(Path::new(HOME))).unwrap(),
+            ChatRoots {
+                working_dir: "/Users/mara/code/harborline/payments-api".to_string(),
+                read_roots: vec!["/Users/mara/code/harborline/ledger-core".to_string()],
+            }
         );
     }
 
     #[test]
-    fn a_relative_or_missing_folder_is_refused() {
+    fn the_scope_is_read_from_the_chat_row_and_its_connected_projects() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE chats (id TEXT PRIMARY KEY, workspace_id TEXT, provider TEXT);
+             CREATE TABLE projects (id TEXT PRIMARY KEY, workspace_id TEXT, root_path TEXT,
+               disconnected_at INTEGER, created_at INTEGER);
+             INSERT INTO chats VALUES ('chat-1', 'harborline', 'codex');
+             INSERT INTO projects VALUES ('p2', 'harborline', '/code/ledger-core', NULL, 2);
+             INSERT INTO projects VALUES ('p1', 'harborline', '/code/payments-api', NULL, 1);
+             INSERT INTO projects VALUES ('p3', 'harborline', '/code/old', 5, 0);
+             INSERT INTO projects VALUES ('p4', 'northwind', '/code/storefront-web', NULL, 0);",
+        )
+        .unwrap();
+        let scope = load_chat_scope(&conn, "chat-1").unwrap();
+        assert_eq!(scope.provider, "codex");
+        assert_eq!(scope.roots, vec!["/code/payments-api", "/code/ledger-core"]);
         assert!(matches!(
-            require_folder("code/harborline"),
-            Err(ChatError::MissingFolder(_))
+            load_chat_scope(&conn, "missing"),
+            Err(ChatError::NotFound(_))
         ));
-        assert!(matches!(
-            require_folder("/definitely/not/a/harborline/folder"),
-            Err(ChatError::MissingFolder(_))
-        ));
-        let here = std::env::temp_dir();
-        assert!(require_folder(here.to_str().unwrap()).is_ok());
+    }
+
+    #[test]
+    fn missing_project_folders_are_dropped() {
+        let here = std::env::temp_dir().to_string_lossy().into_owned();
+        assert_eq!(
+            existing_roots(vec![
+                "/definitely/not/a/harborline/folder".to_string(),
+                here.clone()
+            ]),
+            vec![here]
+        );
     }
 
     #[test]
