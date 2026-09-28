@@ -29,13 +29,17 @@ vi.mock('../../../../worktree/BranchSwitchPanel', () => ({
 
 import { ProjectBranchChip } from './ProjectBranchChip';
 
-const renderChip = ({ canSwitch = true }: { readonly canSwitch?: boolean } = {}) =>
+const renderChip = ({
+  canSwitch = true,
+  blockedReason = null,
+}: { readonly canSwitch?: boolean; readonly blockedReason?: string | null } = {}) =>
   render(
     <ProjectBranchChip
       sessionId={'session-1' as never}
       mountId={'mount-2' as never}
       branch="ak/sibling"
       canSwitch={canSwitch}
+      blockedReason={blockedReason}
     />,
   );
 
@@ -65,15 +69,25 @@ describe('ProjectBranchChip', () => {
     expect(screen.getAllByRole('button')).toHaveLength(1);
   });
 
-  it('copies the branch name when switching is not possible, without a toast', async () => {
-    const writeText = vi.fn(async () => undefined);
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+  it('shows the branch without a control when switching is not possible', () => {
     renderChip({ canSwitch: false });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copy branch ak/sibling' }));
+    expect(screen.getByTitle('ak/sibling')).toBeDefined();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
 
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('ak/sibling'));
+  it('says why a switch is held back instead of opening the panel', () => {
+    renderChip({ blockedReason: 'The 2 uncommitted changes would follow you.' });
+
+    expect(screen.queryByRole('button', { name: 'Switch branch ak/sibling' })).toBeNull();
     expect(screen.queryByTestId('branch-switch-panel')).toBeNull();
-    expect(showToast).not.toHaveBeenCalled();
+  });
+
+  it('opens the switch panel when the menu asks for it', async () => {
+    renderChip();
+
+    window.dispatchEvent(new CustomEvent('goodboy:worktree-switch-branch:mount-2'));
+
+    await waitFor(() => expect(screen.getByTestId('branch-switch-panel')).toBeDefined());
   });
 });

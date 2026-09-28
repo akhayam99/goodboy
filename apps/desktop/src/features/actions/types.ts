@@ -1,8 +1,9 @@
 import type { LucideIcon } from 'lucide-react';
-import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, MountId, SessionId, WorkflowRunId, WorktreeStatus } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
+import type { RemoteHostKind } from '../../shared/lib/remoteHost';
 
 export const ACTION_GROUPS = ['open', 'act', 'copy', 'danger'] as const;
 
@@ -134,6 +135,24 @@ export type PullRequestActionTarget = {
   readonly prNumber: number | null;
 };
 
+export type WorktreeActionTarget = {
+  readonly kind: 'worktree';
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly status: WorktreeStatus | null;
+  readonly remoteKind: RemoteHostKind | null;
+};
+
+export type DiffActionTarget = {
+  readonly kind: 'diff';
+  readonly sessionId: SessionId;
+  readonly worktreePath: string;
+  readonly status: WorktreeStatus | null;
+  readonly remoteKind: RemoteHostKind | null;
+  readonly patch: string;
+  readonly rebaseConflicts: number;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -145,6 +164,8 @@ export type ObjectTarget =
   | AgentActionTarget
   | WorkflowRunActionTarget
   | PullRequestActionTarget
+  | WorktreeActionTarget
+  | DiffActionTarget
   | LinkActionTarget;
 
 export type ObjectKindId = ObjectTarget['kind'];

@@ -705,15 +705,21 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => visible('list', 'Integrations settings'),
   },
   {
-    name: 'mount row: scripts',
+    name: 'mount row menu: scripts',
     covers: ['navigate', 'lens:scripts'],
-    open: () => clickFirstButton(/^Open scripts for/),
+    open: async () => {
+      await clickFirstButton(/ on .+ actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Open scripts/ }));
+    },
     lands: both(lens('scripts'), () => heading('Scripts')),
   },
   {
-    name: 'mount row: terminal',
+    name: 'mount row menu: terminal',
     covers: ['openMountTerminal', 'lens:terminal'],
-    open: () => clickFirstButton(/^Open terminal for/),
+    open: async () => {
+      await clickFirstButton(/ on .+ actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
+    },
     lands: lens('terminal'),
   },
   {

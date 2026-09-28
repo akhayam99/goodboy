@@ -1,14 +1,11 @@
-import { Check, GitBranch } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Chip,
-  FOCUS_RING,
-  Tooltip,
-  cn,
-  useCopyLink,
-  useDropdown,
-} from '@goodboy/ui';
+import { useEffect } from 'react';
+import { GitBranch } from 'lucide-react';
+import { AnchoredPopover, Chip, FOCUS_RING, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
+import {
+  WORKTREE_SWITCH_BRANCH_EVENT,
+  worktreeEventName,
+} from '../../../../actions/kinds/worktree';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
 import { splitBranchLabel } from './branchLabel';
 
@@ -17,6 +14,7 @@ type Props = {
   readonly mountId: MountId;
   readonly branch: string;
   readonly canSwitch: boolean;
+  readonly blockedReason: string | null;
 };
 
 const CHIP_CLASS = 'min-w-0 shrink gap-0 px-0';
@@ -39,49 +37,53 @@ const BranchName = ({ branch }: NameParams) => {
   );
 };
 
-type CopyChipParams = {
-  readonly branch: string;
-};
-
-const CopyBranchChip = ({ branch }: CopyChipParams) => {
-  const { copiedKey, failedKey, copy } = useCopyLink();
-  const copied = copiedKey !== null;
-  const failed = failedKey !== null;
-  const tooltip = copied ? 'Copied' : failed ? 'Copy failed' : 'Copy branch name';
-
-  return (
-    <Chip
-      as="span"
-      tone={copied ? 'success' : failed ? 'danger' : 'neutral'}
-      shape="badge"
-      size="control"
-      className={cn(CHIP_CLASS, copied || failed ? '' : 'hover:bg-hover hover:text-foreground')}
-      label={
-        <Tooltip content={tooltip}>
-          <button
-            type="button"
-            onClick={() => void copy({ text: branch })}
-            aria-label={`Copy branch ${branch}`}
-            className={FACE_CLASS}
-          >
-            {copied ? <Check size={11} aria-hidden /> : <GitBranch size={11} aria-hidden />}
-            <BranchName branch={branch} />
-          </button>
-        </Tooltip>
-      }
-    />
-  );
-};
-
-export const ProjectBranchChip = ({ sessionId, mountId, branch, canSwitch }: Props) => {
+export const ProjectBranchChip = ({
+  sessionId,
+  mountId,
+  branch,
+  canSwitch,
+  blockedReason,
+}: Props) => {
   const dropdown = useDropdown({ width: 'w-96', expectedHeight: 400 });
+  const { open: isOpen, toggle } = dropdown;
+  const isSwitchable = canSwitch && blockedReason === null;
+
+  useEffect(() => {
+    if (!isSwitchable) {
+      return;
+    }
+    const name = worktreeEventName({ name: WORKTREE_SWITCH_BRANCH_EVENT, mountId });
+    const onOpen = () => {
+      if (!isOpen) {
+        toggle();
+      }
+    };
+    window.addEventListener(name, onOpen);
+    return () => window.removeEventListener(name, onOpen);
+  }, [isOpen, isSwitchable, mountId, toggle]);
 
   if (branch === '') {
     return null;
   }
 
-  if (!canSwitch) {
-    return <CopyBranchChip branch={branch} />;
+  if (!isSwitchable) {
+    return (
+      <Chip
+        as="span"
+        tone="neutral"
+        shape="badge"
+        size="control"
+        className={CHIP_CLASS}
+        label={
+          <Tooltip content={blockedReason ?? branch}>
+            <span className={FACE_CLASS}>
+              <GitBranch size={11} aria-hidden />
+              <BranchName branch={branch} />
+            </span>
+          </Tooltip>
+        }
+      />
+    );
   }
 
   return (

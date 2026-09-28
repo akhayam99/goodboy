@@ -10,20 +10,29 @@ export const ActionStatusLine = ({ controls }: Props) => {
     ...controls.inSlot({ slot: 'primary' }),
     ...controls.inSlot({ slot: 'secondary' }),
   ];
-  const blocked = visible.filter((action) => action.blockedReason !== null);
+  const reasons = [
+    ...new Set(
+      visible.flatMap((action) => (action.blockedReason === null ? [] : [action.blockedReason])),
+    ),
+  ].map((reason) => ({
+    reason,
+    actions: visible.filter((action) => action.blockedReason === reason),
+  }));
   const failed =
     controls.failure === null
       ? null
       : (controls.actions.find((action) => action.id === controls.failure?.actionId) ?? null);
-  if (blocked.length === 0 && controls.failure === null) {
+  if (reasons.length === 0 && controls.failure === null) {
     return null;
   }
   return (
     <div className="flex min-w-0 flex-col items-end gap-1 text-secondary">
-      {blocked.map((action) => (
-        <p key={action.id} id={`${action.id}-reason`} className="min-w-0 text-right">
-          <span className="font-medium text-foreground">{action.label}</span>{' '}
-          <span className="text-muted-foreground">{action.blockedReason}</span>
+      {reasons.map(({ reason, actions }) => (
+        <p key={reason} className="min-w-0 text-right">
+          <span className="text-foreground">
+            {actions.map((action) => action.shortLabel).join(', ')}
+          </span>{' '}
+          <span className="text-muted-foreground">{reason}</span>
         </p>
       ))}
       {controls.failure !== null && (

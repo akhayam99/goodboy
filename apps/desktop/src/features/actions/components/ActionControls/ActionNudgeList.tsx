@@ -26,7 +26,7 @@ export const ActionNudgeList = ({ controls, details }: Props) => {
             >
               <Icon size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
               <span className="flex min-w-0 flex-1 items-center gap-2">
-                <span className="min-w-0 truncate font-semibold text-foreground">
+                <span className="min-w-0 truncate text-row text-foreground">
                   {action.shortLabel}
                 </span>
                 {details?.[action.id] ?? null}

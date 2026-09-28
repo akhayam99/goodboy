@@ -30,7 +30,6 @@ export const ActionButton = ({ action, controls, variant }: Props) => {
       size="sm"
       variant={variant}
       aria-label={action.label}
-      aria-describedby={isBlocked ? `${action.id}-reason` : undefined}
       disabled={isBlocked || (controls.pendingId !== null && !isPending)}
       isBusy={isPending}
       {...(action.pendingLabel !== null && { busyLabel: action.pendingLabel })}

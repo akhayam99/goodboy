@@ -1,8 +1,10 @@
 import type { AppStore } from '../../store/store';
 import { resolveActions } from './resolveActions';
 import { AGENT_KIND } from './kinds/agent';
+import { DIFF_KIND } from './kinds/diff';
 import { LINK_KIND } from './kinds/link';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
+import { WORKTREE_KIND } from './kinds/worktree';
 import { SESSION_KIND } from './kinds/session';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
@@ -88,6 +90,10 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: WORKFLOW_RUN_KIND, state, target });
     case 'pullRequest':
       return bind({ definition: PULL_REQUEST_KIND, state, target });
+    case 'worktree':
+      return bind({ definition: WORKTREE_KIND, state, target });
+    case 'diff':
+      return bind({ definition: DIFF_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
     default: {

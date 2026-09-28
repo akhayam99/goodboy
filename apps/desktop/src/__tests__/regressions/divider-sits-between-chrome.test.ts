@@ -111,8 +111,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/DetachDetails.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/ProjectSyncControl.tsx':
-    { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterPanel/index.tsx':

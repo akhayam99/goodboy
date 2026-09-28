@@ -1,25 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  AnchoredPopover,
-  IconButton,
-  InlineConfirm,
-  cn,
-  useDropdown,
-  tintClasses,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
-import type {
-  MountId,
-  ProjectId,
-  SessionId,
-  SessionMountView,
-  WorktreeStatus,
-  WorkspaceId,
-} from '@goodboy/types';
+import { AnchoredPopover, IconButton, cn, useDropdown, tintClasses } from '@goodboy/ui';
+import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
 import { useAppStore } from '../../../../../store';
-import { isWorkingTreeClean } from '../../../../../shared/lib/gitStatus';
 import { worktreeDetachAssessment } from '../../../../worktree/worktree';
 import {
   mountCleanupBlockers,
@@ -27,7 +11,6 @@ import {
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { EditorMenuContent } from '../EditorMenuContent';
 import { DetachConfirm } from './DetachConfirm';
 import {
   BLOCKER_SENTENCE,
@@ -45,18 +28,7 @@ type Props = {
   readonly workspaceId: WorkspaceId | undefined;
   readonly projectName: string;
   readonly worktreePath: string;
-  readonly worktreeStatus: WorktreeStatus | null;
-  readonly mountId?: MountId;
-  readonly branch?: string;
-  readonly menuLabel?: string;
-  readonly canDetachProject?: boolean;
-  readonly isMountAttached?: boolean;
-  readonly items?: ReadonlyArray<OverflowMenuItem>;
 };
-
-type Confirming = 'detach' | 'forget' | 'unmount' | null;
-
-const WorktreeIcon = CONCEPT_ICONS.worktree;
 
 type DetachTarget = {
   readonly mountId: MountId;
@@ -64,21 +36,6 @@ type DetachTarget = {
   readonly branch: string;
   readonly baseBranch: string | null;
   readonly isOnDisk: boolean;
-};
-
-type KeptPathParams = {
-  readonly view: SessionMountView | null;
-  readonly fallback: string;
-};
-
-const keptPathOf = ({ view, fallback }: KeptPathParams): string | null => {
-  if (view === null) {
-    return fallback === '' ? null : fallback;
-  }
-  if (view.diskState === 'missing' || view.diskState === 'removed') {
-    return null;
-  }
-  return view.lastWorktreePath;
 };
 
 const BLOCKER_CODES = [
@@ -92,13 +49,6 @@ export const MountActionsMenu = ({
   workspaceId,
   projectName,
   worktreePath,
-  worktreeStatus,
-  mountId,
-  branch = '',
-  menuLabel,
-  canDetachProject = true,
-  isMountAttached,
-  items = [],
 }: Props) => {
   const dropdown = useDropdown({
     align: 'end',
@@ -107,17 +57,14 @@ export const MountActionsMenu = ({
     expectedHeight: 190,
   });
   const detachProject = useAppStore((state) => state.detachProject);
-  const unmountMount = useAppStore((state) => state.unmountMount);
   const reportError = useAppStore((state) => state.reportError);
   const projectKind = useAppStore(
     (state) => state.projects.find((candidate) => candidate.id === projectId)?.kind ?? null,
   );
   const isRepoProject = projectKind === 'repo';
-  const noun = projectKind === 'folder' ? 'folder' : 'worktree';
   const projectBaseBranch = useAppStore(
     (state) => state.projects.find((candidate) => candidate.id === projectId)?.baseBranch ?? null,
   );
-  const forgetMount = useAppStore((state) => state.forgetMount);
   const mountViews = useAppStore(
     useShallow((state) =>
       (state.sessionMounts?.[sessionId] ?? []).filter((view) => view.projectId === projectId),
@@ -134,11 +81,6 @@ export const MountActionsMenu = ({
       })),
     [mountViews],
   );
-  const mountView = mountViews.find((view) => view.id === mountId) ?? null;
-  const isAttached =
-    isMountAttached ??
-    (mountView === null ? true : mountView.isAttached && mountView.worktreePath !== null);
-  const keptPath = keptPathOf({ view: mountView, fallback: worktreePath });
   const blockerKey = useAppStore((state) =>
     [
       ...new Set(
@@ -156,32 +98,13 @@ export const MountActionsMenu = ({
       .join(','),
   );
   const blockers = BLOCKER_CODES.filter((code) => blockerKey.split(',').includes(code));
-  const forgetBlockerKey = useAppStore((state) =>
-    mountId === undefined
-      ? ''
-      : [
-          ...new Set(
-            mountCleanupBlockers({
-              state,
-              sessionId,
-              mountId,
-              worktreePath: keptPath ?? worktreePath,
-            }),
-          ),
-        ]
-          .sort()
-          .join(','),
-  );
-  const forgetBlockers = BLOCKER_CODES.filter((code) => forgetBlockerKey.split(',').includes(code));
   const { showToast } = useToast();
-  const [confirming, setConfirming] = useState<Confirming>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [stage, setStage] = useState<string | null>(null);
   const [assessments, setAssessments] = useState<ReadonlyArray<MountAssessment> | null>(null);
   const requestRef = useRef(0);
-  const isClean =
-    worktreeStatus != null && isWorkingTreeClean({ workingTree: worktreeStatus.workingTree });
-  const label = menuLabel ?? `${projectName} actions`;
+  const label = `${projectName} actions`;
 
   const fail = ({ title, error }: { title: string; error: unknown }) => {
     void reportError({
@@ -239,7 +162,7 @@ export const MountActionsMenu = ({
     requestRef.current = requestRef.current + 1;
     setAssessments(null);
     setStage(null);
-    setConfirming(null);
+    setIsConfirming(false);
   };
 
   useEffect(() => {
@@ -247,7 +170,7 @@ export const MountActionsMenu = ({
       return;
     }
     requestRef.current = requestRef.current + 1;
-    setConfirming(null);
+    setIsConfirming(false);
     setAssessments(null);
     setStage(null);
   }, [dropdown.open]);
@@ -276,7 +199,7 @@ export const MountActionsMenu = ({
         }),
       });
       dropdown.close();
-      setConfirming(null);
+      setIsConfirming(false);
     } catch (error) {
       fail({ title: "Couldn't detach the project", error });
     } finally {
@@ -285,69 +208,7 @@ export const MountActionsMenu = ({
     }
   };
 
-  const forget = async () => {
-    if (mountId === undefined) {
-      return;
-    }
-    setIsBusy(true);
-    try {
-      const result = await forgetMount({ sessionId, mountId });
-      dropdown.close();
-      setConfirming(null);
-      showToast({
-        kind: 'info',
-        message:
-          result.keptPath === null
-            ? `Removed ${branch === '' ? `the ${noun}` : branch} from this session.`
-            : `Removed ${branch === '' ? `the ${noun}` : branch} from this session. Files remain at ${result.keptPath}.`,
-      });
-    } catch (error) {
-      fail({ title: `Couldn't remove the ${noun}`, error });
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const unmount = async () => {
-    if (mountId === undefined) {
-      return;
-    }
-    setIsBusy(true);
-    try {
-      const result = await unmountMount({ sessionId, mountId });
-      dropdown.close();
-      setConfirming(null);
-      if (result.kept) {
-        showToast({ kind: 'info', message: `Worktree kept at ${worktreePath}` });
-      }
-    } catch (error) {
-      fail({ title: `Couldn't close the ${noun}`, error });
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const forgetNote =
-    keptPath === null ? (
-      <span className="text-secondary text-muted-foreground">
-        This branch leaves the session. The branch and any pull request stay.
-      </span>
-    ) : (
-      <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-        <span className="text-secondary">Its files stay on disk at</span>
-        <span className="truncate font-mono text-secondary">{keptPath}</span>
-      </div>
-    );
-
-  const keptNote = (
-    <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
-      <span className="text-secondary">Uncommitted changes stay on disk at</span>
-      <span className="truncate font-mono text-secondary">{worktreePath}</span>
-    </div>
-  );
-
-  const canDetach = canDetachProject && detachTargets.length > 0;
-  if (mountId === undefined && !canDetach && items.length === 0) {
+  if (detachTargets.length === 0) {
     return null;
   }
 
@@ -366,7 +227,7 @@ export const MountActionsMenu = ({
           onClick={() => {
             if (dropdown.open) {
               dropdown.close();
-              setConfirming(null);
+              setIsConfirming(false);
               return;
             }
             dropdown.toggle();
@@ -377,49 +238,7 @@ export const MountActionsMenu = ({
         />
       }
     >
-      {confirming === 'unmount' ? (
-        <InlineConfirm
-          role="alert"
-          icon={<WorktreeIcon size={ICON_SIZE.row} />}
-          title={branch === '' ? `Close this ${noun}?` : `Close ${branch}?`}
-          {...(isClean
-            ? { description: 'Its worktree is removed. The branch and any pull request stay.' }
-            : {})}
-          confirmLabel={isClean ? 'Close' : 'Close, keep changes'}
-          surface="plain"
-          isBusy={isBusy}
-          onConfirm={() => void unmount()}
-          onCancel={() => setConfirming(null)}
-        >
-          {isClean ? null : keptNote}
-        </InlineConfirm>
-      ) : null}
-      {confirming === 'forget' ? (
-        <InlineConfirm
-          role="alert"
-          icon={<WorktreeIcon size={ICON_SIZE.row} />}
-          title={branch === '' ? `Remove this ${noun}?` : `Remove ${branch}?`}
-          confirmLabel="Remove"
-          surface="plain"
-          isBusy={isBusy}
-          isConfirmDisabled={forgetBlockers.length > 0}
-          onConfirm={() => void forget()}
-          onCancel={() => setConfirming(null)}
-        >
-          {forgetBlockers.length > 0 ? (
-            <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
-              {forgetBlockers.map((blocker) => (
-                <p key={blocker} className="break-words">
-                  {BLOCKER_SENTENCE[blocker]({ projectName })}
-                </p>
-              ))}
-            </div>
-          ) : (
-            forgetNote
-          )}
-        </InlineConfirm>
-      ) : null}
-      {confirming === 'detach' ? (
+      {isConfirming ? (
         <DetachConfirm
           projectName={projectName}
           plan={buildDetachPlan({
@@ -436,56 +255,27 @@ export const MountActionsMenu = ({
           onCancel={cancelDetach}
         />
       ) : null}
-      {confirming === null ? (
+      {isConfirming ? null : (
         <div className="flex flex-col">
-          {items.length === 0 ? null : (
-            <>
-              <EditorMenuContent items={items} onClose={dropdown.close} />
-              {mountId === undefined && !canDetach ? null : (
-                <div aria-hidden className="h-px bg-border-soft" />
-              )}
-            </>
-          )}
-          {mountId === undefined ? null : isAttached ? (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => setConfirming('unmount')}
-              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-hover"
-            >
-              {`Close ${noun}`}
-            </button>
-          ) : (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => setConfirming('forget')}
-              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-hover"
-            >
-              Remove from session
-            </button>
-          )}
-          {canDetach ? (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setConfirming('detach');
-                assess();
-              }}
-              className={cn(
-                'flex w-full items-center px-2.5 py-1.5 text-left',
-                tintClasses('danger').text,
-                'motion-safe:transition-colors',
-                tintClasses('danger').hoverBg,
-                'hover:text-danger',
-              )}
-            >
-              Detach project
-            </button>
-          ) : null}
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setIsConfirming(true);
+              assess();
+            }}
+            className={cn(
+              'flex w-full items-center px-2.5 py-1.5 text-left',
+              tintClasses('danger').text,
+              'motion-safe:transition-colors',
+              tintClasses('danger').hoverBg,
+              'hover:text-danger',
+            )}
+          >
+            Detach project
+          </button>
         </div>
-      ) : null}
+      )}
     </AnchoredPopover>
   );
 };

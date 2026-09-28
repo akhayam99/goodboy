@@ -1080,14 +1080,22 @@ sidebar.
 
 The Diff lens shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. The header speaks only for that branch:
-meta `repo · N commits · state word`, one primary chosen from the branch state
-(`Rebase on main` when it is behind main, `Push branch` when it is local only
-with commits, none otherwise), `Rewrite history` with the commit count and `⋯` (Refresh, Open
-all in editor, Copy branch name, Copy patch). Every rewrite takes the shown
+meta `repo · N commits · state word`, and the controls of the `diff` kind of
+the action registry (`features/actions/kinds/diff.ts`): one primary chosen
+from the branch state (`Rebase on main` when it is behind main, `Push N
+commits` when commits wait on a branch with a pull request, `Create PR` when
+the branch has commits and no pull request, `Open terminal` while a rebase is
+stopped), up to three secondaries (`PR #528`, `Rewrite history`, `Abort
+rebase`) and `⋯` with every available action (Open in editor, Open terminal,
+Change base branch…, Restore a backup…, Copy branch name, Copy patch). A
+blocked control stays visible and disabled, with its reason on the line under
+the header; Abort rebase confirms there inline. Change base branch opens the
+base picker in place, and Restore a backup opens Rewrite history on its
+Backups. Every rewrite takes the shown
 mount's `mountId`, never the active mount. `Rebase on main` replays the
 branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads
-`Rebase on main · N conflicts` and the tooltip names the files, and only then
+`Rebase on main · N conflicts`, and only then
 the hidden History rewriter merges the edits in a throwaway copy. The branch
 moves only after the engine checks the result, with a backup ref and a push
 with lease.

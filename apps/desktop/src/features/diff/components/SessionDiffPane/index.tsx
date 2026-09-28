@@ -1,26 +1,22 @@
-import { useCallback, useMemo, type ReactNode } from 'react';
-import { Copy, ExternalLink, GitBranch, RefreshCw } from 'lucide-react';
-import {
-  Button,
-  ErrorStrip,
-  LensEmptyState,
-  OverflowMenu,
-  PageColumn,
-  Skeleton,
-  cn,
-  formatError,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
-import type { BranchCommit, DiffView as DiffViewKind, MountId, SessionId } from '@goodboy/types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ErrorStrip, LensEmptyState, PageColumn, Skeleton, cn, formatError } from '@goodboy/ui';
+import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
 import { useAppStore, type DiffFocus } from '../../../../store';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { PaneShell } from '../../../../shared/components/PaneShell';
-import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
 import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
 import { branchStateOf } from '../../../session/trail/menus/branchMenu';
-import { PushBranchButton } from './PushBranchButton';
+import { ActionButtons } from '../../../actions/components/ActionControls/ActionButtons';
+import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
+import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
+import { DIFF_CHANGE_BASE_EVENT, diffEventName } from '../../../actions/kinds/diff';
+import type { DiffActionTarget } from '../../../actions/types';
+import { useActionControls } from '../../../actions/useActionControls';
+import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
+import { DiffBaseBranchRow } from './DiffBaseBranchRow';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_DEFAULT_EDITOR,
@@ -29,7 +25,6 @@ import {
 import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
 import { useRebasePrediction } from '../../../history/useRebasePrediction';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
-import { ResolveOverviewAction } from '../../../resolve/components/ResolveOverviewAction';
 import { useDiffNotes } from '../../hooks/useDiffNotes';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
 import { DiffView } from '../DiffView';
@@ -37,19 +32,12 @@ import { DiffNotesDock } from '../DiffNotesDock';
 
 export const DIFF_PANE_TITLE = 'Diff';
 
-export type BranchActionParams = {
-  readonly mountId: MountId | null;
-  readonly commits: ReadonlyArray<BranchCommit>;
-  readonly onRewritten: () => void;
-};
-
 type Props = {
   readonly sessionId: SessionId;
   readonly workingDir: string | null;
   readonly worktreePath: string;
   readonly diffFocus: DiffFocus | null;
   readonly branchRevision: number;
-  readonly renderBranchActions?: (params: BranchActionParams) => ReactNode;
 };
 
 const emptyTitle = (view: DiffViewKind): string => {
@@ -90,7 +78,6 @@ export const SessionDiffPane = ({
   worktreePath,
   diffFocus,
   branchRevision,
-  renderBranchActions,
 }: Props) => {
   const diff = useSessionDiff({ sessionId, worktreePath, diffFocus, branchRevision });
   const { comments, openNotes } = useDiffNotes({ sessionId });
@@ -116,6 +103,17 @@ export const SessionDiffPane = ({
   const mountRepoRoot = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.repoRoot ?? null,
   );
+  const mountProjectId = useAppStore(
+    (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.projectId ?? null,
+  );
+  const projectRoot = useAppStore(
+    (s) => s.projects.find((project) => project.id === mountProjectId)?.rootPath ?? '',
+  );
+  const projectBaseBranch = useAppStore(
+    (s) => s.projects.find((project) => project.id === mountProjectId)?.baseBranch ?? null,
+  );
+  const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: mountRepoRoot });
+  const [isChangingBase, setIsChangingBase] = useState(false);
   const mountName = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.mountName ?? null,
   );
@@ -204,7 +202,6 @@ export const SessionDiffPane = ({
       ) : null}
     </span>
   );
-  const isLocalOnly = diff.status !== null && diff.status.upstream === null;
   const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
   const rebasePrediction = useRebasePrediction({
     worktreePath,
@@ -213,91 +210,29 @@ export const SessionDiffPane = ({
     isEnabled: canRebase && !rebase.isRunning,
   });
 
-  const overflow: OverflowMenuItem[] = [
-    {
-      kind: 'item',
-      key: 'refresh',
-      label: 'Refresh',
-      icon: RefreshCw,
-      onClick: diff.refresh,
-    },
-    ...(fileActions !== null && diff.files.length > 0
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'open-all',
-            label: 'Open all in editor',
-            icon: ExternalLink,
-            onClick: () => {
-              for (const file of diff.files) {
-                void openInEditor(file.path);
-              }
-            },
-          },
-        ]
-      : []),
-    ...(mountBranch !== null && mountBranch !== ''
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'copy-branch',
-            label: 'Copy branch name',
-            icon: Copy,
-            onClick: () => void navigator.clipboard?.writeText(mountBranch),
-          },
-        ]
-      : []),
-    ...(diff.patch !== ''
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'copy-patch',
-            label: 'Copy patch',
-            icon: Copy,
-            onClick: () => void navigator.clipboard?.writeText(diff.patch),
-          },
-        ]
-      : []),
-  ];
-
   const conflictCount = rebasePrediction?.conflictFiles.length ?? 0;
-  const rebaseTitle = rebase.isRunning
-    ? `Rebasing on ${baseBranch}`
-    : conflictCount > 0
-      ? `Replaying this branch on ${baseBranch} conflicts in ${rebasePrediction?.conflictFiles.join(', ')}. History rewriter merges it in a copy.`
-      : `Replay this branch on ${baseBranch}. No agent runs when nothing conflicts.`;
-  const primary = canRebase ? (
-    <Button
-      variant="primary"
-      size="sm"
-      onClick={() => {
-        if (mountId === null) {
-          return;
-        }
-        void rebase.run({ mountId });
-      }}
-      disabled={rebase.isRunning}
-      title={rebaseTitle}
-    >
-      <GitBranch size={ICON_SIZE.row} aria-hidden />
-      {rebase.isRunning
-        ? `Rebasing on ${baseBranch}`
-        : conflictCount > 0
-          ? `Rebase on ${baseBranch} · ${conflictCount} ${conflictCount === 1 ? 'conflict' : 'conflicts'}`
-          : `Rebase on ${baseBranch}`}
-    </Button>
-  ) : isLocalOnly && mountId !== null && (ahead ?? diff.commits.length) > 0 ? (
-    <PushBranchButton sessionId={sessionId} mountId={mountId} />
-  ) : null;
-
-  const actions = (
-    <>
-      <ResolveOverviewAction sessionId={sessionId} />
-      {renderBranchActions?.({ mountId, commits: diff.commits, onRewritten: diff.refresh })}
-      {primary}
-      <OverflowMenu items={overflow} label="More diff actions" align="right" />
-    </>
+  const target = useMemo<DiffActionTarget>(
+    () => ({
+      kind: 'diff',
+      sessionId,
+      worktreePath,
+      status: diff.status,
+      remoteKind,
+      patch: diff.patch,
+      rebaseConflicts: conflictCount,
+    }),
+    [conflictCount, diff.patch, diff.status, remoteKind, sessionId, worktreePath],
   );
+  const controls = useActionControls({ target });
+
+  useEffect(() => {
+    const name = diffEventName({ name: DIFF_CHANGE_BASE_EVENT, sessionId });
+    const onChange = () => setIsChangingBase(true);
+    window.addEventListener(name, onChange);
+    return () => window.removeEventListener(name, onChange);
+  }, [sessionId]);
+
+  const actions = <ActionButtons controls={controls} menuLabel="Diff actions" />;
 
   const toolbar = (
     <div className="flex min-w-0 items-center gap-2">
@@ -321,21 +256,41 @@ export const SessionDiffPane = ({
     </div>
   );
 
-  const notices =
-    rebase.error !== null || diff.metaError !== null ? (
-      <PageColumn className="pb-2">
-        {rebase.error !== null ? (
-          <p role="alert" className="text-secondary text-danger" title={rebase.error}>
-            {rebase.error}
-          </p>
-        ) : null}
-        {diff.metaError !== null ? (
-          <p role="status" className="text-secondary text-muted-foreground" title={diff.metaError}>
-            Couldn't read this branch's commits.
-          </p>
-        ) : null}
-      </PageColumn>
-    ) : null;
+  const hasStatusLine =
+    controls.failure !== null ||
+    [...controls.inSlot({ slot: 'primary' }), ...controls.inSlot({ slot: 'secondary' })].some(
+      (action) => action.blockedReason !== null,
+    );
+  const hasNotices =
+    rebase.error !== null ||
+    diff.metaError !== null ||
+    controls.confirming !== null ||
+    hasStatusLine ||
+    (isChangingBase && mountProjectId !== null);
+  const notices = hasNotices ? (
+    <PageColumn className="flex flex-col gap-2 pb-2">
+      <ActionStatusLine controls={controls} />
+      <ActionConfirmPanel controls={controls} />
+      {isChangingBase && mountProjectId !== null ? (
+        <DiffBaseBranchRow
+          projectId={mountProjectId}
+          repoPath={projectRoot}
+          value={projectBaseBranch}
+          onDone={() => setIsChangingBase(false)}
+        />
+      ) : null}
+      {rebase.error !== null ? (
+        <p role="alert" className="text-secondary text-danger" title={rebase.error}>
+          {rebase.error}
+        </p>
+      ) : null}
+      {diff.metaError !== null ? (
+        <p role="status" className="text-secondary text-muted-foreground" title={diff.metaError}>
+          Couldn't read this branch's commits.
+        </p>
+      ) : null}
+    </PageColumn>
+  ) : null;
 
   const body = diff.loading ? (
     <PageColumn className="flex flex-col gap-3">

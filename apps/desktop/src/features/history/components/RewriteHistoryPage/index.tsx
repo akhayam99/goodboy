@@ -14,6 +14,7 @@ import {
   type OverflowMenuItem,
 } from '@goodboy/ui';
 import type { BranchCommit, HistoryStep, SessionId } from '@goodboy/types';
+import { HISTORY_SHOW_BACKUPS_EVENT, diffEventName } from '../../../actions/kinds/diff';
 import { useAppStore } from '../../../../store';
 import { useWorktreeStatuses } from '../../../session/hooks/useWorktreeStatuses';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
@@ -89,6 +90,13 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     mountId === null ? null : (s.mountGithub[mountId]?.pr?.number ?? null),
   );
   const branchName = mount?.branch ?? null;
+
+  useEffect(() => {
+    const name = diffEventName({ name: HISTORY_SHOW_BACKUPS_EVENT, sessionId });
+    const onShow = () => setIsShowingBackups(true);
+    window.addEventListener(name, onShow);
+    return () => window.removeEventListener(name, onShow);
+  }, [sessionId]);
 
   useEffect(() => {
     if (mountId === null || branchName === null) {

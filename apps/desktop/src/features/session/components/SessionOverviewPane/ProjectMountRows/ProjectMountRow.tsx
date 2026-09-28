@@ -1,184 +1,90 @@
-import { useState } from 'react';
-import {
-  Chip,
-  IconButton,
-  Skeleton,
-  Tooltip,
-  cn,
-  tintClasses,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
-import type { SessionId, WorkspaceId, WorktreeStatus } from '@goodboy/types';
-import type { LensKind, MountDiffStat } from '../../../../../store';
-import { useAppStore } from '../../../../../store';
+import { useMemo } from 'react';
+import { Chip, Skeleton, Tooltip, cn } from '@goodboy/ui';
+import type { SessionId, WorktreeStatus } from '@goodboy/types';
+import type { MountDiffStat } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
-import {
-  selectActiveMountId,
-  selectTurnMountCount,
-} from '../../../../../store/slices/project-mounts/selectors';
+import { selectTurnMountCount } from '../../../../../store/slices/project-mounts/selectors';
+import { useAppStore } from '../../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
+import { useActionControls } from '../../../../actions/useActionControls';
+import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
+import type { WorktreeActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
-import { useEditorMenuItems } from '../useEditorMenuItems';
 import { AlsoInChip } from './AlsoInChip';
 import { BranchPresenceLabel } from './BranchPresenceLabel';
+import { MainDistanceLabel } from './MainDistanceLabel';
 import { MountBranchDecision } from './MountBranchDecision';
 import { MountChangeCell } from './MountChangeCell';
 import { MountKindGlyph } from './MountKindGlyph';
 import { MountPresence } from './MountPresence';
-import { MountRequestAction } from './MountRequestAction';
 import { MountRequestLink } from './MountRequestLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
-import { ProjectSyncControl } from './ProjectSyncControl';
 import { RebaseStoppedNotice } from './RebaseStoppedNotice';
-import { MountActionsMenu } from './MountActionsMenu';
-import { RemoveWorktreeAction } from './RemoveWorktreeAction';
+import { WorktreeRowAction } from './WorktreeRowAction';
 import { useMountPresence } from './useMountPresence';
-import { useProjectActivity } from './useProjectActivity';
-import { hasDiffCounts, mountOperationView, mountWorktreeState } from './mountRowState';
+import { mountOperationView, mountWorktreeState } from './mountRowState';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly row: MountRowView;
   readonly label: string;
-  readonly workspaceId: WorkspaceId | null;
   readonly diffStat: MountDiffStat | null;
   readonly worktreeStatus: WorktreeStatus | null;
   readonly isStatusPending?: boolean;
   readonly isMerged?: boolean;
   readonly commitsAfterMerge?: number | null;
-  readonly onSelectLens: (lens: LensKind) => void;
 };
-
-const UTILITY_REVEAL =
-  'opacity-0 motion-safe:transition-opacity group-hover/mount-row:opacity-100 group-focus-within/mount-row:opacity-100 @max-md:hidden';
 
 const CELL = 'flex items-center px-1';
 const NARROW_HIDDEN = '@max-[36rem]:px-0 @max-[36rem]:*:hidden';
-
-const ACTIVITY_DOT = cn(
-  'pointer-events-none absolute -right-0.5 -top-0.5 size-1.5 rounded-full',
-  tintClasses('success').dot,
-);
-
-type SuffixParams = {
-  readonly count: number;
-};
-
-type OpenLensParams = {
-  readonly lens: LensKind;
-};
-
-const runningSuffix = ({ count }: SuffixParams) => (count > 0 ? `, ${count} running` : '');
 
 export const ProjectMountRow = ({
   sessionId,
   row,
   label,
-  workspaceId,
   diffStat,
   worktreeStatus,
   isStatusPending: isStatusPendingProp = false,
   isMerged = false,
   commitsAfterMerge = null,
-  onSelectLens,
 }: Props) => {
-  const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
-  const setSessionActiveMount = useAppStore((state) => state.setSessionActiveMount);
-  const openMountTerminal = useAppStore((state) => state.openMountTerminal);
-  const attachMount = useAppStore((state) => state.attachMount);
-  const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
   const turnMountCount = useAppStore((state) => selectTurnMountCount({ state, sessionId }));
   const presence = useMountPresence({ sessionId, mountId: row.mountId });
-  const reportError = useAppStore((state) => state.reportError);
-  const [isAttaching, setIsAttaching] = useState(false);
   const isRepo = row.projectKind === 'repo';
   const worktreePath = row.worktreePath;
-  const changes = hasDiffCounts({ diffStat });
   const isStatusPending = isStatusPendingProp && worktreeStatus == null && isRepo;
   const remoteKind = useMountRemoteHostKind({ sessionId, repoRoot: row.repoRoot });
-  const activity = useProjectActivity({
-    sessionId,
-    projectId: row.projectId,
-    workspaceId,
-  });
   const observation = row.observation;
   const hasTools = row.isAttached && worktreePath !== null;
   const hasTurnChoice = turnMountCount > 1;
-  const canStartTurnsHere = hasTools && hasTurnChoice && row.mountId !== activeMountId;
   const worktreeState = mountWorktreeState({
     status: worktreeStatus,
     isPending: isStatusPendingProp,
   });
   const operation = mountOperationView({ status: worktreeStatus, label });
-  const editorItems = useEditorMenuItems({ worktreePath: hasTools ? worktreePath : null });
-
-  const openLens = ({ lens }: OpenLensParams) => {
-    if (lens === 'terminal') {
-      if (worktreePath !== null) {
-        openMountTerminal(sessionId, worktreePath);
-      }
-      return;
-    }
-    if (lens === 'scripts') {
-      setScriptsLensScope({ scope: { projectId: row.projectId } });
-    }
-    onSelectLens(lens);
-  };
-
-  const mount = async () => {
-    setIsAttaching(true);
-    try {
-      await attachMount({ sessionId, mountId: row.mountId });
-    } catch (error) {
-      void reportError({ title: `Couldn't reopen ${label}`, error, sessionId });
-    } finally {
-      setIsAttaching(false);
-    }
-  };
-
-  const startTurnsHere = async () => {
-    try {
-      await setSessionActiveMount({ sessionId, mountId: row.mountId });
-    } catch (error) {
-      void reportError({ title: `Couldn't start new turns in ${label}`, error, sessionId });
-    }
-  };
-
-  const menuItems: ReadonlyArray<OverflowMenuItem> = hasTools
-    ? [
-        ...(canStartTurnsHere
-          ? [
-              {
-                kind: 'item',
-                key: 'start-turns',
-                label: 'Start new turns here',
-                onClick: () => void startTurnsHere(),
-              } satisfies OverflowMenuItem,
-            ]
-          : []),
-        {
-          kind: 'item',
-          key: 'terminal',
-          label: 'Open terminal',
-          icon: CONCEPT_ICONS.terminal,
-          onClick: () => openLens({ lens: 'terminal' }),
-        },
-        {
-          kind: 'item',
-          key: 'scripts',
-          label: 'Open scripts',
-          icon: CONCEPT_ICONS.scripts,
-          onClick: () => openLens({ lens: 'scripts' }),
-        },
-        ...editorItems,
-      ]
-    : [];
+  const target = useMemo<WorktreeActionTarget>(
+    () => ({
+      kind: 'worktree',
+      sessionId,
+      mountId: row.mountId,
+      status: worktreeStatus,
+      remoteKind,
+    }),
+    [remoteKind, row.mountId, sessionId, worktreeStatus],
+  );
+  const controls = useActionControls({ target });
+  const menuTrigger = useObjectMenuTrigger({ target });
+  const switchBranch =
+    controls.actions.find((action) => action.id === 'worktree.switchBranch') ?? null;
 
   return (
     <li
       data-testid="project-mount-row"
       aria-label={label}
       className="group/mount-row col-span-full grid grid-cols-subgrid"
+      onContextMenu={menuTrigger.onContextMenu}
+      onKeyDown={menuTrigger.onKeyDown}
     >
       <div
         data-testid="project-mount-cells"
@@ -199,7 +105,8 @@ export const ProjectMountRow = ({
               sessionId={sessionId}
               mountId={row.mountId}
               branch={row.branch}
-              canSwitch={isRepo && row.isAttached}
+              canSwitch={switchBranch !== null}
+              blockedReason={switchBranch?.blockedReason ?? null}
             />
           )}
           {operation === null ? null : (
@@ -241,14 +148,12 @@ export const ProjectMountRow = ({
           <div className={cn(CELL, 'justify-center', NARROW_HIDDEN)}>
             {isStatusPending ? (
               <span data-testid="project-distance-skeleton" className="shrink-0">
-                <Skeleton className="size-7 rounded-md" />
+                <Skeleton className="h-5 w-20 rounded-md" />
               </span>
             ) : (
-              <ProjectSyncControl
-                sessionId={sessionId}
-                projectId={row.projectId}
-                mountId={row.mountId}
+              <MainDistanceLabel
                 status={worktreeStatus}
+                isRebasing={controls.pendingId === 'worktree.rebase'}
               />
             )}
           </div>
@@ -288,87 +193,14 @@ export const ProjectMountRow = ({
           )}
         </div>
         <div className={CELL}>
-          {row.isAttached && row.isCompleted && isRepo && worktreePath !== null ? (
-            <RemoveWorktreeAction sessionId={sessionId} row={row} label={label} />
-          ) : row.isAttached ? (
-            <MountRequestAction
-              sessionId={sessionId}
-              row={row}
-              label={label}
-              hasChanges={changes}
-              remoteKind={remoteKind}
-            />
-          ) : (
-            <button
-              type="button"
-              disabled={isAttaching}
-              aria-label={`Reopen ${label}`}
-              onClick={() => void mount()}
-              className={cn(
-                'shrink-0 rounded-md border border-border-soft px-2 py-0.5 text-secondary text-muted-foreground hover:bg-hover hover:text-foreground',
-                'disabled:cursor-not-allowed disabled:opacity-50',
-              )}
-            >
-              {isAttaching ? 'Reopening…' : 'Reopen'}
-            </button>
-          )}
+          <WorktreeRowAction sessionId={sessionId} row={row} label={label} controls={controls} />
         </div>
         <div className={cn(CELL, 'justify-end')}>
-          {!hasTools ? null : (
-            <>
-              <span
-                className={cn(
-                  'relative inline-flex shrink-0',
-                  activity.liveTerminals > 0 ? 'opacity-100' : UTILITY_REVEAL,
-                )}
-              >
-                <IconButton
-                  variant="ghost"
-                  icon={CONCEPT_ICONS.terminal}
-                  iconSize={ICON_SIZE.row}
-                  label={`Open terminal for ${label}`}
-                  tooltip={`Open terminal in ${label}${runningSuffix({ count: activity.liveTerminals })}`}
-                  onClick={() => openLens({ lens: 'terminal' })}
-                  className="size-7"
-                />
-                {activity.liveTerminals > 0 ? (
-                  <span data-testid="terminal-activity-dot" aria-hidden className={ACTIVITY_DOT} />
-                ) : null}
-              </span>
-              <span
-                className={cn(
-                  'relative inline-flex shrink-0',
-                  activity.runningScripts > 0 ? 'opacity-100' : UTILITY_REVEAL,
-                )}
-              >
-                <IconButton
-                  variant="ghost"
-                  icon={CONCEPT_ICONS.scripts}
-                  iconSize={ICON_SIZE.row}
-                  label={`Open scripts for ${label}`}
-                  tooltip={`Open scripts for ${label}${runningSuffix({ count: activity.runningScripts })}`}
-                  onClick={() => openLens({ lens: 'scripts' })}
-                  className="size-7"
-                />
-                {activity.runningScripts > 0 ? (
-                  <span data-testid="scripts-activity-dot" aria-hidden className={ACTIVITY_DOT} />
-                ) : null}
-              </span>
-            </>
-          )}
-          <MountActionsMenu
-            sessionId={sessionId}
-            projectId={row.projectId}
-            workspaceId={workspaceId ?? undefined}
-            projectName={row.projectName}
-            menuLabel={`${label} actions`}
-            worktreePath={worktreePath ?? row.lastWorktreePath ?? ''}
-            worktreeStatus={worktreeStatus}
-            mountId={row.mountId}
-            isMountAttached={row.isAttached}
-            branch={row.branch}
-            canDetachProject={false}
-            items={menuItems}
+          <ObjectOverflowMenu
+            target={target}
+            label={`${label} actions`}
+            trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
+            triggerClassName="flex size-7 items-center justify-center"
           />
         </div>
       </div>
@@ -380,7 +212,7 @@ export const ProjectMountRow = ({
             worktreePath={worktreePath}
             baseBranch={row.baseBranch}
             status={worktreeStatus}
-            onOpenTerminal={() => openLens({ lens: 'terminal' })}
+            onOpenTerminal={() => controls.trigger({ actionId: 'worktree.openTerminal' })}
           />
         </div>
       ) : null}
