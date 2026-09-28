@@ -1,6 +1,6 @@
 import { InlineConfirm } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { ActionConfirm } from '../../interimActions/types';
+import type { ActionConfirm } from '../../../actions/types';
 import type { PaletteEntry } from '../../types';
 
 type Props = {

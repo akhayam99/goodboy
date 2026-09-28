@@ -11,13 +11,20 @@ import { ChevronRight } from 'lucide-react';
 import { Divider, EmptyState, Eyebrow, ScrollFade } from '@goodboy/ui';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { parseQuery } from '../../../quick-actions/grammar';
-import { buildActionList, buildCommandList, flattenRows, type CommandRow } from '../../commandList';
+import {
+  buildActionList,
+  buildChoiceList,
+  buildCommandList,
+  flattenRows,
+  type CommandRow,
+} from '../../commandList';
+import { choiceEntries } from '../../sources/choiceEntries';
 import { readFrecency, recordPaletteUse } from '../../frecencyStorage';
 import { useCommandEntries } from '../../hooks/useCommandEntries';
-import { runObjectAction } from '../../interimActions/registry';
-import type { ObjectTarget } from '../../interimActions/types';
-import { useActionEnv } from '../../interimActions/useActionEnv';
-import { useObjectActions } from '../../interimActions/useObjectActions';
+import { runObjectAction } from '../../../actions/registry';
+import type { ObjectTarget, ResolvedAction } from '../../../actions/types';
+import { useActionEnv } from '../../../actions/useActionEnv';
+import { useObjectActions } from '../../../actions/useObjectActions';
 import type { PaletteModeProps } from '../../paletteModeTypes';
 import { verbEntries, type VerbSelectParams } from '../../sources/verbEntries';
 import type { PaletteEntry } from '../../types';
@@ -33,6 +40,7 @@ type Level = {
   readonly target: ObjectTarget;
   readonly title: string;
   readonly key: string;
+  readonly choicesOf: ResolvedAction | null;
 };
 
 type RunVerbParams = {
@@ -60,7 +68,7 @@ export const CommandsMode = ({
   onClose,
   modeSwitch,
 }: PaletteModeProps) => {
-  const env = useActionEnv();
+  const env = useActionEnv({ origin: 'palette' });
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const listboxId = useId();
@@ -115,6 +123,25 @@ export const CommandsMode = ({
     [level, levelActions.actions, levelActions.noun, runVerb],
   );
 
+  const levelChoices = useMemo(
+    () =>
+      level === null || level.choicesOf === null
+        ? []
+        : choiceEntries({
+            target: level.target,
+            action: level.choicesOf,
+            select: ({ choice }) => {
+              void runObjectAction({
+                target: level.target,
+                actionId: level.choicesOf?.id ?? '',
+                env,
+                choice,
+              });
+            },
+          }),
+    [level, env],
+  );
+
   const pool = useMemo(() => {
     const verbLabels = new Set(scopeVerbs.map((entry) => entry.label));
     const isSessionScope = scopeTarget?.kind === 'session';
@@ -137,8 +164,16 @@ export const CommandsMode = ({
             frecency,
             now,
           })
-        : buildActionList({ query: filter, verbs: levelVerbs, frecency, now }),
-    [level, query, pool, scopeVerbs, scopeInfo, frecency, now, filter, levelVerbs],
+        : level.choicesOf !== null
+          ? buildChoiceList({
+              query: filter,
+              title: level.choicesOf.label,
+              choices: levelChoices,
+              frecency,
+              now,
+            })
+          : buildActionList({ query: filter, verbs: levelVerbs, frecency, now }),
+    [level, query, pool, scopeVerbs, scopeInfo, frecency, now, filter, levelVerbs, levelChoices],
   );
   const rows = useMemo(() => flattenRows(sections), [sections]);
   const selectedIndex = Math.max(
@@ -185,6 +220,20 @@ export const CommandsMode = ({
       setConfirming(entry);
       return;
     }
+    if (
+      entry.action != null &&
+      (entry.action.choices?.length ?? 0) > 0 &&
+      entry.target !== undefined
+    ) {
+      setLevel({
+        target: entry.target,
+        title: entry.label,
+        key: level?.key ?? scopeInfo?.key ?? entry.key,
+        choicesOf: entry.action,
+      });
+      setFilter('');
+      return;
+    }
     finish(entry);
   };
 
@@ -192,7 +241,7 @@ export const CommandsMode = ({
     if (entry.target === undefined || entry.kind === 'verb') {
       return;
     }
-    setLevel({ target: entry.target, title: entry.label, key: entry.key });
+    setLevel({ target: entry.target, title: entry.label, key: entry.key, choicesOf: null });
     setFilter('');
   };
 

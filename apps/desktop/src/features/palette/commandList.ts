@@ -1,5 +1,5 @@
 import { parseQuery } from '../quick-actions/grammar';
-import { ACTION_GROUPS, type ActionGroup } from './interimActions/types';
+import { ACTION_GROUPS, type ActionGroup } from '../actions/types';
 import { recentKeys, type FrecencyState } from './frecency';
 import { rankCandidates } from './rank';
 import type { PaletteEntry, PaletteKind } from './types';
@@ -129,6 +129,25 @@ export const buildActionList = ({
     rows: verbs.filter((entry) => entry.action?.group === group && isRunnable(entry)).map(plain),
   })).filter((section) => section.rows.length > 0);
 };
+
+type ChoicesParams = {
+  readonly query: string;
+  readonly title: string;
+  readonly choices: ReadonlyArray<PaletteEntry>;
+  readonly frecency: FrecencyState;
+  readonly now: number;
+};
+
+export const buildChoiceList = ({
+  query,
+  title,
+  choices,
+  frecency,
+  now,
+}: ChoicesParams): ReadonlyArray<CommandSection> =>
+  query.trim().length > 0
+    ? [{ title: null, rows: rankCandidates({ items: choices, query, frecency, now }) }]
+    : [{ title, rows: choices.map(plain) }];
 
 export const flattenRows = (sections: ReadonlyArray<CommandSection>): ReadonlyArray<CommandRow> =>
   sections.flatMap((section) => section.rows);

@@ -1,4 +1,4 @@
-import type { ObjectTarget, ResolvedAction } from '../interimActions/types';
+import type { ObjectTarget, ResolvedAction } from '../../actions/types';
 import type { PaletteEntry } from '../types';
 
 export type VerbSelectParams = {
@@ -16,7 +16,7 @@ type Params = {
 export const verbKey = (actionId: string): string => `verb:${actionId}`;
 
 export const verbLabel = ({ action }: VerbSelectParams): string =>
-  action.group === 'open' && !action.label.startsWith('Open')
+  action.group === 'open' && !action.label.includes(' ') && action.label !== 'Open'
     ? `Open ${action.label}`
     : action.label;
 

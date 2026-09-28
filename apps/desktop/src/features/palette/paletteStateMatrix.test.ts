@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, Session, SessionId } from '@goodboy/types';
 import { buildCommandList, flattenRows } from './commandList';
 import { EMPTY_FRECENCY } from './frecency';
-import { AGENT_KIND, type AgentFacts } from './interimActions/agentKind';
-import { resolveActions } from './interimActions/registry';
-import { SESSION_KIND, type SessionFacts } from './interimActions/sessionKind';
-import type { ObjectTarget } from './interimActions/types';
+import { AGENT_KIND, type AgentFacts } from '../actions/kinds/agent';
+import { resolveActions } from '../actions/resolveActions';
+import { SESSION_KIND, type SessionFacts } from '../actions/kinds/session';
+import type { ObjectTarget } from '../actions/types';
 import { verbEntries } from './sources/verbEntries';
 
 const NOW = Date.parse('2026-09-28T09:00:00Z');
@@ -28,9 +28,18 @@ const AGENT: AgentFacts = {
   agent: { id: AGENT_ID, name: 'Implementer' } as Agent,
   sessionId: SESSION_ID,
   name: 'Implementer',
+  status: 'completed',
+  isTurnLive: false,
   isTurnRunning: false,
+  hasOpenQuestion: false,
   isClosable: false,
   isClosedByUser: false,
+  isWorkflowStep: false,
+  hasMount: true,
+  lastReply: null,
+  provider: 'anthropic',
+  modelKey: null,
+  hiddenModels: null,
 };
 
 type ViewParams<F> = {
@@ -92,6 +101,9 @@ describe('palette verbs follow the session state', () => {
       'Open Diff',
       'Open Terminal',
       'Open in editor',
+      'Rename',
+      'Start agent',
+      'Link an issue',
       'Copy title',
       'Copy branch name',
       'Copy PR link',
@@ -106,6 +118,9 @@ describe('palette verbs follow the session state', () => {
     expect(sessionView({ facts, query: '' })).toEqual([
       'Open Review',
       'Open Terminal',
+      'Rename',
+      'Start agent',
+      'Link an issue',
       'Copy title',
       'Archive',
       'Delete',
@@ -128,7 +143,7 @@ describe('palette verbs follow the session state', () => {
       'Copy PR link',
       'Delete',
     ]);
-    for (const query of ['archive', 'review', 'diff', 'terminal', 'editor']) {
+    for (const query of ['archive', 'review', 'diff', 'terminal', 'editor', 'rename', 'start']) {
       expect(sessionView({ facts, query })).toEqual([]);
     }
   });
@@ -150,6 +165,14 @@ describe('palette verbs follow the agent state', () => {
     expect(halted).not.toContain('Reopen');
     expect(closed).toContain('Reopen');
     expect(closed).not.toContain('Close');
+  });
+
+  it('stops offering Message and Change model once the agent is closed by hand', () => {
+    expect(agentView({ facts: AGENT, query: '' })).toEqual(
+      expect.arrayContaining(['Message this agent', 'Change model']),
+    );
+    const closed = agentView({ facts: { ...AGENT, isClosedByUser: true }, query: 'message' });
+    expect(closed).toEqual([]);
   });
 
   it('never offers Close to an agent that is running or already closed', () => {

@@ -264,4 +264,18 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     expect(screen.queryByRole('option', { name: 'Interrupt' })).toBeNull();
     expect(running.onClose).not.toHaveBeenCalled();
   });
+
+  it('opens the choices of a verb with a submenu, like Change model', () => {
+    const setAgentConfig = vi.fn(async () => undefined);
+    useAppStore.setState({ setAgentConfig } as never);
+    const { input } = openIn(PAYOUT, IMPLEMENTER);
+    type(input, 'change model');
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(screen.getByPlaceholderText('Filter actions…')).toBeDefined();
+    expect(optionNames().length).toBeGreaterThan(0);
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(setAgentConfig).toHaveBeenCalledOnce();
+  });
 });
