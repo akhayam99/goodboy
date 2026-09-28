@@ -23,6 +23,15 @@
 
 .provider svg {
   flex: none;
+  color: var(--brand-ink);
+}
+
+.provider svg[data-brand='anthropic'] {
+  color: #d97757;
+}
+
+.provider svg[data-brand='openrouter'] {
+  color: #94a3b8;
 }
 
 .providerBelt {

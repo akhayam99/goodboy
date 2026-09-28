@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import PROVIDER_SOURCES from './brandIcons.source.json';
 
 const PROVIDER_IDS = [
@@ -52,23 +53,53 @@ const pathOf = (brand: BrandId): string => {
   return TOOL_PATH[brand];
 };
 
+const GEMINI_STOPS = [
+  { offset: 0, color: '#4893FC' },
+  { offset: 0.27, color: '#4893FC' },
+  { offset: 0.777, color: '#969DFF' },
+  { offset: 1, color: '#BD99FE' },
+] as const;
+
 type Props = {
   readonly brand: BrandId;
   readonly size?: number;
   readonly className?: string;
+  readonly isBrandColored?: boolean;
 };
 
-export const BrandMark = ({ brand, size = 16, className }: Props) => (
-  <svg
-    className={['bicon', className].filter(Boolean).join(' ')}
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    aria-hidden="true"
-    focusable="false"
-    data-brand={isProviderId(brand) ? brand : undefined}
-  >
-    <path d={pathOf(brand)} />
-  </svg>
-);
+export const BrandMark = ({ brand, size = 16, className, isBrandColored = false }: Props) => {
+  const gradientId = `brand-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  const isGradient = isBrandColored && brand === 'gemini';
+
+  return (
+    <svg
+      className={['bicon', className].filter(Boolean).join(' ')}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={isGradient ? `url(#${gradientId})` : 'currentColor'}
+      aria-hidden="true"
+      focusable="false"
+      data-brand={isProviderId(brand) ? brand : undefined}
+      data-brand-color={isBrandColored ? '' : undefined}
+    >
+      {isGradient ? (
+        <defs>
+          <linearGradient
+            id={gradientId}
+            x1="6.81"
+            y1="16.03"
+            x2="19.26"
+            y2="5.54"
+            gradientUnits="userSpaceOnUse"
+          >
+            {GEMINI_STOPS.map((stop) => (
+              <stop key={stop.offset} offset={stop.offset} stopColor={stop.color} />
+            ))}
+          </linearGradient>
+        </defs>
+      ) : null}
+      <path d={pathOf(brand)} />
+    </svg>
+  );
+};

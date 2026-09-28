@@ -5,7 +5,7 @@ const BeltCopy = () => (
   <div className="beltCopy">
     {PROVIDERS.map((provider) => (
       <span key={provider.id} className="provider">
-        <BrandMark brand={provider.id} size={16} />
+        <BrandMark brand={provider.id} size={16} isBrandColored />
         {provider.name}
       </span>
     ))}
@@ -19,7 +19,7 @@ export const Providers = () => (
         <li className="providerLead">Works with</li>
         {PROVIDERS.map((provider) => (
           <li key={provider.id} className="provider">
-            <BrandMark brand={provider.id} size={16} />
+            <BrandMark brand={provider.id} size={16} isBrandColored />
             {provider.name}
           </li>
         ))}
