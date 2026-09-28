@@ -6,8 +6,8 @@ export const loadChats =
   (set: SetFn, get: GetFn) =>
   async ({ workspaceId }: LoadChatsParams): Promise<void> => {
     if (!get().hasSettledChatStreams) {
-      set({ hasSettledChatStreams: true });
       await activeChatBackend.settleStreaming({ now: new Date().toISOString() as IsoDateTime });
+      set({ hasSettledChatStreams: true });
     }
     const chats = await activeChatBackend.listChats({ workspaceId });
     set((state) => ({ chatsByWorkspace: { ...state.chatsByWorkspace, [workspaceId]: chats } }));

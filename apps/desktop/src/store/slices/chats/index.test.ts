@@ -127,6 +127,28 @@ beforeEach(() => {
 });
 
 describe('chats slice', () => {
+  it('settles streaming replies once, and tries again when the first settle fails', async () => {
+    const backend = holder.backend;
+    if (backend === null) {
+      throw new Error('no backend');
+    }
+    const settleStreaming = vi
+      .fn<ChatBackend['settleStreaming']>()
+      .mockRejectedValueOnce(new Error('database is locked'))
+      .mockResolvedValue(0);
+    holder.backend = { ...backend, settleStreaming };
+    const { slice, read } = harness({});
+
+    await expect(slice.loadChats({ workspaceId: WORKSPACE })).rejects.toThrow('database is locked');
+    expect(read().hasSettledChatStreams).toBe(false);
+
+    await slice.loadChats({ workspaceId: WORKSPACE });
+    await slice.loadChats({ workspaceId: WORKSPACE });
+
+    expect(settleStreaming).toHaveBeenCalledTimes(2);
+    expect(read().hasSettledChatStreams).toBe(true);
+  });
+
   it('creates a chat on top of the list with a placeholder title', async () => {
     const { slice, read } = harness({});
 

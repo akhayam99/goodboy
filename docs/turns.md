@@ -552,7 +552,8 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   parent folder, and never uses `/`, the home folder or a parent of it.
 - **Its own channel.** Output streams as `chat_event` with the chat id, never
   as `turn_event`, so no session sees it. There is no reload backlog: a reply
-  still streaming when the window closes is marked stopped at the next load.
+  still streaming when the window closes is marked stopped at the next load,
+  and a load whose pass fails leaves it to the next one.
   A reply is done only when the stream reports no failure and the CLI exits
   with 0. A failure event or another exit keeps the partial text and marks
   the reply failed, with the error under it.
