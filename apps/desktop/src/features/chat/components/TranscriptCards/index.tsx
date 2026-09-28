@@ -63,6 +63,8 @@ const TranscriptCardImpl = ({
           model={item.model}
           sentVia={item.sentVia}
           workingDir={workingDir}
+          sessionId={sessionId}
+          agentId={agentId}
         />
       );
     case 'handoff':

@@ -58,7 +58,10 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../../store', () => ({
-  useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (store: typeof state) => T) => selector(state), {
+    getState: () => state,
+    subscribe: () => () => undefined,
+  }),
 }));
 
 vi.mock('zustand/react/shallow', () => ({ useShallow: <T,>(selector: T) => selector }));
@@ -70,6 +73,29 @@ vi.mock('../../../../../app/components/Toast', () => ({
 vi.mock('../../../../worktree/worktree', () => ({ worktreeDetachAssessment }));
 
 import { MountActionsMenu } from './MountActionsMenu';
+import type { MountActionTarget } from '../../../../actions/types';
+import type { MountFacts } from '../../../../actions/kinds/mount';
+
+const mountTarget = (overrides: Partial<MountFacts> = {}): MountActionTarget => ({
+  kind: 'mount',
+  facts: {
+    mountKey: 'mount:mount-1',
+    noun: 'worktree',
+    worktreePath: '/worktrees/api',
+    branch: 'ak/feat',
+    hasTools: false,
+    canStartTurnsHere: false,
+    hasMount: true,
+    isAttached: true,
+    canDetach: true,
+    editors: [],
+    onTerminal: () => undefined,
+    onScripts: () => undefined,
+    onStartTurnsHere: () => undefined,
+    onOpenEditor: () => undefined,
+    ...overrides,
+  },
+});
 
 const typedString = <Value extends string>({ value }: { readonly value: string }): Value =>
   JSON.parse(JSON.stringify(value));
@@ -112,6 +138,7 @@ const renderMenu = () =>
       worktreePath="/worktrees/api"
       worktreeStatus={null}
       branch="ak/feat"
+      target={mountTarget({ mountKey: 'project:project-1', hasMount: false })}
     />,
   );
 
@@ -128,7 +155,7 @@ const renderRowMenu = () =>
       branch="ak/feat"
       mountId={typedString<MountId>({ value: 'mount-1' })}
       isMountAttached={false}
-      canDetachProject={false}
+      target={mountTarget({ canDetach: false, isAttached: false })}
     />,
   );
 
@@ -766,19 +793,24 @@ describe('MountActionsMenu', () => {
         branch="ak/feat"
         mountId={typedString<MountId>({ value: 'mount-1' })}
         isMountAttached
-        canDetachProject={false}
-        items={[
-          { kind: 'item', key: 'terminal', label: 'Open terminal', onClick: onTerminal },
-          { kind: 'item', key: 'scripts', label: 'Open scripts', onClick: vi.fn() },
-        ]}
+        target={mountTarget({ canDetach: false, hasTools: true, onTerminal })}
       />,
     );
 
     const trigger = screen.getByRole('button', { name: 'api on ak/feat actions' });
     expect(trigger.className).not.toContain('opacity-0');
     fireEvent.click(trigger);
-    const names = screen.getAllByRole('menuitem').map((item) => item.textContent);
-    expect(names).toEqual(['Open terminal', 'Open scripts', 'Close worktree']);
+    const names = screen
+      .getAllByRole('menuitem')
+      .map((item) => item.getAttribute('data-menu-label'));
+    expect(names).toEqual([
+      'Open terminal',
+      'Open scripts',
+      'Open in editor',
+      'Copy path',
+      'Copy branch name',
+      'Close worktree',
+    ]);
 
     fireEvent.click(screen.getByRole('menuitem', { name: 'Open terminal' }));
     expect(onTerminal).toHaveBeenCalledOnce();

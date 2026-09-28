@@ -969,6 +969,299 @@ describe('inbox record menu in every state', () => {
   });
 });
 
+const noop = () => undefined;
+
+const commitTarget = (older: number): ObjectTarget => ({
+  kind: 'commit',
+  facts: {
+    sha: 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1',
+    shortSha: 'b2c3d4e',
+    subject: 'Keep trailing-comma rows in the ledger-core importer',
+    older: Array.from({ length: older }, (_, index) => ({
+      sha: `a${index}`,
+      shortSha: `a${index}`,
+      subject: 'Add a failing importer fixture',
+      author: 'Robin Vale',
+      timestamp: 1_787_890_000,
+      pushed: false,
+      parentSha: null,
+    })),
+    onPick: noop,
+    onReword: noop,
+    onSquash: noop,
+    onFold: noop,
+    onDrop: noop,
+    onMove: noop,
+  },
+});
+
+const mountTarget = (fields: {
+  readonly hasTools: boolean;
+  readonly isAttached: boolean;
+  readonly editors: number;
+  readonly canStartTurnsHere?: boolean;
+}): ObjectTarget => ({
+  kind: 'mount',
+  facts: {
+    mountKey: 'mount:ledger-core',
+    noun: 'worktree',
+    worktreePath: fields.hasTools ? '/work/ledger-core' : null,
+    branch: 'hl/payout-export',
+    hasTools: fields.hasTools,
+    canStartTurnsHere: fields.canStartTurnsHere ?? false,
+    hasMount: true,
+    isAttached: fields.isAttached,
+    canDetach: false,
+    editors: Array.from({ length: fields.editors }, () => ({ binary: 'code', label: 'VS Code' })),
+    onTerminal: noop,
+    onScripts: noop,
+    onStartTurnsHere: noop,
+    onOpenEditor: noop,
+  },
+});
+
+const worktreeTarget = (fields: {
+  readonly isInUse: boolean;
+  readonly isKept: boolean;
+  readonly removeIntent: 'force' | 'untracked' | null;
+}): ObjectTarget => ({
+  kind: 'worktree',
+  facts: {
+    path: '/work/.goodboy/worktrees/notify-relay-backoff',
+    ...fields,
+    onReveal: noop,
+    onEditor: noop,
+    onKeep: noop,
+    onStopKeeping: noop,
+    onRemove: noop,
+  },
+});
+
+const scriptTarget = (fields: {
+  readonly isSaved: boolean;
+  readonly isRunning: boolean;
+  readonly blocked?: string | null;
+}): ObjectTarget => ({
+  kind: 'script',
+  facts: {
+    name: 'dev',
+    command: 'pnpm --filter @harborline/ledger-core run dev',
+    isRunning: fields.isRunning,
+    runBlockedReason: fields.blocked ?? null,
+    onShowOutput: noop,
+    onRun: noop,
+    onStop: noop,
+    onEdit: fields.isSaved ? noop : null,
+    onDuplicate: fields.isSaved ? noop : null,
+    onSaveAs: fields.isSaved ? null : noop,
+    onDelete: fields.isSaved ? async () => undefined : null,
+  },
+});
+
+const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<string>]> = [
+  [
+    'commit with older commits',
+    commitTarget(1),
+    [
+      'commit.pick',
+      'commit.reword',
+      'commit.squash',
+      'commit.fold',
+      'commit.moveUp',
+      'commit.moveDown',
+      'commit.copySha',
+      'commit.copySubject',
+      'commit.drop',
+    ],
+  ],
+  [
+    'oldest commit',
+    commitTarget(0),
+    [
+      'commit.pick',
+      'commit.reword',
+      'commit.squash (No older commit below this one)',
+      'commit.fold (No older commit below this one)',
+      'commit.moveUp',
+      'commit.moveDown',
+      'commit.copySha',
+      'commit.copySubject',
+      'commit.drop',
+    ],
+  ],
+  [
+    'diff file in the Diff lens',
+    {
+      kind: 'diffFile',
+      facts: { path: 'src/importer.ts', onOpenInEditor: noop, onCommentOnFile: noop },
+    },
+    ['diffFile.openInEditor', 'diffFile.comment', 'diffFile.copyPath'],
+  ],
+  [
+    'diff file in the drawer',
+    {
+      kind: 'diffFile',
+      facts: { path: 'src/importer.ts', onOpenInEditor: null, onCommentOnFile: null },
+    },
+    ['diffFile.copyPath'],
+  ],
+  [
+    'mount open, another mount takes new turns',
+    mountTarget({ hasTools: true, isAttached: true, editors: 1, canStartTurnsHere: true }),
+    [
+      'mount.terminal',
+      'mount.scripts',
+      'mount.editor',
+      'mount.startTurns',
+      'mount.copyPath',
+      'mount.copyBranch',
+      'mount.close',
+    ],
+  ],
+  [
+    'mount open, no editor installed',
+    mountTarget({ hasTools: true, isAttached: true, editors: 0 }),
+    [
+      'mount.terminal',
+      'mount.scripts',
+      'mount.editor (No editor detected)',
+      'mount.copyPath',
+      'mount.copyBranch',
+      'mount.close',
+    ],
+  ],
+  [
+    'mount closed',
+    mountTarget({ hasTools: false, isAttached: false, editors: 1 }),
+    ['mount.copyBranch', 'mount.remove'],
+  ],
+  [
+    'worktree clean, idle',
+    worktreeTarget({ isInUse: false, isKept: false, removeIntent: null }),
+    [
+      'worktree.reveal',
+      'worktree.editor',
+      'worktree.keepDays',
+      'worktree.keep',
+      'worktree.copyPath',
+    ],
+  ],
+  [
+    'worktree dirty',
+    worktreeTarget({ isInUse: false, isKept: false, removeIntent: 'force' }),
+    [
+      'worktree.reveal',
+      'worktree.editor',
+      'worktree.keepDays',
+      'worktree.keep',
+      'worktree.copyPath',
+      'worktree.remove',
+    ],
+  ],
+  [
+    'worktree kept, not tracked by git',
+    worktreeTarget({ isInUse: false, isKept: true, removeIntent: 'untracked' }),
+    [
+      'worktree.reveal',
+      'worktree.editor',
+      'worktree.stopKeeping',
+      'worktree.copyPath',
+      'worktree.remove',
+    ],
+  ],
+  [
+    'worktree in use by a session',
+    worktreeTarget({ isInUse: true, isKept: false, removeIntent: null }),
+    ['worktree.reveal', 'worktree.editor', 'worktree.copyPath'],
+  ],
+  [
+    'saved script, idle',
+    scriptTarget({ isSaved: true, isRunning: false }),
+    [
+      'script.output',
+      'script.run',
+      'script.edit',
+      'script.duplicate',
+      'script.copyCommand',
+      'script.delete',
+    ],
+  ],
+  [
+    'package script, running',
+    scriptTarget({ isSaved: false, isRunning: true }),
+    ['script.output', 'script.stop', 'script.saveAs', 'script.copyCommand'],
+  ],
+  [
+    'package script while its project prepares',
+    scriptTarget({ isSaved: false, isRunning: false, blocked: 'ledger-core is still preparing' }),
+    [
+      'script.output',
+      'script.run (ledger-core is still preparing)',
+      'script.saveAs',
+      'script.copyCommand',
+    ],
+  ],
+];
+
+describe('git surface menus in every state', () => {
+  it.each(GIT_STATES)('%s', (_state, target, expected) => {
+    expect(matrixOf(target)).toEqual(expected);
+  });
+
+  it('folds into the chosen older commit from the submenu', async () => {
+    const onFold = vi.fn();
+    const target = commitTarget(2);
+    if (target.kind !== 'commit') {
+      throw new Error('expected a commit');
+    }
+    await run({ ...target, facts: { ...target.facts, onFold } }, 'commit.fold', 'a1');
+    expect(onFold).toHaveBeenCalledWith('a1');
+  });
+});
+
+describe('transcript message menu', () => {
+  const message = (fields: {
+    readonly agentId: string | null;
+    readonly text: string;
+  }): ObjectTarget => ({
+    kind: 'message',
+    text: fields.text,
+    sessionId: SESSION,
+    agentId: fields.agentId as never,
+  });
+
+  it('offers open, quote and both copies on a message of a live agent', () => {
+    seed(standalone({ status: 'completed' }));
+    expect(
+      matrixOf(message({ agentId: AGENT, text: 'The **ledger-core** join is unindexed.' })),
+    ).toEqual(['message.openAgent', 'message.quote', 'message.copy', 'message.copyMarkdown']);
+  });
+
+  it('offers only the copies when no agent can take a reply', () => {
+    seed({});
+    expect(matrixOf(message({ agentId: null, text: 'Northwind asked for half even.' }))).toEqual([
+      'message.copy',
+      'message.copyMarkdown',
+    ]);
+  });
+
+  it('copies plain text or the markdown source, and quotes into the draft', async () => {
+    seed(standalone({ status: 'completed' }));
+    copies.length = 0;
+    const target = message({ agentId: AGENT, text: 'The **ledger-core** join is `unindexed`.' });
+    await run(target, 'message.copy');
+    await run(target, 'message.copyMarkdown');
+    expect(copies).toEqual([
+      'The ledger-core join is unindexed.',
+      'The **ledger-core** join is `unindexed`.',
+    ]);
+    await run(target, 'message.quote');
+    expect(useAppStore.getState().agentDraft[AGENT]).toBe(
+      '> The **ledger-core** join is `unindexed`.\n\n',
+    );
+  });
+});
+
 const COMMENT_OPEN = [
   'reviewComment.openInDiff',
   'reviewComment.transcript',

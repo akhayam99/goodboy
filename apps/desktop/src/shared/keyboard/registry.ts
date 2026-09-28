@@ -150,6 +150,12 @@ export const SHORTCUTS = {
     plane: 'app',
     group: 'session',
   },
+  'menu.open': {
+    combo: 'shift+F10',
+    label: 'Open the menu of the focused row',
+    plane: 'session',
+    group: 'general',
+  },
   'activity.openRun': {
     combo: 'shift+Enter',
     label: 'Open the workflow of an activity row',

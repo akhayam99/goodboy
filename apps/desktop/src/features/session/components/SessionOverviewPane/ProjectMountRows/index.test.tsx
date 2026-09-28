@@ -73,7 +73,6 @@ vi.mock('./RemoveWorktreeAction', () => ({ RemoveWorktreeAction: () => null }));
 vi.mock('./NewBranchMountAction', () => ({
   NewBranchMountAction: () => <button>New worktree</button>,
 }));
-vi.mock('../useEditorMenuItems', () => ({ useEditorMenuItems: () => [] }));
 vi.mock('../MountCleanupProposals', () => ({
   MountCleanupProposals: () => null,
 }));

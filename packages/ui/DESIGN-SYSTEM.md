@@ -629,7 +629,39 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 `ListboxList` and `ListboxOptionRow` are the headless list and row for a list
 that lives inside another popover (chips input suggestions, a preset list with
 its own actions), so every value list draws the same row. Menus of actions stay
-on `MenuItems`, and inline choice rows stay inline.
+on `MenuList` (object menus) or `MenuItems` (pickers and page menus), and inline
+choice rows stay inline.
+
+## Menus
+
+`MenuList` is the one body for a menu of actions on an object; `ContextMenu`
+places it at the pointer, and an overflow trigger places it in an
+`AnchoredPopover`. The desktop feeds both from the action registry, so the two
+never differ ([docs/navigation.md](../../docs/navigation.md#context-menus)).
+
+- **Surface**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
+  padding 4, rows at `rounded-sm`, scrolling in a `ScrollFade`. It enters with
+  `animate-popover-in` (120ms, opacity and a 0.98 scale). `ContextMenu` opens
+  at the pointer and flips left or up to stay 8px inside the window
+  (`placeContextMenu`).
+- **Row**: a 16px leading slot for the icon, the label, the shortcut glyphs on
+  the right in `text-secondary text-faint-foreground`, and a chevron when the
+  row opens a submenu. Groups are split by a hairline, never by headers. A
+  blocked row stays in `disabled-foreground` with its reason on a second faint
+  line, is `aria-disabled`, and keeps focus so the reason can be read. Only a
+  verb whose confirm is destructive takes the danger tint.
+- **One submenu level**: `choices` open a second panel beside the row (right,
+  or left when there is no room), with a check on the current value. Nothing
+  nests deeper.
+- **Confirm in place**: a verb with a confirm swaps the menu body for
+  `InlineConfirm surface="plain"`, the menu swap placement below; Escape
+  cancels the confirm first, then closes.
+- **Keyboard and ARIA**: `role="menu"` with `menuitem` rows (`menuitemradio` in
+  a submenu). The first row takes focus on open; the arrows, Home and End move;
+  letters run typeahead; Enter and Space run; ArrowRight opens the submenu and
+  ArrowLeft or Escape leaves it; Tab and a click outside close. Every
+  `AnchoredPopover` with `role="menu"` gets the same arrow keys and typeahead
+  through `useMenuKeys`, so `MenuItems` menus move the same way.
 
 ## Notices
 

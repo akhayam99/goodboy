@@ -145,6 +145,7 @@ vi.mock('../../../../store', () => {
   const useAppStore = <T,>(selector: (storeState: ReturnType<typeof getStoreState>) => T) =>
     selector(getStoreState());
   useAppStore.getState = getStoreState;
+  useAppStore.subscribe = () => () => undefined;
   return { EMPTY_ARRAY: [], useAppStore };
 });
 
@@ -470,8 +471,9 @@ describe('ScriptsPanel', () => {
     fireEvent.click(within(settlement).getByRole('button', { name: `More for ${REPLAY.name}` }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
     expect(state.deleteScript).not.toHaveBeenCalled();
+    const confirm = screen.getByRole('group', { name: `Delete "${REPLAY.name}"?` });
     await act(async () => {
-      fireEvent.click(within(settlement).getByRole('button', { name: 'Delete' }));
+      fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
     });
 
     expect(state.deleteScript).toHaveBeenCalledWith(REPLAY.id, WORKSPACE);

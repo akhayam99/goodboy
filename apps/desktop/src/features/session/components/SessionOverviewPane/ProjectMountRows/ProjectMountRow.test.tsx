@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import type { MountActionTarget } from '../../../../actions/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
@@ -10,7 +11,6 @@ import type {
   WorkspaceId,
   WorktreeStatus,
 } from '@goodboy/types';
-import type { OverflowMenuItem } from '@goodboy/ui';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 
 type RemoveWorktreeProps = {
@@ -19,7 +19,7 @@ type RemoveWorktreeProps = {
 
 type MenuProps = {
   readonly menuLabel?: string;
-  readonly items?: ReadonlyArray<OverflowMenuItem>;
+  readonly target: MountActionTarget;
 };
 
 const { store, remoteKind } = vi.hoisted(() => ({
@@ -67,16 +67,34 @@ vi.mock('./ProjectSyncControl', () => ({
   ProjectSyncControl: () => <span data-testid="sync-control" />,
 }));
 vi.mock('./MountActionsMenu', () => ({
-  MountActionsMenu: ({ menuLabel, items = [] }: MenuProps) => (
+  MountActionsMenu: ({ menuLabel, target }: MenuProps) => (
     <span data-testid="detach-menu">
       <span data-testid="menu-label">{menuLabel}</span>
-      {items.map((item) =>
-        item.kind === 'item' ? (
-          <button key={item.key} type="button" role="menuitem" onClick={item.onClick}>
-            {item.label}
+      {target.facts.hasTools ? (
+        <>
+          <button type="button" role="menuitem" onClick={target.facts.onTerminal}>
+            Open terminal
           </button>
-        ) : null,
-      )}
+          <button type="button" role="menuitem" onClick={target.facts.onScripts}>
+            Open scripts
+          </button>
+          {target.facts.editors.map((editor) => (
+            <button
+              key={editor.binary}
+              type="button"
+              role="menuitem"
+              onClick={() => target.facts.onOpenEditor(editor.binary)}
+            >
+              {editor.label}
+            </button>
+          ))}
+          {target.facts.canStartTurnsHere ? (
+            <button type="button" role="menuitem" onClick={target.facts.onStartTurnsHere}>
+              Start new turns here
+            </button>
+          ) : null}
+        </>
+      ) : null}
     </span>
   ),
 }));

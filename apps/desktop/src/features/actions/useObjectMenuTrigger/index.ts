@@ -2,6 +2,8 @@ import { useCallback, useContext, type KeyboardEvent, type MouseEvent } from 're
 import { keepsNativeMenu } from '../../../app/hooks/useNativeMenuPolicy/keepsNativeMenu';
 import { ObjectMenuContext } from '../components/ObjectMenuProvider/objectMenuContext';
 import type { ObjectTarget } from '../types';
+import { eventMatches } from '../../../shared/keyboard/dispatcher';
+import { SHORTCUTS } from '../../../shared/keyboard/registry';
 
 type Params = {
   readonly target: ObjectTarget | null;

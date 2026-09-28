@@ -1,13 +1,5 @@
-import { useState } from 'react';
-import {
-  Chip,
-  IconButton,
-  Skeleton,
-  Tooltip,
-  cn,
-  tintClasses,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
+import { useEffect, useState } from 'react';
+import { Chip, IconButton, Skeleton, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { SessionId, WorkspaceId, WorktreeStatus } from '@goodboy/types';
 import type { LensKind, MountDiffStat } from '../../../../../store';
 import { useAppStore } from '../../../../../store';
@@ -18,7 +10,9 @@ import {
 } from '../../../../../store/slices/project-mounts/selectors';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
-import { useEditorMenuItems } from '../useEditorMenuItems';
+import { openInEditor } from '../../../../../shared/lib/editor';
+import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
+import type { MountActionTarget } from '../../../../actions/types';
 import { AlsoInChip } from './AlsoInChip';
 import { BranchPresenceLabel } from './BranchPresenceLabel';
 import { MountBranchDecision } from './MountBranchDecision';
@@ -59,6 +53,8 @@ const ACTIVITY_DOT = cn(
   'pointer-events-none absolute -right-0.5 -top-0.5 size-1.5 rounded-full',
   tintClasses('success').dot,
 );
+
+const REFERENCE_EDITORS = new Set(['code', 'cursor']);
 
 type SuffixParams = {
   readonly count: number;
@@ -110,7 +106,15 @@ export const ProjectMountRow = ({
     isPending: isStatusPendingProp,
   });
   const operation = mountOperationView({ status: worktreeStatus, label });
-  const editorItems = useEditorMenuItems({ worktreePath: hasTools ? worktreePath : null });
+  const detectedEditors = useAppStore((state) => state.detectedEditors);
+  const loadDetectedEditors = useAppStore((state) => state.loadDetectedEditors);
+
+  useEffect(() => {
+    if (detectedEditors.length > 0) {
+      return;
+    }
+    void loadDetectedEditors();
+  }, []);
 
   const openLens = ({ lens }: OpenLensParams) => {
     if (lens === 'terminal') {
@@ -144,35 +148,35 @@ export const ProjectMountRow = ({
     }
   };
 
-  const menuItems: ReadonlyArray<OverflowMenuItem> = hasTools
-    ? [
-        ...(canStartTurnsHere
-          ? [
-              {
-                kind: 'item',
-                key: 'start-turns',
-                label: 'Start new turns here',
-                onClick: () => void startTurnsHere(),
-              } satisfies OverflowMenuItem,
-            ]
-          : []),
-        {
-          kind: 'item',
-          key: 'terminal',
-          label: 'Open terminal',
-          icon: CONCEPT_ICONS.terminal,
-          onClick: () => openLens({ lens: 'terminal' }),
-        },
-        {
-          kind: 'item',
-          key: 'scripts',
-          label: 'Open scripts',
-          icon: CONCEPT_ICONS.scripts,
-          onClick: () => openLens({ lens: 'scripts' }),
-        },
-        ...editorItems,
-      ]
-    : [];
+  const mountTarget: MountActionTarget = {
+    kind: 'mount',
+    facts: {
+      mountKey: `mount:${row.mountId}`,
+      noun: row.projectKind === 'folder' ? 'folder' : 'worktree',
+      worktreePath,
+      branch: row.branch,
+      hasTools,
+      canStartTurnsHere,
+      hasMount: true,
+      isAttached: row.isAttached,
+      canDetach: false,
+      editors: detectedEditors
+        .filter((editor) => REFERENCE_EDITORS.has(editor.binary))
+        .map((editor) => ({ binary: editor.binary, label: editor.label })),
+      onTerminal: () => openLens({ lens: 'terminal' }),
+      onScripts: () => openLens({ lens: 'scripts' }),
+      onStartTurnsHere: () => void startTurnsHere(),
+      onOpenEditor: (binary) => {
+        if (worktreePath === null) {
+          return;
+        }
+        openInEditor({ path: worktreePath, editor: binary }).catch((error: unknown) => {
+          void reportError({ title: "Couldn't open the editor", error });
+        });
+      },
+    },
+  };
+  const menu = useObjectMenuTrigger({ target: mountTarget, anchorKey: `mount:${row.mountId}` });
 
   return (
     <li
@@ -182,6 +186,7 @@ export const ProjectMountRow = ({
     >
       <div
         data-testid="project-mount-cells"
+        onContextMenu={menu.onContextMenu}
         className="col-span-full grid min-h-8 grid-cols-subgrid items-center rounded-md px-1 py-1 hover:bg-hover"
       >
         <div className={cn(CELL, 'min-w-0 gap-1')}>
@@ -367,8 +372,7 @@ export const ProjectMountRow = ({
             mountId={row.mountId}
             isMountAttached={row.isAttached}
             branch={row.branch}
-            canDetachProject={false}
-            items={menuItems}
+            target={mountTarget}
           />
         </div>
       </div>

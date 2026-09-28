@@ -1,5 +1,11 @@
 import { Markdown, MetaRow } from '@goodboy/ui';
-import type { MessageAttachment, ProviderId, UserTurnSentVia } from '@goodboy/types';
+import type {
+  AgentId,
+  MessageAttachment,
+  ProviderId,
+  SessionId,
+  UserTurnSentVia,
+} from '@goodboy/types';
 import { PROVIDER_BRAND } from '../../../providers/components/provider-brand';
 import { modelLabel } from '../../utils/chat-constants';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
@@ -9,6 +15,7 @@ import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachment
 import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '@goodboy/ui';
 import { formatClockTime } from '../../../../shared/utils/formatClockTime';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 type MessageAttachmentChipProps = {
   readonly attachment: MessageAttachment;
@@ -47,6 +54,8 @@ type Props = {
   model?: string;
   sentVia?: UserTurnSentVia;
   workingDir?: string | null;
+  sessionId?: SessionId | null;
+  agentId?: AgentId | null;
 };
 
 const SENT_VIA_LABEL: Record<UserTurnSentVia, string> = {
@@ -62,10 +71,17 @@ export const UserText = ({
   model,
   sentVia,
   workingDir = null,
+  sessionId = null,
+  agentId = null,
 }: Props) => {
   const atts = attachments ?? [];
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'message', text, sessionId, agentId },
+    anchorKey: null,
+  });
   return (
     <TranscriptShell
+      onContextMenu={menu.onContextMenu}
       tone="neutral"
       variant="plain"
       className="ml-auto flex w-fit max-w-[85%] flex-col gap-1.5 rounded-lg bg-elevated px-3 py-2 ring-1 ring-border-soft"

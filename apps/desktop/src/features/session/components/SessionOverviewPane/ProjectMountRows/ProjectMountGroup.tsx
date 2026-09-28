@@ -124,6 +124,25 @@ export const ProjectMountGroup = ({
             projectName={group.projectName}
             worktreePath={headPath}
             worktreeStatus={worktreeStatuses.get(headPath) ?? null}
+            target={{
+              kind: 'mount',
+              facts: {
+                mountKey: `project:${group.projectId}`,
+                noun: 'worktree',
+                worktreePath: headPath,
+                branch: '',
+                hasTools: false,
+                canStartTurnsHere: false,
+                hasMount: false,
+                isAttached: false,
+                canDetach: true,
+                editors: [],
+                onTerminal: () => undefined,
+                onScripts: () => undefined,
+                onStartTurnsHere: () => undefined,
+                onOpenEditor: () => undefined,
+              },
+            }}
           />
         </div>
       </div>
