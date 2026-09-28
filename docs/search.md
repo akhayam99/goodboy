@@ -15,8 +15,9 @@ m211 adds three tables.
 
 - `search_index` is an FTS5 table with two columns, `title` and `body`. It
   uses the `unicode61` tokenizer with `remove_diacritics 2`, so "Tomas"
-  finds "Tomás", and prefix indexes of 2 and 3 characters, so a word typed
-  halfway still matches fast.
+  finds "Tomás". Every typed word is a prefix query, so a word typed halfway
+  still matches. There is no `prefix` index: on 100k messages it made a two
+  letter prefix 15% faster (34 ms to 28 ms) and the index 70% bigger.
 - `search_docs` holds one row per indexed object: its `kind`, the id of the
   source row, the ids it hangs from (session, agent, mount, project,
   workspace), its provider, container and status, and the time it
@@ -65,10 +66,13 @@ keeps its docs until the tombstone is collected, and the query hides them.
 
 m211 creates the triggers but indexes nothing, so an upgrade never blocks
 boot. Rows written before it are filled by `runSearchBackfillStep` in
-`packages/db/src/maintenance/searchBackfill.ts`, one batch of 500 rows of one
+`packages/db/src/maintenance/searchBackfill.ts`, one batch of 200 rows of one
 source per call, in its own transaction. `search_index_state` keeps a cursor
 per source (the row id, or the rowid for the three tables without one), so
-the backfill resumes where it stopped after a quit or a crash. A doc the
+the backfill resumes where it stopped after a quit or a crash. The batch is
+small on purpose: every statement goes through the one database connection,
+and a batch of 500 messages held every other write for 180 ms on the 100k
+fixture. A doc the
 triggers already wrote is skipped, so running it twice changes nothing.
 
 The backfill has its own copy of the per-source columns. The triggers are
@@ -83,3 +87,43 @@ refill it. `purgeExcludedSearchDocs` deletes the docs of the projects in
 when its session's active project is that project, when its session or
 mount has a worktree of it, or, for a pull request, when a worktree of it
 has the same repo and branch.
+
+## The query
+
+`searchIndex` in `packages/db/src/queries/search.ts` takes a `SearchQuery`
+(text, kinds, workspace, session, projects, providers, statuses, a date
+range, archived handling and a limit) and returns `SearchHit`s.
+
+- **Words.** The text is folded to lower case without diacritics and split
+  on anything that is not a letter or a digit. Each word becomes a prefix
+  term and all of them must match, so "pay export" finds "Speed up the
+  payout export". An issue key splits the same way: "HAR-231" is "har" and
+  "231".
+- **Ranking.** `bm25` with the title weighted 4 to 1 over the body, scaled
+  by up to 1.5 for recency with a half-life of a week, so the newer of two
+  equal matches comes first. With no words, the newest docs of the filters
+  come first.
+- **What the query joins.** The owner session is the doc's session, the
+  session of its mount, or for a cached GitHub pull request the newest
+  session with a worktree on its repo and branch. Through it come the
+  workspace, the session title and the archived state. The agent comes from
+  `live_agents`, and its provider from the agent's run.
+- **What it hides.** Tombstoned sessions, agents and workspaces, archived
+  sessions and everything in them unless the query asks (`archived:
+'only'` is what `is:archived` means), and every doc of an excluded
+  project.
+- **Marks.** The title comes back highlighted and the body as a snippet of
+  about 18 words, both as `MarkedSegment`s. Marks are computed only for the
+  rows returned, after ranking.
+
+On the 100k message fixture (`search.perf.test.ts`, Apple silicon), a rare
+word answers in 4 ms, two common words in 55 ms, a scoped prefix in 35 ms
+and the newest messages of a filter in 40 ms. Indexing costs 0.03 ms per
+message written.
+
+### Size
+
+The index keeps its own copy of the text, which `snippet()` needs, plus
+positions for every word. On a fixture shaped like a real database (2,343
+messages averaging 2 KB, 87 artifacts, 464 short objects, 6.8 MB of text)
+it takes 15 MB. `readSearchIndexStatus` reads the real size from `dbstat`.

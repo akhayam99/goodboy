@@ -230,8 +230,7 @@ export const m211SearchIndex = `
 CREATE VIRTUAL TABLE search_index USING fts5(
   title,
   body,
-  tokenize = 'unicode61 remove_diacritics 2',
-  prefix = '2 3'
+  tokenize = 'unicode61 remove_diacritics 2'
 );
 
 CREATE TABLE search_docs (

@@ -203,7 +203,7 @@ const SOURCES: ReadonlyArray<BackfillSource> = [
   },
 ];
 
-export const SEARCH_BACKFILL_BATCH = 500;
+export const SEARCH_BACKFILL_BATCH = 200;
 
 type StateRow = {
   readonly id: string;

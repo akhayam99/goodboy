@@ -33,6 +33,12 @@ export {
 } from './maintenance/searchBackfill';
 
 export { NotFoundError, UniqueViolationError } from './shared/errors';
+export {
+  excludeProjectFromSearch,
+  includeProjectInSearch,
+  readSearchIndexStatus,
+  searchIndex,
+} from './queries/search';
 
 export {
   insertWorkspace,

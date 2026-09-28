@@ -596,7 +596,7 @@ mod tests {
         let conn = memory_db();
         conn.execute_batch(
             "CREATE VIRTUAL TABLE search_index USING fts5(
-               title, body, tokenize = 'unicode61 remove_diacritics 2', prefix = '2 3'
+               title, body, tokenize = 'unicode61 remove_diacritics 2'
              );
              CREATE TRIGGER search_workspace_insert AFTER INSERT ON workspaces BEGIN
                DELETE FROM search_index WHERE title = NEW.id;
