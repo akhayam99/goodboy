@@ -412,7 +412,7 @@ const mount = (overrides: Partial<SuggestionMount> = {}): SuggestionMount => ({
   projectName: 'web',
   branch: 'feature/web',
   worktreePath: '/tmp/web',
-  aheadOfUpstream: null,
+  push: null,
   aheadOfBase: null,
   isClean: true,
   pr: null,
@@ -658,16 +658,45 @@ describe('deriveNextSteps eleven new kinds', () => {
   it('suggests pushing unpushed commits on a clean worktree', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,
-      mounts: [mount({ aheadOfUpstream: 4, isClean: true })],
+      mounts: [mount({ push: { kind: 'ahead', ahead: 4 }, isClean: true })],
     });
     const suggestion = suggestions.find((candidate) => candidate.kind === 'push-branch');
     expect(suggestion?.title).toBe('Push 4 commits');
   });
 
+  it('suggests nothing to push once every commit is on origin', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [mount({ push: { kind: 'in-sync' }, aheadOfBase: 8, pr: pr() })],
+    });
+    expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
+  });
+
+  it('says a branch with no remote copy is not pushed yet', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [mount({ push: { kind: 'not-pushed', commits: 3 } })],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'push-branch');
+    expect(suggestion?.title).toBe('Push the branch');
+    expect(suggestion?.detail).toBe('Not pushed yet · 3 commits');
+  });
+
+  it('says a force-pushed remote diverged instead of offering a push', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      mounts: [mount({ push: { kind: 'diverged', ahead: 2, behind: 3 } })],
+    });
+    const suggestion = suggestions.find((candidate) => candidate.kind === 'push-branch');
+    expect(suggestion?.title).toBe('Branch diverged from origin');
+    expect(suggestion?.detail).toBe('2 commits here, 3 commits on origin');
+    expect(suggestion?.kind === 'push-branch' ? suggestion.payload.state : null).toBe('diverged');
+  });
+
   it('never suggests pushing a dirty worktree', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,
-      mounts: [mount({ aheadOfUpstream: 4, isClean: false })],
+      mounts: [mount({ push: { kind: 'ahead', ahead: 4 }, isClean: false })],
     });
     expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
   });
@@ -677,7 +706,7 @@ describe('deriveNextSteps eleven new kinds', () => {
       ...BASE_PARAMS,
       hasRunningAgent: true,
       mounts: [
-        mount({ aheadOfUpstream: 4, pr: null, aheadOfBase: 7 }),
+        mount({ push: { kind: 'ahead', ahead: 4 }, pr: null, aheadOfBase: 7 }),
         mount({ mountId: 'mount-other' as MountId, pr: pr({ checks: 'failure' }) }),
       ],
     });
@@ -693,7 +722,7 @@ describe('deriveNextSteps eleven new kinds', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,
       now,
-      mounts: [mount({ aheadOfUpstream: 4, fetchedAt: '2026-01-01T00:00:00.000Z' })],
+      mounts: [mount({ push: { kind: 'ahead', ahead: 4 }, fetchedAt: '2026-01-01T00:00:00.000Z' })],
     });
     expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(false);
   });
@@ -703,7 +732,7 @@ describe('deriveNextSteps eleven new kinds', () => {
     const suggestions = deriveNextSteps({
       ...BASE_PARAMS,
       now,
-      mounts: [mount({ aheadOfUpstream: 4, fetchedAt: '2026-01-01T00:00:00.000Z' })],
+      mounts: [mount({ push: { kind: 'ahead', ahead: 4 }, fetchedAt: '2026-01-01T00:00:00.000Z' })],
     });
     expect(suggestions.some((candidate) => candidate.kind === 'push-branch')).toBe(true);
   });

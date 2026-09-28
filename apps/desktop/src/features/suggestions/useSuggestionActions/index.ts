@@ -96,6 +96,7 @@ export const useSuggestionActions = ({
   const runPlan = useAppStore((state) => state.runPlan);
   const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
+  const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
   const createPrForSession = useAppStore((state) => state.createPrForSession);
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
@@ -374,6 +375,16 @@ export const useSuggestionActions = ({
               reportError("Couldn't start the debugger")(formatError(error)),
             );
           },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'push-branch' && suggestion.payload.state === 'diverged') {
+      return {
+        primary: {
+          label: 'Review history',
+          isDisabled: false,
+          onAct: () => openRewriteHistory(sessionId, suggestion.payload.worktreePath),
         },
         onDismiss: null,
       };

@@ -6,7 +6,7 @@ import type {
   CrumbMenuRow,
   CrumbState,
 } from '@goodboy/ui';
-import { ArrowDown, Cloud, CloudOff, GitMerge, Laptop } from 'lucide-react';
+import { ArrowDown, Cloud, CloudOff, GitCompare, GitMerge, Laptop } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import {
   branchPresenceOf,
@@ -38,6 +38,7 @@ const PRIORITY_LOOK = {
   merged: { tone: 'merged', glyph: GitMerge },
   'merged-then': { tone: 'warning', glyph: GitMerge },
   'gone-on-origin': { tone: 'danger', glyph: CloudOff },
+  diverged: { tone: 'warning', glyph: GitCompare },
   'local-only': { tone: 'warning', glyph: Laptop },
   'behind-main': { tone: 'warning', glyph: ArrowDown },
   'on-origin': { tone: 'neutral', glyph: Cloud },

@@ -738,6 +738,7 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
             &[
                 "worktree",
                 "add",
+                "--no-track",
                 "-b",
                 &branch_name,
                 worktree_path.to_string_lossy().as_ref(),
@@ -2520,9 +2521,23 @@ fn worktree_commits_blocking(worktree_path: String) -> Result<Vec<BranchCommit>,
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let upstream_ref = resolve_upstream(p);
-    let unpushed = if let Some(ref upstream) = upstream_ref {
-        rev_list_set(p, &format!("{upstream}..HEAD"))
+    let configured = resolve_upstream(p);
+    let remote = crate::branch_remote::branch_remote(
+        p,
+        current_branch_name(p).as_deref(),
+        configured
+            .as_deref()
+            .map(|name| crate::branch_remote::ConfiguredUpstream {
+                name,
+                distance: None,
+            }),
+    );
+    let tracking = match remote.distance {
+        GitDistance::Known { .. } => remote.tracking,
+        GitDistance::Unknown { .. } => None,
+    };
+    let unpushed = if let Some(ref upstream) = tracking {
+        rev_list_set(p, &format!("refs/remotes/{upstream}..HEAD"))
     } else {
         rev_list_set(p, "HEAD")
             .into_iter()
@@ -2934,27 +2949,31 @@ fn worktree_status_blocking(
         .map(|raw| parse_status_v2(&raw));
     let branch = snapshot.as_ref().and_then(|s| s.branch.clone());
     let head = snapshot.as_ref().and_then(|s| s.head.clone());
-    let upstream = snapshot.as_ref().and_then(|s| s.upstream.clone());
     let head_subject = git(p, &["log", "-1", "--format=%s"])
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
-    let upstream_distance = match snapshot.as_ref() {
-        None => GitDistance::Unknown {
-            reason: GitUnknownReason::StatusReadFailed,
-        },
-        Some(_) if branch.is_none() => GitDistance::Unknown {
-            reason: GitUnknownReason::DetachedHead,
-        },
-        Some(_) if upstream.is_none() => GitDistance::Unknown {
-            reason: GitUnknownReason::NoUpstream,
-        },
-        Some(found) => match found.upstream_ab {
-            Some((ahead, behind)) => GitDistance::Known { ahead, behind },
-            None => GitDistance::Unknown {
-                reason: GitUnknownReason::UpstreamGone,
+    let remote = snapshot.as_ref().map(|found| {
+        crate::branch_remote::branch_remote(
+            p,
+            branch.as_deref(),
+            found
+                .upstream
+                .as_deref()
+                .map(|name| crate::branch_remote::ConfiguredUpstream {
+                    name,
+                    distance: found.upstream_ab,
+                }),
+        )
+    });
+    let (upstream, upstream_distance) = match remote {
+        None => (
+            None,
+            GitDistance::Unknown {
+                reason: GitUnknownReason::StatusReadFailed,
             },
-        },
+        ),
+        Some(found) => (found.tracking, found.distance),
     };
     let working_tree = snapshot
         .map(|s| s.working_tree)
@@ -3321,42 +3340,6 @@ pub(crate) fn distance_between(cwd: &Path, left: &str, right: &str) -> GitDistan
             reason: GitUnknownReason::RevListFailed,
         },
     }
-}
-
-pub(crate) fn upstream_ref_exists(cwd: &Path, upstream: &str) -> bool {
-    git(
-        cwd,
-        &[
-            "rev-parse",
-            "--verify",
-            "--quiet",
-            &format!("refs/remotes/{upstream}"),
-        ],
-    )
-    .is_ok()
-}
-
-pub(crate) fn distance_from_upstream(
-    cwd: &Path,
-    branch: Option<&String>,
-    upstream: Option<&String>,
-) -> GitDistance {
-    if branch.is_none() {
-        return GitDistance::Unknown {
-            reason: GitUnknownReason::DetachedHead,
-        };
-    }
-    let Some(reference) = upstream else {
-        return GitDistance::Unknown {
-            reason: GitUnknownReason::NoUpstream,
-        };
-    };
-    if !upstream_ref_exists(cwd, reference) {
-        return GitDistance::Unknown {
-            reason: GitUnknownReason::UpstreamGone,
-        };
-    }
-    distance_between(cwd, reference, "HEAD")
 }
 
 pub(crate) fn read_working_tree(cwd: &Path) -> GitWorkingTree {
@@ -3973,41 +3956,6 @@ mod rewrite_tests {
         assert_eq!(status.upstream.as_deref(), Some("origin/main"));
         assert_eq!(
             status.upstream_distance,
-            GitDistance::Unknown {
-                reason: GitUnknownReason::UpstreamGone
-            }
-        );
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn distance_from_upstream_reports_gone_once_the_tracking_ref_is_pruned() {
-        let root = init_repo("distance-upstream-gone");
-        commit(&root, "base.txt", "base", "base");
-        push_to_new_remote(&root);
-        let branch = super::current_branch_name(&root);
-        let upstream = super::resolve_upstream(&root);
-
-        assert!(super::upstream_ref_exists(
-            &root,
-            upstream.as_deref().unwrap()
-        ));
-        assert_eq!(
-            super::distance_from_upstream(&root, branch.as_ref(), upstream.as_ref()),
-            GitDistance::Known {
-                ahead: 0,
-                behind: 0
-            }
-        );
-
-        git_ok(&root, &["update-ref", "-d", "refs/remotes/origin/main"]);
-
-        assert!(!super::upstream_ref_exists(
-            &root,
-            upstream.as_deref().unwrap()
-        ));
-        assert_eq!(
-            super::distance_from_upstream(&root, branch.as_ref(), upstream.as_ref()),
             GitDistance::Unknown {
                 reason: GitUnknownReason::UpstreamGone
             }
@@ -4701,6 +4649,67 @@ mod rewrite_tests {
             dir_name: Some(slug.to_string()),
         })
         .unwrap()
+    }
+
+    #[test]
+    fn a_new_session_branch_does_not_track_the_base_it_was_cut_from() {
+        let root = std::fs::canonicalize(init_repo("session-no-track")).unwrap();
+        commit(&root, "base.txt", "base\n", "base");
+        push_to_new_remote(&root);
+        let created = create_session_mount(&root, "no-track");
+        let path = PathBuf::from(&created.worktree_path);
+
+        assert!(super::resolve_upstream(&path).is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn eight_pushed_commits_read_as_on_origin_with_nothing_to_push() {
+        let root = std::fs::canonicalize(init_repo("session-pushed-eight")).unwrap();
+        commit(&root, "base.txt", "base\n", "base");
+        push_to_new_remote(&root);
+        let created = create_session_mount(&root, "pushed-eight");
+        let path = PathBuf::from(&created.worktree_path);
+        git_ok(&path, &["branch", "--set-upstream-to", "origin/main"]);
+        for index in 0..8 {
+            commit(
+                &path,
+                &format!("file-{index}.txt"),
+                "body\n",
+                &format!("commit {index}"),
+            );
+        }
+        let before = worktree_status_blocking(created.worktree_path.clone(), None).unwrap();
+        assert_eq!(before.upstream, None);
+        assert_eq!(
+            before.upstream_distance,
+            GitDistance::Unknown {
+                reason: GitUnknownReason::NoUpstream
+            }
+        );
+
+        git_ok(&path, &["push", "origin", &created.branch_name]);
+        commit(&path, "local.txt", "local\n", "local only");
+
+        let status = worktree_status_blocking(created.worktree_path.clone(), None).unwrap();
+        let own = format!("origin/{}", created.branch_name);
+        assert_eq!(status.upstream.as_deref(), Some(own.as_str()));
+        assert_eq!(
+            status.upstream_distance,
+            GitDistance::Known {
+                ahead: 1,
+                behind: 0
+            }
+        );
+        let commits = super::worktree_commits_blocking(created.worktree_path.clone()).unwrap();
+        let unpushed: Vec<&str> = commits
+            .iter()
+            .filter(|commit| !commit.pushed)
+            .map(|commit| commit.subject.as_str())
+            .collect();
+        assert_eq!(unpushed, vec!["local only"]);
+        assert_eq!(commits.iter().filter(|commit| commit.pushed).count(), 8);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

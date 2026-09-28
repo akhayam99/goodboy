@@ -4,6 +4,7 @@ import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceAhead, distanceBehind, isWorkingTreeClean } from '../../../shared/lib/gitStatus';
+import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { workflowHasOpenQuestions } from '../../context/openQuestionsGate';
 import { splitWorkflowRuns } from '../../workflows/activeWorkflowRuns';
 import { useAttachedWorkflowRuns } from '../../workflows/useAttachedWorkflowRuns';
@@ -285,8 +286,7 @@ export const useSessionSuggestions = ({ session, agents, withRebase = true }: Pa
               projectName: project?.name ?? mount.mountName,
               branch: mount.branch,
               worktreePath: mount.worktreePath,
-              aheadOfUpstream:
-                status == null ? null : distanceAhead({ distance: status.upstreamDistance }),
+              push: status == null ? null : branchPushStateOf({ status }),
               aheadOfBase: status == null ? null : distanceAhead({ distance: status.mainDistance }),
               isClean:
                 status == null ? null : isWorkingTreeClean({ workingTree: status.workingTree }),

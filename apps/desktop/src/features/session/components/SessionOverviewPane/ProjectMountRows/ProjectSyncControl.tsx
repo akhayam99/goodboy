@@ -11,7 +11,7 @@ import {
 import { AnchoredPopover, Tooltip, cn, formatError, useDropdown } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { distanceAhead } from '../../../../../shared/lib/gitStatus';
+import { branchPushStateOf, commitsToPush } from '../../../../../shared/lib/branchPushState';
 import { mainPresenceOf, type MainPresence } from '../../../../../shared/lib/branchPresence';
 import { BaseBranchSelect } from '../../../../worktree/BaseBranchSelect';
 import { useRebaseBranch } from '../../../hooks/useRebaseBranch';
@@ -103,9 +103,7 @@ export const ProjectSyncControl = ({ sessionId, projectId, mountId, status }: Pr
   const distance = status?.mainDistance.kind === 'known' ? status.mainDistance : null;
   const main =
     status == null ? null : mainPresenceOf({ status, isRebasingAgent: rebase.isRunning });
-  const upstreamAhead =
-    status == null ? null : distanceAhead({ distance: status.upstreamDistance });
-  const canPush = upstreamAhead != null && upstreamAhead > 0;
+  const canPush = status != null && commitsToPush({ state: branchPushStateOf({ status }) }) > 0;
   const commitBaseBranch = async ({ candidate }: CommitBaseBranchParams) => {
     const value = candidate?.trim() ?? '';
     const next = value === '' ? null : value;
