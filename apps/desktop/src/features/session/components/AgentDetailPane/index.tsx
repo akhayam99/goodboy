@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { HeaderBand, PageColumn, StudioDetailTabs } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
@@ -7,6 +7,7 @@ import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
+import { agentOpenTab, isOpenAgentReveal, type AgentTab } from './agentOpenTab';
 import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentStatusBadge } from '../AgentTree/AgentStatusBadge';
@@ -26,12 +27,10 @@ type Props = {
   readonly context?: ReactNode;
 };
 
-type Tab = 'brief' | 'transcript';
-
 const TABS = [
   { value: 'brief', label: 'Brief' },
   { value: 'transcript', label: 'Transcript' },
-] satisfies ReadonlyArray<{ readonly value: Tab; readonly label: string }>;
+] satisfies ReadonlyArray<{ readonly value: AgentTab; readonly label: string }>;
 
 export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context }: Props) => {
   const turnState = useAppStore((state) => state.agentTurnState[agent.id] ?? null);
@@ -40,9 +39,14 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       (question) => question.createdByAgentId === agent.id,
     ),
   );
+  const areQuestionsLoaded = useAppStore(
+    (state) => state.sessionOpenQuestions[session.id] !== undefined,
+  );
   const status = effectiveAgentStatus({ agent, turnState });
-  const liveTab: Tab = status === 'running' || hasOpenQuestions ? 'transcript' : 'brief';
-  const [tab, setTab] = useState<Tab>(liveTab);
+  const openTab = agentOpenTab({ hasOpenQuestions });
+  const openTabRef = useRef(openTab);
+  openTabRef.current = openTab;
+  const [tab, setTab] = useState<AgentTab>(openTab);
   const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
@@ -64,13 +68,14 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
   });
 
   useEffect(() => {
-    setTab(liveTab);
-  }, [agent.id]);
+    setTab(openTabRef.current);
+  }, [agent.id, areQuestionsLoaded]);
 
   useEffect(() => {
-    const revealTranscript = () => setTab('transcript');
-    window.addEventListener('goodboy:reveal-chat', revealTranscript);
-    return () => window.removeEventListener('goodboy:reveal-chat', revealTranscript);
+    const reveal = (event: Event) =>
+      setTab(isOpenAgentReveal(event) ? openTabRef.current : 'transcript');
+    window.addEventListener('goodboy:reveal-chat', reveal);
+    return () => window.removeEventListener('goodboy:reveal-chat', reveal);
   }, []);
 
   const planned =

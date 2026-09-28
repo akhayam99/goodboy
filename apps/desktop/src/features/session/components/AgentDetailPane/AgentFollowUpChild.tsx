@@ -7,6 +7,7 @@ import { attachedQuestionsFor } from '../../timeline/attachedQuestions';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';
 import { agentNowState } from './agentNowState';
+import { openAgentRevealEvent } from './agentOpenTab';
 import type { FollowUpChild } from './followUpChildren';
 
 type Props = {
@@ -38,7 +39,7 @@ export const AgentFollowUpChild = ({ entry, sessionId }: Props) => {
 
   const onOpen = () => {
     navigate({ to: agentPlace({ sessionId, agentId: agent.id }) });
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    window.dispatchEvent(openAgentRevealEvent());
   };
 
   return (

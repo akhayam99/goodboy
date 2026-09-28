@@ -3,8 +3,8 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { currentPlatform } from '../../platform';
 
 export const TITLEBAR_INSET_VAR = '--titlebar-inset';
-export const TRAFFIC_LIGHT_INSET = '78px';
-export const PLAIN_INSET = '12px';
+export const TRAFFIC_LIGHT_INSET = '72px';
+export const PLAIN_INSET = '0px';
 
 const inTauri = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 

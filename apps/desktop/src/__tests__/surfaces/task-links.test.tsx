@@ -573,8 +573,8 @@ describe('tasks and sessions on the real store', () => {
       }
 
       await mount(surfaces(session, entry, <LinkIssueAction session={session} />));
-      fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
-      const dialog = await screen.findByRole('dialog', { name: 'Link an issue' });
+      fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Link work' });
       const picker = within(dialog).getByRole('combobox');
       fireEvent.focus(picker);
       fireEvent.click(picker);
@@ -606,10 +606,11 @@ describe('tasks and sessions on the real store', () => {
         ],
       },
     } as unknown as Partial<StoreState>);
+    stubActions({ loadProjectSentryLinks: vi.fn(async () => undefined) });
 
     await mount(<LinkIssueAction session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Link an issue' });
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Link work' });
     const picker = within(dialog).getByRole('combobox');
     fireEvent.focus(picker);
     fireEvent.click(picker);
@@ -623,11 +624,19 @@ describe('tasks and sessions on the real store', () => {
   });
 
   it.each([
-    { how: 'pasted link', value: 'https://cascadia.sentry.io/issues/4512099/' },
-    { how: 'short code', value: 'core-api-3c' },
+    {
+      how: 'pasted link',
+      value: 'https://cascadia.sentry.io/issues/4512099/',
+      option: 'Link CORE-API-3C',
+    },
+    {
+      how: 'short code',
+      value: 'core-api-3c',
+      option: /^ValueError in the ledger-core nightly close/,
+    },
   ])(
     'links a sentry issue outside the list from its $how in the session link button',
-    async ({ value }) => {
+    async ({ value, option }) => {
       const entry = CASES.find((candidate) => candidate.provider === 'sentry');
       if (entry == null) {
         throw new Error('missing sentry case');
@@ -647,14 +656,12 @@ describe('tasks and sessions on the real store', () => {
       };
 
       await mount(surfaces(session, entry, <LinkIssueAction session={session} />));
-      fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
-      const dialog = await screen.findByRole('dialog', { name: 'Link an issue' });
+      fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
+      const dialog = await screen.findByRole('dialog', { name: 'Link work' });
       const picker = within(dialog).getByRole('combobox');
       fireEvent.focus(picker);
       fireEvent.change(picker, { target: { value } });
-      fireEvent.click(
-        await screen.findByRole('option', { name: 'Link CORE-API-3C' }, { timeout: 2000 }),
-      );
+      fireEvent.click(await screen.findByRole('option', { name: option }, { timeout: 2000 }));
       await settle();
 
       await waitFor(() =>
@@ -689,8 +696,8 @@ describe('tasks and sessions on the real store', () => {
         />
       </>,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Link an issue' });
+    fireEvent.click(screen.getByRole('button', { name: 'Link work' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Link work' });
     const picker = within(dialog).getByRole('combobox');
     fireEvent.focus(picker);
     fireEvent.click(picker);

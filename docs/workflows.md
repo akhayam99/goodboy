@@ -329,7 +329,10 @@ How the numbers are measured is in [turns.md](turns.md#measured-time-and-estimat
 When a run needs you, one **Next action** strip says what to do. It sits in
 the fixed header of the workflow detail and of the agent detail, above the
 tabs, so Brief and Transcript show the same strip and the transcript does not
-repeat it at the bottom. Orchestrated runs get the same strip, and the
+repeat it at the bottom. Opening an agent from Activity, Workflow, the board or
+a toast follows one rule (`agentOpenTab`): an agent with an open question opens
+on Brief, where the question comes first; any other agent opens on Transcript,
+pinned to the latest line. Orchestrated runs get the same strip, and the
 orchestrator strip carries no answer or skip button of its own.
 
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**

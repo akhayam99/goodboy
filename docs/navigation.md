@@ -113,7 +113,14 @@ opens it on a mode. Commands is the first mode.
 - **Keys.** ↑↓ move, ↵ runs the row (an object row opens it), → opens every
   verb of an object row, grouped Open, Act, Copy and export, Danger, and ← or
   Backspace goes back. A verb with choices, such as Change model, opens them as
-  a level. A preview pane describes the highlighted row.
+  a level. Copy worktree path copies at once when the session has one
+  worktree; with several it opens them as a level (name, branch and path), and
+  ⌘↵ copies every path, one per line. A preview pane describes the highlighted
+  row.
+- **An agent in scope keeps its session's verbs.** They follow the agent's
+  verbs under "For this session", so Copy worktree path stays one search
+  away. A session verb with the same label as an agent verb steps
+  aside.
 - **Prefixes stay**: `@` agents, `#` sessions, `:` workspaces, `$` scripts,
   `>` actions, `?` help.
 
@@ -223,7 +230,7 @@ never exists on one surface only.
   (creation pickers, property pickers, page chrome).
 - **What each object offers.** A session: Open, Review, Diff, Terminal, Open in
   editor; Rename (inline, in the row that opened the menu), Start agent, Link
-  an issue; copy the title, branch and pull request link; Archive with Undo and
+  work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
   Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
@@ -677,15 +684,18 @@ viewport, so app zoom takes the same path as a narrow window:
 ask` (wide it adds `in {workspace}`), and
    Limits keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
-   (`need you`, `running`, `scripts`, `today`, `Limits`) drop and Limits keeps
+   (`need you`, `running`, `scripts`, `today`) drop and Limits keeps
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
 The traffic lights, identity, the movement cluster (Board and Chat keep their words),
 the command center, the needs-you count, the
-spend figure, the first Limits chip and the bell never hide. The Limits chips
-past the ones that fit are the only overflow: a `+N` chip takes the tone of
-the worst hidden provider and lists them. No other control moves into an
+spend figure, the first Limits chip and the bell never hide. A Limits chip is
+the provider glyph and two bars, with no card, label or number around it; the
+percentage lives in its tooltip and its accessible name. A provider with no
+figures yet draws no chip. The Limits chips past the ones that fit, and the
+providers with no figures, are the only overflow: a `+N` chip takes the tone
+of the worst hidden provider and lists them. No other control moves into an
 overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
 only drop under zoom.
 
@@ -709,7 +719,7 @@ only drop under zoom.
 - **Theme is in the bar, after the fourth round of removing it.** A dark room,
   a projector, a shared screen: the theme changes several times a day, and a
   detour through Settings is friction each time. The toggle sits after the
-  vertical divider and before the bell, alternates dark and light on a click,
+  Limits chips and before the bell, with no divider, alternates dark and light on a click,
   and turns Match system into an explicit choice the first time it is
   clicked. Below the 720px `chrome-narrow` width it leaves the bar; it is not
   in the never-hide list. The three-way choice (dark, light, Match system)
@@ -1278,7 +1288,8 @@ body into items, one per top-level bullet with its sub-bullets, or one per
 sentence for prose. Summary shows State, Next, Open questions (the session's
 open questions, read only) and Learned, then any section the summarizer did not
 name. Goal is one block with Edit and Versions in its header. Decisions shows
-the changes block, then Active, then the folded Replaced and withdrawn group.
+the changes block, then Active, then the folded Replaced and removed group,
+split into Removed by you and Replaced with a search across both.
 
 The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)).
 When something changed since the previous look (`sessionDecisionsBaseline`,
@@ -1291,10 +1302,16 @@ text, its why as one muted line under the text when the row has one (clamped
 to two lines, **Show more** when longer; older rows show nothing), and who
 settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
 `replaces 5`). An added row also carries `New` until the next open. A row the summarizer reworded says `Reworded by Goodboy` with
-**Show previous**. On hover a row offers edit (a reword of yours) and
-Withdraw, with no confirm because the bottom group, **Replaced and withdrawn**,
-offers Restore; its rows are struck through, point at the decision that
-replaced them (`→ 7` scrolls there and highlights it), and quote the reason.
+**Show previous**. Clicking a row opens it (**Show more** on the text when it
+was clamped, same toggle), revealing Edit (a reword of yours) and Remove.
+Remove withdraws at once, with no confirm, so agents see it retired, but the
+row stays where it was, struck through, with a per-row Undo, and the block
+opens with `N changes on this visit · Undo all` while any are pending.
+Leaving the drawer, by closing it or switching session, drops them into the
+bottom group, **Replaced and removed**, split by a `Removed by you` /
+`Replaced` filter with a search over both; only the rows you removed offer
+Restore. Every closed row is struck through, points at the decision that
+replaced it (`→ 7` scrolls there and highlights it), and quotes the reason.
 The dock adds a decision of yours on Enter. While the summarizer writes, rows
 stay readable and every edit waits. A row that arrives while the drawer is open
 comes in with `Reveal` (200ms), and a reworded text fades in (180ms,
@@ -1396,15 +1413,21 @@ a `Now | After Apply` toggle. Every action has one color (Keep green, Fold in
 azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
 today's main grey) used on the row's change mark, its node, a 2px edge, the
 dot of its "what happens" line and its planned change. Drag a row between two
-others to move it, drop it onto a row to fold it in (fixup, `Keep title`), and
-switch `Keep title | Keep both` on the folded row or its change to combine
-(squash). The drag is pointer events with our own hit testing
+others to move it and drop it onto a row to fold it in (fixup, `Keep title`).
+A folded row carries one always visible control, `Keep title · Keep both ·
+Separate`: `Keep both` combines (squash) and `Separate` makes it its own commit
+again, the same edit as `Separate` in its menu; its planned change keeps
+`Keep title | Keep both`. The row buttons (icons) and the `⋯` menu sit in a
+slot reserved at the end of the row, so they never cover the control; a folded
+row shows only the menu. The drag is pointer events with our own hit testing
 (`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
 owns the drag session on macOS, and the composer's file drop needs it on. Keys
 on a focused row: Alt with the arrows moves, C folds into the one below, S
 combines keeping both messages, R or Enter renames, Delete or Backspace
 removes, ⌘Z undoes the last edit. Hovering a row, a node in After Apply or a
-planned change lights up the same commit in all three places. Nothing touches
+planned change lights up the same commit in all three places; on a fold,
+hovering any member or the node lights the whole group, the commit that takes
+them in and every commit it takes in. Nothing touches
 git while you edit: the plan is a draft saved per worktree in `history_plans`,
 the planned changes are derived from it (each with its own `Undo`, plus
 `Reset all`), and once the plan rests for a quarter of a second the engine
@@ -1473,7 +1496,11 @@ toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
 saved as `goodboy:diff-wrap`; split always wraps). `[` and `]` go to the
-previous and next file. Each file has a sticky header (status letter, path,
+previous and next file. A jump is instant, not smooth: file bodies keep
+`content-visibility` with estimated heights, so for a few frames the view
+measures the picked header and snaps it back to the top until the heights
+settle. The picked file stays the active one until you scroll, so `[` and `]`
+start from it, and the jump cursor starts on it inside the filtered list. Each file has a sticky header (status letter, path,
 changes, comment count, `Viewed`, `⋯` with Open in editor, Copy path, Comment
 on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line

@@ -979,10 +979,30 @@ const ROWS: ReadonlyArray<Row> = [
     lands: both(lens('agents'), () => heading('Agents')),
   },
   {
-    name: 'palette verb: Link an issue',
-    covers: ['palette:Link an issue'],
-    open: () => openPalette(/^Link an issue$/),
-    lands: () => visible('dialog', 'Link an issue'),
+    name: 'palette verb: Link work',
+    covers: ['palette:Link work'],
+    open: () => openPalette(/^Link work$/),
+    lands: () => visible('dialog', 'Link work'),
+  },
+  {
+    name: 'palette verb: Copy worktree path',
+    covers: ['palette:Copy worktree path'],
+    open: async () => {
+      clipboardWrites = [];
+      vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(async (text: string) => {
+        clipboardWrites.push(text);
+      });
+      await openPalette(/^Copy worktree path$/);
+      const all = screen.queryByRole('option', { name: 'Copy all paths' });
+      if (all !== null) {
+        fireEvent.mouseDown(all);
+        await settle();
+      }
+    },
+    lands: async () => {
+      await waitFor(() => expect(clipboardWrites).toHaveLength(1), WAIT);
+      expect(clipboardWrites[0]?.trim()).not.toBe('');
+    },
   },
   ...(['Copy title', 'Copy branch name', 'Copy PR link'] as const).map((label): Row => ({
     name: `palette verb: ${label}`,

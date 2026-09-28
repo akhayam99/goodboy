@@ -19,6 +19,9 @@ import type { DiffComments, DiffFileActions, DiffThread, DiffViewed } from './ty
 export type { DiffComments, DiffThread } from './types';
 
 const BATCH_SIZE = 20;
+const SETTLE_FRAMES = 30;
+const STABLE_FRAMES = 3;
+const USER_SCROLL_EVENTS = ['wheel', 'touchmove', 'pointerdown', 'keydown'] as const;
 
 type Props = {
   readonly files: ReadonlyArray<FileDiff>;
@@ -44,6 +47,12 @@ const isTypingTarget = (target: EventTarget | null): boolean =>
     target.tagName === 'TEXTAREA' ||
     target.tagName === 'SELECT');
 
+const offsetFromTop = (element: HTMLElement, viewport: HTMLElement | null): number =>
+  element.getBoundingClientRect().top - (viewport?.getBoundingClientRect().top ?? 0);
+
+const snapToTop = (element: HTMLElement) =>
+  element.scrollIntoView?.({ block: 'start', behavior: 'instant' });
+
 export const DiffView = ({
   files,
   comments = null,
@@ -68,6 +77,9 @@ export const DiffView = ({
   const refCallbacks = useRef(new Map<string, RefCallback<HTMLElement>>());
   const observerRef = useRef<IntersectionObserver | null>(null);
   const pendingScroll = useRef<string | null>(null);
+  const intersecting = useRef(new Set<string>());
+  const lockedPath = useRef<string | null>(null);
+  const settleFrame = useRef<number | null>(null);
   const jump = useDropdown({
     align: 'start',
     width: 'w-[420px] max-w-[calc(100vw-2rem)]',
@@ -92,10 +104,79 @@ export const DiffView = ({
   const isViewed = useCallback((file: FileDiff) => viewed?.stateOf(file) === 'viewed', [viewed]);
   const viewedCount = viewed === null ? null : files.filter(isViewed).length;
 
+  const cancelSettle = useCallback(() => {
+    if (settleFrame.current !== null) {
+      cancelAnimationFrame(settleFrame.current);
+      settleFrame.current = null;
+    }
+  }, []);
+
+  const topFilePath = useCallback((): string | null => {
+    const rootTop = viewportRef.current?.getBoundingClientRect().top ?? 0;
+    for (const file of files) {
+      if (!intersecting.current.has(file.path)) {
+        continue;
+      }
+      const element = fileRefs.current.get(file.path);
+      if (element && element.getBoundingClientRect().bottom > rootTop + 1) {
+        return file.path;
+      }
+    }
+    return null;
+  }, [files]);
+
+  const syncActivePath = useCallback(() => {
+    if (lockedPath.current !== null) {
+      return;
+    }
+    const top = topFilePath();
+    if (top !== null) {
+      setActivePath(top);
+    }
+  }, [topFilePath]);
+
   useLayoutEffect(() => {
     pendingScroll.current = null;
+    lockedPath.current = null;
+    intersecting.current = new Set();
     setMountedCount(BATCH_SIZE);
   }, [files]);
+
+  useEffect(() => cancelSettle, [cancelSettle]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (viewport === null) {
+      return;
+    }
+    let frame: number | null = null;
+    const release = () => {
+      lockedPath.current = null;
+      cancelSettle();
+    };
+    const onScroll = () => {
+      if (lockedPath.current !== null || frame !== null) {
+        return;
+      }
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        syncActivePath();
+      });
+    };
+    for (const name of USER_SCROLL_EVENTS) {
+      viewport.addEventListener(name, release, { passive: true });
+    }
+    viewport.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      for (const name of USER_SCROLL_EVENTS) {
+        viewport.removeEventListener(name, release);
+      }
+      viewport.removeEventListener('scroll', onScroll);
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+      }
+    };
+  }, [cancelSettle, syncActivePath]);
 
   useEffect(() => {
     if (mountedCount >= files.length) {
@@ -117,18 +198,17 @@ export const DiffView = ({
     const observer = new IntersectionObserver(
       (entries) => {
         const nowSeen: string[] = [];
-        let top: IntersectionObserverEntry | null = null;
         for (const entry of entries) {
-          if (!entry.isIntersecting) {
+          const path = entry.target.getAttribute('data-file-path');
+          if (path === null) {
             continue;
           }
-          const path = entry.target.getAttribute('data-file-path');
-          if (path !== null) {
-            nowSeen.push(path);
+          if (!entry.isIntersecting) {
+            intersecting.current.delete(path);
+            continue;
           }
-          if (top === null || entry.boundingClientRect.top < top.boundingClientRect.top) {
-            top = entry;
-          }
+          intersecting.current.add(path);
+          nowSeen.push(path);
         }
         if (nowSeen.length > 0) {
           setSeen((current) => {
@@ -138,10 +218,7 @@ export const DiffView = ({
             return new Set([...current, ...nowSeen]);
           });
         }
-        const topPath = top?.target.getAttribute('data-file-path') ?? null;
-        if (topPath !== null) {
-          setActivePath(topPath);
-        }
+        syncActivePath();
       },
       { root: viewportRef.current, rootMargin: '400px 0px 0px 0px', threshold: 0 },
     );
@@ -155,7 +232,7 @@ export const DiffView = ({
         observerRef.current = null;
       }
     };
-  }, [files]);
+  }, [files, syncActivePath]);
 
   const registerRef = useCallback((path: string): RefCallback<HTMLElement> => {
     const existing = refCallbacks.current.get(path);
@@ -178,12 +255,46 @@ export const DiffView = ({
     return callback;
   }, []);
 
+  const anchorTo = useCallback(
+    (path: string, element: HTMLElement) => {
+      cancelSettle();
+      lockedPath.current = path;
+      setActivePath(path);
+      snapToTop(element);
+      let last = offsetFromTop(element, viewportRef.current);
+      let frames = 0;
+      let stable = 0;
+      const tick = () => {
+        const current = fileRefs.current.get(path);
+        if (!current || lockedPath.current !== path) {
+          settleFrame.current = null;
+          return;
+        }
+        const offset = offsetFromTop(current, viewportRef.current);
+        const settled =
+          viewportRef.current === null ? Math.abs(offset - last) <= 1 : Math.abs(offset) <= 1;
+        stable = settled ? stable + 1 : 0;
+        if (!settled) {
+          snapToTop(current);
+        }
+        last = offsetFromTop(current, viewportRef.current);
+        frames += 1;
+        if (stable >= STABLE_FRAMES || frames >= SETTLE_FRAMES) {
+          settleFrame.current = null;
+          return;
+        }
+        settleFrame.current = requestAnimationFrame(tick);
+      };
+      settleFrame.current = requestAnimationFrame(tick);
+    },
+    [cancelSettle],
+  );
+
   const scrollToFile = useCallback(
     (path: string) => {
       const element = fileRefs.current.get(path);
       if (element) {
-        element.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-        setActivePath(path);
+        anchorTo(path, element);
         return;
       }
       const index = files.findIndex((file) => file.path === path);
@@ -194,7 +305,7 @@ export const DiffView = ({
       const needed = Math.min(Math.ceil((index + 1) / BATCH_SIZE) * BATCH_SIZE, files.length);
       setMountedCount((count) => Math.max(count, needed));
     },
-    [files],
+    [anchorTo, files],
   );
 
   useEffect(() => {
@@ -207,9 +318,8 @@ export const DiffView = ({
       return;
     }
     pendingScroll.current = null;
-    element.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-    setActivePath(path);
-  }, [mountedCount]);
+    anchorTo(path, element);
+  }, [anchorTo, mountedCount]);
 
   useEffect(() => {
     if (focusPath === null || files.length === 0) {

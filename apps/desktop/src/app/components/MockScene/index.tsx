@@ -88,6 +88,7 @@ import { BrandSlackScene } from './scenes/brand/SlackScene';
 import { BrandContextScene } from './scenes/brand/ContextScene';
 import { BrandCompareScene } from './scenes/brand/CompareScene';
 import { BrandDiffScene } from './scenes/brand/DiffScene';
+import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
@@ -101,6 +102,7 @@ import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
 import { AgentBriefScene } from './scenes/AgentBriefScene';
+import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 
@@ -184,6 +186,7 @@ export const MOCK_SCENES = {
   'brand-context': BrandContextScene,
   'brand-compare': BrandCompareScene,
   'brand-diff': BrandDiffScene,
+  'brand-diff-many': BrandDiffManyFilesScene,
   'brand-history': BrandHistoryScene,
   'brand-history-plan': BrandHistoryPlanScene,
   'brand-history-trial': BrandHistoryTrialScene,
@@ -195,6 +198,7 @@ export const MOCK_SCENES = {
   'brand-security-findings': BrandSecurityFindingsScene,
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
+  'agent-brief-question': AgentBriefQuestionScene,
   'crash-report': CrashReportScene,
 };
 

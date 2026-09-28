@@ -26,7 +26,7 @@ import { useAppStore } from '../../../../store';
 import { readFrecency, recordPaletteUse } from '../../frecencyStorage';
 import { useCommandEntries } from '../../hooks/useCommandEntries';
 import { runObjectAction } from '../../../actions/registry';
-import type { ObjectTarget, ResolvedAction } from '../../../actions/types';
+import { ALL_CHOICES_ID, type ObjectTarget, type ResolvedAction } from '../../../actions/types';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { PaletteModeProps } from '../../paletteModeTypes';
@@ -87,6 +87,11 @@ export const CommandsMode = ({
   const scopeTarget: ObjectTarget | null =
     scope === null || scope.kind === 'workspace' ? null : scope;
   const scopeActions = useObjectActions({ target: scopeTarget, env });
+  const parentTarget = useMemo<ObjectTarget | null>(
+    () => (scope?.kind === 'agent' ? { kind: 'session', sessionId: scope.sessionId } : null),
+    [scope],
+  );
+  const parentActions = useObjectActions({ target: parentTarget, env });
   const levelActions = useObjectActions({ target: level?.target ?? null, env });
   const entries = useCommandEntries();
   const hasWorkspace = useAppStore((state) => state.currentWorkspaceId !== null);
@@ -112,6 +117,21 @@ export const CommandsMode = ({
           }),
     [scopeTarget, scopeActions.actions, scopeInfo?.noun, runVerb],
   );
+
+  const parentVerbs = useMemo(() => {
+    if (parentTarget === null) {
+      return [];
+    }
+    const scopeLabels = new Set(scopeVerbs.map((entry) => entry.label));
+    return verbEntries({
+      target: parentTarget,
+      actions: parentActions.actions,
+      isScope: false,
+      noun: parentActions.noun ?? '',
+      select: ({ action }: VerbSelectParams) =>
+        runVerb({ target: parentTarget, actionId: action.id }),
+    }).filter((entry) => !scopeLabels.has(entry.label));
+  }, [parentTarget, parentActions.actions, parentActions.noun, scopeVerbs, runVerb]);
 
   const levelVerbs = useMemo(
     () =>
@@ -148,14 +168,14 @@ export const CommandsMode = ({
   );
 
   const pool = useMemo(() => {
-    const verbLabels = new Set(scopeVerbs.map((entry) => entry.label));
-    const isSessionScope = scopeTarget?.kind === 'session';
+    const verbLabels = new Set([...scopeVerbs, ...parentVerbs].map((entry) => entry.label));
+    const isSessionScope = scopeTarget?.kind === 'session' || parentTarget !== null;
     return entries.filter(
       (entry) =>
         !(entry.kind === 'action' && verbLabels.has(entry.label)) &&
         !(isSessionScope && REGISTRY_LENS_KEYS.has(entry.key)),
     );
-  }, [entries, scopeVerbs, scopeTarget]);
+  }, [entries, scopeVerbs, parentVerbs, scopeTarget, parentTarget]);
 
   const ask = useMemo(
     () =>
@@ -174,6 +194,8 @@ export const CommandsMode = ({
             scopeVerbs,
             scopeTitle: scopeInfo === null ? null : `For this ${scopeInfo.noun}`,
             scopeKey: scopeInfo?.key ?? null,
+            parentVerbs,
+            parentTitle: parentTarget === null ? null : 'For this session',
             frecency,
             now,
             ask,
@@ -192,6 +214,8 @@ export const CommandsMode = ({
       query,
       pool,
       scopeVerbs,
+      parentVerbs,
+      parentTarget,
       scopeInfo,
       frecency,
       now,
@@ -230,6 +254,7 @@ export const CommandsMode = ({
   }, [selected]);
 
   const subject = level?.title ?? scopeInfo?.title ?? null;
+  const allChoice = levelChoices.find((entry) => entry.key.endsWith(`:${ALL_CHOICES_ID}`)) ?? null;
 
   const finish = (entry: PaletteEntry): void => {
     const at = Date.now();
@@ -291,7 +316,7 @@ export const CommandsMode = ({
     if (altId === undefined) {
       return null;
     }
-    const verbs = level === null ? scopeVerbs : levelVerbs;
+    const verbs = level === null ? [...scopeVerbs, ...parentVerbs] : levelVerbs;
     return verbs.find((candidate) => candidate.action?.id === altId) ?? null;
   };
 
@@ -310,6 +335,10 @@ export const CommandsMode = ({
         event.preventDefault();
         if (confirming !== null) {
           finish(confirming);
+          return;
+        }
+        if ((event.metaKey || event.ctrlKey) && allChoice !== null) {
+          finish(allChoice);
           return;
         }
         if (selected !== null) {
@@ -477,6 +506,7 @@ export const CommandsMode = ({
                 <PreviewHints
                   entry={selected.item}
                   isActionsLevel={level !== null}
+                  allLabel={allChoice?.label ?? null}
                   hasOtherModes={modeSwitch !== null}
                 />
               </aside>

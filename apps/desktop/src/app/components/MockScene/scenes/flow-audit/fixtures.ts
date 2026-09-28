@@ -246,6 +246,17 @@ export const CHAT_MOUNTS: ReadonlyArray<SessionProjectMount> = [
   }),
 ];
 
+export const PALETTE_CHAT_MOUNTS: ReadonlyArray<SessionProjectMount> = [
+  ...CHAT_MOUNTS,
+  mountOf({
+    sessionId: CHAT_SESSION_ID,
+    projectId: LEDGER_PROJECT_ID,
+    mountName: 'ledger-core',
+    branch: 'hl/fix-retry-storm',
+    suffix: 'storm',
+  }),
+];
+
 export const PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
   {
     id: 'anthropic',

@@ -3,6 +3,7 @@ import type { Session, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore, type LensKind } from '../../../../../store';
 import { openInEditor } from '../../../../../shared/lib/editor';
 import { openReview } from '../../../../review/openReview';
+import { openAgentRevealEvent } from '../../../../session/components/AgentDetailPane/agentOpenTab';
 
 export type BoardNavigation = {
   readonly selectCard: (session: Session) => void;
@@ -41,7 +42,7 @@ export const useBoardNavigation = (): BoardNavigation => {
             ? sessionPlace({ sessionId: id })
             : agentPlace({ sessionId: id, agentId: agent.id }),
       });
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      window.dispatchEvent(openAgentRevealEvent());
     };
 
     const openIDE = (session: Session): void => {

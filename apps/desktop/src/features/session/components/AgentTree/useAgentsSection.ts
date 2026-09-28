@@ -28,6 +28,7 @@ import { classifyAgent, type AgentKind } from '../../agent-kind';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
 import { useSessionAgentTree } from './useSessionAgentTree';
+import { openAgentRevealEvent } from '../AgentDetailPane/agentOpenTab';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 
 type Params = {
@@ -187,11 +188,11 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
 
   const onPickAgent = (sid: AgentId) => {
     if (sid === selectedAgentId) {
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      window.dispatchEvent(openAgentRevealEvent());
       return;
     }
     navigate({ to: agentPlace({ sessionId: task.id, agentId: sid }) });
-    window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+    window.dispatchEvent(openAgentRevealEvent());
   };
 
   const onAnswerQuestion = (question: OpenQuestion | null) => {

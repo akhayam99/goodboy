@@ -3,6 +3,7 @@ import type { PaletteEntry } from '../../types';
 type Props = {
   readonly entry: PaletteEntry;
   readonly isActionsLevel: boolean;
+  readonly allLabel: string | null;
   readonly hasOtherModes: boolean;
 };
 
@@ -16,9 +17,10 @@ const enterLabel = (entry: PaletteEntry): string => {
   return 'Open';
 };
 
-export const PreviewHints = ({ entry, isActionsLevel, hasOtherModes }: Props) => {
+export const PreviewHints = ({ entry, isActionsLevel, allLabel, hasOtherModes }: Props) => {
   const hints = [
     `↵ ${enterLabel(entry)}`,
+    ...(allLabel !== null && allLabel !== entry.label ? [`⌘↵ ${allLabel}`] : []),
     ...(!isActionsLevel && entry.target !== undefined && entry.kind !== 'verb'
       ? ['→ All actions']
       : []),

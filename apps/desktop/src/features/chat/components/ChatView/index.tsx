@@ -47,7 +47,7 @@ import { mountProposalsByRun } from '../../../suggestions/transcriptMountProposa
 import { ChatEmptyState } from './ChatEmptyState';
 import { TranscriptRows } from './TranscriptRows';
 import { ChatImageLoaderProvider } from './ChatImageLoaderProvider';
-import { useScrollPin } from './useScrollPin';
+import { USER_SCROLL_EVENTS, useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
 import { QuestionWaitingPill } from './parts/QuestionWaitingPill';
@@ -192,8 +192,12 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
   );
   const authResults = useAppStore((s) => s.authResults);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
-  const { scrollerRef, pinned, onScroll } = useScrollPin({
-    deps: [deferredItems],
+  const openQuestions = useSessionOpenQuestions(session.id);
+  const agentQuestionCount = openQuestions.filter(
+    (question) => question.createdByAgentId === selectedAgentId,
+  ).length;
+  const { scrollerRef, pinned, onScroll, onUserScroll } = useScrollPin({
+    deps: [deferredItems, agentQuestionCount],
     resetKey: selectedAgentId,
   });
   const fadeHostRef = useRef<HTMLDivElement>(null);
@@ -242,8 +246,16 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
     }
     scrollerRef.current = viewport;
     viewport.addEventListener('scroll', onScroll, { passive: true });
-    return () => viewport.removeEventListener('scroll', onScroll);
-  }, [scrollerRef, onScroll]);
+    for (const name of USER_SCROLL_EVENTS) {
+      viewport.addEventListener(name, onUserScroll, { passive: true });
+    }
+    return () => {
+      viewport.removeEventListener('scroll', onScroll);
+      for (const name of USER_SCROLL_EVENTS) {
+        viewport.removeEventListener(name, onUserScroll);
+      }
+    };
+  }, [scrollerRef, onScroll, onUserScroll]);
 
   const onSelectRun = (runId: ProviderRunId) => {
     document
@@ -356,7 +368,6 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
     return nodes;
   }, [mountProposalActions, mountProposals, phaseRuns]);
 
-  const openQuestions = useSessionOpenQuestions(session.id);
   const answeredQuestions = useSessionAnsweredQuestions(session.id);
   const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
   const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);

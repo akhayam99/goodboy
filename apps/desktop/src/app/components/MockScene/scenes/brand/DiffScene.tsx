@@ -12,7 +12,10 @@ import {
   CTX_PATCH,
   POST_CREDIT_PATH,
 } from './contextDiffPatch';
-import { DiffStage } from './DiffStage';
+import { DiffStage, handlersFor } from './DiffStage';
+import { MANY_FILES_PATCH } from './manyFilesDiffPatch';
+
+const MANY_FILES_HANDLERS = handlersFor(MANY_FILES_PATCH);
 
 const NOTES: ReadonlyArray<DiffComment> = [
   {
@@ -35,7 +38,11 @@ const markViewed = (): void => {
   writeReviewedMap(CTX_SESSION_ID, { kind: 'branch' }, { [file.path]: fileSignature(file) });
 };
 
-export const BrandDiffScene = () => {
+type Props = {
+  readonly manyFiles?: boolean;
+};
+
+export const BrandDiffScene = ({ manyFiles = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [isStaged, setIsStaged] = useState(false);
 
@@ -62,5 +69,11 @@ export const BrandDiffScene = () => {
     return null;
   }
 
-  return <ShellFrame session={CTX_SESSION} main={isStaged ? <DiffStage /> : null} />;
+  const stage = manyFiles ? (
+    <DiffStage handlers={MANY_FILES_HANDLERS} centerNote={false} />
+  ) : (
+    <DiffStage />
+  );
+
+  return <ShellFrame session={CTX_SESSION} main={isStaged ? stage : null} />;
 };

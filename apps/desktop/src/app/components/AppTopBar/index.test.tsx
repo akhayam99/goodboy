@@ -121,7 +121,7 @@ describe('AppTopBar', () => {
     expect(bar?.getAttribute('data-tauri-drag-region')).toBe('deep');
     expect(bar?.className).toContain('grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)]');
     expect(bar?.className).toContain('@container/topbar');
-    expect(bar?.className).toContain('pl-(--titlebar-inset)');
+    expect(bar?.className).toContain('pl-1.5');
     expect(bar?.className).toContain('bg-chrome');
     expect(bar?.className).not.toContain('bg-background');
     expect(children.map((child) => child.className.split(' ')[0])).toEqual([

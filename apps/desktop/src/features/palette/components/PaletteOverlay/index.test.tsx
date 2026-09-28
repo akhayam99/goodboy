@@ -302,6 +302,78 @@ describe('PaletteOverlay offers only the verbs the object state allows', () => {
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(setAgentConfig).toHaveBeenCalledOnce();
   });
+
+  it('keeps the session verbs under the agent verbs when an agent is selected', () => {
+    openIn(PAYOUT, IMPLEMENTER);
+
+    const eyebrows = screen
+      .getAllByText(/^For this (agent|session)$/)
+      .map((node) => node.textContent);
+    expect(eyebrows).toEqual(['For this agent', 'For this session']);
+    expect(optionNames()).toContain('Start agent');
+  });
+});
+
+describe('PaletteOverlay, copy worktree path', () => {
+  const writeText = vi.fn(async (_text: string) => undefined);
+
+  const mount = (name: string, branch: string) => ({
+    mountId: `mount-${name}`,
+    sessionId: PAYOUT,
+    mountName: name,
+    worktreePath: `/worktrees/${name}`,
+    branch,
+  });
+
+  const seedMounts = (mounts: ReadonlyArray<ReturnType<typeof mount>>) => {
+    act(() => {
+      useAppStore.setState(
+        (state) =>
+          ({
+            sessionProjectMounts: { ...state.sessionProjectMounts, [PAYOUT]: mounts },
+          }) as never,
+      );
+    });
+  };
+
+  beforeEach(() => {
+    writeText.mockClear();
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+  });
+
+  it('copies the only worktree straight away, from the agent scope too', () => {
+    seedMounts([mount('ledger-core', 'hl/payout-export')]);
+    const { input, onClose } = openIn(PAYOUT, IMPLEMENTER);
+    type(input, 'copy worktree');
+
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(writeText).toHaveBeenCalledWith('/worktrees/ledger-core');
+  });
+
+  it('picks one of several worktrees inside the palette, or copies all of them', () => {
+    seedMounts([
+      mount('ledger-core', 'hl/payout-export'),
+      mount('notify-relay', 'hl/payout-webhook'),
+    ]);
+    const first = openIn(PAYOUT);
+    type(first.input, 'copy worktree');
+    fireEvent.keyDown(first.input, { key: 'Enter' });
+
+    expect(optionNames()).toEqual(['ledger-core', 'notify-relay', 'Copy all paths']);
+    type(first.input, 'webhook');
+    fireEvent.keyDown(first.input, { key: 'Enter' });
+    expect(writeText).toHaveBeenLastCalledWith('/worktrees/notify-relay');
+    cleanup();
+
+    const second = openIn(PAYOUT);
+    type(second.input, 'copy worktree');
+    fireEvent.keyDown(second.input, { key: 'Enter' });
+    fireEvent.keyDown(second.input, { key: 'Enter', metaKey: true });
+    expect(writeText).toHaveBeenLastCalledWith('/worktrees/ledger-core\n/worktrees/notify-relay');
+    expect(second.onClose).toHaveBeenCalledOnce();
+  });
 });
 
 const IMPORTER_SHA = 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1';

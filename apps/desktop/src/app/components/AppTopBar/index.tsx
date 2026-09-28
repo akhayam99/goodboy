@@ -1,4 +1,3 @@
-import { Divider } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { NotificationCenter } from '../../../features/notifications/components/NotificationCenter';
 import { WorkspaceIdentityRow } from '../../../features/workspace/components/WorkspaceIdentityRow';
@@ -21,7 +20,7 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: 
   <>
     <div
       data-tauri-drag-region="deep"
-      className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-chrome pl-(--titlebar-inset) pr-3"
+      className="@container/topbar grid h-9 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] items-center gap-2 bg-chrome pl-1.5 pr-3"
     >
       <div className="col-start-1 flex min-w-0 items-center gap-1">
         <div className="flex min-w-0 max-w-50 items-center">
@@ -34,7 +33,7 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: 
         <CommandCenter />
       </div>
 
-      <div className="col-start-3 flex items-center justify-end gap-2">
+      <div className="col-start-3 flex items-center justify-end gap-1">
         <div className="flex shrink-0 items-center gap-1">
           <StorageChip />
           <NowChip onOpenScript={onOpenScript} />
@@ -42,8 +41,6 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: 
         </div>
 
         <LimitsStrip openProviderId={openProviderId} />
-
-        <Divider orientation="vertical" className="h-4 shrink-0 self-center" />
 
         <ThemeToggle />
 

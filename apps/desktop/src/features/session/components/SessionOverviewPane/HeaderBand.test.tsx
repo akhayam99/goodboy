@@ -64,7 +64,7 @@ vi.mock('./SessionCostChip', () => ({
   SessionCostChip: () => <span data-testid="session-cost-chip" />,
 }));
 vi.mock('./LinkedWorkChips', () => ({ LinkedWorkChips: () => <span>Linked work</span> }));
-vi.mock('./LinkIssueAction', () => ({ LinkIssueAction: () => <button>Link issue</button> }));
+vi.mock('./LinkIssueAction', () => ({ LinkIssueAction: () => <button>Link work</button> }));
 vi.mock('./ProjectMountRows', () => ({
   ProjectMountRows: () => <section aria-label="Projects" />,
 }));
@@ -99,6 +99,20 @@ describe('HeaderBand', () => {
 
     render(<HeaderBand session={{ ...session, titleUserEdited: true }} onSelectLens={vi.fn()} />);
     expect(screen.queryByText('Named by Goodboy')).toBeNull();
+  });
+
+  it('offers Link work on a live session and drops it once archived', () => {
+    const { unmount } = render(<HeaderBand session={session} onSelectLens={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Link work' })).toBeDefined();
+    unmount();
+
+    render(
+      <HeaderBand
+        session={{ ...session, archivedAt: '2026-09-28T09:00:00.000Z' } as Session}
+        onSelectLens={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Link work' })).toBeNull();
   });
 
   it('stays clear of attention chips when nothing is waiting', () => {
