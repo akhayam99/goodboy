@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
 import type { ChatId, IsoDateTime, ProviderId, ProviderRunId } from '@goodboy/types';
 import { parseProviderLine } from '../chat/parseProviderLine';
-import { chatReadPath } from './chatReadPath';
+import { chatReadPaths } from './chatReadPath';
 
 export const CHAT_EVENT_NAME = 'chat_event';
 
@@ -102,10 +102,7 @@ export const runChatTurn = async ({
         failure = event.message;
         continue;
       }
-      const read = chatReadPath({ event, workingDir: request.workingDir });
-      if (read !== null) {
-        onRead(read);
-      }
+      chatReadPaths({ event, workingDir: request.workingDir }).forEach((path) => onRead(path));
     }
   };
 

@@ -556,7 +556,9 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 - **What it carries.** Each turn sends the workspace system prompt and the
   last turns of the chat as text; Goodboy owns the conversation, not the CLI.
   The files a read tool opened are kept on the reply for the "Read N files"
-  trace.
+  trace. Codex reads through shell commands, so for Codex the trace takes the
+  file arguments of `cat`, `nl`, `head`, `tail`, `sed -n`, `rg` or `grep` with
+  a file, and `ls` of a file (`chatReadPath.ts`).
 - **Storage.** `chats` and `chat_messages` (m212). A chat stores its model as a
   catalog key. Idle is derived: a chat with no activity for seven days moves
   to the idle group, and only the user archives it.
