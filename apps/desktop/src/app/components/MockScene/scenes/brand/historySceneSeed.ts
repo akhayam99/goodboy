@@ -5,6 +5,7 @@ import type {
   HistoryStep,
   PullRequestState,
 } from '@goodboy/types';
+import { historyBackupRef } from '../../../../../features/history/historyBackupRef';
 import {
   combineInto,
   initialPlanItems,
@@ -240,7 +241,7 @@ export const LEDGER_STOPPED_RUN: HistoryRun = {
 export const LEDGER_RESULT_RUN: HistoryRun = {
   ...baseRun,
   phase: 'pushed',
-  backupRef: `refs/goodboy/backup/${LEDGER_BRANCH.replace('/', '-')}/1790000000000000000`,
+  backupRef: historyBackupRef({ branch: LEDGER_BRANCH, atMs: Date.now() - 2 * 60_000 }),
   remoteSha: RESULT_SHA.c,
   applied: {
     before: 7,
