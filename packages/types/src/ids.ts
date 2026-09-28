@@ -31,3 +31,6 @@ export type IntegrationDraftId = string & { readonly __brand: 'IntegrationDraftI
 
 export type CredentialId = string & { readonly __brand: 'CredentialId' };
 export type IntegrationCredentialId = string & { readonly __brand: 'IntegrationCredentialId' };
+
+export type ChatId = string & { readonly __brand: 'ChatId' };
+export type ChatMessageId = string & { readonly __brand: 'ChatMessageId' };

@@ -562,3 +562,15 @@ export {
   unstarClosedIssues,
   updateStarredIssueSnapshots,
 } from './queries/starred-issue';
+export {
+  finishChatMessage,
+  insertChat,
+  insertChatMessage,
+  listChatMessages,
+  listChats,
+  renameChat,
+  setChatModel,
+  setChatPinned,
+  setChatsArchived,
+  settleStreamingChatMessages,
+} from './queries/chat';
