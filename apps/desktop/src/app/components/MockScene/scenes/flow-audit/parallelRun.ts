@@ -1,6 +1,6 @@
 import type { Agent, AgentId, Session, TurnState, WorkflowRun } from '@goodboy/types';
 import { sceneClock } from '../../sceneClock';
-import { FLOW_AGENTS, FLOW_SESSION, SESSIONS } from './fixtures';
+import { FLOW_AGENTS, FLOW_SESSION, FLOW_TELEMETRY, NOW, SESSIONS } from './fixtures';
 
 const clock = sceneClock({ anchor: '2026-09-16T11:20:00.000Z' });
 
@@ -41,9 +41,22 @@ const parallelScoutOf = (agent: Agent): Agent => {
   };
 };
 
-export const PARALLEL_AGENTS: ReadonlyArray<Agent> = FLOW_AGENTS.filter(
-  (agent) => agent.kind === 'scout',
-).map(parallelScoutOf);
+const pendingOf = (agent: Agent): Agent => {
+  const { completedAt, lastFinishedAt, lastViewedAt, doneAt, ...rest } = agent;
+  return { ...rest, status: 'pending', outputSummary: '', startedAt: NOW };
+};
+
+export const PARALLEL_AGENTS: ReadonlyArray<Agent> = FLOW_AGENTS.map((agent) =>
+  agent.kind === 'scout' ? parallelScoutOf(agent) : pendingOf(agent),
+);
+
+const SCOUT_RUN_IDS = new Set(
+  PARALLEL_AGENTS.filter((agent) => agent.kind === 'scout').map((agent) => agent.runId),
+);
+
+export const PARALLEL_TELEMETRY = FLOW_TELEMETRY.filter((record) =>
+  SCOUT_RUN_IDS.has(record.runId),
+);
 
 const [BASE_RUN, ...OTHER_RUNS] = FLOW_SESSION.workflowRuns;
 
@@ -54,7 +67,7 @@ const PARALLEL_RUN: WorkflowRun = {
     (hint) => hint.consumedAtStep === undefined || hint.consumedAtStep === 1,
   ),
   orchestratorSummary:
-    'Three scouts are reading ledger-core, payments-api and notify-relay at the same time. One has reported; the plan waits until the other two finish.',
+    'Three scouts are reading ledger-core, payments-api and notify-relay at the same time. One has reported; the plan starts when the other two finish.',
 };
 
 const turnOf = (agent: Agent): TurnState | null =>
