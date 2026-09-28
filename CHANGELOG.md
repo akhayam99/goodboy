@@ -12,6 +12,55 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.11.6
+
+Agents pick up where they were after a restart or an update, every form ends on one action row, and an open question shows once.
+
+### New
+
+#### Agents resume after a restart
+<!-- gb area=agents image=resume-restart -->
+
+Restart Goodboy or install an update and the agents that were running pick up where they stopped, with a note in their transcript. Every window reopens where it was.
+
+Reloading a window with `Cmd+R` keeps its running agents going. An agent a restart cut off any other way reads Stopped by restart, with Resume one click away.
+
+#### Pick up a task with the workflow builder
+<!-- gb area=workflows -->
+
+Pick up a task opens the same workflow builder as Run a workflow, with the issue as the goal. Start links the issue, mounts its project, creates the session and starts the run in one action.
+
+### Improved
+
+#### Forms end on one action row
+<!-- gb area=app image=form-actions -->
+
+Every form, popover and creation flow ends the way the new workflow form does: quiet options on the left, the main action on the right, right after the content. Footer bars with a divider are gone.
+
+#### Open questions show once
+<!-- gb area=sessions image=question-once -->
+
+A question an agent asks shows once in the session activity, on the row of the agent that asked. Next step and the needs-you callout leave out questions and approvals already on screen, and the sidebar names them once.
+
+Answer on a workflow row opens the agent that asked, right at its question.
+
+#### Theme switch cross-fades
+<!-- gb area=app -->
+
+Switching between light and dark fades the whole window at once while the theme icon turns. With reduced motion the switch stays instant.
+
+#### Actions show busy until they finish
+<!-- gb area=app -->
+
+Next step actions, pull request and Resolve verbs, Continue, Start step and Restore show busy while they run and ignore a second click. A failure is logged once, naming what failed.
+
+### Fixed
+
+- The push count only counts commits missing from the branch's own remote, and drops to zero right after a push from the app, an agent or a terminal. <!-- gb area=sessions -->
+- A branch whose remote was force-pushed reads diverged and opens its history, instead of offering a push that fails. <!-- gb area=sessions -->
+- A resolver you start shows on its queue row right away, without a reload. <!-- gb area=review -->
+- When an agent process refuses to stop, Stop logs it instead of showing the agent idle. <!-- gb area=agents -->
+
 ## Goodboy v0.11.5
 
 The Task, Workflow and Agent kickoff is back with Start blank and the full workflow builder, and sessions find pull requests made elsewhere.
