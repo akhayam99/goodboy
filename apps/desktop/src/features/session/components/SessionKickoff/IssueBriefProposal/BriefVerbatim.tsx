@@ -1,4 +1,4 @@
-import { Button, ClampedProse } from '@goodboy/ui';
+import { Button, ClampedProse, FormActions } from '@goodboy/ui';
 import type { IssueBriefSource } from '../../../../../store/slices/issue-briefs/types';
 import { BriefHeader } from './BriefHeader';
 
@@ -28,10 +28,10 @@ export const BriefVerbatim = ({ source, verbatimGoal, onUseIssueText, onDismiss 
     <p className="text-secondary text-faint-foreground">
       No model is free to write a brief, so this is the {source.noun} text as it is.
     </p>
-    <footer className="flex items-center gap-1.5">
+    <FormActions>
       <Button size="sm" onClick={onUseIssueText}>
         Use issue text
       </Button>
-    </footer>
+    </FormActions>
   </>
 );
