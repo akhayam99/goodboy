@@ -61,6 +61,7 @@ type Props = {
   readonly mode: ResolveDecisionMode;
   readonly proposalKind: ResolveProposalKind;
   readonly isBusy: boolean;
+  readonly busyActionId: ResolveItemActionId | null;
   readonly sharedMembers: ReadonlyArray<SharedCandidateMember>;
   readonly canRunCheck: boolean;
   readonly isCheckRunning: boolean;
@@ -182,6 +183,7 @@ export const ResolveItemView = ({
   mode,
   proposalKind,
   isBusy,
+  busyActionId,
   sharedMembers,
   canRunCheck,
   isCheckRunning,
@@ -316,11 +318,17 @@ export const ResolveItemView = ({
                       <ActionButton
                         action={actions.secondary}
                         isPrimary={false}
+                        isBusy={busyActionId === actions.secondary.id}
                         onAction={onAction}
                       />
                     )}
                     {actions.primary !== null && (
-                      <ActionButton action={actions.primary} isPrimary onAction={onAction} />
+                      <ActionButton
+                        action={actions.primary}
+                        isPrimary
+                        isBusy={busyActionId === actions.primary.id}
+                        onAction={onAction}
+                      />
                     )}
                   </FormActions>
                 )}
@@ -350,7 +358,8 @@ export const ResolveItemView = ({
                       size="sm"
                       variant="primary"
                       data-resolve-primary
-                      disabled={isBusy || isCommitBlocked}
+                      disabled={isCommitBlocked}
+                      isBusy={isBusy}
                       onClick={onCommitEditing}
                     >
                       {commitLabel}

@@ -33,6 +33,7 @@ export const IconButton = ({
   tone = 'neutral',
   variant = 'outline',
   type = 'button',
+  disabled = false,
   className,
   ...rest
 }: IconButtonProps) => {
@@ -41,6 +42,8 @@ export const IconButton = ({
       <button
         type={type}
         aria-label={label}
+        aria-busy={busy ? true : undefined}
+        disabled={disabled || busy}
         className={cn(
           'inline-flex items-center justify-center rounded-md p-1.5',
           'text-muted-foreground motion-safe:transition-colors',

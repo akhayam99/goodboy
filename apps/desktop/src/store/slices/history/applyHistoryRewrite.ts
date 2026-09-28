@@ -134,6 +134,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       });
       break;
     }
+    await refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] }).catch(() => undefined);
     if (!input.shouldPush || !remote.hasUpstream) {
       return 'applied';
     }
@@ -174,6 +175,9 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
     }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
     if (pushed.kind === 'pushed') {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushed', stop: null } });
+      await refreshWorktreeStatuses({ worktreePaths: [target.worktreePath] }).catch(
+        () => undefined,
+      );
       if (planId !== null) {
         await markHistoryPlan({
           db: tauriDatabase,

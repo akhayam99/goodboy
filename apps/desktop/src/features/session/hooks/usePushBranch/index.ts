@@ -1,69 +1,46 @@
-import { useState } from 'react';
-import { formatError } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 
 type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
-  readonly onError?: (message: string) => void;
 };
 
 type Result = {
   readonly isBusy: boolean;
-  readonly error: string | null;
-  readonly run: () => Promise<void>;
+  readonly run: () => Promise<boolean>;
 };
 
+const PUSH_KEY = 'push';
 const PUSH_PROGRESS_LABEL = 'Pushing the branch';
+const PUSH_FAILURE_TITLE = "Couldn't push the branch";
 
-export const usePushBranch = ({ sessionId, mountId, onError }: Params): Result => {
+export const usePushBranch = ({ sessionId, mountId }: Params): Result => {
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
   const beginSessionCreation = useAppStore((state) => state.beginSessionCreation);
   const endSessionCreation = useAppStore((state) => state.endSessionCreation);
-  const { showToast } = useToast();
-  const [isBusy, setIsBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const action = usePendingAction({ sessionId });
 
-  const fail = (message: string) => {
-    setError(message);
-    onError?.(message);
-  };
-
-  const run = async (): Promise<void> => {
-    if (isBusy) {
-      return;
-    }
-    setError(null);
-    setIsBusy(true);
-    const creationId = beginSessionCreation(sessionId, {
-      kind: 'branch',
-      label: PUSH_PROGRESS_LABEL,
+  const run = (): Promise<boolean> =>
+    action.run({
+      key: PUSH_KEY,
+      failureTitle: PUSH_FAILURE_TITLE,
+      task: async () => {
+        const creationId = beginSessionCreation(sessionId, {
+          kind: 'branch',
+          label: PUSH_PROGRESS_LABEL,
+        });
+        try {
+          const result = await pushSessionBranch({ sessionId, mountId });
+          if (!result.ok) {
+            throw new Error(result.error);
+          }
+        } finally {
+          endSessionCreation(sessionId, creationId);
+        }
+      },
     });
-    showToast({
-      kind: 'info',
-      message: 'Pushing this branch to its remote.',
-      title: 'Push started',
-    });
-    try {
-      const result = await pushSessionBranch({ sessionId, mountId });
-      if (!result.ok) {
-        fail(result.error);
-        return;
-      }
-      showToast({
-        kind: 'success',
-        message: 'This branch is pushed to its remote.',
-        title: 'Push done',
-      });
-    } catch (failure) {
-      fail(formatError(failure));
-    } finally {
-      endSessionCreation(sessionId, creationId);
-      setIsBusy(false);
-    }
-  };
 
-  return { isBusy, error, run };
+  return { isBusy: action.pendingKeys.has(PUSH_KEY), run };
 };

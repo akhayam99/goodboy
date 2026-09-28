@@ -17,10 +17,11 @@ type Props = {
   readonly suggestion: SessionSuggestion;
   readonly actions: SuggestionActions;
   readonly compact: boolean;
+  readonly isPending: boolean;
   readonly onNotNow: () => void;
 };
 
-export const NextStepRow = ({ suggestion, actions, compact, onNotNow }: Props) => {
+export const NextStepRow = ({ suggestion, actions, compact, isPending, onNotNow }: Props) => {
   const Icon = SUGGESTION_ICONS[suggestion.kind];
   const tone = BAND_TONE[suggestion.band];
   const dropdown = useDropdown({ align: 'end', expectedWidth: 160, expectedHeight: 80 });
@@ -48,7 +49,7 @@ export const NextStepRow = ({ suggestion, actions, compact, onNotNow }: Props) =
           <span className="truncate text-label text-muted-foreground">{suggestion.detail}</span>
         )}
       </span>
-      {isArmed && (
+      {isArmed && !isPending && (
         <Button size="sm" variant="ghost" onClick={() => setIsConfirming(false)}>
           Cancel
         </Button>
@@ -58,13 +59,14 @@ export const NextStepRow = ({ suggestion, actions, compact, onNotNow }: Props) =
           size="sm"
           variant={suggestion.band === 0 || isArmed ? 'primary' : 'secondary'}
           disabled={primary.isDisabled}
+          isBusy={isPending}
           onClick={() => {
             if (primary.requiresConfirm === true && !isConfirming) {
               setIsConfirming(true);
               return;
             }
             setIsConfirming(false);
-            primary.onAct();
+            void primary.run();
           }}
         >
           {primary.label}
@@ -90,7 +92,6 @@ export const NextStepRow = ({ suggestion, actions, compact, onNotNow }: Props) =
           onClick={() => {
             dropdown.close();
             onNotNow();
-            actions.onDismiss?.();
           }}
           className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-body text-foreground transition-colors hover:bg-hover"
         >

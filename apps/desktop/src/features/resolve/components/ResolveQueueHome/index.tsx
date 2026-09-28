@@ -44,6 +44,7 @@ import { eligibleReviewThreads } from '../../../suggestions/eligibleThreads';
 import type { CommentThread } from '../../../github/comment-threads';
 import { useResolveQueueRows } from '../../hooks/useResolveQueueRows';
 import { useResolveAgain } from '../../hooks/useResolveAgain';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { hasActiveResolveRun } from '../../hasActiveResolveRun';
 import { heldBackByThreadId } from '../../heldBackByThreadId';
 import { resolvableThread } from '../../resolvableThread';
@@ -368,13 +369,16 @@ export const ResolveQueueHome = ({ session, header = null, publish = null }: Pro
 
   const onAskForChanges = useResolveAgain({ sessionId, rows });
 
+  const resume = usePendingAction({ sessionId });
   const onResume = useCallback(
     ({ itemId }: { readonly itemId: string }): void => {
-      void takeUpResolveQueueItem({ sessionId, itemId }).catch((error: unknown) =>
-        reportError({ title: "Couldn't resume the queued fix", error, sessionId }),
-      );
+      void resume.run({
+        key: itemId,
+        failureTitle: "Couldn't resume the queued fix",
+        task: () => takeUpResolveQueueItem({ sessionId, itemId }),
+      });
     },
-    [reportError, sessionId, takeUpResolveQueueItem],
+    [resume, sessionId, takeUpResolveQueueItem],
   );
 
   const focusRow = useCallback(({ threadId }: FocusRowParams): void => {
@@ -633,7 +637,12 @@ export const ResolveQueueHome = ({ session, header = null, publish = null }: Pro
       openRow(row);
     };
     return (
-      <Button size="sm" variant="ghost" onClick={onPress}>
+      <Button
+        size="sm"
+        variant="ghost"
+        isBusy={action === 'resume' && resume.pendingKeys.has(row.item.id)}
+        onClick={onPress}
+      >
         {RESOLVE_ROW_ACTION_LABEL[action]}
       </Button>
     );

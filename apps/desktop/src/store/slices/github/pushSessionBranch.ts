@@ -35,7 +35,7 @@ export const pushSessionBranch = async ({
   if (push.exitCode !== 0) {
     return { ok: false, error: push.stderr.trim() || `git push exited with ${push.exitCode}` };
   }
-  void refreshWorktreeStatuses({ worktreePaths: [repo.worktreePath] });
+  await refreshWorktreeStatuses({ worktreePaths: [repo.worktreePath] }).catch(() => undefined);
   void get().refreshSessionPr(sessionId, { mountId, force: true, silent: true });
   return { ok: true };
 };

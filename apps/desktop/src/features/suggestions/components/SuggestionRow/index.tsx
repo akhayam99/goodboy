@@ -11,6 +11,7 @@ type Props = {
   readonly onAction: () => void;
   readonly onDismiss?: () => void;
   readonly isDisabled?: boolean;
+  readonly isBusy?: boolean;
 };
 
 export const SuggestionRow = ({
@@ -20,6 +21,7 @@ export const SuggestionRow = ({
   onAction,
   onDismiss,
   isDisabled = false,
+  isBusy = false,
 }: Props) => {
   const Icon = SUGGESTION_ICONS[suggestion.kind];
   return (
@@ -47,6 +49,7 @@ export const SuggestionRow = ({
         variant="secondary"
         emphasis="outline"
         disabled={isDisabled}
+        isBusy={isBusy}
         onClick={onAction}
       >
         {actionLabel}

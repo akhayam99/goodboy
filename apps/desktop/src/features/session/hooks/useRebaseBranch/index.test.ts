@@ -12,7 +12,8 @@ const { showToast, state } = vi.hoisted(() => ({
       'session-1': [{ mountId: 'mount-1', projectId: 'project-1', baseBranch: 'main' }],
     } as Record<string, ReadonlyArray<unknown>>,
     projects: [{ id: 'project-1', baseBranch: 'main' }],
-    rebaseBranch: vi.fn(async () => 'rebased'),
+    rebaseBranch: vi.fn(async (): Promise<string> => 'rebased'),
+    reportError: vi.fn(async (_params: unknown) => undefined),
   },
 }));
 
@@ -38,6 +39,7 @@ afterEach(() => {
   cleanup();
   state.historyRuns = {};
   state.rebaseBranch.mockClear();
+  state.reportError.mockClear();
   showToast.mockClear();
 });
 
@@ -55,6 +57,24 @@ describe('useRebaseBranch', () => {
     expect(showToast).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'success', title: 'Rebase done' }),
     );
+  });
+
+  it('logs a rebase that throws before the engine can stop it', async () => {
+    state.rebaseBranch.mockRejectedValueOnce(new Error('no mount for this session'));
+    const { result } = renderHook(() =>
+      useRebaseBranch({ sessionId, mountId, status: behindBy(4) }),
+    );
+
+    await act(async () => {
+      await result.current.run({ mountId });
+    });
+
+    expect(state.reportError).toHaveBeenCalledWith({
+      title: "Couldn't rebase the branch",
+      error: new Error('no mount for this session'),
+      sessionId,
+    });
+    expect(result.current.isRunning).toBe(false);
   });
 
   it('does nothing when the branch is not behind', async () => {

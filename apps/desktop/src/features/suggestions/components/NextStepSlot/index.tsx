@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, type LensKind } from '../../../../store';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { useSessionSuggestions } from '../../useSessionSuggestions';
 import { useSuggestionActions, type SuggestionActions } from '../../useSuggestionActions';
 import { useTranscriptMountProposals } from '../../useTranscriptMountProposals';
@@ -45,6 +46,7 @@ export const NextStepSlot = ({
     agents,
     onSelectQuestions: () => onSelectLens('questions'),
   });
+  const pending = usePendingAction({ sessionId });
   const [expanded, setExpanded] = useState(false);
   const [notNowIds, setNotNowIds] = useState<ReadonlySet<string>>(new Set());
 
@@ -59,7 +61,7 @@ export const NextStepSlot = ({
     return null;
   }
 
-  const onNotNow = (suggestion: SessionSuggestion) => {
+  const onNotNow = (suggestion: SessionSuggestion, actions: SuggestionActions) => {
     setNotNowIds((current) => new Set([...current, suggestion.id]));
     void recordNextStepOutcome({
       sessionId,
@@ -67,38 +69,67 @@ export const NextStepSlot = ({
       outcome: 'dismissed',
       fingerprint: suggestion.fingerprint,
     });
+    const dismiss = actions.onDismiss;
+    if (dismiss === null) {
+      return;
+    }
+    void pending.run({
+      key: `${suggestion.id}:dismiss`,
+      failureTitle: "Couldn't dismiss the suggestion",
+      task: dismiss,
+    });
   };
 
   const trackedActions = (suggestion: SessionSuggestion): SuggestionActions => {
     const actions = actionsFor({ suggestion });
-    if (actions.primary === null) {
+    const primary = actions.primary;
+    if (primary === null) {
       return actions;
     }
     return {
       ...actions,
       primary: {
-        ...actions.primary,
-        onAct: () => {
+        ...primary,
+        run: async () => {
           void recordNextStepOutcome({
             sessionId,
             kind: suggestion.kind,
             outcome: 'accepted',
             fingerprint: suggestion.fingerprint,
           });
-          actions.primary?.onAct();
+          await pending.run({
+            key: suggestion.id,
+            failureTitle: primary.failureTitle,
+            task: primary.run,
+          });
         },
       },
     };
   };
 
+  const rowFor = ({
+    suggestion,
+    isCompact,
+  }: {
+    readonly suggestion: SessionSuggestion;
+    readonly isCompact: boolean;
+  }) => {
+    const actions = trackedActions(suggestion);
+    return (
+      <NextStepRow
+        key={suggestion.id}
+        suggestion={suggestion}
+        actions={actions}
+        compact={isCompact}
+        isPending={pending.pendingKeys.has(suggestion.id)}
+        onNotNow={() => onNotNow(suggestion, actions)}
+      />
+    );
+  };
+
   return (
     <div className="flex flex-col gap-1">
-      <NextStepRow
-        suggestion={first}
-        actions={trackedActions(first)}
-        compact={false}
-        onNotNow={() => onNotNow(first)}
-      />
+      {rowFor({ suggestion: first, isCompact: false })}
       {rest.length > 0 && !expanded && (
         <button
           type="button"
@@ -108,16 +139,7 @@ export const NextStepSlot = ({
           {rest.length} more
         </button>
       )}
-      {expanded &&
-        rest.map((suggestion) => (
-          <NextStepRow
-            key={suggestion.id}
-            suggestion={suggestion}
-            actions={trackedActions(suggestion)}
-            compact
-            onNotNow={() => onNotNow(suggestion)}
-          />
-        ))}
+      {expanded && rest.map((suggestion) => rowFor({ suggestion, isCompact: true }))}
     </div>
   );
 };

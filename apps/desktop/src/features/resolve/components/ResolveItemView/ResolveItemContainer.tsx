@@ -1,7 +1,16 @@
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatError } from '@goodboy/ui';
-import type { ResolveCheckRun, ResolveQueueItemWithThread, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  ResolveCheckRun,
+  ResolveQueueItemWithThread,
+  SessionId,
+} from '@goodboy/types';
+import {
+  ReportedError,
+  isReportedError,
+} from '../../../../store/slices/notifications/reportedError';
 import { sessionPlace, useAppStore } from '../../../../store';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useAgentMetrics } from '../../../session/hooks/useAgentMetrics';
@@ -11,6 +20,7 @@ import { summariseResolveChecks } from '../../checkReceipts';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
 import { useResolveItemDraft } from '../../hooks/useResolveItemDraft';
+import type { ResolveAgainOutcome } from '../../hooks/useResolveAgain';
 import { refuseBlockedReason } from '../../refuseBlockedReason';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { candidateHeadSha, selectResolveCandidate } from '../../selectResolveCandidate';
@@ -41,7 +51,7 @@ type Props = {
   readonly worktreePath: string | null;
   readonly onSelect: (threadId: string | null, excludedThreadIds?: ReadonlyArray<string>) => void;
   readonly nextThreadId?: string | null;
-  readonly onRequestAttempt?: (params: RequestAttemptParams) => Promise<boolean>;
+  readonly onRequestAttempt?: (params: RequestAttemptParams) => Promise<ResolveAgainOutcome>;
   readonly onAskForChanges?: (params: RequestAttemptParams) => boolean;
   readonly onOpenInDiff: (params: {
     readonly threadId: string;
@@ -70,7 +80,12 @@ const EMPTY_SCRIPT_GROUPS: ReadonlyArray<ScriptGroup> = [];
 const EMPTY_ITEM_DRAFTS: Readonly<Record<string, ResolveItemDraft>> = {};
 const COULD_NOT_SEND =
   'This comment is no longer on the pull request, so the agent cannot be asked about it';
-type GuardParams = Readonly<{ run: () => Promise<void>; onSuccess?: () => void }>;
+type GuardParams = Readonly<{
+  failureTitle: string;
+  actionId?: ResolveItemActionId;
+  run: () => Promise<void>;
+  onSuccess?: () => void;
+}>;
 type ResolveBlockerParams = {
   readonly row: ResolveQueueRow;
   readonly isApprovable: boolean;
@@ -145,6 +160,7 @@ export const ResolveItemContainer = ({
   const reopenResolveQueueItem = useAppStore((s) => s.reopenResolveQueueItem);
   const runResolveCheck = useAppStore((s) => s.runResolveCheck);
   const forceCloseResolver = useAppStore((s) => s.forceCloseResolver);
+  const reportError = useAppStore((s) => s.reportError);
   const loadDiscoveredScripts = useAppStore((s) => s.loadDiscoveredScripts);
   const metrics = useAgentMetrics({ sessionId });
   const threadId = row.thread.threadId;
@@ -155,6 +171,7 @@ export const ResolveItemContainer = ({
     proposal: row.proposal,
   });
   const [isBusy, setIsBusy] = useState(false);
+  const [busyActionId, setBusyActionId] = useState<ResolveItemActionId | null>(null);
   const [isCheckRunning, setIsCheckRunning] = useState(false);
   const [unprovable, setUnprovable] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -224,8 +241,12 @@ export const ResolveItemContainer = ({
       ? null
       : (metrics.aggregatesByAgentId.get(row.attempt.agentId)?.estimatedCostUsd ?? null);
 
-  const guard = async ({ run, onSuccess }: GuardParams): Promise<void> => {
+  const guard = async ({ failureTitle, actionId, run, onSuccess }: GuardParams): Promise<void> => {
+    if (isBusy) {
+      return;
+    }
     setIsBusy(true);
+    setBusyActionId(actionId ?? null);
     setError(null);
     try {
       await run();
@@ -233,18 +254,25 @@ export const ResolveItemContainer = ({
         onSuccess?.();
       }
     } catch (caught) {
+      if (isReportedError(caught)) {
+        return;
+      }
       if (isStillSelected()) {
         setError(formatError(caught));
+        return;
       }
+      void reportError({ title: failureTitle, error: caught, sessionId });
     } finally {
       if (isStillSelected()) {
         setIsBusy(false);
+        setBusyActionId(null);
       }
     }
   };
 
   const onApprove = (): void => {
     void guard({
+      failureTitle: "Couldn't approve the comment",
       run: () =>
         acceptResolveQueueItem({
           sessionId,
@@ -268,6 +296,7 @@ export const ResolveItemContainer = ({
   };
   const onResolve = (): void => {
     void guard({
+      failureTitle: "Couldn't resolve the comment",
       run: async () => {
         const decision = { sessionId, itemId: row.item.id, revision: row.thread.revision, reply };
         const isRewritten = reply !== (row.thread.replyDraft ?? '');
@@ -297,6 +326,7 @@ export const ResolveItemContainer = ({
   };
   const onDiscuss = (): void => {
     void guard({
+      failureTitle: "Couldn't post the reply",
       run: () => discussResolveThread({ sessionId, threadId, reply }),
       onSuccess: () => {
         setReply('');
@@ -307,6 +337,7 @@ export const ResolveItemContainer = ({
   const onRefuse = (): void => {
     if (isNote) {
       void guard({
+        failureTitle: "Couldn't close the note",
         run: () => closeResolvedNote({ sessionId, threadId }),
         onSuccess: () => {
           setMode('read');
@@ -316,6 +347,7 @@ export const ResolveItemContainer = ({
       return;
     }
     void guard({
+      failureTitle: "Couldn't close the comment",
       run: () =>
         refuseResolveQueueItem({
           sessionId,
@@ -329,8 +361,10 @@ export const ResolveItemContainer = ({
       },
     });
   };
-  const onReopen = (): void => {
+  const onReopen = (actionId: ResolveItemActionId): void => {
     void guard({
+      actionId,
+      failureTitle: "Couldn't reopen the comment",
       run: () =>
         reopenResolveQueueItem({ sessionId, itemId: row.item.id, revision: row.thread.revision }),
     });
@@ -378,17 +412,33 @@ export const ResolveItemContainer = ({
       threadId,
       instruction: typed === '' ? RESOLVE_ITEM_LABEL.rereadInstruction : typed,
     };
-    const request =
-      onRequestAttempt === undefined
-        ? Promise.resolve(onAskForChanges?.(params) ?? false)
-        : onRequestAttempt(params);
-    void request.then((isSent) => {
-      if (!isSent) {
-        setError(COULD_NOT_SEND);
-        return;
-      }
-      setInstruction('');
-      setMode('read');
+    void guard({
+      failureTitle: "The fix didn't start",
+      run: async () => {
+        const outcome: ResolveAgainOutcome =
+          onRequestAttempt === undefined
+            ? onAskForChanges?.(params) === true
+              ? 'started'
+              : 'missing'
+            : await onRequestAttempt(params);
+        if (outcome === 'missing') {
+          throw new Error(COULD_NOT_SEND);
+        }
+        if (outcome === 'failed') {
+          throw new ReportedError("The fix didn't start");
+        }
+      },
+      onSuccess: () => {
+        setInstruction('');
+        setMode('read');
+      },
+    });
+  };
+  const onStop = (agentId: AgentId): void => {
+    void guard({
+      actionId: 'stop_run',
+      failureTitle: "Couldn't stop the agent",
+      run: () => forceCloseResolver(sessionId, agentId),
     });
   };
 
@@ -430,11 +480,15 @@ export const ResolveItemContainer = ({
       return;
     }
     if (id === 'resume_comment' || id === 'change_decision') {
-      void guard({ run: () => takeUpResolveQueueItem({ sessionId, itemId: row.item.id }) });
+      void guard({
+        actionId: id,
+        failureTitle: "Couldn't take the comment up",
+        run: () => takeUpResolveQueueItem({ sessionId, itemId: row.item.id }),
+      });
       return;
     }
     if (id === 'review_changed' || id === 'reopen_locally') {
-      onReopen();
+      onReopen(id);
       return;
     }
     if (id === 'check_publication') {
@@ -453,7 +507,7 @@ export const ResolveItemContainer = ({
       return;
     }
     if (id === 'stop_run' && row.attempt !== null) {
-      void forceCloseResolver(sessionId, row.attempt.agentId);
+      onStop(row.attempt.agentId);
     }
   };
 
@@ -478,6 +532,7 @@ export const ResolveItemContainer = ({
       instruction={instruction}
       mode={mode}
       isBusy={isBusy}
+      busyActionId={busyActionId}
       proposalKind={proposalKind}
       actions={actions}
       sharedMembers={sharedMembers}
@@ -524,9 +579,11 @@ export const ResolveItemContainer = ({
         })
       }
       onRunCheck={onRunCheck}
-      onStopRun={() =>
-        row.attempt !== null && void forceCloseResolver(sessionId, row.attempt.agentId)
-      }
+      onStopRun={() => {
+        if (row.attempt !== null) {
+          onStop(row.attempt.agentId);
+        }
+      }}
       onViewWork={onViewAgent}
       onSelectRelated={(relatedThreadId) => onSelect(relatedThreadId)}
       onOpenUrl={(url) => void openUrl(url)}

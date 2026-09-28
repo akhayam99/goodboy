@@ -15,13 +15,14 @@ import type {
   WorkflowId,
   WorkflowRunId,
 } from '@goodboy/types';
-import type { SessionSuggestion } from '../types';
+import { SUGGESTION_KINDS, type SessionSuggestion, type SuggestionKind } from '../types';
 
 const { storeState, spies } = vi.hoisted(() => {
   const ensureProjectMounted = vi.fn(async () => undefined);
   const recordSessionEvent = vi.fn(async () => undefined);
   const setSessionActiveProject = vi.fn(async () => undefined);
   const emitNotification = vi.fn(async () => undefined);
+  const reportError = vi.fn(async (_params: unknown) => undefined);
   const spawnAgent = vi.fn(
     async (
       sessionId: string,
@@ -54,6 +55,7 @@ const { storeState, spies } = vi.hoisted(() => {
       recordSessionEvent,
       setSessionActiveProject,
       emitNotification,
+      reportError,
       advanceAgent: vi.fn(async () => undefined),
       spawnAgent,
       setAgentConfig,
@@ -88,6 +90,7 @@ const { storeState, spies } = vi.hoisted(() => {
       recordSessionEvent,
       setSessionActiveProject,
       emitNotification,
+      reportError,
       spawnAgent,
       setAgentConfig,
       runPlan,
@@ -125,6 +128,7 @@ vi.mock('../../session/hooks/useWorktreeStatuses', () => ({
   useWorktreeStatuses: spies.worktreeStatuses,
 }));
 vi.mock('../../session/hooks/useRebaseBranch', () => ({
+  REBASE_FAILURE_TITLE: "Couldn't rebase the branch",
   useRebaseBranch: spies.useRebaseBranch,
 }));
 vi.mock('../../workflows/useAdvanceWorkflowAgent', () => ({
@@ -201,7 +205,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Continue');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.advanceAgent).toHaveBeenCalledWith({ agent: PENDING_AGENT });
   });
@@ -238,7 +242,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Resolve 1 new');
-    actions.primary?.onAct();
+    actions.primary?.run();
     await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(1));
     expect(spies.spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual(['thread-1']);
     expect(spies.spawnAgent.mock.calls[0]?.[1].kindOverride).toBe('resolver');
@@ -301,7 +305,7 @@ describe('useSuggestionActions', () => {
         payload: { eligibleThreadCount: 3 },
       },
     });
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(1));
     expect(spies.spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual([
@@ -336,7 +340,7 @@ describe('useSuggestionActions', () => {
 
     expect(actions.primary?.label).toBe('Rebase');
     expect(actions.primary?.isDisabled).toBe(false);
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
@@ -377,7 +381,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.choices?.[1]?.description).toBe('feature/web-second');
-    actions.primary?.choices?.[1]?.onAct();
+    actions.primary?.choices?.[1]?.run();
 
     await vi.waitFor(() => expect(spies.rebaseRun).toHaveBeenCalledTimes(1));
     expect(spies.setSessionActiveProject).not.toHaveBeenCalled();
@@ -460,7 +464,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Start implementer');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.runPlan).toHaveBeenCalledWith(SESSION_ID, 'plan-1');
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -486,7 +490,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Answer');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(onSelectQuestions).toHaveBeenCalledTimes(1);
   });
@@ -504,7 +508,7 @@ describe('useSuggestionActions', () => {
       },
     });
 
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(onSelectQuestions).not.toHaveBeenCalled();
     expect(spies.navigate).toHaveBeenCalledWith({
@@ -533,7 +537,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Add project');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.ensureProjectMounted).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -584,7 +588,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Review');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.navigate).toHaveBeenCalledWith({
       to: agentPlace({ sessionId: SESSION_ID, agentId: AGENT_ID }),
@@ -605,7 +609,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Sign in');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(listener).toHaveBeenCalledTimes(1);
     const event = listener.mock.calls[0]?.[0] as CustomEvent;
@@ -624,7 +628,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Retry');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'debugger',
@@ -644,13 +648,13 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Start reviewer');
-    actions.primary?.onAct();
+    actions.primary?.run();
     expect(spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'reviewer',
       focus: 'none',
     });
 
-    actions.primary?.choices?.[0]?.onAct();
+    actions.primary?.choices?.[0]?.run();
     expect(spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'tester',
       focus: 'none',
@@ -669,7 +673,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Start debugger');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'debugger',
@@ -699,7 +703,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Push');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.pushSessionBranch).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -728,7 +732,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Review history');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/tmp/web');
     expect(spies.pushSessionBranch).not.toHaveBeenCalled();
@@ -746,7 +750,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Open PR');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.createPrForSession).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
@@ -766,7 +770,7 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Mark ready');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.markPrReady).toHaveBeenCalledWith(SESSION_ID, 618);
   });
@@ -789,7 +793,7 @@ describe('useSuggestionActions', () => {
 
     expect(actions.primary?.label).toBe('Merge');
     expect(actions.primary?.requiresConfirm).toBe(true);
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.mergePr).toHaveBeenCalledWith(SESSION_ID, 618, 'squash');
   });
@@ -812,7 +816,7 @@ describe('useSuggestionActions', () => {
 
     expect(actions.primary?.label).toBe('Close worktree');
     expect(actions.primary?.requiresConfirm).toBe(true);
-    actions.primary?.onAct();
+    actions.primary?.run();
     expect(spies.resolveMountCleanup).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       requestId: 'cleanup:merge_cleanup:mount-web:feature/web',
@@ -839,11 +843,178 @@ describe('useSuggestionActions', () => {
     });
 
     expect(actions.primary?.label).toBe('Set up');
-    actions.primary?.onAct();
+    actions.primary?.run();
 
     expect(spies.attachWorkflowToSession).toHaveBeenCalledWith(SESSION_ID, 'workflow-1', {
       goal: 'Ship the thing',
       navigate: true,
     });
+  });
+});
+
+const EVERY_KIND = {
+  'workflow-next-step': {
+    ...suggestionBase,
+    id: 'workflow-next-step:run-1',
+    kind: 'workflow-next-step',
+    payload: { runId: RUN_ID, stepId: STEP_ID },
+  },
+  'plan-ready': {
+    ...suggestionBase,
+    id: 'plan-ready:plan-1',
+    kind: 'plan-ready',
+    payload: { planId: 'plan-1' as PlanId },
+  },
+  'resolve-threads': {
+    ...suggestionBase,
+    id: 'resolve-threads:session-1',
+    kind: 'resolve-threads',
+    payload: { eligibleThreadCount: 0 },
+  },
+  'rebase-project': {
+    ...suggestionBase,
+    id: 'rebase-project:session-1',
+    kind: 'rebase-project',
+    payload: { targets: [] },
+  },
+  'answer-questions': {
+    ...suggestionBase,
+    id: 'answer-questions:session-1',
+    kind: 'answer-questions',
+    payload: { count: 1, firstQuestion: null },
+  },
+  'mount-project': {
+    ...suggestionBase,
+    id: 'mount-project:project-web',
+    kind: 'mount-project',
+    payload: {
+      projectId: WEB_ID,
+      projectName: 'web',
+      reason: 'needs the router',
+      agentId: AGENT_ID,
+      eventId: 'event-1' as SessionEventId,
+    },
+  },
+  'approve-tool': {
+    ...suggestionBase,
+    id: 'approve-tool:agent-1',
+    kind: 'approve-tool',
+    payload: { agentId: AGENT_ID, agentLabel: 'Tester', toolUseId: 'tool-1', toolName: 'pnpm' },
+  },
+  'sign-in': {
+    ...suggestionBase,
+    id: 'sign-in:agent-1',
+    kind: 'sign-in',
+    payload: { agentId: AGENT_ID, agentLabel: 'Implementer', providerId: 'anthropic' },
+  },
+  'retry-agent': {
+    ...suggestionBase,
+    id: 'retry-agent:agent-1',
+    kind: 'retry-agent',
+    payload: { agentId: AGENT_ID, agentKind: 'debugger' },
+  },
+  'fix-checks': {
+    ...suggestionBase,
+    id: 'fix-checks:mount-web',
+    kind: 'fix-checks',
+    payload: { mountId: WEB_MOUNT_ID, projectName: 'web', prNumber: 618 },
+  },
+  'push-branch': {
+    ...suggestionBase,
+    id: 'push-branch:mount-web',
+    kind: 'push-branch',
+    payload: {
+      mountId: WEB_MOUNT_ID,
+      projectId: WEB_ID,
+      projectName: 'web',
+      branch: 'feature/web',
+      worktreePath: '/tmp/web',
+      state: 'ahead',
+      ahead: 1,
+      behind: 0,
+    },
+  },
+  'open-pr': {
+    ...suggestionBase,
+    id: 'open-pr:mount-web',
+    kind: 'open-pr',
+    payload: { mountId: WEB_MOUNT_ID, projectId: WEB_ID, projectName: 'web', ahead: 1 },
+  },
+  'mark-ready': {
+    ...suggestionBase,
+    id: 'mark-ready:mount-web',
+    kind: 'mark-ready',
+    payload: { mountId: WEB_MOUNT_ID, projectName: 'web', prNumber: 618 },
+  },
+  'merge-pr': {
+    ...suggestionBase,
+    id: 'merge-pr:mount-web',
+    kind: 'merge-pr',
+    payload: {
+      mountId: WEB_MOUNT_ID,
+      projectName: 'web',
+      prNumber: 618,
+      defaultMethod: 'squash',
+    },
+  },
+  'check-changes': {
+    ...suggestionBase,
+    id: 'check-changes:agent-1',
+    kind: 'check-changes',
+    payload: { agentId: AGENT_ID },
+  },
+  'close-worktree': {
+    ...suggestionBase,
+    id: 'close-worktree:mount-web',
+    kind: 'close-worktree',
+    payload: {
+      mountId: WEB_MOUNT_ID,
+      requestId: 'cleanup:mount-web',
+      branch: 'feature/web',
+      prNumber: null,
+    },
+  },
+  'continue-with-workflow': {
+    ...suggestionBase,
+    id: 'continue-with-workflow:agent-1',
+    kind: 'continue-with-workflow',
+    payload: { workflowId: 'workflow-1' as WorkflowId, workflowName: 'Plan and ship' },
+  },
+} satisfies { readonly [K in SuggestionKind]: Extract<SessionSuggestion, { readonly kind: K }> };
+
+describe('every suggestion kind', () => {
+  it.each(SUGGESTION_KINDS)(
+    '%s runs as a promise with a failure title, so the row can show pending',
+    async (kind) => {
+      const actions = actionsFor({ suggestion: EVERY_KIND[kind] });
+      const primary = actions.primary;
+
+      expect(primary).not.toBeNull();
+      expect(
+        primary?.failureTitle.startsWith("Couldn't") || primary?.failureTitle.includes("didn't"),
+      ).toBe(true);
+      const pending = primary?.run();
+      expect(pending).toBeInstanceOf(Promise);
+      await pending;
+      for (const choice of primary?.choices ?? []) {
+        await expect(choice.run()).resolves.toBeUndefined();
+      }
+    },
+  );
+
+  it('hands a failed push back as a rejection so the row logs it once', async () => {
+    spies.pushSessionBranch.mockResolvedValueOnce({ ok: false, error: 'rejected' } as never);
+    const actions = actionsFor({ suggestion: EVERY_KIND['push-branch'] });
+
+    await expect(actions.primary?.run()).rejects.toThrow('rejected');
+    expect(spies.reportError).not.toHaveBeenCalled();
+    expect(spies.emitNotification).not.toHaveBeenCalled();
+  });
+
+  it('hands a failed agent start back as a rejection', async () => {
+    spies.spawnAgent.mockRejectedValueOnce(new Error('provider unavailable'));
+    const actions = actionsFor({ suggestion: EVERY_KIND['fix-checks'] });
+
+    await expect(actions.primary?.run()).rejects.toThrow('provider unavailable');
   });
 });

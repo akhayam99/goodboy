@@ -19,6 +19,7 @@ import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { GithubConnectionEmptyState } from '../../../github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
@@ -26,8 +27,10 @@ import { buildCommentAgentArgs } from '../../../chat/spawn-from-comment';
 import { kindRouting } from '../../../session/agent-kind';
 import type { CommentThread } from '../../../github/comment-threads';
 import {
+  PR_LIFECYCLE_ACTIONS,
   prLifecycleFailureTitle,
   describePrWriteInFlight,
+  type PrLifecycleAction,
   type PrLifecycleBusy,
 } from '../../prLifecycle';
 import { evaluatePrMergeReadiness } from '../../prMergeReadiness';
@@ -42,6 +45,11 @@ import { PrActivityMode } from '../ReviewPane/modes/PrActivityMode';
 import { PrDetailsMode } from '../ReviewPane/modes/PrDetailsMode';
 import { WriteReview } from '../ReviewPane/WriteReview';
 import { PublishBar } from '../ReviewPane/WriteReview/PublishBar';
+
+type LifecycleRun = {
+  readonly kind: PrLifecycleAction;
+  readonly action: () => Promise<void>;
+};
 
 type Props = {
   readonly session: Session;
@@ -65,7 +73,9 @@ export const PullRequestPage = ({ session }: Props) => {
   );
   const [isBusy, setIsBusy] = useState(false);
   const checksRef = useRef<HTMLDivElement | null>(null);
-  const [lifecycleBusy, setLifecycleBusy] = useState<PrLifecycleBusy>(null);
+  const lifecycle = usePendingAction({ sessionId });
+  const lifecycleBusy: PrLifecycleBusy =
+    PR_LIFECYCLE_ACTIONS.find((action) => lifecycle.pendingKeys.has(action)) ?? null;
   const { showToast } = useToast();
   const reportError = useAppStore((s) => s.reportError);
 
@@ -121,25 +131,20 @@ export const PullRequestPage = ({ session }: Props) => {
   }, [refreshSessionPr, refreshSessionPrDetail, sessionId]);
 
   const runLifecycle = useCallback(
-    async (kind: Exclude<PrLifecycleBusy, null>, action: () => Promise<void>) => {
-      if (lifecycleBusy !== null) {
+    async ({ kind, action }: LifecycleRun) => {
+      if (lifecycle.pendingKeys.size > 0) {
         return;
       }
-      setLifecycleBusy(kind);
-      try {
-        await action();
+      const isDone = await lifecycle.run({
+        key: kind,
+        failureTitle: prLifecycleFailureTitle({ action: kind, prNumber: pr?.number ?? null }),
+        task: action,
+      });
+      if (isDone) {
         onMutated();
-      } catch (error) {
-        void reportError({
-          title: prLifecycleFailureTitle({ action: kind, prNumber: pr?.number ?? null }),
-          error,
-          sessionId,
-        });
-      } finally {
-        setLifecycleBusy(null);
       }
     },
-    [lifecycleBusy, onMutated, pr, reportError, sessionId],
+    [lifecycle, onMutated, pr],
   );
 
   const startGeneralFix = useCallback(
@@ -295,13 +300,24 @@ export const PullRequestPage = ({ session }: Props) => {
             mergeReadiness={mergeReadiness}
             writeInFlight={writeInFlight}
             canCreateNew={!isDraftAgentRunning}
-            onMarkReady={() => void runLifecycle('ready', () => markPrReady(sessionId, pr.number))}
-            onConvertDraft={() =>
-              void runLifecycle('undraft', () => convertPrToDraft(sessionId, pr.number))
+            onMarkReady={() =>
+              void runLifecycle({ kind: 'ready', action: () => markPrReady(sessionId, pr.number) })
             }
-            onClosePr={() => void runLifecycle('close', () => closePr(sessionId, pr.number))}
-            onReopen={() => void runLifecycle('reopen', () => reopenPr(sessionId, pr.number))}
-            onMerge={() => runLifecycle('merge', () => mergePr(sessionId, pr.number))}
+            onConvertDraft={() =>
+              void runLifecycle({
+                kind: 'undraft',
+                action: () => convertPrToDraft(sessionId, pr.number),
+              })
+            }
+            onClosePr={() =>
+              void runLifecycle({ kind: 'close', action: () => closePr(sessionId, pr.number) })
+            }
+            onReopen={() =>
+              void runLifecycle({ kind: 'reopen', action: () => reopenPr(sessionId, pr.number) })
+            }
+            onMerge={() =>
+              runLifecycle({ kind: 'merge', action: () => mergePr(sessionId, pr.number) })
+            }
             onCreateNew={() => setMode('create_pr')}
           />
         </>

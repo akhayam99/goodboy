@@ -15,6 +15,8 @@ type Params = {
   readonly rows: ReadonlyArray<ResolveQueueRow>;
 };
 
+export type ResolveAgainOutcome = 'started' | 'missing' | 'failed';
+
 export type ResolveAgainParams = {
   readonly threadId: string;
   readonly instruction: string;
@@ -23,7 +25,7 @@ export type ResolveAgainParams = {
 export const useResolveAgain = ({
   sessionId,
   rows,
-}: Params): ((params: ResolveAgainParams) => Promise<boolean>) => {
+}: Params): ((params: ResolveAgainParams) => Promise<ResolveAgainOutcome>) => {
   const pr = useAppStore((s) => s.sessionGithub[sessionId]?.pr ?? null);
   const comments = useAppStore(
     (s) =>
@@ -46,12 +48,12 @@ export const useResolveAgain = ({
   );
 
   return useCallback(
-    async ({ threadId, instruction }: ResolveAgainParams): Promise<boolean> => {
+    async ({ threadId, instruction }: ResolveAgainParams): Promise<ResolveAgainOutcome> => {
       const row = rows.find((candidate) => candidate.thread.threadId === threadId) ?? null;
       const isNote = row !== null && conversationSourceOf({ row }) === 'note';
       const thread = threadsByThreadId.get(threadId) ?? (isNote ? row.commentThread : null);
       if ((pr === null && !isNote) || thread == null) {
-        return false;
+        return 'missing';
       }
       const routing = kindRouting({ kind: 'resolver', roleModels });
       try {
@@ -79,10 +81,10 @@ export const useResolveAgain = ({
           spawnAgent,
           setAgentConfig,
         });
-        return true;
+        return 'started';
       } catch (error) {
         void reportError({ title: "Couldn't retry the fix", error, sessionId });
-        return false;
+        return 'failed';
       }
     },
     [

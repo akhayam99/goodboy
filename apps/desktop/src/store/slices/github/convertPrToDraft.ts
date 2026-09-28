@@ -3,6 +3,7 @@ import { tauriGhRunner } from '../../../features/github/github';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
+import { ReportedError } from '../notifications/reportedError';
 
 export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number) => {
@@ -40,7 +41,7 @@ export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
             sessionId,
             workspaceId: workspace.id,
           });
-          throw new Error(errMsg);
+          throw new ReportedError(errMsg);
         }
         await get().refreshSessionPr(sessionId, { force: true });
       },
