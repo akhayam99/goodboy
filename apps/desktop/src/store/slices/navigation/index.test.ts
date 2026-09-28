@@ -452,3 +452,133 @@ const DRAFTS: DrawerRequest = {
 };
 
 const EMPTY = { drawer: null, selection: {}, scroll: {}, revealed: [] };
+
+const layersOf = (store: ReturnType<typeof makeStore>): ReadonlyArray<string> => {
+  const state = store.getState();
+  const stack = state.navigation[state.currentWorkspaceId ?? ''];
+  return stack?.entries[stack.index]?.layers ?? [];
+};
+
+const depthOf = (store: ReturnType<typeof makeStore>): number =>
+  store.getState().navigation[WS]?.entries.length ?? 0;
+
+const DIFF = sessionPlace({
+  sessionId: S1,
+  lens: 'files',
+  target: { kind: 'diff', mountPath: '/w/payments-api', focus: null },
+});
+
+const HISTORY = sessionPlace({
+  sessionId: S1,
+  lens: 'files',
+  target: { kind: 'diff', mountPath: '/w/payments-api', focus: null, page: 'history' },
+});
+
+describe('code host layers', () => {
+  it('stacks each layer opened from inside to the right, and Back removes one', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
+    expect(layersOf(store)).toEqual([]);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    expect(layersOf(store)).toEqual(['pr']);
+
+    store.getState().back();
+    expect(store.getState().activeLens[S1]).toBe('pr');
+    store.getState().back();
+    expect(store.getState().activeLens[S1]).toBeNull();
+  });
+
+  it('reads Overview, Diff, pull request when the pull request is opened from the diff', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: DIFF });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
+    expect(layersOf(store)).toEqual(['diff']);
+  });
+
+  it('pops back to a kind already in the trail instead of stacking a copy', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    store.getState().navigate({ to: DIFF });
+    expect(layersOf(store)).toEqual(['pr', 'review']);
+    const depth = depthOf(store);
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
+    expect(store.getState().activeLens[S1]).toBe('pr');
+    expect(layersOf(store)).toEqual([]);
+    expect(depthOf(store)).toBe(depth);
+
+    store.getState().forward();
+    expect(store.getState().activeLens[S1]).toBe('review');
+  });
+
+  it('keeps Rewrite history a child of its diff, and the diff crumb pops back to it', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
+    store.getState().navigate({ to: DIFF });
+    store.getState().navigate({ to: HISTORY });
+    expect(layersOf(store)).toEqual(['pr']);
+    const depth = depthOf(store);
+
+    store.getState().navigate({ to: DIFF });
+    expect(store.getState().diffPage[S1] ?? null).toBeNull();
+    expect(layersOf(store)).toEqual(['pr']);
+    expect(depthOf(store)).toBe(depth);
+  });
+
+  it('gives a jump from outside the canonical path of its target', () => {
+    const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: { pr: { number: 318 } } } } as never);
+    store.getState().navigate({ to: BOARD_PLACE });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    expect(layersOf(store)).toEqual(['pr']);
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S2, lens: 'review' }) });
+    expect(layersOf(store)).toEqual([]);
+  });
+
+  it('opens Review from the Overview with the Overview as its only parent', () => {
+    const store = makeStore();
+    store.setState({ sessionGithub: { [S1]: { pr: { number: 318 } } } } as never);
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    expect(layersOf(store)).toEqual([]);
+  });
+
+  it('pushes a focused diff instead of popping to the diff below', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: DIFF });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    const depth = depthOf(store);
+    store.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'files',
+        target: {
+          kind: 'diff',
+          mountPath: '/w/payments-api',
+          focus: { kind: 'branch', path: 'src/webhooks.ts' },
+        },
+      }),
+    });
+    expect(depthOf(store)).toBe(depth + 1);
+    expect(layersOf(store)).toEqual([]);
+  });
+
+  it('drops the layers when a layer opens a page that is not one', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'review' }) });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    expect(layersOf(store)).toEqual([]);
+
+    store.getState().back();
+    expect(layersOf(store)).toEqual(['pr']);
+  });
+});
