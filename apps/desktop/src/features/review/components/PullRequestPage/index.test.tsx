@@ -132,19 +132,21 @@ vi.mock('../../../github/usePrDraftAgentRunning', () => ({
 vi.mock('../../../resolve/components/ResolveQueueHome', () => ({
   ResolveQueueHome: ({
     header,
-    dock,
+    publish,
   }: {
     readonly header: React.ReactNode;
-    readonly dock: React.ReactNode;
+    readonly publish: React.ReactNode;
   }) => (
     <div data-testid="resolve-queue">
       {header}
-      {dock}
+      {publish}
     </div>
   ),
 }));
 vi.mock('../ReviewPane/WriteReview', () => ({
-  WriteReview: () => <div data-testid="write-review" />,
+  WriteReview: ({ publishBar }: { readonly publishBar: React.ReactNode }) => (
+    <div data-testid="write-review">{publishBar}</div>
+  ),
 }));
 vi.mock('../../../../shared/lib/editor', () => ({ openUrl: vi.fn(async () => undefined) }));
 
@@ -494,15 +496,17 @@ describe('PullRequestPage', () => {
     expect(screen.getByRole('region', { name: 'PR activity' })).toBeDefined();
   });
 
-  it('opens Write review as a child page and submits from its dock', async () => {
+  it('opens Write review as a child page and submits from the diff toolbar, not a footer bar', async () => {
     h.state.reviewDrafts = {
       [SESSION_ID]: [{ id: 'draft-1', status: 'draft' } as unknown as never],
     };
-    render(<PullRequestPage session={SESSION} />);
+    const { container } = render(<PullRequestPage session={SESSION} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Write review (1)' }));
     expect(h.state.pullRequestModes[SESSION_ID]).toBe('write_review');
-    expect(screen.getByTestId('write-review')).toBeDefined();
+    const writeReview = screen.getByTestId('write-review');
+    expect(within(writeReview).getByRole('button', { name: 'Submit review' })).toBeDefined();
+    expect(container.querySelector('[data-slot="pane-dock"]')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Submit review' }));
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }));

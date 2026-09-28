@@ -692,9 +692,10 @@ app below it has crashed.
   summary in `faint-foreground`) that opens the exact text in a `muted`
   `ScrollFade` of `text-code`, a copy button, and the line that says what never
   leaves.
-- **Footer**: the destination or the error in `text-secondary`, Add detail
-  while the detail is closed, and the primary button whose label names the
-  destination, with its shortcut in an on-tone pill.
+- **Action row**: `FormActions`, with the destination or the error in
+  `text-secondary` on the left, Add detail while the detail is closed, and the
+  primary button whose label names the destination, with its shortcut in an
+  on-tone pill.
 
 ## Pane anatomy
 
@@ -725,7 +726,9 @@ ellipsis) only when the goal says more than the title, or `Add a goal` when
 there is none, then the chips, `Context` first. Goal, decisions and summary
 live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
-transcript), and `dock` pins a row to the bottom of the same column. Studio
+transcript), and `dock` pins a chat composer to the bottom of the same column.
+A form's actions never go in `dock`: they are `FormActions` at the end of the
+body. Studio
 chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
 the only `h1` on the surface.
 
@@ -879,6 +882,41 @@ box around the whole thing. Secondary controls go in `SectionHeader`'s
 `action` slot. Related options sit in one container, not one card each. One
 action row comes right after the last section: error on the left, exactly one
 primary button on the right, cancel and alternates as ghost or secondary.
+
+## Form actions
+
+Every form, creation and edit flow ends the way the new workflow form does
+(session Overview, Workflows, Create): a page title, one big input card,
+segmented choices with a one-line explanation, options as quiet pill selects,
+and then the action row inline at the end of the content. Two primitives carry
+it:
+
+- **`FormPage`** is the scrolling body of a page-sized form: a `ScrollFade`
+  holding `PANE_RHYTHM.column` and `PANE_RHYTHM.body` with `gap-8` between the
+  blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
+- **`FormActions`** is the action row. `leading` holds the quiet options or the
+  status line on the left (Starts, Autorun, Spend cap, routing, "Scribe is
+  writing", an error with `role="alert"`). The children sit right-aligned in
+  order: secondary first (Discard, Cancel, Back as `ghost` with
+  `text-muted-foreground`), alternates as `secondary`, and the one primary
+  last. `reason` puts the disabled primary's explanation under the buttons and
+  pairs with the primary's `aria-describedby` through `reasonId`; `error` does
+  the same for a failure.
+
+Buttons are `md` on a page and `sm` inside a popover, a drawer or a card. The
+row sits right after the last block: inside a popover it is the end of
+`PopoverBody`, inside a dialog the end of the body, in a card the last child.
+
+There is no footer bar. A form never pins its actions under the content with a
+`Divider`, a `border-t`, a `<footer>`, `PaneShell` `dock` or
+`PANE_RHYTHM.dock`. `PopoverFooter` and the `Dialog` `footer` slot are gone for
+that reason. The `footer-cta-bar` rule in
+`apps/desktop/src/__tests__/regressions/forbidden-patterns.test.ts` counts
+those shapes per file and fails on a new one. The only pinned row left is a
+chat composer (`dock={conversation.composer}`). A review surface that lives
+over a long diff puts its submit in the diff toolbar instead (Write review's
+Submit review, the diff lens notes), the way a code host puts Review changes at
+the top.
 
 ## Empty states
 

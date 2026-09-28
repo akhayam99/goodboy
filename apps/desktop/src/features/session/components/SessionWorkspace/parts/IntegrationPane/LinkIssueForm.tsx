@@ -126,10 +126,10 @@ export const LinkIssueForm = ({
         onClear={() => undefined}
       />
       {error != null ? (
-        <footer role="alert" className="flex items-center gap-1 text-label text-danger">
+        <p role="alert" className="flex items-center gap-1 text-label text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           {error}
-        </footer>
+        </p>
       ) : null}
     </div>
   );

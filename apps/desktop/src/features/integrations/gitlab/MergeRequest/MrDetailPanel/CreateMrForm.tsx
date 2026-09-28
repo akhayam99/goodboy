@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Checkbox,
-  Divider,
   FieldRow,
+  FormActions,
+  FormPage,
   formatError,
   Input,
-  ScrollFade,
   SectionHeader,
   SegmentedTabs,
   Textarea,
@@ -22,7 +22,6 @@ import { useAppStore } from '../../../../../store';
 import { useToast } from '../../../../../app/components/Toast';
 import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { PANE_RHYTHM } from '@goodboy/ui';
 
 type CreateMode = 'manual' | 'agent';
 
@@ -145,8 +144,8 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-        <section className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+      <FormPage>
+        <section className="flex flex-col gap-6">
           <section className="flex flex-col">
             <SectionHeader
               label="How"
@@ -175,7 +174,6 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                     className="h-8 w-full text-body sm:w-96"
                   />
                 </FieldRow>
-                <Divider />
                 <FieldRow label="Description" help="What changed and why. Markdown supported.">
                   <Textarea
                     value={description}
@@ -188,7 +186,6 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                     className="w-full text-body sm:w-96"
                   />
                 </FieldRow>
-                <Divider />
                 <FieldRow label="Target branch" help="The branch this merge request merges into.">
                   <Input
                     value={targetBranch}
@@ -220,7 +217,6 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                 />
               </FieldRow>
             )}
-            <Divider />
             <FieldRow
               label="Open as draft"
               help="Creates the merge request in GitLab's draft state."
@@ -229,14 +225,9 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
             </FieldRow>
           </section>
         </section>
-      </ScrollFade>
-
-      <Divider />
-
-      <footer className="shrink-0 px-6 py-3">
-        <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            {shownError != null && (
+        <FormActions
+          leading={
+            shownError == null ? null : (
               <span
                 role="alert"
                 className="inline-flex min-w-0 items-center gap-1 truncate text-label text-danger"
@@ -245,8 +236,9 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
                 <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
                 {shownError}
               </span>
-            )}
-          </div>
+            )
+          }
+        >
           {mode === 'manual' ? (
             <Button
               onClick={() => void onCreate()}
@@ -276,8 +268,8 @@ export const CreateMrForm = ({ sessionId, branch, error, onClose }: Props) => {
               )}
             </Button>
           )}
-        </div>
-      </footer>
+        </FormActions>
+      </FormPage>
     </div>
   );
 };

@@ -61,6 +61,16 @@ describe('RunSpendLimitPopover', () => {
     expect(screen.queryByRole('tab', { name: /pause/i })).toBeNull();
   });
 
+  it('ends the popover with remove and save inline, never in a footer bar', () => {
+    renderPopover(run({ spendLimitUsd: 12.5 }));
+
+    openPopover();
+    const save = screen.getByTestId('run-spend-limit-save');
+    expect(save.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(save.closest('footer')).toBeNull();
+    expect(screen.getByTestId('run-spend-limit-remove').parentElement).toBe(save.parentElement);
+  });
+
   it('saves the amount with the mode that says what happens at the limit', async () => {
     renderPopover();
 

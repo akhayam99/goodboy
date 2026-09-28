@@ -119,16 +119,30 @@ describe('WorkspaceLinkForm', () => {
 
   it('draws no action row before a setup shape is picked', () => {
     const { container } = renderForm();
-    expect(container.querySelector('footer')).toBeNull();
+    expect(container.querySelector('[data-slot="form-actions"]')).toBeNull();
   });
 
   it('keeps its actions inline at the end of the form', () => {
-    renderForm();
+    const { container } = renderForm();
     fireEvent.click(screen.getByRole('radio', { name: /a workspace with several projects/i }));
 
     const submit = screen.getByRole('button', { name: 'Create workspace' });
-    expect(submit.closest('form')).not.toBeNull();
-    expect(submit.closest('footer')?.parentElement?.tagName).toBe('FORM');
+    expect(submit.closest('[data-slot="form-actions"]')?.parentElement?.tagName).toBe('FORM');
+    expect(container.querySelector('footer')).toBeNull();
+    expect(container.querySelector('[role="separator"]')).toBeNull();
+  });
+
+  it('ends the project shape with New project and Choose a folder in the action row', () => {
+    renderForm();
+    fireEvent.click(screen.getByRole('radio', { name: /start from a project/i }));
+
+    const choose = screen.getByRole('button', { name: /choose a folder/i });
+    const newProject = screen.getByRole('button', { name: /new project/i });
+    expect(choose.closest('[data-slot="form-actions"]')?.parentElement?.tagName).toBe('FORM');
+    expect(newProject.parentElement).toBe(choose.parentElement);
+    expect(newProject.compareDocumentPosition(choose) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 
   it('links a picked git repository directly as a project-shaped workspace', async () => {

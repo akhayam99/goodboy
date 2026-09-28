@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import { Button, cn } from '@goodboy/ui';
+import { Button, FormActions, cn } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
 import { ICON_SIZE, projectGlyph } from '../../../../../shared/components/conceptIcons';
 import type { MountFailure } from './mountFailure';
@@ -120,8 +120,14 @@ export const MountPreflightCard = ({
           </details>
         </div>
       )}
-      <footer className="flex items-center justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={onCancel} disabled={isBusy}>
+      <FormActions>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onCancel}
+          disabled={isBusy}
+          className="text-muted-foreground"
+        >
           Back
         </Button>
         <Button
@@ -132,7 +138,7 @@ export const MountPreflightCard = ({
         >
           {failure === null ? 'Add project' : 'Try again'}
         </Button>
-      </footer>
+      </FormActions>
     </section>
   );
 };

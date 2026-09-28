@@ -33,7 +33,7 @@ import { ResolveOverviewAction } from '../../../resolve/components/ResolveOvervi
 import { useDiffNotes } from '../../hooks/useDiffNotes';
 import { useSessionDiff } from '../../hooks/useSessionDiff';
 import { DiffView } from '../DiffView';
-import { DiffNotesDock } from '../DiffNotesDock';
+import { DiffNotesActions } from '../DiffNotesActions';
 
 export const DIFF_PANE_TITLE = 'Diff';
 
@@ -368,22 +368,16 @@ export const SessionDiffPane = ({
       fileActions={fileActions}
       focusPath={diff.focusPath}
       onFocusHandled={diff.clearFocus}
+      toolbarEnd={
+        openNotes.length > 0 ? (
+          <DiffNotesActions sessionId={sessionId} openNotes={openNotes} />
+        ) : undefined
+      }
     />
   );
 
   return (
-    <PaneShell
-      title={DIFF_PANE_TITLE}
-      meta={meta}
-      actions={actions}
-      tabs={toolbar}
-      scroll="self"
-      dock={
-        openNotes.length > 0 && !isEmpty ? (
-          <DiffNotesDock sessionId={sessionId} openNotes={openNotes} />
-        ) : null
-      }
-    >
+    <PaneShell title={DIFF_PANE_TITLE} meta={meta} actions={actions} tabs={toolbar} scroll="self">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {notices}
         {body}

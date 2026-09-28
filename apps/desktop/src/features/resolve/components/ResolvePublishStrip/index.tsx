@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, GhostActionButton, InlineConfirm } from '@goodboy/ui';
+import { Button, FormActions, GhostActionButton, InlineConfirm } from '@goodboy/ui';
 import { Activity, AlertTriangle, GitCommit, RefreshCw, RotateCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type {
@@ -285,20 +285,27 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
           }
         />
       )}
-      <div className="flex items-center gap-4">
-        {preview !== null && (
-          <span className="text-secondary tabular-nums text-muted-foreground">
-            {frozenAtLabel({ frozenAt: preview.frozenAt })}
-          </span>
-        )}
+      <FormActions
+        leading={
+          preview === null ? null : (
+            <span className="text-secondary tabular-nums text-muted-foreground">
+              {frozenAtLabel({ frozenAt: preview.frozenAt })}
+            </span>
+          )
+        }
+      >
         {preview?.publicationId != null && (
-          <Button size="sm" variant="ghost" disabled={isBusy} onClick={onCancel}>
+          <Button
+            variant="ghost"
+            disabled={isBusy}
+            onClick={onCancel}
+            className="text-muted-foreground"
+          >
             Cancel
           </Button>
         )}
         <Button
           ref={entryRef}
-          size="sm"
           variant="primary"
           isBusy={isBusy}
           disabled={(total === 0 && !isStuck) || isArmed}
@@ -306,7 +313,7 @@ export const ResolvePublishStrip = ({ sessionId }: Props) => {
         >
           {label}
         </Button>
-      </div>
+      </FormActions>
     </div>
   );
 };

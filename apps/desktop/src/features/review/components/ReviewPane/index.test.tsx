@@ -131,14 +131,14 @@ vi.mock('../../../github/usePrDraftAgentRunning', () => ({
 vi.mock('../../../resolve/components/ResolveQueueHome', () => ({
   ResolveQueueHome: ({
     header,
-    dock,
+    publish,
   }: {
     readonly header: React.ReactNode;
-    readonly dock: React.ReactNode;
+    readonly publish: React.ReactNode;
   }) => (
     <div data-testid="resolve-queue">
       {header}
-      {dock}
+      {publish}
     </div>
   ),
 }));
@@ -393,7 +393,7 @@ describe('ReviewPane', () => {
     expect(h.state.navigate).toHaveBeenCalled();
   });
 
-  it('keeps the dock to the publication and links the pull request page from the header', () => {
+  it('keeps the publish actions to the publication and links the pull request page from the header', () => {
     render(<ReviewPane session={SESSION} />);
 
     for (const name of [/Write review/, /PR details/, /PR activity/, /^Checks$/]) {

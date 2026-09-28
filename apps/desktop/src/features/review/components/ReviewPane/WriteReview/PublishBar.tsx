@@ -36,7 +36,7 @@ export const PublishBar = ({ sessionId, provider, draftCount, publishing, onPubl
   const draftWord = draftCount === 1 ? 'draft' : 'drafts';
 
   return (
-    <div data-slot="review-dock" className="flex min-w-0 items-center gap-2">
+    <div data-slot="review-publish" className="flex min-w-0 items-center gap-2">
       <Button
         variant="ghost"
         size="sm"

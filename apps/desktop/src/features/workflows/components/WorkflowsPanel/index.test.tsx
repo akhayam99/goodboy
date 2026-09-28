@@ -525,7 +525,13 @@ describe('WorkflowsPanel import', () => {
     fireEvent.click(await within(dialog).findByRole('checkbox', { name: 'Settlement replay' }));
     fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Ledger migration' }));
     expect(within(dialog).getByText('2 selected from Northwind')).toBeDefined();
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Import 2' }));
+    const importButton = within(dialog).getByRole('button', { name: 'Import 2' });
+    expect(importButton.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(importButton.closest('footer')).toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'Clear' }).parentElement).toBe(
+      importButton.parentElement,
+    );
+    fireEvent.click(importButton);
 
     await waitFor(() => expect(state.copyWorkflowsFromWorkspaces).toHaveBeenCalledOnce());
     const input = state.copyWorkflowsFromWorkspaces.mock.calls[0]?.[0] as {

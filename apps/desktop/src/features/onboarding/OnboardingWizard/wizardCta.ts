@@ -8,7 +8,7 @@ export type WizardCta = {
   readonly disabled: boolean;
 };
 
-export type WizardFooter = {
+export type WizardActions = {
   readonly primary: WizardCta | null;
   readonly skip: WizardCta | null;
   readonly hint: string | null;
@@ -39,7 +39,7 @@ const cta = ({
   readonly disabled?: boolean;
 }): WizardCta => ({ label, action, disabled });
 
-const footer = ({
+const actions = ({
   primary,
   skip = null,
   hint = null,
@@ -47,7 +47,7 @@ const footer = ({
   readonly primary: WizardCta | null;
   readonly skip?: WizardCta | null;
   readonly hint?: string | null;
-}): WizardFooter => ({ primary, skip, hint });
+}): WizardActions => ({ primary, skip, hint });
 
 const optionalStep = ({
   isConnected,
@@ -57,9 +57,9 @@ const optionalStep = ({
   readonly isConnected: boolean;
   readonly isLastStep: boolean;
   readonly busy: boolean;
-}): WizardFooter => {
+}): WizardActions => {
   const action: WizardCtaAction = isLastStep ? 'finish' : 'next';
-  return footer({
+  return actions({
     primary: cta({
       label: isLastStep ? 'Done' : 'Continue',
       action,
@@ -69,7 +69,7 @@ const optionalStep = ({
   });
 };
 
-export const wizardFooter = ({
+export const wizardActions = ({
   step,
   providersConnected,
   hasWorkspace,
@@ -79,17 +79,17 @@ export const wizardFooter = ({
   taskSourceConnected,
   isLastStep,
   busy,
-}: Params): WizardFooter => {
+}: Params): WizardActions => {
   switch (step) {
     case 'welcome':
-      return footer({ primary: cta({ label: 'Get started', action: 'next' }) });
+      return actions({ primary: cta({ label: 'Get started', action: 'next' }) });
     case 'providers':
-      return footer({
+      return actions({
         primary: cta({ label: 'Continue', action: 'next', disabled: providersConnected === 0 }),
         hint: providersConnected === 0 ? PROVIDER_GATE_HINT : null,
       });
     case 'project':
-      return footer({
+      return actions({
         primary: cta({
           label: 'Continue',
           action: 'commit-project',
@@ -102,7 +102,7 @@ export const wizardFooter = ({
     case 'tasks':
       return optionalStep({ isConnected: taskSourceConnected, isLastStep, busy });
     case 'first-session':
-      return footer({
+      return actions({
         primary: null,
         skip: cta({ label: 'Skip, open the board', action: 'finish', disabled: busy }),
       });

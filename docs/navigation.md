@@ -602,9 +602,9 @@ before anything moves, so Settings stays open under it.
 First-run setup is a full-screen wizard in one shell that never moves: a top
 bar with a labelled stepper (Provider, Project, Code host, Tasks, First
 session) and Skip setup, a body that starts at the same line on every step,
-and a footer pinned at the bottom (Back left, Skip for now and the primary
-right). Steps crossfade in place (240 ms, 80 ms of opacity with reduced
-motion); the footer is disabled while they do. Welcome says what the five
+and the form actions inline at the end of the step (Back, Skip for now and
+the primary, right-aligned, no divider). Steps crossfade in place (240 ms,
+80 ms of opacity with reduced motion); the actions are disabled while they do. Welcome says what the five
 steps take. Provider needs one usable route (a CLI login, a saved key or
 OpenCode's free models). Project picks one folder, with or without version
 control, names the workspace after its parent folder and finds the
@@ -952,8 +952,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   back links and the overview action say so), and Resolve stays a verb on the
   actions that settle a thread. Review exists with or without a pull request:
   without one it is one root with a `No pull request` header and the session's
-  notes (see Pull request review in `docs/concepts.md`). Its dock holds only the
-  publication, and its header links the pull request page (`PR #528 ›`).
+  notes (see Pull request review in `docs/concepts.md`). The publication is the
+  one action row at the end of the list (`FormActions`, no footer bar), and its
+  header links the pull request page (`PR #528 ›`).
   The `pr` lens is the pull request page on GitHub too (`Merge request` on
   GitLab, still their own studios there). Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
@@ -962,7 +963,8 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   The body reads, in order: one warning with `Resolve in Review` when
   conversations wait or a reviewer asked for changes, otherwise the merge
   readiness note; then Details, Checks and Activity. `Write review` is a child
-  page (`Overview › Pull request › #528 › Write review`) with the submit dock;
+  page (`Overview › Pull request › #528 › Write review`) with the drafts count
+  and Submit review in the diff toolbar;
   without a pull request the page is the creation form
   (`Overview › Pull request › New`). The child page lives in the store per
   session and drops back to the page when the lens closes. Everything Review
@@ -1143,7 +1145,8 @@ GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Diff`, which opens the Diff lens on that mount with the file in focus.
 `diff-notes` lists the open notes of the Diff lens by file, and `review-drafts`
-lists the review drafts of Write review; the dock count opens each one.
+lists the review drafts of Write review; the count in the diff toolbar opens
+each one.
 
 ## The Diff lens
 
@@ -1206,9 +1209,10 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The Diff lens docks `N notes` and `Resolve in Review`, which opens Review on
-the same notes; Write review docks `N drafts` and `Submit review`, whose
-popover holds the summary and the verdict. Files mount in batches of 20 as the
+The diff toolbar carries `N notes` and `Resolve in Review` in the Diff lens,
+which opens Review on the same notes, and `N drafts` and `Submit review` in
+Write review, whose popover holds the summary and the verdict. Neither is a
+footer bar. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 
 ## The Scripts lens

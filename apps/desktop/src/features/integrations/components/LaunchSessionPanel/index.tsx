@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { Button, cn, formatError, Textarea, inlineMarkdownText } from '@goodboy/ui';
+import { Button, FormActions, cn, formatError, Textarea, inlineMarkdownText } from '@goodboy/ui';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 import type {
   ProjectId,
@@ -209,19 +209,23 @@ export const LaunchSessionPanel = ({
         </span>
       ) : null}
 
-      <footer className="flex items-center justify-end gap-2 px-1">
-        {(brief?.status === 'loading' || readyBrief !== null) && (
-          <p className="min-w-0 flex-1 truncate px-1 text-secondary text-faint-foreground">
-            Edited text is never replaced by the brief.
-          </p>
-        )}
+      <FormActions
+        className="px-1"
+        leading={
+          brief?.status === 'loading' || readyBrief !== null ? (
+            <p className="min-w-0 truncate px-1 text-secondary text-faint-foreground">
+              Edited text is never replaced by the brief.
+            </p>
+          ) : null
+        }
+      >
         <Button size="sm" onClick={() => void launch()} disabled={!canLaunch} className="shrink-0">
           <span className={cn(isBusy && 'text-shimmer')}>
             {isBusy ? 'Launching…' : 'Launch session'}
           </span>
           {!isBusy ? <ArrowRight size={ICON_SIZE.row} aria-hidden /> : null}
         </Button>
-      </footer>
+      </FormActions>
     </section>
   );
 };

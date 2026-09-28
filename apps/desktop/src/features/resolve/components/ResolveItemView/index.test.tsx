@@ -440,17 +440,30 @@ describe('the resolve item view', () => {
     expect(screen.queryByText('Passed')).toBeNull();
   });
 
-  it('commits a revision request through its own footer, never through the reply', () => {
+  it('commits a revision request through its own action row, never through the reply', () => {
     const onCommitEditing = vi.fn();
-    renderView({ mode: 'fix', instruction: 'Cap the attempts at three.', onCommitEditing });
+    const onCancelEditing = vi.fn();
+    renderView({
+      mode: 'fix',
+      instruction: 'Cap the attempts at three.',
+      onCommitEditing,
+      onCancelEditing,
+    });
 
     expect(screen.queryByRole('button', { name: 'Resolve' })).toBeNull();
     expect(screen.getByLabelText('Instructions for agent')).toHaveProperty(
       'value',
       'Cap the attempts at three.',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Send to agent' }));
+    const send = screen.getByRole('button', { name: 'Send to agent' });
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    expect(send.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(cancel.parentElement).toBe(send.parentElement);
+    expect(send.closest('[role="separator"]')).toBeNull();
+    fireEvent.click(send);
     expect(onCommitEditing).toHaveBeenCalledOnce();
+    fireEvent.click(cancel);
+    expect(onCancelEditing).toHaveBeenCalledOnce();
   });
 
   it('lets the agent read the comment again with no instruction of your own', () => {
@@ -502,7 +515,7 @@ describe('the resolve item view', () => {
     ).toBeDefined();
   });
 
-  it('confirms the refusal from its own footer once the reply is written', () => {
+  it('confirms the refusal from its own action row once the reply is written', () => {
     const onCommitEditing = vi.fn();
     renderView({ mode: 'close', reply: 'We are keeping this as it is.', onCommitEditing });
 

@@ -138,6 +138,8 @@ comments in TS, Rust and YAML/TOML, em dashes, `interface`, `export function`,
 `forbidden-patterns.baseline.json`. A count may fall but never grow, and a new
 file starts at zero. The same ratchet counts the design system's debt: raw
 type sizes, weights, leadings and tracking in place of a type role, a scroller
-that is not a `ScrollFade`, and a side border on a rounded box. Each failure
+that is not a `ScrollFade`, a side border on a rounded box, and a footer bar
+holding a form's actions instead of `FormActions` at the end of the content
+([DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md#form-actions)). Each failure
 names the role or primitive to use instead
 ([DESIGN-SYSTEM.md](./packages/ui/DESIGN-SYSTEM.md#type-scale)).

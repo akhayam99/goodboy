@@ -3,8 +3,7 @@ import { ListFilter } from 'lucide-react';
 import {
   AnchoredPopover,
   Button,
-  Divider,
-  PopoverFooter,
+  FormActions,
   SegmentedTabs,
   cn,
   tintClasses,
@@ -195,18 +194,21 @@ export const ActivityFilterPanel = ({
             />
           ))}
         </div>
+        <FormActions
+          className="min-h-7"
+          leading={
+            <span className="min-w-0 truncate text-secondary text-muted-foreground">
+              {summaryOf({ hidden, preset })}
+            </span>
+          }
+        >
+          {preset === 'everything' ? null : (
+            <Button variant="ghost" size="sm" onClick={() => onPreset({ preset: 'everything' })}>
+              Show everything
+            </Button>
+          )}
+        </FormActions>
       </div>
-      <Divider />
-      <PopoverFooter className="flex min-h-9 items-center gap-2 px-3 py-1">
-        <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
-          {summaryOf({ hidden, preset })}
-        </span>
-        {preset === 'everything' ? null : (
-          <Button variant="ghost" size="sm" onClick={() => onPreset({ preset: 'everything' })}>
-            Show everything
-          </Button>
-        )}
-      </PopoverFooter>
     </AnchoredPopover>
   );
 };

@@ -13,7 +13,7 @@ import { useGithubConnection } from '../../../integrations/github/useGithubConne
 import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
 import { ResolveQueueHome } from '../../../resolve/components/ResolveQueueHome';
 import { PrContextRow } from './PrContextRow';
-import { PublishConversationsBar } from './PublishConversationsBar';
+import { ResolvePublishStrip } from '../../../resolve/components/ResolvePublishStrip';
 import { NoPullRequestHeader } from './NoPullRequestHeader';
 import { PullRequestLink } from './PullRequestLink';
 
@@ -132,7 +132,7 @@ export const ReviewPane = ({ session }: Props) => {
     <ResolveQueueHome
       session={session}
       header={header}
-      dock={<PublishConversationsBar sessionId={sessionId} />}
+      publish={<ResolvePublishStrip sessionId={sessionId} />}
     />
   );
 };

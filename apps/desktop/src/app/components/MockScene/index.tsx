@@ -71,6 +71,7 @@ import { CompanionScene } from './scenes/audit/CompanionScene';
 import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
 import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
 import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
+import { FormsAuditScene } from './scenes/audit/FormsAuditScene';
 import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
@@ -157,6 +158,7 @@ export const MOCK_SCENES = {
   'review-modes': ReviewModesScene,
   'workflow-studio': WorkflowStudioScene,
   'workflow-builder-modes': WorkflowBuilderModesScene,
+  forms: FormsAuditScene,
   'impact-scopes': ImpactScopesScene,
   explore: ExploreScene,
   'design-scale': DesignScaleScene,

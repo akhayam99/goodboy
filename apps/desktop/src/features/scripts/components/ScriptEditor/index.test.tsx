@@ -74,4 +74,20 @@ describe('ScriptEditor', () => {
     expect(onSave).toHaveBeenCalledTimes(1);
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('ends with cancel and save inline, and both buttons still work', () => {
+    const onSave = vi.fn();
+    const onCancel = vi.fn();
+    const { container } = renderEditor({ projects: [LEDGER], onSave, onCancel });
+
+    const save = screen.getByRole('button', { name: 'Save' });
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    expect(save.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(cancel.parentElement).toBe(save.parentElement);
+    expect(container.querySelector('footer')).toBeNull();
+    fireEvent.click(save);
+    fireEvent.click(cancel);
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
 });

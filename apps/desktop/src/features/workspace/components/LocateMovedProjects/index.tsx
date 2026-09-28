@@ -1,4 +1,4 @@
-import { Button, Notice } from '@goodboy/ui';
+import { Button, FormActions, Notice } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { LocateMovedProjectRow } from './LocateMovedProjectRow';
@@ -81,7 +81,19 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
       <p className="text-label text-muted-foreground">
         Git links get repaired. Session folders move with their project.
       </p>
-      <div className="flex items-center gap-2">
+      <FormActions>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isBusy}
+          onClick={clear}
+          className="text-muted-foreground"
+        >
+          Cancel
+        </Button>
+        <Button variant="secondary" size="sm" disabled={isBusy} onClick={onChoose}>
+          Choose another folder
+        </Button>
         <Button
           size="sm"
           disabled={selectedCount === 0}
@@ -91,13 +103,7 @@ export const LocateMovedProjects = ({ workspaceId, onChoose }: Props) => {
         >
           Move {selectedCount} {selectedCount === 1 ? 'project' : 'projects'}
         </Button>
-        <Button variant="secondary" size="sm" disabled={isBusy} onClick={onChoose}>
-          Choose another folder
-        </Button>
-        <Button variant="ghost" size="sm" disabled={isBusy} onClick={clear}>
-          Cancel
-        </Button>
-      </div>
+      </FormActions>
     </section>
   );
 };

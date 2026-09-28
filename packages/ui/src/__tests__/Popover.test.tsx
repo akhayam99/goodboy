@@ -2,24 +2,22 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import { Popover, PopoverBody, PopoverFooter } from '../components/Popover';
+import { Popover, PopoverBody } from '../components/Popover';
 
 afterEach(cleanup);
 
 describe('Popover', () => {
-  it('keeps the footer action available when the body overflows', () => {
+  it('keeps the action at the end of an overflowing body', () => {
     render(
       <Popover>
         <PopoverBody>
           <div>{Array.from({ length: 40 }, (_, index) => `Row ${index}`)}</div>
-        </PopoverBody>
-        <PopoverFooter>
           <button type="button">Start</button>
-        </PopoverFooter>
+        </PopoverBody>
       </Popover>,
     );
 
-    expect(screen.getByRole('button', { name: 'Start' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start' }).closest('footer')).toBeNull();
   });
   it('carries no height bound of its own', () => {
     render(
@@ -68,15 +66,9 @@ describe('Popover', () => {
     render(
       <Popover role="menu" ariaLabel="Floating">
         <PopoverBody>Row</PopoverBody>
-        <PopoverFooter>
-          <button type="button">Start</button>
-        </PopoverFooter>
       </Popover>,
     );
 
     expect(screen.getByRole('menu').className).toContain('bg-floating');
-    expect(screen.getByRole('button', { name: 'Start' }).closest('footer')?.className).toContain(
-      'bg-floating',
-    );
   });
 });
