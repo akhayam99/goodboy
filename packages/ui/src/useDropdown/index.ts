@@ -60,7 +60,8 @@ export const useDropdown = ({
       }
       if (
         containerRef.current?.contains(target) === true ||
-        popupRef.current?.contains(target) === true
+        popupRef.current?.contains(target) === true ||
+        (target instanceof Element && target.closest('[data-menu-portal]') !== null)
       ) {
         return;
       }

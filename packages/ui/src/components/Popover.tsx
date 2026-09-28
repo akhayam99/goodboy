@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode, Ref } from 'react';
+import type { CSSProperties, KeyboardEventHandler, ReactNode, Ref } from 'react';
 import { cn } from '../cn';
 import { ScrollFade } from './ScrollFade';
 
@@ -10,6 +10,7 @@ export type PopoverProps = {
   readonly ariaLabel?: string;
   readonly innerRef?: Ref<HTMLDivElement>;
   readonly tabIndex?: number;
+  readonly onKeyDown?: KeyboardEventHandler<HTMLDivElement>;
 };
 
 export type PopoverBodyProps = {
@@ -30,6 +31,7 @@ export const Popover = ({
   ariaLabel,
   innerRef,
   tabIndex,
+  onKeyDown,
 }: PopoverProps) => {
   return (
     <div
@@ -37,6 +39,7 @@ export const Popover = ({
       role={role}
       aria-label={ariaLabel}
       tabIndex={tabIndex}
+      onKeyDown={onKeyDown}
       style={style}
       className={cn(
         'flex min-h-0 min-w-0 flex-col overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-floating text-label shadow-lg',
