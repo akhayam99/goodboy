@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { AlertTriangle, Search } from 'lucide-react';
-import { Eyebrow, KbdPill, ScrollFade, SegmentedTabs, cn } from '@goodboy/ui';
+import { Divider, Eyebrow, KbdPill, ScrollFade, SegmentedTabs, cn } from '@goodboy/ui';
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import { IntegrationGlyph } from '../../../integrations/components/IntegrationGlyph';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
@@ -158,7 +158,7 @@ export const LinkWorkPicker = ({
         />
       </div>
       {sources.length > 1 && view.kind === 'list' ? (
-        <div className="flex border-t border-border px-2 py-1.5">
+        <div className="flex px-2 pb-2">
           <SegmentedTabs
             size="sm"
             ariaLabel="Filter by source"
@@ -172,11 +172,8 @@ export const LinkWorkPicker = ({
           />
         </div>
       ) : null}
-      <ScrollFade
-        className="max-h-80 border-t border-border"
-        viewportClassName="p-1"
-        fadeFrom="floating"
-      >
+      <Divider />
+      <ScrollFade className="max-h-80" viewportClassName="p-1" fadeFrom="floating">
         {view.kind === 'unknownLink' ? (
           <p className="px-2.5 py-3 text-label text-muted-foreground">
             {`Goodboy links ${Object.values(LINK_WORK_PROVIDER_LABEL).join(', ')} URLs.`}
@@ -232,15 +229,13 @@ export const LinkWorkPicker = ({
         )}
       </ScrollFade>
       {error !== null ? (
-        <p
-          role="alert"
-          className="flex items-center gap-1 border-t border-border px-3 py-2 text-label text-danger"
-        >
+        <p role="alert" className="flex items-center gap-1 px-3 py-2 text-label text-danger">
           <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
           {error}
         </p>
       ) : null}
-      <div className="flex items-center gap-4 border-t border-border bg-muted px-3 py-2 text-label text-faint-foreground">
+      <Divider />
+      <div className="flex items-center gap-4 bg-muted px-3 py-2 text-label text-faint-foreground">
         <span className="flex items-center gap-1.5">
           <KbdPill>↑↓</KbdPill>
           move
