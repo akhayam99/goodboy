@@ -5,7 +5,6 @@ import { FAQS } from '../data/faqs';
 export const Faq = () => (
   <Chapter
     id="faq"
-    isBand
     head={{ eyebrow: 'Questions', eyebrowKind: 'page', heading: 'Before you install' }}
   >
     <div className="faq">

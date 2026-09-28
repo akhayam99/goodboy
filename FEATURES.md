@@ -414,7 +414,7 @@ Start each step from a short brief instead of the whole previous chat. If the su
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s07-questions-dark.webp">
-  <img src="./docs/readme/s07-questions-light.webp" alt="An open question from the stuck-delivery banner agent with suggested answers, two picked, and Let an agent answer">
+  <img src="./docs/readme/s07-questions-light.webp" alt="The Questions lens: three questions waiting on you next to the blocking one from the stuck-delivery banner agent, with its context, a file, three numbered answers with Dedicated retry queue recommended, Something else, Let an agent decide, Skip and Answer">
 </picture>
 
 Get each question as one card: who asks, whether it blocks, the question, and its answers as numbered tiles with the recommended one tagged. Pick with a number key, answer with Enter, or write something else in line. The Questions lens lists what waits on you next to the question you are answering, and j and k move through the list. The same card sits at the end of the transcript and at the top of the agent's Brief. The answers to one agent go out together once you answered its last question, and until then each one keeps an Undo. An agent can mark a question as blocking, which holds its step until you answer. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
@@ -736,6 +736,11 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
 </picture>
 
 ### Workspace chat
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s34-chat-dark.webp">
+  <img src="./docs/readme/s34-chat-light.webp" alt="Chat in Harborline: the list of chats by Pinned, Today, This week and Idle, and an answer on where the consent step lives in payments-api, with a table of three files, Read 4 files, Copy and Start work from here">
+</picture>
 
 Ask about the workspace without starting a session. **Chat**, right of **Board**, opens a list of your chats next to one conversation. Each chat reads every project of the workspace and never changes a file: the answer streams in, **Read N files** lists what it opened, and the model is picked per chat, from Claude or Codex, the two providers that can be held to reading. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you.
 
