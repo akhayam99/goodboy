@@ -7,7 +7,7 @@ import { DEV_DIFF, DEV_HISTORY } from '../figures';
 const ITEMS: readonly Benefit[] = [
   {
     lead: 'Rewrite history before you push.',
-    text: 'Drag commits to fold, squash, reorder or drop them, and see the branch after Apply before it moves. Every rewrite keeps a backup for 30 days.',
+    text: 'Drag commits to fold, squash, reorder or drop them, pick what each fold keeps, and see the branch after Apply before it moves. Every rewrite keeps a backup for 30 days.',
   },
   {
     lead: 'Branches that do not pile up.',

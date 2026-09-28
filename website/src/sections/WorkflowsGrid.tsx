@@ -8,7 +8,7 @@ export const WorkflowsGrid = () => (
       {
         figure: INBOX_ISSUE,
         title: 'Inbox',
-        text: 'Issues and pull requests from GitHub, Linear, Jira, Sentry and Slack in one list. Open one and the session starts with its brief drafted.',
+        text: 'Issues and pull requests from GitHub, Linear, Jira, Sentry and Slack in one list. Open one and the session starts with its brief drafted, or press L in a session to link one to it.',
       },
       {
         figure: ARTIFACTS_COMPARE,
