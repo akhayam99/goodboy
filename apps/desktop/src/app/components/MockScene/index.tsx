@@ -86,7 +86,8 @@ import { BrandLookupScene } from './scenes/brand/LookupScene';
 import { BrandSlackScene } from './scenes/brand/SlackScene';
 import { BrandContextScene } from './scenes/brand/ContextScene';
 import { BrandCompareScene } from './scenes/brand/CompareScene';
-import { BrandDiffManyFilesScene, BrandDiffScene } from './scenes/brand/DiffScene';
+import { BrandDiffScene } from './scenes/brand/DiffScene';
+import { BrandDiffManyFilesScene } from './scenes/brand/DiffManyFilesScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
 import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
 import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
@@ -99,7 +100,8 @@ import { BrandSecurityFindingsScene } from './scenes/brand/SecurityFindingsScene
 import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
-import { AgentBriefQuestionScene, AgentBriefScene } from './scenes/AgentBriefScene';
+import { AgentBriefScene } from './scenes/AgentBriefScene';
+import { AgentBriefQuestionScene } from './scenes/AgentBriefQuestionScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 

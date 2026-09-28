@@ -92,8 +92,6 @@ type Props = {
   readonly hasQuestion?: boolean;
 };
 
-export const AgentBriefQuestionScene = () => <AgentBriefScene hasQuestion />;
-
 export const AgentBriefScene = ({ hasQuestion = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const agent = hasQuestion ? WAITING_AGENT : AGENT;

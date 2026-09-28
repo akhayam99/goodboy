@@ -273,11 +273,9 @@ export const DiffView = ({
         const offset = offsetFromTop(current, viewportRef.current);
         const settled =
           viewportRef.current === null ? Math.abs(offset - last) <= 1 : Math.abs(offset) <= 1;
-        if (settled) {
-          stable += 1;
-        } else {
+        stable = settled ? stable + 1 : 0;
+        if (!settled) {
           snapToTop(current);
-          stable = 0;
         }
         last = offsetFromTop(current, viewportRef.current);
         frames += 1;

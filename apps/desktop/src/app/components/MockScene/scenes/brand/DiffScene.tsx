@@ -42,8 +42,6 @@ type Props = {
   readonly manyFiles?: boolean;
 };
 
-export const BrandDiffManyFilesScene = () => <BrandDiffScene manyFiles />;
-
 export const BrandDiffScene = ({ manyFiles = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
   const [isStaged, setIsStaged] = useState(false);
