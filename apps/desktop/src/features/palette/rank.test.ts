@@ -101,6 +101,27 @@ describe('rankCandidates', () => {
     ).toEqual(['Archive']);
   });
 
+  it('finds available and blocked fold actions by their label word prefix', () => {
+    const items: ReadonlyArray<RankCandidate> = [
+      { key: 'available', label: 'Fold down' },
+      { key: 'blocked', label: 'Fold down', isBlocked: true },
+    ];
+
+    const ranked = rankCandidates({ items, query: 'fold', frecency: EMPTY_FRECENCY, now: NOW });
+
+    expect(ranked.map((entry) => entry.item.key)).toEqual(['available', 'blocked']);
+  });
+
+  it('finds a blocked squash action by a short word prefix', () => {
+    const items: ReadonlyArray<RankCandidate> = [
+      { key: 'blocked', label: 'Squash down', isBlocked: true },
+    ];
+
+    expect(
+      labels(rankCandidates({ items, query: 'sq', frecency: EMPTY_FRECENCY, now: NOW })),
+    ).toEqual(['Squash down']);
+  });
+
   it('orders an empty query by frecency, then by source order', () => {
     const ranked = rankCandidates({
       items: ITEMS,

@@ -44,6 +44,11 @@ type WholeQueryParams = {
   readonly lower: string;
 };
 
+type WordPrefixParams = {
+  readonly token: string;
+  readonly text: string;
+};
+
 const CHAR = 16;
 const WORD_START = 16;
 const CAMEL = 12;
@@ -76,6 +81,16 @@ const positionBonus = ({ text, index }: IndexParams): number => {
     return CAMEL;
   }
   return 0;
+};
+
+const isWordPrefix = ({ token, text }: WordPrefixParams): boolean => {
+  const lower = text.toLowerCase();
+  for (let index = lower.indexOf(token); index >= 0; index = lower.indexOf(token, index + 1)) {
+    if (positionBonus({ text, index }) >= CAMEL) {
+      return true;
+    }
+  }
+  return false;
 };
 
 const isSubsequence = ({ token, lower }: SubsequenceParams): boolean => {
@@ -162,12 +177,10 @@ const matchToken = ({ token, text }: TokenParams): TextMatch | null => {
     }
     j = found;
   }
-  const first = positions[0] ?? 0;
-  const isContiguous = positions.every((position, index) => position === first + index);
   return {
     score: endScore,
     positions,
-    isWordPrefix: isContiguous && positionBonus({ text, index: first }) >= CAMEL,
+    isWordPrefix: isWordPrefix({ token, text }),
   };
 };
 
@@ -233,11 +246,11 @@ export const scoreFields = ({ query, label, secondary }: ScoreFieldsParams): Fie
   if (whole !== null) {
     return { ...whole, isOnLabel: true };
   }
+  const tokens = queryTokens(query);
   const positions = new Set<number>();
   let score = 0;
-  let isWordPrefix = true;
   let isOnLabel = false;
-  for (const token of queryTokens(query)) {
+  for (const token of tokens) {
     const onLabel = matchToken({ token, text: label });
     const onSecondary = bestSecondary({ token, secondary });
     const pick =
@@ -248,7 +261,6 @@ export const scoreFields = ({ query, label, secondary }: ScoreFieldsParams): Fie
       return null;
     }
     score += pick.score;
-    isWordPrefix = isWordPrefix && pick.isWordPrefix;
     if (pick === onLabel) {
       isOnLabel = true;
       pick.positions.forEach((position) => positions.add(position));
@@ -257,7 +269,7 @@ export const scoreFields = ({ query, label, secondary }: ScoreFieldsParams): Fie
   return {
     score,
     positions: [...positions].sort((a, b) => a - b),
-    isWordPrefix,
+    isWordPrefix: tokens.every((token) => isWordPrefix({ token, text: label })),
     isOnLabel,
   };
 };

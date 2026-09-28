@@ -18,6 +18,17 @@ describe('scoreText', () => {
     expect(match?.isWordPrefix).toBe(true);
   });
 
+  it('checks word prefixes independently of the fuzzy match positions', () => {
+    const match = scoreText({ query: 'fold', text: 'Fold down' });
+
+    expect(match).not.toBeNull();
+    expect(match?.isWordPrefix).toBe(true);
+  });
+
+  it('accepts a short prefix of a longer word', () => {
+    expect(scoreText({ query: 'sq', text: 'Squash down' })?.isWordPrefix).toBe(true);
+  });
+
   it('matches tokens in any order', () => {
     expect(scoreText({ query: 'export pay', text: 'Speed up the payout export' })).not.toBeNull();
   });

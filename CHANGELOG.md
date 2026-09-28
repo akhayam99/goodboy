@@ -12,6 +12,14 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.12.2
+
+Typing the start of any word in `Cmd+K` finds the action you meant.
+
+### Fixed
+
+- Typing the start of any word in `Cmd+K` now finds the action, so "fold" finds Fold down. <!-- gb area=app pr=1918 -->
+
 ## Goodboy v0.12.1
 
 Rewrite history is rebuilt: drag commits to fold, squash or move them, and see what the branch becomes before you apply.
