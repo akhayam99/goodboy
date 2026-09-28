@@ -7,9 +7,9 @@ import {
 } from '@goodboy/core';
 import type { PrComment, PullRequestState } from '@goodboy/types';
 import {
-  buildCommentAgentArgs,
   buildCommentAgentTitle,
   buildResolverAgentArgs,
+  buildResolverKickoff,
   type ResolverStyle,
 } from './spawn-from-comment';
 
@@ -66,6 +66,16 @@ const outcomeIds = (prompt: string): ReadonlyArray<string> =>
 const occurrences = ({ text, needle }: { text: string; needle: string }): number =>
   text.split(needle).length - 1;
 
+const kickoff = ({
+  head,
+  replies = [],
+  hint = '',
+}: {
+  readonly head: PrComment;
+  readonly replies?: ReadonlyArray<PrComment>;
+  readonly hint?: string;
+}): string => buildResolverKickoff({ threads: [{ head, replies }], pr: PR, hint });
+
 describe('spawn-from-comment', () => {
   it('titles review comments with short file + line', () => {
     expect(buildCommentAgentTitle(makeComment())).toBe('resolve: alice on foo.ts:42');
@@ -85,40 +95,11 @@ describe('spawn-from-comment', () => {
     ).toBe('resolve: alice comment');
   });
 
-  it('builds args as a resolver agent carrying the comment context', () => {
-    const args = buildCommentAgentArgs(makeComment(), PR);
-    expect(args.name).toBe('resolve: alice on foo.ts:42');
-    expect(args.kind).toBe('resolver');
-    expect(args.initialPrompt).toContain('src/foo.ts:42');
-    expect(args.initialPrompt).toContain('this should use a helper');
-    expect(args.initialPrompt).toContain('#9108');
-  });
-
-  it('links the source comment of a review thread', () => {
-    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
-      provider: 'codex',
-      model: 'gpt-5-codex',
-      effort: 'high',
-    });
-    expect(args.sourceThreadId).toBe('PRRT_7');
-    expect(args.sourceCommentUrl).toBe('https://github.com/o/r/pull/9108#discussion_r1');
-  });
-
-  it('omits sourceThreadId for issue comments but keeps the url', () => {
-    const args = buildCommentAgentArgs(
-      makeComment({ source: 'issue', path: undefined, line: undefined, threadId: undefined }),
-      PR,
-    );
-    expect(args.sourceThreadId).toBeUndefined();
-    expect(args.sourceCommentUrl).toBe('https://github.com/o/r/pull/9108#discussion_r1');
-  });
-
-  it('keeps issue comments on the resolver kind', () => {
-    const args = buildCommentAgentArgs(
-      makeComment({ source: 'issue', path: undefined, line: undefined, body: 'this crashes' }),
-      PR,
-    );
-    expect(args.kind).toBe('resolver');
+  it('carries the comment context into a single kickoff', () => {
+    const prompt = kickoff({ head: makeComment() });
+    expect(prompt).toContain('src/foo.ts:42');
+    expect(prompt).toContain('this should use a helper');
+    expect(prompt).toContain('#9108');
   });
 
   it('carries author, location, link and thread id of every thread it hands over', () => {
@@ -132,18 +113,19 @@ describe('spawn-from-comment', () => {
   });
 
   it('includes thread replies as context after the head comment', () => {
-    const args = buildCommentAgentArgs(makeComment(), PR, {}, [
-      makeComment({ id: 'review-2', author: 'bob', body: 'agree, but rename it' }),
-    ]);
-    expect(args.initialPrompt).toContain('- reply from bob:');
-    expect(args.initialPrompt).toContain('agree, but rename it');
-    expect(args.initialPrompt.indexOf('this should use a helper')).toBeLessThan(
-      args.initialPrompt.indexOf('agree, but rename it'),
+    const prompt = kickoff({
+      head: makeComment(),
+      replies: [makeComment({ id: 'review-2', author: 'bob', body: 'agree, but rename it' })],
+    });
+    expect(prompt).toContain('- reply from bob:');
+    expect(prompt).toContain('agree, but rename it');
+    expect(prompt.indexOf('this should use a helper')).toBeLessThan(
+      prompt.indexOf('agree, but rename it'),
     );
   });
 
   it('omits the replies section when the thread has no replies', () => {
-    expect(buildCommentAgentArgs(makeComment(), PR).initialPrompt).not.toContain('- reply from');
+    expect(kickoff({ head: makeComment() })).not.toContain('- reply from');
   });
 
   it('asks for exactly one outcome marker per thread and never reuses a reply', () => {
@@ -177,10 +159,9 @@ describe('spawn-from-comment', () => {
   });
 
   it('asks for no marker at all on a comment that has no review thread', () => {
-    const prompt = buildCommentAgentArgs(
-      makeComment({ source: 'issue', path: undefined, line: undefined, threadId: undefined }),
-      PR,
-    ).initialPrompt;
+    const prompt = kickoff({
+      head: makeComment({ source: 'issue', path: undefined, line: undefined, threadId: undefined }),
+    });
 
     expect(prompt).not.toContain('thread id');
     expect(prompt).not.toContain('How to report each thread');
@@ -188,7 +169,7 @@ describe('spawn-from-comment', () => {
   });
 
   it('uses the neutral resolver instruction for a single kickoff', () => {
-    const prompt = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
+    const prompt = kickoff({ head: makeComment() });
     expect(prompt).toBe(
       [
         'Resolve 1 thread on PR #9108, branch `kay/foo`.',
@@ -207,21 +188,21 @@ describe('spawn-from-comment', () => {
   });
 
   it('keeps omitted, empty and whitespace-only hint prompts byte-identical', () => {
-    const omitted = buildCommentAgentArgs(makeComment(), PR).initialPrompt;
-    expect(buildCommentAgentArgs(makeComment(), PR, { hint: '' }).initialPrompt).toBe(omitted);
-    expect(buildCommentAgentArgs(makeComment(), PR, { hint: ' \n\t ' }).initialPrompt).toBe(
-      omitted,
-    );
+    const omitted = buildResolverAgentArgs({
+      threads: [{ head: makeComment(), replies: [] }],
+      pr: PR,
+    }).initialPrompt;
+    expect(kickoff({ head: makeComment(), hint: '' })).toBe(omitted);
+    expect(kickoff({ head: makeComment(), hint: ' \n\t ' })).toBe(omitted);
   });
 
   it('appends trimmed operator notes last', () => {
-    const args = buildCommentAgentArgs(makeComment({ threadId: 'PRRT_7' }), PR, {
+    const prompt = kickoff({
+      head: makeComment({ threadId: 'PRRT_7' }),
       hint: '  Use the existing helper.\nAvoid schema changes.  ',
     });
-    expect(args.initialPrompt).toContain(
-      'Operator notes\nUse the existing helper.\nAvoid schema changes.',
-    );
-    expect(args.initialPrompt.endsWith('Avoid schema changes.')).toBe(true);
+    expect(prompt).toContain('Operator notes\nUse the existing helper.\nAvoid schema changes.');
+    expect(prompt.endsWith('Avoid schema changes.')).toBe(true);
   });
 
   it('builds one combined resolver with every source thread', () => {

@@ -418,10 +418,73 @@ const seedReviewComment = ({ sessionId }: Ctx): void => {
       ...state.mountGithub,
       [mount.mountId]: {
         ...github,
-        detail: { ...(github.detail ?? { reviews: [], checks: [] }), comments: [comment] },
+        detail: {
+          ...(github.detail ?? { reviews: [], checks: [], reviewRequests: [] }),
+          prNumber: github.pr.number,
+          comments: [comment],
+        },
       } as typeof github,
     },
   });
+};
+
+const openPullRequestPage = async (): Promise<void> => {
+  await clickFirstButton(/^Open PR #\d+ of /);
+};
+
+const markPullRequestForeign = ({ sessionId }: Ctx): void => {
+  const state = useAppStore.getState();
+  const github = state.sessionGithub[sessionId];
+  if (github === undefined || github.pr === null) {
+    throw new Error('the pr seed has no session pull request');
+  }
+  const pr = { ...github.pr, author: 'kenji-w' };
+  useAppStore.setState({
+    githubStatus: { mode: 'gh-cli', available: true, user: 'mara-l' },
+    sessionGithub: { ...state.sessionGithub, [sessionId]: { ...github, pr } },
+    mountGithub: Object.fromEntries(
+      Object.entries(state.mountGithub).map(([mountId, entry]) => [
+        mountId,
+        entry.pr?.number === pr.number
+          ? {
+              ...entry,
+              pr,
+              prs: entry.prs.map((candidate) => (candidate.number === pr.number ? pr : candidate)),
+            }
+          : entry,
+      ]),
+    ),
+    sessionProjectPrs: Object.fromEntries(
+      Object.entries(state.sessionProjectPrs).map(([key, byProject]) => [
+        key,
+        Object.fromEntries(
+          Object.entries(byProject).map(([projectId, prs]) => [
+            projectId,
+            prs.map((candidate) => (candidate.number === pr.number ? pr : candidate)),
+          ]),
+        ),
+      ]),
+    ),
+  });
+};
+
+const FOREIGN_CONTROLS: Readonly<Record<string, ReadonlyArray<RegExp>>> = {
+  pr: [/^Conversations/, /^Draft fixes/, /^Rebase on /, /^Rewrite history/, /^Fix$/, /^Push \d+$/],
+  files: [/^Squash and merge/, /^Mark ready/, /^Conversations/, /^Draft fixes/, /^Write review/],
+  review: [/^Squash and merge/, /^Mark ready/, /^Rebase on /, /^Rewrite history/],
+};
+
+const expectOwnControlsOnly = ({ sessionId }: Ctx): void => {
+  const layer = useAppStore.getState().activeLens[sessionId] ?? null;
+  const foreign = layer === null ? [] : (FOREIGN_CONTROLS[layer] ?? []);
+  const header = document.querySelector('[data-slot="pane-header"]');
+  if (header === null || foreign.length === 0) {
+    return;
+  }
+  const names = within(header as HTMLElement)
+    .queryAllByRole('button')
+    .map((button) => button.getAttribute('aria-label') ?? button.textContent ?? '');
+  expect(names.filter((name) => foreign.some((pattern) => pattern.test(name)))).toEqual([]);
 };
 
 const openDiffHistory = async (): Promise<void> => {
@@ -847,15 +910,21 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => visible('list', 'Integrations settings'),
   },
   {
-    name: 'mount row: scripts',
+    name: 'mount row menu: scripts',
     covers: ['navigate', 'lens:scripts'],
-    open: () => clickFirstButton(/^Open scripts for/),
+    open: async () => {
+      await clickFirstButton(/ on .+ actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Open scripts/ }));
+    },
     lands: both(lens('scripts'), () => heading('Scripts')),
   },
   {
-    name: 'mount row: terminal',
+    name: 'mount row menu: terminal',
     covers: ['openMountTerminal', 'lens:terminal'],
-    open: () => clickFirstButton(/^Open terminal for/),
+    open: async () => {
+      await clickFirstButton(/ on .+ actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Open terminal/ }));
+    },
     lands: lens('terminal'),
   },
   {
@@ -982,6 +1051,65 @@ const ROWS: ReadonlyArray<Row> = [
     },
   },
   {
+    name: 'layers: the pull request quiet line opens Review on top of it',
+    covers: ['openReviewTarget', 'layer:pr>review'],
+    open: async (ctx) => {
+      seedReviewComment(ctx);
+      await settle();
+      await openPullRequestPage();
+      await clickButton(/^1 comment to resolve/);
+    },
+    lands: both(lens('review'), trailReads('Overview', 'PR #', 'Review')),
+  },
+  {
+    name: 'layers: the pull request quiet line opens its diff',
+    covers: ['navigate', 'layer:pr>diff'],
+    open: async () => {
+      await openPullRequestPage();
+      await clickButton(/^Changes on this branch/);
+    },
+    lands: both(lens('files'), () => heading('Diff')),
+  },
+  {
+    name: "layers: Write review on someone else's pull request",
+    covers: ['navigate', 'layer:pr>write-review'],
+    open: async (ctx) => {
+      markPullRequestForeign(ctx);
+      await settle();
+      await openPullRequestPage();
+      await clickButton(/^Write review$/);
+    },
+    lands: async (ctx) => {
+      await lens('pr')(ctx);
+      await waitFor(
+        () => expect(useAppStore.getState().pullRequestModes[ctx.sessionId]).toBe('write_review'),
+        WAIT,
+      );
+    },
+  },
+  {
+    name: 'layers: Restore a backup in the Diff menu opens the Backups of Rewrite history',
+    covers: ['openRewriteHistory', 'layer:diff>history'],
+    open: async () => {
+      await openCrumb(/^Diff/);
+      await clickButton(/^Diff actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Restore a backup/ }));
+    },
+    lands: () => visible('region', 'Backups'),
+  },
+  {
+    name: 'diff menu: Change base branch opens the picker in place',
+    covers: ['layer:diff-base'],
+    open: async () => {
+      await openCrumb(/^Diff/);
+      await clickButton(/^Diff actions$/);
+      await click(await screen.findByRole('menuitem', { name: /^Change base branch/ }));
+    },
+    lands: async () => {
+      expect(await screen.findByText('Compare with', undefined, WAIT)).toBeDefined();
+    },
+  },
+  {
     name: 'review header pull request link',
     covers: ['navigate', 'lens:pr'],
     open: async () => {
@@ -1040,6 +1168,7 @@ describe('navigation entries render their destination on the real store', () => 
 
       await row.open(ctx);
       await row.lands(ctx);
+      expectOwnControlsOnly(ctx);
 
       const tracedActions = row.covers.filter((token) => STORE_ACTIONS.includes(token));
       expect(tracedActions.filter((name) => !calls.has(name))).toEqual([]);

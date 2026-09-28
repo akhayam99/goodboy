@@ -170,11 +170,21 @@ never exists on one surface only.
   step, Start the next step, Restore; Copy run summary; Close, Discard and
   Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
   from the list row too. A plan part, an inbox record (with the tool verbs of
-  an open record), a pull request, a diff file, a commit on the rewrite page, a
-  project mount, a storage worktree, a script, a transcript message and a link
-  in rendered text have their own kinds. `__tests__/actions/stateMatrix.test.ts`
-  pins, per kind and per state, which verbs show and why a verb is blocked, and
-  runs them on the real store.
+  an open record), a pull request, a worktree row of the Overview (`mount`), a
+  project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
+  page, a storage worktree, a script, a transcript message and a link in
+  rendered text have their own kinds. The pull request, `mount` and `diff`
+  kinds read their facts from the store and carry a `slot` per action: which
+  available actions also get a visible control on their layer (`primary`,
+  `secondary`, `inline`, `nudge`, `notice`, `hover`, `section`, `chip`), at
+  most one primary and three secondaries; the menu, the right click and the
+  palette ignore `slot` and list every available action.
+  `useActionControls` renders those controls with the pending words on the
+  control, the blocked reason on the line under the header and a failure with
+  Retry under the control. `__tests__/actions/stateMatrix.test.ts` pins, per
+  kind and per state, which verbs show, in which slot, and why a verb is
+  blocked, and runs them on the real store; `kinds/*.matrix.test.ts` pins the
+  same for the three UX5 kinds against the plan's state table.
 - **Pointer and keys.** The menu opens at the pointer and flips to stay 8px
   inside the window. Shift+F10 (`menu.open`) and the Menu key open it on the
   focused row, and Control-click is a right click. The arrows, Home and End
@@ -186,9 +196,9 @@ never exists on one surface only.
   an unselected row it clears the selection and acts on that row alone.
 - **Confirm and undo.** A verb that loses work confirms inside the menu with
   `InlineConfirm` (Delete, Discard, Close run, Merge, Close pull request,
-  Delete script). A mount's Close, Remove and Detach and a storage worktree's
-  Remove keep their detailed confirm (the detach plan, the forced remove) in
-  their own menu. A reversible verb runs at once with an Undo toast (Archive,
+  Delete script, Close worktree, Remove from session, Abort rebase). Detach
+  project and a storage worktree's Remove keep their detailed confirm (the
+  detach plan, the forced remove) in their own menu. A reversible verb runs at once with an Undo toast (Archive,
   Close agent). A draft verb on the rewrite page (Drop) needs neither.
 - **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
   with its reason under the label, and does nothing when chosen. A verb that
@@ -380,18 +390,23 @@ the Inbox (Launch session).
   Review, the Diff and Rewrite history are layers of one page. Each entry of
   the stack carries `layers`, the kinds to its left (`layers.ts`). Opening a
   layer from the Overview puts it under the Overview alone; opening one from
-  inside another layer stacks it to the right (`Overview > Diff > Pull request
-  > #318`, `Overview > PR #318 > Review`). A kind already in the trail pops
-  > back to its entry instead of stacking a copy, so the stack never loops and
-  > is at most four deep; a crumb pops to itself the same way, and Back removes
-  > one layer. A request that carries a focus (a diff on one file) pushes
-  > instead. A jump from outside the page (board card, palette from another
-  > place, notification, sidebar) gets the canonical path of its target: Review
-  > sits under its pull request when the session has one, everything else under
-  > the Overview. Rewrite history stays a child of its Diff (the branch crumb
-  > between them). Opening a page that is not a layer drops the path, and Back
-  > finds it again. A reload carries the path in the reload intent and replays
-  > it from the Overview, so the trail comes back as it was.
+  inside another layer stacks it to the right
+  (`Overview > Diff > Pull request > #318`, `Overview > PR #318 > Review`). A
+  kind already in the trail pops back to its entry instead of stacking a copy,
+  so the stack never loops and is at most four deep; a crumb pops to itself the
+  same way, and Back removes one layer. A request that carries a focus (a diff
+  on one file) pushes instead. A jump from outside the page (board card,
+  palette from another place, notification, sidebar) gets the canonical path of
+  its target: Review sits under its pull request when the session has one,
+  everything else under the Overview. Rewrite history stays a child of its Diff
+  (the branch crumb between them). Opening a page that is not a layer drops the
+  path, and Back finds it again. A reload carries the path in the reload intent
+  and replays it from the Overview, so the trail comes back as it was. A layer
+  never renders another layer's controls; it links to it in one quiet line. The
+  `code-layers` mock scene (`?scene=code-layers&layer=pr&pr=failing&wt=behind`)
+  shows every layer in any pull request and worktree state, and the navigation
+  flows walk every arrow between the layers with a guard that fails when a
+  layer header carries another layer's controls.
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
@@ -972,11 +987,19 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   attention callout routes by cause: requested changes open Review, failed
   checks and an approval open the pull request. Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
-  pull requests by branch, with `New pull request`. The page header carries the
-  state action (`Merge`, `Mark ready for review`), `Write review` and `GitHub`.
-  The body reads, in order: one warning with `Resolve in Review` when
-  conversations wait or a reviewer asked for changes, otherwise the merge
-  readiness note; then Details, Checks and Activity. `Write review` is a child
+  pull requests by branch, with `New pull request`. The page shows the pull
+  request only. Its controls come from the `pullRequest` kind of the action
+  registry (`features/actions/kinds/pullRequest.ts`), whose `slot` says which
+  available actions also get a visible control (`⋯`, the right click and ⌘K
+  ignore it and list every one): at most one primary that
+  names the next step (`Mark ready for review` on a draft, `Squash and merge`
+  once approved and green), up to three secondaries (`GitHub`, a blocked
+  `Squash and merge` with its reason on the line under the header, `Reopen`,
+  `Write review` on someone else's pull request), and `⋯` with every available
+  action. Merge and Close confirm inline under the header. Two quiet lines
+  point elsewhere: `N comments to resolve` opens Review and `Open diff` the
+  Diff. Then Details and Checks; general comments live in Review, and the page
+  has no Activity or Fix. `Write review` is a child
   page (`Overview › Pull request › #528 › Write review`) and a form with no
   dock: the diff to comment on, then Line comments, Verdict and Summary in one
   column, and the action row at the end;
@@ -1164,18 +1187,25 @@ sidebar.
 
 The Diff lens shows one branch. The trail carries the choice (see Segment
 menus); there are no worktree tabs. The header speaks only for that branch:
-meta `repo · N commits · state word`, one primary chosen from the branch state
-(`Rebase on main` when it is behind main, `Push branch` when it is local only
-with commits, none otherwise), `PR #318` when the branch has a pull request
-(it opens the pull request, trail `Overview › Diff › PR #318`; the Diff has
-no Review door of its own), `Rewrite history` with the commit count and `⋯`
-(Refresh, Open all in editor, Copy branch name, Copy patch). A line that
-carries an open review comment of that pull request shows it read only,
-marked `To resolve`, with `Open in Review` on that comment. Every rewrite takes the shown
+meta `repo · N commits · state word`, and the controls of the `diff` kind of
+the action registry (`features/actions/kinds/diff.ts`): one primary chosen
+from the branch state (`Rebase on main` when it is behind main, `Push N
+commits` when commits wait on a branch with a pull request, `Create PR` when
+the branch has commits and no pull request, `Open terminal` while a rebase is
+stopped), up to three secondaries (`PR #528`, which opens the pull request
+with the trail `Overview › Diff › Pull request › #528`, `Rewrite history`, `Abort
+rebase`) and `⋯` with every available action (Open in editor, Open terminal,
+Change base branch…, Restore a backup…, Copy branch name, Copy patch). A
+blocked control stays visible and disabled, with its reason on the line under
+the header; Abort rebase confirms there inline. Change base branch opens the
+base picker in place, and Restore a backup opens Rewrite history on its
+Backups. The Diff has no Review door of its own: a line that carries an open
+review comment of that pull request shows it read only, marked `To resolve`,
+with `Open in Review` on that comment. Every rewrite takes the shown
 mount's `mountId`, never the active mount. `Rebase on main` replays the
 branch on origin with the history engine and runs no agent. The engine first
 predicts the replay in memory; when it conflicts, the button reads
-`Rebase on main · N conflicts` and the tooltip names the files, and only then
+`Rebase on main · N conflicts`, and only then
 the hidden History rewriter merges the edits in a throwaway copy. The branch
 moves only after the engine checks the result, with a backup ref and a push
 with lease.

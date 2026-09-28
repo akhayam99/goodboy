@@ -6,7 +6,6 @@ import { DIFF_PANE_TITLE, SessionDiffPane } from '../../../../diff/components/Se
 import { FileVersionsPane } from './FileVersionsPane';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import { RewriteHistoryPage } from '../../../../history/components/RewriteHistoryPage';
-import { RewriteHistoryButton } from '../../../../history/components/RewriteHistoryButton';
 
 type Props = {
   readonly sessionId: SessionId;
@@ -25,7 +24,6 @@ export const FilesPane = ({
 }: Props) => {
   const diffFocus = useAppStore((s) => s.diffFocus[sessionId] ?? null);
   const diffPage = useAppStore((s) => s.diffPage[sessionId] ?? null);
-  const openRewriteHistory = useAppStore((s) => s.openRewriteHistory);
 
   if (isBranchless) {
     if (sessionDir == null) {
@@ -66,14 +64,6 @@ export const FilesPane = ({
       worktreePath={worktreePath}
       diffFocus={diffFocus}
       branchRevision={0}
-      renderBranchActions={({ mountId, commits }) =>
-        mountId === null || commits.length === 0 ? null : (
-          <RewriteHistoryButton
-            count={commits.length}
-            onOpen={() => openRewriteHistory(sessionId, worktreePath)}
-          />
-        )
-      }
     />
   );
 };

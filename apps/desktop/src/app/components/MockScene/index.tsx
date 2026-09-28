@@ -69,6 +69,7 @@ import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
 import { InboxStatesScene } from './scenes/audit/InboxStatesScene';
 import { CompanionScene } from './scenes/audit/CompanionScene';
 import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
+import { CodeLayersScene } from './scenes/CodeLayersScene';
 import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
 import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
 import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
@@ -153,6 +154,7 @@ export const MOCK_SCENES = {
   'inbox-states': InboxStatesScene,
   companion: CompanionScene,
   'review-modes': ReviewModesScene,
+  'code-layers': CodeLayersScene,
   'workflow-studio': WorkflowStudioScene,
   'workflow-builder-modes': WorkflowBuilderModesScene,
   'impact-scopes': ImpactScopesScene,

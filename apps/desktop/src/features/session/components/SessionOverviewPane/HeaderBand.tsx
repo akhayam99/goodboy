@@ -104,11 +104,7 @@ export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props
           </div>
         </div>
       </div>
-      <ProjectMountRows
-        session={session}
-        isHiddenWhenEmpty={isSettingUp}
-        onSelectLens={onSelectLens}
-      />
+      <ProjectMountRows session={session} isHiddenWhenEmpty={isSettingUp} />
     </div>
   );
 };

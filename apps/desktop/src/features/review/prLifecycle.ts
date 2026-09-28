@@ -2,8 +2,6 @@ export const PR_LIFECYCLE_ACTIONS = ['ready', 'undraft', 'merge', 'close', 'reop
 
 export type PrLifecycleAction = (typeof PR_LIFECYCLE_ACTIONS)[number];
 
-export type PrLifecycleBusy = PrLifecycleAction | null;
-
 export const prLifecycleFailureTitle = ({
   action,
   prNumber,
@@ -24,8 +22,8 @@ export const prLifecycleFailureTitle = ({
     case 'reopen':
       return `Couldn't reopen ${target}`;
     default: {
-      const _exhaustive: never = action;
-      return `Couldn't update ${target}`;
+      const exhaustive: never = action;
+      return exhaustive;
     }
   }
 };

@@ -14,21 +14,27 @@ export const resolveOne = <F>({
 }: {
   readonly definition: ActionDefinition<F>;
   readonly facts: F;
-}): ResolvedAction => ({
-  id: definition.id,
-  label: typeof definition.label === 'string' ? definition.label : definition.label({ facts }),
-  icon: definition.icon,
-  group: definition.group,
-  shortcut: definition.shortcut ?? null,
-  description: definition.description?.({ facts }) ?? null,
-  blockedReason: definition.blockedReason?.({ facts }) ?? null,
-  confirm: definition.confirm?.({ facts }) ?? null,
-  isUndoable: definition.isUndoable === true,
-  choices: definition.choices?.({ facts }) ?? null,
-  emphasis: definition.emphasis?.({ facts }) ?? null,
-  isBusy: definition.isBusy?.({ facts }) ?? false,
-  slot: definition.slot?.({ facts }) ?? 'menu',
-});
+}): ResolvedAction => {
+  const label =
+    typeof definition.label === 'string' ? definition.label : definition.label({ facts });
+  return {
+    id: definition.id,
+    label,
+    shortLabel: definition.shortLabel?.({ facts }) ?? label,
+    icon: definition.icon,
+    group: definition.group,
+    slot: definition.slot?.({ facts }) ?? 'menu',
+    pendingLabel: definition.pendingLabel?.({ facts }) ?? null,
+    shortcut: definition.shortcut ?? null,
+    description: definition.description?.({ facts }) ?? null,
+    blockedReason: definition.blockedReason?.({ facts }) ?? null,
+    confirm: definition.confirm?.({ facts }) ?? null,
+    isUndoable: definition.isUndoable === true,
+    choices: definition.choices?.({ facts }) ?? null,
+    emphasis: definition.emphasis?.({ facts }) ?? null,
+    isBusy: definition.isBusy?.({ facts }) ?? false,
+  };
+};
 
 export const resolveActions = <F>({
   definitions,

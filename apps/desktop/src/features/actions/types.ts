@@ -1,16 +1,23 @@
 import type { LucideIcon } from 'lucide-react';
-import type { AgentId, ArtifactId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  MountId,
+  ProjectId,
+  SessionId,
+  WorkflowRunId,
+  WorktreeStatus,
+} from '@goodboy/types';
 import type { ArtifactGeneration } from '../artifacts/artifactCollection';
 import type { RecordFacts } from './kinds/record';
-import type { PullRequestFacts } from './kinds/pullRequest';
 import type { CommitFacts } from './kinds/commit';
 import type { DiffFileFacts } from './kinds/diffFile';
-import type { MountFacts } from './kinds/mount';
 import type { WorktreeFacts } from './kinds/worktree';
 import type { ScriptFacts } from './kinds/script';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
+import type { RemoteHostKind } from '../../shared/lib/remoteHost';
 
 export const ACTION_GROUPS = ['open', 'act', 'copy', 'danger'] as const;
 
@@ -28,12 +35,11 @@ export const ACTION_SLOTS = [
   'chip',
   'empty',
   'menu',
-  'hidden',
 ] as const;
 
 export type ActionSlot = (typeof ACTION_SLOTS)[number];
 
-export type ActionConfirmRole = 'alert' | 'danger';
+export type ActionConfirmRole = 'primary' | 'alert' | 'danger';
 
 export type ActionConfirm = {
   readonly title: string;
@@ -75,6 +81,7 @@ export type ActionRunParams<F> = {
 export type ActionDefinition<F> = {
   readonly id: string;
   readonly label: string | ((params: FactsParams<F>) => string);
+  readonly shortLabel?: (params: FactsParams<F>) => string;
   readonly icon: LucideIcon;
   readonly group: ActionGroup;
   readonly shortcut?: ShortcutId;
@@ -85,9 +92,10 @@ export type ActionDefinition<F> = {
   readonly isUndoable?: boolean;
   readonly hasCustomConfirm?: boolean;
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
+  readonly slot?: (params: FactsParams<F>) => ActionSlot;
+  readonly pendingLabel?: (params: FactsParams<F>) => string;
   readonly emphasis?: (params: FactsParams<F>) => ActionEmphasis | null;
   readonly isBusy?: (params: FactsParams<F>) => boolean;
-  readonly slot?: (params: FactsParams<F>) => ActionSlot;
   readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
 };
 
@@ -106,8 +114,11 @@ export type ObjectKindDefinition<T, F> = {
 export type ResolvedAction = {
   readonly id: string;
   readonly label: string;
+  readonly shortLabel: string;
   readonly icon: LucideIcon;
   readonly group: ActionGroup;
+  readonly slot: ActionSlot;
+  readonly pendingLabel: string | null;
   readonly shortcut: ShortcutId | null;
   readonly description: string | null;
   readonly blockedReason: string | null;
@@ -116,7 +127,6 @@ export type ResolvedAction = {
   readonly choices: ReadonlyArray<ActionChoice> | null;
   readonly emphasis: ActionEmphasis | null;
   readonly isBusy: boolean;
-  readonly slot: ActionSlot;
 };
 
 export type SessionActionTarget = {
@@ -195,7 +205,18 @@ export type RecordActionTarget = {
 
 export type PullRequestActionTarget = {
   readonly kind: 'pullRequest';
-  readonly facts: PullRequestFacts;
+  readonly sessionId: SessionId;
+  readonly prNumber: number | null;
+};
+
+export type DiffActionTarget = {
+  readonly kind: 'diff';
+  readonly sessionId: SessionId;
+  readonly worktreePath: string;
+  readonly status: WorktreeStatus | null;
+  readonly remoteKind: RemoteHostKind | null;
+  readonly patch: string;
+  readonly rebaseConflicts: number;
 };
 
 export type CommitActionTarget = {
@@ -210,7 +231,16 @@ export type DiffFileActionTarget = {
 
 export type MountActionTarget = {
   readonly kind: 'mount';
-  readonly facts: MountFacts;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly status: WorktreeStatus | null;
+  readonly remoteKind: RemoteHostKind | null;
+};
+
+export type ProjectActionTarget = {
+  readonly kind: 'project';
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
 };
 
 export type WorktreeActionTarget = {
@@ -261,9 +291,11 @@ export type ObjectTarget =
   | ArtifactActionTarget
   | RecordActionTarget
   | PullRequestActionTarget
+  | DiffActionTarget
   | CommitActionTarget
   | DiffFileActionTarget
   | MountActionTarget
+  | ProjectActionTarget
   | WorktreeActionTarget
   | ScriptActionTarget
   | MessageActionTarget

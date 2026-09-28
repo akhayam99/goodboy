@@ -1,14 +1,8 @@
 // @vitest-environment happy-dom
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type {
-  BranchCommit,
-  MountId,
-  ProjectId,
-  SessionId,
-  SessionProjectMount,
-} from '@goodboy/types';
+import { cleanup, render, screen } from '@testing-library/react';
+import type { MountId, ProjectId, SessionId, SessionProjectMount } from '@goodboy/types';
 import { setActiveLens, setDiffFocus } from '../../../../../store/slices/session-view/workSurface';
 import type { GetFn, SetFn } from '../../../../../store/slices/session-view/types';
 
@@ -17,14 +11,6 @@ const SESSION_ID = 'ses-1' as SessionId;
 type State = Record<string, unknown>;
 
 const state: State = {};
-
-const { openRewriteHistory, branch } = vi.hoisted(() => ({
-  openRewriteHistory: vi.fn(),
-  branch: {
-    mountId: null as string | null,
-    commits: [] as ReadonlyArray<unknown>,
-  },
-}));
 
 const mountOf = ({
   name,
@@ -68,28 +54,15 @@ vi.mock('../../../../diff/components/SessionDiffPane', () => ({
   SessionDiffPane: ({
     diffFocus,
     worktreePath,
-    renderBranchActions,
   }: {
     diffFocus: { readonly kind: string } | null;
     worktreePath?: string;
-    renderBranchActions?: (params: {
-      readonly mountId: MountId | null;
-      readonly commits: ReadonlyArray<BranchCommit>;
-      readonly onRewritten: () => void;
-    }) => React.ReactNode;
   }) => (
-    <>
-      {renderBranchActions?.({
-        mountId: branch.mountId as MountId | null,
-        commits: branch.commits as ReadonlyArray<BranchCommit>,
-        onRewritten: () => undefined,
-      })}
-      <div
-        data-testid="diff-viewer"
-        data-focus-kind={diffFocus?.kind ?? 'none'}
-        data-worktree={worktreePath ?? 'none'}
-      />
-    </>
+    <div
+      data-testid="diff-viewer"
+      data-focus-kind={diffFocus?.kind ?? 'none'}
+      data-worktree={worktreePath ?? 'none'}
+    />
   ),
 }));
 
@@ -115,9 +88,6 @@ const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProject
   for (const key of Object.keys(state)) {
     delete state[key];
   }
-  openRewriteHistory.mockClear();
-  branch.mountId = null;
-  branch.commits = [];
   Object.assign(state, {
     activeLens: {},
     selectedAgentId: {},
@@ -133,7 +103,6 @@ const reset = ({ mounts = [] }: { readonly mounts?: ReadonlyArray<SessionProject
     setDiffFocus: setDiffFocus(set),
     setActiveLens: setActiveLens(set),
     diffPage: {},
-    openRewriteHistory,
   });
 };
 
@@ -162,27 +131,6 @@ const renderBranchlessPane = () =>
 afterEach(cleanup);
 
 describe('FilesPane', () => {
-  it('opens Rewrite history for the worktree shown', () => {
-    reset();
-    branch.mountId = WEB_MOUNT.mountId;
-    branch.commits = [
-      {
-        sha: 'abcdef123456',
-        shortSha: 'abcdef1',
-        subject: 'Old subject',
-        author: 'Builder',
-        parentSha: 'parent123',
-        timestamp: 1,
-        pushed: false,
-      },
-    ];
-
-    renderPane({ worktreePath: '/wt/web' });
-    fireEvent.click(screen.getByRole('button', { name: /Rewrite history/ }));
-
-    expect(openRewriteHistory).toHaveBeenCalledWith(SESSION_ID, '/wt/web');
-  });
-
   it('shows the Rewrite history page as the child page of the branch', () => {
     reset();
     state['diffPage'] = { [SESSION_ID]: 'history' };
@@ -191,15 +139,6 @@ describe('FilesPane', () => {
 
     expect(screen.getByTestId('rewrite-history').getAttribute('data-worktree')).toBe('/wt/web');
     expect(screen.queryByTestId('diff-viewer')).toBeNull();
-  });
-
-  it('hides Rewrite history on a branch without commits', () => {
-    reset();
-    branch.mountId = WEB_MOUNT.mountId;
-
-    renderPane({ worktreePath: '/wt/web' });
-
-    expect(screen.queryByRole('button', { name: /Rewrite history/ })).toBeNull();
   });
 
   it('carries the working tree focus into the diff', () => {

@@ -3,23 +3,11 @@
 import type { MountActionTarget } from '../../../../actions/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type {
-  IsoDateTime,
-  MountId,
-  ProjectId,
-  SessionId,
-  WorkspaceId,
-  WorktreeStatus,
-} from '@goodboy/types';
+import type { IsoDateTime, MountId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
 
 type RemoveWorktreeProps = {
   readonly label: string;
-};
-
-type MenuProps = {
-  readonly menuLabel?: string;
-  readonly target: MountActionTarget;
 };
 
 const { store, remoteKind } = vi.hoisted(() => ({
@@ -31,7 +19,15 @@ const { store, remoteKind } = vi.hoisted(() => ({
     openMountTerminal: vi.fn(),
     openMountRequest: vi.fn(async () => ({ kind: 'opened' as const })),
     attachMount: vi.fn(async () => undefined),
-    projects: [] as ReadonlyArray<{ id: string; baseBranch?: string | null }>,
+    rebaseBranch: vi.fn(async () => 'rebased' as const),
+    pushSessionBranch: vi.fn(async () => ({ ok: true as const })),
+    unmountMount: vi.fn(async () => ({ kept: false })),
+    openRewriteHistory: vi.fn(),
+    openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
+    mountGithub: {} as Record<string, unknown>,
+    mountGitlabMr: {} as Record<string, unknown>,
+    mountBitbucketPr: {} as Record<string, unknown>,
+    projects: [] as ReadonlyArray<{ id: string; kind?: string; baseBranch?: string | null }>,
     emitNotification: vi.fn(),
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
@@ -53,9 +49,6 @@ const { store, remoteKind } = vi.hoisted(() => ({
     agentTurnDestination: {} as Record<string, { kind: string; mountId?: string }>,
     navigate: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
-    openRewriteHistory: vi.fn(),
-    openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
-    mountGithub: {} as Record<string, unknown>,
     sessionGithub: {} as Record<string, unknown>,
     sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
   },
@@ -63,50 +56,13 @@ const { store, remoteKind } = vi.hoisted(() => ({
 
 vi.mock('../../../../../store', async () => ({
   ...(await import('../../../../../store/slices/navigation/place')),
-  useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
+  useAppStore: Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
+    getState: () => store,
+    subscribe: () => () => undefined,
+  }),
 }));
 vi.mock('./ProjectBranchChip', () => ({
   ProjectBranchChip: () => <span data-testid="branch-chip" />,
-}));
-vi.mock('./ProjectSyncControl', () => ({
-  ProjectSyncControl: () => <span data-testid="sync-control" />,
-}));
-vi.mock('./MountActionsMenu', () => ({
-  MountActionsMenu: ({ menuLabel, target }: MenuProps) => (
-    <span data-testid="detach-menu">
-      <span data-testid="menu-label">{menuLabel}</span>
-      {target.facts.hasTools ? (
-        <>
-          <button type="button" role="menuitem" onClick={target.facts.onTerminal}>
-            Open terminal
-          </button>
-          <button type="button" role="menuitem" onClick={target.facts.onScripts}>
-            Open scripts
-          </button>
-          {target.facts.editors.map((editor) => (
-            <button
-              key={editor.binary}
-              type="button"
-              role="menuitem"
-              onClick={() => target.facts.onOpenEditor(editor.binary)}
-            >
-              {editor.label}
-            </button>
-          ))}
-          {target.facts.canStartTurnsHere ? (
-            <button type="button" role="menuitem" onClick={target.facts.onStartTurnsHere}>
-              Start new turns here
-            </button>
-          ) : null}
-          {target.facts.onRewriteHistory != null ? (
-            <button type="button" role="menuitem" onClick={target.facts.onRewriteHistory}>
-              Rewrite history
-            </button>
-          ) : null}
-        </>
-      ) : null}
-    </span>
-  ),
 }));
 vi.mock('./RemoveWorktreeAction', () => ({
   RemoveWorktreeAction: ({ label }: RemoveWorktreeProps) => (
@@ -126,6 +82,10 @@ vi.mock('../../../../../app/components/Toast', () => ({
 }));
 vi.mock('../../../../../shared/lib/editor', () => ({
   openInEditor: vi.fn(async () => undefined),
+}));
+vi.mock('../../../hooks/useWorktreeStatuses/cache', () => ({
+  ensure: vi.fn(async () => null),
+  worktreeStatusKey: () => 'key',
 }));
 import { tooltipTextOf } from '../../../../../__tests__/helpers/tooltip';
 import { openInEditor } from '../../../../../shared/lib/editor';
@@ -156,35 +116,89 @@ const baseRow: MountRowView = {
   isCompleted: false,
 };
 
+const viewOf = ({ row }: { readonly row: MountRowView }) => ({
+  id: row.mountId,
+  sessionId,
+  projectId: row.projectId,
+  worktreePath: row.worktreePath,
+  lastWorktreePath: row.lastWorktreePath,
+  branch: row.branch,
+  baseBranch: row.baseBranch,
+  parallelIndex: 0,
+  mountName: row.mountName,
+  repoSlug: null,
+  repoRoot: row.repoRoot,
+  isAttached: row.isAttached,
+  diskState: row.isOnDisk ? 'present' : 'removed',
+  revision: 0,
+});
+
+const seedRequest = ({ row }: { readonly row: MountRowView }) => {
+  if (row.request === null || store.mountGithub[row.mountId] !== undefined) {
+    return;
+  }
+  store.mountGithub = {
+    [row.mountId]: {
+      pr: {
+        number: row.request.number,
+        title: row.request.title,
+        url: row.request.url,
+        state: row.request.state,
+        isDraft: row.request.isDraft,
+        headSha: null,
+      },
+      repository: null,
+      host: null,
+      detail: null,
+    },
+  };
+};
+
+const statusWith = (patch: Partial<WorktreeStatus>): WorktreeStatus => ({
+  branch: 'feat/api',
+  head: null,
+  headSubject: null,
+  mainDistance: { kind: 'known', ahead: 2, behind: 0 },
+  upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
+  workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
+  upstream: 'origin/feat/api',
+  inProgress: null,
+  ...patch,
+});
+
 const renderRow = ({
   diffStat = null,
   worktreeStatus = null,
   isStatusPending = false,
   row = baseRow,
   label = 'API',
-  onSelectLens = vi.fn(),
 }: {
   readonly diffStat?: { additions: number; deletions: number } | null;
   readonly worktreeStatus?: WorktreeStatus | null;
   readonly isStatusPending?: boolean;
   readonly row?: MountRowView;
   readonly label?: string;
-  readonly onSelectLens?: (lens: string) => void;
-}) =>
-  render(
+}) => {
+  if (store.sessionMounts[sessionId] === undefined) {
+    store.sessionMounts = { [sessionId]: [viewOf({ row })] };
+  }
+  seedRequest({ row });
+  return render(
     <ul>
       <ProjectMountRow
         sessionId={sessionId}
         row={row}
         label={label}
-        workspaceId={'ws-1' as WorkspaceId}
         diffStat={diffStat}
         worktreeStatus={worktreeStatus}
         isStatusPending={isStatusPending}
-        onSelectLens={onSelectLens}
       />
     </ul>,
   );
+};
+
+const openMenu = ({ label = 'API' }: { readonly label?: string } = {}) =>
+  fireEvent.click(screen.getByRole('button', { name: `${label} actions` }));
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -205,6 +219,8 @@ beforeEach(() => {
   store.sessionActiveProject = {};
   store.sessionMounts = {};
   store.sessionProjectMounts = {};
+  store.mountGithub = {};
+  store.projects = [{ id: 'api', kind: 'repo', baseBranch: 'main' }];
   store.sessionOpenQuestions = {};
   store.agentTurnState = {};
   store.agentTurnDestination = {};
@@ -214,6 +230,17 @@ beforeEach(() => {
 });
 
 afterEach(cleanup);
+
+const openRequest: NonNullable<MountRowView['request']> = {
+  provider: 'github',
+  identity: null,
+  number: 12,
+  state: 'open',
+  isDraft: false,
+  url: 'https://github.com/acme/api/pull/12',
+  title: 'Split one',
+  label: 'PR #12',
+};
 
 const REQUEST_ROW: MountRowView = {
   ...baseRow,
@@ -287,12 +314,12 @@ describe('ProjectMountRow layer links', () => {
 });
 
 describe('ProjectMountRow request action', () => {
-  it('opens the pull request for this mount in review, without touching the window bus', async () => {
+  it('creates the pull request of this mount, without touching the window bus', async () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:open-github-session', listener);
-    renderRow({ diffStat: { additions: 3, deletions: 1 } });
+    renderRow({ worktreeStatus: statusWith({}) });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create a PR for API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create PR for API' }));
 
     await waitFor(() =>
       expect(store.openMountRequest).toHaveBeenCalledWith({
@@ -305,41 +332,28 @@ describe('ProjectMountRow request action', () => {
     window.removeEventListener('goodboy:open-github-session', listener);
   });
 
-  it('blocks create pr while an agent is opening one', () => {
+  it('holds create pr with its reason while an agent is opening one', () => {
     store.sessionPhaseRuns = {
       [sessionId]: [{ name: 'open pull request', status: 'running' }],
     };
-    renderRow({ diffStat: { additions: 3, deletions: 1 } });
+    renderRow({ worktreeStatus: statusWith({}) });
 
-    const action = screen.getByRole('button', { name: 'An agent is opening a PR for API' });
+    const action = screen.getByRole('button', { name: 'Create PR for API' });
     expect(action.hasAttribute('disabled')).toBe(true);
-    expect(action.textContent).toBe('Opening PR…');
+    expect(tooltipTextOf({ element: action })).toBe('An agent is already opening a pull request.');
   });
 
-  it('hides create pr without changes', () => {
-    renderRow({ diffStat: null });
-    expect(screen.queryByRole('button', { name: 'Create a PR for API' })).toBeNull();
+  it('hides create pr while the branch has no commit of its own', () => {
+    renderRow({
+      worktreeStatus: statusWith({ mainDistance: { kind: 'known', ahead: 0, behind: 0 } }),
+    });
+    expect(screen.queryByRole('button', { name: 'Create PR for API' })).toBeNull();
   });
 
   it('shows the request of this mount instead of the create action', async () => {
-    renderRow({
-      diffStat: { additions: 3, deletions: 1 },
-      row: {
-        ...baseRow,
-        request: {
-          provider: 'github',
-          identity: null,
-          number: 12,
-          state: 'open',
-          isDraft: false,
-          url: 'https://github.com/acme/api/pull/12',
-          title: 'Split one',
-          label: 'PR #12',
-        },
-      },
-    });
+    renderRow({ worktreeStatus: statusWith({}), row: { ...baseRow, request: openRequest } });
 
-    expect(screen.queryByRole('button', { name: 'Create a PR for API' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Create PR for API' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Open PR #12 of API' }));
 
     await waitFor(() =>
@@ -354,16 +368,81 @@ describe('ProjectMountRow request action', () => {
 
   it('offers create mr on a gitlab remote', () => {
     remoteKind.current = 'gitlab';
-    renderRow({ diffStat: { additions: 1, deletions: 0 } });
-    expect(screen.getByRole('button', { name: 'Create a PR for API' }).textContent).toBe(
-      'Create MR',
-    );
+    renderRow({ worktreeStatus: statusWith({}) });
+    expect(screen.getByRole('button', { name: 'Create MR for API' }).textContent).toBe('Create MR');
   });
 
   it('hides the action when the remote kind is unknown', () => {
     remoteKind.current = null;
-    renderRow({ diffStat: { additions: 1, deletions: 0 } });
-    expect(screen.queryByRole('button', { name: 'Create a PR for API' })).toBeNull();
+    renderRow({ worktreeStatus: statusWith({}) });
+    expect(screen.queryByRole('button', { name: 'Create PR for API' })).toBeNull();
+  });
+});
+
+describe('ProjectMountRow one action by state', () => {
+  it('offers Rebase on main when main moved, and runs it on this mount', async () => {
+    renderRow({
+      worktreeStatus: statusWith({ mainDistance: { kind: 'known', ahead: 2, behind: 4 } }),
+      row: { ...baseRow, request: openRequest },
+    });
+
+    expect(screen.getByText('Behind main by 4')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Rebase on main for API' }));
+
+    await waitFor(() =>
+      expect(store.rebaseBranch).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
+    );
+  });
+
+  it('keeps Rebase visible and disabled with its reason while changes are uncommitted', () => {
+    renderRow({
+      worktreeStatus: statusWith({
+        mainDistance: { kind: 'known', ahead: 2, behind: 4 },
+        workingTree: {
+          kind: 'known',
+          staged: 0,
+          unstaged: 2,
+          untracked: 0,
+          unmerged: 0,
+          changed: 2,
+        },
+      }),
+      row: { ...baseRow, request: openRequest },
+    });
+
+    const rebase = screen.getByRole('button', { name: 'Rebase on main for API' });
+    expect(rebase.hasAttribute('disabled')).toBe(true);
+    expect(tooltipTextOf({ element: rebase })).toBe(
+      'Commit or discard the 2 uncommitted changes first.',
+    );
+  });
+
+  it('offers Push once commits wait on a branch with a pull request', async () => {
+    renderRow({
+      worktreeStatus: statusWith({ upstreamDistance: { kind: 'known', ahead: 2, behind: 0 } }),
+      row: { ...baseRow, request: openRequest },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 2 commits for API' }));
+
+    await waitFor(() =>
+      expect(store.pushSessionBranch).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
+    );
+  });
+
+  it('says a failed push under the control', async () => {
+    store.pushSessionBranch.mockResolvedValueOnce({
+      ok: false,
+      error: 'rejected by origin',
+    } as never);
+    renderRow({
+      worktreeStatus: statusWith({ upstreamDistance: { kind: 'known', ahead: 2, behind: 0 } }),
+      row: { ...baseRow, request: openRequest },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Push 2 commits for API' }));
+
+    expect((await screen.findByRole('status')).textContent).toBe('rejected by origin');
   });
 });
 
@@ -375,30 +454,30 @@ describe('ProjectMountRow availability', () => {
     isOnDisk: true,
   };
 
-  it('offers mount on an unmounted row and states the kept files in the state slot', async () => {
+  it('offers Reopen on a closed row and states the kept files in the state slot', async () => {
     renderRow({ row: detached });
 
     expect(screen.getByText('Files kept')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Reopen API' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen for API' }));
 
     await waitFor(() =>
       expect(store.attachMount).toHaveBeenCalledWith({ sessionId, mountId: 'mount-1' }),
     );
   });
 
-  it('hides the worktree tools of an unmounted row', () => {
+  it('keeps the worktree tools out of the menu of a closed row', () => {
     renderRow({ row: detached });
+    openMenu();
 
-    expect(screen.queryByRole('button', { name: 'Open terminal for API' })).toBeNull();
-    expect(screen.queryByRole('menuitem', { name: 'Open terminal' })).toBeNull();
-    expect(screen.queryByRole('menuitem', { name: 'VS Code' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /Open terminal/ })).toBeNull();
+    expect(screen.getByRole('menuitem', { name: /Remove from session/ })).toBeDefined();
   });
 
   it('names the row and its action menu after the mount label', () => {
     renderRow({ row: { ...baseRow }, label: 'API on feat/api' });
 
     expect(screen.getByRole('listitem', { name: 'API on feat/api' })).toBeDefined();
-    expect(screen.getByTestId('menu-label').textContent).toBe('API on feat/api actions');
+    expect(screen.getByRole('button', { name: 'API on feat/api actions' })).toBeDefined();
   });
 
   it('renders the branch decision surface when the mount reports a mismatch', () => {
@@ -420,26 +499,20 @@ describe('ProjectMountRow availability', () => {
     expect(screen.getByTestId('branch-decision')).toBeDefined();
   });
 
-  it('offers worktree removal only for a completed attached row', () => {
-    renderRow({ row: { ...baseRow, isCompleted: true } });
+  it('offers Remove worktree only once the pull request merged', () => {
+    renderRow({
+      worktreeStatus: statusWith({ mainDistance: { kind: 'known', ahead: 0, behind: 0 } }),
+      row: { ...baseRow, isCompleted: true, request: { ...openRequest, state: 'merged' } },
+    });
 
     expect(screen.getByRole('button', { name: 'Remove the worktree for API' })).toBeDefined();
     cleanup();
+    store.sessionMounts = {};
+    store.mountGithub = {};
     renderRow({});
     expect(screen.queryByRole('button', { name: 'Remove the worktree for API' })).toBeNull();
   });
 });
-
-const openRequest: MountRowView['request'] = {
-  provider: 'github',
-  identity: null,
-  number: 12,
-  state: 'open',
-  isDraft: false,
-  url: 'https://github.com/acme/api/pull/12',
-  title: 'Split one',
-  label: 'PR #12',
-};
 
 const slotsOf = (): ReadonlyArray<Element> =>
   Array.from(screen.getByTestId('project-mount-cells').children);
@@ -454,6 +527,7 @@ describe('ProjectMountRow column grammar', () => {
     });
     const attached = slotsOf();
     cleanup();
+    store.sessionMounts = {};
     renderRow({ row: detached });
     const unmounted = slotsOf();
 
@@ -499,20 +573,21 @@ describe('ProjectMountRow column grammar', () => {
     });
     expect(slotsOf()[4]?.textContent).toBe('PR #12In review');
     cleanup();
+    store.sessionMounts = {};
 
     renderRow({ row: detached });
     expect(slotsOf()[4]?.textContent).toBe('Files kept');
   });
 
-  it('keeps the mount action in the action cell and the menu last', () => {
+  it('keeps the one action in the action cell and the menu last', () => {
     renderRow({ row: detached });
     const slots = slotsOf();
 
     expect(slots[5]?.textContent).toBe('Reopen');
-    expect(slots.at(-1)?.querySelector('[data-testid="detach-menu"]')).not.toBeNull();
+    expect(slots.at(-1)?.querySelector('[aria-label="API actions"]')).not.toBeNull();
   });
 
-  it('hides sync and diff in a narrow container without dropping their cells', () => {
+  it('hides the distance and the diff in a narrow container without dropping their cells', () => {
     renderRow({ diffStat: { additions: 3, deletions: 1 } });
     const slots = slotsOf();
 
@@ -522,151 +597,92 @@ describe('ProjectMountRow column grammar', () => {
 });
 
 describe('ProjectMountRow menu', () => {
-  it('lists terminal, scripts and the editors of this mount in the row menu', () => {
-    renderRow({});
+  it('lists every action of the worktree, grouped, with the editors one level down', () => {
+    store.detectedEditors = [{ binary: 'code', label: 'VS Code' }];
+    renderRow({ worktreeStatus: statusWith({}) });
+    openMenu();
 
-    expect(screen.getByRole('menuitem', { name: 'Open terminal' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'Open scripts' })).toBeDefined();
-    expect(screen.getByRole('menuitem', { name: 'VS Code' })).toBeDefined();
+    const labels = screen.getAllByRole('menuitem').map((item) => item.textContent ?? '');
+    expect(labels.some((label) => label.startsWith('Open terminal'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Open in editor'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Open scripts'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Rewrite history'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Copy path'))).toBe(true);
+    expect(labels.some((label) => label.startsWith('Close worktree'))).toBe(true);
   });
 
-  it('opens rewrite history for this worktree from the row menu', () => {
-    renderRow({});
+  it('opens rewrite history for this worktree from the row menu', async () => {
+    renderRow({ worktreeStatus: statusWith({}) });
+    openMenu();
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Rewrite history' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /^Rewrite history/ }));
 
-    expect(store.openRewriteHistory).toHaveBeenCalledWith(sessionId, '/api');
+    await waitFor(() => expect(store.openRewriteHistory).toHaveBeenCalledWith(sessionId, '/api'));
   });
 
-  it('opens the worktree of the mount, not the first worktree of the session', () => {
+  it('keeps no hover-only terminal, scripts or sync control on the row', () => {
     renderRow({});
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'VS Code' }));
-
-    expect(openInEditor).toHaveBeenCalledWith({ path: '/api', editor: 'code' });
-  });
-
-  it('keeps no hover-only class on the menu and moves the editor off the row', () => {
-    renderRow({});
-
-    expect(screen.queryByRole('button', { name: 'Open the folder of API' })).toBeNull();
-    expect(screen.getByTestId('detach-menu').closest('.opacity-0')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open terminal for API' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Open scripts for API' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Branch sync actions' })).toBeNull();
   });
 });
 
 describe('ProjectMountRow lens opening, write destination isolation', () => {
-  it('opens the terminal on this row worktree through its own scope, leaving the write destination alone', () => {
-    const onSelectLens = vi.fn();
-    renderRow({ onSelectLens });
+  it('opens the terminal on this row worktree, leaving the write destination alone', async () => {
+    renderRow({});
+    openMenu();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Open terminal for API' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Open terminal/ }));
 
-    expect(store.openMountTerminal).toHaveBeenCalledWith(sessionId, '/api');
-    expect(store.setSessionActiveMount).not.toHaveBeenCalled();
-    expect(onSelectLens).not.toHaveBeenCalled();
-  });
-
-  it('opens scripts scoped to this project, leaving the write destination alone', () => {
-    const onSelectLens = vi.fn();
-    renderRow({ onSelectLens });
-
-    fireEvent.click(screen.getByRole('button', { name: 'Open scripts for API' }));
-
-    expect(store.setScriptsLensScope).toHaveBeenCalledWith({ scope: { projectId: 'api' } });
-    expect(onSelectLens).toHaveBeenCalledWith('scripts');
+    await waitFor(() => expect(store.openMountTerminal).toHaveBeenCalledWith(sessionId, '/api'));
     expect(store.setSessionActiveMount).not.toHaveBeenCalled();
   });
-});
 
-describe('ProjectMountRow activity dots', () => {
-  it('marks the terminal icon when a live tab belongs to the project', () => {
-    store.terminalTabs = {
-      [sessionId]: [{ id: `${sessionId}::t1`, projectId: 'api', status: 'running' }],
-    };
+  it('opens scripts scoped to this project, leaving the write destination alone', async () => {
     renderRow({});
-    expect(screen.getByTestId('terminal-activity-dot')).toBeDefined();
-    expect(screen.queryByTestId('scripts-activity-dot')).toBeNull();
+    openMenu();
+
+    fireEvent.click(screen.getByRole('menuitem', { name: /Open scripts/ }));
+
+    await waitFor(() =>
+      expect(store.setScriptsLensScope).toHaveBeenCalledWith({ scope: { projectId: 'api' } }),
+    );
+    expect(store.setSessionActiveMount).not.toHaveBeenCalled();
   });
 
-  it('leaves the terminal icon bare when the live tab belongs to another project', () => {
-    store.terminalTabs = {
-      [sessionId]: [{ id: `${sessionId}::t1`, projectId: 'web', status: 'running' }],
-    };
+  it('opens the worktree of the mount in the editor, not the first worktree of the session', async () => {
+    store.detectedEditors = [];
     renderRow({});
-    expect(screen.queryByTestId('terminal-activity-dot')).toBeNull();
-  });
+    openMenu();
 
-  it('marks the scripts icon when a pending run belongs to the project', () => {
-    store.scriptRuns = { [sessionId]: { 'script-api': { status: 'pending' } } };
-    renderRow({});
-    expect(screen.getByTestId('scripts-activity-dot')).toBeDefined();
-    expect(screen.queryByTestId('terminal-activity-dot')).toBeNull();
-  });
+    fireEvent.click(screen.getByRole('menuitem', { name: /Open in editor/ }));
 
-  it('carries the counts in the tooltips', () => {
-    store.terminalTabs = {
-      [sessionId]: [
-        { id: `${sessionId}::t1`, projectId: 'api', status: 'running' },
-        { id: `${sessionId}::t2`, projectId: 'api', status: 'running' },
-        { id: `${sessionId}::t3`, projectId: 'web', status: 'running' },
-      ],
-    };
-    store.scriptRuns = { [sessionId]: { 'script-api': { status: 'pending' } } };
-    renderRow({});
-
-    expect(
-      tooltipTextOf({ element: screen.getByRole('button', { name: 'Open terminal for API' }) }),
-    ).toBe('Open terminal in API, 2 running');
-    expect(
-      tooltipTextOf({ element: screen.getByRole('button', { name: 'Open scripts for API' }) }),
-    ).toBe('Open scripts for API, 1 running');
-  });
-
-  it('keeps the plain tooltips when nothing runs for the project', () => {
-    renderRow({});
-
-    expect(
-      tooltipTextOf({ element: screen.getByRole('button', { name: 'Open terminal for API' }) }),
-    ).toBe('Open terminal in API');
-    expect(
-      tooltipTextOf({ element: screen.getByRole('button', { name: 'Open scripts for API' }) }),
-    ).toBe('Open scripts for API');
+    await waitFor(() => expect(openInEditor).toHaveBeenCalledWith({ path: '/api' }));
   });
 });
 
 describe('ProjectMountRow loading placeholders', () => {
-  const status = {
-    branch: 'feat/api',
-    head: null,
-    headSubject: null,
-    mainDistance: { kind: 'known', ahead: 0, behind: 0 },
-    upstreamDistance: { kind: 'known', ahead: 0, behind: 0 },
-    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
-    upstream: null,
-    inProgress: null,
-  } satisfies WorktreeStatus;
-
   it('holds a distance placeholder while the git status is still pending', () => {
     renderRow({ isStatusPending: true });
 
     expect(screen.getByTestId('project-distance-skeleton')).not.toBeNull();
-    expect(screen.queryByTestId('sync-control')).toBeNull();
   });
 
-  it('swaps the placeholder for the sync control once the status lands', () => {
-    renderRow({ worktreeStatus: status });
+  it('swaps the placeholder for the distance once the status lands', () => {
+    renderRow({
+      worktreeStatus: statusWith({ mainDistance: { kind: 'known', ahead: 1, behind: 3 } }),
+    });
 
     expect(screen.queryByTestId('project-distance-skeleton')).toBeNull();
-    expect(screen.getByTestId('sync-control')).not.toBeNull();
+    expect(screen.getByText('Behind main by 3')).toBeDefined();
   });
 
-  it('hides the sync control only for a completed row', () => {
-    renderRow({ worktreeStatus: status, row: { ...baseRow, isCompleted: true } });
-    expect(screen.queryByTestId('sync-control')).toBeNull();
-    cleanup();
+  it('says nothing about the distance when the branch is up to date', () => {
+    renderRow({ worktreeStatus: statusWith({}) });
 
-    renderRow({ worktreeStatus: status });
-    expect(screen.getByTestId('sync-control')).not.toBeNull();
+    expect(screen.queryByText(/Behind main/)).toBeNull();
   });
 
   it('holds a branch placeholder instead of an empty branch cell', () => {
@@ -770,10 +786,10 @@ describe('ProjectMountRow worktree state', () => {
 });
 
 const twoMounts = () => {
-  store.sessionProjectMounts = {
+  store.sessionMounts = {
     [sessionId]: [
-      { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
-      { mountId: 'mount-2', projectId: 'api', worktreePath: '/api-2', isAttached: true },
+      viewOf({ row: baseRow }),
+      viewOf({ row: { ...baseRow, mountId: 'mount-2' as MountId, worktreePath: '/api-2' } }),
     ],
   };
 };
@@ -783,8 +799,9 @@ describe('ProjectMountRow new turns', () => {
     twoMounts();
     store.sessionActiveMount = { [sessionId]: 'mount-2' };
     renderRow({});
+    openMenu();
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Start new turns here' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Start new turns here/ }));
 
     await waitFor(() =>
       expect(store.setSessionActiveMount).toHaveBeenCalledWith({
@@ -798,19 +815,16 @@ describe('ProjectMountRow new turns', () => {
     twoMounts();
     store.sessionActiveMount = { [sessionId]: 'mount-1' };
     renderRow({});
+    openMenu();
 
-    expect(screen.queryByRole('menuitem', { name: 'Start new turns here' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /Start new turns here/ })).toBeNull();
   });
 
   it('hides the choice when the session has a single mount', () => {
-    store.sessionProjectMounts = {
-      [sessionId]: [
-        { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
-      ],
-    };
     renderRow({});
+    openMenu();
 
-    expect(screen.queryByRole('menuitem', { name: 'Start new turns here' })).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /Start new turns here/ })).toBeNull();
   });
 });
 
@@ -861,11 +875,6 @@ describe('ProjectMountRow presence', () => {
   });
 
   it('shows no presence with a single mount', () => {
-    store.sessionProjectMounts = {
-      [sessionId]: [
-        { mountId: 'mount-1', projectId: 'api', worktreePath: '/api', isAttached: true },
-      ],
-    };
     store.sessionPhaseRuns = { [sessionId]: [agent({ id: 'a-1', ordinal: 1, name: 'Scout' })] };
     store.agentTurnState = { 'a-1': { kind: 'running' } };
     store.agentTurnDestination = { 'a-1': { kind: 'mount', mountId: 'mount-1' } };

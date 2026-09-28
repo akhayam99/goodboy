@@ -9,7 +9,13 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AgentId, TurnState } from '@goodboy/types';
+import type {
+  AgentId,
+  MountId,
+  SessionProjectMount,
+  TurnState,
+  WorktreeStatus,
+} from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -782,124 +788,638 @@ describe('artifact menu in every state', () => {
   });
 });
 
-const pullRequest = (
+const slottedOf = (target: ObjectTarget): ReadonlyArray<string> =>
+  (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map((action) =>
+    action.blockedReason === null
+      ? `${action.id} ${action.slot}`
+      : `${action.id} ${action.slot} (${action.blockedReason})`,
+  );
+
+const PR_TARGET: ObjectTarget = { kind: 'pullRequest', sessionId: SESSION, prNumber: null };
+
+const seedPullRequest = (
   fields: Partial<{
     state: 'open' | 'merged' | 'closed' | 'queued';
     isDraft: boolean;
-    readiness: 'ready' | 'blocked' | 'unknown';
-    writeInFlight: string | null;
-    canCreateNew: boolean;
-  }>,
-): ObjectTarget => ({
-  kind: 'pullRequest',
-  facts: {
-    number: 482,
-    state: fields.state ?? 'open',
-    isDraft: fields.isDraft ?? false,
-    url: 'https://github.com/harborline/ledger-core/pull/482',
-    headBranch: 'hl/payout-export',
-    baseBranch: 'main',
-    mergeReadiness: {
-      status: fields.readiness ?? 'ready',
-      reason:
-        fields.readiness === 'blocked'
-          ? 'Resolve the conflicts with main first'
-          : 'Squash merge this pull request',
-      caveats: [],
+    checks: 'success' | 'failure' | 'pending' | null;
+    reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
+    mergeable: boolean | null;
+    author: string;
+    openThreads: number;
+  }> | null,
+): void => {
+  seed({});
+  if (fields === null) {
+    useAppStore.setState({
+      sessionGithub: { [SESSION]: { pr: null, detail: null } as never },
+    });
+    return;
+  }
+  const comments = Array.from({ length: fields.openThreads ?? 0 }, (_, index) => ({
+    id: `c-${index}`,
+    author: 'kenji-w',
+    authorAvatarUrl: null,
+    body: 'Cap the retries',
+    createdAt: FIXTURE_NOW,
+    url: `https://github.com/harborline/ledger-core/pull/482#discussion_${index}`,
+    source: 'review',
+    resolved: false,
+    threadId: `PRRT_${index}`,
+    path: 'src/payout.ts',
+    line: 10 + index,
+  }));
+  useAppStore.setState({
+    githubStatus: { mode: 'gh-cli', available: true, user: 'mara-l' },
+    sessionGithub: {
+      [SESSION]: {
+        pr: {
+          number: 482,
+          title: 'Export payouts in one pass',
+          url: 'https://github.com/harborline/ledger-core/pull/482',
+          state: fields.state ?? 'open',
+          mergeable: fields.mergeable ?? true,
+          checks: fields.checks ?? 'success',
+          baseBranch: 'main',
+          headBranch: 'hl/payout-export',
+          isDraft: fields.isDraft ?? false,
+          reviewDecision: fields.reviewDecision ?? null,
+          body: '',
+          updatedAt: FIXTURE_NOW,
+          author: fields.author ?? 'mara-l',
+        },
+        detail: {
+          prNumber: 482,
+          comments,
+          reviews:
+            fields.reviewDecision === 'changes_requested'
+              ? [
+                  {
+                    id: 'r-1',
+                    author: 'kenji-w',
+                    authorAvatarUrl: null,
+                    state: 'changes_requested',
+                    submittedAt: FIXTURE_NOW,
+                    body: '',
+                  },
+                ]
+              : [],
+          reviewRequests: [],
+          checks:
+            fields.checks === 'failure'
+              ? [{ name: 'unit tests', conclusion: 'failure', detailsUrl: null, durationMs: 1 }]
+              : [],
+        },
+      } as never,
     },
-    writeInFlight: fields.writeInFlight ?? null,
-    isBusy: (fields.writeInFlight ?? null) !== null,
-    canCreateNew: fields.canCreateNew ?? true,
-    onMerge: async () => undefined,
-    onMarkReady: () => undefined,
-    onConvertDraft: () => undefined,
-    onClose: () => undefined,
-    onReopen: () => undefined,
-    onCreateNew: () => undefined,
-  },
-});
+  });
+};
 
-const PR_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<string>]> = [
+const PR_OWN_TAIL = ['pullRequest.editDetails hover', 'pullRequest.requestReview section'];
+const PR_COPIES = ['pullRequest.copyLink menu', 'pullRequest.copyBranch menu'];
+
+const UX5_PR_STATES: ReadonlyArray<
+  readonly [string, Parameters<typeof seedPullRequest>[0], ReadonlyArray<string>]
+> = [
   [
     'draft',
-    pullRequest({ isDraft: true, readiness: 'blocked' }),
+    { isDraft: true },
     [
-      'pullRequest.openOnGithub',
-      'pullRequest.merge (Resolve the conflicts with main first)',
-      'pullRequest.markReady',
-      'pullRequest.createNew',
-      'pullRequest.copyLink',
-      'pullRequest.copyBranch',
-      'pullRequest.close',
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.markReady primary',
+      ...PR_OWN_TAIL,
+      ...PR_COPIES,
+      'pullRequest.close menu',
     ],
   ],
   [
-    'open',
-    pullRequest({}),
+    'checks running',
+    { checks: 'pending', reviewDecision: 'review_required' },
     [
-      'pullRequest.openOnGithub',
-      'pullRequest.merge',
-      'pullRequest.convertDraft',
-      'pullRequest.createNew',
-      'pullRequest.copyLink',
-      'pullRequest.copyBranch',
-      'pullRequest.close',
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (Checks are still running.)',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
     ],
   ],
   [
-    'open, another window writing it',
-    pullRequest({ writeInFlight: 'Goodboy is already merging #482' }),
+    'checks failing',
+    { checks: 'failure', reviewDecision: 'changes_requested', openThreads: 3 },
     [
-      'pullRequest.openOnGithub',
-      'pullRequest.merge (Goodboy is already merging #482)',
-      'pullRequest.convertDraft (Goodboy is already merging #482)',
-      'pullRequest.createNew (Goodboy is already merging #482)',
-      'pullRequest.copyLink',
-      'pullRequest.copyBranch',
-      'pullRequest.close (Goodboy is already merging #482)',
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openReview nudge',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (1 check failing: unit tests.)',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'changes requested',
+    { reviewDecision: 'changes_requested', openThreads: 3 },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openReview nudge',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (kenji-w asked for changes.)',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'approved, green',
+    { reviewDecision: 'approved' },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge primary',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'conflicts with main',
+    { reviewDecision: 'approved', mergeable: false },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (Conflicts with main. Rebase in the Diff.)',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
     ],
   ],
   [
     'merged',
-    pullRequest({ state: 'merged', readiness: 'blocked' }),
-    [
-      'pullRequest.openOnGithub',
-      'pullRequest.merge (Resolve the conflicts with main first)',
-      'pullRequest.createNew',
-      'pullRequest.copyLink',
-      'pullRequest.copyBranch',
-    ],
+    { state: 'merged' },
+    ['pullRequest.openOnGithub secondary', 'pullRequest.openDiff nudge', ...PR_COPIES],
   ],
   [
     'closed',
-    pullRequest({ state: 'closed', readiness: 'blocked' }),
+    { state: 'closed' },
     [
-      'pullRequest.openOnGithub',
-      'pullRequest.merge (Resolve the conflicts with main first)',
-      'pullRequest.reopen',
-      'pullRequest.createNew',
-      'pullRequest.copyLink',
-      'pullRequest.copyBranch',
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.reopen secondary',
+      ...PR_COPIES,
     ],
   ],
   [
-    'open while an agent drafts a new one',
-    pullRequest({ canCreateNew: false }),
+    "someone else's",
+    { reviewDecision: 'review_required', author: 'kenji-w' },
     [
-      'pullRequest.openOnGithub',
-      'pullRequest.merge',
-      'pullRequest.convertDraft',
-      'pullRequest.createNew (An agent is already opening a pull request for this session)',
-      'pullRequest.copyLink',
-      'pullRequest.copyBranch',
-      'pullRequest.close',
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (Needs an approving review.)',
+      'pullRequest.writeReview secondary',
+      ...PR_COPIES,
     ],
+  ],
+  ['no pull request yet', null, ['pullRequest.create primary']],
+];
+
+describe('pull request actions in every state, on the real store', () => {
+  it.each(UX5_PR_STATES)('%s', (_state, fields, expected) => {
+    seedPullRequest(fields);
+    expect(slottedOf(PR_TARGET)).toEqual(expected);
+  });
+});
+
+const LEDGER_MOUNT = mountFixture();
+
+const gitStatus = (
+  fields: Partial<{
+    ahead: number;
+    behind: number;
+    unpushed: number;
+    originAhead: number;
+    changed: number;
+    rebase: boolean;
+    upstream: string | null;
+  }>,
+): WorktreeStatus => ({
+  branch: LEDGER_MOUNT.branch,
+  head: null,
+  headSubject: null,
+  upstream: fields.upstream === undefined ? 'origin/hl/payout-export' : fields.upstream,
+  mainDistance: { kind: 'known', ahead: fields.ahead ?? 5, behind: fields.behind ?? 0 },
+  upstreamDistance: {
+    kind: 'known',
+    ahead: fields.unpushed ?? 0,
+    behind: fields.originAhead ?? 0,
+  },
+  workingTree: {
+    kind: 'known',
+    staged: 0,
+    unstaged: fields.changed ?? 0,
+    untracked: 0,
+    unmerged: 0,
+    changed: fields.changed ?? 0,
+  },
+  inProgress: fields.rebase === true ? 'rebase' : null,
+});
+
+const seedMount = ({
+  pr,
+  isAttached = true,
+  mounts = [LEDGER_MOUNT],
+  openThreads = 0,
+}: {
+  readonly pr: 'open' | 'draft' | 'merged' | 'closed' | null;
+  readonly isAttached?: boolean;
+  readonly mounts?: ReadonlyArray<SessionProjectMount>;
+  readonly openThreads?: number;
+}): void => {
+  seed({ mounts });
+  useAppStore.setState({
+    projects: [
+      {
+        id: LEDGER_MOUNT.projectId,
+        name: 'ledger-core',
+        kind: 'repo',
+        baseBranch: 'main',
+        rootPath: LEDGER_MOUNT.repoRoot,
+      } as never,
+    ],
+    sessionMounts: {
+      [SESSION]: mounts.map((mount) => ({
+        id: mount.mountId ?? LEDGER_MOUNT.mountId,
+        sessionId: SESSION,
+        projectId: mount.projectId,
+        worktreePath: isAttached || mount !== LEDGER_MOUNT ? mount.worktreePath : null,
+        lastWorktreePath: mount.worktreePath,
+        branch: mount.branch,
+        baseBranch: mount.baseBranch ?? null,
+        parallelIndex: mount.parallelIndex ?? 0,
+        mountName: mount.mountName,
+        repoSlug: null,
+        repoRoot: mount.repoRoot,
+        isAttached: isAttached || mount !== LEDGER_MOUNT,
+        diskState: 'present',
+        revision: 1,
+        createdAt: FIXTURE_NOW,
+        updatedAt: FIXTURE_NOW,
+      })) as never,
+    },
+    mountGithub:
+      pr === null
+        ? {}
+        : ({
+            [LEDGER_MOUNT.mountId as string]: {
+              pr: {
+                number: 482,
+                title: 'Export payouts in one pass',
+                url: 'https://github.com/harborline/ledger-core/pull/482',
+                state: pr === 'draft' ? 'open' : pr,
+                isDraft: pr === 'draft',
+                headSha: null,
+              },
+              repository: null,
+              host: null,
+              detail: {
+                prNumber: 482,
+                comments: Array.from({ length: openThreads }, (_, index) => ({
+                  id: `c-${index}`,
+                  author: 'kenji-w',
+                  authorAvatarUrl: null,
+                  body: 'Cap the retries',
+                  createdAt: FIXTURE_NOW,
+                  url: `https://github.com/harborline/ledger-core/pull/482#discussion_${index}`,
+                  source: 'review',
+                  resolved: false,
+                  threadId: `PRRT_${index}`,
+                })),
+                reviews: [],
+                reviewRequests: [],
+                checks: [],
+              },
+            },
+          } as never),
+  });
+};
+
+const mountRowTarget = (status: WorktreeStatus | null): ObjectTarget => ({
+  kind: 'mount',
+  sessionId: SESSION,
+  mountId: LEDGER_MOUNT.mountId as MountId,
+  status,
+  remoteKind: 'github',
+});
+
+const WT_TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
+const WT_COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
+const WT_HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip'];
+const WT_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
+
+const MOUNT_STATES: ReadonlyArray<
+  readonly [string, Parameters<typeof seedMount>[0], WorktreeStatus | null, ReadonlyArray<string>]
+> = [
+  [
+    'PR open, 3 to resolve',
+    { pr: 'open', openThreads: 3 },
+    gitStatus({}),
+    [
+      ...WT_PR,
+      'mount.openReview inline',
+      ...WT_TOOLS,
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'mount.close menu',
+    ],
+  ],
+  [
+    'no PR, not pushed',
+    { pr: null },
+    gitStatus({ ahead: 3, upstream: null }),
+    [
+      'mount.openDiff inline',
+      ...WT_TOOLS,
+      'mount.createPullRequest inline',
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'mount.close menu',
+    ],
+  ],
+  [
+    'no PR, pushed',
+    { pr: null },
+    gitStatus({ ahead: 3 }),
+    [
+      'mount.openDiff inline',
+      ...WT_TOOLS,
+      'mount.createPullRequest inline',
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'mount.close menu',
+    ],
+  ],
+  [
+    'draft PR',
+    { pr: 'draft' },
+    gitStatus({ ahead: 4 }),
+    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+  ],
+  [
+    'PR open, 2 not pushed',
+    { pr: 'open' },
+    gitStatus({ ahead: 6, unpushed: 2 }),
+    [...WT_PR, ...WT_TOOLS, 'mount.push inline', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+  ],
+  [
+    'behind main by 4',
+    { pr: 'open' },
+    gitStatus({ behind: 4 }),
+    [...WT_PR, ...WT_TOOLS, 'mount.rebase inline', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+  ],
+  [
+    'behind, 2 uncommitted',
+    { pr: 'open' },
+    gitStatus({ behind: 4, changed: 2 }),
+    [
+      ...WT_PR,
+      ...WT_TOOLS,
+      'mount.rebase inline (Commit or discard the 2 uncommitted changes first.)',
+      'mount.rewriteHistory menu (Commit or discard the 2 uncommitted changes first.)',
+      'mount.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
+      ...WT_COPIES,
+      'mount.close menu',
+    ],
+  ],
+  [
+    'diverged from origin',
+    { pr: 'open' },
+    gitStatus({ unpushed: 1, originAhead: 1 }),
+    [
+      ...WT_PR,
+      ...WT_TOOLS,
+      'mount.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'mount.close menu',
+    ],
+  ],
+  [
+    'rebase stopped',
+    { pr: 'open' },
+    gitStatus({ changed: 3, rebase: true }),
+    [
+      ...WT_PR,
+      'mount.openTerminal notice',
+      'mount.openInEditor menu',
+      'mount.scripts menu',
+      'mount.abortRebase notice',
+      'mount.rewriteHistory menu (Finish or abort the rebase first.)',
+      ...WT_COPIES,
+    ],
+  ],
+  [
+    'merged',
+    { pr: 'merged' },
+    gitStatus({ ahead: 0 }),
+    [
+      'mount.openPullRequest inline',
+      ...WT_TOOLS,
+      'mount.switchBranch chip',
+      ...WT_COPIES,
+      'mount.close inline',
+    ],
+  ],
+  [
+    'PR closed',
+    { pr: 'closed' },
+    gitStatus({}),
+    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
+  ],
+  [
+    'new branch, no changes, one of two mounts',
+    {
+      pr: null,
+      mounts: [
+        LEDGER_MOUNT,
+        mountFixture({
+          mountId: 'mount-ledger-core-2' as MountId,
+          worktreePath: '/work/harborline/ledger-core-2',
+          branch: 'hl/payout-docs',
+        }),
+      ],
+    },
+    gitStatus({ ahead: 0 }),
+    [
+      ...WT_TOOLS,
+      'mount.switchBranch chip',
+      'mount.startTurnsHere menu',
+      ...WT_COPIES,
+      'mount.close menu',
+    ],
+  ],
+  [
+    'worktree closed, files kept',
+    { pr: 'open', isAttached: false },
+    null,
+    ['mount.reopen inline', ...WT_COPIES, 'mount.forget menu'],
   ],
 ];
 
-describe('pull request menu in every state', () => {
-  it.each(PR_STATES)('%s', (_state, target, expected) => {
-    expect(matrixOf(target)).toEqual(expected);
+describe('worktree row actions in every state, on the real store', () => {
+  it.each(MOUNT_STATES)('%s', (_state, mountSeed, status, expected) => {
+    seedMount(mountSeed);
+    if (_state.startsWith('new branch')) {
+      useAppStore.setState({ sessionActiveMount: { [SESSION]: 'mount-ledger-core-2' as MountId } });
+    }
+    expect(slottedOf(mountRowTarget(status))).toEqual(expected);
+  });
+});
+
+describe('project actions, on the real store', () => {
+  it('offers Detach project while the project has a mount', () => {
+    seedMount({ pr: null });
+    expect(
+      slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),
+    ).toEqual(['project.detach menu']);
+  });
+
+  it('offers nothing once the project has no mount', () => {
+    seedMount({ pr: null, mounts: [] });
+    expect(
+      slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),
+    ).toEqual([]);
+  });
+});
+
+const diffTarget = (status: WorktreeStatus | null, patch = 'diff --git a/x b/x'): ObjectTarget => ({
+  kind: 'diff',
+  sessionId: SESSION,
+  worktreePath: LEDGER_MOUNT.worktreePath,
+  status,
+  remoteKind: 'github',
+  patch,
+  rebaseConflicts: 0,
+});
+
+const DIFF_TOOLS = ['diff.openTerminal menu', 'diff.openInEditor menu'];
+const DIFF_COPIES = ['diff.copyBranch menu', 'diff.copyPatch menu'];
+const DIFF_TAIL = ['diff.changeBase menu', 'diff.restoreBackup menu', ...DIFF_COPIES];
+
+const DIFF_STATES: ReadonlyArray<
+  readonly [string, 'open' | null, WorktreeStatus, ReadonlyArray<string>]
+> = [
+  [
+    'on origin, PR open',
+    'open',
+    gitStatus({}),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    '3 not pushed, no PR',
+    null,
+    gitStatus({ ahead: 3, upstream: null }),
+    [
+      ...DIFF_TOOLS,
+      'diff.createPullRequest primary',
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    '2 not pushed, PR open',
+    'open',
+    gitStatus({ ahead: 6, unpushed: 2 }),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.push primary',
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    'behind main by 4',
+    'open',
+    gitStatus({ behind: 4 }),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.rebase primary',
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    '2 uncommitted',
+    'open',
+    gitStatus({ behind: 4, changed: 2 }),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.rebase primary (Commit or discard the 2 uncommitted changes first.)',
+      'diff.rewriteHistory secondary (Commit or discard the 2 uncommitted changes first.)',
+      'diff.changeBase menu',
+      'diff.restoreBackup menu (Commit or discard the 2 uncommitted changes first.)',
+      ...DIFF_COPIES,
+    ],
+  ],
+  [
+    'diverged',
+    'open',
+    gitStatus({ unpushed: 1, originAhead: 1 }),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    'rebase stopped',
+    'open',
+    gitStatus({ changed: 3, rebase: true }),
+    [
+      'diff.openPullRequest secondary',
+      'diff.continueRebase primary',
+      'diff.openInEditor menu',
+      'diff.abortRebase secondary',
+      'diff.rewriteHistory secondary (Finish or abort the rebase first.)',
+      'diff.restoreBackup menu (Commit or discard the 3 uncommitted changes first.)',
+      ...DIFF_COPIES,
+    ],
+  ],
+  [
+    'no changes',
+    null,
+    gitStatus({ ahead: 0 }),
+    [...DIFF_TOOLS, 'diff.changeBase menu', 'diff.copyBranch menu'],
+  ],
+];
+
+describe('diff actions in every state, on the real store', () => {
+  it.each(DIFF_STATES)('%s', (state, pr, status, expected) => {
+    seedMount({ pr });
+    expect(
+      slottedOf(diffTarget(status, state === 'no changes' ? '' : 'diff --git a/x b/x')),
+    ).toEqual(expected);
   });
 });
 
@@ -995,31 +1515,6 @@ const commitTarget = (older: number): ObjectTarget => ({
   },
 });
 
-const mountTarget = (fields: {
-  readonly hasTools: boolean;
-  readonly isAttached: boolean;
-  readonly editors: number;
-  readonly canStartTurnsHere?: boolean;
-}): ObjectTarget => ({
-  kind: 'mount',
-  facts: {
-    mountKey: 'mount:ledger-core',
-    noun: 'worktree',
-    worktreePath: fields.hasTools ? '/work/ledger-core' : null,
-    branch: 'hl/payout-export',
-    hasTools: fields.hasTools,
-    canStartTurnsHere: fields.canStartTurnsHere ?? false,
-    hasMount: true,
-    isAttached: fields.isAttached,
-    canDetach: false,
-    editors: Array.from({ length: fields.editors }, () => ({ binary: 'code', label: 'VS Code' })),
-    onTerminal: noop,
-    onScripts: noop,
-    onStartTurnsHere: noop,
-    onOpenEditor: noop,
-  },
-});
-
 const worktreeTarget = (fields: {
   readonly isInUse: boolean;
   readonly isKept: boolean;
@@ -1104,36 +1599,6 @@ const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<st
       facts: { path: 'src/importer.ts', onOpenInEditor: null, onCommentOnFile: null },
     },
     ['diffFile.copyPath'],
-  ],
-  [
-    'mount open, another mount takes new turns',
-    mountTarget({ hasTools: true, isAttached: true, editors: 1, canStartTurnsHere: true }),
-    [
-      'mount.terminal',
-      'mount.scripts',
-      'mount.editor',
-      'mount.startTurns',
-      'mount.copyPath',
-      'mount.copyBranch',
-      'mount.close',
-    ],
-  ],
-  [
-    'mount open, no editor installed',
-    mountTarget({ hasTools: true, isAttached: true, editors: 0 }),
-    [
-      'mount.terminal',
-      'mount.scripts',
-      'mount.editor (No editor detected)',
-      'mount.copyPath',
-      'mount.copyBranch',
-      'mount.close',
-    ],
-  ],
-  [
-    'mount closed',
-    mountTarget({ hasTools: false, isAttached: false, editors: 1 }),
-    ['mount.copyBranch', 'mount.remove'],
   ],
   [
     'worktree clean, idle',

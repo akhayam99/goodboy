@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { PrDetail, PullRequestState, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../../store';
 import type { LensKind } from '../../../../../store';
@@ -6,26 +6,37 @@ import { RecordProperties } from '../../../../../shared/components/StudioDetail/
 import { githubPullRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useSessionRepo } from '../../../../../store/slices/worktrees/useSessionRepo';
 import { closingIssueReferences } from '../../../../github/closingIssueReferences';
-import { closingReferenceLines } from '../../../../github/closingReferenceLines';
-import { removeClosingReference } from '../../../../github/removeClosingReference';
 import { LinkIssueToPrPopover } from '../../../../github/components/LinkIssueToPrPopover';
 import { PrOverview } from '../../../../github/components/PullRequest/PrOverview';
 import { PrReviewers } from '../../../../github/components/PullRequest/PrReviewers';
+import {
+  PR_EDIT_DETAILS_EVENT,
+  PR_REQUEST_REVIEW_EVENT,
+  pullRequestEventName,
+} from '../../../../actions/kinds/pullRequest';
 import { LinkedIssuesSection } from './LinkedIssuesSection';
 
 type Props = {
   readonly sessionId: SessionId;
   readonly pr: PullRequestState;
   readonly detail: PrDetail | null;
+  readonly canEdit: boolean;
+  readonly canRequestReview: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
   readonly onMutated: () => void;
 };
 
-export const PrDetailsMode = ({ sessionId, pr, detail, onSelectLens, onMutated }: Props) => {
-  const [unlinkingIssueNumber, setUnlinkingIssueNumber] = useState<number | null>(null);
+export const PrDetailsMode = ({
+  sessionId,
+  pr,
+  detail,
+  canEdit,
+  canRequestReview,
+  onSelectLens,
+  onMutated,
+}: Props) => {
   const linkedIssues = useAppStore((s) => s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY);
   const externalTasks = useAppStore((s) => s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY);
-  const editPr = useAppStore((s) => s.editPr);
   const requestReview = useAppStore((s) => s.requestReview);
   const setFocusedGithubIssueNumber = useAppStore((s) => s.setFocusedGithubIssueNumber);
   const repo = useSessionRepo({ sessionId });
@@ -51,16 +62,6 @@ export const PrDetailsMode = ({ sessionId, pr, detail, onSelectLens, onMutated }
       ),
     [branch, githubTasks, linkedIssueNumbers, pr.body],
   );
-  const unlinkableIssueNumbers = useMemo(() => closingReferenceLines({ body: pr.body }), [pr.body]);
-
-  const onUnlink = async (issueNumber: number) => {
-    setUnlinkingIssueNumber(issueNumber);
-    await editPr(sessionId, pr.number, {
-      body: removeClosingReference({ body: pr.body, number: issueNumber }),
-    }).catch(() => undefined);
-    setUnlinkingIssueNumber(null);
-    onMutated();
-  };
 
   const onAddReviewers = (logins: ReadonlyArray<string>) => {
     void (async () => {
@@ -72,7 +73,13 @@ export const PrDetailsMode = ({ sessionId, pr, detail, onSelectLens, onMutated }
   return (
     <section aria-label="PR details" className="flex flex-col gap-6">
       <RecordProperties facts={properties} />
-      <PrOverview pr={pr} sessionId={sessionId} onMutated={onMutated} />
+      <PrOverview
+        pr={pr}
+        sessionId={sessionId}
+        canEdit={canEdit}
+        editEventName={pullRequestEventName({ name: PR_EDIT_DETAILS_EVENT, sessionId })}
+        onMutated={onMutated}
+      />
       <LinkedIssuesSection
         issues={linkedIssues}
         action={
@@ -85,18 +92,17 @@ export const PrDetailsMode = ({ sessionId, pr, detail, onSelectLens, onMutated }
             />
           ) : null
         }
-        unlinkableNumbers={unlinkableIssueNumbers}
-        unlinkingNumber={unlinkingIssueNumber}
         onOpenIssue={(issueNumber) => {
           setFocusedGithubIssueNumber(sessionId, issueNumber);
           onSelectLens('github_issue');
         }}
-        onUnlink={(issueNumber) => void onUnlink(issueNumber)}
       />
       <PrReviewers
         detail={detail}
         projectRoot={repo?.repoRoot ?? null}
         {...(repo?.projectId !== undefined && { projectId: repo.projectId })}
+        canRequest={canRequestReview}
+        requestEventName={pullRequestEventName({ name: PR_REQUEST_REVIEW_EVENT, sessionId })}
         onAddReviewers={onAddReviewers}
       />
     </section>

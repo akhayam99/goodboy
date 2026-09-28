@@ -6,7 +6,7 @@ type IconProps = {
   readonly 'aria-hidden'?: boolean;
 };
 
-export type MenuConfirmRole = 'alert' | 'danger';
+export type MenuConfirmRole = 'primary' | 'alert' | 'danger';
 
 export type MenuConfirm = {
   readonly title: string;
