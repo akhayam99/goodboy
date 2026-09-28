@@ -184,6 +184,7 @@ const EXEMPT: Readonly<Record<string, string>> = {
 let useAppStore: StoryStore;
 let consoleErrors: Array<string> = [];
 let calls: Set<string> = new Set();
+let clipboardWrites: Array<string> = [];
 
 beforeAll(async () => {
   useAppStore = await importStore();
@@ -585,6 +586,54 @@ const ROWS: ReadonlyArray<Row> = [
     covers: ['openStudio', 'studio:guide', 'palette:Guide'],
     open: () => openPalette(/^Guide/),
     lands: () => band('Guide'),
+  },
+  {
+    name: 'palette verb: Rename',
+    covers: ['palette:Rename'],
+    open: () => openPalette(/^Rename$/),
+    lands: () => visible('textbox', 'Session title'),
+  },
+  {
+    name: 'palette verb: Start agent',
+    covers: ['navigate', 'palette:Start agent'],
+    open: () => openPalette(/^Start agent$/),
+    lands: both(lens('agents'), () => heading('Agents')),
+  },
+  {
+    name: 'palette verb: Link an issue',
+    covers: ['palette:Link an issue'],
+    open: () => openPalette(/^Link an issue$/),
+    lands: () => visible('dialog', 'Link an issue'),
+  },
+  ...(['Copy title', 'Copy branch name', 'Copy PR link'] as const).map((label): Row => ({
+    name: `palette verb: ${label}`,
+    covers: [`palette:${label}`],
+    open: async () => {
+      clipboardWrites = [];
+      vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(async (text: string) => {
+        clipboardWrites.push(text);
+      });
+      await openPalette(new RegExp(`^${label}$`));
+    },
+    lands: async () => {
+      await waitFor(() => expect(clipboardWrites).toHaveLength(1), WAIT);
+      expect(clipboardWrites[0]?.trim()).not.toBe('');
+    },
+  })),
+  {
+    name: 'palette verb: Archive',
+    covers: ['palette:Archive'],
+    open: async () => {
+      useAppStore.setState({ archiveTask: async () => undefined } as never);
+      await openPalette(/^Archive$/);
+    },
+    lands: async () => expect(await screen.findByText('Session archived', {}, WAIT)).toBeDefined(),
+  },
+  {
+    name: 'palette verb: Delete asks first',
+    covers: ['palette:Delete…'],
+    open: () => openPalette(/^Delete/),
+    lands: async () => expect(await screen.findByText('Delete session?', {}, WAIT)).toBeDefined(),
   },
   {
     name: 'palette: Add workspace',
