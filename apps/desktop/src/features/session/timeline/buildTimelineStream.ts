@@ -379,7 +379,7 @@ const questionRowStateOf = ({ entry }: { readonly entry: TimelineQuestionEntry }
   questionBucketOf({ entry }) === 'open'
     ? {
         phase: 'waiting',
-        reason: null,
+        reason: { kind: 'openQuestions' },
         ask: { kind: 'answer', question: entry.questions[0] ?? null },
       }
     : DONE_ROW_STATE;

@@ -197,12 +197,22 @@ const SESSION_EVENTS = [
   },
 ] as unknown as ReadonlyArray<SessionEvent>;
 
-const WAITING_AGENTS: ReadonlyArray<Agent> = AGENTS.map((agent) => ({
-  ...agent,
-  status: 'running',
-  outputSummary: null,
-  lastFinishedAt: null,
-}));
+const WAITING_AGENTS: ReadonlyArray<Agent> = [
+  {
+    id: AGENT_ID,
+    sessionId: SESSION_ID,
+    stepId: STEP_ID,
+    workflowRunId: WORKFLOW_RUN_ID,
+    ordinal: 0,
+    name: 'Round once at settlement',
+    kind: 'implementer',
+    status: 'running',
+    startedAt: STARTED,
+    lastViewedAt: NOW,
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-sonnet-5',
+  },
+];
 
 const WAITING_QUESTIONS: ReadonlyArray<OpenQuestion> = [
   ...OPEN_QUESTIONS,

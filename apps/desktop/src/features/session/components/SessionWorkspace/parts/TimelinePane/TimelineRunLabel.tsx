@@ -28,7 +28,6 @@ export const TimelineRunLabel = ({
       <TimelineRunChip
         kind={runWorkflowKind({ workflow: entry.workflow })}
         workflowName={entry.workflow.name}
-        identity={entry.identity}
         muted={isDiscarded}
         lit={isLaneLit}
       />

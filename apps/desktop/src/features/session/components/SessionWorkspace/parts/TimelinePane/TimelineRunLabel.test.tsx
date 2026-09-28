@@ -106,11 +106,12 @@ describe('TimelineRunLabel', () => {
     expect(chipOf().textContent).not.toContain('Refactor (example)');
   });
 
-  it('tints the chip from the identity palette and never from a semantic tone', () => {
+  it('keeps the chip neutral, never tinted by a tone or by the lane identity', () => {
     render(<Label entry={entryOf()} />);
     const { className } = chipOf();
 
-    expect(className).toContain(runIdentity({ laneIndex: 0, seed: 0 }).chip);
+    expect(className).toContain('bg-fill');
+    expect(className).not.toContain('identity-');
     for (const tone of ['primary', 'success', 'danger', 'warning', 'info']) {
       expect(className).not.toContain(`bg-${tone}`);
       expect(className).not.toContain(`text-${tone}`);
@@ -216,7 +217,20 @@ describe('TimelineRunLabel', () => {
     render(<Label entry={entryOf()} />);
 
     expect(screen.getByText('Refactor (example)').className).toContain('text-foreground');
-    expect(chipOf().className).toContain(runIdentity({ laneIndex: 0, seed: 0 }).chip);
+    expect(chipOf().className).toContain('bg-fill');
+  });
+
+  it('keeps the chip neutral while one of its steps waits on an answer', () => {
+    render(
+      <Label
+        entry={entryOf({
+          children: [stepOf({ stepLabel: '1', questionAt: '2026-08-18T09:30:00Z' })],
+        })}
+      />,
+    );
+
+    expect(chipOf().className).not.toContain('warning');
+    expect(chipOf().className).not.toContain('identity-');
   });
 
   it('reads a discarded run in the muted register the discard event next to it uses', () => {
@@ -231,18 +245,9 @@ describe('TimelineRunLabel', () => {
   it('hollows the chip of a discarded run without spending a word on it', () => {
     render(<Label entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
 
-    expect(chipOf().className).toContain(runIdentity({ laneIndex: 0, seed: 0 }).mutedChip);
-    expect(chipOf().className).not.toContain(runIdentity({ laneIndex: 0, seed: 0 }).chip);
+    expect(chipOf().className).toContain('bg-transparent');
+    expect(chipOf().className).not.toContain('bg-fill');
     expect(screen.queryByText('Discarded')).toBeNull();
-  });
-
-  it('keeps the run identity hue on a discarded run so it stays that run', () => {
-    const { mutedChip } = runIdentity({ laneIndex: 0, seed: 0 });
-
-    render(<Label entry={entryOf({ discardedAt: '2026-08-18T10:00:00Z' })} />);
-
-    expect(mutedChip).toContain('text-identity-');
-    expect(chipOf().className).toContain(mutedChip);
   });
 
   it('says what the orchestrator is doing while it chooses the next step', () => {

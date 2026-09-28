@@ -24,17 +24,16 @@ describe('runIdentity', () => {
     for (let index = 0; index < 40; index += 1) {
       const identity = runIdentity({ laneIndex: index, seed: 0 });
       expect(tones.some((tone) => identity.stroke.includes(tone))).toBe(false);
-      expect(tones.some((tone) => identity.chip.includes(tone))).toBe(false);
       expect(identity.stroke.startsWith('var(--color-identity-')).toBe(true);
     }
   });
 
-  it('offers the same identity to a chip as to its lane', () => {
+  it('offers the same identity to a spinner as to its lane', () => {
     const identity = runIdentity({ laneIndex: 4, seed: 0 });
     const slot = identity.index + 1;
 
     expect(identity.stroke).toBe(`var(--color-identity-${slot})`);
-    expect(identity.chip).toContain(`text-identity-${slot}`);
+    expect(identity.spin).toBe(`spin-border-identity-${slot}`);
   });
 
   it('reads a lane stroke back from the index the geometry carries', () => {

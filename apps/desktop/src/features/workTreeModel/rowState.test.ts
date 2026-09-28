@@ -351,6 +351,36 @@ describe('rowStateNode', () => {
   });
 });
 
+describe('rowStateTone for one waiting agent', () => {
+  const questionsRow: RowState = {
+    phase: 'waiting',
+    reason: { kind: 'openQuestions' },
+    ask: { kind: 'answer', question: QUESTION },
+  };
+
+  it('keeps the questions row quiet while it still asks for the answer', () => {
+    expect(read(questionsRow)).toEqual({
+      node: 'question',
+      sentence: null,
+      tone: 'neutral',
+      ask: 'answer',
+    });
+    expect(isRowNeedingYou({ state: questionsRow })).toBe(true);
+  });
+
+  it('keeps the waiting agent amber, the one signal for the question', () => {
+    expect(
+      rowStateTone({ state: agentState({ agent: { status: 'running' }, isAsking: true }) }),
+    ).toBe('warning');
+  });
+
+  it('keeps a run quiet while its step asks on a row of its own', () => {
+    expect(
+      rowStateTone({ state: { phase: 'waiting', reason: { kind: 'stepAsking' }, ask: null } }),
+    ).toBe('neutral');
+  });
+});
+
 describe('rowStateShortSentence', () => {
   const waiting = (reason: RowStateReason): RowState => ({ phase: 'waiting', reason, ask: null });
 

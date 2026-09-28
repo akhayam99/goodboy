@@ -48,6 +48,8 @@ import {
 import { dayLabel } from '../../../../timeline/dayLabel';
 import {
   firstNeedsYouRowId,
+  hasWaitingRow,
+  needsYouCount,
   needsYouEntries,
   needsYouRootIds,
 } from '../../../../timeline/needsYou';
@@ -237,19 +239,24 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
     return deciding;
   }, [orchestratingWorkflowRuns, workflows]);
 
-  const attentionRootIds = useMemo(
+  const fullStreamItems = useMemo(
     () =>
-      needsYouRootIds({
-        items: buildTimelineStream({
-          entries: model.entries,
-          unreadAgentIds,
-          advanceByRunId,
-          decidingRunIds,
-          dayLabelFor: dayLabel,
-        }).items,
-      }),
+      buildTimelineStream({
+        entries: model.entries,
+        unreadAgentIds,
+        advanceByRunId,
+        decidingRunIds,
+        dayLabelFor: dayLabel,
+      }).items,
     [advanceByRunId, decidingRunIds, model.entries, unreadAgentIds],
   );
+
+  const attentionRootIds = useMemo(
+    () => needsYouRootIds({ items: fullStreamItems }),
+    [fullStreamItems],
+  );
+
+  const needsYouTotal = useMemo(() => needsYouCount({ items: fullStreamItems }), [fullStreamItems]);
 
   const { isNeedsYou } = activity;
 
@@ -449,7 +456,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
     readonly isAskerOffScreen: boolean;
   }): TimelineRowAction => ({
     label: 'Answer',
-    asksUser: true,
+    variant: 'secondary',
     onAct: () => {
       if (question != null && isAskerOffScreen) {
         openAgentQuestion({ question });
@@ -586,7 +593,11 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
       <SectionHeader
         label="Activity"
         hint={emptyHint}
-        meta={<NeedsYouChip count={attentionRootIds.size} onReveal={revealNeedsYou} />}
+        meta={
+          hasWaitingRow({ items: stream.items }) ? null : (
+            <NeedsYouChip count={needsYouTotal} onReveal={revealNeedsYou} />
+          )
+        }
         action={
           <div className="flex items-center gap-1">
             {hasUnreadAgents ? (

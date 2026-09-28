@@ -270,16 +270,18 @@ nothing more.
 
 One set serves every object that needs a name: `--color-identity-1` to
 `--color-identity-8` in `apps/desktop/src/styles.css`, chroma 0.09 on eight
-hues, with no red. Two accessors read it, and nothing else does:
+hues, with no red and no amber, so a lane never reads as failed or waiting
+(`identity-palette-avoids-state-hues.test.ts` keeps every hue 30 degrees or
+more from the danger and warning hues). Two accessors read it, and nothing
+else does:
 
 - `runIdentity` in `apps/desktop/src/features/session/timeline/runIdentity.ts`
   picks a start slot per session from a hash of the session id. Then it walks
   the set with stride 3 across workflow runs and agent chains, ordered by
   creation time and id. 3 and 8 share no factor, so every slot is used before
-  one repeats. It gives five versions of one slot: `stroke` for an SVG lane,
-  `chip` for the run's own chip, `mutedChip` for a discarded run's chip,
-  `litChip` for the chip while its lane is hovered, and `spin` for the running
-  border. `runIdentityStroke`, next to it, turns the
+  one repeats. It gives two versions of one slot: `stroke` for an SVG lane and
+  `spin` for the running border. The run's "Workflow" chip stays neutral, so
+  a lane colour never lands on a pill. `runIdentityStroke`, next to it, turns the
   index the rail geometry carries back into a stroke.
 - `workspaceAccent` in `apps/desktop/src/features/workspace/color.ts` hashes a
   workspace id onto the same eight slots for its sidebar dot.
@@ -290,13 +292,12 @@ Three limits keep identity small:
   identity colour at oklab delta e 4.5 or more from every tone, and at 4.5:1
   as text on every surface. A violet lane is not a plan. A lane colour says
   nothing beyond "these rows are one run".
-- Identity colours the lane, the run chip that names it and the workspace dot,
-  nothing else. Stage stays in the marker on top of the lane, which still goes
-  through `tintClasses(tone)` like everything else.
-- The run chip is the only component tinted from identity instead of from a
-  tone. So on purpose it is **not** a `Chip`. `TimelineRunChip` in the
-  timeline feature owns its own surface, and the palette never enters
-  `packages/ui`.
+- Identity colours the lane, the running border and the workspace dot, nothing
+  else. Stage stays in the marker on top of the lane, which still goes through
+  `tintClasses(tone)` like everything else.
+- `TimelineRunChip` is neutral at rest, fainter on a discarded run and a step
+  stronger while its lane is hovered, whatever the run state. The palette
+  never enters `packages/ui`.
 
 A run row carries the chip, one title and at most one short status line.
 `TimelineRunLabel` prints the run title (`run.title`, falling back to the
@@ -305,9 +306,18 @@ document and lives in the workflow detail. A preset or custom workflow names its
 When any step of the run, at any depth, waits on an open question,
 `runOpenQuestion` picks the oldest one. The run row then takes the question
 node, says "Needs your answer in step 4.2" in the warning tone, and shows a
-visible Answer in the warning outline. Answer calls `focusQuestion` and opens
-the questions lens on that exact question. Every Answer on the feed (agent,
-question and run rows) is the same action.
+visible Answer as a neutral secondary button. Answer calls `focusQuestion` and
+opens the questions lens on that exact question. Every Answer on the feed
+(agent, question and run rows) is the same action.
+
+One waiting agent is marked once. When its questions have their own row in the
+feed, the agent row keeps the amber question node and "Needs you", and
+everything around it stays quiet: the questions row (reason `openQuestions`)
+has a neutral icon, neutral text and a neutral Answer, the run row turns to
+`stepAsking`, and only a row whose `rowStateTone` is warning gets the soft
+warning wash. The "N need you" chip beside the Activity heading shows only
+when no waiting row is on screen, in the neutral tone, and counts open
+questions the same way the header Questions chip does.
 
 Agent kinds (`--color-agent-*`) and provider glyphs (`--color-provider-*`) are
 identity palettes of their own. Each has a single accessor and is held to the

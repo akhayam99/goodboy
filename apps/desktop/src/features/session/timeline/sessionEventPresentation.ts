@@ -119,11 +119,7 @@ const GLYPH: Record<SessionEventKind, SessionEventGlyph> = {
     label: 'Write destination',
   },
   question_dismissed: { icon: CONCEPT_ICONS.questions, tone: 'neutral', label: 'Question' },
-  question_restored: {
-    icon: CONCEPT_ICONS.questions,
-    tone: CONCEPT_TONE.questions,
-    label: 'Question',
-  },
+  question_restored: { icon: CONCEPT_ICONS.questions, tone: 'neutral', label: 'Question' },
   history_rewritten: { icon: CONCEPT_ICONS.history, tone: CONCEPT_TONE.history, label: 'History' },
   history_pushed: { icon: CONCEPT_ICONS.history, tone: 'success', label: 'History' },
   history_stopped: { icon: CONCEPT_ICONS.history, tone: 'warning', label: 'History' },
