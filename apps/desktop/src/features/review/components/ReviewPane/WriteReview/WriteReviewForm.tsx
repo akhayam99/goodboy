@@ -31,7 +31,7 @@ const VERDICTS = [
 
 export const WRITE_REVIEW_FORM_LABEL = 'Your review';
 export const NO_LINE_COMMENTS = 'No line comments yet. Click a line number in the diff above.';
-export const ONE_REVIEW_HINT = 'GitHub shows it as one review. Nothing is sent before.';
+export const ONE_REVIEW_HINT = 'GitHub shows it as one review.';
 
 export const WriteReviewForm = ({ sessionId }: Props) => {
   const drafts = useAppStore(
@@ -110,12 +110,15 @@ export const WriteReviewForm = ({ sessionId }: Props) => {
       </div>
       <div className="flex min-w-0 flex-col gap-2">
         <SectionHeader label="Verdict" headingLevel={2} />
-        <SegmentedTabs<PublishPrReviewVerdict>
-          options={VERDICTS}
-          value={submission.verdict}
-          onChange={(verdict) => setReviewSubmission({ sessionId, patch: { verdict } })}
-          ariaLabel="Review verdict"
-        />
+        <div className="w-fit">
+          <SegmentedTabs<PublishPrReviewVerdict>
+            size="sm"
+            options={VERDICTS}
+            value={submission.verdict}
+            onChange={(verdict) => setReviewSubmission({ sessionId, patch: { verdict } })}
+            ariaLabel="Review verdict"
+          />
+        </div>
       </div>
       <div className="flex min-w-0 flex-col gap-2">
         <SectionHeader label="Summary" headingLevel={2} htmlFor={`review-summary-${sessionId}`} />

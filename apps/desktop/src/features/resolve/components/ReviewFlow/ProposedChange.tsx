@@ -24,10 +24,7 @@ export const ProposedChange = ({ files, isLoading, error }: Props) => {
         <p className="text-secondary text-muted-foreground">{REVIEW_FLOW_LABEL.noChangeCaptured}</p>
       )}
       {plan.files.map((file) => (
-        <div
-          key={file.path}
-          className="min-w-0 overflow-hidden rounded-md border border-border bg-subtle"
-        >
+        <div key={file.path} className="min-w-0 overflow-hidden rounded-lg bg-subtle">
           <p className="truncate px-3 pt-2 font-mono text-secondary text-muted-foreground">
             {file.path}
           </p>

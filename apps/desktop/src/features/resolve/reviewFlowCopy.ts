@@ -83,3 +83,8 @@ export const counterLabel = ({
   readonly index: number;
   readonly total: number;
 }): string => `${index} of ${total}`;
+
+export const sharedFixLine = ({ count }: { readonly count: number }): string =>
+  count === 1
+    ? 'The same fix answers one more comment, accepted with this one:'
+    : `The same fix answers ${count} more comments, accepted with this one:`;

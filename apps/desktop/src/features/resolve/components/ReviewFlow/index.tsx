@@ -420,16 +420,16 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     return (
       <div className="flex min-h-0 min-w-0 flex-1 gap-8">
         <ScrollFade
-          className="hidden min-h-0 w-[300px] shrink-0 @3xl:block"
-          viewportClassName="pb-5"
+          className="hidden min-h-0 w-[300px] shrink-0 @4xl:block"
+          viewportClassName="pb-5 pr-2"
           fadeSize="h-6"
         >
           <div ref={listRef}>
             <ReviewList groups={groups} focusedThreadId={focusedThreadId} onSelect={select} />
           </div>
         </ScrollFade>
-        <ScrollFade className="min-h-0 min-w-0 flex-1" viewportClassName="pb-8" fadeSize="h-6">
-          <div className="mb-4 flex items-center gap-1 @3xl:hidden">
+        <ScrollFade className="min-h-0 min-w-0 flex-1" viewportClassName="pb-8 pr-4" fadeSize="h-6">
+          <div className="mb-4 flex items-center gap-1 @4xl:hidden">
             <span className="text-secondary tabular-nums text-muted-foreground">
               {counterLabel({ index: index + 1, total: entries.length })}
             </span>

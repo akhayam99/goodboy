@@ -1045,7 +1045,7 @@ rides the drawer slot of the location, so Back from the Diff or from the
 resolver's page finds the same comment focused, but it never opens the shell
 drawer: `selectDrawerPanel` leaves it out, `DrawerHost` has no case for it, and
 Review renders the comment in its own right column beside the list, with the
-trail visible. The column reads its own width (`@container`): below 48rem the
+trail visible. The column reads its own width (`@container`): below 56rem the
 list folds into an `N of M` counter with previous and next.
 
 `scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.

@@ -15,12 +15,20 @@ import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMe
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
+import { OUTDATED_REASON } from '../../../actions/kinds/reviewComment';
 import type { ReviewComposeMode } from '../../../review/reviewRequest';
 import { conversationSha } from '../../conversationAgentResult';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
 import { useResolveItemDraft } from '../../hooks/useResolveItemDraft';
 import { isResolveOnly } from '../../reviewCommentState';
-import { COMPOSE_COPY, REVIEW_FLOW_LABEL, decidedNote, replyHeading } from '../../reviewFlowCopy';
+import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
+import {
+  COMPOSE_COPY,
+  REVIEW_FLOW_LABEL,
+  decidedNote,
+  replyHeading,
+  sharedFixLine,
+} from '../../reviewFlowCopy';
 import { selectResolveCandidate } from '../../selectResolveCandidate';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
@@ -123,7 +131,7 @@ export const ReviewComment = ({
   const author = note?.author ?? null;
   const verbs = verbsOf(actions);
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
-  const hasChange = candidate !== null || row.proposalKind === 'fix';
+  const hasChange = candidate !== null;
   const replyShown =
     reply.trim() !== '' || (state !== 'new' && state !== 'drafting' && state !== 'needs');
   const blocker = sharedCandidateBlocker({ members });
@@ -188,23 +196,22 @@ export const ReviewComment = ({
       )}
 
       {members.length > 0 && (state === 'ready' || state === 'edited') && (
-        <p className="text-secondary text-muted-foreground">
-          {members.length === 1
-            ? 'Accepting this also accepts '
-            : `Accepting this also accepts ${members.length} comments: `}
-          {members.map((member, index) => (
-            <button
-              key={member.threadId}
-              type="button"
-              onClick={() => onSelect(member.threadId)}
-              className="rounded-sm text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            >
-              {index > 0 ? ', ' : ''}
-              {member.title ?? 'another comment'}
-            </button>
-          ))}
-          {blocker === null ? '.' : ''}
-        </p>
+        <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
+          <p>{sharedFixLine({ count: members.length })}</p>
+          <ul className="flex min-w-0 flex-col">
+            {members.map((member) => (
+              <li key={member.threadId} className="min-w-0 list-none">
+                <button
+                  type="button"
+                  onClick={() => onSelect(member.threadId)}
+                  className="block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                  {member.title ?? RESOLVE_COMMENT_UNAVAILABLE}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {blocker !== null && (
         <p className="text-secondary text-warning">
@@ -278,6 +285,17 @@ export const ReviewComment = ({
             state: state as 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved',
             sha: conversationSha({ row }),
           })}
+        </p>
+      )}
+
+      {state === 'outdated' && (
+        <p className="flex min-w-0 items-start gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-foreground">
+          <AlertCircle
+            size={ICON_SIZE.control}
+            aria-hidden
+            className="mt-0.5 shrink-0 text-warning"
+          />
+          {OUTDATED_REASON}
         </p>
       )}
 
