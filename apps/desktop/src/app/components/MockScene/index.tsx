@@ -6,6 +6,7 @@ import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { ChatShellScene } from './scenes/ChatShellScene';
+import { ChatRoomScene } from './scenes/ChatRoomScene';
 import { InboxScene } from './scenes/InboxScene';
 import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
@@ -108,6 +109,7 @@ export const MOCK_SCENES = {
   workflow: WorkflowScene,
   shell: ShellScene,
   'chat-shell': ChatShellScene,
+  'chat-room': ChatRoomScene,
   inbox: InboxScene,
   'inbox-source': InboxSourceScene,
   conversation: ConversationScene,

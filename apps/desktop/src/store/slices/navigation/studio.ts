@@ -1,4 +1,4 @@
-import type { SessionId } from '@goodboy/types';
+import type { ChatId, SessionId } from '@goodboy/types';
 import type { ImpactScope } from '../../../features/impact/lib';
 import type { InboxKind, InboxProvider } from '../../../features/inbox/types';
 import type { SettingsFocus } from '../../../features/settings/components/SettingsStudio/types';
@@ -19,7 +19,8 @@ export type StudioPlace =
   | { readonly kind: 'inbox'; readonly focus: InboxStudioFocus | null }
   | { readonly kind: 'impact'; readonly scope: ImpactScope | null }
   | { readonly kind: 'changelog' }
-  | { readonly kind: 'notifications' };
+  | { readonly kind: 'notifications' }
+  | { readonly kind: 'chat'; readonly chatId: ChatId | null };
 
 export type StudioKind = StudioPlace['kind'];
 
@@ -40,6 +41,8 @@ export const studioKey = ({ studio }: KeyParams): string => {
       return joined(['impact', studio.scope?.kind]);
     case 'workflow':
       return 'workflows';
+    case 'chat':
+      return joined(['chat', studio.chatId]);
     case 'addWorkspace':
       return 'add-workspace';
     case 'guide':

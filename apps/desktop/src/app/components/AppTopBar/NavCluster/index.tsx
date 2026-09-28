@@ -3,6 +3,7 @@ import { useAppStore } from '../../../../store';
 import { useGoToBoard } from '../../../hooks/useGoToBoard';
 import { STUDIO_META } from '../../StudioFrame/studioMeta';
 import { BoardButton } from './BoardButton';
+import { ChatButton } from './ChatButton';
 import { HistoryArrow } from './HistoryArrow';
 import type { HistoryItem } from './HistoryMenu';
 import { historyLabel } from './historyLabel';
@@ -14,6 +15,8 @@ export const NavCluster = () => {
   const sessions = useAppStore((s) => s.sessions);
   const isOnBoard = useAppStore((s) => s.currentSessionId === null);
   const studioKind = useAppStore((s) => s.appStudio?.kind ?? null);
+  const hasWorkspace = useAppStore((s) => s.currentWorkspaceId !== null);
+  const openStudio = useAppStore((s) => s.openStudio);
   const back = useAppStore((s) => s.back);
   const forward = useAppStore((s) => s.forward);
   const goToHistory = useAppStore((s) => s.goToHistory);
@@ -58,6 +61,12 @@ export const NavCluster = () => {
         studioTitle={studioKind === null ? null : STUDIO_META[studioKind].title}
         onBoard={goToBoard}
       />
+      {hasWorkspace ? (
+        <ChatButton
+          isOnChat={studioKind === 'chat'}
+          onChat={() => openStudio({ studio: { kind: 'chat', chatId: null } })}
+        />
+      ) : null}
     </div>
   );
 };
