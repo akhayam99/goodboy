@@ -336,15 +336,15 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Rewrite history',
-        desc: 'Reword, squash, drop or reorder commits, then Apply. The plan replays in a throwaway copy, and your branch moves only when it comes out clean.',
+        desc: 'Drag a commit to move it or onto another to fold it in, or rename, squash or remove it from the row. Now and After Apply sit side by side. Apply tries the plan on a temporary copy, and your branch moves only when it comes out clean.',
       },
       {
         term: 'Conflicts ahead of time',
         desc: 'See which files would conflict while you edit the plan, without touching your checkout.',
       },
       {
-        term: 'Push and undo',
-        desc: "A rewrite pushes with a lease, so it never overwrites a teammate's work, and Undo rewrite takes it back for 30 days.",
+        term: 'Push and restore',
+        desc: "Apply and update online replaces the online branch only when nothing newer is there, so it never overwrites a teammate's work. Every rewrite saves a backup, and Backups restores it for 30 days.",
       },
       {
         term: 'After a merge',

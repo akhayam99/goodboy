@@ -18,8 +18,8 @@ export const Review = () => (
         a no, and the agent can say so with a reason.
       </p>
       <p>
-        Want the branch tidy afterwards? Squash and reorder commits with the conflicts shown before
-        you apply, and take it back within 30 days.
+        Want the branch tidy afterwards? Drag commits to fold, squash or move them, see what the
+        branch becomes before you apply, and restore the backup within 30 days.
       </p>
       <div className="linkRow">
         <SeeHow anchor="resolve" />

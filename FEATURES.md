@@ -570,7 +570,7 @@ Review someone else's pull request in a form under the diff: your line comments,
 
 ### Rewrite history
 
-Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename or remove it, or start the branch from today's main. The branch is drawn as a graph with main and where you left it, next to what it becomes after Apply, and every planned change can be undone on its own.
+Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename, squash or remove it, or start the branch from today's main. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change, and every planned change can be undone on its own. Each row's buttons, its `⋯` menu and a right click offer the same actions.
 
 ### Safe apply
 
@@ -584,9 +584,9 @@ See which files would conflict while you edit the plan, or read "No conflicts ex
 
 Let the History rewriter merge a conflicting rewrite in a copy, and have Goodboy check the result before anything moves.
 
-### Push with lease and undo
+### Push with lease and restore
 
-Push a rewrite without overwriting a teammate's work, and take it back for 30 days with **Undo rewrite**.
+**Apply and update online** replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten. Every rewrite saves a backup first: **Restore it** on the result takes it back, and **Backups** lists the older ones for 30 days.
 
 ### Suggest a message
 

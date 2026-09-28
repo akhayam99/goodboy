@@ -12,6 +12,31 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.12.1
+
+Rewrite history is rebuilt: drag commits to fold, squash or move them, and see what the branch becomes before you apply.
+
+### New
+
+#### Rewrite history as two graphs
+<!-- gb area=review image=history-plan -->
+
+The branch is drawn as it is Now, next to what it becomes After Apply, with a color for each kind of change. Drag a commit between two others to move it, or onto another to fold it in, and rename, squash or remove it from the row, its menu or a right click. Every planned change is listed and can be undone on its own.
+
+#### Every rewrite is tried on a copy first
+<!-- gb area=review image=history-trial -->
+
+Apply tries each change on a temporary copy and checks the result, and only then moves your branch. If a step stops, the page says which one and why, and your branch stays exactly as it was.
+
+#### Backups you can restore
+<!-- gb area=review image=history-result -->
+
+Every rewrite saves a backup first. The result shows it with Restore it, and Backups on the page lists the older ones. Apply and update online replaces the online branch only when nothing newer is there.
+
+### Fixed
+
+- Agents can no longer write into Goodboy's own data folder. <!-- gb area=agents -->
+
 ## Goodboy v0.12.0
 
 Right click any object, reach any action from `Cmd+K`, find anything with `Cmd+F`, and take review comments from draft to push in one flow.
