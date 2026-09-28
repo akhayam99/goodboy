@@ -208,7 +208,7 @@ const readsOfSegment = ({ args: segment }: ArgsParams): ReadonlyArray<string> =>
 const relativeTo = ({ path, workingDir }: RelativeParams): string => {
   const folder = workingDir.replace(/\/+$/, '');
   const inside = path.startsWith(`${folder}/`) ? path.slice(folder.length + 1) : path;
-  return inside.replace(/^\.\//, '');
+  return inside.startsWith('./') ? inside.slice(2) : inside;
 };
 
 const shellReads = ({ text }: TextParams): ReadonlyArray<string> =>
