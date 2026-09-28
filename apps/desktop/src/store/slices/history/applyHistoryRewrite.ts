@@ -4,12 +4,14 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { applyHistoryPlan, pushWithLease } from '../../../features/history/historyEngine';
 import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
 import { historyTargetOf } from './historyTargetOf';
+import { identityChange } from './historyIdentity';
 import { remoteForPush } from './remoteForPush';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
 import { setHistoryRun } from './setHistoryRun';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
 import type {
+  HistoryIdentity,
   ApplyHistoryRewriteInput,
   ApplyHistoryRewriteOutcome,
   GetFn,
@@ -34,6 +36,10 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       await reportHistoryStop({ get, set, target, origin, stop, planId });
       return 'stopped';
     };
+    const changed = identityChange({ get, sessionId, mountId, identity: input.identity });
+    if (changed !== null) {
+      return stopWith({ reason: 'blocked', message: changed, files: [], sha: null });
+    }
     const remote = await remoteForPush({
       target,
       expectedHead: input.expectedHead,
@@ -47,8 +53,8 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'applying', planId } });
     while (true) {
       const outcome = await applyHistoryPlan({
-        worktreePath: target.worktreePath,
-        branch: target.branch,
+        worktreePath: input.identity.worktreePath,
+        branch: input.identity.branch,
         expectedHead: input.expectedHead,
         newHead: input.newHead,
       }).catch((error: unknown) => ({ kind: 'failed' as const, message: formatError(error) }));
@@ -121,6 +127,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
           stop: null,
           result: null,
           copyPath: null,
+          identity: input.identity,
         },
       });
       break;
@@ -134,6 +141,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       origin,
       planId,
       expectedRemoteSha: remote.sha,
+      identity: input.identity,
     });
   };
 };
@@ -144,6 +152,7 @@ type PushInput = {
   readonly origin: ApplyHistoryRewriteInput['origin'];
   readonly planId: string | null;
   readonly expectedRemoteSha: string | null;
+  readonly identity: HistoryIdentity | null;
 };
 
 export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
@@ -153,12 +162,21 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
     origin,
     planId,
     expectedRemoteSha,
+    identity,
   }: PushInput): Promise<ApplyHistoryRewriteOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
+    const changed =
+      identity === null ? null : identityChange({ get, sessionId, mountId, identity });
+    if (changed !== null) {
+      const stop: HistoryStop = { reason: 'blocked', message: changed, files: [], sha: null };
+      setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop } });
+      await reportHistoryStop({ get, set, target, origin, stop, planId });
+      return 'stopped';
+    }
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'pushing', planId } });
     const pushed = await pushWithLease({
-      worktreePath: target.worktreePath,
-      branch: target.branch,
+      worktreePath: identity?.worktreePath ?? target.worktreePath,
+      branch: identity?.branch ?? target.branch,
       expectedRemoteSha,
       workspaceId: target.workspaceId,
       projectId: target.projectId,

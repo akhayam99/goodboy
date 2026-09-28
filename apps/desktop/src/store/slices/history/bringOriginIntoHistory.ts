@@ -2,6 +2,7 @@ import { formatError } from '@goodboy/ui';
 import { readOriginAhead, tryHistoryPlan } from '../../../features/history/historyEngine';
 import { worktreeStatus } from '../../../features/worktree/worktree';
 import { historyTargetOf } from './historyTargetOf';
+import { identityOf } from './historyIdentity';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
 import type {
@@ -94,6 +95,7 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
       map: trial.map,
       shouldPush: false,
       byAgent: false,
+      identity: identityOf({ target }),
       summary: `${ahead.commits.length} from origin brought in`,
       incorporatedRemoteSha: ahead.remoteSha,
     });

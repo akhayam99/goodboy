@@ -237,6 +237,7 @@ import type {
   ApplyHistoryRewriteOutcome,
   EditHistoryDraftInput,
   HistoryMountInput,
+  HistoryIdentity,
   HistoryRunOrigin,
   RebaseBranchOutcome,
   SettleHistoryRewriterInput,
@@ -619,6 +620,7 @@ type AppActions = {
     origin: HistoryRunOrigin;
     planId: string | null;
     expectedRemoteSha: string | null;
+    identity: HistoryIdentity | null;
   }): Promise<ApplyHistoryRewriteOutcome>;
   startHistoryRewriter(input: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome>;
   settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;

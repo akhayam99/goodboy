@@ -782,6 +782,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
                 origin: run.origin,
                 planId: run.planId,
                 expectedRemoteSha: run.remoteSha,
+                identity: run.identity,
               }).then(() => loadHistoryDraft({ sessionId, mountId }))
             }
             onBringOrigin={() => void bringOriginIntoHistory({ sessionId, mountId })}

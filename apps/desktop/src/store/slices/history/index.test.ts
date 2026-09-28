@@ -6,6 +6,7 @@ import type {
   HistoryStep,
   HistoryTrialProgress,
   MountId,
+  ProjectId,
   SessionId,
 } from '@goodboy/types';
 
@@ -56,6 +57,11 @@ import { rewriterKickoff } from './rewriterKickoff';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-ledger' as SessionId;
+const IDENTITY = {
+  worktreePath: '/w/ledger',
+  branch: 'fix/ledger-postings',
+  projectId: 'project-ledger' as ProjectId,
+};
 const MOUNT_ID = 'mount-ledger' as MountId;
 const AGENT_ID = 'agent-rewriter' as AgentId;
 
@@ -373,6 +379,7 @@ describe('rebase on main', () => {
         plan,
         origin: 'rebase',
         planId: null,
+        identity: IDENTITY,
       },
     };
     engine.collectHistoryRewrite.mockResolvedValue({
@@ -447,6 +454,7 @@ describe('rebase on main', () => {
         map: [],
         shouldPush: true,
         byAgent: false,
+        identity: IDENTITY,
       }),
     ).resolves.toBe('stopped');
 
@@ -740,6 +748,35 @@ describe('apply a planned rewrite', () => {
     expect(engine.pushWithLease).toHaveBeenCalledWith(
       expect.objectContaining({ expectedRemoteSha: 'included-sha' }),
     );
+  });
+
+  it('refuses to apply to another branch when the place switched during the trial', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockImplementation(async () => {
+      const state = harnessed.read() as unknown as Record<string, unknown>;
+      const mounts = state['sessionProjectMounts'] as Record<
+        string,
+        Array<Record<string, unknown>>
+      >;
+      mounts[SESSION_ID] = (mounts[SESSION_ID] ?? []).map((mount) => ({
+        ...mount,
+        branch: 'fix/other-branch',
+      }));
+      return { kind: 'tried', result: TRIED };
+    });
+
+    await expect(
+      harnessed.slice.applyHistoryDraft({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+    expect(harnessed.read().historyRuns[MOUNT_ID]?.stop?.message).toContain('fix/ledger-postings');
   });
 
   it('forgets a finished run when you are done', async () => {

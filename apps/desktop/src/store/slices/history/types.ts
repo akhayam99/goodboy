@@ -49,6 +49,12 @@ export type HistoryStop = {
   readonly sha: string | null;
 };
 
+export type HistoryIdentity = {
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly projectId: ProjectId;
+};
+
 export type HistoryRewriteResult = {
   readonly head: string;
   readonly expectedHead: string;
@@ -56,6 +62,7 @@ export type HistoryRewriteResult = {
   readonly isTreeEqual: boolean;
   readonly changedFiles: ReadonlyArray<string>;
   readonly byAgent: boolean;
+  readonly identity: HistoryIdentity;
 };
 
 export type HistoryRun = {
@@ -73,6 +80,7 @@ export type HistoryRun = {
   readonly holder: string | null;
   readonly progress: HistoryTrialProgress | null;
   readonly applied: HistoryApplied | null;
+  readonly identity: HistoryIdentity | null;
   readonly updatedAt: number;
 };
 
@@ -100,6 +108,7 @@ export type HistoryRewriterBinding = {
   readonly plan: HistoryPlanArgs;
   readonly origin: HistoryRunOrigin;
   readonly planId: string | null;
+  readonly identity: HistoryIdentity;
 };
 
 export type HistoryTarget = {
@@ -128,6 +137,7 @@ export type ApplyHistoryRewriteInput = HistoryMountInput & {
   readonly map: ReadonlyArray<HistoryShaMove>;
   readonly shouldPush: boolean;
   readonly byAgent: boolean;
+  readonly identity: HistoryIdentity;
   readonly summary?: string;
   readonly isTreeEqual?: boolean;
   readonly incorporatedRemoteSha?: string | null;

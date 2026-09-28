@@ -4,6 +4,7 @@ import { discardHistoryCopy, prepareHistoryRewrite } from '../../../features/his
 import { taskModelAgentSpawnConfig } from '../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { historyTargetOf } from './historyTargetOf';
+import { identityOf } from './historyIdentity';
 import { reportHistoryStop } from './reportHistoryStop';
 import { rewriterKickoff } from './rewriterKickoff';
 import { setHistoryRun } from './setHistoryRun';
@@ -50,6 +51,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
     note,
   }: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome> => {
     const target = historyTargetOf({ get, sessionId, mountId });
+    const identity = identityOf({ target });
     const stopWith = async (stop: HistoryStop): Promise<StartHistoryRewriterOutcome> => {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop, planId } });
       await reportHistoryStop({ get, set, target, origin, stop, planId });
@@ -89,6 +91,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
           map: prepared.map,
           shouldPush: true,
           byAgent: false,
+          identity,
         });
       }
       setHistoryRun({
@@ -105,6 +108,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
             isTreeEqual: prepared.isTreeEqual,
             changedFiles: prepared.changedFiles,
             byAgent: false,
+            identity,
           },
         },
       });
@@ -148,7 +152,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
     set((state) => ({
       historyRewriters: {
         ...state.historyRewriters,
-        [agentId]: { sessionId, mountId, copyPath, plan, origin, planId },
+        [agentId]: { sessionId, mountId, copyPath, plan, origin, planId, identity },
       },
     }));
     setHistoryRun({

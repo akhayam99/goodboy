@@ -10,6 +10,7 @@ import {
 } from '../../../features/history/historyEditText';
 import { historyGraphModel } from '../../../features/history/historyGraphModel';
 import { historyTargetOf } from './historyTargetOf';
+import { identityOf } from './historyIdentity';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
 import type {
@@ -155,6 +156,7 @@ export const applyHistoryDraft = (set: SetFn, get: GetFn) => {
     }
     const origin = 'plan' as const;
     const target = historyTargetOf({ get, sessionId, mountId });
+    const identity = identityOf({ target });
     const stopWith = async (stop: HistoryStop): Promise<ApplyHistoryRewriteOutcome> => {
       setHistoryRun({
         set,
@@ -218,6 +220,7 @@ export const applyHistoryDraft = (set: SetFn, get: GetFn) => {
       map: trial.map,
       shouldPush,
       byAgent: false,
+      identity,
       isTreeEqual: trial.isTreeEqual,
       summary: `${applied.lines.length} ${applied.lines.length === 1 ? 'change' : 'changes'} · ${commitCount({ count: applied.before })} became ${applied.after}`,
     });
@@ -249,6 +252,7 @@ export const applyRewrittenHistory = (set: SetFn, get: GetFn) => {
       map: run.result.map,
       shouldPush,
       byAgent: run.result.byAgent,
+      identity: run.result.identity,
     });
     setHistoryRun({ set, sessionId, mountId, origin: run.origin, patch: { result: null } });
     await get().loadHistoryDraft({ sessionId, mountId });

@@ -17,7 +17,7 @@ export const settleHistoryRewriter = (set: SetFn, get: GetFn) => {
     if (binding === undefined || binding.sessionId !== sessionId) {
       return;
     }
-    const { mountId, origin, planId, plan, copyPath } = binding;
+    const { mountId, origin, planId, plan, copyPath, identity } = binding;
     const target = historyTargetOf({ get, sessionId, mountId });
     const stopWith = async (stop: HistoryStop): Promise<void> => {
       setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'stopped', stop, planId } });
@@ -79,6 +79,7 @@ export const settleHistoryRewriter = (set: SetFn, get: GetFn) => {
         map: check.map,
         shouldPush: true,
         byAgent: true,
+        identity,
       });
       return;
     }
@@ -98,6 +99,7 @@ export const settleHistoryRewriter = (set: SetFn, get: GetFn) => {
           isTreeEqual: check.isTreeEqual,
           changedFiles: check.changedFiles,
           byAgent: true,
+          identity,
         },
       },
     });

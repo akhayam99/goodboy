@@ -6,6 +6,7 @@ import {
   tryHistoryPlan,
 } from '../../../features/history/historyEngine';
 import { historyTargetOf } from './historyTargetOf';
+import { identityOf } from './historyIdentity';
 import { isHistoryRunActive } from './isHistoryRunActive';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
@@ -93,6 +94,7 @@ export const rebaseBranch = (set: SetFn, get: GetFn) => {
           map: trial.map,
           shouldPush: true,
           byAgent: false,
+          identity: identityOf({ target }),
         });
         return applied === 'stopped' || applied === 'busy' ? applied : 'rebased';
       }
