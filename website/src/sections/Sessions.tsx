@@ -10,15 +10,15 @@ export const Sessions = () => (
     id="how"
     isBand
     head={{
-      eyebrow: 'Inside a session',
-      heading: 'One session, many chats',
-      lead: 'A task gets one session, and inside it each chat has one job.',
+      eyebrow: 'Overview and activity',
+      heading: 'One session for all your agents',
+      lead: 'Each one has a single job and starts from the same brief.',
     }}
   >
     <Frame figure={RUN_AGENTS}>
       <div className="contrastCols">
         <div>
-          <h3 className="cellTitle was">With one chat</h3>
+          <h3 className="cellTitle was">One long conversation</h3>
           <p className="cellText">
             The plan, the code, the tests and the review pile up in one thread. The model loses the
             start, and changing tool means telling the story again.
@@ -27,8 +27,8 @@ export const Sessions = () => (
         <div>
           <h3 className="cellTitle">With Goodboy</h3>
           <p className="cellText">
-            A scout reads, a planner decides, implementers write and a tester checks. Each chat
-            stays short, so the model keeps all of it.
+            A scout reads, a planner decides, implementers write and a tester checks. Each one stays
+            short, so the model keeps all of it.
           </p>
         </div>
       </div>

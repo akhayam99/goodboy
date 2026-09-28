@@ -12,8 +12,8 @@ export const StorageAndChat = () => (
       },
       {
         figure: CHAT_PLAIN,
-        title: 'A plain chat',
-        text: 'When a task needs no structure, talk to one agent and steer it by hand.',
+        title: 'Talk to one agent',
+        text: 'When a task needs no structure, steer it by hand, message by message.',
       },
     ]}
   />

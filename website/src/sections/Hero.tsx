@@ -15,12 +15,13 @@ export const Hero = () => (
   <section className="hero" aria-labelledby="hero-title">
     <div className="shell">
       <div className="heroCopy">
-        <Eyebrow text="Agentic development environment" kind="page" className="rise" />
+        <Eyebrow text="Desktop app for macOS and Linux" kind="page" className="rise" />
         <h1 id="hero-title" className="display rise" style={rise(1)}>
           A development environment that structures agent work
         </h1>
         <p className="lead rise" style={rise(2)}>
-          Every task keeps its goal, decisions and summary, so each agent starts briefed.
+          Every task keeps its goal, decisions and summary, so each model that picks it up starts
+          briefed.
         </p>
         <div className="ctaRow rise" style={rise(3)}>
           <a className="btn" href={SITE.latest}>
@@ -29,7 +30,7 @@ export const Hero = () => (
           <a className="btn ghost" href={SITE.repo}>
             View on GitHub
           </a>
-          <span className="heroMeta">Free for macOS and Linux, no account needed.</span>
+          <span className="heroMeta">Free, no account needed.</span>
         </div>
       </div>
       <div className="heroFrame rise" style={rise(4)}>

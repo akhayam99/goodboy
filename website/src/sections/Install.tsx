@@ -41,7 +41,7 @@ export const Install = () => {
         eyebrow: 'Install',
         eyebrowKind: 'page',
         heading: 'Set up with a folder and a provider',
-        lead: 'Install it, connect a provider, and point it at a folder you already work in.',
+        lead: 'Download the app, sign in to a tool you already pay for, and point it at code you work on.',
       }}
     >
       <div className="install">

@@ -13,7 +13,7 @@ export const SwitchAndFind = () => (
       {
         figure: FIND_SEARCH,
         title: 'Search and navigation',
-        text: 'Press ⌘K for any session, agent or pull request. Search reads every message and plan.',
+        text: 'Press ⌘K for any session, agent or pull request. ⌘F reads every message and plan.',
       },
     ]}
   />

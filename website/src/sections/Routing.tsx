@@ -54,8 +54,8 @@ export const Routing = () => (
     id="routing"
     head={{
       eyebrow: 'Providers, limits and cost',
-      heading: 'Know what a task costs while it runs',
-      lead: 'The top bar shows what is left of each plan, every step records what it spent, and a monthly cap warns you before you cross it.',
+      heading: 'See what a task spends while it runs',
+      lead: 'The top bar shows what is left of each plan, every step keeps its own total, and a monthly cap warns you before you go over.',
     }}
   >
     <Frame figure={IMPACT} />
@@ -63,7 +63,7 @@ export const Routing = () => (
       <div className="billsHead">
         <h3 className="sectionTitle">The same task, run two ways</h3>
         <p className="body">
-          The same six steps, twice. One agent carrying the whole chat pays for it on every step. A
+          Six steps, done twice. One agent carrying the whole chat pays for it on every step. A
           fresh agent per step reads a short brief, and the heavy model runs only where it matters.
         </p>
       </div>
