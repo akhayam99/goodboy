@@ -39,10 +39,10 @@ import { sceneClock } from '../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-18T10:05:00.000Z' });
 
-const WORKSPACE_ID = 'mock-run-workspace-cascadia' as WorkspaceId;
+const WORKSPACE_ID = 'mock-run-workspace-harborline' as WorkspaceId;
 export const SESSION_ID = 'mock-run-session-webhooks' as SessionId;
 const PAYMENTS_ID = 'mock-run-project-payments-api' as ProjectId;
-const CONSOLE_ID = 'mock-run-project-web-console' as ProjectId;
+const CONSOLE_ID = 'mock-run-project-notify-relay' as ProjectId;
 
 const WORKFLOW_ID = 'mock-run-workflow-webhook-idempotency' as WorkflowId;
 const WORKFLOW_RUN_ID = 'mock-run-workflow-run-webhook-idempotency' as WorkflowRunId;
@@ -116,8 +116,8 @@ const OVERRIDES = {
 
 const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
-  name: 'Cascadia',
-  slug: 'cascadia',
+  name: 'Harborline',
+  slug: 'harborline',
   overrides: OVERRIDES,
   createdAt: EARLIER,
   updatedAt: NOW,
@@ -128,7 +128,7 @@ const PROJECTS: ReadonlyArray<Project> = [
     id: PAYMENTS_ID,
     workspaceId: WORKSPACE_ID,
     name: 'payments-api',
-    rootPath: '/mock/cascadia/payments-api',
+    rootPath: '~/code/harborline/payments-api',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: EARLIER,
@@ -137,8 +137,8 @@ const PROJECTS: ReadonlyArray<Project> = [
   {
     id: CONSOLE_ID,
     workspaceId: WORKSPACE_ID,
-    name: 'web-console',
-    rootPath: '/mock/cascadia/web-console',
+    name: 'notify-relay',
+    rootPath: '~/code/harborline/notify-relay',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: EARLIER,
@@ -149,9 +149,9 @@ const PROJECTS: ReadonlyArray<Project> = [
 const PAYMENTS_MOUNT: SessionProjectMount = {
   projectId: PAYMENTS_ID,
   mountName: 'payments-api',
-  worktreePath: '/mock/cascadia/payments-api-idempotency',
-  repoRoot: '/mock/cascadia/payments-api',
-  branch: 'nw/fix-webhook-idempotency',
+  worktreePath: '~/code/harborline/payments-api-idempotency',
+  repoRoot: '~/code/harborline/payments-api',
+  branch: 'hl/fix-webhook-idempotency',
   mountId: 'mock-run-mount-payments' as MountId,
   sessionId: SESSION_ID,
   lastWorktreePath: null,
@@ -164,10 +164,10 @@ const PAYMENTS_MOUNT: SessionProjectMount = {
 
 const CONSOLE_MOUNT: SessionProjectMount = {
   projectId: CONSOLE_ID,
-  mountName: 'web-console',
-  worktreePath: '/mock/cascadia/web-console-retry-state',
-  repoRoot: '/mock/cascadia/web-console',
-  branch: 'nw/surface-retry-state',
+  mountName: 'notify-relay',
+  worktreePath: '~/code/harborline/notify-relay-retry-state',
+  repoRoot: '~/code/harborline/notify-relay',
+  branch: 'hl/surface-retry-state',
   mountId: 'mock-run-mount-console' as MountId,
   sessionId: SESSION_ID,
   lastWorktreePath: null,
@@ -180,16 +180,15 @@ const CONSOLE_MOUNT: SessionProjectMount = {
 
 const BACKFILL_MOUNT: SessionProjectMount = {
   ...PAYMENTS_MOUNT,
-  worktreePath: '/mock/cascadia/payments-api-backfill',
-  branch: 'nw/backfill-processed-events',
+  worktreePath: '~/code/harborline/payments-api-backfill',
+  branch: 'hl/fix-duplicate-credit',
   mountId: 'mock-run-mount-payments-backfill' as MountId,
   parallelIndex: 1,
 };
 
 const MOUNTS = [PAYMENTS_MOUNT, BACKFILL_MOUNT, CONSOLE_MOUNT];
 
-const GOAL =
-  'Stop payments-api from double-crediting invoices when Stripe redelivers a webhook, then surface the retry state in web-console so support can see a stuck delivery';
+const GOAL = 'Stop retried webhooks posting a second credit';
 
 const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
   { key: 'goal', value: GOAL, enabled: true },
@@ -197,10 +196,10 @@ const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
     key: 'decisions',
     value: [
       '- D7 Show the stuck-delivery banner after the third failed retry, not the first',
-      '- D6 Keep the retry state store on payments-api, so web-console stays a read only view',
+      '- D6 Keep the retry state store on payments-api, so notify-relay stays a read only view',
       '- D4 Backfill runs read only for its first pass',
       '- D2 Write the dedupe check inside the same transaction as the credit',
-      "- D1 Key idempotency on Stripe's event id; the payload changes between retries",
+      "- D1 Key idempotency on the processor's event id; the payload changes between retries",
     ].join('\n'),
     enabled: true,
   },
@@ -217,10 +216,10 @@ const CONTEXT_SLOTS: ReadonlyArray<ContextSlot> = [
       '- Backfill for settled events is written and stays read only',
       '- 42 tests pass on the webhook handler',
       '',
-      '- web-console still shows nothing for a stuck delivery',
+      '- notify-relay still shows nothing for a stuck delivery',
       '',
       '#### Next',
-      '- Wire the retry state into web-console',
+      '- Wire the retry state into notify-relay',
       '- Flip the backfill out of read only after a week of live traffic',
       '- Decide whether support can replay a delivery by hand',
     ].join('\n'),
@@ -257,11 +256,11 @@ const DECISIONS_SEEN_AT = at({ day: DAY_TWO, time: '09:00:00' });
 const DECISIONS: ReadonlyArray<SessionDecision> = [
   decision({
     number: 1,
-    text: "Key idempotency on Stripe's event id; the payload changes between retries",
+    text: "Key idempotency on the processor's event id; the payload changes between retries",
     agentId: SCOUT_EVENTS_AGENT_ID,
     turnOrdinal: 1,
     why: 'Northwind resends the same event with a new payload on every retry',
-    previousText: "Use Stripe's event.id as the key because the payload differs per retry",
+    previousText: "Use the processor's event id as the key because the payload differs per retry",
     rewordedAt: at({ day: DAY_TWO, time: '10:00:00' }),
   }),
   decision({
@@ -302,7 +301,7 @@ const DECISIONS: ReadonlyArray<SessionDecision> = [
   }),
   decision({
     number: 6,
-    text: 'Keep the retry state store on payments-api, so web-console stays a read only view',
+    text: 'Keep the retry state store on payments-api, so notify-relay stays a read only view',
     agentId: PLANNER_AGENT_ID,
     turnOrdinal: 6,
     why: 'payments-api already owns the ledger-core transaction, and notify-relay reads from it. A second store would need its own migration, its own backfill and a sync job that Harborline has no one to watch.',
@@ -335,7 +334,7 @@ const WORKFLOW_STEPS: ReadonlyArray<Step> = [
     role: 'scout',
     ordinal: 0,
     name: 'Trace the webhook delivery path',
-    promptPrefix: 'Trace how payments-api receives and acknowledges a Stripe webhook.',
+    promptPrefix: 'Trace how payments-api receives and acknowledges a processor webhook.',
   },
   {
     id: CONTRACT_STEP_ID,
@@ -386,7 +385,7 @@ const CONSOLE_STEPS: ReadonlyArray<Step> = [
     role: 'implementer',
     ordinal: 0,
     name: 'Read retry state from the typed endpoint',
-    promptPrefix: 'Give web-console a store for deduped and stuck deliveries.',
+    promptPrefix: 'Give notify-relay a store for deduped and stuck deliveries.',
   },
   {
     id: CONSOLE_BANNER_STEP_ID,
@@ -421,7 +420,7 @@ const WORKFLOW: Workflow = {
 const CONSOLE_WORKFLOW: Workflow = {
   id: CONSOLE_WORKFLOW_ID,
   workspaceId: WORKSPACE_ID,
-  name: 'Surface retry state in web-console',
+  name: 'Surface retry state in notify-relay',
   description: 'Read the retry state, warn on a stuck delivery, then pin the states with tests.',
   goal: 'Let support see a stuck or deduped delivery without opening the database',
   origin: 'orchestrated',
@@ -502,7 +501,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'scout',
     status: 'completed',
     outputSummary:
-      'payments-api/src/webhooks/stripeHandler.ts acks the request before the credit transaction opens.',
+      'payments-api/src/webhooks/applyWebhook.ts acks the request before the credit transaction opens.',
     startedAt: at({ day: DAY_ONE, time: '09:14:00' }),
     completedAt: at({ day: DAY_ONE, time: '09:21:00' }),
     lastFinishedAt: at({ day: DAY_ONE, time: '09:21:00' }),
@@ -518,7 +517,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'scout',
     status: 'completed',
     outputSummary:
-      'The events table keys on an internal uuid, not the Stripe event id, so nothing rejects a duplicate today.',
+      'The events table keys on an internal uuid, not the processor event id, so nothing rejects a duplicate today.',
     startedAt: at({ day: DAY_ONE, time: '09:14:00' }),
     completedAt: at({ day: DAY_ONE, time: '09:24:00' }),
     lastFinishedAt: at({ day: DAY_ONE, time: '09:24:00' }),
@@ -530,11 +529,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     sessionId: SESSION_ID,
     parentAgentId: SCOUT_AGENT_ID,
     ordinal: 0.3,
-    name: 'Stripe retry semantics',
+    name: 'Processor retry semantics',
     kind: 'scout',
     status: 'completed',
     outputSummary:
-      'Stripe redelivers on any non-2xx or timeout, with the same event id every time, for up to three days.',
+      'The processor redelivers on any non-2xx or timeout, with the same event id every time, for up to three days.',
     startedAt: at({ day: DAY_ONE, time: '09:15:00' }),
     completedAt: at({ day: DAY_ONE, time: '09:27:00' }),
     lastFinishedAt: at({ day: DAY_ONE, time: '09:27:00' }),
@@ -551,7 +550,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'planner',
     status: 'completed',
     outputSummary:
-      'Key the dedupe check on the Stripe event id, check it inside the credit transaction, backfill settled events read only.',
+      'Key the dedupe check on the processor event id, check it inside the credit transaction, backfill settled events read only.',
     startedAt: at({ day: DAY_ONE, time: '09:40:00' }),
     completedAt: at({ day: DAY_ONE, time: '09:47:00' }),
     lastFinishedAt: at({ day: DAY_ONE, time: '09:47:00' }),
@@ -585,7 +584,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     kind: 'implementer',
     status: 'completed',
     outputSummary:
-      'Added a unique stripe_event_id column on webhook_events with a migration and a backfill-safe default.',
+      'Added a unique processor_event_id column on webhook_events with a migration and a backfill-safe default.',
     startedAt: at({ day: DAY_ONE, time: '09:50:00' }),
     completedAt: at({ day: DAY_ONE, time: '10:22:00' }),
     lastFinishedAt: at({ day: DAY_ONE, time: '10:22:00' }),
@@ -642,7 +641,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     completedAt: at({ day: DAY_ONE, time: '10:52:00' }),
     lastFinishedAt: at({ day: DAY_ONE, time: '10:52:00' }),
     providerOverride: 'anthropic',
-    modelOverride: 'claude-sonnet-4-5',
+    modelOverride: 'claude-sonnet-5',
   },
   {
     id: DEDUPE_REPLAY_AGENT_ID,
@@ -667,7 +666,8 @@ const AGENTS: ReadonlyArray<Agent> = [
     name: 'answer: key on the event id, the payload changes between retries',
     kind: 'implementer',
     status: 'completed',
-    outputSummary: 'Stripe keeps the event id stable across retries and rewrites the payload.',
+    outputSummary:
+      'The processor keeps the event id stable across retries and rewrites the payload.',
     startedAt: at({ day: DAY_ONE, time: '10:40:00' }),
     completedAt: at({ day: DAY_ONE, time: '10:46:00' }),
     lastFinishedAt: at({ day: DAY_ONE, time: '10:46:00' }),
@@ -710,7 +710,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     lastViewedAt: NOW,
     doneAt: at({ day: DAY_ONE, time: '12:40:00' }),
     providerOverride: 'anthropic',
-    modelOverride: 'claude-sonnet-4-5',
+    modelOverride: 'claude-sonnet-5',
   },
   {
     id: CONSOLE_STORE_AGENT_ID,
@@ -721,14 +721,14 @@ const AGENTS: ReadonlyArray<Agent> = [
     name: 'Read retry state from the typed endpoint',
     kind: 'implementer',
     status: 'completed',
-    outputSummary: 'web-console now reads deduped and stuck deliveries from a typed endpoint.',
+    outputSummary: 'notify-relay now reads deduped and stuck deliveries from a typed endpoint.',
     startedAt: at({ day: DAY_ONE, time: '11:10:00' }),
     completedAt: at({ day: DAY_ONE, time: '11:52:00' }),
     lastFinishedAt: at({ day: DAY_ONE, time: '11:52:00' }),
     lastViewedAt: NOW,
     doneAt: at({ day: DAY_ONE, time: '11:52:00' }),
     providerOverride: 'anthropic',
-    modelOverride: 'claude-sonnet-4-5',
+    modelOverride: 'claude-sonnet-5',
   },
   {
     id: CONSOLE_BANNER_AGENT_ID,
@@ -772,20 +772,20 @@ const AGENTS: ReadonlyArray<Agent> = [
     lastViewedAt: NOW,
     doneAt: at({ day: DAY_TWO, time: '10:04:00' }),
     providerOverride: 'anthropic',
-    modelOverride: 'claude-sonnet-4-5',
+    modelOverride: 'claude-sonnet-5',
   },
 ];
 
 const PLAN_BODY = `## Approach
 
-Key the dedupe check on the Stripe event id and check it inside the same transaction as the credit, then backfill settled events read only before trusting it live.
+Key the dedupe check on the processor event id and check it inside the same transaction as the credit, then backfill settled events read only before trusting it live.
 
 ## Steps
 
-1. Add a unique \`stripe_event_id\` column to \`webhook_events\`.
+1. Add a unique \`processor_event_id\` column to \`webhook_events\`.
 2. Move the dedupe check inside the credit transaction, not before it.
 3. Backfill three years of settled events behind a read only flag.
-4. Surface retry state in web-console once the backfill counts hold.
+4. Surface retry state in notify-relay once the backfill counts hold.
 
 ## Risks
 
@@ -798,7 +798,7 @@ const PLAN_ARTIFACT: SessionArtifact = {
   workflowRunId: WORKFLOW_RUN_ID,
   kind: 'plan',
   schemaVersion: 1,
-  title: 'Key the dedupe check on the Stripe event id',
+  title: 'Key the dedupe check on the processor event id',
   sourceFormat: 'markdown',
   sourceText: PLAN_BODY,
   metadata: {},
@@ -868,7 +868,7 @@ const WIREFRAME_ARTIFACT: WireframeArtifact = {
   workflowRunId: WORKFLOW_RUN_ID,
   kind: 'wireframe',
   schemaVersion: 1,
-  title: 'Stuck delivery in web-console',
+  title: 'Stuck delivery in notify-relay',
   sourceFormat: 'json',
   sourceText: JSON.stringify(WIREFRAME_DOCUMENT, null, 2),
   metadata: { fidelity: 'low', designProfile: {} },
@@ -885,7 +885,7 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     sessionId: SESSION_ID,
     agentId: PLANNER_AGENT_ID,
     workflowRunId: WORKFLOW_RUN_ID,
-    title: 'Key the dedupe check on the Stripe event id',
+    title: 'Key the dedupe check on the processor event id',
     bodyMd: PLAN_BODY,
     status: 'consumed',
     createdAt: at({ day: DAY_ONE, time: '09:47:00' }),
@@ -896,7 +896,7 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
 
 const REPORT_BODY = `# Webhook redelivery no longer double credits
 
-Stripe redelivers a webhook whenever payments-api is slow to acknowledge it. Every redelivery
+The processor redelivers a webhook whenever payments-api is slow to acknowledge it. Every redelivery
 was posting a second credit to the invoice, because nothing checked whether the event had
 already been applied.
 
@@ -904,10 +904,10 @@ already been applied.
 
 | Area | Before | After |
 | --- | --- | --- |
-| dedupe key | none | Stripe event id, unique |
+| dedupe key | none | processor event id, unique |
 | dedupe timing | none | inside the credit transaction |
 | settled events | drift kept | backfilled, read only |
-| web-console | no visibility | retry state store live, banner in progress |
+| notify-relay | no visibility | retry state store live, banner in progress |
 
 ## Evidence
 
@@ -926,7 +926,7 @@ already been applied.
 
 ## Next steps
 
-- Finish the stuck-delivery banner and console coverage in web-console.
+- Finish the stuck-delivery banner and console coverage in notify-relay.
 - Flip the backfill out of read only after a week of live traffic confirms the counts hold.`;
 
 const REPORT_ARTIFACT: ReportArtifact = {
@@ -974,14 +974,15 @@ const OPEN_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     sessionId: SESSION_ID,
     workflowRunId: CONSOLE_RUN_ID,
     createdByAgentId: CONSOLE_BANNER_AGENT_ID,
-    text: 'How many retries should raise the banner?',
+    text: 'Which failures should count toward a stuck delivery?',
     suggestedAnswers: [
-      'Three, it is the first retry support ever notices',
-      'Two, so nothing sits stuck for an hour',
-      'Whatever crosses the five minute mark, count aside',
+      'Connection resets',
+      'HTTP 429 with a retry hint',
+      'HTTP 502 and 503',
+      'Read timeouts past 30 seconds',
+      'Signature mismatches',
     ],
-    recommendedAnswer: 'Three, it is the first retry support ever notices',
-    selectMode: 'one',
+    selectMode: 'many',
     isBlocking: true,
     userAnswer: null,
     status: 'open',
@@ -1002,9 +1003,9 @@ const SESSION_EVENTS = [
     sessionId: SESSION_ID,
     kind: 'pr_created',
     payload: {
-      number: 612,
+      number: 311,
       title: 'Add an idempotency guard to the webhook handler',
-      url: 'https://example.invalid/cascadia/payments-api/pull/612',
+      url: 'https://example.invalid/harborline/payments-api/pull/311',
     },
     createdAt: at({ day: DAY_ONE, time: '11:30:00' }),
   },
@@ -1013,9 +1014,9 @@ const SESSION_EVENTS = [
     sessionId: SESSION_ID,
     kind: 'pr_merged',
     payload: {
-      number: 612,
+      number: 311,
       title: 'Add an idempotency guard to the webhook handler',
-      url: 'https://example.invalid/cascadia/payments-api/pull/612',
+      url: 'https://example.invalid/harborline/payments-api/pull/311',
     },
     createdAt: at({ day: DAY_TWO, time: '09:25:00' }),
   },
@@ -1068,7 +1069,7 @@ const PR = ({
 }): PullRequestState => ({
   number,
   title,
-  url: `https://example.invalid/cascadia/${repo}/pull/${number}`,
+  url: `https://example.invalid/harborline/${repo}/pull/${number}`,
   state,
   mergeable: state === 'open' ? true : null,
   checks,
@@ -1081,7 +1082,7 @@ const PR = ({
 });
 
 const PAYMENTS_PR = PR({
-  number: 612,
+  number: 311,
   title: 'Add an idempotency guard to the webhook handler',
   headBranch: PAYMENTS_MOUNT.branch,
   repo: 'payments-api',
@@ -1091,18 +1092,18 @@ const PAYMENTS_PR = PR({
 });
 
 const CONSOLE_PR = PR({
-  number: 48,
+  number: 57,
   title: 'Show retry state on the deliveries screen',
   headBranch: CONSOLE_MOUNT.branch,
-  repo: 'web-console',
+  repo: 'notify-relay',
   state: 'open',
   checks: 'pending',
   reviewDecision: 'review_required',
 });
 
 const BACKFILL_PR = PR({
-  number: 618,
-  title: 'Backfill processed event ids for invoices settled before the guard',
+  number: 318,
+  title: 'Stop retried webhooks posting a second credit',
   headBranch: BACKFILL_MOUNT.branch,
   repo: 'payments-api',
   state: 'open',
@@ -1134,7 +1135,7 @@ const mountGithubEntry = ({ mount, pr }: MountGithubParams) => ({
   mountId: mount.mountId,
   projectId: mount.projectId,
   revision: 0,
-  repository: `cascadia/${mount.mountName}`,
+  repository: `harborline/${mount.mountName}`,
   host: 'github.com',
   branch: mount.branch,
   links: [],
@@ -1155,8 +1156,8 @@ const externalTask = (
 });
 
 const EXTERNAL_TASKS: ReadonlyArray<SessionExternalTask> = [
-  externalTask('linear', 'PAY-418', 'Invoices credited twice after webhook retries'),
-  externalTask('sentry', 'PAYMENTS-API-3F2', 'DuplicateCreditError in handleInvoicePaid'),
+  externalTask('linear', 'HBL-412', 'Retried webhooks post a second credit'),
+  externalTask('sentry', 'PAYMENTS-API-3F2', 'DuplicateCreditError in applyWebhook'),
 ];
 
 const MINUTE_MS = 60_000;
@@ -1175,7 +1176,7 @@ const TURN_SPANS: ReadonlyArray<MeasuredTurnSpan> = AGENTS.flatMap((agent) => {
       isOrchestratedRunDone: false,
       stepRole: 'implementer',
       provider: agent.providerOverride ?? 'anthropic',
-      model: agent.modelOverride ?? 'claude-sonnet-4-5',
+      model: agent.modelOverride ?? 'claude-sonnet-5',
       effort: null,
       startedAtMs,
       endedAtMs: startedAtMs + (2 + (agent.ordinal % 5)) * MINUTE_MS + 40_000,
@@ -1200,7 +1201,7 @@ const historySamples = ({ nowMs }: { readonly nowMs: number }): ReadonlyArray<Du
     [6, 7, 8, 9, 10, 11, 12, 13].map((minutes) => ({
       role,
       provider: 'anthropic',
-      model: 'claude-sonnet-4-5',
+      model: 'claude-sonnet-5',
       effort: null,
       activeMs: (minutes + roleIndex) * MINUTE_MS,
       costUsd: (minutes + roleIndex) / 40,
@@ -1238,7 +1239,7 @@ export const seedActivityRunScene = () => {
         parallelIndex: index,
         projectId: mount.projectId,
         mountName: mount.mountName,
-        repoSlug: `cascadia/${mount.mountName}`,
+        repoSlug: `harborline/${mount.mountName}`,
         createdAt: clock.ms({
           at: index === 0 ? `${DAY_ONE}T09:12:00.000Z` : `${DAY_ONE}T09:13:00.000Z`,
         }),
@@ -1296,7 +1297,7 @@ export const seedActivityRunScene = () => {
           sessionId: SESSION_ID,
           kind: 'turn',
           provider: 'codex',
-          model: 'gpt-6-astra',
+          model: 'gpt-5.6-sol',
           recordedAt: at({ day: DAY_ONE, time: '10:22:00' }),
           inputTokens: 8_400,
           outputTokens: 1_950,
@@ -1308,19 +1309,19 @@ export const seedActivityRunScene = () => {
           sessionId: SESSION_ID,
           kind: 'turn',
           provider: 'anthropic',
-          model: 'claude-opus-5',
+          model: 'claude-opus-5-5',
           recordedAt: at({ day: DAY_ONE, time: '12:40:00' }),
           inputTokens: 21_300,
           outputTokens: 4_120,
-          estimatedCostUsd: 1.94,
+          estimatedCostUsd: 2.615,
         },
         {
           id: 'mock-run-telemetry-console' as TelemetryRecordId,
           runId: CONSOLE_PROVIDER_RUN_ID,
           sessionId: SESSION_ID,
           kind: 'turn',
-          provider: 'anthropic',
-          model: 'claude-sonnet-5',
+          provider: 'cursor',
+          model: 'kimi-k3',
           recordedAt: at({ day: DAY_TWO, time: '09:58:00' }),
           inputTokens: 5_600,
           outputTokens: 1_180,
@@ -1332,7 +1333,7 @@ export const seedActivityRunScene = () => {
           sessionId: SESSION_ID,
           kind: 'summarizer',
           provider: 'anthropic',
-          model: 'claude-sonnet-4-5',
+          model: 'claude-sonnet-5',
           recordedAt: at({ day: DAY_ONE, time: '09:48:00' }),
           inputTokens: 1_340,
           outputTokens: 310,
@@ -1344,7 +1345,7 @@ export const seedActivityRunScene = () => {
           sessionId: SESSION_ID,
           kind: 'summarizer',
           provider: 'anthropic',
-          model: 'claude-sonnet-4-5',
+          model: 'claude-sonnet-5',
           recordedAt: at({ day: DAY_TWO, time: '10:04:00' }),
           inputTokens: 2_680,
           outputTokens: 540,
@@ -1360,7 +1361,7 @@ export const seedActivityRunScene = () => {
           {
             number: 57,
             title: 'Retried webhooks post a second credit',
-            url: 'https://example.invalid/cascadia/payments-api/issues/57',
+            url: 'https://example.invalid/harborline/payments-api/issues/57',
             closes: true,
           },
         ],

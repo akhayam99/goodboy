@@ -1,6 +1,6 @@
 import { Moon, Sun } from 'lucide-react';
 import { Tooltip } from '@goodboy/ui';
-import { useThemeStore, withViewTransition } from '../../../../shared/lib/theme';
+import { useAppliedTheme, useThemeStore } from '../../../../shared/lib/theme';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 const STATE_LABEL: Record<'dark' | 'light', string> = {
@@ -9,7 +9,7 @@ const STATE_LABEL: Record<'dark' | 'light', string> = {
 };
 
 export const ThemeToggle = () => {
-  const theme = useThemeStore((s) => s.theme);
+  const theme = useAppliedTheme();
   const preference = useThemeStore((s) => s.preference);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
 
@@ -26,7 +26,7 @@ export const ThemeToggle = () => {
     >
       <button
         type="button"
-        onClick={() => withViewTransition(() => toggleTheme())}
+        onClick={toggleTheme}
         aria-label={tooltip}
         className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
       >

@@ -78,9 +78,6 @@ vi.mock('../../../features/settings/components/SettingsStudio', () => ({
 vi.mock('../../../features/settings/components/GuideStudio', () => ({
   GuideStudio: () => <div data-testid="studio" data-kind="guide" />,
 }));
-vi.mock('../../../features/settings/components/ReportIssueStudio', () => ({
-  ReportIssueStudio: () => <div data-testid="studio" data-kind="report" />,
-}));
 vi.mock('../../../features/workspace/components/WorkspaceLinkStudio', () => ({
   WorkspaceLinkStudio: () => <div data-testid="studio" data-kind="addWorkspace" />,
 }));
@@ -297,7 +294,6 @@ describe('app overlay hook', () => {
     ['goodboy:open-notifications-studio', 'notifications'],
     ['goodboy:add-workspace', 'addWorkspace'],
     ['goodboy:open-guide', 'guide'],
-    ['goodboy:open-report-issue', 'report'],
   ])('mounts the studio that %s names', async (name, kind) => {
     renderHarness();
 
@@ -418,16 +414,16 @@ describe('app overlay hook, workspace launcher', () => {
     expect(await openStudios()).toEqual(['palette']);
   });
 
-  it.each([
-    ['goodboy:open-guide', 'guide'],
-    ['goodboy:open-report-issue', 'report'],
-  ])('mounts the app studio that %s names over the launcher', async (name, kind) => {
-    renderLauncher();
+  it.each([['goodboy:open-guide', 'guide']])(
+    'mounts the app studio that %s names over the launcher',
+    async (name, kind) => {
+      renderLauncher();
 
-    fire({ name });
+      fire({ name });
 
-    expect(await openStudios()).toEqual([kind]);
-  });
+      expect(await openStudios()).toEqual([kind]);
+    },
+  );
 
   it('keeps workspace studios closed while no workspace is open', async () => {
     renderLauncher();

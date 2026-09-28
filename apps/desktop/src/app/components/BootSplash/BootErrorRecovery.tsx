@@ -1,10 +1,7 @@
 import { Button, cn, tintClasses } from '@goodboy/ui';
-import { useCallback } from 'react';
-import { openUrl } from '../../../shared/lib/editor';
-import { redactHomePath } from './redactHomePath';
-
-const GITHUB_NEW_ISSUE_URL =
-  'https://github.com/akhayam99/goodboy/issues/new?template=bug_report.md&labels=bug%2Cboot&title=Boot+failure';
+import { useMemo, useState } from 'react';
+import { CrashReport } from '../../../features/bug-report/components/CrashReport';
+import { crashPart } from '../../../features/bug-report/crashReport';
 
 type Props = {
   readonly error: string;
@@ -16,33 +13,47 @@ const sentenceCase = ({ text }: { readonly text: string }): string =>
   `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
 
 export const BootErrorRecovery = ({ error, category, onRetry }: Props) => {
-  const openIssue = useCallback(() => {
-    const body = `**category:** ${category}\n\n**error:**\n\`\`\`\n${redactHomePath({ text: error })}\n\`\`\`\n\nBoot timings for this launch are in \`~/.goodboy/boot-breadcrumbs.log\` (phase and timing only, no paths or credentials). Paste the last few lines if you can.`;
-    void openUrl(`${GITHUB_NEW_ISSUE_URL}&body=${encodeURIComponent(body)}`);
-  }, [error, category]);
+  const [isReporting, setIsReporting] = useState(false);
+  const errorPart = useMemo(
+    () => crashPart({ message: `${category} failed: ${error}`, stack: null, componentStack: null }),
+    [category, error],
+  );
 
   return (
-    <div
-      role="alert"
-      className={cn(
-        'flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label',
-        tintClasses('danger').border,
-      )}
-    >
-      <div className="flex flex-col gap-1">
-        <span className="font-medium text-danger">{`${sentenceCase({ text: category })} failed`}</span>
-        <p className="leading-relaxed text-muted-foreground">{error}</p>
+    <div className="flex flex-col items-center gap-3">
+      <div
+        role="alert"
+        className={cn(
+          'flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label',
+          tintClasses('danger').border,
+        )}
+      >
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-danger">{`${sentenceCase({ text: category })} failed`}</span>
+          <p className="leading-relaxed text-muted-foreground">{error}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {onRetry !== undefined ? (
+            <Button variant="danger" size="sm" onClick={onRetry}>
+              Retry
+            </Button>
+          ) : null}
+          {isReporting ? null : (
+            <Button variant="ghost" size="sm" onClick={() => setIsReporting(true)}>
+              Report this
+            </Button>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        {onRetry !== undefined ? (
-          <Button variant="danger" size="sm" onClick={onRetry}>
-            Retry
-          </Button>
-        ) : null}
-        <Button variant="ghost" size="sm" onClick={openIssue}>
-          Report on GitHub
-        </Button>
-      </div>
+      {isReporting ? (
+        <div className="w-full max-w-140">
+          <CrashReport
+            heading="Report this startup error"
+            initialLine={`Startup failed: ${category}`}
+            errorPart={errorPart}
+          />
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -104,7 +104,7 @@ export const FirstSessionStep = ({
     <div className="flex flex-col gap-5">
       <StepHeading
         title="Give your first agent something to do"
-        line="The same three ways you'll start every session."
+        line="Three ways to put Goodboy to work."
       />
       <div
         role="tablist"
@@ -199,7 +199,8 @@ export const FirstSessionStep = ({
         {choice === 'task' &&
           (hasIssueSource ? (
             <HandOff
-              line="Your issues open in a new session. Pick one there and choose how to work on it."
+              line="Your issues open in the Inbox. Pick one there and start a session from it."
+              label="Open the Inbox"
               busy={busy}
               onOpen={() => onHandOff('task')}
             />
@@ -211,7 +212,8 @@ export const FirstSessionStep = ({
           ))}
         {choice === 'workflow' && (
           <HandOff
-            line="Describe the goal in a new session, then pick a preset or let Goodboy orchestrate."
+            line="A new session opens on its overview. Pick a preset, build your own, or let Goodboy orchestrate."
+            label="Open a new session"
             busy={busy}
             onOpen={() => onHandOff('workflow')}
           />

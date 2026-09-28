@@ -6,7 +6,9 @@ import type {
   WireframeArtifactMetadata,
 } from '@goodboy/types';
 import { readClusterChecks } from '../context/clusterChecks';
-import { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION, extractArtifactBlocks } from './grammar';
+import { readEnvelopeBody } from './envelopeBody';
+import { ARTIFACT_MAX_BYTES, ARTIFACT_SCHEMA_VERSION } from './grammar';
+import { locateArtifactBlocks } from './locateArtifactBlocks';
 import type { ArtifactCaptureError, ArtifactCaptureResult, ParsedArtifact } from './types';
 import { parseWireframeSource, type WireframeIssue } from './wireframe';
 
@@ -120,7 +122,7 @@ const jsonContent = (value: unknown): string | null => {
 };
 
 export const parseArtifactEnvelope = (assistantText: string): ArtifactCaptureResult => {
-  const blocks = extractArtifactBlocks(assistantText);
+  const blocks = locateArtifactBlocks(assistantText);
   if (blocks.length === 0) {
     return { status: 'none' };
   }
@@ -150,15 +152,15 @@ export const parseArtifactEnvelope = (assistantText: string): ArtifactCaptureRes
   }
   const kind = kindRaw as ArtifactKind;
 
-  let payload: unknown;
-  try {
-    payload = JSON.parse(block.body);
-  } catch {
-    return fail('invalid_json', 'the artifact body is not valid JSON');
+  const body = readEnvelopeBody(block.body);
+  if (body === null) {
+    return fail(
+      'invalid_json',
+      'the artifact header is not valid JSON: put one JSON object with title, format and metadata on the line after the opening marker, then the content',
+    );
   }
-  if (!isRecord(payload)) {
-    return fail('invalid_json', 'the artifact body must be a JSON object');
-  }
+  const payload =
+    body.rawContent === null ? body.fields : { ...body.fields, content: body.rawContent };
 
   const titleRaw = payload['title'];
   const title = typeof titleRaw === 'string' ? titleRaw.trim().slice(0, MAX_TITLE_LENGTH) : '';

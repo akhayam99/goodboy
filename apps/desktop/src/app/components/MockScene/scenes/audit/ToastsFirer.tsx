@@ -38,7 +38,7 @@ export const ToastsFirer = ({ variant }: Props) => {
         severity: 'error',
         title: "Couldn't remove the worktree for ledger-core",
         message:
-          "Git refused: '/mock/harborline/sessions/ledger-core-refund-retry' contains modified or untracked files, use --force to delete it",
+          "Git refused: '~/code/harborline/sessions/ledger-core-refund-retry' contains modified or untracked files, use --force to delete it",
         context: CONTEXT,
         persist: true,
       });

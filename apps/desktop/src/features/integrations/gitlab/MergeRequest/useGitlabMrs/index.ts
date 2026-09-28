@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
+import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { gitlabFetchAssignedMrs, type GitlabMergeRequest } from '../../client';
 
@@ -85,7 +86,7 @@ export const useGitlabMrs = ({ workspaceId, isEnabled = true }: HookParams): Res
     try {
       setMrs(await gitlabFetchAssignedMrs(workspaceId, host));
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : String(fetchError));
+      setError(formatError(fetchError));
     } finally {
       setLoading(false);
     }

@@ -4,8 +4,7 @@ import { SITE } from '../site';
 export const Footer = () => (
   <footer id="footer" aria-label="Footer">
     <div className="wrap">
-      <Logo size={22} />
-      <span style={{ fontSize: 13, color: 'var(--gray6)' }}>FSL-1.1-MIT © Amin Khayam</span>
+      <Logo />
       <span className="right">
         <a href={SITE.repo}>GitHub</a>
         <a href={SITE.concepts}>Concepts</a>

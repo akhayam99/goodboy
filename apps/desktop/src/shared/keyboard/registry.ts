@@ -26,6 +26,13 @@ export const SHORTCUTS = {
     group: 'general',
   },
   'session.new': { combo: 'cmd+KeyN', label: 'New session', plane: 'app', group: 'general' },
+  'report.open': {
+    combo: 'cmd+KeyI',
+    offMacCombo: 'ctrl+shift+KeyI',
+    label: 'Report a bug',
+    plane: 'app',
+    group: 'general',
+  },
   'app.reload': { combo: 'cmd+KeyR', label: 'Reload', plane: 'app', group: 'general' },
 
   'workspace.switcher': {

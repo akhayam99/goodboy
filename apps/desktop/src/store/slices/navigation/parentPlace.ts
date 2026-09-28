@@ -9,7 +9,7 @@ type Params = {
 };
 
 export const parentPlace = ({ state, place }: Params): Place | null => {
-  if (place.at === 'board' || place.at === 'session-draft') {
+  if (place.at === 'board') {
     return null;
   }
   const { sessionId, view } = place;

@@ -58,8 +58,8 @@ const renderColumn = (
       sessions={sessions}
       nav={nav}
       selection={selection}
-      onArchive={noop}
-      onDelete={noop}
+      selectedIds={[]}
+      onClearSelection={noop}
       onRestore={noop}
       collapse={collapse}
     />,
@@ -126,6 +126,21 @@ describe('StageColumn', () => {
     expect(column?.className).toContain('w-72');
     expect(column?.className).toContain('motion-safe:starting:w-11');
     expect(screen.getByText('Nothing archived')).toBeDefined();
+  });
+
+  it('gives every empty column the same min-height, whatever its copy length', () => {
+    const { container: shortOne } = renderColumn([], makeSelection(), {
+      kind: 'stage',
+      stage: 'done',
+    });
+    const { container: longOne } = renderColumn([], makeSelection(), {
+      kind: 'stage',
+      stage: 'attention',
+    });
+    const shortEmpty = shortOne.querySelector('[class*="min-h-28"]');
+    const longEmpty = longOne.querySelector('[class*="min-h-28"]');
+    expect(shortEmpty).not.toBeNull();
+    expect(longEmpty).not.toBeNull();
   });
 
   it('marks the cards the board selection owns', () => {

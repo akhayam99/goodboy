@@ -21,8 +21,8 @@ const sibling = (id: string, goal: string, hoursAgo: number): Session => ({
 });
 
 const SIBLINGS: ReadonlyArray<Session> = [
-  sibling('mock-run-sibling-refunds', 'Refund every charge on split payments', 1),
-  sibling('mock-run-sibling-rate-limit', 'Add per-tenant rate limiting to the public API', 3),
+  sibling('mock-run-sibling-refunds', 'Draft the payout delay notice for the help center', 1),
+  sibling('mock-run-sibling-rate-limit', 'Per-tenant limits on the public API', 3),
   sibling('mock-run-sibling-export', 'Fix the rounding drift in the settlement export', 6),
 ];
 
@@ -39,9 +39,9 @@ export const ActivityRunScene = ({ contextTab }: Props) => {
       session: SESSION,
       siblings: SIBLINGS,
       branches: {
-        'mock-run-sibling-refunds': 'nw/fix-split-refunds',
-        'mock-run-sibling-rate-limit': 'nw/feat-tenant-rate-limit',
-        'mock-run-sibling-export': 'nw/fix-export-rounding',
+        'mock-run-sibling-refunds': 'hl/payout-delay-notice',
+        'mock-run-sibling-rate-limit': 'hl/per-tenant-limits',
+        'mock-run-sibling-export': 'hl/fix-export-rounding',
       },
       telemetryAt: isoAgo(HOUR),
       lens: null,

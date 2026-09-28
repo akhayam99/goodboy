@@ -17,8 +17,8 @@ import { StudioFrame } from './StudioFrame';
 import { mockWorkspace, seedStudioChrome } from './shellChrome';
 import { useAppStore, type ProviderSpendEntry } from '../../../../store';
 
-const WORKSPACE_ID = 'mock-impact-workspace-northwind' as WorkspaceId;
-const WORKSPACE_NAME = 'Northwind';
+const WORKSPACE_ID = 'mock-impact-workspace-harborline' as WorkspaceId;
+const WORKSPACE_NAME = 'Harborline';
 
 const NOW = Date.now();
 
@@ -49,19 +49,11 @@ const buildSession = (id: SessionId, goal: string, defaultProvider: ProviderId):
 });
 
 const SESSIONS: ReadonlyArray<Session> = [
-  buildSession(
-    PAYMENTS_ID,
-    'Fix the half-cent rounding drift in payments-api invoice totals',
-    'anthropic',
-  ),
-  buildSession(
-    NOTIFY_ID,
-    'Add exponential backoff to notify-relay after 429s from the webhook consumer',
-    'anthropic',
-  ),
-  buildSession(BILLING_ID, 'Wire billing-api monthly invoice export to CSV', 'codex'),
-  buildSession(STOREFRONT_ID, 'Refactor storefront-web checkout flow state machine', 'anthropic'),
-  buildSession(WEBCONSOLE_ID, 'Add an audit log to web-console admin actions', 'anthropic'),
+  buildSession(PAYMENTS_ID, 'Stop retried webhooks posting a second credit', 'anthropic'),
+  buildSession(NOTIFY_ID, 'Warn merchants before a payout hold', 'anthropic'),
+  buildSession(BILLING_ID, 'Reconcile the settlement export against the ledger snapshot', 'codex'),
+  buildSession(STOREFRONT_ID, 'Per-tenant limits on the public API', 'anthropic'),
+  buildSession(WEBCONSOLE_ID, 'Retire the legacy export cron job', 'anthropic'),
 ];
 
 type TurnSpec = {

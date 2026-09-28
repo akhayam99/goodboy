@@ -52,8 +52,8 @@ const POSTINGS_BRANCH = 'fix/ledger-reconciliation-idempotent-postings';
 const BACKFILL_BRANCH = 'fix/ledger-reconciliation-statement-backfill';
 const RELAY_BRANCH = 'fix/notify-relay-webhook-rate-limit-backoff';
 
-const LEDGER_ROOT = '/mock/harborline/ledger-core';
-const RELAY_ROOT = '/mock/harborline/notify-relay';
+const LEDGER_ROOT = '~/code/harborline/ledger-core';
+const RELAY_ROOT = '~/code/harborline/notify-relay';
 
 const OVERRIDES = {
   defaultProviderId: null,
@@ -469,8 +469,8 @@ const SERIES: PrSeriesView = {
   sessionId: SESSION_ID,
   projectId: LEDGER_ID,
   name: 'Ledger reconciliation rewrite',
-  workItemIdentifier: 'HRB-2481',
-  workItemUrl: 'https://example.invalid/harborline/issues/2481',
+  workItemIdentifier: 'HBL-391',
+  workItemUrl: 'https://example.invalid/linear/HBL-391',
   plannedCount: 6,
   parentRequest: null,
   createdAt: NOW,
@@ -633,8 +633,8 @@ export const MountsScene = () => {
             sessionId: SESSION_ID,
             provider: 'linear',
             externalId: 'mock-mounts-hrb-2481',
-            identifier: 'HRB-2481',
-            url: 'https://example.invalid/linear/HRB-2481',
+            identifier: 'HBL-391',
+            url: 'https://example.invalid/linear/HBL-391',
             title: 'Ledger reconciliation rewrite',
             createdAt: NOW,
           },
@@ -642,8 +642,8 @@ export const MountsScene = () => {
             sessionId: SESSION_ID,
             provider: 'jira',
             externalId: 'mock-mounts-ops-77',
-            identifier: 'OPS-77',
-            url: 'https://example.invalid/jira/OPS-77',
+            identifier: 'LEDG-77',
+            url: 'https://example.invalid/jira/LEDG-77',
             title: 'Notify relay floods the webhook provider',
             createdAt: NOW,
           },

@@ -3,7 +3,10 @@ import type { InboxRecord } from './types';
 
 type Params = { readonly record: InboxRecord };
 
-export const recordSessionId = ({ record }: Params): SessionId | null => {
+export const recordSessionId = ({ record }: Params): SessionId | null =>
+  record.linkedSessionId ?? payloadSessionId({ record });
+
+const payloadSessionId = ({ record }: Params): SessionId | null => {
   const payload = record.payload;
   switch (payload.provider) {
     case 'github':

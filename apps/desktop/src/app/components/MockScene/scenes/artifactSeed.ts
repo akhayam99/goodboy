@@ -44,7 +44,7 @@ const REPORT_AGENT_ID = 'mock-artifact-agent-report' as AgentId;
 const CHANGE_REPORT_AGENT_ID = 'mock-artifact-agent-change-report' as AgentId;
 const WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe' as AgentId;
 export const SCOUTING_WIREFRAME_AGENT_ID = 'mock-artifact-agent-wireframe-scouting' as AgentId;
-export const SCOUTING_WIREFRAME_RUN_TITLE = 'High fidelity';
+export const SCOUTING_WIREFRAME_RUN_TITLE = 'Deliveries screen, high fidelity';
 const SCREENS_SCOUT_AGENT_ID = 'mock-artifact-agent-scout-screens' as AgentId;
 const DATA_SCOUT_AGENT_ID = 'mock-artifact-agent-scout-data' as AgentId;
 
@@ -93,8 +93,8 @@ const PROJECTS: ReadonlyArray<Project> = [
   {
     id: LEDGER_ID,
     workspaceId: WORKSPACE_ID,
-    name: 'ledger-core',
-    rootPath: '/mock/harborline/ledger-core',
+    name: 'payments-api',
+    rootPath: '~/code/harborline/payments-api',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: EARLIER,
@@ -104,7 +104,7 @@ const PROJECTS: ReadonlyArray<Project> = [
     id: RELAY_ID,
     workspaceId: WORKSPACE_ID,
     name: 'notify-relay',
-    rootPath: '/mock/harborline/notify-relay',
+    rootPath: '~/code/harborline/notify-relay',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: EARLIER,
@@ -114,10 +114,10 @@ const PROJECTS: ReadonlyArray<Project> = [
 
 const LEDGER_MOUNT: SessionProjectMount = {
   projectId: LEDGER_ID,
-  mountName: 'ledger-core',
-  worktreePath: '/mock/harborline/ledger-core-rounding',
-  repoRoot: '/mock/harborline/ledger-core',
-  branch: 'nw/fix-posting-rounding',
+  mountName: 'payments-api',
+  worktreePath: '~/code/harborline/payments-api-duplicate-credit',
+  repoRoot: '~/code/harborline/payments-api',
+  branch: 'hl/fix-duplicate-credit',
   mountId: 'mock-artifact-mount-ledger' as MountId,
   sessionId: SESSION_ID,
   lastWorktreePath: null,
@@ -131,9 +131,9 @@ const LEDGER_MOUNT: SessionProjectMount = {
 const RELAY_MOUNT: SessionProjectMount = {
   projectId: RELAY_ID,
   mountName: 'notify-relay',
-  worktreePath: '/mock/harborline/notify-relay-backoff',
-  repoRoot: '/mock/harborline/notify-relay',
-  branch: 'nw/fix-retry-backoff',
+  worktreePath: '~/code/harborline/notify-relay-retry-state',
+  repoRoot: '~/code/harborline/notify-relay',
+  branch: 'hl/surface-retry-state',
   mountId: 'mock-artifact-mount-relay' as MountId,
   sessionId: SESSION_ID,
   lastWorktreePath: null,
@@ -149,7 +149,7 @@ const MOUNTS = [LEDGER_MOUNT, RELAY_MOUNT];
 export const SESSION: Session = {
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
-  goal: 'Fix the half-cent rounding drift in ledger-core postings and stop notify-relay from retrying settled batches',
+  goal: 'Stop retried webhooks posting a second credit',
   state: { kind: 'idle', lastActivityAt: NOW },
   contextSlots: [],
   providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -167,10 +167,11 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: SCOUT_AGENT_ID,
     sessionId: SESSION_ID,
     ordinal: 0,
-    name: 'Trace the rounding drift',
+    name: 'Trace where a retried webhook posts',
     kind: 'scout',
     status: 'completed',
-    outputSummary: 'Found the drift in the per-posting rounding of split allocations.',
+    outputSummary:
+      'Found the second credit: the handler checks the event id before the transaction opens.',
     startedAt: clock.iso({ at: '2026-09-14T15:04:00.000Z' }),
     completedAt: clock.iso({ at: '2026-09-14T15:19:00.000Z' }),
     lastFinishedAt: clock.iso({ at: '2026-09-14T15:19:00.000Z' }),
@@ -181,10 +182,10 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: PLANNER_AGENT_ID,
     sessionId: SESSION_ID,
     ordinal: 1,
-    name: 'Plan the rounding fix',
+    name: 'Plan the event id dedupe',
     kind: 'planner',
     status: 'completed',
-    outputSummary: 'Drafted a banker rounding plan with a backfill for settled batches.',
+    outputSummary: 'Planned the dedupe inside the transaction and the retry count in notify-relay.',
     startedAt: clock.iso({ at: '2026-09-14T15:20:00.000Z' }),
     completedAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
     lastFinishedAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
@@ -195,10 +196,10 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: IMPLEMENTER_AGENT_ID,
     sessionId: SESSION_ID,
     ordinal: 2,
-    name: 'Apply the rounding fix in ledger-core',
+    name: 'Dedupe on the event id in payments-api',
     kind: 'implementer',
     status: 'completed',
-    outputSummary: 'Moved allocation rounding to the batch total and kept postings balanced.',
+    outputSummary: 'Moved the event id check into the credit transaction.',
     startedAt: clock.iso({ at: '2026-09-14T15:32:00.000Z' }),
     completedAt: clock.iso({ at: '2026-09-14T16:04:00.000Z' }),
     lastFinishedAt: clock.iso({ at: '2026-09-14T16:04:00.000Z' }),
@@ -209,10 +210,10 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: TESTER_AGENT_ID,
     sessionId: SESSION_ID,
     ordinal: 3,
-    name: 'Cover the split allocation cases',
+    name: 'Replay one event three times',
     kind: 'tester',
     status: 'completed',
-    outputSummary: 'Added 14 allocation cases, including the three cent split that drifted.',
+    outputSummary: 'Added 8 redelivery cases, including the triple delivery from the Sentry trace.',
     startedAt: clock.iso({ at: '2026-09-14T16:05:00.000Z' }),
     completedAt: clock.iso({ at: '2026-09-14T16:18:00.000Z' }),
     lastFinishedAt: clock.iso({ at: '2026-09-14T16:18:00.000Z' }),
@@ -251,10 +252,10 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: WIREFRAME_AGENT_ID,
     sessionId: SESSION_ID,
     ordinal: 6,
-    name: 'Sketch the settlement review flow',
+    name: 'Sketch the deliveries screen',
     kind: 'wireframe',
     status: 'completed',
-    outputSummary: 'Drew four screens for reviewing and releasing a settlement batch.',
+    outputSummary: 'Drew four screens for the delivery console, with attempts and a stuck flag.',
     startedAt: clock.iso({ at: '2026-09-14T16:28:00.000Z' }),
     completedAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
     lastFinishedAt: clock.iso({ at: '2026-09-14T16:38:00.000Z' }),
@@ -280,7 +281,8 @@ const AGENTS: ReadonlyArray<Agent> = [
     name: 'screens and routes',
     kind: 'scout',
     status: 'completed',
-    outputSummary: 'the batch list already renders the totals apps/web/src/Batches.tsx',
+    outputSummary:
+      'the delivery list already renders the status in notify-relay/console/Deliveries.tsx',
     startedAt: clock.iso({ at: '2026-09-14T16:39:00.000Z' }),
     completedAt: clock.iso({ at: '2026-09-14T16:39:14.000Z' }),
     lastFinishedAt: clock.iso({ at: '2026-09-14T16:39:14.000Z' }),
@@ -299,127 +301,123 @@ const AGENTS: ReadonlyArray<Agent> = [
 
 const PLAN_BODY = `## Approach
 
-Round once per batch instead of once per posting, then reconcile the remainder
-against the largest allocation so the batch total still balances.
+Check the processor event id inside the credit transaction instead of in the
+handler, so a redelivery that lands mid-write cannot post a second credit.
 
 ## Steps
 
-1. Move \`roundAllocation\` out of the per posting loop in \`postings/allocate.ts\`.
-2. Reconcile the residual cents against the largest allocation.
-3. Backfill the settled batches from the last quarter behind a dry run flag.
+1. Keep the processor event id on every credit row in \`credits/schema.ts\`.
+2. Move the duplicate check from \`webhooks/applyWebhook.ts\` into \`credits/applyCredit.ts\`, inside the transaction.
+3. Record the attempts on each delivery in \`notify-relay\`.
 
 ## Risks
 
-- The backfill touches settled rows, so it runs read only until the totals match.`;
+- A unique index on a busy table, so it is added concurrently.`;
 
-const REPORT_BODY = `# Rounding drift in ledger-core postings
+const REPORT_BODY = `# Retried webhooks no longer double credit
 
-Settlement batches in \`ledger-core\` landed one or two cents away from the
-invoice total. This session traced the drift, fixed the allocation path, covered
-it with tests, and left the backfill behind a flag.
+When the processor redelivered a webhook, \`payments-api\` could credit the same
+account twice. This session found where the second credit was written, moved the
+check inside the transaction, and let support see each retry in \`notify-relay\`.
 
 ## What was wrong
 
-Each posting rounded its own share of the batch. With three or more
-allocations the rounded shares no longer summed to the batch total, and the
-difference was silently absorbed by the last posting written.
+The handler looked for the event id before the credit transaction opened. A
+redelivery that landed while the first delivery was still writing passed that
+check, and both deliveries posted a credit.
 
 ### Where it came from
 
-The per posting rounding predates split allocations. It was correct while a
-batch carried a single posting, and nothing failed loudly when that stopped
-being true.
+The check predates the processor's retry policy. It held while each event
+arrived once, and nothing failed loudly when retries started.
 
 ## What changed
 
 | Area | Before | After | Notes |
 | --- | --- | --- | --- |
-| allocation rounding | per posting | per batch | residual goes to the largest share |
-| settled batches | drift kept | backfilled | dry run until totals match |
-| notify-relay retries | retried settled batches | skips settled | keyed on batch state |
-| test coverage | 6 cases | 20 cases | split allocations included |
+| event id check | in the handler | in the transaction | unique on the processor event id |
+| credit rows | no event id | event id on every row | older rows left as they are |
+| retry visibility | hidden | attempts per delivery | shown in the console |
+| test coverage | 11 cases | 19 cases | one event delivered three times |
 
-The allocation path now rounds once and reconciles the remainder:
+The credit writer now dedupes inside the transaction:
 
 \`\`\`ts
-const allocate = ({ total, weights }: AllocateArgs): ReadonlyArray<Cents> => {
-  const raw = weights.map((weight) => (total * weight) / sum(weights));
-  const rounded = raw.map((value) => Math.round(value));
-  const residual = total - sum(rounded);
-  return applyResidual({ rounded, residual, index: largestIndex(raw) });
+const applyCredit = async ({ tx, event }: ApplyCreditArgs): Promise<CreditResult> => {
+  const seen = await tx.credits.findByEventId(event.id);
+  if (seen !== null) {
+    return { kind: 'duplicate', creditId: seen.id };
+  }
+  const credit = await tx.credits.insert({ ...creditOf(event), eventId: event.id });
+  return { kind: 'credited', creditId: credit.id };
 };
 \`\`\`
 
 ## Evidence
 
-- \`ledger-core\` at \`a41f9c2\`: 9 files changed, 312 additions, 148 deletions.
-- \`notify-relay\` at \`7b30e15\`: 4 files changed, 74 additions, 31 deletions.
-- 20 allocation cases pass, including the three cent split that drifted.
+- \`payments-api\` at \`e83d1a0\`: 3 files changed, 47 additions, 12 deletions.
+- \`notify-relay\` at \`c52b7e9\`: 3 files changed, 41 additions, 6 deletions.
+- The redelivery test sends \`evt_7Qm2\` three times and gets one credit.
 
-> The backfill was not run against settled data. It stays in dry run until an
-> operator compares the reported totals.
+> \`ledger-core\` was read, not changed. It already rejects a second posting for
+> the same event id.
 
 ## Sources
 
-- Apply the rounding fix in ledger-core (Implementer)
-- Cover the split allocation cases (Tester)
-- Round once per batch (Plan)
+- Dedupe on the event id in payments-api (Implementer)
+- Replay one event three times (Tester)
+- Dedupe on the event id (Plan)
 
 ## Open questions
 
-1. Should the residual go to the largest allocation or the first one? The
-   invoice convention this session worked from was never confirmed.
-2. Does \`notify-relay\` need to replay the notifications it suppressed while it
-   was retrying settled batches?
+1. How many failed retries should raise the stuck-delivery banner?
+2. Do older credit rows without an event id need a cleanup?
 
 ## Next steps
 
-- Confirm the residual convention before the backfill runs for real.
-- Run the backfill in dry run against a copy of last quarter.
-- Delete the legacy \`roundAllocation\` helper once no caller remains.`;
+- Answer the banner question before #57 merges.
+- Watch Sentry for \`DuplicateCreditError\` for a week after the deploy.
+- Remove the handler check once no caller relies on it.`;
 
 const CHANGE_REPORT_BODY = `# Local change report
 
 Two mounts carry local work for this session. Everything below was read from the
 worktrees on disk: nothing has been pushed and nothing has been reviewed.
 
-## ledger-core
+## payments-api
 
-Branch \`nw/fix-posting-rounding\` off \`main\`, 3 commits ahead, head \`a41f9c2\`.
+Branch \`hl/fix-duplicate-credit\` off \`main\`, 3 commits ahead, head \`e83d1a0\`.
 
 | Commit | Subject |
 | --- | --- |
-| \`a41f9c2\` | fix(postings): round once per batch |
-| \`5c0e7b1\` | test(postings): cover split allocations |
-| \`9d42af8\` | chore(postings): gate the backfill behind a dry run flag |
+| \`e83d1a0\` | fix(webhooks): dedupe on the event id inside the transaction |
+| \`7a19c40\` | feat(credits): keep the processor event id on every row |
+| \`2d5f8be\` | test(webhooks): replay one event three times |
 
-9 files changed, 312 additions, 148 deletions. The allocation path rounds once
-per batch. The backfill script is committed but no scheduler calls it.
+3 files changed, 47 additions, 12 deletions. The credit writer checks the event
+id inside the transaction.
 
 ## notify-relay
 
-Branch \`nw/fix-retry-backoff\` off \`main\`, 1 commit ahead, head \`7b30e15\`.
+Branch \`hl/surface-retry-state\` off \`main\`, 1 commit ahead, head \`c52b7e9\`.
 
-4 files changed, 74 additions, 31 deletions. Retries now read batch state before
-scheduling the next attempt.
+3 files changed, 41 additions, 6 deletions. Every delivery now records how many
+attempts it took.
 
 ## Checks that ran
 
-- Unit tests in \`ledger-core\`: 20 allocation cases, all green.
+- Unit tests in \`payments-api\`: 19 webhook cases, all green.
 - Typecheck in both worktrees: green.
-- The backfill was never run against settled data.
 
 ## Risk a reviewer should read first
 
-The residual now lands on the largest allocation. That choice is visible in
-every settled batch the backfill touches, and no test pins the convention
-itself, so \`applyResidual\` is the first thing to read before the backfill
-leaves dry run.
+The unique index on the event id turns a late retry into a constraint error
+before the handler sees it, so \`applyCredit\` is the first thing to read.
 
 ## Sources
 
-- Apply the rounding fix in ledger-core (Implementer)
-- Cover the split allocation cases (Tester)`;
+- Dedupe on the event id in payments-api (Implementer)
+- Replay one event three times (Tester)`;
 
 const REPORT_KICKOFF = `# evidence pack: Session summary
 
@@ -431,18 +429,18 @@ this pack is the only evidence you have. it carries final agent messages, not to
 
 ## agents
 
-- ${SCOUT_AGENT_ID} scout "Trace the rounding drift": the drift is in the per posting rounding of split allocations.
-- ${PLANNER_AGENT_ID} planner "Plan the rounding fix": round once per batch, reconcile the residual against the largest allocation.
-- ${IMPLEMENTER_AGENT_ID} implementer "Apply the rounding fix in ledger-core": rounding moved to the batch total, postings stay balanced.
-- ${TESTER_AGENT_ID} tester "Cover the split allocation cases": 14 new allocation cases, including the three cent split.
+- ${SCOUT_AGENT_ID} scout "Trace where a retried webhook posts": the handler checks the event id before the transaction opens.
+- ${PLANNER_AGENT_ID} planner "Plan the event id dedupe": check the event id inside the transaction, record attempts in notify-relay.
+- ${IMPLEMENTER_AGENT_ID} implementer "Dedupe on the event id in payments-api": the event id check moved into the credit transaction.
+- ${TESTER_AGENT_ID} tester "Replay one event three times": 8 new redelivery cases, including the triple delivery from the Sentry trace.
 
 ## artifacts
 
-- ${PLAN_ARTIFACT_ID} plan "Round once per batch" (consumed).
+- ${PLAN_ARTIFACT_ID} plan "Dedupe on the event id" (consumed).
 
 ## diff
 
-ledger-core off main, head a41f9c2, 9 files changed, 312 additions, 148 deletions.
+payments-api off main, head e83d1a0, 3 files changed, 47 additions, 12 deletions.
 
 ## truncation
 
@@ -458,8 +456,8 @@ this pack is the only evidence you have. it carries final agent messages, not to
 
 ## diff
 
-ledger-core off main, head a41f9c2, 9 files changed, 312 additions, 148 deletions.
-notify-relay off main, head 7b30e15, 4 files changed, 74 additions, 31 deletions.
+payments-api off main, head e83d1a0, 3 files changed, 47 additions, 12 deletions.
+notify-relay off main, head c52b7e9, 3 files changed, 41 additions, 6 deletions.
 
 ## truncation
 
@@ -475,13 +473,13 @@ this pack is the only evidence you have. it carries final agent messages, not to
 
 ## agents
 
-- ${SCOUT_AGENT_ID} scout "Trace the rounding drift": the drift is in the per posting rounding of split allocations.
-- ${IMPLEMENTER_AGENT_ID} implementer "Apply the rounding fix in ledger-core": rounding moved to the batch total, postings stay balanced.
+- ${SCOUT_AGENT_ID} scout "Trace where a retried webhook posts": the handler checks the event id before the transaction opens.
+- ${IMPLEMENTER_AGENT_ID} implementer "Dedupe on the event id in payments-api": the event id check moved into the credit transaction.
 
 ## artifacts
 
-- ${PLAN_ARTIFACT_ID} plan "Round once per batch" (consumed).
-- ${REPORT_ARTIFACT_ID} report "Rounding drift in ledger-core postings" (active).
+- ${PLAN_ARTIFACT_ID} plan "Dedupe on the event id" (consumed).
+- ${REPORT_ARTIFACT_ID} report "Retried webhooks no longer double credit" (active).
 
 ## design profile
 
@@ -515,7 +513,7 @@ const REPORT_ARTIFACT: ReportArtifact = {
   workflowRunId: null,
   kind: 'report',
   schemaVersion: 1,
-  title: 'Rounding drift in ledger-core postings',
+  title: 'Retried webhooks no longer double credit',
   sourceFormat: 'markdown',
   sourceText: REPORT_BODY,
   metadata: { reportType: 'session-summary' },
@@ -551,7 +549,7 @@ const PLAN_ARTIFACT: SessionArtifact = {
   workflowRunId: null,
   kind: 'plan',
   schemaVersion: 1,
-  title: 'Round once per batch',
+  title: 'Dedupe on the event id',
   sourceFormat: 'markdown',
   sourceText: PLAN_BODY,
   metadata: {},
@@ -869,7 +867,7 @@ const HIGH_THEME: WireframeTheme = {
     accentForeground: '#ffffff',
     danger: '#f85149',
   },
-  sources: ['ledger-core/app/styles/tokens.css', 'ledger-core/app/components/Button.tsx'],
+  sources: ['notify-relay/console/styles/tokens.css', 'notify-relay/console/components/Button.tsx'],
 };
 
 const WIREFRAME_LOW_DOCUMENT: WireframeDocument = {
@@ -905,7 +903,7 @@ const WIREFRAME_LOW_ARTIFACT: WireframeArtifact = {
   workflowRunId: null,
   kind: 'wireframe',
   schemaVersion: 1,
-  title: 'Settlement review flow',
+  title: 'Deliveries screen',
   sourceFormat: 'json',
   sourceText: JSON.stringify(WIREFRAME_LOW_DOCUMENT, null, 2),
   metadata: { fidelity: 'low', designProfile: {} },
@@ -923,18 +921,18 @@ const WIREFRAME_HIGH_ARTIFACT: WireframeArtifact = {
   workflowRunId: null,
   kind: 'wireframe',
   schemaVersion: 1,
-  title: 'Settlement review flow, themed',
+  title: 'Deliveries screen, themed',
   sourceFormat: 'json',
   sourceText: JSON.stringify(WIREFRAME_HIGH_DOCUMENT, null, 2),
   metadata: {
     fidelity: 'high',
     designProfile: {
       themeName: 'harborline-console',
-      commitSha: 'a41f9c2',
+      commitSha: 'c52b7e9',
       sources: [
-        'ledger-core/app/styles/tokens.css',
-        'ledger-core/app/components/Button.tsx',
-        'ledger-core/tailwind.config.ts',
+        'notify-relay/console/styles/tokens.css',
+        'notify-relay/console/components/Button.tsx',
+        'notify-relay/console/tailwind.config.ts',
       ],
     },
   },
@@ -957,7 +955,11 @@ const SESSION_EVENTS = [
     id: 'mock-artifact-event-pr',
     sessionId: SESSION_ID,
     kind: 'pr_created',
-    payload: { number: 412, title: 'Round once per batch', url: 'https://example.invalid/pr/412' },
+    payload: {
+      number: 318,
+      title: 'Stop retried webhooks posting a second credit',
+      url: 'https://example.invalid/pr/318',
+    },
     createdAt: clock.iso({ at: '2026-09-14T16:12:00.000Z' }),
   },
 ] as unknown as ReadonlyArray<SessionEvent>;
@@ -972,20 +974,20 @@ const ARTIFACTS: ReadonlyArray<SessionArtifact> = [
 
 const ACTIVE_PLAN_BODY = `## Approach
 
-Replay every batch settled in the last quarter through the new allocation path,
-behind a dry run flag, and compare each payout with the one already sent.
+Show the attempts on each delivery in the \`notify-relay\` console, with a stuck
+flag once a delivery keeps failing.
 
 ## Steps
 
-1. Add a \`--dry-run\` flag to the backfill job in \`ledger-core\`.
-2. Replay the settled batches in weekly chunks, oldest first.
-3. Write every payout that moves by a cent or more to a review table.
-4. Post the totals to the finance channel before anything is written back.
+1. Read the attempts from the typed delivery endpoint.
+2. Add an attempts column to the deliveries table.
+3. Flag a delivery as stuck after the third failed retry.
+4. Name the stuck event in a banner above the filters.
 
 ## Done when
 
-- Two nightly runs match the ledger snapshot
-- Finance has signed off on the review table
+- The console shows attempts for every delivery
+- A stuck delivery shows in the banner within a minute
 `;
 
 const PLANS: ReadonlyArray<PlanWithCount> = [
@@ -993,7 +995,7 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     id: PLAN_ID,
     sessionId: SESSION_ID,
     agentId: PLANNER_AGENT_ID,
-    title: 'Round once per batch',
+    title: 'Dedupe on the event id',
     bodyMd: PLAN_BODY,
     status: 'consumed',
     createdAt: clock.iso({ at: '2026-09-14T15:31:00.000Z' }),
@@ -1004,8 +1006,8 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     id: 'mock-artifact-plan-half-cent' as PlanId,
     sessionId: SESSION_ID,
     agentId: PLANNER_AGENT_ID,
-    title: 'Cover the half cent cases',
-    bodyMd: 'Add a test for every split where the residual lands on a half cent.',
+    title: 'Replay one event three times',
+    bodyMd: 'Deliver evt_7Qm2 three times and expect one credit and three 200 responses.',
     status: 'consumed',
     createdAt: clock.iso({ at: '2026-09-14T15:40:00.000Z' }),
     updatedAt: clock.iso({ at: '2026-09-14T15:40:00.000Z' }),
@@ -1015,7 +1017,7 @@ const PLANS: ReadonlyArray<PlanWithCount> = [
     id: OLD_PLAN_ID,
     sessionId: SESSION_ID,
     agentId: PLANNER_AGENT_ID,
-    title: 'Backfill the settled batches',
+    title: 'Show the attempts on each delivery',
     bodyMd: ACTIVE_PLAN_BODY,
     status: 'active',
     createdAt: clock.iso({ at: '2026-09-14T16:34:00.000Z' }),

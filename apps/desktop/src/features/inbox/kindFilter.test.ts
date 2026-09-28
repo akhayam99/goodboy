@@ -159,7 +159,7 @@ describe('inboxFacetCounts', () => {
 
 describe('visibleTypeFacets', () => {
   it('shows only the types a connected tool can produce', () => {
-    expect(visibleTypeFacets({ connected: ['github'] })).toEqual(['issue']);
+    expect(visibleTypeFacets({ connected: ['github'] })).toEqual(['issue', 'pr-mr']);
     expect(visibleTypeFacets({ connected: ['gitlab', 'sentry'] })).toEqual([
       'issue',
       'pr-mr',

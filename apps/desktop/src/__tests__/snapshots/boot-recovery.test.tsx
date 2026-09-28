@@ -36,7 +36,7 @@ describe('BootSplash error recovery', () => {
 
   it('renders the report issue button', () => {
     render(<BootSplash phase="error" error="oops" />);
-    expect(screen.getByRole('button', { name: /report on github/i })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Report this' })).toBeDefined();
   });
 
   it('error container has role=alert', () => {

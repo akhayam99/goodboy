@@ -10,11 +10,11 @@ import { useAppOverlays } from './app/hooks/useAppOverlays';
 import { NoWorkspaceScreen } from './app/components/AppEmptyState';
 import { StageBoard } from './features/workspace/components/StageBoard';
 import { ToastProvider } from './app/components/Toast';
+import { ObjectMenuProvider } from './features/actions/components/ObjectMenuProvider';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
 import { SessionNavSidebar } from './features/session/components/SessionNavSidebar';
 import { NewSessionBridge } from './features/session/components/NewSessionBridge';
-import { SessionDraftPane } from './features/session/components/SessionDraftPane';
 import { SessionArchiveBridge } from './features/session/components/SessionArchiveBridge';
 import { CollapsedRail } from './features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { SidebarPeekOverlay } from './features/workspace/components/SidebarPeekOverlay';
@@ -50,7 +50,8 @@ import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessi
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
 import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
-import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
+import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
+import { LastCrashBridge } from './features/bug-report/components/LastCrashBridge';
 
 const KEEP_ALIVE_CAP = 5;
 
@@ -82,8 +83,7 @@ export const App = () => {
   );
   const currentSession = useCurrentSession();
   const currentWorkspaceSessions = useSessions();
-  const isDraftShown = useAppStore((s) => selectIsSessionDraftShown({ state: s }));
-  const hasActiveSession = currentSession != null || isDraftShown;
+  const hasActiveSession = currentSession != null;
   const sessionSidebar = useSessionSidebarVisibility({ hasActiveSession });
   const connected = useConnectedIntegrations({ workspaceId: currentWorkspaceId });
   const [keepAliveIds, setKeepAliveIds] = useState<ReadonlyArray<SessionId>>([]);
@@ -202,103 +202,109 @@ export const App = () => {
   if (isWorkspaceLauncherBranch) {
     return (
       <ToastProvider>
-        <NotificationToastBridge />
-        {layers}
+        <ObjectMenuProvider>
+          <NotificationToastBridge />
+          <ReportSheetHost />
+          <LastCrashBridge />
+          {layers}
+        </ObjectMenuProvider>
       </ToastProvider>
     );
   }
 
   return (
     <ToastProvider>
-      <NotificationToastBridge />
-      <WorkflowFollowToastBridge />
-      <NewSessionBridge />
-      <SessionArchiveBridge />
-      <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
-      <AppShell
-        topBar={
-          <AppTopBar
-            onOpenSpend={openSpend}
-            onOpenScript={openScript}
-            openProviderId={settingsProviderId}
-          />
-        }
-        footer={
-          <AppFooter
-            scope={arrangement.footer}
-            target={footer}
-            connected={connected}
-            onOpenIntegration={openIntegration}
-            onOpenInbox={openInbox}
-            onOpenWorkflows={openWorkflows}
-            onOpenImpact={openImpact}
-            onOpenSettings={openSettings}
-            onOpenChangelog={openChangelog}
-            onOpenShortcuts={openShortcutHelp}
-          />
-        }
-        leftHidden={arrangement.leftHidden}
-        leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
-        leftSidebar={
-          hasActiveSession && arrangement.leftSlot !== 'none' ? (
-            arrangement.leftSlot === 'rail' ? (
-              <CollapsedRail onToggleSidebar={sessionSidebar.toggle} isDraftShown={isDraftShown} />
-            ) : (
-              <SessionNavSidebar
-                currentSessionId={currentSession?.id ?? null}
-                onToggleSidebar={sessionSidebar.toggle}
-              />
-            )
-          ) : undefined
-        }
-        leftOverlay={
-          hasActiveSession && arrangement.leftOverlaySlot === 'peek' ? (
-            <SidebarPeekOverlay
-              isPeeking={sessionSidebar.isPeeking}
-              onEdgeEnter={sessionSidebar.requestPeek}
-              onEdgeLeave={() => {
-                sessionSidebar.cancelPeek();
-                sessionSidebar.scheduleClose();
-              }}
-              onPanelEnter={sessionSidebar.cancelClose}
-              onPanelLeave={sessionSidebar.scheduleClose}
-              onHold={sessionSidebar.holdPeek}
-              onRelease={sessionSidebar.releasePeek}
-            >
-              <SessionNavSidebar
-                currentSessionId={currentSession?.id ?? null}
-                onNavigate={sessionSidebar.closePeek}
-                isCollapsed={sessionSidebar.isCollapsed}
-                onToggleSidebar={sessionSidebar.toggle}
-              />
-            </SidebarPeekOverlay>
-          ) : undefined
-        }
-        drawer={isDrawerOpen ? <DrawerHost /> : null}
-        main={
-          <div className="relative h-full w-full">
-            {currentSession ? (
-              <div className="relative h-full w-full">
-                {deferredRenderedIds.map((id) => (
-                  <KeepAliveWorkSurface
-                    key={id}
-                    sessionId={id}
-                    isActive={id === deferredActiveId}
-                  />
-                ))}
-              </div>
-            ) : currentWorkspace && isDraftShown ? (
-              <SessionDraftPane workspaceId={currentWorkspace.id} />
-            ) : currentWorkspace ? (
-              <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
-            ) : (
-              <NoWorkspaceScreen onAddWorkspace={openAddWorkspace} />
-            )}
-          </div>
-        }
-        studio={studio}
-      />
-      {layers}
+      <ObjectMenuProvider>
+        <NotificationToastBridge />
+        <ReportSheetHost />
+        <LastCrashBridge />
+        <WorkflowFollowToastBridge />
+        <NewSessionBridge />
+        <SessionArchiveBridge />
+        <ReleaseNoticeBridge onOpenChangelog={openChangelog} />
+        <AppShell
+          topBar={
+            <AppTopBar
+              onOpenSpend={openSpend}
+              onOpenScript={openScript}
+              openProviderId={settingsProviderId}
+            />
+          }
+          footer={
+            <AppFooter
+              scope={arrangement.footer}
+              target={footer}
+              connected={connected}
+              onOpenIntegration={openIntegration}
+              onOpenInbox={openInbox}
+              onOpenWorkflows={openWorkflows}
+              onOpenImpact={openImpact}
+              onOpenSettings={openSettings}
+              onOpenChangelog={openChangelog}
+              onOpenShortcuts={openShortcutHelp}
+            />
+          }
+          leftHidden={arrangement.leftHidden}
+          leftSidebarCollapsed={arrangement.leftSidebarCollapsed}
+          leftSidebar={
+            hasActiveSession && arrangement.leftSlot !== 'none' ? (
+              arrangement.leftSlot === 'rail' ? (
+                <CollapsedRail onToggleSidebar={sessionSidebar.toggle} />
+              ) : (
+                <SessionNavSidebar
+                  currentSessionId={currentSession?.id ?? null}
+                  onToggleSidebar={sessionSidebar.toggle}
+                />
+              )
+            ) : undefined
+          }
+          leftOverlay={
+            hasActiveSession && arrangement.leftOverlaySlot === 'peek' ? (
+              <SidebarPeekOverlay
+                isPeeking={sessionSidebar.isPeeking}
+                onEdgeEnter={sessionSidebar.requestPeek}
+                onEdgeLeave={() => {
+                  sessionSidebar.cancelPeek();
+                  sessionSidebar.scheduleClose();
+                }}
+                onPanelEnter={sessionSidebar.cancelClose}
+                onPanelLeave={sessionSidebar.scheduleClose}
+                onHold={sessionSidebar.holdPeek}
+                onRelease={sessionSidebar.releasePeek}
+              >
+                <SessionNavSidebar
+                  currentSessionId={currentSession?.id ?? null}
+                  onNavigate={sessionSidebar.closePeek}
+                  isCollapsed={sessionSidebar.isCollapsed}
+                  onToggleSidebar={sessionSidebar.toggle}
+                />
+              </SidebarPeekOverlay>
+            ) : undefined
+          }
+          drawer={isDrawerOpen ? <DrawerHost /> : null}
+          main={
+            <div className="relative h-full w-full">
+              {currentSession ? (
+                <div className="relative h-full w-full">
+                  {deferredRenderedIds.map((id) => (
+                    <KeepAliveWorkSurface
+                      key={id}
+                      sessionId={id}
+                      isActive={id === deferredActiveId}
+                    />
+                  ))}
+                </div>
+              ) : currentWorkspace ? (
+                <StageBoard workspaceId={currentWorkspace.id} sessions={currentWorkspaceSessions} />
+              ) : (
+                <NoWorkspaceScreen onAddWorkspace={openAddWorkspace} />
+              )}
+            </div>
+          }
+          studio={studio}
+        />
+        {layers}
+      </ObjectMenuProvider>
     </ToastProvider>
   );
 };

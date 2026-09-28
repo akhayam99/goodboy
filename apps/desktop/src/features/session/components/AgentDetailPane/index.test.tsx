@@ -120,6 +120,28 @@ describe('AgentDetailPane', () => {
     expect(title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it('puts the role chip on the title line and the routing detail on its own line below', () => {
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => undefined}
+      />,
+    );
+
+    const role = screen.getByText('Implementer');
+    const status = screen.getByText('Running');
+    const header = screen.getByText('Model not chosen yet').closest('[data-slot="pane-header"]');
+
+    expect(role.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      status.compareDocumentPosition(screen.getByText('Model not chosen yet')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(header).not.toBeNull();
+  });
+
   it('opens on the transcript while the agent is running', () => {
     render(
       <AgentDetailPane

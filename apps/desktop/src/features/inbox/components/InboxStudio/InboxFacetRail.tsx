@@ -33,6 +33,7 @@ import {
   type InboxView,
 } from '../../kindFilter';
 import { INBOX_PROVIDERS, type InboxProvider } from '../../types';
+import { InboxProjectFacets } from './InboxProjectFacets';
 
 type Props = {
   readonly filters: InboxFilters;
@@ -167,25 +168,12 @@ export const InboxFacetRail = ({
         </FacetSection>
       ) : null}
       {projects.length > 1 ? (
-        <FacetSection label="Project">
-          {projects.map((project) => (
-            <FacetRow
-              key={project.id}
-              icon={
-                project.kind === 'repo' ? CONCEPT_ICONS.projectRepo : CONCEPT_ICONS.projectFolder
-              }
-              label={project.name}
-              count={counts.project(project.id)}
-              isSelected={filters.project === project.id}
-              onClick={() =>
-                onFiltersChange({
-                  ...filters,
-                  project: filters.project === project.id ? null : project.id,
-                })
-              }
-            />
-          ))}
-        </FacetSection>
+        <InboxProjectFacets
+          projects={projects}
+          filters={filters}
+          counts={counts}
+          onFiltersChange={onFiltersChange}
+        />
       ) : null}
       <FacetKeyHints hints={INBOX_KEY_HINTS} />
       {hasActiveFilter ? (

@@ -17,8 +17,6 @@ type AgentPlaceParams = {
 
 export const BOARD_PLACE: Place = { at: 'board' };
 
-export const SESSION_DRAFT_PLACE: Place = { at: 'session-draft' };
-
 export const sessionPlace = ({
   sessionId,
   lens = null,

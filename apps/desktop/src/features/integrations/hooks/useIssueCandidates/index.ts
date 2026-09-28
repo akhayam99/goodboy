@@ -25,6 +25,22 @@ type Result = {
 
 const EMPTY_ROWS: ReadonlyArray<IssueCandidate> = [];
 
+const linkedSentryProjects = async ({
+  provider,
+  workspaceId,
+}: Params): Promise<ReadonlyArray<string>> => {
+  if (provider !== 'sentry') {
+    return [];
+  }
+  const { projectSentryLinks, loadProjectSentryLinks } = useAppStore.getState();
+  if (projectSentryLinks[workspaceId] == null) {
+    await loadProjectSentryLinks({ workspaceId }).catch(() => undefined);
+  }
+  return (useAppStore.getState().projectSentryLinks[workspaceId] ?? []).map(
+    (link) => link.sentryProject,
+  );
+};
+
 export const useIssueCandidates = ({ workspaceId, provider }: Params): Result => {
   const rootPath = useAppStore((state) =>
     primaryProjectRoot({ projects: state.projects, workspaceId }),
@@ -52,7 +68,17 @@ export const useIssueCandidates = ({ workspaceId, provider }: Params): Result =>
       delete next[provider];
       return next;
     });
-    void fetchIssueCandidates({ provider, workspaceId, rootPath, gitlabHost, jiraConfig })
+    void linkedSentryProjects({ provider, workspaceId })
+      .then((sentryProjects) =>
+        fetchIssueCandidates({
+          provider,
+          workspaceId,
+          rootPath,
+          gitlabHost,
+          jiraConfig,
+          sentryProjects,
+        }),
+      )
       .then((rows) => {
         setByProvider((current) => ({ ...current, [provider]: rows }));
       })

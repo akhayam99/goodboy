@@ -13,16 +13,24 @@ import { AttentionChips } from './AttentionChips';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
 import { ArchivedRestore } from './ArchivedRestore';
+import { useRenameRequest } from '../../../actions/useRenameRequest';
+import { SESSION_HEADER_ANCHOR, sessionObjectKey } from '../../../actions/kinds/session';
 
 type Props = {
   readonly session: Session;
+  readonly isSettingUp?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-export const HeaderBand = ({ session, onSelectLens }: Props) => {
+export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props) => {
   const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
+  useRenameRequest({
+    objectKey: sessionObjectKey({ sessionId }),
+    anchorKeys: [null, SESSION_HEADER_ANCHOR],
+    onRename: rename.start,
+  });
   const hasLinkedWork = useAppStore((s) => {
     const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
     const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
@@ -80,7 +88,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
             <SessionDestructiveActions session={session} />
           </div>
         </div>
-        <GoalTeaser session={session} />
+        {isSettingUp ? null : <GoalTeaser session={session} />}
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
             {isArchived ? <ArchivedRestore session={session} /> : null}
@@ -94,7 +102,11 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
           </div>
         </div>
       </div>
-      <ProjectMountRows session={session} onSelectLens={onSelectLens} />
+      <ProjectMountRows
+        session={session}
+        isHiddenWhenEmpty={isSettingUp}
+        onSelectLens={onSelectLens}
+      />
     </div>
   );
 };

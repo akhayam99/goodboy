@@ -43,7 +43,9 @@ Below is the full index. Other docs and agents use it to find their way.
 ## Root hubs
 
 - [README.md](../README.md): when you are new here, human or agent, and
-  want the pitch, the install steps and the feature tour.
+  want the short recap and the install steps.
+- [FEATURES.md](../FEATURES.md): when you want every feature, in the order a
+  task lives, with a screenshot where one helps.
 - [concepts.md](./concepts.md): when you need to know what something in the
   app is, or how far an integration goes.
 - [DESIGN.md](../DESIGN.md): when you are judging whether a screen or flow
@@ -191,6 +193,7 @@ that matches its task. Whoever starts the agent points it here.
 - Every doc opens with a `Read this when` header, with two exceptions. The
   release flow writes `CHANGELOG.md`, and agents read it through
   [release-command.md](release-command.md), the doc that owns it. The root
-  `README.md` is the public landing page GitHub shows first, and its entry
-  in this map is its header. `.github/pull_request_template.md` is a form
+  `README.md` is the public landing page GitHub shows first, and
+  `FEATURES.md` is the public feature guide it links to; their entries in
+  this map are their headers. `.github/pull_request_template.md` is a form
   pasted into every PR body, not a doc.

@@ -133,7 +133,7 @@ export const SessionActivityBar = ({
   return (
     <div className="flex h-full min-h-0 w-full shrink-0 flex-col gap-2">
       <div className="flex shrink-0 items-center justify-end gap-1 px-2 py-2">
-        {!isArchivedView ? <NewSessionButton workspaceId={workspaceId} /> : null}
+        {!isArchivedView ? <NewSessionButton /> : null}
 
         <div className="flex shrink-0 items-center gap-0.5">
           <ProjectFilter workspaceId={workspaceId} sessions={filterSessions} />
@@ -210,6 +210,8 @@ export const SessionActivityBar = ({
                         isActive={session.id === currentSessionId}
                         isDimmed={isArchivedView}
                         isSelected={isSelected(session.id as SessionId)}
+                        selectedIds={selection.selected}
+                        onClearSelection={clearSelection}
                         onModifierClick={selection.handleItemClick}
                         onClick={() => onSelectSession(session.id as SessionId)}
                       />

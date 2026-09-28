@@ -31,9 +31,9 @@ import { sceneClock } from '../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 
-export const WORKSPACE_ID = 'mock-resolve-workspace-cascadia' as WorkspaceId;
+export const WORKSPACE_ID = 'mock-resolve-workspace-harborline' as WorkspaceId;
 export const SESSION_ID = 'mock-resolve-session-webhook-retry' as SessionId;
-const PROJECT_ID = 'mock-resolve-project-billing-api' as ProjectId;
+const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
 
 const NOW_ISO = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const NOW_MS = Date.parse(NOW_ISO);
@@ -64,22 +64,22 @@ const OVERRIDES = {
 
 const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
-  name: 'Cascadia',
-  slug: 'cascadia',
+  name: 'Harborline',
+  slug: 'harborline',
   overrides: OVERRIDES,
   createdAt: NOW_ISO,
   updatedAt: NOW_ISO,
 };
 
 const PR: PullRequestState = {
-  number: 528,
-  title: 'Retry failed webhook deliveries with backoff',
-  url: 'https://example.invalid/cascadia/billing-api/pull/528',
+  number: 318,
+  title: 'Stop retried webhooks posting a second credit',
+  url: 'https://example.invalid/harborline/payments-api/pull/318',
   state: 'open',
   mergeable: true,
   checks: 'pending',
   baseBranch: 'main',
-  headBranch: 'fix/webhook-retry-backoff',
+  headBranch: 'hl/fix-duplicate-credit',
   isDraft: false,
   reviewDecision: 'review_required',
   body: '',
@@ -412,7 +412,7 @@ const buildNote = (seed: NoteSeed): PrComment => ({
 const COMMENTS: ReadonlyArray<PrComment> = [
   buildNote({
     threadId: T1,
-    author: 'a-delgado',
+    author: 'kenji-w',
     path: 'src/webhooks/retryPolicy.ts',
     line: 42,
     createdMinutesAgo: 95,
@@ -420,7 +420,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
   buildNote({
     threadId: T2,
-    author: 'a-delgado',
+    author: 'kenji-w',
     path: 'src/webhooks/metrics.ts',
     line: 18,
     createdMinutesAgo: 93,
@@ -428,7 +428,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
   buildNote({
     threadId: T3,
-    author: 'kwatanabe',
+    author: 'omar-t',
     path: 'src/webhooks/errorShape.ts',
     line: 9,
     createdMinutesAgo: 40,
@@ -436,7 +436,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
   buildNote({
     threadId: T4,
-    author: 'kwatanabe',
+    author: 'omar-t',
     path: 'src/webhooks/idempotency.ts',
     line: 55,
     createdMinutesAgo: 20,
@@ -444,7 +444,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
   buildNote({
     threadId: T5,
-    author: 'a-delgado',
+    author: 'kenji-w',
     path: 'src/webhooks/logging.ts',
     line: 12,
     createdMinutesAgo: 150,
@@ -452,7 +452,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
   buildNote({
     threadId: T6,
-    author: 'kwatanabe',
+    author: 'omar-t',
     path: 'src/webhooks/timeoutConfig.ts',
     line: 6,
     createdMinutesAgo: 210,
@@ -460,7 +460,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
   buildNote({
     threadId: T8,
-    author: 'a-delgado',
+    author: 'kenji-w',
     path: 'src/webhooks/config.ts',
     line: 3,
     createdMinutesAgo: 500,
@@ -469,9 +469,9 @@ const COMMENTS: ReadonlyArray<PrComment> = [
 ];
 
 const MOUNT_TARGET: MountTargetSnapshot = {
-  mountId: 'mock-resolve-mount-billing-api' as MountId,
+  mountId: 'mock-resolve-mount-payments-api' as MountId,
   mountRevision: 3,
-  worktreePath: '/mock/cascadia/billing-api-webhook-retry',
+  worktreePath: '~/code/harborline/payments-api-webhook-retry',
 };
 
 const ATTEMPT_RETRY: ResolveAttempt = {
@@ -481,7 +481,7 @@ const ATTEMPT_RETRY: ResolveAttempt = {
   prNumber: PR.number,
   threadIds: [T1, T2],
   provider: 'anthropic',
-  model: 'claude-sonnet-4-5',
+  model: 'claude-sonnet-5',
   effort: null,
   instructions: null,
   phase: 'finished',
@@ -570,7 +570,7 @@ const CHECK_RUNS: ReadonlyArray<ResolveCheckRun> = [
 const PUBLICATION: ResolvePublication = {
   id: PUBLICATION_ID,
   sessionId: SESSION_ID,
-  repo: 'cascadia/billing-api',
+  repo: 'harborline/payments-api',
   prNumber: PR.number,
   branch: PR.headBranch,
   targetRef: `refs/heads/${PR.headBranch}`,

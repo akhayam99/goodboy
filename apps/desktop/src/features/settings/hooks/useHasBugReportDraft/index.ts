@@ -6,6 +6,5 @@ export const useHasBugReportDraft = (): boolean =>
     (s) =>
       s.bugReportDraft.title !== '' ||
       s.bugReportDraft.description !== '' ||
-      s.bugReportDraft.issueType !== emptyBugReportDraft.issueType ||
-      s.bugReportDraft.images.length > 0,
+      s.bugReportDraft.issueType !== emptyBugReportDraft.issueType,
   );

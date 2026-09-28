@@ -54,7 +54,14 @@ export { CommandPreview } from './components/CommandPreview';
 export { DiffLayoutToggle } from './components/DiffLayoutToggle';
 export type { DiffLayoutMode } from './components/DiffLayoutToggle';
 export { ErrorBoundary } from './components/ErrorBoundary';
-export type { ErrorReportOutcome, ErrorReportRequest } from './components/ErrorBoundary';
+export type { ErrorReportRequest } from './components/ErrorBoundary';
+export { ReportSheet } from './components/ReportSheet';
+export type {
+  ReportSheetAttachment,
+  ReportSheetDuplicate,
+  ReportSheetProps,
+  ReportSheetVariant,
+} from './components/ReportSheet';
 export { ErrorStrip } from './components/ErrorStrip';
 export { GhostActionButton } from './components/GhostActionButton';
 export { HeaderBand } from './components/HeaderBand';
@@ -63,6 +70,15 @@ export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
 export { MenuItems } from './components/MenuItems';
+export { ContextMenu } from './components/ContextMenu/ContextMenu';
+export { MenuList } from './components/ContextMenu/MenuList';
+export type {
+  MenuChoice,
+  MenuConfirm,
+  MenuEntry,
+  MenuItemEntry,
+  MenuPoint,
+} from './components/ContextMenu/menuTypes';
 export type { OverflowMenuItem } from './components/MenuItems';
 export { SplitButton } from './components/SplitButton';
 export type { SplitButtonPrimaryParams } from './components/SplitButton';

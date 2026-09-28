@@ -22,11 +22,6 @@ const GuideStudio = lazy(() =>
     default: module.GuideStudio,
   })),
 );
-const ReportIssueStudio = lazy(() =>
-  import('../../../features/settings/components/ReportIssueStudio').then((module) => ({
-    default: module.ReportIssueStudio,
-  })),
-);
 const WorkspaceLinkStudio = lazy(() =>
   import('../../../features/workspace/components/WorkspaceLinkStudio').then((module) => ({
     default: module.WorkspaceLinkStudio,
@@ -118,8 +113,6 @@ const renderStudio = ({
       );
     case 'guide':
       return <GuideStudio onClose={close} />;
-    case 'report':
-      return <ReportIssueStudio onClose={close} />;
     case 'companion':
       return <CompanionStudio onClose={close} />;
     case 'addWorkspace':

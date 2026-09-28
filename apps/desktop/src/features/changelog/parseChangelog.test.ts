@@ -9,7 +9,7 @@ describe('parseChangelog', () => {
   it('parses the real CHANGELOG.md without throwing', () => {
     const content = readFileSync(CHANGELOG_PATH, 'utf8');
     const releases = parseChangelog({ text: content });
-    expect(releases.length).toBe(94);
+    expect(releases.length).toBe(97);
   });
 
   it('parses v0.7.0 into the v2 shape with New, Improved and Fixed', () => {

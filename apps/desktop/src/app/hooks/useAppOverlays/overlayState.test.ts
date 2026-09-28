@@ -42,7 +42,6 @@ const CASES: ReadonlyArray<readonly [string, StudioPlace | null, FooterTarget]> 
   ['impact', { kind: 'impact', scope: null }, 'impact'],
   ['changelog', { kind: 'changelog' }, 'changelog'],
   ['guide', { kind: 'guide' }, null],
-  ['report', { kind: 'report' }, null],
   ['companion', { kind: 'companion' }, null],
   ['add workspace', { kind: 'addWorkspace' }, null],
   ['notifications', { kind: 'notifications' }, null],

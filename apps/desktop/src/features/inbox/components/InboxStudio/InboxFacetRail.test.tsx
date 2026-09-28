@@ -1,4 +1,4 @@
-import type { Project } from '@goodboy/types';
+import type { Project, ProjectId } from '@goodboy/types';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NO_INBOX_FILTERS, type InboxFacetCounts, type InboxFilters } from '../../kindFilter';
@@ -86,7 +86,7 @@ describe('InboxFacetRail', () => {
     expect(within(type).getByRole('button', { name: /Issues/ })).toBeDefined();
     expect(within(type).getByRole('button', { name: /Errors/ })).toBeDefined();
     expect(within(type).queryByRole('button', { name: /Threads/ })).toBeNull();
-    expect(within(type).queryByRole('button', { name: /Pull requests/ })).toBeNull();
+    expect(within(type).getByRole('button', { name: /Pull requests/ })).toBeDefined();
   });
 
   it('picks one source at a time and clears it on a second click', () => {
@@ -155,6 +155,61 @@ describe('InboxFacetRail', () => {
     fireEvent.click(within(section('Project')).getByRole('button', { name: /ledger-core/ }));
 
     expect(onFiltersChange).toHaveBeenCalledWith({ ...NO_INBOX_FILTERS, project: 'ledger' });
+  });
+
+  it('hides empty projects behind a quiet toggle and keeps the selected one', () => {
+    const projects = [
+      { id: 'ledger', name: 'ledger-core', kind: 'repo' },
+      { id: 'relay', name: 'notify-relay', kind: 'repo' },
+      { id: 'pay', name: 'payments-api', kind: 'repo' },
+      { id: 'store', name: 'storefront-web', kind: 'folder' },
+    ] as unknown as ReadonlyArray<Project>;
+    render(
+      <InboxFacetRail
+        filters={{ ...NO_INBOX_FILTERS, project: 'pay' as ProjectId }}
+        counts={{ ...COUNTS, project: (id) => (id === 'ledger' ? 3 : 0) }}
+        connected={['github', 'sentry']}
+        loading={NOT_LOADING}
+        errors={NO_ERRORS}
+        projects={projects}
+        onFiltersChange={vi.fn()}
+        onClearFilters={vi.fn()}
+      />,
+    );
+
+    const project = section('Project');
+    expect(within(project).getByRole('button', { name: /ledger-core/ })).toBeDefined();
+    expect(within(project).getByRole('button', { name: /payments-api/ })).toBeDefined();
+    expect(within(project).queryByRole('button', { name: /notify-relay/ })).toBeNull();
+    expect(within(project).queryByRole('button', { name: /storefront-web/ })).toBeNull();
+
+    fireEvent.click(within(project).getByRole('button', { name: 'Show 2 empty' }));
+    expect(within(project).getByRole('button', { name: /notify-relay/ })).toBeDefined();
+    expect(within(project).getByRole('button', { name: /storefront-web/ })).toBeDefined();
+
+    fireEvent.click(within(project).getByRole('button', { name: 'Hide empty' }));
+    expect(within(project).queryByRole('button', { name: /notify-relay/ })).toBeNull();
+  });
+
+  it('shows no toggle when every project has items', () => {
+    const projects = [
+      { id: 'ledger', name: 'ledger-core', kind: 'repo' },
+      { id: 'relay', name: 'notify-relay', kind: 'repo' },
+    ] as unknown as ReadonlyArray<Project>;
+    render(
+      <InboxFacetRail
+        filters={NO_INBOX_FILTERS}
+        counts={{ ...COUNTS, project: () => 2 }}
+        connected={['github', 'sentry']}
+        loading={NOT_LOADING}
+        errors={NO_ERRORS}
+        projects={projects}
+        onFiltersChange={vi.fn()}
+        onClearFilters={vi.fn()}
+      />,
+    );
+
+    expect(within(section('Project')).queryByRole('button', { name: /empty/ })).toBeNull();
   });
 
   it('leaves the project section out with a single project', () => {

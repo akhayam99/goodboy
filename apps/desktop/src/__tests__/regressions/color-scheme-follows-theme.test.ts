@@ -10,4 +10,10 @@ describe('color scheme', () => {
       /html\[data-theme='light'\] body,\s*html\[data-theme='light'\] #root \{\s*color-scheme: light;/,
     );
   });
+
+  it('turns element transitions off for the frame a theme switch swaps the palette', () => {
+    expect(STYLES).toMatch(
+      /html\[data-theme-switching\] \*,\s*html\[data-theme-switching\] \*::before,\s*html\[data-theme-switching\] \*::after \{\s*transition: none !important;/,
+    );
+  });
 });

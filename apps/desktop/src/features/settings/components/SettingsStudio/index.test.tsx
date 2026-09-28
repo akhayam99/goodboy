@@ -135,7 +135,7 @@ vi.mock('../../../onboarding/onboarding-store', () => ({
 import { SettingsStudio } from './index';
 import { APP_SECTIONS } from './appSections';
 import type { SettingsScopeChange } from './types';
-import { REPORT_ISSUE_STUDIO_EVENT } from '../../reportIssueStudioEvent';
+import { OPEN_REPORT_SHEET_EVENT } from '../../../bug-report/openReportSheet';
 import { shortcutGlyphs, shortcutRangeGlyphs } from '../../../../shared/keyboard/registry';
 import { SHORTCUT_ROW_COUNT } from './shortcutRows';
 
@@ -413,15 +413,15 @@ describe('SettingsStudio', () => {
     expect(screen.getByRole('button', { name: 'Wipe' })).toBeDefined();
   });
 
-  it('opens the report issue studio through the shared studio event', () => {
+  it('opens the report sheet from Help', () => {
     const listener = vi.fn();
-    window.addEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
+    window.addEventListener(OPEN_REPORT_SHEET_EVENT, listener);
     renderApp({ section: 'help' });
 
-    fireEvent.click(screen.getByRole('button', { name: /report an issue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /report a bug/i }));
 
     expect(listener).toHaveBeenCalledOnce();
-    window.removeEventListener(REPORT_ISSUE_STUDIO_EVENT, listener);
+    window.removeEventListener(OPEN_REPORT_SHEET_EVENT, listener);
   });
 
   it('offers export and import under Backup', () => {

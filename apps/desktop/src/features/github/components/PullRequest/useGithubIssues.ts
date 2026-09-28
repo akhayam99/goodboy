@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { detectRepoSlug } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type {
   GithubIssue,
   SessionExternalTaskProvider,
@@ -97,7 +98,7 @@ export const useGithubIssues = ({
       }
       setIssues(await ghAssignedIssues(slug, { cwd: rootPath, workspaceId }));
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : String(fetchError));
+      setError(formatError(fetchError));
     } finally {
       setLoading(false);
     }
