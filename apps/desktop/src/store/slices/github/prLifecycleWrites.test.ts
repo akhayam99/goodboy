@@ -11,8 +11,20 @@ const h = vi.hoisted(() => ({
 
 vi.mock('../../../features/github/github', () => ({ tauriGhRunner: { run: h.run } }));
 
+import { closePr } from './closePr';
+import { convertPrToDraft } from './convertPrToDraft';
+import { editPr } from './editPr';
 import { markPrReady } from './markPrReady';
 import { mergePr } from './mergePr';
+import {
+  PR_WRITE_NO_PULL_REQUEST,
+  PR_WRITE_NO_REPO,
+  PR_WRITE_NO_SESSION,
+  PR_WRITE_NO_WORKSPACE,
+} from './prWriteContext';
+import { reopenPr } from './reopenPr';
+import { requestReview } from './requestReview';
+import { isReportedError } from '../notifications/reportedError';
 
 const SESSION_ID = 'session-1' as SessionId;
 const LEDGER_ID = 'project-ledger' as ProjectId;
@@ -93,6 +105,8 @@ const makeState = (): State => ({
   claimPrWrite: vi.fn(() => ({ ok: true, token: 'token-1' })),
   releasePrWrite: vi.fn(),
   emitNotification: vi.fn(async () => undefined),
+  reportError: vi.fn(async () => undefined),
+  refreshSessionPrDetail: vi.fn(async () => undefined),
   refreshSessionPr: vi.fn(async () => undefined),
   recordSessionEventOnce: vi.fn(async () => undefined),
 });
@@ -160,5 +174,132 @@ describe('pull request writes with two mounts', () => {
       projectId: LEDGER_ID,
     });
     expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, { force: true });
+  });
+});
+
+type Verb = (params: { readonly state: State; readonly prNumber?: number }) => Promise<void>;
+
+const asGet = (state: State) => (() => state) as never;
+
+const VERBS: ReadonlyArray<{
+  readonly name: string;
+  readonly title: string;
+  readonly hasOptionalNumber: boolean;
+  readonly call: Verb;
+}> = [
+  {
+    name: 'markPrReady',
+    title: "Couldn't mark #12 ready",
+    hasOptionalNumber: true,
+    call: ({ state, prNumber }) => markPrReady(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+  },
+  {
+    name: 'convertPrToDraft',
+    title: "Couldn't convert #12 to a draft",
+    hasOptionalNumber: true,
+    call: ({ state, prNumber }) => convertPrToDraft(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+  },
+  {
+    name: 'mergePr',
+    title: "Couldn't merge #12",
+    hasOptionalNumber: true,
+    call: ({ state, prNumber }) => mergePr(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+  },
+  {
+    name: 'closePr',
+    title: "Couldn't close #12",
+    hasOptionalNumber: true,
+    call: ({ state, prNumber }) => closePr(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+  },
+  {
+    name: 'reopenPr',
+    title: "Couldn't reopen #12",
+    hasOptionalNumber: true,
+    call: ({ state, prNumber }) => reopenPr(vi.fn(), asGet(state))(SESSION_ID, prNumber),
+  },
+  {
+    name: 'editPr',
+    title: "Couldn't edit the pull request",
+    hasOptionalNumber: false,
+    call: ({ state, prNumber }) =>
+      editPr(vi.fn(), asGet(state))(SESSION_ID, prNumber ?? 12, { title: 'Ledger change' }),
+  },
+  {
+    name: 'requestReview',
+    title: "Couldn't request a review",
+    hasOptionalNumber: false,
+    call: ({ state, prNumber }) =>
+      requestReview(vi.fn(), asGet(state))(SESSION_ID, prNumber ?? 12, ['octo-reviewer']),
+  },
+];
+
+const expectLoudFailure = async ({
+  run,
+  state,
+  title,
+  message,
+}: {
+  readonly run: Promise<void>;
+  readonly state: State;
+  readonly title: string;
+  readonly message: string;
+}) => {
+  const error = await run.then(
+    () => null,
+    (caught: unknown) => caught,
+  );
+  expect(error).toBeInstanceOf(Error);
+  expect(isReportedError(error)).toBe(true);
+  expect((error as Error).message).toBe(message);
+  expect(state.reportError).toHaveBeenCalledTimes(1);
+  expect(state.reportError).toHaveBeenCalledWith(
+    expect.objectContaining({ title, error: new Error(message), sessionId: SESSION_ID }),
+  );
+  expect(h.run).not.toHaveBeenCalled();
+};
+
+describe.each(VERBS)('$name without what it needs', ({ title, hasOptionalNumber, call }) => {
+  it('fails loudly when the workspace is missing', async () => {
+    const state = { ...makeState(), workspaces: [] };
+
+    await expectLoudFailure({
+      run: call({ state, prNumber: 12 }),
+      state,
+      title,
+      message: PR_WRITE_NO_WORKSPACE,
+    });
+  });
+
+  it('fails loudly when no repository is mounted', async () => {
+    const state = { ...makeState(), sessionProjectMounts: { [SESSION_ID]: [] } };
+
+    await expectLoudFailure({
+      run: call({ state, prNumber: 12 }),
+      state,
+      title,
+      message: PR_WRITE_NO_REPO,
+    });
+  });
+
+  it('fails loudly when the session is gone', async () => {
+    const state = { ...makeState(), sessions: [] };
+
+    await expectLoudFailure({
+      run: call({ state, prNumber: 12 }),
+      state,
+      title,
+      message: PR_WRITE_NO_SESSION,
+    });
+  });
+
+  it.runIf(hasOptionalNumber)('fails loudly when there is no pull request to act on', async () => {
+    const state = { ...makeState(), sessionGithub: {} };
+
+    await expectLoudFailure({
+      run: call({ state }),
+      state,
+      title: title.replace('#12', 'the pull request'),
+      message: PR_WRITE_NO_PULL_REQUEST,
+    });
   });
 });

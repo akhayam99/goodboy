@@ -1,25 +1,20 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
+import { prWriteContext } from './prWriteContext';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { GetFn, SetFn } from './types';
 import { ReportedError } from '../notifications/reportedError';
 
 export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number) => {
-    const num = prNumber ?? get().sessionGithub[sessionId]?.pr?.number;
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (num == null || !session) {
-      return;
-    }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) {
-      return;
-    }
-    const repo = getSessionRepo({ get, sessionId });
-    if (repo == null) {
-      return;
-    }
+    const { num, session, repo } = prWriteContext({
+      get,
+      sessionId,
+      prNumber,
+      failureTitle: ({ prNumber: target }) =>
+        prLifecycleFailureTitle({ action: 'undraft', prNumber: target }),
+    });
     await withPrWriteClaim({
       get,
       projectId: repo.projectId,
@@ -39,7 +34,7 @@ export const convertPrToDraft = (_set: SetFn, get: GetFn) => {
             title: `Couldn't convert #${num} to a draft`,
             body: errMsg,
             sessionId,
-            workspaceId: workspace.id,
+            workspaceId: session.workspaceId,
           });
           throw new ReportedError(errMsg);
         }

@@ -1,7 +1,8 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
 import { mountPrEventPayload } from './mountPrEventPayload';
+import { prWriteContext } from './prWriteContext';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
@@ -9,19 +10,14 @@ import { ReportedError } from '../notifications/reportedError';
 
 export const markPrReady = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber?: number, { mountId }: PrWriteOptions = {}) => {
-    const num = prNumber ?? get().sessionGithub[sessionId]?.pr?.number;
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (num == null || !session) {
-      return;
-    }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) {
-      return;
-    }
-    const repo = getSessionRepo({ get, sessionId, ...(mountId === undefined ? {} : { mountId }) });
-    if (repo == null) {
-      return;
-    }
+    const { num, session, repo } = prWriteContext({
+      get,
+      sessionId,
+      prNumber,
+      ...(mountId === undefined ? {} : { mountId }),
+      failureTitle: ({ prNumber: target }) =>
+        prLifecycleFailureTitle({ action: 'ready', prNumber: target }),
+    });
     await withPrWriteClaim({
       get,
       projectId: repo.projectId,
@@ -41,7 +37,7 @@ export const markPrReady = (_set: SetFn, get: GetFn) => {
             title: `Couldn't mark #${num} ready`,
             body: errMsg,
             sessionId,
-            workspaceId: workspace.id,
+            workspaceId: session.workspaceId,
           });
           throw new ReportedError(errMsg);
         }

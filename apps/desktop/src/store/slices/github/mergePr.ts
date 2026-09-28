@@ -1,7 +1,8 @@
 import type { PrMergeMethod, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
 import { mountPrEventPayload } from './mountPrEventPayload';
+import { prWriteContext } from './prWriteContext';
 import { withPrWriteClaim } from './withPrWriteClaim';
 import type { PrWriteOptions } from './prWriteOptions';
 import type { GetFn, SetFn } from './types';
@@ -20,19 +21,14 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
     method: PrMergeMethod = 'squash',
     { mountId }: PrWriteOptions = {},
   ) => {
-    const num = prNumber ?? get().sessionGithub[sessionId]?.pr?.number;
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (num == null || !session) {
-      return;
-    }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) {
-      return;
-    }
-    const repo = getSessionRepo({ get, sessionId, ...(mountId === undefined ? {} : { mountId }) });
-    if (repo == null) {
-      return;
-    }
+    const { num, session, repo } = prWriteContext({
+      get,
+      sessionId,
+      prNumber,
+      ...(mountId === undefined ? {} : { mountId }),
+      failureTitle: ({ prNumber: target }) =>
+        prLifecycleFailureTitle({ action: 'merge', prNumber: target }),
+    });
     await withPrWriteClaim({
       get,
       projectId: repo.projectId,
@@ -52,7 +48,7 @@ export const mergePr = (_set: SetFn, get: GetFn) => {
             title: `Couldn't merge #${num}`,
             body: errMsg,
             sessionId,
-            workspaceId: workspace.id,
+            workspaceId: session.workspaceId,
           });
           throw new ReportedError(errMsg);
         }
