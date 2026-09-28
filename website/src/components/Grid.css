@@ -1,9 +1,7 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  overflow: hidden;
+  gap: 48px 32px;
   list-style: none;
 }
 
@@ -14,41 +12,35 @@
 .cell {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
   min-width: 0;
-  padding: 32px;
-}
-
-.cell + .cell {
-  border-left: 1px solid var(--line);
 }
 
 .cellMedia {
-  padding: 6px;
-  border-radius: 12px;
-  background: var(--plate);
-  border: 1px solid var(--plate-line);
+  height: 300px;
+  overflow: hidden;
+  padding: 32px 0 0 32px;
+  border-radius: var(--r-stage);
+  background: var(--stage);
+  border: 1px solid var(--stage-line);
+}
+
+.cellMedia.closed {
+  display: flex;
+  justify-content: center;
+  padding: 32px 32px 0;
 }
 
 .cellView {
-  height: 236px;
+  width: fit-content;
   overflow: hidden;
-  border-radius: 7px;
+  border-radius: 10px 0 0 0;
   background: var(--bg);
-  box-shadow: 0 0 0 1px var(--view-line);
-  -webkit-mask-image:
-    linear-gradient(to right, #000 72%, transparent),
-    linear-gradient(to bottom, #000 66%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(to right, #000 72%, transparent),
-    linear-gradient(to bottom, #000 66%, transparent);
-  mask-composite: intersect;
+  box-shadow: 0 0 0 1px var(--win-edge);
 }
 
 .cellMedia.closed .cellView {
-  -webkit-mask-image: linear-gradient(to bottom, #000 66%, transparent);
-  mask-image: linear-gradient(to bottom, #000 66%, transparent);
+  border-radius: 10px 10px 0 0;
 }
 
 .cellView img {
@@ -56,6 +48,11 @@
   width: var(--w);
   max-width: none;
   height: auto;
+}
+
+.cellMedia > .cellView,
+.cellMedia.closed > .cellView {
+  flex: none;
 }
 
 .cellTitle {
@@ -74,25 +71,21 @@
   .grid.three {
     grid-template-columns: minmax(0, 1fr);
   }
-  .grid.three .cell + .cell {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
 }
 
 @media (max-width: 600px) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
   }
   .cell {
-    gap: 20px;
-    padding: 20px;
+    gap: 16px;
   }
-  .cell + .cell {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
-  .cellView {
-    height: 168px;
+  .cellMedia,
+  .cellMedia.closed {
+    height: 220px;
+    padding: 24px 0 0 24px;
+    border-radius: 16px;
+    justify-content: flex-start;
   }
 }

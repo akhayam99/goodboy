@@ -67,36 +67,30 @@
   width: fit-content;
   min-width: 0;
   max-width: 100%;
-  padding: 8px;
-  border-radius: 14px;
-  background: var(--plate);
-  border: 1px solid var(--plate-line);
+  overflow: hidden;
+  padding: 40px 0 0 40px;
+  border-radius: var(--r-stage);
+  background: var(--stage);
+  border: 1px solid var(--stage-line);
+}
+
+.frag.capped {
+  max-height: calc(var(--cap) + 40px);
+}
+
+.frag.closed {
+  padding: 40px;
 }
 
 .fragView {
   overflow: hidden;
-  border-radius: var(--r-view);
+  border-radius: 10px 0 0 0;
   background: var(--bg);
-  box-shadow: 0 0 0 1px var(--view-line);
-  -webkit-mask-image: linear-gradient(to right, #000 80%, transparent);
-  mask-image: linear-gradient(to right, #000 80%, transparent);
-}
-
-.frag.capped .fragView {
-  max-height: var(--cap);
-  -webkit-mask-image:
-    linear-gradient(to right, #000 80%, transparent),
-    linear-gradient(to bottom, #000 70%, transparent);
-  -webkit-mask-composite: source-in;
-  mask-image:
-    linear-gradient(to right, #000 80%, transparent),
-    linear-gradient(to bottom, #000 70%, transparent);
-  mask-composite: intersect;
+  box-shadow: 0 0 0 1px var(--win-edge);
 }
 
 .frag.closed .fragView {
-  -webkit-mask-image: none;
-  mask-image: none;
+  border-radius: 10px;
 }
 
 .frag img {
@@ -131,22 +125,14 @@
   .split.mirrored .splitText {
     padding: 0;
   }
-  .frag {
-    padding: 6px;
-    border-radius: 12px;
+  .frag,
+  .frag.closed {
+    max-height: 300px;
+    padding: 24px 0 0 24px;
+    border-radius: 16px;
   }
-  .fragView,
-  .frag.capped .fragView,
   .frag.closed .fragView {
-    max-height: 260px;
-    -webkit-mask-image:
-      linear-gradient(to right, #000 80%, transparent),
-      linear-gradient(to bottom, #000 70%, transparent);
-    -webkit-mask-composite: source-in;
-    mask-image:
-      linear-gradient(to right, #000 80%, transparent),
-      linear-gradient(to bottom, #000 70%, transparent);
-    mask-composite: intersect;
+    border-radius: 10px 0 0 0;
   }
   .sectionTitle {
     font-size: 24px;

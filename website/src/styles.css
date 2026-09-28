@@ -13,9 +13,12 @@
   --bg: #ffffff;
   --raise: #f8f9fa;
   --band: #f7f8f9;
-  --plate: #eef0f2;
-  --plate-line: rgb(16 17 19 / 0.1);
-  --view-line: rgb(16 17 19 / 0.08);
+  --stage-a: #dde7e9;
+  --stage-b: #e8eef0;
+  --stage-c: #f1f4f6;
+  --stage-line: rgb(16 17 19 / 0.05);
+  --win-edge: rgb(16 17 19 / 0.1);
+  --brand-ink: #000000;
   --hover: rgb(16 17 19 / 0.05);
   --line: rgb(16 17 19 / 0.09);
   --line-soft: rgb(16 17 19 / 0.06);
@@ -34,7 +37,9 @@
   --sel-bg: oklch(0.9 0.05 210);
   --sel-ink: oklch(0.35 0.09 210);
 
-  --r-frame: 16px;
+  --r-frame: 28px;
+  --r-stage: 20px;
+  --stage: linear-gradient(160deg, var(--stage-a) 0%, var(--stage-b) 46%, var(--stage-c) 100%);
   --r-card: 12px;
   --r-frag: 10px;
   --r-view: 8px;
@@ -74,9 +79,12 @@
   --bg: #0d0f11;
   --raise: #131619;
   --band: #111417;
-  --plate: #1a1d21;
-  --plate-line: rgb(255 255 255 / 0.09);
-  --view-line: rgb(255 255 255 / 0.07);
+  --stage-a: #173239;
+  --stage-b: #101b1f;
+  --stage-c: #0b0e11;
+  --stage-line: rgb(255 255 255 / 0.04);
+  --win-edge: rgb(255 255 255 / 0.1);
+  --brand-ink: #ffffff;
   --hover: rgb(255 255 255 / 0.06);
   --line: rgb(255 255 255 / 0.08);
   --line-soft: rgb(255 255 255 / 0.05);

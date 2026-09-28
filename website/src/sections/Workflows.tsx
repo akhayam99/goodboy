@@ -1,6 +1,6 @@
 import { Chapter } from '../components/Chapter';
 import { Frame } from '../components/Frame';
-import { RUN_PARALLEL } from '../figures';
+import { RUN_CANVAS } from '../figures';
 import { Context } from './Context';
 import { WorkflowsGrid } from './WorkflowsGrid';
 
@@ -10,11 +10,11 @@ export const Workflows = () => (
     isBand
     head={{
       eyebrow: 'Workflows',
-      heading: 'Run a goal as steps, each a fresh agent',
-      lead: 'An orchestrator picks each next step and waits for it to finish. Inside a step, several agents can work side by side.',
+      heading: 'Split a big goal into several steps',
+      lead: 'An orchestrator picks what runs next and waits for it to finish. Inside a step, several agents can work side by side.',
     }}
   >
-    <Frame figure={RUN_PARALLEL} cap={800} />
+    <Frame figure={RUN_CANVAS} isCanvas />
     <WorkflowsGrid />
     <Context />
   </Chapter>

@@ -14,8 +14,8 @@ export type FragmentFigure = {
   readonly alt: string;
 };
 
-const FRAME_WIDTHS = [1250, 2500, 3750] as const;
-const PHONE_WIDTHS = [672, 1008, 1344] as const;
+const FRAME_WIDTHS = [1144, 2288, 3432] as const;
+const PHONE_WIDTHS = [732, 1098, 1464] as const;
 
 type FrameParams = {
   readonly id: string;
@@ -32,9 +32,9 @@ type FragmentParams = {
   readonly alt: string;
 };
 
-const frame = ({ id, height = 2344, alt }: FrameParams): FrameFigure => ({
-  source: { id, widths: FRAME_WIDTHS, width: 3750, height },
-  phone: { id: `${id}-phone`, widths: PHONE_WIDTHS, width: 1344, height: 1680 },
+const frame = ({ id, height = 2145, alt }: FrameParams): FrameFigure => ({
+  source: { id, widths: FRAME_WIDTHS, width: 3432, height },
+  phone: { id: `${id}-phone`, widths: PHONE_WIDTHS, width: 1464, height: 1830 },
   alt,
 });
 
@@ -70,7 +70,7 @@ export const RUN_AGENTS = frame({
 
 export const BOARD = frame({
   id: 'board',
-  height: 1563,
+  height: 1430,
   alt: 'The Harborline board: sessions in Building, Running, Needs you and In review, each card with its pull request and its cost',
 });
 
@@ -109,9 +109,10 @@ export const DEV_HISTORY = frame({
   alt: 'Rewrite history on payments-api hl/fix-duplicate-credit: a backup to restore, the branch as it is now with two fixups folding into their commits, and the three commits it becomes after Apply',
 });
 
-export const RUN_PARALLEL = frame({
-  id: 'run-parallel',
-  alt: 'The duplicate credit fix run in progress: the orchestrator waiting on step 1, where three scouts read notify-relay, payments-api and ledger-core at the same time, one already done',
+export const RUN_CANVAS = frame({
+  id: 'run-canvas',
+  height: 1841,
+  alt: 'The step graph of the duplicate credit fix run: the orchestrator waiting on step 1, three scouts working at the same time with one done, and the plan, two implementers and the tester still to come',
 });
 
 export const IMPACT = frame({
