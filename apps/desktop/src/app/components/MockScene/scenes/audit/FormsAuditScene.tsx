@@ -80,7 +80,7 @@ const column = (content: ReactNode): ReactNode => (
 const workspaceOf = (): Workspace | null =>
   useAppStore.getState().workspaces.find((workspace) => workspace.id === WORKSPACE_ID) ?? null;
 
-const FORMS: Readonly<Record<string, () => ReactNode>> = {
+const FORMS = {
   pr: () => (
     <div className="flex h-full min-h-0 flex-col">
       <CreatePrPanel
@@ -171,9 +171,22 @@ const FORMS: Readonly<Record<string, () => ReactNode>> = {
       </div>,
     ),
   locate: () => column(<LocateMovedProjects workspaceId={WORKSPACE_ID} onChoose={noop} />),
-};
+} satisfies Readonly<Record<string, () => ReactNode>>;
 
-const FORM_RENDERERS: ReadonlyMap<string, () => ReactNode> = new Map(Object.entries(FORMS));
+const FORM_RENDERERS: ReadonlyMap<string, () => ReactNode> = new Map([
+  ['pr', FORMS.pr],
+  ['mr', FORMS.mr],
+  ['link', FORMS.link],
+  ['convert', FORMS.convert],
+  ['skills', FORMS.skills],
+  ['agent', FORMS.agent],
+  ['spend-run', FORMS['spend-run']],
+  ['spend-session', FORMS['spend-session']],
+  ['script', FORMS.script],
+  ['saved-step', FORMS['saved-step']],
+  ['import', FORMS.import],
+  ['locate', FORMS.locate],
+]);
 
 export const FormsAuditScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -224,5 +237,5 @@ export const FormsAuditScene = () => {
   }
 
   const render = FORM_RENDERERS.get(FORM) ?? FORMS.pr;
-  return <ShellFrame session={SESSION} main={render === undefined ? null : render()} />;
+  return <ShellFrame session={SESSION} main={render()} />;
 };
