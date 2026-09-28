@@ -47,6 +47,9 @@
 }
 
 @media (max-width: 600px) {
+  .toolGroup h3 {
+    font-size: 13px;
+  }
   .tools {
     padding: 0;
   }

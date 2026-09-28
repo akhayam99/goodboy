@@ -113,6 +113,9 @@
 }
 
 @media (max-width: 600px) {
+  .featGroup h2 span {
+    font-size: 13px;
+  }
   .features {
     padding: 0;
   }

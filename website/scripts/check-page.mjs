@@ -15,6 +15,7 @@ const SCROLL_STEP_PX = 600;
 const SCROLL_PAUSE_MS = 60;
 const TIMEOUT_MS = 240000;
 const MIN_DENSITY = 2;
+const MIN_PHONE_TEXT_PX = 13;
 const HERO_FRAME_VISIBLE_PX = 380;
 const INTER_PROBE = '500 64px Inter';
 const REPO_BLOB_PREFIX = 'https://github.com/akhayam99/goodboy/blob/main/';
@@ -26,17 +27,17 @@ const VIEWPORTS = [
     width: 1440,
     height: 900,
     isMobile: false,
-    maxHeight: 14300,
+    maxHeight: 5500,
     isHeroChecked: true,
   },
   { name: 'laptop', width: 1024, height: 768, isMobile: false, maxHeight: Infinity },
   { name: 'tablet', width: 768, height: 1024, isMobile: false, maxHeight: Infinity },
   { name: 'narrow', width: 660, height: 900, isMobile: false, maxHeight: Infinity },
-  { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 14800 },
+  { name: 'phone', width: 390, height: 844, isMobile: true, isTouch: true, maxHeight: 7500 },
 ];
 const OVERLAP_TOLERANCE_PX = 1;
 const THEMES = ['dark', 'light'];
-const PAGE_EYEBROWS = ['Desktop ADE for macOS and Linux', 'Questions', 'Install', 'All features'];
+const PAGE_EYEBROWS = ['Desktop ADE for macOS and Linux', 'Install', 'All features'];
 
 const parseArgs = ({ argv }) => {
   const shotsIndex = argv.indexOf('--shots');
@@ -175,7 +176,7 @@ const PAGE_PROBE = `(async () => {
       return parseFloat(x) !== 0 || parseFloat(y) !== 0 || parseFloat(blur) !== 0;
     });
   };
-  const shadowed = [...document.querySelectorAll('.frame, .frame *, .frag, .frag *, .grid, .grid *')]
+  const shadowed = [...document.querySelectorAll('.stage, .stage *')]
     .filter((node) => !node.hasAttribute('data-shadow-exception'))
     .filter((node) => isShadow(getComputedStyle(node).boxShadow) || getComputedStyle(node).filter.includes('drop-shadow'))
     .map((node) => String(node.className || node.tagName));
@@ -189,7 +190,7 @@ const PAGE_PROBE = `(async () => {
       density: box.width > 0 ? pixels / box.width : null,
     };
   });
-  const heroFrame = document.querySelector('.hero .frame');
+  const heroFrame = document.querySelector('.hero .stage');
   const heroBox = heroFrame === null ? null : heroFrame.getBoundingClientRect();
   const banner = document.querySelector('#iubenda-cs-banner .iubenda-cs-content');
   const h1 = document.querySelector('h1');
@@ -226,8 +227,37 @@ const PAGE_PROBE = `(async () => {
       );
       return deepest > box.bottom + ${OVERLAP_TOLERANCE_PX} ? [name(node) + ' content spills ' + Math.round(deepest - box.bottom) + ' px below it'] : [];
     });
+  const isVisible = (node) => {
+    const box = node.getBoundingClientRect();
+    return box.width > 0 && box.height > 0 && getComputedStyle(node).visibility !== 'hidden';
+  };
+  const textWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const smallText = [];
+  for (let node = textWalker.nextNode(); node !== null; node = textWalker.nextNode()) {
+    const parent = node.parentElement;
+    if (parent === null || node.textContent.trim() === '' || parent.closest('script, style, noscript, #iubenda-cs-banner, .vh') !== null || !isVisible(parent)) {
+      continue;
+    }
+    const size = parseFloat(getComputedStyle(parent).fontSize);
+    if (size < ${MIN_PHONE_TEXT_PX}) {
+      smallText.push(Math.round(size * 10) / 10 + ' px "' + node.textContent.trim().slice(0, 40) + '"');
+    }
+  }
+  const leadIns = [...document.querySelectorAll('.leadIn')].map((node) => {
+    const heading = node.parentElement.querySelector('h2');
+    return {
+      text: node.textContent.trim(),
+      size: parseFloat(getComputedStyle(node).fontSize),
+      heading: heading === null ? null : parseFloat(getComputedStyle(heading).fontSize),
+    };
+  });
   const overlaps = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
   return {
+    isCoarse: matchMedia('(hover: none) and (pointer: coarse)').matches,
+    downloads: [...document.querySelectorAll('[data-download]')].filter(isVisible).length,
+    stars: [...document.querySelectorAll('[data-star]')].filter(isVisible).length,
+    smallText,
+    leadIns,
     isInter: document.fonts.check(${JSON.stringify(INTER_PROBE)}),
     scrollWidth: root.scrollWidth,
     clientWidth: root.clientWidth,
@@ -252,7 +282,7 @@ const PAGE_PROBE = `(async () => {
       d: node.getAttribute('d'),
     })),
     docLinks: [
-      ...document.querySelectorAll('.textLink, .navLinks a, nav[aria-label="Docs"] a'),
+      ...document.querySelectorAll('.textLink, .navLinks a, .alsoRow, nav[aria-label="Docs"] a'),
     ].map((node) => node.getAttribute('href')),
     brandInkColors: (() => {
       const inkProbe = document.createElement('span');
@@ -289,7 +319,16 @@ const scrollThrough = ({ evaluate }) =>
     return true;
   })()`);
 
-const checkRun = ({ viewport, theme, probe, groups, audiences, brands, featureAnchors }) => {
+const checkRun = ({
+  viewport,
+  theme,
+  probe,
+  groups,
+  audiences,
+  brands,
+  featureAnchors,
+  isHome,
+}) => {
   const label = `${viewport.name} ${theme}`;
   const failures = [];
   const fail = (message) => failures.push(`${label}: ${message}`);
@@ -299,7 +338,7 @@ const checkRun = ({ viewport, theme, probe, groups, audiences, brands, featureAn
   if (probe.scrollWidth > probe.clientWidth) {
     fail(`horizontal overflow, ${probe.scrollWidth} px wide in ${probe.clientWidth}`);
   }
-  if (probe.height > viewport.maxHeight) {
+  if (isHome && probe.height > viewport.maxHeight) {
     fail(`page is ${probe.height} px tall, the budget is ${viewport.maxHeight}`);
   }
   if (probe.hasEmDash) {
@@ -309,6 +348,31 @@ const checkRun = ({ viewport, theme, probe, groups, audiences, brands, featureAn
     fail(`a middot triplet in visible text: "${probe.middot}"`);
   }
   probe.shadowed.forEach((name) => fail(`a shadow on ${name}`));
+  if (viewport.isTouch === true) {
+    if (!probe.isCoarse) {
+      fail('touch emulation did not give a coarse pointer');
+    }
+    if (probe.downloads > 0) {
+      fail(`${probe.downloads} download links or Homebrew blocks show on a touch device`);
+    }
+    if (isHome && probe.stars === 0) {
+      fail('no Star on GitHub button on a touch device');
+    }
+    probe.smallText.forEach((text) =>
+      fail(`text under ${MIN_PHONE_TEXT_PX} px on a phone: ${text}`),
+    );
+  }
+  if (viewport.isTouch !== true) {
+    if (probe.stars > 0) {
+      fail('a Star on GitHub button shows with a fine pointer');
+    }
+    if (isHome && probe.downloads === 0) {
+      fail('no download link shows with a fine pointer');
+    }
+  }
+  probe.leadIns
+    .filter((leadIn) => leadIn.heading === null || leadIn.size >= leadIn.heading)
+    .forEach((leadIn) => fail(`lead-in "${leadIn.text}" is not smaller than its heading`));
   probe.images
     .filter((image) => !image.isLoaded)
     .forEach((image) => fail(`${image.src} did not load`));
@@ -436,8 +500,15 @@ const run = async () => {
             deviceScaleFactor: 2,
             mobile: viewport.isMobile,
           });
+          await cdp.send('Emulation.setTouchEmulationEnabled', {
+            enabled: viewport.isTouch === true,
+            maxTouchPoints: viewport.isTouch === true ? 5 : 1,
+          });
           await cdp.send('Emulation.setEmulatedMedia', {
-            features: [{ name: 'prefers-color-scheme', value: theme }],
+            features: [
+              { name: 'prefers-color-scheme', value: theme },
+              { name: 'prefers-reduced-motion', value: 'reduce' },
+            ],
           });
           await cdp.send('Page.navigate', { url });
           await sleep(SETTLE_MS);
@@ -446,9 +517,16 @@ const run = async () => {
           const probe = await cdp.evaluate(PAGE_PROBE);
           heights.push(`${page} ${viewport.name} ${theme}: ${probe.height} px`);
           failures.push(
-            ...checkRun({ viewport, theme, probe, groups, audiences, brands, featureAnchors }).map(
-              (failure) => `${page} ${failure}`,
-            ),
+            ...checkRun({
+              viewport,
+              theme,
+              probe,
+              groups,
+              audiences,
+              brands,
+              featureAnchors,
+              isHome: page === 'home',
+            }).map((failure) => `${page} ${failure}`),
           );
           if (shots !== null) {
             await captureHeadings({ ...cdp, shots, viewport, theme, page });
