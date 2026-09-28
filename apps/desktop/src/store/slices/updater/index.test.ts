@@ -26,14 +26,16 @@ function harness({ autoDownload = 'false' }: HarnessOptions = {}) {
   };
   const reportError = vi.fn(async () => undefined);
   const loadSetting = vi.fn(async () => autoDownload);
+  const loadChangelogUpcoming = vi.fn(async () => undefined);
   const get = (): unknown => ({
     ...state,
     reportError,
     loadSetting,
+    loadChangelogUpcoming,
     downloadUpdate: slice.downloadUpdate,
   });
   const slice = createUpdaterSlice(set as never, get as never);
-  return { slice, getState: () => state, reportError, loadSetting };
+  return { slice, getState: () => state, reportError, loadSetting, loadChangelogUpcoming };
 }
 
 describe('updater slice', () => {
@@ -56,6 +58,13 @@ describe('updater slice', () => {
     await slice.checkForUpdates();
     expect(getState().updaterStatus).toBe('available');
     expect(getState().updateVersion).toBe('0.2.0');
+  });
+
+  it('starts loading the changelog of the update without waiting for it', async () => {
+    checkMock.mockResolvedValue({ version: '0.2.0', downloadAndInstall: vi.fn() });
+    const { slice, loadChangelogUpcoming } = harness();
+    await slice.checkForUpdates();
+    expect(loadChangelogUpcoming).toHaveBeenCalledWith({ target: '0.2.0' });
   });
 
   it('records an error when the check fails', async () => {

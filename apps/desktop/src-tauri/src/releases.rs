@@ -6,6 +6,21 @@ const REPO_SLUG: &str = "akhayam99/goodboy";
 const PER_PAGE: u32 = 50;
 const CLIENT_USER_AGENT: &str = "goodboy-desktop";
 
+fn changelog_url(version: &str) -> String {
+    format!(
+        "https://raw.githubusercontent.com/{}/v{}/CHANGELOG.md",
+        REPO_SLUG, version
+    )
+}
+
+fn is_release_version(version: &str) -> bool {
+    let parts: Vec<&str> = version.split('.').collect();
+    parts.len() == 3
+        && parts
+            .iter()
+            .all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()))
+}
+
 fn releases_url() -> String {
     format!(
         "https://api.github.com/repos/{}/releases?per_page={}",
@@ -68,6 +83,26 @@ pub async fn releases_list() -> Result<Vec<ReleaseNote>, String> {
 
     let raw: Vec<GithubRelease> = response.json().await.map_err(|e| e.to_string())?;
     Ok(published_only(raw))
+}
+
+#[tauri::command]
+pub async fn release_changelog(version: String) -> Result<String, String> {
+    if !is_release_version(&version) {
+        return Err(format!("\"{version}\" is not a usable release version"));
+    }
+    let response = http_client()
+        .get(changelog_url(&version))
+        .header(reqwest::header::USER_AGENT, CLIENT_USER_AGENT)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let status = response.status();
+    if !status.is_success() {
+        return Err(format!("github responded {}", status.as_u16()));
+    }
+
+    response.text().await.map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -133,6 +168,28 @@ mod tests {
         assert_eq!(notes.len(), 1);
         assert_eq!(notes[0].version, "v0.1.54");
         assert_eq!(notes[0].body, "");
+    }
+
+    #[test]
+    fn builds_the_changelog_url_at_the_release_tag() {
+        assert_eq!(
+            changelog_url("0.13.0"),
+            "https://raw.githubusercontent.com/akhayam99/goodboy/v0.13.0/CHANGELOG.md"
+        );
+    }
+
+    #[test]
+    fn accepts_only_a_plain_release_version() {
+        assert!(is_release_version("0.13.0"));
+        for version in ["v0.13.0", "0.13", "0.13.0-rc.1", "../main", ""] {
+            assert!(!is_release_version(version), "accepted {version}");
+        }
+    }
+
+    #[test]
+    fn the_changelog_command_stays_registered_with_the_webview() {
+        let lib_src = include_str!("lib.rs");
+        assert!(lib_src.contains("releases::release_changelog"));
     }
 
     #[test]

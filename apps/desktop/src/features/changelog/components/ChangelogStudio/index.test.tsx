@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   reloadChangelogDates: vi.fn(async () => undefined),
   markChangelogSeen: vi.fn(async () => undefined),
   focusChangelogRelease: vi.fn(),
+  loadChangelogUpcoming: vi.fn(async () => undefined),
+  updateNotes: null as ReleaseEntry | null,
   applyUpdate: vi.fn(async () => undefined),
   updater: { status: 'idle', version: null as string | null },
   installedVersion: null as string | null,
@@ -23,6 +25,8 @@ vi.mock('../../../../store', () => ({
       reloadChangelogDates: mocks.reloadChangelogDates,
       markChangelogSeen: mocks.markChangelogSeen,
       focusChangelogRelease: mocks.focusChangelogRelease,
+      loadChangelogUpcoming: mocks.loadChangelogUpcoming,
+      updateNotes: mocks.updateNotes,
       applyUpdate: mocks.applyUpdate,
       updaterStatus: mocks.updater.status,
       updateVersion: mocks.updater.version,
@@ -57,12 +61,14 @@ const baseState = (releases: ReadonlyArray<ReleaseEntry>): ChangelogState => ({
   changelogSeenVersion: null,
   changelogSeenHydrated: true,
   changelogFocusVersion: null,
+  changelogUpcoming: null,
 });
 
 beforeEach(() => {
   mocks.state = baseState([]);
   mocks.installedVersion = null;
   mocks.updater = { status: 'idle', version: null };
+  mocks.updateNotes = null;
 });
 
 afterEach(() => {
@@ -86,8 +92,8 @@ describe('ChangelogStudio', () => {
     const newerRow = rows.find((row) => row.textContent?.includes('0.5.6'));
     expect(installedRow?.textContent).toContain('installed');
     expect(newerRow?.textContent).not.toContain('installed');
-    expect(newerRow?.textContent).toContain('available');
-    expect(installedRow?.textContent).not.toContain('available');
+    expect(newerRow?.textContent).toContain('in the update');
+    expect(installedRow?.textContent).not.toContain('in the update');
   });
 
   const threeReleases = () =>
@@ -179,5 +185,76 @@ describe('ChangelogStudio', () => {
     fireEvent.change(search, { target: { value: 'xylophonemarmot' } });
 
     expect(screen.getByText(/No release mentions/)).toBeDefined();
+  });
+
+  const railVersions = (): ReadonlyArray<string> => {
+    const rail = screen.getByRole('navigation', { name: 'Releases' });
+    return Array.from(rail.querySelectorAll('button'))
+      .map((row) => row.textContent ?? '')
+      .filter((text) => /^\d/.test(text));
+  };
+
+  it('lists the releases of the update above the installed ones and opens on the target', () => {
+    mocks.state = {
+      ...baseState([
+        buildRelease('0.12.2', 'shipped the installed thing'),
+        buildRelease('0.12.1', 'shipped an older thing'),
+      ]),
+      changelogFocusVersion: '0.13.0',
+      changelogUpcoming: {
+        target: '0.13.0',
+        releases: [
+          buildRelease('0.13.0', 'shipped chats for Harborline'),
+          buildRelease('0.12.3', 'shipped link work for Northwind'),
+        ],
+      },
+    };
+    mocks.installedVersion = '0.12.2';
+    mocks.updater = { status: 'available', version: '0.13.0' };
+
+    renderStudio();
+
+    expect(mocks.loadChangelogUpcoming).toHaveBeenCalledWith({ target: '0.13.0' });
+    expect(screen.getByRole('heading', { name: 'Goodboy 0.13.0' })).toBeDefined();
+    expect(screen.getByText('In the update')).toBeDefined();
+    const rows = railVersions();
+    expect(rows.map((text) => text.slice(0, 6))).toEqual(['0.13.0', '0.12.3', '0.12.2', '0.12.1']);
+    expect(rows[0]).toContain('in the update');
+    expect(rows[1]).toContain('in the update');
+    expect(rows[2]).toContain('installed');
+  });
+
+  it('falls back to the notes of the update while its changelog is not loaded', () => {
+    mocks.state = {
+      ...baseState([buildRelease('0.12.2', 'shipped the installed thing')]),
+      changelogFocusVersion: '0.13.0',
+    };
+    mocks.installedVersion = '0.12.2';
+    mocks.updater = { status: 'ready', version: '0.13.0' };
+    mocks.updateNotes = buildRelease('0.13.0', 'shipped chats for Acme');
+
+    renderStudio();
+
+    expect(screen.getByRole('heading', { name: 'Goodboy 0.13.0' })).toBeDefined();
+    expect(railVersions()[0]).toContain('in the update');
+  });
+
+  it('lands on the update instead of the catch-up when opened from the update', () => {
+    mocks.state = {
+      ...baseState([
+        buildRelease('0.12.2', 'shipped the installed thing'),
+        buildRelease('0.12.1', 'shipped a skipped thing'),
+        buildRelease('0.12.0', 'shipped the seen thing'),
+      ]),
+      changelogSeenVersion: '0.12.0',
+      changelogFocusVersion: '0.13.0',
+    };
+    mocks.installedVersion = '0.12.2';
+    mocks.updater = { status: 'available', version: '0.13.0' };
+    mocks.updateNotes = buildRelease('0.13.0', 'shipped chats for Cascadia');
+
+    renderStudio();
+
+    expect(screen.getByRole('heading', { name: 'Goodboy 0.13.0' })).toBeDefined();
   });
 });

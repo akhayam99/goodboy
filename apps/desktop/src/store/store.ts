@@ -320,6 +320,7 @@ import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
+import type { LoadChangelogUpcomingParams } from './slices/changelog/loadChangelogUpcoming';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
@@ -410,6 +411,7 @@ type AppActions = {
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
   focusChangelogRelease(params: FocusChangelogReleaseParams): void;
+  loadChangelogUpcoming(params: LoadChangelogUpcomingParams): Promise<void>;
   setBugReportDraft(params: SetBugReportDraftParams): void;
   clearBugReportDraft(): void;
   openSessionDraft(): void;

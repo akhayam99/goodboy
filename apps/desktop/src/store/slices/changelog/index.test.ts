@@ -1,13 +1,27 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { fetchReleasesMock, getSettingMock, setSettingMock } = vi.hoisted(() => ({
+const {
+  fetchReleasesMock,
+  getSettingMock,
+  setSettingMock,
+  fetchReleaseChangelogMock,
+  getVersionMock,
+} = vi.hoisted(() => ({
   fetchReleasesMock: vi.fn(),
+  fetchReleaseChangelogMock: vi.fn(async (_params: { version: string }) => ''),
+  getVersionMock: vi.fn(async () => '0.12.2'),
   getSettingMock: vi.fn(async () => null as string | null),
   setSettingMock: vi.fn(async () => undefined),
 }));
 
 vi.mock('../../../features/changelog/changelog', () => ({ fetchReleases: fetchReleasesMock }));
+
+vi.mock('../../../features/changelog/fetchReleaseChangelog', () => ({
+  fetchReleaseChangelog: fetchReleaseChangelogMock,
+}));
+
+vi.mock('@tauri-apps/api/app', () => ({ getVersion: getVersionMock }));
 
 vi.mock('@goodboy/db', () => ({ getSetting: getSettingMock, setSetting: setSettingMock }));
 
@@ -153,5 +167,70 @@ describe('changelog slice', () => {
 
     slice.focusChangelogRelease({ version: null });
     expect(getState().changelogFocusVersion).toBeNull();
+  });
+
+  const fetchedChangelog = [
+    '## Goodboy v0.13.0',
+    '',
+    'Ask about the Harborline workspace in a chat.',
+    '',
+    '### Fixed',
+    '',
+    '- A chat reopens where you left it. <!-- gb area=sessions -->',
+    '',
+    '## Goodboy v0.12.3',
+    '',
+    'Link work from one search.',
+    '',
+    '### Fixed',
+    '',
+    '- Search covers every tracker. <!-- gb area=sessions -->',
+    '',
+    '## Goodboy v0.12.2',
+    '',
+    'Faster board.',
+    '',
+    '### Fixed',
+    '',
+    '- The board scrolls again. <!-- gb area=app -->',
+  ].join('\n');
+
+  it('loads the releases between the installed version and the update from the update tag', async () => {
+    fetchReleaseChangelogMock.mockResolvedValueOnce(fetchedChangelog);
+    const { slice, getState } = harness();
+
+    await slice.loadChangelogUpcoming({ target: '0.13.0' });
+
+    expect(fetchReleaseChangelogMock).toHaveBeenCalledWith({ version: '0.13.0' });
+    expect(getState().changelogUpcoming?.target).toBe('0.13.0');
+    expect(getState().changelogUpcoming?.releases.map((release) => release.version)).toEqual([
+      '0.13.0',
+      '0.12.3',
+    ]);
+  });
+
+  it('keeps the loaded releases for the session and fetches once per target', async () => {
+    fetchReleaseChangelogMock.mockResolvedValue(fetchedChangelog);
+    const { slice } = harness();
+
+    await Promise.all([
+      slice.loadChangelogUpcoming({ target: '0.13.0' }),
+      slice.loadChangelogUpcoming({ target: 'v0.13.0' }),
+    ]);
+    await slice.loadChangelogUpcoming({ target: '0.13.0' });
+
+    expect(fetchReleaseChangelogMock).toHaveBeenCalledOnce();
+  });
+
+  it('leaves nothing loaded when the fetch fails, so a later open tries again', async () => {
+    fetchReleaseChangelogMock.mockRejectedValueOnce(new Error('offline'));
+    fetchReleaseChangelogMock.mockResolvedValueOnce(fetchedChangelog);
+    const { slice, getState } = harness();
+
+    await slice.loadChangelogUpcoming({ target: '0.13.0' });
+    expect(getState().changelogUpcoming).toBeNull();
+
+    await slice.loadChangelogUpcoming({ target: '0.13.0' });
+    expect(getState().changelogUpcoming?.releases).toHaveLength(2);
   });
 });

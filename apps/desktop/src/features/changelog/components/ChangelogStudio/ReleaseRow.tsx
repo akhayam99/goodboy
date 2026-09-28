@@ -66,7 +66,7 @@ export const ReleaseRow = ({ release, isActive, installedVersion, onSelect }: Pr
           />
         ) : null}
         {isInstalled ? <Chip tone="neutral" width="sm" label="installed" /> : null}
-        {isAvailable ? <Chip tone="primary" width="sm" label="available" /> : null}
+        {isAvailable ? <Chip tone="primary" width="sm" label="in the update" /> : null}
       </div>
       <span className="truncate text-secondary text-muted-foreground">
         {releaseSummary({ release })}

@@ -229,6 +229,7 @@ pub fn run() {
             remote_image::load_tool_image,
             local_image::local_image_read,
             releases::releases_list,
+            releases::release_changelog,
             changelog_images::changelog_image,
             explore::explore_list,
             explore::explore_read,

@@ -68,6 +68,7 @@ import { SettingsWorkspaceScene } from './scenes/audit/SettingsWorkspaceScene';
 import { OnboardingScene } from './scenes/audit/OnboardingScene';
 import { ToastsScene } from './scenes/audit/ToastsScene';
 import { UpdateConfirmScene } from './scenes/audit/UpdateConfirmScene';
+import { UpdateWhatsNewScene } from './scenes/audit/UpdateWhatsNewScene';
 import { NotificationsScene } from './scenes/audit/NotificationsScene';
 import { ChangelogScene } from './scenes/audit/ChangelogScene';
 import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
@@ -166,6 +167,7 @@ export const MOCK_SCENES = {
   onboarding: OnboardingScene,
   toasts: ToastsScene,
   'update-confirm': UpdateConfirmScene,
+  'update-whats-new': UpdateWhatsNewScene,
   notifications: NotificationsScene,
   changelog: ChangelogScene,
   'artifact-states': ArtifactStatesScene,

@@ -14,6 +14,7 @@ import { ChangelogRail } from './ChangelogRail';
 import { CatchUpReader } from './CatchUpReader';
 import { ReleaseReader } from './ReleaseReader';
 import { searchReleases } from '../../searchReleases';
+import { upcomingEntries, withUpcomingReleases } from '../../upcomingReleases';
 
 type PickReleaseParams = {
   readonly releases: ReadonlyArray<ReleaseEntry>;
@@ -48,7 +49,11 @@ type Props = {
 };
 
 export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
-  const releases = useAppStore((state) => state.changelogReleases);
+  const bundledReleases = useAppStore((state) => state.changelogReleases);
+  const upcoming = useAppStore((state) => state.changelogUpcoming);
+  const updateTarget = useAppStore((state) => state.updateVersion);
+  const updateNotes = useAppStore((state) => state.updateNotes);
+  const loadChangelogUpcoming = useAppStore((state) => state.loadChangelogUpcoming);
   const dates = useAppStore((state) => state.changelogDates);
   const loadChangelogDates = useAppStore((state) => state.loadChangelogDates);
   const seenVersion = useAppStore((state) => state.changelogSeenVersion);
@@ -60,9 +65,21 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
   const installedVersion = useInstalledVersion();
   const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const [isCatchUpSelected, setIsCatchUpSelected] = useState(true);
   const focusAtOpen = useAppStore((state) => state.changelogFocusVersion);
   const [focusVersion] = useState(focusAtOpen);
+  const [isCatchUpSelected, setIsCatchUpSelected] = useState(
+    () =>
+      focusAtOpen === null ||
+      updateTarget === null ||
+      !sameVersion({ tag: focusAtOpen, version: updateTarget }),
+  );
+
+  useEffect(() => {
+    if (updateTarget === null) {
+      return;
+    }
+    void loadChangelogUpcoming({ target: updateTarget });
+  }, [updateTarget, loadChangelogUpcoming]);
 
   useEffect(() => {
     void loadChangelogDates();
@@ -79,6 +96,21 @@ export const ChangelogStudio = ({ onClose, onOpenScreen }: Props) => {
     void markChangelogSeen({ version: installedVersion });
   }, [installedVersion, markChangelogSeen]);
 
+  const fetchedUpcoming =
+    upcoming !== null &&
+    updateTarget !== null &&
+    sameVersion({ tag: upcoming.target, version: updateTarget })
+      ? upcoming.releases
+      : [];
+  const releases = withUpcomingReleases({
+    upcoming: upcomingEntries({
+      fetched: fetchedUpcoming,
+      notes: updateNotes,
+      target: updateTarget,
+      installed: installedVersion,
+    }),
+    releases: bundledReleases,
+  });
   const catchUp = changelogCatchUp({ releases, seenVersion, installedVersion });
   const filteredReleases = searchReleases({ releases, query });
   const selected = pickRelease({
