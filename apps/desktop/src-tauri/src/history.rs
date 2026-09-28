@@ -24,6 +24,8 @@ const LEASE_HOLDER: &str = "history-rewrite";
 const JOURNAL_FILE: &str = "goodboy-history.journal";
 const COPY_PREFIX: &str = "goodboy-history-";
 const TRIAL_SLUG_PREFIX: &str = "try-";
+const COPY_MARKER: &str = "goodboy-history-copy";
+const CLEANUP_LOCK: &str = "goodboy-history-cleanup.lock";
 const STALE_TRIAL_SECS: u64 = 10 * 60;
 const STALE_REWRITER_SECS: u64 = 24 * 60 * 60;
 
@@ -1270,6 +1272,70 @@ impl Drop for CopyGuard<'_> {
     }
 }
 
+fn create_copy<'a>(
+    cwd: &'a Path,
+    copy: &Path,
+    start: &str,
+) -> Result<CopyGuard<'a>, WorktreeError> {
+    if copy.exists() {
+        return Err(plan_error(
+            "a folder already sits where the temporary copy goes, so nothing was changed",
+        ));
+    }
+    let copy_text = copy.to_string_lossy().to_string();
+    let guard = CopyGuard {
+        cwd,
+        path: copy_text.clone(),
+        is_kept: false,
+    };
+    git(
+        cwd,
+        &["worktree", "add", "--detach", "--quiet", &copy_text, start],
+    )?;
+    mark_copy(copy)?;
+    Ok(guard)
+}
+
+fn admin_dir_of(copy: &Path) -> Option<PathBuf> {
+    let pointer = std::fs::read_to_string(copy.join(".git")).ok()?;
+    let admin = PathBuf::from(pointer.trim().strip_prefix("gitdir:")?.trim());
+    let worktrees = admin.parent()?;
+    (worktrees.file_name()? == "worktrees").then_some(admin)
+}
+
+fn canonical_text(path: &Path) -> Option<String> {
+    Some(
+        std::fs::canonicalize(path)
+            .ok()?
+            .to_string_lossy()
+            .to_string(),
+    )
+}
+
+fn mark_copy(copy: &Path) -> Result<(), WorktreeError> {
+    let admin =
+        admin_dir_of(copy).ok_or_else(|| plan_error("the temporary copy has no git link"))?;
+    let owner = canonical_text(copy).ok_or_else(|| plan_error("the temporary copy vanished"))?;
+    std::fs::write(admin.join(COPY_MARKER), owner)?;
+    Ok(())
+}
+
+pub(crate) fn owned_copy_repo(copy: &Path) -> Option<PathBuf> {
+    let admin = admin_dir_of(copy)?;
+    let owner = std::fs::read_to_string(admin.join(COPY_MARKER)).ok()?;
+    if owner.trim() != canonical_text(copy)? {
+        return None;
+    }
+    let registered = std::fs::read_to_string(admin.join("gitdir")).ok()?;
+    if canonical_text(Path::new(registered.trim()))? != canonical_text(&copy.join(".git"))? {
+        return None;
+    }
+    if admin.join("locked").exists() {
+        return None;
+    }
+    Some(admin.parent()?.parent()?.to_path_buf())
+}
+
 pub(crate) fn trial(
     args: &HistoryPlanArgs,
     slug: &str,
@@ -1297,16 +1363,7 @@ pub(crate) fn trial_with(
     let copy = copy_path_of(slug);
     let copy_text = copy.to_string_lossy().to_string();
     progress(TrialProgress::Copy);
-    discard_copy(cwd, &copy_text);
-    git(
-        cwd,
-        &["worktree", "add", "--detach", "--quiet", &copy_text, &start],
-    )?;
-    let mut guard = CopyGuard {
-        cwd,
-        path: copy_text.clone(),
-        is_kept: false,
-    };
+    let mut guard = create_copy(cwd, &copy, &start)?;
     let replay = replay_in_copy(&copy, &steps, &ordered, progress)?;
     if replay.stop.is_some() {
         progress(TrialProgress::Cleanup);
@@ -1903,16 +1960,6 @@ pub async fn history_plan_run(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn copy_git_dir(copy: &Path) -> Option<PathBuf> {
-    let pointer = std::fs::read_to_string(copy.join(".git")).ok()?;
-    let git_dir = PathBuf::from(pointer.trim().strip_prefix("gitdir:")?.trim());
-    let worktrees = git_dir.parent()?;
-    if worktrees.file_name()? != "worktrees" {
-        return None;
-    }
-    Some(worktrees.parent()?.to_path_buf())
-}
-
 fn age_secs(path: &Path) -> u64 {
     std::fs::metadata(path)
         .and_then(|meta| meta.modified())
@@ -1937,7 +1984,7 @@ pub(crate) fn clean_stale_copies_in(
             continue;
         };
         let path = entry.path();
-        let Some(common) = copy_git_dir(&path) else {
+        let Some(common) = owned_copy_repo(&path) else {
             continue;
         };
         let limit = if slug.starts_with(TRIAL_SLUG_PREFIX) {
@@ -1948,7 +1995,20 @@ pub(crate) fn clean_stale_copies_in(
         if age_secs(&path) < limit {
             continue;
         }
-        if std::fs::remove_dir_all(&path).is_err() {
+        let Some(admin) = admin_dir_of(&path) else {
+            continue;
+        };
+        let lock = admin.join(CLEANUP_LOCK);
+        if std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&lock)
+            .is_err()
+        {
+            continue;
+        }
+        if owned_copy_repo(&path).is_none() || std::fs::remove_dir_all(&path).is_err() {
+            let _ = std::fs::remove_file(&lock);
             continue;
         }
         let _ = crate::path_env::command("git")
@@ -2379,7 +2439,7 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
             changed_files: Vec::new(),
         });
     }
-    if !args.keeps_copy {
+    if !args.keeps_copy && owned_copy_repo(copy).is_some() {
         discard_copy(cwd, &args.copy_path);
     }
     Ok(RewriterCheck {
@@ -2410,8 +2470,8 @@ pub async fn history_copy_discard(
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(worktree_path));
         }
-        if !copy_path.contains(COPY_PREFIX) {
-            return Err(plan_error("that folder is not a history copy"));
+        if owned_copy_repo(Path::new(&copy_path)).is_none() {
+            return Err(plan_error("that folder is not a history copy Goodboy made"));
         }
         discard_copy(&cwd, &copy_path);
         Ok(())
@@ -3783,31 +3843,71 @@ mod tests {
         let trial_copy = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}1"));
         let rewriter_copy = scratch.join(format!("{COPY_PREFIX}mount-1"));
         for copy in [&trial_copy, &rewriter_copy] {
-            git_ok(
-                &l.root,
-                &[
-                    "worktree",
-                    "add",
-                    "--detach",
-                    "--quiet",
-                    copy.to_str().unwrap(),
-                    &l.base,
-                ],
-            );
+            let mut guard = create_copy(&l.root, copy, &l.base).unwrap();
+            guard.is_kept = true;
         }
+        let users = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}mine"));
+        git_ok(
+            &l.root,
+            &[
+                "worktree",
+                "add",
+                "--detach",
+                "--quiet",
+                users.to_str().unwrap(),
+                &l.base,
+            ],
+        );
+        std::fs::write(users.join("work.txt"), "my work\n").unwrap();
         let lookalike = scratch.join(format!("{COPY_PREFIX}test-repo"));
         std::fs::create_dir_all(lookalike.join(".git")).unwrap();
-        assert_eq!(worktree_count(&l.root), 3);
+        assert_eq!(worktree_count(&l.root), 4);
 
         assert_eq!(clean_stale_copies_in(&scratch, 0, u64::MAX), 1);
         assert!(!trial_copy.exists());
         assert!(rewriter_copy.exists());
-        assert_eq!(worktree_count(&l.root), 2);
+        assert!(users.join("work.txt").exists());
+        assert_eq!(worktree_count(&l.root), 3);
 
+        git_ok(
+            &l.root,
+            &["worktree", "lock", rewriter_copy.to_str().unwrap()],
+        );
+        assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 0);
+        git_ok(
+            &l.root,
+            &["worktree", "unlock", rewriter_copy.to_str().unwrap()],
+        );
         assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 1);
         assert!(!rewriter_copy.exists());
         assert!(lookalike.exists());
+        assert_eq!(
+            std::fs::read_to_string(users.join("work.txt")).unwrap(),
+            "my work\n"
+        );
+    }
+
+    #[test]
+    fn a_failing_post_checkout_hook_leaves_no_copy_registered() {
+        let l = ledger("copy-hook");
+        let hooks = l.root.join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks).unwrap();
+        let hook = hooks.join("post-checkout");
+        std::fs::write(&hook, "#!/bin/sh\nexit 1\n").unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        let args = ledger_plan(
+            &l,
+            picks(&[
+                &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+            ]),
+        );
+        assert!(trial(&args, &slug("copy-hook"), false).is_err());
         assert_eq!(worktree_count(&l.root), 1);
+        assert!(!copy_path_of(&slug("copy-hook")).exists());
     }
 
     #[test]
