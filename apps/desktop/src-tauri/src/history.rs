@@ -1594,26 +1594,47 @@ fn blocking_reason(cwd: &Path) -> Option<String> {
     }
 }
 
-fn untracked_in_the_way(cwd: &Path, target: &str) -> Option<String> {
-    let untracked = lines_of(&git(cwd, &["ls-files", "--others", "--exclude-standard"]).ok()?);
+fn nul_paths(raw: &str) -> Vec<String> {
+    raw.split('\0')
+        .filter(|path| !path.is_empty())
+        .map(|path| path.trim_end_matches('/').to_string())
+        .collect()
+}
+
+fn parents_of(path: &str) -> impl Iterator<Item = &str> {
+    path.match_indices('/')
+        .map(move |(index, _)| &path[..index])
+}
+
+pub(crate) fn untracked_in_the_way(cwd: &Path, target: &str) -> Option<String> {
+    let Ok(raw_untracked) = git(cwd, &["ls-files", "-z", "--others", "--directory"]) else {
+        return Some("Couldn't list the untracked files here, so nothing was changed.".to_string());
+    };
+    let untracked = nul_paths(&raw_untracked);
     if untracked.is_empty() {
         return None;
     }
-    let tracked: std::collections::HashSet<String> =
-        lines_of(&git(cwd, &["ls-tree", "-r", "--name-only", target]).ok()?)
-            .into_iter()
-            .collect();
+    let Ok(raw_tracked) = git(cwd, &["ls-tree", "-r", "-z", "--name-only", target]) else {
+        return Some("Couldn't read the rewritten files, so nothing was changed.".to_string());
+    };
+    let files: std::collections::HashSet<String> = nul_paths(&raw_tracked).into_iter().collect();
+    let dirs: std::collections::HashSet<&str> =
+        files.iter().flat_map(|file| parents_of(file)).collect();
     let blocking: Vec<String> = untracked
         .into_iter()
-        .filter(|file| tracked.contains(file))
+        .filter(|path| {
+            files.contains(path)
+                || dirs.contains(path.as_str())
+                || parents_of(path).any(|parent| files.contains(parent))
+        })
         .collect();
     if blocking.is_empty() {
         return None;
     }
     Some(format!(
-        "{} untracked {} would be overwritten: {}. Move or commit {} first.",
+        "{} untracked or ignored {} would be overwritten: {}. Move or commit {} first. Nothing was changed.",
         blocking.len(),
-        plural_files(blocking.len()),
+        if blocking.len() == 1 { "path" } else { "paths" },
         blocking.join(", "),
         if blocking.len() == 1 { "it" } else { "them" }
     ))
@@ -3790,5 +3811,76 @@ mod tests {
         let head = result.head.clone().unwrap();
         assert!(is_ancestor(&l.root, &l.retries, &head));
         assert!(!is_ancestor(&l.root, &l.tests, &head));
+    }
+
+    #[test]
+    fn apply_refuses_to_replace_an_untracked_folder_or_an_ignored_file() {
+        let l = ledger("apply-untracked-folder");
+        std::fs::write(l.root.join(".gitignore"), "build.log\n").unwrap();
+        git_ok(&l.root, &["add", ".gitignore"]);
+        git_ok(
+            &l.root,
+            &["commit", "-q", "--no-verify", "-m", "Ignore the build log"],
+        );
+        let ignored = git_ok(&l.root, &["rev-parse", "HEAD"]);
+        git_ok(&l.root, &["rm", "-q", "--cached", "logger.ts"]);
+        std::fs::remove_file(l.root.join("logger.ts")).unwrap();
+        git_ok(
+            &l.root,
+            &["commit", "-q", "--no-verify", "-m", "Drop the logger file"],
+        );
+        let now = git_ok(&l.root, &["rev-parse", "HEAD"]);
+        std::fs::create_dir_all(l.root.join("logger.ts")).unwrap();
+        std::fs::write(l.root.join("logger.ts").join("notes.txt"), "mine\n").unwrap();
+        let blocked = move_branch_blocking(&l.root, "feature", &now, &ignored).unwrap();
+        let MoveOutcome::Blocked { reason } = blocked else {
+            panic!("expected the untracked folder to block");
+        };
+        assert!(reason.contains("logger.ts"), "{reason}");
+        assert_eq!(
+            std::fs::read_to_string(l.root.join("logger.ts").join("notes.txt")).unwrap(),
+            "mine\n"
+        );
+        std::fs::remove_dir_all(l.root.join("logger.ts")).unwrap();
+        std::fs::write(l.root.join("build.log"), "tracked log\n").unwrap();
+        git_ok(&l.root, &["add", "-f", "build.log"]);
+        git_ok(&l.root, &["commit", "-q", "--no-verify", "-m", "Track the build log"]);
+        let tracked_log = git_ok(&l.root, &["rev-parse", "HEAD"]);
+        git_ok(&l.root, &["reset", "-q", "--hard", &now]);
+        std::fs::write(l.root.join("build.log"), "my local log\n").unwrap();
+        let blocked = move_branch_blocking(&l.root, "feature", &now, &tracked_log).unwrap();
+        assert!(matches!(blocked, MoveOutcome::Blocked { .. }));
+        assert_eq!(
+            std::fs::read_to_string(l.root.join("build.log")).unwrap(),
+            "my local log\n"
+        );
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), now);
+    }
+
+    #[test]
+    fn a_file_where_the_rewrite_needs_a_folder_blocks_too() {
+        let l = ledger("apply-untracked-parent");
+        git_ok(&l.root, &["rm", "-q", "export.test.ts"]);
+        git_ok(
+            &l.root,
+            &["commit", "-q", "--no-verify", "-m", "No tests yet"],
+        );
+        let now = git_ok(&l.root, &["rev-parse", "HEAD"]);
+        std::fs::create_dir_all(l.root.join("assets")).unwrap();
+        std::fs::write(l.root.join("assets").join("logo.svg"), "<svg/>\n").unwrap();
+        git_ok(&l.root, &["add", "assets/logo.svg"]);
+        git_ok(
+            &l.root,
+            &["commit", "-q", "--no-verify", "-m", "Add the logo"],
+        );
+        let with_assets = git_ok(&l.root, &["rev-parse", "HEAD"]);
+        git_ok(&l.root, &["reset", "-q", "--hard", &now]);
+        std::fs::write(l.root.join("assets"), "a note, not a folder\n").unwrap();
+        let blocked = move_branch_blocking(&l.root, "feature", &now, &with_assets).unwrap();
+        assert!(matches!(blocked, MoveOutcome::Blocked { .. }));
+        assert_eq!(
+            std::fs::read_to_string(l.root.join("assets")).unwrap(),
+            "a note, not a folder\n"
+        );
     }
 }
