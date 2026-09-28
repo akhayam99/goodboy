@@ -218,6 +218,7 @@ const baseRun = {
   progress: null,
   applied: null,
   identity: null,
+  movedHead: null,
   updatedAt: 0,
 } satisfies Omit<HistoryRun, 'phase'>;
 

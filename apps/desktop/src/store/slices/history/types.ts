@@ -81,6 +81,7 @@ export type HistoryRun = {
   readonly progress: HistoryTrialProgress | null;
   readonly applied: HistoryApplied | null;
   readonly identity: HistoryIdentity | null;
+  readonly movedHead: string | null;
   readonly updatedAt: number;
 };
 

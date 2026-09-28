@@ -1666,10 +1666,17 @@ fn backup_namespace(branch: &str) -> String {
     format!("{BACKUP_PREFIX}/b-{encoded}")
 }
 
+const KEPT_STAMP: &str = "keep-";
+
+fn is_stamp(stamp: &str) -> bool {
+    let digits = stamp.strip_prefix(KEPT_STAMP).unwrap_or(stamp);
+    !digits.is_empty() && digits.bytes().all(|byte| byte.is_ascii_digit())
+}
+
 pub(crate) fn is_backup_of(branch: &str, ref_name: &str) -> bool {
     ref_name
         .strip_prefix(&format!("{}/", backup_namespace(branch)))
-        .is_some_and(|stamp| !stamp.is_empty() && stamp.bytes().all(|byte| byte.is_ascii_digit()))
+        .is_some_and(is_stamp)
 }
 
 fn now_secs() -> u64 {
@@ -1895,6 +1902,29 @@ pub(crate) fn move_branch_blocking(
     expected_head: &str,
     new_head: &str,
 ) -> Result<MoveOutcome, WorktreeError> {
+    move_branch_with(cwd, branch, expected_head, new_head, false)
+}
+
+pub(crate) fn restore_blocking(
+    cwd: &Path,
+    branch: &str,
+    expected_head: &str,
+    backup_ref: &str,
+) -> Result<MoveOutcome, WorktreeError> {
+    if !is_backup_of(branch, backup_ref) {
+        return Err(plan_error("that backup belongs to another branch"));
+    }
+    let target = resolve_commit(cwd, backup_ref)?;
+    move_branch_with(cwd, branch, expected_head, &target, true)
+}
+
+fn move_branch_with(
+    cwd: &Path,
+    branch: &str,
+    expected_head: &str,
+    new_head: &str,
+    keeps_backup: bool,
+) -> Result<MoveOutcome, WorktreeError> {
     if let Some(reason) = recover_journal(cwd)? {
         return Ok(MoveOutcome::Blocked { reason });
     }
@@ -1916,7 +1946,12 @@ pub(crate) fn move_branch_blocking(
     if let Some(reason) = untracked_in_the_way(cwd, &target) {
         return Ok(MoveOutcome::Blocked { reason });
     }
-    let backup_ref = format!("{}/{}", backup_namespace(branch), now_nanos());
+    let backup_ref = format!(
+        "{}/{}{}",
+        backup_namespace(branch),
+        if keeps_backup { KEPT_STAMP } else { "" },
+        now_nanos()
+    );
     git(cwd, &["update-ref", &backup_ref, &expected])?;
     let journal = journal_of(cwd).ok_or_else(|| plan_error("the worktree has no git directory"))?;
     std::fs::write(
@@ -2011,6 +2046,7 @@ fn created_at_of(ref_name: &str) -> u64 {
     ref_name
         .rsplit('/')
         .next()
+        .map(|stamp| stamp.strip_prefix(KEPT_STAMP).unwrap_or(stamp))
         .and_then(|stamp| stamp.parse::<u128>().ok())
         .map(|nanos| (nanos / 1_000_000_000) as u64)
         .unwrap_or_default()
@@ -2105,13 +2141,20 @@ pub(crate) fn list_backups(cwd: &Path, branch: &str) -> Result<Vec<HistoryBackup
 }
 
 pub(crate) fn prune_backups(cwd: &Path) {
+    prune_backups_before(cwd, now_secs().saturating_sub(BACKUP_KEEP_SECS));
+}
+
+fn prune_backups_before(cwd: &Path, cutoff: u64) {
     migrate_legacy_backups(cwd);
     let Ok(refs) = backup_refs(cwd) else {
         return;
     };
-    let cutoff = now_secs().saturating_sub(BACKUP_KEEP_SECS);
     for (ref_name, sha, _) in refs {
-        if legacy_backup_of(&ref_name).is_some() || !ref_name.contains("/b-") {
+        let is_kept = ref_name
+            .rsplit('/')
+            .next()
+            .is_some_and(|stamp| stamp.starts_with(KEPT_STAMP));
+        if is_kept || legacy_backup_of(&ref_name).is_some() || !ref_name.contains("/b-") {
             continue;
         }
         let created = created_at_of(&ref_name);
@@ -2303,9 +2346,8 @@ pub async fn history_restore(
         if !is_backup_of(&args.branch, &args.backup_ref) {
             return Err(plan_error("that backup belongs to another branch"));
         }
-        let target = resolve_commit(&cwd, &args.backup_ref)?;
         with_lease(&registry, &args.worktree_path, || {
-            move_branch_blocking(&cwd, &args.branch, &args.expected_head, &target)
+            restore_blocking(&cwd, &args.branch, &args.expected_head, &args.backup_ref)
         })
     })
     .await
@@ -5012,5 +5054,46 @@ mod tests {
         }
         prune_backups(&b.root);
         assert_eq!(git_ok(&b.root, &["rev-parse", shared]), b.b);
+    }
+
+    #[test]
+    fn the_backup_a_restore_leaves_is_never_pruned() {
+        let l = ledger("restore-backup-kept");
+        let mut steps = picks(&[&l.export, &l.batch, &l.webhook, &l.retries, &l.logging]);
+        steps.push(step(&l.tests, HistoryVerb::Drop));
+        steps.push(step(&l.typo, HistoryVerb::Pick));
+        let head = run_ok(&l, steps, "restore-backup-kept").head.unwrap();
+        let MoveOutcome::Moved {
+            backup_ref: rewrite_backup,
+            ..
+        } = move_branch_blocking(&l.root, "feature", &l.typo, &head).unwrap()
+        else {
+            panic!("expected the rewrite to move the branch");
+        };
+        let MoveOutcome::Moved {
+            backup_ref: restore_backup,
+            ..
+        } = restore_blocking(&l.root, "feature", &head, &rewrite_backup).unwrap()
+        else {
+            panic!("expected the restore to move the branch");
+        };
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+        prune_backups_before(&l.root, u64::MAX);
+        assert_eq!(git_ok(&l.root, &["rev-parse", &restore_backup]), head);
+        assert!(
+            git_run(
+                &l.root,
+                &["rev-parse", "--verify", "--quiet", &rewrite_backup],
+                None,
+                None
+            )
+            .unwrap()
+            .status
+                != 0
+        );
+        let listed = list_backups(&l.root, "feature").unwrap();
+        assert!(listed
+            .iter()
+            .any(|backup| backup.ref_name == restore_backup));
     }
 }

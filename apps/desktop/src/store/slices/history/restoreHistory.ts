@@ -38,15 +38,14 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
         sha: null,
       });
     }
+    const run = get().historyRuns[mountId];
+    const pushedHead = run?.phase === 'pushed' ? run.movedHead : null;
     const remote = await remoteForPush({
       target,
-      expectedHead: status.head,
-      incorporated: null,
+      expectedHead: backupRef,
+      incorporated: pushedHead,
       shouldPush,
     });
-    if (remote.stop !== null) {
-      return stopWith(remote.stop);
-    }
     const remoteSha = remote.sha;
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'applying', stop: null } });
     const moved = await restoreHistoryBackup({
@@ -95,6 +94,17 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
     await get().loadHistoryDraft({ sessionId, mountId });
     if (!shouldPush || !remote.hasUpstream) {
       return 'restored';
+    }
+    if (remote.stop !== null) {
+      return stopWith({
+        reason: remote.stop.reason,
+        message:
+          remote.stop.reason === 'origin-moved'
+            ? 'Restored here. The online copy has newer commits than this backup, so nothing was pushed.'
+            : `Restored here, but the online copy could not be checked, so nothing was pushed.`,
+        files: [],
+        sha: remote.stop.sha,
+      });
     }
     const pushed = await pushWithLease({
       worktreePath: target.worktreePath,

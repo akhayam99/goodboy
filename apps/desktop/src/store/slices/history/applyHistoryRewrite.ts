@@ -128,6 +128,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
           result: null,
           copyPath: null,
           identity: input.identity,
+          movedHead: outcome.head,
         },
       });
       break;

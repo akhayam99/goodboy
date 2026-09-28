@@ -821,6 +821,34 @@ describe('plan editing', () => {
 });
 
 describe('restore previous history', () => {
+  it('restores here but never pushes over online commits newer than the backup', async () => {
+    const { slice, read } = harness();
+    const backupRef = 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000000';
+    engine.readRemoteLease.mockImplementation(async ({ expectedHead }: { expectedHead: string }) =>
+      expectedHead === backupRef
+        ? { kind: 'not-included', sha: 'teammate-sha' }
+        : { kind: 'included', sha: 'teammate-sha' },
+    );
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'backup-sha',
+      backupRef: 'refs/goodboy/backup/b-6669782f6c6564676572/keep-1790000000000000001',
+    });
+
+    await expect(
+      slice.restoreHistory({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        backupRef,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(engine.restoreHistoryBackup).toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+    expect(read().historyRuns[MOUNT_ID]?.stop?.message).toContain('nothing was pushed');
+  });
+
   it('moves the branch back to the backup and pushes it with the lease read before', async () => {
     const { slice, read } = harness();
     engine.restoreHistoryBackup.mockResolvedValue({
