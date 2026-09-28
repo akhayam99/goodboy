@@ -128,6 +128,7 @@ type RemoteLeaseParams = {
   readonly branch: string;
   readonly expectedHead: string;
   readonly incorporated: string | null;
+  readonly incorporatedSince: string | null;
   readonly workspaceId: string | null;
   readonly projectId: string | null;
 };
@@ -137,6 +138,7 @@ export const readRemoteLease = async ({
   branch,
   expectedHead,
   incorporated,
+  incorporatedSince,
   workspaceId,
   projectId,
 }: RemoteLeaseParams): Promise<HistoryRemoteLease> =>
@@ -145,6 +147,7 @@ export const readRemoteLease = async ({
     branch,
     expectedHead,
     incorporated,
+    incorporatedSince,
     workspaceId,
     projectId,
   });

@@ -1157,7 +1157,9 @@ it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, in a
 namespace made from the full branch name, kept 30 days; `Backups` in the page menu lists them with `Restore previous
 history`, which moves the branch back and, on a branch with an upstream,
 pushes it with a lease only when the online copy has nothing newer than that
-backup; otherwise it stays restored here and the page says nothing was pushed.
+backup, or is the last rewrite this page pushed and the online copy it replaced
+was already in that backup; otherwise it stays restored here and the page says
+nothing was pushed.
 The backup a restore leaves is never pruned. Backups made before the current
 naming never move: they show read-only as older backups under every branch
 whose name matches, can't be restored from the page and are never pruned. History rewriter may write only its

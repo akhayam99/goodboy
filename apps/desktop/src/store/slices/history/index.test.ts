@@ -849,6 +849,57 @@ describe('restore previous history', () => {
     expect(read().historyRuns[MOUNT_ID]?.stop?.message).toContain('nothing was pushed');
   });
 
+  it('checks an older backup against the remote seen when the last rewrite was applied', async () => {
+    const { slice, read } = harness();
+    const state = read() as unknown as Record<string, unknown>;
+    const backupRef = 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000000';
+    state['historyRuns'] = {
+      [MOUNT_ID]: {
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        origin: 'plan',
+        phase: 'pushed',
+        planId: 'plan-2',
+        agentId: null,
+        copyPath: null,
+        stop: null,
+        result: null,
+        backupRef: 'refs/goodboy/backup/b-6669782f6c6564676572/1790000000000000001',
+        remoteSha: 'teammate-sha',
+        holder: null,
+        progress: null,
+        applied: null,
+        identity: null,
+        movedHead: 'rewrite-two',
+        updatedAt: 1,
+      },
+    };
+    engine.readRemoteLease.mockResolvedValue({ kind: 'not-included', sha: 'rewrite-two' });
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'backup-sha',
+      backupRef: 'refs/goodboy/backup/b-6669782f6c6564676572/keep-1790000000000000002',
+    });
+
+    await expect(
+      slice.restoreHistory({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        backupRef,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(engine.readRemoteLease).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expectedHead: backupRef,
+        incorporated: 'rewrite-two',
+        incorporatedSince: 'teammate-sha',
+      }),
+    );
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+
   it('moves the branch back to the backup and pushes it with the lease read before', async () => {
     const { slice, read } = harness();
     engine.restoreHistoryBackup.mockResolvedValue({

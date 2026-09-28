@@ -39,11 +39,12 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       });
     }
     const run = get().historyRuns[mountId];
-    const pushedHead = run?.phase === 'pushed' ? run.movedHead : null;
+    const isPushed = run?.phase === 'pushed';
     const remote = await remoteForPush({
       target,
       expectedHead: backupRef,
-      incorporated: pushedHead,
+      incorporated: isPushed ? run.movedHead : null,
+      incorporatedSince: isPushed ? run.remoteSha : null,
       shouldPush,
     });
     const remoteSha = remote.sha;

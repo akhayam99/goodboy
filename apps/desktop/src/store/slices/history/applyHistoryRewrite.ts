@@ -44,6 +44,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       target,
       expectedHead: input.expectedHead,
       incorporated: input.incorporatedRemoteSha ?? null,
+      incorporatedSince: null,
       shouldPush: input.shouldPush,
     });
     if (remote.stop !== null) {

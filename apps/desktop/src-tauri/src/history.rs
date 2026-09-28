@@ -2581,6 +2581,7 @@ pub(crate) fn remote_lease(
     branch: &str,
     expected_head: &str,
     incorporated: Option<&str>,
+    incorporated_since: Option<&str>,
     token: Option<&str>,
 ) -> RemoteLease {
     let reference = format!("refs/heads/{branch}");
@@ -2609,12 +2610,15 @@ pub(crate) fn remote_lease(
     let Some(sha) = found else {
         return RemoteLease::Absent;
     };
-    let is_incorporated = incorporated.map(str::trim) == Some(sha.as_str());
     let Ok(expected) = resolve_commit(cwd, expected_head) else {
         return RemoteLease::Unknown {
             reason: "the branch head the plan started from is missing".to_string(),
         };
     };
+    let is_incorporated = incorporated.map(str::trim) == Some(sha.as_str())
+        && incorporated_since
+            .map(str::trim)
+            .is_none_or(|since| is_ancestor(cwd, since, &expected));
     if is_incorporated || is_ancestor(cwd, &sha, &expected) {
         return RemoteLease::Included { sha };
     }
@@ -2627,6 +2631,7 @@ pub async fn history_remote_lease(
     branch: String,
     expected_head: String,
     incorporated: Option<String>,
+    incorporated_since: Option<String>,
     workspace_id: Option<String>,
     project_id: Option<String>,
 ) -> Result<RemoteLease, WorktreeError> {
@@ -2641,6 +2646,7 @@ pub async fn history_remote_lease(
             &branch,
             &expected_head,
             incorporated.as_deref(),
+            incorporated_since.as_deref(),
             token.as_deref(),
         ))
     })
@@ -4743,7 +4749,7 @@ mod tests {
             &["remote", "add", "origin", remote.to_str().unwrap()],
         );
         assert_eq!(
-            remote_lease(&l.root, "feature", &l.typo, None, None),
+            remote_lease(&l.root, "feature", &l.typo, None, None, None),
             RemoteLease::Absent
         );
         git_ok(
@@ -4756,7 +4762,7 @@ mod tests {
             ],
         );
         assert_eq!(
-            remote_lease(&l.root, "feature", &l.typo, None, None),
+            remote_lease(&l.root, "feature", &l.typo, None, None, None),
             RemoteLease::Included {
                 sha: l.webhook.clone()
             }
@@ -4783,14 +4789,117 @@ mod tests {
         );
         git_ok(&other, &["push", "-q", "origin", "feature"]);
         assert_eq!(
-            remote_lease(&l.root, "feature", &l.typo, None, None),
+            remote_lease(&l.root, "feature", &l.typo, None, None, None),
             RemoteLease::NotIncluded {
                 sha: theirs.clone()
             }
         );
         assert_eq!(
-            remote_lease(&l.root, "feature", &l.typo, Some(&theirs), None),
+            remote_lease(&l.root, "feature", &l.typo, Some(&theirs), None, None),
             RemoteLease::Included { sha: theirs }
+        );
+    }
+
+    #[test]
+    fn restoring_an_older_backup_never_counts_a_later_push_that_carried_a_teammate() {
+        let l = ledger("restore-lease-teammate");
+        let remote = l.root.join("remote.git");
+        git_ok(&l.root, &["init", "-q", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &l.root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        let push = |sha: &str| {
+            git_ok(
+                &l.root,
+                &[
+                    "push",
+                    "-q",
+                    "-f",
+                    "origin",
+                    &format!("{sha}:refs/heads/feature"),
+                ],
+            )
+        };
+        let tree_of = |sha: &str| git_ok(&l.root, &["rev-parse", &format!("{sha}^{{tree}}")]);
+        let first_backup = l.webhook.clone();
+        push(&first_backup);
+        let first_rewrite = git_ok(
+            &l.root,
+            &[
+                "commit-tree",
+                &tree_of(&first_backup),
+                "-p",
+                &l.base,
+                "-m",
+                "Rewrite one",
+            ],
+        );
+        push(&first_rewrite);
+        let teammate = git_ok(
+            &l.root,
+            &[
+                "commit-tree",
+                &tree_of(&l.retries),
+                "-p",
+                &first_rewrite,
+                "-m",
+                "Teammate retries",
+            ],
+        );
+        push(&teammate);
+        let second_backup = teammate.clone();
+        let second_rewrite = git_ok(
+            &l.root,
+            &[
+                "commit-tree",
+                &tree_of(&l.retries),
+                "-p",
+                &l.base,
+                "-m",
+                "Rewrite two with the teammate",
+            ],
+        );
+        push(&second_rewrite);
+
+        assert_eq!(
+            remote_lease(
+                &l.root,
+                "feature",
+                &first_backup,
+                Some(&second_rewrite),
+                Some(&teammate),
+                None
+            ),
+            RemoteLease::NotIncluded {
+                sha: second_rewrite.clone()
+            }
+        );
+        assert_eq!(
+            remote_lease(
+                &l.root,
+                "feature",
+                &second_backup,
+                Some(&second_rewrite),
+                Some(&teammate),
+                None
+            ),
+            RemoteLease::Included {
+                sha: second_rewrite.clone()
+            }
+        );
+        assert_eq!(
+            remote_lease(
+                &l.root,
+                "feature",
+                &first_backup,
+                Some(&second_rewrite),
+                None,
+                None
+            ),
+            RemoteLease::Included {
+                sha: second_rewrite
+            }
         );
     }
 

@@ -14,6 +14,7 @@ type Params = {
   readonly target: HistoryTarget;
   readonly expectedHead: string;
   readonly incorporated: string | null;
+  readonly incorporatedSince: string | null;
   readonly shouldPush: boolean;
 };
 
@@ -21,6 +22,7 @@ export const remoteForPush = async ({
   target,
   expectedHead,
   incorporated,
+  incorporatedSince,
   shouldPush,
 }: Params): Promise<RemoteForPush> => {
   const status = await worktreeStatus({ worktreePath: target.worktreePath }).catch(() => null);
@@ -29,6 +31,7 @@ export const remoteForPush = async ({
     branch: target.branch,
     expectedHead,
     incorporated,
+    incorporatedSince,
     workspaceId: target.workspaceId,
     projectId: target.projectId,
   }).catch((error: unknown): HistoryRemoteLease => ({

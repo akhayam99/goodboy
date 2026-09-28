@@ -75,7 +75,8 @@ describe('history engine bridge', () => {
       worktreePath: '/w',
       branch: 'hl/ledger-export',
       expectedHead: 'head',
-      incorporated: null,
+      incorporated: 'pushed-head',
+      incorporatedSince: 'remote-at-apply',
       workspaceId: 'ws',
       projectId: 'p',
     });
@@ -83,7 +84,8 @@ describe('history engine bridge', () => {
       worktreePath: '/w',
       branch: 'hl/ledger-export',
       expectedHead: 'head',
-      incorporated: null,
+      incorporated: 'pushed-head',
+      incorporatedSince: 'remote-at-apply',
       workspaceId: 'ws',
       projectId: 'p',
     });
