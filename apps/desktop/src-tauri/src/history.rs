@@ -1653,7 +1653,14 @@ fn planned_order(cwd: &Path, ordered: &[HistoryStep]) -> Result<Vec<PlannedStep>
 }
 
 fn backup_namespace(branch: &str) -> String {
-    format!("{BACKUP_PREFIX}/{}", sanitize_slug(branch))
+    let encoded: String = branch.bytes().map(|byte| format!("{byte:02x}")).collect();
+    format!("{BACKUP_PREFIX}/b-{encoded}")
+}
+
+pub(crate) fn is_backup_of(branch: &str, ref_name: &str) -> bool {
+    ref_name
+        .strip_prefix(&format!("{}/", backup_namespace(branch)))
+        .is_some_and(|stamp| !stamp.is_empty() && stamp.bytes().all(|byte| byte.is_ascii_digit()))
 }
 
 fn now_secs() -> u64 {
@@ -1968,6 +1975,9 @@ pub(crate) fn list_backups(cwd: &Path, branch: &str) -> Result<Vec<HistoryBackup
         .filter_map(|line| {
             let mut parts = line.split('\u{1f}');
             let ref_name = parts.next()?.trim().to_string();
+            if !is_backup_of(branch, &ref_name) {
+                return None;
+            }
             let sha = parts.next()?.trim().to_string();
             let subject = parts.next().unwrap_or_default().trim().to_string();
             Some(HistoryBackup {
@@ -2153,10 +2163,7 @@ pub async fn history_restore(
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(args.worktree_path));
         }
-        if !args
-            .backup_ref
-            .starts_with(&format!("{}/", backup_namespace(&args.branch)))
-        {
+        if !is_backup_of(&args.branch, &args.backup_ref) {
             return Err(plan_error("that backup belongs to another branch"));
         }
         let target = resolve_commit(&cwd, &args.backup_ref)?;
@@ -3941,7 +3948,8 @@ mod tests {
         else {
             panic!("expected the branch to move");
         };
-        assert!(backup_ref.starts_with("refs/goodboy/backup/feature/"));
+        assert!(is_backup_of("feature", &backup_ref));
+        assert!(backup_ref.starts_with("refs/goodboy/backup/b-66656174757265/"));
         assert_eq!(git_ok(&l.root, &["rev-parse", &backup_ref]), l.typo);
         assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), head);
         let restored = move_branch_blocking(&l.root, "feature", &head, &backup_ref).unwrap();
@@ -4563,5 +4571,31 @@ mod tests {
             git_ok(&l.root, &["rev-parse", "refs/heads/feature"]),
             l.typo
         );
+    }
+
+    #[test]
+    fn backups_of_branches_whose_names_look_alike_never_mix() {
+        let b = branch("backup-namespace");
+        let slash = format!("{}/{}", backup_namespace("feature/a"), now_nanos());
+        let dash = format!("{}/{}", backup_namespace("feature-a"), now_nanos());
+        git_ok(&b.root, &["update-ref", &slash, &b.a]);
+        git_ok(&b.root, &["update-ref", &dash, &b.b]);
+        git_ok(
+            &b.root,
+            &["update-ref", "refs/goodboy/backup/feature-a/1000", &b.c],
+        );
+        let listed: Vec<String> = list_backups(&b.root, "feature-a")
+            .unwrap()
+            .into_iter()
+            .map(|backup| backup.ref_name)
+            .collect();
+        assert_eq!(listed, vec![dash.clone()]);
+        assert!(is_backup_of("feature-a", &dash));
+        assert!(!is_backup_of("feature-a", &slash));
+        assert!(!is_backup_of(
+            "feature-a",
+            "refs/goodboy/backup/feature-a/1000"
+        ));
+        assert!(!is_backup_of("feature-a", &format!("{dash}/../x")));
     }
 }
