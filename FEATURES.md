@@ -505,20 +505,20 @@ Export a wireframe as a folder of pages, or redraw it at the other fidelity.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s12-resolve-dark.webp">
-  <img src="./docs/readme/s12-resolve-light.webp" alt="Review comments on payments-api #318 grouped by file with their states">
+  <img src="./docs/readme/s12-resolve-light.webp" alt="Review comments on payments-api #318 grouped as open, waiting for the push and done, with the picked one on the right">
 </picture>
 
 ### Resolve
 
-Turn review comments into commits without writing the fix yourself. Select comments, press **Resolve** and pick a model: an agent writes each fix as a local commit and drafts the reply, and you approve, ask for a revision, or mark it **Will not fix**.
+Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Draft fixes for N** and an agent writes each fix as a local commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment.
 
 ### Comment states
 
-Know what each comment needs next. Each one shows a state like **Working**, **Needs you**, **Reply ready** or **Approved**, grouped by file.
+Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Waiting for the push** and **Done**.
 
 ### Close on GitHub
 
-Finish a review in one action: push the fixes, post the replies and resolve the threads. After an interruption Goodboy looks for your reply in the thread before posting it again.
+Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.
 
 ### Review replies in your voice
 
@@ -526,7 +526,7 @@ Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like m
 
 ### Fixes on a branch that moved
 
-Approve a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.
+Accept a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.
 
 ### Notes before a pull request
 
@@ -534,7 +534,11 @@ Review your own diff before anyone else does. Leave notes, resolve them like rev
 
 ### GitHub pull request page
 
-Know whether a GitHub pull request can merge, in plain words, with details, checks and activity, and merge, mark ready, draft or close it from there. **Merge** asks for confirmation.
+Know whether a GitHub pull request can merge, in plain words, with details and checks, and merge, mark ready, draft or close it from there. The next step is the one main action, such as **Mark ready for review** on a draft or **Squash and merge** once it is approved and green. **Merge** and **Close** confirm right under the header, and **N comments to resolve** opens Review.
+
+### Pull request, Diff and Review as layers
+
+Move between a pull request, its Diff and its Review without losing your place. They open as one path in the trail from the worktree row, and Back walks it. Every link to a pull request lands on its page.
 
 ### Write it for me
 
@@ -548,14 +552,14 @@ Keep a pull request description in step with its branch. After a history push, a
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s17-diff-dark.webp">
-  <img src="./docs/readme/s17-diff-light.webp" alt="The session diff for payments-api with one file viewed and a note on a line">
+  <img src="./docs/readme/s17-diff-light.webp" alt="The session diff for payments-api with one file viewed, a note on a line, and 1 note and Resolve in Review in the toolbar">
 </picture>
 
-Read changes with syntax colors, word-level highlights, split or unified view and a **Viewed** tick per file, and quote a line into a note or a question for an agent.
+Read changes with syntax colors, word-level highlights, split or unified view and a **Viewed** tick per file, and quote a line into a note or a question for an agent. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**.
 
 ### Write review
 
-Draft line comments on a GitHub pull request and publish them with **Comment**, **Approve** or **Request changes**. Outdated drafts are marked **Stale**.
+Review someone else's pull request in a form under the diff: your line comments, the verdict and a summary, sent with **Approve**, **Request changes** or **Submit comments**. Outdated drafts are marked **Stale**.
 
 ## Branch history
 
@@ -705,7 +709,7 @@ Get updates in the background, then see what is new. With agents running, **Rest
 
 ### Changelog in the app
 
-Read release notes inside the app, searchable, with links into the screen each change touched. After an update, "What's new since" covers the releases you skipped.
+Read release notes inside the app, searchable, with links into the screen each change touched. After an update, "What's new since" covers the releases you skipped. In the list, only releases that update your data in one direction carry a mark.
 
 ### Before and after pictures
 
@@ -722,6 +726,10 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
 <a id="keyboard-and-terminal"></a>
 <details>
 <summary><h2>Keyboard and terminal</h2></summary>
+
+### Right click menus
+
+Right click a session, agent, run, artifact, pull request, worktree row, diff file or message to see every action it has, at the pointer. The **⋯** menu and the palette list the same actions in the same order, and one that cannot run says why. **Shift+F10** opens the menu on the focused row.
 
 ### Command palette
 

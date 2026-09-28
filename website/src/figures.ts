@@ -118,13 +118,13 @@ export const RESOLVE: Figure = {
   id: 'resolve',
   width: 3840,
   height: 2400,
-  alt: 'Seven review comments on pull request 318 grouped by file, one fixed in commit 4f21c8b, one waiting for an answer and several replies ready to review',
+  alt: 'Review for pull request 318: comments grouped as open, waiting for the push and done, one reply open on the right, and Push 1 in the header',
   details: [
     {
       id: 'resolve-d1',
-      width: 2045,
-      height: 826,
-      caption: 'A fix committed, and replies drafted for you to review',
+      width: 1707,
+      height: 747,
+      caption: 'A drafted reply with Accept, Reply and Skip',
     },
   ],
 };
