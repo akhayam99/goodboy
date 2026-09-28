@@ -41,7 +41,7 @@
       _iub.csConfiguration = {
         siteId: 4548648,
         cookiePolicyId: 46359357,
-        lang: 'en',
+        lang: 'it',
         storage: { useSiteId: true },
         askConsentAtCookiePolicyUpdate: true,
         enableFadp: true,
@@ -53,7 +53,9 @@
         callback: {
           onBannerShown: function () {
             document
-              .querySelectorAll('#iubenda-cs-banner .iubenda-cs-content, #iubenda-cs-banner .iubenda-cs-opt-group')
+              .querySelectorAll(
+                '#iubenda-cs-banner .iubenda-cs-content, #iubenda-cs-banner .iubenda-cs-opt-group',
+              )
               .forEach(function (node) {
                 node.removeAttribute('style');
               });
@@ -165,17 +167,12 @@
       content="Every feature in Goodboy, the agentic development environment, grouped the way a task lives, with the release that added it."
     />
     <meta name="twitter:image" content="https://goodboy-ai.dev/og-image.png" />
-    <meta
-      name="twitter:image:alt"
-      content="Goodboy features"
-    />
+    <meta name="twitter:image:alt" content="Goodboy features" />
 
     <!-- Theme / PWA hints -->
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0d0f11" media="(prefers-color-scheme: dark)" />
     <meta name="color-scheme" content="light dark" />
-
-
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->

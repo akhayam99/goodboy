@@ -90,12 +90,14 @@ OG image renders in Inter on a machine without it installed.
 
 The consent card is iubenda's Cookie Solution, embedded in `website/index.html`
 rather than through Google Tag Manager, so the repo owns its language, position
-and look. It asks in English, sits at the bottom left, and takes its colours
+and look. It asks in Italian, sits at the bottom left, and takes its colours
 from `website/src/styles/consent.css`; the `onBannerShown` callback drops
 iubenda's inline colours so the site tokens apply in both themes. Consent Mode
 defaults to denied before any tag loads. iubenda shows no card for a language
-the cookie policy lacks, so the policy needs an English version in the iubenda
-dashboard, and the GTM iubenda tag stays paused so the card never loads twice.
+the cookie policy lacks, and the policy has only an Italian version, so the
+embed uses `lang: 'it'` and goes back to `'en'` once an English policy exists
+in the iubenda dashboard. The GTM iubenda tag stays paused so the card never
+loads twice.
 
 ## Page kit
 
