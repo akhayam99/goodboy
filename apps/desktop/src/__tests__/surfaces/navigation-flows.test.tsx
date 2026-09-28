@@ -367,6 +367,34 @@ const both =
     }
   };
 
+const trailNav = (): HTMLElement => screen.getByRole('navigation', { name: 'Breadcrumb' });
+
+const trailReads =
+  (...labels: ReadonlyArray<string>) =>
+  async (): Promise<void> => {
+    const pattern = new RegExp(labels.map((label) => label.replace('#', '#\\d*')).join('.*'));
+    await waitFor(() => expect(trailNav().textContent ?? '').toMatch(pattern), WAIT);
+  };
+
+const clickCrumb = async (label: RegExp): Promise<void> => {
+  await click(within(trailNav()).getByRole('button', { name: label }));
+};
+
+const stackDepth = (): number => {
+  const state = useAppStore.getState();
+  return state.navigation[state.currentWorkspaceId ?? '']?.entries.length ?? 0;
+};
+
+const openDiffThenPr = async (): Promise<void> => {
+  await openCrumb(/^Diff/);
+  await clickButton(/^Open PR #\d+$/);
+};
+
+const openPrThenReview = async (): Promise<void> => {
+  await clickFirstButton(/^Open PR #\d+ of /);
+  await openPalette(/^Open Review/);
+};
+
 const seedReviewComment = ({ sessionId }: Ctx): void => {
   const state = useAppStore.getState();
   const mount = state.sessionProjectMounts[sessionId]?.[0];
@@ -813,6 +841,68 @@ const ROWS: ReadonlyArray<Row> = [
       await clickButton(/^Open PR #\d+$/);
     },
     lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+  },
+  {
+    name: 'layers: the diff then its pull request read Overview, Diff, Pull request',
+    covers: ['navigate', 'layer:diff>pr'],
+    open: openDiffThenPr,
+    lands: both(lens('pr'), trailReads('Overview', 'Diff', 'Pull request', '#')),
+  },
+  {
+    name: 'layers: the Diff crumb pops back from the pull request',
+    covers: ['navigate', 'layer:crumb-pop'],
+    open: async () => {
+      await openDiffThenPr();
+      await clickCrumb(/^Diff$/);
+    },
+    lands: both(lens('files'), () => heading('Diff'), trailReads('Overview', 'Diff')),
+  },
+  {
+    name: 'layers: Back removes the pull request layer from the diff',
+    covers: ['back', 'layer:back'],
+    open: async () => {
+      await openDiffThenPr();
+      await clickButton(/^Back/);
+    },
+    lands: both(lens('files'), () => heading('Diff')),
+  },
+  {
+    name: 'layers: Review opened on the pull request stacks on it',
+    covers: ['navigate', 'layer:pr>review'],
+    open: openPrThenReview,
+    lands: both(lens('review'), trailReads('Overview', 'PR #', 'Review')),
+  },
+  {
+    name: 'layers: the pull request link inside Review pops to it, no copy',
+    covers: ['navigate', 'layer:pop-to-kind'],
+    open: async () => {
+      await openPrThenReview();
+      const depth = stackDepth();
+      await clickButton(/^Open pull request #\d+/);
+      expect(stackDepth()).toBe(depth);
+    },
+    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+  },
+  {
+    name: 'layers: the pull request crumb pops back from Review',
+    covers: ['navigate', 'layer:crumb-pop'],
+    open: async () => {
+      await openPrThenReview();
+      await clickCrumb(/^PR #\d+$/);
+    },
+    lands: lens('pr'),
+  },
+  {
+    name: 'layers: comments to resolve open Review under the Overview alone',
+    covers: ['openReviewTarget', 'layer:overview>review'],
+    open: async (ctx) => {
+      seedReviewComment(ctx);
+      await settle();
+      await clickFirstButton(/^Open Review for .+, 1 to resolve$/);
+    },
+    lands: async () => {
+      await waitFor(() => expect(trailNav().textContent ?? '').not.toMatch(/PR #/), WAIT);
+    },
   },
   {
     name: 'review header pull request link',

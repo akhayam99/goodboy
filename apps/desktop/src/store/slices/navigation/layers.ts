@@ -5,7 +5,7 @@ import type { LayerKind, Location, NavigationStack, Place, PlaceRequest } from '
 
 const STRUCTURAL_PARENT: Partial<Record<LayerKind, LayerKind>> = { history: 'diff' };
 
-export const layerKindOf = (place: Place): LayerKind | null => {
+const layerKindOf = (place: Place): LayerKind | null => {
   if (place.at !== 'session' || place.view.studio !== null) {
     return null;
   }
@@ -74,7 +74,7 @@ const hasFocus = (request: PlaceRequest): boolean => {
   return target.kind !== 'diff' || target.focus !== null;
 };
 
-export type LayerMove =
+type LayerMove =
   | { readonly kind: 'none' }
   | { readonly kind: 'push'; readonly layers: ReadonlyArray<LayerKind> }
   | { readonly kind: 'pop'; readonly index: number };

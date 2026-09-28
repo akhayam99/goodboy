@@ -312,7 +312,24 @@ the Inbox (Launch session).
   was, so that lens only ever records where the user came from. The activity
   feed, the palette, a notification, a linked-work chip and a restored session
   are shortcuts into a place that already has a parent. None of them may
-  rewrite it. History is what Back is for.
+  rewrite it. History is what Back is for. The code host layers are the one
+  exception, below.
+- **The code host layers are a path, not a structure.** The pull request,
+  Review, the Diff and Rewrite history are layers of one page. Each entry of
+  the stack carries `layers`, the kinds to its left (`layers.ts`). Opening a
+  layer from the Overview puts it under the Overview alone; opening one from
+  inside another layer stacks it to the right (`Overview > Diff > Pull request
+  > #318`, `Overview > PR #318 > Review`). A kind already in the trail pops
+  > back to its entry instead of stacking a copy, so the stack never loops and
+  > is at most four deep; a crumb pops to itself the same way, and Back removes
+  > one layer. A request that carries a focus (a diff on one file) pushes
+  > instead. A jump from outside the page (board card, palette from another
+  > place, notification, sidebar) gets the canonical path of its target: Review
+  > sits under its pull request when the session has one, everything else under
+  > the Overview. Rewrite history stays a child of its Diff (the branch crumb
+  > between them). Opening a page that is not a layer drops the path, and Back
+  > finds it again. A reload carries the path in the reload intent and replays
+  > it from the Overview, so the trail comes back as it was.
 - **A child hangs off the overview section that owns it**: a step under its
   run under Workflows, an ad-hoc agent under Agents, a resolver under its
   comment in Review (`s/{session}/review/t/{thread}/agent`). Back returns where
