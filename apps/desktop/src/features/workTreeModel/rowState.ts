@@ -9,6 +9,7 @@ export type RowStateReason =
   | { readonly kind: 'ready'; readonly stepLabel: string | null }
   | { readonly kind: 'question'; readonly stepLabel: string | null }
   | { readonly kind: 'stepAsking' }
+  | { readonly kind: 'openQuestions' }
   | { readonly kind: 'budget'; readonly limitUsd: number | null }
   | { readonly kind: 'failed' }
   | { readonly kind: 'blocked' }

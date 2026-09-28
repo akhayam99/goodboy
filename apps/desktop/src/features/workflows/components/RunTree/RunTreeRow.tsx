@@ -163,8 +163,7 @@ export const RunTreeRow = ({
               <span className={WORK_META_COLUMN.action}>
                 {answer === null ? null : (
                   <Button
-                    variant="warning"
-                    emphasis="outline"
+                    variant="secondary"
                     size="sm"
                     className="h-6 shrink-0"
                     onClick={() => onAnswer(answer.question)}

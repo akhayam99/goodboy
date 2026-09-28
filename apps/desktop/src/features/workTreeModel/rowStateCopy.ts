@@ -30,6 +30,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
         ? 'Needs your answer'
         : `Needs your answer in step ${reason.stepLabel}`;
     case 'stepAsking':
+    case 'openQuestions':
       return null;
     case 'budget':
       return reason.limitUsd == null
@@ -89,6 +90,7 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'question':
       return 'Needs you';
     case 'stepAsking':
+    case 'openQuestions':
       return null;
     case 'budget':
       return 'At spend limit';
@@ -153,6 +155,7 @@ export const rowStateShortSentence = ({ state }: StateParams): string | null =>
 const NEUTRAL_REASONS: ReadonlySet<RowStateReason['kind']> = new Set([
   'discarded',
   'stepAsking',
+  'openQuestions',
   'agentStopped',
   'stepStopped',
 ]);

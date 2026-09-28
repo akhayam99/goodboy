@@ -29,6 +29,7 @@ import {
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
 import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
+import { ActivityOneSignalScene } from './scenes/ActivityOneSignalScene';
 import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
@@ -127,6 +128,7 @@ export const MOCK_SCENES = {
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
   'activity-question': ActivityQuestionScene,
+  'activity-one-signal': ActivityOneSignalScene,
   'context-drawer': ContextDrawerScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
