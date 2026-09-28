@@ -193,6 +193,9 @@ type Store = {
   evictSession: () => void;
   emitNotification: () => void;
   recordSessionEvent: () => Promise<void>;
+  refreshSessionPr: () => Promise<void>;
+  refreshSessionMr: () => Promise<void>;
+  refreshSessionBitbucketPr: () => Promise<void>;
   reconcileOrphanWorktrees: () => Promise<void>;
   cleanupSessionMounts: () => Promise<ReadonlyArray<unknown>>;
 };
@@ -244,6 +247,9 @@ const makeStore = ({
   evictSession: vi.fn(),
   emitNotification: vi.fn(),
   recordSessionEvent: vi.fn(async () => undefined),
+  refreshSessionPr: vi.fn(async () => undefined),
+  refreshSessionMr: vi.fn(async () => undefined),
+  refreshSessionBitbucketPr: vi.fn(async () => undefined),
   reconcileOrphanWorktrees: vi.fn(async () => undefined),
   cleanupSessionMounts: vi.fn(async () => []),
 });

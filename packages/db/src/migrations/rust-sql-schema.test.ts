@@ -126,6 +126,18 @@ const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
     contains: ['FROM agents a', 'a.deleted_at IS NULL'],
     reason: 'impact accounting filters tombstones inline and owns its own deleted-spend policy',
   },
+  {
+    file: 'session-workflow.ts',
+    contains: ['WITH RECURSIVE owned(id)', 'SELECT a.id FROM agents a JOIN owned o'],
+    reason:
+      'a run delete walks the children of agents deleted earlier too, then purges each one as a single agent delete does',
+  },
+  {
+    file: 'session-workflow.ts',
+    contains: ['SELECT COUNT(*) AS purged FROM agents', 'WHERE deleted_at IS NULL'],
+    reason:
+      'a run delete counts only the agents it newly tombstones, filtering on deleted_at itself',
+  },
 ];
 
 const RUST_TEST_MODULE = '#[cfg(test)]';

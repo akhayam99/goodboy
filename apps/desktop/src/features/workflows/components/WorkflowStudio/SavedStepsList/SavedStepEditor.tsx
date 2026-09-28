@@ -1,6 +1,6 @@
 import { useState, type KeyboardEvent } from 'react';
 import { Copy, Trash2 } from 'lucide-react';
-import { Button, InlineConfirm } from '@goodboy/ui';
+import { Button, FormActions, InlineConfirm } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import type { StepDraft } from '../../../engine';
 import { stepDraftWithModel } from '../../../engine';
@@ -86,12 +86,15 @@ export const SavedStepEditor = ({
           onCancel={() => setIsConfirmingRemove(false)}
         />
       ) : (
-        <div className="flex items-center justify-end gap-1">
-          {error === null ? null : (
-            <p role="alert" className="min-w-0 flex-1 truncate text-secondary text-danger">
-              {error}
-            </p>
-          )}
+        <FormActions
+          leading={
+            error === null ? null : (
+              <p role="alert" className="min-w-0 truncate text-secondary text-danger">
+                {error}
+              </p>
+            )
+          }
+        >
           {mode === 'builtin' ? (
             <Button variant="ghost" size="sm" onClick={onSaveCopy} isBusy={isBusy}>
               <Copy size={ICON_SIZE.row} aria-hidden />
@@ -110,19 +113,25 @@ export const SavedStepEditor = ({
             </Button>
           ) : null}
           {mode === 'new' ? (
-            <Button variant="ghost" size="sm" onClick={onRemove} disabled={isBusy}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onRemove}
+              disabled={isBusy}
+              className="text-muted-foreground"
+            >
               Discard
             </Button>
           ) : null}
           <Button
-            variant="secondary"
+            variant={mode === 'new' ? 'primary' : 'secondary'}
             size="sm"
             onClick={onDone}
             isBusy={mode !== 'builtin' && isBusy}
           >
             {mode === 'new' ? 'Save step' : 'Done'}
           </Button>
-        </div>
+        </FormActions>
       )}
     </div>
   );

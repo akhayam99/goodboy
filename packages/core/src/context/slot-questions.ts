@@ -25,6 +25,28 @@ export const removeQuestionsFromSlot = async (
   return true;
 };
 
+type RemoveSessionQuestionsParams = {
+  readonly db: Database;
+  readonly questions: ReadonlyArray<{ readonly sessionId: SessionId; readonly text: string }>;
+};
+
+export const removeSessionQuestionsFromSlots = async ({
+  db,
+  questions,
+}: RemoveSessionQuestionsParams): Promise<ReadonlyArray<SessionId>> => {
+  const textsBySession = new Map<SessionId, Array<string>>();
+  for (const { sessionId, text } of questions) {
+    textsBySession.set(sessionId, [...(textsBySession.get(sessionId) ?? []), text]);
+  }
+  const changed: Array<SessionId> = [];
+  for (const [sessionId, texts] of textsBySession) {
+    if (await removeQuestionsFromSlot(db, sessionId, texts)) {
+      changed.push(sessionId);
+    }
+  }
+  return changed;
+};
+
 export const addQuestionsToSlot = async (
   db: Database,
   sessionId: SessionId,

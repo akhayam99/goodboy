@@ -25,6 +25,66 @@ describe('windowView reload intent', () => {
     });
   });
 
+  it('carries the whole location of the window through a reload', () => {
+    const location = {
+      workspaceId: ws,
+      place: {
+        at: 'session' as const,
+        sessionId: session,
+        view: {
+          lens: 'workflows' as const,
+          agentId: null,
+          studio: null,
+          target: { kind: 'run' as const, runId: 'wfrun-1' },
+        },
+      },
+      studio: null,
+      focus: {
+        drawer: {
+          kind: 'context' as const,
+          sessionId: session,
+          payload: { tab: 'summary' as const, view: 'current' as const },
+        },
+        selection: {},
+        scroll: { timeline: 240 },
+        revealed: ['step-2'],
+      },
+    };
+    writeReloadIntent({
+      mode: 'restore',
+      workspaceId: ws,
+      sessionId: session,
+      agentId: null,
+      location,
+    });
+    expect(consumeReloadIntent()).toEqual({
+      mode: 'restore',
+      workspaceId: ws,
+      sessionId: session,
+      agentId: null,
+      location,
+    });
+  });
+
+  it('drops a location it cannot read and keeps the rest of the intent', () => {
+    sessionStorage.setItem(
+      KEY,
+      JSON.stringify({
+        mode: 'restore',
+        workspaceId: ws,
+        sessionId: null,
+        agentId: null,
+        location: { place: { at: 'nowhere' } },
+      }),
+    );
+    expect(consumeReloadIntent()).toEqual({
+      mode: 'restore',
+      workspaceId: ws,
+      sessionId: null,
+      agentId: null,
+    });
+  });
+
   it('round-trips a fresh intent', () => {
     writeReloadIntent({ mode: 'fresh' });
     expect(consumeReloadIntent()).toEqual({ mode: 'fresh' });

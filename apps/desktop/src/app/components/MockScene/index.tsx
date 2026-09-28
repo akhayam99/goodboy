@@ -6,6 +6,7 @@ import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { ChatShellScene } from './scenes/ChatShellScene';
 import { InboxScene } from './scenes/InboxScene';
+import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
 import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
@@ -26,6 +27,7 @@ import {
 } from './scenes/ArtifactCreationScenes';
 import { ActivityFilterScene, ActivityTimelineScene } from './scenes/ActivityScenes';
 import { ActivityRunScene } from './scenes/ActivityRunScene';
+import { ActivityQuestionScene } from './scenes/ActivityQuestionScene';
 import { ContextDrawerScene } from './scenes/ContextDrawerScene';
 import { WorkflowBuilderScene } from './scenes/flow-audit/WorkflowBuilderScene';
 import { WorkflowRunScene } from './scenes/flow-audit/WorkflowRunScene';
@@ -70,10 +72,12 @@ import { CompanionScene } from './scenes/audit/CompanionScene';
 import { ReviewModesScene } from './scenes/audit/ReviewModesScene';
 import { WorkflowStudioScene } from './scenes/audit/WorkflowStudioScene';
 import { WorkflowBuilderModesScene } from './scenes/audit/WorkflowBuilderModesScene';
+import { FormsAuditScene } from './scenes/audit/FormsAuditScene';
 import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
 import { ListboxScene } from './scenes/ListboxScene';
+import { BrandKickoffScene } from './scenes/brand/KickoffScene';
 import { BrandLookupScene } from './scenes/brand/LookupScene';
 import { BrandSlackScene } from './scenes/brand/SlackScene';
 import { BrandContextScene } from './scenes/brand/ContextScene';
@@ -97,6 +101,7 @@ export const MOCK_SCENES = {
   shell: ShellScene,
   'chat-shell': ChatShellScene,
   inbox: InboxScene,
+  'inbox-source': InboxSourceScene,
   conversation: ConversationScene,
   mounts: MountsScene,
   'mount-mismatch': MountMismatchScene,
@@ -114,6 +119,7 @@ export const MOCK_SCENES = {
   activity: ActivityTimelineScene,
   'activity-filter': ActivityFilterScene,
   'activity-run': ActivityRunScene,
+  'activity-question': ActivityQuestionScene,
   'context-drawer': ContextDrawerScene,
   'workflow-builder': WorkflowBuilderScene,
   'workflow-run': WorkflowRunScene,
@@ -154,10 +160,12 @@ export const MOCK_SCENES = {
   'review-modes': ReviewModesScene,
   'workflow-studio': WorkflowStudioScene,
   'workflow-builder-modes': WorkflowBuilderModesScene,
+  forms: FormsAuditScene,
   'impact-scopes': ImpactScopesScene,
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,
+  'brand-kickoff': BrandKickoffScene,
   'brand-lookup': BrandLookupScene,
   'brand-slack': BrandSlackScene,
   'brand-context': BrandContextScene,

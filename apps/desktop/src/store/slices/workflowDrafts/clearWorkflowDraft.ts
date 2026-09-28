@@ -1,14 +1,13 @@
-import type { SessionId } from '@goodboy/types';
-import type { SetFn } from './types';
+import type { SetFn, WorkflowDraftKey } from './types';
 
 export const clearWorkflowDraft = (set: SetFn) => {
-  return (sessionId: SessionId) => {
+  return (draftKey: WorkflowDraftKey) => {
     set((s) => {
-      if (!(sessionId in s.workflowDrafts)) {
+      if (!(draftKey in s.workflowDrafts)) {
         return s;
       }
       const next = { ...s.workflowDrafts };
-      delete next[sessionId];
+      delete next[draftKey];
       return { workflowDrafts: next };
     });
   };

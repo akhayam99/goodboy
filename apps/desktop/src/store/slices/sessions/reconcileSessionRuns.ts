@@ -1,6 +1,7 @@
-import type { Agent, IsoDateTime, Session, TurnState } from '@goodboy/types';
+import type { Agent, IsoDateTime, ProviderRunId, Session, TurnState } from '@goodboy/types';
 import { updateAgentStatus, updateSessionState } from '@goodboy/db';
-import { cancelTurn } from '../../../features/chat/turn';
+import { cancelTurn, isTurnStreamActive } from '../../../features/chat/turn';
+import { readTurnCursor, type TurnCursor, type TurnOwner } from '../../../features/chat/turnCursor';
 import { tauriDatabase } from '../../../shared/lib/db';
 
 type ReconcileLoadedSessionsParams = Readonly<{
@@ -14,6 +15,26 @@ type ReconcileLoadedAgentParams = Readonly<{
   liveRunIds: ReadonlySet<string>;
 }>;
 
+export type ReattachableTurn = {
+  readonly runId: ProviderRunId;
+  readonly cursor: TurnCursor & { readonly owner: TurnOwner };
+};
+
+const isKeptRun = ({ runId }: { readonly runId: ProviderRunId }): boolean =>
+  isTurnStreamActive({ runId }) || readTurnCursor({ runId }) !== null;
+
+export const reattachableTurn = ({ agent }: { readonly agent: Agent }): ReattachableTurn | null => {
+  const runId = agent.runId;
+  if (agent.status !== 'running' || runId == null || isTurnStreamActive({ runId })) {
+    return null;
+  }
+  const cursor = readTurnCursor({ runId });
+  if (cursor === null || cursor.owner === null || cursor.owner.agentId !== agent.id) {
+    return null;
+  }
+  return { runId, cursor: { ...cursor, owner: cursor.owner } };
+};
+
 export const reconcileLoadedSessions = async ({
   sessions,
   liveRunIds,
@@ -22,6 +43,9 @@ export const reconcileLoadedSessions = async ({
   return Promise.all(
     sessions.map(async (session) => {
       if (session.state.kind !== 'running') {
+        return session;
+      }
+      if (isKeptRun({ runId: session.state.runId })) {
         return session;
       }
       if (liveRunIds.has(session.state.runId)) {
@@ -39,6 +63,12 @@ export const reconcileLoadedAgent = async ({
   liveRunIds,
 }: ReconcileLoadedAgentParams): Promise<Agent> => {
   if (agent.status !== 'running') {
+    return agent;
+  }
+  const isOwnedHere =
+    agent.runId != null &&
+    (isTurnStreamActive({ runId: agent.runId }) || reattachableTurn({ agent }) !== null);
+  if (isOwnedHere) {
     return agent;
   }
   if (agent.runId != null && liveRunIds.has(agent.runId)) {

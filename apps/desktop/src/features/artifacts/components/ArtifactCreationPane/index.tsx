@@ -4,8 +4,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { runsForWorkflowRun } from '@goodboy/core';
 import {
   Button,
+  FormPage,
   PANE_RHYTHM,
-  ScrollFade,
   SectionHeader,
   cn,
   formatError,
@@ -39,7 +39,7 @@ import { ArtifactBriefField } from './ArtifactBriefField';
 import { ArtifactChoiceRows } from './ArtifactChoiceRows';
 import { ArtifactMountRows } from './ArtifactMountRows';
 import { ArtifactContextDisclosure } from './ArtifactContextDisclosure';
-import { ArtifactCreationFooter } from './ArtifactCreationFooter';
+import { ArtifactCreationActions } from './ArtifactCreationActions';
 import { useArtifactAttachments } from './useArtifactAttachments';
 import { useArtifactContextPreview } from './useArtifactContextPreview';
 import { useArtifactCreationDraft } from './useArtifactCreationDraft';
@@ -254,11 +254,8 @@ export const ArtifactCreationPane = ({
       }
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <ScrollFade className="min-h-0 flex-1" viewportClassName={PANE_RHYTHM.body} fadeSize={24}>
-          <div
-            data-testid="artifact-creation-pane"
-            className={cn(PANE_RHYTHM.column, PANE_RHYTHM.stack, 'min-w-0')}
-          >
+        <FormPage>
+          <div data-testid="artifact-creation-pane" className={cn(PANE_RHYTHM.stack, 'min-w-0')}>
             {note === null ? null : (
               <span
                 className="text-secondary text-muted-foreground"
@@ -336,28 +333,28 @@ export const ArtifactCreationPane = ({
               onOpenChange={setIsContextOpen}
             />
           </div>
-        </ScrollFade>
-        <ArtifactCreationFooter
-          generateLabel={adapter.generateLabel}
-          gate={gate}
-          connectedProviders={connectedProviders}
-          recommendation={recommendation}
-          routing={routing}
-          isStarting={isStarting}
-          isDiscardArmed={isDiscardArmed}
-          hasDraft={!isEmpty}
-          error={error}
-          onRouting={handle.setRouting}
-          onCancel={onClose}
-          onArmDiscard={() => setIsDiscardArmed(true)}
-          onDisarmDiscard={() => setIsDiscardArmed(false)}
-          onDiscard={() => {
-            files.discardAll();
-            clearArtifactDraft({ sessionId, kind });
-            onClose();
-          }}
-          onGenerate={generate}
-        />
+          <ArtifactCreationActions
+            generateLabel={adapter.generateLabel}
+            gate={gate}
+            connectedProviders={connectedProviders}
+            recommendation={recommendation}
+            routing={routing}
+            isStarting={isStarting}
+            isDiscardArmed={isDiscardArmed}
+            hasDraft={!isEmpty}
+            error={error}
+            onRouting={handle.setRouting}
+            onCancel={onClose}
+            onArmDiscard={() => setIsDiscardArmed(true)}
+            onDisarmDiscard={() => setIsDiscardArmed(false)}
+            onDiscard={() => {
+              files.discardAll();
+              clearArtifactDraft({ sessionId, kind });
+              onClose();
+            }}
+            onGenerate={generate}
+          />
+        </FormPage>
       </div>
     </PaneShell>
   );

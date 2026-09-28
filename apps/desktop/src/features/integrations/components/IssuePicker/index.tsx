@@ -29,6 +29,7 @@ type Props = {
   readonly placeholder: string;
   readonly disabled: boolean;
   readonly resolvePaste?: (rawValue: string) => IssueCandidate | null;
+  readonly onQueryChange?: (query: string) => void;
   readonly onOpen: () => void;
   readonly onPick: (candidate: IssueCandidate) => void;
   readonly onClear: () => void;
@@ -44,11 +45,17 @@ export const IssuePicker = ({
   placeholder,
   disabled,
   resolvePaste,
+  onQueryChange,
   onOpen,
   onPick,
   onClear,
 }: Props) => {
   const [query, setQuery] = useState('');
+  useEffect(() => {
+    if (onQueryChange != null) {
+      onQueryChange(query);
+    }
+  }, [onQueryChange, query]);
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdown = useDropdown({ disabled, expectedHeight: 288 });

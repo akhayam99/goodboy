@@ -1,6 +1,15 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Dialog, formatError, Input, Listbox, SegmentedTabs, StatusDot } from '@goodboy/ui';
+import {
+  Button,
+  Dialog,
+  FormActions,
+  formatError,
+  Input,
+  Listbox,
+  SegmentedTabs,
+  StatusDot,
+} from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import {
   createGithubRepo,
@@ -254,13 +263,208 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
           ? undefined
           : 'Give this project a git repository so sessions get their own branch and pull requests.'
       }
-      footer={
-        isConverted ? (
-          <Button onClick={onClose}>Done</Button>
-        ) : (
-          <>
-            {error != null && <span className="mr-auto text-label text-danger">{error}</span>}
-            <Button variant="ghost" onClick={onClose} disabled={isBusy}>
+    >
+      {isConverted ? (
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-3">
+            <span className="flex items-center gap-1.5 text-label text-success">
+              <Check size={ICON_SIZE.row} aria-hidden />
+              {project?.name ?? workspace.name} is backed by git
+            </span>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              New sessions get their own branch and worktree. The sessions you already have keep
+              working as plain folders, and nothing of yours was committed: add what you want
+              tracked when you are ready.
+            </p>
+          </div>
+          <FormActions>
+            <Button onClick={onClose}>Done</Button>
+          </FormActions>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-4">
+            {orphan != null && (
+              <p role="status" className="text-xs leading-relaxed text-warning">
+                {orphan.nameWithOwner} was created on GitHub before this failed. It exists on GitHub
+                at {orphan.url} and was not removed. Delete it yourself if you do not want it, or
+                pick it from Link existing.
+              </p>
+            )}
+
+            <SegmentedTabs
+              ariaLabel="Repository setup"
+              options={ACTION_OPTIONS}
+              value={action}
+              onChange={onActionChange}
+              fill
+            />
+
+            {isCreating ? (
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Goodboy creates the repository on GitHub. A GitLab project is linked from Link
+                existing instead.
+              </p>
+            ) : (
+              <SegmentedTabs
+                ariaLabel="Repository host"
+                options={[
+                  { value: 'github', label: 'GitHub' },
+                  { value: 'gitlab', label: 'GitLab' },
+                ]}
+                value={host}
+                onChange={onHostChange}
+                fill
+              />
+            )}
+
+            {isConnected ? (
+              <span className="flex items-center gap-1.5 text-label text-success">
+                <Check size={11} aria-hidden />
+                {HOST_NAME[host]} is connected
+              </span>
+            ) : (
+              <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-subtle px-3 py-2">
+                <span className="flex items-center gap-1.5 text-label text-muted-foreground">
+                  <StatusDot tone="warning" size="sm" />
+                  {reposState.kind === 'unauthenticated'
+                    ? 'the GitHub CLI is installed but not signed in'
+                    : `${HOST_NAME[host]} is not connected yet`}
+                </span>
+                <Button size="sm" variant="secondary" onClick={onConnect}>
+                  Connect {HOST_NAME[host]}
+                </Button>
+              </div>
+            )}
+
+            {isCreating && isConnected && (
+              <>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-label font-semibold text-foreground">repository name</span>
+                  <Input
+                    value={repoName}
+                    placeholder={lastPathSegment({ path: project?.rootPath ?? '' })}
+                    onChange={(event) => setRepoName(event.target.value)}
+                    disabled={isBusy}
+                    aria-label="Repository name"
+                    aria-invalid={nameCheck.kind === 'invalid'}
+                  />
+                  {nameCheck.kind === 'invalid' && repoName.trim() !== '' && (
+                    <span role="alert" className="text-label text-danger">
+                      {nameCheck.reason}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-label font-semibold text-foreground">visibility</span>
+                  <div role="radiogroup" aria-label="Visibility" className="flex gap-2">
+                    {VISIBILITY_OPTIONS.map((option) => (
+                      <Button
+                        key={option.value}
+                        role="radio"
+                        aria-checked={visibility === option.value}
+                        variant={visibility === option.value ? 'primary' : 'secondary'}
+                        onClick={() => setVisibility(option.value)}
+                        disabled={isBusy}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
+                  {visibility === null && (
+                    <span className="text-label text-muted-foreground">
+                      Pick who can see the repository. Goodboy does not choose for you.
+                    </span>
+                  )}
+                </div>
+
+                {nameCheck.kind === 'ok' && visibility !== null && (
+                  <p className="text-xs leading-relaxed text-foreground">
+                    Create {repoDestination({ owner: githubOwner, name: nameCheck.name })} as a{' '}
+                    {visibility} repository and set it as this folder&apos;s origin remote.
+                  </p>
+                )}
+              </>
+            )}
+
+            {!isCreating && host === 'github' && isConnected && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-label font-semibold text-foreground">repository</span>
+                <Listbox
+                  isBlock
+                  value={selectedRepo}
+                  options={[
+                    {
+                      value: MANUAL_REPO,
+                      label: areReposLoading
+                        ? 'loading your repositories…'
+                        : 'paste a remote url instead',
+                    },
+                    ...repos.map((repo) => ({
+                      value: repo.nameWithOwner,
+                      label: repo.nameWithOwner,
+                    })),
+                  ]}
+                  onChange={setSelectedRepo}
+                  disabled={isBusy || areReposLoading}
+                  ariaLabel="Repository"
+                />
+                {reposState.kind === 'ok' && repos.length === 0 && (
+                  <span className="text-label text-muted-foreground">
+                    this account owns no repositories yet
+                  </span>
+                )}
+                {reposState.kind === 'failed' && (
+                  <span className="text-label text-muted-foreground">
+                    gh could not list your repositories: {reposState.message}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {!isCreating && (host === 'gitlab' || selectedRepo === MANUAL_REPO) && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-label font-semibold text-foreground">remote url</span>
+                <Input
+                  value={manualUrl}
+                  placeholder={HOST_URL_PLACEHOLDER[host]}
+                  onChange={(event) => setManualUrl(event.target.value)}
+                  disabled={isBusy || !isConnected}
+                />
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Create the repository on {HOST_NAME[host]} first, then paste its clone url here.
+                </p>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5">
+              <span className="text-label font-semibold text-foreground">what happens</span>
+              <ul className="flex flex-col gap-1 text-xs leading-relaxed text-muted-foreground">
+                <li className="flex items-center gap-1.5">
+                  <GitBranch size={11} aria-hidden className="shrink-0" />
+                  git starts tracking {project?.rootPath ?? ''}
+                </li>
+                <li>the first commit holds a .gitignore and nothing else</li>
+                <li>your files stay untracked until you add them yourself</li>
+                <li>your session folders and .goodboy stay out of version control</li>
+                <li>
+                  {isCreating
+                    ? 'the repository Goodboy creates becomes the origin remote'
+                    : 'the repository you picked becomes the origin remote'}
+                </li>
+              </ul>
+            </div>
+          </div>
+          <FormActions
+            leading={error == null ? null : <span className="text-label text-danger">{error}</span>}
+          >
+            <Button
+              variant="ghost"
+              onClick={onClose}
+              disabled={isBusy}
+              className="text-muted-foreground"
+            >
               Cancel
             </Button>
             <Button
@@ -272,195 +476,7 @@ export const ConvertWorkspaceDialog = ({ open, workspace, onClose }: Props) => {
                 {isCreating ? 'Create repository' : 'Convert to dev project'}
               </span>
             </Button>
-          </>
-        )
-      }
-    >
-      {isConverted ? (
-        <div className="flex flex-col gap-3">
-          <span className="flex items-center gap-1.5 text-label text-success">
-            <Check size={ICON_SIZE.row} aria-hidden />
-            {project?.name ?? workspace.name} is backed by git
-          </span>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            New sessions get their own branch and worktree. The sessions you already have keep
-            working as plain folders, and nothing of yours was committed: add what you want tracked
-            when you are ready.
-          </p>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          {orphan != null && (
-            <p role="status" className="text-xs leading-relaxed text-warning">
-              {orphan.nameWithOwner} was created on GitHub before this failed. It exists on GitHub
-              at {orphan.url} and was not removed. Delete it yourself if you do not want it, or pick
-              it from Link existing.
-            </p>
-          )}
-
-          <SegmentedTabs
-            ariaLabel="Repository setup"
-            options={ACTION_OPTIONS}
-            value={action}
-            onChange={onActionChange}
-            fill
-          />
-
-          {isCreating ? (
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Goodboy creates the repository on GitHub. A GitLab project is linked from Link
-              existing instead.
-            </p>
-          ) : (
-            <SegmentedTabs
-              ariaLabel="Repository host"
-              options={[
-                { value: 'github', label: 'GitHub' },
-                { value: 'gitlab', label: 'GitLab' },
-              ]}
-              value={host}
-              onChange={onHostChange}
-              fill
-            />
-          )}
-
-          {isConnected ? (
-            <span className="flex items-center gap-1.5 text-label text-success">
-              <Check size={11} aria-hidden />
-              {HOST_NAME[host]} is connected
-            </span>
-          ) : (
-            <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-subtle px-3 py-2">
-              <span className="flex items-center gap-1.5 text-label text-muted-foreground">
-                <StatusDot tone="warning" size="sm" />
-                {reposState.kind === 'unauthenticated'
-                  ? 'the GitHub CLI is installed but not signed in'
-                  : `${HOST_NAME[host]} is not connected yet`}
-              </span>
-              <Button size="sm" variant="secondary" onClick={onConnect}>
-                Connect {HOST_NAME[host]}
-              </Button>
-            </div>
-          )}
-
-          {isCreating && isConnected && (
-            <>
-              <div className="flex flex-col gap-1.5">
-                <span className="text-label font-semibold text-foreground">repository name</span>
-                <Input
-                  value={repoName}
-                  placeholder={lastPathSegment({ path: project?.rootPath ?? '' })}
-                  onChange={(event) => setRepoName(event.target.value)}
-                  disabled={isBusy}
-                  aria-label="Repository name"
-                  aria-invalid={nameCheck.kind === 'invalid'}
-                />
-                {nameCheck.kind === 'invalid' && repoName.trim() !== '' && (
-                  <span role="alert" className="text-label text-danger">
-                    {nameCheck.reason}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <span className="text-label font-semibold text-foreground">visibility</span>
-                <div role="radiogroup" aria-label="Visibility" className="flex gap-2">
-                  {VISIBILITY_OPTIONS.map((option) => (
-                    <Button
-                      key={option.value}
-                      role="radio"
-                      aria-checked={visibility === option.value}
-                      variant={visibility === option.value ? 'primary' : 'secondary'}
-                      onClick={() => setVisibility(option.value)}
-                      disabled={isBusy}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </div>
-                {visibility === null && (
-                  <span className="text-label text-muted-foreground">
-                    Pick who can see the repository. Goodboy does not choose for you.
-                  </span>
-                )}
-              </div>
-
-              {nameCheck.kind === 'ok' && visibility !== null && (
-                <p className="text-xs leading-relaxed text-foreground">
-                  Create {repoDestination({ owner: githubOwner, name: nameCheck.name })} as a{' '}
-                  {visibility} repository and set it as this folder&apos;s origin remote.
-                </p>
-              )}
-            </>
-          )}
-
-          {!isCreating && host === 'github' && isConnected && (
-            <div className="flex flex-col gap-1.5">
-              <span className="text-label font-semibold text-foreground">repository</span>
-              <Listbox
-                isBlock
-                value={selectedRepo}
-                options={[
-                  {
-                    value: MANUAL_REPO,
-                    label: areReposLoading
-                      ? 'loading your repositories…'
-                      : 'paste a remote url instead',
-                  },
-                  ...repos.map((repo) => ({
-                    value: repo.nameWithOwner,
-                    label: repo.nameWithOwner,
-                  })),
-                ]}
-                onChange={setSelectedRepo}
-                disabled={isBusy || areReposLoading}
-                ariaLabel="Repository"
-              />
-              {reposState.kind === 'ok' && repos.length === 0 && (
-                <span className="text-label text-muted-foreground">
-                  this account owns no repositories yet
-                </span>
-              )}
-              {reposState.kind === 'failed' && (
-                <span className="text-label text-muted-foreground">
-                  gh could not list your repositories: {reposState.message}
-                </span>
-              )}
-            </div>
-          )}
-
-          {!isCreating && (host === 'gitlab' || selectedRepo === MANUAL_REPO) && (
-            <div className="flex flex-col gap-1.5">
-              <span className="text-label font-semibold text-foreground">remote url</span>
-              <Input
-                value={manualUrl}
-                placeholder={HOST_URL_PLACEHOLDER[host]}
-                onChange={(event) => setManualUrl(event.target.value)}
-                disabled={isBusy || !isConnected}
-              />
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Create the repository on {HOST_NAME[host]} first, then paste its clone url here.
-              </p>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-1.5">
-            <span className="text-label font-semibold text-foreground">what happens</span>
-            <ul className="flex flex-col gap-1 text-xs leading-relaxed text-muted-foreground">
-              <li className="flex items-center gap-1.5">
-                <GitBranch size={11} aria-hidden className="shrink-0" />
-                git starts tracking {project?.rootPath ?? ''}
-              </li>
-              <li>the first commit holds a .gitignore and nothing else</li>
-              <li>your files stay untracked until you add them yourself</li>
-              <li>your session folders and .goodboy stay out of version control</li>
-              <li>
-                {isCreating
-                  ? 'the repository Goodboy creates becomes the origin remote'
-                  : 'the repository you picked becomes the origin remote'}
-              </li>
-            </ul>
-          </div>
+          </FormActions>
         </div>
       )}
     </Dialog>

@@ -1,7 +1,10 @@
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
-import { getSessionRepo } from '../worktrees/getSessionRepo';
+import { prWriteContext } from './prWriteContext';
 import type { GetFn, SetFn } from './types';
+import { ReportedError } from '../notifications/reportedError';
+
+const EDIT_FAILURE_TITLE = "Couldn't edit the pull request";
 
 export type EditPrOptions = {
   title?: string;
@@ -10,18 +13,12 @@ export type EditPrOptions = {
 
 export const editPr = (_set: SetFn, get: GetFn) => {
   return async (sessionId: SessionId, prNumber: number, opts: EditPrOptions) => {
-    const session = get().sessions.find((s) => s.id === sessionId);
-    if (!session) {
-      return;
-    }
-    const workspace = get().workspaces.find((w) => w.id === session.workspaceId);
-    if (!workspace) {
-      return;
-    }
-    const repo = getSessionRepo({ get, sessionId });
-    if (repo == null) {
-      return;
-    }
+    const { session, repo } = prWriteContext({
+      get,
+      sessionId,
+      prNumber,
+      failureTitle: () => EDIT_FAILURE_TITLE,
+    });
 
     const args = ['pr', 'edit', String(prNumber)];
     if (opts.title !== undefined) {
@@ -44,12 +41,12 @@ export const editPr = (_set: SetFn, get: GetFn) => {
       void get().emitNotification({
         kind: 'error',
         severity: 'error',
-        title: "Couldn't edit the pull request",
+        title: EDIT_FAILURE_TITLE,
         body: errMsg,
         sessionId,
-        workspaceId: workspace.id,
+        workspaceId: session.workspaceId,
       });
-      throw new Error(errMsg);
+      throw new ReportedError(errMsg);
     }
     await get().refreshSessionPr(sessionId, { force: true });
   };

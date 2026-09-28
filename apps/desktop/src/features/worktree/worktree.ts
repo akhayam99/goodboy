@@ -549,6 +549,29 @@ export const worktreeDiffWorking = async (
   return invoke<string>('worktree_diff_working', { worktreePath, scope });
 };
 
+type SyncBranchRefParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly expectedSha: string;
+  readonly workspaceId: WorkspaceId;
+  readonly projectId: string;
+};
+
+export const worktreeSyncBranchRef = async ({
+  worktreePath,
+  branch,
+  expectedSha,
+  workspaceId,
+  projectId,
+}: SyncBranchRefParams): Promise<boolean> =>
+  invoke<boolean>('worktree_sync_branch_ref', {
+    worktreePath,
+    branch,
+    expectedSha,
+    workspaceId,
+    projectId,
+  });
+
 export const worktreeStatus = async ({
   worktreePath,
   baseBranch,

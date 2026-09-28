@@ -23,12 +23,19 @@ type StoreState = {
   readonly issueBriefs: Readonly<Record<string, never>>;
   readonly sessions: ReadonlyArray<never>;
   readonly linkSessionExternalTask: typeof h.linkSessionExternalTask;
+  readonly projects: ReadonlyArray<never>;
+  readonly projectSentryLinks: Readonly<Record<string, never>>;
+  readonly workspaceIntegrations: Readonly<Record<string, never>>;
 };
 
 vi.mock('../../../../store', async () => ({
   ...(await import('../../../../store/slices/navigation/place')),
+  EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: StoreState) => T) =>
     selector({
+      projects: [],
+      projectSentryLinks: {},
+      workspaceIntegrations: {},
       createSession: h.createSession,
       unlinkSessionExternalTask: h.unlinkSessionExternalTask,
       navigate: h.navigate,

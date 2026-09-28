@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, GhostActionButton } from '@goodboy/ui';
+import { Button, FormActions, GhostActionButton } from '@goodboy/ui';
 import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
 import type { ProviderId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -149,17 +149,28 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
           onMoveDown={() => undefined}
         />
       </ul>
-      {error !== null ? (
-        <span className="text-secondary font-medium text-danger" role="alert">
-          {error}
-        </span>
-      ) : null}
-      {error === null && isOrchestrating ? (
-        <span className="text-secondary font-medium text-muted-foreground">
-          the orchestrator is choosing the next step
-        </span>
-      ) : null}
-      <div className="flex items-center gap-2">
+      <FormActions
+        leading={
+          error !== null ? (
+            <span className="text-secondary font-medium text-danger" role="alert">
+              {error}
+            </span>
+          ) : isOrchestrating ? (
+            <span className="text-secondary font-medium text-muted-foreground">
+              the orchestrator is choosing the next step
+            </span>
+          ) : null
+        }
+      >
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={isBusy}
+          onClick={() => setDraft(null)}
+          className="text-muted-foreground"
+        >
+          Cancel
+        </Button>
         <Button
           size="sm"
           disabled={isBusy || isOrchestrating || draft.name.trim() === ''}
@@ -167,10 +178,7 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
         >
           {isBusy ? 'Adding' : 'Add step'}
         </Button>
-        <Button size="sm" variant="ghost" disabled={isBusy} onClick={() => setDraft(null)}>
-          Cancel
-        </Button>
-      </div>
+      </FormActions>
     </div>
   );
 };

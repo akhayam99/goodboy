@@ -54,7 +54,7 @@ type PlaceParams = {
 };
 
 const canonicalPlace = ({ state, request }: PlaceParams): Place => {
-  if (request.at === 'board') {
+  if (request.at === 'board' || request.at === 'session-draft') {
     return request;
   }
   const { view, sessionId } = request;

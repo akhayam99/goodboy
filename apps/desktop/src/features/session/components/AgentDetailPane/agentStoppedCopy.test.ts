@@ -52,13 +52,15 @@ describe('agentStoppedCopy', () => {
     expect(copy.canContinue).toBe(false);
   });
 
-  it('names Goodboy when the app stopped the agent', () => {
+  it('says a restart stopped the agent and offers Resume', () => {
     const copy = agentStoppedCopy({
       agent: agentOf({ stoppedBy: 'app' }),
       provider: 'anthropic',
       isProviderConnected: true,
     });
 
-    expect(copy.title).toBe('This agent stopped when Goodboy quit. What it wrote is kept.');
+    expect(copy.title).toBe('Stopped by restart. What it wrote is kept.');
+    expect(copy.actionLabel).toBe('Resume');
+    expect(copy.canContinue).toBe(true);
   });
 });

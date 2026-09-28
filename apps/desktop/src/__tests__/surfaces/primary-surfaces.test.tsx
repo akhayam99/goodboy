@@ -41,6 +41,7 @@ import { InboxDetail } from '../../features/inbox/components/InboxStudio/InboxDe
 import type { InboxProvider, InboxRecord } from '../../features/inbox/types';
 import { StageBoard } from '../../features/workspace/components/StageBoard';
 import { SettingsStudio } from '../../features/settings/components/SettingsStudio';
+import { SessionDraftPane } from '../../features/session/components/SessionDraftPane';
 import { WorkspaceSwitcher } from '../../features/workspace/components/WorkspaceSwitcher';
 import { ContextDrawer } from '../../features/session/components/ContextDrawer';
 import { PullRequestPage } from '../../features/review/components/PullRequestPage';
@@ -300,7 +301,7 @@ describe('primary surfaces mount on real store selectors', () => {
     await mountSurface({ ui: <KeepAliveWorkSurface sessionId={sessionId} isActive /> });
 
     expect(screen.queryByRole('status', { name: 'Loading session overview' })).toBeNull();
-    expect(screen.getByRole('list', { name: 'Set up this session' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Start agent' })).toBeDefined();
     expect(screen.getByTestId('context-chip')).toBeDefined();
     expectNoRenderLoop();
   });
@@ -331,6 +332,15 @@ describe('primary surfaces mount on real store selectors', () => {
     await mountSurface({ ui: <PullRequestPage session={session} /> });
 
     expect(screen.getAllByText(pr.title).length).toBeGreaterThan(0);
+    expectNoRenderLoop();
+  });
+
+  it('opens the new session draft', async () => {
+    seedBoardScene();
+
+    await mountSurface({ ui: <SessionDraftPane workspaceId={WORKSPACE_ID} /> });
+
+    expect(screen.getByRole('tablist', { name: 'How do you want to start?' })).toBeDefined();
     expectNoRenderLoop();
   });
 

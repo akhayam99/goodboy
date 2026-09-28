@@ -60,7 +60,12 @@ export const cancelCurrentTurn = (set: SetFn, get: GetFn) => {
     if (reason === 'user') {
       await markStoppedByUser({ set, sessionId, agentId: activeAgentId, at: now });
     }
-    await cancelTurn(agentState.runId).catch(() => undefined);
+    await cancelTurn(agentState.runId).catch((error: unknown) => {
+      if (reason !== 'user') {
+        return;
+      }
+      void get().reportError({ title: "Couldn't stop the agent", error, sessionId });
+    });
     const idleState: TurnState = { kind: 'idle', lastActivityAt: now };
     const derived = applyAgentTurnState(set, sessionId, activeAgentId, idleState, now);
     await updateSessionState(tauriDatabase, sessionId, derived, now).catch(() => undefined);

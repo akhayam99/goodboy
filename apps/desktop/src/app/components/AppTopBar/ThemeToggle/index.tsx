@@ -30,12 +30,14 @@ export const ThemeToggle = () => {
         aria-label={tooltip}
         className="flex size-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground"
       >
-        <Icon
-          key={theme}
-          size={ICON_SIZE.control}
-          aria-hidden
-          className="motion-safe:animate-theme-icon-in"
-        />
+        <span data-theme-icon className="flex">
+          <Icon
+            key={theme}
+            size={ICON_SIZE.control}
+            aria-hidden
+            className="motion-safe:animate-theme-icon-in"
+          />
+        </span>
       </button>
     </Tooltip>
   );

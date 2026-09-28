@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, GitCommit, Search } from 'lucide-react';
-import {
-  AnchoredPopover,
-  Chip,
-  cn,
-  Divider,
-  ScrollFade,
-  useDropdown,
-  tintClasses,
-} from '@goodboy/ui';
+import { AnchoredPopover, Chip, cn, ScrollFade, useDropdown, tintClasses } from '@goodboy/ui';
 import type { BranchCommit, DiffView, WorktreeStatus } from '@goodboy/types';
 import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
 import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
@@ -353,7 +345,6 @@ export const DiffViewSelector = ({
           aria-label="Filter commits"
         />
       </div>
-      <Divider />
       <ScrollFade fadeFrom="subtle" className="max-h-[400px]">
         <div className="flex flex-col gap-0.5 py-1" onKeyDown={handleKeyDown}>
           {sections.map((section) => (

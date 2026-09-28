@@ -254,6 +254,18 @@ activity column is narrower than 28rem, the needs-you chip keeps its count
 and Filter keeps its icon. Suggestions live in **Next steps**, above Activity
 and outside its filter, not as a row inside the feed.
 
+An open question shows once on screen, on the agent that asked it. Its
+question row, on that agent's lane, carries the text and the one **Answer**;
+the agent row keeps its "Needs you" state without a second button, and takes
+the Answer back when the filter hides question rows. The workflow row says
+nothing about a question its step or the question row already shows: no
+sentence, no Answer, only a neutral "Waiting on a step" node. It names the
+question only when neither is in view (a sub-agent and question rows both
+filtered out), and then its Answer opens the asking agent at the question.
+The activity reports which open questions its rows show (`shownQuestionIds`),
+so Next steps and the needs-you callout above it do not repeat them. The
+needs-you count counts each family once, so one question never counts twice.
+
 ## Next steps
 
 One engine, `deriveNextSteps` (`features/suggestions/`), decides everything
@@ -265,8 +277,8 @@ whether you clicked it on the board or in the session overview.
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
   in the session overview, above Activity, outside its filter and its
   grouping: a suggestion is not activity, it is a pointer to what activity
-  should happen next. A session with nothing started shows its setup steps
-  instead; the two never compete for the same moment.
+  should happen next. A new session shows the kickoff instead; the two never
+  compete for the same moment.
 - Every suggestion carries a **band** (0 waits on you, 1 unblocks something,
   2 ships something, 3 improves something), a **why** (the second line, the
   concrete reason), a **fingerprint** (kind, object, trigger version) and a
@@ -287,13 +299,25 @@ whether you clicked it on the board or in the session overview.
   dismiss writes a `next:<kind>` row to `nudge_events`
   (`useNextStepOutcomes`); the demotion window reads the session's own
   history, not the workspace's.
-- Eighteen suggestion kinds ship: the original six (answer open questions,
+- The answer-open-questions suggestion counts only the open questions the
+  Activity does not show, so it never sits above a question already in view.
+  With one such question, **Answer** opens the agent that asked at that
+  question (`useOpenAgentQuestion`); with more, it opens the questions view.
+- An approval has one place in the overview: the **Needs you** callout,
+  whose **Answer the approval** opens the blocked agent. The approve-tool
+  suggestion for that same agent stays out of Next steps; an approval the
+  callout does not name (a second blocked agent) still shows there.
+- Seventeen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
-  project, run a ready plan, add a proposed project) plus twelve more that
+  project, run a ready plan, add a proposed project) plus eleven more that
   landed on the same engine, not a second one: approve a pending permission,
-  sign back in after `auth_required`, unblock a failed workflow step, retry
+  sign back in after `auth_required`, retry
   the last standalone agent that failed, fix a pull request's failing checks,
-  push unpushed commits on a clean worktree, open a pull request once a
+  push unpushed commits on a clean worktree (counted against the branch's
+  own copy on origin by `branchPushStateOf`; `Push the branch` with `Not
+pushed yet` when origin has no copy, and `Branch diverged from origin`
+  with `Review history` instead of a push when origin moved on its own),
+  open a pull request once a
   mount is ahead with none yet, mark a green draft ready, merge an approved
   and green pull request, review the changes once a standalone implementer
   finishes clean, close a merged worktree's cleanup proposal, and continue
@@ -301,15 +325,18 @@ whether you clicked it on the board or in the session overview.
   with a goal set and no workflow attached yet (a discarded run does not
   count as attached, so the offer comes back) - its "Set up" action attaches
   the workspace's first library workflow with the session's own goal in one
-  click, no form. Merge, close-worktree and unblock-step's Skip arm a
+  click, no form. Merge and close-worktree arm a
   confirm on the row before they act; the other new kinds run on one click,
-  like the original six. Two simplifications from the design: the "never
+  like the original six. Push, open-pr, mark-ready and merge-pr act on the
+  mount their suggestion names (`markPrReady` and `mergePr` take a
+  `mountId`), never the session's active mount. Two simplifications from the design: the "never
   while an agent works on the same mount" rule (E7-6) is session-wide, not
   per-mount, for the new push/open-pr/mark-ready/merge-pr/fix-checks kinds
   only - rebase-project keeps its own narrower per-request check; and the
-  demotion window (above) reads the session, not the workspace. unblock-step
-  only ships Skip; retrying the step itself needs a per-step retry action the
-  workflow engine does not expose yet. approve-tool opens the agent's
+  demotion window (above) reads the session, not the workspace. A failed
+  workflow step has no suggestion: its own row in Activity carries the one
+  **Restart the step**, which opens the step where Check completion and Skip
+  step live. approve-tool opens the agent's
   chat rather than the permission card directly; sign-in dispatches the
   same `goodboy:open-settings` event the palette's "Connect a provider"
   uses. continue-with-workflow always offers the workspace's first library
@@ -808,12 +835,21 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Opening Launch session on an inbox issue asks the **Issue briefs** task model
-for a brief: a title, a goal of one to three sentences and up to five "done
-when" criteria, in the issue's language. It reads the issue text, not its
-comments, and answers in checked JSON, so a reply with a preamble fails
-instead of leaking into the goal. The brief is only a proposal: in the Launch
-session popover it fills the goal only while you have not edited it, and
+Picking an issue in the new session draft, or opening Launch session on an
+inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
+of one to three sentences and up to five "done when" criteria, in the issue's
+language. It reads the issue text, not its comments, and answers in checked
+JSON, so a reply with a preamble fails instead of leaking into the goal. The
+brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
+text or Dismiss, and a failure stays inline in the card with Retry. The first
+three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
+`SessionKickoff/`) underneath: Run a workflow (preselected, the full workflow
+builder with the goal filled in) or Ask an agent, precompiled with that goal
+and editable. Its own action links the issue, mounts the project the issue
+maps to (the same rule as Launch session in the Inbox), creates the session
+and starts the workflow or agent in the same gesture; nothing exists before
+that. In the
+Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
 connected provider free for the task, the card shows the issue text alone.
@@ -865,7 +901,22 @@ the workspace with Link to a session, or open the session already linked to it.
 A record shows its session whichever way the link was made: launched from the
 inbox, picked there, or linked from the session's own link button, by search or
 by pasted URL. The session link button searches the issues of every Sentry
-project linked to the workspace, not only the connected one.
+project linked to the workspace, not only the connected one. A code or link
+pasted there goes through the same lookup as the inbox search
+(`useWorkspaceIssueLookup`, scoped to the picked tracker) and links the task
+`launchSpecFor` builds from the resolved record, so a Sentry short code such as
+`PAYMENTS-API-3` resolves and a Sentry link keeps its short id. A paste the
+lookup cannot resolve falls back to the fields read from the URL.
+
+Launch session mounts the item's project when it maps to one
+(`launchMountFor`). A Sentry error reads the projects linked to its Sentry
+project and the ones a Sentry code mapping points at; a GitHub or GitLab item
+reads the project whose remote is its repo. One match is mounted, several
+preselect the best (linked and mapped, then a name equal to the Sentry
+project) and the popover lets you pick another or none, and no match mounts
+nothing. Linear, Jira and Slack items never mount one. The popover names the
+project and the reason ("from Sentry project payments-api"), and the mount
+keeps that reason.
 
 Pull and merge requests come from the code hosts. GitHub lists the open pull
 requests of the workspace root repo that ask for your review, plus your own
@@ -874,9 +925,17 @@ open ones updated in the last seven days, through the same `gh` login as issues
 Bitbucket the pull requests of the linked repo. Open ones show as open, merged
 and closed ones as closed.
 
-With two or more projects in the workspace, the rail also filters by project.
-Projects with no records hide behind a quiet "Show N empty" toggle at the end
-of the section; the selected project stays listed even at zero. Code host records belong to the project at the workspace root. A Sentry error
+With two or more projects in the workspace, the rail also filters by project,
+but only when the current view includes a source that maps to projects
+(`PROJECT_MAPPED_PROVIDERS`: Sentry, GitHub and GitLab) and a record there
+belongs to one. A Linear, Jira or Slack view, or a view narrowed to one of
+them by Source or Type, shows no Project section at all, and a pick that
+leaves no mapped source drops the project filter. Projects with no records
+hide behind a quiet "Show N empty" toggle at the end of the section; the
+selected project stays listed even at zero, and a project's count is the
+records tied to it. A GitHub or GitLab record belongs to the project whose
+remote (`Project.remoteUrl`) is its repo. A tracker record never belongs to a
+project; its row shows the tracker's own project or team instead. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
@@ -884,9 +943,13 @@ suggested from Sentry code mappings and wait for your Link. The inbox reads the
 first page of every linked Sentry project besides the connected one, in one
 load that starts once the links are read. A Sentry call that hits a rate limit
 or a gateway error is retried up to twice, waiting what `Retry-After` asks for
-(at most 5 seconds), before the tool says it did not load. A record
-no project claims, such as a Linear or Jira issue, stays visible under every
-project filter. In Settings, Workspace, a project that reads Sentry shows the
+(at most 5 seconds), before the tool says it did not load. The project
+filter applies to the mapped sources only: a Sentry, GitHub or GitLab record
+tied to another project, or to none, leaves the list, while every Linear, Jira,
+Slack or Bitbucket record stays. In a mixed view with a project picked, one
+quiet line under the section says so (`projectFilterNote`), for example
+"Project filter applies to Sentry. Linear issues aren't tied to a project, so
+they stay listed." In Settings, Workspace, a project that reads Sentry shows the
 Sentry glyph, and its tooltip names the Sentry projects.
 
 ## Providers and routing

@@ -15,23 +15,23 @@ import {
   pendingMountEvents,
   type SuggestionMountEvent,
 } from '../../store/materializationProposals';
+import type { BranchPushState } from '../../shared/lib/branchPushState';
 import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
-import type { RebaseSuggestionTarget, SessionSuggestion, SuggestionKind } from './types';
-
-export type SuggestionFailedStep = {
-  readonly stepId: StepId;
-  readonly label: string | null;
-};
+import type {
+  RebaseSuggestionTarget,
+  SessionSuggestion,
+  SuggestionKind,
+  SuggestionQuestion,
+} from './types';
 
 export type SuggestionWorkflowRun = {
   readonly id: WorkflowRunId;
   readonly title: string;
   readonly advanceState: { readonly kind: string; readonly stepId?: StepId };
   readonly isRunning: boolean;
-  readonly failedStep?: SuggestionFailedStep | null;
 };
 
 export type SuggestionAgent = {
@@ -50,7 +50,7 @@ export type SuggestionMount = {
   readonly projectName: string;
   readonly branch: string;
   readonly worktreePath: string;
-  readonly aheadOfUpstream: number | null;
+  readonly push: BranchPushState | null;
   readonly aheadOfBase: number | null;
   readonly isClean: boolean | null;
   readonly pr: PullRequestState | null;
@@ -106,12 +106,75 @@ const isRebaseConsumed = ({ project }: { readonly project: SuggestionProject }):
   return request.behind === project.mainDistance;
 };
 
+type PushSuggestionParams = {
+  readonly mount: SuggestionMount;
+  readonly sessionId: SessionId;
+};
+
+type PushSuggestion = Extract<SessionSuggestion, { readonly kind: 'push-branch' }>;
+
+const commitsLabel = (count: number): string => `${count} ${count === 1 ? 'commit' : 'commits'}`;
+
+const pushSuggestionOf = ({ mount, sessionId }: PushSuggestionParams): PushSuggestion | null => {
+  const push = mount.push;
+  if (push === null) {
+    return null;
+  }
+  const base = {
+    id: `push-branch:${mount.mountId}`,
+    kind: 'push-branch' as const,
+    priority: 41,
+    band: 2 as const,
+    sessionId,
+    targetKey: `branch:${mount.mountId}`,
+  };
+  const target = {
+    mountId: mount.mountId,
+    projectId: mount.projectId,
+    projectName: mount.projectName,
+    branch: mount.branch,
+    worktreePath: mount.worktreePath,
+  };
+  if (push.kind === 'diverged') {
+    return {
+      ...base,
+      title: 'Branch diverged from origin',
+      detail: `${commitsLabel(push.ahead)} here, ${commitsLabel(push.behind)} on origin`,
+      fingerprint: `push-branch:${mount.mountId}:diverged:${push.ahead}:${push.behind}`,
+      payload: { ...target, state: 'diverged', ahead: push.ahead, behind: push.behind },
+    };
+  }
+  if (mount.isClean === false) {
+    return null;
+  }
+  if (push.kind === 'ahead') {
+    return {
+      ...base,
+      title: `Push ${commitsLabel(push.ahead)}`,
+      detail: `${mount.projectName} · ${mount.branch}`,
+      fingerprint: `push-branch:${mount.mountId}:${push.ahead}`,
+      payload: { ...target, state: 'ahead', ahead: push.ahead, behind: 0 },
+    };
+  }
+  if (push.kind === 'not-pushed' && push.commits !== null && push.commits > 0) {
+    return {
+      ...base,
+      title: 'Push the branch',
+      detail: `Not pushed yet · ${commitsLabel(push.commits)}`,
+      fingerprint: `push-branch:${mount.mountId}:new:${push.commits}`,
+      payload: { ...target, state: 'not-pushed', ahead: push.commits, behind: 0 },
+    };
+  }
+  return null;
+};
+
 type Params = {
   readonly sessionId: SessionId;
   readonly workflowRuns: ReadonlyArray<SuggestionWorkflowRun>;
   readonly plans: ReadonlyArray<SuggestionPlan>;
   readonly consumedPlanIds: ReadonlySet<PlanId>;
   readonly openQuestionCount: number;
+  readonly firstOpenQuestion?: SuggestionQuestion | null;
   readonly hasPullRequest: boolean;
   readonly eligibleThreadCount: number;
   readonly projects: ReadonlyArray<SuggestionProject>;
@@ -134,6 +197,7 @@ export const deriveNextSteps = ({
   plans,
   consumedPlanIds,
   openQuestionCount,
+  firstOpenQuestion = null,
   hasPullRequest,
   eligibleThreadCount,
   projects,
@@ -181,7 +245,7 @@ export const deriveNextSteps = ({
       sessionId,
       targetKey: null,
       fingerprint: `answer-questions:${sessionId}:${openQuestionCount}`,
-      payload: { count: openQuestionCount },
+      payload: { count: openQuestionCount, firstQuestion: firstOpenQuestion },
     });
   }
   for (const agent of agents) {
@@ -280,28 +344,6 @@ export const deriveNextSteps = ({
     });
   }
   for (const run of workflowRuns) {
-    if (run.failedStep != null) {
-      suggestions.push({
-        id: `unblock-step:${run.id}`,
-        kind: 'unblock-step',
-        priority: 3,
-        band: 0,
-        title:
-          run.failedStep.label == null
-            ? `Step failed: ${run.title}`
-            : `Step failed: ${run.failedStep.label}`,
-        detail: 'Tell the agent what to do next, or skip it',
-        sessionId,
-        targetKey: `workflow-run:${run.id}`,
-        fingerprint: `unblock-step:${run.id}:${run.failedStep.stepId}`,
-        payload: {
-          runId: run.id,
-          stepId: run.failedStep.stepId,
-          stepLabel: run.failedStep.label,
-        },
-      });
-      continue;
-    }
     if (run.advanceState.kind !== 'ready' || run.advanceState.stepId == null) {
       continue;
     }
@@ -440,26 +482,9 @@ export const deriveNextSteps = ({
           },
         });
       }
-      if (mount.aheadOfUpstream != null && mount.aheadOfUpstream > 0 && mount.isClean !== false) {
-        suggestions.push({
-          id: `push-branch:${mount.mountId}`,
-          kind: 'push-branch',
-          priority: 41,
-          band: 2,
-          title: `Push ${mount.aheadOfUpstream} ${mount.aheadOfUpstream === 1 ? 'commit' : 'commits'}`,
-          detail: `${mount.projectName} · ${mount.branch}`,
-          sessionId,
-          targetKey: `branch:${mount.mountId}`,
-          fingerprint: `push-branch:${mount.mountId}:${mount.aheadOfUpstream}`,
-          payload: {
-            mountId: mount.mountId,
-            projectId: mount.projectId,
-            projectName: mount.projectName,
-            branch: mount.branch,
-            worktreePath: mount.worktreePath,
-            ahead: mount.aheadOfUpstream,
-          },
-        });
+      const push = pushSuggestionOf({ mount, sessionId });
+      if (push !== null) {
+        suggestions.push(push);
       }
     }
   }

@@ -217,6 +217,41 @@ new commits` (`checkMergedThen`, one git check per tip, kept in
   so a retry after the remote accepted a request attaches the existing one
   instead of opening a duplicate. GitHub and GitLab requests open as drafts
   unless the turn asks for ready.
+- **A row reads its request from `mountGithub`, and every git action refreshes
+  it.** `refreshSessionPr` fills the entry per mount (`gh pr list --head
+<branch>`). Creating, merging, closing, reopening, marking ready or draft
+  and editing a request refresh it forced. So do a push (`pushSessionBranch`,
+  which the header, the suggestion and the resolve push share, and which also
+  re-reads that worktree's status so the ahead count drops at once), a history push
+  (rebase or rewrite) and a branch switch on any mount. Changes made outside
+  the app (an agent that ran `gh`, a terminal) are caught cheaply:
+  `recheckSessionMounts` runs when an agent turn ends and when the window
+  regains focus (`useSessionFocusRecheck`, debounced 400ms, current session
+  only). It makes at most one refresh per mount, skips a mount that is loading
+  or whose request merged or closed, and skips a mount fetched in the last 5s
+  (turn end) or 60s (focus). `useGithubPolling` still sweeps on boot, on a
+  branch change and every 5 minutes, but its timer and its visibility sweep
+  skip mounts already fetched with no request, so only the recheck finds a PR
+  opened outside the app. There is no faster global poll.
+- **The push count re-reads with the request.** Every push surface (the
+  suggestion, the branch word, the sync control, the Diff's `Push branch`,
+  Rewrite history's on-origin commits) reads one state, `branchPushStateOf`
+  over `worktree_status`, which compares HEAD with the branch's own
+  `<remote>/<branch>` ref ([traps.md](./traps.md)). An in-app push or history
+  push re-reads the worktree status at once (`refreshWorktreeStatuses`).
+  `recheckSessionMounts` re-reads the session's worktree statuses first, on
+  turn end and on focus, with or without GitHub, so a push by an agent or a
+  terminal, which moves the shared tracking ref, clears the count. A push
+  from another clone does not move that ref: when a request refresh returns
+  a head sha that differs from it, `syncBranchRefToPr` fetches that one ref
+  (`worktree_sync_branch_ref`) and re-reads the status. No other fetch runs.
+- **Refresh re-reads a session on demand.** The header's Refresh button
+  (before Archive and Delete, hidden on an archived session), ⌘⇧R and the
+  palette's `Refresh session` run `resyncSession`: mounts and branches from
+  disk, the local branch and worktree status caches, linked work items, and
+  every provider request forced, then the PR detail of the open session. The
+  glyph pulses in place while it runs (`sessionSyncing`), the page stays live,
+  and a failure raises an error notification with the provider's message.
 - **A series is declared, never inferred.** `series create` names the split
   and its size; `series set-member` places a mount at a position, or reserves
   a planned position when no mount is given. Generated request text carries

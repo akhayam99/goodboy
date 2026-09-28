@@ -2,6 +2,8 @@ import { findReusableAgent, isAgentStatusHalted } from '@goodboy/core';
 import type { Agent, AgentId, OpenQuestion, Step, Workflow, WorkflowRun } from '@goodboy/types';
 import type { WorkflowAdvanceState } from './advanceGate';
 import { isWorkflowRunClosedByUser } from './isWorkflowRunClosedByUser';
+import { attachedQuestionsFor } from '../session/timeline/attachedQuestions';
+import { isQuestionDelegate } from '../context/questionDelegate';
 
 export type NextAction =
   | { readonly kind: 'none' }
@@ -70,12 +72,25 @@ const waitingCause = ({
   return `${later[0]}, ${later[1]} and ${later.length - MAX_NAMED_STEPS} more wait on this step.`;
 };
 
+type AskerParams = {
+  readonly question: OpenQuestion;
+  readonly agents: ReadonlyArray<Agent>;
+};
+
+const hasAskingAgentRow = ({ question, agents }: AskerParams): boolean =>
+  agents.some(
+    (agent) =>
+      !isQuestionDelegate({ agent }) &&
+      attachedQuestionsFor({ questions: [question], agent }).length > 0,
+  );
+
 const answerAction = ({
   advance,
   run,
   agents,
-  questions,
+  questions: runQuestions,
 }: Omit<Params, 'subjectAgentId' | 'workflow'>): NextAction | null => {
+  const questions = runQuestions.filter((question) => !hasAskingAgentRow({ question, agents }));
   const question = questions[0];
   if (question == null) {
     return null;

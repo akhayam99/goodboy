@@ -3,6 +3,7 @@ import { back } from './back';
 import { forward } from './forward';
 import { goToHistory } from './goToHistory';
 import { navigate } from './navigate';
+import { restoreLocation } from './restoreLocation';
 import { amendStudio, closeStudio, openStudio } from './studioMoves';
 import { up } from './up';
 import type { GetFn, SetFn } from './types';
@@ -18,5 +19,6 @@ export const createNavigationSlice = (set: SetFn, get: GetFn) => {
     openStudio: openStudio(set, get),
     amendStudio: amendStudio(set, get),
     closeStudio: closeStudio(set, get),
+    restoreLocation: restoreLocation(set, get),
   };
 };

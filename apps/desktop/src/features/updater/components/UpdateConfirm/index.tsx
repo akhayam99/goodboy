@@ -16,9 +16,9 @@ export const runningAgentsCopy = ({ count }: { count: number }): string => {
     return 'Nothing is running.';
   }
   if (count === 1) {
-    return 'Restarting stops 1 running agent.';
+    return 'The running agent picks up where it stopped after the restart.';
   }
-  return `Restarting stops ${count} running agents.`;
+  return `The ${count} running agents pick up where they stopped after the restart.`;
 };
 
 export const UpdateConfirm = ({ trigger, onOpenChangelog, align = 'end' }: Props) => {

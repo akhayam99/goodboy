@@ -88,12 +88,12 @@ describe('GuideStudio', () => {
     expect(useAppStore.getState().appStudio).toBeNull();
   });
 
-  it('asks for a new session from the setup chapter', () => {
+  it('asks for a new session from the kickoff chapter', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:new-session', listener);
     render(<GuideStudio onClose={vi.fn()} />);
 
-    const kickoff = screen.getByRole('region', { name: 'New session and setup' });
+    const kickoff = screen.getByRole('region', { name: 'New session and kickoff' });
     fireEvent.click(within(kickoff).getByRole('button', { name: 'Start a new session' }));
 
     expect(listener).toHaveBeenCalledTimes(1);

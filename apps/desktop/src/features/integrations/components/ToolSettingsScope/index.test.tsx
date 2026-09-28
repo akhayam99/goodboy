@@ -19,6 +19,7 @@ const plainFrame = ({ nested, detail }: ScopeFrameParts) => (
     {detail}
   </>
 );
+import { TrackerStudioLinks } from '../TrackerStudioLinks';
 
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const LINEAR: IntegrationBinding = {
@@ -525,5 +526,37 @@ describe('ToolSettingsScope', () => {
     await user.keyboard('{Enter}');
     expect(screen.getByLabelText('Personal API key').id).toBe('gitlab-pat');
     expect(screen.getByLabelText('Personal API key')).toBe(document.activeElement);
+  });
+
+  it.each([false, true])('routes tracker links with connection state %s', async (isConnected) => {
+    store.setState({ workspaceIntegrations: { [WORKSPACE_ID]: isConnected ? [LINEAR] : [] } });
+    const dispatch = vi.spyOn(window, 'dispatchEvent');
+    render(
+      <TrackerStudioLinks
+        connected={{
+          linear: isConnected,
+          github: false,
+          gitlab: false,
+          jira: false,
+          sentry: false,
+        }}
+        links={[{ provider: 'linear', label: 'Linear', issueExternalId: 'issue-1' }]}
+      />,
+    );
+    const label = isConnected ? 'Open Linear in the inbox' : 'Connect Linear';
+    const button = screen.getByRole('button', { name: label });
+    fireEvent.mouseEnter(button);
+    expect((await screen.findByRole('tooltip')).textContent).toBe(label);
+    fireEvent.click(button);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining(
+        isConnected
+          ? {
+              type: 'goodboy:open-inbox',
+              detail: { provider: 'linear', kind: 'issue', recordKey: 'linear:issue:issue-1' },
+            }
+          : { type: 'goodboy:open-settings', detail: { scope: 'tools', tool: 'linear' } },
+      ),
+    );
   });
 });

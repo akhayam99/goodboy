@@ -51,6 +51,7 @@ vi.mock('../../../../store', async () => ({
 }));
 
 import { NextActionStrip } from './index';
+import { QUESTION_DELEGATE_SOURCE_KIND } from '../../../context/questionDelegate';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKFLOW_ID = 'workflow-1' as WorkflowId;
@@ -218,8 +219,40 @@ describe('NextActionStrip', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('sends Answer to the agent that asked, on the warning rail', () => {
+  it('leaves a step question to the asking row the run tree draws', () => {
     store.sessionPhaseRuns = { [SESSION_ID]: [agent(0, 'completed'), agent(1, 'running')] };
+    store.sessionOpenQuestions = {
+      [SESSION_ID]: [
+        {
+          id: 'q-1' as OpenQuestionId,
+          sessionId: SESSION_ID,
+          workflowRunId: RUN_ID,
+          createdByAgentId: 'agent-1' as AgentId,
+          text: 'Keep the legacy export?',
+          suggestedAnswers: [],
+          isBlocking: true,
+          userAnswer: null,
+          status: 'open',
+          createdAt: NOW,
+        },
+      ],
+    };
+    renderStrip();
+
+    expect(screen.queryByRole('region', { name: 'Next action: answer' })).toBeNull();
+  });
+
+  it('sends Answer to the agent that asked when no tree row shows it, on the warning rail', () => {
+    const delegate: Agent = {
+      ...agent(1, 'completed'),
+      id: 'agent-1' as AgentId,
+      stepId: undefined,
+      parentAgentId: 'agent-0' as AgentId,
+      sourceKind: QUESTION_DELEGATE_SOURCE_KIND,
+    };
+    store.sessionPhaseRuns = {
+      [SESSION_ID]: [agent(0, 'completed'), delegate, agent(2, 'pending')],
+    };
     store.sessionOpenQuestions = {
       [SESSION_ID]: [
         {

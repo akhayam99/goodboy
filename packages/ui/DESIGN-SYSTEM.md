@@ -102,7 +102,7 @@ The list is `TYPE_ROLES` in `typeRoles.ts`.
 | ---------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
 | `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
 | `text-title`     | 17/24, 600, -0.005em          | the one pane title (h1) of a surface                                                   |
-| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a wizard question                               |
+| `text-heading`   | 14/20, 600                    | a page-grade section, a popover title, a kickoff question                              |
 | `text-row`       | 14/20, 500                    | a top-level row label, a card title                                                    |
 | `text-body`      | 14/20                         | running text; text with no class inherits it from the body                             |
 | `text-prose`     | 14/22                         | messages, markdown, artifacts                                                          |
@@ -692,9 +692,10 @@ app below it has crashed.
   summary in `faint-foreground`) that opens the exact text in a `muted`
   `ScrollFade` of `text-code`, a copy button, and the line that says what never
   leaves.
-- **Footer**: the destination or the error in `text-secondary`, Add detail
-  while the detail is closed, and the primary button whose label names the
-  destination, with its shortcut in an on-tone pill.
+- **Action row**: `FormActions`, with the destination or the error in
+  `text-secondary` on the left, Add detail while the detail is closed, and the
+  primary button whose label names the destination, with its shortcut in an
+  on-tone pill.
 
 ## Pane anatomy
 
@@ -725,7 +726,9 @@ ellipsis) only when the goal says more than the title, or `Add a goal` when
 there is none, then the chips, `Context` first. Goal, decisions and summary
 live in the Context drawer, never as a block in the column. `scroll="body"` keeps the header fixed above a scrolling body,
 `scroll="self"` hands the body a bounded region that scrolls itself (a
-transcript), and `dock` pins a row to the bottom of the same column. Studio
+transcript), and `dock` pins a chat composer to the bottom of the same column.
+A form's actions never go in `dock`: they are `FormActions` at the end of the
+body. Studio
 chrome (`OverlayHeader`, the studio band) is window chrome, not a heading. The header is named with `aria-label`, so the detail title is
 the only `h1` on the surface.
 
@@ -756,7 +759,7 @@ Which action goes in which zone is decided in [DESIGN.md](../../DESIGN.md#action
 - The `tabs` slot of the detail layout keeps the tab strip at its own width. It never stretches across the header.
 - A section-scoped action uses `SectionHeader.action`. A field control uses `FieldRow`. Neither one moves itself up into global chrome.
 - A region that can start several kinds of work shows one primary, never a row of peer buttons. `SplitButton` joins the primary half, which its owner renders through `primary({ className })` so a popover can anchor to it, with a chevron half that opens the less frequent starts as a menu. Each menu item names the kind and carries a one-line `description` and a concept `tone` on its icon. `OverflowMenu` and `SplitButton` render items through the same `MenuItems`.
-- A blank session's setup follows the same rule: only the open step shows its fields and its one primary (Save goal, Start agent), the other steps are single rows that reopen in place, and Skip is a ghost beside the primary. The workflow list under Start the work is a list of rows, never tiles. A grid of tiles is not an action zone.
+- The new session draft follows the same rule, with one exception: an empty session asks one question with three choices on one row, as tabs (`SegmentedTabs` `card` variant, glyph, title, one line, a check on the selected one) instead of a stacked list, because there are exactly three doors and they read better side by side. Only the selected tab's panel, and only its primary, shows. An item that cannot work yet is left out, never shown disabled. A grid of tiles is otherwise not an action zone.
 - The session overview's actions carry a second exception: a frequent alternative to the primary sits as one secondary button beside it, not folded into the menu. `OverviewActions` shows a secondary Run workflow (Open run once one is active) next to the primary Start agent, with `OverflowMenu` labeled Create holding only the rarer starts (Report, Wireframe). Still one primary; the secondary is the one alternative common enough to earn its own button.
 - An overflow menu that has to confirm one of its items in place renders `MenuItems` inside its own `AnchoredPopover` and swaps to a plain `InlineConfirm`, as the orchestrator strip does for **Stop now**.
 - An on or off setting is a `Switch`: the label names the setting and the knob says its state, so the label never reads "on" or "off". Autorun uses it everywhere (`WorkflowAutorunToggle`).
@@ -781,6 +784,45 @@ A verb blocked for a moment stays visible with its reason in the tooltip; a verb
 A card `InlineConfirm` inside a popover, or one floated with `absolute top-full`, is a bug (`inline-confirm-placement.test.ts`). The trigger is ghost or secondary with danger text. The solid danger fill shows only on the confirm button. The title says what will happen. The description says what survives and how to undo it. Reversible actions use `role="alert"`, irreversible ones `role="danger"`.
 
 **Copy feedback lives on the control.** `useCopyLink().copy({ text, key })` keys the copied state, so in a list only the row whose `key` matches flips to "Copied". A successful copy never toasts; a failure shows inline while the control stays mounted, and only a menu item, which unmounts on click, reports a failure through a toast. `CopyButton` reads "Copy", "Copied", "Copy failed".
+
+## Action feedback
+
+Every click that starts work answers at once, on the control that started it,
+and answers again when the work ends. The product rules live in
+[DESIGN.md](../../DESIGN.md) → Status & signals; the mechanics are here.
+
+- **Pending is on the control.** The button that started the action takes
+  `isBusy` (`Button`, `GhostActionButton`, `InlineConfirm`) or `busy`
+  (`IconButton`, `RefreshIconButton`): the pulsing glyph, `aria-busy`, and
+  disabled against a second submit. Never a spinner, never a toast that
+  says "started" when the control already says it.
+- **Success is the new state.** The action refetches exactly the state it
+  changed (the mount's request, the worktree status, the resolve rows), so
+  the screen shows the result without a reload. A toast adds nothing when the
+  result is on screen; it is only for a result that lands somewhere else, like
+  an agent started with `focus: 'none'`.
+- **Failure is one log row.** The error goes to `reportError` with a title
+  that names the action ("Couldn't push the branch") and the real message as
+  its body. The toast is its preview. The control comes back enabled, so the
+  click is the retry. A form the user is still looking at keeps its error next
+  to its footer instead, as DESIGN.md says. Never a toast, an inline banner and
+  a suggestion for the same outcome.
+
+`usePendingAction` (`apps/desktop/src/shared/hooks/usePendingAction`) is the
+one runner: `run({ key, failureTitle, task })` keeps `key` in `pendingKeys`
+until `task` settles, drops a second run of the same key, reports a thrown
+error once through `reportError` and resolves to whether it worked. A store
+action that already logged its failure throws `ReportedError`, and a turn error
+the transcript already shows counts the same (`isReportedError`), so the runner
+never logs one failure twice. A store verb never turns a missing target into
+a quiet no-op: the pull request writes resolve their target through
+`prWriteContext`, which logs and throws `ReportedError` when the session,
+workspace, pull request or repository is missing. Every next-step suggestion
+runs through the runner: `SuggestionAction.run` returns a promise and carries its `failureTitle`, and
+`NextStepSlot` owns the runner (`useSuggestionActions` test guards every kind).
+A suggestion's `choices` (a rebase target, "Start tester instead") render as
+ghost buttons beside the primary in `NextStepRow`, run through the same runner
+under their own key, and hold the row's other controls while one runs.
 
 ## Section rhythm
 
@@ -880,6 +922,41 @@ box around the whole thing. Secondary controls go in `SectionHeader`'s
 action row comes right after the last section: error on the left, exactly one
 primary button on the right, cancel and alternates as ghost or secondary.
 
+## Form actions
+
+Every form, creation and edit flow ends the way the new workflow form does
+(session Overview, Workflows, Create): a page title, one big input card,
+segmented choices with a one-line explanation, options as quiet pill selects,
+and then the action row inline at the end of the content. Two primitives carry
+it:
+
+- **`FormPage`** is the scrolling body of a page-sized form: a `ScrollFade`
+  holding `PANE_RHYTHM.column` and `PANE_RHYTHM.body` with `gap-8` between the
+  blocks. Put it inside the shell (`StudioShell`, `PaneShell scroll="self"`).
+- **`FormActions`** is the action row. `leading` holds the quiet options or the
+  status line on the left (Starts, Autorun, Spend cap, routing, "Scribe is
+  writing", an error with `role="alert"`). The children sit right-aligned in
+  order: secondary first (Discard, Cancel, Back as `ghost` with
+  `text-muted-foreground`), alternates as `secondary`, and the one primary
+  last. `reason` puts the disabled primary's explanation under the buttons and
+  pairs with the primary's `aria-describedby` through `reasonId`; `error` does
+  the same for a failure.
+
+Buttons are `md` on a page and `sm` inside a popover, a drawer or a card. The
+row sits right after the last block: inside a popover it is the end of
+`PopoverBody`, inside a dialog the end of the body, in a card the last child.
+
+There is no footer bar. A form never pins its actions under the content with a
+`Divider`, a `border-t`, a `<footer>`, `PaneShell` `dock` or
+`PANE_RHYTHM.dock`. `PopoverFooter` and the `Dialog` `footer` slot are gone for
+that reason. The `footer-cta-bar` rule in
+`apps/desktop/src/__tests__/regressions/forbidden-patterns.test.ts` counts
+those shapes per file and fails on a new one. The only pinned row left is a
+chat composer (`dock={conversation.composer}`). A review surface that lives
+over a long diff puts its submit in the diff toolbar instead (Write review's
+Submit review, the diff lens notes), the way a code host puts Review changes at
+the top.
+
 ## Empty states
 
 A lens with nothing to show has one layout: `LensEmptyState`. It is a wrapper
@@ -888,13 +965,12 @@ Lenses always use `inline`. Only a surface's own main empty state gets the
 large size and an `h2`. An empty lens leaves `headingLevel` unset, so it adds
 nothing to the document outline.
 
-A blank session's empty state is its setup (`SessionSetup`): `Set up this
-session` over an ordered list of Goal, Project and Start the work. Each row is
-a 20px step marker (the ordinal, filled with primary on the open step, a
-success check once done, a faint ring otherwise), a title and, once done or
-skipped, a muted one-line summary. The open step sits on `subtle` with its one
-line of explanation, its fields and its action row. There is no example run
-and no grid of tiles.
+The new session draft is the kickoff. It asks "How do you want to
+start?" and answers with a single-select list of three rows, each a concept
+glyph, a title and one line: Pick up a task, Run a workflow, Not sure yet. The
+selected row reveals its fields and its one primary under the list. Arrow keys
+move between rows and Enter moves into the selected row's fields. There is no
+example run and no grid of tiles.
 
 Inline empty states belong to a lens or a compact collection surface. A filled,
 borderless inline empty state belongs to a surface's own body and uses
@@ -939,13 +1015,26 @@ never mounts and unmounts its panel by hand.
 
 A theme switch is a class swap on `<html>` and nothing else: `applyDocumentTheme`
 sets the `light` or `dark` class, `data-theme` and `color-scheme`, and the CSS
-variables repaint the page in one frame. No view transition, no React state:
-the zustand store keeps only the preference. For that frame
-`html[data-theme-switching]` turns every element transition off, so a
-`transition-colors` surface lands on its new color at once instead of
-animating in waves. The few things that paint with JS colors (the xterm
-terminal, the changelog image, the theme toggle icon) listen through
-`subscribeAppliedTheme` or `useAppliedTheme` and update only themselves.
+variables repaint the page in one frame, with no React state (the zustand
+store keeps only the preference). A switch the user asks for (the toggle,
+Settings, the palette, the system or another window) wraps that same swap in
+one document view transition: the old and new window snapshots cross-fade
+over 420ms, `cubic-bezier(0.45, 0, 0.55, 1)`. A circular reveal from the
+toggle was tried and dropped, because its hard bright edge flips a third of
+the screen between two frames. `html[data-theme-switching]` turns every
+element transition off from the swap until the fade ends, so no
+`transition-colors` surface animates on its own. Never add a per-element
+color transition for the theme: that is what made the switch flash and lag
+before. A switch asked for mid-fade waits and runs once the fade ends, the
+last request winning, so repeated clicks never stack. The first paint,
+reduced motion and an engine without `document.startViewTransition` swap at
+once. The toggle icon wrapper (`data-theme-icon`) takes
+`view-transition-name: theme-icon` for the switch only, so the old icon turns
+out (`theme-icon-out`, 300ms) while the new one turns in
+(`theme-icon-in`, 420ms), transform and opacity only. The few things that
+paint with JS colors (the xterm terminal, the changelog image, the theme
+toggle icon) listen through `subscribeAppliedTheme` or `useAppliedTheme` and
+update only themselves.
 
 - `spin-border`: working, on an element whose own edge carries the signal
   (a `WorkNode`'s ring). A session card or row carries its tone in a

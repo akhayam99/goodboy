@@ -27,6 +27,97 @@ When Goodboy records a decision from a session, it now keeps the reason that cam
 
 Decisions you add yourself, decisions from agents and decisions recorded before this version have no reason line.
 
+## Goodboy v0.11.6
+
+Agents pick up where they were after a restart or an update, every form ends on one action row, and an open question shows once.
+
+### New
+
+#### Agents resume after a restart
+<!-- gb area=agents -->
+
+Restart Goodboy or install an update and the agents that were running pick up where they stopped, with a note in their transcript. Every window reopens where it was.
+
+Reloading a window with `Cmd+R` keeps its running agents going. An agent a restart cut off any other way reads Stopped by restart, with Resume one click away.
+
+#### Pick up a task with the workflow builder
+<!-- gb area=workflows -->
+
+Pick up a task opens the same workflow builder as Run a workflow, with the issue as the goal. Start links the issue, mounts its project, creates the session and starts the run in one action.
+
+### Improved
+
+#### Forms end on one action row
+<!-- gb area=app image=form-actions -->
+
+Every form, popover and creation flow ends the way the new workflow form does: quiet options on the left, the main action on the right, right after the content. Footer bars with a divider are gone.
+
+#### Open questions show once
+<!-- gb area=sessions image=question-once -->
+
+A question an agent asks shows once in the session activity, on the row of the agent that asked. Next step and the needs-you callout leave out questions and approvals already on screen, and the sidebar names them once.
+
+Answer on a workflow row opens the agent that asked, right at its question.
+
+#### Theme switch cross-fades
+<!-- gb area=app -->
+
+Switching between light and dark fades the whole window at once while the theme icon turns. With reduced motion the switch stays instant.
+
+#### Actions show busy until they finish
+<!-- gb area=app -->
+
+Next step actions, pull request and Resolve verbs, Continue, Start step and Restore show busy while they run and ignore a second click. A failure is logged once, naming what failed.
+
+### Fixed
+
+- The push count only counts commits missing from the branch's own remote, and drops to zero right after a push from the app, an agent or a terminal. <!-- gb area=sessions -->
+- A branch whose remote was force-pushed reads diverged and opens its history, instead of offering a push that fails. <!-- gb area=sessions -->
+- A resolver you start shows on its queue row right away, without a reload. <!-- gb area=review -->
+- When an agent process refuses to stop, Stop logs it instead of showing the agent idle. <!-- gb area=agents -->
+- A next step with alternatives shows its choices beside the main action again. <!-- gb area=sessions -->
+- Mark ready and Merge from a next step act on the project and branch the suggestion names. <!-- gb area=review -->
+- Change decision on a resolved comment reopens the decision so you can pick again. <!-- gb area=review -->
+- A pull request action that cannot reach its pull request says so, instead of looking like it worked. <!-- gb area=review -->
+
+## Goodboy v0.11.5
+
+The Task, Workflow and Agent kickoff is back with Start blank and the full workflow builder, and sessions find pull requests made elsewhere.
+
+### New
+
+#### Run a workflow
+<!-- gb area=workflows image=kickoff-workflow -->
+
+New opens the kickoff again, with Pick up a task, Run a workflow and Ask an agent. It replaces the setup steps on the Overview from 0.11.4.
+
+Run a workflow is the same builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, add guidance, and set Can use, Starts, Autorun and a spend cap. Start workflow creates the session and starts the run in one action.
+
+#### Start blank
+<!-- gb area=sessions -->
+
+Start blank in the kickoff header opens a new session straight on its Overview, where you add the goal, projects and work when you are ready.
+
+#### Refresh a session
+<!-- gb area=sessions -->
+
+Pull requests an agent opened or you made in a terminal show up when the turn ends or when you come back to the window. Refresh, next to Archive and Delete in the session header, re-reads projects, branches and pull requests right away. It also runs from `Cmd+Shift+R` and the command palette.
+
+### Improved
+
+#### Inbox groups by project where it maps to code
+<!-- gb area=inbox screen=inbox image=inbox-source -->
+
+The Project filter shows for Sentry errors, and for GitHub or GitLab items when several projects live on that host. Linear and Jira stay one flat list.
+
+Launching a session from a Sentry error or a GitHub or GitLab item mounts the project it belongs to, and the launch panel says why.
+
+### Fixed
+
+- Deleting a workflow run deletes its agents and their open questions, for every kind of workflow. Leftovers from earlier deletes are cleaned up at startup. <!-- gb area=workflows -->
+- `Esc` no longer takes the window out of macOS full screen. It still closes menus and panels inside the app. <!-- gb area=app -->
+- Pasting an issue code such as a Sentry short code into the Overview link picker finds the issue and links it. <!-- gb area=inbox -->
+
 ## Goodboy v0.11.4
 
 New sessions open blank on their overview and set up in three short steps, with every kind of workflow one pick away.

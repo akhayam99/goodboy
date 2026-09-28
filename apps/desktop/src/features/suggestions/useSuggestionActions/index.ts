@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { formatError } from '@goodboy/ui';
 import type { Agent, ResolveThread, Session, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace, sessionPlace } from '../../../store';
 import { sessionResolveStyle } from '../../../store/sessionReplySettings';
@@ -10,12 +9,14 @@ import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
 import { startResolve } from '../../resolve/startResolve';
 import { kindRouting } from '../../session/agent-kind';
-import { useRebaseBranch } from '../../session/hooks/useRebaseBranch';
+import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
 import { resolveNewLabel } from '../../resolve/resolveQueueCopy';
+import { prLifecycleFailureTitle } from '../../review/prLifecycle';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
+import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
 
 const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
@@ -34,7 +35,8 @@ type Params = {
 export type SuggestionAction = {
   readonly label: string;
   readonly isDisabled: boolean;
-  readonly onAct: () => void;
+  readonly failureTitle: string;
+  readonly run: () => Promise<void>;
   readonly choices?: ReadonlyArray<SuggestionActionChoice>;
   readonly requiresConfirm?: boolean;
 };
@@ -44,12 +46,12 @@ export type SuggestionActionChoice = {
   readonly label: string;
   readonly description: string;
   readonly detail: string;
-  readonly onAct: () => void;
+  readonly run: () => Promise<void>;
 };
 
 export type SuggestionActions = {
   readonly primary: SuggestionAction | null;
-  readonly onDismiss: (() => void) | null;
+  readonly onDismiss: (() => Promise<void>) | null;
 };
 
 export type SuggestionActionResolver = (params: {
@@ -69,6 +71,7 @@ export const useSuggestionActions = ({
   onSelectQuestions,
 }: Params): SuggestionActionResolver => {
   const sessionId = session.id;
+  const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
   const mounts = useAppStore(
     (state) =>
@@ -82,7 +85,6 @@ export const useSuggestionActions = ({
       ),
     ),
   );
-  const emitNotification = useAppStore((state) => state.emitNotification);
   const roleModels = useSessionRoleModels({ sessionId });
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
@@ -94,24 +96,14 @@ export const useSuggestionActions = ({
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const proposalActions = useMountProposalActions({ sessionId });
   const runPlan = useAppStore((state) => state.runPlan);
-  const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
+  const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
   const createPrForSession = useAppStore((state) => state.createPrForSession);
   const markPrReady = useAppStore((state) => state.markPrReady);
   const mergePr = useAppStore((state) => state.mergePr);
   const resolveMountCleanup = useAppStore((state) => state.resolveMountCleanup);
   const attachWorkflowToSession = useAppStore((state) => state.attachWorkflowToSession);
   const announceAgentStarted = useAgentStartedToast();
-
-  const reportError = (title: string) => (message: string) => {
-    void emitNotification({
-      kind: 'error',
-      severity: 'error',
-      title,
-      body: formatError(message),
-      sessionId,
-    });
-  };
 
   const rebaseMounts = useMemo(
     () => mounts.filter((mount) => !completedMountIds.includes(mount.mountId)),
@@ -142,17 +134,16 @@ export const useSuggestionActions = ({
     sessionId,
     mountId: behind?.mountId ?? null,
     status: behind?.status ?? null,
-    onError: reportError("Couldn't rebase the branch"),
   });
 
   const unresolvedThreads = useMemo(() => eligibleReviewThreads({ github, rows }), [github, rows]);
 
   const pullRequest = github?.pr ?? null;
-  const startResolving = () => {
+  const startResolving = async (): Promise<void> => {
     if (pullRequest == null || unresolvedThreads.length === 0) {
       return;
     }
-    void startResolve({
+    await startResolve({
       sessionId,
       threads: unresolvedThreads,
       pr: pullRequest,
@@ -160,24 +151,18 @@ export const useSuggestionActions = ({
       style: resolveStyle,
       spawnAgent,
       setAgentConfig,
-    })
-      .then(() => navigate({ to: sessionPlace({ sessionId, lens: 'review' }) }))
-      .catch((error: unknown) => {
-        reportError("The fix didn't start")(formatError(error));
-      });
+    });
+    navigate({ to: sessionPlace({ sessionId, lens: 'review' }) });
   };
 
-  const startRebase = ({ target }: StartRebaseParams) => {
-    void rebase.run({ mountId: target.mountId, behind: target.behind }).catch((error: unknown) => {
-      reportError("Couldn't rebase the branch")(formatError(error));
-    });
-  };
+  const startRebase = ({ target }: StartRebaseParams): Promise<void> =>
+    rebase.run({ mountId: target.mountId, behind: target.behind });
 
   const startWorkflowStep = ({
     suggestion,
   }: {
     readonly suggestion: Extract<SessionSuggestion, { readonly kind: 'workflow-next-step' }>;
-  }) => {
+  }): Promise<void> => {
     const next =
       agents.find(
         (agent) =>
@@ -185,7 +170,7 @@ export const useSuggestionActions = ({
           agent.stepId === suggestion.payload.stepId &&
           agent.status === 'pending',
       ) ?? null;
-    void advanceAgent({ agent: next });
+    return advanceAgent({ agent: next });
   };
 
   const proposalTarget = ({
@@ -204,7 +189,8 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Continue',
           isDisabled: false,
-          onAct: () => startWorkflowStep({ suggestion }),
+          failureTitle: "The next step didn't start",
+          run: () => startWorkflowStep({ suggestion }),
         },
         onDismiss: null,
       };
@@ -214,7 +200,8 @@ export const useSuggestionActions = ({
         primary: {
           label: resolveNewLabel({ count: unresolvedThreads.length }),
           isDisabled: false,
-          onAct: startResolving,
+          failureTitle: "The fix didn't start",
+          run: startResolving,
         },
         onDismiss: null,
       };
@@ -225,11 +212,12 @@ export const useSuggestionActions = ({
         primary: {
           label: rebase.isRunning ? 'Rebasing' : 'Rebase',
           isDisabled: firstTarget == null || rebase.isRunning,
-          onAct: () => {
+          failureTitle: REBASE_FAILURE_TITLE,
+          run: async () => {
             if (firstTarget == null) {
               return;
             }
-            startRebase({ target: firstTarget });
+            await startRebase({ target: firstTarget });
           },
           choices:
             suggestion.payload.targets.length > 1
@@ -238,7 +226,7 @@ export const useSuggestionActions = ({
                   label: target.projectName,
                   description: target.branch,
                   detail: `${target.behind} behind`,
-                  onAct: () => startRebase({ target }),
+                  run: () => startRebase({ target }),
                 }))
               : undefined,
         },
@@ -250,14 +238,14 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Start implementer',
           isDisabled: false,
-          onAct: () => {
-            void runPlan(sessionId, suggestion.payload.planId).then((agentId) => {
-              announceAgentStarted({
-                sessionId,
-                agentId,
-                title: 'Implementer started',
-                message: 'An agent is running this plan. You can keep working.',
-              });
+          failureTitle: "Couldn't start the implementer",
+          run: async () => {
+            const agentId = await runPlan(sessionId, suggestion.payload.planId);
+            announceAgentStarted({
+              sessionId,
+              agentId,
+              title: 'Implementer started',
+              message: 'An agent is running this plan. You can keep working.',
             });
           },
         },
@@ -265,8 +253,20 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'answer-questions') {
+      const { count, firstQuestion } = suggestion.payload;
       return {
-        primary: { label: 'Answer', isDisabled: false, onAct: onSelectQuestions },
+        primary: {
+          label: 'Answer',
+          isDisabled: false,
+          failureTitle: "Couldn't open the questions",
+          run: async () => {
+            if (count === 1 && firstQuestion != null) {
+              openAgentQuestion({ question: firstQuestion });
+              return;
+            }
+            onSelectQuestions();
+          },
+        },
         onDismiss: null,
       };
     }
@@ -275,11 +275,10 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Add project',
           isDisabled: false,
-          onAct: () => {
-            void proposalActions.mount(proposalTarget({ suggestion })).catch(() => undefined);
-          },
+          failureTitle: "Couldn't add the project",
+          run: () => proposalActions.mount(proposalTarget({ suggestion })),
         },
-        onDismiss: () => proposalActions.dismiss(proposalTarget({ suggestion })),
+        onDismiss: async () => proposalActions.dismiss(proposalTarget({ suggestion })),
       };
     }
     if (suggestion.kind === 'approve-tool') {
@@ -287,7 +286,8 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Review',
           isDisabled: false,
-          onAct: () =>
+          failureTitle: "Couldn't open the agent",
+          run: async () =>
             navigate({ to: agentPlace({ sessionId, agentId: suggestion.payload.agentId }) }),
         },
         onDismiss: null,
@@ -298,21 +298,9 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Sign in',
           isDisabled: false,
-          onAct: () => openProviderSignIn({ providerId: suggestion.payload.providerId }),
-        },
-        onDismiss: null,
-      };
-    }
-    if (suggestion.kind === 'unblock-step') {
-      return {
-        primary: {
-          label: 'Skip',
-          isDisabled: false,
-          requiresConfirm: true,
-          onAct: () => {
-            void skipStuckStepAndAdvance(sessionId, suggestion.payload.runId, {
-              onlyWhenBlocked: true,
-            });
+          failureTitle: "Couldn't open the sign-in",
+          run: async () => {
+            openProviderSignIn({ providerId: suggestion.payload.providerId });
           },
         },
         onDismiss: null,
@@ -323,11 +311,12 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Retry',
           isDisabled: false,
-          onAct: () => {
-            void spawnAgent(sessionId, {
+          failureTitle: "Couldn't retry",
+          run: async () => {
+            await spawnAgent(sessionId, {
               kindOverride: suggestion.payload.agentKind,
               focus: 'none',
-            }).catch((error: unknown) => reportError("Couldn't retry")(formatError(error)));
+            });
           },
         },
         onDismiss: null,
@@ -338,10 +327,9 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Start reviewer',
           isDisabled: false,
-          onAct: () => {
-            void spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none' }).catch(
-              (error: unknown) => reportError("Couldn't start the reviewer")(formatError(error)),
-            );
+          failureTitle: "Couldn't start the reviewer",
+          run: async () => {
+            await spawnAgent(sessionId, { kindOverride: 'reviewer', focus: 'none' });
           },
           choices: [
             {
@@ -349,10 +337,8 @@ export const useSuggestionActions = ({
               label: 'Start tester instead',
               description: 'Writes tests for the changes',
               detail: '',
-              onAct: () => {
-                void spawnAgent(sessionId, { kindOverride: 'tester', focus: 'none' }).catch(
-                  (error: unknown) => reportError("Couldn't start the tester")(formatError(error)),
-                );
+              run: async () => {
+                await spawnAgent(sessionId, { kindOverride: 'tester', focus: 'none' });
               },
             },
           ],
@@ -365,15 +351,25 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Start debugger',
           isDisabled: false,
-          onAct: () => {
-            void spawnAgent(sessionId, {
+          failureTitle: "Couldn't start the debugger",
+          run: async () => {
+            await spawnAgent(sessionId, {
               kindOverride: 'debugger',
               mountId: suggestion.payload.mountId,
               focus: 'none',
-            }).catch((error: unknown) =>
-              reportError("Couldn't start the debugger")(formatError(error)),
-            );
+            });
           },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'push-branch' && suggestion.payload.state === 'diverged') {
+      return {
+        primary: {
+          label: 'Review history',
+          isDisabled: false,
+          failureTitle: "Couldn't open the history",
+          run: async () => openRewriteHistory(sessionId, suggestion.payload.worktreePath),
         },
         onDismiss: null,
       };
@@ -383,14 +379,15 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Push',
           isDisabled: false,
-          onAct: () => {
-            void pushSessionBranch({ sessionId, mountId: suggestion.payload.mountId }).then(
-              (result) => {
-                if (!result.ok) {
-                  reportError("Couldn't push the branch")(result.error);
-                }
-              },
-            );
+          failureTitle: "Couldn't push the branch",
+          run: async () => {
+            const result = await pushSessionBranch({
+              sessionId,
+              mountId: suggestion.payload.mountId,
+            });
+            if (!result.ok) {
+              throw new Error(result.error);
+            }
           },
         },
         onDismiss: null,
@@ -401,14 +398,8 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Open PR',
           isDisabled: false,
-          onAct: () => {
-            void createPrForSession({
-              sessionId,
-              mountId: suggestion.payload.mountId,
-            }).catch((error: unknown) =>
-              reportError("Couldn't create the pull request")(formatError(error)),
-            );
-          },
+          failureTitle: "Couldn't create the pull request",
+          run: () => createPrForSession({ sessionId, mountId: suggestion.payload.mountId }),
         },
         onDismiss: null,
       };
@@ -418,9 +409,14 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Mark ready',
           isDisabled: false,
-          onAct: () => {
-            void markPrReady(sessionId, suggestion.payload.prNumber);
-          },
+          failureTitle: prLifecycleFailureTitle({
+            action: 'ready',
+            prNumber: suggestion.payload.prNumber,
+          }),
+          run: () =>
+            markPrReady(sessionId, suggestion.payload.prNumber, {
+              mountId: suggestion.payload.mountId,
+            }),
         },
         onDismiss: null,
       };
@@ -431,9 +427,14 @@ export const useSuggestionActions = ({
           label: 'Merge',
           isDisabled: false,
           requiresConfirm: true,
-          onAct: () => {
-            void mergePr(sessionId, suggestion.payload.prNumber, suggestion.payload.defaultMethod);
-          },
+          failureTitle: prLifecycleFailureTitle({
+            action: 'merge',
+            prNumber: suggestion.payload.prNumber,
+          }),
+          run: () =>
+            mergePr(sessionId, suggestion.payload.prNumber, suggestion.payload.defaultMethod, {
+              mountId: suggestion.payload.mountId,
+            }),
         },
         onDismiss: null,
       };
@@ -444,16 +445,16 @@ export const useSuggestionActions = ({
           label: 'Close worktree',
           isDisabled: false,
           requiresConfirm: true,
-          onAct: () => {
-            void resolveMountCleanup({
+          failureTitle: "Couldn't close the worktree",
+          run: () =>
+            resolveMountCleanup({
               sessionId,
               requestId: suggestion.payload.requestId,
               decision: 'remove',
-            });
-          },
+            }),
         },
         onDismiss: () =>
-          void resolveMountCleanup({
+          resolveMountCleanup({
             sessionId,
             requestId: suggestion.payload.requestId,
             decision: 'keep',
@@ -465,13 +466,12 @@ export const useSuggestionActions = ({
         primary: {
           label: 'Set up',
           isDisabled: false,
-          onAct: () => {
-            void attachWorkflowToSession(sessionId, suggestion.payload.workflowId, {
+          failureTitle: "Couldn't attach the workflow",
+          run: async () => {
+            await attachWorkflowToSession(sessionId, suggestion.payload.workflowId, {
               goal: session.goal,
               navigate: true,
-            }).catch((error: unknown) =>
-              reportError("Couldn't attach the workflow")(formatError(error)),
-            );
+            });
           },
         },
         onDismiss: null,

@@ -35,7 +35,7 @@ The idea is small. A task keeps its own goal, decisions and summary, so the agen
 
 You pick an issue from Linear. Goodboy drafts a title and a goal from it, and the task lands on the **board** as a session. From there the board moves it for you, between **building**, **running**, **needs you** and **in review**, with done work folded to the side, as the work changes. Each card shows its pull request and what it has cost so far.
 
-Tasks come from the tools you connect: [GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#supported-tools). Or press **New** for a [blank session](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#start-blank-set-it-up-step-by-step): its overview asks for a goal, a project and how to start the work, one step at a time.
+Tasks come from the tools you connect: [GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#supported-tools). Or press **New** to pick up a task, run a workflow or ask an agent, or to [start blank](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#start-blank) and add the goal later.
 
 [See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#the-board)
 
@@ -48,7 +48,7 @@ Tasks come from the tools you connect: [GitHub, GitLab, Bitbucket, Jira, Linear,
 
 ## Workflows
 
-A **workflow** splits the task into steps, and each step is a fresh agent with a short brief. In **Orchestrated** mode a model picks the next step after each one finishes and writes down why. A new session lists your own workflows, the built-in ones, and an orchestrated or custom one, and each opens the same form, filled in with your goal.
+A **workflow** splits the task into steps, and each step is a fresh agent with a short brief. In **Orchestrated** mode a model picks the next step after each one finishes and writes down why. The same builder opens from **New**, so the session and its run start together.
 
 That is also where the money goes. In the run below, a scout read the posting path for two cents. The planner spent $1.28, because that is the step that has to think. Want to steer? Queue a hint for the next decision, or have the orchestrator read it now.
 
@@ -93,7 +93,7 @@ The review comes back with seven comments. Select them and press **Resolve**. An
 
 ## Chat
 
-Every agent still has its own chat when you want to steer by hand. Type while it works and your message waits for its turn, or send it now and interrupt.
+Every agent still has its own chat when you want to steer by hand. Type while it works and your message waits for its turn, or send it now and interrupt. Restart Goodboy or install an update, and the agents that were working pick up where they stopped.
 
 The inbox, plans and wireframes, history rewriting, storage cleanup, security findings and the rest are in [FEATURES.md](./FEATURES.md), with screenshots. Something broke? Press **⌘I** in the app and report it in one line. [goodboy-ai.dev](https://goodboy-ai.dev) tells the story in a minute.
 

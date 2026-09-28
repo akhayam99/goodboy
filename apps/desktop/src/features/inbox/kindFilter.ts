@@ -56,11 +56,27 @@ type MatchesProjectParams = {
   readonly project: ProjectId | null;
 };
 
+export const PROJECT_MAPPED_PROVIDERS: ReadonlyArray<InboxProvider> = [
+  'sentry',
+  'github',
+  'gitlab',
+];
+
+type ProviderParams = {
+  readonly provider: InboxProvider;
+};
+
+export const isProjectMappedProvider = ({ provider }: ProviderParams): boolean =>
+  PROJECT_MAPPED_PROVIDERS.includes(provider);
+
+const isTiedToProject = ({ record, project }: MatchesProjectParams): boolean =>
+  project !== null && (record.projectIds ?? []).includes(project);
+
 export const matchesProject = ({ record, project }: MatchesProjectParams): boolean => {
-  if (project == null || record.projectIds == null || record.projectIds.length === 0) {
+  if (project == null || !isProjectMappedProvider({ provider: record.provider })) {
     return true;
   }
-  return record.projectIds.includes(project);
+  return isTiedToProject({ record, project });
 };
 
 type VisibleTypeFacetsParams = {
@@ -168,6 +184,7 @@ export type InboxFacetCounts = {
   readonly kind: Readonly<Record<InboxTypeFacet, number>>;
   readonly source: Readonly<Record<InboxProvider, number>>;
   readonly project: (project: ProjectId) => number;
+  readonly hasProjectMapping: boolean;
 };
 
 type FacetCountsParams = {
@@ -233,7 +250,10 @@ export const inboxFacetCounts = ({
     },
     source: sourceCounts({ records: forSource }),
     project: (project: ProjectId): number =>
-      forProject.filter((record) => matchesProject({ record, project })).length,
+      forProject.filter((record) => isTiedToProject({ record, project })).length,
+    hasProjectMapping: forProject.some(
+      (record) => record.projectIds != null && record.projectIds.length > 0,
+    ),
   };
 };
 

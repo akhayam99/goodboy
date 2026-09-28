@@ -8,6 +8,7 @@ export type RowPhase = 'queued' | 'running' | 'waiting' | 'failed' | 'done' | 'c
 export type RowStateReason =
   | { readonly kind: 'ready'; readonly stepLabel: string | null }
   | { readonly kind: 'question'; readonly stepLabel: string | null }
+  | { readonly kind: 'stepAsking' }
   | { readonly kind: 'budget'; readonly limitUsd: number | null }
   | { readonly kind: 'failed' }
   | { readonly kind: 'blocked' }
@@ -126,7 +127,6 @@ export type RowFailedStep = {
 };
 
 export type RowStoppedStep = {
-  readonly agent: Agent;
   readonly stepLabel: string | null;
 };
 
@@ -144,6 +144,7 @@ type RunParams = {
   readonly failedStep: RowFailedStep | null;
   readonly stoppedStep?: RowStoppedStep | null;
   readonly question: RowWaitingQuestion | null;
+  readonly isQuestionShown?: boolean;
   readonly readyStep: RowReadyStep | null;
   readonly chainedAfterTitle: string | null;
 };
@@ -156,6 +157,7 @@ const waitingRunState = ({
   failedStep,
   stoppedStep = null,
   question,
+  isQuestionShown = false,
   readyStep,
 }: WaitingParams): RowState | null => {
   const stop = run.orchestrationStop?.kind ?? null;
@@ -169,14 +171,14 @@ const waitingRunState = ({
     return {
       phase: 'waiting',
       reason: { kind: 'stepBlocked', stepLabel: failedStep.stepLabel },
-      ask: { kind: 'restartStep' },
+      ask: null,
     };
   }
   if (failedStep != null || (advance?.kind === 'blocked' && advance.reason === 'failed-step')) {
     return {
       phase: 'failed',
       reason: { kind: 'stepFailed', stepLabel: failedStep?.stepLabel ?? null },
-      ask: { kind: 'restartStep' },
+      ask: failedStep == null ? { kind: 'restartStep' } : null,
     };
   }
   if (question != null) {
@@ -186,11 +188,14 @@ const waitingRunState = ({
       ask: { kind: 'answer', question: question.question },
     };
   }
+  if (isQuestionShown) {
+    return { phase: 'waiting', reason: { kind: 'stepAsking' }, ask: null };
+  }
   if (stoppedStep != null) {
     return {
       phase: 'waiting',
       reason: { kind: 'stepStopped', stepLabel: stoppedStep.stepLabel },
-      ask: { kind: 'continue', agent: stoppedStep.agent },
+      ask: null,
     };
   }
   if ((advance?.kind === 'blocked' && advance.reason === 'questions') || stop === 'questions') {

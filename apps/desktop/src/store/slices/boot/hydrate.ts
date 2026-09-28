@@ -7,6 +7,8 @@ import { newerDatabaseFromError } from '../../../shared/lib/newerDatabase';
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
 import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
 import { consumeReloadIntent } from '../../../features/workspace/windowView';
+import { restoreLaunchLayout, type LaunchLayout } from './restoreLaunchLayout';
+import { reopenSecondaryWindows } from './reopenSecondaryWindows';
 import {
   SETTING_EDITOR_BINARY,
   SETTING_HIDDEN_MODELS,
@@ -163,12 +165,17 @@ export const hydrate = (set: SetFn, get: GetFn) => {
         const restoringSessionAt = Date.now();
         set({ bootPhase: 'restoring-session' });
         const reloadIntent = consumeReloadIntent();
+        let launchLayout: LaunchLayout | null = null;
         if (reloadIntent?.mode === 'restore') {
           const snapWorkspace = workspaces.find((w) => w.id === reloadIntent.workspaceId) ?? null;
           if (snapWorkspace) {
             await get().setCurrentWorkspace(snapWorkspace.id);
             void setWindowTitle(snapWorkspace.name);
-            const snapSessionId = reloadIntent.sessionId;
+            if (reloadIntent.location !== undefined) {
+              get().restoreLocation({ location: reloadIntent.location });
+            }
+            const snapSessionId =
+              reloadIntent.location === undefined ? reloadIntent.sessionId : null;
             if (snapSessionId && get().sessions.some((s) => s.id === snapSessionId)) {
               await get().setCurrentSession(snapSessionId);
               const snapAgentId = reloadIntent.agentId;
@@ -186,10 +193,16 @@ export const hydrate = (set: SetFn, get: GetFn) => {
             ? (workspaces.find((w) => w.id === hashWorkspaceId) ?? null)
             : null;
           const reopenLast = reopenLastRaw === '1';
-          if (hashWorkspace) {
+          launchLayout = await restoreLaunchLayout({
+            get,
+            workspaces,
+            isReopenLast: reopenLast,
+          }).catch(() => null);
+          const isLayoutRestored = launchLayout?.isRestored === true;
+          if (!isLayoutRestored && hashWorkspace) {
             await get().setCurrentWorkspace(hashWorkspace.id);
             void setWindowTitle(hashWorkspace.name);
-          } else if (reopenLast) {
+          } else if (!isLayoutRestored && reopenLast) {
             const lastWorkspaceId =
               lastWorkspaceRaw && lastWorkspaceRaw.length > 0
                 ? (lastWorkspaceRaw as WorkspaceId)
@@ -222,6 +235,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           .reattachTerminalTabs()
           .catch(() => {});
         set({ bootPhase: 'ready', hydrated: true });
+        void reopenSecondaryWindows({ layouts: launchLayout?.secondary ?? [] });
         recordBootBreadcrumb({
           phase: 'ready',
           detail: `ms=${Date.now() - bootStartedAt},ok`,

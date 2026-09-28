@@ -1,20 +1,41 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
-const { cancelTurn, updateAgentStatus, updateSessionState } = vi.hoisted(() => ({
-  cancelTurn: vi.fn(async () => undefined),
-  updateAgentStatus: vi.fn(async () => undefined),
-  updateSessionState: vi.fn(async () => undefined),
-}));
+const { cancelTurn, isTurnStreamActive, updateAgentStatus, updateSessionState } = vi.hoisted(
+  () => ({
+    isTurnStreamActive: vi.fn((_params: { readonly runId: string }) => false),
+    cancelTurn: vi.fn(async () => undefined),
+    updateAgentStatus: vi.fn(async () => undefined),
+    updateSessionState: vi.fn(async () => undefined),
+  }),
+);
 
 vi.mock('@goodboy/db', () => ({ updateAgentStatus, updateSessionState }));
-vi.mock('../../../features/chat/turn', () => ({ cancelTurn }));
+vi.mock('../../../features/chat/turn', () => ({ cancelTurn, isTurnStreamActive }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-import { reconcileLoadedAgent, reconcileLoadedSessions } from './reconcileSessionRuns';
+import { writeTurnCursor, type TurnOwner } from '../../../features/chat/turnCursor';
+import {
+  reattachableTurn,
+  reconcileLoadedAgent,
+  reconcileLoadedSessions,
+} from './reconcileSessionRuns';
 
 const NOW = '2026-08-31T10:00:00.000Z' as IsoDateTime;
 const RUN_ID = 'run-1' as ProviderRunId;
+const OWNER: TurnOwner = {
+  agentId: 'agent-1' as never,
+  sessionId: 'session-1' as never,
+  workspaceId: 'workspace-1' as never,
+  workflowRunId: null,
+  stepRole: 'implementer',
+  provider: 'anthropic',
+  model: 'claude-sonnet-5',
+  effort: null,
+  startedAt: NOW,
+  workingDir: '/tmp/worktree',
+  mountId: null,
+};
 
 const buildSession = ({ state }: Pick<Session, 'state'>): Session => ({
   id: 'session-1' as never,
@@ -42,6 +63,7 @@ const buildAgent = ({ status }: Pick<Agent, 'status'>): Agent => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
 });
 
 describe('loaded run reconciliation', () => {
@@ -93,6 +115,42 @@ describe('loaded run reconciliation', () => {
     });
     expect(reconciled.status).toBe('stopped');
     expect(reconciled.stoppedBy).toBe('app');
+  });
+
+  it('keeps a running agent this window was streaming before it reloaded', async () => {
+    const agent = buildAgent({ status: 'running' });
+    writeTurnCursor({ runId: RUN_ID, cursor: { seq: 3, index: 0, owner: OWNER } });
+
+    const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) });
+    const [session] = await reconcileLoadedSessions({
+      sessions: [buildSession({ state: { kind: 'running', runId: RUN_ID, startedAt: NOW } })],
+      liveRunIds: new Set([RUN_ID]),
+      now: NOW,
+    });
+
+    expect(reconciled).toBe(agent);
+    expect(session?.state.kind).toBe('running');
+    expect(cancelTurn).not.toHaveBeenCalled();
+    expect(updateAgentStatus).not.toHaveBeenCalled();
+    expect(reattachableTurn({ agent })).toEqual({
+      runId: RUN_ID,
+      cursor: { seq: 3, index: 0, owner: OWNER },
+    });
+  });
+
+  it('never re-attaches a run another agent owns or a stream still open here', async () => {
+    const agent = buildAgent({ status: 'running' });
+    writeTurnCursor({
+      runId: RUN_ID,
+      cursor: { seq: 3, index: 0, owner: { ...OWNER, agentId: 'agent-2' as never } },
+    });
+    expect(reattachableTurn({ agent })).toBeNull();
+
+    writeTurnCursor({ runId: RUN_ID, cursor: { seq: 3, index: 0, owner: OWNER } });
+    isTurnStreamActive.mockReturnValue(true);
+    expect(reattachableTurn({ agent })).toBeNull();
+    expect(await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) })).toBe(agent);
+    isTurnStreamActive.mockReturnValue(false);
   });
 
   it('returns settled records with the same references', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PROVIDER_GATE_HINT, wizardFooter } from './wizardCta';
+import { PROVIDER_GATE_HINT, wizardActions } from './wizardCta';
 import { WIZARD_STEPS, visibleWizardSteps } from './wizardSteps';
 
 const BASE = {
@@ -13,9 +13,9 @@ const BASE = {
   busy: false,
 } as const;
 
-describe('wizardFooter', () => {
+describe('wizardActions', () => {
   it('maps every step to its primary action', () => {
-    expect(WIZARD_STEPS.map((step) => wizardFooter({ ...BASE, step }).primary?.action)).toEqual([
+    expect(WIZARD_STEPS.map((step) => wizardActions({ ...BASE, step }).primary?.action)).toEqual([
       'next',
       'next',
       'commit-project',
@@ -23,45 +23,45 @@ describe('wizardFooter', () => {
       'next',
       undefined,
     ]);
-    expect(wizardFooter({ ...BASE, step: 'welcome' }).primary?.label).toBe('Get started');
+    expect(wizardActions({ ...BASE, step: 'welcome' }).primary?.label).toBe('Get started');
   });
 
   it('gates the providers step with a hint while nothing is connected', () => {
-    const gated = wizardFooter({ ...BASE, step: 'providers', providersConnected: 0 });
+    const gated = wizardActions({ ...BASE, step: 'providers', providersConnected: 0 });
     expect(gated.primary?.disabled).toBe(true);
     expect(gated.hint).toBe(PROVIDER_GATE_HINT);
-    expect(wizardFooter({ ...BASE, step: 'providers' }).hint).toBeNull();
+    expect(wizardActions({ ...BASE, step: 'providers' }).hint).toBeNull();
   });
 
   it('keeps the project step closed until a project and a workspace name exist', () => {
-    expect(wizardFooter({ ...BASE, step: 'project', projectCount: 0 }).primary?.disabled).toBe(
+    expect(wizardActions({ ...BASE, step: 'project', projectCount: 0 }).primary?.disabled).toBe(
       true,
     );
-    expect(wizardFooter({ ...BASE, step: 'project', workspaceName: ' ' }).primary?.disabled).toBe(
+    expect(wizardActions({ ...BASE, step: 'project', workspaceName: ' ' }).primary?.disabled).toBe(
       true,
     );
-    expect(wizardFooter({ ...BASE, step: 'project' }).primary?.disabled).toBe(false);
+    expect(wizardActions({ ...BASE, step: 'project' }).primary?.disabled).toBe(false);
   });
 
   it('offers Skip for now on code host and tasks until something is connected', () => {
-    const codeHost = wizardFooter({ ...BASE, step: 'code-host' });
+    const codeHost = wizardActions({ ...BASE, step: 'code-host' });
     expect(codeHost.skip?.label).toBe('Skip for now');
     expect(codeHost.primary?.disabled).toBe(true);
-    const connected = wizardFooter({ ...BASE, step: 'code-host', codeHostConnected: true });
+    const connected = wizardActions({ ...BASE, step: 'code-host', codeHostConnected: true });
     expect(connected.skip).toBeNull();
     expect(connected.primary?.disabled).toBe(false);
-    expect(wizardFooter({ ...BASE, step: 'tasks' }).skip?.label).toBe('Skip for now');
+    expect(wizardActions({ ...BASE, step: 'tasks' }).skip?.label).toBe('Skip for now');
   });
 
   it('closes with Done when a reopened step is the last one', () => {
-    const single = wizardFooter({ ...BASE, step: 'tasks', isLastStep: true });
+    const single = wizardActions({ ...BASE, step: 'tasks', isLastStep: true });
     expect(single.primary?.label).toBe('Done');
     expect(single.primary?.action).toBe('finish');
     expect(single.skip?.action).toBe('finish');
   });
 
-  it('leaves the first session primary to the step, with Skip, open the board in the footer', () => {
-    const first = wizardFooter({ ...BASE, step: 'first-session' });
+  it('leaves the first session primary to the step, with Skip, open the board in the action row', () => {
+    const first = wizardActions({ ...BASE, step: 'first-session' });
     expect(first.primary).toBeNull();
     expect(first.skip?.label).toBe('Skip, open the board');
   });

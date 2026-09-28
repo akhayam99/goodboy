@@ -3,15 +3,14 @@ import {
   Button,
   Chip,
   EmptyState,
+  FormPage,
   Notice,
-  PANE_RHYTHM,
-  ScrollFade,
   Switch,
   Tooltip,
-  cn,
   formatError,
 } from '@goodboy/ui';
 import {
+  DEFAULT_SESSION_PROVIDER_PREFERENCE,
   PROVIDER_CAPABILITIES,
   type PlannerOutput,
   clampEffortForModel,
@@ -31,6 +30,7 @@ import type {
   WorkflowExecutionMode,
   WorkflowId,
   WorkflowSpendLimitMode,
+  WorkspaceId,
 } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
@@ -45,7 +45,13 @@ import { buildWorkspaceProjectsBlock } from '../../../../store/buildWorkspacePro
 import { workflowStartGate } from './workflowStartGate';
 import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';
-import type { Mode, WorkflowBuilderDraft } from '../../../../store/slices/workflowDrafts/types';
+import type {
+  KickoffLane,
+  Mode,
+  WorkflowBuilderDraft,
+  WorkflowDraftKey,
+} from '../../../../store/slices/workflowDrafts/types';
+import { kickoffDraftKey } from '../../../../store/slices/workflowDrafts/kickoffDraftKey';
 import type { StepDraft, WorkflowDraft } from '../../../workflows/engine';
 import {
   addStep as addDraftStep,
@@ -96,10 +102,18 @@ import { PlannerDraftRow } from './parts/PlannerDraftRow';
 import { PlanEstimateChip } from './parts/PlanEstimateChip';
 import { usePlanEstimates } from './usePlanEstimates';
 
-type Props = {
-  readonly session: Session;
-  readonly onClose: () => void;
+export type BuilderKickoff = {
+  readonly workspaceId: WorkspaceId;
+  readonly lane?: KickoffLane;
+  readonly goal: string;
+  readonly goalPlaceholder: string;
+  readonly onGoalChange: (goal: string) => void;
+  readonly start: (run: (session: Session) => Promise<void>) => Promise<void>;
 };
+
+type Props =
+  | { readonly session: Session; readonly kickoff?: never; readonly onClose: () => void }
+  | { readonly kickoff: BuilderKickoff; readonly session?: never; readonly onClose?: never };
 
 type ProviderEntry = { readonly id: ProviderId; readonly connection: string };
 
@@ -157,31 +171,39 @@ export const uniqueWorkflowName = (
   return `${requested} ${suffix}`;
 };
 
-export const WorkflowBuilderView = ({ session, onClose }: Props) => {
+export const WorkflowBuilderView = (props: Props) => {
+  const session = props.session ?? null;
+  const kickoff = props.kickoff ?? null;
+  const workspaceId: WorkspaceId =
+    props.session !== undefined ? props.session.workspaceId : props.kickoff.workspaceId;
+  const draftKey: WorkflowDraftKey =
+    props.session !== undefined
+      ? props.session.id
+      : kickoffDraftKey({ workspaceId, lane: props.kickoff.lane ?? 'workflow' });
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const deleteWorkflow = useAppStore((s) => s.deleteWorkflow);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);
   const generateWorkflowTitle = useAppStore((s) => s.generateWorkflowTitle);
   const suggestWorkflowTitle = useAppStore((s) => s.suggestWorkflowTitle);
   const phaseTemplates = useAppStore(
-    (s) => s.phaseTemplates[session.workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
+    (s) => s.phaseTemplates[workspaceId] ?? (EMPTY_ARRAY as ReadonlyArray<Workflow>),
   );
   const sessionPhaseRuns = useAppStore(
-    (s) => s.sessionPhaseRuns?.[session.id] ?? (EMPTY_ARRAY as ReadonlyArray<never>),
+    (s) =>
+      (session === null ? undefined : s.sessionPhaseRuns?.[session.id]) ??
+      (EMPTY_ARRAY as ReadonlyArray<never>),
   );
   const providers = useAppStore(
     (s) => s.providers ?? (EMPTY_ARRAY as ReadonlyArray<never>),
   ) as ReadonlyArray<ProviderEntry>;
-  const workspaceOverrides = useAppStore(
-    (s) => s.workspaceOverrides?.[session.workspaceId] ?? null,
-  );
+  const workspaceOverrides = useAppStore((s) => s.workspaceOverrides?.[workspaceId] ?? null);
   const roleModels = workspaceOverrides?.roleModels ?? null;
   const roleEffort = (role: StepDraft['role']): EffortLevel =>
     resolveRoleRouting({ role, prefs: roleModels }).effort as EffortLevel;
   const setWorkflowDraft = useAppStore((s) => s.setWorkflowDraft);
   const clearWorkflowDraft = useAppStore((s) => s.clearWorkflowDraft);
-  const sessionSlots = useSessionSlots(session.id);
-  const sessionWorktree = useSessionRepo({ sessionId: session.id })?.worktreePath ?? null;
+  const sessionSlots = useSessionSlots(session?.id ?? null);
+  const sessionWorktree = useSessionRepo({ sessionId: session?.id ?? null })?.worktreePath ?? null;
   const { showToast } = useToast();
 
   const {
@@ -195,15 +217,17 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   const presets = phaseTemplates.filter(isPresetWorkflow);
 
-  const [initialDraft] = useState(() => useAppStore.getState().workflowDrafts[session.id]);
+  const [initialDraft] = useState(() => useAppStore.getState().workflowDrafts[draftKey]);
 
   const defaultMode = (): Mode => {
-    const last = readLastWorkflowMode({ workspaceId: session.workspaceId });
+    const last = readLastWorkflowMode({ workspaceId });
     return last === 'preset' && presets.length === 0 ? 'dynamic' : last;
   };
 
   const [mode, setMode] = useState<Mode>(() => initialDraft?.mode ?? defaultMode());
-  const [goalText, setGoalText] = useState(initialDraft?.goalText ?? '');
+  const [localGoal, setLocalGoal] = useState(initialDraft?.goalText ?? '');
+  const goalText = kickoff?.goal ?? localGoal;
+  const setGoalText = kickoff?.onGoalChange ?? setLocalGoal;
   const [goalHistory, setGoalHistory] = useState<ReadonlyArray<string>>(
     initialDraft?.goalHistory ?? [],
   );
@@ -269,9 +293,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const [plannerModelOverride, setPlannerModelOverride] = useState('');
   const [plannerEffortOverride, setPlannerEffortOverride] = useState<EffortLevel | null>(null);
 
-  const providerId =
-    providers.find((p) => p.id === session.providerOverride)?.id ??
-    session.providerPreference.defaultProvider;
+  const providerId: ProviderId =
+    session === null
+      ? (workspaceOverrides?.defaultProviderId ??
+        DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider)
+      : (providers.find((p) => p.id === session.providerOverride)?.id ??
+        session.providerPreference.defaultProvider);
 
   const connectedProviders = useMemo<ReadonlyArray<ProviderId>>(
     () => providers.filter((p) => p.connection === 'connected').map((p) => p.id),
@@ -392,7 +419,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   );
 
   const activeRuns = useMemo<ReadonlyArray<ChainRun & { readonly ordinal: number }>>(() => {
-    const runs = session.workflowRuns ?? [];
+    const runs = session?.workflowRuns ?? [];
     return runs
       .filter((r) => !r.discardedAt)
       .flatMap((r) => {
@@ -406,7 +433,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
         return complete || failed ? [] : [{ run: r, template, ordinal: r.ordinal }];
       })
       .sort((a, b) => a.ordinal - b.ordinal);
-  }, [session.workflowRuns, phaseTemplates, sessionPhaseRuns]);
+  }, [session?.workflowRuns, phaseTemplates, sessionPhaseRuns]);
 
   useEffect(() => {
     if (startChoice.triggerMode !== 'after_run') {
@@ -419,8 +446,8 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   }, [activeRuns, startChoice]);
 
   const identityIndex = runIdentity({
-    laneIndex: (session.workflowRuns ?? []).filter((r) => r.createdAt != null).length,
-    seed: runIdentitySeed({ sessionId: session.id }),
+    laneIndex: (session?.workflowRuns ?? []).filter((r) => r.createdAt != null).length,
+    seed: runIdentitySeed({ sessionId: draftKey }),
   }).index;
 
   const draft: WorkflowBuilderDraft = {
@@ -453,12 +480,12 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
 
   useEffect(() => {
     if (draftEmpty) {
-      clearWorkflowDraft(session.id);
+      clearWorkflowDraft(draftKey);
     } else {
-      setWorkflowDraft(session.id, draft);
+      setWorkflowDraft(draftKey, draft);
     }
   }, [
-    session.id,
+    draftKey,
     mode,
     goalText,
     goalHistory,
@@ -505,19 +532,19 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSpendLimitMode('pause');
     setError(null);
     setExpandedKey(null);
-    clearWorkflowDraft(session.id);
+    clearWorkflowDraft(draftKey);
   };
 
   const handleClose = () => {
-    clearWorkflowDraft(session.id);
-    onClose();
+    clearWorkflowDraft(draftKey);
+    props.onClose?.();
   };
 
   const blocked = busy || planning;
 
   const requestTitleSuggestion = (goal: string) => {
     const trimmed = goal.trim();
-    if (trimmed === '' || trimmed === suggestedGoalRef.current) {
+    if (session === null || trimmed === '' || trimmed === suggestedGoalRef.current) {
       return;
     }
     suggestedGoalRef.current = trimmed;
@@ -562,14 +589,14 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setSteps((previous) => reorderDraftSteps({ steps: previous, from, to }));
   };
 
-  const savedSteps = useSavedSteps({ workspaceId: session.workspaceId });
+  const savedSteps = useSavedSteps({ workspaceId });
   const addStep = (picked: SavedStep | null) => {
     const step = picked === null ? blankStepDraft() : stepDraftFromSavedStep({ step: picked });
     setSteps((previous) => addDraftStep({ steps: previous, step }));
     setExpandedKey(step.key);
   };
   const { savingKey, saveAsStep } = useSaveAsStep({
-    workspaceId: session.workspaceId,
+    workspaceId,
     onLinked: (key, libraryStepId) => patchStep(key, { libraryStepId }),
     onError: (message) => setError({ title: "Couldn't save the step", message }),
   });
@@ -696,7 +723,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const onDeletePreset = async (t: Workflow) => {
     setError(null);
     try {
-      await deleteWorkflow(t.id, session.workspaceId);
+      await deleteWorkflow(t.id, workspaceId);
       if (selectedPresetId === t.id) {
         setSelectedPresetId(null);
         setBasePresetId(null);
@@ -757,14 +784,11 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       });
       const storeState = useAppStore.getState();
       const profileBlock = buildProfileGuard({
-        profile: storeState.workspaces.find((candidate) => candidate.id === session.workspaceId)
-          ?.profile,
+        profile: storeState.workspaces.find((candidate) => candidate.id === workspaceId)?.profile,
         audience: 'planner',
       });
       const projectsBlock = buildWorkspaceProjectsBlock({
-        projects: storeState.projects.filter(
-          (project) => project.workspaceId === session.workspaceId,
-        ),
+        projects: storeState.projects.filter((project) => project.workspaceId === workspaceId),
       });
       const repoContext = [profileBlock, projectsBlock].filter((block) => block !== '').join('\n');
       const result = await client.plan({
@@ -806,12 +830,75 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
   const isPresetEdited = basePreset !== null && (presetDirty || isPresetRenamed);
   const canSaveAsPreset = mode === 'custom' || presetDirty || isPresetRenamed;
 
+  const runOn = async (target: Session): Promise<void> => {
+    if (mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed) {
+      await attachWorkflowToSession(target.id, selectedPreset.id, attachOptions());
+      writeLastWorkflowMode({ workspaceId, mode });
+      showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
+      return;
+    }
+    const now = new Date().toISOString() as Workflow['createdAt'];
+    const workflowId = `wf_builder_${crypto.randomUUID()}` as WorkflowId;
+    const name = uniqueWorkflowName(resolvedTitle, phaseTemplates);
+    const description =
+      mode === 'custom'
+        ? (plan?.reasoning ?? '')
+        : mode === 'dynamic'
+          ? 'Steps are decided at runtime from the latest results.'
+          : (selectedPreset?.description ?? basePreset?.description ?? '');
+    const goal = goalText.trim();
+    const process = mode === 'custom' || mode === 'dynamic' ? processText.trim() : '';
+    const workflow: Workflow = {
+      id: workflowId,
+      workspaceId,
+      name,
+      description,
+      ...(goal.length > 0 && { goal }),
+      ...(process.length > 0 && { processText: process }),
+      steps: [],
+      isPreset: mode === 'dynamic' ? false : saveAsPreset,
+      origin: mode === 'dynamic' ? 'orchestrated' : 'custom',
+      createdAt: now,
+      updatedAt: now,
+    };
+    const saved = await savePhaseTemplate(
+      mode === 'dynamic'
+        ? workflow
+        : {
+            ...upsertArgsFromDraft({
+              workspaceId,
+              id: workflowId,
+              draft: {
+                name,
+                description,
+                goal,
+                steps: steps.map((step) => ({ ...step, sourceStepId: null })),
+                origin: 'custom',
+                isPreset: saveAsPreset,
+              },
+            }),
+            ...(process.length > 0 && { processText: process }),
+          },
+    );
+    if (mode === 'dynamic' && typedTitle === '' && activeSuggestion === null) {
+      void generateWorkflowTitle(
+        workspaceId,
+        workflowId,
+        target.id,
+        saved?.name ?? name,
+        goal,
+        process,
+      );
+    }
+    await attachWorkflowToSession(target.id, workflowId, attachOptions());
+    writeLastWorkflowMode({ workspaceId, mode });
+    showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
+  };
+
   const onStart = async () => {
     if (blocked) {
       return;
     }
-    const usePresetAsIs =
-      mode === 'preset' && selectedPreset !== null && !presetDirty && !isPresetRenamed;
     if (
       (mode === 'preset' && selectedPreset === null) ||
       (mode === 'custom' && steps.length === 0)
@@ -821,69 +908,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     setError(null);
     setBusy(true);
     try {
-      if (usePresetAsIs) {
-        await attachWorkflowToSession(session.id, selectedPreset.id, attachOptions());
-        writeLastWorkflowMode({ workspaceId: session.workspaceId, mode });
-        showToast({ kind: 'success', message: `Started ${selectedPreset.name}.` });
-        handleClose();
-        return;
-      }
-      const now = new Date().toISOString() as Workflow['createdAt'];
-      const workflowId = `wf_builder_${crypto.randomUUID()}` as WorkflowId;
-      const name = uniqueWorkflowName(resolvedTitle, phaseTemplates);
-      const description =
-        mode === 'custom'
-          ? (plan?.reasoning ?? '')
-          : mode === 'dynamic'
-            ? 'Steps are decided at runtime from the latest results.'
-            : (selectedPreset?.description ?? basePreset?.description ?? '');
-      const goal = goalText.trim();
-      const process = mode === 'custom' || mode === 'dynamic' ? processText.trim() : '';
-      const workflow: Workflow = {
-        id: workflowId,
-        workspaceId: session.workspaceId,
-        name,
-        description,
-        ...(goal.length > 0 && { goal }),
-        ...(process.length > 0 && { processText: process }),
-        steps: [],
-        isPreset: mode === 'dynamic' ? false : saveAsPreset,
-        origin: mode === 'dynamic' ? 'orchestrated' : 'custom',
-        createdAt: now,
-        updatedAt: now,
-      };
-      const saved = await savePhaseTemplate(
-        mode === 'dynamic'
-          ? workflow
-          : {
-              ...upsertArgsFromDraft({
-                workspaceId: session.workspaceId,
-                id: workflowId,
-                draft: {
-                  name,
-                  description,
-                  goal,
-                  steps: steps.map((step) => ({ ...step, sourceStepId: null })),
-                  origin: 'custom',
-                  isPreset: saveAsPreset,
-                },
-              }),
-              ...(process.length > 0 && { processText: process }),
-            },
-      );
-      if (mode === 'dynamic' && typedTitle === '' && activeSuggestion === null) {
-        void generateWorkflowTitle(
-          session.workspaceId,
-          workflowId,
-          session.id,
-          saved?.name ?? name,
-          goal,
-          process,
-        );
-      }
-      await attachWorkflowToSession(session.id, workflowId, attachOptions());
-      writeLastWorkflowMode({ workspaceId: session.workspaceId, mode });
-      showToast({ kind: 'success', message: `Started ${saved?.name ?? name}.` });
+      await (props.session !== undefined ? runOn(props.session) : props.kickoff.start(runOn));
       handleClose();
     } catch (err) {
       setError({ title: "Couldn't start the workflow", message: formatError(err) });
@@ -938,7 +963,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     ) : null;
 
   const estimates = usePlanEstimates({
-    workspaceId: session.workspaceId,
+    workspaceId,
     steps: steps.map((step) => ({
       key: step.key,
       role: step.role ?? 'custom',
@@ -1136,6 +1161,111 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
     </>
   );
 
+  const fields = (
+    <>
+      <div className="flex flex-col gap-3">
+        <BuilderTitleField
+          value={title}
+          placeholder={defaultTitle}
+          suggestion={activeSuggestion}
+          disabled={blocked}
+          onChange={setTitle}
+          onAcceptSuggestion={() => {
+            if (activeSuggestion !== null) {
+              setTitle(activeSuggestion);
+            }
+          }}
+          origin={
+            isPresetEdited && basePreset !== null ? (
+              <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-secondary text-muted-foreground">
+                {`Edited from ${basePreset.name}`}
+              </span>
+            ) : null
+          }
+          estimate={estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />}
+        />
+        <GoalField
+          value={goalText}
+          {...(kickoff !== null && { placeholder: kickoff.goalPlaceholder })}
+          hasSessionGoal={sessionGoal.length > 0}
+          isSessionGoal={goalText === sessionGoal}
+          canUndo={goalHistory.length > 0}
+          isPolishing={polishing}
+          disabled={busy}
+          files={{
+            isDragging: isDraggingFiles,
+            composerRef,
+            fileInputRef,
+            onFiles: onFileInputChange,
+            attachments: attachments.map((a) => (
+              <AttachmentChip
+                key={a.id}
+                {...pendingAttachmentProps(a)}
+                onRemove={() => removeAttachment(a.id)}
+              />
+            )),
+          }}
+          onChange={onGoalChange}
+          onBlur={() => requestTitleSuggestion(goalText)}
+          onUseSessionGoal={onUseSessionGoal}
+          onUndo={onUndoGoal}
+          onPolish={() => void onPolishGoal()}
+        />
+      </div>
+      <div className="flex flex-col gap-4">
+        <ModeSwitch mode={mode} disabled={blocked} control={modeControl} onChange={setMode} />
+        {mode === 'custom' && isPlannerOpen ? (
+          <PlannerDraftRow
+            process={processText}
+            hasPlan={plan !== null}
+            isPlanning={planning}
+            disabled={blocked}
+            connectedProviders={connectedProviders}
+            providerOverride={plannerProviderOverride}
+            modelOverride={plannerModelOverride}
+            effort={plannerEffort}
+            recommendedProvider={resolvedPlanTaskModel.providerId}
+            recommendedModel={plannerRecommendedModel}
+            onProcess={setProcessText}
+            onProvider={(next) => {
+              setPlannerProviderOverride(next);
+              setPlannerModelOverride('');
+            }}
+            onModel={setPlannerModelOverride}
+            onEffort={setPlannerEffortOverride}
+            onPlan={() => void onPlan()}
+          />
+        ) : null}
+        {renderPlan()}
+      </div>
+      <div className="flex flex-col gap-3">
+        {error === null ? null : (
+          <Notice
+            tone="danger"
+            placement="inline"
+            role="alert"
+            title={error.title}
+            body={error.message}
+          />
+        )}
+        <LaunchBar
+          controls={launchControls}
+          reason={startGate.reason}
+          isStartDisabled={startGate.isDisabled}
+          isStarting={busy}
+          canDiscard={!draftEmpty}
+          onDiscard={resetDraft}
+          onStart={() => void onStart()}
+        />
+      </div>
+      <DragGhost ghost={ghost} />
+    </>
+  );
+
+  if (kickoff !== null) {
+    return <div className="flex flex-col gap-8">{fields}</div>;
+  }
+
   return (
     <StudioShell
       icon={CONCEPT_ICONS.workflows}
@@ -1144,109 +1274,7 @@ export const WorkflowBuilderView = ({ session, onClose }: Props) => {
       onClose={handleClose}
       variant="slot"
     >
-      {() => (
-        <ScrollFade className="min-h-0 w-full flex-1">
-          <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'flex flex-col gap-8')}>
-            <div className="flex flex-col gap-3">
-              <BuilderTitleField
-                value={title}
-                placeholder={defaultTitle}
-                suggestion={activeSuggestion}
-                disabled={blocked}
-                onChange={setTitle}
-                onAcceptSuggestion={() => {
-                  if (activeSuggestion !== null) {
-                    setTitle(activeSuggestion);
-                  }
-                }}
-                origin={
-                  isPresetEdited && basePreset !== null ? (
-                    <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-secondary text-muted-foreground">
-                      {`Edited from ${basePreset.name}`}
-                    </span>
-                  ) : null
-                }
-                estimate={
-                  estimates?.total == null ? null : <PlanEstimateChip total={estimates.total} />
-                }
-              />
-              <GoalField
-                value={goalText}
-                hasSessionGoal={sessionGoal.length > 0}
-                isSessionGoal={goalText === sessionGoal}
-                canUndo={goalHistory.length > 0}
-                isPolishing={polishing}
-                disabled={busy}
-                files={{
-                  isDragging: isDraggingFiles,
-                  composerRef,
-                  fileInputRef,
-                  onFiles: onFileInputChange,
-                  attachments: attachments.map((a) => (
-                    <AttachmentChip
-                      key={a.id}
-                      {...pendingAttachmentProps(a)}
-                      onRemove={() => removeAttachment(a.id)}
-                    />
-                  )),
-                }}
-                onChange={onGoalChange}
-                onBlur={() => requestTitleSuggestion(goalText)}
-                onUseSessionGoal={onUseSessionGoal}
-                onUndo={onUndoGoal}
-                onPolish={() => void onPolishGoal()}
-              />
-            </div>
-            <div className="flex flex-col gap-4">
-              <ModeSwitch mode={mode} disabled={blocked} control={modeControl} onChange={setMode} />
-              {mode === 'custom' && isPlannerOpen ? (
-                <PlannerDraftRow
-                  process={processText}
-                  hasPlan={plan !== null}
-                  isPlanning={planning}
-                  disabled={blocked}
-                  connectedProviders={connectedProviders}
-                  providerOverride={plannerProviderOverride}
-                  modelOverride={plannerModelOverride}
-                  effort={plannerEffort}
-                  recommendedProvider={resolvedPlanTaskModel.providerId}
-                  recommendedModel={plannerRecommendedModel}
-                  onProcess={setProcessText}
-                  onProvider={(next) => {
-                    setPlannerProviderOverride(next);
-                    setPlannerModelOverride('');
-                  }}
-                  onModel={setPlannerModelOverride}
-                  onEffort={setPlannerEffortOverride}
-                  onPlan={() => void onPlan()}
-                />
-              ) : null}
-              {renderPlan()}
-            </div>
-            <div className="flex flex-col gap-3">
-              {error === null ? null : (
-                <Notice
-                  tone="danger"
-                  placement="inline"
-                  role="alert"
-                  title={error.title}
-                  body={error.message}
-                />
-              )}
-              <LaunchBar
-                controls={launchControls}
-                reason={startGate.reason}
-                isStartDisabled={startGate.isDisabled}
-                isStarting={busy}
-                canDiscard={!draftEmpty}
-                onDiscard={resetDraft}
-                onStart={() => void onStart()}
-              />
-            </div>
-            <DragGhost ghost={ghost} />
-          </div>
-        </ScrollFade>
-      )}
+      {() => <FormPage>{fields}</FormPage>}
     </StudioShell>
   );
 };

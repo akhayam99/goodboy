@@ -1,15 +1,17 @@
 import { Block } from '../components/Block';
 import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
-import { S12 } from '../figures';
+import { RESOLVE } from '../figures';
 
 export const Review = () => (
   <Block
+    id="review"
     headingId="h2-review"
-    heading="From a review comment to a commit"
+    heading="Pull request review"
     sub="Pick the comments and press Resolve. An agent writes each fix as a commit and drafts the reply in your voice, and you approve."
     isAlt
   >
+    <Shot figure={RESOLVE} />
     <div className="stackText">
       <p>
         One action pushes the fixes, posts the replies and resolves the threads. Some comments
@@ -23,6 +25,5 @@ export const Review = () => (
         <SeeHow anchor="resolve" />
       </div>
     </div>
-    <Shot figure={S12} />
   </Block>
 );

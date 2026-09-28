@@ -28,6 +28,7 @@ export type IssueCandidate = {
   readonly goal: string;
   readonly body: string;
   readonly branchSlug: string;
+  readonly sentryProject?: string;
 };
 
 type Params = {

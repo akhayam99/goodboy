@@ -35,8 +35,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/artifacts/components/ArtifactCreationPane/ArtifactCreationFooter.tsx':
-    { count: 1, reason: 'chrome' },
   'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx': {
     count: 1,
     reason: 'chrome',
@@ -51,14 +49,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/explore/components/ExplorePane/ExploreSpawnPopover.tsx': {
-    count: 2,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/github/components/PullRequest/CreatePrPanel.tsx': {
-    count: 5,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/github/components/PullRequest/ThreadReplies.tsx': {
     count: 1,
     reason: 'debt',
@@ -67,25 +57,13 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/integrations/gitlab/MergeRequest/MrDetailPanel/CreateMrForm.tsx': {
-    count: 4,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/integrations/jira/AssigneePicker.tsx': { count: 3, reason: 'debt' },
   'apps/desktop/src/features/integrations/jira/TransitionMenu.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/notifications/components/NotificationCenter/index.tsx': {
     count: 2,
     reason: 'debt',
   },
-  'apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/onboarding/OnboardingWizard/steps/ProviderCard.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
-  'apps/desktop/src/features/permissions/components/DiffViewSelector/index.tsx': {
     count: 1,
     reason: 'debt',
   },
@@ -97,15 +75,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'apps/desktop/src/features/resolve/components/ResolveItemView/index.tsx': {
-    count: 2,
-    reason: 'chrome',
-  },
   'apps/desktop/src/features/session/components/CommandPalette/index.tsx': {
-    count: 1,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx': {
     count: 1,
     reason: 'chrome',
   },
@@ -115,21 +85,11 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/FileVersionsPane/index.tsx':
     { count: 1, reason: 'debt' },
-  'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/ActivityFilterPanel/index.tsx':
-    { count: 1, reason: 'debt' },
   'apps/desktop/src/features/session/components/SessionWorkspace/parts/TimelinePane/TimelineDayRule.tsx':
     { count: 1, reason: 'chrome' },
-  'apps/desktop/src/features/skills/components/SkillsPanel/index.tsx': {
-    count: 5,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/terminal/components/TerminalDock/index.tsx': {
     count: 1,
     reason: 'debt',
-  },
-  'apps/desktop/src/features/workflows/components/RunSpendLimitPopover/index.tsx': {
-    count: 2,
-    reason: 'chrome',
   },
   'apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitDetail.tsx': {
     count: 2,
@@ -143,10 +103,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'debt',
   },
-  'apps/desktop/src/features/workspace/components/WorkspaceLinkForm/index.tsx': {
-    count: 1,
-    reason: 'debt',
-  },
   'apps/desktop/src/features/workspace/components/WorkspaceSwitcher/index.tsx': {
     count: 2,
     reason: 'debt',
@@ -156,7 +112,7 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 1,
     reason: 'chrome',
   },
-  'packages/ui/src/components/Dialog.tsx': { count: 3, reason: 'chrome' },
+  'packages/ui/src/components/Dialog.tsx': { count: 2, reason: 'chrome' },
   'packages/ui/src/components/DrawerFrame.tsx': { count: 1, reason: 'chrome' },
   'packages/ui/src/components/Markdown/index.tsx': { count: 3, reason: 'markdown' },
   'apps/desktop/src/app/components/MockScene/scenes/audit/UpdateConfirmScene.tsx': {

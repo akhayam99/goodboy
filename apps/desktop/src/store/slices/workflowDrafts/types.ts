@@ -1,10 +1,16 @@
-import type { ProviderId, WorkflowId, EffortLevel } from '@goodboy/types';
+import type { ProviderId, SessionId, WorkflowId, EffortLevel, WorkspaceId } from '@goodboy/types';
 import type { PlannerOutput } from '@goodboy/core';
 import type { WorkflowDraft } from '../../../features/workflows/engine';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
 export type Mode = 'preset' | 'custom' | 'dynamic';
+
+export type KickoffLane = 'workflow' | 'task';
+
+export type KickoffDraftKey = `kickoff:${WorkspaceId}` | `kickoff-task:${WorkspaceId}`;
+
+export type WorkflowDraftKey = SessionId | KickoffDraftKey;
 
 type OrchestratorModelDraft = {
   readonly providerOverride: ProviderId | '';

@@ -207,7 +207,7 @@ export const resolveOrchestratorState = ({
   const stoppedIndex = ordered.findIndex((agent) => agent.status === 'stopped');
   if (stoppedIndex >= 0) {
     const agent = ordered[stoppedIndex]!;
-    const by = agent.stoppedBy === 'app' ? 'when Goodboy quit' : 'by you';
+    const by = agent.stoppedBy === 'app' ? 'by restart' : 'by you';
     return {
       ...base,
       phase: 'waiting',

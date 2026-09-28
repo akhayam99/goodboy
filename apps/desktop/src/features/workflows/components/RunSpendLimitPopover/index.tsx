@@ -4,10 +4,9 @@ import {
   AnchoredPopover,
   Button,
   cn,
-  Divider,
+  FormActions,
   formatUsd,
   PopoverBody,
-  PopoverFooter,
   useDropdown,
 } from '@goodboy/ui';
 import type { SessionId, WorkflowRun, WorkflowSpendLimitMode } from '@goodboy/types';
@@ -101,11 +100,10 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
       }
     >
       <PopoverBody>
-        <header className="px-3 py-2 text-label font-semibold text-foreground">
+        <header className="px-3 pb-1 pt-3 text-label font-semibold text-foreground">
           Spend limit for this run
         </header>
-        <Divider />
-        <div className="flex flex-col gap-2 px-3 py-3">
+        <div className="flex flex-col gap-2 px-3 py-2">
           <SpendLimitFields
             amount={amount}
             behavior={behaviorOfRunMode({ mode })}
@@ -120,29 +118,29 @@ export const RunSpendLimitPopover = ({ sessionId, run, variant }: Props) => {
               : `${formatUsd(spentUsd)} spent so far. Leave it empty for no limit.`}
           </p>
         </div>
-      </PopoverBody>
-      <Divider />
-      <PopoverFooter className="flex items-center justify-end gap-2 px-3 py-2">
-        {limitUsd == null ? null : (
+        <FormActions className="px-3 pb-3 pt-1">
+          {limitUsd == null ? null : (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              data-testid="run-spend-limit-remove"
+              onClick={() => void commit(null)}
+              className="text-muted-foreground"
+            >
+              Remove limit
+            </Button>
+          )}
           <Button
-            variant="ghost"
             size="sm"
-            disabled={busy}
-            data-testid="run-spend-limit-remove"
-            onClick={() => void commit(null)}
+            disabled={busy || isInvalid}
+            data-testid="run-spend-limit-save"
+            onClick={() => void commit(parseSpendLimit(amount))}
           >
-            Remove limit
+            Save
           </Button>
-        )}
-        <Button
-          size="sm"
-          disabled={busy || isInvalid}
-          data-testid="run-spend-limit-save"
-          onClick={() => void commit(parseSpendLimit(amount))}
-        >
-          Save
-        </Button>
-      </PopoverFooter>
+        </FormActions>
+      </PopoverBody>
     </AnchoredPopover>
   );
 };

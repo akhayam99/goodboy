@@ -114,4 +114,28 @@ describe('SkillsPanel', () => {
     expect(state.deleteSkill).not.toHaveBeenCalled();
     expect(screen.queryByRole('group', { name: 'Delete "my-skill"?' })).toBeNull();
   });
+
+  it('ends the editor with cancel and save inline, and both still work', async () => {
+    const { container } = render(
+      <ToastProvider>
+        <SkillsPanel workspaceId={'ws-1' as never} />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit my-skill' }));
+    const save = screen.getByRole('button', { name: 'Save' });
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    expect(save.closest('[data-slot="form-actions"]')).not.toBeNull();
+    expect(cancel.parentElement).toBe(save.parentElement);
+    expect(container.querySelector('footer')).toBeNull();
+
+    await act(async () => {
+      fireEvent.click(save);
+    });
+    expect(state.saveSkill).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit my-skill' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+  });
 });

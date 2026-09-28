@@ -135,6 +135,20 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   falls back to its home lens.
 - **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
   back and forward buttons walk the stack.
+- **A window comes back where it was.** `captureWindowLocation` reads the
+  current entry, focus included, and `restoreLocation({ location })` replaces
+  the top entry with it and applies it as a restore (a session that is gone
+  falls back to the board, an agent that is gone to its lens). Cmd+R writes
+  it into the reload intent in session storage. Each window also saves it as
+  `window.layout.<window label>` in the settings table half a second after it
+  moves (`useWindowLayout`), and forgets it when you close that window.
+  After an update or an app restart, and on any launch with **Reopen last**
+  on, the main window restores its own layout and reopens every other saved
+  window with `#restore=<old label>`, one per workspace; each one reads its
+  old layout and forgets it (`restoreLaunchLayout`). On a plain launch with
+  Reopen last off, the launcher opens and the saved windows are forgotten.
+  The history stack itself stays in memory: a restored window starts with one
+  entry.
 
 ## Surfaces
 
@@ -201,7 +215,9 @@ workflow progress when a run is active (one segment per step, then
 `Implement · 3 of 5`, counted from the steps that started, never estimated),
 otherwise the stage reason. At most two marks follow it, in this order: what
 waits on you (open questions, then review drafts), the first linked task with a
-`+n` for the rest, the agent count. The row starts with a 20px node: the pull
+`+n` for the rest, the agent count. When open questions are the stage reason,
+the row says it once, as the "1 to answer" mark, and leaves the reason blank.
+The row starts with a 20px node: the pull
 request glyph in its state colour when there is a request, otherwise the stage
 icon, a ring while an agent runs, and `?` or `!` when the session needs you.
 Every row carries a `ToneBar`, the same tone primitive as its card
@@ -225,45 +241,123 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
-**New session starts blank, straight on its Overview.** New, ⌘N, the board,
-the palette, the collapsed rail and the checklist all fire
-`goodboy:new-session`, and `NewSessionBridge` calls `startBlankSession`
-(`store/slices/sessionStart/`): it creates a session with no title, goal,
-project, agent or workflow and lands on its Overview. Nothing is asked first.
-While the last blank session is still untouched (no title, goal, slot, mount,
-agent or workflow run), New goes back to it instead of creating another one,
-so repeated presses never pile up empty sessions. A second press while the
-first create is still running is ignored. A blank session reads `Untitled
-session` in the header, the sidebar, the board and every confirm
-(`sessionTitle`).
+**New session is a draft, not a session.** New, ⌘N, the board, the palette
+and the checklist open the `New session` draft (the `session-draft` place,
+address `new`). Nothing is written: no row in the database, the sidebar or
+the board. The trail and the title say `New session`, the title is faint and
+cannot be renamed, and there is no `⋯`, no chip and no projects section. The
+sidebar's New button stays selected while the draft is open. Each workspace
+keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
+leaving it keeps it intact, New brings it back, and the button shows a primary
+dot with `Draft in progress` while a written draft waits. `Discard draft` in
+the header empties it; Esc never does. Back returns to the draft like any
+other place. **Start blank** in the header (`startBlankSession`) is the way
+to start from the goal: it creates a session with no title and no goal slot
+and lands on its normal Overview (`Untitled session`, `Add a goal`), where
+the goal, projects and work are added from the usual controls. Nothing is
+required first, and the draft stays for the next New.
 
-**A session with nothing started sets itself up inline** (`SessionSetup`).
-While it has no agent and no workflow run, the Overview shows `Set up this
-session` in place of the next step and Activity: an ordered list of three
-steps, one open at a time, each with its own empty state and actions.
+The draft asks one question, "How do you want to start?", with three choices
+on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
 
-- **Goal** asks "What should this session get done?". Save goal writes the
-  goal slot and, while the session is untitled, names it after the goal's
-  first sentence (`saveSessionSetupGoal`, marked `Named by Goodboy`).
-- **Project** lists the workspace projects not in the session yet
-  (`MountProjectList`, the same list and preflight as Add project). Skip keeps
-  the turns in the session folder; a workspace with no project offers `Add
-workspace project`.
-- **Start the work** lists `Your workflows`, `Built in` and `From scratch`
-  (`Orchestrated workflow`, `Custom workflow`), with Start agent and the Create
-  menu beside them. Picking a workflow prefills the builder draft
-  (`builderDraftFor`: the preset and its steps, or the custom or orchestrated
-  approach, plus the session goal) and opens the same `Start a workflow` studio
-  the Workflows lens uses (`WorkflowBuilderView`), editable before anything
-  starts.
+- **Pick up a task** shows the open issues of the connected trackers with a
+  search field. Picking one and pressing **Pick up** proposes the brief under
+  the list, as the issue brief flow in [concepts.md](concepts.md) describes.
+  Use brief, Edit or Use issue text settles the title and goal and opens
+  **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
+  or Ask an agent choice as the other two tabs, precompiled with that goal,
+  Run a workflow preselected. Run a workflow is the same embedded
+  `WorkflowBuilderView` as the Workflow tab (Orchestrated, Custom or Preset,
+  the plan, guidance, Can use, Starts, Autorun, Spend cap), with the issue as
+  its goal and its own draft under `kickoff-task:<workspace>`. When the issue
+  maps to a project (`launchMountFor`, the Inbox rule: a GitHub or GitLab repo
+  path, or a Sentry project linked or code-mapped to a project) a
+  `LaunchMountRow` above the choice says which project the session works in
+  and why, and lets you pick another or none. Start workflow, or Start on the
+  agent side, links the issue, mounts that project, creates the session and
+  starts the run or agent in one gesture (`startSessionFromDraft`, kind
+  `task` with a `mount` and a `then`). Without a tracker
+  it shows the connect links. The search, like the Inbox search, reads an issue
+  code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
+  `owner/repo#482`, a tracker URL; anything else stays a local filter). When
+  no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
+  right tracker once (300 ms after typing, cached two minutes): a key goes to
+  Jira when it matches the Jira project, to Linear alone when the prefix
+  matches a Linear team key (`linear_fetch_team_keys`, fetched once per
+  connection and cached, so a recognized team no longer also fires a Jira
+  call that was always going to 404), otherwise to Linear and Jira; `#N` goes
+  to every GitHub or GitLab repo of the workspace's projects (four GitHub
+  calls at a time); a short id resolves across the Sentry organization
+  (`sentry_resolve_short_id`). While a lookup is in flight, the row names the
+  trackers it asked (`Looking up CAS-231 in Linear and Jira`). Hits sit in a
+  `Not in your inbox` group above the list (`InboxLookupGroup`) and open or
+  pick up like any other issue, with a second line showing `Assigned to
+<name>` for a Linear or Jira hit with a known assignee, the project/repo
+  context otherwise; a miss is one row in that group that says why (not
+  found or not visible, key rejected with `Sign in again`, missing
+  permission, tracker not connected, no repo for `#N`), and a rate limit
+  shows a live countdown and retries once on its own when it ends, alongside
+  the manual `Try again`. The mobile companion resolves Linear, Sentry and
+  GitLab issues through the same direct lookups instead of searching only
+  the issues assigned to you. Issues can be starred (`StarToggle`, the same
+  star as projects) from an Inbox row, a lookup hit or `s` on the selected
+  row. Stars live per workspace (`workspace_starred_issues`, keyed by
+  provider and external id; GitHub keys by `owner/repo#N`) with the last
+  copy of identifier, title and state, so the `Starred` group draws before
+  any tracker answers; a row not refreshed since app start opens the detail
+  panel from that snapshot (`placeholderRecordOf`), not the tool's URL, and
+  gets replaced once the refresh lands a real record. In the Inbox it sits
+  under `Not in your inbox` and above the days, and a starred issue leaves
+  the days; open ones come first, closed ones at the bottom with `Unstar
+closed` and `Undo`, and one the tracker no longer returns reads `Can't
+reach NW-230 anymore`. Pick up a task shows only the open starred issues,
+  even ones a session already picked up. Opening the Inbox or Pick up a task
+  refreshes the stars at most every five minutes (`refreshStarredIssues`):
+  one request per tracker for Linear and Jira, one per project for GitLab,
+  and one per issue for GitHub and Sentry, which have no batch endpoint for
+  fetching by id.
+- **Run a workflow** is the workflow builder itself (`WorkflowBuilderView`
+  with a `kickoff` target), the same one Overview > Workflows > Create opens:
+  title, goal card with Add files and Polish, the Orchestrated / Custom /
+  Preset switch, Can use, the plan preview with the orchestrator row or the
+  editable steps, guidance, Starts, Autorun, Spend cap and Start workflow with
+  its reason. Its goal field is the kickoff goal (`workflowGoal` in the
+  draft), the only one on screen. Its draft lives under `kickoff:<workspace>`
+  in `workflowDrafts`, so it survives leaving the kickoff, and Discard draft
+  clears it with the rest. Start workflow runs `startSessionFromDraft` with
+  kind `workflow-run`: the session is created first, then the builder saves
+  the workflow and attaches the run to it in the same action, and the view
+  lands on the run. A failure removes the half-created session and keeps the
+  draft. Before a session exists the builder leaves out Use session goal, the
+  title suggestion (the orchestrated title is generated after start, as in a
+  session) and the worktree as the planner's working folder.
+- **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
+  model and project sit below it as chips (`AgentStartFields`), opening the
+  same role grid and model picker `Start agent` uses. The role defaults to
+  Scout every time, never the last one picked, because a habitual Implementer
+  writes code you did not ask for. Scout alone can start with an empty field
+  ("Start Scout on the whole project", which reads the project and changes
+  nothing); every other role needs a prompt first. The model chip reads Auto
+  until pinned. The project chip only shows when the workspace has more than
+  one repo project; with one it is preselected with no chip, with none the
+  session starts with no project attached.
 
-Each step can be skipped, and a done or skipped row reopens in place on click
-(`focusSessionSetupStep`). The next open step is the first one neither done
-nor skipped. Skips live in memory per session. The header hides `Add a goal`
-and the empty Projects section while the setup shows, so nothing is asked
-twice. The first agent or workflow run ends the setup and the Overview
-becomes the usual document. Picking up an issue with a drafted brief lives in
-the Inbox (Launch session).
+Only the selected tab's panel, and only its primary, shows. The tabs
+preselect Pick up a task when a tracker has open issues and Run a workflow
+otherwise, and they never remember the last choice. Opening the draft puts
+focus on the selected tab.
+
+**Start is the only way a session is born from the draft.** The primary
+creates the session and starts the work in one gesture
+(`startSessionFromDraft`): the title and the goal come from the issue, the
+workflow goal or the first sentence of the Scout focus, a picked issue is
+linked, and the column moves to the new session. The header marks that title
+`Named by Goodboy` until you rename it or open the session again, and a better
+title that arrives later fades in without moving the layout. If the start fails, the
+session is removed again, the draft stays as it was and the reason shows
+inline above the primary. A session that exists always has a real title, so
+its header never has an empty state. Sessions created elsewhere with no
+activity yet show the plain overview with its actions.
 
 ## Breadcrumbs
 
@@ -336,8 +430,11 @@ the Inbox (Launch session).
   instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
-  that applies of `Merged`, `Gone on origin`, `Local only`, `Behind main by
-N` and `On origin` (`branchPriorityOf`), and `All branches in Overview`. A
+  that applies of `Merged`, `Gone on origin`, `Local only`, `Diverged from
+origin`, `Behind main by N` and `On origin` (`branchPriorityOf`), and `All
+branches in Overview`. `Local only` and `Diverged from origin` read the
+  branch's own remote copy (`branchPushStateOf`), never the base it was cut
+  from. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the menu and in the Diff header alike
   (`isMountRequestMerged`). It never
@@ -533,21 +630,22 @@ before anything moves, so Settings stays open under it.
 First-run setup is a full-screen wizard in one shell that never moves: a top
 bar with a labelled stepper (Provider, Project, Code host, Tasks, First
 session) and Skip setup, a body that starts at the same line on every step,
-and a footer pinned at the bottom (Back left, Skip for now and the primary
-right). Steps crossfade in place (240 ms, 80 ms of opacity with reduced
-motion); the footer is disabled while they do. Welcome says what the five
+and the form actions inline at the end of the step (Back, Skip for now and
+the primary, right-aligned, no divider). Steps crossfade in place (240 ms,
+80 ms of opacity with reduced motion); the actions are disabled while they do. Welcome says what the five
 steps take. Provider needs one usable route (a CLI login, a saved key or
 OpenCode's free models). Project picks one folder, with or without version
 control, names the workspace after its parent folder and finds the
 repositories inside one. Code host is skipped by itself when no project is a
 repository. Code host and Tasks can be skipped; Sentry, Slack and the rest
 live in Settings › Integrations. There is no permissions question: every
-workspace starts on Full access. The last step offers three ways to start,
-with Ask an agent picked and three starters: Start Scout creates the session
-in the project picked in the Project step (`startFirstScout`), titled after
-the starter, with Scout running on it. Pick up a task closes the wizard on the
-Inbox. Run a workflow closes it on a blank session in that project, open on its
-Start the work step. With no
+workspace starts on Full access. The last step offers the same three ways as
+a new session, with Ask an agent picked and three starters: Start Scout
+starts the session from a Scout draft (`startSessionFromDraft`) with that
+starter as its focus, and Scout running. Pick up a task and Run a workflow
+close the wizard on the new session draft with that choice picked. Either
+way the draft carries the project picked in the Project step, so the session
+lands in it. With no
 issue source at all, Pick up a task says so and leads back to Code host. The checklist has six
 items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
@@ -592,7 +690,10 @@ too. An entry carries its own combo for other systems where the plain mapping
 would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
 elsewhere, where Ctrl+T belongs to the shell. Report a bug (`report.open`) is
 ⌘I on macOS and Ctrl+Shift+I elsewhere, because Ctrl+I is Tab in a terminal;
-it fires from anywhere, the terminal included. The plane is for the dispatcher.
+it fires from anywhere, the terminal included. Refresh session
+(`session.refresh`, ⌘⇧R) sits on the session plane beside Archive (⌘⇧A) and
+Delete (⌘⇧⌫), because it acts on the open session; ⌘R stays the app reload.
+The plane is for the dispatcher.
 Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Window), and Settings > App > Shortcuts lists the
 groups in that order, read top to bottom per column. Entries that share a
@@ -611,6 +712,13 @@ and as a glyph in parentheses in tooltips. Where the row is too tight, the
 tooltip is the only place it shows. Off macOS, typing wins over the lens
 plane. An AltGr character, or a Ctrl+Alt combo typed into a field or the
 terminal, never fires a shortcut.
+
+**Esc never leaves full screen on macOS.** A full-screen window keeps its Space
+when Esc goes unhandled: the web layer still gets every Escape keydown first, so
+popovers, the palette, drawers, studios and inline edits close or cancel as
+usual, and only the leftover key stops at the window
+(`src-tauri/src/fullscreen_escape.rs`). Leave full screen with the green
+button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
 
@@ -872,8 +980,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   back links and the overview action say so), and Resolve stays a verb on the
   actions that settle a thread. Review exists with or without a pull request:
   without one it is one root with a `No pull request` header and the session's
-  notes (see Pull request review in `docs/concepts.md`). Its dock holds only the
-  publication, and its header links the pull request page (`PR #528 ›`).
+  notes (see Pull request review in `docs/concepts.md`). The publication is the
+  one action row at the end of the list (`FormActions`, no footer bar), and its
+  header links the pull request page (`PR #528 ›`).
   The `pr` lens is the pull request page on GitHub too (`Merge request` on
   GitLab, still their own studios there). Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
@@ -882,7 +991,8 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   The body reads, in order: one warning with `Resolve in Review` when
   conversations wait or a reviewer asked for changes, otherwise the merge
   readiness note; then Details, Checks and Activity. `Write review` is a child
-  page (`Overview › Pull request › #528 › Write review`) with the submit dock;
+  page (`Overview › Pull request › #528 › Write review`) with the drafts count
+  and Submit review in the diff toolbar;
   without a pull request the page is the creation form
   (`Overview › Pull request › New`). The child page lives in the store per
   session and drops back to the page when the lens closes. Everything Review
@@ -924,9 +1034,12 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
 
 ## Creating a session
 
-A new session is created blank and always lands on Overview. Nothing is a
-condition for having one: goal, project, agents and workflow are each set
-later, inline, from the setup steps. Creating a session picks no project. The session is born on the
+The new session form always lands on Overview. It offers no agent-kind picker
+before the session exists: the kind is a choice made inside a session, not a
+condition for having one. Its issue sources come from a curated allowlist, not
+from every connected provider, because a connected code host does not mean an
+issue picker. The section hides when none of the allowed sources is connected.
+Creating a session picks no project either. The session is born on the
 workspace with only a container directory, and projects are materialized when
 the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
 
@@ -1062,7 +1175,8 @@ GitHub commit link clicked anywhere in a session; outside a session the link
 opens in the browser). It shows unified and wrapped, and a worktree peek offers
 `Open in Diff`, which opens the Diff lens on that mount with the file in focus.
 `diff-notes` lists the open notes of the Diff lens by file, and `review-drafts`
-lists the review drafts of Write review; the dock count opens each one.
+lists the review drafts of Write review; the count in the diff toolbar opens
+each one.
 
 ## The Diff lens
 
@@ -1125,9 +1239,10 @@ on file); a viewed file collapses, and generated or binary files start
 collapsed. Rows are a CSS grid with `role="grid"`, never a table. Click a line
 number to comment, drag or shift-click to cover a range; the composer and the
 threads sit under the last line of the range. ⌘Enter saves, Escape cancels.
-The Diff lens docks `N notes` and `Resolve in Review`, which opens Review on
-the same notes; Write review docks `N drafts` and `Submit review`, whose
-popover holds the summary and the verdict. Files mount in batches of 20 as the
+The diff toolbar carries `N notes` and `Resolve in Review` in the Diff lens,
+which opens Review on the same notes, and `N drafts` and `Submit review` in
+Write review, whose popover holds the summary and the verdict. Neither is a
+footer bar. Files mount in batches of 20 as the
 browser idles, so a large diff stays responsive.
 
 ## The Scripts lens

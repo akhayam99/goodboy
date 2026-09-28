@@ -102,7 +102,11 @@ vi.mock('../features/workspace/components/WorkspaceLauncher', () => ({
 vi.mock('../features/workspace/components/WorkspaceSwitcher', () => ({
   WorkspaceSwitcher: () => null,
 }));
-vi.mock('../features/workspace/window', () => ({ isMainWindow: () => true }));
+vi.mock('../features/workspace/window', () => ({
+  isMainWindow: () => true,
+  currentWindowLabel: () => 'main',
+  onWindowClose: async () => () => undefined,
+}));
 vi.mock('../features/workflows/components/WorkflowStudio', () => ({ WorkflowStudio: () => null }));
 vi.mock('../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));

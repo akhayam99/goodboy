@@ -37,8 +37,12 @@ afterEach(cleanup);
 describe('runningAgentsCopy', () => {
   it('names what a restart stops', () => {
     expect(runningAgentsCopy({ count: 0 })).toBe('Nothing is running.');
-    expect(runningAgentsCopy({ count: 1 })).toBe('Restarting stops 1 running agent.');
-    expect(runningAgentsCopy({ count: 2 })).toBe('Restarting stops 2 running agents.');
+    expect(runningAgentsCopy({ count: 1 })).toBe(
+      'The running agent picks up where it stopped after the restart.',
+    );
+    expect(runningAgentsCopy({ count: 2 })).toBe(
+      'The 2 running agents pick up where they stopped after the restart.',
+    );
   });
 });
 
@@ -55,7 +59,9 @@ describe('UpdateConfirm', () => {
       />,
     );
     await userEvent.click(screen.getByRole('button', { name: 'open' }));
-    expect(screen.getByText('Restarting stops 2 running agents.')).toBeTruthy();
+    expect(
+      screen.getByText('The 2 running agents pick up where they stopped after the restart.'),
+    ).toBeTruthy();
     expect(screen.queryByRole('button', { name: "What's new" })).toBeNull();
   });
 

@@ -1,45 +1,28 @@
-import { useMemo } from 'react';
 import { Button, cn, tintClasses } from '@goodboy/ui';
-import type { Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore, useSessionStageInfo, agentPlace } from '../../../../store';
+import type { SessionId } from '@goodboy/types';
+import { useAppStore, agentPlace } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { describeSessionStage } from '../../session-stage';
-import { agentHomeLens, classifyAgent, resolveRootAgent } from '../../agent-kind';
-import { attentionAgentId, resolveAttentionTarget } from './lib';
+import { isAttentionCalloutShown, type SessionAttention } from './lib';
 
 type Props = {
-  readonly session: Session;
+  readonly sessionId: SessionId;
+  readonly attention: SessionAttention;
   readonly onSelectLens: (lens: LensKind) => void;
+  readonly isQuestionShownBelow?: boolean;
 };
 
-export const AttentionCallout = ({ session, onSelectLens }: Props) => {
-  const sessionId = session.id as SessionId;
-  const stage = useSessionStageInfo(session);
-  const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const agentKindOverride = useAppStore((s) => s.agentKindOverride);
+export const AttentionCallout = ({
+  sessionId,
+  attention,
+  onSelectLens,
+  isQuestionShownBelow = false,
+}: Props) => {
   const navigate = useAppStore((s) => s.navigate);
-  const blockedAgentId = useAppStore(
-    (s) => agents.find((agent) => s.agentTurnState[agent.id]?.kind === 'blocked')?.id ?? null,
-  );
+  const { stage, target } = attention;
 
-  const target = useMemo(() => {
-    const agentId = attentionAgentId({ stage, agents, blockedAgentId });
-    if (agentId === null) {
-      return resolveAttentionTarget({ stage, agent: null });
-    }
-    const root = resolveRootAgent({ agents, agentId }) ?? null;
-    const home =
-      root === null
-        ? 'agents'
-        : agentHomeLens({
-            agent: root,
-            kind: classifyAgent({ agent: root, override: agentKindOverride[root.id] ?? null }),
-          });
-    return resolveAttentionTarget({ stage, agent: { agentId, home } });
-  }, [agentKindOverride, blockedAgentId, agents, stage]);
-
-  if (stage.stage !== 'attention' || target === null) {
+  if (target === null || !isAttentionCalloutShown({ attention, isQuestionShownBelow })) {
     return null;
   }
 

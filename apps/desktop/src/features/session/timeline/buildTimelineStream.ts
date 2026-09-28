@@ -31,7 +31,12 @@ import type {
 } from './buildTimelineGroups';
 import type { RailGroupInput, RailGroupShape } from '../../workTreeModel/railGeometry';
 import type { RunIdentity } from './runIdentity';
-import { oldestAgentOpenQuestion, runOpenQuestion } from './runOpenQuestion';
+import {
+  hasShownRunQuestion,
+  oldestAgentOpenQuestion,
+  runOpenQuestion,
+  runShownQuestionIds,
+} from './runOpenQuestion';
 import {
   TIMELINE_RHYTHM,
   markerCenterY,
@@ -462,20 +467,37 @@ const SCHEDULED_PHASES: ReadonlySet<RowPhase> = new Set<RowPhase>(['running', 'w
 
 const SKIPPED_UNDER_CLOSED: RowState = { phase: 'skipped', reason: { kind: 'skipped' }, ask: null };
 
+const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
+
 const agentRowStateOf = ({
   entry,
   readyAgentId,
+  failedAgentId = null,
+  questionRowIds = NO_QUESTION_ROWS,
 }: {
   readonly entry: TimelineAgentEntry;
   readonly readyAgentId: string | null;
-}): RowState =>
-  resolveAgentRowState({
+  readonly failedAgentId?: string | null;
+  readonly questionRowIds?: ReadonlySet<string>;
+}): RowState => {
+  const state = resolveAgentRowState({
     agent: entry.agent,
     isAsking: entry.openQuestions.length > 0 && !isQuestionDelegate({ agent: entry.agent }),
     question: oldestAgentOpenQuestion({ entry }),
     isReadyStep: readyAgentId === entry.agent.id,
     isMissingArtifact: entry.isMissingArtifact,
   });
+  const isAskedOnItsQuestionRow =
+    state.ask?.kind === 'answer' &&
+    entry.openQuestions.every((question) => questionRowIds.has(question.id));
+  if (isAskedOnItsQuestionRow) {
+    return { ...state, ask: null };
+  }
+  if (failedAgentId === entry.agent.id && state.ask == null) {
+    return { ...state, ask: { kind: 'restartStep' } };
+  }
+  return state;
+};
 
 const hasScheduledChildWork = ({
   entry,
@@ -564,6 +586,7 @@ type EmitContext = {
   readonly showReports: boolean;
   readonly showWireframes: boolean;
   readonly showQuestions: boolean;
+  readonly questionRowIds: ReadonlySet<string>;
 };
 
 const hasUnreadDescendant = ({
@@ -587,6 +610,7 @@ type EmitAgentParams = {
   readonly groupId: string | null;
   readonly showSubagents: boolean;
   readonly readyAgentId: string | null;
+  readonly failedAgentId?: string | null;
   readonly isParentClosed: boolean;
   readonly context: EmitContext;
 };
@@ -603,10 +627,16 @@ const agentRows = ({
   groupId,
   showSubagents,
   readyAgentId,
+  failedAgentId = null,
   isParentClosed,
   context,
 }: EmitAgentParams): ReadonlyArray<DraftRow> => {
-  const resolved = agentRowStateOf({ entry, readyAgentId });
+  const resolved = agentRowStateOf({
+    entry,
+    readyAgentId,
+    failedAgentId,
+    questionRowIds: context.questionRowIds,
+  });
   const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
   const rowState = isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
   const childLaneId = laneIdOf({ entryId: entry.id });
@@ -692,7 +722,11 @@ const failedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }) => {
       isAgentStatusHalted({ status: child.agent.status }) &&
       child.agent.doneAt == null
     ) {
-      return { stepLabel: child.stepLabel, isBlocked: child.agent.status === 'blocked' };
+      return {
+        agentId: child.agent.id,
+        stepLabel: child.stepLabel,
+        isBlocked: child.agent.status === 'blocked',
+      };
     }
   }
   return null;
@@ -701,7 +735,7 @@ const failedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }) => {
 const stoppedStepOf = ({ entry }: { readonly entry: TimelineRunEntry }): RowStoppedStep | null => {
   for (const child of entry.children) {
     if (child.kind === 'agent' && child.agent.status === 'stopped' && child.agent.doneAt == null) {
-      return { agent: child.agent, stepLabel: child.stepLabel };
+      return { stepLabel: child.stepLabel };
     }
   }
   return null;
@@ -734,15 +768,22 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
   const steps = stepAgentsOf({ entry });
   const hasRunningStep = steps.some((agent) => agent.status === 'running');
   const isDeciding = !isFinished && context.decidingRunIds.has(entry.run.id);
+  const failedStep = failedStepOf({ entry });
+  const shownQuestionIds = runShownQuestionIds({
+    entry,
+    questionRowIds: context.questionRowIds,
+    showSubagents: context.showWorkflowSubagents,
+  });
   const rowState = resolveRunRowState({
     run: entry.run,
     advance,
     isFinished,
     isDeciding,
     hasRunningStep,
-    failedStep: failedStepOf({ entry }),
+    failedStep,
     stoppedStep: stoppedStepOf({ entry }),
-    question: runOpenQuestion({ entry }),
+    question: runOpenQuestion({ entry, shownQuestionIds }),
+    isQuestionShown: hasShownRunQuestion({ entry, shownQuestionIds }),
     readyStep,
     chainedAfterTitle: chainedAfterTitleOf({ entry, context }),
   });
@@ -767,6 +808,7 @@ const runRows = ({ entry, context }: EmitRunParams): ReadonlyArray<DraftRow> => 
           groupId: laneId,
           showSubagents: context.showWorkflowSubagents,
           readyAgentId: readyStep?.agent.id ?? null,
+          failedAgentId: failedStep?.agentId ?? null,
           isParentClosed: false,
           context,
         }),
@@ -987,6 +1029,21 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
   return items;
 };
 
+const openQuestionRowIds = ({
+  entries,
+}: {
+  readonly entries: ReadonlyArray<TimelineTopLevelEntry>;
+}): ReadonlySet<string> =>
+  new Set(
+    entries.flatMap((entry) =>
+      entry.kind === 'question'
+        ? entry.questions
+            .filter((question) => question.status === 'open')
+            .map((question) => question.id)
+        : [],
+    ),
+  );
+
 export const buildTimelineStream = ({
   entries,
   unreadAgentIds,
@@ -1021,6 +1078,7 @@ export const buildTimelineStream = ({
     showReports,
     showWireframes,
     showQuestions,
+    questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
   };
   const rows: DraftRow[] = [];
 
@@ -1142,6 +1200,7 @@ export const buildRunTreeStream = ({
     showReports: false,
     showWireframes: false,
     showQuestions: false,
+    questionRowIds: NO_QUESTION_ROWS,
   };
   const sorted = [...runRows({ entry, context })].sort((first, second) =>
     compareNewestFirst({ first, second }),
@@ -1180,6 +1239,7 @@ export const buildAgentTreeStream = ({
     showReports: false,
     showWireframes: false,
     showQuestions: false,
+    questionRowIds: NO_QUESTION_ROWS,
   };
   const rootLaneId = `tree:${entry.id}`;
   context.groups.push({

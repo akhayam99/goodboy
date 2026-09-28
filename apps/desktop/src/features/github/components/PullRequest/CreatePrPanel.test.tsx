@@ -220,7 +220,27 @@ describe('CreatePrPanel', () => {
     );
   });
 
-  it('shows the create error in the footer', async () => {
+  it('ends the form with cancel and create inline, never in a footer bar', async () => {
+    const onCancel = vi.fn();
+    render(
+      <CreatePrPanel
+        sessionId={SESSION_ID}
+        defaultTitle="Refactor PR cards"
+        onCreated={vi.fn()}
+        onCancel={onCancel}
+      />,
+    );
+    await screen.findByRole('combobox', { name: 'Branch' });
+    const create = screen.getByRole('button', { name: 'Create PR' });
+    const cancel = screen.getByRole('button', { name: 'Cancel' });
+    expect(create.closest('[data-slot="form-page"]')).not.toBeNull();
+    expect(create.closest('footer')).toBeNull();
+    expect(cancel.parentElement).toBe(create.parentElement);
+    fireEvent.click(cancel);
+    expect(onCancel).toHaveBeenCalledOnce();
+  });
+
+  it('shows the create error next to the actions', async () => {
     h.store.createPrForSession.mockRejectedValueOnce(new Error('gh exploded'));
     renderPanel();
     await screen.findByRole('combobox', { name: 'Branch' });

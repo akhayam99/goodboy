@@ -7,8 +7,16 @@ import type { DrawerRequest } from '../drawer/state';
 import { createNavigationSlice } from '.';
 import { dropSession } from './history';
 import { locationKey } from './locationKey';
-import { BOARD_PLACE, agentPlace, resolverPagePlace, sessionPlace } from './place';
+import {
+  BOARD_PLACE,
+  SESSION_DRAFT_PLACE,
+  agentPlace,
+  resolverPagePlace,
+  sessionPlace,
+} from './place';
 import { HISTORY_LIMIT } from './types';
+import { captureWindowLocation } from './captureWindowLocation';
+import { parseLocation } from '../../../features/workspace/windowLayout';
 
 const WS = 'ws-harborline' as WorkspaceId;
 const WS_2 = 'ws-northwind' as WorkspaceId;
@@ -34,6 +42,7 @@ const makeStore = () =>
       ({
         currentWorkspaceId: WS,
         currentSessionId: null,
+        sessions: [{ id: S1 }, { id: S2 }],
         navigation: {},
         appStudio: null,
         activeLens: {},
@@ -48,6 +57,7 @@ const makeStore = () =>
         focusedGithubIssueNumber: {},
         focusedExternalTask: {},
         drawer: null,
+        openSessionDraftWorkspaceId: null,
         contextDrawerTab: {},
         sessionPhaseRuns: {
           [S1]: [agent({}), agent({ id: RESOLVER, name: 'resolve: ana on a.ts:4' })],
@@ -78,6 +88,57 @@ const keyOf = (store: ReturnType<typeof makeStore>): string => {
   return entry === undefined ? '' : locationKey(entry);
 };
 
+describe('restoring a saved window location', () => {
+  it('brings back the lens, target, drawer and scroll a reload or relaunch saved', () => {
+    const before = makeStore();
+    before.getState().navigate({
+      to: sessionPlace({
+        sessionId: S1,
+        lens: 'plans',
+        target: { kind: 'artifact', artifactId: ARTIFACT },
+      }),
+    });
+    before.getState().openDrawer({
+      kind: 'context',
+      sessionId: S1,
+      payload: { tab: 'summary', view: 'current' },
+    });
+    before.getState().amendFocus({ patch: { scroll: { plans: 320 } } });
+    const saved = parseLocation({
+      value: JSON.parse(JSON.stringify(captureWindowLocation({ state: before.getState() }))),
+    });
+
+    const after = makeStore();
+    after.getState().restoreLocation({ location: saved! });
+
+    const state = after.getState();
+    expect(state.currentSessionId).toBe(S1);
+    expect(state.activeLens[S1]).toBe('plans');
+    expect(state.focusedArtifactId[S1]).toBe(ARTIFACT);
+    expect(state.drawer).toEqual(before.getState().drawer);
+    const stack = state.navigation[WS];
+    expect(stack?.entries[stack.index]?.focus.scroll).toEqual({ plans: 320 });
+  });
+
+  it('falls back to the board when the saved session is gone', () => {
+    const store = makeStore();
+    store.getState().restoreLocation({
+      location: {
+        workspaceId: WS,
+        place: {
+          at: 'session',
+          sessionId: 'session-deleted' as SessionId,
+          view: { lens: 'review', agentId: null, studio: null, target: null },
+        },
+        studio: null,
+        focus: { drawer: null, selection: {}, scroll: {}, revealed: [] },
+      },
+    });
+    expect(store.getState().currentSessionId).toBeNull();
+    expect(keyOf(store)).toBe('board');
+  });
+});
+
 describe('navigation slice', () => {
   it('turns an old Context page into the overview with the Context drawer on its tab', () => {
     const store = makeStore();
@@ -93,6 +154,26 @@ describe('navigation slice', () => {
 
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'context' }) });
     expect(store.getState().drawer).toMatchObject({ payload: { tab: 'summary' } });
+  });
+
+  it('opens the new session draft as its own entry and Back leaves it', () => {
+    const store = makeStore();
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1 }) });
+    store.getState().navigate({ to: SESSION_DRAFT_PLACE });
+
+    expect(store.getState().currentSessionId).toBeNull();
+    expect(store.getState().openSessionDraftWorkspaceId).toBe(WS);
+    expect(keyOf(store)).toBe('new');
+
+    store.getState().back();
+    expect(store.getState().currentSessionId).toBe(S1);
+    expect(store.getState().openSessionDraftWorkspaceId).toBeNull();
+
+    store.getState().forward();
+    expect(store.getState().openSessionDraftWorkspaceId).toBe(WS);
+    store.getState().navigate({ to: BOARD_PLACE });
+    expect(store.getState().openSessionDraftWorkspaceId).toBeNull();
+    expect(keyOf(store)).toBe('board');
   });
 
   it('pushes a voice per place and walks back and forward', () => {

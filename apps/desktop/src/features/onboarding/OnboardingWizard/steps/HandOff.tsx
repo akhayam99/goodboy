@@ -2,12 +2,10 @@ import { Button } from '@goodboy/ui';
 
 export const HandOff = ({
   line,
-  label,
   busy,
   onOpen,
 }: {
   readonly line: string;
-  readonly label: string;
   readonly busy: boolean;
   readonly onOpen: () => void;
 }) => (
@@ -15,7 +13,7 @@ export const HandOff = ({
     <p className="text-body text-muted-foreground">{line}</p>
     <div>
       <Button variant="primary" disabled={busy} isBusy={busy} onClick={onOpen}>
-        {label}
+        Open a new session
       </Button>
     </div>
   </div>

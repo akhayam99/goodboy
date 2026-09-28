@@ -5,6 +5,7 @@ import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { sessionTitle } from '../../sessionTitle';
 import { SessionDestructiveActions } from './SessionDestructiveActions';
+import { SessionRefreshAction } from './SessionRefreshAction';
 import { LinkIssueAction } from './LinkIssueAction';
 import { ContextChip } from './ContextChip';
 import { GoalTeaser } from './GoalTeaser';
@@ -16,11 +17,10 @@ import { ArchivedRestore } from './ArchivedRestore';
 
 type Props = {
   readonly session: Session;
-  readonly isSettingUp?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props) => {
+export const HeaderBand = ({ session, onSelectLens }: Props) => {
   const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
@@ -78,10 +78,11 @@ export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props
             <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
           ) : null}
           <div className="flex shrink-0 items-center gap-1">
+            {isArchived ? null : <SessionRefreshAction sessionId={sessionId} />}
             <SessionDestructiveActions session={session} />
           </div>
         </div>
-        {isSettingUp ? null : <GoalTeaser session={session} />}
+        <GoalTeaser session={session} />
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
             {isArchived ? <ArchivedRestore session={session} /> : null}
@@ -95,11 +96,7 @@ export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props
           </div>
         </div>
       </div>
-      <ProjectMountRows
-        session={session}
-        isHiddenWhenEmpty={isSettingUp}
-        onSelectLens={onSelectLens}
-      />
+      <ProjectMountRows session={session} onSelectLens={onSelectLens} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import {
   Button,
-  Divider,
+  FormActions,
   Markdown,
   PANE_RHYTHM,
   ScrollFade,
@@ -61,6 +61,7 @@ type Props = {
   readonly mode: ResolveDecisionMode;
   readonly proposalKind: ResolveProposalKind;
   readonly isBusy: boolean;
+  readonly busyActionId: ResolveItemActionId | null;
   readonly sharedMembers: ReadonlyArray<SharedCandidateMember>;
   readonly canRunCheck: boolean;
   readonly isCheckRunning: boolean;
@@ -106,14 +107,14 @@ const conversationTabs = ({
   },
 ];
 
-type FooterParams = {
+type ActionNoteParams = {
   readonly mode: ResolveDecisionMode;
   readonly isAnswering: boolean;
   readonly isReplyBlank: boolean;
   readonly isNote: boolean;
 };
 
-const FOOTER_NOTE = ({ mode, isAnswering, isReplyBlank, isNote }: FooterParams): string => {
+const ACTION_NOTE = ({ mode, isAnswering, isReplyBlank, isNote }: ActionNoteParams): string => {
   if (isNote && mode === 'resolve') {
     return RESOLVE_ITEM_LABEL.resolveLocalNote;
   }
@@ -145,7 +146,7 @@ const COMMIT_LABEL = ({
   mode,
   isAnswering,
   isNote,
-}: Omit<FooterParams, 'isReplyBlank'>): string => {
+}: Omit<ActionNoteParams, 'isReplyBlank'>): string => {
   if (isNote && mode === 'close') {
     return RESOLVE_ITEM_LABEL.closeLocalNoteAction;
   }
@@ -182,6 +183,7 @@ export const ResolveItemView = ({
   mode,
   proposalKind,
   isBusy,
+  busyActionId,
   sharedMembers,
   canRunCheck,
   isCheckRunning,
@@ -219,7 +221,7 @@ export const ResolveItemView = ({
   const hasAgentTab = row.attempt !== null && agentPanel !== null;
   const location = threadLocationOf({ row });
   const isAgentShown = hasAgentTab && tab === 'agent';
-  const footerNote = FOOTER_NOTE({ mode, isAnswering, isReplyBlank, isNote });
+  const actionNote = ACTION_NOTE({ mode, isAnswering, isReplyBlank, isNote });
   const commitLabel =
     mode === 'resolve'
       ? (actions.primary?.label ?? RESOLVE_ITEM_LABEL.resolve)
@@ -304,6 +306,66 @@ export const ResolveItemView = ({
                 )}
                 {note !== null && <p className="text-secondary text-warning">{note}</p>}
                 {error !== null && <p className="text-secondary text-danger">{error}</p>}
+                {mode === 'read' && (actions.primary !== null || actions.secondary !== null) && (
+                  <FormActions
+                    leading={
+                      nextStep == null ? null : (
+                        <p className="min-w-0 text-secondary text-muted-foreground">{nextStep}</p>
+                      )
+                    }
+                  >
+                    {actions.secondary !== null && (
+                      <ActionButton
+                        action={actions.secondary}
+                        isPrimary={false}
+                        isBusy={busyActionId === actions.secondary.id}
+                        onAction={onAction}
+                      />
+                    )}
+                    {actions.primary !== null && (
+                      <ActionButton
+                        action={actions.primary}
+                        isPrimary
+                        isBusy={busyActionId === actions.primary.id}
+                        onAction={onAction}
+                      />
+                    )}
+                  </FormActions>
+                )}
+                {mode !== 'read' && (
+                  <FormActions
+                    leading={
+                      <p
+                        className={cn(
+                          'min-w-0 text-secondary',
+                          isCommitBlocked ? 'text-warning' : 'text-muted-foreground',
+                        )}
+                      >
+                        {actionNote}
+                      </p>
+                    }
+                  >
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isBusy}
+                      onClick={onCancelEditing}
+                      className="text-muted-foreground"
+                    >
+                      {RESOLVE_QUEUE_ACTION_LABEL.cancel}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      data-resolve-primary
+                      disabled={isCommitBlocked}
+                      isBusy={isBusy}
+                      onClick={onCommitEditing}
+                    >
+                      {commitLabel}
+                    </Button>
+                  </FormActions>
+                )}
               </div>
               <section
                 aria-label={RESOLVE_ITEM_LABEL.aboutThisComment}
@@ -370,55 +432,6 @@ export const ResolveItemView = ({
               </section>
             </div>
           </ScrollFade>
-          {mode === 'read' && (actions.primary !== null || actions.secondary !== null) && (
-            <>
-              <Divider />
-              <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-                <p className="min-w-0 text-secondary text-muted-foreground">{nextStep ?? ''}</p>
-                <div className="flex items-center gap-2">
-                  {actions.secondary !== null && (
-                    <ActionButton
-                      action={actions.secondary}
-                      isPrimary={false}
-                      onAction={onAction}
-                    />
-                  )}
-                  {actions.primary !== null && (
-                    <ActionButton action={actions.primary} isPrimary onAction={onAction} />
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-          {mode !== 'read' && (
-            <>
-              <Divider />
-              <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
-                <p
-                  className={cn(
-                    'min-w-0 text-secondary',
-                    isCommitBlocked ? 'text-warning' : 'text-muted-foreground',
-                  )}
-                >
-                  {footerNote}
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="ghost" disabled={isBusy} onClick={onCancelEditing}>
-                    {RESOLVE_QUEUE_ACTION_LABEL.cancel}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="primary"
-                    data-resolve-primary
-                    disabled={isBusy || isCommitBlocked}
-                    onClick={onCommitEditing}
-                  >
-                    {commitLabel}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
         </>
       )}
     </div>

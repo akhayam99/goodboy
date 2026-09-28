@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { runsForWorkflowRun } from '@goodboy/core';
 import type { ReactNode } from 'react';
@@ -30,6 +30,7 @@ import { runSpendUsd } from '../../../../../../store/slices/workflows/runSpendUs
 import { useSessionRoleModels } from '../../../../../../shared/hooks/useSessionRoleModels';
 import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWorkflowRuns';
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
+import { usePendingAction } from '../../../../../../shared/hooks/usePendingAction';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
 import { isWorkflowRunClosable } from '../../../../../workflows/isWorkflowRunClosable';
 import { WorkflowRunMenu } from '../../../../../workflows/components/WorkflowRunMenu';
@@ -53,8 +54,10 @@ import {
   needsYouRootIds,
 } from '../../../../timeline/needsYou';
 import { timelineLaneRuns } from '../../../../timeline/timelineLaneRuns';
+import { shownQuestionIds } from '../../../../timeline/shownQuestionIds';
 import { layoutTimelineRail } from '../../../../../workTreeModel/railGeometry';
 import { useOpenQuestions } from '../../../../../context/components/QuestionsTab/useOpenQuestions';
+import { useOpenAgentQuestion } from '../../../../../context/hooks/useOpenAgentQuestion';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useAgentTouchedWorktrees } from '../../../../hooks/useAgentTouchedWorktrees';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
@@ -83,9 +86,10 @@ const EMPTY_REVEALED_ROWS: ReadonlySet<string> = new Set();
 type Props = {
   readonly session: Session;
   readonly actions: ReactNode;
+  readonly onShownQuestionsChange?: (ids: ReadonlySet<string>) => void;
 };
 
-export const TimelinePane = ({ session, actions }: Props) => {
+export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props) => {
   const sessionId: SessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
   const plans = useAppStore((s) => s.sessionPlans?.[sessionId] ?? EMPTY_ARRAY);
@@ -105,6 +109,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
   const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
   const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
+  const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const openQuestions = useSessionOpenQuestions(sessionId);
   const answeredQuestions = useSessionAnsweredQuestions(sessionId);
   const dismissedQuestions = useSessionDismissedQuestions(sessionId);
@@ -116,6 +121,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
   const openContextDrawer = useAppStore((s) => s.openContextDrawer);
   const [expandedRows, setExpandedRows] = useState<ReadonlySet<string>>(NO_EXPANDED_ROWS);
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
+  const pending = usePendingAction({ sessionId });
   const activity = useActivityFilter();
   const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
   const diffStats = useMountDiffStats(sessionId);
@@ -296,6 +302,13 @@ export const TimelinePane = ({ session, actions }: Props) => {
 
   const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
 
+  const shownQuestions = useMemo(() => shownQuestionIds({ items: stream.items }), [stream.items]);
+  const shownQuestionsKey = [...shownQuestions].sort().join(' ');
+
+  useLayoutEffect(() => {
+    onShownQuestionsChange?.(shownQuestions);
+  }, [onShownQuestionsChange, shownQuestionsKey]);
+
   const listRef = useRef<HTMLDivElement>(null);
 
   const revealNeedsYou = () => {
@@ -433,12 +446,18 @@ export const TimelinePane = ({ session, actions }: Props) => {
 
   const answerAction = ({
     question,
+    isAskerOffScreen,
   }: {
     readonly question: OpenQuestion | null;
+    readonly isAskerOffScreen: boolean;
   }): TimelineRowAction => ({
     label: 'Answer',
     asksUser: true,
     onAct: () => {
+      if (question != null && isAskerOffScreen) {
+        openAgentQuestion({ question });
+        return;
+      }
       if (question != null) {
         focusQuestion(question.id);
       }
@@ -479,7 +498,7 @@ export const TimelinePane = ({ session, actions }: Props) => {
     }
     switch (ask.kind) {
       case 'answer':
-        return answerAction({ question: ask.question });
+        return answerAction({ question: ask.question, isAskerOffScreen: entry.kind === 'run' });
       case 'restartStep': {
         const target = openTargetFor({ entry });
         if (target == null) {
@@ -491,14 +510,26 @@ export const TimelinePane = ({ session, actions }: Props) => {
         const { agent } = ask;
         return {
           label: `Start ${ask.step.name}`,
-          onAct: () => void advanceAgent({ agent }),
+          isBusy: pending.pendingKeys.has(agent.id),
+          onAct: () =>
+            void pending.run({
+              key: agent.id,
+              failureTitle: "The next step didn't start",
+              task: () => advanceAgent({ agent }),
+            }),
         };
       }
       case 'continue': {
         const { agent } = ask;
         return {
-          label: entry.kind === 'run' ? 'Continue step' : 'Continue',
-          onAct: () => void continueStoppedAgent({ sessionId, agentId: agent.id }),
+          label: agent.stoppedBy === 'app' ? 'Resume' : 'Continue',
+          isBusy: pending.pendingKeys.has(agent.id),
+          onAct: () =>
+            void pending.run({
+              key: agent.id,
+              failureTitle: "Couldn't continue the agent",
+              task: () => continueStoppedAgent({ sessionId, agentId: agent.id }),
+            }),
         };
       }
       default: {

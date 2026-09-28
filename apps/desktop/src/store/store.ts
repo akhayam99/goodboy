@@ -111,6 +111,7 @@ import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import type { CreatePrInput } from './slices/github/createPrForSession';
 import type { RefreshPrOptions } from './slices/github/refreshMountPr';
+import type { PrWriteOptions } from './slices/github/prWriteOptions';
 import { createGitlabMrSlice, initialGitlabMrState } from './slices/gitlab-mr';
 import type { CreateMrInput, MergeMrInput, RefreshMrOptions } from './slices/gitlab-mr';
 import {
@@ -180,7 +181,7 @@ import type {
 import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
-import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import type { WorkflowBuilderDraft, WorkflowDraftKey } from './slices/workflowDrafts/types';
 import type {
   ClearArtifactDraftParams,
   HydrateArtifactDraftsParams,
@@ -248,6 +249,8 @@ import type { BringOriginOutcome } from './slices/history/bringOriginIntoHistory
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
+import { createSessionSyncSlice } from './slices/session-sync';
+import { sessionSyncInitialState } from './slices/session-sync/state';
 import { createIssueBriefsSlice } from './slices/issue-briefs';
 import { issueBriefsInitialState } from './slices/issue-briefs/state';
 import { createDurationEstimatesSlice } from './slices/durationEstimates';
@@ -313,7 +316,7 @@ import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
-import { createSessionStartSlice } from './slices/sessionStart';
+import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
 import { initialContextDrawerState } from './slices/contextDrawer/state';
 import { createDecisionsSlice } from './slices/decisions';
@@ -322,15 +325,17 @@ import type { ApplySessionDecisionOpsParams } from './slices/decisions/applySess
 import type { NoteDecisionChangesParams } from './slices/decisions/noteDecisionChanges';
 import type { ConsolidateSessionContextParams } from './slices/decisions/consolidateSessionContext';
 import type { OpenContextDrawerParams } from './slices/contextDrawer/openContextDrawer';
-import { initialSessionStartState } from './slices/sessionStart/state';
-import type { SaveSessionSetupGoalParams } from './slices/sessionStart/saveSessionSetupGoal';
-import type { SessionSetupStepParams } from './slices/sessionStart/skipSessionSetupStep';
-import type { CloseSessionSetupStepParams } from './slices/sessionStart/closeSessionSetupStep';
+import { initialSessionDraftState } from './slices/sessionDraft/state';
+import type { PatchSessionDraftParams } from './slices/sessionDraft/patchSessionDraft';
+import type { DiscardSessionDraftParams } from './slices/sessionDraft/discardSessionDraft';
+import type { StartSessionFromDraftParams } from './slices/sessionDraft/startSessionFromDraft';
+import type { StartBlankSessionParams } from './slices/sessionDraft/startBlankSession';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
 import {
   initialNavigationState,
   type AmendFocusParams,
+  type Location as NavigationLocation,
   type NavigateParams,
   type StudioParams,
 } from './slices/navigation/types';
@@ -402,7 +407,7 @@ type AppActions = {
   focusChangelogRelease(params: FocusChangelogReleaseParams): void;
   setBugReportDraft(params: SetBugReportDraftParams): void;
   clearBugReportDraft(): void;
-  startBlankSession(): Promise<Session | null>;
+  openSessionDraft(): void;
   openContextDrawer(params: OpenContextDrawerParams): void;
   toggleContextDrawer(params: OpenContextDrawerParams): void;
   loadSessionContextSeen(sessionId: SessionId): Promise<void>;
@@ -411,10 +416,10 @@ type AppActions = {
   applySessionDecisionOps(params: ApplySessionDecisionOpsParams): Promise<AppliedDecisionOps>;
   noteDecisionChanges(params: NoteDecisionChangesParams): Promise<void>;
   consolidateSessionContext(params: ConsolidateSessionContextParams): void;
-  saveSessionSetupGoal(params: SaveSessionSetupGoalParams): Promise<void>;
-  skipSessionSetupStep(params: SessionSetupStepParams): void;
-  focusSessionSetupStep(params: SessionSetupStepParams): void;
-  closeSessionSetupStep(params: CloseSessionSetupStepParams): void;
+  patchSessionDraft(params: PatchSessionDraftParams): void;
+  discardSessionDraft(params: DiscardSessionDraftParams): void;
+  startSessionFromDraft(params: StartSessionFromDraftParams): Promise<Session>;
+  startBlankSession(params: StartBlankSessionParams): Promise<Session>;
   openDrawer(request: DrawerRequest): void;
   closeDrawer(): void;
   toggleDrawer(request: DrawerRequest): void;
@@ -424,6 +429,7 @@ type AppActions = {
   goToHistory(params: GoToHistoryParams): void;
   up(): void;
   amendFocus(params: AmendFocusParams): void;
+  restoreLocation(params: { readonly location: NavigationLocation }): void;
   openStudio(params: StudioParams): void;
   amendStudio(params: StudioParams): void;
   closeStudio(): void;
@@ -848,8 +854,8 @@ type AppActions = {
   setArtifactDraft(params: SetArtifactDraftParams): void;
   clearArtifactDraft(params: ClearArtifactDraftParams): void;
   hydrateArtifactDrafts(params: HydrateArtifactDraftsParams): void;
-  setWorkflowDraft(sessionId: SessionId, draft: WorkflowBuilderDraft): void;
-  clearWorkflowDraft(sessionId: SessionId): void;
+  setWorkflowDraft(draftKey: WorkflowDraftKey, draft: WorkflowBuilderDraft): void;
+  clearWorkflowDraft(draftKey: WorkflowDraftKey): void;
   setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
   clearWorkflowStudioDraft(params: { workspaceId: WorkspaceId }): void;
   setWorkflowStudioVisible(params: { workspaceId: WorkspaceId | null }): void;
@@ -922,9 +928,14 @@ type AppActions = {
     mountId: MountId;
   }): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: string }>;
   createPrForSession(input: CreatePrInput): Promise<void>;
-  markPrReady(sessionId: SessionId, prNumber?: number): Promise<void>;
+  markPrReady(sessionId: SessionId, prNumber?: number, opts?: PrWriteOptions): Promise<void>;
   convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
-  mergePr(sessionId: SessionId, prNumber?: number, method?: PrMergeMethod): Promise<void>;
+  mergePr(
+    sessionId: SessionId,
+    prNumber?: number,
+    method?: PrMergeMethod,
+    opts?: PrWriteOptions,
+  ): Promise<void>;
   refreshSessionMr(sessionId: SessionId, opts?: RefreshMrOptions): Promise<void>;
   loadReviewDrafts(sessionId: SessionId): Promise<void>;
   addReviewDraft(input: AddReviewDraftInput): Promise<PrReviewDraft>;
@@ -1164,6 +1175,7 @@ export type AppStore = AppState &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createPrWritesSlice> &
+  ReturnType<typeof createSessionSyncSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
@@ -1180,7 +1192,7 @@ export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
   ...initialBugReportDraftState,
-  ...initialSessionStartState,
+  ...initialSessionDraftState,
   ...initialContextDrawerState,
   ...initialDecisionsState,
   ...initialDrawerState,
@@ -1245,6 +1257,7 @@ export const initialState: AppState = {
   ...scribeInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
+  ...sessionSyncInitialState,
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
   ...providerLimitsInitialState,
@@ -1411,6 +1424,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createScribeSlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
+  ...createSessionSyncSlice(set, get),
   ...createIssueBriefsSlice(set, get),
   ...createDurationEstimatesSlice(set, get),
   ...createProviderLimitsSlice(set, get),
@@ -1426,7 +1440,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createUpdaterSlice(set, get),
   ...createChangelogSlice(set, get),
   ...createBugReportDraftSlice(set, get),
-  ...createSessionStartSlice(set, get),
+  ...createSessionDraftSlice(set, get),
   ...createContextDrawerSlice(set, get),
   ...createDecisionsSlice(set, get),
   ...createDrawerSlice(set, get),

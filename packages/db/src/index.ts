@@ -131,6 +131,7 @@ export { getSessionContextSeenAt, setSessionContextSeenAt } from './queries/sess
 export { listSessionDecisions, saveSessionDecisions } from './queries/session-decision';
 export {
   attachWorkflowToSession,
+  deleteOrphanedWorkflowAgents,
   detachWorkflowFromSession,
   discardWorkflowInSession,
   restoreWorkflowInSession,
@@ -203,7 +204,13 @@ export {
 export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
 export { summarizeProviderSpendPeriods, type ProviderSpendPeriods } from './queries/provider-spend';
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
-export { getSetting, setSetting } from './queries/settings';
+export {
+  deleteSetting,
+  getSetting,
+  listSettingsWithPrefix,
+  replaceSettingIfUnchanged,
+  setSetting,
+} from './queries/settings';
 export {
   listBudgetRules,
   getSessionBudget,

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { WorkspaceId } from '@goodboy/types';
+import type { ProjectId, WorkspaceId } from '@goodboy/types';
 
 type CreateSession = (input: Readonly<Record<string, unknown>>) => Promise<{
   session: { id: string; goal: string };
@@ -230,5 +230,71 @@ describe('LaunchSessionPanel', () => {
       sessionId: null,
       isRetry: true,
     });
+  });
+});
+
+describe('LaunchSessionPanel mount', () => {
+  const MOUNT = {
+    options: [
+      { projectId: 'pay' as ProjectId, name: 'payments-api' },
+      { projectId: 'ledger' as ProjectId, name: 'ledger-core' },
+    ],
+    selectedId: 'pay' as ProjectId,
+    reason: 'from Sentry project payments-api',
+  };
+
+  const renderWithMount = () =>
+    render(
+      <LaunchSessionPanel
+        workspaceId={WORKSPACE_ID}
+        linkedSessionId={null}
+        goalSeed="Fix the flake"
+        externalTask={EXTERNAL_TASK}
+        briefSource={null}
+        onClose={vi.fn()}
+        mount={MOUNT}
+      />,
+    );
+
+  it('says which project it mounts and why, then mounts it on launch', async () => {
+    renderWithMount();
+
+    expect(screen.getByRole('combobox', { name: 'Project to work in' }).textContent).toContain(
+      'Works in payments-api',
+    );
+    expect(screen.getByText('from Sentry project payments-api')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: /Launch session/ }));
+
+    await waitFor(() =>
+      expect(h.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: 'pay',
+          projectReason: 'from Sentry project payments-api',
+        }),
+      ),
+    );
+  });
+
+  it('lets the user switch the project or mount none', async () => {
+    renderWithMount();
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Project to work in' }));
+    fireEvent.click(await screen.findByRole('option', { name: /ledger-core/ }));
+    expect(screen.getByRole('combobox', { name: 'Project to work in' }).textContent).toContain(
+      'Works in ledger-core',
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Project to work in' }));
+    fireEvent.click(await screen.findByRole('option', { name: /No project/ }));
+    expect(screen.queryByText('from Sentry project payments-api')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Launch session/ }));
+
+    await waitFor(() => expect(h.createSession).toHaveBeenCalledOnce());
+    expect(h.createSession.mock.calls[0]?.[0]).not.toHaveProperty('projectId');
+  });
+
+  it('shows no project row when nothing maps to a project', () => {
+    renderPanel();
+    expect(screen.queryByRole('combobox', { name: 'Project to work in' })).toBeNull();
   });
 });

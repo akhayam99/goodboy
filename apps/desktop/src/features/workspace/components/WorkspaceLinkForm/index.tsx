@@ -4,7 +4,7 @@ import {
   Button,
   Chip,
   cn,
-  Divider,
+  FormActions,
   formatError,
   Input,
   Notice,
@@ -148,7 +148,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         return;
       }
       throw new Error(
-        `No git repository at ${picked}. Pick a folder with a .git directory, use New project to initialize one, or link it without git below.`,
+        `No git repository at ${picked}. Pick a folder with a .git directory, use New project to initialize one, or use Link a plain folder.`,
       );
     });
 
@@ -329,25 +329,37 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
           }
         : null;
 
+  const isPickingProject = created === null && choice === 'project';
+
   const actions = (
-    <>
-      {error != null ? (
-        <span
-          role="alert"
-          className="flex min-w-0 flex-1 items-center gap-1 text-label text-danger"
-        >
-          <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-          {error}
-        </span>
-      ) : (
-        <span className="min-w-0 flex-1" aria-hidden />
-      )}
+    <FormActions
+      leading={
+        error == null ? null : (
+          <span role="alert" className="flex min-w-0 items-center gap-1 text-label text-danger">
+            <AlertTriangle size={ICON_SIZE.row} aria-hidden className="shrink-0" />
+            {error}
+          </span>
+        )
+      }
+    >
+      {isPickingProject ? (
+        <>
+          <Button type="button" variant="secondary" disabled={busy} onClick={onNewProject}>
+            <FolderPlus size={ICON_SIZE.control} aria-hidden />
+            New project
+          </Button>
+          <Button type="button" variant="primary" disabled={busy} onClick={onPickProjectFolder}>
+            <FolderGit2 size={ICON_SIZE.control} aria-hidden />
+            Choose a folder
+          </Button>
+        </>
+      ) : null}
       {primary !== null ? (
         <Button type="submit" form={formId} disabled={primary.disabled} aria-busy={busy}>
           {primary.label}
         </Button>
       ) : null}
-    </>
+    </FormActions>
   );
 
   return (
@@ -399,21 +411,6 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
 
           {choice === 'project' ? (
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  disabled={busy}
-                  onClick={onPickProjectFolder}
-                >
-                  <FolderGit2 size={ICON_SIZE.control} aria-hidden />
-                  Choose a folder
-                </Button>
-                <Button type="button" variant="secondary" disabled={busy} onClick={onNewProject}>
-                  <FolderPlus size={ICON_SIZE.control} aria-hidden />
-                  New project
-                </Button>
-              </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 Pick a folder with a git repository, or let New project run git init in an empty
                 one.
@@ -593,12 +590,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
         </section>
       )}
 
-      {primary !== null || error != null ? (
-        <>
-          <Divider />
-          <footer className="flex items-center justify-end gap-2">{actions}</footer>
-        </>
-      ) : null}
+      {primary !== null || error != null || isPickingProject ? actions : null}
     </form>
   );
 };

@@ -221,13 +221,15 @@ scene at `http://localhost:1421/?scene=<scene>&theme=<dark|light>` (start
 `pnpm dev` in `apps/desktop` first, same as everywhere else on this page), and
 saves `docs/changelog/next/<name>-<before|after>-{dark,light}.webp`.
 
-- **The whole window by default.** A scene with no `[data-shot]` element is
-  captured as the full window, 1360×850 CSS pixels at DPR 1, which is what
-  every mock scene is today. No scene change is needed.
-- **`[data-shot]` narrows the capture.** When a scene marks one element with
-  `data-shot`, the script switches to 680×425 CSS pixels at DPR 2 (still
-  1360×850 physical) and clips to that element's box. Both paths convert
-  through `cwebp -q 80`.
+- **`[data-shot]` marks the capture target.** The scene's own root element
+  needs this attribute; nothing else does. It is not the same target as a
+  README screenshot, which captures the whole viewport. The script clips to
+  this element's box, at 680×425 CSS pixels, DPR 2 (1360×850 physical), and
+  converts through `cwebp -q 80`. A scene without `[data-shot]` is captured
+  whole instead, at a 1360×850 window and DPR 1, so the picture keeps the same
+  size. Extra scene params ride in the scene argument
+  (`'session-start&kind=workflow'`), and `GOODBOY_SHOT_URL` points the script
+  at a dev server on another port.
 - **Both themes, one command each.** The script captures dark and light in
   one run; a scene that renders differently per theme needs no extra work,
   the `&theme=` query param already switches it (`MockScene/index.tsx`).

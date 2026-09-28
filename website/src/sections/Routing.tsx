@@ -5,7 +5,7 @@ import { More } from '../components/More';
 import { SeeHow } from '../components/SeeHow';
 import { delay, useInViewOnce } from '../components/Reveal';
 import { Shot } from '../components/Shot';
-import { S16 } from '../figures';
+import { IMPACT } from '../figures';
 import { SITE } from '../site';
 
 type Turn = {
@@ -55,11 +55,35 @@ export const Routing = () => {
   const { ref, inView } = useInViewOnce<HTMLDivElement>();
 
   return (
-    <section className="block alt" id="routing" aria-labelledby="h2-routing">
+    <section className="block" id="routing" aria-labelledby="h2-routing">
       <div className="wrap">
         <div className="blockHead">
-          <h2 id="h2-routing">The same task, two very different bills</h2>
+          <h2 id="h2-routing">Providers, limits and cost</h2>
           <p className="sub">
+            See what is left of each plan before you start, and what every step spent after.
+          </p>
+        </div>
+        <div className="stack">
+          <Shot figure={IMPACT} />
+          <div className="stackText">
+            <p>
+              The top bar shows what is left of your Claude and Codex plans. When one runs out
+              mid-task and another eligible provider is connected, the turn can move there, and the
+              chat says where it went.
+            </p>
+            <p>
+              Set a monthly cap per provider and Goodboy taps you on the shoulder before you cross
+              it, not after. When Codex offers a free reset, it sits right on the usage page.
+            </p>
+            <div className="linkRow">
+              <More href={`${SITE.concepts}#providers-and-routing`}>See how routing works</More>
+              <SeeHow anchor="providers-limits-and-cost" />
+            </div>
+          </div>
+        </div>
+        <div className="billsHead">
+          <h3>The same task, two very different bills</h3>
+          <p>
             The same six steps, twice. On the left one agent carries the whole chat into each step,
             and the bars climb. On the right a fresh agent takes each step with a short brief, and
             the heavy model runs only where it matters.
@@ -105,28 +129,8 @@ export const Routing = () => {
         </div>
         <p className="caption">
           <span>Example run.</span> Running totals for six steps on the Harborline webhook fix. The
-          first three match the costs in the run above.
+          first three match the workflow run shown earlier.
         </p>
-        <div className="sp" />
-        <div className="stack">
-          <div className="stackText">
-            <h3>How much is left, on the top bar</h3>
-            <p>
-              Goodboy shows what is left of your Claude and Codex plans before you start an agent,
-              and what it spent there. When one runs out mid-task and another eligible provider is
-              connected, the turn can move there, and the chat says where it went.
-            </p>
-            <p>
-              When Codex offers a free reset, it sits right on the usage page, with a warning if
-              spending it now would waste it.
-            </p>
-            <div className="linkRow">
-              <More href={`${SITE.concepts}#provider-routing--balance`}>See how routing works</More>
-              <SeeHow anchor="providers-limits-and-cost" />
-            </div>
-          </div>
-          <Shot figure={S16} />
-        </div>
       </div>
     </section>
   );

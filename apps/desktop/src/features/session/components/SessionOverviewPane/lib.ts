@@ -82,3 +82,22 @@ export const resolveAttentionTarget = ({ stage, agent }: TargetParams): Attentio
 export const selectOpenQuestions = (
   questions: ReadonlyArray<OpenQuestion>,
 ): ReadonlyArray<OpenQuestion> => questions.filter((q) => q.status === 'open');
+
+export type SessionAttention = {
+  readonly stage: SessionStageInfo;
+  readonly target: AttentionTarget | null;
+};
+
+export const isAttentionCalloutShown = ({
+  attention,
+  isQuestionShownBelow,
+}: {
+  readonly attention: SessionAttention;
+  readonly isQuestionShownBelow: boolean;
+}): boolean => {
+  const { stage, target } = attention;
+  if (stage.stage !== 'attention' || target === null) {
+    return false;
+  }
+  return !(isQuestionShownBelow && stage.attention === 'open-question');
+};

@@ -34,7 +34,10 @@ zero.** Both status structs carry:
 
 - `upstreamDistance` and, for worktrees, `mainDistance`: either
   `{ kind: 'known', ahead, behind }` or `{ kind: 'unknown', reason }`. In
-  sync is `known` with both counts at zero.
+  sync is `known` with both counts at zero. `upstreamDistance` measures HEAD
+  against the branch's own remote-tracking ref (`branch_remote`), not
+  `@{u}` when that names another branch; `no-upstream` then means the
+  branch has no copy on the remote yet.
 - `workingTree`: either `{ kind: 'known', staged, unstaged, untracked,
 unmerged, changed }` or `{ kind: 'unknown', reason }`. An unmerged path is
   counted once, as `unmerged`.

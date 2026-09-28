@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import { Button, Input, Textarea } from '@goodboy/ui';
+import { Button, FormActions, Input, Textarea } from '@goodboy/ui';
 import type { Project, ProjectId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProjectSelect } from './ProjectSelect';
@@ -85,24 +85,27 @@ export const ScriptEditor = ({
         autoCorrect="off"
         autoCapitalize="off"
       />
-      <footer className="flex flex-wrap items-center gap-2">
-        {error === null ? (
-          <p className="min-w-0 flex-1 text-secondary text-faint-foreground">
-            Saved scripts run in any branch of {projectName}, in every session of this workspace.
-          </p>
-        ) : (
-          <p role="alert" className="flex min-w-0 flex-1 items-center gap-1 text-label text-danger">
-            <AlertTriangle size={ICON_SIZE.row} aria-hidden />
-            {error}
-          </p>
-        )}
-        <Button variant="ghost" size="sm" onClick={onCancel}>
+      <FormActions
+        leading={
+          error === null ? (
+            <p className="min-w-0 text-secondary text-faint-foreground">
+              Saved scripts run in any branch of {projectName}, in every session of this workspace.
+            </p>
+          ) : (
+            <p role="alert" className="flex min-w-0 items-center gap-1 text-label text-danger">
+              <AlertTriangle size={ICON_SIZE.row} aria-hidden />
+              {error}
+            </p>
+          )
+        }
+      >
+        <Button variant="ghost" size="sm" onClick={onCancel} className="text-muted-foreground">
           Cancel
         </Button>
         <Button size="sm" onClick={onSave} isBusy={isSaving}>
           Save
         </Button>
-      </footer>
+      </FormActions>
     </section>
   );
 };

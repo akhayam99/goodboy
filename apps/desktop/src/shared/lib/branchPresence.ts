@@ -1,9 +1,10 @@
 import type { WorktreeStatus } from '@goodboy/types';
-import { distanceAhead, distanceBehind } from './gitStatus';
+import { distanceBehind } from './gitStatus';
+import { branchPushStateOf } from './branchPushState';
 import { mergedThenLabel } from './mergedThen';
 
 export type BranchPresenceKind =
-  'on-origin' | 'local-only' | 'gone-on-origin' | 'merged' | 'merged-then';
+  'on-origin' | 'diverged' | 'local-only' | 'gone-on-origin' | 'merged' | 'merged-then';
 
 export type BranchPresence = {
   readonly kind: BranchPresenceKind;
@@ -28,20 +29,20 @@ export const branchPresenceOf = ({
   if (isMerged) {
     return { kind: 'merged', label: 'Merged', toPush: null };
   }
-  if (status.upstream == null) {
+  const push = branchPushStateOf({ status });
+  if (push.kind === 'not-pushed') {
     return { kind: 'local-only', label: 'Local only', toPush: null };
   }
-  if (
-    status.upstreamDistance.kind === 'unknown' &&
-    status.upstreamDistance.reason === 'upstream-gone'
-  ) {
+  if (push.kind === 'gone') {
     return { kind: 'gone-on-origin', label: 'Gone on origin', toPush: null };
   }
-  const ahead = distanceAhead({ distance: status.upstreamDistance });
+  if (push.kind === 'diverged') {
+    return { kind: 'diverged', label: 'Diverged from origin', toPush: null };
+  }
   return {
     kind: 'on-origin',
     label: 'On origin',
-    toPush: ahead != null && ahead > 0 ? ahead : null,
+    toPush: push.kind === 'ahead' ? push.ahead : null,
   };
 };
 

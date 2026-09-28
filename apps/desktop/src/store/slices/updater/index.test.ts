@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const { checkMock, relaunchMock, invokeMock } = vi.hoisted(() => ({
   checkMock: vi.fn(),
   relaunchMock: vi.fn(async () => undefined),
-  invokeMock: vi.fn(async () => null),
+  invokeMock: vi.fn(async (_command: string, _args?: unknown): Promise<unknown> => null),
 }));
 
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: checkMock }));
@@ -238,6 +238,43 @@ describe('updater slice', () => {
     expect(downloadAndInstall).toHaveBeenCalled();
     expect(relaunchMock).toHaveBeenCalled();
     expect(getState().updaterStatus).toBe('downloading');
+  });
+
+  it('marks the running agents for resume before the update relaunches', async () => {
+    const downloadAndInstall = vi.fn(async () => undefined);
+    checkMock.mockResolvedValue({ version: '0.2.0', downloadAndInstall });
+    const { slice } = harness();
+    await slice.checkForUpdates();
+    await slice.applyUpdate();
+    const prepareOrder = invokeMock.mock.calls.findIndex(
+      (call: ReadonlyArray<unknown>) => call[0] === 'restart_prepare',
+    );
+    expect(prepareOrder).toBeGreaterThanOrEqual(0);
+    expect(invokeMock.mock.invocationCallOrder[prepareOrder]).toBeLessThan(
+      relaunchMock.mock.invocationCallOrder[0] ?? 0,
+    );
+    expect(invokeMock).toHaveBeenCalledWith('db_execute', expect.anything());
+  });
+
+  it('never relaunches when the running agents could not be marked for resume', async () => {
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'restart_prepare') {
+        throw new Error('prepare refused');
+      }
+      return null;
+    });
+    const { slice } = harness();
+    await expect(slice.relaunchApp()).rejects.toThrow('prepare refused');
+    expect(relaunchMock).not.toHaveBeenCalled();
+    expect(invokeMock).toHaveBeenCalledWith('restart_abort');
+    invokeMock.mockImplementation(async () => null);
+  });
+
+  it('lets the next run go on when the relaunch fails', async () => {
+    relaunchMock.mockRejectedValueOnce(new Error('relaunch refused'));
+    const { slice } = harness();
+    await expect(slice.relaunchApp()).rejects.toThrow('relaunch refused');
+    expect(invokeMock).toHaveBeenCalledWith('restart_abort');
   });
 
   it('relaunches the app on request', async () => {

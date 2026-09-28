@@ -27,6 +27,7 @@ import {
 import { applyMountGithub, pullRequestFromLink } from './mountGithub';
 import { githubRequestHost, githubRequestIdentity, toMountPullRequestLink } from './mountPrLink';
 import { type MountPrFetch } from './resolveSessionPrFetch';
+import { syncBranchRefToPr } from './syncBranchRefToPr';
 import type { GetFn, SetFn } from './types';
 
 export type RefreshPrOptions = {
@@ -203,6 +204,13 @@ export const refreshMountPr = async ({
                   candidate: githubRequestIdentity({ repository, pr: candidate }),
                 }),
               ) ?? canonical);
+        void syncBranchRefToPr({
+          cwd: target.cwd,
+          branch: mount.branch,
+          pr: canonical,
+          workspaceId: target.session.workspaceId,
+          projectId: mount.projectId,
+        });
         const linkedIssues =
           displayed === null
             ? []
