@@ -725,7 +725,7 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
 
 ### Command palette
 
-Find workspaces, sessions, agents, pages, scripts and actions with **⌘K**, using the same prefixes as the composer.
+Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too.
 
 ### Terminal
 
