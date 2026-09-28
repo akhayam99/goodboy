@@ -3,8 +3,8 @@ import { CHANGELOG_RELEASES } from './changelogSource';
 
 describe('changelogSource', () => {
   it('loads the packaged CHANGELOG.md at build time', () => {
-    expect(CHANGELOG_RELEASES.length).toBe(103);
-    expect(CHANGELOG_RELEASES[0]?.version).toBe('0.12.3');
+    expect(CHANGELOG_RELEASES.length).toBe(104);
+    expect(CHANGELOG_RELEASES[0]?.version).toBe('0.13.0');
     expect(CHANGELOG_RELEASES[0]?.shape).toBe('v2');
   });
 });

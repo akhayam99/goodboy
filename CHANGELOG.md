@@ -12,6 +12,35 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.13.0
+
+Ask the whole workspace a question in Chat, and answer every agent question from one card with a number key.
+
+This version updates your data in one direction. To go back to 0.12, restore the backup Goodboy made before updating.
+
+### New
+
+#### Ask the workspace in Chat
+<!-- gb area=app image=chat -->
+
+Chat, right of Board, answers questions about the workspace without starting a session. It reads every project and never changes a file, and each answer lists the files it read. Pick Claude or Codex for each chat.
+
+Start work drafts a title, a goal, what the chat established and the files it named. Edit any of it, then start a new session or send it to one that is already running.
+
+Any search in `Cmd+K` starts with Ask in Chat. Chats you leave for seven days move to Idle, dimmed, and Archive idle clears them with an Undo.
+
+### Improved
+
+#### Answer a question from one card
+<!-- gb area=agents image=question-card -->
+
+Each question is one card: who asks, whether it blocks, the question and its answers as numbered tiles with the recommended one tagged. Pick with a number key and press Enter, or write something else in line. The same card sits in the Questions view, at the end of the transcript and at the top of the agent's Brief.
+
+#### The Questions view lists what waits on you
+<!-- gb area=sessions image=questions -->
+
+The Questions view lists every question waiting on you next to the one you are answering, and `j` and `k` move through the list. Scrolled up in a transcript, the pill reads 1 question waiting and brings its card back into view.
+
 ## Goodboy v0.12.3
 
 Link any tracker item to a session with `L`, copy a worktree path from `Cmd+K`, and open or undo a decision right where it sits.
