@@ -9,7 +9,12 @@ type Params = {
 
 export const relaunchWithResume = async ({ reason }: Params): Promise<void> => {
   await writeRestartReason({ reason }).catch(() => undefined);
-  await invoke<ReadonlyArray<string>>('restart_prepare').catch(() => undefined);
+  try {
+    await invoke<ReadonlyArray<string>>('restart_prepare');
+  } catch (error) {
+    await invoke('restart_abort').catch(() => undefined);
+    throw error;
+  }
   try {
     await relaunch();
   } catch (error) {

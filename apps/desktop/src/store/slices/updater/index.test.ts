@@ -256,6 +256,20 @@ describe('updater slice', () => {
     expect(invokeMock).toHaveBeenCalledWith('db_execute', expect.anything());
   });
 
+  it('never relaunches when the running agents could not be marked for resume', async () => {
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === 'restart_prepare') {
+        throw new Error('prepare refused');
+      }
+      return null;
+    });
+    const { slice } = harness();
+    await expect(slice.relaunchApp()).rejects.toThrow('prepare refused');
+    expect(relaunchMock).not.toHaveBeenCalled();
+    expect(invokeMock).toHaveBeenCalledWith('restart_abort');
+    invokeMock.mockImplementation(async () => null);
+  });
+
   it('lets the next run go on when the relaunch fails', async () => {
     relaunchMock.mockRejectedValueOnce(new Error('relaunch refused'));
     const { slice } = harness();
