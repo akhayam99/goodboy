@@ -1,4 +1,3 @@
-import type { Session } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { excerptOf } from '../../excerptOf';
@@ -8,22 +7,26 @@ import { PreviewFacts } from './PreviewFacts';
 import { PreviewHeader } from './PreviewHeader';
 import { SessionPreview } from './SessionPreview';
 
+const sentenceCase = (text: string): string => `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+
 type Props = {
   readonly entry: PaletteEntry;
   readonly subject: string | null;
 };
 
-const NO_SESSIONS: ReadonlyArray<Session> = [];
-
 export const EntryPreview = ({ entry, subject }: Props) => {
   const target = entry.target;
   const session = useAppStore((s) =>
-    entry.kind === 'session' && target?.kind === 'session'
-      ? ((s.sessions ?? NO_SESSIONS).find((candidate) => candidate.id === target.sessionId) ?? null)
+    target?.kind === 'session'
+      ? (s.sessions.find((candidate) => candidate.id === target.sessionId) ??
+        Object.values(s.archivedSessions)
+          .flat()
+          .find((candidate) => candidate.id === target.sessionId) ??
+        null)
       : null,
   );
   const agent = useAppStore((s) =>
-    entry.kind === 'agent' && target?.kind === 'agent'
+    target?.kind === 'agent'
       ? ((s.sessionPhaseRuns[target.sessionId] ?? EMPTY_ARRAY).find(
           (candidate) => candidate.id === target.agentId,
         ) ?? null)
@@ -48,14 +51,35 @@ export const EntryPreview = ({ entry, subject }: Props) => {
       : null;
   });
 
-  if (session !== null) {
-    return <SessionPreview session={session} />;
-  }
-  if (agent !== null) {
+  const objectPreview =
+    session !== null ? (
+      <SessionPreview session={session} />
+    ) : agent !== null ? (
+      <div className="flex flex-col gap-4">
+        <PreviewHeader
+          title={agent.name}
+          subtitle={entry.kind === 'agent' ? entry.detail : 'Agent'}
+        />
+        <PreviewFacts
+          facts={[
+            { label: 'Status', value: sentenceCase(agent.status) },
+            ...(agent.modelOverride == null
+              ? []
+              : [{ label: 'Model', value: agent.modelOverride }]),
+          ]}
+        />
+      </div>
+    ) : null;
+  if (objectPreview !== null) {
     return (
       <div className="flex flex-col gap-4">
-        <PreviewHeader title={agent.name} subtitle={entry.detail} />
-        <PreviewFacts facts={[{ label: 'Status', value: agent.status }]} />
+        {objectPreview}
+        {entry.action?.blockedReason != null && (
+          <p className="text-label text-muted-foreground">{entry.action.blockedReason}</p>
+        )}
+        {entry.action?.confirm != null && (
+          <p className="text-label text-muted-foreground">{entry.action.confirm.description}</p>
+        )}
       </div>
     );
   }

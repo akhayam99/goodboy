@@ -41,7 +41,10 @@ export const SessionPreview = ({ session }: Props) => {
       />
       <PreviewFacts
         facts={[
-          { label: 'Stage', value: stage.label },
+          {
+            label: 'Stage',
+            value: `${stage.label.charAt(0).toUpperCase()}${stage.label.slice(1)}`,
+          },
           ...(mount === null ? [] : [{ label: 'Project', value: mount.mountName }]),
           ...(shownBranch === null
             ? []

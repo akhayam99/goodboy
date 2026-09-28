@@ -45,7 +45,7 @@ export const PaletteInputRow = ({
       aria-label={ariaLabel}
       spellCheck={false}
       autoComplete="off"
-      className="h-full min-w-0 flex-1 bg-transparent text-body text-foreground placeholder:text-faint-foreground focus-visible:outline-none"
+      className="h-full min-w-0 flex-1 bg-transparent text-body text-foreground placeholder:text-faint-foreground focus-visible:outline-none!"
     />
     {modeSwitch}
   </div>

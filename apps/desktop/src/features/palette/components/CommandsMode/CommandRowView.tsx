@@ -73,7 +73,7 @@ export const CommandRowView = ({ row, id, isSelected, onHover, onRun }: Props) =
         {item.detail !== undefined && item.detail !== '' && (
           <span
             className={cn(
-              'truncate text-label',
+              'min-w-0 flex-1 truncate text-label',
               isBlocked ? 'text-muted-foreground' : 'text-faint-foreground',
             )}
           >

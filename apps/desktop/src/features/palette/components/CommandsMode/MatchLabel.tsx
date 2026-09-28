@@ -26,10 +26,10 @@ const segmentsOf = ({ label, positions }: Props): ReadonlyArray<Segment> => {
 
 export const MatchLabel = ({ label, positions }: Props) => {
   if (positions.length === 0) {
-    return <span className="truncate">{label}</span>;
+    return <span className="max-w-full shrink-0 truncate">{label}</span>;
   }
   return (
-    <span className="truncate">
+    <span className="max-w-full shrink-0 truncate">
       <span className="sr-only">{label}</span>
       <span aria-hidden>
         {segmentsOf({ label, positions }).map((segment, index) =>
@@ -38,7 +38,9 @@ export const MatchLabel = ({ label, positions }: Props) => {
               {segment.text}
             </span>
           ) : (
-            <span key={index}>{segment.text}</span>
+            <span key={index} className="text-muted-foreground">
+              {segment.text}
+            </span>
           ),
         )}
       </span>

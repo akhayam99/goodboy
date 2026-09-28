@@ -388,7 +388,7 @@ export const CommandsMode = ({
         />
       ) : (
         <div className="flex min-h-0 flex-1">
-          <ScrollFade className="max-h-[420px] min-h-0 flex-1" fadeFrom="floating">
+          <ScrollFade className="max-h-[420px] min-h-0 min-w-0 flex-1" fadeFrom="floating">
             <ul
               ref={listRef}
               id={listboxId}
