@@ -192,4 +192,129 @@ describe('NextStepRow', () => {
 
     expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull();
   });
+
+  it('renders each choice next to the primary action as a reachable button', () => {
+    const first = vi.fn(async () => undefined);
+    const second = vi.fn(async () => undefined);
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Rebase',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run: vi.fn(async () => undefined),
+        choices: [
+          {
+            id: 'mount:ledger-core',
+            label: 'ledger-core',
+            description: 'feature/ledger-first',
+            detail: '7 behind',
+            run: first,
+          },
+          {
+            id: 'mount:notify-relay',
+            label: 'notify-relay',
+            description: 'feature/relay',
+            detail: '3 behind',
+            run: second,
+          },
+        ],
+      },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'rebase-project' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    const relay = screen.getByRole('button', { name: 'notify-relay' });
+    expect(relay.getAttribute('title')).toBe('feature/relay, 3 behind');
+    relay.focus();
+    expect(document.activeElement).toBe(relay);
+    fireEvent.click(relay);
+
+    expect(second).toHaveBeenCalledTimes(1);
+    expect(first).not.toHaveBeenCalled();
+  });
+
+  it('names choices that share a label by their description', () => {
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Rebase',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run: vi.fn(async () => undefined),
+        choices: [
+          {
+            id: 'a',
+            label: 'ledger-core',
+            description: 'feature/one',
+            detail: '',
+            run: vi.fn(async () => undefined),
+          },
+          {
+            id: 'b',
+            label: 'ledger-core',
+            description: 'feature/two',
+            detail: '',
+            run: vi.fn(async () => undefined),
+          },
+        ],
+      },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'rebase-project' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'feature/one' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'feature/two' })).toBeTruthy();
+  });
+
+  it('marks the running choice busy and holds the other controls', () => {
+    const actions: SuggestionActions = {
+      primary: {
+        label: 'Start reviewer',
+        isDisabled: false,
+        failureTitle: 'Failed',
+        run: vi.fn(async () => undefined),
+        choices: [
+          {
+            id: 'start-tester',
+            label: 'Start tester instead',
+            description: '',
+            detail: '',
+            run: vi.fn(async () => undefined),
+          },
+        ],
+      },
+      onDismiss: null,
+    };
+    render(
+      <NextStepRow
+        suggestion={suggestion({ kind: 'check-changes' })}
+        actions={actions}
+        compact={false}
+        isPending={false}
+        pendingChoiceIds={new Set(['start-tester'])}
+        onNotNow={vi.fn()}
+      />,
+    );
+
+    const choice = screen.getByRole('button', { name: 'Start tester instead' });
+    expect(choice.getAttribute('aria-busy')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Start reviewer' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+  });
 });

@@ -327,7 +327,9 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   the workspace's first library workflow with the session's own goal in one
   click, no form. Merge and close-worktree arm a
   confirm on the row before they act; the other new kinds run on one click,
-  like the original six. Two simplifications from the design: the "never
+  like the original six. Push, open-pr, mark-ready and merge-pr act on the
+  mount their suggestion names (`markPrReady` and `mergePr` take a
+  `mountId`), never the session's active mount. Two simplifications from the design: the "never
   while an agent works on the same mount" rule (E7-6) is session-wide, not
   per-mount, for the new push/open-pr/mark-ready/merge-pr/fix-checks kinds
   only - rebase-project keeps its own narrower per-request check; and the

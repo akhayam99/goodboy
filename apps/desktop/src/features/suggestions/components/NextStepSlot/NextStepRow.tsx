@@ -4,7 +4,7 @@ import { AnchoredPopover, Button, IconButton, cn, tintClasses, useDropdown } fro
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SUGGESTION_ICONS } from '../../suggestionIcons';
 import type { NextStepBand, SessionSuggestion } from '../../types';
-import type { SuggestionActions } from '../../useSuggestionActions';
+import type { SuggestionActionChoice, SuggestionActions } from '../../useSuggestionActions';
 
 const BAND_TONE: Record<NextStepBand, 'warning' | 'info' | 'primary' | 'neutral'> = {
   0: 'warning',
@@ -18,10 +18,31 @@ type Props = {
   readonly actions: SuggestionActions;
   readonly compact: boolean;
   readonly isPending: boolean;
+  readonly pendingChoiceIds?: ReadonlySet<string>;
   readonly onNotNow: () => void;
 };
 
-export const NextStepRow = ({ suggestion, actions, compact, isPending, onNotNow }: Props) => {
+const NO_PENDING_CHOICES: ReadonlySet<string> = new Set();
+
+const choiceText = ({
+  choice,
+  choices,
+}: {
+  readonly choice: SuggestionActionChoice;
+  readonly choices: ReadonlyArray<SuggestionActionChoice>;
+}) => {
+  const isShared = choices.some((other) => other.id !== choice.id && other.label === choice.label);
+  return isShared && choice.description !== '' ? choice.description : choice.label;
+};
+
+export const NextStepRow = ({
+  suggestion,
+  actions,
+  compact,
+  isPending,
+  pendingChoiceIds = NO_PENDING_CHOICES,
+  onNotNow,
+}: Props) => {
   const Icon = SUGGESTION_ICONS[suggestion.kind];
   const tone = BAND_TONE[suggestion.band];
   const dropdown = useDropdown({ align: 'end', expectedWidth: 160, expectedHeight: 80 });
@@ -33,6 +54,8 @@ export const NextStepRow = ({ suggestion, actions, compact, isPending, onNotNow 
 
   const primary = actions.primary;
   const isArmed = primary?.requiresConfirm === true && isConfirming;
+  const choices = primary?.choices ?? [];
+  const isChoicePending = pendingChoiceIds.size > 0;
 
   return (
     <div
@@ -54,11 +77,32 @@ export const NextStepRow = ({ suggestion, actions, compact, isPending, onNotNow 
           Cancel
         </Button>
       )}
+      {!isArmed &&
+        primary != null &&
+        choices.map((choice) => {
+          const isBusy = pendingChoiceIds.has(choice.id);
+          const hint = [choice.description, choice.detail].filter((part) => part !== '');
+          return (
+            <Button
+              key={choice.id}
+              size="sm"
+              variant="ghost"
+              title={hint.length > 0 ? hint.join(', ') : undefined}
+              disabled={primary.isDisabled || ((isPending || isChoicePending) && !isBusy)}
+              isBusy={isBusy}
+              onClick={() => {
+                void choice.run();
+              }}
+            >
+              {choiceText({ choice, choices })}
+            </Button>
+          );
+        })}
       {primary != null && (
         <Button
           size="sm"
           variant={suggestion.band === 0 || isArmed ? 'primary' : 'secondary'}
-          disabled={primary.isDisabled}
+          disabled={primary.isDisabled || (isChoicePending && !isPending)}
           isBusy={isPending}
           onClick={() => {
             if (primary.requiresConfirm === true && !isConfirming) {

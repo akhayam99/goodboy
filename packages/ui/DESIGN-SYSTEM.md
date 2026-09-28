@@ -814,9 +814,15 @@ until `task` settles, drops a second run of the same key, reports a thrown
 error once through `reportError` and resolves to whether it worked. A store
 action that already logged its failure throws `ReportedError`, and a turn error
 the transcript already shows counts the same (`isReportedError`), so the runner
-never logs one failure twice. Every next-step suggestion runs through it:
-`SuggestionAction.run` returns a promise and carries its `failureTitle`, and
+never logs one failure twice. A store verb never turns a missing target into
+a quiet no-op: the pull request writes resolve their target through
+`prWriteContext`, which logs and throws `ReportedError` when the session,
+workspace, pull request or repository is missing. Every next-step suggestion
+runs through the runner: `SuggestionAction.run` returns a promise and carries its `failureTitle`, and
 `NextStepSlot` owns the runner (`useSuggestionActions` test guards every kind).
+A suggestion's `choices` (a rebase target, "Start tester instead") render as
+ghost buttons beside the primary in `NextStepRow`, run through the same runner
+under their own key, and hold the row's other controls while one runs.
 
 ## Section rhythm
 

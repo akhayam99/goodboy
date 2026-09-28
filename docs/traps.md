@@ -60,6 +60,11 @@ file holds those explanations. Everything below has been "fixed" at least once a
   60s is closed as failed with the error `The app stopped while publishing`:
   a reply caught in `sending` turns `uncertain`, and retry checks GitHub before
   posting again. The in-memory map in `publicationLock.ts` is only a fast lane.
+  Taking a comment back up (`undeferResolveQueueItem`) only moves a
+  `deferred` or `wont_fix` item; the database refuses an `accepted` one.
+  Undoing an approval is a reopen (`reopenResolveQueueItem`, stage event
+  `user_unapproved`). `resolveDecisionVerb` maps each row action to the
+  verb its state allows, and its test walks the decision matrix.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider
