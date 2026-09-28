@@ -1,7 +1,7 @@
-import { relaunch } from '@tauri-apps/plugin-process';
 import type { DownloadEvent } from '@tauri-apps/plugin-updater';
 import { formatError } from '@goodboy/ui';
 import { getPendingUpdate } from './pendingUpdate';
+import { relaunchWithResume } from './prepareRestart';
 import type { GetFn, SetFn } from './types';
 
 const progressFrom = ({
@@ -36,7 +36,7 @@ export const applyUpdate = (set: SetFn, get: GetFn) => {
       set({ updaterStatus: 'downloading', updateFailure: null });
       try {
         await update.install();
-        await relaunch();
+        await relaunchWithResume({ reason: 'update' });
       } catch (err) {
         set({
           updaterStatus: 'ready',
@@ -60,7 +60,7 @@ export const applyUpdate = (set: SetFn, get: GetFn) => {
         const current = get().updateProgress ?? { downloaded: 0, total: null };
         set({ updateProgress: progressFrom({ event, current }) });
       });
-      await relaunch();
+      await relaunchWithResume({ reason: 'update' });
     } catch (err) {
       set({
         updaterStatus: 'available',

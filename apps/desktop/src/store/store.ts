@@ -334,6 +334,7 @@ import { createNavigationSlice } from './slices/navigation';
 import {
   initialNavigationState,
   type AmendFocusParams,
+  type Location as NavigationLocation,
   type NavigateParams,
   type StudioParams,
 } from './slices/navigation/types';
@@ -427,6 +428,7 @@ type AppActions = {
   goToHistory(params: GoToHistoryParams): void;
   up(): void;
   amendFocus(params: AmendFocusParams): void;
+  restoreLocation(params: { readonly location: NavigationLocation }): void;
   openStudio(params: StudioParams): void;
   amendStudio(params: StudioParams): void;
   closeStudio(): void;

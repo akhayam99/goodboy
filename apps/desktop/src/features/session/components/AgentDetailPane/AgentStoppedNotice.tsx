@@ -56,7 +56,7 @@ export const AgentStoppedNotice = ({
           size="sm"
           onClick={() => void continueStoppedAgent({ sessionId: session.id, agentId: agent.id })}
         >
-          Continue
+          {copy.actionLabel}
         </Button>
       ) : null}
     </div>

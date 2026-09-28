@@ -56,7 +56,7 @@ Point agents at the right repo without naming it. Starred projects and their one
 
 ### Open in new window
 
-Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice.
+Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice. After a reload or an update, and on every launch with **Reopen last** on, every window comes back on the screen, tab and panel it showed.
 
 ### Locate moved projects
 
@@ -209,7 +209,7 @@ Keep talking while an agent works. **Enter** queues your message for its next tu
 
 ### Stop and Continue
 
-Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**, and quitting Goodboy mid-turn does the same.
+Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you reload, restart or update Goodboy keeps going: a reload finds it still running, and after a restart it picks up where it stopped, with a note in its chat. One that cannot pick up says **Stopped by restart** and offers **Resume**.
 
 ### Turn footer
 

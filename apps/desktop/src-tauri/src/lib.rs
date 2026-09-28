@@ -45,6 +45,7 @@ mod query_bridge;
 mod releases;
 mod remote_image;
 mod repo;
+mod restart_marker;
 mod scratch_dir;
 mod scripts;
 mod scroller_style;
@@ -58,6 +59,7 @@ mod storage;
 mod summarize;
 mod terminal;
 mod turn;
+mod turn_backlog;
 mod usage_probe;
 mod util;
 mod workflows;
@@ -86,8 +88,12 @@ fn suppress_webkit_media_remote() {
 
 /// Kills every child process the app still owns. Idempotent: each registry is
 /// drained, so a second call after the window teardown finds nothing left.
-fn drain_child_processes(app: &tauri::AppHandle) {
+pub(crate) fn drain_child_processes(app: &tauri::AppHandle, is_app_exit: bool) {
     use tauri::Manager;
+    if is_app_exit {
+        turn::mark_exiting();
+    }
+    restart_marker::persist(app, &turn::live_run_ids(&app.state::<turn::TurnRegistry>()));
     stop_running_work(app);
     provider_lifecycle::shutdown(&app.state::<provider_lifecycle::ProviderLifecycleRegistry>());
     query_bridge::shutdown();
@@ -148,7 +154,7 @@ pub fn run() {
                 .filter(|label| label.as_str() != window.label())
                 .count();
             if survivors == 0 {
-                drain_child_processes(app);
+                drain_child_processes(app, false);
             }
         })
         .register_asynchronous_uri_scheme_protocol(
@@ -330,6 +336,10 @@ pub fn run() {
             external_terminal::open_command_in_external_terminal,
             turn::turn_spawn,
             turn::turn_cancel,
+            turn::turn_attach,
+            turn::turn_release,
+            restart_marker::restart_prepare,
+            restart_marker::restart_abort,
             turn::turn_list_live,
             worktree_writer::worktree_writer_acquire,
             worktree_writer::worktree_writer_release,
@@ -531,7 +541,7 @@ pub fn run() {
                 event,
                 tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
             ) {
-                drain_child_processes(app);
+                drain_child_processes(app, true);
             }
         });
 }

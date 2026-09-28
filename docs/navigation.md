@@ -135,6 +135,20 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   falls back to its home lens.
 - **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
   back and forward buttons walk the stack.
+- **A window comes back where it was.** `captureWindowLocation` reads the
+  current entry, focus included, and `restoreLocation({ location })` replaces
+  the top entry with it and applies it as a restore (a session that is gone
+  falls back to the board, an agent that is gone to its lens). Cmd+R writes
+  it into the reload intent in session storage. Each window also saves it as
+  `window.layout.<window label>` in the settings table half a second after it
+  moves (`useWindowLayout`), and forgets it when you close that window.
+  After an update or an app restart, and on any launch with **Reopen last**
+  on, the main window restores its own layout and reopens every other saved
+  window with `#restore=<old label>`, one per workspace; each one reads its
+  old layout and forgets it (`restoreLaunchLayout`). On a plain launch with
+  Reopen last off, the launcher opens and the saved windows are forgotten.
+  The history stack itself stays in memory: a restored window starts with one
+  entry.
 
 ## Surfaces
 

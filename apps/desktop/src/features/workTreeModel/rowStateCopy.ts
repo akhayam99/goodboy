@@ -52,7 +52,7 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
     case 'stopped':
       return 'Stopped by you';
     case 'agentStopped':
-      return reason.by === 'app' ? 'Stopped when Goodboy quit' : 'Stopped by you';
+      return reason.by === 'app' ? 'Stopped by restart' : 'Stopped by you';
     case 'stepStopped':
       return reason.stepLabel == null
         ? 'A step was stopped'
@@ -222,7 +222,7 @@ export const rowStateNode = ({ state }: StateParams): RowNode => {
     return { state: node, label: 'Needs approval' };
   }
   if (state.reason?.kind === 'agentStopped' && state.reason.by === 'app') {
-    return { state: node, label: 'Stopped when Goodboy quit' };
+    return { state: node, label: 'Stopped by restart' };
   }
   return { state: node, label: ROW_NODE_LABEL[node] };
 };

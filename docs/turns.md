@@ -167,6 +167,53 @@ provider turns each line into `TurnEvent`s. A payload no parser models becomes
 - A turn that ends with no assistant text and no error appends a
   non-retryable "exited without a response" error.
 
+## Surviving a reload or a restart
+
+Rust owns every CLI process, so the webview can go away while a turn runs.
+
+- **Every line has a sequence number and a backlog.** `turn_backlog.rs` keeps
+  each run's envelopes (16 MiB per run, the newest 16 ended runs) and every
+  `turn_event` carries its `seq`. `turn_attach(runId, afterSeq)` returns what
+  came after a cursor and whether the run is still live; `turn_release` drops
+  an ended backlog, which `runTurn` does when its stream closes.
+- **The window that streams a turn owns it.** `runTurn` and `attachTurn`
+  share one stream core (`features/chat/turn.ts`). After every event it hands
+  on, it writes a cursor (`seq`, index inside that line, and the turn's owner:
+  span fields, working directory, mount) to session storage
+  (`features/chat/turnCursor.ts`). Session storage survives Cmd+R and nothing
+  else, so a cursor means "this window was streaming this run before it
+  reloaded".
+- **Cmd+R re-attaches.** When a workspace loads, `reconcileLoadedAgent` keeps
+  a running agent whose run has a cursor here (or a stream still open in this
+  window) instead of cancelling it, and `reattachLiveTurn` asks Rust for what
+  came after the cursor, skips the events it already stored, drops live lines
+  it already replayed and stores the rest. When the run ends it settles the
+  way `sendTurn` does: span, provider run, step completion, message, summary,
+  artifacts, materialize requests and autorun. It does not plan a fallback,
+  settle a scribe, rewriter or resolve attempt, capture file versions, or send
+  drift and nudge notices. If Rust already evicted part of the output, a note
+  says so; if the run is gone, the agent fails with a retryable error.
+- **A clean exit marks what it cut.** On app exit, and in `restart_prepare`
+  before the updater relaunches, Rust writes the live run ids to
+  `restart.interrupted_runs` in the settings table and stops sending end and
+  error envelopes, so a dying window never settles those runs as failed. The
+  agents stay `running` in the database until the next load marks them
+  `stopped_by = app`.
+- **The next launch resumes them.** When a workspace loads,
+  `resumeInterruptedAgents` resumes every `stopped_by = app` agent whose run
+  the marker names and takes it off the marker. `planRestartResume` picks how:
+  Claude and the opencode family resume their own session with a short
+  "check before you run it again" prompt; Codex, Cursor and Antigravity get
+  the same prompt plus the prior turns block; a turn cut before Claude opened
+  a session is sent again as it was. A `decision_note` goes first ("Resumed
+  after Goodboy restarted." or "updated."), and it names any tool call that
+  had started and not ended. The turn goes through `sendTurn`, so budgets,
+  limits and pins apply, and a resumed step completes like any other.
+- **Anything else stays Stopped by restart.** An agent the marker does not
+  name (a crash, a force quit) or one whose provider is disconnected shows
+  "Stopped by restart" with **Resume**, which runs the same resume
+  (`continueStoppedAgent`). Nothing restarts on its own after a crash.
+
 ## Turn events
 
 `TurnEvent` and `ProviderUsage` live in `@goodboy/types`, so the core parsers

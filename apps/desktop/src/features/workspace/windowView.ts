@@ -1,4 +1,6 @@
 import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { Location } from '../../store/slices/navigation/types';
+import { parseLocation } from './windowLayout';
 
 const RELOAD_INTENT_KEY = 'goodboy:window-reload-intent';
 
@@ -7,6 +9,7 @@ type RestoreIntent = {
   readonly workspaceId: WorkspaceId;
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
+  readonly location?: Location;
 };
 
 type FreshIntent = {
@@ -33,7 +36,9 @@ export const consumeReloadIntent = (): WindowReloadIntent | null => {
       return parsed;
     }
     if (parsed.mode === 'restore' && typeof parsed.workspaceId === 'string') {
-      return parsed;
+      const { location: rawLocation, ...rest } = parsed;
+      const location = parseLocation({ value: rawLocation });
+      return location === null ? rest : { ...rest, location };
     }
     return null;
   } catch {

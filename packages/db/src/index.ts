@@ -204,7 +204,7 @@ export {
 export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
 export { summarizeProviderSpendPeriods, type ProviderSpendPeriods } from './queries/provider-spend';
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
-export { getSetting, setSetting } from './queries/settings';
+export { deleteSetting, getSetting, listSettingsWithPrefix, setSetting } from './queries/settings';
 export {
   listBudgetRules,
   getSessionBudget,
