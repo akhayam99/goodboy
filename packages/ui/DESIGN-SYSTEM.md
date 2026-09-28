@@ -414,6 +414,46 @@ it comes from the grades in `timelineRhythm.ts`, not from hiding rows. A queued
 step is a row of its own with its own dashed node, never a count behind one
 clock glyph.
 
+### History graph
+
+Rewrite history draws one branch on the same grammar: newer above older,
+solid for what happened, dashed for what has not happened yet. Main is a
+straight `idle` trunk with its head node and one dot per commit it gained
+(the subject on hover); the branch leaves it with a quarter curve at the real
+fork point and climbs in a `muted-foreground` lane, one node per commit. The
+big graph is Now and never reorders while you plan; After Apply is a compact
+dashed copy beside it whose nodes sit level with their own rows when the order
+allows (`historyAfterLayout`). No line is ever drawn between the two graphs or
+across rows: hovering a row, a node or a planned change lights the same
+commit in all three places.
+
+Each action has one colour, read only through `HISTORY_ACTION_CLASSES` in
+`apps/desktop/src/features/history/historyActionClasses.ts`:
+
+| action                      | git term | colour     | token                      |
+| --------------------------- | -------- | ---------- | -------------------------- |
+| Keep                        | pick     | green      | `--color-success`          |
+| Fold in, keep its title     | fixup    | azure      | `--color-history-fixup`    |
+| Combine, keep both messages | squash   | yellow     | `--color-history-squash`   |
+| Move                        | reorder  | violet     | `--color-history-move`     |
+| Rename                      | reword   | neutral    | `--color-muted-foreground` |
+| Remove                      | drop     | red        | `--color-danger`           |
+| Start from today's main     | rebase   | trunk grey | `--color-idle`             |
+
+The colour shows on the change mark (a 12% wash, a 40% border and the colour
+as text), on the node and the outer ring of a commit that takes others in, on
+a 2px bar inside the left of the row, on the dot of each part of the "what
+happens" line, on the mark that leads each planned change and on the pressed
+half of `Keep title | Keep both`. A kept row gets a green node and nothing
+else. Warnings keep `warning` and the triangle. `token-contrast-floor.test.ts`
+holds the three history tokens at 4.5:1 on every surface and on their own
+mark, which is why the light theme draws them darker than the dark one. The
+edited row keeps a fading wash for 1.4s (`animate-history-arrive`), the
+narrow After Apply list and the settle after Apply slide rows with
+`useFlipList` (360ms), and After Apply nodes tween in 380ms; reduced motion
+turns all three into instant swaps. The planned changes and the result end
+with `FormActions`, inline at the end of the content, never in a dock.
+
 ### Work nodes and row states
 
 Every surface that draws a sequence of work (the activity feed, the workflow
@@ -925,7 +965,7 @@ What "empty" means, and the copy rule for it, are product rules and live in
 
 Eight animations, one meaning each. Transition keyframes (`fade-in`,
 `nav-step-in`, `nav-step-out`, `studio-in`, `studio-out`, `layer-in`,
-`layer-out`, `trail-crumb-in`, `crumb-menu-in`) move content between states and sit outside the
+`layer-out`, `trail-crumb-in`, `crumb-menu-in`, `history-arrive`) move content between states and sit outside the
 registry. The `Trail` closes a crumb label with `grid-template-columns` from
 `1fr` to `0fr` (220ms, `cubic-bezier(0.2, 0, 0, 1)`, 40ms cascade), the same
 trick as `Reveal` on the other axis.

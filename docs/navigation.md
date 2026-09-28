@@ -1093,32 +1093,62 @@ with lease.
 `Rewrite history` is a child page of the branch: the trail reads
 `Overview › Diff › <branch> › Rewrite history`, the branch segment leads back
 to the Diff, and picking another branch from its popover keeps you on Rewrite
-history. The page lists the commits since main, newest first, split into
-`Only here` and `On origin`, over the merge base that is not editable. Each
-row has a verb column (Pick, Reword, Squash into the one below, Fold into,
-Drop, Move up or down) and every verb carries one line that says what happens
-to the code and to the message; the word fixup never shows. The keys are the
-ones of `git rebase -i`: P, R, S, F, D, and Alt with the arrows to move; a row can also be dragged onto another by its grip, and it lands where that row was.
-Nothing touches git while you edit: the plan is a draft saved per worktree in
-`history_plans`, and once the plan rests for a quarter of a second the engine predicts it in memory
-with one `git merge-tree --stdin` process for every commit and one `git fast-import` that writes
-the predicted commits (git 2.45 or newer; older git spawns one merge and one commit per step).
-The dock says what changes (`1 reword · 1 dropped`),
-whether the code changes, and `No conflicts expected`; when an edit breaks
-the plan it names that edit (`Moving 5b3e91f above 7c2d8a1 will conflict`)
-and offers `Rewrite with an agent` or undoing the change. `Apply and push`
-first replays the plan in a throwaway copy, then moves the branch with a
-backup ref and pushes with a lease; `Apply here, push later` stops before the
-push. Commits already on origin can be rewritten too: the dock counts them,
-names the pull request that updates, and the first push that rewrites origin
-on a branch asks once in an `InlineConfirm`. The push always carries
+history. The page draws the branch as a graph (`history_graph`): a grey main
+trunk with its head node (`main is here now`, how many commits it gained,
+`Start from today's main`), your branch leaving it at the real fork point, one
+row per commit newest first, and `Your branch starts here` at the fork. Fact
+chips over it say how many commits are yours and how many stay after Apply,
+how far main moved, and how many are already online. The big list is always
+the branch as it is (Now) and never reorders while you plan; beside it, After
+Apply draws the planned result with a dashed lane, each node level with its
+own row when the order allows. Under 760px of content the side graph becomes
+a `Now | After Apply` toggle. Every action has one color (Keep green, Fold in
+azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
+today's main grey) used on the row's change mark, its node, a 2px edge, the
+dot of its "what happens" line and its planned change. Drag a row between two
+others to move it, drop it onto a row to fold it in (fixup, `Keep title`), and
+switch `Keep title | Keep both` on the folded row or its change to combine
+(squash). The drag is pointer events with our own hit testing
+(`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
+owns the drag session on macOS, and the composer's file drop needs it on. Keys
+on a focused row: Alt with the arrows moves, C folds into the one below, S
+combines keeping both messages, R or Enter renames, Delete or Backspace
+removes, ⌘Z undoes the last edit. Hovering a row, a node in After Apply or a
+planned change lights up the same commit in all three places. Nothing touches
+git while you edit: the plan is a draft saved per worktree in `history_plans`,
+the planned changes are derived from it (each with its own `Undo`, plus
+`Reset all`), and once the plan rests for a quarter of a second the engine
+predicts it in memory with one `git merge-tree --stdin` process for every
+commit and one `git fast-import` that writes the predicted commits (git 2.45
+or newer; older git spawns one merge and one commit per step). A predicted
+conflict shows on its row (`may conflict in webhook.ts`) and in a notice with
+`Rewrite with an agent`. The action row sits at the end of the content
+(`FormActions`, no dock): `Apply`, or `Apply here only` and `Apply and update
+online` when the plan replaces commits that are already online, which also
+shows the notice about the pull request and the push with lease. Apply never
+rewrites the branch first. `history_plan_run` checks the worktree (right
+branch, nothing uncommitted, head where the plan started), replays the whole
+plan on a temporary git worktree outside your checkout, reports each step
+while the page says `Trying your changes on a temporary copy. Your branch is
+untouched until this finishes.`, checks the result (no conflict left, no merge
+commit, the planned number of commits, and the same tree as the branch, or the
+branch merged with today's main, except the files of removed commits), and
+removes the copy on every exit. A stop names the step and why and says the
+branch is exactly as it was. Only a passing check moves the branch, after a
+backup ref, and an untracked file the new history would overwrite blocks the
+move. Commits before the first change keep their shas, so an edit to local
+commits never rewrites what is online. The push always carries
 `--force-with-lease` on the origin sha read at apply, never a bare force; if
-origin moved, nothing is pushed and the dock offers `Bring them into the plan`, which fetches the commits origin gained, replays them on top of the rewrite in a copy and leaves `Push with lease` on the new origin sha. After an apply the dock
-reads `Rewritten here · origin has the old history` with `Push with lease`
-and `Undo rewrite`. Every move leaves a backup under `refs/goodboy/backup/`,
-kept 30 days; `Backups` in the page menu lists them with `Restore previous
+origin moved, nothing is pushed and the result offers `Bring them into the
+plan`, which fetches the commits origin gained, replays them on top of the
+rewrite in a copy and leaves `Push with lease` on the new origin sha. The
+result section lists what changed in the action colors, says whether the
+online copy was updated, what the check found, and the backup, with `Restore
+it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, kept
+30 days; `Backups` in the page menu lists them with `Restore previous
 history`, which moves the branch back and, on a branch with an upstream,
-pushes it with a lease. `Branch vs main` sits in the file
+pushes it with a lease. Temporary copies left by a crash are removed when the
+app starts. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
