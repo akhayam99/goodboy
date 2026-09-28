@@ -226,6 +226,89 @@ describe('rebase on main', () => {
     expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
   });
 
+  it('never applies or pushes a replay whose check failed, even without a conflict', async () => {
+    const { slice, read } = harness();
+    engine.predictHistoryPlan.mockResolvedValue({
+      isSupported: true,
+      steps: [{ sha: 'a1', outcome: 'conflict', files: ['ledger.ts'], newSha: null }],
+      head: null,
+      isTreeEqual: false,
+      changedFiles: [],
+    });
+    engine.prepareHistoryRewrite.mockResolvedValue({
+      head: 'replayed-head',
+      map: [],
+      isTreeEqual: false,
+      changedFiles: ['ledger.ts'],
+      stop: null,
+      copyPath: null,
+      order: [],
+      check: {
+        isPassed: false,
+        expectsSameCode: false,
+        problems: ['The result differs from what the plan should make in 1 file: ledger.ts.'],
+        unexpectedFiles: ['ledger.ts'],
+        removedFiles: [],
+      },
+    });
+
+    await expect(slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID })).resolves.toBe(
+      'stopped',
+    );
+    expect(read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('unverified');
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+
+    await slice.startHistoryRewriter({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      plan: { worktreePath: '/w/ledger', base: 'base-sha', head: 'head-sha', steps: [] },
+      origin: 'plan',
+      planId: 'plan-1',
+    });
+    expect(read().historyRuns[MOUNT_ID]?.phase).toBe('stopped');
+    expect(read().historyRuns[MOUNT_ID]?.result).toBeNull();
+  });
+
+  it('removes the conflicted copy when the rewriter cannot start or cannot be told', async () => {
+    const { slice, read } = harness();
+    engine.prepareHistoryRewrite.mockResolvedValue({
+      head: null,
+      map: [],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: { sha: 'a1', index: 0, kind: 'merge', files: ['ledger.ts'], message: '' },
+      copyPath: '/tmp/goodboy-history-copy',
+      order: [],
+      check: null,
+    });
+    const plan = { worktreePath: '/w/ledger', base: 'base-sha', head: 'head-sha', steps: [] };
+    const spawn = read().spawnAgent as unknown as ReturnType<typeof vi.fn>;
+    spawn.mockRejectedValueOnce(new Error('no room for another agent'));
+    await slice.startHistoryRewriter({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      plan,
+      origin: 'plan',
+      planId: 'plan-1',
+    });
+    expect(engine.discardHistoryCopy).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      copyPath: '/tmp/goodboy-history-copy',
+    });
+    const send = read().sendTurn as unknown as ReturnType<typeof vi.fn>;
+    send.mockRejectedValueOnce(new Error('the provider is offline'));
+    await slice.startHistoryRewriter({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      plan,
+      origin: 'plan',
+      planId: 'plan-1',
+    });
+    await vi.waitFor(() => expect(engine.discardHistoryCopy).toHaveBeenCalledTimes(2));
+    expect(read().historyRewriters[AGENT_ID]).toBeUndefined();
+  });
+
   it('hands a predicted conflict to the hidden history rewriter working in a copy', async () => {
     const { slice, read } = harness();
     engine.predictHistoryPlan.mockResolvedValue({

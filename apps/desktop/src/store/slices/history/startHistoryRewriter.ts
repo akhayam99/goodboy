@@ -1,6 +1,6 @@
 import type { AgentId, AuxTaskId, SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
-import { prepareHistoryRewrite } from '../../../features/history/historyEngine';
+import { discardHistoryCopy, prepareHistoryRewrite } from '../../../features/history/historyEngine';
 import { taskModelAgentSpawnConfig } from '../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig';
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { historyTargetOf } from './historyTargetOf';
@@ -69,6 +69,14 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
     if (typeof prepared === 'string') {
       return stopWith({ reason: 'failed', message: prepared, files: [], sha: null });
     }
+    if (prepared.stop === null && prepared.head !== null && prepared.check?.isPassed !== true) {
+      return stopWith({
+        reason: 'unverified',
+        message: `The replay on the temporary copy did not match the plan: ${(prepared.check?.problems ?? ['it was not checked.']).join(' ')} Nothing was changed.`,
+        files: prepared.check?.unexpectedFiles ?? [],
+        sha: null,
+      });
+    }
     if (prepared.stop === null && prepared.head !== null) {
       if (origin === 'rebase') {
         return get().applyHistoryRewrite({
@@ -110,8 +118,12 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
         sha: null,
       });
     }
+    const copyPath = prepared.copyPath;
+    const discard = () =>
+      discardHistoryCopy({ worktreePath: target.worktreePath, copyPath }).catch(() => undefined);
     const config = rewriterConfig({ get, sessionId });
     if (config.provider === '') {
+      await discard();
       return stopWith({
         reason: prepared.stop.kind === 'hook' ? 'hook' : 'conflict',
         message: 'No provider is connected to hand the conflict to History rewriter.',
@@ -119,7 +131,6 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
         sha: prepared.stop.sha,
       });
     }
-    const copyPath = prepared.copyPath;
     let agentId: AgentId;
     try {
       agentId = await get().spawnAgent(sessionId, {
@@ -131,6 +142,7 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
         focus: 'none',
       });
     } catch (error) {
+      await discard();
       return stopWith({ reason: 'failed', message: formatError(error), files: [], sha: null });
     }
     set((state) => ({
@@ -171,9 +183,14 @@ export const startHistoryRewriter = (set: SetFn, get: GetFn) => {
         content: kickoff,
         handoff: { instruction: kickoff, plan: null },
       })
-      .catch((error: unknown) =>
-        stopWith({ reason: 'failed', message: formatError(error), files: [], sha: null }),
-      );
+      .catch(async (error: unknown) => {
+        set((state) => {
+          const { [agentId]: _dropped, ...rest } = state.historyRewriters;
+          return { historyRewriters: rest };
+        });
+        await discard();
+        return stopWith({ reason: 'failed', message: formatError(error), files: [], sha: null });
+      });
     return 'rewriting';
   };
 };

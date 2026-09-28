@@ -4322,4 +4322,36 @@ mod tests {
             RemoteLease::Included { sha: theirs }
         );
     }
+
+    #[test]
+    fn a_hook_that_changes_the_content_fails_the_check_of_a_clean_replay() {
+        let l = ledger("hook-changes-content");
+        let hooks = l.root.join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks).unwrap();
+        let hook = hooks.join("pre-commit");
+        std::fs::write(
+            &hook,
+            "#!/bin/sh\necho injected >> hook.txt\ngit add hook.txt\n",
+        )
+        .unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        let mut reword = step(&l.export, HistoryVerb::Reword);
+        reword.message = Some("Add the ledger export endpoint".to_string());
+        let mut steps = vec![reword];
+        steps.extend(picks(&[
+            &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+        ]));
+        let prepared = trial(&ledger_plan(&l, steps), &slug("hook-changes-content"), true).unwrap();
+        assert_eq!(prepared.stop, None);
+        assert!(prepared.head.is_some());
+        let check = prepared.check.unwrap();
+        assert!(!check.is_passed);
+        assert_eq!(check.unexpected_files, vec!["hook.txt".to_string()]);
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+        assert_eq!(worktree_count(&l.root), 1);
+    }
 }
