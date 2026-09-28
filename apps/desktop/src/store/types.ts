@@ -87,6 +87,7 @@ import type {
   Workspace,
   WorkspaceGitStatus,
   WorkspaceId,
+  WorkflowId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
 import type { AgentKind } from '../features/session/agent-kind';
@@ -425,6 +426,7 @@ export type AppState = AppSliceState & {
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;
   readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
+  readonly workflowStudioFocus: WorkflowId | null;
   readonly workflowNodeRoutingPending: Readonly<Record<string, boolean>>;
   readonly workflowNodeRoutingErrors: Readonly<Record<string, string | null>>;
   readonly agentAttachments: Readonly<Record<AgentId, ReadonlyArray<DraftAttachment>>>;

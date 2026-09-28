@@ -23,8 +23,22 @@ export {
   pickRestorableSnapshot,
 } from './migrations/downgradeGuard';
 export { runDatabaseHygiene, type DatabaseHygieneResult } from './maintenance/runDatabaseHygiene';
+export {
+  purgeExcludedSearchDocs,
+  readSearchBackfillProgress,
+  rebuildSearchIndex,
+  runSearchBackfillStep,
+  type SearchBackfillProgress,
+  type SearchBackfillStep,
+} from './maintenance/searchBackfill';
 
 export { NotFoundError, UniqueViolationError } from './shared/errors';
+export {
+  excludeProjectFromSearch,
+  includeProjectInSearch,
+  readSearchIndexStatus,
+  searchIndex,
+} from './queries/search';
 
 export {
   insertWorkspace,

@@ -32,4 +32,5 @@ export type WorkflowStudioState = {
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;
   readonly visibleWorkflowStudioWorkspaceId: WorkspaceId | null;
+  readonly workflowStudioFocus: WorkflowId | null;
 };

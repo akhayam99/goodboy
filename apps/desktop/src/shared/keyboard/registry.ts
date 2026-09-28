@@ -17,6 +17,7 @@ export type ShortcutEntry = {
 
 export const SHORTCUTS = {
   'palette.open': { combo: 'cmd+KeyK', label: 'Command palette', plane: 'app', group: 'general' },
+  'search.open': { combo: 'cmd+KeyF', label: 'Search', plane: 'app', group: 'general' },
   'settings.open': { combo: 'cmd+Comma', label: 'Settings', plane: 'app', group: 'general' },
   'settings.shortcuts': {
     combo: 'cmd+Slash',
@@ -106,6 +107,13 @@ export const SHORTCUTS = {
 
   'nav.back': { combo: 'cmd+BracketLeft', label: 'Back', plane: 'app', group: 'navigate' },
   'nav.forward': { combo: 'cmd+BracketRight', label: 'Forward', plane: 'app', group: 'navigate' },
+  'find.next': { combo: 'cmd+KeyG', label: 'Next match', plane: 'app', group: 'navigate' },
+  'find.previous': {
+    combo: 'cmd+shift+KeyG',
+    label: 'Previous match',
+    plane: 'session',
+    group: 'navigate',
+  },
   'column.toggle': {
     combo: 'cmd+KeyB',
     label: 'Show or hide the session sidebar',

@@ -125,6 +125,13 @@ row also names its project. An empty list says why: no project in the
 session, no script in the project, or no match for the filter. Enter runs the
 row and opens its output in the right drawer; the composer text is cleared.
 
+⌘F opens search, the palette's second mode: a local index over sessions,
+messages, agents, artifacts, decisions, questions, issues, pull requests and
+branches, with filters and a preview. A hit lands in context through the one
+door, and ⌘G and ⇧⌘G then walk the matches in that view. A focused terminal
+keeps ⌘F for its own scrollback. [search.md](search.md) owns the index, the
+landing targets and the find rules.
+
 ## Addresses and history
 
 Every view has an address, and one history per window and workspace records

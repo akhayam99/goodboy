@@ -473,3 +473,12 @@ export type { ProjectSentryLink, ProjectSentryLinkSource } from './project-sentr
 export type { DeletedBranch } from './deleted-branch';
 export { DELETED_BRANCH_KEEP_DAYS } from './deleted-branch';
 export type { StarredIssue, StarredIssueState } from './starred-issue';
+export { SEARCH_KINDS, isSearchKind } from './search';
+export type {
+  MarkedSegment,
+  SearchArchived,
+  SearchHit,
+  SearchIndexStatus,
+  SearchKind,
+  SearchQuery,
+} from './search';

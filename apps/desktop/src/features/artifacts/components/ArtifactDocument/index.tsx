@@ -25,7 +25,12 @@ export const ArtifactDocument = ({ artifact, medium, workspaceName }: Props) => 
   const sections = documentOutline({ sourceText: rest });
   const meta = artifactMetaFields({ artifact, workspaceName });
   return (
-    <article data-testid="artifact-document" data-medium={medium} className="print-document">
+    <article
+      data-testid="artifact-document"
+      data-find-root
+      data-medium={medium}
+      className="print-document"
+    >
       <PrintLetterhead
         eyebrowLabel={meta.eyebrowLabel}
         dateLabel={meta.dateLabel}

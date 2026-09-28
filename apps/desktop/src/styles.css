@@ -47,6 +47,8 @@
   --color-info: oklch(0.716 0.12 245);
   --color-merged: oklch(0.734 0.15 305);
   --color-draft: oklch(0.728 0.14 277);
+  --color-find-match: oklch(0.76 0.13 78 / 0.28);
+  --color-find-current: oklch(0.76 0.13 78 / 0.62);
 
   /* Per-provider accent. */
   --color-provider-anthropic: oklch(0.74 0.15 55);
@@ -497,6 +499,8 @@ html[data-theme='light'] {
   --color-info: oklch(0.481 0.14 245);
   --color-merged: oklch(0.49 0.18 305);
   --color-draft: oklch(0.49 0.17 277);
+  --color-find-match: oklch(0.86 0.15 88 / 0.55);
+  --color-find-current: oklch(0.8 0.16 75 / 0.9);
   --color-provider-anthropic: oklch(0.54 0.16 55);
   --color-provider-cursor: oklch(0.5 0.17 290);
   --color-provider-codex: oklch(0.48 0.15 148);
@@ -613,6 +617,15 @@ body {
 /* Reusable tabular-figures helper for aligned numeric columns / metrics. */
 @utility bg-hover {
   background-image: linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover));
+}
+
+::highlight(find-match) {
+  background-color: var(--color-find-match);
+}
+
+::highlight(find-current) {
+  background-color: var(--color-find-current);
+  color: var(--color-foreground);
 }
 
 @utility bg-selected {

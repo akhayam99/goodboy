@@ -8,6 +8,7 @@ import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { UpdatesSection } from './UpdatesSection';
 import { ThemePreferenceField } from './ThemePreferenceField';
+import { SearchIndexBand } from './SearchIndexBand';
 
 export const AppGeneralSection = () => {
   const loadSetting = useAppStore((s) => s.loadSetting);
@@ -80,6 +81,8 @@ export const AppGeneralSection = () => {
           </FieldRow>
         </div>
       </Band>
+
+      <SearchIndexBand />
     </div>
   );
 };

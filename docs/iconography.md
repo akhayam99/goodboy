@@ -239,3 +239,13 @@ requests `GitPullRequest`, `thread` `MessagesSquare`, `error` `Bug`. The state
 column draws `InboxStateLabel`: `open` `Circle`, `active` `Contrast`, `done`
 `CircleCheck`, `alert` `TriangleAlert`, each in the state tone, always next to
 the tool's own state word.
+
+## Search results
+
+A search hit leads with the glyph of its kind, from `SEARCH_KIND_META`
+(`features/search/searchKindMeta.ts`), which reads the registry: a session
+`sessions`, an agent `agents`, a plan `plan`, a report `report`, a wireframe
+`wireframe`, a decision `decisions`, a question `questions`, an issue
+`issues`, a pull request `pr` and a branch `branch`. A message is the
+`message` concept, `MessageSquareText` in neutral: a line someone wrote, not
+a comment thread (`comments`).

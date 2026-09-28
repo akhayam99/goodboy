@@ -4,4 +4,5 @@ export const initialWorkflowStudioState: WorkflowStudioState = {
   workflowStudioDrafts: {},
   workflowGenerations: {},
   visibleWorkflowStudioWorkspaceId: null,
+  workflowStudioFocus: null,
 };

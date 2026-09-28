@@ -21,6 +21,7 @@ import { applyQaDecidingPreview } from '../workflows/applyQaDecidingPreview';
 import { adoptLegacyIntegrationSecrets } from '../integrations/adoptLegacyIntegrationSecrets';
 import { drainAuditRetryQueue } from './auditRetryQueue';
 import { scheduleStorageCheck } from '../storage/scheduleStorageCheck';
+import { scheduleSearchBackfill } from '../search-index/scheduleSearchBackfill';
 import type { GetFn, SetFn } from './types';
 import type { BootPhase } from '../../types';
 
@@ -247,6 +248,7 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           .reconcileOrphanWorktrees()
           .catch(() => {});
         scheduleStorageCheck({ get });
+        scheduleSearchBackfill({ get });
 
         void get().refreshGithubStatus();
       } catch (err) {

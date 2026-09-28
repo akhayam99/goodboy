@@ -189,6 +189,7 @@ import type {
 } from './slices/artifactDrafts/types';
 import { createWorkflowStudioSlice } from './slices/workflowStudio';
 import { initialWorkflowStudioState } from './slices/workflowStudio/state';
+import type { SetWorkflowStudioFocusParams } from './slices/workflowStudio/setWorkflowStudioFocus';
 import type {
   StartWorkflowGenerationParams,
   WorkflowStudioDraft,
@@ -263,6 +264,7 @@ import { createHandoffsSlice } from './slices/handoffs';
 import { createSecurityFindingsSlice } from './slices/security-findings';
 import { createBranchCleanupSlice } from './slices/branch-cleanup';
 import { createStarredIssuesSlice } from './slices/starred-issues';
+import { createSearchIndexSlice } from './slices/search-index';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -859,6 +861,7 @@ type AppActions = {
   setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
   clearWorkflowStudioDraft(params: { workspaceId: WorkspaceId }): void;
   setWorkflowStudioVisible(params: { workspaceId: WorkspaceId | null }): void;
+  setWorkflowStudioFocus(params: SetWorkflowStudioFocusParams): void;
   startWorkflowGeneration(params: StartWorkflowGenerationParams): Promise<boolean>;
   consumeWorkflowGeneration(params: { workspaceId: WorkspaceId }): void;
   undoWorkflowGeneration(params: { workspaceId: WorkspaceId }): Promise<void>;
@@ -1186,7 +1189,8 @@ export type AppStore = AppState &
   ReturnType<typeof createHandoffsSlice> &
   ReturnType<typeof createSecurityFindingsSlice> &
   ReturnType<typeof createBranchCleanupSlice> &
-  ReturnType<typeof createStarredIssuesSlice>;
+  ReturnType<typeof createStarredIssuesSlice> &
+  ReturnType<typeof createSearchIndexSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1433,6 +1437,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createSecurityFindingsSlice(set, get),
   ...createBranchCleanupSlice(set, get),
   ...createStarredIssuesSlice(set, get),
+  ...createSearchIndexSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),
