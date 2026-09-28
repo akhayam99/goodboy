@@ -181,6 +181,12 @@ import { turnNodeRouting } from './turnNodeRouting';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { GetFn, SendTurnResult, SetFn } from './types';
 import { formatClockTime } from '../../../shared/utils/formatClockTime';
+import {
+  expectsArtifact,
+  isAgentMissingArtifact,
+  MISSING_ARTIFACT_CODE,
+  MISSING_ARTIFACT_MESSAGE,
+} from '../../../features/artifacts/turnArtifactOutcome';
 
 type Input = {
   sessionId: SessionId;
@@ -1826,6 +1832,43 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           runId,
           code: captured.error.code,
           message: captured.error.message,
+          at: now(),
+        });
+      }
+      const settledAgentRow =
+        (get().sessionPhaseRuns[sessionId] ?? []).find((row) => row.id === activeAgentId) ?? null;
+      if (
+        captured.error !== null &&
+        settledAgentRow !== null &&
+        settledAgentRow.status === 'completed' &&
+        earlyAgentKind !== 'planner' &&
+        expectsArtifact({ kind: earlyAgentKind })
+      ) {
+        await invokeAgentUpdateStatus(settledAgentRow.id, {
+          status: 'blocked',
+          completedAt: now(),
+        });
+        const blockedRuns = await invokeAgentList(sessionId);
+        set((state) => ({
+          sessionPhaseRuns: { ...state.sessionPhaseRuns, [sessionId]: blockedRuns },
+        }));
+      }
+      if (
+        captured.error === null &&
+        captured.plan === null &&
+        captured.artifact === null &&
+        settledAgentRow !== null &&
+        isAgentMissingArtifact({
+          agent: settledAgentRow,
+          kind: earlyAgentKind,
+          artifacts: get().sessionArtifacts?.[sessionId],
+        })
+      ) {
+        get().appendTurnEvent(activeAgentId, sessionId, {
+          kind: 'artifact_capture_failed',
+          runId,
+          code: MISSING_ARTIFACT_CODE,
+          message: MISSING_ARTIFACT_MESSAGE,
           at: now(),
         });
       }

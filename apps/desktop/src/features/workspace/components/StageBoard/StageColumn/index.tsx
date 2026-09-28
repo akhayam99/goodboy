@@ -159,6 +159,7 @@ export const StageColumn = ({
           icon={view.presentation.icon}
           title={EMPTY_COPY[view.key].title}
           description={EMPTY_COPY[view.key].description}
+          className={PANE_RHYTHM.board.emptyMinHeight}
         />
       )}
 

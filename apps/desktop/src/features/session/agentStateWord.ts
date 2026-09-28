@@ -14,6 +14,7 @@ type Params = {
   readonly isTurnLive: boolean;
   readonly hasActiveChild: boolean;
   readonly isResolverSettled?: boolean;
+  readonly isMissingArtifact?: boolean;
 };
 
 const finishedWord = ({ agent }: { readonly agent: Agent }): AgentStateWord => {
@@ -35,6 +36,7 @@ export const agentStateWord = ({
   isTurnLive,
   hasActiveChild,
   isResolverSettled = false,
+  isMissingArtifact = false,
 }: Params): AgentStateWord => {
   const isFinished = isAgentFinished({
     agent,
@@ -45,6 +47,9 @@ export const agentStateWord = ({
   });
   if (isFinished) {
     return finishedWord({ agent });
+  }
+  if (isMissingArtifact && !hasOpenQuestion && agent.status === 'blocked') {
+    return { word: 'No artifact', tone: 'warning', group: 'needs-you' };
   }
   if (hasOpenQuestion || agent.status === 'blocked') {
     return { word: 'Needs you', tone: 'warning', group: 'needs-you' };

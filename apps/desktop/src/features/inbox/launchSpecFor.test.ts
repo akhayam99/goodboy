@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { launchSpecFor } from './launchSpecFor';
-import type { WorkspaceId } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
 import type { InboxRecord } from './types';
 
 const workspaceId = 'workspace-1' as WorkspaceId;
+const LINKED_SESSION = 'session-12' as SessionId;
 
 const RECORDS: ReadonlyArray<InboxRecord> = [
   {
@@ -253,13 +254,45 @@ const RECORDS: ReadonlyArray<InboxRecord> = [
       repo: { workspaceId, workspaceSlug: 'goodboy', repoSlug: 'goodboy', email: 'a@b.com' },
     },
   },
+  {
+    key: 'github:pr:12',
+    provider: 'github',
+    kind: 'pr',
+    identifier: '#12',
+    title: 'Retry ledger sync',
+    state: 'open',
+    updatedAt: '2026-08-01T10:00:00Z',
+    url: 'https://github.com/harborline/ledger-core/pull/12',
+    stateLabel: 'In review',
+    context: 'harborline/ledger-core',
+    payload: {
+      provider: 'github',
+      kind: 'pr',
+      role: 'review-requested',
+      sessionId: LINKED_SESSION,
+      pr: {
+        number: 12,
+        title: 'Retry ledger sync',
+        url: 'https://github.com/harborline/ledger-core/pull/12',
+        state: 'open',
+        mergeable: true,
+        checks: null,
+        baseBranch: 'main',
+        headBranch: 'retry-sync',
+        isDraft: false,
+        reviewDecision: null,
+        body: 'Retries the sync on timeout.',
+        updatedAt: '2026-08-01T10:00:00Z',
+      },
+    },
+  },
 ];
 
 describe('launchSpecFor', () => {
   it('gives every tool a primary: launch, or open the linked session', () => {
     const specs = RECORDS.map((record) => [record.key, launchSpecFor({ record })] as const);
 
-    expect(specs.length).toBe(8);
+    expect(specs.length).toBe(9);
     for (const [key, spec] of specs) {
       expect(spec, key).not.toBeNull();
       expect(spec?.externalTask.identifier, key).not.toBe('');
@@ -275,5 +308,44 @@ describe('launchSpecFor', () => {
     expect(
       launchSpecFor({ record: { ...bitbucket, payload: { ...bitbucket.payload, repo: null } } }),
     ).toBeNull();
+  });
+
+  it('picks up a GitHub pull request as a task and reopens its linked session', () => {
+    const github = RECORDS.find((record) => record.key === 'github:pr:12');
+    if (github == null) {
+      throw new Error('missing github pr fixture');
+    }
+
+    const spec = launchSpecFor({ record: github });
+
+    expect(spec?.linkedSessionId).toBe(LINKED_SESSION);
+    expect(spec?.briefSource).toBeNull();
+    expect(spec?.externalTask).toEqual({
+      provider: 'github',
+      externalId: '12',
+      identifier: '#12',
+      url: 'https://github.com/harborline/ledger-core/pull/12',
+      title: 'Retry ledger sync',
+    });
+    expect(spec?.goalSeed).toContain('GitHub pull request #12: Retry ledger sync');
+    expect(spec?.goalSeed).toContain('Retries the sync on timeout.');
+  });
+
+  it('opens the session a GitHub pull request was linked to from the inbox', () => {
+    const github = RECORDS.find((record) => record.key === 'github:pr:12');
+    if (github?.payload.provider !== 'github' || github.payload.kind !== 'pr') {
+      throw new Error('missing github pr fixture');
+    }
+    const linked = 'session-linked' as SessionId;
+
+    const spec = launchSpecFor({
+      record: {
+        ...github,
+        linkedSessionId: linked,
+        payload: { ...github.payload, sessionId: null },
+      },
+    });
+
+    expect(spec?.linkedSessionId).toBe(linked);
   });
 });

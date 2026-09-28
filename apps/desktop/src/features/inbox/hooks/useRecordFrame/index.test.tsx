@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   navigate: vi.fn(),
   requestIssueBrief: vi.fn(async (_params: unknown) => undefined),
   reportError: vi.fn(async () => undefined),
+  linkSessionExternalTask: vi.fn(async () => undefined),
 }));
 
 type StoreState = {
@@ -20,6 +21,8 @@ type StoreState = {
   readonly requestIssueBrief: typeof h.requestIssueBrief;
   readonly reportError: typeof h.reportError;
   readonly issueBriefs: Readonly<Record<string, never>>;
+  readonly sessions: ReadonlyArray<never>;
+  readonly linkSessionExternalTask: typeof h.linkSessionExternalTask;
 };
 
 vi.mock('../../../../store', async () => ({
@@ -32,6 +35,8 @@ vi.mock('../../../../store', async () => ({
       requestIssueBrief: h.requestIssueBrief,
       reportError: h.reportError,
       issueBriefs: {},
+      sessions: [],
+      linkSessionExternalTask: h.linkSessionExternalTask,
     }),
 }));
 

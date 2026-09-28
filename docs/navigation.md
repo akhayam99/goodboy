@@ -225,97 +225,45 @@ empty session reads as a young version of the same document, not a wall of
 placeholders. Finished work collapses into one summary row per category. The
 surface itself shows urgency, never a badge parked beside it.
 
-**New session is a draft, not a session.** New, ⌘N, the board, the palette
-and the checklist open the `New session` draft (the `session-draft` place,
-address `new`). Nothing is written: no row in the database, the sidebar or
-the board. The trail and the title say `New session`, the title is faint and
-cannot be renamed, and there is no `⋯`, no chip and no projects section. The
-sidebar's New button stays selected while the draft is open. Each workspace
-keeps one draft in memory (`store/slices/sessionDraft/`), never on disk:
-leaving it keeps it intact, New brings it back, and the button shows a primary
-dot with `Draft in progress` while a written draft waits. `Discard draft` in
-the header empties it; Esc never does. Back returns to the draft like any
-other place.
+**New session starts blank, straight on its Overview.** New, ⌘N, the board,
+the palette, the collapsed rail and the checklist all fire
+`goodboy:new-session`, and `NewSessionBridge` calls `startBlankSession`
+(`store/slices/sessionStart/`): it creates a session with no title, goal,
+project, agent or workflow and lands on its Overview. Nothing is asked first.
+While the last blank session is still untouched (no title, goal, slot, mount,
+agent or workflow run), New goes back to it instead of creating another one,
+so repeated presses never pile up empty sessions. A second press while the
+first create is still running is ignored. A blank session reads `Untitled
+session` in the header, the sidebar, the board and every confirm
+(`sessionTitle`).
 
-The draft asks one question, "How do you want to start?", with three choices
-on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
+**A session with nothing started sets itself up inline** (`SessionSetup`).
+While it has no agent and no workflow run, the Overview shows `Set up this
+session` in place of the next step and Activity: an ordered list of three
+steps, one open at a time, each with its own empty state and actions.
 
-- **Pick up a task** shows the open issues of the connected trackers with a
-  search field. Picking one and pressing **Pick up** proposes the brief under
-  the list, as the issue brief flow in [concepts.md](concepts.md) describes.
-  Use brief, Edit or Use issue text settles the title and goal and opens
-  **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
-  or Ask an agent choice as the other two tabs, precompiled with that goal,
-  Run a workflow preselected. Its own primary links the issue, creates the
-  session and starts the workflow or agent in one gesture. Without a tracker
-  it shows the connect links. The search, like the Inbox search, reads an issue
-  code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
-  `owner/repo#482`, a tracker URL; anything else stays a local filter). When
-  no loaded row has that exact identifier, `useWorkspaceIssueLookup` asks the
-  right tracker once (300 ms after typing, cached two minutes): a key goes to
-  Jira when it matches the Jira project, to Linear alone when the prefix
-  matches a Linear team key (`linear_fetch_team_keys`, fetched once per
-  connection and cached, so a recognized team no longer also fires a Jira
-  call that was always going to 404), otherwise to Linear and Jira; `#N` goes
-  to every GitHub or GitLab repo of the workspace's projects (four GitHub
-  calls at a time); a short id resolves across the Sentry organization
-  (`sentry_resolve_short_id`). While a lookup is in flight, the row names the
-  trackers it asked (`Looking up CAS-231 in Linear and Jira`). Hits sit in a
-  `Not in your inbox` group above the list (`InboxLookupGroup`) and open or
-  pick up like any other issue, with a second line showing `Assigned to
-<name>` for a Linear or Jira hit with a known assignee, the project/repo
-  context otherwise; a miss is one row in that group that says why (not
-  found or not visible, key rejected with `Sign in again`, missing
-  permission, tracker not connected, no repo for `#N`), and a rate limit
-  shows a live countdown and retries once on its own when it ends, alongside
-  the manual `Try again`. The mobile companion resolves Linear, Sentry and
-  GitLab issues through the same direct lookups instead of searching only
-  the issues assigned to you. Issues can be starred (`StarToggle`, the same
-  star as projects) from an Inbox row, a lookup hit or `s` on the selected
-  row. Stars live per workspace (`workspace_starred_issues`, keyed by
-  provider and external id; GitHub keys by `owner/repo#N`) with the last
-  copy of identifier, title and state, so the `Starred` group draws before
-  any tracker answers; a row not refreshed since app start opens the detail
-  panel from that snapshot (`placeholderRecordOf`), not the tool's URL, and
-  gets replaced once the refresh lands a real record. In the Inbox it sits
-  under `Not in your inbox` and above the days, and a starred issue leaves
-  the days; open ones come first, closed ones at the bottom with `Unstar
-closed` and `Undo`, and one the tracker no longer returns reads `Can't
-reach NW-230 anymore`. Pick up a task shows only the open starred issues,
-  even ones a session already picked up. Opening the Inbox or Pick up a task
-  refreshes the stars at most every five minutes (`refreshStarredIssues`):
-  one request per tracker for Linear and Jira, one per project for GitLab,
-  and one per issue for GitHub and Sentry, which have no batch endpoint for
-  fetching by id.
-- **Run a workflow** asks for the goal and a preset, then **Run workflow**
-  starts it with that goal.
-- **Ask an agent** (`AgentStart`) is the real chat composer's field: role,
-  model and project sit below it as chips (`AgentStartFields`), opening the
-  same role grid and model picker `Start agent` uses. The role defaults to
-  Scout every time, never the last one picked, because a habitual Implementer
-  writes code you did not ask for. Scout alone can start with an empty field
-  ("Start Scout on the whole project", which reads the project and changes
-  nothing); every other role needs a prompt first. The model chip reads Auto
-  until pinned. The project chip only shows when the workspace has more than
-  one repo project; with one it is preselected with no chip, with none the
-  session starts with no project attached.
+- **Goal** asks "What should this session get done?". Save goal writes the
+  goal slot and, while the session is untitled, names it after the goal's
+  first sentence (`saveSessionSetupGoal`, marked `Named by Goodboy`).
+- **Project** lists the workspace projects not in the session yet
+  (`MountProjectList`, the same list and preflight as Add project). Skip keeps
+  the turns in the session folder; a workspace with no project offers `Add
+workspace project`.
+- **Start the work** lists `Your workflows`, `Built in` and `From scratch`
+  (`Orchestrated workflow`, `Custom workflow`), with Start agent and the Create
+  menu beside them. Picking a workflow prefills the builder draft
+  (`builderDraftFor`: the preset and its steps, or the custom or orchestrated
+  approach, plus the session goal) and opens the same `Start a workflow` studio
+  the Workflows lens uses (`WorkflowBuilderView`), editable before anything
+  starts.
 
-Only the selected tab's panel, and only its primary, shows. The tabs
-preselect Pick up a task when a tracker has open issues and Run a workflow
-otherwise, and they never remember the last choice. Opening the draft puts
-focus on the selected tab.
-
-**Start is the only way a session is born from the draft.** The primary
-creates the session and starts the work in one gesture
-(`startSessionFromDraft`): the title and the goal come from the issue, the
-workflow goal or the first sentence of the Scout focus, a picked issue is
-linked, and the column moves to the new session. The header marks that title
-`Named by Goodboy` until you rename it or open the session again, and a better
-title that arrives later fades in without moving the layout. If the start fails, the
-session is removed again, the draft stays as it was and the reason shows
-inline above the primary. A session that exists always has a real title, so
-its header never has an empty state. Sessions created elsewhere with no
-activity yet show the plain overview with its actions.
+Each step can be skipped, and a done or skipped row reopens in place on click
+(`focusSessionSetupStep`). The next open step is the first one neither done
+nor skipped. Skips live in memory per session. The header hides `Add a goal`
+and the empty Projects section while the setup shows, so nothing is asked
+twice. The first agent or workflow run ends the setup and the Overview
+becomes the usual document. Picking up an issue with a drafted brief lives in
+the Inbox (Launch session).
 
 ## Breadcrumbs
 
@@ -449,8 +397,13 @@ covered.
   over a studio on the board it closes the studio; in a session it navigates
   to the board as a history entry. ⌘⇧H does the same. The command center opens
   the palette and shows ⌘K; it never takes typing itself.
-- Right: the Now chip (needs you, running, scripts, each only when above
-  zero), today's spend and the bell. Now opens one popover grouped by those
+- Right: the storage chip, the Now chip (needs you, running, scripts, each
+  only when above zero), today's spend and the bell. The storage chip
+  (`StorageChip`) reads `Free 7 GB` in muted text only while at least 1 GB of
+  worktree folders can go on every workspace, the same "can go" the Storage
+  summary counts (`useStorageSummary`); it never turns warning, and it hides
+  when there is nothing to free. A click opens App > Storage scoped to all
+  workspaces on To review, scrolled to the worktree folders. Now opens one popover grouped by those
   three, and a group with no rows is not drawn. A script row moves to its
   session and opens that run's output in the right drawer. Spend opens Impact
   on its Spend tab; it is never merged with a count. Then `Limits`: one chip per connected plan provider (Claude, Codex,
@@ -531,12 +484,51 @@ flow.
 Centre: the Goodboy chip. It holds everything about Goodboy itself, the way
 the Apple menu or Linear's help menu does. Its label says one thing, in this
 order: an update is ready, setup is unfinished (with its progress), or
-"Goodboy beta". Its popover holds the version and release notes, the update,
-the setup checklist, Report a bug (the draft survives closing), What's new,
-keyboard shortcuts and Sponsor. Report a bug swaps the popover for the short
-form, and its primary action opens the full form instead of sending. The
-popover opens by itself once, when the first agent finishes a turn, and never
-while the setup wizard is open; the checklist has no floating card.
+"Goodboy beta". Its popover leads with Report a bug (with ⌘I, and Draft saved
+when a draft waits), then the version and release notes, the update, the setup
+checklist, What's new, keyboard shortcuts and Sponsor. Report a bug closes the
+popover and opens the report sheet. The popover opens by itself once, when the
+first agent finishes a turn, and never while the setup wizard is open; the
+checklist has no floating card.
+
+## Report sheet
+
+One sheet files every report. `ReportSheetHost`
+(`features/bug-report/components/ReportSheetHost`) floats it above the footer
+chip, centred, with no overlay: the page under it stays live. Every door lands
+there: ⌘I from anywhere, Report a bug in the Goodboy chip, Report a bug in the
+palette (it also answers bug, issue, feedback, crash and broken), **Settings >
+App > Help**, **Help > Report a bug** in the macOS menu bar (`help_menu.rs`
+emits `goodboy://report-open` to the focused window), and Report this on a
+warning or error notification, which attaches that notification. Opening the sheet reads the screen you are on
+before anything moves, so Settings stays open under it.
+
+- **One line is the title.** The cursor starts there. ⇥ or Add detail opens a
+  longer field, ⌘↵ sends, Esc closes, and the line and the detail stay in the
+  `bugReportDraft` slice until the report is sent.
+- **Every attached part is a chip.** Version and build, system, screen, CLI
+  versions, and the notification or the error when there is one. A chip's ×
+  leaves it out; the dashed chip puts it back.
+- **What gets sent** opens the exact text that leaves, with the count of
+  redactions and the list of what never leaves.
+- **The button says where it goes.** With GitHub connected it is Send, and
+  the issue is filed through `gh` under your account; the toast links it.
+  While you type, an open issue that matches shows above the chips with Add
+  mine there, which comments instead of filing. Without GitHub it is Open on
+  GitHub: a prefilled link, and when the report does not fit the link the full
+  text goes to the clipboard first.
+- **Crash and startup failure.** The crash screen shows the same sheet inline
+  under the error, with the error and our stack frames attached and the line
+  set to `Crash: <kind>`. The startup error screen opens it under the error
+  with Report this. Neither needs the store.
+- **After a crash the app could not show.** An uncaught window error or a
+  panic leaves `~/.goodboy/last-crash.json`. The next launch shows one
+  persistent toast with when and where: Goodboy closed unexpectedly last time
+  after a panic, Goodboy hit an error last time when the window kept running.
+  Report it opens the sheet as Report this crash or Report this error with the
+  error and the last action names attached, and Dismiss
+  deletes the record. `LastCrashBridge` claims the record, so only one window
+  shows it.
 
 First-run setup is a full-screen wizard in one shell that never moves: a top
 bar with a labelled stepper (Provider, Project, Code host, Tasks, First
@@ -550,13 +542,12 @@ control, names the workspace after its parent folder and finds the
 repositories inside one. Code host is skipped by itself when no project is a
 repository. Code host and Tasks can be skipped; Sentry, Slack and the rest
 live in Settings › Integrations. There is no permissions question: every
-workspace starts on Full access. The last step offers the same three ways as
-a new session, with Ask an agent picked and three starters: Start Scout
-starts the session from a Scout draft (`startSessionFromDraft`) with that
-starter as its focus, and Scout running. Pick up a task and Run a workflow
-close the wizard on the new session draft with that choice picked. Either
-way the draft carries the project picked in the Project step, so the session
-lands in it. With no
+workspace starts on Full access. The last step offers three ways to start,
+with Ask an agent picked and three starters: Start Scout creates the session
+in the project picked in the Project step (`startFirstScout`), titled after
+the starter, with Scout running on it. Pick up a task closes the wizard on the
+Inbox. Run a workflow closes it on a blank session in that project, open on its
+Start the work step. With no
 issue source at all, Pick up a task says so and leads back to Code host. The checklist has six
 items (provider, project, code host, task manager, first session, profile); a
 skipped code host or task manager reopens its own step, and the first session
@@ -599,7 +590,9 @@ outside the registry. So no two surfaces can claim the same chord, and no
 shortcut can exist without being documented. That holds for per-OS combos
 too. An entry carries its own combo for other systems where the plain mapping
 would collide, like the terminal's new tab: ⌘T on macOS, Ctrl+Shift+T
-elsewhere, where Ctrl+T belongs to the shell. The plane is for the dispatcher.
+elsewhere, where Ctrl+T belongs to the shell. Report a bug (`report.open`) is
+⌘I on macOS and Ctrl+Shift+I elsewhere, because Ctrl+I is Tab in a terminal;
+it fires from anywhere, the terminal included. The plane is for the dispatcher.
 Every entry also names the task `group` it belongs to (General, Workspaces,
 Navigate, Session, Views, Window), and Settings > App > Shortcuts lists the
 groups in that order, read top to bottom per column. Entries that share a
@@ -625,7 +618,7 @@ Utility studios render in the shell's studio slot, between the top bar and the
 footer, so both bars stay visible and usable. The one exception is the
 workspace launcher, which has no shell. There, Add workspace takes the whole
 window, and so do the app studios: Settings (its corner gear, ⌘, or ⌘/ for
-shortcuts), the guide and Report an issue. The palette opens there too.
+shortcuts) and the guide. The palette opens there too.
 Studios are not part of the breadcrumb IA. They exit on close or Esc, and only
 one is open at a time.
 
@@ -648,7 +641,7 @@ one is open at a time.
   fades while the new body enters in 160ms. A studio body still renders
   `StudioShell`; inside the frame it only hands its chrome to the band. Until a
   body's chunk arrives, the frame shows one of three opaque skeletons: `list`
-  (Inbox, Notifications, Report an issue, Add workspace, Impact), `rail`
+  (Inbox, Notifications, Add workspace, Impact), `rail`
   (Settings) or `grid` (Workflows, Changelog, the guide, pairing). With no studio
   open, no frame node exists, so nothing covers the page.
 - **One Esc stack.** The frame, a body that holds Esc (the Inbox with a record
@@ -659,12 +652,11 @@ one is open at a time.
   popover (its footer's Open all notifications) and from the palette's Go to
   group, never from the footer, since the bell already shows the unread count.
   The popover never deletes history. That lives in the studio, behind its
-  confirm. Report an issue opens from the top bar, **Settings > App > Help**
-  and the palette. It sits next to settings, not beside the named launchers.
+  confirm. Reporting a bug is not a studio: it is the report sheet above.
 - **Notifications have one row and one scope.** `NotificationRow` draws a
   group in the popover (`compact`, one line, eight rows at most, Unread or
   All) and in the studio (`cozy`, opens in place with the body, the older
-  members and Send to developers). Both lead with a fixed unread slot that holds
+  members and Report this). Both lead with a fixed unread slot that holds
   a primary dot on unread rows and stays empty on read ones, so every title
   keeps one left edge; unread titles are also bold and read rows recede. In the
   studio the time owns a fixed last column and Mark read and Dismiss swap in
@@ -701,8 +693,14 @@ one is open at a time.
   contents and Linear's settings sidebar.
 - **Storage is the one place for disk space, scoped by a picker.** App >
   Storage lists every worktree folder Goodboy made, grouped by repository,
-  under three filters: To review, In use and Kept. A scope picker
-  (`StorageScopePicker`, `Listbox`) sits above the summary: the current
+  under three filters: To review, In use and Kept. The page is two clusters
+  (`StorageCluster`), each with its own accent on a tinted icon and a left
+  rail: `Free up space` (primary: the summary, Worktrees, Artifacts from
+  deleted sessions, History and app data, Cleanup) and `Clean up branches`
+  (merged: Branches, then the scoped workspace's after-merge rule with a
+  `Change` link to Workspace settings). A scope picker
+  (`StorageScopePicker`, `Listbox`) sits in the page header row next to
+  `Check again` (`StorageHeaderActions`): the current
   window's workspace, every other workspace with its own weight, `Removed
 workspaces` (folders whose owning workspace is gone or was never linked),
   and `All workspaces` with the machine total. The scope drives the summary
@@ -725,7 +723,7 @@ workspaces: <total>, <can go> can go` line under the numbers. The
   settings table (`storage.suggestAfterDays`, `storage.lastNudgeAt`,
   `storage.lastNudgeBytes`). Sizes are measured one folder at a time after
   boot, never on the boot path. The worktree scan itself sends nothing.
-  Below the worktrees, `Branches` (`BranchesSection`) lists local branches
+  In the branches cluster, `Branches` (`BranchesSection`) lists local branches
   only, in the same scope, grouped by project. It scans only when it opens:
   one `git for-each-ref` per project (`project_branches`), with the merge
   test cached by both tips and fed each branch's merged pull request head
@@ -747,7 +745,7 @@ look` (`Merged, then N new commits`, unmerged and gone on origin, local
   same compare-and-delete and 14-day restore as the after-merge rule; a
   success Notice carries `Undo` for the batch. A branch another worktree
   holds reads Protected, so its folder goes first from Worktrees.
-  Below that, "Artifacts from deleted sessions" lists plans, reports
+  In the space cluster, under Worktrees, "Artifacts from deleted sessions" lists plans, reports
   and wireframes whose session is gone, under To review and Kept, with Open,
   Keep (30 days or always) and Delete behind an InlineConfirm. Its one bulk
   action deletes the unused ones. Artifacts never trigger a nudge on their own.
@@ -806,7 +804,10 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
 - **A code-host record keeps its verbs outside a session.** A GitLab merge
   request opened from the inbox approves, merges, closes and reopens through
   the workspace's GitLab host. A Bitbucket pull request shows its verbs too,
-  blocked with the reason until Goodboy has resolved it for a session. Merge
+  blocked with the reason until Goodboy has resolved it for a session. A GitHub
+  pull request opens read only: description, review state, branches and its
+  comments, with Launch session as the primary and Open in GitHub for the rest.
+  Merge
   always asks first, and so does every destructive verb. The mount reads
   through the workspace's first repo project, so a workspace with no repo
   project stops at an empty state.
@@ -814,7 +815,10 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   tool glyph, the identifier and the state on the identity line, with Open in
   the tool, the `⋯` menu and, in the inbox, close at its end. Under the title
   sits one action row: one primary (Launch session, or Open session once one is
-  linked) and at most two tool verbs picked by state. Everything else lives in
+  linked) and at most two tool verbs picked by state. Before a session is
+  linked, the inbox adds Link to a session beside Launch session: a searchable
+  list of the workspace's sessions, inline, that links the record to the one
+  you pick. Everything else lives in
   `⋯` in a fixed order: rare tool verbs, Refresh, Copy link, Unlink session,
   then destructive verbs after a separator. Editable properties change from the
   control that shows them (the Jira state opens its transitions). Launch
@@ -920,12 +924,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
 
 ## Creating a session
 
-The new session form always lands on Overview. It offers no agent-kind picker
-before the session exists: the kind is a choice made inside a session, not a
-condition for having one. Its issue sources come from a curated allowlist, not
-from every connected provider, because a connected code host does not mean an
-issue picker. The section hides when none of the allowed sources is connected.
-Creating a session picks no project either. The session is born on the
+A new session is created blank and always lands on Overview. Nothing is a
+condition for having one: goal, project, agents and workflow are each set
+later, inline, from the setup steps. Creating a session picks no project. The session is born on the
 workspace with only a container directory, and projects are materialized when
 the work reaches them ([concepts.md](concepts.md) → Lazy sessions).
 
@@ -964,10 +965,14 @@ versions of that slot, inside the same drawer, with Restore; Escape leaves the
 view before the drawer). The **Context** chip in the session header toggles it
 on any page of the session, and so does ⌘⌥C; ⌘⌥G, ⌘⌥E and ⌘⌥U open it on Goal,
 Decisions and Summary. The first open shows Summary, later ones the last tab
-used in that session. The chip says `2 new` when decisions were added since the
-Decisions tab was last shown (`sessions.context_seen_at`, counted from the
-`added` and `replaced` of `decisions_changed` events; withdrawals never count),
-and opens on Decisions then; it shows
+used in that session. The chip carries a quiet dot, never a count, when the
+decisions ledger changed since the drawer was last seen
+(`sessions.context_seen_at`, compared with the ledger rows in
+`decisionChangesSince`: added, removed and reworded rows, leaving out what you
+did yourself and what came and went unseen), and opens on Decisions then. The
+drawer marks it seen when it opens, on any tab, and again when it closes. A
+session never looked at starts its baseline the first time it loads, so the
+rows it already had never read as new. The chip shows
 a pulsing dot while the summarizer writes and a danger glyph when it failed,
 with Retry in the drawer's status line. The old addresses `s/{session}/context`
 and `context/goal`, `context/decisions`, `context/summary` resolve in
@@ -975,12 +980,28 @@ and `context/goal`, `context/decisions`, `context/summary` resolve in
 The drawer header has one action, **Copy as brief**, which copies Goal,
 Decisions, Summary and Open questions in that order (`shareableContext`).
 
-The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)):
-active decisions newest first, each with its number, at most two lines of
+The drawer sits on the `subtle` panel surface, like every `DrawerFrame`. Its
+tabs are a `SegmentedTabs` strip at its own width, with the status line on the
+same row; the Decisions tab carries the count and the change dot.
+
+Every tab reads as labelled blocks (`ContextBlock`: a `fill` band with an
+eyebrow title, an icon and a count). A block shows its key line first and
+folds the rest behind **Show N more** (`KeyLineList`); `summaryItems` splits a
+body into items, one per top-level bullet with its sub-bullets, or one per
+sentence for prose. Summary shows State, Next, Open questions (the session's
+open questions, read only) and Learned, then any section the summarizer did not
+name. Goal is one block with Edit and Versions in its header. Decisions shows
+the changes block, then Active, then the folded Replaced and withdrawn group.
+
+The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)).
+When something changed since the previous look (`sessionDecisionsBaseline`,
+the `context_seen_at` captured when the drawer opened), it starts with
+**Changed since you last looked**: one line per row, `+` added, `−` removed
+(`Replaced by 7` or `Withdrawn`), a pencil for reworded, and a click scrolls to
+the row and highlights it. Then **Active**, with its count: active decisions
+newest first, each with its number, at most two lines of
 text, and who settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
-`replaces 5`). A row added or replaced since the previous look carries `New`
-until the next open (`sessionDecisionsBaseline`, the `context_seen_at` before
-this one). A row the summarizer reworded says `Reworded by Goodboy` with
+`replaces 5`). An added row also carries `New` until the next open. A row the summarizer reworded says `Reworded by Goodboy` with
 **Show previous**. On hover a row offers edit (a reword of yours) and
 Withdraw, with no confirm because the bottom group, **Replaced and withdrawn**,
 offers Restore; its rows are struck through, point at the decision that

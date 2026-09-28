@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Button, Markdown, Skeleton, Textarea } from '@goodboy/ui';
+import { Button, Skeleton, Textarea } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { ContextBlock } from './ContextBlock';
+import { KeyLineList } from './KeyLineList';
+import { summaryItems } from './summaryItems';
 import { GoalAttachmentsStrip } from '../../../context/components/ContextPanel/strips/GoalAttachmentsStrip';
 
 type Props = {
@@ -105,18 +109,30 @@ export const GoalTab = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <Markdown text={value} className="text-prose text-foreground" />
+      <ContextBlock
+        title="Goal"
+        icon={CONCEPT_ICONS.goal}
+        action={
+          <div className="flex items-center gap-1">
+            {historyCount > 0 ? (
+              <Button variant="ghost" size="sm" onClick={onOpenVersions}>
+                {`Versions ${historyCount}`}
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isLocked}
+              onClick={() => setIsEditing(true)}
+            >
+              Edit
+            </Button>
+          </div>
+        }
+      >
+        <KeyLineList items={summaryItems({ body: value })} label="Goal" />
+      </ContextBlock>
       <GoalAttachmentsStrip owner={{ type: 'session', id: sessionId }} />
-      <div className="flex items-center gap-1.5">
-        <Button variant="ghost" size="sm" disabled={isLocked} onClick={() => setIsEditing(true)}>
-          Edit
-        </Button>
-        {historyCount > 0 ? (
-          <Button variant="ghost" size="sm" onClick={onOpenVersions}>
-            {`Versions ${historyCount}`}
-          </Button>
-        ) : null}
-      </div>
       {isLocked ? (
         <p className="text-secondary text-faint-foreground">
           Editing opens when the update finishes.

@@ -99,17 +99,19 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
           title={<AgentTitle agent={agent} sessionId={session.id} />}
           meta={
             <>
+              <AgentKindChip kind={kind} />
               <AgentStatusBadge status={status} />
               {time == null ? null : <AgentHeaderTime time={time} />}
-              <AgentKindChip kind={kind} />
-              <RoutingLabel
-                provider={executed?.provider ?? providerOverride}
-                model={executed?.model ?? modelOverride}
-                effort={observedEffort ?? effortOverride}
-                planned={planned}
-                isEffortObserved={observedEffort != null}
-              />
             </>
+          }
+          subtitle={
+            <RoutingLabel
+              provider={executed?.provider ?? providerOverride}
+              model={executed?.model ?? modelOverride}
+              effort={observedEffort ?? effortOverride}
+              planned={planned}
+              isEffortObserved={observedEffort != null}
+            />
           }
           actions={
             <AgentHeaderActions

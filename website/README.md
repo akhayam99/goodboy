@@ -23,13 +23,18 @@ The questions in `website/src/sections/Faq.tsx` are mirrored by hand into the
 commit: nothing checks that they agree, and search engines read the JSON-LD,
 not the section.
 
-## Reveal classes
+## Figures
 
-`useRevealAll` in `website/src/components/Reveal.tsx` adds the `in` class to
-every `.rv` element straight on the DOM once it scrolls into view. React owns
-the `className` of any element it renders with a state class, so a re-render
-drops `in` and the element stays at `opacity: 0`. Keep state classes on an
-inner node, never on the element that carries `rv`.
+Product figures are real app screenshots from the brand mock scenes (see
+[docs/mock-screenshots.md](../docs/mock-screenshots.md)), in
+`website/public/img/`: `<id>.webp` for desktop and `<id>-m.webp`, a crop of one
+element, for screens under 860px. `website/src/figures.ts` holds each figure's
+size, alt text, numbered dots and captions. A dot sits 8px beside the text its
+caption names, never over it, with at most three per figure; a caption marked
+`isMobile: false` hides with its dot on the mobile crop. `Shot` in
+`website/src/components/Shot.tsx` renders the window frame and brings the dots
+in once the figure scrolls into view. When a screenshot is recaptured, its dot
+positions in `figures.ts` move with it.
 
 ## Verify with the page
 
@@ -44,10 +49,13 @@ Check the rendered page, not the diff:
 ## One invented world
 
 Every name, number and time on the page belongs to one invented world, and
-every figure agrees with every other. The canon: workspace `acme`; projects
-`api`, `web`, `mobile`, `billing`, `auth`, `search`, `docs` and `infra`; the
-main session "Ship LIN-241, bulk archive for notifications" touching `api` and
-`web` on branch `gb/lin-241-bulk-archive`, with pull requests `api` #1045 and
-`web` #3050; a reviewer called `sam`. Nothing on the page names a real person,
-customer or repository. When the canon changes, it changes everywhere in one
-pass.
+every figure agrees with every other. The canon lives in
+`apps/desktop/src/app/components/MockScene/scenes/brand/canon.ts`: workspace
+Harborline with `payments-api`, `notify-relay` and `ledger-core`; the task
+HBL-412 "Stop retried webhooks posting a second credit" on branch
+`hl/fix-duplicate-credit`, with pull requests `payments-api` #318 and
+`notify-relay` #57, while `ledger-core` is only read; $3.47 spent so far; the
+people Dana R., Kenji W., Marta L. and Omar T. A repo the story only reads has
+no branch or pull request in any figure, and any number in the copy matches the
+figure next to it. Nothing on the page names a real person, customer or
+repository. When the canon changes, it changes everywhere in one pass.

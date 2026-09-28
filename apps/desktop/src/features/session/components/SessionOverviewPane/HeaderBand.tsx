@@ -16,10 +16,11 @@ import { ArchivedRestore } from './ArchivedRestore';
 
 type Props = {
   readonly session: Session;
+  readonly isSettingUp?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
-export const HeaderBand = ({ session, onSelectLens }: Props) => {
+export const HeaderBand = ({ session, isSettingUp = false, onSelectLens }: Props) => {
   const isArchived = session.archivedAt != null;
   const sessionId = session.id as SessionId;
   const rename = useSessionTitleRename({ sessionId, currentTitle: session.goal });
@@ -58,26 +59,20 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
               </div>
             </div>
           ) : (
-            <Tooltip content="Click to rename">
-              <h1
-                role="button"
-                tabIndex={0}
-                onClick={rename.start}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') {
-                    return;
-                  }
-                  event.preventDefault();
-                  rename.start();
-                }}
-                title={inlineMarkdownText({ text: titleText })}
-                className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-title text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-              >
-                <span key={titleText} className="motion-safe:animate-fade-in">
-                  <InlineMarkdown text={titleText} />
-                </span>
-              </h1>
-            </Tooltip>
+            <h1 className="flex min-w-0 flex-1 text-title text-foreground">
+              <Tooltip content="Click to rename">
+                <button
+                  type="button"
+                  onClick={rename.start}
+                  title={inlineMarkdownText({ text: titleText })}
+                  className="line-clamp-2 min-w-0 flex-1 cursor-text rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                >
+                  <span key={titleText} className="motion-safe:animate-fade-in">
+                    <InlineMarkdown text={titleText} />
+                  </span>
+                </button>
+              </Tooltip>
+            </h1>
           )}
           {isNamedByGoodboy && !rename.editing ? (
             <span className="shrink-0 text-secondary text-faint-foreground">Named by Goodboy</span>
@@ -86,7 +81,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
             <SessionDestructiveActions session={session} />
           </div>
         </div>
-        <GoalTeaser session={session} />
+        {isSettingUp ? null : <GoalTeaser session={session} />}
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">
             {isArchived ? <ArchivedRestore session={session} /> : null}
@@ -100,7 +95,11 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
           </div>
         </div>
       </div>
-      <ProjectMountRows session={session} onSelectLens={onSelectLens} />
+      <ProjectMountRows
+        session={session}
+        isHiddenWhenEmpty={isSettingUp}
+        onSelectLens={onSelectLens}
+      />
     </div>
   );
 };

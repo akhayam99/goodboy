@@ -370,32 +370,36 @@ exports[`snapshot, error states > App init error, BootSplash with error message 
     </div>
   </div>
   <div
-    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label border-danger/40"
-    role="alert"
+    class="flex flex-col items-center gap-3"
   >
     <div
-      class="flex flex-col gap-1"
+      class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label border-danger/40"
+      role="alert"
     >
-      <span
-        class="font-medium text-danger"
+      <div
+        class="flex flex-col gap-1"
       >
-        Init failed
-      </span>
-      <p
-        class="leading-relaxed text-muted-foreground"
+        <span
+          class="font-medium text-danger"
+        >
+          Init failed
+        </span>
+        <p
+          class="leading-relaxed text-muted-foreground"
+        >
+          database migration failed
+        </p>
+      </div>
+      <div
+        class="flex items-center gap-2"
       >
-        database migration failed
-      </p>
-    </div>
-    <div
-      class="flex items-center gap-2"
-    >
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-label"
-        type="button"
-      >
-        Report on GitHub
-      </button>
+        <button
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-label"
+          type="button"
+        >
+          Report this
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -429,32 +433,36 @@ exports[`snapshot, error states > BootSplash: boot-error phase 1`] = `
     </div>
   </div>
   <div
-    class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label border-danger/40"
-    role="alert"
+    class="flex flex-col items-center gap-3"
   >
     <div
-      class="flex flex-col gap-1"
+      class="flex w-72 flex-col gap-3 rounded-r-md border-l-2 p-4 text-label border-danger/40"
+      role="alert"
     >
-      <span
-        class="font-medium text-danger"
+      <div
+        class="flex flex-col gap-1"
       >
-        Init failed
-      </span>
-      <p
-        class="leading-relaxed text-muted-foreground"
+        <span
+          class="font-medium text-danger"
+        >
+          Init failed
+        </span>
+        <p
+          class="leading-relaxed text-muted-foreground"
+        >
+          detecting-cli failed
+        </p>
+      </div>
+      <div
+        class="flex items-center gap-2"
       >
-        detecting-cli failed
-      </p>
-    </div>
-    <div
-      class="flex items-center gap-2"
-    >
-      <button
-        class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-label"
-        type="button"
-      >
-        Report on GitHub
-      </button>
+        <button
+          class="inline-flex items-center justify-center whitespace-nowrap gap-1.5 rounded-md border-transparent font-medium motion-safe:transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring border-0 text-foreground hover:bg-hover h-7 px-2.5 text-label"
+          type="button"
+        >
+          Report this
+        </button>
+      </div>
     </div>
   </div>
 </div>

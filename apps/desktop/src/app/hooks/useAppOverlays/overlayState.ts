@@ -6,7 +6,6 @@ export const isAppScopeOverlay = ({ overlay }: { readonly overlay: StudioPlace }
   switch (overlay.kind) {
     case 'settings':
     case 'guide':
-    case 'report':
     case 'companion':
       return true;
     case 'addWorkspace':
@@ -81,7 +80,6 @@ export const footerTarget = ({ overlay, connected }: FooterTargetParams): Footer
     case 'changelog':
       return 'changelog';
     case 'guide':
-    case 'report':
     case 'companion':
     case 'addWorkspace':
     case 'notifications':

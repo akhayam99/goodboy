@@ -1,103 +1,76 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { Divider, SelectableRow } from '@goodboy/ui';
-import {
-  BookOpen,
-  GitBranch,
-  LayoutDashboard,
-  Lightbulb,
-  MessagesSquare,
-  Palette,
-  Wrench,
-} from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+import { ScrollFade, StudioRailLayout } from '@goodboy/ui';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
-import { DogMascot } from '../../../../shared/components/DogMascot';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { GUIDE_CHAPTERS } from './guideChapters';
 import { GuideContent } from './parts/GuideContent';
+import { GuideRail } from './parts/GuideRail';
+import { searchChapters } from './searchChapters';
+import { useOpenGuideTarget } from './useOpenGuideTarget';
 
 type Props = {
   readonly onClose: () => void;
 };
 
-type Section =
-  'overview' | 'board' | 'session' | 'turn' | 'tools' | 'tokens' | 'agents' | 'tips' | 'legenda';
-
-type NavItem = {
-  readonly id: Section;
-  readonly label: string;
-  readonly icon: ReactNode;
-};
-
-const NAV_ITEMS: ReadonlyArray<NavItem> = [
-  { id: 'overview', label: 'Overview', icon: <BookOpen size={ICON_SIZE.row} aria-hidden /> },
-  { id: 'board', label: 'Stage board', icon: <LayoutDashboard size={ICON_SIZE.row} aria-hidden /> },
-  { id: 'session', label: 'Sessions', icon: <GitBranch size={ICON_SIZE.row} aria-hidden /> },
-  { id: 'turn', label: 'Turns', icon: <MessagesSquare size={ICON_SIZE.row} aria-hidden /> },
-  { id: 'tools', label: 'Tools', icon: <Wrench size={ICON_SIZE.row} aria-hidden /> },
-  {
-    id: 'tokens',
-    label: 'Tokens & cost',
-    icon: <CONCEPT_ICONS.budget size={ICON_SIZE.row} aria-hidden />,
-  },
-  { id: 'agents', label: 'Agents', icon: <DogMascot size={ICON_SIZE.row} /> },
-  { id: 'tips', label: 'Tips', icon: <Lightbulb size={ICON_SIZE.row} aria-hidden /> },
-  { id: 'legenda', label: 'Legend', icon: <Palette size={ICON_SIZE.row} aria-hidden /> },
-];
-
 export const GuideStudio = ({ onClose }: Props) => {
-  const scrollToRef = useRef<(id: Section) => void>(() => {});
+  const scrollToRef = useRef<(id: string) => void>(() => {});
   const suppressUntilRef = useRef(0);
-  const [active, setActive] = useState<Section>('overview');
+  const [query, setQuery] = useState('');
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const openTarget = useOpenGuideTarget();
+  const chapters = searchChapters({ chapters: GUIDE_CHAPTERS, query });
+  const shownActiveId =
+    chapters.find((chapter) => chapter.id === activeId)?.id ?? chapters[0]?.id ?? null;
 
-  const jump = (id: Section) => {
+  const jump = (id: string) => {
     suppressUntilRef.current = Date.now() + 700;
-    setActive(id);
+    setActiveId(id);
     scrollToRef.current(id);
   };
 
-  const onVisible = (id: Section) => {
+  const onVisible = useCallback((id: string) => {
     if (Date.now() >= suppressUntilRef.current) {
-      setActive(id);
+      setActiveId(id);
     }
-  };
+  }, []);
+
+  const registerScrollTo = useCallback((fn: (id: string) => void) => {
+    scrollToRef.current = fn;
+  }, []);
 
   return (
     <StudioShell
-      icon={BookOpen}
-      title="Getting started"
-      subtitle="How Goodboy fits together"
-      closeLabel="close getting started"
+      icon={CONCEPT_ICONS.guide}
+      tone={CONCEPT_TONE.guide}
+      title="Guide"
+      subtitle="How Goodboy works, chapter by chapter"
+      closeLabel="close guide"
       onClose={onClose}
     >
       {() => (
-        <div className="flex min-h-0 flex-1">
-          <nav
-            aria-label="Guide sections"
-            className="flex w-52 shrink-0 flex-col gap-1 bg-subtle p-3"
-          >
-            {NAV_ITEMS.map((item) => (
-              <SelectableRow
-                key={item.id}
-                selected={active === item.id}
-                onClick={() => jump(item.id)}
-                ariaCurrent={active === item.id ? 'true' : undefined}
-                className="items-center gap-2 py-2 pl-3 pr-2 text-body"
-              >
-                {item.icon}
-                <span>{item.label}</span>
-              </SelectableRow>
-            ))}
-          </nav>
-          <Divider orientation="vertical" />
-          <div className="min-h-0 flex-1">
+        <StudioRailLayout
+          railLabel="Guide chapters"
+          railWidth="standard"
+          rail={
+            <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
+              <GuideRail
+                chapters={chapters}
+                activeId={shownActiveId}
+                query={query}
+                onQueryChange={setQuery}
+                onSelect={jump}
+              />
+            </ScrollFade>
+          }
+          detail={
             <GuideContent
-              onJump={jump}
+              chapters={chapters}
+              onOpen={openTarget}
               onVisible={onVisible}
-              registerScrollTo={(fn) => {
-                scrollToRef.current = fn;
-              }}
+              registerScrollTo={registerScrollTo}
             />
-          </div>
-        </div>
+          }
+        />
       )}
     </StudioShell>
   );

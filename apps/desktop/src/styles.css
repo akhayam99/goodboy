@@ -301,6 +301,15 @@
   --z-index-lightbox: 90;
 }
 
+.goodboy-brand-chip {
+  background-color: oklch(0.205 0.006 255);
+  --color-foreground: oklch(0.93 0.006 90);
+  --color-faint-foreground: oklch(0.68 0.012 255);
+  --color-muted: oklch(0.25 0.009 255);
+  --color-overlay-hover: oklch(1 0 0 / 0.05);
+  --color-overlay-selected: oklch(1 0 0 / 0.09);
+}
+
 /* fade-in keyframes defined only when the user hasn't asked to reduce motion,
    so reduced-motion users get no fade/rise — the animation resolves to a no-op
    (unknown animation name) instead of a movement neutralized after the fact. */
@@ -414,10 +423,10 @@
   }
 }
 
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: var(--motion-normal);
-  animation-timing-function: var(--ease-default);
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+  transition: none !important;
 }
 
 /* Light palette, applied when html[data-theme="light"].

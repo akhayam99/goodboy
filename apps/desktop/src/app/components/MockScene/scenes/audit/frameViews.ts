@@ -55,7 +55,7 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
       fire({ name: 'goodboy:open-guide' });
       return;
     case 'report':
-      fire({ name: 'goodboy:open-report-issue' });
+      fire({ name: 'goodboy:open-report-sheet' });
       return;
     case 'add-workspace':
       openers.openAddWorkspace();

@@ -26,10 +26,10 @@ import type {
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
 import { useAppStore, useSessions } from '../../../../store';
 
-export const WORKSPACE_ID = 'mock-board-workspace-cascade' as WorkspaceId;
-const CORE_ID = 'mock-board-project-core-api' as ProjectId;
-const CONSOLE_ID = 'mock-board-project-web-console' as ProjectId;
-const LONG_ID = 'mock-board-project-reporting-warehouse' as ProjectId;
+export const WORKSPACE_ID = 'mock-board-workspace-harborline' as WorkspaceId;
+const CORE_ID = 'mock-board-project-payments-api' as ProjectId;
+const CONSOLE_ID = 'mock-board-project-notify-relay' as ProjectId;
+const LONG_ID = 'mock-board-project-ledger-core' as ProjectId;
 const WORKFLOW_ID = 'mock-board-workflow-checkout-retry' as WorkflowId;
 const WORKFLOW_RUN_ID = 'mock-board-workflow-run-checkout-retry' as WorkflowRunId;
 const RUNNING_PROVIDER_RUN_ID = 'mock-board-provider-run-checkout-retry' as ProviderRunId;
@@ -64,7 +64,7 @@ const OVERRIDES = {
 
 const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
-  name: 'Cascade',
+  name: 'Harborline',
   slug: 'cascade',
   overrides: OVERRIDES,
   createdAt: isoAgo(30 * DAY),
@@ -75,8 +75,8 @@ const PROJECTS: ReadonlyArray<Project> = [
   {
     id: CORE_ID,
     workspaceId: WORKSPACE_ID,
-    name: 'core-api',
-    rootPath: '/mock/cascade/core-api',
+    name: 'payments-api',
+    rootPath: '~/code/harborline/payments-api',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: isoAgo(30 * DAY),
@@ -85,8 +85,8 @@ const PROJECTS: ReadonlyArray<Project> = [
   {
     id: CONSOLE_ID,
     workspaceId: WORKSPACE_ID,
-    name: 'web-console',
-    rootPath: '/mock/cascade/web-console',
+    name: 'notify-relay',
+    rootPath: '~/code/harborline/notify-relay',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: isoAgo(30 * DAY),
@@ -95,8 +95,8 @@ const PROJECTS: ReadonlyArray<Project> = [
   {
     id: LONG_ID,
     workspaceId: WORKSPACE_ID,
-    name: 'reporting-analytics-data-warehouse-pipeline',
-    rootPath: '/mock/cascade/reporting-analytics-data-warehouse-pipeline',
+    name: 'ledger-core',
+    rootPath: '~/code/harborline/ledger-core',
     kind: 'repo',
     overrides: OVERRIDES,
     createdAt: isoAgo(30 * DAY),
@@ -157,21 +157,21 @@ const mount = (params: {
 
 const CORE_MOUNT = mount({
   projectId: CORE_ID,
-  mountName: 'core-api',
-  branch: 'fix/api-gateway-rate-limits',
-  repoRoot: '/mock/cascade/core-api',
+  mountName: 'payments-api',
+  branch: 'hl/fix-duplicate-credit',
+  repoRoot: '~/code/harborline/payments-api',
 });
 const CONSOLE_MOUNT = mount({
   projectId: CONSOLE_ID,
-  mountName: 'web-console',
-  branch: 'feat/checkout-retry-dedupe',
-  repoRoot: '/mock/cascade/web-console',
+  mountName: 'notify-relay',
+  branch: 'hl/payout-hold-warning',
+  repoRoot: '~/code/harborline/notify-relay',
 });
 const LONG_MOUNT = mount({
   projectId: LONG_ID,
-  mountName: 'reporting-analytics-data-warehouse-pipeline',
-  branch: 'fix/settlement-export-rounding-drift',
-  repoRoot: '/mock/cascade/reporting-analytics-data-warehouse-pipeline',
+  mountName: 'ledger-core',
+  branch: 'hl/reconcile-settlement-export',
+  repoRoot: '~/code/harborline/ledger-core',
 });
 
 type PrParams = {
@@ -193,7 +193,7 @@ const pullRequest = ({
 }: PrParams): PullRequestState => ({
   number,
   title,
-  url: `https://example.invalid/cascade/pull/${number}`,
+  url: `https://example.invalid/harborline/pull/${number}`,
   state,
   mergeable: state === 'open' ? true : null,
   checks,
@@ -238,7 +238,7 @@ const SESSIONS: ReadonlyArray<Session> = [
   {
     id: BUILDING_RATE_LIMIT,
     workspaceId: WORKSPACE_ID,
-    goal: 'Add per-tenant rate limiting to the public API gateway',
+    goal: 'Per-tenant limits on the public API',
     state: { kind: 'idle', lastActivityAt: isoAgo(2 * HOUR) },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -253,7 +253,7 @@ const SESSIONS: ReadonlyArray<Session> = [
   {
     id: BUILDING_ONBOARDING,
     workspaceId: WORKSPACE_ID,
-    goal: 'Draft the first-run onboarding checklist copy',
+    goal: 'Draft the payout delay notice for the help center',
     state: { kind: 'idle', lastActivityAt: isoAgo(40 * MINUTE) },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -268,7 +268,7 @@ const SESSIONS: ReadonlyArray<Session> = [
   {
     id: RUNNING_CHECKOUT_RETRY,
     workspaceId: WORKSPACE_ID,
-    goal: 'Rewrite the checkout retry queue to dedupe webhook events',
+    goal: 'Nightly reconciliation before the Monday close',
     state: { kind: 'running', runId: RUNNING_PROVIDER_RUN_ID, startedAt: isoAgo(25 * MINUTE) },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -282,7 +282,7 @@ const SESSIONS: ReadonlyArray<Session> = [
         autoRun: true,
         triggerMode: 'immediate',
         executionMode: 'dynamic',
-        goal: 'Rewrite the checkout retry queue to dedupe webhook events',
+        goal: 'Nightly reconciliation before the Monday close',
         createdAt: isoAgo(30 * MINUTE),
       },
     ],
@@ -295,7 +295,7 @@ const SESSIONS: ReadonlyArray<Session> = [
   {
     id: ATTENTION_BACKOFF,
     workspaceId: WORKSPACE_ID,
-    goal: 'Pick the retry backoff strategy for the notify relay',
+    goal: 'Warn merchants before a payout hold',
     state: { kind: 'idle', lastActivityAt: isoAgo(5 * HOUR) },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -310,12 +310,8 @@ const SESSIONS: ReadonlyArray<Session> = [
   {
     id: ATTENTION_ERROR,
     workspaceId: WORKSPACE_ID,
-    goal: 'Fix the rounding bug in the multi-currency settlement export',
-    state: {
-      kind: 'error',
-      message: 'Agent hit an unrecoverable git conflict',
-      failedAt: isoAgo(HOUR),
-    },
+    goal: 'Fix the rounding drift in the settlement export',
+    state: { kind: 'idle', lastActivityAt: isoAgo(HOUR) },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
     permissionMode: 'default',
@@ -329,7 +325,7 @@ const SESSIONS: ReadonlyArray<Session> = [
   {
     id: REVIEW_PAGINATION,
     workspaceId: WORKSPACE_ID,
-    goal: 'Add pagination to the admin sessions table',
+    goal: 'Stop retried webhooks posting a second credit',
     state: { kind: 'idle', lastActivityAt: isoAgo(6 * HOUR) },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -344,7 +340,7 @@ const SESSIONS: ReadonlyArray<Session> = [
   {
     id: REVIEW_RECONCILIATION,
     workspaceId: WORKSPACE_ID,
-    goal: "Reconcile the nightly settlement export against the ledger snapshot before the finance team's Monday close and stop the rounding drift from compounding",
+    goal: 'Reconcile the settlement export against the ledger snapshot',
     state: { kind: 'idle', lastActivityAt: isoAgo(2 * DAY) },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -388,11 +384,35 @@ const SESSIONS: ReadonlyArray<Session> = [
   },
 ];
 
+const BUILDING_SECRET = 'mock-board-session-signing-secret' as SessionId;
+const RUNNING_EXPORT = 'mock-board-session-payout-export' as SessionId;
+const RUNNING_EXPORT_RUN_ID = 'mock-board-run-payout-export' as ProviderRunId;
+
+const BRAND_EXTRA_SESSIONS: ReadonlyArray<Session> = [
+  {
+    ...SESSIONS[0]!,
+    id: BUILDING_SECRET,
+    goal: 'Rotate the processor signing secret',
+    state: { kind: 'idle', lastActivityAt: isoAgo(90 * MINUTE) },
+    createdAt: isoAgo(2 * HOUR),
+    updatedAt: isoAgo(90 * MINUTE),
+  },
+  {
+    ...SESSIONS[0]!,
+    id: RUNNING_EXPORT,
+    goal: 'Speed up the payout export for large merchants',
+    state: { kind: 'running', runId: RUNNING_EXPORT_RUN_ID, startedAt: isoAgo(12 * MINUTE) },
+    activeProjectId: LONG_ID,
+    createdAt: isoAgo(50 * MINUTE),
+    updatedAt: isoAgo(12 * MINUTE),
+  },
+];
+
 const ARCHIVED_SESSIONS: ReadonlyArray<Session> = [
   {
     id: ARCHIVED_MACROS,
     workspaceId: WORKSPACE_ID,
-    goal: 'Update support macro templates for the refund flow',
+    goal: 'Update the refund macros for support',
     state: { kind: 'ended', endedAt: isoAgo(5 * DAY) },
     contextSlots: [],
     providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -434,7 +454,7 @@ const telemetry = (params: {
   sessionId: params.sessionId,
   kind: 'turn',
   provider: 'anthropic',
-  model: 'claude-sonnet-4-5',
+  model: 'claude-sonnet-5',
   inputTokens: 4_200,
   outputTokens: 960,
   estimatedCostUsd: params.costUsd,
@@ -464,9 +484,9 @@ const agent = (params: {
 const OPEN_QUESTION: OpenQuestion = {
   id: 'mock-board-question-relay-backoff' as OpenQuestionId,
   sessionId: ATTENTION_BACKOFF,
-  text: 'Should the relay retry with a fixed delay or exponential backoff?',
-  suggestedAnswers: ['Fixed delay', 'Exponential backoff'],
-  recommendedAnswer: 'Exponential backoff',
+  text: 'Should the warning go out by email, in the dashboard, or both?',
+  suggestedAnswers: ['Email', 'Dashboard', 'Both'],
+  recommendedAnswer: 'Both',
   isBlocking: false,
   userAnswer: null,
   status: 'open',
@@ -495,7 +515,7 @@ const EXTERNAL_TASKS: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTa
     externalTask({
       sessionId: BUILDING_RATE_LIMIT,
       provider: 'linear',
-      identifier: 'CAS-212',
+      identifier: 'HBL-377',
       title: 'Per-tenant limits on the public API',
     }),
   ],
@@ -503,21 +523,21 @@ const EXTERNAL_TASKS: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTa
     externalTask({
       sessionId: RUNNING_CHECKOUT_RETRY,
       provider: 'sentry',
-      identifier: 'CORE-API-7K1',
-      title: 'DuplicateChargeError in retryCheckout',
+      identifier: 'LEDGER-CORE-2C4',
+      title: 'LedgerSnapshotMismatch in nightly_reconcile',
     }),
     externalTask({
       sessionId: RUNNING_CHECKOUT_RETRY,
       provider: 'linear',
-      identifier: 'CAS-198',
-      title: 'Checkout retries charge twice',
+      identifier: 'HBL-405',
+      title: 'Monday close needs a clean reconciliation',
     }),
   ],
   [ATTENTION_ERROR]: [
     externalTask({
       sessionId: ATTENTION_ERROR,
       provider: 'jira',
-      identifier: 'FIN-88',
+      identifier: 'HBL-398',
       title: 'Settlement export off by a few cents',
     }),
   ],
@@ -525,22 +545,22 @@ const EXTERNAL_TASKS: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTa
     externalTask({
       sessionId: REVIEW_RECONCILIATION,
       provider: 'jira',
-      identifier: 'FIN-91',
-      title: 'Nightly reconciliation before the Monday close',
+      identifier: 'HBL-391',
+      title: 'Settlement export disagrees with the ledger snapshot',
     }),
     externalTask({
       sessionId: REVIEW_RECONCILIATION,
       provider: 'sentry',
-      identifier: 'WAREHOUSE-2C4',
-      title: 'LedgerSnapshotMismatch',
+      identifier: 'LEDGER-CORE-1F9',
+      title: 'ExportTotalMismatch in build_export',
     }),
   ],
   [REVIEW_PAGINATION]: [
     externalTask({
       sessionId: REVIEW_PAGINATION,
-      provider: 'github',
-      identifier: '#187',
-      title: 'The admin sessions table loads every row at once',
+      provider: 'linear',
+      identifier: 'HBL-412',
+      title: 'Retried webhooks post a second credit',
     }),
   ],
 };
@@ -551,17 +571,19 @@ export const seedBoardScene = (): void => {
     currentWorkspaceId: WORKSPACE_ID,
     currentSessionId: null,
     projects: PROJECTS,
-    sessions: SESSIONS,
+    sessions: [...SESSIONS, ...BRAND_EXTRA_SESSIONS],
     archivedSessions: { [WORKSPACE_ID]: ARCHIVED_SESSIONS },
     boardReady: true,
     projectGitStatus: GIT_STATUSES,
     sessionProjectMounts: {
       [BUILDING_RATE_LIMIT]: [CORE_MOUNT],
+      [BUILDING_SECRET]: [CORE_MOUNT],
+      [RUNNING_EXPORT]: [LONG_MOUNT],
       [BUILDING_ONBOARDING]: [CONSOLE_MOUNT],
-      [RUNNING_CHECKOUT_RETRY]: [CORE_MOUNT, CONSOLE_MOUNT],
+      [RUNNING_CHECKOUT_RETRY]: [LONG_MOUNT],
       [ATTENTION_BACKOFF]: [CONSOLE_MOUNT],
       [ATTENTION_ERROR]: [LONG_MOUNT],
-      [REVIEW_PAGINATION]: [CONSOLE_MOUNT],
+      [REVIEW_PAGINATION]: [CORE_MOUNT, LONG_MOUNT],
       [REVIEW_RECONCILIATION]: [LONG_MOUNT],
       [DONE_LOCKFILE]: [CORE_MOUNT],
       [DONE_CRON]: [CONSOLE_MOUNT],
@@ -570,22 +592,24 @@ export const seedBoardScene = (): void => {
     },
     sessionGithub: {
       [BUILDING_RATE_LIMIT]: githubEntry(null),
+      [BUILDING_SECRET]: githubEntry(null),
+      [RUNNING_EXPORT]: githubEntry(null),
       [BUILDING_ONBOARDING]: githubEntry(null),
       [RUNNING_CHECKOUT_RETRY]: githubEntry(null),
       [ATTENTION_BACKOFF]: githubEntry(null),
       [ATTENTION_ERROR]: githubEntry(null),
       [REVIEW_PAGINATION]: githubEntry(
         pullRequest({
-          number: 231,
-          title: 'Add pagination to the admin sessions table',
-          headBranch: 'feat/admin-sessions-pagination',
+          number: 318,
+          title: 'Stop retried webhooks posting a second credit',
+          headBranch: 'hl/fix-duplicate-credit',
           state: 'open',
           checks: 'success',
         }),
       ),
       [REVIEW_RECONCILIATION]: githubEntry(
         pullRequest({
-          number: 244,
+          number: 90,
           title: 'Reconcile the settlement export against the ledger snapshot',
           headBranch: LONG_MOUNT.branch,
           state: 'open',
@@ -610,14 +634,38 @@ export const seedBoardScene = (): void => {
         }),
       ),
     },
-    sessionOpenQuestions: { [ATTENTION_BACKOFF]: [OPEN_QUESTION] },
+    sessionOpenQuestions: {
+      [ATTENTION_BACKOFF]: [OPEN_QUESTION],
+      [ATTENTION_ERROR]: [
+        {
+          ...OPEN_QUESTION,
+          id: 'mock-board-question-export-rounding' as OpenQuestionId,
+          sessionId: ATTENTION_ERROR,
+          text: 'Should the export round each line or only the total?',
+          suggestedAnswers: ['Each line', 'Only the total'],
+          recommendedAnswer: 'Only the total',
+          createdAt: isoAgo(HOUR),
+        },
+      ],
+    },
     sessionPhaseRuns: {
+      [RUNNING_EXPORT]: [
+        agent({
+          id: 'mock-board-agent-export-implementer' as AgentId,
+          sessionId: RUNNING_EXPORT,
+          ordinal: 0,
+          name: 'Stream the export instead of building it in memory',
+          kind: 'implementer',
+          status: 'running',
+          runId: RUNNING_EXPORT_RUN_ID,
+        }),
+      ],
       [RUNNING_CHECKOUT_RETRY]: [
         agent({
           id: 'mock-board-agent-retry-scout' as AgentId,
           sessionId: RUNNING_CHECKOUT_RETRY,
           ordinal: 0,
-          name: 'Trace the checkout retry path',
+          name: 'Diff the export against the snapshot',
           kind: 'scout',
           status: 'completed',
         }),
@@ -625,7 +673,7 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-agent-retry-implementer' as AgentId,
           sessionId: RUNNING_CHECKOUT_RETRY,
           ordinal: 1,
-          name: 'Dedupe webhook events in the retry queue',
+          name: 'Reconcile the rows that disagree',
           kind: 'implementer',
           status: 'running',
           runId: RUNNING_PROVIDER_RUN_ID,
@@ -636,13 +684,29 @@ export const seedBoardScene = (): void => {
           id: 'mock-board-agent-pagination-implementer' as AgentId,
           sessionId: REVIEW_PAGINATION,
           ordinal: 0,
-          name: 'Add pagination to the admin sessions table',
+          name: 'Dedupe on the event id in payments-api',
           kind: 'implementer',
           status: 'completed',
         }),
       ],
     },
     sessionTelemetry: {
+      [BUILDING_SECRET]: [
+        telemetry({
+          id: 'mock-board-telemetry-signing-secret',
+          sessionId: BUILDING_SECRET,
+          costUsd: 0.46,
+          recordedAt: isoAgo(90 * MINUTE),
+        }),
+      ],
+      [RUNNING_EXPORT]: [
+        telemetry({
+          id: 'mock-board-telemetry-payout-export',
+          sessionId: RUNNING_EXPORT,
+          costUsd: 0.88,
+          recordedAt: isoAgo(12 * MINUTE),
+        }),
+      ],
       [BUILDING_RATE_LIMIT]: [
         telemetry({
           id: 'mock-board-telemetry-rate-limit',
@@ -687,7 +751,7 @@ export const seedBoardScene = (): void => {
         telemetry({
           id: 'mock-board-telemetry-admin-pagination',
           sessionId: REVIEW_PAGINATION,
-          costUsd: 0.75,
+          costUsd: 3.47,
           recordedAt: isoAgo(6 * HOUR),
         }),
       ],

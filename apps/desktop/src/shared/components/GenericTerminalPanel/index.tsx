@@ -7,7 +7,7 @@ import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import '@xterm/xterm/css/xterm.css';
 import { RotateCcw } from 'lucide-react';
-import { useThemeStore } from '../../lib/theme';
+import { getAppliedTheme, subscribeAppliedTheme } from '../../lib/theme';
 import { openUrl } from '../../lib/editor';
 import { resolveTerminalTheme } from './terminal-theme';
 import { MAX_CACHE_CHUNKS, outputCache } from './outputCache';
@@ -45,8 +45,6 @@ export const GenericTerminalPanel = ({
   const termRef = useRef<Terminal | null>(null);
   const fitAndSyncRef = useRef<(() => void) | null>(null);
 
-  const theme = useThemeStore((s) => s.theme);
-
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -59,7 +57,7 @@ export const GenericTerminalPanel = ({
       fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace",
       fontSize: 12,
       lineHeight: 1.4,
-      theme: resolveTerminalTheme(theme),
+      theme: resolveTerminalTheme(getAppliedTheme()),
       disableStdin: readOnly,
       allowProposedApi: true,
     });
@@ -172,13 +170,17 @@ export const GenericTerminalPanel = ({
     };
   }, [terminalId]);
 
-  useEffect(() => {
-    const term = termRef.current;
-    if (!term) {
-      return;
-    }
-    term.options.theme = resolveTerminalTheme(theme);
-  }, [theme]);
+  useEffect(
+    () =>
+      subscribeAppliedTheme(() => {
+        const term = termRef.current;
+        if (!term) {
+          return;
+        }
+        term.options.theme = resolveTerminalTheme(getAppliedTheme());
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (isActive) {

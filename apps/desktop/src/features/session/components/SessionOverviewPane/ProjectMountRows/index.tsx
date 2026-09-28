@@ -18,12 +18,13 @@ import {
 
 type Props = {
   readonly session: Session;
+  readonly isHiddenWhenEmpty?: boolean;
   readonly onSelectLens: (lens: LensKind) => void;
 };
 
 const NO_PROJECT_HINT = 'No project yet. Turns run in the session folder until you add one.';
 
-export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
+export const ProjectMountRows = ({ session, isHiddenWhenEmpty = false, onSelectLens }: Props) => {
   const groups = useMountRows({ sessionId: session.id });
   const loadSessionMounts = useAppStore((state) => state.loadSessionMounts);
   const loadPrSeries = useAppStore((state) => state.loadPrSeries);
@@ -59,6 +60,10 @@ export const ProjectMountRows = ({ session, onSelectLens }: Props) => {
       void saveSetting(PROJECTS_HINT_DISMISSED_KEY, 'true').catch(() => undefined);
     }
   }, [saveSetting, settings, worktreeCount]);
+
+  if (isHiddenWhenEmpty && groups.length === 0) {
+    return null;
+  }
 
   return (
     <section aria-label="Projects" className="flex min-w-0 flex-col gap-2">

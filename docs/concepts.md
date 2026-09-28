@@ -265,8 +265,8 @@ whether you clicked it on the board or in the session overview.
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
   in the session overview, above Activity, outside its filter and its
   grouping: a suggestion is not activity, it is a pointer to what activity
-  should happen next. A new session shows the kickoff instead; the two never
-  compete for the same moment.
+  should happen next. A session with nothing started shows its setup steps
+  instead; the two never compete for the same moment.
 - Every suggestion carries a **band** (0 waits on you, 1 unblocks something,
   2 ships something, 3 improves something), a **why** (the second line, the
   concrete reason), a **fingerprint** (kind, object, trigger version) and a
@@ -572,7 +572,8 @@ is the **session record** on the **Overview**:
 
 - The goal, the decisions and the summary, in that order, in the **Context**
   drawer (the overview keeps one `Goal` line under the title when the goal
-  says more than the title). The summary reads as State, Next and Learned.
+  says more than the title). The summary reads as State, Next, Open questions and Learned, one
+  block each, key line first.
 - What the session produces, as sections of the same page: workflows, agents,
   review, questions, diff and plans
 
@@ -807,19 +808,12 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Picking an issue in the new session draft, or opening Launch session on an
-inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
-of one to three sentences and up to five "done when" criteria, in the issue's
-language. It reads the issue text, not its comments, and answers in checked
-JSON, so a reply with a preamble fails instead of leaking into the goal. The
-brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
-text or Dismiss, and a failure stays inline in the card with Retry. The first
-three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
-`SessionKickoff/`) underneath: Run a workflow (preselected, the workspace's
-first library preset) or Ask an agent, precompiled with that goal and
-editable. Its own action links the issue, creates the session and starts the
-workflow or agent in the same gesture; nothing exists before that. In the
-Launch session popover the brief fills the goal only while you have not edited it, and
+Opening Launch session on an inbox issue asks the **Issue briefs** task model
+for a brief: a title, a goal of one to three sentences and up to five "done
+when" criteria, in the issue's language. It reads the issue text, not its
+comments, and answers in checked JSON, so a reply with a preamble fails
+instead of leaking into the goal. The brief is only a proposal: in the Launch
+session popover it fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
 connected provider free for the task, the card shows the issue text alone.
@@ -866,16 +860,31 @@ and by source, one pick per section, with counts; only the types a connected
 tool can produce show. A tool that did not load says so in its source row and
 in one notice above the list. The state column uses the tool's own word, the
 same one the record shows. A record opens in a drawer beside the list, with the
-same header, facts and sections for every tool, and the source's own actions. From it you start a session, or open the session already linked
-to it.
+same header, facts and sections for every tool, and the source's own actions. From it you start a session, link it to an existing session of
+the workspace with Link to a session, or open the session already linked to it.
+A record shows its session whichever way the link was made: launched from the
+inbox, picked there, or linked from the session's own link button, by search or
+by pasted URL. The session link button searches the issues of every Sentry
+project linked to the workspace, not only the connected one.
+
+Pull and merge requests come from the code hosts. GitHub lists the open pull
+requests of the workspace root repo that ask for your review, plus your own
+open ones updated in the last seven days, through the same `gh` login as issues
+(`listInboxPullRequests`). GitLab lists open merge requests assigned to you, and
+Bitbucket the pull requests of the linked repo. Open ones show as open, merged
+and closed ones as closed.
 
 With two or more projects in the workspace, the rail also filters by project.
-Code host records belong to the project at the workspace root. A Sentry error
+Projects with no records hide behind a quiet "Show N empty" toggle at the end
+of the section; the selected project stays listed even at zero. Code host records belong to the project at the workspace root. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be
 suggested from Sentry code mappings and wait for your Link. The inbox reads the
-first page of every linked Sentry project besides the connected one. A record
+first page of every linked Sentry project besides the connected one, in one
+load that starts once the links are read. A Sentry call that hits a rate limit
+or a gateway error is retried up to twice, waiting what `Retry-After` asks for
+(at most 5 seconds), before the tool says it did not load. A record
 no project claims, such as a Linear or Jira issue, stays visible under every
 project filter. In Settings, Workspace, a project that reads Sentry shows the
 Sentry glyph, and its tooltip names the Sentry projects.
@@ -1011,7 +1020,14 @@ Other identifiers:
 - `ArtifactKind`: `plan`, `report`, `wireframe`
 - `ArtifactStatus`: `active`, `consumed`, `superseded`, `discarded`
 - Plans sit between `<<plan>>` and `<</plan>>` markers
-- Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope
+- Reports and wireframes sit inside an `<<artifact v=1 kind=...>>` envelope.
+  The line after the marker is a JSON header with title, format and metadata.
+  The content follows it as raw text up to `<</artifact>>`, so markdown is
+  never escaped into a JSON string. The parser still reads the older single
+  JSON object body, and repairs raw newlines, stray quotes and smart quotes in
+  it. It also reads a block wrapped in a plain or `json` code fence
+  (`packages/core/src/artifacts/envelopeBody.ts`,
+  `packages/core/src/artifacts/locateArtifactBlocks.ts`).
 - A review conversation is a `resolve_threads` row. A fix attempt is a
   `resolve_attempts` row.
 

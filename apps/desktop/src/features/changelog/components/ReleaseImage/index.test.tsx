@@ -9,8 +9,7 @@ const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke }));
 
 vi.mock('../../../../shared/lib/theme', () => ({
-  useThemeStore: (selector: (value: { readonly theme: 'dark' | 'light' }) => unknown) =>
-    selector({ theme: 'dark' }),
+  useAppliedTheme: () => 'dark',
 }));
 
 beforeEach(() => {

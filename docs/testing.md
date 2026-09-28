@@ -35,6 +35,13 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 - Seeds follow the mock vocabulary (Harborline, Northwind, ledger-core, payments-api), never real names.
 - happy-dom has no layout, so axe reports `color-contrast` as incomplete, never as a violation. Contrast belongs to the token contrast guard (`__tests__/regressions/token-contrast-floor.test.ts`); this suite covers structure only, in either theme.
 
+## Every page has a navigation flow row
+
+`apps/desktop/src/__tests__/surfaces/navigation-flows.test.tsx` mounts the whole `App` on the real store, with only the Tauri bridge mocked. Each row of its `ROWS` table clicks a real control (crumb menu, palette, footer, settings rail, mount row, back arrow) and checks that a heading or landmark of the destination renders. A row fails on React #185, "Maximum update depth", "getSnapshot should be cached", the error boundary, or a store action it lists in `covers` that the click never called.
+
+- A new page, studio, lens, settings section or navigation action adds one row in the same commit.
+- The ratchet at the bottom of the file greps the store navigation actions (`open*`, `navigate`, `back`, `forward`, `goToHistory`), the `useAppOverlays` openers, the studio kinds, the settings scopes and sections, and reads the live crumb menu and palette. Anything without a row fails the test. `EXEMPT` holds the few actions that open no page, each with its reason; an entry there that gains a row, or whose action is gone, fails too.
+
 ## Database tests start from a migrated template
 
 A `packages/db` test that needs a migrated schema calls `await makeMigratedTestDatabase()` (or `{ throughVersion: N }` to stop before the migration under test) from `test-helpers/test-db.ts`. The first call per version in a file runs the real migration chain once and keeps the serialized result; every call returns an independent in-memory clone with `foreign_keys` on. A migration test still runs the migration under test with a real `migrate(db)` on top of the clone. Tests whose subject is the runner itself (`runner*.test.ts`, `registry.test.ts`, segment checkpoints, crash resume, anything reading `MigrateResult` or passing a custom migration list) and file-backed databases keep `makeTestDatabase` plus `migrate`.

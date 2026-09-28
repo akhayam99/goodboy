@@ -55,14 +55,6 @@ vi.mock('../../../../features/settings/hooks/useHasBugReportDraft', () => ({
   useHasBugReportDraft: () => mocks.hasDraft,
 }));
 
-vi.mock('../../../../features/settings/components/ReportIssueForm', () => ({
-  ReportIssueForm: ({ onOpenFullForm }: { readonly onOpenFullForm: () => void }) => (
-    <button type="button" onClick={onOpenFullForm}>
-      Add details and send
-    </button>
-  ),
-}));
-
 vi.mock('../../../../features/updater/hooks/useRunningAgentCount', () => ({
   useRunningAgentCount: () => 0,
 }));
@@ -71,7 +63,9 @@ vi.mock('../../../../shared/lib/editor', () => ({
   openUrl: mocks.openUrl,
 }));
 
+import { applyDocumentTheme } from '../../../../shared/lib/theme';
 import { GoodboyChip, SPONSOR_URL } from './index';
+import { OPEN_REPORT_SHEET_EVENT } from '../../../../features/bug-report/openReportSheet';
 
 const REST_LABEL = 'Goodboy beta: version, help and sponsor';
 
@@ -89,6 +83,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  applyDocumentTheme({ theme: 'dark' });
 });
 
 const renderChip = () => {
@@ -110,6 +105,31 @@ describe('GoodboyChip', () => {
 
     const chip = screen.getByRole('button', { name: REST_LABEL });
     expect(chip.textContent).toBe('Goodboybeta');
+  });
+
+  it('leaves the rest mark bare in dark mode', () => {
+    mocks.progress.finished = true;
+    renderChip();
+
+    const chip = screen.getByRole('button', { name: REST_LABEL });
+    expect(chip.className).not.toContain('goodboy-brand-chip');
+  });
+
+  it('wraps the rest mark in a dark chip when the theme is light', () => {
+    mocks.progress.finished = true;
+    applyDocumentTheme({ theme: 'light' });
+    renderChip();
+
+    const chip = screen.getByRole('button', { name: REST_LABEL });
+    expect(chip.className).toContain('goodboy-brand-chip');
+  });
+
+  it('never puts the dark chip on the setup or update states', () => {
+    applyDocumentTheme({ theme: 'light' });
+    renderChip();
+
+    const chip = screen.getByRole('button', { name: 'Goodboy: setup is not finished' });
+    expect(chip.className).not.toContain('goodboy-brand-chip');
   });
 
   it('says setup and its progress while setup is open', () => {
@@ -170,21 +190,21 @@ describe('GoodboyChip', () => {
     expect(SPONSOR_URL).toBe('https://github.com/sponsors/akhayam99');
   });
 
-  it('swaps in the bug report form, says a draft is saved, and comes back', () => {
+  it('leads with report a bug, says a draft is saved, and hands off to the report sheet', () => {
     mocks.hasDraft = true;
+    const listener = vi.fn();
+    window.addEventListener(OPEN_REPORT_SHEET_EVENT, listener);
     renderChip();
 
     const menu = openMenu();
     expect(within(menu).getByText('Draft saved')).toBeDefined();
+    const rows = within(menu).getAllByRole('button');
+    expect(rows[0]?.textContent).toContain('Report a bug');
     fireEvent.click(within(menu).getByText('Report a bug'));
 
-    expect(screen.getByRole('button', { name: 'Add details and send' })).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(screen.getByText("What's new")).toBeDefined();
-
-    fireEvent.click(screen.getByText('Report a bug'));
-    fireEvent.click(screen.getByRole('button', { name: 'Add details and send' }));
+    expect(listener).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog', { name: 'Goodboy' })).toBeNull();
+    window.removeEventListener(OPEN_REPORT_SHEET_EVENT, listener);
   });
 
   it('opens itself once after the first agent finishes, then remembers it did', async () => {

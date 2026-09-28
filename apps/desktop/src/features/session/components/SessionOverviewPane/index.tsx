@@ -7,6 +7,8 @@ import { TimelinePane } from '../SessionWorkspace/parts/TimelinePane';
 import { OverviewActions } from './OverviewActions';
 import { AttentionCallout } from './AttentionCallout';
 import { NextStepSlot } from '../../../suggestions/components/NextStepSlot';
+import { SessionSetup } from '../SessionSetup';
+import { useSessionSetup } from '../SessionSetup/useSessionSetup';
 
 type Props = {
   readonly session: Session;
@@ -16,6 +18,7 @@ type Props = {
 export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
   const sessionId: SessionId = session.id;
   const isArchived = session.archivedAt != null;
+  const setup = useSessionSetup({ session });
 
   const openWorkflowBuilder = () => {
     window.dispatchEvent(
@@ -25,23 +28,31 @@ export const SessionOverviewPane = ({ session, onSelectLens }: Props) => {
 
   return (
     <PaneShell
-      header={<HeaderBand session={session} onSelectLens={onSelectLens} />}
+      header={
+        <HeaderBand session={session} isSettingUp={setup.isActive} onSelectLens={onSelectLens} />
+      }
       animationClassName="animate-fade-in"
     >
       <AttentionCallout session={session} onSelectLens={onSelectLens} />
-      <NextStepSlot session={session} onSelectLens={onSelectLens} />
-      <TimelinePane
-        session={session}
-        actions={
-          <ArchivedGate isArchived={isArchived}>
-            <OverviewActions
-              session={session}
-              onOpenWorkflowBuilder={openWorkflowBuilder}
-              onOpenRun={() => onSelectLens('workflows')}
-            />
-          </ArchivedGate>
-        }
-      />
+      {setup.isActive ? (
+        <SessionSetup session={session} steps={setup.steps} />
+      ) : (
+        <>
+          <NextStepSlot session={session} onSelectLens={onSelectLens} />
+          <TimelinePane
+            session={session}
+            actions={
+              <ArchivedGate isArchived={isArchived}>
+                <OverviewActions
+                  session={session}
+                  onOpenWorkflowBuilder={openWorkflowBuilder}
+                  onOpenRun={() => onSelectLens('workflows')}
+                />
+              </ArchivedGate>
+            }
+          />
+        </>
+      )}
     </PaneShell>
   );
 };

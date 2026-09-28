@@ -548,6 +548,7 @@ export {
   REVIEW_REPLY_SAMPLE_SIZE,
   learnReplyStyle,
   listAssignedIssues,
+  listInboxPullRequests,
   listIssueComments,
   listMyReviewReplies,
   listOwnedRepos,

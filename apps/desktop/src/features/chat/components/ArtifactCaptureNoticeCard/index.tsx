@@ -15,7 +15,7 @@ type Props = {
 };
 
 export const REPAIR_PROMPT =
-  'your last artifact block could not be captured. re-emit it once, alone, with nothing else in the turn: an opening `<<artifact v=1 kind=...>>` line, one JSON object on the lines below it with title, format, content and metadata, and a closing `<</artifact>>` line. keep the content identical to what you already wrote, do not restate it in prose, and do not wrap the block in a code fence.';
+  'your last artifact block could not be captured. re-emit it once, alone, with nothing else in the turn: an opening `<<artifact v=1 kind=...>>` line, a header of one JSON object on the next line with title, format and metadata but no content, the content itself on the lines below the header (plain markdown for a report or a plan, never inside a JSON string; the JSON document for a wireframe), and a closing `<</artifact>>` line. keep the content identical to what you already wrote, do not restate it in prose, and do not wrap the block in a code fence.';
 
 export const ArtifactCaptureNoticeCard = ({ item, sessionId = null, agentId = null }: Props) => {
   const [open, setOpen] = useState(false);

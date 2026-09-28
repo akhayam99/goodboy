@@ -14,7 +14,7 @@ const VARIANT = sceneParam({ key: 'v' }) ?? 'populated';
 const OPEN_LABELS = sceneParamList({ key: 'open', separator: ',' });
 
 const NOW = clock.iso({ at: '2026-09-14T16:40:00.000Z' });
-const SESSION_DIR = '/mock/harborline/sessions/settlement-rounding';
+const SESSION_DIR = '~/code/harborline/sessions/settlement-rounding';
 const MODIFIED_AT = clock.iso({ at: '2026-09-14T15:40:00.000Z' });
 
 type EntryParams = {

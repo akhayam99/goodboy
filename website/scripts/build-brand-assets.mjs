@@ -267,7 +267,7 @@ const createBaseHtml = ({
 </style>
 <body class="${bodyClass}">${content}</body>`;
 
-const createOgHtml = ({ format, accent, mascotBase64, providerBrands, date }) => {
+const createOgHtml = ({ format, accent, tileColor, mascotBase64, providerBrands, date }) => {
   const marks = providerBrands
     .map(
       ({ id, path, color }) =>
@@ -275,7 +275,7 @@ const createOgHtml = ({ format, accent, mascotBase64, providerBrands, date }) =>
     )
     .join('');
   const content = `
-    <div class="brand">${createMascot({ className: 'mascot', mascotBase64 })}<span>Goodboy</span></div>
+    <div class="brand"><span class="tile">${createMascot({ className: 'mascot', mascotBase64 })}</span><span>Goodboy</span></div>
     <h1>Stop <em>re&#8209;explaining yourself.</em></h1>
     <p class="sub">Describe a task once. Goodboy decides which agent goes next, on the plans you already pay for.</p>
     <div class="foot">
@@ -291,10 +291,10 @@ const createOgHtml = ({ format, accent, mascotBase64, providerBrands, date }) =>
     content,
     extraCss: `
       body { padding: 68px 76px; display: flex; flex-direction: column; position: relative }
-      body:before { content: ""; position: absolute; top: -280px; right: -220px; width: 780px; height: 780px; border-radius: 50%; background: radial-gradient(circle, color-mix(in oklch, ${accent} 16%, transparent), transparent 62%) }
-      .brand { display: flex; align-items: center; gap: 14px; position: relative }
-      .brand .mascot { width: 54px; height: 54px }
-      .brand span { font-size: 38px; font-weight: 600; letter-spacing: -0.015em }
+      .brand { display: flex; align-items: center; gap: 16px; position: relative }
+      .brand .tile { width: 60px; height: 60px; border-radius: ${60 * TILE_RADIUS_RATIO}px; background: ${tileColor}; display: grid; place-items: center }
+      .brand .mascot { width: ${60 * MARK_SCALE}px; height: ${60 * MARK_SCALE}px; background: #fff }
+      .brand > span:last-child { font-size: 38px; font-weight: 600; letter-spacing: -0.015em }
       h1 { margin-top: auto; font-size: 88px; font-weight: 500; line-height: 1.04; letter-spacing: -0.02em; position: relative }
       h1 em { font-style: normal; color: ${accent} }
       .sub { margin-top: 26px; font-size: 30px; line-height: 1.35; color: #495057; max-width: 940px; position: relative }
@@ -440,9 +440,9 @@ const outputPathFor = (surface) =>
     ? resolve(WEBSITE_DIRECTORY, 'public/og-image.png')
     : resolve(WEBSITE_DIRECTORY, `public/brand/${slugFor(surface)}.png`);
 
-const createHtmlFor = ({ format, accent, mascotBase64, providerBrands, date }) => {
+const createHtmlFor = ({ format, accent, tileColor, mascotBase64, providerBrands, date }) => {
   if (format.surface === 'og-image') {
-    return createOgHtml({ format, accent, mascotBase64, providerBrands, date });
+    return createOgHtml({ format, accent, tileColor, mascotBase64, providerBrands, date });
   }
   if (format.surface === 'X avatar') {
     return createAvatarHtml({ format, accent, mascotBase64 });
@@ -631,7 +631,7 @@ if (requestedSurface !== '' && !knownSurfaces.includes(requestedSurface)) {
 }
 
 selectedFormats.forEach((format) => {
-  const html = createHtmlFor({ format, accent, mascotBase64, providerBrands, date });
+  const html = createHtmlFor({ format, accent, tileColor, mascotBase64, providerBrands, date });
   renderFormat({ format, html });
 });
 

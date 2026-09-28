@@ -1,0 +1,143 @@
+.shot {
+  position: relative;
+  margin: 0;
+}
+
+.window {
+  background: var(--gray0);
+  border: 1px solid var(--gray3);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: var(--window-shadow);
+}
+
+.imgbox {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--gray3) 70%, transparent);
+}
+
+.imgbox img {
+  width: 100%;
+  height: auto;
+}
+
+.imgbox.mb {
+  display: none;
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+}
+
+.imgbox.mb img {
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--gray3) 70%, transparent);
+}
+
+.pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 700 11.5px/1 var(--sans);
+  color: #fff;
+  background: var(--accent-deep);
+  box-shadow:
+    0 0 0 3px #fff,
+    0 4px 10px -2px rgb(16 17 19 / 0.35);
+  pointer-events: none;
+  opacity: 0;
+  scale: 0.8;
+  transition:
+    opacity 240ms ease var(--d),
+    scale 240ms ease var(--d);
+}
+
+.shot.in .pin {
+  opacity: 1;
+  scale: 1;
+}
+
+.pin.m {
+  display: none;
+}
+
+.pincaps {
+  list-style: none;
+  margin: 14px 4px 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  font: 400 14px/1.45 var(--sans);
+  color: var(--gray7);
+}
+
+.pincaps li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.pincaps li b {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font: 700 10.5px/1 var(--sans);
+  color: #fff;
+  background: var(--accent-deep);
+  translate: 0 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin {
+    opacity: 1;
+    scale: 1;
+    transition: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .window {
+    padding: 6px;
+    border-radius: 12px;
+  }
+  .imgbox.dk,
+  .pin.d {
+    display: none;
+  }
+  .imgbox.mb {
+    display: block;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .pin.m {
+    display: grid;
+    width: 20px;
+    height: 20px;
+    font-size: 11px;
+  }
+  .pincaps {
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13.5px;
+  }
+  .pincaps li.nomob {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .window {
+    padding: 3px;
+    border-radius: 10px;
+  }
+}

@@ -52,8 +52,13 @@ vi.mock('../../../../shared/lib/editor', () => ({ openUrl: h.openUrl }));
 vi.mock('../../../../store', () => ({
   useSessionById: (id: SessionId | null) =>
     id === LINKED_SESSION_ID ? { id, goal: '**Fix** the crash' } : null,
-  useAppStore: <T,>(selector: (state: { readonly workspaces: ReadonlyArray<never> }) => T) =>
-    selector({ workspaces: [] }),
+  useAppStore: <T,>(
+    selector: (state: {
+      readonly workspaces: ReadonlyArray<never>;
+      readonly sessions: ReadonlyArray<never>;
+      readonly sessionExternalTasks: Readonly<Record<string, never>>;
+    }) => T,
+  ) => selector({ workspaces: [], sessions: [], sessionExternalTasks: {} }),
 }));
 
 vi.mock('../../useInboxStars', () => ({

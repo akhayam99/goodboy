@@ -1,3 +1,4 @@
+mod app_platform;
 mod artifact_folder;
 mod artifact_mirror;
 mod artifacts;
@@ -20,11 +21,12 @@ mod external_terminal;
 mod file_versions;
 mod frame_protocol;
 mod github;
-mod history;
 mod gitlab;
 mod goodboy_ignore;
+mod history;
 mod integration_credentials;
 mod jira;
+mod last_crash;
 mod linear;
 mod live_child;
 mod local_image;
@@ -60,6 +62,9 @@ mod util;
 mod workflows;
 mod worktree;
 mod worktree_writer;
+
+#[cfg(target_os = "macos")]
+mod help_menu;
 
 #[cfg(target_os = "macos")]
 fn suppress_webkit_media_remote() {
@@ -100,6 +105,7 @@ pub fn run_query_cli() -> Option<i32> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    last_crash::install_panic_hook();
     boot_breadcrumb::record("process-start", Some("start"));
     #[cfg(target_os = "macos")]
     suppress_webkit_media_remote();
@@ -173,6 +179,8 @@ pub fn run() {
         .setup(move |app| {
             use tauri::Manager;
             query_bridge::start(app.handle().clone());
+            #[cfg(target_os = "macos")]
+            help_menu::install(app.handle())?;
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
@@ -209,6 +217,10 @@ pub fn run() {
             explore::explore_read,
             explore::explore_open,
             boot_breadcrumb::boot_breadcrumb,
+            app_platform::app_platform,
+            last_crash::last_crash_write,
+            last_crash::last_crash_claim,
+            last_crash::last_crash_delete,
             db::db_exec,
             db::db_execute,
             db::db_list_migration_snapshots,
@@ -326,9 +338,6 @@ pub fn run() {
             attachment::attachment_delete,
             attachment::attachment_read_dropped,
             attachment::attachment_cleanup_orphans,
-            attachment::bug_report_stage_images,
-            attachment::bug_report_discard_images,
-            attachment::bug_report_reveal_images,
             file_versions::file_versions_begin_snapshot,
             file_versions::file_versions_finalize_snapshot,
             file_versions::file_versions_list_staged_snapshots,

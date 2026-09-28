@@ -31,6 +31,7 @@ export const PANE_RHYTHM = {
     maxWidth: 'max-w-[106rem]',
     cardGap: 'gap-2.5',
     colStack: 'gap-2.5',
+    emptyMinHeight: 'min-h-28',
   },
   sessionList: {
     pad: 'px-2 py-2',

@@ -1,16 +1,15 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { AnchoredPopover, Divider, IconButton, cn, useDropdown } from '@goodboy/ui';
+import { useEffect } from 'react';
+import { AnchoredPopover, cn, useDropdown } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
+import { useAppliedTheme } from '../../../../shared/lib/theme';
 import { collapse } from '../../../../features/onboarding/onboarding-store';
 import { useOnboardingProgress } from '../../../../features/onboarding/hooks/useOnboardingProgress';
 import { useInstalledVersion } from '../../../../features/changelog/hooks/useInstalledVersion';
-import { ReportIssueForm } from '../../../../features/settings/components/ReportIssueForm';
+import { openReportSheet } from '../../../../features/bug-report/openReportSheet';
 import { useHasBugReportDraft } from '../../../../features/settings/hooks/useHasBugReportDraft';
 import { UpdateArrivalCard } from '../../../../features/updater/components/UpdateArrivalCard';
 import { useRestartWhenIdle } from '../../../../features/updater/hooks/useRestartWhenIdle';
 import { openUrl } from '../../../../shared/lib/editor';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { GoodboyChipLabel, type GoodboyChipState } from './GoodboyChipLabel';
 import { GoodboyMenu } from './GoodboyMenu';
 
@@ -18,8 +17,6 @@ type Props = {
   readonly onOpenChangelog: () => void;
   readonly onOpenShortcuts: () => void;
 };
-
-type View = 'menu' | 'report';
 
 export const OPEN_GOODBOY_MENU_EVENT = 'goodboy:open-goodboy-menu';
 export const SPONSOR_URL = 'https://github.com/sponsors/akhayam99';
@@ -39,7 +36,6 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
   const updaterStatus = useAppStore((s) => s.updaterStatus);
   const version = useInstalledVersion();
   const hasDraft = useHasBugReportDraft();
-  const [view, setView] = useState<View>('menu');
   const dropdown = useDropdown({
     align: 'center',
     width: 'w-75',
@@ -56,6 +52,8 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
     isQueued;
   const isSetupOpen = !progress.finished && progress.hasProjects && !progress.isDone;
   const state: GoodboyChipState = hasUpdate ? 'update' : isSetupOpen ? 'setup' : 'rest';
+  const theme = useAppliedTheme();
+  const isBrandChip = state === 'rest' && theme === 'light';
   const shouldAutoOpen =
     !progress.finished &&
     progress.wizardDone &&
@@ -69,13 +67,6 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
     collapse();
     window.dispatchEvent(new CustomEvent(OPEN_GOODBOY_MENU_EVENT));
   }, [shouldAutoOpen]);
-
-  useEffect(() => {
-    if (isOpen) {
-      return;
-    }
-    setView('menu');
-  }, [isOpen]);
 
   const leaveFor =
     ({ action }: { readonly action: () => void }) =>
@@ -103,47 +94,26 @@ export const GoodboyChip = ({ onOpenChangelog, onOpenShortcuts }: Props) => {
             data-testid="goodboy-chip"
             className={cn(
               'flex h-6 items-center gap-1.5 rounded-md px-2 text-secondary motion-safe:transition-colors',
-              isOpen ? 'bg-muted' : 'hover:bg-hover',
+              isBrandChip && 'goodboy-brand-chip',
+              isOpen ? 'bg-muted' : isBrandChip ? 'bg-background hover:bg-hover' : 'hover:bg-hover',
             )}
           >
             <GoodboyChipLabel state={state} progress={progress} />
           </button>
         }
       >
-        {view === 'report' ? (
-          <>
-            <header className="flex items-center gap-1.5 px-2 py-1.5">
-              <IconButton
-                variant="ghost"
-                icon={ArrowLeft}
-                iconSize={ICON_SIZE.row}
-                label="Back"
-                onClick={() => setView('menu')}
-              />
-              <span className="text-label font-semibold text-foreground">Report a bug</span>
-              {hasDraft ? (
-                <span className="ml-auto pr-1 text-secondary text-faint-foreground">
-                  Draft saved
-                </span>
-              ) : null}
-            </header>
-            <Divider />
-            <ReportIssueForm onOpenFullForm={close} />
-          </>
-        ) : (
-          <GoodboyMenu
-            version={version}
-            progress={progress}
-            hasUpdate={hasUpdate}
-            hasDraft={hasDraft}
-            onReport={() => setView('report')}
-            onOpenChangelog={leaveFor({ action: onOpenChangelog })}
-            onOpenShortcuts={leaveFor({ action: onOpenShortcuts })}
-            onSponsor={() => {
-              void openUrl(SPONSOR_URL);
-            }}
-          />
-        )}
+        <GoodboyMenu
+          version={version}
+          progress={progress}
+          hasUpdate={hasUpdate}
+          hasDraft={hasDraft}
+          onReport={leaveFor({ action: () => openReportSheet() })}
+          onOpenChangelog={leaveFor({ action: onOpenChangelog })}
+          onOpenShortcuts={leaveFor({ action: onOpenShortcuts })}
+          onSponsor={() => {
+            void openUrl(SPONSOR_URL);
+          }}
+        />
       </AnchoredPopover>
     </>
   );

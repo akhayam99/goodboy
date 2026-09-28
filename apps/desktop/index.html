@@ -60,9 +60,12 @@
             stored === 'system' &&
             typeof window.matchMedia === 'function' &&
             window.matchMedia('(prefers-color-scheme: light)').matches;
-          if (stored === 'light' || systemIsLight) {
+          var theme = stored === 'light' || systemIsLight ? 'light' : 'dark';
+          if (theme === 'light') {
             document.documentElement.setAttribute('data-theme', 'light');
           }
+          document.documentElement.classList.add(theme);
+          document.documentElement.style.colorScheme = theme;
         } catch (e) {}
       })();
     </script>

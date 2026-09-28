@@ -23,7 +23,7 @@ export const INBOX_TYPE_FACETS: ReadonlyArray<InboxTypeFacet> = [
 
 export const INBOX_KIND_PROVIDERS: Record<InboxTypeFacet, ReadonlyArray<InboxProvider>> = {
   issue: ['github', 'gitlab', 'linear', 'jira'],
-  'pr-mr': ['gitlab', 'bitbucket'],
+  'pr-mr': ['github', 'gitlab', 'bitbucket'],
   thread: ['slack'],
   error: ['sentry'],
 };

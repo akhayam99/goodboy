@@ -155,7 +155,8 @@ render, before the snapshot is taken.
 A layout change is also captured at `--window-size=1100,800`, close to the
 window's minimum width, where a second rail or a fixed-width control is the
 first thing to clip. Capture both themes at both widths: `&theme=light` after
-the scene key renders the light theme.
+the scene key renders the light theme. `&storage=reclaimable` on `board-shell`
+seeds the Settings storage folders, so the top bar shows its storage chip.
 
 ## Data hygiene
 
@@ -200,11 +201,15 @@ Scenes that share one seed live in a folder, with one file per scene, a
 questions cluster, the transcript and the command palette over one Harborline
 session.
 
-The README's feature guide is captured from these scenes. The images live in
-`docs/images/`, named after the scene that made them, so a re-capture is one
-command with no lookup. To crop a short surface, use a `--window-size` height
-shorter than 900. The layout keeps its own proportions and the footer stays
-pinned.
+The README, `FEATURES.md` and the website are captured from these scenes. The
+`brand-*` scenes in `scenes/brand/` tell one Harborline story (issue HBL-412,
+branch `hl/fix-duplicate-credit`, payments-api #318 and notify-relay #57, with
+ledger-core only read), and `scenes/brand/canon.ts` holds the names and numbers
+every picture shares. Add `&brand=1` to skip onboarding and hide the toasts a
+browser tab raises. The README and `FEATURES.md` images live in `docs/readme/`
+as dark and light `.webp` pairs, and the website's in `website/public/img/`. To
+crop a short surface, use a `--window-size` height shorter than 900. The layout
+keeps its own proportions and the footer stays pinned.
 
 ## Pictures for the changelog
 

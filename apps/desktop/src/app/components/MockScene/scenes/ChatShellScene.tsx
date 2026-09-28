@@ -23,10 +23,10 @@ import { ChatView } from '../../../../features/chat/components/ChatView';
 import { useAppStore } from '../../../../store';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 
-const WORKSPACE_ID = 'mock-chat-workspace-cascade' as WorkspaceId;
+const WORKSPACE_ID = 'mock-chat-workspace-cascadia' as WorkspaceId;
 const SESSION_ID = 'mock-chat-session-webhook-credits' as SessionId;
 const PAYMENTS_ID = 'mock-chat-project-payments-api' as ProjectId;
-const CONSOLE_ID = 'mock-chat-project-web-console' as ProjectId;
+const CONSOLE_ID = 'mock-chat-project-notify-relay' as ProjectId;
 const AGENT_ID = 'mock-chat-agent-implementer' as AgentId;
 const ANSWERED_DELEGATE_ID = 'mock-chat-agent-answer-window' as AgentId;
 const LIVE_DELEGATE_ID = 'mock-chat-agent-answer-banner' as AgentId;
@@ -65,8 +65,8 @@ const OVERRIDES = {
 
 const WORKSPACE: Workspace = {
   id: WORKSPACE_ID,
-  name: 'Cascade',
-  slug: 'cascade',
+  name: 'Cascadia',
+  slug: 'cascadia',
   overrides: OVERRIDES,
   createdAt: STARTED,
   updatedAt: NOW,
@@ -76,7 +76,7 @@ const projectOf = (id: ProjectId, name: string): Project => ({
   id,
   workspaceId: WORKSPACE_ID,
   name,
-  rootPath: `/mock/cascade/${name}`,
+  rootPath: `/mock/cascadia/${name}`,
   kind: 'repo',
   overrides: OVERRIDES,
   createdAt: STARTED,
@@ -85,16 +85,16 @@ const projectOf = (id: ProjectId, name: string): Project => ({
 
 const PROJECTS: ReadonlyArray<Project> = [
   projectOf(PAYMENTS_ID, 'payments-api'),
-  projectOf(CONSOLE_ID, 'web-console'),
+  projectOf(CONSOLE_ID, 'notify-relay'),
 ];
 
 const mountOf = (projectId: ProjectId, name: string, branch: string): SessionProjectMount => ({
   mountId: `mock-chat-mount-${name}` as MountId,
   projectId,
   mountName: name,
-  worktreePath: `/mock/cascade/${name}-webhook-credits`,
+  worktreePath: `/mock/cascadia/${name}-webhook-credits`,
   lastWorktreePath: null,
-  repoRoot: `/mock/cascade/${name}`,
+  repoRoot: `/mock/cascadia/${name}`,
   branch,
   baseBranch: 'main',
   parallelIndex: 0,
@@ -106,13 +106,13 @@ const mountOf = (projectId: ProjectId, name: string, branch: string): SessionPro
 
 const MOUNTS: ReadonlyArray<SessionProjectMount> = [
   mountOf(PAYMENTS_ID, 'payments-api', 'nw/fix-webhook-idempotency'),
-  mountOf(CONSOLE_ID, 'web-console', 'nw/surface-retry-state'),
+  mountOf(CONSOLE_ID, 'notify-relay', 'nw/surface-retry-state'),
 ];
 
 const SESSION: Session = {
   id: SESSION_ID,
   workspaceId: WORKSPACE_ID,
-  goal: 'Stop payments-api from double-crediting invoices when Stripe redelivers a webhook',
+  goal: 'Stop payments-api from double-crediting invoices when the processor redelivers a webhook',
   state: { kind: 'idle', lastActivityAt: NOW },
   contextSlots: [],
   providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
@@ -172,7 +172,7 @@ const AGENTS: ReadonlyArray<Agent> = [
     id: LIVE_DELEGATE_ID,
     sessionId: SESSION_ID,
     ordinal: 3,
-    name: 'answer: Should web-console show a banner while a…',
+    name: 'answer: Should notify-relay show a banner while a…',
     kind: 'implementer',
     status: 'running',
     sourceKind: 'open_question',
@@ -184,12 +184,12 @@ const AGENTS: ReadonlyArray<Agent> = [
 ];
 
 const PLAN_TEXT = [
-  'Stripe redelivers whenever payments-api takes longer than its timeout to acknowledge, and every redelivery posts a second credit.',
+  'The processor redelivers whenever payments-api takes longer than its timeout to acknowledge, and every redelivery posts a second credit.',
   '',
   '<<plan>>',
   '# Key the idempotency guard on the event id',
   '',
-  "1. Record Stripe's event id in a `processed_events` table before the credit is posted.",
+  "1. Record the processor's event id in a `processed_events` table before the credit is posted.",
   '2. Wrap the credit and the insert in one transaction, so a crash cannot split them.',
   '3. Answer 200 on a duplicate id without touching the invoice.',
   '4. Replay last week of webhooks in a dry run and diff every invoice balance.',
@@ -200,7 +200,7 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
   {
     kind: 'user_text',
     runId: RUN_ID,
-    text: 'Invoices get credited twice when Stripe retries a webhook. Find why and fix it, then show the retry state in web-console.',
+    text: 'Invoices get credited twice when the processor retries a webhook. Find why and fix it, then show the retry state in notify-relay.',
     provider: 'anthropic',
     model: 'claude-opus-5-5',
     at: at(2),
@@ -209,21 +209,21 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
   {
     kind: 'file_edit',
     runId: RUN_ID,
-    path: '/mock/cascade/payments-api-webhook-credits/src/webhooks/handler.ts',
+    path: '/mock/cascadia/payments-api-webhook-credits/src/webhooks/handler.ts',
     editType: 'modify',
     at: at(28),
   },
   {
     kind: 'file_edit',
     runId: RUN_ID,
-    path: '/mock/cascade/payments-api-webhook-credits/migrations/0142_processed_events.sql',
+    path: '/mock/cascadia/payments-api-webhook-credits/migrations/0142_processed_events.sql',
     editType: 'create',
     at: at(29),
   },
   {
     kind: 'file_edit',
     runId: RUN_ID,
-    path: '/mock/cascade/payments-api-webhook-credits/test/webhooks/redelivery.test.ts',
+    path: '/mock/cascadia/payments-api-webhook-credits/test/webhooks/redelivery.test.ts',
     editType: 'create',
     at: at(31),
   },
@@ -231,7 +231,7 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
     kind: 'assistant_text',
     runId: RUN_ID,
     delta:
-      'The guard is in and the redelivery test posts the same event three times against one credit. One call left on the web-console side before I touch it.',
+      'The guard is in and the redelivery test posts the same event three times against one credit. One call left on the notify-relay side before I touch it.',
     at: at(38),
   },
   { kind: 'done', runId: RUN_ID, at: at(38) },
@@ -248,7 +248,8 @@ const QUESTIONS_ANSWERED: ReadonlyArray<OpenQuestion> = [
     recommendedAnswer: '30 days',
     selectMode: 'one',
     isBlocking: false,
-    userAnswer: '30 days: Stripe stops redelivering after 3 days, the rest covers manual replays.',
+    userAnswer:
+      '30 days: the processor stops redelivering after 3 days, the rest covers manual replays.',
     answerSource: 'agent',
     answeredByAgentId: ANSWERED_DELEGATE_ID,
     status: 'answered',
@@ -264,7 +265,7 @@ const QUESTIONS_OPEN: ReadonlyArray<OpenQuestion> = [
     sessionId: SESSION_ID,
     createdByAgentId: AGENT_ID,
     turnOrdinal: 1,
-    text: 'Should web-console show a banner while a webhook is being retried, or only mark the invoice row?',
+    text: 'Should notify-relay show a banner while a webhook is being retried, or only mark the invoice row?',
     suggestedAnswers: ['A banner on the invoice page', 'A badge on the invoice row', 'Both'],
     recommendedAnswer: 'A badge on the invoice row',
     selectMode: 'one',

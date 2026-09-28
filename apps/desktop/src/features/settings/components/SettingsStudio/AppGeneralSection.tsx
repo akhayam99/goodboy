@@ -1,24 +1,15 @@
 import { useEffect, useState } from 'react';
-import { FieldRow, Band, Listbox, type ListboxOption } from '@goodboy/ui';
-import { Monitor, Moon, Sun } from 'lucide-react';
+import { FieldRow, Band, Listbox } from '@goodboy/ui';
 import {
   DEFAULT_EDITOR_BINARY,
   SETTING_EDITOR_BINARY,
 } from '../../../../features/settings/settings';
 import { useAppStore } from '../../../../store';
-import { useThemeStore, type ThemePreference } from '../../../../shared/lib/theme';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { UpdatesSection } from './UpdatesSection';
-
-const THEME_OPTIONS: ReadonlyArray<ListboxOption<ThemePreference>> = [
-  { value: 'system', label: 'Match system', leading: <Monitor size={ICON_SIZE.row} /> },
-  { value: 'light', label: 'Light', leading: <Sun size={ICON_SIZE.row} /> },
-  { value: 'dark', label: 'Dark', leading: <Moon size={ICON_SIZE.row} /> },
-];
+import { ThemePreferenceField } from './ThemePreferenceField';
 
 export const AppGeneralSection = () => {
-  const preference = useThemeStore((s) => s.preference);
-  const setPreference = useThemeStore((s) => s.setPreference);
   const loadSetting = useAppStore((s) => s.loadSetting);
   const saveSetting = useAppStore((s) => s.saveSetting);
   const loadDetectedEditors = useAppStore((s) => s.loadDetectedEditors);
@@ -63,15 +54,7 @@ export const AppGeneralSection = () => {
         headingLevel={2}
       >
         <div className="flex flex-col">
-          <FieldRow label="Theme" help="Applies to every window.">
-            <Listbox
-              size="sm"
-              value={preference}
-              options={THEME_OPTIONS}
-              onChange={setPreference}
-              ariaLabel="Theme"
-            />
-          </FieldRow>
+          <ThemePreferenceField />
         </div>
       </Band>
 

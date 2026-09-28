@@ -8,6 +8,7 @@ import { LimitsStrip } from './LimitsStrip';
 import { NowChip } from './NowChip';
 import { NavCluster } from './NavCluster';
 import { SpendButton } from './SpendButton';
+import { StorageChip } from './StorageChip';
 import { ThemeToggle } from './ThemeToggle';
 
 type Props = {
@@ -35,6 +36,7 @@ export const AppTopBar = ({ onOpenSpend, onOpenScript, openProviderId = null }: 
 
       <div className="col-start-3 flex items-center justify-end gap-2">
         <div className="flex shrink-0 items-center gap-1">
+          <StorageChip />
           <NowChip onOpenScript={onOpenScript} />
           <SpendButton onOpenSpend={onOpenSpend} />
         </div>

@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Chip, StatusDot, Tooltip, chipClasses, cn } from '@goodboy/ui';
+import { Chip, StatusDot, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore, useSummarizerStatus } from '../../../../store';
 import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
-import { selectNewDecisionCount } from '../../../../store/slices/contextDrawer/selectNewDecisionCount';
+import { selectHasContextChange } from '../../../../store/slices/contextDrawer/selectHasContextChange';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
 import { withShortcutHint } from '../../../../shared/keyboard/registry';
 
@@ -14,10 +14,10 @@ type Props = {
 
 type TooltipParams = {
   readonly status: 'idle' | 'running' | 'error';
-  readonly newCount: number;
+  readonly hasChange: boolean;
 };
 
-const tooltipFor = ({ status, newCount }: TooltipParams): string => {
+const tooltipFor = ({ status, hasChange }: TooltipParams): string => {
   if (status === 'running') {
     return 'Updating context';
   }
@@ -25,27 +25,33 @@ const tooltipFor = ({ status, newCount }: TooltipParams): string => {
     return "Couldn't update the context. Open to retry.";
   }
   return withShortcutHint({
-    label:
-      newCount > 0
-        ? `${newCount} new ${newCount === 1 ? 'decision' : 'decisions'} since you last looked`
-        : 'Goal, decisions and summary',
+    label: hasChange ? 'Decisions changed since you last looked' : 'Goal, decisions and summary',
     shortcut: 'lens.context',
   });
 };
 
 export const ContextChip = ({ sessionId }: Props) => {
   const { status } = useSummarizerStatus(sessionId);
-  const newCount = useAppStore((state) => selectNewDecisionCount({ state, sessionId }));
   const isOpen = useAppStore((state) => {
     const drawer = selectOpenDrawer(state);
     return drawer !== null && drawer.kind === 'context' && drawer.sessionId === sessionId;
   });
+  const hasChange = useAppStore((state) => !isOpen && selectHasContextChange({ state, sessionId }));
+  const hasLedger = useAppStore((state) => state.sessionDecisions[sessionId] !== undefined);
   const toggleContextDrawer = useAppStore((state) => state.toggleContextDrawer);
   const loadSessionContextSeen = useAppStore((state) => state.loadSessionContextSeen);
+  const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
 
   useEffect(() => {
     void loadSessionContextSeen(sessionId);
   }, [loadSessionContextSeen, sessionId]);
+
+  useEffect(() => {
+    if (hasLedger) {
+      return;
+    }
+    void loadSessionDecisions(sessionId);
+  }, [hasLedger, loadSessionDecisions, sessionId]);
 
   const glyph =
     status === 'running' ? (
@@ -57,7 +63,7 @@ export const ContextChip = ({ sessionId }: Props) => {
     );
 
   return (
-    <Tooltip content={tooltipFor({ status, newCount })}>
+    <Tooltip content={tooltipFor({ status, hasChange })}>
       <Chip
         as="button"
         tone="neutral"
@@ -66,20 +72,18 @@ export const ContextChip = ({ sessionId }: Props) => {
         ariaPressed={isOpen}
         testId="context-chip"
         onClick={() =>
-          toggleContextDrawer({ sessionId, ...(newCount > 0 && !isOpen && { tab: 'decisions' }) })
+          toggleContextDrawer({ sessionId, ...(hasChange && !isOpen && { tab: 'decisions' }) })
         }
         icon={glyph}
         label="Context"
         trailing={
-          newCount > 0 ? (
+          hasChange ? (
             <span
-              className={cn(
-                chipClasses({ tone: 'primary', size: 'xs', bordered: false }),
-                'tabular-nums',
-              )}
-            >
-              {`${newCount} new`}
-            </span>
+              role="img"
+              aria-label="Changed since you last looked"
+              data-testid="context-change-dot"
+              className="size-1.5 shrink-0 rounded-full bg-primary"
+            />
           ) : null
         }
         className={cn(isOpen && 'bg-selected')}

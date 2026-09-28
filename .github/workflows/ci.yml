@@ -60,6 +60,9 @@ jobs:
       - name: doc refs
         run: pnpm run check:doc-refs
 
+      - name: script tests
+        run: pnpm run test:scripts
+
       - name: knip
         run: pnpm knip --include files,duplicates,unlisted,dependencies,devDependencies
 
