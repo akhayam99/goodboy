@@ -19,7 +19,7 @@ Typing the start of any word in `Cmd+K` finds the action you meant, and a waitin
 ### Improved
 
 #### One question, one signal in the activity
-<!-- gb area=sessions image=one-signal -->
+<!-- gb area=sessions image=one-signal pr=1920 -->
 
 When an agent asks you something, its own row is the only thing marked in the activity, instead of the whole list lighting up. Its questions row stays quiet and keeps a plain Answer, and the needs-you count appears only when the filter hides the agent, counting questions the same way everywhere.
 
