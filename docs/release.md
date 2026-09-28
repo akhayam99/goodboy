@@ -114,8 +114,9 @@ in its tooltip, and the same confirm offers Retry. A notification also offers
 Retry, which installs again without a new check. A failed background check
 shows no chip and no notification. It shows up in **Settings > App > General**
 instead, next to the installed version, the last check time and **Check now**.
-The changelog opens on the focused or installed release and marks newer ones
-"available".
+The changelog opens on the focused or installed release. Releases newer than
+the installed one sit on top, marked "In the update", and "What's new" from
+the update lands on the update's own release instead of the catch-up.
 
 The changelog bundled in a build (`CHANGELOG.md?raw` in
 `features/changelog/changelogSource.ts`) stops at that build's own version, so

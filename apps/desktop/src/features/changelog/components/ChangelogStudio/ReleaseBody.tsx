@@ -27,7 +27,7 @@ export const releaseHeaderMeta = ({ release, dateLabel }: ReleaseHeaderMetaParam
   return parts.join(' · ');
 };
 
-export type ReleaseEyebrowLabel = 'Installed' | 'Available' | null;
+export type ReleaseEyebrowLabel = 'Installed' | 'In the update' | null;
 
 export const releaseEyebrowLabel = ({
   release,
@@ -40,7 +40,7 @@ export const releaseEyebrowLabel = ({
     return 'Installed';
   }
   if (isNewerRelease({ tag: release.version, installed: installedVersion })) {
-    return 'Available';
+    return 'In the update';
   }
   return null;
 };

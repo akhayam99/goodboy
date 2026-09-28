@@ -718,7 +718,7 @@ Get updates in the background, then see what is new. With agents running, **Rest
 
 ### Changelog in the app
 
-Read release notes inside the app, searchable, with links into the screen each change touched. After an update, "What's new since" covers the releases you skipped. In the list, only releases that update your data in one direction carry a mark.
+Read release notes inside the app, searchable, with links into the screen each change touched. Before an update, "What's new" shows every release it brings, marked **In the update**. After an update, "What's new since" covers the releases you skipped. In the list, only releases that update your data in one direction carry a mark.
 
 ### Before and after pictures
 
