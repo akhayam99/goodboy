@@ -2399,6 +2399,17 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
     let mut tip = start.clone();
     let mut map = Vec::new();
     for (commit, group) in made.iter().zip(groups.iter()) {
+        let is_original = group.members.len() == 1
+            && group.members.first() == Some(commit)
+            && rev_parse_all(cwd, &[format!("{commit}^")]).as_deref() == Some(&[tip.clone()][..]);
+        if is_original {
+            tip = commit.clone();
+            map.push(ShaMove {
+                from: commit.clone(),
+                to: Some(tip.clone()),
+            });
+            continue;
+        }
         let tree = tree_of(copy, commit)?;
         tip = commit_tree(cwd, &tree, &tip, &group.message, &group.author)?;
         for member in &group.members {
@@ -4097,5 +4108,76 @@ mod tests {
         assert!(!journal.exists());
         assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), head);
         assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
+    }
+
+    #[test]
+    fn an_agent_rewrite_keeps_the_shas_of_the_untouched_older_commits() {
+        let root = init_repo("rewriter-prefix");
+        let base = commit(&root, "policy.txt", "one\n", "base");
+        git_ok(&root, &["checkout", "-q", "-b", "feature"]);
+        std::fs::write(root.join("keep.txt"), "keep\n").unwrap();
+        git_ok(&root, &["add", "keep.txt"]);
+        let dated = crate::path_env::command("git")
+            .args([
+                "commit",
+                "-q",
+                "--no-verify",
+                "-m",
+                "Keep the settlement key",
+            ])
+            .current_dir(&root)
+            .env("GIT_COMMITTER_DATE", "2001-01-01T00:00:00Z")
+            .output()
+            .unwrap();
+        assert!(dated.status.success());
+        let kept = git_ok(&root, &["rev-parse", "HEAD"]);
+        let a = commit(&root, "policy.txt", "two\n", "A edits the policy");
+        let b = commit(&root, "policy.txt", "three\n", "B edits the policy again");
+        let args = plan(
+            &root,
+            &base,
+            &b,
+            vec![
+                step(&kept, HistoryVerb::Pick),
+                step(&b, HistoryVerb::Pick),
+                step(&a, HistoryVerb::Pick),
+            ],
+        );
+        let prepared = trial(&args, &slug("rewriter-prefix"), true).unwrap();
+        let copy = PathBuf::from(prepared.copy_path.clone().unwrap());
+        std::fs::write(copy.join("policy.txt"), "three\n").unwrap();
+        git_ok(&copy, &["add", "policy.txt"]);
+        git_ok(&copy, &["commit", "--no-verify", "-m", "b"]);
+        let second = git_run(&copy, &["cherry-pick", "--no-commit", &a], None, None).unwrap();
+        assert_ne!(second.status, 0);
+        std::fs::write(copy.join("policy.txt"), "three\n").unwrap();
+        git_ok(&copy, &["add", "policy.txt"]);
+        git_ok(
+            &copy,
+            &["commit", "--no-verify", "--allow-empty", "-m", "a"],
+        );
+        let check = collect_rewrite(&RewriterCollectArgs {
+            plan: args,
+            copy_path: copy.to_string_lossy().into_owned(),
+            skipped: Vec::new(),
+            keeps_copy: false,
+        })
+        .unwrap();
+        assert!(check.problems.is_empty(), "{:?}", check.problems);
+        let head = check.head.unwrap();
+        let oldest = git_ok(
+            &root,
+            &["rev-list", "--reverse", &format!("{base}..{head}")],
+        )
+        .lines()
+        .next()
+        .unwrap()
+        .to_string();
+        assert_eq!(oldest, kept);
+        assert!(check.map.contains(&ShaMove {
+            from: kept.clone(),
+            to: Some(kept.clone()),
+        }));
+        assert!(!copy.exists());
     }
 }
