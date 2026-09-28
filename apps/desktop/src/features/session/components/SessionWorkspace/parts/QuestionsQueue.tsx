@@ -52,7 +52,7 @@ export const QuestionsQueue = ({
 
   return (
     <ScrollFade className="min-h-0 flex-1" fadeSize={24}>
-      <div role="list" aria-label="Questions" className="flex flex-col gap-1 px-2 pb-3">
+      <section aria-label="Questions" className="flex flex-col gap-1 px-2 pb-3">
         {model.waiting.length > 0 && (
           <div className="flex flex-col gap-0.5">
             <span className="flex items-center gap-1.5 px-2.5 pb-1 pt-2">
@@ -91,7 +91,7 @@ export const QuestionsQueue = ({
             {isAnsweredOpen && model.answered.map(renderRow)}
           </div>
         )}
-      </div>
+      </section>
     </ScrollFade>
   );
 };

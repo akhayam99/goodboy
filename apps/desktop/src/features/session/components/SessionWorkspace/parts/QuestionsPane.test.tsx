@@ -129,7 +129,7 @@ const setup = ({
   render(<QuestionsPane session={SESSION} />);
 };
 
-const detailHeading = () => screen.getByRole('heading', { level: 3 });
+const detailHeading = () => screen.getByRole('heading', { level: 2 });
 const row = (name: string) => screen.getByRole('button', { name });
 
 beforeEach(() => {

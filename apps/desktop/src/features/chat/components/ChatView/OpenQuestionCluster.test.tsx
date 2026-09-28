@@ -150,7 +150,7 @@ describe('OpenQuestionCluster', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Postgres' }));
     fireEvent.click(answerButton());
     fireEvent.click(screen.getByRole('button', { name: 'Previous question' }));
-    screen.getByText('Answered · goes to scout with the rest');
+    screen.getByText('Answered · sends with the rest');
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(useOpenQuestions.getState().staged).toEqual([]);
   });

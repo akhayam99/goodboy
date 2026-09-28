@@ -141,7 +141,7 @@ describe('QuestionCard', () => {
       draft: draftWith({ selectedSuggestions: ['Shared jobs queue'] }),
       onUndo,
     });
-    screen.getByText('Answered · goes to Planner with the rest');
+    screen.getByText('Answered · sends with the rest');
     expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
     expect(onUndo).toHaveBeenCalledOnce();

@@ -65,8 +65,8 @@ const doneLabel = ({
   }
   if (state === 'staged') {
     return isHandedOff
-      ? `Handed to an agent · goes to ${asker} with the rest`
-      : `Answered · goes to ${asker} with the rest`;
+      ? 'Handed to an agent · sends with the rest'
+      : 'Answered · sends with the rest';
   }
   if (question.userAnswer === RESOLVED_BY_AGENT) {
     return 'Resolved by the agent';
@@ -113,6 +113,7 @@ export const QuestionCard = ({
   const articleRef = useRef<HTMLElement>(null);
   const blockingId = useId();
   const isCompact = variant === 'compact';
+  const Title = isCompact ? 'h3' : 'h2';
 
   useEffect(() => {
     if (!autoFocus) {
@@ -191,6 +192,7 @@ export const QuestionCard = ({
       aria-label={parts.title}
       aria-describedby={question.isBlocking && isOpen ? blockingId : undefined}
       onKeyDown={handleKeyDown}
+      style={{ outline: 'none' }}
       className={cn(
         '@container flex min-w-0 flex-col outline-none motion-safe:animate-fade-in',
         isCompact ? 'gap-3 rounded-lg border border-border-soft bg-elevated p-4' : 'gap-5',
@@ -206,14 +208,14 @@ export const QuestionCard = ({
       />
       <div className="flex min-w-0 flex-col gap-3">
         <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-1.5')}>
-          <h3
+          <Title
             className={cn(
               'min-w-0 break-words text-foreground select-text',
               isCompact ? 'text-heading' : 'text-title',
             )}
           >
             {parts.title}
-          </h3>
+          </Title>
           {parts.context.length > 0 && (
             <Markdown
               text={parts.context}

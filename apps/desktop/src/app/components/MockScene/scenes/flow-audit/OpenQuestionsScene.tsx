@@ -6,9 +6,8 @@ import {
   ANSWERED_QUESTIONS,
   CHAT_SESSION,
   CHAT_SESSION_ID,
+  LENS_QUESTIONS,
   NOW,
-  OPEN_QUESTIONS,
-  QUESTION_SIGNALS_ID,
   SESSIONS,
 } from './fixtures';
 import { seedChatSurfaces } from './seeds';
@@ -27,7 +26,7 @@ export const OpenQuestionsScene = () => {
     });
     useAppStore.setState({
       sessionOpenQuestions: {
-        [CHAT_SESSION_ID]: OPEN_QUESTIONS.filter((question) => question.id === QUESTION_SIGNALS_ID),
+        [CHAT_SESSION_ID]: LENS_QUESTIONS,
       },
       sessionAnsweredQuestions: { [CHAT_SESSION_ID]: ANSWERED_QUESTIONS },
       sessionDismissedQuestions: { [CHAT_SESSION_ID]: [] },
