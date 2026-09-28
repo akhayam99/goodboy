@@ -1,9 +1,21 @@
 @import 'tailwindcss';
 @source '../../../packages/ui/src/**/*.{ts,tsx}';
 
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./assets/fonts/InterVariable-latin.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 @theme {
   --font-sans:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, 'Cascadia Mono', monospace;
 
   /* Dark palette (default), soft desaturated darks, lifted black base.
@@ -626,7 +638,8 @@ html[data-theme='light'] #root {
 }
 
 body {
-  font-feature-settings: 'cv11', 'ss01', 'tnum';
+  font-feature-settings: 'calt' 1;
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -658,6 +671,12 @@ body {
   font-weight: 600;
   letter-spacing: var(--tracking-eyebrow);
   text-transform: uppercase;
+}
+
+@layer utilities {
+  .text-meta {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 @utility text-code {

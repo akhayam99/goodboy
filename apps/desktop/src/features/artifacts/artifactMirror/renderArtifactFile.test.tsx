@@ -68,6 +68,15 @@ describe('renderArtifactFile', () => {
     expect(css).toContain('.print-sheet');
     expect(css).toContain(".print-sheet[data-medium='file']");
   });
+
+  it('embeds the one Inter face as a data uri, never a url the file cannot reach', () => {
+    const css = artifactDocumentCss();
+    expect(css.match(/@font-face \{/g)).toHaveLength(1);
+    expect(css).toMatch(
+      /@font-face \{[^}]*font-family: 'Inter';[^}]*url\('data:font\/woff2;base64,/,
+    );
+    expect(css).not.toContain('InterVariable-latin.woff2');
+  });
 });
 
 describe('documentTokens', () => {
