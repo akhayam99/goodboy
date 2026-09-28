@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import type { MountActionTarget } from '../../../../actions/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IsoDateTime, MountId, ProjectId, SessionId, WorktreeStatus } from '@goodboy/types';

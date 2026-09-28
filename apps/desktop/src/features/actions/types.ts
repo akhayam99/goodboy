@@ -3,6 +3,7 @@ import type {
   AgentId,
   ArtifactId,
   MountId,
+  ProjectId,
   SessionId,
   WorkflowRunId,
   WorktreeStatus,
@@ -11,6 +12,8 @@ import type { ArtifactGeneration } from '../artifacts/artifactCollection';
 import type { RecordFacts } from './kinds/record';
 import type { CommitFacts } from './kinds/commit';
 import type { DiffFileFacts } from './kinds/diffFile';
+import type { WorktreeFacts } from './kinds/worktree';
+import type { ScriptFacts } from './kinds/script';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -87,6 +90,7 @@ export type ActionDefinition<F> = {
   readonly blockedReason?: (params: FactsParams<F>) => string | null;
   readonly confirm?: (params: FactsParams<F>) => ActionConfirm | null;
   readonly isUndoable?: boolean;
+  readonly hasCustomConfirm?: boolean;
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
   readonly slot?: (params: FactsParams<F>) => ActionSlot;
   readonly pendingLabel?: (params: FactsParams<F>) => string;
@@ -205,14 +209,6 @@ export type PullRequestActionTarget = {
   readonly prNumber: number | null;
 };
 
-export type WorktreeActionTarget = {
-  readonly kind: 'worktree';
-  readonly sessionId: SessionId;
-  readonly mountId: MountId;
-  readonly status: WorktreeStatus | null;
-  readonly remoteKind: RemoteHostKind | null;
-};
-
 export type DiffActionTarget = {
   readonly kind: 'diff';
   readonly sessionId: SessionId;
@@ -233,6 +229,37 @@ export type DiffFileActionTarget = {
   readonly facts: DiffFileFacts;
 };
 
+export type MountActionTarget = {
+  readonly kind: 'mount';
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly status: WorktreeStatus | null;
+  readonly remoteKind: RemoteHostKind | null;
+};
+
+export type ProjectActionTarget = {
+  readonly kind: 'project';
+  readonly sessionId: SessionId;
+  readonly projectId: ProjectId;
+};
+
+export type WorktreeActionTarget = {
+  readonly kind: 'worktree';
+  readonly facts: WorktreeFacts;
+};
+
+export type ScriptActionTarget = {
+  readonly kind: 'script';
+  readonly facts: ScriptFacts;
+};
+
+export type MessageActionTarget = {
+  readonly kind: 'message';
+  readonly text: string;
+  readonly sessionId: SessionId | null;
+  readonly agentId: AgentId | null;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -247,8 +274,12 @@ export type ObjectTarget =
   | ArtifactActionTarget
   | RecordActionTarget
   | PullRequestActionTarget
-  | WorktreeActionTarget
   | DiffActionTarget
   | CommitActionTarget
   | DiffFileActionTarget
+  | MountActionTarget
+  | ProjectActionTarget
+  | WorktreeActionTarget
+  | ScriptActionTarget
+  | MessageActionTarget
   | LinkActionTarget;

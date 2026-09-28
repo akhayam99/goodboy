@@ -2,10 +2,7 @@ import { useEffect } from 'react';
 import { GitBranch } from 'lucide-react';
 import { AnchoredPopover, Chip, FOCUS_RING, Tooltip, cn, useDropdown } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import {
-  WORKTREE_SWITCH_BRANCH_EVENT,
-  worktreeEventName,
-} from '../../../../actions/kinds/worktree';
+import { MOUNT_SWITCH_BRANCH_EVENT, mountEventName } from '../../../../actions/kinds/mount';
 import { BranchSwitchPanel } from '../../../../worktree/BranchSwitchPanel';
 import { splitBranchLabel } from './branchLabel';
 
@@ -52,7 +49,7 @@ export const ProjectBranchChip = ({
     if (!isSwitchable) {
       return;
     }
-    const name = worktreeEventName({ name: WORKTREE_SWITCH_BRANCH_EVENT, mountId });
+    const name = mountEventName({ name: MOUNT_SWITCH_BRANCH_EVENT, mountId });
     const onOpen = () => {
       if (!isOpen) {
         toggle();

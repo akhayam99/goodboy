@@ -285,8 +285,8 @@ are subgrids of it), so the columns line up down the whole section: branch,
 series part, distance to main, diff, state, action, menu. A column no row
 fills takes no width, and below a 36rem container the distance and diff cells
 empty out (the Changes lens still has the diff). The row's actions come from
-the `worktree` kind of the action registry
-(`features/actions/kinds/worktree.ts`). The action cell shows the one action
+the `mount` kind of the action registry
+(`features/actions/kinds/mount.ts`). The action cell shows the one action
 the state calls for, picked by its `inline` slot: `Rebase on main` when main
 moved, `Push N commits` when commits wait on a branch with a pull request,
 `Create PR` when the branch has commits and no pull request, `Remove worktree`
@@ -299,8 +299,8 @@ Start new turns here (only with two or more mounts), the copies, then Close
 worktree, or Remove from session on a closed row. There are no hover-only icons
 on the row. When a rebase stops, the notice under the row brings the terminal
 and Abort rebase forward. Below a 28rem container New worktree shows its icon
-only. The project menu (`MountActionsMenu`) holds Detach project and renders
-nothing when the project has no mount to detach.
+only. The project menu (`MountActionsMenu`, the `project` kind) holds Detach project
+and renders nothing when the project has no mount to detach.
 
 With two or more mounts, a row shows its presence (`MountPresence`): the
 state node of each agent whose turn runs, waits on an answer or needs you in

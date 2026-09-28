@@ -58,7 +58,10 @@ const { state, showToast, worktreeDetachAssessment } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../../store', () => ({
-  useAppStore: <T,>(selector: (store: typeof state) => T) => selector(state),
+  useAppStore: Object.assign(<T,>(selector: (store: typeof state) => T) => selector(state), {
+    getState: () => state,
+    subscribe: () => () => undefined,
+  }),
 }));
 
 vi.mock('zustand/react/shallow', () => ({ useShallow: <T,>(selector: T) => selector }));

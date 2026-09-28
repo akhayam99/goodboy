@@ -1111,24 +1111,20 @@ const seedMount = ({
   });
 };
 
-const worktreeTarget = (status: WorktreeStatus | null): ObjectTarget => ({
-  kind: 'worktree',
+const mountRowTarget = (status: WorktreeStatus | null): ObjectTarget => ({
+  kind: 'mount',
   sessionId: SESSION,
   mountId: LEDGER_MOUNT.mountId as MountId,
   status,
   remoteKind: 'github',
 });
 
-const WT_TOOLS = [
-  'worktree.openTerminal menu',
-  'worktree.openInEditor menu',
-  'worktree.scripts menu',
-];
-const WT_COPIES = ['worktree.copyBranch menu', 'worktree.copyPath menu'];
-const WT_HISTORY = ['worktree.rewriteHistory menu', 'worktree.switchBranch chip'];
-const WT_PR = ['worktree.openPullRequest inline', 'worktree.openDiff inline'];
+const WT_TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
+const WT_COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
+const WT_HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip'];
+const WT_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
 
-const WORKTREE_STATES: ReadonlyArray<
+const MOUNT_STATES: ReadonlyArray<
   readonly [string, Parameters<typeof seedMount>[0], WorktreeStatus | null, ReadonlyArray<string>]
 > = [
   [
@@ -1137,11 +1133,11 @@ const WORKTREE_STATES: ReadonlyArray<
     gitStatus({}),
     [
       ...WT_PR,
-      'worktree.openReview inline',
+      'mount.openReview inline',
       ...WT_TOOLS,
       ...WT_HISTORY,
       ...WT_COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   ],
   [
@@ -1149,12 +1145,12 @@ const WORKTREE_STATES: ReadonlyArray<
     { pr: null },
     gitStatus({ ahead: 3, upstream: null }),
     [
-      'worktree.openDiff inline',
+      'mount.openDiff inline',
       ...WT_TOOLS,
-      'worktree.createPullRequest inline',
+      'mount.createPullRequest inline',
       ...WT_HISTORY,
       ...WT_COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   ],
   [
@@ -1162,45 +1158,31 @@ const WORKTREE_STATES: ReadonlyArray<
     { pr: null },
     gitStatus({ ahead: 3 }),
     [
-      'worktree.openDiff inline',
+      'mount.openDiff inline',
       ...WT_TOOLS,
-      'worktree.createPullRequest inline',
+      'mount.createPullRequest inline',
       ...WT_HISTORY,
       ...WT_COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   ],
   [
     'draft PR',
     { pr: 'draft' },
     gitStatus({ ahead: 4 }),
-    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'worktree.close menu'],
+    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
   ],
   [
     'PR open, 2 not pushed',
     { pr: 'open' },
     gitStatus({ ahead: 6, unpushed: 2 }),
-    [
-      ...WT_PR,
-      ...WT_TOOLS,
-      'worktree.push inline',
-      ...WT_HISTORY,
-      ...WT_COPIES,
-      'worktree.close menu',
-    ],
+    [...WT_PR, ...WT_TOOLS, 'mount.push inline', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
   ],
   [
     'behind main by 4',
     { pr: 'open' },
     gitStatus({ behind: 4 }),
-    [
-      ...WT_PR,
-      ...WT_TOOLS,
-      'worktree.rebase inline',
-      ...WT_HISTORY,
-      ...WT_COPIES,
-      'worktree.close menu',
-    ],
+    [...WT_PR, ...WT_TOOLS, 'mount.rebase inline', ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
   ],
   [
     'behind, 2 uncommitted',
@@ -1209,11 +1191,11 @@ const WORKTREE_STATES: ReadonlyArray<
     [
       ...WT_PR,
       ...WT_TOOLS,
-      'worktree.rebase inline (Commit or discard the 2 uncommitted changes first.)',
-      'worktree.rewriteHistory menu (Commit or discard the 2 uncommitted changes first.)',
-      'worktree.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
+      'mount.rebase inline (Commit or discard the 2 uncommitted changes first.)',
+      'mount.rewriteHistory menu (Commit or discard the 2 uncommitted changes first.)',
+      'mount.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
       ...WT_COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   ],
   [
@@ -1223,10 +1205,10 @@ const WORKTREE_STATES: ReadonlyArray<
     [
       ...WT_PR,
       ...WT_TOOLS,
-      'worktree.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
+      'mount.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
       ...WT_HISTORY,
       ...WT_COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   ],
   [
@@ -1235,11 +1217,11 @@ const WORKTREE_STATES: ReadonlyArray<
     gitStatus({ changed: 3, rebase: true }),
     [
       ...WT_PR,
-      'worktree.openTerminal notice',
-      'worktree.openInEditor menu',
-      'worktree.scripts menu',
-      'worktree.abortRebase notice',
-      'worktree.rewriteHistory menu (Finish or abort the rebase first.)',
+      'mount.openTerminal notice',
+      'mount.openInEditor menu',
+      'mount.scripts menu',
+      'mount.abortRebase notice',
+      'mount.rewriteHistory menu (Finish or abort the rebase first.)',
       ...WT_COPIES,
     ],
   ],
@@ -1248,18 +1230,18 @@ const WORKTREE_STATES: ReadonlyArray<
     { pr: 'merged' },
     gitStatus({ ahead: 0 }),
     [
-      'worktree.openPullRequest inline',
+      'mount.openPullRequest inline',
       ...WT_TOOLS,
-      'worktree.switchBranch chip',
+      'mount.switchBranch chip',
       ...WT_COPIES,
-      'worktree.close inline',
+      'mount.close inline',
     ],
   ],
   [
     'PR closed',
     { pr: 'closed' },
     gitStatus({}),
-    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'worktree.close menu'],
+    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'mount.close menu'],
   ],
   [
     'new branch, no changes, one of two mounts',
@@ -1277,27 +1259,43 @@ const WORKTREE_STATES: ReadonlyArray<
     gitStatus({ ahead: 0 }),
     [
       ...WT_TOOLS,
-      'worktree.switchBranch chip',
-      'worktree.startTurnsHere menu',
+      'mount.switchBranch chip',
+      'mount.startTurnsHere menu',
       ...WT_COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   ],
   [
     'worktree closed, files kept',
     { pr: 'open', isAttached: false },
     null,
-    ['worktree.reopen inline', ...WT_COPIES, 'worktree.forget menu'],
+    ['mount.reopen inline', ...WT_COPIES, 'mount.forget menu'],
   ],
 ];
 
-describe('worktree actions in every state, on the real store', () => {
-  it.each(WORKTREE_STATES)('%s', (_state, mountSeed, status, expected) => {
+describe('worktree row actions in every state, on the real store', () => {
+  it.each(MOUNT_STATES)('%s', (_state, mountSeed, status, expected) => {
     seedMount(mountSeed);
     if (_state.startsWith('new branch')) {
       useAppStore.setState({ sessionActiveMount: { [SESSION]: 'mount-ledger-core-2' as MountId } });
     }
-    expect(slottedOf(worktreeTarget(status))).toEqual(expected);
+    expect(slottedOf(mountRowTarget(status))).toEqual(expected);
+  });
+});
+
+describe('project actions, on the real store', () => {
+  it('offers Detach project while the project has a mount', () => {
+    seedMount({ pr: null });
+    expect(
+      slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),
+    ).toEqual(['project.detach menu']);
+  });
+
+  it('offers nothing once the project has no mount', () => {
+    seedMount({ pr: null, mounts: [] });
+    expect(
+      slottedOf({ kind: 'project', sessionId: SESSION, projectId: LEDGER_MOUNT.projectId }),
+    ).toEqual([]);
   });
 });
 
@@ -1484,6 +1482,244 @@ describe('inbox record menu in every state', () => {
       );
     expect(labels(record({ isStarred: true }))).toContain('Unstar');
     expect(labels(record({ isStarred: false }))).toContain('Star');
+  });
+});
+
+const noop = () => undefined;
+
+const commitTarget = (older: number): ObjectTarget => ({
+  kind: 'commit',
+  facts: {
+    sha: 'b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1',
+    shortSha: 'b2c3d4e',
+    subject: 'Keep trailing-comma rows in the ledger-core importer',
+    older: Array.from({ length: older }, (_, index) => ({
+      sha: `a${index}`,
+      shortSha: `a${index}`,
+      subject: 'Add a failing importer fixture',
+      author: 'Robin Vale',
+      timestamp: 1_787_890_000,
+      pushed: false,
+      parentSha: null,
+    })),
+    onPick: noop,
+    onReword: noop,
+    onSquash: noop,
+    onFold: noop,
+    onDrop: noop,
+    onMove: noop,
+  },
+});
+
+const worktreeTarget = (fields: {
+  readonly isInUse: boolean;
+  readonly isKept: boolean;
+  readonly removeIntent: 'force' | 'untracked' | null;
+}): ObjectTarget => ({
+  kind: 'worktree',
+  facts: {
+    path: '/work/.goodboy/worktrees/notify-relay-backoff',
+    ...fields,
+    onReveal: noop,
+    onEditor: noop,
+    onKeep: noop,
+    onStopKeeping: noop,
+    onRemove: noop,
+  },
+});
+
+const scriptTarget = (fields: {
+  readonly isSaved: boolean;
+  readonly isRunning: boolean;
+  readonly blocked?: string | null;
+}): ObjectTarget => ({
+  kind: 'script',
+  facts: {
+    name: 'dev',
+    command: 'pnpm --filter @harborline/ledger-core run dev',
+    isRunning: fields.isRunning,
+    runBlockedReason: fields.blocked ?? null,
+    onShowOutput: noop,
+    onRun: noop,
+    onStop: noop,
+    onEdit: fields.isSaved ? noop : null,
+    onDuplicate: fields.isSaved ? noop : null,
+    onSaveAs: fields.isSaved ? null : noop,
+    onDelete: fields.isSaved ? async () => undefined : null,
+  },
+});
+
+const GIT_STATES: ReadonlyArray<readonly [string, ObjectTarget, ReadonlyArray<string>]> = [
+  [
+    'commit with older commits',
+    commitTarget(1),
+    [
+      'commit.pick',
+      'commit.reword',
+      'commit.squash',
+      'commit.fold',
+      'commit.moveUp',
+      'commit.moveDown',
+      'commit.copySha',
+      'commit.copySubject',
+      'commit.drop',
+    ],
+  ],
+  [
+    'oldest commit',
+    commitTarget(0),
+    [
+      'commit.pick',
+      'commit.reword',
+      'commit.squash (No older commit below this one)',
+      'commit.fold (No older commit below this one)',
+      'commit.moveUp',
+      'commit.moveDown',
+      'commit.copySha',
+      'commit.copySubject',
+      'commit.drop',
+    ],
+  ],
+  [
+    'diff file in the Diff lens',
+    {
+      kind: 'diffFile',
+      facts: { path: 'src/importer.ts', onOpenInEditor: noop, onCommentOnFile: noop },
+    },
+    ['diffFile.openInEditor', 'diffFile.comment', 'diffFile.copyPath'],
+  ],
+  [
+    'diff file in the drawer',
+    {
+      kind: 'diffFile',
+      facts: { path: 'src/importer.ts', onOpenInEditor: null, onCommentOnFile: null },
+    },
+    ['diffFile.copyPath'],
+  ],
+  [
+    'worktree clean, idle',
+    worktreeTarget({ isInUse: false, isKept: false, removeIntent: null }),
+    [
+      'worktree.reveal',
+      'worktree.editor',
+      'worktree.keepDays',
+      'worktree.keep',
+      'worktree.copyPath',
+    ],
+  ],
+  [
+    'worktree dirty',
+    worktreeTarget({ isInUse: false, isKept: false, removeIntent: 'force' }),
+    [
+      'worktree.reveal',
+      'worktree.editor',
+      'worktree.keepDays',
+      'worktree.keep',
+      'worktree.copyPath',
+      'worktree.remove',
+    ],
+  ],
+  [
+    'worktree kept, not tracked by git',
+    worktreeTarget({ isInUse: false, isKept: true, removeIntent: 'untracked' }),
+    [
+      'worktree.reveal',
+      'worktree.editor',
+      'worktree.stopKeeping',
+      'worktree.copyPath',
+      'worktree.remove',
+    ],
+  ],
+  [
+    'worktree in use by a session',
+    worktreeTarget({ isInUse: true, isKept: false, removeIntent: null }),
+    ['worktree.reveal', 'worktree.editor', 'worktree.copyPath'],
+  ],
+  [
+    'saved script, idle',
+    scriptTarget({ isSaved: true, isRunning: false }),
+    [
+      'script.output',
+      'script.run',
+      'script.edit',
+      'script.duplicate',
+      'script.copyCommand',
+      'script.delete',
+    ],
+  ],
+  [
+    'package script, running',
+    scriptTarget({ isSaved: false, isRunning: true }),
+    ['script.output', 'script.stop', 'script.saveAs', 'script.copyCommand'],
+  ],
+  [
+    'package script while its project prepares',
+    scriptTarget({ isSaved: false, isRunning: false, blocked: 'ledger-core is still preparing' }),
+    [
+      'script.output',
+      'script.run (ledger-core is still preparing)',
+      'script.saveAs',
+      'script.copyCommand',
+    ],
+  ],
+];
+
+describe('git surface menus in every state', () => {
+  it.each(GIT_STATES)('%s', (_state, target, expected) => {
+    expect(matrixOf(target)).toEqual(expected);
+  });
+
+  it('folds into the chosen older commit from the submenu', async () => {
+    const onFold = vi.fn();
+    const target = commitTarget(2);
+    if (target.kind !== 'commit') {
+      throw new Error('expected a commit');
+    }
+    await run({ ...target, facts: { ...target.facts, onFold } }, 'commit.fold', 'a1');
+    expect(onFold).toHaveBeenCalledWith('a1');
+  });
+});
+
+describe('transcript message menu', () => {
+  const message = (fields: {
+    readonly agentId: string | null;
+    readonly text: string;
+  }): ObjectTarget => ({
+    kind: 'message',
+    text: fields.text,
+    sessionId: SESSION,
+    agentId: fields.agentId as never,
+  });
+
+  it('offers open, quote and both copies on a message of a live agent', () => {
+    seed(standalone({ status: 'completed' }));
+    expect(
+      matrixOf(message({ agentId: AGENT, text: 'The **ledger-core** join is unindexed.' })),
+    ).toEqual(['message.openAgent', 'message.quote', 'message.copy', 'message.copyMarkdown']);
+  });
+
+  it('offers only the copies when no agent can take a reply', () => {
+    seed({});
+    expect(matrixOf(message({ agentId: null, text: 'Northwind asked for half even.' }))).toEqual([
+      'message.copy',
+      'message.copyMarkdown',
+    ]);
+  });
+
+  it('copies plain text or the markdown source, and quotes into the draft', async () => {
+    seed(standalone({ status: 'completed' }));
+    copies.length = 0;
+    const target = message({ agentId: AGENT, text: 'The **ledger-core** join is `unindexed`.' });
+    await run(target, 'message.copy');
+    await run(target, 'message.copyMarkdown');
+    expect(copies).toEqual([
+      'The ledger-core join is unindexed.',
+      'The **ledger-core** join is `unindexed`.',
+    ]);
+    await run(target, 'message.quote');
+    expect(useAppStore.getState().agentDraft[AGENT]).toBe(
+      '> The **ledger-core** join is `unindexed`.\n\n',
+    );
   });
 });
 

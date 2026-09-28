@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { AnchoredPopover, IconButton, cn, useDropdown, tintClasses } from '@goodboy/ui';
+import { AnchoredPopover, IconButton, cn, useDropdown } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { useToast } from '../../../../../app/components/Toast';
 import { useAppStore } from '../../../../../store';
@@ -11,6 +11,13 @@ import {
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { ObjectOverflowList } from '../../../../actions/components/ObjectOverflowMenu/ObjectOverflowList';
+import {
+  PROJECT_DETACH_EVENT,
+  projectKeyOf,
+  type ProjectDetachRequest,
+} from '../../../../actions/kinds/project';
+import type { ProjectActionTarget } from '../../../../actions/types';
 import { DetachConfirm } from './DetachConfirm';
 import {
   BLOCKER_SENTENCE,
@@ -38,6 +45,14 @@ type DetachTarget = {
   readonly isOnDisk: boolean;
 };
 
+const NO_OMISSIONS: ReadonlyArray<string> = [];
+
+const isDetachRequest = (event: Event): event is CustomEvent<ProjectDetachRequest> =>
+  event instanceof CustomEvent &&
+  typeof event.detail === 'object' &&
+  event.detail !== null &&
+  'projectKey' in event.detail;
+
 const BLOCKER_CODES = [
   'agent-running',
   'terminal-open',
@@ -50,11 +65,18 @@ export const MountActionsMenu = ({
   projectName,
   worktreePath,
 }: Props) => {
+  const projectKey = projectKeyOf({ sessionId, projectId });
+  const openEvent = `goodboy:project-menu-open:${projectKey}`;
+  const target = useMemo<ProjectActionTarget>(
+    () => ({ kind: 'project', sessionId, projectId }),
+    [projectId, sessionId],
+  );
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-96',
     expectedWidth: 384,
     expectedHeight: 190,
+    openEvent,
   });
   const detachProject = useAppStore((state) => state.detachProject);
   const reportError = useAppStore((state) => state.reportError);
@@ -158,6 +180,22 @@ export const MountActionsMenu = ({
     });
   };
 
+  const assessRef = useRef(assess);
+  assessRef.current = assess;
+
+  useEffect(() => {
+    const onRequest = (event: Event) => {
+      if (!isDetachRequest(event) || event.detail.projectKey !== projectKey) {
+        return;
+      }
+      setIsConfirming(true);
+      assessRef.current();
+      window.dispatchEvent(new CustomEvent(openEvent));
+    };
+    window.addEventListener(PROJECT_DETACH_EVENT, onRequest);
+    return () => window.removeEventListener(PROJECT_DETACH_EVENT, onRequest);
+  }, [openEvent, projectKey]);
+
   const cancelDetach = () => {
     requestRef.current = requestRef.current + 1;
     setAssessments(null);
@@ -215,7 +253,6 @@ export const MountActionsMenu = ({
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
       ariaLabel={label}
       anchorClassName="shrink-0"
       trigger={
@@ -256,25 +293,13 @@ export const MountActionsMenu = ({
         />
       ) : null}
       {isConfirming ? null : (
-        <div className="flex flex-col">
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setIsConfirming(true);
-              assess();
-            }}
-            className={cn(
-              'flex w-full items-center px-2.5 py-1.5 text-left',
-              tintClasses('danger').text,
-              'motion-safe:transition-colors',
-              tintClasses('danger').hoverBg,
-              'hover:text-danger',
-            )}
-          >
-            Detach project
-          </button>
-        </div>
+        <ObjectOverflowList
+          target={target}
+          label={label}
+          anchorKey={null}
+          omit={NO_OMISSIONS}
+          onClose={dropdown.close}
+        />
       )}
     </AnchoredPopover>
   );

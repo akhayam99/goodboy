@@ -16,10 +16,10 @@ import { selectMountForPath } from '../../../store/slices/project-mounts/selecto
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { ActionDefinition, DiffActionTarget, ObjectKindDefinition } from '../types';
 import { abortRebase, plural, pushMount, rebaseMount, settleRequest } from './gitRuns';
-import { worktreeFactsFor } from './worktree';
-import type { WorktreeFacts } from './worktreeFacts';
+import { mountFactsFor } from './mount';
+import type { MountFacts } from './mountFacts';
 
-export type DiffFacts = WorktreeFacts & {
+export type DiffFacts = MountFacts & {
   readonly patch: string;
   readonly rebaseConflicts: number;
 };
@@ -262,7 +262,7 @@ export const DIFF_KIND: ObjectKindDefinition<DiffActionTarget, DiffFacts> = {
     if (mount === null || mount.mountId === undefined) {
       return null;
     }
-    const facts = worktreeFactsFor({
+    const facts = mountFactsFor({
       state,
       sessionId: target.sessionId,
       mountId: mount.mountId,

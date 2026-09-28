@@ -8,9 +8,9 @@ import type {
 import { changedCount, distanceAhead, distanceBehind } from '../../../shared/lib/gitStatus';
 import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
 
-export type WorktreeRequestPhase = 'open' | 'draft' | 'merged' | 'closed';
+export type MountRequestPhase = 'open' | 'draft' | 'merged' | 'closed';
 
-export type WorktreeFacts = {
+export type MountFacts = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
   readonly projectId: ProjectId;
@@ -22,7 +22,7 @@ export type WorktreeFacts = {
   readonly keptPath: string | null;
   readonly isRepo: boolean;
   readonly isClosed: boolean;
-  readonly pr: WorktreeRequestPhase | null;
+  readonly pr: MountRequestPhase | null;
   readonly requestLabel: string | null;
   readonly requestNumber: number | null;
   readonly requestProvider: MountPullRequestProvider | null;
@@ -37,10 +37,10 @@ export type WorktreeFacts = {
   readonly canStartTurnsHere: boolean;
   readonly isDraftAgentRunning: boolean;
   readonly blockers: ReadonlyArray<string>;
-  readonly editors: ReadonlyArray<WorktreeEditor>;
+  readonly editors: ReadonlyArray<MountEditor>;
 };
 
-export type WorktreeEditor = {
+export type MountEditor = {
   readonly binary: string;
   readonly label: string;
 };
@@ -50,7 +50,7 @@ type RequestParams = {
   readonly isDraft: boolean;
 };
 
-const phaseOf = ({ state, isDraft }: RequestParams): WorktreeRequestPhase => {
+const phaseOf = ({ state, isDraft }: RequestParams): MountRequestPhase => {
   if (state === 'merged' || state === 'closed') {
     return state;
   }
@@ -87,10 +87,10 @@ type Params = {
   readonly canStartTurnsHere: boolean;
   readonly isDraftAgentRunning: boolean;
   readonly blockers: ReadonlyArray<string>;
-  readonly editors: ReadonlyArray<WorktreeEditor>;
+  readonly editors: ReadonlyArray<MountEditor>;
 };
 
-export const worktreeFacts = ({
+export const mountFacts = ({
   sessionId,
   mountId,
   projectId,
@@ -110,7 +110,7 @@ export const worktreeFacts = ({
   isDraftAgentRunning,
   blockers,
   editors,
-}: Params): WorktreeFacts => {
+}: Params): MountFacts => {
   const ahead = status === null ? 0 : (distanceAhead({ distance: status.mainDistance }) ?? 0);
   const upstreamAhead =
     status === null ? null : distanceAhead({ distance: status.upstreamDistance });

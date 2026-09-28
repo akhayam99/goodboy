@@ -4,6 +4,7 @@ import { extractAllCommentResolved, isReviewThreadId, stripControlMarkers } from
 import { HandoffChip } from '../HandoffChip';
 import { PlanChip } from '../PlanChip';
 import { ResolverThreadsCard } from '../ResolverThreadsCard';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 type Props = {
   text: string;
@@ -16,8 +17,15 @@ export const AssistantText = ({ text, sessionId, agentId = null }: Props) => {
   const hasCommentResolvedMarker = extractAllCommentResolved(text).some(({ threadId }) =>
     isReviewThreadId(threadId),
   );
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'message', text: displayText, sessionId, agentId },
+    anchorKey: null,
+  });
   return (
-    <div className="group relative flex flex-col gap-2 text-prose">
+    <div
+      className="group relative flex flex-col gap-2 text-prose"
+      onContextMenu={menu.onContextMenu}
+    >
       {hasCommentResolvedMarker ? null : (
         <div className="absolute -right-1 -top-1 opacity-0 motion-safe:transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <CopyButton value={text} label="message" />

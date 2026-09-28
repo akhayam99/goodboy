@@ -86,7 +86,7 @@ describe('ProjectBranchChip', () => {
   it('opens the switch panel when the menu asks for it', async () => {
     renderChip();
 
-    window.dispatchEvent(new CustomEvent('goodboy:worktree-switch-branch:mount-2'));
+    window.dispatchEvent(new CustomEvent('goodboy:mount-switch-branch:mount-2'));
 
     await waitFor(() => expect(screen.getByTestId('branch-switch-panel')).toBeDefined());
   });

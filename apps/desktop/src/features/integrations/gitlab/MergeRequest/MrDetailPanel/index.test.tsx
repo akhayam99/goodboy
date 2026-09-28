@@ -81,7 +81,10 @@ const h = vi.hoisted(() => ({
 
 vi.mock('../../../../../store', async () => ({
   ...(await import('../../../../../store/slices/navigation/place')),
-  useAppStore: <T,>(selector: (state: Store) => T) => selector(h.store),
+  useAppStore: Object.assign(<T,>(selector: (state: Store) => T) => selector(h.store), {
+    getState: () => h.store,
+    subscribe: () => () => undefined,
+  }),
 }));
 
 vi.mock('../../../../../app/components/Toast', () => ({
@@ -327,7 +330,7 @@ describe('MrDetailPanel', () => {
 
   it.each([
     ['Merge', 'Merge !4?'],
-    ['Close merge request…', 'Close !4?'],
+    ['Close merge request', 'Close !4?'],
   ] as const)('backing out of the %s confirmation writes nothing', (label, question) => {
     render(
       <MrDetailPanel
@@ -468,7 +471,7 @@ describe('MrDetailPanel', () => {
     );
 
     openMenu();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Close merge request…' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Close merge request' }));
     expect(screen.getByText('Close !4?')).toBeDefined();
     expect(h.gitlabUpdateMrState).not.toHaveBeenCalled();
 

@@ -3,7 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useRef } from 'react';
-import { ToastProvider, useToast, useToastLift, type ToastAction, type ToastKind } from './index';
+import { ToastProvider, useToast, useToastLift, type ToastAction } from './index';
+import type { ToastKind } from './types';
 
 type Shot = {
   readonly kind: ToastKind;

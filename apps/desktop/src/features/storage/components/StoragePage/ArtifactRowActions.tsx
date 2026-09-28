@@ -3,7 +3,7 @@ import { Button, OverflowMenu, cn, tintClasses, type OverflowMenuItem } from '@g
 import { useAppStore } from '../../../../store';
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { KEEP_DAYS } from './worktreeRowMenu';
+import { KEEP_DAYS } from '../../../actions/kinds/worktree';
 
 type Props = {
   readonly artifact: StorageArtifact;

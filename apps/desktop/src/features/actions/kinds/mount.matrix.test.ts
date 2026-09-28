@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
 import { matrixOf } from '../../../__tests__/helpers/actionMatrix';
 import { resolveActions } from '../resolveActions';
-import { WORKTREE_KIND } from './worktree';
-import type { WorktreeFacts } from './worktreeFacts';
+import { MOUNT_KIND } from './mount';
+import type { MountFacts } from './mountFacts';
 
-const facts = (overrides: Partial<WorktreeFacts>): WorktreeFacts => ({
+const facts = (overrides: Partial<MountFacts>): MountFacts => ({
   sessionId: 'session-harborline' as SessionId,
   mountId: 'mount-payments' as MountId,
   projectId: 'project-payments' as ProjectId,
@@ -36,15 +36,15 @@ const facts = (overrides: Partial<WorktreeFacts>): WorktreeFacts => ({
   ...overrides,
 });
 
-const TOOLS = ['worktree.openTerminal menu', 'worktree.openInEditor menu', 'worktree.scripts menu'];
-const COPIES = ['worktree.copyBranch menu', 'worktree.copyPath menu'];
-const HISTORY = ['worktree.rewriteHistory menu', 'worktree.switchBranch chip'];
-const WITH_PR = ['worktree.openPullRequest inline', 'worktree.openDiff inline'];
+const TOOLS = ['mount.openTerminal menu', 'mount.openInEditor menu', 'mount.scripts menu'];
+const COPIES = ['mount.copyBranch menu', 'mount.copyPath menu'];
+const HISTORY = ['mount.rewriteHistory menu', 'mount.switchBranch chip'];
+const WITH_PR = ['mount.openPullRequest inline', 'mount.openDiff inline'];
 const DIRTY_2 = 'Commit or discard the 2 uncommitted changes first.';
 
 const STATES: ReadonlyArray<{
   readonly name: string;
-  readonly facts: WorktreeFacts;
+  readonly facts: MountFacts;
   readonly expected: ReadonlyArray<string>;
 }> = [
   {
@@ -52,11 +52,11 @@ const STATES: ReadonlyArray<{
     facts: facts({ comments: 3 }),
     expected: [
       ...WITH_PR,
-      'worktree.openReview inline',
+      'mount.openReview inline',
       ...TOOLS,
       ...HISTORY,
       ...COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   },
   {
@@ -70,12 +70,12 @@ const STATES: ReadonlyArray<{
       unpushed: 3,
     }),
     expected: [
-      'worktree.openDiff inline',
+      'mount.openDiff inline',
       ...TOOLS,
-      'worktree.createPullRequest inline',
+      'mount.createPullRequest inline',
       ...HISTORY,
       ...COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   },
   {
@@ -88,18 +88,18 @@ const STATES: ReadonlyArray<{
       ahead: 3,
     }),
     expected: [
-      'worktree.openDiff inline',
+      'mount.openDiff inline',
       ...TOOLS,
-      'worktree.createPullRequest inline',
+      'mount.createPullRequest inline',
       ...HISTORY,
       ...COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   },
   {
     name: 'Draft PR',
     facts: facts({ pr: 'draft', ahead: 4 }),
-    expected: [...WITH_PR, ...TOOLS, ...HISTORY, ...COPIES, 'worktree.close menu'],
+    expected: [...WITH_PR, ...TOOLS, ...HISTORY, ...COPIES, 'mount.close menu'],
   },
   {
     name: 'PR open, 2 not pushed',
@@ -107,10 +107,10 @@ const STATES: ReadonlyArray<{
     expected: [
       ...WITH_PR,
       ...TOOLS,
-      'worktree.push inline',
+      'mount.push inline',
       ...HISTORY,
       ...COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   },
   {
@@ -119,10 +119,10 @@ const STATES: ReadonlyArray<{
     expected: [
       ...WITH_PR,
       ...TOOLS,
-      'worktree.rebase inline',
+      'mount.rebase inline',
       ...HISTORY,
       ...COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   },
   {
@@ -131,11 +131,11 @@ const STATES: ReadonlyArray<{
     expected: [
       ...WITH_PR,
       ...TOOLS,
-      `worktree.rebase inline (${DIRTY_2})`,
-      `worktree.rewriteHistory menu (${DIRTY_2})`,
-      'worktree.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
+      `mount.rebase inline (${DIRTY_2})`,
+      `mount.rewriteHistory menu (${DIRTY_2})`,
+      'mount.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
       ...COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   },
   {
@@ -144,10 +144,10 @@ const STATES: ReadonlyArray<{
     expected: [
       ...WITH_PR,
       ...TOOLS,
-      'worktree.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
+      'mount.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
       ...HISTORY,
       ...COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   },
   {
@@ -155,11 +155,11 @@ const STATES: ReadonlyArray<{
     facts: facts({ dirty: 3, isRebasing: true }),
     expected: [
       ...WITH_PR,
-      'worktree.openTerminal notice',
-      'worktree.openInEditor menu',
-      'worktree.scripts menu',
-      'worktree.abortRebase notice',
-      'worktree.rewriteHistory menu (Finish or abort the rebase first.)',
+      'mount.openTerminal notice',
+      'mount.openInEditor menu',
+      'mount.scripts menu',
+      'mount.abortRebase notice',
+      'mount.rewriteHistory menu (Finish or abort the rebase first.)',
       ...COPIES,
     ],
   },
@@ -167,17 +167,17 @@ const STATES: ReadonlyArray<{
     name: 'Merged',
     facts: facts({ pr: 'merged', ahead: 0 }),
     expected: [
-      'worktree.openPullRequest inline',
+      'mount.openPullRequest inline',
       ...TOOLS,
-      'worktree.switchBranch chip',
+      'mount.switchBranch chip',
       ...COPIES,
-      'worktree.close inline',
+      'mount.close inline',
     ],
   },
   {
     name: 'PR closed',
     facts: facts({ pr: 'closed' }),
-    expected: [...WITH_PR, ...TOOLS, ...HISTORY, ...COPIES, 'worktree.close menu'],
+    expected: [...WITH_PR, ...TOOLS, ...HISTORY, ...COPIES, 'mount.close menu'],
   },
   {
     name: 'New branch, no changes',
@@ -191,22 +191,22 @@ const STATES: ReadonlyArray<{
     }),
     expected: [
       ...TOOLS,
-      'worktree.switchBranch chip',
-      'worktree.startTurnsHere menu',
+      'mount.switchBranch chip',
+      'mount.startTurnsHere menu',
       ...COPIES,
-      'worktree.close menu',
+      'mount.close menu',
     ],
   },
   {
     name: 'Worktree closed, files kept',
     facts: facts({ isClosed: true, worktreePath: null }),
-    expected: ['worktree.reopen inline', ...COPIES, 'worktree.forget menu'],
+    expected: ['mount.reopen inline', ...COPIES, 'mount.forget menu'],
   },
 ];
 
-const definitions = WORKTREE_KIND.actions;
+const definitions = MOUNT_KIND.actions;
 
-describe.each(STATES)('worktree, $name', ({ facts: state, expected }) => {
+describe.each(STATES)('mount, $name', ({ facts: state, expected }) => {
   it('offers exactly the planned actions', () => {
     expect(matrixOf({ definitions, facts: state })).toEqual(expected);
   });
@@ -219,17 +219,17 @@ describe.each(STATES)('worktree, $name', ({ facts: state, expected }) => {
   });
 });
 
-describe('worktree, labels by state', () => {
+describe('mount, labels by state', () => {
   it('names the merged cleanup Remove worktree and the rest Close worktree', () => {
     const merged = resolveActions({ definitions, facts: facts({ pr: 'merged', ahead: 0 }) });
     const open = resolveActions({ definitions, facts: facts({}) });
-    expect(merged.find((action) => action.id === 'worktree.close')?.label).toBe('Remove worktree');
-    expect(open.find((action) => action.id === 'worktree.close')?.label).toBe('Close worktree');
+    expect(merged.find((action) => action.id === 'mount.close')?.label).toBe('Remove worktree');
+    expect(open.find((action) => action.id === 'mount.close')?.label).toBe('Close worktree');
   });
 
   it('says a close with uncommitted changes keeps them', () => {
     const close = resolveActions({ definitions, facts: facts({ dirty: 2 }) }).find(
-      (action) => action.id === 'worktree.close',
+      (action) => action.id === 'mount.close',
     );
     expect(close?.confirm?.confirmLabel).toBe('Close, keep changes');
   });
@@ -242,7 +242,7 @@ describe('worktree, labels by state', () => {
         worktreePath: null,
         blockers: ['Work is still running in hl/fix-duplicate-credit; stop it first.'],
       }),
-    }).find((action) => action.id === 'worktree.forget');
+    }).find((action) => action.id === 'mount.forget');
     expect(forget?.blockedReason).toBe(
       'Work is still running in hl/fix-duplicate-credit; stop it first.',
     );
@@ -258,7 +258,7 @@ describe('worktree, labels by state', () => {
         requestProvider: null,
         isDraftAgentRunning: true,
       }),
-    }).find((action) => action.id === 'worktree.createPullRequest');
+    }).find((action) => action.id === 'mount.createPullRequest');
     expect(create?.blockedReason).toBe('An agent is already opening a pull request.');
   });
 });

@@ -16,9 +16,9 @@ import {
   type ShowToastParams,
   type ToastContextValue,
 } from './toastContext';
-import type { ToastAction, ToastItem, ToastKind } from './types';
+import type { ToastAction, ToastItem } from './types';
 
-export type { ToastAction, ToastItem, ToastKind } from './types';
+export type { ToastAction, ToastItem } from './types';
 
 export type { PreviewNotificationParams, ShowToast } from './toastContext';
 

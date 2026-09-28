@@ -9,7 +9,7 @@ import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conce
 import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
 import { useActionControls } from '../../../../actions/useActionControls';
 import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
-import type { WorktreeActionTarget } from '../../../../actions/types';
+import type { MountActionTarget } from '../../../../actions/types';
 import { useMountRemoteHostKind } from '../../../../worktree/useMountRemoteHostKind';
 import { AlsoInChip } from './AlsoInChip';
 import { BranchPresenceLabel } from './BranchPresenceLabel';
@@ -22,7 +22,7 @@ import { MountRequestLink } from './MountRequestLink';
 import { MountResolveLink } from './MountResolveLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { RebaseStoppedNotice } from './RebaseStoppedNotice';
-import { WorktreeRowAction } from './WorktreeRowAction';
+import { MountRowAction } from './MountRowAction';
 import { useMountPresence } from './useMountPresence';
 import { mountOperationView, mountWorktreeState } from './mountRowState';
 
@@ -64,9 +64,9 @@ export const ProjectMountRow = ({
     isPending: isStatusPendingProp,
   });
   const operation = mountOperationView({ status: worktreeStatus, label });
-  const target = useMemo<WorktreeActionTarget>(
+  const target = useMemo<MountActionTarget>(
     () => ({
-      kind: 'worktree',
+      kind: 'mount',
       sessionId,
       mountId: row.mountId,
       status: worktreeStatus,
@@ -77,7 +77,7 @@ export const ProjectMountRow = ({
   const controls = useActionControls({ target });
   const menuTrigger = useObjectMenuTrigger({ target });
   const switchBranch =
-    controls.actions.find((action) => action.id === 'worktree.switchBranch') ?? null;
+    controls.actions.find((action) => action.id === 'mount.switchBranch') ?? null;
 
   return (
     <li
@@ -154,7 +154,7 @@ export const ProjectMountRow = ({
             ) : (
               <MainDistanceLabel
                 status={worktreeStatus}
-                isRebasing={controls.pendingId === 'worktree.rebase'}
+                isRebasing={controls.pendingId === 'mount.rebase'}
               />
             )}
           </div>
@@ -197,7 +197,7 @@ export const ProjectMountRow = ({
           )}
         </div>
         <div className={CELL}>
-          <WorktreeRowAction sessionId={sessionId} row={row} label={label} controls={controls} />
+          <MountRowAction sessionId={sessionId} row={row} label={label} controls={controls} />
         </div>
         <div className={cn(CELL, 'justify-end')}>
           <ObjectOverflowMenu
@@ -216,7 +216,7 @@ export const ProjectMountRow = ({
             worktreePath={worktreePath}
             baseBranch={row.baseBranch}
             status={worktreeStatus}
-            onOpenTerminal={() => controls.trigger({ actionId: 'worktree.openTerminal' })}
+            onOpenTerminal={() => controls.trigger({ actionId: 'mount.openTerminal' })}
           />
         </div>
       ) : null}

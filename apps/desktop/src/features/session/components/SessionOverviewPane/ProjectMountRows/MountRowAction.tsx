@@ -12,13 +12,13 @@ type Props = {
   readonly controls: ActionControls;
 };
 
-export const WorktreeRowAction = ({ sessionId, row, label, controls }: Props) => {
+export const MountRowAction = ({ sessionId, row, label, controls }: Props) => {
   const action =
     controls.inSlot({ slot: 'inline' }).find((candidate) => candidate.group !== 'open') ?? null;
   if (action === null) {
     return null;
   }
-  if (action.id === 'worktree.close') {
+  if (action.id === 'mount.close') {
     return <RemoveWorktreeAction sessionId={sessionId} row={row} label={label} />;
   }
   const Icon = action.icon;

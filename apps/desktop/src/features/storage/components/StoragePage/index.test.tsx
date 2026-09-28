@@ -51,6 +51,7 @@ const { state } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => ({
   useAppStore: Object.assign(<T,>(selector: (s: typeof state) => T) => selector(state), {
+    subscribe: () => () => undefined,
     getState: () => state,
   }),
   useWorkspaces: () => (state.workspaces as ReadonlyArray<unknown>) ?? [],

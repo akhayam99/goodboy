@@ -8,7 +8,11 @@ import { DIFF_FILE_KIND } from './kinds/diffFile';
 import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
+import { MESSAGE_KIND } from './kinds/message';
+import { MOUNT_KIND } from './kinds/mount';
+import { PROJECT_KIND } from './kinds/project';
 import { RECORD_KIND } from './kinds/record';
+import { SCRIPT_KIND } from './kinds/script';
 import { WORKTREE_KIND } from './kinds/worktree';
 import { SESSION_KIND } from './kinds/session';
 import { SESSIONS_KIND } from './kinds/sessions';
@@ -101,14 +105,22 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: RECORD_KIND, state, target });
     case 'pullRequest':
       return bind({ definition: PULL_REQUEST_KIND, state, target });
-    case 'worktree':
-      return bind({ definition: WORKTREE_KIND, state, target });
     case 'diff':
       return bind({ definition: DIFF_KIND, state, target });
     case 'commit':
       return bind({ definition: COMMIT_KIND, state, target });
     case 'diffFile':
       return bind({ definition: DIFF_FILE_KIND, state, target });
+    case 'mount':
+      return bind({ definition: MOUNT_KIND, state, target });
+    case 'project':
+      return bind({ definition: PROJECT_KIND, state, target });
+    case 'worktree':
+      return bind({ definition: WORKTREE_KIND, state, target });
+    case 'script':
+      return bind({ definition: SCRIPT_KIND, state, target });
+    case 'message':
+      return bind({ definition: MESSAGE_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
     default: {
