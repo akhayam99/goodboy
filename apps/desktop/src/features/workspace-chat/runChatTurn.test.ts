@@ -127,6 +127,57 @@ describe('runChatTurn', () => {
     });
   });
 
+  it('fails a partial answer when the provider reports a failure after some text', async () => {
+    invokeMock.mockImplementation(async () => {
+      emit({
+        runId: RUN,
+        type: 'line',
+        line: assistant([{ type: 'text', text: 'It lives in payments-api' }]),
+      });
+      emit({
+        runId: RUN,
+        type: 'line',
+        line: JSON.stringify({
+          type: 'result',
+          subtype: 'error_during_execution',
+          error: 'The session ran out of context.',
+        }),
+      });
+      emit({ runId: RUN, type: 'end', exit_code: 0, stderr: '' });
+      return RUN;
+    });
+    const text: string[] = [];
+
+    const outcome = await runChatTurn({
+      request: request({}),
+      onText: (delta) => text.push(delta),
+      onRead: () => undefined,
+    });
+
+    expect(text.join('').trim()).toBe('It lives in payments-api');
+    expect(outcome).toEqual({ status: 'failed', error: 'The session ran out of context.' });
+  });
+
+  it('fails a partial answer when the process exits with an error', async () => {
+    invokeMock.mockImplementation(async () => {
+      emit({
+        runId: RUN,
+        type: 'line',
+        line: assistant([{ type: 'text', text: 'It lives in' }]),
+      });
+      emit({ runId: RUN, type: 'end', exit_code: 1, stderr: 'stream closed' });
+      return RUN;
+    });
+
+    const outcome = await runChatTurn({
+      request: request({}),
+      onText: () => undefined,
+      onRead: () => undefined,
+    });
+
+    expect(outcome).toEqual({ status: 'failed', error: 'stream closed' });
+  });
+
   it('fails with the provider output when it ends without an answer', async () => {
     invokeMock.mockImplementation(async () => {
       emit({ runId: RUN, type: 'line', line: 'Not logged in. Run claude login.' });

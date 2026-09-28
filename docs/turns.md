@@ -553,6 +553,9 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 - **Its own channel.** Output streams as `chat_event` with the chat id, never
   as `turn_event`, so no session sees it. There is no reload backlog: a reply
   still streaming when the window closes is marked stopped at the next load.
+  A reply is done only when the stream reports no failure and the CLI exits
+  with 0. A failure event or another exit keeps the partial text and marks
+  the reply failed, with the error under it.
 - **What it carries.** Each turn sends the workspace system prompt and the
   last turns of the chat as text; Goodboy owns the conversation, not the CLI.
   The files a read tool opened are kept on the reply for the "Read N files"

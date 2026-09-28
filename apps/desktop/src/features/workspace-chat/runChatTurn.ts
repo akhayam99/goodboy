@@ -9,6 +9,8 @@ export const CHAT_EVENT_NAME = 'chat_event';
 
 const NO_ANSWER_MESSAGE = 'The provider ended without an answer.';
 
+const CUT_SHORT_MESSAGE = 'The provider stopped before the answer was finished.';
+
 export type ChatTurnRequest = {
   readonly runId: ProviderRunId;
   readonly chatId: ChatId;
@@ -110,11 +112,16 @@ export const runChatTurn = async ({
     for (const line of assembler.flush()) {
       handleLine({ line });
     }
-    if (failure !== null && !hasText) {
+    if (failure !== null) {
       return { status: 'failed', error: failure };
     }
-    if (hasText) {
+    const isCleanExit = envelope.exit_code === 0;
+    if (hasText && isCleanExit) {
       return { status: 'done' };
+    }
+    if (hasText) {
+      const stderr = envelope.stderr.trim();
+      return { status: 'failed', error: stderr === '' ? CUT_SHORT_MESSAGE : stderr };
     }
     const detail = [...unparsed, envelope.stderr.trim()].filter((part) => part !== '').join('\n');
     return { status: 'failed', error: detail === '' ? NO_ANSWER_MESSAGE : detail };
