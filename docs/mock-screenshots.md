@@ -218,6 +218,46 @@ as dark and light `.webp` pairs, and the website's in `website/public/img/`. To
 crop a short surface, use a `--window-size` height shorter than 900. The layout
 keeps its own proportions and the footer stays pinned.
 
+## Landing crops
+
+The website shows three kinds of picture, and each one is cut a different
+way. Every one exists in both themes, and each file is exported at 1200, 2400
+and 3840 wide, as `<id>-<width>.webp` for dark and `<id>-<width>-light.webp`
+for light, so `<picture>` can pick one from `srcset`.
+
+- **A frame** is the whole window. Capture it at `1024x640`, the app's minimum
+  width, at device scale factor 4. That gives 4096x2560, which exports down to
+  every width. A frame never uses a window narrower than 1024: below it the
+  sidebar and the top bar show a layout no user can get. A wide frame (the
+  board at 2.4:1) uses a wider window, such as `1280x533`, instead of a
+  shorter crop.
+- **A fragment** is one component, clipped to its box plus 24 px where the
+  screen continues. Where the component ends in its own border (a popover, a
+  palette), keep 8 px on that side, because the screen behind it is noise.
+  Clip through CDP `Page.captureScreenshot` with `clip.scale`, so the clip
+  renders at 4 times that scale. Pick the scale so the clip reaches 3840 px:
+  a 400 px wide popover needs scale 2.5, which is 10x. Chrome lays the text out
+  again at that size, so it stays sharp. Never enlarge a smaller capture.
+- **A phone crop** is a 4:5 cut of the same window a frame uses. Do not narrow
+  the window to make the content fit: the rows truncate their branch names and
+  titles. Cut the part that reads on its own (the title and projects, the role
+  rows, one board column), and leave the right edge open where a row runs on.
+  A crop that needs more rows uses a taller window, such as `1024x1100`.
+
+The smallest text inside a fragment is 10 css px in the app. The site keeps
+fragment text at 13 css px or larger, so it draws a fragment at 1.3 times its
+clip width or wider. Record that width with each fragment. Measure it from the
+text nodes that intersect the clip, not by eye.
+
+A wireframe or a report inside a fragment needs
+`--disable-site-isolation-trials` (see above), or the frame renders at 1x
+while the rest of the clip is sharp. A wireframe keeps its own palette in both
+app themes, so its light file can match its dark one.
+
+Look at every file at 100% before you keep it, in both themes, at the smallest
+and the largest width. Check the edges too: a clip that cuts a heading in half,
+or catches the top of a button below, needs a new box.
+
 ## Pictures for the changelog
 
 A changelog entry can carry a before/after picture (`image=<name>` in
