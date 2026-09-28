@@ -30,6 +30,7 @@ export const checkForUpdates = (set: SetFn, get: GetFn) => {
         updateFailure: null,
         updateCheckedAt: checkedAt,
       });
+      void get().loadChangelogUpcoming({ target: update.version });
       const autoDownload = await get().loadSetting(SETTING_UPDATER_AUTO_DOWNLOAD);
       if (autoDownload !== 'false') {
         void get().downloadUpdate();

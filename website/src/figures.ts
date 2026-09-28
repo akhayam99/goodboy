@@ -149,6 +149,13 @@ export const STORAGE_LOCAL = fragment({
   alt: 'The storage summary: 5.1 GB used, 5.0 GB that can go, and the usage bar with its legend',
 });
 
+export const WORKSPACE_CHAT = fragment({
+  id: 'workspace-chat',
+  height: 1292,
+  displayWidth: 666,
+  alt: 'An answer about Harborline: where the consent step lives in payments-api, a table of three files and what each does, Read 4 files, Copy and Start work from here',
+});
+
 export const CHAT_PLAIN = fragment({
   id: 'chat-plain',
   height: 603,

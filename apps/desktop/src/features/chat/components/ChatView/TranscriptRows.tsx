@@ -127,11 +127,7 @@ export const TranscriptRows = ({
     }
     out.push(
       <li key={`oq-${ordinal}`}>
-        <OpenQuestionCluster
-          questions={cards}
-          sessionId={sessionId}
-          viewerAgentId={selectedAgentId}
-        />
+        <OpenQuestionCluster questions={cards} sessionId={sessionId} />
       </li>,
     );
   };
@@ -239,11 +235,7 @@ export const TranscriptRows = ({
   if (tailCards != null && tailCards.length > 0) {
     out.push(
       <li key="oq-tail">
-        <OpenQuestionCluster
-          questions={tailCards}
-          sessionId={sessionId}
-          viewerAgentId={selectedAgentId}
-        />
+        <OpenQuestionCluster questions={tailCards} sessionId={sessionId} />
       </li>,
     );
   }

@@ -33,7 +33,7 @@ Goodboy is a desktop app for coding agents, on **macOS** and **Linux**. Connect 
 
 Inside a session every chat has one job. A scout reads the code on a light model, a planner decides on a strong one, implementers write and a tester checks. Agents work in their own copy of each repo, so your checkout stays yours, and a task that spans payments-api and notify-relay gets a branch and a pull request in each.
 
-Five tasks in flight? The activity bar keeps each one where you left it, and **⌘K** and **⌘F** take you anywhere. Review comments come back as commits with the reply drafted in your voice, and a messy branch gets tidied by dragging its commits around.
+Five tasks in flight? The activity bar keeps each one where you left it, and **⌘K** and **⌘F** take you anywhere. Review comments come back as commits with the reply drafted in your voice, and a messy branch gets tidied by dragging its commits around. When you only want an answer, **Chat** reads every project of the workspace without changing a file.
 
 <br>
 

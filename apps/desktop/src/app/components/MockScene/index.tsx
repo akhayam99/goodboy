@@ -6,6 +6,7 @@ import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { ChatShellScene } from './scenes/ChatShellScene';
+import { ChatRoomScene } from './scenes/ChatRoomScene';
 import { InboxScene } from './scenes/InboxScene';
 import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
@@ -67,6 +68,7 @@ import { SettingsWorkspaceScene } from './scenes/audit/SettingsWorkspaceScene';
 import { OnboardingScene } from './scenes/audit/OnboardingScene';
 import { ToastsScene } from './scenes/audit/ToastsScene';
 import { UpdateConfirmScene } from './scenes/audit/UpdateConfirmScene';
+import { UpdateWhatsNewScene } from './scenes/audit/UpdateWhatsNewScene';
 import { NotificationsScene } from './scenes/audit/NotificationsScene';
 import { ChangelogScene } from './scenes/audit/ChangelogScene';
 import { ArtifactStatesScene } from './scenes/audit/ArtifactStatesScene';
@@ -110,6 +112,7 @@ export const MOCK_SCENES = {
   workflow: WorkflowScene,
   shell: ShellScene,
   'chat-shell': ChatShellScene,
+  'chat-room': ChatRoomScene,
   inbox: InboxScene,
   'inbox-source': InboxSourceScene,
   conversation: ConversationScene,
@@ -164,6 +167,7 @@ export const MOCK_SCENES = {
   onboarding: OnboardingScene,
   toasts: ToastsScene,
   'update-confirm': UpdateConfirmScene,
+  'update-whats-new': UpdateWhatsNewScene,
   notifications: NotificationsScene,
   changelog: ChangelogScene,
   'artifact-states': ArtifactStatesScene,

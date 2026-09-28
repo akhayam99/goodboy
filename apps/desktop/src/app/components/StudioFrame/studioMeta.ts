@@ -76,4 +76,11 @@ export const STUDIO_META = {
     closeLabel: 'close notifications',
     skeleton: 'list',
   },
+  chat: {
+    icon: CONCEPT_ICONS.chat,
+    tone: CONCEPT_TONE.chat,
+    title: 'Chat',
+    closeLabel: 'close chat',
+    skeleton: 'rail',
+  },
 } as const satisfies Record<StudioKind, StudioMeta>;

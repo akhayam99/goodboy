@@ -29,8 +29,13 @@ export const AgentBriefQuestions = ({ session, agent }: Props) => {
   }
 
   return (
-    <Band inset="content" label={unanswered.length === 1 ? 'Open question' : 'Open questions'}>
-      <OpenQuestionCluster questions={unanswered} sessionId={session.id} viewerAgentId={agent.id} />
+    <Band
+      inset="content"
+      label="Waiting on you"
+      headingLevel={2}
+      action={<span className="text-secondary text-faint-foreground">{unanswered.length}</span>}
+    >
+      <OpenQuestionCluster questions={unanswered} sessionId={session.id} />
     </Band>
   );
 };

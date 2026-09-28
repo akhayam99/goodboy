@@ -212,6 +212,7 @@ beforeAll(async () => {
     import('../../features/changelog/components/ChangelogStudio'),
     import('../../features/notifications/components/NotificationsStudio'),
     import('../../features/companion/components/CompanionStudio'),
+    import('../../features/workspace-chat/components/ChatStudio'),
   ]);
 }, STORE_IMPORT_TIMEOUT_MS);
 
@@ -1083,6 +1084,15 @@ const ROWS: ReadonlyArray<Row> = [
     covers: ['openSpend', 'studio:impact'],
     open: () => clickButton(/^Spent today/),
     lands: () => heading('Spend'),
+  },
+  {
+    name: 'top bar: chat',
+    covers: ['openStudio', 'studio:chat'],
+    open: () => clickButton(/^Chat$/),
+    lands: both(
+      () => band('Chat'),
+      () => heading('New chat'),
+    ),
   },
   {
     name: 'top bar: all notifications',

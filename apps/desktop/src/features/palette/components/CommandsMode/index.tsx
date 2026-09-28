@@ -15,10 +15,14 @@ import {
   buildActionList,
   buildChoiceList,
   buildCommandList,
+  defaultCommandKey,
   flattenRows,
   type CommandRow,
 } from '../../commandList';
+import { ASK_IN_CHAT_KEY, askEntry } from '../../sources/askEntry';
 import { choiceEntries } from '../../sources/choiceEntries';
+import { askInChat } from '../../../workspace-chat/askInChat';
+import { useAppStore } from '../../../../store';
 import { readFrecency, recordPaletteUse } from '../../frecencyStorage';
 import { useCommandEntries } from '../../hooks/useCommandEntries';
 import { runObjectAction } from '../../../actions/registry';
@@ -90,6 +94,7 @@ export const CommandsMode = ({
   const parentActions = useObjectActions({ target: parentTarget, env });
   const levelActions = useObjectActions({ target: level?.target ?? null, env });
   const entries = useCommandEntries();
+  const hasWorkspace = useAppStore((state) => state.currentWorkspaceId !== null);
 
   const runVerb = useCallback(
     ({ target, actionId }: RunVerbParams) => {
@@ -172,6 +177,14 @@ export const CommandsMode = ({
     );
   }, [entries, scopeVerbs, parentVerbs, scopeTarget, parentTarget]);
 
+  const ask = useMemo(
+    () =>
+      hasWorkspace && query.trim() !== '' && parseQuery(query).prefix === null
+        ? askEntry({ query, ask: (question) => void askInChat({ question }) })
+        : null,
+    [hasWorkspace, query],
+  );
+
   const sections = useMemo(
     () =>
       level === null
@@ -185,6 +198,7 @@ export const CommandsMode = ({
             parentTitle: parentTarget === null ? null : 'For this session',
             frecency,
             now,
+            ask,
           })
         : level.choicesOf !== null
           ? buildChoiceList({
@@ -205,15 +219,19 @@ export const CommandsMode = ({
       scopeInfo,
       frecency,
       now,
+      ask,
       filter,
       levelVerbs,
       levelChoices,
     ],
   );
   const rows = useMemo(() => flattenRows(sections), [sections]);
+  const activeKey =
+    selectedKey ??
+    (level === null ? defaultCommandKey({ query, rows, askKey: ASK_IN_CHAT_KEY }) : null);
   const selectedIndex = Math.max(
     0,
-    rows.findIndex((row) => row.item.key === selectedKey),
+    rows.findIndex((row) => row.item.key === activeKey),
   );
   const selected: CommandRow | null = rows[selectedIndex] ?? null;
   const optionId = (key: string): string => `${listboxId}-${key}`;

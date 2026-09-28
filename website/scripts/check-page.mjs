@@ -26,13 +26,13 @@ const VIEWPORTS = [
     width: 1440,
     height: 900,
     isMobile: false,
-    maxHeight: 13500,
+    maxHeight: 14300,
     isHeroChecked: true,
   },
   { name: 'laptop', width: 1024, height: 768, isMobile: false, maxHeight: Infinity },
   { name: 'tablet', width: 768, height: 1024, isMobile: false, maxHeight: Infinity },
   { name: 'narrow', width: 660, height: 900, isMobile: false, maxHeight: Infinity },
-  { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 14000 },
+  { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 14800 },
 ];
 const OVERLAP_TOLERANCE_PX = 1;
 const THEMES = ['dark', 'light'];

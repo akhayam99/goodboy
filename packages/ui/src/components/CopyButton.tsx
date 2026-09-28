@@ -12,6 +12,7 @@ export type CopyButtonProps = {
   className?: string;
   children?: ReactNode;
   presentation?: 'text' | 'icon';
+  tone?: 'muted' | 'faint';
 };
 
 const GLYPH = { idle: Copy, copied: Check, failed: X } as const;
@@ -37,6 +38,7 @@ export const CopyButton = ({
   className,
   children,
   presentation = 'text',
+  tone = 'muted',
 }: CopyButtonProps) => {
   const { copiedKey, failedKey, copy } = useCopyLink();
   const state = failedKey !== null ? 'failed' : copiedKey !== null ? 'copied' : 'idle';
@@ -54,7 +56,9 @@ export const CopyButton = ({
         className={cn(
           'inline-flex shrink-0 items-center rounded-md p-1 motion-safe:transition-colors',
           FOCUS_RING,
-          state === 'idle' && 'text-muted-foreground hover:bg-hover hover:text-foreground',
+          state === 'idle' && 'hover:bg-hover hover:text-foreground',
+          state === 'idle' &&
+            (tone === 'faint' ? 'text-faint-foreground' : 'text-muted-foreground'),
           state === 'copied' && 'text-success',
           state === 'failed' && 'text-danger',
           className,

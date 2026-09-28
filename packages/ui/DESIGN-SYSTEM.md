@@ -1054,6 +1054,40 @@ over a long diff puts its submit in the diff toolbar instead (Write review's
 Submit review, the diff lens notes), the way a code host puts Review changes at
 the top.
 
+## Question card
+
+An open question is a decision to take, not a message to write, so it has one
+card (`QuestionCard`, in `features/context/components/QuestionsTab`) in three
+places: the Questions lens detail (`variant="full"`), the tail of the
+transcript and the top of an agent's Brief (`variant="compact"`, a raised
+`bg-elevated` card with a `border-soft` hairline). `LiveQuestionCard` wires it
+to the drafts and the delegate controls; every place uses that one.
+
+- **Top line.** The asking agent's avatar, "_Name_ asks", a warning `Chip`
+  when it blocks, the age, then on the right "2 of 3" with dots and chevrons
+  when the same agent asked more than one, and the dismiss `IconButton` for a
+  question that does not block. No footer with pips or a recap.
+- **Question.** The first line is the title (`text-title` full,
+  `text-heading` compact), the rest is up to a few lines of context in
+  `text-body` muted, and file paths quoted as code become `text-code` chips in
+  the full card.
+- **Options.** One tile per answer (`AnswerOptionRow`): the keyboard number in
+  a `text-meta` key cap, the label in `text-row`, a primary `Chip`
+  "Recommended" on the recommended one, and a radio or checkbox indicator on
+  the right. A tile at rest is `bg-fill` plus `border-soft`; hover takes
+  `border`; a picked tile takes `bg-selected`, never a primary tint. "Something
+  else" is the last tile and opens its field in line (`CustomAnswerField`). A
+  question with no options is one text field.
+- **Delegation** is a secondary text action under the tiles
+  (`DelegateAnswerRow`): "Let an agent decide", then the routing pill, hints
+  and Cancel once chosen, and the tiles dim.
+- **Actions** end the card through `FormActions` (`AnswerSubmitButton`): the
+  key hint in `leading`, Skip as `ghost`, Answer (or Hand off) as the one
+  primary. `1` to `9` pick, Enter answers, Escape leaves a field.
+- **Answered.** A staged answer keeps the picked tile and swaps the actions for
+  a done line with Undo (`QuestionAnswerDone`); a sent one shows the answer in
+  a `bg-fill` box.
+
 ## Empty states
 
 A lens with nothing to show has one layout: `LensEmptyState`. It is a wrapper
@@ -1093,6 +1127,36 @@ discarded read as three answers instead of one long list.
 
 What "empty" means, and the copy rule for it, are product rules and live in
 [DESIGN.md](../../DESIGN.md).
+
+## Workspace chat
+
+The chat page (`features/workspace-chat/components/ChatStudio`) is a studio
+on `StudioRailLayout`: the chat list is the rail on `chrome`, one
+conversation is the wrapped sheet, and "Turn into work" is the
+`DrawerColumn` drawer beside it, never a dialog.
+
+- **List rows** are `InteractiveRow`s: title `text-label`, the last answer
+  as a `text-secondary` snippet, time as `text-meta` on the right. Pin and
+  Archive are ghost `IconButton`s that replace the time on hover. Groups are
+  `Eyebrow` headings (Pinned, Today, This week, Idle). An idle row keeps its
+  shape and only drops a text step (`faint` title, `disabled` snippet); a
+  group action ("Archive idle") is a quiet text button at the end of its
+  heading, and its Undo line takes the group's place.
+- **The conversation** is one `max-w-2xl` column. The question is a `bg-subtle`
+  bubble on the right in `text-prose`; the answer is `Markdown` in
+  `text-prose` with no bubble. Under it, in order: `Read N files` (a quiet
+  disclosure listing paths in `text-code`), then Copy (`CopyButton` with
+  `tone="faint"`) and "Start work from here", quiet `text-secondary` actions
+  in the same faint tone as the disclosure. A streaming answer with no text yet shows a pulsing `StatusDot` and
+  "Reading {workspace}", never a spinner.
+- **The header** holds the chat title as `text-heading`, three
+  `border-soft` chips (workspace and project count, Read-only, the model with
+  its provider glyph) that hide below `@3xl/chat`, and one secondary
+  `Start work` button.
+- **The composer** is the only pinned row: a `bg-subtle` box with the
+  textarea, the model menu (provider glyph, never a sparkle), the Enter hint
+  from `@2xl/chat`, and a square send button that turns into Stop while an
+  answer streams.
 
 ## Motion registry
 

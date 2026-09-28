@@ -1180,3 +1180,37 @@ export const ANSWERED_QUESTIONS: ReadonlyArray<OpenQuestion> = [
     answeredAt: answeredAt(26),
   },
 ];
+
+export const LENS_QUESTIONS: ReadonlyArray<OpenQuestion> = [
+  {
+    id: 'mock-flow-question-retry-queue' as OpenQuestionId,
+    sessionId: CHAT_SESSION_ID,
+    createdByAgentId: CHAT_AGENT_BACKOFF_ID,
+    text: [
+      'Which queue should the delivery retries run on?',
+      'A stuck delivery is retried once today and then dropped. Retries can share the jobs queue or get one of their own in `src/deliveries/retry.ts`, and the banner reads from it.',
+    ].join('\n'),
+    suggestedAnswers: ['Shared jobs queue', 'Dedicated retry queue', 'Retry in process'],
+    recommendedAnswer: 'Dedicated retry queue',
+    selectMode: 'one',
+    isBlocking: true,
+    userAnswer: null,
+    status: 'open',
+    createdAt: clock.iso({ at: '2026-09-16T10:40:00.000Z' }),
+  },
+  ...OPEN_QUESTIONS.filter((question) => question.id === QUESTION_SIGNALS_ID),
+  {
+    id: 'mock-flow-question-page-window' as OpenQuestionId,
+    sessionId: CHAT_SESSION_ID,
+    createdByAgentId: CHAT_AGENT_TRIAGE_ID,
+    text: [
+      'How long may a delivery stay stuck before someone is paged?',
+      'After this window the event moves to the dead letters and shows up in the Harborline admin.',
+    ].join('\n'),
+    suggestedAnswers: [],
+    isBlocking: false,
+    userAnswer: null,
+    status: 'open',
+    createdAt: clock.iso({ at: '2026-09-16T10:12:00.000Z' }),
+  },
+];

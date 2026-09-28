@@ -137,6 +137,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
         desc: 'Ask a question about the code. Scout is the default and maps an unfamiliar repo before you plan.',
       },
       {
+        term: 'Chat',
+        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, and Start work turns an answer into a new session or a message to one that is running.',
+      },
+      {
         term: 'Start blank',
         desc: 'Start from the goal: the session opens on its Overview, where you add the goal, projects and work when you are ready.',
       },
@@ -207,7 +211,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Open questions',
-        desc: 'Agents ask as cards, and a blocking question holds its step until you answer. Each question shows once, on the row of the agent that asked. You can hand a question to another agent.',
+        desc: 'Each question is one card: pick an answer with its number and press Enter, or write something else. The Questions view lists what waits on you, and the same card sits in the transcript and on the Brief. A blocking question holds its step until you answer, and Let an agent decide hands it to another agent.',
       },
     ],
     links: [{ label: 'Open Workflows', target: { kind: 'studio', studio: { kind: 'workflow' } } }],
@@ -506,7 +510,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Command palette',
-        desc: 'Opens on what you are looking at, with its actions first. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row. Copy worktree path copies where a session works.',
+        desc: 'Opens on what you are looking at, with its actions first. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row. Any search starts with Ask in Chat. Copy worktree path copies where a session works.',
       },
       {
         term: 'Search',

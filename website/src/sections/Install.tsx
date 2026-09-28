@@ -37,6 +37,7 @@ export const Install = () => {
   return (
     <Chapter
       id="install"
+      isBand
       head={{
         eyebrow: 'Install',
         eyebrowKind: 'page',

@@ -75,11 +75,7 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
         {questions.length > 0 ? (
           <div data-testid="artifact-run-questions" className="flex min-w-0 flex-col gap-2">
             <SectionHeader label="Answer this before it can produce" />
-            <OpenQuestionCluster
-              questions={questions}
-              sessionId={sessionId}
-              viewerAgentId={generation.agentId}
-            />
+            <OpenQuestionCluster questions={questions} sessionId={sessionId} />
           </div>
         ) : null}
         <div className="flex min-w-0 flex-col gap-2">

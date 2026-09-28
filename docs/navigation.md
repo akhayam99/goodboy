@@ -34,7 +34,7 @@
   presence ("what else is going on"). The ⌘K palette is transit ("where do I
   want to be").
 - **The top bar carries state, identity and movement.** Movement is Back,
-  Forward, Board and Search, clustered in the centre. Destinations (studios)
+  Forward, Board, Chat and Search, clustered in the centre. Destinations (studios)
   stay in the footer, and the bar never edits a record in place. The spend
   chip is the one exception: it is state that opens the studio that owns that
   number, on Impact's Spend tab. Board is not a destination like Inbox: it is
@@ -646,8 +646,15 @@ covered.
   is `SquareKanban` plus the word, 24px high like the search: on the board it
   is pressed (`aria-current="page"`, `You're on the board`) and does nothing;
   over a studio on the board it closes the studio; in a session it navigates
-  to the board as a history entry. ⌘⇧H does the same. The command center opens
-  the palette and shows ⌘K; it never takes typing itself.
+  to the board as a history entry. ⌘⇧H does the same. `Chat` sits right of
+  `Board` in the same shape (`MessageCircle` plus the word) and opens the
+  `chat` studio on a new chat; while that studio is open it is pressed and
+  does nothing. It only shows when a workspace is open. The command center opens
+  the palette and shows ⌘K; it never takes typing itself. In the palette,
+  every search with text and no prefix starts with `Ask in Chat`, which opens
+  a new chat with the query as its first message; a query that reads like a
+  question (ends with `?` or has four words or more) has it picked, a shorter
+  one keeps the best match picked so Enter still jumps.
 - Right: the storage chip, the Now chip (needs you, running, scripts, each
   only when above zero), today's spend and the bell. The storage chip
   (`StorageChip`) reads `Free 7 GB` in muted text only while at least 1 GB of
@@ -673,14 +680,15 @@ provider` chip. A bar in the chrome is always a provider window; money is
 The bar is an `@container/topbar` and degrades on its own width, never the
 viewport, so app zoom takes the same path as a narrow window:
 
-1. Below `chrome-wide` the command center narrows and says only `Search`, and
+1. Below `chrome-wide` the command center narrows and says only `Search or
+ask` (wide it adds `in {workspace}`), and
    Limits keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
    (`need you`, `running`, `scripts`, `today`) drop and Limits keeps
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
-The traffic lights, identity, the movement cluster (Board keeps its word),
+The traffic lights, identity, the movement cluster (Board and Chat keep their words),
 the command center, the needs-you count, the
 spend figure, the first Limits chip and the bell never hide. A Limits chip is
 the provider glyph and two bars, with no card, label or number around it; the

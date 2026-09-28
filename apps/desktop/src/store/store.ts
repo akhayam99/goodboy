@@ -267,6 +267,7 @@ import { createSecurityFindingsSlice } from './slices/security-findings';
 import { createBranchCleanupSlice } from './slices/branch-cleanup';
 import { createStarredIssuesSlice } from './slices/starred-issues';
 import { createSearchIndexSlice } from './slices/search-index';
+import { createChatsSlice } from './slices/chats';
 import { handoffsInitialState } from './slices/handoffs/state';
 import type {
   CreatePrSeriesInput,
@@ -319,6 +320,7 @@ import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
+import type { LoadChangelogUpcomingParams } from './slices/changelog/loadChangelogUpcoming';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
@@ -409,6 +411,7 @@ type AppActions = {
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
   focusChangelogRelease(params: FocusChangelogReleaseParams): void;
+  loadChangelogUpcoming(params: LoadChangelogUpcomingParams): Promise<void>;
   setBugReportDraft(params: SetBugReportDraftParams): void;
   clearBugReportDraft(): void;
   openSessionDraft(): void;
@@ -1196,7 +1199,8 @@ export type AppStore = AppState &
   ReturnType<typeof createSecurityFindingsSlice> &
   ReturnType<typeof createBranchCleanupSlice> &
   ReturnType<typeof createStarredIssuesSlice> &
-  ReturnType<typeof createSearchIndexSlice>;
+  ReturnType<typeof createSearchIndexSlice> &
+  ReturnType<typeof createChatsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
@@ -1445,6 +1449,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBranchCleanupSlice(set, get),
   ...createStarredIssuesSlice(set, get),
   ...createSearchIndexSlice(set, get),
+  ...createChatsSlice(set, get),
   ...createPresenceSlice(set, get),
   ...createTurnSlice(set, get),
   ...createWorktreesSlice(set, get),

@@ -161,7 +161,7 @@ Reach any screen without the mouse. **⌘K** opens on what you are looking at, a
   <img src="./docs/readme/s29-palette-light.webp" alt="The command palette on the resolver agent of payments-api 318: its actions first, then Go to">
 </picture>
 
-Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too.
+Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
 
 ### Search
 
@@ -414,14 +414,14 @@ Start each step from a short brief instead of the whole previous chat. If the su
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s07-questions-dark.webp">
-  <img src="./docs/readme/s07-questions-light.webp" alt="An open question from the stuck-delivery banner agent with suggested answers, two picked, and Let an agent answer">
+  <img src="./docs/readme/s07-questions-light.webp" alt="The Questions lens: three questions waiting on you next to the blocking one from the stuck-delivery banner agent, with its context, a file, three numbered answers with Dedicated retry queue recommended, Something else, Let an agent decide, Skip and Answer">
 </picture>
 
-Get questions as cards instead of lines buried in a chat. An agent can mark a question as blocking, which holds its step until you answer, and a question can include suggested answers next to free text. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
+Get each question as one card: who asks, whether it blocks, the question, and its answers as numbered tiles with the recommended one tagged. Pick with a number key, answer with Enter, or write something else in line. The Questions lens lists what waits on you next to the question you are answering, and j and k move through the list. The same card sits at the end of the transcript and at the top of the agent's Brief. The answers to one agent go out together once you answered its last question, and until then each one keeps an Undo. An agent can mark a question as blocking, which holds its step until you answer. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
 
-### Let an agent answer
+### Let an agent decide
 
-Hand a question to another agent with a hint and a model, and its answer counts as yours. **Answer it yourself** takes it back.
+Hand a question to another agent with a hint and a model from **Let an agent decide**, and its answer counts as yours. **Answer it yourself** takes it back.
 
 ### Import workflows
 
@@ -718,7 +718,7 @@ Get updates in the background, then see what is new. With agents running, **Rest
 
 ### Changelog in the app
 
-Read release notes inside the app, searchable, with links into the screen each change touched. After an update, "What's new since" covers the releases you skipped. In the list, only releases that update your data in one direction carry a mark.
+Read release notes inside the app, searchable, with links into the screen each change touched. Before an update, "What's new" shows every release it brings, marked **In the update**. After an update, "What's new since" covers the releases you skipped. In the list, only releases that update your data in one direction carry a mark.
 
 ### Before and after pictures
 
@@ -734,6 +734,17 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s09-transcript-dark.webp">
   <img src="./docs/readme/s09-transcript-light.webp" alt="The Test agent chat on Haiku 4.5: the ask, four operations, and the redelivery test posting one credit for three deliveries">
 </picture>
+
+### Workspace chat
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s34-chat-dark.webp">
+  <img src="./docs/readme/s34-chat-light.webp" alt="Chat in Harborline: the list of chats by Pinned, Today, This week and Idle, and an answer on where the consent step lives in payments-api, with a table of three files, Read 4 files, Copy and Start work from here">
+</picture>
+
+Ask about the workspace without starting a session. **Chat**, right of **Board**, opens a list of your chats next to one conversation. Each chat reads every project of the workspace and never changes a file: the answer streams in, **Read N files** lists what it opened, and the model is picked per chat, from Claude or Codex, the two providers that can be held to reading. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you.
+
+**Start work** turns a chat into work in a panel beside it: the chat's model drafts a title, a goal, what the chat established and the files it named, you edit any of it, then start a new session with that goal or send it into a session that is already running.
 
 ### Roles
 
