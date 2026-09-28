@@ -575,7 +575,7 @@ html[data-theme='light'] {
 }
 
 :root {
-  --titlebar-inset: 12px;
+  --titlebar-inset: 0px;
 }
 
 html {

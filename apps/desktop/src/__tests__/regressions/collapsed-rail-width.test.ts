@@ -4,9 +4,14 @@ import { describe, expect, it } from 'vitest';
 import { COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
 
 const SOURCE_ROOT = join(__dirname, '..', '..');
+const SPACING_PX = 4;
 
 const TOP_BAR = readFileSync(
   join(SOURCE_ROOT, 'app', 'components', 'AppTopBar', 'index.tsx'),
+  'utf8',
+);
+const IDENTITY_ROW = readFileSync(
+  join(SOURCE_ROOT, 'features', 'workspace', 'components', 'WorkspaceIdentityRow', 'index.tsx'),
   'utf8',
 );
 const COLLAPSED_RAIL = readFileSync(
@@ -30,12 +35,33 @@ const classNameContaining = ({ source, marker }: { source: string; marker: strin
   return match[1] ?? '';
 };
 
-describe('collapsed rail and title bar inset', () => {
-  it('pads the top bar with the title bar inset, never a fixed spacing step', () => {
-    const bar = classNameContaining({ source: TOP_BAR, marker: 'grid h-9' });
+type SpacingParams = {
+  readonly className: string;
+  readonly prefix: string;
+};
 
-    expect(bar).toContain('pl-(--titlebar-inset)');
-    expect(bar).not.toMatch(/(?:^|\s)pl-[\d.]+(?:\s|$)/);
+const spacingOf = ({ className, prefix }: SpacingParams): number => {
+  const match = new RegExp(`(?:^|\\s)${prefix}-([\\d.]+)(?:\\s|$)`).exec(className);
+  if (match === null) {
+    throw new Error(`${className} has no ${prefix} utility`);
+  }
+  return Number(match[1]) * SPACING_PX;
+};
+
+describe('workspace tile and collapsed rail axis', () => {
+  it('lands the workspace tile center on the rail button axis', () => {
+    const bar = classNameContaining({ source: TOP_BAR, marker: 'grid h-9' });
+    const row = classNameContaining({ source: IDENTITY_ROW, marker: 'flex w-full' });
+    const trigger = classNameContaining({ source: IDENTITY_ROW, marker: 'group flex w-full' });
+    const tile = classNameContaining({ source: IDENTITY_ROW, marker: 'flex size-5' });
+
+    const tileCenter =
+      spacingOf({ className: bar, prefix: 'pl' }) +
+      spacingOf({ className: trigger, prefix: 'px' }) +
+      spacingOf({ className: tile, prefix: 'size' }) / 2;
+
+    expect(tileCenter).toBe(COLLAPSED_RAIL_WIDTH / 2);
+    expect(row).toContain('ml-(--titlebar-inset)');
   });
 
   it('sizes the rail from the shell constant and centers its buttons', () => {

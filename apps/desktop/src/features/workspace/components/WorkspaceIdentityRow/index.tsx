@@ -28,7 +28,7 @@ export const WorkspaceIdentityRow = () => {
   const accent = workspaceAccent(currentWorkspace.id);
 
   return (
-    <div className="flex w-full min-w-0 items-center gap-0.5">
+    <div className="ml-(--titlebar-inset) flex w-full min-w-0 items-center gap-0.5">
       <AnchoredPopover
         dropdown={dropdown}
         role="dialog"

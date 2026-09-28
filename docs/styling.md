@@ -138,10 +138,11 @@ column slides and stays centred. When pushing would leave the column under
 560px, the drawer lies over the page instead.
 [navigation.md](navigation.md#the-right-drawer) owns what goes in it.
 
-The top bar's left padding is `--titlebar-inset`. It defaults to 12px in
-`styles.css`; on macOS `useTitlebarInset` raises it to 78px so the traffic
+The top bar's 6px left padding puts the workspace tile on the collapsed rail's
+22px axis. The identity row adds `--titlebar-inset`, which defaults to 0px in
+`styles.css`; on macOS `useTitlebarInset` raises it to 72px so the traffic
 lights, drawn inside the bar by the overlay title bar, never sit on a control,
-and drops it back to 12px in full screen. A window without a top bar (the
+and drops it back to 0px in full screen. A window without a top bar (the
 workspace launcher) keeps a 36px drag strip at its top edge instead.
 
 The overlay slots are children of the grid, not siblings above it. An overlay
