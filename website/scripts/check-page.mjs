@@ -229,6 +229,22 @@ const PAGE_PROBE = `(async () => {
       brand: node.closest('svg').getAttribute('data-brand'),
       d: node.getAttribute('d'),
     })),
+    brandInkColors: (() => {
+      const inkProbe = document.createElement('span');
+      inkProbe.style.color = 'var(--brand-ink)';
+      inkProbe.style.position = 'absolute';
+      inkProbe.style.opacity = '0';
+      document.body.appendChild(inkProbe);
+      const inkColor = getComputedStyle(inkProbe).color;
+      inkProbe.remove();
+      return [...document.querySelectorAll('.provider svg[data-brand]')]
+        .filter((node) => node.getAttribute('fill') === 'currentColor')
+        .map((node) => ({
+          brand: node.getAttribute('data-brand'),
+          color: getComputedStyle(node).color,
+          ink: inkColor,
+        }));
+    })(),
   };
 })()`;
 
@@ -308,6 +324,9 @@ const checkRun = ({ viewport, theme, probe, groups, audiences, brands }) => {
       fail(`provider mark ${mark.brand} differs from simple-icons ${source.slug}`);
     }
   });
+  probe.brandInkColors
+    .filter((mark) => mark.color === mark.ink)
+    .forEach((mark) => fail(`provider mark ${mark.brand} uses the text color`));
   return failures;
 };
 

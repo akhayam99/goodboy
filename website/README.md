@@ -128,10 +128,11 @@ image and frame note fades and rises 14 px as it scrolls into view
 (`useReveal`, which marks `[data-reveal]` nodes shown), and the cost bars grow
 from zero when their pair appears. The provider marks in the Works with row are in their
 brand colours (Claude orange, OpenRouter slate, the Gemini gradient from its
-2025 mark; Codex, Cursor, OpenCode and Moonshot black on light and white on
-dark), with the names in tier 3. They scroll as a marquee on a phone and sit
-still on wider screens. `prefers-reduced-motion` turns all of it
-off.
+2025 mark, Codex the OpenAI green, Cursor its orange, OpenCode and Moonshot
+their own accent blues, each hex sourced and recorded in
+`brandIcons.source.json`), with the names in tier 3. They scroll as a marquee
+on a phone and sit still on wider screens. `prefers-reduced-motion` turns all
+of it off.
 
 `Picture` serves every image as a `srcset` of its three widths, so a browser
 downloads only what its screen needs.
