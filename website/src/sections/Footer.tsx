@@ -28,9 +28,9 @@ const COLUMNS: readonly Column[] = [
     title: 'Docs',
     links: [
       { label: 'Getting started', href: SITE.gettingStarted },
-      { label: 'Concepts', href: SITE.concepts },
-      { label: 'Providers', href: SITE.providersDoc },
-      { label: 'Workflows guide', href: SITE.workflowsDoc },
+      { label: 'Concepts', href: SITE.featureGuide },
+      { label: 'Providers', href: `${SITE.featureGuide}#providers-limits-and-cost` },
+      { label: 'Workflows guide', href: `${SITE.featureGuide}#workflows` },
     ],
   },
   {

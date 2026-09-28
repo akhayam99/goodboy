@@ -17,7 +17,7 @@ export const Nav = () => {
             <a href="/#how">How it works</a>
             <a href="/#teams">For teams</a>
             <a href="/#workflows">Workflows</a>
-            <a href={SITE.docs}>Docs</a>
+            <a href={SITE.featureGuide}>Docs</a>
           </nav>
           <span className="navSpacer" />
           <a className="iconButton navGithub" href={SITE.repo} aria-label="Goodboy on GitHub">

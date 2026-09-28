@@ -251,7 +251,9 @@ const PAGE_PROBE = `(async () => {
       brand: node.closest('svg').getAttribute('data-brand'),
       d: node.getAttribute('d'),
     })),
-    docLinks: [...document.querySelectorAll('.textLink')].map((node) => node.getAttribute('href')),
+    docLinks: [
+      ...document.querySelectorAll('.textLink, .navLinks a, nav[aria-label="Docs"] a'),
+    ].map((node) => node.getAttribute('href')),
     brandInkColors: (() => {
       const inkProbe = document.createElement('span');
       inkProbe.style.color = 'var(--brand-ink)';

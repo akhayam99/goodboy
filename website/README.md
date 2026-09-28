@@ -156,9 +156,10 @@ rule itself lives in [docs/tone-of-voice.md](../docs/tone-of-voice.md). `--shots
 `--verify-icons` compares the provider mark paths with their pinned
 simple-icons files over the network; the fill is free, since the marks
 carry brand colours. It also fails a `.textLink` (a "learn more" or "How X
-works" link) that points anywhere in the repo's docs other than
-`FEATURES.md`, or whose anchor is not a heading in the current
-`FEATURES.md`. Tag Manager is blocked during the run.
+works" link), a nav link or a footer Docs-column link that points anywhere in
+the repo's docs other than `FEATURES.md`, or whose anchor is not a heading in
+the current `FEATURES.md`; the GitHub repo, releases, changelog, security and
+legal links are unaffected. Tag Manager is blocked during the run.
 
 ## One invented world
 
