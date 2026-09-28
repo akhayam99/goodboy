@@ -17,7 +17,6 @@ export const FeaturesPage = () => (
             eyebrowKind="page"
             heading="What Goodboy does, group by group"
             lead="Everything in the app, in the order a task lives, from set up to clean up. Pick a release to see what it added."
-            level={1}
           />
           <Features />
           <Tools />

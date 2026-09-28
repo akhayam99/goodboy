@@ -15,16 +15,15 @@ export const Nav = () => {
           <Logo />
           <nav className="navLinks" aria-label="Primary">
             <a href="/#how">How it works</a>
-            <a href="/#teams">For teams</a>
-            <a href="/#workflows">Workflows</a>
-            <a href={SITE.featureGuide}>Docs</a>
+            <a href={SITE.featureGuide}>Features</a>
+            <a href={SITE.releases}>Releases</a>
           </nav>
           <span className="navSpacer" />
-          <a className="iconButton navGithub" href={SITE.repo} aria-label="Goodboy on GitHub">
+          <a className="iconButton" href={SITE.repo} aria-label="Goodboy on GitHub">
             <BrandMark brand="github" size={18} />
           </a>
           <ThemeToggle />
-          <a className="btn small" href={SITE.latest}>
+          <a className="btn small onlyFine" href={SITE.latest} data-download>
             Download
           </a>
         </div>

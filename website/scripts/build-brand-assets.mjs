@@ -280,12 +280,12 @@ const createOgHtml = ({ format, accent, tileColor, mascotBase64, providerBrands,
     .join('');
   const content = `
     <div class="brand"><span class="tile">${createMascot({ className: 'mascot', mascotBase64 })}</span><span>Goodboy</span></div>
-    <h1>Stop <em>re&#8209;explaining yourself.</em></h1>
-    <p class="sub">Describe a task once. Goodboy decides which agent goes next, on the plans you already pay for.</p>
+    <h1>Run many coding agents <em>at once</em></h1>
+    <p class="sub">A free desktop app that puts each one on its own task and branch, on the plans and keys you already pay for.</p>
     <div class="foot">
       <span class="dom">goodboy-ai.dev</span>
       <span class="marks-wrap"><span class="marks">${marks}</span><small>providers as of ${date}</small></span>
-      <span class="note">free and source-available</span>
+      <span class="note">free, no account needed</span>
     </div>`;
   return createBaseHtml({
     width: format.width,

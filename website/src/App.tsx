@@ -2,15 +2,11 @@ import { Analytics } from '@vercel/analytics/react';
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
 import { Providers } from './sections/Providers';
-import { Sessions } from './sections/Sessions';
-import { Teams } from './sections/Teams';
-import { Workflows } from './sections/Workflows';
-import { Routing } from './sections/Routing';
-import { WorkspaceChat } from './sections/WorkspaceChat';
-import { Faq } from './sections/Faq';
+import { JobsAndModels } from './sections/JobsAndModels';
+import { WhatNeedsYou } from './sections/WhatNeedsYou';
+import { StopReexplaining } from './sections/StopReexplaining';
+import { AlsoIn } from './sections/AlsoIn';
 import { Install } from './sections/Install';
-import { Support } from './sections/Support';
-import { Closer } from './sections/Closer';
 import { Footer } from './sections/Footer';
 import { useReveal } from './hooks/useReveal';
 
@@ -23,15 +19,11 @@ export const App = () => {
       <main id="main">
         <Hero />
         <Providers />
-        <Sessions />
-        <Teams />
-        <Workflows />
-        <Routing />
-        <WorkspaceChat />
-        <Faq />
+        <JobsAndModels />
+        <WhatNeedsYou />
+        <StopReexplaining />
+        <AlsoIn />
         <Install />
-        <Support />
-        <Closer />
       </main>
       <Footer />
       <Analytics />

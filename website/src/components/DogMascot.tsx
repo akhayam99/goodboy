@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import mascot from '../assets/mascot.png';
 
 type Props = {
-  readonly size?: number;
+  readonly size?: number | string;
   readonly color?: string;
 };
 

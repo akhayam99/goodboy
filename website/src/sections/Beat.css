@@ -1,0 +1,96 @@
+.beat.band {
+  background: var(--band);
+  border-block: 1px solid var(--line-soft);
+}
+
+.beatInner {
+  display: grid;
+  gap: 40px;
+  padding: 96px 0;
+}
+
+.beatHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 56px;
+  padding: 0 36px;
+}
+
+.beatTitle,
+.beatText {
+  display: grid;
+  justify-items: start;
+  min-width: 0;
+}
+
+.leadIn {
+  margin-bottom: 6px;
+  font: 500 20px/28px var(--sans);
+  letter-spacing: -0.01em;
+  color: var(--t4);
+  text-wrap: balance;
+}
+
+.beatHeading {
+  font: 500 44px/50px var(--display);
+  letter-spacing: var(--tr-h2);
+  text-wrap: balance;
+}
+
+.beatBody {
+  max-width: 620px;
+  font: 400 17px/27px var(--sans);
+  letter-spacing: var(--tr-body);
+  color: var(--t2);
+  text-wrap: pretty;
+}
+
+.beatLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin-top: 16px;
+}
+
+.beatFine {
+  margin-top: 12px;
+  font: var(--t-caption);
+  color: var(--t4);
+}
+
+@media (max-width: 860px) {
+  .beatHead {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 600px) {
+  .beatInner {
+    gap: 24px;
+    padding: 56px 0;
+  }
+  .beatHead {
+    gap: 12px;
+    padding: 0;
+  }
+  .leadIn {
+    font-size: 17px;
+    line-height: 24px;
+  }
+  .beatHeading {
+    font-size: 30px;
+    line-height: 36px;
+    letter-spacing: -0.018em;
+  }
+  .beatBody {
+    font-size: 16px;
+    line-height: 25px;
+  }
+  .beatLinks {
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 14px;
+  }
+}

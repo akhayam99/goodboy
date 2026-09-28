@@ -1,0 +1,26 @@
+.stage {
+  min-width: 0;
+  padding: 48px;
+  border-radius: var(--r-frame);
+  background: var(--stage);
+  border: 1px solid var(--stage-line);
+}
+
+@media (max-width: 1100px) {
+  .stage {
+    padding: 32px;
+  }
+}
+
+@media (max-width: 860px) {
+  .stage {
+    padding: 20px;
+    border-radius: var(--r-stage);
+  }
+}
+
+@media (max-width: 600px) {
+  .stage {
+    padding: 12px;
+  }
+}

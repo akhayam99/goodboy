@@ -8,34 +8,14 @@ type Props = {
   readonly eyebrowKind?: EyebrowKind;
   readonly heading: string;
   readonly lead?: ReactNode;
-  readonly level?: 1 | 2;
-  readonly isCentered?: boolean;
-  readonly className?: string;
-  readonly children?: ReactNode;
 };
 
-export const Statement = ({
-  headingId,
-  eyebrow,
-  eyebrowKind = 'group',
-  heading,
-  lead,
-  level = 2,
-  isCentered = false,
-  className,
-  children,
-}: Props) => {
-  const Heading = level === 1 ? 'h1' : 'h2';
-  return (
-    <div
-      className={['statement', isCentered ? 'centered' : null, className].filter(Boolean).join(' ')}
-    >
-      {eyebrow === undefined ? null : <Eyebrow text={eyebrow} kind={eyebrowKind} />}
-      <Heading id={headingId} className={level === 1 ? 'display' : 'chapterTitle'}>
-        {heading}
-      </Heading>
-      {lead === undefined ? null : <p className="lead">{lead}</p>}
-      {children}
-    </div>
-  );
-};
+export const Statement = ({ headingId, eyebrow, eyebrowKind = 'group', heading, lead }: Props) => (
+  <div className="statement">
+    {eyebrow === undefined ? null : <Eyebrow text={eyebrow} kind={eyebrowKind} />}
+    <h1 id={headingId} className="display">
+      {heading}
+    </h1>
+    {lead === undefined ? null : <p className="lead">{lead}</p>}
+  </div>
+);

@@ -10,7 +10,6 @@ export const SITE = {
   issues: `${REPO}/issues`,
   newIssue: `${REPO}/issues/new`,
   featureGuide: `${BLOB}/FEATURES.md`,
-  gettingStarted: `${REPO}#install`,
   changelog: `${BLOB}/CHANGELOG.md`,
   security: `${BLOB}/SECURITY.md`,
   privacy: POLICY,

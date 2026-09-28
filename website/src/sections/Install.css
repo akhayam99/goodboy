@@ -1,29 +1,65 @@
-.install {
+.installInner {
+  display: grid;
+  gap: 56px;
+  padding: 96px 36px;
+}
+
+.installHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 56px;
+}
+
+.installTitle {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.installBody {
   display: grid;
   justify-items: start;
   gap: 24px;
-  padding: 0 36px;
+  min-width: 0;
+}
+
+.installLead {
+  max-width: 540px;
+  font: 400 17px/27px var(--sans);
+  letter-spacing: var(--tr-body);
+  color: var(--t2);
+  text-wrap: pretty;
+}
+
+.installDesk {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  width: 100%;
 }
 
 .cmd {
   display: flex;
   align-items: center;
   gap: 12px;
-  width: min(100%, 620px);
-  padding: 10px 10px 10px 16px;
+  width: min(100%, 540px);
+  padding: 8px 8px 8px 16px;
   border: 1px solid var(--line);
-  border-radius: var(--r-btn);
+  border-radius: 10px;
   background: var(--raise);
   font: 400 14px/20px var(--mono);
-  font-variant-numeric: tabular-nums;
   color: var(--t1);
 }
 
 .cmd code {
   flex: 1;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
   font: inherit;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .cmdPrompt {
@@ -31,11 +67,15 @@
 }
 
 .cmd button {
-  height: 28px;
-  padding: 0 10px;
+  flex: none;
+  min-width: 72px;
+  height: 34px;
+  padding: 0 12px;
   border-radius: 6px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
   font: 500 13px/20px var(--sans);
-  color: var(--t2);
+  color: var(--t1);
   transition: background 0.16s ease-out;
 }
 
@@ -44,16 +84,54 @@
   transition: none;
 }
 
-.installNote {
-  font: var(--t-caption);
-  color: var(--t4);
+.installFacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  list-style: none;
+}
+
+.installFacts li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  font: 400 15px/22px var(--sans);
+  color: var(--t2);
+  text-wrap: pretty;
+}
+
+.installFacts svg {
+  flex: none;
+  margin-top: 3px;
+  fill: none;
+  stroke: var(--t3);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 860px) {
+  .installHead {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .installFacts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
 }
 
 @media (max-width: 600px) {
-  .install {
-    padding: 0;
+  .installInner {
+    gap: 32px;
+    padding: 56px 0;
   }
-  .cmd {
-    font-size: 13px;
+  .installTitle {
+    gap: 12px;
+  }
+  .installLead {
+    font-size: 16px;
+    line-height: 25px;
   }
 }

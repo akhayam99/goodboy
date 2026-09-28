@@ -62,14 +62,18 @@
 }
 
 @media (max-width: 860px) {
-  .navLinks,
-  .navGithub {
+  .navLinks {
     display: none;
   }
 }
 
 @media (max-width: 600px) {
   .navInner {
+    height: 56px;
     padding: 0;
+  }
+  .iconButton {
+    width: 44px;
+    height: 44px;
   }
 }
