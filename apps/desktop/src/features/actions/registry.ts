@@ -5,6 +5,8 @@ import { LINK_KIND } from './kinds/link';
 import { SESSION_KIND } from './kinds/session';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
+import { REVIEW_KIND } from './kinds/review';
+import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
 import type {
   ActionDefinition,
   ActionEnv,
@@ -87,6 +89,10 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: WORKFLOW_RUN_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
+    case 'review':
+      return bind({ definition: REVIEW_KIND, state, target });
+    case 'reviewComment':
+      return bind({ definition: REVIEW_COMMENT_KIND, state, target });
     default: {
       const exhaustive: never = target;
       return exhaustive;

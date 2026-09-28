@@ -148,12 +148,6 @@ export const driftSentence = ({
   return drift.length === 0 ? null : 'Something changed while you were looking';
 };
 
-export const heldBackChipLabel = ({
-  kind,
-}: {
-  readonly kind: 'comment_changed' | 'approval_withdrawn';
-}): string => `Held back, ${HELD_BACK_REASON[kind]}`;
-
 export type BlockerCopy = {
   readonly sentence: string;
   readonly action: 'open_diff' | 'view_work' | 'recheck_fix' | 'refresh' | null;

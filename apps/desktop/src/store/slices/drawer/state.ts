@@ -3,8 +3,6 @@ import type { ExploreEntry } from '../../../features/explore/explore';
 
 export type ArtifactDrawerTab = 'details' | 'chat';
 
-export type ConversationTab = 'comment' | 'agent';
-
 export type ContextDrawerTab = 'goal' | 'decisions' | 'summary';
 
 export type ContextDrawerView = 'current' | 'versions';
@@ -44,7 +42,7 @@ export type DrawerContent =
     }
   | {
       readonly kind: 'conversation';
-      readonly payload: { readonly threadId: string; readonly tab: ConversationTab };
+      readonly payload: { readonly threadId: string };
     }
   | {
       readonly kind: 'file-diff';

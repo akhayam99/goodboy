@@ -41,15 +41,6 @@ type CountParams = {
   readonly note?: string;
 };
 
-export const resolveAgentCount = ({ threads, pr, routing, note = '' }: CountParams): number =>
-  fixAttemptChunks({
-    threads,
-    mode: 'shared',
-    pr,
-    hint: note.trim(),
-    contextWindow: contextWindowFor(routing.model),
-  }).length;
-
 export const startResolve = async ({
   sessionId,
   threads,

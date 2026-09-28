@@ -202,19 +202,20 @@ describe('navigation slice', () => {
     expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
   });
 
-  it('opens a resolver in Review with its comment on the Agent tab', () => {
+  it('opens a resolver as its transcript layer over the comment in Review', () => {
     const store = makeStore();
     store.setState({
       sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
     } as never);
     store.getState().navigate({ to: agentPlace({ sessionId: S1, agentId: RESOLVER }) });
 
-    expect(store.getState().activeLens[S1]).toBe('review');
-    expect(store.getState().selectedAgentId[S1]).toBeNull();
+    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent`);
+    expect(store.getState().selectedAgentId[S1]).toBe(RESOLVER);
+    store.getState().up();
     expect(store.getState().drawer).toEqual({
       kind: 'conversation',
       sessionId: S1,
-      payload: { threadId: 'gh:PRRT_42', tab: 'agent' },
+      payload: { threadId: 'gh:PRRT_42' },
     });
   });
 
@@ -223,7 +224,7 @@ describe('navigation slice', () => {
     const conversation = {
       kind: 'conversation' as const,
       sessionId: S1,
-      payload: { threadId: 'gh:PRRT_42', tab: 'comment' as const },
+      payload: { threadId: 'gh:PRRT_42' },
     };
     store.setState({
       sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
@@ -255,7 +256,7 @@ describe('navigation slice', () => {
     expect(store.getState().drawer).toEqual({
       kind: 'conversation',
       sessionId: S1,
-      payload: { threadId: 'gh:PRRT_42', tab: 'comment' },
+      payload: { threadId: 'gh:PRRT_42' },
     });
   });
 

@@ -117,6 +117,7 @@ export type EnsureReviewThreadResult = 'existing' | 'created' | 'missing' | 'clo
 export type ResolveActions = {
   readonly acceptResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;
   readonly refuseResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;
+  readonly resolveWithoutReply: (params: ItemParams) => Promise<void>;
   readonly deferResolveQueueItem: (params: ItemParams) => Promise<void>;
   readonly takeUpResolveQueueItem: (params: ItemParams) => Promise<void>;
   readonly reopenResolveQueueItem: (params: Omit<ItemRevisionParams, 'reply'>) => Promise<void>;

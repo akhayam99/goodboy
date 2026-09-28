@@ -15,6 +15,8 @@ import type { ResolveQueueItem, ResolveThread, SessionId } from '@goodboy/types'
 import { createResolveSlice } from './index';
 import { EMPTY_REFUSAL_REPLY, REFUSAL_AFTER_INTEGRATION } from './refuseResolveQueueItem';
 import { resolveInitialState } from './state';
+import { threadOutcome } from './threadOutcome';
+import { RESOLVE_ONLY_AFTER_INTEGRATION } from './resolveWithoutReply';
 import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
@@ -288,6 +290,34 @@ describe('resolve queue actions', () => {
       approvedRevision: null,
       approvedReplyHash: null,
     });
+  });
+
+  it('resolves a comment without a reply: accepted, nothing to post, the thread closes', async () => {
+    const live = createHarness();
+    await live.actions.resolveWithoutReply({ sessionId, itemId: item.id });
+    const [entry] = await listResolveQueueItems({ db, sessionId });
+    expect(entry?.item.approvalState).toBe('accepted');
+    expect(entry?.item.approvedRevision).toBe(entry?.thread.revision);
+    expect(entry?.thread).toMatchObject({
+      stage: 'approved',
+      state: 'answered',
+      disposition: 'no_change',
+      replyDraft: null,
+    });
+    expect([...(await approvedPublicationScope({ sessionId })).threadIds]).toEqual(['thread']);
+    const [row] = await listResolveThreads({ db, sessionId });
+    expect(row === undefined ? null : threadOutcome({ row })).toEqual({ kind: 'analyzed' });
+  });
+
+  it('will not resolve without a reply once the fix is on the branch', async () => {
+    const live = createHarness();
+    await db.execute("UPDATE resolve_queue_items SET integrated_sha = 'abc' WHERE id = ?", [
+      item.id,
+    ]);
+    await expect(live.actions.resolveWithoutReply({ sessionId, itemId: item.id })).rejects.toThrow(
+      RESOLVE_ONLY_AFTER_INTEGRATION,
+    );
+    expect((await listResolveQueueItems({ db, sessionId }))[0]?.item.approvalState).toBe('none');
   });
 
   it('reopens an item as a new generation', async () => {

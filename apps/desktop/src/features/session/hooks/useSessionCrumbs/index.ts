@@ -238,7 +238,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
               drawer: {
                 kind: 'conversation',
                 sessionId,
-                payload: { threadId: resolverThreadId, tab: 'comment' },
+                payload: { threadId: resolverThreadId },
               },
             });
           },

@@ -86,7 +86,7 @@ const LENS_ROOTS: Readonly<Record<string, Root>> = {
     kind: 'shell',
     files: [
       'features/review/components/ReviewPane/index.tsx',
-      'features/resolve/components/ResolveQueueHome/index.tsx',
+      'features/resolve/components/ReviewFlow/index.tsx',
     ],
   },
   GithubTaskDetail: {

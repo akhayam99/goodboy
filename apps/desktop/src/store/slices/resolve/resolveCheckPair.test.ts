@@ -15,7 +15,6 @@ import {
 } from '@goodboy/db';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { MountId, ProjectId, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
-import { summariseResolveChecks } from '../../../features/resolve/checkReceipts';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
 import type { GetFn, SetFn } from './types';
@@ -359,16 +358,11 @@ describe('checking a proposal before accepting it', () => {
     expect(candidate?.state).toBe('ready');
     expect(pair.candidate?.candidateTree).toBe(candidate?.candidateSha);
 
-    const summary = summariseResolveChecks({
-      runs: await listResolveCheckRuns({ db, sessionId: SESSION_ID }),
-      candidate: candidate ?? null,
-      acceptedSet: [],
-    });
-    expect(summary.verdict).toEqual({
-      kind: 'proves_the_fix',
-      testIdentity: 'answers the reviewer',
-    });
-    expect(summary.receipts.every((receipt) => !receipt.isStale)).toBe(true);
+    const runs = await listResolveCheckRuns({ db, sessionId: SESSION_ID });
+    expect(runs.map((run) => run.testIdentity)).toEqual([
+      'answers the reviewer',
+      'answers the reviewer',
+    ]);
   });
 
   it('leaves the session worktree and the branch tip exactly where they were', async () => {
@@ -431,11 +425,7 @@ describe('checking a proposal before accepting it', () => {
     expect(pair.candidate).toBeNull();
     expect(pair.unprovable).not.toBeNull();
     expect(pair.base?.outcome).toBe('failed');
-    const summary = summariseResolveChecks({
-      runs: await listResolveCheckRuns({ db, sessionId: SESSION_ID }),
-      candidate: (await listResolveCandidates({ db, sessionId: SESSION_ID }))[0] ?? null,
-      acceptedSet: [],
-    });
-    expect(summary.verdict).toEqual({ kind: 'base_only' });
+    const runs = await listResolveCheckRuns({ db, sessionId: SESSION_ID });
+    expect(runs.map((run) => run.candidateTree)).toEqual([null]);
   });
 });

@@ -42,10 +42,7 @@ const canonicalAgent = ({
   if (threadId === null) {
     return { place: sessionPlace({ sessionId, lens: 'review', agentId }), drawer: null };
   }
-  return {
-    place: sessionPlace({ sessionId, lens: 'review' }),
-    drawer: { kind: 'conversation', sessionId, payload: { threadId, tab: 'agent' } },
-  };
+  return { place: resolverPagePlace({ sessionId, agentId, threadId }), drawer: null };
 };
 
 type PlaceParams = {

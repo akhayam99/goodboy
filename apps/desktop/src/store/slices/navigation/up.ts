@@ -53,7 +53,7 @@ export const up = (set: SetFn, get: GetFn) => {
         ? {
             kind: 'conversation' as const,
             sessionId,
-            payload: { threadId: target.threadId, tab: 'comment' as const },
+            payload: { threadId: target.threadId },
           }
         : null;
     get().navigate({ to: parent, drawer });

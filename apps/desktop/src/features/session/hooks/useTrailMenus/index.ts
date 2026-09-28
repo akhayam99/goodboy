@@ -427,7 +427,7 @@ export const useTrailMenus = ({
                 drawer: {
                   kind: 'conversation',
                   sessionId,
-                  payload: { threadId: row.thread.threadId, tab: 'comment' },
+                  payload: { threadId: row.thread.threadId },
                 },
               });
             },

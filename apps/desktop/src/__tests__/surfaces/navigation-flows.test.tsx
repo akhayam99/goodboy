@@ -387,7 +387,7 @@ const LENS_ROWS: ReadonlyArray<{
   { label: 'Agents', lens: 'agents', lands: () => heading('Agents') },
   { label: 'Questions', lens: 'questions', lands: () => heading('Questions') },
   { label: 'Artifacts', lens: 'plans', lands: () => heading('Artifacts') },
-  { label: 'Review', lens: 'review', lands: () => heading('Conversations') },
+  { label: 'Review', lens: 'review', lands: () => heading('Review') },
   { label: 'Diff', lens: 'files', lands: () => heading('Diff') },
   {
     label: 'Pull request',
@@ -752,7 +752,7 @@ const ROWS: ReadonlyArray<Row> = [
     name: 'pull request page from the mount row',
     covers: ['openMountRequest', 'openReviewTarget'],
     open: () => clickFirstButton(/^Open PR #\d+ of /),
-    lands: both(lens('review'), () => heading(/Stop retried webhooks/)),
+    lands: both(lens('review'), () => heading('Review')),
   },
   {
     name: 'mount row: changes to the mount diff',

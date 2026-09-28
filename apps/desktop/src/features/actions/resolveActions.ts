@@ -25,6 +25,7 @@ export const resolveOne = <F>({
   confirm: definition.confirm?.({ facts }) ?? null,
   isUndoable: definition.isUndoable === true,
   choices: definition.choices?.({ facts }) ?? null,
+  slot: definition.slot?.({ facts }) ?? 'menu',
 });
 
 export const resolveActions = <F>({

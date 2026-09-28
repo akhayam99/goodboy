@@ -11,7 +11,7 @@ import type {
 } from '@goodboy/types';
 import { AppFooter } from '../../AppFooter';
 import { DrawerHost } from '../../DrawerHost';
-import { selectOpenDrawer } from '../../../../store/slices/drawer/selectOpenDrawer';
+import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { AppTopBar } from '../../AppTopBar';
 import { ToastProvider } from '../../Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
@@ -104,7 +104,7 @@ type ShellFrameProps = {
 };
 
 export const ShellFrame = ({ session, main, sidebar = 'collapsed' }: ShellFrameProps) => {
-  const isDrawerOpen = useAppStore((state) => selectOpenDrawer(state) !== null);
+  const isDrawerOpen = useAppStore((state) => selectDrawerPanel(state) !== null);
   const arrangement = shellArrangement({
     hasWorkspace: true,
     hasActiveSession: true,

@@ -26,6 +26,7 @@ import { ensureReviewThread } from './ensureReviewThread';
 import { materializeReviewThreads } from './materializeReviewThreads';
 import { syncNoteThreads } from './syncNoteThreads';
 import { closeResolvedNote } from './closeResolvedNote';
+import { resolveWithoutReply } from './resolveWithoutReply';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type {
   ResolveActions,
@@ -66,6 +67,11 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       serialize({
         sessionId: params.sessionId,
         run: () => refuseResolveQueueItem({ set, get, ...params }),
+      }),
+    resolveWithoutReply: (params: ItemParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => resolveWithoutReply({ set, get, ...params }),
       }),
     discussResolveThread: (params: DiscussParams) =>
       serialize({

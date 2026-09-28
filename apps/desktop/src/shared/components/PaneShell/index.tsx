@@ -22,6 +22,7 @@ type TitleHeaderProps = {
   readonly tone?: Tone;
   readonly meta?: ReactNode;
   readonly actions?: ReactNode;
+  readonly subheader?: ReactNode;
   readonly header?: undefined;
 };
 
@@ -33,6 +34,7 @@ type CustomHeaderProps = {
   readonly tone?: undefined;
   readonly meta?: undefined;
   readonly actions?: undefined;
+  readonly subheader?: undefined;
 };
 
 type Props = BaseProps & (TitleHeaderProps | CustomHeaderProps);
@@ -82,12 +84,15 @@ export const PaneShell = (props: Props) => {
         {props.header !== undefined ? (
           props.header
         ) : (
-          <PaneTitleRow
-            title={props.title}
-            icon={iconNode}
-            meta={props.meta}
-            actions={titleActions}
-          />
+          <>
+            <PaneTitleRow
+              title={props.title}
+              icon={iconNode}
+              meta={props.meta}
+              actions={titleActions}
+            />
+            {props.subheader ?? null}
+          </>
         )}
         {tabs != null ? <div className="flex min-w-0 items-center">{tabs}</div> : null}
       </div>

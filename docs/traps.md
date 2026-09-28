@@ -63,8 +63,9 @@ file holds those explanations. Everything below has been "fixed" at least once a
   Taking a comment back up (`undeferResolveQueueItem`) only moves a
   `deferred` or `wont_fix` item; the database refuses an `accepted` one.
   Undoing an approval is a reopen (`reopenResolveQueueItem`, stage event
-  `user_unapproved`). `resolveDecisionVerb` maps each row action to the
-  verb its state allows, and its test walks the decision matrix.
+  `user_unapproved`). `reviewComment.undo` in the action registry picks the
+  verb from the approval (reopen for `accepted`, take up for `deferred` and
+  `wont_fix`), and `reviewComment.matrix.test.ts` walks every state.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider

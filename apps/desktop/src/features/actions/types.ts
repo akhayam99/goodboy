@@ -8,6 +8,23 @@ export const ACTION_GROUPS = ['open', 'act', 'copy', 'danger'] as const;
 
 export type ActionGroup = (typeof ACTION_GROUPS)[number];
 
+export const ACTION_SLOTS = [
+  'primary',
+  'secondary',
+  'inline',
+  'link',
+  'nudge',
+  'notice',
+  'hover',
+  'section',
+  'chip',
+  'empty',
+  'menu',
+  'hidden',
+] as const;
+
+export type ActionSlot = (typeof ACTION_SLOTS)[number];
+
 export type ActionConfirmRole = 'alert' | 'danger';
 
 export type ActionConfirm = {
@@ -56,6 +73,7 @@ export type ActionDefinition<F> = {
   readonly confirm?: (params: FactsParams<F>) => ActionConfirm | null;
   readonly isUndoable?: boolean;
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
+  readonly slot?: (params: FactsParams<F>) => ActionSlot;
   readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
 };
 
@@ -82,6 +100,7 @@ export type ResolvedAction = {
   readonly confirm: ActionConfirm | null;
   readonly isUndoable: boolean;
   readonly choices: ReadonlyArray<ActionChoice> | null;
+  readonly slot: ActionSlot;
 };
 
 export type SessionActionTarget = {
@@ -111,11 +130,24 @@ export type LinkActionTarget = {
   readonly href: string;
 };
 
+export type ReviewActionTarget = {
+  readonly kind: 'review';
+  readonly sessionId: SessionId;
+};
+
+export type ReviewCommentActionTarget = {
+  readonly kind: 'reviewComment';
+  readonly sessionId: SessionId;
+  readonly threadId: string;
+};
+
 export type ObjectTarget =
   | SessionActionTarget
   | SessionsActionTarget
   | AgentActionTarget
   | WorkflowRunActionTarget
-  | LinkActionTarget;
+  | LinkActionTarget
+  | ReviewActionTarget
+  | ReviewCommentActionTarget;
 
 export type ObjectKindId = ObjectTarget['kind'];

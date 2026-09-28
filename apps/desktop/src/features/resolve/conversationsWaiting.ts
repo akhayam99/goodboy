@@ -9,9 +9,6 @@ const WAITING: ReadonlySet<ResolveUiState> = new Set([
   'approved',
 ]);
 
-export const isConversationOpen = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
-  row.status !== 'resolved' && row.status !== 'later';
-
 export const conversationsWaiting = ({
   rows,
 }: {

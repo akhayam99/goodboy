@@ -871,12 +871,15 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   and an object you work on is a child page in the trail. See
   [The right drawer](#the-right-drawer).
 - **Review is where the session's code is discussed; the pull request page is
-  where it ships.** The lens is Review, its list is Conversations (heading,
-  back links and the overview action say so), and Resolve stays a verb on the
-  actions that settle a thread. Review exists with or without a pull request:
-  without one it is one root with a `No pull request` header and the session's
-  notes (see Pull request review in `docs/concepts.md`). Its dock holds only the
-  publication, and its header links the pull request page (`PR #528 ›`).
+  where it ships.** Review is one flow: the list of comments on the left in
+  three groups (Open, Waiting for the push, Done) and the focused comment on
+  the right, in the layer itself, never in a drawer. The header carries the
+  title, one quiet link to the pull request (`PR #528 ›`), the count of each
+  state, `Draft fixes for N` and `…`; nothing else of the pull request.
+  "Resolve" names the area, never a button. Review exists with or without a
+  pull request: without one it lists the session's notes under a
+  `No pull request yet` line with `Open a pull request` (see Pull request
+  review in `docs/concepts.md`). Its dock holds only the publication.
   The `pr` lens is the pull request page on GitHub too (`Merge request` on
   GitLab, still their own studios there). Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
@@ -893,16 +896,15 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   out through one publisher, so a restart finds the same rows in the same
   states, and no second path pushes a reply or closes a thread.
 - **The resolver stays in Review.** A resolver exists for one comment, so its
-  home is that comment, never the Agents lens. The conversation panel has two
-  tabs, `Comment` and `Agent`; `Agent` shows the resolver's live transcript and
-  composer, with a dot while it works. View agent, a notification, the
-  agent-started toast and the palette all land on Review with that comment's
-  panel open on `Agent` (`canonicalLocation` maps the resolver to the first
-  thread of its attempt). `…` → Open agent full page opens the resolver as a
-  child page of Review; Back, or Up when the queue is the entry below, returns
-  to the queue with the panel open, and Up from a page reached any other way
-  opens the queue with that comment. There are no return pills: the Diff, the
-  publication and the resolver page all come back through Back.
+  home is that comment, never the Agents lens. The comment shows its agent in
+  one line from the first paint (model, age, the state word, and while it
+  drafts the last thing it said). `…` → Agent transcript opens the resolver as
+  a child page of Review (`s/{session}/review/t/{thread}/agent`), and so do a
+  notification, the agent-started toast and the palette (`canonicalLocation`
+  maps the resolver to the first thread of its attempt). Back, or Up when
+  Review is the entry below, returns to Review with that comment focused, and
+  Up from a page reached any other way opens Review on that comment. There are
+  no return pills: the Diff and the resolver page come back through Back.
 - **The switcher and the palette list only destinations the session can
   use.** One function feeds both. Context is a drawer, not a destination: the
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
@@ -1034,17 +1036,13 @@ record opens in the same `DrawerColumn` inside the studio body
 (`InboxStudioLayout`), with the same width, card and motion. Escape closes the
 record before the studio.
 
-`conversation` (payload `{ threadId, tab }`) is a Review conversation. The queue
-stays the page and the conversation opens in the shell drawer: `DrawerHost`
-renders `ConversationDrawerSlot`, and `ResolveQueueHome` portals the panel
-into it, so the panel keeps the queue's order and keys. Back from the Diff or
-from the resolver's page finds the conversation open again, because it was in
-the entry. The panel is one column that reads its own width (`@container`),
-never the viewport: a 44px `ResolvePanelHeader` (the state as glyph and word,
-the location in mono, previous and next with `N of M`, `…`, close), then the
-comment, the agent's question, the reply, the change, the checks and the
-resolver's run, and a fixed footer with one primary and one secondary action.
-The list beside it replaces the old Back to conversations button.
+`conversation` (payload `{ threadId }`) is the focused comment in Review. It
+rides the drawer slot of the location, so Back from the Diff or from the
+resolver's page finds the same comment focused, but it never opens the shell
+drawer: `selectDrawerPanel` leaves it out, `DrawerHost` has no case for it, and
+Review renders the comment in its own right column beside the list, with the
+trail visible. The column reads its own width (`@container`): below 48rem the
+list folds into an `N of M` counter with previous and next.
 
 `scriptRun` (payload `{ scriptKey, mountId }`) shows one script run's output.
 `ScriptRunDrawer` reads the run from `scriptRuns`, where the one

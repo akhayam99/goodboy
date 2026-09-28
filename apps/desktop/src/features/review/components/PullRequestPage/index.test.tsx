@@ -129,20 +129,6 @@ vi.mock('../../../integrations/github/useGithubConnection', () => ({
 vi.mock('../../../github/usePrDraftAgentRunning', () => ({
   usePrDraftAgentRunning: () => false,
 }));
-vi.mock('../../../resolve/components/ResolveQueueHome', () => ({
-  ResolveQueueHome: ({
-    header,
-    dock,
-  }: {
-    readonly header: React.ReactNode;
-    readonly dock: React.ReactNode;
-  }) => (
-    <div data-testid="resolve-queue">
-      {header}
-      {dock}
-    </div>
-  ),
-}));
 vi.mock('../ReviewPane/WriteReview', () => ({
   WriteReview: () => <div data-testid="write-review" />,
 }));

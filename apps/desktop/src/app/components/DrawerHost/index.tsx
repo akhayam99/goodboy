@@ -1,5 +1,5 @@
 import { useAppStore } from '../../../store';
-import { selectOpenDrawer } from '../../../store/slices/drawer/selectOpenDrawer';
+import { selectDrawerPanel } from '../../../store/slices/drawer/selectDrawerPanel';
 import { ContextDrawer } from '../../../features/session/components/ContextDrawer';
 import { ExploreFileDrawer } from '../../../features/explore/components/ExploreFileDrawer';
 import { ArtifactShellDrawer } from '../../../features/artifacts/components/ArtifactShell/ArtifactShellDrawer';
@@ -8,13 +8,12 @@ import { ScriptRunDrawer } from '../../../features/scripts/components/ScriptRunD
 import { DiffNotesDrawer } from '../../../features/diff/components/DiffNotesDrawer';
 import { FileDiffDrawer } from '../../../features/diff/components/FileDiffDrawer';
 import { ReviewDraftsDrawer } from '../../../features/review/components/ReviewDraftsDrawer';
-import { ConversationDrawerSlot } from '../../../features/resolve/components/ConversationDrawerSlot';
 import { drawerKey } from '../../../store/slices/drawer/drawerKey';
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
 
 export const DrawerHost = () => {
-  const drawer = useAppStore(selectOpenDrawer);
+  const drawer = useAppStore(selectDrawerPanel);
   const closeDrawer = useAppStore((s) => s.closeDrawer);
 
   if (drawer === null) {
@@ -72,8 +71,6 @@ export const DrawerHost = () => {
       return <DiffNotesDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
     case 'review-drafts':
       return <ReviewDraftsDrawer sessionId={drawer.sessionId} onClose={closeDrawer} />;
-    case 'conversation':
-      return <ConversationDrawerSlot />;
     case 'file-diff':
       return (
         <FileDiffDrawer
