@@ -2,18 +2,18 @@ import { Analytics } from '@vercel/analytics/react';
 import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
 import { Providers } from './sections/Providers';
-import { HowItWorks } from './sections/HowItWorks';
-import { Activity } from './sections/Activity';
-import { Briefing } from './sections/Briefing';
-import { Artifacts } from './sections/Artifacts';
-import { Roles } from './sections/Roles';
-import { Workspace } from './sections/Workspace';
-import { Routing } from './sections/Routing';
-import { Integrations } from './sections/Integrations';
+import { Sessions } from './sections/Sessions';
+import { Developers } from './sections/Developers';
+import { Leads } from './sections/Leads';
+import { Workflows } from './sections/Workflows';
+import { Inbox } from './sections/Inbox';
 import { Review } from './sections/Review';
-import { Housekeeping } from './sections/Housekeeping';
+import { Artifacts } from './sections/Artifacts';
+import { Context } from './sections/Context';
+import { Routing } from './sections/Routing';
+import { Storage } from './sections/Storage';
 import { Features } from './sections/Features';
-import { Privacy } from './sections/Privacy';
+import { Tools } from './sections/Tools';
 import { Faq } from './sections/Faq';
 import { Install } from './sections/Install';
 import { Footer } from './sections/Footer';
@@ -24,18 +24,18 @@ export const App = () => (
     <main id="main">
       <Hero />
       <Providers />
-      <HowItWorks />
-      <Activity />
-      <Briefing />
-      <Artifacts />
-      <Roles />
-      <Workspace />
-      <Routing />
-      <Integrations />
+      <Sessions />
+      <Developers />
+      <Leads />
+      <Workflows />
+      <Inbox />
       <Review />
-      <Housekeeping />
+      <Artifacts />
+      <Context />
+      <Routing />
+      <Storage />
       <Features />
-      <Privacy />
+      <Tools />
       <Faq />
       <Install />
     </main>
