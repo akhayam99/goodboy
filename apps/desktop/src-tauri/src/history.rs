@@ -1158,6 +1158,17 @@ pub(crate) fn is_owned_copy(copy: &Path) -> bool {
     reservation_root_of(copy).is_some_and(|root| owner_repo(&root).is_some())
 }
 
+fn own_admin_dir(copy: &Path, repo: &Path) -> Option<PathBuf> {
+    let pointer = std::fs::read_to_string(copy.join(".git")).ok()?;
+    let admin = std::fs::canonicalize(pointer.trim().strip_prefix("gitdir:")?.trim()).ok()?;
+    if admin.parent()? != std::fs::canonicalize(repo.join("worktrees")).ok()? {
+        return None;
+    }
+    let registered = std::fs::read_to_string(admin.join("gitdir")).ok()?;
+    let registered = std::fs::canonicalize(registered.trim()).ok()?;
+    (registered == std::fs::canonicalize(copy.join(".git")).ok()?).then_some(admin)
+}
+
 fn remove_reservation(root: &Path, held: Option<std::fs::File>) -> bool {
     let Some(repo) = owner_repo(root) else {
         return false;
@@ -1166,20 +1177,19 @@ fn remove_reservation(root: &Path, held: Option<std::fs::File>) -> bool {
         return false;
     };
     let copy = root.join(COPY_DIR);
-    let git_dir = format!("--git-dir={}", repo.to_string_lossy());
+    let admin = own_admin_dir(&copy, &repo);
     if copy.exists() {
         let _ = crate::path_env::command("git")
-            .arg(&git_dir)
+            .arg(format!("--git-dir={}", repo.to_string_lossy()))
             .args(["worktree", "remove", "--force"])
             .arg(&copy)
             .output();
     }
     let removed = std::fs::remove_dir_all(root).is_ok();
     drop(lock);
-    let _ = crate::path_env::command("git")
-        .arg(&git_dir)
-        .args(["worktree", "prune"])
-        .output();
+    if let Some(admin) = admin.filter(|admin| admin.exists()) {
+        let _ = std::fs::remove_dir_all(admin);
+    }
     removed
 }
 
@@ -4641,5 +4651,37 @@ mod tests {
         let prediction = predict(&args).unwrap();
         assert_eq!(prediction.steps[3].outcome, StepOutcome::Empty);
         assert!(prediction.steps[3].new_sha.is_some());
+    }
+
+    #[test]
+    fn removing_a_copy_never_prunes_the_other_worktrees_of_the_repo() {
+        let l = ledger("no-global-prune");
+        let elsewhere = temp_root("unmounted-drive").join("ledger-review");
+        git_ok(
+            &l.root,
+            &[
+                "worktree",
+                "add",
+                "--detach",
+                "--quiet",
+                elsewhere.to_str().unwrap(),
+                &l.base,
+            ],
+        );
+        let admin = l.root.join(".git").join("worktrees").join("ledger-review");
+        assert!(admin.exists());
+        std::fs::remove_dir_all(&elsewhere).unwrap();
+        let args = ledger_plan(
+            &l,
+            picks(&[
+                &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+            ]),
+        );
+        trial(&args, &slug("no-global-prune"), false).unwrap();
+        assert!(
+            admin.exists(),
+            "the other worktree's registration was pruned"
+        );
+        assert!(!copy_path_of(&slug("no-global-prune")).exists());
     }
 }
