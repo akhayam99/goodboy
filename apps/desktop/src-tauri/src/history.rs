@@ -1702,28 +1702,43 @@ fn branch_tip(cwd: &Path, branch: &str) -> Option<String> {
         .next()
 }
 
-fn recover_journal(cwd: &Path) -> Result<(), WorktreeError> {
+fn is_consistent(cwd: &Path) -> bool {
+    matches_tree(cwd, "HEAD")
+}
+
+fn pending_notice(journal: &Path, detail: &str) -> String {
+    format!(
+        "An earlier rewrite here was interrupted and {detail} Goodboy changes nothing until it is settled: check git status, then delete {} to go on.",
+        journal.display()
+    )
+}
+
+pub(crate) fn recover_journal(cwd: &Path) -> Result<Option<String>, WorktreeError> {
     let Some(journal) = journal_of(cwd) else {
-        return Ok(());
+        return Ok(None);
     };
     if !journal.exists() {
-        return Ok(());
+        return Ok(None);
     }
     let recorded = std::fs::read_to_string(&journal)?;
-    let mut lines = recorded.lines().map(str::trim);
-    let old = lines.next().unwrap_or_default().to_string();
-    let new = lines.next().unwrap_or_default().to_string();
-    let _backup = lines.next();
-    let branch = lines
-        .next()
-        .filter(|name| !name.is_empty())
-        .map(str::to_string)
-        .or_else(|| crate::worktree::current_branch_name(cwd))
-        .unwrap_or_default();
+    let lines: Vec<&str> = recorded.lines().map(str::trim).collect();
+    let [old, new, _backup, branch, ..] = lines.as_slice() else {
+        return Ok(Some(pending_notice(
+            &journal,
+            "it was written by an older Goodboy that did not record its branch, so it will not be guessed.",
+        )));
+    };
+    let (old, new, branch) = (old.to_string(), new.to_string(), branch.to_string());
+    if branch.is_empty() {
+        return Ok(Some(pending_notice(
+            &journal,
+            "it does not name its branch.",
+        )));
+    }
+    let is_ours = is_on_branch(cwd, &branch) && old != new;
     let tip = branch_tip(cwd, &branch);
-    let is_ours = !branch.is_empty() && is_on_branch(cwd, &branch);
-    if is_ours && tip.as_deref() == Some(old.as_str()) && old != new && matches_tree(cwd, &new) {
-        let _ = git_run(
+    if is_ours && tip.as_deref() == Some(old.as_str()) && matches_tree(cwd, &new) {
+        let finished = git_run(
             cwd,
             &[
                 "update-ref",
@@ -1735,13 +1750,41 @@ fn recover_journal(cwd: &Path) -> Result<(), WorktreeError> {
             ],
             None,
             None,
-        );
+        )?;
+        if finished.status == 0 && is_consistent(cwd) {
+            std::fs::remove_file(&journal)?;
+            return Ok(None);
+        }
+        return Ok(Some(pending_notice(
+            &journal,
+            &format!("finishing it failed: {}", finished.stderr.trim()),
+        )));
     }
-    if is_ours && tip.as_deref() == Some(new.as_str()) && old != new && matches_tree(cwd, &old) {
-        let _ = git_run(cwd, &["read-tree", "-m", "-u", &old, &new], None, None);
+    if is_ours && tip.as_deref() == Some(new.as_str()) && matches_tree(cwd, &old) {
+        let finished = git_run(cwd, &["read-tree", "-m", "-u", &old, &new], None, None)?;
+        if finished.status == 0 && is_consistent(cwd) {
+            std::fs::remove_file(&journal)?;
+            return Ok(None);
+        }
+        return Ok(Some(pending_notice(
+            &journal,
+            &format!("finishing it failed: {}", finished.stderr.trim()),
+        )));
     }
-    std::fs::remove_file(&journal)?;
-    Ok(())
+    if is_consistent(cwd) {
+        std::fs::remove_file(&journal)?;
+        return Ok(None);
+    }
+    if !is_on_branch(cwd, &branch) {
+        return Ok(Some(pending_notice(
+            &journal,
+            &format!("belongs to {branch}, which is not checked out here."),
+        )));
+    }
+    Ok(Some(pending_notice(
+        &journal,
+        "the branch and the files no longer match either side of it.",
+    )))
 }
 
 fn blocking_reason(cwd: &Path) -> Option<String> {
@@ -1851,7 +1894,9 @@ pub(crate) fn move_branch_blocking(
     expected_head: &str,
     new_head: &str,
 ) -> Result<MoveOutcome, WorktreeError> {
-    recover_journal(cwd)?;
+    if let Some(reason) = recover_journal(cwd)? {
+        return Ok(MoveOutcome::Blocked { reason });
+    }
     let current_branch = crate::worktree::current_branch_name(cwd).unwrap_or_default();
     if current_branch != branch {
         return Ok(MoveOutcome::Blocked {
@@ -1878,7 +1923,9 @@ pub(crate) fn move_branch_blocking(
         format!("{expected}\n{target}\n{backup_ref}\n{branch}\n"),
     )?;
     let outcome = apply_move(cwd, branch, &expected, &target, &backup_ref);
-    let _ = std::fs::remove_file(&journal);
+    if is_consistent(cwd) {
+        let _ = std::fs::remove_file(&journal);
+    }
     outcome
 }
 
@@ -3032,11 +3079,61 @@ mod tests {
         let b = branch("apply-journal");
         let journal = journal_of(&b.root).unwrap();
         git_ok(&b.root, &["update-ref", "HEAD", &b.b, &b.c]);
-        std::fs::write(&journal, format!("{}\n{}\nref\n", b.c, b.b)).unwrap();
-        recover_journal(&b.root).unwrap();
+        std::fs::write(&journal, format!("{}\n{}\nref\nfeature\n", b.c, b.b)).unwrap();
+        assert_eq!(recover_journal(&b.root).unwrap(), None);
         assert!(!journal.exists());
         assert_eq!(git_ok(&b.root, &["status", "--porcelain"]), "");
         assert_eq!(git_ok(&b.root, &["rev-parse", "HEAD"]), b.b);
+    }
+
+    #[test]
+    fn a_legacy_journal_without_a_branch_is_kept_and_never_acted_on() {
+        let b = branch("apply-journal-legacy");
+        git_ok(&b.root, &["checkout", "-q", "-b", "other"]);
+        let journal = journal_of(&b.root).unwrap();
+        git_ok(&b.root, &["update-ref", "HEAD", &b.b, &b.c]);
+        std::fs::write(&journal, format!("{}\n{}\nref\n", b.c, b.b)).unwrap();
+        let notice = recover_journal(&b.root).unwrap().unwrap();
+        assert!(notice.contains("older Goodboy"), "{notice}");
+        assert!(journal.exists());
+        assert_eq!(git_ok(&b.root, &["rev-parse", "HEAD"]), b.b);
+        assert_eq!(
+            std::fs::read_to_string(b.root.join("policy.txt")).unwrap(),
+            "three\n"
+        );
+        let blocked = move_branch_blocking(&b.root, "other", &b.b, &b.a).unwrap();
+        assert!(matches!(blocked, MoveOutcome::Blocked { .. }));
+    }
+
+    #[test]
+    fn a_repair_that_fails_keeps_the_journal() {
+        let l = ledger("apply-journal-locked");
+        let mut steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests,
+        ]);
+        steps.push(fold(&l.typo, &l.export, HistoryVerb::Fixup));
+        let head = run_ok(&l, steps, "apply-journal-locked").head.unwrap();
+        git_ok(&l.root, &["read-tree", "-m", "-u", &l.typo, &head]);
+        let journal = journal_of(&l.root).unwrap();
+        std::fs::write(&journal, format!("{}\n{head}\nref\nfeature\n", l.typo)).unwrap();
+        let lock = l
+            .root
+            .join(".git")
+            .join("refs")
+            .join("heads")
+            .join("feature.lock");
+        std::fs::write(&lock, "").unwrap();
+        let notice = recover_journal(&l.root).unwrap();
+        assert!(notice.is_some());
+        assert!(journal.exists());
+        assert_eq!(
+            git_ok(&l.root, &["rev-parse", "refs/heads/feature"]),
+            l.typo
+        );
+        std::fs::remove_file(&lock).unwrap();
+        assert_eq!(recover_journal(&l.root).unwrap(), None);
+        assert!(!journal.exists());
+        assert_eq!(git_ok(&l.root, &["rev-parse", "refs/heads/feature"]), head);
     }
 
     #[test]
@@ -4370,7 +4467,7 @@ mod tests {
         git_ok(&l.root, &["read-tree", "-m", "-u", &l.typo, &head]);
         let journal = journal_of(&l.root).unwrap();
         std::fs::write(&journal, format!("{}\n{head}\nref\nfeature\n", l.typo)).unwrap();
-        recover_journal(&l.root).unwrap();
+        assert_eq!(recover_journal(&l.root).unwrap(), None);
         assert!(!journal.exists());
         assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), head);
         assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
