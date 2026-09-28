@@ -71,6 +71,8 @@ type HitRow = {
   readonly provider: string | null;
   readonly container: string | null;
   readonly status: string | null;
+  readonly ordinal: number | null;
+  readonly url: string | null;
   readonly isArchived: number;
   readonly occurredAt: number;
 };
@@ -182,7 +184,21 @@ const SELECTED = `d.id AS docId, d.fts_rowid AS ftsRowid, d.kind, d.ref_id AS re
   d.agent_id AS agentId, a.name AS agentName, d.mount_id AS mountId,
   ${EFFECTIVE_PROVIDER} AS provider, d.container, ${EFFECTIVE_STATUS} AS status,
   CASE WHEN s.archived_at IS NOT NULL THEN 1 ELSE 0 END AS isArchived,
-  d.occurred_at AS occurredAt`;
+  d.occurred_at AS occurredAt,
+  CASE WHEN d.kind = 'decision'
+    THEN (SELECT number FROM session_decisions WHERE id = d.ref_id) END AS ordinal,
+  CASE
+    WHEN d.id LIKE 'mountpr:%' THEN (SELECT url FROM mount_pr_links WHERE id = d.ref_id)
+    WHEN d.id LIKE 'ghpr:%' THEN (
+      SELECT CASE WHEN json_valid(pr_json) THEN json_extract(pr_json, '$.url') END
+      FROM github_pr_cache WHERE repo_slug = d.container AND branch = d.ref_id)
+    WHEN d.id LIKE 'task:%' THEN (
+      SELECT url FROM session_external_tasks
+      WHERE session_id = d.session_id AND provider = d.provider AND external_id = d.ref_id LIMIT 1)
+    WHEN d.id LIKE 'starred:%' THEN (
+      SELECT url FROM workspace_starred_issues
+      WHERE workspace_id = d.workspace_id AND provider = d.provider AND external_id = d.ref_id)
+  END AS url`;
 
 const JOINS = `LEFT JOIN sessions s ON s.id = d.owner_session_id
   LEFT JOIN live_agents a ON a.id = d.agent_id
@@ -226,6 +242,8 @@ const toHit = ({ row, marks }: ToHitParams): SearchHit | null => {
     provider: row.provider,
     container: row.container,
     status: row.status,
+    ordinal: row.ordinal,
+    url: row.url,
     isArchived: row.isArchived === 1,
     occurredAt: new Date(row.occurredAt).toISOString() as IsoDateTime,
     title: parseMarkedText({ text: marks?.title ?? '' }),

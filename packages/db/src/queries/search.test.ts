@@ -154,6 +154,19 @@ describe('search query', () => {
     ]);
   });
 
+  it('returns the decision number and the provider link of issues and pull requests', async () => {
+    const db = await seeded();
+    const [decision] = await run({ db, query: { text: 'settlement', kinds: ['decision'] } });
+    expect(decision?.ordinal).toBe(1);
+    const links = await run({ db, query: { text: 'payout', kinds: ['pr', 'issue'] } });
+    expect(Object.fromEntries(links.map((hit) => [hit.docId, hit.url]))).toEqual({
+      'ghpr:harborline/ledger-core:ak/feat-payout-stream':
+        'https://github.com/harborline/ledger-core/pull/482',
+      'mountpr:mpr-1': 'https://gitlab.example/mr/17',
+      'task:s-payout:linear:lin-231': 'https://linear.app/harborline/issue/HAR-231',
+    });
+  });
+
   it('ties a pull request to the session whose mount has its branch', async () => {
     const db = await seeded();
     const hits = await run({ db, query: { text: 'payout', kinds: ['pr'] } });

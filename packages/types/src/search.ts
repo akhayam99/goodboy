@@ -53,6 +53,8 @@ export type SearchHit = Readonly<{
   provider: string | null;
   container: string | null;
   status: string | null;
+  ordinal: number | null;
+  url: string | null;
   isArchived: boolean;
   occurredAt: IsoDateTime;
   title: ReadonlyArray<MarkedSegment>;
