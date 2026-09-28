@@ -19,7 +19,7 @@ Agents pick up where they were after a restart or an update, every form ends on 
 ### New
 
 #### Agents resume after a restart
-<!-- gb area=agents image=resume-restart -->
+<!-- gb area=agents -->
 
 Restart Goodboy or install an update and the agents that were running pick up where they stopped, with a note in their transcript. Every window reopens where it was.
 

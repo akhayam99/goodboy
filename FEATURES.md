@@ -144,7 +144,7 @@ Know what needs you from any screen. A top-bar chip counts sessions that need yo
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s03-activity-dark.webp">
-  <img src="./docs/readme/s03-activity-light.webp" alt="A session overview with payments-api and notify-relay, a suggestion to answer an open question, and the Activity timeline">
+  <img src="./docs/readme/s03-activity-light.webp" alt="A session overview with payments-api and notify-relay, and the Activity timeline with one open question on its own row">
 </picture>
 
 ### Session overview
