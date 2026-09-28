@@ -1,5 +1,5 @@
 import { Copy, GitBranch, Link, Link2, Pencil } from 'lucide-react';
-import type { Session, SessionId } from '@goodboy/types';
+import type { Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { openInEditor } from '../../../shared/lib/editor';
@@ -9,7 +9,9 @@ import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
 import { createAgentEventName } from '../../session/hooks/useTrailMenus';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import { RENAME_REQUEST_EVENT, requestRename } from '../renameRequest';
+import { ALL_CHOICES_ID } from '../types';
 import type {
+  ActionChoice,
   ActionConfirm,
   ActionDefinition,
   ActionEnv,
@@ -26,7 +28,16 @@ export type SessionFacts = {
   readonly hasMount: boolean;
   readonly branch: string | null;
   readonly worktreePath: string | null;
+  readonly mounts: ReadonlyArray<SessionProjectMount>;
+  readonly worktreePaths: ReadonlyArray<string>;
   readonly prUrl: string | null;
+};
+
+type SessionWorktree = {
+  readonly id: string;
+  readonly name: string;
+  readonly branch: string | null;
+  readonly path: string;
 };
 
 export const LINK_ISSUE_EVENT = 'goodboy:link-issue';
@@ -85,6 +96,77 @@ const deleteConfirm = ({ facts }: { readonly facts: SessionFacts }): ActionConfi
 });
 
 const isLive = ({ facts }: { readonly facts: SessionFacts }): boolean => !facts.isArchived;
+
+const worktreesOf = ({
+  facts,
+}: {
+  readonly facts: SessionFacts;
+}): ReadonlyArray<SessionWorktree> => {
+  const mounted = facts.mounts
+    .filter((mount) => mount.worktreePath !== '')
+    .map((mount) => ({
+      id: mount.mountId,
+      name: mount.mountName,
+      branch: mount.branch === '' ? null : mount.branch,
+      path: mount.worktreePath,
+    }));
+  if (mounted.length > 0) {
+    return mounted;
+  }
+  return facts.worktreePaths.map((path) => ({
+    id: path,
+    name:
+      path
+        .split('/')
+        .filter((part) => part !== '')
+        .at(-1) ?? path,
+    branch: null,
+    path,
+  }));
+};
+
+const worktreeChoices = ({
+  facts,
+}: {
+  readonly facts: SessionFacts;
+}): ReadonlyArray<ActionChoice> => {
+  const worktrees = worktreesOf({ facts });
+  return worktrees.length < 2
+    ? []
+    : [
+        ...worktrees.map((worktree) => ({
+          id: worktree.id,
+          label: worktree.name,
+          isCurrent: false,
+          detail:
+            worktree.branch === null ? worktree.path : `${worktree.branch} · ${worktree.path}`,
+          keywords: worktree.branch === null ? [worktree.path] : [worktree.branch, worktree.path],
+        })),
+        {
+          id: ALL_CHOICES_ID,
+          label: 'Copy all paths',
+          isCurrent: false,
+          detail: 'One per line',
+        },
+      ];
+};
+
+const worktreeTextFor = ({
+  facts,
+  choice,
+}: {
+  readonly facts: SessionFacts;
+  readonly choice: string | null;
+}): string | null => {
+  const worktrees = worktreesOf({ facts });
+  if (choice === ALL_CHOICES_ID) {
+    return worktrees.map((worktree) => worktree.path).join('\n');
+  }
+  if (choice === null) {
+    return worktrees[0]?.path ?? null;
+  }
+  return worktrees.find((worktree) => worktree.id === choice)?.path ?? null;
+};
 
 const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   {
@@ -185,6 +267,21 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     run: ({ facts, env }) => env.copyText({ text: facts.title }),
   },
   {
+    id: 'session.copyWorktreePath',
+    label: 'Copy worktree path',
+    icon: CONCEPT_ICONS.worktree,
+    group: 'copy',
+    when: ({ facts }) => worktreesOf({ facts }).length > 0,
+    choices: worktreeChoices,
+    run: ({ facts, env, choice }) => {
+      const text = worktreeTextFor({ facts, choice });
+      if (text === null) {
+        return;
+      }
+      return env.copyText({ text });
+    },
+  },
+  {
     id: 'session.copyBranch',
     label: 'Copy branch name',
     icon: GitBranch,
@@ -258,6 +355,7 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
     const rawBranch = state.sessionBranches[target.sessionId] ?? null;
     const branch = rawBranch === null || rawBranch.trim() === '' ? null : rawBranch;
     const mounts = state.sessionProjectMounts[target.sessionId] ?? [];
+    const worktreePaths = state.sessionWorktrees[target.sessionId] ?? [];
     return {
       session,
       sessionId: target.sessionId,
@@ -266,7 +364,9 @@ export const SESSION_KIND: ObjectKindDefinition<SessionActionTarget, SessionFact
       isBranchless: isBranchlessSession({ branch: rawBranch }),
       hasMount: mounts.length > 0 || branch !== null,
       branch: branch ?? mounts[0]?.branch ?? null,
-      worktreePath: state.sessionWorktrees[target.sessionId]?.[0] ?? null,
+      worktreePath: worktreePaths[0] ?? null,
+      mounts,
+      worktreePaths,
       prUrl: state.sessionGithub[target.sessionId]?.pr?.url ?? null,
     };
   },

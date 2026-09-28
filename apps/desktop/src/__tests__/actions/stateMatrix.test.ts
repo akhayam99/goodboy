@@ -27,7 +27,7 @@ import {
   SESSION_ID as REVIEW_SESSION,
   seedResolveScene,
 } from '../../app/components/MockScene/scenes/resolveSeed';
-import type { ActionEnv, ObjectTarget } from '../../features/actions/types';
+import { ALL_CHOICES_ID, type ActionEnv, type ObjectTarget } from '../../features/actions/types';
 import {
   AGENT,
   FIXTURE_NOW,
@@ -150,6 +150,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.startAgent',
       'session.linkIssue',
       'session.copyTitle',
+      'session.copyWorktreePath',
       'session.copyBranch',
       'session.archive',
       'session.delete',
@@ -174,6 +175,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.startAgent',
       'session.linkIssue',
       'session.copyTitle',
+      'session.copyWorktreePath',
       'session.copyBranch',
       'session.copyPr',
       'session.archive',
@@ -192,6 +194,7 @@ const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, Readonl
       'session.open',
       'session.restore',
       'session.copyTitle',
+      'session.copyWorktreePath',
       'session.copyBranch',
       'session.delete',
     ],
@@ -222,6 +225,42 @@ describe('session menu in every state', () => {
     expect(archived?.find((action) => action.id === 'session.delete')?.confirm?.altActionId).toBe(
       undefined,
     );
+  });
+
+  it('copies the only worktree path straight away, with no choices', async () => {
+    seed({ mounts: [mountFixture()] });
+    const action = bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })
+      ?.resolve()
+      .find((candidate) => candidate.id === 'session.copyWorktreePath');
+    expect(action?.choices).toEqual([]);
+    copies.length = 0;
+    await run(SESSION_TARGET, 'session.copyWorktreePath');
+    expect(copies).toEqual([mountFixture().worktreePath]);
+  });
+
+  it('offers every worktree and all of them at once when there are several', async () => {
+    const second = mountFixture({
+      mountId: 'mount-notify-relay' as MountId,
+      mountName: 'notify-relay',
+      worktreePath: '/worktrees/notify-relay',
+      branch: 'hl/payout-webhook',
+    });
+    seed({ mounts: [mountFixture(), second] });
+    const action = bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })
+      ?.resolve()
+      .find((candidate) => candidate.id === 'session.copyWorktreePath');
+    expect(action?.choices?.map((choice) => choice.label)).toEqual([
+      mountFixture().mountName,
+      'notify-relay',
+      'Copy all paths',
+    ]);
+    copies.length = 0;
+    await run(SESSION_TARGET, 'session.copyWorktreePath', 'mount-notify-relay');
+    await run(SESSION_TARGET, 'session.copyWorktreePath', ALL_CHOICES_ID);
+    expect(copies).toEqual([
+      '/worktrees/notify-relay',
+      `${mountFixture().worktreePath}\n/worktrees/notify-relay`,
+    ]);
   });
 
   it('names the branchless delete as final, files and all', () => {

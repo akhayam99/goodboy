@@ -18,7 +18,9 @@ export const choiceEntries = ({ target, action, select }: Params): ReadonlyArray
     kind: 'verb',
     group: 'action',
     icon: action.icon,
-    ...(choice.isCurrent && { detail: 'Current' }),
+    ...(choice.keywords !== undefined && { secondary: choice.keywords }),
+    ...(choice.detail !== undefined && { detail: choice.detail }),
+    ...(choice.detail === undefined && choice.isCurrent && { detail: 'Current' }),
     target,
     run: () => select({ choice: choice.id }),
   }));

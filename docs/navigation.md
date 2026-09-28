@@ -113,7 +113,14 @@ opens it on a mode. Commands is the first mode.
 - **Keys.** ↑↓ move, ↵ runs the row (an object row opens it), → opens every
   verb of an object row, grouped Open, Act, Copy and export, Danger, and ← or
   Backspace goes back. A verb with choices, such as Change model, opens them as
-  a level. A preview pane describes the highlighted row.
+  a level. Copy worktree path copies at once when the session has one
+  worktree; with several it opens them as a level (name, branch and path), and
+  ⌘↵ copies every path, one per line. A preview pane describes the highlighted
+  row.
+- **An agent in scope keeps its session's verbs.** They follow the agent's
+  verbs under "For this session", so Copy worktree path stays one search
+  away. A session verb with the same label as an agent verb steps
+  aside.
 - **Prefixes stay**: `@` agents, `#` sessions, `:` workspaces, `$` scripts,
   `>` actions, `?` help.
 
@@ -223,7 +230,7 @@ never exists on one surface only.
   (creation pickers, property pickers, page chrome).
 - **What each object offers.** A session: Open, Review, Diff, Terminal, Open in
   editor; Rename (inline, in the row that opened the menu), Start agent, Link
-  an issue; copy the title, branch and pull request link; Archive with Undo and
+  an issue; copy the title, worktree path, branch and pull request link; Archive with Undo and
   Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
