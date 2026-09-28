@@ -14,7 +14,7 @@ export const Workflows = () => (
       lead: 'An orchestrator picks each next step and waits for it to finish. Inside a step, several agents can work side by side.',
     }}
   >
-    <Frame figure={RUN_PARALLEL} />
+    <Frame figure={RUN_PARALLEL} cap={800} />
     <WorkflowsGrid />
     <Context />
   </Chapter>
