@@ -2,6 +2,8 @@ import './Shot.css';
 import type { Figure } from '../figures';
 import { Details } from './Details';
 import { useInViewOnce } from './Reveal';
+import { themedId } from './themedSrc';
+import { useTheme } from '../theme/theme';
 
 type Props = {
   readonly figure: Figure;
@@ -10,6 +12,7 @@ type Props = {
 
 export const Shot = ({ figure, isEager = false }: Props) => {
   const { ref, inView } = useInViewOnce<HTMLElement>();
+  const id = themedId({ id: figure.id, theme: useTheme() });
 
   return (
     <figure className={inView ? 'shot in' : 'shot'} ref={ref}>
@@ -21,9 +24,7 @@ export const Shot = ({ figure, isEager = false }: Props) => {
             <i />
           </div>
           <img
-            src={`/img/${figure.id}-1920.webp`}
-            srcSet={`/img/${figure.id}-1920.webp 1920w, /img/${figure.id}.webp ${figure.width}w`}
-            sizes="(max-width: 860px) 200vw, 1240px"
+            src={`/img/${id}.webp`}
             width={figure.width}
             height={figure.height}
             alt={figure.alt}

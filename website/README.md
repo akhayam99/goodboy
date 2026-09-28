@@ -26,25 +26,36 @@ not the section.
 ## Figures
 
 Product figures are real app screenshots from the brand mock scenes (see
-[docs/mock-screenshots.md](../docs/mock-screenshots.md)), dark theme, captured
-at 1440 CSS pixels wide with a device scale factor of 2.667, so each is 3840
-pixels wide. They live in `website/public/img/` as WebP at quality 88:
+[docs/mock-screenshots.md](../docs/mock-screenshots.md)), captured at 1440 by
+900 CSS pixels with a device scale factor of 4, in both app themes. Headless
+Chrome needs `--disable-site-isolation-trials`, or a wireframe or report frame
+renders at scale 1 and comes out soft. They live in `website/public/img/` as
+WebP:
 
-- `<id>.webp`, the full capture, and `<id>-1920.webp`, the same image at half
-  size. `Shot` serves both through `srcset`, and its `sizes` asks for twice
-  the phone's width so a phone with a device scale factor of 3 gets the full
-  capture and stays sharp when pinched.
-- `<id>-d1.webp` and `<id>-d2.webp`, crops of one part of the capture at full
-  resolution, never resized. Keep a crop between 1:1 and 3:1: a longer strip
-  turns into a sliver on a phone.
+- `<id>.webp`, the full capture scaled down to 3840 pixels wide at quality 90,
+  and `<id>-light.webp`, the same scene in the app's light theme.
+- `<id>-d1.webp`, `<id>-d2.webp` and their `-light` twins, crops of one part of
+  the scale 4 capture at quality 92, never resized. Keep a crop between 1:1 and
+  3:1: a longer strip turns into a sliver on a phone.
 
-`website/src/figures.ts` holds each figure's size, alt text and its detail
-crops with their captions. `Shot` in `website/src/components/Shot.tsx` frames
-the capture as a window on a dark stage. On a wide screen the detail crops
+Every image carries at least twice the pixels of its largest rendered size, at
+1440 and at 390 wide. `website/src/figures.ts` holds each figure's size, alt
+text and its detail crops with their captions. `Shot` in
+`website/src/components/Shot.tsx` frames the capture as a window on a stage and
+loads only the image of the active theme. On a wide screen the detail crops
 overlap the bottom of the stage at equal height. A phone gets the same page:
 the same sections, text and figures in the same order, with the stage full
 bleed, the window at full width and the crops stacked under it. When a
 screenshot is recaptured, cut its detail crops again from the new capture.
+
+## Theme
+
+The page follows the system theme until the visitor picks one with the header
+toggle, which is kept in `localStorage` under `goodboy-site:theme`. A script at
+the top of `website/index.html` sets `data-theme` before the first paint, so
+the page never flashes. Colours come from the tokens at the top of
+`website/src/styles.css`, with a dark set under `:root[data-theme='dark']`. The
+logo is always the dark tile with the white dog, in both themes.
 
 ## Verify with the page
 

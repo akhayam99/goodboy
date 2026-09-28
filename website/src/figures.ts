@@ -21,14 +21,14 @@ export const SESSION: Figure = {
   details: [
     {
       id: 'session-d1',
-      width: 920,
-      height: 875,
+      width: 1380,
+      height: 1312,
       caption: 'Every task sorted by where it stands, and what it waits on',
     },
     {
       id: 'session-d2',
-      width: 2587,
-      height: 1000,
+      width: 3880,
+      height: 1500,
       caption: 'Each step names its agent, its model and its cost',
     },
   ],
@@ -42,8 +42,8 @@ export const AGENTS: Figure = {
   details: [
     {
       id: 'agents-d1',
-      width: 2626,
-      height: 832,
+      width: 3940,
+      height: 1248,
       caption: 'Eight chats on one task, each with a role and its own model',
     },
   ],
@@ -57,8 +57,8 @@ export const SWITCH: Figure = {
   details: [
     {
       id: 'switch-d1',
-      width: 1026,
-      height: 656,
+      width: 1540,
+      height: 984,
       caption: 'The bell keeps the latest, unread first',
     },
   ],
@@ -72,8 +72,8 @@ export const FIND: Figure = {
   details: [
     {
       id: 'find-d1',
-      width: 2186,
-      height: 1333,
+      width: 3280,
+      height: 2000,
       caption: '⌘K on an agent: its actions first, then every place to go',
     },
   ],
@@ -87,8 +87,8 @@ export const WORKSPACE: Figure = {
   details: [
     {
       id: 'workspace-d1',
-      width: 2152,
-      height: 696,
+      width: 3228,
+      height: 1044,
       caption: 'One task, a branch and a pull request in each repo it touches',
     },
   ],
@@ -102,20 +102,20 @@ export const DEVELOPERS: Figure = {
   details: [
     {
       id: 'developers-d1',
-      width: 1733,
-      height: 920,
+      width: 2600,
+      height: 1380,
       caption: 'The pull request page, with Review and Diff one click away',
     },
     {
       id: 'developers-d2',
-      width: 1707,
-      height: 1040,
+      width: 2560,
+      height: 1560,
       caption: 'The diff, with a note left on a line',
     },
     {
       id: 'developers-d3',
-      width: 2534,
-      height: 1174,
+      width: 3800,
+      height: 1760,
       caption: 'Branches Goodboy made, and which are safe to delete',
     },
   ],
@@ -137,14 +137,14 @@ export const BOARD: Figure = {
   details: [
     {
       id: 'board-d1',
-      width: 768,
-      height: 299,
+      width: 1152,
+      height: 448,
       caption: 'Where it stands, its pull request, its cost',
     },
     {
       id: 'board-d2',
-      width: 2562,
-      height: 933,
+      width: 3844,
+      height: 1400,
       caption: 'Claude spend this month against its cap',
     },
   ],
@@ -152,14 +152,14 @@ export const BOARD: Figure = {
 
 export const BUILDER: Figure = {
   id: 'builder',
-  width: 2614,
-  height: 1707,
+  width: 3840,
+  height: 2508,
   alt: 'A new orchestrated workflow for the duplicate credit fix, with its goal, the orchestrator on GPT-5.6 Sol and guidance to ask before any change to ledger-core',
   details: [
     {
       id: 'builder-d1',
-      width: 1827,
-      height: 973,
+      width: 2740,
+      height: 1460,
       caption: 'Orchestrated, custom or preset, with an orchestrator on the model you set',
     },
   ],
@@ -173,14 +173,14 @@ export const INBOX: Figure = {
   details: [
     {
       id: 'inbox-d1',
-      width: 1067,
-      height: 864,
+      width: 1600,
+      height: 1296,
       caption: 'HBL-412, one press away from a session',
     },
     {
       id: 'inbox-d2',
-      width: 667,
-      height: 426,
+      width: 1000,
+      height: 640,
       caption: 'GitHub, Linear, Sentry and Slack in one list',
     },
   ],
@@ -194,8 +194,8 @@ export const RESOLVE: Figure = {
   details: [
     {
       id: 'resolve-d1',
-      width: 1680,
-      height: 774,
+      width: 2520,
+      height: 1160,
       caption: 'A drafted reply with Redraft, Accept, Reply and Skip',
     },
   ],
@@ -209,14 +209,14 @@ export const COMPARE: Figure = {
   details: [
     {
       id: 'compare-d1',
-      width: 1507,
-      height: 853,
+      width: 2260,
+      height: 1280,
       caption: 'v3 adds a stuck-delivery banner and an attempts column',
     },
     {
       id: 'compare-d2',
-      width: 2267,
-      height: 1306,
+      width: 3400,
+      height: 1960,
       caption: 'The session report, as a document',
     },
   ],
@@ -230,14 +230,14 @@ export const CONTEXT: Figure = {
   details: [
     {
       id: 'context-d1',
-      width: 1072,
-      height: 1267,
+      width: 1608,
+      height: 1900,
       caption: 'Decision 3 replaced decision 1, and says why',
     },
     {
       id: 'context-d2',
-      width: 2507,
-      height: 880,
+      width: 3760,
+      height: 1320,
       caption: 'The brief the agent received, part by part',
     },
   ],
@@ -251,8 +251,8 @@ export const IMPACT: Figure = {
   details: [
     {
       id: 'impact-d1',
-      width: 2574,
-      height: 854,
+      width: 3860,
+      height: 1280,
       caption: 'What is left of the Codex plan, with a free reset',
     },
   ],
@@ -266,8 +266,8 @@ export const STORAGE: Figure = {
   details: [
     {
       id: 'storage-d1',
-      width: 2560,
-      height: 885,
+      width: 3840,
+      height: 1328,
       caption: 'What each working copy weighs, and which are safe to remove',
     },
   ],
@@ -281,8 +281,8 @@ export const SUPPORT: Figure = {
   details: [
     {
       id: 'support-d1',
-      width: 1504,
-      height: 592,
+      width: 2256,
+      height: 888,
       caption: 'One line, and what gets sent is shown before it goes',
     },
   ],
