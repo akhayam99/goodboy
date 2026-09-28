@@ -1135,10 +1135,14 @@ commit, the planned number of commits, and the same tree as the branch, or the
 branch merged with today's main, except the files of removed commits), and
 removes the copy on every exit. A stop names the step and why and says the
 branch is exactly as it was. Only a passing check moves the branch, after a
-backup ref, and an untracked file the new history would overwrite blocks the
-move. Commits before the first change keep their shas, so an edit to local
+backup ref: the files move first with a two-way `read-tree` that refuses to
+overwrite local or untracked work (ignored files and folders included), then
+HEAD moves with a compare and swap, and nothing ever runs a hard reset on your
+checkout. Commits before the first change keep their shas, so an edit to local
 commits never rewrites what is online. The push always carries
-`--force-with-lease` on the origin sha read at apply, never a bare force; if
+`--force-with-lease` on the online sha the plan already contains
+(`history_remote_lease`), never a bare force or a sha read after the trial;
+a push that lands during the trial stops the apply before anything moves; if
 origin moved, nothing is pushed and the result offers `Bring them into the
 plan`, which fetches the commits origin gained, replays them on top of the
 rewrite in a copy and leaves `Push with lease` on the new origin sha. The
@@ -1148,7 +1152,8 @@ it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, kept
 30 days; `Backups` in the page menu lists them with `Restore previous
 history`, which moves the branch back and, on a branch with an upstream,
 pushes it with a lease. Temporary copies left by a crash are removed when the
-app starts. `Branch vs main` sits in the file
+app starts, but only copies that carry Goodboy's owner marker, match their
+registered worktree and are not locked. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
