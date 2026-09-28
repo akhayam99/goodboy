@@ -1540,6 +1540,12 @@ fn journal_of(cwd: &Path) -> Option<PathBuf> {
     git_dir_of(cwd).map(|dir| dir.join(JOURNAL_FILE))
 }
 
+fn matches_tree(cwd: &Path, commit: &str) -> bool {
+    let index = git_run(cwd, &["diff", "--cached", "--quiet", commit], None, None);
+    let files = git_run(cwd, &["diff", "--quiet", commit], None, None);
+    index.is_ok_and(|run| run.status == 0) && files.is_ok_and(|run| run.status == 0)
+}
+
 fn recover_journal(cwd: &Path) -> Result<(), WorktreeError> {
     let Some(journal) = journal_of(cwd) else {
         return Ok(());
@@ -1552,9 +1558,23 @@ fn recover_journal(cwd: &Path) -> Result<(), WorktreeError> {
     let old = lines.next().unwrap_or_default().to_string();
     let new = lines.next().unwrap_or_default().to_string();
     let head = resolve_commit(cwd, "HEAD")?;
-    let still_on_old_tree = git_run(cwd, &["diff", "--quiet", &old], None, None)?.status == 0;
-    if head == new && head != old && still_on_old_tree {
-        git(cwd, &["reset", "--hard", "--quiet", &new])?;
+    if head == old && head != new && matches_tree(cwd, &new) {
+        let _ = git_run(
+            cwd,
+            &[
+                "update-ref",
+                "-m",
+                "goodboy: finish rewrite",
+                "HEAD",
+                &new,
+                &old,
+            ],
+            None,
+            None,
+        );
+    }
+    if head == new && head != old && matches_tree(cwd, &old) {
+        let _ = git_run(cwd, &["read-tree", "-m", "-u", &old, &new], None, None);
     }
     std::fs::remove_file(&journal)?;
     Ok(())
@@ -1690,28 +1710,59 @@ pub(crate) fn move_branch_blocking(
     git(cwd, &["update-ref", &backup_ref, &expected])?;
     let journal = journal_of(cwd).ok_or_else(|| plan_error("the worktree has no git directory"))?;
     std::fs::write(&journal, format!("{expected}\n{target}\n{backup_ref}\n"))?;
-    git(
+    let outcome = apply_move(cwd, &expected, &target, &backup_ref);
+    let _ = std::fs::remove_file(&journal);
+    outcome
+}
+
+pub(crate) fn apply_move(
+    cwd: &Path,
+    expected: &str,
+    target: &str,
+    backup_ref: &str,
+) -> Result<MoveOutcome, WorktreeError> {
+    let files = git_run(
+        cwd,
+        &["read-tree", "-m", "-u", expected, target],
+        None,
+        None,
+    )?;
+    if files.status != 0 {
+        return Ok(MoveOutcome::Blocked {
+            reason: format!(
+                "Git refused to update the files without losing work, so nothing was changed. {}",
+                files.stderr.trim()
+            ),
+        });
+    }
+    let moved = git_run(
         cwd,
         &[
             "update-ref",
             "-m",
             "goodboy: rewrite history",
             "HEAD",
-            &target,
-            &expected,
+            target,
+            expected,
         ],
+        None,
+        None,
     )?;
-    let reset = git(cwd, &["reset", "--hard", "--quiet", &target]);
-    if let Err(error) = reset {
-        let _ = git(cwd, &["update-ref", "HEAD", &expected, &target]);
-        let _ = git(cwd, &["reset", "--hard", "--quiet", &expected]);
-        let _ = std::fs::remove_file(&journal);
-        return Err(error);
+    if moved.status == 0 {
+        return Ok(MoveOutcome::Moved {
+            head: target.to_string(),
+            backup_ref: backup_ref.to_string(),
+        });
     }
-    std::fs::remove_file(&journal)?;
-    Ok(MoveOutcome::Moved {
-        head: target,
-        backup_ref,
+    let head = resolve_commit(cwd, "HEAD")?;
+    let back = git_run(cwd, &["read-tree", "-m", "-u", target, &head], None, None)?;
+    if back.status == 0 {
+        return Ok(MoveOutcome::HeadMoved { head });
+    }
+    Ok(MoveOutcome::Blocked {
+        reason: format!(
+            "The branch moved while the files were updated. Nothing was reset; the files now match the rewrite and the previous history is kept as {backup_ref}."
+        ),
     })
 }
 
@@ -3844,7 +3895,10 @@ mod tests {
         std::fs::remove_dir_all(l.root.join("logger.ts")).unwrap();
         std::fs::write(l.root.join("build.log"), "tracked log\n").unwrap();
         git_ok(&l.root, &["add", "-f", "build.log"]);
-        git_ok(&l.root, &["commit", "-q", "--no-verify", "-m", "Track the build log"]);
+        git_ok(
+            &l.root,
+            &["commit", "-q", "--no-verify", "-m", "Track the build log"],
+        );
         let tracked_log = git_ok(&l.root, &["rev-parse", "HEAD"]);
         git_ok(&l.root, &["reset", "-q", "--hard", &now]);
         std::fs::write(l.root.join("build.log"), "my local log\n").unwrap();
@@ -3882,5 +3936,66 @@ mod tests {
             std::fs::read_to_string(l.root.join("assets")).unwrap(),
             "a note, not a folder\n"
         );
+    }
+
+    #[test]
+    fn a_local_edit_that_appears_after_the_checks_is_kept_and_nothing_moves() {
+        let l = ledger("apply-late-edit");
+        let mut steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests,
+        ]);
+        steps.push(step(&l.typo, HistoryVerb::Drop));
+        let head = run_ok(&l, steps, "apply-late-edit").head.unwrap();
+        std::fs::write(l.root.join("export.ts"), "edited while applying\n").unwrap();
+        let outcome = apply_move(&l.root, &l.typo, &head, "refs/goodboy/backup/feature/1").unwrap();
+        assert!(
+            matches!(outcome, MoveOutcome::Blocked { .. }),
+            "{outcome:?}"
+        );
+        assert_eq!(
+            std::fs::read_to_string(l.root.join("export.ts")).unwrap(),
+            "edited while applying\n"
+        );
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+    }
+
+    #[test]
+    fn a_commit_that_lands_during_the_move_is_never_reset_away() {
+        let l = ledger("apply-late-commit");
+        let mut steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests,
+        ]);
+        steps.push(fold(&l.typo, &l.export, HistoryVerb::Fixup));
+        let head = run_ok(&l, steps, "apply-late-commit").head.unwrap();
+        let late = commit(
+            &l.root,
+            "late.txt",
+            "late\n",
+            "Late commit from another tool",
+        );
+        let outcome = apply_move(&l.root, &l.typo, &head, "refs/goodboy/backup/feature/1").unwrap();
+        assert!(!matches!(outcome, MoveOutcome::Moved { .. }), "{outcome:?}");
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), late);
+        assert_eq!(
+            std::fs::read_to_string(l.root.join("late.txt")).unwrap(),
+            "late\n"
+        );
+    }
+
+    #[test]
+    fn a_crash_after_the_files_moved_finishes_the_ref_move() {
+        let l = ledger("apply-journal-forward");
+        let mut steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests,
+        ]);
+        steps.push(fold(&l.typo, &l.export, HistoryVerb::Fixup));
+        let head = run_ok(&l, steps, "apply-journal-forward").head.unwrap();
+        git_ok(&l.root, &["read-tree", "-m", "-u", &l.typo, &head]);
+        let journal = journal_of(&l.root).unwrap();
+        std::fs::write(&journal, format!("{}\n{head}\nref\n", l.typo)).unwrap();
+        recover_journal(&l.root).unwrap();
+        assert!(!journal.exists());
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), head);
+        assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
     }
 }
