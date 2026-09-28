@@ -88,6 +88,33 @@ const QUESTION: OpenQuestion = {
   createdAt: NOW,
 };
 
+const TURNS = [
+  [
+    'Reuse the token footer from the transcript in the Brief view.',
+    'The transcript already renders a usage footer with input, output and cached tokens.\n\nI moved it into a shared component so both views draw the same numbers, then replaced the metadata line in the Brief with it.',
+  ],
+  [
+    'Keep the header readable too.',
+    'The header now carries the agent name and a status line, with routing underneath.\n\nThe role badge and the model stay on their own row so the name never wraps into them.',
+  ],
+  [
+    'Do the tests still cover the old metadata line?',
+    'They did. I rewrote the Brief tests to assert the shared footer instead, and added one for an agent with no telemetry yet.\n\nThe session and chat folders pass locally.',
+  ],
+  [
+    'Check both themes before you stop.',
+    'Checked the Brief in dark and light against the transcript footer. The figures match, and the footer keeps its muted tone in both.\n\nDone. The Brief and the transcript now share one footer.',
+  ],
+] as const;
+
+const TRANSCRIPT = TURNS.flatMap(([text, delta], index) => {
+  const runId = `mock-agent-brief-turn-${index}` as ProviderRunId;
+  return [
+    { kind: 'user_text' as const, runId, text, at: NOW },
+    { kind: 'assistant_text' as const, runId, delta, at: NOW },
+  ];
+});
+
 type Props = {
   readonly hasQuestion?: boolean;
 };
@@ -100,9 +127,12 @@ export const AgentBriefScene = ({ hasQuestion = false }: Props) => {
     useAppStore.setState({
       sessions: [SESSION],
       currentSessionId: SESSION_ID,
+      selectedAgentId: { [SESSION_ID]: AGENT_ID },
       sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessionTelemetry: { [SESSION_ID]: [TELEMETRY] },
       agentRunHistory: { [AGENT_ID]: [RUN_ID] },
+      transcripts: { [AGENT_ID]: TRANSCRIPT },
+      loadAgentTranscript: async () => undefined,
       sessionPlans: { [SESSION_ID]: [] },
       sessionOpenQuestions: { [SESSION_ID]: hasQuestion ? [QUESTION] : [] },
       sessionAnsweredQuestions: { [SESSION_ID]: [] },
