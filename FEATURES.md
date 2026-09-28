@@ -193,7 +193,7 @@ Point agents at the right repo without naming it. Starred projects and their one
   <img src="./docs/readme/s10-projects-light.webp" alt="The projects of one session: payments-api with pull request 318 in review and 311 merged, notify-relay with pull request 57">
 </picture>
 
-Let agents edit in parallel without touching your checkout. When an agent needs to edit a repo, that work gets its own worktree and branch.
+Let agents edit in parallel without touching your checkout. When an agent needs to edit a repo, that work gets its own worktree and branch. **Copy worktree path** in **⌘K** copies where a session works, or lets you pick one when it has several, with **⌘Enter** to copy them all.
 
 ### Several branches per project
 
@@ -219,12 +219,12 @@ Keep Goodboy's own folder out of your commits with one click. The card shows up 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s22-history-dark.webp">
-  <img src="./docs/readme/s22-history-light.webp" alt="Rewrite history for hl/ledger-export: the branch Now with a fold, a combine, a removal, a move and a rename, next to the four commits it becomes After Apply">
+  <img src="./docs/readme/s22-history-light.webp" alt="Rewrite history for hl/ledger-export: the branch Now with three commits folded into one, a combine, a move and a rename, next to the four commits it becomes After Apply">
 </picture>
 
 ### Rewrite history
 
-Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename, squash or remove it, or start the branch from today's main. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change, and every planned change can be undone on its own. Each row's buttons, its `⋯` menu, a right click and `Cmd+K` on the focused row offer the same actions.
+Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename, squash or remove it, or start the branch from today's main. A folded commit chooses **Keep title**, **Keep both** or **Separate** in one control, and hovering any commit of a fold highlights the whole group. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change, and every planned change can be undone on its own. Each row's buttons, its `⋯` menu, a right click and `Cmd+K` on the focused row offer the same actions.
 
 ### Safe apply
 
@@ -582,7 +582,7 @@ Export a wireframe as a folder of pages, or redraw it at the other fidelity.
 
 ### Decisions
 
-Record a decision once and have the agents after it read it. Each one gets a number and a byline, and replacing or withdrawing it needs a reason that stays next to it.
+Record a decision once and have the agents after it read it. Each one gets a number and a byline, and replacing or withdrawing it needs a reason that stays next to it. Click a decision in the context drawer to open it, with **Edit** and **Remove** inside. A removed decision is retired at once and stays in the list with **Undo** while the drawer is open, and closed decisions are split into **Removed by you** and **Replaced**.
 
 ### See why each decision was made
 
@@ -608,7 +608,7 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s15-limits-dark.webp">
-  <img src="./docs/readme/s15-limits-light.webp" width="480" alt="The Claude limits card from the top bar: about to run out, with 84% of the week used">
+  <img src="./docs/readme/s15-limits-light.webp" width="480" alt="The limits bars in the top bar and the Claude card under them: about to run out, with 84% of the week used">
 </picture>
 
 ### Usage limits chip
