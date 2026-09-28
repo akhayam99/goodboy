@@ -1138,7 +1138,11 @@ branch is exactly as it was. Only a passing check moves the branch, after a
 backup ref: the files move first with a two-way `read-tree` that refuses to
 overwrite local or untracked work (ignored files and folders included), then
 the branch ref moves with a compare and swap while HEAD still points at that
-branch, and nothing ever runs a hard reset on your checkout. Empty commits are
+branch, and nothing ever runs a hard reset on your checkout. The worktree and
+branch the trial ran on travel with the run to the move and the push, and any
+switch stops them. A rewrite interrupted by a crash is settled before the next
+one checks the worktree; a record Goodboy cannot tie to its branch blocks
+Apply with a notice instead of being guessed. Empty commits are
 kept; only what the plan removes or folds disappears. Commits before the first change keep their shas, so an edit to local
 commits never rewrites what is online. The push always carries
 `--force-with-lease` on the online sha the plan already contains
