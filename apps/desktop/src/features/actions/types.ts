@@ -5,6 +5,9 @@ import type { RecordFacts } from './kinds/record';
 import type { PullRequestFacts } from './kinds/pullRequest';
 import type { CommitFacts } from './kinds/commit';
 import type { DiffFileFacts } from './kinds/diffFile';
+import type { MountFacts } from './kinds/mount';
+import type { WorktreeFacts } from './kinds/worktree';
+import type { ScriptFacts } from './kinds/script';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -63,6 +66,7 @@ export type ActionDefinition<F> = {
   readonly blockedReason?: (params: FactsParams<F>) => string | null;
   readonly confirm?: (params: FactsParams<F>) => ActionConfirm | null;
   readonly isUndoable?: boolean;
+  readonly hasCustomConfirm?: boolean;
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
   readonly emphasis?: (params: FactsParams<F>) => ActionEmphasis | null;
   readonly isBusy?: (params: FactsParams<F>) => boolean;
@@ -185,6 +189,21 @@ export type DiffFileActionTarget = {
   readonly facts: DiffFileFacts;
 };
 
+export type MountActionTarget = {
+  readonly kind: 'mount';
+  readonly facts: MountFacts;
+};
+
+export type WorktreeActionTarget = {
+  readonly kind: 'worktree';
+  readonly facts: WorktreeFacts;
+};
+
+export type ScriptActionTarget = {
+  readonly kind: 'script';
+  readonly facts: ScriptFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -201,4 +220,7 @@ export type ObjectTarget =
   | PullRequestActionTarget
   | CommitActionTarget
   | DiffFileActionTarget
+  | MountActionTarget
+  | WorktreeActionTarget
+  | ScriptActionTarget
   | LinkActionTarget;

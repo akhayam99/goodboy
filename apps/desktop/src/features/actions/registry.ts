@@ -8,6 +8,9 @@ import { RECORD_KIND } from './kinds/record';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { COMMIT_KIND } from './kinds/commit';
 import { DIFF_FILE_KIND } from './kinds/diffFile';
+import { MOUNT_KIND } from './kinds/mount';
+import { WORKTREE_KIND } from './kinds/worktree';
+import { SCRIPT_KIND } from './kinds/script';
 import { SESSION_KIND } from './kinds/session';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
@@ -103,6 +106,12 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: COMMIT_KIND, state, target });
     case 'diffFile':
       return bind({ definition: DIFF_FILE_KIND, state, target });
+    case 'mount':
+      return bind({ definition: MOUNT_KIND, state, target });
+    case 'worktree':
+      return bind({ definition: WORKTREE_KIND, state, target });
+    case 'script':
+      return bind({ definition: SCRIPT_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
     default: {

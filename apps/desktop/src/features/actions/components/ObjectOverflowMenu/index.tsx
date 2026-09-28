@@ -16,6 +16,7 @@ type Props = {
   readonly align?: 'left' | 'right';
   readonly anchorKey?: string | null;
   readonly omit?: ReadonlyArray<string>;
+  readonly disabled?: boolean;
 };
 
 export const ObjectOverflowMenu = ({
@@ -27,8 +28,10 @@ export const ObjectOverflowMenu = ({
   align = 'right',
   anchorKey = null,
   omit = NO_OMISSIONS,
+  disabled = false,
 }: Props) => {
   const dropdown = useDropdown({
+    disabled,
     align: align === 'right' ? 'end' : 'start',
     width: 'min-w-[200px] max-w-sm',
     expectedHeight: 320,
@@ -48,6 +51,7 @@ export const ObjectOverflowMenu = ({
               dropdown.toggle();
             }}
             aria-label={label}
+            disabled={disabled}
             aria-haspopup="menu"
             aria-expanded={dropdown.open}
             className={cn(

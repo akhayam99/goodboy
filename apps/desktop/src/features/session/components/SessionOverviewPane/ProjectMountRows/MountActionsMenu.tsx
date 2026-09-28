@@ -1,14 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import {
-  AnchoredPopover,
-  IconButton,
-  InlineConfirm,
-  cn,
-  useDropdown,
-  tintClasses,
-  type OverflowMenuItem,
-} from '@goodboy/ui';
+import { AnchoredPopover, IconButton, InlineConfirm, cn, useDropdown } from '@goodboy/ui';
 import type {
   MountId,
   ProjectId,
@@ -27,7 +19,13 @@ import {
 } from '../../../../../store/slices/mount-cleanup/cleanupPolicy';
 import type { DetachDisposition } from '../../../../../store/slices/project-mounts/detachProject';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { EditorMenuContent } from '../EditorMenuContent';
+import { ObjectOverflowList } from '../../../../actions/components/ObjectOverflowMenu/ObjectOverflowList';
+import {
+  MOUNT_CONFIRM_EVENT,
+  type MountConfirmKind,
+  type MountConfirmRequest,
+} from '../../../../actions/kinds/mount';
+import type { MountActionTarget } from '../../../../actions/types';
 import { DetachConfirm } from './DetachConfirm';
 import {
   BLOCKER_SENTENCE,
@@ -49,12 +47,19 @@ type Props = {
   readonly mountId?: MountId;
   readonly branch?: string;
   readonly menuLabel?: string;
-  readonly canDetachProject?: boolean;
   readonly isMountAttached?: boolean;
-  readonly items?: ReadonlyArray<OverflowMenuItem>;
+  readonly target: MountActionTarget;
 };
 
-type Confirming = 'detach' | 'forget' | 'unmount' | null;
+type Confirming = MountConfirmKind | null;
+
+const NO_OMISSIONS: ReadonlyArray<string> = [];
+
+const isMountConfirmRequest = (event: Event): event is CustomEvent<MountConfirmRequest> =>
+  event instanceof CustomEvent &&
+  typeof event.detail === 'object' &&
+  event.detail !== null &&
+  'mountKey' in event.detail;
 
 const WorktreeIcon = CONCEPT_ICONS.worktree;
 
@@ -96,15 +101,17 @@ export const MountActionsMenu = ({
   mountId,
   branch = '',
   menuLabel,
-  canDetachProject = true,
   isMountAttached,
-  items = [],
+  target,
 }: Props) => {
+  const { mountKey } = target.facts;
+  const openEvent = `goodboy:mount-menu-open:${mountKey}`;
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-96',
     expectedWidth: 384,
     expectedHeight: 190,
+    openEvent,
   });
   const detachProject = useAppStore((state) => state.detachProject);
   const unmountMount = useAppStore((state) => state.unmountMount);
@@ -235,6 +242,24 @@ export const MountActionsMenu = ({
     });
   };
 
+  const assessRef = useRef(assess);
+  assessRef.current = assess;
+
+  useEffect(() => {
+    const onRequest = (event: Event) => {
+      if (!isMountConfirmRequest(event) || event.detail.mountKey !== mountKey) {
+        return;
+      }
+      setConfirming(event.detail.kind);
+      if (event.detail.kind === 'detach') {
+        assessRef.current();
+      }
+      window.dispatchEvent(new CustomEvent(openEvent));
+    };
+    window.addEventListener(MOUNT_CONFIRM_EVENT, onRequest);
+    return () => window.removeEventListener(MOUNT_CONFIRM_EVENT, onRequest);
+  }, [mountKey, openEvent]);
+
   const cancelDetach = () => {
     requestRef.current = requestRef.current + 1;
     setAssessments(null);
@@ -346,15 +371,18 @@ export const MountActionsMenu = ({
     </div>
   );
 
-  const canDetach = canDetachProject && detachTargets.length > 0;
-  if (mountId === undefined && !canDetach && items.length === 0) {
+  const canDetach = target.facts.canDetach && detachTargets.length > 0;
+  if (mountId === undefined && !canDetach) {
     return null;
   }
+  const menuTarget: MountActionTarget = {
+    ...target,
+    facts: { ...target.facts, canDetach, isAttached, hasMount: mountId !== undefined },
+  };
 
   return (
     <AnchoredPopover
       dropdown={dropdown}
-      role="menu"
       ariaLabel={label}
       anchorClassName="shrink-0"
       trigger={
@@ -437,54 +465,13 @@ export const MountActionsMenu = ({
         />
       ) : null}
       {confirming === null ? (
-        <div className="flex flex-col">
-          {items.length === 0 ? null : (
-            <>
-              <EditorMenuContent items={items} onClose={dropdown.close} />
-              {mountId === undefined && !canDetach ? null : (
-                <div aria-hidden className="h-px bg-border-soft" />
-              )}
-            </>
-          )}
-          {mountId === undefined ? null : isAttached ? (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => setConfirming('unmount')}
-              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-hover"
-            >
-              {`Close ${noun}`}
-            </button>
-          ) : (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => setConfirming('forget')}
-              className="flex w-full items-center px-2.5 py-1.5 text-left motion-safe:transition-colors hover:bg-hover"
-            >
-              Remove from session
-            </button>
-          )}
-          {canDetach ? (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                setConfirming('detach');
-                assess();
-              }}
-              className={cn(
-                'flex w-full items-center px-2.5 py-1.5 text-left',
-                tintClasses('danger').text,
-                'motion-safe:transition-colors',
-                tintClasses('danger').hoverBg,
-                'hover:text-danger',
-              )}
-            >
-              Detach project
-            </button>
-          ) : null}
-        </div>
+        <ObjectOverflowList
+          target={menuTarget}
+          label={label}
+          anchorKey={mountKey}
+          omit={NO_OMISSIONS}
+          onClose={dropdown.close}
+        />
       ) : null}
     </AnchoredPopover>
   );

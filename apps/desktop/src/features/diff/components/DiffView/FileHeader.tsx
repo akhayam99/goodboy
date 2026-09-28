@@ -1,16 +1,12 @@
-import {
-  Check,
-  ChevronRight,
-  Copy,
-  ExternalLink,
-  MessageSquare,
-  MessageSquarePlus,
-} from 'lucide-react';
-import { OverflowMenu, cn, tintClasses, type OverflowMenuItem } from '@goodboy/ui';
+import { Check, ChevronRight, MessageSquare } from 'lucide-react';
+import { cn, tintClasses } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { STATUS_LETTER, STATUS_TONE, STATUS_WORD, splitPath } from '../../lib/fileStatus';
 import type { ViewedState } from '../../lib/reviewedFiles';
+import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import type { DiffFileActionTarget } from '../../../actions/types';
 
 type Props = {
   readonly file: FileDiff;
@@ -56,41 +52,17 @@ export const FileHeader = ({
   const { dir, name } = splitPath(file.path);
   const tone = tintClasses(STATUS_TONE[file.status]);
   const isViewed = viewed === 'viewed';
-  const items: OverflowMenuItem[] = [
-    ...(onOpenInEditor
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'open',
-            label: 'Open in editor',
-            icon: ExternalLink,
-            onClick: onOpenInEditor,
-          },
-        ]
-      : []),
-    {
-      kind: 'item',
-      key: 'copy',
-      label: 'Copy path',
-      icon: Copy,
-      onClick: () => void navigator.clipboard?.writeText(file.path),
-    },
-    ...(onCommentOnFile
-      ? [
-          {
-            kind: 'item' as const,
-            key: 'comment',
-            label: 'Comment on file',
-            icon: MessageSquarePlus,
-            onClick: onCommentOnFile,
-          },
-        ]
-      : []),
-  ];
+  const target: DiffFileActionTarget = {
+    kind: 'diffFile',
+    facts: { path: file.path, onOpenInEditor, onCommentOnFile },
+  };
+  const menu = useObjectMenuTrigger({ target, anchorKey: `diff-file:${file.path}` });
 
   return (
     <div
       data-slot="diff-file-header"
+      onContextMenu={menu.onContextMenu}
+      onKeyDown={menu.onKeyDown}
       className="sticky top-0 z-10 flex h-9 min-w-0 items-center gap-2 rounded-md bg-subtle pl-1 pr-1.5 font-sans"
     >
       <button
@@ -166,7 +138,11 @@ export const FileHeader = ({
           Viewed
         </button>
       ) : null}
-      <OverflowMenu items={items} label={`More actions for ${file.path}`} align="right" />
+      <ObjectOverflowMenu
+        target={target}
+        label={`More actions for ${file.path}`}
+        anchorKey={`diff-file:${file.path}`}
+      />
     </div>
   );
 };
