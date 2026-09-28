@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import type { ProjectId } from '@goodboy/types';
 import { Band, Button, FieldRow, Listbox } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
+import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
 import { searchProgressLabel } from '../../../search/components/SearchMode/searchProgressLabel';
@@ -11,16 +11,16 @@ type ExcludedParams = {
 };
 
 export const SearchIndexBand = () => {
-  const status = useAppStore((state) => state.searchIndexStatus);
-  const isRebuilding = useAppStore((state) => state.isSearchIndexRebuilding);
+  const status = useAppStore((state) => state.searchIndexStatus ?? null);
+  const isRebuilding = useAppStore((state) => state.isSearchIndexRebuilding === true);
   const loadStatus = useAppStore((state) => state.loadSearchIndexStatus);
   const rebuild = useAppStore((state) => state.rebuildSearchIndex);
   const setExcluded = useAppStore((state) => state.setProjectSearchExcluded);
   const reportError = useAppStore((state) => state.reportError);
-  const projects = useAppStore((state) => state.projects);
+  const projects = useAppStore((state) => state.projects ?? EMPTY_ARRAY);
 
   useEffect(() => {
-    void loadStatus().catch(() => undefined);
+    void loadStatus?.().catch(() => undefined);
   }, [loadStatus]);
 
   const options = useMemo(

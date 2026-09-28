@@ -3,7 +3,7 @@ import { useShortcut } from '../../../shared/keyboard/useShortcut';
 import { FindSession } from './FindSession';
 
 export const FindInViewController = () => {
-  const viewFind = useAppStore((state) => state.viewFind);
+  const viewFind = useAppStore((state) => state.viewFind ?? null);
   const stepViewFind = useAppStore((state) => state.stepViewFind);
 
   useShortcut('find.next', () => stepViewFind({ delta: 1 }));
