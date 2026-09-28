@@ -1,124 +1,7 @@
 // @vitest-environment happy-dom
 
-let _storeState: Record<string, unknown> = {};
-let _openQuestions: Array<{ status: string; [k: string]: unknown }> = [];
-let _answeredQuestions: Array<{ status: string; [k: string]: unknown }> = [];
-let _oqDrafts: Record<string, unknown> = {};
-let _oqJustAnswered: string[] = [];
-let _oqPendingUndo: { question: { id: string; sessionId: string }; timer: number } | null = null;
-let _oqFocusedQuestionId: string | null = null;
-
-const mockAnswerOpenQuestions = vi.fn().mockResolvedValue(undefined);
-const mockDismissOpenQuestion = vi.fn().mockResolvedValue(undefined);
-const mockRestoreDismissedOpenQuestion = vi.fn().mockResolvedValue(undefined);
-const mockLoadSessionOpenQuestions = vi.fn().mockResolvedValue(undefined);
-const mockLoadSessionAnsweredQuestions = vi.fn().mockResolvedValue(undefined);
-const mockNavigate = vi.fn();
-const mockFlashAnswered = vi.fn();
-const mockToggleSuggestion = vi.fn();
-const mockSetCustomAnswer = vi.fn((questionId: string, text: string) => {
-  _oqDrafts[questionId] = { selectedSuggestions: [], customAnswer: text, showCustomField: true };
-});
-const mockToggleCustomField = vi.fn();
-const mockClearJustAnswered = vi.fn();
-const mockBeginUndo = vi.fn();
-const mockClearUndo = vi.fn();
-const mockClearDraft = vi.fn();
-const mockClearFocusedQuestion = vi.fn(() => {
-  _oqFocusedQuestionId = null;
-});
-const mockSpawnQuestionDelegates = vi.fn().mockResolvedValue([]);
-
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
-vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
-vi.mock('@tauri-apps/plugin-shell', () => ({ Command: { create: vi.fn() } }));
-vi.mock('@tauri-apps/plugin-sql', () => ({
-  default: { load: vi.fn().mockResolvedValue({}) },
-}));
-
-vi.mock('../../../../../store', async () => ({
-  ...(await import('../../../../../store/slices/navigation/place')),
-  EMPTY_ARRAY: [] as never[],
-  useAppStore: vi.fn((selector: (s: unknown) => unknown) => selector(_storeState)),
-  useSessionOpenQuestions: vi.fn(() => _openQuestions),
-  useSessionAnsweredQuestions: vi.fn(() => _answeredQuestions),
-}));
-
-vi.mock('../../../../context/components/QuestionsTab/useOpenQuestions', () => ({
-  useOpenQuestions: vi.fn((selector: (s: unknown) => unknown) =>
-    selector({
-      drafts: _oqDrafts,
-      justAnswered: _oqJustAnswered,
-      toggleSuggestion: mockToggleSuggestion,
-      setCustomAnswer: mockSetCustomAnswer,
-      toggleCustomField: mockToggleCustomField,
-      flashAnswered: mockFlashAnswered,
-      clearDraft: mockClearDraft,
-      clearJustAnswered: mockClearJustAnswered,
-      pendingUndo: _oqPendingUndo,
-      beginUndo: mockBeginUndo,
-      clearUndo: mockClearUndo,
-      focusedQuestionId: _oqFocusedQuestionId,
-      clearFocusedQuestion: mockClearFocusedQuestion,
-    }),
-  ),
-  PERSON_ANSWERS: { kind: 'person' },
-  deriveDraftAnswer: vi.fn(
-    (draft: { selectedSuggestions?: string[]; customAnswer?: string } | undefined) => {
-      if (!draft) return '';
-      const custom = draft.customAnswer?.trim() ?? '';
-      if (custom.length > 0) return custom;
-      return (draft.selectedSuggestions ?? []).join(', ');
-    },
-  ),
-}));
-
-vi.mock('./QuestionsPaneCard', () => ({
-  QuestionsPaneCard: (props: {
-    question: { id: string; text: string };
-    customAnswer: string;
-    onSetCustomAnswer: (id: string, text: string) => void;
-    onDismiss: (id: string) => void;
-  }) => (
-    <div data-testid={`question-card-${props.question.id}`}>
-      <span>{props.question.text}</span>
-      <input
-        aria-label={`answer ${props.question.id}`}
-        value={props.customAnswer}
-        onChange={(event) => props.onSetCustomAnswer(props.question.id, event.target.value)}
-      />
-      <button onClick={() => props.onDismiss(props.question.id)}>dismiss</button>
-    </div>
-  ),
-}));
-
-vi.mock('../../../../../shared/components/PaneShell', () => ({
-  PaneShell: (props: {
-    title: string;
-    meta?: string;
-    actions?: React.ReactNode;
-    children: React.ReactNode;
-  }) => (
-    <div data-testid="pane-shell" data-title={props.title} data-meta={props.meta}>
-      {props.actions}
-      {props.children}
-    </div>
-  ),
-}));
-
-vi.mock('../../SessionOverviewPane/lib', () => ({
-  selectOpenQuestions: (qs: Array<{ status: string }>) => qs.filter((q) => q.status === 'open'),
-}));
-
-vi.mock('../../../../chat/components/ChatView/AnsweredCard', () => ({
-  AnsweredCard: (props: { question: { id: string; text: string } }) => (
-    <div data-testid={`answered-card-${props.question.id}`}>{props.question.text}</div>
-  ),
-}));
-
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import React from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type {
   Agent,
@@ -128,862 +11,251 @@ import type {
   OpenQuestionId,
   Session,
   SessionId,
-  Step,
-  StepId,
-  Workflow,
-  WorkflowId,
-  WorkflowRunId,
   WorkspaceId,
 } from '@goodboy/types';
+
+const { store } = vi.hoisted(() => ({
+  store: {
+    state: {} as Record<string, unknown>,
+    open: [] as ReadonlyArray<unknown>,
+    answered: [] as ReadonlyArray<unknown>,
+  },
+}));
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
+vi.mock('@tauri-apps/plugin-sql', () => ({
+  default: { load: vi.fn().mockResolvedValue({}) },
+}));
+
+vi.mock('../../../../../store', async () => ({
+  ...(await import('../../../../../store/slices/navigation/place')),
+  EMPTY_ARRAY: [] as never[],
+  useAppStore: (selector: (s: unknown) => unknown) => selector(store.state),
+  useSessionOpenQuestions: () => store.open,
+  useSessionAnsweredQuestions: () => store.answered,
+}));
+
+vi.mock('../../../../../shared/components/PaneShell', () => ({
+  PaneShell: (props: { title: string; meta?: string; children: ReactNode }) => (
+    <div data-testid="pane-shell" data-title={props.title} data-meta={props.meta}>
+      {props.children}
+    </div>
+  ),
+}));
+
+import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
 import { QuestionsPane } from './QuestionsPane';
 
-const NOW = '2026-05-26T00:00:00.000Z' as IsoDateTime;
+const NOW = '2026-09-28T10:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'sess_1' as SessionId;
-const WS_ID = 'ws_1' as WorkspaceId;
-const WF_A = 'wf_a' as WorkflowId;
-const WF_B = 'wf_b' as WorkflowId;
-
-const BASE_SESSION: Session = {
+const SESSION = {
   id: SESSION_ID,
-  workspaceId: WS_ID,
-  goal: 'test goal',
-  branchPrefix: 'test',
-  createdAt: NOW,
-  state: { kind: 'idle' },
+  workspaceId: 'ws_1' as WorkspaceId,
   providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
 } as unknown as Session;
 
-function mkStep(workflowId: WorkflowId, ordinal: number): Step {
-  return {
-    id: `${workflowId}_s${ordinal}` as StepId,
-    workflowId,
-    ordinal,
-    name: `step ${ordinal}`,
-    promptPrefix: '',
-  };
-}
-
-function mkWorkflow(id: WorkflowId, stepCount: number): Workflow {
-  return {
-    id,
-    workspaceId: WS_ID,
-    name: id === WF_A ? 'Workflow A' : 'Workflow B',
-    description: '',
-    steps: Array.from({ length: stepCount }, (_, i) => mkStep(id, i)),
-    createdAt: NOW,
-    updatedAt: NOW,
-  };
-}
-
-function mkAgent(
-  id: string,
-  stepId: StepId | undefined,
-  name: string,
-  extras?: Partial<Agent>,
-): Agent {
-  return {
+const agent = (id: string, name: string, extra: Partial<Agent> = {}): Agent =>
+  ({
     id: id as AgentId,
     sessionId: SESSION_ID,
-    stepId,
     ordinal: 0,
     name,
-    status: 'completed',
-    ...extras,
-  } as Agent;
-}
+    status: 'running',
+    ...extra,
+  }) as Agent;
 
-function mkQuestion(id: string, opts: Partial<OpenQuestion> = {}): OpenQuestion {
-  return {
+const question = (
+  id: string,
+  text: string,
+  askerId: string,
+  extra: Partial<OpenQuestion> = {},
+): OpenQuestion =>
+  ({
     id: id as OpenQuestionId,
     sessionId: SESSION_ID,
-    text: `question ${id}`,
-    suggestedAnswers: [],
+    createdByAgentId: askerId as AgentId,
+    text,
+    suggestedAnswers: ['Yes', 'No'],
+    isBlocking: false,
     userAnswer: null,
     status: 'open',
     createdAt: NOW,
-    ...opts,
-  } as OpenQuestion;
-}
+    ...extra,
+  }) as OpenQuestion;
 
-function setupStore(overrides: {
-  agents?: Agent[];
-  workflows?: Workflow[];
-  openQuestions?: OpenQuestion[];
-  answeredQuestions?: OpenQuestion[];
-  drafts?: Record<string, unknown>;
-  pendingUndoQuestion?: OpenQuestion;
-}) {
-  const agents = overrides.agents ?? [];
-  const workflows = overrides.workflows ?? [];
-  const openQuestions = overrides.openQuestions ?? [];
-  const answeredQuestions = overrides.answeredQuestions ?? [];
+const PLANNER = agent('planner', 'Planner');
+const REVIEWER = agent('reviewer', 'Reviewer');
+const Q1 = question('q1', 'Which queue should retries run on?', 'planner', { isBlocking: true });
+const Q2 = question('q2', 'Which events should be retried?', 'planner');
+const Q3 = question('q3', 'Keep the old dispatch path?', 'reviewer');
 
-  _openQuestions = openQuestions;
-  _answeredQuestions = answeredQuestions;
-  _oqDrafts = overrides.drafts ?? {};
-  _oqJustAnswered = [];
-  _oqPendingUndo = overrides.pendingUndoQuestion
-    ? { question: overrides.pendingUndoQuestion, timer: 0 }
-    : null;
-  _storeState = {
+const actions = {
+  answerOpenQuestions: vi.fn().mockResolvedValue(undefined),
+  dismissOpenQuestion: vi.fn().mockResolvedValue(undefined),
+  restoreDismissedOpenQuestion: vi.fn().mockResolvedValue(undefined),
+  loadSessionOpenQuestions: vi.fn().mockResolvedValue(undefined),
+  loadSessionAnsweredQuestions: vi.fn().mockResolvedValue(undefined),
+  spawnQuestionDelegates: vi.fn().mockResolvedValue([]),
+  takeQuestionBack: vi.fn(),
+  navigate: vi.fn(),
+  setAnswerIntent: vi.fn(),
+};
+
+const setup = ({
+  open = [Q1, Q2, Q3],
+  answered = [],
+  agents = [PLANNER, REVIEWER],
+  loaded = true,
+}: {
+  readonly open?: ReadonlyArray<OpenQuestion>;
+  readonly answered?: ReadonlyArray<OpenQuestion>;
+  readonly agents?: ReadonlyArray<Agent>;
+  readonly loaded?: boolean;
+} = {}) => {
+  store.open = open;
+  store.answered = answered;
+  store.state = {
+    ...actions,
+    sessions: [SESSION],
+    providers: [],
+    cliRequirements: [],
+    agentKindOverride: {},
     sessionPhaseRuns: { [SESSION_ID]: agents },
-    phaseTemplates: { [WS_ID]: workflows },
-    sessionOpenQuestions: { [SESSION_ID]: openQuestions },
-    sessionAnsweredQuestions: { [SESSION_ID]: answeredQuestions },
+    sessionOpenQuestions: loaded ? { [SESSION_ID]: open } : {},
+    sessionAnsweredQuestions: loaded ? { [SESSION_ID]: answered } : {},
     sessionQuestionsLoadError: {},
-    answerOpenQuestions: mockAnswerOpenQuestions,
-    dismissOpenQuestion: mockDismissOpenQuestion,
-    restoreDismissedOpenQuestion: mockRestoreDismissedOpenQuestion,
-    loadSessionOpenQuestions: mockLoadSessionOpenQuestions,
-    loadSessionAnsweredQuestions: mockLoadSessionAnsweredQuestions,
-    navigate: mockNavigate,
-    spawnQuestionDelegates: mockSpawnQuestionDelegates,
   };
-}
+  render(<QuestionsPane session={SESSION} />);
+};
+
+const detailHeading = () => screen.getByRole('heading', { level: 3 });
+const row = (name: string) => screen.getByRole('button', { name });
+
+beforeEach(() => {
+  useOpenQuestions.setState({
+    drafts: {},
+    staged: [],
+    pendingUndo: null,
+    focusedQuestionId: null,
+  });
+});
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
-  _storeState = {};
-  _openQuestions = [];
-  _answeredQuestions = [];
-  _oqDrafts = {};
-  _oqJustAnswered = [];
-  _oqPendingUndo = null;
-  _oqFocusedQuestionId = null;
 });
 
 describe('QuestionsPane', () => {
-  describe('loading state', () => {
-    it('shows a loading skeleton before open and answered questions have loaded', () => {
-      setupStore({ openQuestions: [] });
-      _storeState['sessionOpenQuestions'] = {};
-      _storeState['sessionAnsweredQuestions'] = {};
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByRole('status', { name: 'Loading questions' })).toBeDefined();
-      expect(screen.queryByText('No open questions')).toBeNull();
-    });
-
-    it('replaces the skeleton with a retry when a load failed', () => {
-      setupStore({ openQuestions: [] });
-      _storeState['sessionOpenQuestions'] = {};
-      _storeState['sessionQuestionsLoadError'] = { [SESSION_ID]: 'database is locked' };
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.queryByRole('status', { name: 'Loading questions' })).toBeNull();
-      expect(screen.getByText('Questions did not load')).toBeDefined();
-      mockLoadSessionOpenQuestions.mockClear();
-      mockLoadSessionAnsweredQuestions.mockClear();
-      fireEvent.click(screen.getByRole('button', { name: /retry/i }));
-      expect(mockLoadSessionOpenQuestions).toHaveBeenCalledWith(SESSION_ID);
-      expect(mockLoadSessionAnsweredQuestions).toHaveBeenCalledWith(SESSION_ID);
-    });
+  it('shows a skeleton until the questions load', () => {
+    setup({ loaded: false });
+    screen.getByRole('status', { name: 'Loading questions' });
   });
 
-  describe('empty state', () => {
-    it('renders empty state when no open questions', () => {
-      setupStore({ openQuestions: [] });
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByText('No open questions')).toBeDefined();
-    });
-
-    it('renders empty state when all questions are answered/dismissed', () => {
-      setupStore({
-        openQuestions: [
-          mkQuestion('q1', { status: 'answered' }),
-          mkQuestion('q2', { status: 'dismissed' }),
-        ],
-      });
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByText('No open questions')).toBeDefined();
-    });
-
-    it('titles the empty pane and leaves the teaching copy to the empty state', () => {
-      setupStore({ openQuestions: [] });
-      render(<QuestionsPane session={BASE_SESSION} />);
-      const shell = screen.getByTestId('pane-shell');
-      expect(shell.getAttribute('data-title')).toBe('Questions');
-      expect(shell.getAttribute('data-meta')).toBeNull();
-    });
+  it('shows the empty state when nothing was ever asked', () => {
+    setup({ open: [] });
+    screen.getByText('No open questions');
   });
 
-  describe('cluster rendering', () => {
-    it('renders questions grouped by workflow-owner agent with headers', () => {
-      const wfA = mkWorkflow(WF_A, 2);
-      const planner = mkAgent('agent_planner', wfA.steps[0]!.id, 'planner');
-      const implementer = mkAgent('agent_impl', wfA.steps[1]!.id, 'implementer');
-
-      setupStore({
-        agents: [planner, implementer],
-        workflows: [wfA],
-        openQuestions: [
-          mkQuestion('q1', { workflowId: WF_A, ownedByStepOrdinal: 0 }),
-          mkQuestion('q2', { workflowId: WF_A, ownedByStepOrdinal: 0 }),
-          mkQuestion('q3', { workflowId: WF_A, ownedByStepOrdinal: 1 }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByText('planner')).toBeDefined();
-      expect(screen.getByText('implementer')).toBeDefined();
-      expect(screen.getByTestId('question-card-q1')).toBeDefined();
-      expect(screen.queryByTestId('question-card-q2')).toBeNull();
-      expect(screen.getByTestId('question-card-q3')).toBeDefined();
-
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-
-      expect(screen.getByTestId('question-card-q2')).toBeDefined();
-      expect(screen.queryByTestId('question-card-q1')).toBeNull();
-      expect(screen.getByTestId('question-card-q3')).toBeDefined();
-    });
-
-    it('renders ad-hoc clusters by creator agent when no workflow', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      const fixer = mkAgent('agent_fixer', undefined, 'fixer');
-
-      setupStore({
-        agents: [scout, fixer],
-        workflows: [],
-        openQuestions: [
-          mkQuestion('q1', { createdByAgentId: scout.id }),
-          mkQuestion('q2', { createdByAgentId: fixer.id }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByText('scout')).toBeDefined();
-      expect(screen.getByText('fixer')).toBeDefined();
-    });
-
-    it('shows "via {creator}" suffix when owner differs from creator', () => {
-      const wfA = mkWorkflow(WF_A, 2);
-      const scout = mkAgent('agent_scout', wfA.steps[0]!.id, 'scout');
-      const planner = mkAgent('agent_planner', wfA.steps[1]!.id, 'planner');
-
-      setupStore({
-        agents: [scout, planner],
-        workflows: [wfA],
-        openQuestions: [
-          mkQuestion('q1', {
-            workflowId: WF_A,
-            ownedByStepOrdinal: 1,
-            createdByAgentId: scout.id,
-            createdByStepOrdinal: 0,
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByText('planner')).toBeDefined();
-      expect(screen.getByText('via scout')).toBeDefined();
-    });
-
-    it('does not show "via" suffix when owner == creator', () => {
-      const wfA = mkWorkflow(WF_A, 1);
-      const planner = mkAgent('agent_planner', wfA.steps[0]!.id, 'planner');
-
-      setupStore({
-        agents: [planner],
-        workflows: [wfA],
-        openQuestions: [
-          mkQuestion('q1', {
-            workflowId: WF_A,
-            ownedByStepOrdinal: 0,
-            createdByAgentId: planner.id,
-            createdByStepOrdinal: 0,
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByText('planner')).toBeDefined();
-      expect(screen.queryByText(/^via /)).toBeNull();
-    });
-
-    it('no header for orphan questions', () => {
-      setupStore({
-        agents: [],
-        workflows: [],
-        openQuestions: [mkQuestion('q1'), mkQuestion('q2')],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByTestId('question-card-q1')).toBeDefined();
-      expect(screen.queryByTestId('question-card-q2')).toBeNull();
-      expect(screen.queryByText(/^via /)).toBeNull();
-    });
-
-    it('orphan cluster sorts last when mixed with owned clusters', () => {
-      const wfA = mkWorkflow(WF_A, 1);
-      const planner = mkAgent('agent_planner', wfA.steps[0]!.id, 'planner');
-
-      setupStore({
-        agents: [planner],
-        workflows: [wfA],
-        openQuestions: [
-          mkQuestion('q_owned', { workflowId: WF_A, ownedByStepOrdinal: 0 }),
-          mkQuestion('q_orphan'),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      const cards = screen.getAllByTestId(/^question-card-/);
-      expect(cards[0]!.getAttribute('data-testid')).toBe('question-card-q_owned');
-      expect(cards[1]!.getAttribute('data-testid')).toBe('question-card-q_orphan');
-    });
-
-    it('separates clusters across different workflows', () => {
-      const wfA = mkWorkflow(WF_A, 1);
-      const wfB = mkWorkflow(WF_B, 1);
-      const agentA = mkAgent('agent_a', wfA.steps[0]!.id, 'agent A');
-      const agentB = mkAgent('agent_b', wfB.steps[0]!.id, 'agent B');
-
-      setupStore({
-        agents: [agentA, agentB],
-        workflows: [wfA, wfB],
-        openQuestions: [
-          mkQuestion('q1', { workflowId: WF_A, ownedByStepOrdinal: 0 }),
-          mkQuestion('q2', { workflowId: WF_B, ownedByStepOrdinal: 0 }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByText('agent A')).toBeDefined();
-      expect(screen.getByText('agent B')).toBeDefined();
-    });
+  it('lists what waits on you and opens the first question', () => {
+    setup();
+    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBe(
+      '3 waiting · 1 blocking',
+    );
+    screen.getByText('Waiting on you');
+    row('Which events should be retried?');
+    expect(detailHeading().textContent).toBe('Which queue should retries run on?');
   });
 
-  describe('staged answering', () => {
-    it('walks a cluster one question at a time and sends every staged answer at once', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
+  it('opens the question picked in the list', () => {
+    setup();
+    fireEvent.click(row('Keep the old dispatch path?'));
+    expect(detailHeading().textContent).toBe('Keep the old dispatch path?');
+  });
 
-      setupStore({
-        agents: [scout],
-        workflows: [],
-        openQuestions: [
-          mkQuestion('q1', { createdByAgentId: scout.id }),
-          mkQuestion('q2', { createdByAgentId: scout.id }),
-        ],
-      });
+  it('moves through the list with j and k', () => {
+    setup();
+    const card = screen.getByRole('article');
+    fireEvent.keyDown(card, { key: 'j' });
+    expect(detailHeading().textContent).toBe('Which events should be retried?');
+    fireEvent.keyDown(screen.getByRole('article'), { key: 'k' });
+    expect(detailHeading().textContent).toBe('Which queue should retries run on?');
+  });
 
-      render(<QuestionsPane session={BASE_SESSION} />);
+  it('stages an answer, moves on, and keeps Undo on the answered row', () => {
+    setup();
+    fireEvent.click(screen.getByRole('radio', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+    expect(detailHeading().textContent).toBe('Which events should be retried?');
+    expect(actions.answerOpenQuestions).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(useOpenQuestions.getState().staged).toEqual([]);
+  });
 
-      expect(screen.getByTestId('question-card-q1')).toBeDefined();
-      expect(screen.queryByTestId('question-card-q2')).toBeNull();
-      expect(screen.getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(true);
-
-      fireEvent.change(screen.getByLabelText('answer q1'), {
-        target: { value: 'first answer' },
-      });
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-
-      expect(screen.getByTestId('question-card-q2')).toBeDefined();
-      expect(screen.queryByTestId('question-card-q1')).toBeNull();
-      expect(mockAnswerOpenQuestions).not.toHaveBeenCalled();
-
-      fireEvent.change(screen.getByLabelText('answer q2'), {
-        target: { value: 'second answer' },
-      });
-      fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-
-      expect(screen.getByTestId('question-card-q1')).toBeDefined();
-      expect((screen.getByLabelText('answer q1') as HTMLInputElement).value).toBe('first answer');
-      expect(screen.getByText('2 of 2 answered')).toBeDefined();
-
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-
-      expect(mockAnswerOpenQuestions).toHaveBeenCalledTimes(1);
-      expect(mockAnswerOpenQuestions).toHaveBeenCalledWith(
+  it('sends the answers of one agent together once its last question is answered', async () => {
+    setup();
+    fireEvent.click(screen.getByRole('radio', { name: 'Yes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'No' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+    await waitFor(() =>
+      expect(actions.answerOpenQuestions).toHaveBeenCalledWith(
         SESSION_ID,
         [
-          { id: 'q1', text: 'question q1', answer: 'first answer' },
-          { id: 'q2', text: 'question q2', answer: 'second answer' },
+          { id: 'q1', text: Q1.text, answer: 'Yes' },
+          { id: 'q2', text: Q2.text, answer: 'No' },
         ],
-        scout.id,
-      );
-    });
-
-    it('opens the cluster on the question the overview asked to focus', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      setupStore({
-        agents: [scout],
-        openQuestions: [
-          mkQuestion('q1', { createdByAgentId: scout.id }),
-          mkQuestion('q2', { createdByAgentId: scout.id }),
-        ],
-      });
-      _oqFocusedQuestionId = 'q2';
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByTestId('question-card-q2')).toBeDefined();
-      expect(screen.queryByTestId('question-card-q1')).toBeNull();
-      expect(mockClearFocusedQuestion).toHaveBeenCalled();
-    });
-
-    it('drops a focus that points at no open question', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      setupStore({
-        agents: [scout],
-        openQuestions: [mkQuestion('q1', { createdByAgentId: scout.id })],
-      });
-      _oqFocusedQuestionId = 'q-gone';
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByTestId('question-card-q1')).toBeDefined();
-      expect(mockClearFocusedQuestion).toHaveBeenCalled();
-    });
-
-    it('keeps each asking agent cluster on its own step', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      const fixer = mkAgent('agent_fixer', undefined, 'fixer');
-
-      setupStore({
-        agents: [scout, fixer],
-        workflows: [],
-        openQuestions: [
-          mkQuestion('q1', { createdByAgentId: scout.id }),
-          mkQuestion('q2', { createdByAgentId: scout.id }),
-          mkQuestion('q3', { createdByAgentId: fixer.id }),
-          mkQuestion('q4', { createdByAgentId: fixer.id }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      expect(screen.getByTestId('question-card-q1')).toBeDefined();
-      expect(screen.getByTestId('question-card-q3')).toBeDefined();
-
-      fireEvent.click(screen.getAllByRole('button', { name: 'Continue' })[0]!);
-
-      expect(screen.getByTestId('question-card-q2')).toBeDefined();
-      expect(screen.getByTestId('question-card-q3')).toBeDefined();
-      expect(screen.queryByTestId('question-card-q4')).toBeNull();
-    });
+        'planner',
+      ),
+    );
   });
 
-  describe('delegated answers', () => {
-    const delegatedDraft = {
-      selectedSuggestions: [],
-      customAnswer: '',
-      showCustomField: false,
-      answerIntent: {
-        kind: 'agent',
-        hints: 'weigh the cost',
-        routing: { provider: 'anthropic', model: 'sonnet-5', effort: 'medium' },
-      },
-    };
-
-    it('spawns nothing for a question the user just dismissed', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      const dismissed = mkQuestion('q2', { createdByAgentId: scout.id });
-
-      setupStore({
-        agents: [scout],
-        workflows: [],
-        openQuestions: [mkQuestion('q1', { createdByAgentId: scout.id })],
-        pendingUndoQuestion: dismissed,
-        drafts: {
-          q1: { selectedSuggestions: ['yes'], customAnswer: '', showCustomField: false },
-          q2: delegatedDraft,
-        },
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-
-      expect(mockSpawnQuestionDelegates).not.toHaveBeenCalled();
+  it('keeps answered questions folded until asked for, then shows what was sent', () => {
+    const answered = question('a1', 'Which branch should the fix land on?', 'reviewer', {
+      status: 'answered',
+      userAnswer: 'main',
+      answeredAt: NOW,
     });
-
-    it('recaps a delegated question as an agent answering it', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-
-      setupStore({
-        agents: [scout],
-        workflows: [],
-        openQuestions: [
-          mkQuestion('q1', { createdByAgentId: scout.id }),
-          mkQuestion('q2', { createdByAgentId: scout.id }),
-        ],
-        drafts: {
-          q1: { selectedSuggestions: ['yes'], customAnswer: '', showCustomField: false },
-          q2: delegatedDraft,
-        },
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-
-      expect(screen.getByText('question q1 → yes · question q2 → an agent answers')).toBeDefined();
-    });
+    setup({ answered: [answered] });
+    expect(
+      screen.queryByRole('button', { name: 'Which branch should the fix land on?' }),
+    ).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Answered/ }));
+    fireEvent.click(row('Which branch should the fix land on?'));
+    screen.getByText('Answered · sent to Reviewer');
   });
 
-  describe('pane meta', () => {
-    it('counts one open question', () => {
-      setupStore({ openQuestions: [mkQuestion('q1')] });
-      render(<QuestionsPane session={BASE_SESSION} />);
-      const shell = screen.getByTestId('pane-shell');
-      expect(shell.getAttribute('data-meta')).toBe('1 open');
-    });
-
-    it('counts several open questions', () => {
-      setupStore({
-        openQuestions: [mkQuestion('q1'), mkQuestion('q2'), mkQuestion('q3')],
-      });
-      render(<QuestionsPane session={BASE_SESSION} />);
-      const shell = screen.getByTestId('pane-shell');
-      expect(shell.getAttribute('data-meta')).toBe('3 open');
-    });
+  it('opens the question another surface asked to focus', () => {
+    useOpenQuestions.setState({ focusedQuestionId: Q3.id });
+    setup();
+    expect(detailHeading().textContent).toBe('Keep the old dispatch path?');
   });
 
-  describe('dismiss callback', () => {
-    it('calls dismissOpenQuestion and starts the undo window', async () => {
-      const question = mkQuestion('q1');
-      setupStore({ openQuestions: [question] });
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      fireEvent.click(screen.getByText('dismiss'));
-      expect(mockDismissOpenQuestion).toHaveBeenCalledWith(SESSION_ID, question);
-      await waitFor(() => expect(mockBeginUndo).toHaveBeenCalledWith(question));
-    });
+  it('dismisses a question and offers Undo on its row', async () => {
+    setup();
+    fireEvent.click(row('Keep the old dispatch path?'));
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss question' }));
+    await waitFor(() => expect(actions.dismissOpenQuestion).toHaveBeenCalledWith(SESSION_ID, Q3));
+    store.open = [Q1, Q2];
+    cleanup();
+    render(<QuestionsPane session={SESSION} />);
+    screen.getByText('Dismissed');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    await waitFor(() =>
+      expect(actions.restoreDismissedOpenQuestion).toHaveBeenCalledWith(SESSION_ID, Q3),
+    );
   });
 
-  describe('submit callback per cluster', () => {
-    it('routes answer to cluster ownerAgentId, not global first question creator', () => {
-      const wfA = mkWorkflow(WF_A, 2);
-      const planner = mkAgent('agent_planner', wfA.steps[0]!.id, 'planner');
-      const implementer = mkAgent('agent_impl', wfA.steps[1]!.id, 'implementer');
-
-      setupStore({
-        agents: [planner, implementer],
-        workflows: [wfA],
-        openQuestions: [
-          mkQuestion('q1', {
-            workflowId: WF_A,
-            ownedByStepOrdinal: 0,
-            createdByAgentId: 'some_other_agent' as AgentId,
-          }),
-          mkQuestion('q2', {
-            workflowId: WF_A,
-            ownedByStepOrdinal: 1,
-          }),
-        ],
-        drafts: {
-          q2: { selectedSuggestions: ['yes'], customAnswer: '', showCustomField: false },
-        },
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-
-      const submitButtons = screen.getAllByRole('button', { name: 'Send' });
-      expect(submitButtons.length).toBeGreaterThanOrEqual(1);
-
-      fireEvent.click(submitButtons[submitButtons.length - 1]!);
-
-      expect(mockAnswerOpenQuestions).toHaveBeenCalledWith(
-        SESSION_ID,
-        [{ id: 'q2', text: 'question q2', answer: 'yes' }],
-        implementer.id,
-      );
-    });
-
-    it('does not render submit button when no drafts pending', () => {
-      setupStore({ openQuestions: [mkQuestion('q1')] });
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    });
-
-    it('shows a counter alongside Send when several answers are ready in a cluster', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-
-      setupStore({
-        agents: [scout],
-        workflows: [],
-        openQuestions: [
-          mkQuestion('q1', { createdByAgentId: scout.id }),
-          mkQuestion('q2', { createdByAgentId: scout.id }),
-          mkQuestion('q3', { createdByAgentId: scout.id }),
-        ],
-        drafts: {
-          q1: { selectedSuggestions: ['option a'], customAnswer: '', showCustomField: false },
-          q2: { selectedSuggestions: [], customAnswer: 'custom answer', showCustomField: true },
-        },
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByText('2 of 3 answered')).toBeDefined();
-      expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
-
-      expect(screen.getByText('2 of 3 answered')).toBeDefined();
-      expect(screen.getByRole('button', { name: 'Send' })).toBeDefined();
-    });
-
-    it('shows the singular ready label when the cluster holds a single question', () => {
-      setupStore({
-        openQuestions: [mkQuestion('q1')],
-        drafts: {
-          q1: { selectedSuggestions: ['ok'], customAnswer: '', showCustomField: false },
-        },
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByText('ready to send')).toBeDefined();
-    });
-
-    it('submit with null ownerAgentId for orphan cluster', () => {
-      setupStore({
-        openQuestions: [mkQuestion('q1')],
-        drafts: {
-          q1: { selectedSuggestions: ['ok'], customAnswer: '', showCustomField: false },
-        },
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-
-      expect(mockAnswerOpenQuestions).toHaveBeenCalledWith(
-        SESSION_ID,
-        [{ id: 'q1', text: 'question q1', answer: 'ok' }],
-        null,
-      );
-    });
-
-    it('calls flashAnswered before answerOpenQuestions', () => {
-      setupStore({
-        openQuestions: [mkQuestion('q1')],
-        drafts: {
-          q1: { selectedSuggestions: ['yes'], customAnswer: '', showCustomField: false },
-        },
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
-
-      expect(mockFlashAnswered).toHaveBeenCalledWith(['q1']);
-      expect(mockAnswerOpenQuestions).toHaveBeenCalled();
-    });
-
-    it('does nothing when pairs list is empty (no pending drafts)', () => {
-      setupStore({
-        openQuestions: [mkQuestion('q1')],
-        drafts: {
-          q1: { selectedSuggestions: [], customAnswer: '   ', showCustomField: false },
-        },
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
-    });
-  });
-
-  describe('workflowRunId scoping', () => {
-    it('resolves owner via workflowRunId when present on question and agent', () => {
-      const wfA = mkWorkflow(WF_A, 1);
-      const runId = 'run_1' as WorkflowRunId;
-      const agent1 = mkAgent('agent_1', wfA.steps[0]!.id, 'run1-agent', {
-        workflowRunId: runId,
-      });
-
-      setupStore({
-        agents: [agent1],
-        workflows: [wfA],
-        openQuestions: [
-          mkQuestion('q1', {
-            workflowId: WF_A,
-            workflowRunId: runId,
-            ownedByStepOrdinal: 0,
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByText('run1-agent')).toBeDefined();
-    });
-  });
-
-  describe('answered history', () => {
-    it('loads open and answered questions on mount', () => {
-      setupStore({ openQuestions: [] });
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(mockLoadSessionOpenQuestions).toHaveBeenCalledWith(SESSION_ID);
-      expect(mockLoadSessionAnsweredQuestions).toHaveBeenCalledWith(SESSION_ID);
-    });
-
-    it('renders no answered section when answered list is empty', () => {
-      setupStore({ openQuestions: [], answeredQuestions: [] });
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.queryByTestId(/^answered-card-/)).toBeNull();
-    });
-
-    it('shows answered cards without interaction', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      setupStore({
-        openQuestions: [],
-        agents: [scout],
-        answeredQuestions: [
-          mkQuestion('aq1', {
-            status: 'answered',
-            createdByAgentId: scout.id,
-            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
-            userAnswer: 'yes',
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
-      expect(screen.getByRole('region', { name: 'Answered history' })).toBeDefined();
-    });
-
-    it('renders answered cards grouped by creator agent', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      setupStore({
-        openQuestions: [],
-        agents: [scout],
-        answeredQuestions: [
-          mkQuestion('aq1', {
-            status: 'answered',
-            createdByAgentId: scout.id,
-            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
-            userAnswer: 'yes',
-          }),
-          mkQuestion('aq2', {
-            status: 'answered',
-            createdByAgentId: scout.id,
-            answeredAt: '2026-05-26T02:00:00.000Z' as IsoDateTime,
-            userAnswer: 'no',
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
-      expect(screen.getByTestId('answered-card-aq2')).toBeDefined();
-      expect(screen.getByText('scout')).toBeDefined();
-      expect(screen.queryByText('No open questions')).toBeNull();
-    });
-
-    it('restores a transiently dismissed question from the undo state', async () => {
-      const question = mkQuestion('q1');
-      setupStore({ openQuestions: [], pendingUndoQuestion: question });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
-
-      expect(mockRestoreDismissedOpenQuestion).toHaveBeenCalledWith(SESSION_ID, question);
-      await waitFor(() => expect(mockClearUndo).toHaveBeenCalled());
-    });
-
-    it('clusters answered by different agents separately', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      const fixer = mkAgent('agent_fixer', undefined, 'fixer');
-      setupStore({
-        openQuestions: [],
-        agents: [scout, fixer],
-        answeredQuestions: [
-          mkQuestion('aq1', {
-            status: 'answered',
-            createdByAgentId: scout.id,
-            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
-            userAnswer: 'yes',
-          }),
-          mkQuestion('aq2', {
-            status: 'answered',
-            createdByAgentId: fixer.id,
-            answeredAt: '2026-05-26T02:00:00.000Z' as IsoDateTime,
-            userAnswer: 'no',
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByText('scout')).toBeDefined();
-      expect(screen.getByText('fixer')).toBeDefined();
-      expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
-      expect(screen.getByTestId('answered-card-aq2')).toBeDefined();
-    });
-
-    it('sorts clusters most-recent-first by newest answeredAt', () => {
-      const older = mkAgent('agent_older', undefined, 'older-agent');
-      const newer = mkAgent('agent_newer', undefined, 'newer-agent');
-      setupStore({
-        openQuestions: [],
-        agents: [older, newer],
-        answeredQuestions: [
-          mkQuestion('aq_old', {
-            status: 'answered',
-            createdByAgentId: older.id,
-            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
-            userAnswer: 'old answer',
-          }),
-          mkQuestion('aq_new', {
-            status: 'answered',
-            createdByAgentId: newer.id,
-            answeredAt: '2026-05-26T03:00:00.000Z' as IsoDateTime,
-            userAnswer: 'new answer',
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      const agentLabels = screen.getAllByText(/.*-agent$/);
-      expect(agentLabels[0]!.textContent).toBe('newer-agent');
-      expect(agentLabels[1]!.textContent).toBe('older-agent');
-    });
-
-    it('clicking agent header opens the agent', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      setupStore({
-        openQuestions: [],
-        agents: [scout],
-        answeredQuestions: [
-          mkQuestion('aq1', {
-            status: 'answered',
-            createdByAgentId: scout.id,
-            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
-            userAnswer: 'yes',
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      fireEvent.click(screen.getByText('scout'));
-      expect(mockNavigate).toHaveBeenCalledWith({
-        to: { at: 'agent', sessionId: SESSION_ID, agentId: scout.id },
-      });
-    });
-
-    it('renders answered section below open questions', () => {
-      const scout = mkAgent('agent_scout', undefined, 'scout');
-      setupStore({
-        openQuestions: [mkQuestion('open1', { createdByAgentId: scout.id })],
-        agents: [scout],
-        answeredQuestions: [
-          mkQuestion('aq1', {
-            status: 'answered',
-            createdByAgentId: scout.id,
-            answeredAt: '2026-05-26T01:00:00.000Z' as IsoDateTime,
-            userAnswer: 'yes',
-          }),
-        ],
-      });
-
-      render(<QuestionsPane session={BASE_SESSION} />);
-      expect(screen.getByTestId('question-card-open1')).toBeDefined();
-      expect(screen.getByTestId('answered-card-aq1')).toBeDefined();
-    });
+  it('sets a question an agent is answering apart', () => {
+    const delegate = agent('delegate-1', 'answer: Keep the old dispatch path?', {
+      sourceKind: 'open_question',
+      sourceThreadId: 'q3',
+      ordinal: 4,
+    } as Partial<Agent>);
+    setup({ agents: [PLANNER, REVIEWER, delegate] });
+    screen.getByText('With an agent');
+    expect(screen.getByTestId('pane-shell').getAttribute('data-meta')).toBe(
+      '2 waiting · 1 blocking',
+    );
   });
 });

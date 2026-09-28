@@ -1,45 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Bot } from 'lucide-react';
-import { Skeleton } from '@goodboy/ui';
-import { LensEmptyState } from '@goodboy/ui';
-import type {
-  Agent,
-  AgentId,
-  OpenQuestion,
-  OpenQuestionId,
-  OpenQuestionSelectMode,
-  Session,
-  SessionId,
-} from '@goodboy/types';
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { CircleCheck } from 'lucide-react';
+import { LensEmptyState, ScrollFade, Skeleton } from '@goodboy/ui';
+import type { AgentId, OpenQuestion, OpenQuestionId, Session, SessionId } from '@goodboy/types';
 import {
   EMPTY_ARRAY,
   useAppStore,
   useSessionAnsweredQuestions,
   useSessionOpenQuestions,
-  agentPlace,
 } from '../../../../../store';
-import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
-import { AnsweredCard } from '../../../../chat/components/ChatView/AnsweredCard';
-import { AnswerSubmitButton } from '../../../../context/components/QuestionsTab/AnswerSubmitButton';
-import { DismissedQuestionUndo } from '../../../../context/components/QuestionsTab/DismissedQuestionUndo';
-import { QuestionClusterHeader } from '../../../../context/components/QuestionsTab/QuestionClusterHeader';
-import { QuestionsPaneCard } from './QuestionsPaneCard';
+import { LiveQuestionCard } from '../../../../context/components/QuestionsTab/LiveQuestionCard';
+import {
+  askerOf,
+  askerQuestions,
+} from '../../../../context/components/QuestionsTab/askerQuestions';
+import { useOpenQuestions } from '../../../../context/components/QuestionsTab/useOpenQuestions';
+import type { AgentKind } from '../../../agent-kind';
 import { ContextLoadFailure } from '../../ContextDrawer/ContextLoadFailure';
-import {
-  buildQuestionClusters,
-  type QuestionCluster,
-} from '../../../../context/components/QuestionsTab/clusters';
-import { resolveStagedFlow } from '../../../../context/components/QuestionsTab/resolveStagedFlow';
-import { summarizeStagedAnswers } from '../../../../context/components/QuestionsTab/summarizeStagedAnswers';
-import {
-  deriveDraftAnswer,
-  useOpenQuestions,
-} from '../../../../context/components/QuestionsTab/useOpenQuestions';
-import type { QuestionDelegateRequest } from '../../../../../store/slices/open-questions/spawnQuestionDelegates';
-import {
-  partitionDelegatedQuestions,
-  QUESTION_DELEGATE_COPY,
-} from '../../../../context/questionDelegate';
 import { selectOpenQuestions } from '../../SessionOverviewPane/lib';
 import { PaneShell } from '../../../../../shared/components/PaneShell';
 import {
@@ -47,321 +23,58 @@ import {
   CONCEPT_TONE,
   ICON_SIZE,
 } from '../../../../../shared/components/conceptIcons';
-import { FinishedRegister } from '../../../../../shared/components/FinishedRegister';
-
-type AnswerPair = { id: OpenQuestionId; text: string; answer: string };
+import { QuestionsQueue } from './QuestionsQueue';
+import {
+  buildQuestionsLens,
+  nextWaitingQuestion,
+  visibleQuestionRows,
+  type QuestionRow,
+} from './questionsLensModel';
 
 type QuestionsPaneProps = {
   readonly session: Session;
 };
 
-type ClusterSectionProps = {
-  readonly cluster: QuestionCluster;
-  readonly sessionId: SessionId;
-  readonly ownerAgent: Agent | null;
-  readonly drafts: ReturnType<typeof useOpenQuestions.getState>['drafts'];
-  readonly justAnswered: ReadonlyArray<OpenQuestionId>;
-  readonly onToggleSuggestion: (
-    questionId: OpenQuestionId,
-    suggestion: string,
-    mode: OpenQuestionSelectMode,
-  ) => void;
-  readonly onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
-  readonly onToggleCustomField: (questionId: OpenQuestionId) => void;
-  readonly onClearJustAnswered: (id: OpenQuestionId) => void;
-  readonly onDismiss: (question: OpenQuestion) => void;
-  readonly pendingUndoQuestionId: OpenQuestionId | null;
-  readonly focusIndex: number | null;
-  readonly onFocused: () => void;
-  readonly onUndo: (question: OpenQuestion) => void;
-  readonly onSubmit: (
-    pairs: ReadonlyArray<AnswerPair>,
-    requests: ReadonlyArray<QuestionDelegateRequest>,
-    ownerAgentId: AgentId | null,
-  ) => void;
-};
+const NO_KIND_OVERRIDES: Readonly<Record<AgentId, AgentKind>> = {};
 
-const delegateRequestsFor = ({
-  questions,
-  drafts,
+const paneMeta = ({
+  waiting,
+  blocking,
 }: {
-  readonly questions: ReadonlyArray<OpenQuestion>;
-  readonly drafts: ReturnType<typeof useOpenQuestions.getState>['drafts'];
-}): ReadonlyArray<QuestionDelegateRequest> =>
-  questions.flatMap((question): ReadonlyArray<QuestionDelegateRequest> => {
-    const intent = drafts[question.id]?.answerIntent;
-    if (intent?.kind !== 'agent') {
-      return [];
-    }
-    return [
-      {
-        question,
-        hints: intent.hints,
-        provider: intent.routing.provider,
-        model: intent.routing.model,
-        effort: intent.routing.effort,
-      },
-    ];
-  });
-
-const ClusterSection = ({
-  cluster,
-  sessionId,
-  ownerAgent,
-  drafts,
-  justAnswered,
-  onToggleSuggestion,
-  onSetCustomAnswer,
-  onToggleCustomField,
-  onClearJustAnswered,
-  onDismiss,
-  pendingUndoQuestionId,
-  focusIndex,
-  onFocused,
-  onUndo,
-  onSubmit,
-}: ClusterSectionProps) => {
-  const [stepIndex, setStepIndex] = useState(0);
-  const sectionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (focusIndex == null) {
-      return;
-    }
-    setStepIndex(focusIndex);
-    sectionRef.current?.scrollIntoView?.({ block: 'nearest' });
-    onFocused();
-  }, [focusIndex, onFocused]);
-
-  const answerableQuestions = cluster.questions.filter(
-    (question) => question.id !== pendingUndoQuestionId,
-  );
-  const answerablePairs = answerableQuestions.map((q) => ({
-    id: q.id,
-    text: q.text,
-    answer: deriveDraftAnswer(drafts[q.id]),
-  }));
-  const pendingPairs = answerablePairs.filter((pair) => pair.answer.length > 0);
-  const delegateRequests = delegateRequestsFor({ questions: answerableQuestions, drafts });
-  const stagedCount = pendingPairs.length + delegateRequests.length;
-  const delegatedIds = new Set(delegateRequests.map((request) => request.question.id));
-  const recapEntries = answerablePairs.map((pair) => ({
-    text: pair.text,
-    answer: delegatedIds.has(pair.id) ? QUESTION_DELEGATE_COPY.recap : pair.answer,
-  }));
-
-  const flow = resolveStagedFlow({ total: cluster.questions.length, index: stepIndex });
-  const current = cluster.questions[flow.index] ?? null;
-
-  const handleForward = () => {
-    if (flow.action === 'send') {
-      setStepIndex(0);
-      onSubmit(pendingPairs, delegateRequests, cluster.ownerAgentId);
-      return;
-    }
-    setStepIndex(flow.index + 1);
-  };
-
-  const handleBack = () => {
-    setStepIndex(flow.index - 1);
-  };
-
-  const showsFooter = flow.showsStepper || stagedCount > 0;
-
-  return (
-    <div ref={sectionRef} className="flex flex-col gap-2">
-      {(cluster.ownerAgentName !== null || ownerAgent !== null) && (
-        <QuestionClusterHeader
-          sessionId={sessionId}
-          ownerAgent={ownerAgent}
-          ownerAgentName={cluster.ownerAgentName}
-          creatorAgentName={cluster.creatorAgentName}
-        />
-      )}
-      {current !== null &&
-        (current.id === pendingUndoQuestionId ? (
-          <DismissedQuestionUndo key={current.id} onUndo={() => onUndo(current)} />
-        ) : (
-          <QuestionsPaneCard
-            key={current.id}
-            question={current}
-            sessionId={sessionId}
-            selectedSuggestions={drafts[current.id]?.selectedSuggestions ?? []}
-            customAnswer={drafts[current.id]?.customAnswer ?? ''}
-            showCustomField={drafts[current.id]?.showCustomField ?? false}
-            justAnswered={justAnswered.includes(current.id)}
-            onToggleSuggestion={onToggleSuggestion}
-            onSetCustomAnswer={onSetCustomAnswer}
-            onToggleCustomField={onToggleCustomField}
-            onDismiss={() => onDismiss(current)}
-            onClearJustAnswered={onClearJustAnswered}
-          />
-        ))}
-      {showsFooter && (
-        <AnswerSubmitButton
-          answerCount={stagedCount}
-          totalCount={answerablePairs.length}
-          action={flow.action}
-          stepIndex={flow.index}
-          stepCount={flow.total}
-          canGoBack={flow.canGoBack}
-          onBack={handleBack}
-          onClick={handleForward}
-          disabled={flow.action === 'send' && stagedCount === 0}
-          recap={
-            flow.action === 'send' && flow.showsStepper
-              ? summarizeStagedAnswers({ entries: recapEntries })
-              : ''
-          }
-        />
-      )}
-    </div>
-  );
-};
-
-type AnsweredCluster = {
-  readonly agentId: AgentId | null;
-  readonly agentName: string | null;
-  readonly questions: ReadonlyArray<OpenQuestion>;
-  readonly newestAt: string;
-};
-
-const buildAnsweredClusters = (
-  answered: ReadonlyArray<OpenQuestion>,
-  agentById: ReadonlyMap<AgentId, Agent>,
-): ReadonlyArray<AnsweredCluster> => {
-  type Bucket = {
-    agentId: AgentId | null;
-    agentName: string | null;
-    questions: OpenQuestion[];
-    newestAt: string;
-  };
-  const buckets = new Map<string, Bucket>();
-  const order: string[] = [];
-
-  for (const q of answered) {
-    const agentId = q.createdByAgentId ?? null;
-    const key = agentId ?? '__none__';
-    const agent = agentId ? (agentById.get(agentId) ?? null) : null;
-    const qTime = q.answeredAt ?? q.createdAt;
-    let bucket = buckets.get(key);
-    if (!bucket) {
-      bucket = {
-        agentId,
-        agentName: agent?.name ?? null,
-        questions: [],
-        newestAt: qTime,
-      };
-      buckets.set(key, bucket);
-      order.push(key);
-    }
-    bucket.questions.push(q);
-    if (qTime > bucket.newestAt) {
-      bucket.newestAt = qTime;
-    }
+  readonly waiting: number;
+  readonly blocking: number;
+}): string | undefined => {
+  if (waiting === 0) {
+    return undefined;
   }
-
-  return [...order]
-    .map((key) => buckets.get(key)!)
-    .sort((a, b) => (b.newestAt > a.newestAt ? 1 : b.newestAt < a.newestAt ? -1 : 0));
+  return blocking > 0 ? `${waiting} waiting · ${blocking} blocking` : `${waiting} waiting`;
 };
 
-type AnsweredClusterHeaderProps = {
-  readonly agentId: AgentId | null;
-  readonly agentName: string | null;
-  readonly newestAt: string;
-  readonly sessionId: SessionId;
-};
-
-const AnsweredClusterHeader = ({
-  agentId,
-  agentName,
-  newestAt,
-  sessionId,
-}: AnsweredClusterHeaderProps) => {
-  const navigate = useAppStore((s) => s.navigate);
-
-  return (
-    <div className="flex items-center justify-between gap-2 px-0.5">
-      {agentId !== null && agentName !== null ? (
-        <button
-          type="button"
-          onClick={() => navigate({ to: agentPlace({ sessionId, agentId }) })}
-          className="flex min-w-0 items-center gap-1.5 text-secondary font-medium hover:opacity-70 motion-safe:transition-opacity"
-        >
-          <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="truncate text-foreground">{agentName}</span>
-        </button>
-      ) : (
-        <div className="flex min-w-0 items-center gap-1.5 text-secondary font-medium">
-          <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
-          <span className="truncate text-foreground">unknown agent</span>
-        </div>
-      )}
-      <span className="shrink-0 text-secondary text-muted-foreground">
-        {formatRelativeAge({ fromIso: newestAt })}
-      </span>
-    </div>
-  );
-};
-
-type AnsweredHistoryProps = {
-  readonly clusters: ReadonlyArray<AnsweredCluster>;
-  readonly sessionId: SessionId;
-};
-
-const AnsweredHistory = ({ clusters, sessionId }: AnsweredHistoryProps) => {
-  if (clusters.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {clusters.map((cluster) => (
-        <div key={cluster.agentId ?? '__none__'} className="flex flex-col gap-2">
-          <AnsweredClusterHeader
-            agentId={cluster.agentId}
-            agentName={cluster.agentName}
-            newestAt={cluster.newestAt}
-            sessionId={sessionId}
-          />
-          {cluster.questions.map((q) => (
-            <AnsweredCard key={q.id} question={q} />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-};
+const isTypingTarget = (target: EventTarget): boolean =>
+  target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement;
 
 export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
   const sessionId = session.id as SessionId;
   const open = selectOpenQuestions(useSessionOpenQuestions(sessionId));
   const answered = useSessionAnsweredQuestions(sessionId);
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const workflows = useAppStore((s) => s.phaseTemplates[session.workspaceId] ?? EMPTY_ARRAY);
+  const kindOverrides = useAppStore((s) => s.agentKindOverride ?? NO_KIND_OVERRIDES);
   const loadSessionOpenQuestions = useAppStore((s) => s.loadSessionOpenQuestions);
   const loadSessionAnsweredQuestions = useAppStore((s) => s.loadSessionAnsweredQuestions);
   const openLoaded = useAppStore((s) => s.sessionOpenQuestions[sessionId] !== undefined);
   const answeredLoaded = useAppStore((s) => s.sessionAnsweredQuestions[sessionId] !== undefined);
   const loadError = useAppStore((s) => s.sessionQuestionsLoadError[sessionId]);
-  const drafts = useOpenQuestions((s) => s.drafts);
-  const justAnswered = useOpenQuestions((s) => s.justAnswered);
-  const toggleSuggestion = useOpenQuestions((s) => s.toggleSuggestion);
-  const setCustomAnswer = useOpenQuestions((s) => s.setCustomAnswer);
-  const toggleCustomField = useOpenQuestions((s) => s.toggleCustomField);
-  const clearJustAnswered = useOpenQuestions((s) => s.clearJustAnswered);
-  const flashAnswered = useOpenQuestions((s) => s.flashAnswered);
-  const clearDraft = useOpenQuestions((s) => s.clearDraft);
-  const spawnQuestionDelegates = useAppStore((s) => s.spawnQuestionDelegates);
+  const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
+  const restoreDismissedOpenQuestion = useAppStore((s) => s.restoreDismissedOpenQuestion);
+  const staged = useOpenQuestions((s) => s.staged);
+  const unstageAnswer = useOpenQuestions((s) => s.unstageAnswer);
   const pendingUndo = useOpenQuestions((s) => s.pendingUndo);
   const beginUndo = useOpenQuestions((s) => s.beginUndo);
   const clearUndo = useOpenQuestions((s) => s.clearUndo);
-  const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
-  const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
-  const restoreDismissedOpenQuestion = useAppStore((s) => s.restoreDismissedOpenQuestion);
   const focusedQuestionId = useOpenQuestions((s) => s.focusedQuestionId);
   const clearFocusedQuestion = useOpenQuestions((s) => s.clearFocusedQuestion);
+  const [selectedId, setSelectedId] = useState<OpenQuestionId | null>(null);
+  const [isAnsweredOpen, setIsAnsweredOpen] = useState(false);
 
   const loadQuestions = useCallback(() => {
     void loadSessionOpenQuestions(sessionId);
@@ -372,82 +85,58 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
     loadQuestions();
   }, [loadQuestions]);
 
-  const pendingUndoQuestion =
-    pendingUndo?.question.sessionId === sessionId ? pendingUndo.question : null;
-  const displayedOpen = useMemo(() => {
-    if (
-      pendingUndoQuestion === null ||
-      open.some((question) => question.id === pendingUndoQuestion.id)
-    ) {
-      return open;
-    }
-    return [...open, pendingUndoQuestion].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  }, [open, pendingUndoQuestion]);
+  const dismissed = pendingUndo?.question.sessionId === sessionId ? pendingUndo.question : null;
 
-  const { waiting, answerable } = useMemo(
-    () => partitionDelegatedQuestions({ questions: displayedOpen, agents }),
-    [displayedOpen, agents],
+  const model = useMemo(
+    () => buildQuestionsLens({ open, answered, agents, staged, dismissed }),
+    [open, answered, agents, staged, dismissed],
   );
-  const clusters = useMemo(
-    () => buildQuestionClusters({ questions: answerable, agents, workflows }),
-    [answerable, agents, workflows],
+  const rows = useMemo(
+    () => visibleQuestionRows({ model, isAnsweredOpen }),
+    [model, isAnsweredOpen],
   );
-
-  const focusedClusterIndex = useMemo(() => {
-    if (focusedQuestionId == null) {
-      return null;
-    }
-    for (const cluster of clusters) {
-      const index = cluster.questions.findIndex((question) => question.id === focusedQuestionId);
-      if (index !== -1) {
-        return { ownerAgentId: cluster.ownerAgentId, index };
-      }
-    }
-    return null;
-  }, [clusters, focusedQuestionId]);
+  const allRows = useMemo(() => visibleQuestionRows({ model, isAnsweredOpen: true }), [model]);
 
   useEffect(() => {
-    if (focusedQuestionId == null || !openLoaded || focusedClusterIndex != null) {
+    if (focusedQuestionId == null || !openLoaded) {
       return;
     }
-    clearFocusedQuestion();
-  }, [clearFocusedQuestion, focusedClusterIndex, focusedQuestionId, openLoaded]);
-
-  const agentById = useMemo(() => {
-    const map = new Map<AgentId, Agent>();
-    for (const a of agents) {
-      map.set(a.id, a);
+    if (allRows.some((row) => row.question.id === focusedQuestionId)) {
+      setSelectedId(focusedQuestionId);
     }
-    return map;
-  }, [agents]);
+    clearFocusedQuestion();
+  }, [allRows, clearFocusedQuestion, focusedQuestionId, openLoaded]);
 
-  const answeredClusters = useMemo(
-    () => buildAnsweredClusters(answered, agentById),
-    [answered, agentById],
-  );
+  const selectedRow =
+    allRows.find((row) => row.question.id === selectedId) ??
+    model.waiting[0] ??
+    model.delegated[0] ??
+    null;
+  const effectiveId = selectedRow?.question.id ?? null;
 
-  const handleSubmit = useCallback(
-    async (
-      pairs: ReadonlyArray<AnswerPair>,
-      requests: ReadonlyArray<QuestionDelegateRequest>,
-      ownerAgentId: AgentId | null,
-    ) => {
-      if (pairs.length === 0 && requests.length === 0) {
-        return;
-      }
-      flashAnswered(pairs.map((pair) => pair.id));
-      if (requests.length > 0) {
-        const outcomes = await spawnQuestionDelegates({ sessionId, requests });
-        for (const outcome of outcomes) {
-          if (outcome.kind === 'spawned' || outcome.kind === 'already-running') {
-            clearDraft(outcome.questionId);
-          }
-        }
-      }
-      await answerOpenQuestions(sessionId, pairs, ownerAgentId);
-    },
-    [flashAnswered, clearDraft, spawnQuestionDelegates, answerOpenQuestions, sessionId],
-  );
+  const moveSelection = (step: number) => {
+    if (rows.length === 0) {
+      return;
+    }
+    const index = rows.findIndex((row) => row.question.id === effectiveId);
+    const next = index === -1 ? 0 : Math.max(0, Math.min(rows.length - 1, index + step));
+    setSelectedId(rows[next]?.question.id ?? null);
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (isTypingTarget(event.target) || event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    if (event.key === 'j' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      moveSelection(1);
+      return;
+    }
+    if (event.key === 'k' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      moveSelection(-1);
+    }
+  };
 
   const handleDismiss = useCallback(
     async (question: OpenQuestion) => {
@@ -457,13 +146,27 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
     [beginUndo, dismissOpenQuestion, sessionId],
   );
 
-  const handleUndo = useCallback(
+  const handleUndoDismiss = useCallback(
     async (question: OpenQuestion) => {
       await restoreDismissedOpenQuestion(sessionId, question);
       clearUndo();
+      setSelectedId(question.id);
     },
     [clearUndo, restoreDismissedOpenQuestion, sessionId],
   );
+
+  const handleUndoRow = (row: QuestionRow) => {
+    if (row.kind === 'staged') {
+      unstageAnswer(row.question.id);
+      setSelectedId(row.question.id);
+      return;
+    }
+    void handleUndoDismiss(row.question);
+  };
+
+  const selectNextWaiting = (from: OpenQuestionId) => {
+    setSelectedId(nextWaitingQuestion({ model, from }));
+  };
 
   if ((!openLoaded || !answeredLoaded) && loadError !== undefined) {
     return (
@@ -489,7 +192,7 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
     );
   }
 
-  if (open.length === 0 && answeredClusters.length === 0 && pendingUndoQuestion === null) {
+  if (allRows.length === 0) {
     return (
       <PaneShell title="Questions">
         <LensEmptyState
@@ -502,82 +205,75 @@ export const QuestionsPane = ({ session }: QuestionsPaneProps) => {
     );
   }
 
-  if (open.length === 0 && pendingUndoQuestion === null) {
-    return (
-      <PaneShell title="Questions">
-        <LensEmptyState
-          tone={CONCEPT_TONE.questions}
-          icon={CONCEPT_ICONS.questions}
-          title="Nothing needs you right now"
-          description="Every question on this session is answered. Answered questions remain below for reference."
-        />
-        <FinishedRegister
-          label="Answered"
-          count={answered.length}
-          visible={<AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />}
-        />
-      </PaneShell>
-    );
-  }
+  const question = selectedRow?.question ?? null;
+  const group =
+    question === null || selectedRow?.kind === 'answered' || selectedRow?.kind === 'dismissed'
+      ? []
+      : askerQuestions({ questions: model.answerable, askerId: askerOf(question) });
+  const position = question === null ? -1 : group.findIndex((q) => q.id === question.id);
+  const pager =
+    group.length < 2 || position === -1
+      ? null
+      : {
+          index: position,
+          doneFlags: group.map((q) => staged.includes(q.id)),
+          onPrevious: () => setSelectedId(group[position - 1]?.id ?? null),
+          onNext: () => setSelectedId(group[position + 1]?.id ?? null),
+        };
 
   return (
     <PaneShell
       title="Questions"
-      meta={answerable.length > 0 ? `${answerable.length} open` : undefined}
+      meta={paneMeta({ waiting: model.waiting.length, blocking: model.blockingCount })}
+      scroll="self"
     >
-      <div className="flex flex-col gap-4">
-        {waiting.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {waiting.map((question) => (
-              <QuestionsPaneCard
+      <div
+        onKeyDown={handleKeyDown}
+        className="grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)] @max-[56rem]:grid-cols-[15rem_minmax(0,1fr)]"
+      >
+        <div className="flex min-h-0 flex-col border-r border-border-soft">
+          <QuestionsQueue
+            model={model}
+            agents={agents}
+            kindOverrides={kindOverrides}
+            selectedId={effectiveId}
+            isAnsweredOpen={isAnsweredOpen}
+            onToggleAnswered={() => setIsAnsweredOpen((value) => !value)}
+            onSelect={setSelectedId}
+            onUndo={handleUndoRow}
+          />
+        </div>
+        <ScrollFade className="min-h-0" fadeSize={24}>
+          {question === null || selectedRow === null ? (
+            <div className="flex h-full flex-col items-center justify-center gap-1.5 p-6 text-center">
+              <CircleCheck size={ICON_SIZE.control} aria-hidden className="text-success" />
+              <span className="text-heading text-foreground">Nothing needs you right now</span>
+              <span className="text-label text-faint-foreground">
+                Agents ask here when they need a call from you.
+              </span>
+            </div>
+          ) : (
+            <div className="mx-auto w-full max-w-[40rem] px-10 py-6 @max-[56rem]:px-6">
+              <LiveQuestionCard
                 key={question.id}
                 question={question}
                 sessionId={sessionId}
-                selectedSuggestions={EMPTY_ARRAY}
-                customAnswer=""
-                showCustomField={false}
-                justAnswered={false}
-                onToggleSuggestion={toggleSuggestion}
-                onSetCustomAnswer={setCustomAnswer}
-                onToggleCustomField={toggleCustomField}
+                variant="full"
+                autoFocus
+                pager={pager}
+                settled={
+                  selectedRow.kind === 'answered' || selectedRow.kind === 'dismissed'
+                    ? selectedRow.kind
+                    : null
+                }
+                onAnswered={(answeredQuestion) => selectNextWaiting(answeredQuestion.id)}
+                onSkip={model.waiting.length > 1 ? () => selectNextWaiting(question.id) : null}
                 onDismiss={() => void handleDismiss(question)}
-                onClearJustAnswered={clearJustAnswered}
+                onUndoDismiss={() => void handleUndoDismiss(question)}
               />
-            ))}
-          </div>
-        )}
-        {clusters.map((cluster) => (
-          <ClusterSection
-            key={cluster.ownerAgentId ?? '__orphan__'}
-            cluster={cluster}
-            sessionId={sessionId}
-            ownerAgent={cluster.ownerAgentId ? (agentById.get(cluster.ownerAgentId) ?? null) : null}
-            drafts={drafts}
-            justAnswered={justAnswered}
-            onToggleSuggestion={toggleSuggestion}
-            onSetCustomAnswer={setCustomAnswer}
-            onToggleCustomField={toggleCustomField}
-            onClearJustAnswered={clearJustAnswered}
-            onDismiss={(question) => void handleDismiss(question)}
-            pendingUndoQuestionId={pendingUndoQuestion?.id ?? null}
-            focusIndex={
-              focusedClusterIndex != null &&
-              focusedClusterIndex.ownerAgentId === cluster.ownerAgentId
-                ? focusedClusterIndex.index
-                : null
-            }
-            onFocused={clearFocusedQuestion}
-            onUndo={(question) => void handleUndo(question)}
-            onSubmit={(pairs, requests, ownerAgentId) =>
-              void handleSubmit(pairs, requests, ownerAgentId)
-            }
-          />
-        ))}
-        <FinishedRegister
-          label="Answered"
-          count={answered.length}
-          visible={<AnsweredHistory clusters={answeredClusters} sessionId={sessionId} />}
-        />
+            </div>
+          )}
+        </ScrollFade>
       </div>
     </PaneShell>
   );

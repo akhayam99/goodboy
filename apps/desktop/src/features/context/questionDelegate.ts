@@ -9,16 +9,15 @@ import type {
 export const QUESTION_DELEGATE_SOURCE_KIND: AgentSourceKind = 'open_question';
 
 export const QUESTION_DELEGATE_COPY = {
-  offer: 'Let an agent answer',
-  running: 'an agent is answering this',
-  retry: 'the agent could not answer. hand it over again',
-  blocked: "a delegated agent can't delegate again. this one is yours to answer",
-  recap: 'an agent answers',
-  panelTitle: 'an agent answers for you',
-  panelHint: 'the answer counts as yours. hints are optional.',
-  hintsPlaceholder: 'what to weigh, what to rule out. leave empty and the agent decides.',
-  hintsLabel: 'Hints',
-  back: 'answer it yourself',
+  offer: 'Let an agent decide',
+  chosen: 'An agent decides with',
+  running: 'An agent is answering this',
+  retry: 'The agent could not answer. Hand it over again',
+  blocked: "A delegated agent can't delegate again. This one is yours to answer",
+  recap: 'An agent decides',
+  hintsPlaceholder: 'Hints for the agent: what to weigh, what to rule out. Optional.',
+  cancel: 'Cancel',
+  back: 'Answer it yourself',
 } as const;
 
 const NAME_BUDGET = 48;

@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Agent, AgentId, OpenQuestion, Session, SessionId } from '@goodboy/types';
 
 const { state } = vi.hoisted(() => ({
@@ -49,7 +49,7 @@ beforeEach(() => {
   state.answerOpenQuestions.mockClear();
   state.loadSessionOpenQuestions.mockClear();
   state.openQuestions = [];
-  useOpenQuestions.setState({ drafts: {}, justAnswered: [], pendingUndo: null });
+  useOpenQuestions.setState({ drafts: {}, staged: [], pendingUndo: null });
 });
 afterEach(cleanup);
 
@@ -59,9 +59,9 @@ describe('AgentBriefQuestions', () => {
 
     render(<AgentBriefQuestions session={session} agent={agent} />);
 
-    expect(screen.getByText('Open question')).toBeDefined();
-    expect(screen.getByText('Il refactor del core è già su main?')).toBeDefined();
-    expect(screen.getByRole('radio', { name: 'no, è su un altro branch' })).toBeDefined();
+    screen.getByText('Waiting on you');
+    screen.getByRole('heading', { name: 'Il refactor del core è già su main?' });
+    screen.getByRole('radio', { name: 'no, è su un altro branch' });
   });
 
   it('loads the session questions so the brief does not depend on the transcript', () => {
@@ -102,14 +102,14 @@ describe('AgentBriefQuestions', () => {
     expect(screen.getByText('Il refactor del core è già su main?')).toBeDefined();
   });
 
-  it('answers through the same store action the transcript uses', () => {
+  it('answers through the same store action the transcript uses', async () => {
     state.openQuestions = [makeQuestion({})];
 
     render(<AgentBriefQuestions session={session} agent={agent} />);
     fireEvent.click(screen.getByRole('radio', { name: 'no, è su un altro branch' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
 
-    expect(state.answerOpenQuestions).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(state.answerOpenQuestions).toHaveBeenCalledTimes(1));
     expect(state.answerOpenQuestions).toHaveBeenCalledWith(
       sessionId,
       [
@@ -123,19 +123,20 @@ describe('AgentBriefQuestions', () => {
     );
   });
 
-  it('leaves out the asking-agent header, since the brief already names the agent', () => {
+  it('names the asking agent on the card', () => {
     state.openQuestions = [makeQuestion({})];
 
     render(<AgentBriefQuestions session={session} agent={agent} />);
 
-    expect(screen.queryByTitle('Open TEST')).toBeNull();
+    screen.getByText('TEST');
   });
 
-  it('titles the section for a single question and for several', () => {
+  it('counts the questions waiting and pages between them', () => {
     state.openQuestions = [makeQuestion({}), makeQuestion({ id: 'oq-2', text: 'And this one?' })];
 
     render(<AgentBriefQuestions session={session} agent={agent} />);
 
-    expect(screen.getByText('Open questions')).toBeDefined();
+    expect(screen.getByText('Waiting on you').parentElement?.textContent).toBe('Waiting on you2');
+    screen.getByText('1 of 2');
   });
 });

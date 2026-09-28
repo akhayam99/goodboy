@@ -477,10 +477,13 @@ or several answers apply.
   agent is told an agent gave it. A delegate that answers nothing is nudged
   once, then fails. Answering it yourself, or taking it back, stops the
   delegate. A question a delegate asked is never delegated again.
-- **Saved, then delivered.** An answer is saved the moment you give it, but it
-  reaches the asking agent only once that agent has no open question left.
-  Then all its answers travel in one turn and are marked delivered. Answered
-  and delivered are two different facts.
+- **Staged, saved, then delivered.** Answering a question stages it, with
+  Undo, while the same agent still has another question waiting on you. Once
+  its last one is answered, every staged answer of that agent is saved at
+  once. It reaches the asking agent only when that agent has no open question
+  left (one handed to a delegate still counts). Then all its answers travel in
+  one turn and are marked delivered. Answered and delivered are two different
+  facts.
 
 ## Artifacts
 

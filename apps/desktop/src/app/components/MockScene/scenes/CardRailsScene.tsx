@@ -71,27 +71,41 @@ const PERMISSION_DECISION = {
 } as Extract<TranscriptItem, { kind: 'permission_decision' }>;
 
 const questionProps = {
-  selectedSuggestions: ['cache only a resolved lookup'],
-  customAnswer: '',
-  showCustomField: false,
-  justAnswered: false,
-  onToggleSuggestion: noop,
-  onSetCustomAnswer: noop,
-  onToggleCustomField: noop,
-  onDismiss: noop,
-  onClearJustAnswered: noop,
-  delegateState: 'available' as const,
-  delegateHints: '',
-  delegateRouting: {
-    provider: 'anthropic' as const,
-    model: 'claude-opus-5',
-    effort: 'high' as const,
+  variant: 'compact' as const,
+  state: 'open' as const,
+  askerName: 'implementer',
+  askerKind: 'implementer' as const,
+  age: '4m ago',
+  draft: {
+    selectedSuggestions: ['cache only a resolved lookup'],
+    customAnswer: '',
+    showCustomField: false,
+    answerIntent: { kind: 'person' as const },
   },
-  connectedProviders: ['anthropic' as const],
-  onChooseDelegate: noop,
-  onCancelDelegate: noop,
-  onDelegateHints: noop,
-  onDelegateRouting: noop,
+  pager: null,
+  delegate: {
+    delegateState: 'available' as const,
+    delegateHints: '',
+    delegateRouting: {
+      provider: 'anthropic' as const,
+      model: 'claude-opus-5',
+      effort: 'high' as const,
+    },
+    connectedProviders: ['anthropic' as const],
+    onChooseDelegate: noop,
+    onCancelDelegate: noop,
+    onDelegateHints: noop,
+    onDelegateRouting: noop,
+    onOpenDelegate: null,
+    onTakeBackDelegate: noop,
+  },
+  onToggleSuggestion: noop,
+  onToggleCustomField: noop,
+  onSetCustomAnswer: noop,
+  onAnswer: noop,
+  onSkip: noop,
+  onUndo: null,
+  onDismiss: noop,
 };
 
 type RowProps = {
@@ -119,7 +133,7 @@ export const CardRailsScene = () => {
     <main className="h-screen overflow-auto bg-background text-foreground">
       <div className={cn(PANE_RHYTHM.column, PANE_RHYTHM.body, 'gap-6')}>
         <Row label="question, blocking">
-          <QuestionCard {...questionProps} question={OPEN_QUESTION} askedByName="implementer" />
+          <QuestionCard {...questionProps} question={OPEN_QUESTION} />
         </Row>
         <Row label="question, answered by an agent">
           <AnsweredCard question={ANSWERED_QUESTION} answeredByName="answer: the cache question" />

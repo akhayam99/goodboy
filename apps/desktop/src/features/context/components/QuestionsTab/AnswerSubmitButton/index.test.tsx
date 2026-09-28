@@ -7,89 +7,80 @@ import { AnswerSubmitButton } from '.';
 afterEach(cleanup);
 
 describe('AnswerSubmitButton', () => {
-  it('sends straight away and shows no stepper for a lone question', () => {
-    render(<AnswerSubmitButton answerCount={1} totalCount={1} onClick={() => undefined} />);
-
-    expect(screen.getByRole('button', { name: 'Send' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-    expect(screen.queryByLabelText(/question 1 of 1/i)).toBeNull();
-  });
-
-  it('shows pips, a disabled Back and Continue on the first of several', () => {
+  it('hints the number keys and Enter for a choice', () => {
     render(
       <AnswerSubmitButton
-        answerCount={0}
-        totalCount={3}
-        stepIndex={0}
-        stepCount={3}
-        action="continue"
-        canGoBack={false}
-        onBack={() => undefined}
-        onClick={() => undefined}
+        inputMode="one"
+        optionCount={3}
+        canAnswer={false}
+        isHandOff={false}
+        onAnswer={vi.fn()}
+        onSkip={null}
       />,
     );
-
-    expect(screen.getByLabelText('Question 1 of 3')).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Back' }).hasAttribute('disabled')).toBe(true);
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    screen.getByText('1-3');
+    screen.getByText('to pick');
   });
 
-  it('fires onBack once Back is live', () => {
-    const onBack = vi.fn();
+  it('says toggle for a multiple choice', () => {
     render(
       <AnswerSubmitButton
-        answerCount={1}
-        totalCount={3}
-        stepIndex={1}
-        stepCount={3}
-        action="continue"
-        canGoBack
-        onBack={onBack}
-        onClick={() => undefined}
+        inputMode="many"
+        optionCount={4}
+        canAnswer={false}
+        isHandOff={false}
+        onAnswer={vi.fn()}
+        onSkip={null}
       />,
     );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(onBack).toHaveBeenCalledOnce();
+    screen.getByText('to toggle');
   });
 
-  it('carries the recap line on the last question', () => {
+  it('answers and skips', () => {
+    const onAnswer = vi.fn();
+    const onSkip = vi.fn();
     render(
       <AnswerSubmitButton
-        answerCount={2}
-        totalCount={2}
-        stepIndex={1}
-        stepCount={2}
-        action="send"
-        canGoBack
-        onBack={() => undefined}
-        onClick={() => undefined}
-        recap="db → sqlite · cache → redis"
+        inputMode="one"
+        optionCount={2}
+        canAnswer
+        isHandOff={false}
+        onAnswer={onAnswer}
+        onSkip={onSkip}
       />,
     );
-
-    expect(screen.getByText('db → sqlite · cache → redis')).toBeDefined();
-    expect(screen.getByText('2 of 2 answered')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }));
+    expect(onAnswer).toHaveBeenCalledOnce();
+    expect(onSkip).toHaveBeenCalledOnce();
   });
 
-  it('refuses to send with nothing staged', () => {
-    const onClick = vi.fn();
+  it('keeps Answer off until an answer is ready', () => {
     render(
       <AnswerSubmitButton
-        answerCount={0}
-        totalCount={2}
-        stepIndex={1}
-        stepCount={2}
-        action="send"
-        disabled
-        onClick={onClick}
+        inputMode="text"
+        optionCount={0}
+        canAnswer={false}
+        isHandOff={false}
+        onAnswer={vi.fn()}
+        onSkip={null}
       />,
     );
+    expect(screen.getByRole('button', { name: 'Answer' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Skip' })).toBeNull();
+  });
 
-    const send = screen.getByRole('button', { name: 'Send' });
-    expect(send.hasAttribute('disabled')).toBe(true);
-    fireEvent.click(send);
-    expect(onClick).not.toHaveBeenCalled();
+  it('reads Hand off when an agent decides', () => {
+    render(
+      <AnswerSubmitButton
+        inputMode="one"
+        optionCount={2}
+        canAnswer
+        isHandOff
+        onAnswer={vi.fn()}
+        onSkip={null}
+      />,
+    );
+    screen.getByRole('button', { name: 'Hand off' });
   });
 });

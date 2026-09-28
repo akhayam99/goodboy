@@ -38,7 +38,7 @@ type PendingUndo = {
 
 type OpenQuestionsUiState = {
   drafts: Record<string, QuestionDraft>;
-  justAnswered: ReadonlyArray<OpenQuestionId>;
+  staged: ReadonlyArray<OpenQuestionId>;
   pendingUndo: PendingUndo | null;
   focusedQuestionId: OpenQuestionId | null;
   toggleSuggestion: (
@@ -47,11 +47,12 @@ type OpenQuestionsUiState = {
     mode?: OpenQuestionSelectMode,
   ) => void;
   setCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
-  toggleCustomField: (questionId: OpenQuestionId) => void;
+  toggleCustomField: (questionId: OpenQuestionId, mode?: OpenQuestionSelectMode) => void;
   setAnswerIntent: (questionId: OpenQuestionId, intent: AnswerIntent) => void;
   clearDraft: (questionId: OpenQuestionId) => void;
+  stageAnswer: (questionId: OpenQuestionId) => void;
+  unstageAnswer: (questionId: OpenQuestionId) => void;
   flashAnswered: (ids: ReadonlyArray<OpenQuestionId>) => void;
-  clearJustAnswered: (id: OpenQuestionId) => void;
   beginUndo: (question: OpenQuestion) => void;
   clearUndo: () => void;
   focusQuestion: (questionId: OpenQuestionId) => void;
@@ -68,17 +69,21 @@ function emptyDraft(): QuestionDraft {
 }
 
 export const deriveDraftAnswer = (draft: QuestionDraft | undefined): string => {
-  if (isDelegatedDraft(draft)) {
+  if (draft === undefined || isDelegatedDraft(draft)) {
     return '';
   }
-  return (draft?.customAnswer.trim().length ?? 0) > 0
-    ? draft!.customAnswer.trim()
-    : (draft?.selectedSuggestions ?? []).join(', ');
+  const custom = draft.showCustomField ? draft.customAnswer.trim() : '';
+  const parts =
+    custom.length > 0 ? [...draft.selectedSuggestions, custom] : draft.selectedSuggestions;
+  return parts.join(', ');
 };
+
+export const isDraftReady = (draft: QuestionDraft | undefined): boolean =>
+  isDelegatedDraft(draft) || deriveDraftAnswer(draft).length > 0;
 
 export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   drafts: {},
-  justAnswered: [],
+  staged: [],
   pendingUndo: null,
   focusedQuestionId: null,
 
@@ -86,14 +91,14 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
     const drafts = { ...get().drafts };
     const draft = drafts[questionId] ?? emptyDraft();
     const alreadySelected = draft.selectedSuggestions.includes(suggestion);
-    const next =
-      mode === 'many'
-        ? alreadySelected
-          ? draft.selectedSuggestions.filter((s) => s !== suggestion)
-          : [...draft.selectedSuggestions, suggestion]
-        : alreadySelected
-          ? []
-          : [suggestion];
+    if (mode === 'one') {
+      drafts[questionId] = { ...draft, selectedSuggestions: [suggestion], showCustomField: false };
+      set({ drafts });
+      return;
+    }
+    const next = alreadySelected
+      ? draft.selectedSuggestions.filter((s) => s !== suggestion)
+      : [...draft.selectedSuggestions, suggestion];
     drafts[questionId] = { ...draft, selectedSuggestions: next };
     set({ drafts });
   },
@@ -101,13 +106,18 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   setCustomAnswer: (questionId, text) => {
     const drafts = { ...get().drafts };
     const draft = drafts[questionId] ?? emptyDraft();
-    drafts[questionId] = { ...draft, customAnswer: text };
+    drafts[questionId] = { ...draft, customAnswer: text, showCustomField: true };
     set({ drafts });
   },
 
-  toggleCustomField: (questionId) => {
+  toggleCustomField: (questionId, mode = 'many') => {
     const drafts = { ...get().drafts };
     const draft = drafts[questionId] ?? emptyDraft();
+    if (mode === 'one') {
+      drafts[questionId] = { ...draft, selectedSuggestions: [], showCustomField: true };
+      set({ drafts });
+      return;
+    }
     drafts[questionId] = { ...draft, showCustomField: !draft.showCustomField };
     set({ drafts });
   },
@@ -122,17 +132,24 @@ export const useOpenQuestions = create<OpenQuestionsUiState>((set, get) => ({
   clearDraft: (questionId) => {
     const drafts = { ...get().drafts };
     delete drafts[questionId];
-    set({ drafts });
+    set((s) => ({ drafts, staged: s.staged.filter((id) => id !== questionId) }));
+  },
+
+  stageAnswer: (questionId) => {
+    set((s) => (s.staged.includes(questionId) ? {} : { staged: [...s.staged, questionId] }));
+  },
+
+  unstageAnswer: (questionId) => {
+    set((s) => ({ staged: s.staged.filter((id) => id !== questionId) }));
   },
 
   flashAnswered: (ids) => {
     const drafts = { ...get().drafts };
     for (const id of ids) delete drafts[id];
-    set({ drafts, justAnswered: ids });
-  },
-
-  clearJustAnswered: (id) => {
-    set((s) => ({ justAnswered: s.justAnswered.filter((x) => x !== id) }));
+    set((s) => ({
+      drafts,
+      staged: s.staged.filter((id) => !ids.includes(id)),
+    }));
   },
 
   beginUndo: (question) => {

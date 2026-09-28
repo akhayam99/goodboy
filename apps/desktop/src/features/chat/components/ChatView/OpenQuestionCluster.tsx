@@ -1,40 +1,41 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { Agent, AgentId, OpenQuestion, SessionId, Workflow } from '@goodboy/types';
+import type { Agent, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { AnswerSubmitButton } from '../../../context/components/QuestionsTab/AnswerSubmitButton';
-import { QuestionClusterHeader } from '../../../context/components/QuestionsTab/QuestionClusterHeader';
-import { buildQuestionClusters } from '../../../context/components/QuestionsTab/clusters';
-import { resolveStagedFlow } from '../../../context/components/QuestionsTab/resolveStagedFlow';
-import { summarizeStagedAnswers } from '../../../context/components/QuestionsTab/summarizeStagedAnswers';
-import {
-  deriveDraftAnswer,
-  useOpenQuestions,
-} from '../../../context/components/QuestionsTab/useOpenQuestions';
-import type { QuestionDelegateRequest } from '../../../../store/slices/open-questions/spawnQuestionDelegates';
-import {
-  partitionDelegatedQuestions,
-  QUESTION_DELEGATE_COPY,
-} from '../../../context/questionDelegate';
+import { LiveQuestionCard } from '../../../context/components/QuestionsTab/LiveQuestionCard';
+import { askerOf, askerQuestions } from '../../../context/components/QuestionsTab/askerQuestions';
+import { useOpenQuestions } from '../../../context/components/QuestionsTab/useOpenQuestions';
+import { partitionDelegatedQuestions } from '../../../context/questionDelegate';
 import { OpenQuestionInlineCard } from './OpenQuestionInlineCard';
 
 const NO_AGENTS: ReadonlyArray<Agent> = [];
-const NO_WORKFLOWS: ReadonlyArray<Workflow> = [];
 
 type Props = {
-  questions: ReadonlyArray<OpenQuestion>;
-  sessionId: SessionId;
-  viewerAgentId?: AgentId | null;
+  readonly questions: ReadonlyArray<OpenQuestion>;
+  readonly sessionId: SessionId;
 };
 
-export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null }: Props) => {
-  const drafts = useOpenQuestions((s) => s.drafts);
-  const flashAnswered = useOpenQuestions((s) => s.flashAnswered);
-  const clearDraft = useOpenQuestions((s) => s.clearDraft);
-  const answerOpenQuestions = useAppStore((s) => s.answerOpenQuestions);
-  const spawnQuestionDelegates = useAppStore((s) => s.spawnQuestionDelegates);
+type NextParams = {
+  readonly list: ReadonlyArray<OpenQuestion>;
+  readonly from: OpenQuestionId;
+  readonly isEligible: (question: OpenQuestion) => boolean;
+};
+
+const nextAfter = ({ list, from, isEligible }: NextParams): OpenQuestion | null => {
+  const start = list.findIndex((question) => question.id === from);
+  for (let step = 1; step <= list.length; step += 1) {
+    const candidate = list[(start + step) % list.length];
+    if (candidate !== undefined && candidate.id !== from && isEligible(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+};
+
+export const OpenQuestionCluster = ({ questions, sessionId }: Props) => {
   const agents = useAppStore((s) => s.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
-  const workflows = useAppStore((s) => s.sessionWorkflows?.[sessionId] ?? NO_WORKFLOWS);
-  const [stepIndex, setStepIndex] = useState(0);
+  const dismissOpenQuestion = useAppStore((s) => s.dismissOpenQuestion);
+  const staged = useOpenQuestions((s) => s.staged);
+  const [currentId, setCurrentId] = useState<OpenQuestionId | null>(null);
 
   const { openQuestions, settled } = useMemo(
     () => ({
@@ -47,115 +48,45 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
     () => partitionDelegatedQuestions({ questions: openQuestions, agents }),
     [openQuestions, agents],
   );
-  const clusters = useMemo(
-    () => buildQuestionClusters({ questions: answerable, agents, workflows }),
-    [answerable, agents, workflows],
-  );
-  const agentById = useMemo(() => {
-    const map = new Map<AgentId, Agent>();
-    for (const agent of agents) {
-      map.set(agent.id, agent);
-    }
-    return map;
-  }, [agents]);
 
-  const staged = useMemo(
-    () =>
-      clusters.flatMap((cluster) => cluster.questions.map((question) => ({ cluster, question }))),
-    [clusters],
-  );
+  const current =
+    answerable.find((question) => question.id === currentId) ??
+    answerable.find((question) => !staged.includes(question.id)) ??
+    answerable[0] ??
+    null;
+  const group =
+    current === null ? [] : askerQuestions({ questions: answerable, askerId: askerOf(current) });
+  const position = current === null ? -1 : group.findIndex((q) => q.id === current.id);
 
-  const flow = resolveStagedFlow({ total: staged.length, index: stepIndex });
-  const current = staged[flow.index] ?? null;
-
-  const answerablePairs = staged.map(({ question }) => ({
-    id: question.id,
-    text: question.text,
-    answer: deriveDraftAnswer(drafts[question.id]),
-  }));
-  const pendingPairs = answerablePairs.filter((pair) => pair.answer.length > 0);
-  const delegateRequests = staged.flatMap(
-    ({ question }): ReadonlyArray<QuestionDelegateRequest> => {
-      const intent = drafts[question.id]?.answerIntent;
-      if (intent?.kind !== 'agent') {
-        return [];
-      }
-      return [
-        {
-          question,
-          hints: intent.hints,
-          provider: intent.routing.provider,
-          model: intent.routing.model,
-          effort: intent.routing.effort,
-        },
-      ];
+  const handleAnswered = useCallback(
+    (question: OpenQuestion) => {
+      const next = nextAfter({
+        list: answerable,
+        from: question.id,
+        isEligible: (candidate) => !staged.includes(candidate.id),
+      });
+      setCurrentId(next?.id ?? null);
     },
+    [answerable, staged],
   );
-  const stagedCount = pendingPairs.length + delegateRequests.length;
-  const delegatedIds = new Set(delegateRequests.map((request) => request.question.id));
-  const recapEntries = answerablePairs.map((pair) => ({
-    text: pair.text,
-    answer: delegatedIds.has(pair.id) ? QUESTION_DELEGATE_COPY.recap : pair.answer,
-  }));
-  const targetAgentId = questions[0]?.createdByAgentId ?? null;
 
-  const handleSubmit = useCallback(async () => {
-    if (stagedCount === 0) {
-      return;
-    }
-    setStepIndex(0);
-    flashAnswered(pendingPairs.map((pair) => pair.id));
-    if (delegateRequests.length > 0) {
-      const outcomes = await spawnQuestionDelegates({ sessionId, requests: delegateRequests });
-      for (const outcome of outcomes) {
-        if (outcome.kind === 'spawned' || outcome.kind === 'already-running') {
-          clearDraft(outcome.questionId);
-        }
-      }
-    }
-    await answerOpenQuestions(sessionId, pendingPairs, targetAgentId);
-  }, [
-    stagedCount,
-    pendingPairs,
-    delegateRequests,
-    flashAnswered,
-    clearDraft,
-    spawnQuestionDelegates,
-    answerOpenQuestions,
-    sessionId,
-    targetAgentId,
-  ]);
+  const handleSkip =
+    current === null || answerable.length < 2
+      ? null
+      : () => {
+          const next = nextAfter({ list: answerable, from: current.id, isEligible: () => true });
+          setCurrentId(next?.id ?? null);
+        };
 
-  const handleForward = useCallback(() => {
-    if (flow.action === 'send') {
-      void handleSubmit();
-      return;
-    }
-    setStepIndex(flow.index + 1);
-  }, [flow.action, flow.index, handleSubmit]);
-
-  const handleBack = useCallback(() => {
-    setStepIndex(flow.index - 1);
-  }, [flow.index]);
-
-  const ownerAgent =
-    current?.cluster.ownerAgentId != null
-      ? (agentById.get(current.cluster.ownerAgentId) ?? null)
-      : null;
-  const showsOwner =
-    current !== null &&
-    current.cluster.ownerAgentId != null &&
-    current.cluster.ownerAgentId !== viewerAgentId;
-  const headerName = showsOwner ? current.cluster.ownerAgentName : null;
-  const creatorName =
-    current?.question.createdByAgentId != null
-      ? (agentById.get(current.question.createdByAgentId)?.name ?? null)
-      : null;
-  const creatorIsViewer =
-    current?.question.createdByAgentId != null &&
-    current.question.createdByAgentId === viewerAgentId;
-  const askedByName = creatorIsViewer || creatorName === headerName ? null : creatorName;
-  const showsFooter = flow.showsStepper || stagedCount > 0;
+  const pager =
+    current === null || group.length < 2
+      ? null
+      : {
+          index: position,
+          doneFlags: group.map((question) => staged.includes(question.id)),
+          onPrevious: () => setCurrentId(group[position - 1]?.id ?? current.id),
+          onNext: () => setCurrentId(group[position + 1]?.id ?? current.id),
+        };
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
@@ -163,42 +94,18 @@ export const OpenQuestionCluster = ({ questions, sessionId, viewerAgentId = null
         <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
       ))}
       {waiting.map((q) => (
-        <OpenQuestionInlineCard key={q.id} question={q} sessionId={sessionId} />
+        <LiveQuestionCard key={q.id} question={q} sessionId={sessionId} variant="compact" />
       ))}
       {current !== null && (
-        <div className="flex min-w-0 flex-col gap-2">
-          {showsOwner && (
-            <QuestionClusterHeader
-              sessionId={sessionId}
-              ownerAgent={ownerAgent}
-              ownerAgentName={current.cluster.ownerAgentName}
-              creatorAgentName={current.cluster.creatorAgentName}
-            />
-          )}
-          <OpenQuestionInlineCard
-            key={current.question.id}
-            question={current.question}
-            sessionId={sessionId}
-            askedByName={askedByName}
-          />
-        </div>
-      )}
-      {showsFooter && (
-        <AnswerSubmitButton
-          answerCount={stagedCount}
-          totalCount={answerablePairs.length}
-          action={flow.action}
-          stepIndex={flow.index}
-          stepCount={flow.total}
-          canGoBack={flow.canGoBack}
-          onBack={handleBack}
-          onClick={handleForward}
-          disabled={flow.action === 'send' && stagedCount === 0}
-          recap={
-            flow.action === 'send' && flow.showsStepper
-              ? summarizeStagedAnswers({ entries: recapEntries })
-              : ''
-          }
+        <LiveQuestionCard
+          key={current.id}
+          question={current}
+          sessionId={sessionId}
+          variant="compact"
+          pager={pager}
+          onAnswered={handleAnswered}
+          onSkip={handleSkip}
+          onDismiss={() => void dismissOpenQuestion(sessionId, current)}
         />
       )}
     </div>

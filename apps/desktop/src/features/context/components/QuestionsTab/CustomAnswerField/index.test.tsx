@@ -2,66 +2,60 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import { CustomAnswerField } from '.';
 
 afterEach(cleanup);
 
+type FieldProps = ComponentProps<typeof CustomAnswerField>;
+
+const renderField = (patch: Partial<FieldProps> = {}) => {
+  const props: FieldProps = {
+    value: '',
+    open: false,
+    mode: 'one',
+    onToggle: vi.fn(),
+    onChange: vi.fn(),
+    onSubmit: vi.fn(),
+    onEscape: vi.fn(),
+    ...patch,
+  };
+  render(<CustomAnswerField {...props} />);
+  return props;
+};
+
 describe('CustomAnswerField', () => {
-  it('renders the open trigger when closed and fires onToggle', () => {
-    const onToggle = vi.fn();
-    render(
-      <CustomAnswerField value="" open={false} onToggle={onToggle} onChange={() => undefined} />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: /other/i }));
-    expect(onToggle).toHaveBeenCalledOnce();
+  it('reads as the Something else tile while closed', () => {
+    const props = renderField();
+    screen.getByText('Write your own answer');
+    fireEvent.click(screen.getByRole('radio', { name: 'Something else' }));
+    expect(props.onToggle).toHaveBeenCalledOnce();
   });
 
-  it('renders a textarea when open and forwards typed value', () => {
-    const onChange = vi.fn();
-    render(<CustomAnswerField value="" open onToggle={() => undefined} onChange={onChange} />);
-    const textarea = screen.getByPlaceholderText(/write your own answer/i);
-    fireEvent.change(textarea, { target: { value: 'hi' } });
-    expect(onChange).toHaveBeenCalledWith('hi');
+  it('writes into the inline field once open', () => {
+    const props = renderField({ open: true });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Your answer' }), {
+      target: { value: 'neither' },
+    });
+    expect(props.onChange).toHaveBeenCalledWith('neither');
   });
 
-  it('closes as a full row in the option border language, never a dashed pill', () => {
-    render(
-      <CustomAnswerField
-        value=""
-        open={false}
-        onToggle={() => undefined}
-        onChange={() => undefined}
-      />,
-    );
-    const trigger = screen.getByRole('button', { name: /other/i });
-
-    expect(trigger.className).toContain('w-full');
-    expect(trigger.className).not.toContain('border-dashed');
-    expect(trigger.className).not.toContain('self-start');
+  it('submits on Enter and keeps Shift Enter for a new line', () => {
+    const props = renderField({ open: true, value: 'neither' });
+    const field = screen.getByRole('textbox', { name: 'Your answer' });
+    fireEvent.keyDown(field, { key: 'Enter', shiftKey: true });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(props.onSubmit).toHaveBeenCalledOnce();
   });
 
-  it('reads as selected once it carries an answer', () => {
-    const { container } = render(
-      <CustomAnswerField
-        value="use Neon"
-        open
-        onToggle={() => undefined}
-        onChange={() => undefined}
-      />,
-    );
-    const frame = container.firstElementChild as HTMLElement;
-
-    expect(frame.className).toContain('bg-primary/10');
-    expect(frame.className).toContain('border-primary/40');
+  it('hands focus back on Escape', () => {
+    const props = renderField({ open: true });
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Your answer' }), { key: 'Escape' });
+    expect(props.onEscape).toHaveBeenCalledOnce();
   });
 
-  it('stays unselected while it is empty', () => {
-    const { container } = render(
-      <CustomAnswerField value="   " open onToggle={() => undefined} onChange={() => undefined} />,
-    );
-    const frame = container.firstElementChild as HTMLElement;
-
-    expect(frame.className).not.toContain('bg-primary/10');
-    expect(frame.className).toContain('border-border-soft');
+  it('uses a checkbox in multi-choice mode', () => {
+    renderField({ mode: 'many' });
+    screen.getByRole('checkbox', { name: 'Something else' });
   });
 });

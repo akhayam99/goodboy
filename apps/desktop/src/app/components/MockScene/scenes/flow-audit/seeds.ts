@@ -277,6 +277,5 @@ export const seedChatSurfaces = () => {
         answerIntent: PERSON_ANSWERS,
       },
     },
-    justAnswered: [],
   });
 };
