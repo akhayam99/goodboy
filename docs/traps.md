@@ -100,9 +100,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
 - The query socket sits in `~/.goodboy/query/`, not in `~/.goodboy`. Codex
   and Claude turns get the socket folder as a writable directory
   (`--add-dir`), so they can connect. Moving the socket back beside the
-  database hands every agent write access to `data.db`, `file-versions/` and
-  `history-copies/`. `turn.rs` has a test that fails when any provider gets a
-  writable directory containing those paths.
+  database puts `data.db`, `file-versions/` and `history-copies/` inside that
+  directory. This only matters where `--add-dir` confines anything: Codex in
+  `workspace-write` and Claude outside `bypassPermissions`. Claude in
+  `bypassPermissions` (the default), Cursor, OpenCode and Antigravity have no
+  OS sandbox and can write there anyway. `turn.rs` has a test that fails when
+  a provider's `--add-dir` contains those paths.
 
 ## Hand-maintained lists the compiler does not check
 

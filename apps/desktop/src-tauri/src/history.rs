@@ -2214,7 +2214,13 @@ fn is_kept_elsewhere(cwd: &Path, ref_name: &str, sha: &str) -> bool {
             BACKUP_PREFIX,
         ],
     )
-    .is_ok_and(|raw| raw.lines().any(|line| line.trim() != ref_name))
+    .is_ok_and(|raw| {
+        raw.lines().map(str::trim).any(|line| {
+            line != ref_name
+                && (!line.starts_with(BACKUP_PREFIX)
+                    || stamp_of(line).is_some_and(|(is_kept, _)| is_kept))
+        })
+    })
 }
 
 type BackupSpaces = HashMap<String, Vec<(bool, u128, String, String)>>;
@@ -5555,6 +5561,44 @@ mod tests {
                 != 0
         );
         assert_eq!(git_ok(&b.root, &["rev-parse", &capped]), only);
+    }
+
+    #[test]
+    fn the_cap_never_counts_a_timed_backup_as_keeping_a_commit() {
+        let b = branch("prune-timed-witness");
+        let space = backup_namespace("feature");
+        let stamp = |index: u128| 1_000_000_000_000_000_000u128 + index * 1_000_000_000;
+        let tree = git_ok(&b.root, &["rev-parse", &format!("{}^{{tree}}", b.b)]);
+        let only = git_ok(
+            &b.root,
+            &[
+                "commit-tree",
+                &tree,
+                "-p",
+                &b.a,
+                "-m",
+                "Reached by a timed backup",
+            ],
+        );
+        let capped = format!("{space}/{KEPT_STAMP}{}", stamp(1));
+        let timed = format!("{}/{}", backup_namespace("team/other"), stamp(0));
+        git_ok(&b.root, &["update-ref", &capped, &only]);
+        git_ok(&b.root, &["update-ref", &timed, &only]);
+        for index in 2..22 {
+            git_ok(
+                &b.root,
+                &[
+                    "update-ref",
+                    &format!("{space}/{KEPT_STAMP}{}", stamp(index)),
+                    &b.c,
+                ],
+            );
+        }
+
+        prune_backups_before(&b.root, 0);
+
+        assert_eq!(git_ok(&b.root, &["rev-parse", &capped]), only);
+        assert_eq!(git_ok(&b.root, &["rev-parse", &timed]), only);
     }
 
     #[test]
