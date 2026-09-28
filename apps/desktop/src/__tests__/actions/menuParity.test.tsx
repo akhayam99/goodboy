@@ -26,8 +26,19 @@ import type { BoardNavigation } from '../../features/workspace/components/StageB
 import { FileHeader } from '../../features/diff/components/DiffView/FileHeader';
 import { ScriptRow } from '../../features/scripts/components/ScriptRow';
 import { RecordHeader } from '../../shared/components/StudioDetail/RecordHeader';
+import { ArtifactShellHeader } from '../../features/artifacts/components/ArtifactShell/ArtifactShellHeader';
+import { ArtifactShellActions } from '../../features/artifacts/components/ArtifactShell/ArtifactShellActions';
+import { bindTarget } from '../../features/actions/registry';
+import type { ArtifactActionTarget } from '../../features/actions/types';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';
-import { SESSION, mountFixture, seedActionState, sessionFixture } from '../helpers/actionFixtures';
+import {
+  AGENT,
+  FIXTURE_NOW,
+  SESSION,
+  mountFixture,
+  seedActionState,
+  sessionFixture,
+} from '../helpers/actionFixtures';
 
 let useAppStore: StoryStore;
 
@@ -171,6 +182,62 @@ describe('every ⋯ menu and its right click list the same actions in the same o
       context: screen.getByRole('button', { name: 'Show dev output' }),
     });
     expect(fromOverflow).toEqual(['Show output', 'Run', 'Save as script', 'Copy command']);
+    expect(fromContext).toEqual(fromOverflow);
+  });
+
+  it('artifact viewer header: the ⋯ and the right click list every action, buttons included, in registry order', async () => {
+    seedActionState({ useAppStore, seed: {} });
+    useAppStore.setState({
+      sessionPlans: { [SESSION]: [] },
+      sessionArtifacts: {
+        [SESSION]: [
+          {
+            id: 'artifact-payout',
+            sessionId: SESSION,
+            agentId: AGENT,
+            workflowRunId: null,
+            kind: 'plan',
+            schemaVersion: 1,
+            title: 'Speed up the payout export',
+            sourceFormat: 'markdown',
+            sourceText: '# Speed up the payout export',
+            metadata: {},
+            status: 'active',
+            revision: 1,
+            createdAt: FIXTURE_NOW,
+            updatedAt: FIXTURE_NOW,
+          } as never,
+        ],
+      },
+    });
+    const target: ArtifactActionTarget = {
+      kind: 'artifact',
+      sessionId: SESSION,
+      subject: { kind: 'stored', artifactId: 'artifact-payout' as never, isPlanRunning: false },
+    };
+    withMenus(
+      <ArtifactShellHeader
+        kind="plan"
+        title="Speed up the payout export"
+        chip={null}
+        actions={<ArtifactShellActions target={target} onArm={() => undefined} />}
+        toggles={null}
+        meta={null}
+      />,
+    );
+    const registry = (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map(
+      (action) => action.label,
+    );
+    const buttoned = (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? [])
+      .filter((action) => action.slot === 'primary' || action.slot === 'secondary')
+      .map((action) => action.label);
+    const { fromOverflow, fromContext } = await overflowThenContext({
+      overflow: screen.getByRole('button', { name: 'More' }),
+      context: screen.getByTestId('artifact-title'),
+    });
+
+    expect(buttoned.length).toBeGreaterThan(0);
+    expect(fromOverflow).toEqual(registry);
     expect(fromContext).toEqual(fromOverflow);
   });
 

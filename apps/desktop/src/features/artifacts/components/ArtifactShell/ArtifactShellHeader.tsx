@@ -1,5 +1,8 @@
-import type { ReactNode } from 'react';
+import { useCallback, useRef, type ReactNode } from 'react';
 import type { ArtifactKind } from '@goodboy/types';
+import type { ArtifactActionTarget } from '../../../actions/types';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { ARTIFACT_HEADER_ANCHOR, ArtifactHeaderMenuContext } from './artifactHeaderMenu';
 import { ArtifactKindGlyph } from '../ArtifactList/ArtifactKindGlyph';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
@@ -12,27 +15,47 @@ type Props = {
   readonly meta: ReactNode;
 };
 
-export const ArtifactShellHeader = ({ kind, title, chip, actions, toggles, meta }: Props) => (
-  <div data-testid="artifact-shell-header" className="flex min-w-0 flex-col gap-0.5">
-    <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-      <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />
-      <h1
-        data-testid="artifact-title"
-        title={title}
-        className="min-w-0 flex-1 truncate text-title text-foreground"
+export const ArtifactShellHeader = ({ kind, title, chip, actions, toggles, meta }: Props) => {
+  const targetRef = useRef<ArtifactActionTarget | null>(null);
+  const register = useCallback((target: ArtifactActionTarget | null) => {
+    targetRef.current = target;
+  }, []);
+  const readTarget = useCallback(() => targetRef.current, []);
+  const menu = useObjectMenuTrigger({
+    target: null,
+    anchorKey: ARTIFACT_HEADER_ANCHOR,
+    onBeforeOpen: readTarget,
+  });
+
+  return (
+    <ArtifactHeaderMenuContext.Provider value={register}>
+      <div
+        data-testid="artifact-shell-header"
+        className="flex min-w-0 flex-col gap-0.5"
+        onContextMenu={menu.onContextMenu}
+        onKeyDown={menu.onKeyDown}
       >
-        {title}
-      </h1>
-      {chip}
-      <span className="flex min-w-0 shrink-0 items-center gap-1.5">
-        {actions}
-        {toggles}
-      </span>
-    </div>
-    {meta === null ? null : (
-      <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-5.5">
-        {meta}
+        <div className="flex min-h-8 min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <ArtifactKindGlyph kind={kind} size={ICON_SIZE.control} />
+          <h1
+            data-testid="artifact-title"
+            title={title}
+            className="min-w-0 flex-1 truncate text-title text-foreground"
+          >
+            {title}
+          </h1>
+          {chip}
+          <span className="flex min-w-0 shrink-0 items-center gap-1.5">
+            {actions}
+            {toggles}
+          </span>
+        </div>
+        {meta === null ? null : (
+          <div data-testid="artifact-shell-meta" className="flex min-w-0 pl-5.5">
+            {meta}
+          </div>
+        )}
       </div>
-    )}
-  </div>
-);
+    </ArtifactHeaderMenuContext.Provider>
+  );
+};

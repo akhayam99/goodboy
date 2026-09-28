@@ -362,7 +362,7 @@ describe('ArtifactStudio shell', () => {
     expect(screen.getByText('Each posting rounded its own share.')).toBeDefined();
   });
 
-  it('keeps every export behind More, in the registry order, with a label on each row', () => {
+  it('lists every action behind More, the buttoned Edit included, in the registry order', () => {
     state.sessionArtifacts = { 'sess-1': [report] };
     focus('artifact-report');
     renderStudio();
@@ -373,6 +373,8 @@ describe('ArtifactStudio shell', () => {
         .getAllByRole('menuitem')
         .map((item) => item.textContent),
     ).toEqual([
+      'Open',
+      'Edit',
       expect.stringContaining('Regenerate'),
       'Copy markdown',
       'Save markdown to…',
