@@ -80,6 +80,10 @@ import { BrandContextScene } from './scenes/brand/ContextScene';
 import { BrandCompareScene } from './scenes/brand/CompareScene';
 import { BrandDiffScene } from './scenes/brand/DiffScene';
 import { BrandHistoryScene } from './scenes/brand/HistoryScene';
+import { BrandHistoryPlanScene } from './scenes/brand/HistoryPlanScene';
+import { BrandHistoryResultScene } from './scenes/brand/HistoryResultScene';
+import { BrandHistoryStoppedScene } from './scenes/brand/HistoryStoppedScene';
+import { BrandHistoryTrialScene } from './scenes/brand/HistoryTrialScene';
 import { BrandLimitsScene } from './scenes/brand/LimitsScene';
 import { BrandCodexScene } from './scenes/brand/CodexScene';
 import { BrandStorageScene } from './scenes/brand/StorageScene';
@@ -164,6 +168,10 @@ export const MOCK_SCENES = {
   'brand-compare': BrandCompareScene,
   'brand-diff': BrandDiffScene,
   'brand-history': BrandHistoryScene,
+  'brand-history-plan': BrandHistoryPlanScene,
+  'brand-history-trial': BrandHistoryTrialScene,
+  'brand-history-stopped': BrandHistoryStoppedScene,
+  'brand-history-result': BrandHistoryResultScene,
   'brand-limits': BrandLimitsScene,
   'brand-codex': BrandCodexScene,
   'brand-storage': BrandStorageScene,

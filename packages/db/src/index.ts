@@ -67,12 +67,7 @@ export {
   dismissSecurityFinding,
   flagSecurityFindingAgain,
 } from './queries/security-finding';
-export {
-  getDraftHistoryPlan,
-  hasPushedHistoryPlan,
-  markHistoryPlan,
-  saveDraftHistoryPlan,
-} from './queries/history-plan';
+export { getDraftHistoryPlan, markHistoryPlan, saveDraftHistoryPlan } from './queries/history-plan';
 export {
   insertDeletedBranch,
   listDeletedBranches,

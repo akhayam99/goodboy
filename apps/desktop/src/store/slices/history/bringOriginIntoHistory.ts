@@ -66,6 +66,14 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
     if (typeof trial === 'string') {
       return stopWith({ reason: 'failed', message: trial, files: [], sha: null });
     }
+    if (trial.check?.isPassed === false) {
+      return stopWith({
+        reason: 'unverified',
+        message: `Bringing origin in did not check out on the copy: ${trial.check.problems.join(' ')} Nothing was changed.`,
+        files: trial.check.unexpectedFiles,
+        sha: null,
+      });
+    }
     if (trial.stop !== null || trial.head === null) {
       const started = await get().startHistoryRewriter({
         sessionId,

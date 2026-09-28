@@ -1,8 +1,6 @@
-import { hasPushedHistoryPlan } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { pushWithLease, restoreHistoryBackup } from '../../../features/history/historyEngine';
 import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/worktree';
-import { tauriDatabase } from '../../../shared/lib/db';
 import { historyTargetOf } from './historyTargetOf';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
@@ -80,7 +78,7 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       sessionId,
       mountId,
       origin,
-      patch: { phase: 'restored', backupRef: moved.backupRef, result: null },
+      patch: { phase: 'restored', backupRef: moved.backupRef, result: null, applied: null },
     });
     await recordHistoryEvent({
       get,
@@ -114,14 +112,4 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       sha: null,
     });
   };
-};
-
-type BranchInput = {
-  readonly mountId: HistoryMountInput['mountId'];
-  readonly branch: string;
-};
-
-export const hasPushedHistoryBefore = () => {
-  return async ({ mountId, branch }: BranchInput): Promise<boolean> =>
-    hasPushedHistoryPlan({ db: tauriDatabase, mountId, branch }).catch(() => false);
 };

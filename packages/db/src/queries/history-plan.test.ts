@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import {
-  getDraftHistoryPlan,
-  hasPushedHistoryPlan,
-  markHistoryPlan,
-  saveDraftHistoryPlan,
-} from './history-plan';
+import { getDraftHistoryPlan, markHistoryPlan, saveDraftHistoryPlan } from './history-plan';
 
 const SESSION = 'session-ledger' as SessionId;
 const MOUNT = 'mount-ledger' as MountId;
@@ -57,7 +52,7 @@ describe('history plans', () => {
     expect(second.updatedAt).toBe(20);
   });
 
-  it('closes the draft when it is applied and remembers a push per branch', async () => {
+  it('closes the draft when it is applied and records the push', async () => {
     const db = await seeded();
     const draft = await saveDraftHistoryPlan({
       db,
@@ -72,13 +67,12 @@ describe('history plans', () => {
     await markHistoryPlan({ db, id: draft.id, state: 'applied', at: 30, backupRef: 'refs/b' });
 
     expect(await getDraftHistoryPlan({ db, mountId: MOUNT })).toBeNull();
-    expect(await hasPushedHistoryPlan({ db, mountId: MOUNT, branch: 'fix/ledger-postings' })).toBe(
-      false,
-    );
     await markHistoryPlan({ db, id: draft.id, state: 'pushed', at: 40, remoteShaAtApply: 'r' });
-    expect(await hasPushedHistoryPlan({ db, mountId: MOUNT, branch: 'fix/ledger-postings' })).toBe(
-      true,
+    const rows = await db.select<{ readonly state: string; readonly pushed_at: number | null }>(
+      'SELECT state, pushed_at FROM history_plans WHERE id = ?',
+      [draft.id],
     );
+    expect(rows).toEqual([{ state: 'pushed', pushed_at: 40 }]);
   });
 
   it('refuses a state the table does not know', async () => {
