@@ -1,7 +1,9 @@
 import { useCallback } from 'react';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../store';
+import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
 import { notifyWorkflowGateBlock } from '../../store/slices/workflows/notifyWorkflowGateBlock';
+import { isReportedError } from '../../store/slices/notifications/reportedError';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -17,6 +19,7 @@ export const useAdvanceWorkflowAgent = ({
 }: Params): ((params: AdvanceParams) => Promise<void>) => {
   const activateWorkflowAgent = useAppStore((state) => state.activateWorkflowAgent);
   const emitNotification = useAppStore((state) => state.emitNotification);
+  const reportError = useAppStore((state) => state.reportError);
 
   return useCallback(
     async ({ agent, isConfirmed = false }: AdvanceParams): Promise<void> => {
@@ -31,9 +34,16 @@ export const useAdvanceWorkflowAgent = ({
           bypassGate: isConfirmed,
         });
       } catch (error) {
-        notifyWorkflowGateBlock({ error, sessionId, emitNotification });
+        if (error instanceof WorkflowGateError) {
+          notifyWorkflowGateBlock({ error, sessionId, emitNotification });
+          return;
+        }
+        if (isReportedError(error)) {
+          return;
+        }
+        void reportError({ title: "The next step didn't start", error, sessionId });
       }
     },
-    [activateWorkflowAgent, emitNotification, sessionId],
+    [activateWorkflowAgent, emitNotification, reportError, sessionId],
   );
 };

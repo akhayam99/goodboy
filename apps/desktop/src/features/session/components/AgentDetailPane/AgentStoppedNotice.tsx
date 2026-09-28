@@ -2,6 +2,7 @@ import { Button, cn, tintClasses } from '@goodboy/ui';
 import type { Agent, ProviderId, ProviderName, Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
 import { agentStoppedCopy } from './agentStoppedCopy';
 
 type Props = {
@@ -30,6 +31,7 @@ export const AgentStoppedNotice = ({
 }: Props) => {
   const continueStoppedAgent = useAppStore((state) => state.continueStoppedAgent);
   const authResults = useAppStore((state) => state.authResults);
+  const pending = usePendingAction({ sessionId: session.id });
   if (agent.status !== 'stopped') {
     return null;
   }
@@ -54,7 +56,14 @@ export const AgentStoppedNotice = ({
         <Button
           variant="secondary"
           size="sm"
-          onClick={() => void continueStoppedAgent({ sessionId: session.id, agentId: agent.id })}
+          isBusy={pending.pendingKeys.has(agent.id)}
+          onClick={() =>
+            void pending.run({
+              key: agent.id,
+              failureTitle: "Couldn't continue the agent",
+              task: () => continueStoppedAgent({ sessionId: session.id, agentId: agent.id }),
+            })
+          }
         >
           Continue
         </Button>

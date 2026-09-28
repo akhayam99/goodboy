@@ -171,6 +171,7 @@ function buildHarness(
       undefined,
   );
   const drainResolveQueue = vi.fn(async () => undefined);
+  const reportError = vi.fn(async (_params: unknown) => undefined);
   const recordResolveAttempt = vi.fn(
     async (_params: { phase: string; instructions: string | null }) => 'attempt-id',
   );
@@ -206,6 +207,7 @@ function buildHarness(
     sessionCreations: {},
     revealedActivityRows: {},
     sendTurn,
+    reportError,
   };
   const get = (() => state) as unknown as Parameters<typeof spawnAgent>[1];
   const set = vi.fn((update: Parameters<Parameters<typeof spawnAgent>[0]>[0]) => {
@@ -221,6 +223,7 @@ function buildHarness(
     getState: get,
     drainResolveQueue,
     recordResolveAttempt,
+    reportError,
     sendTurn,
     spawn: spawnAgent(set, get),
   };
@@ -441,6 +444,22 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
 
     expect(sendTurn).toHaveBeenCalledTimes(1);
     expect(sendTurn.mock.calls[0]?.[0]?.mountId).toBe('mount-web');
+  });
+
+  it('logs a kickoff that fails before the transcript can show it', async () => {
+    const { reportError, sendTurn, spawn } = buildHarness([]);
+    sendTurn.mockRejectedValueOnce(new Error('every provider is signed out'));
+
+    await spawn(SESSION_ID, { name: 'Scout', initialPrompt: 'look around' });
+
+    await vi.waitFor(() =>
+      expect(reportError).toHaveBeenCalledWith({
+        title: "The agent didn't start",
+        error: new Error('every provider is signed out'),
+        sessionId: SESSION_ID,
+      }),
+    );
+    expect(reportError).toHaveBeenCalledTimes(1);
   });
 
   it('names no mount for an agent spawned without one', async () => {

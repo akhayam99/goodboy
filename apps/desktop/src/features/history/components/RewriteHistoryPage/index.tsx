@@ -15,6 +15,7 @@ import {
 } from '@goodboy/ui';
 import type { BranchCommit, HistoryStep, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import { usePendingAction, type PendingActionRun } from '../../../../shared/hooks/usePendingAction';
 import { useWorktreeStatuses } from '../../../session/hooks/useWorktreeStatuses';
 import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
 import { scribeKeyOf } from '../../../../store/slices/scribe/scribeKeyOf';
@@ -56,6 +57,10 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     useShallow((s) => selectMountForPath({ state: s, sessionId, path: worktreePath })),
   );
   const mountId = mount?.mountId ?? null;
+  const history = usePendingAction({ sessionId });
+  const attempt = ({ key, failureTitle, task }: PendingActionRun): void => {
+    void history.run({ key, failureTitle, task });
+  };
   const draft = useAppStore((s) => (mountId === null ? null : (s.historyDrafts[mountId] ?? null)));
   const run = useAppStore((s) => (mountId === null ? null : (s.historyRuns[mountId] ?? null)));
   const scribe = useAppStore((s) =>
@@ -469,11 +474,16 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
             hasUpstream={hasUpstream}
             revision={run?.updatedAt ?? 0}
             onRestore={(backup) =>
-              void restoreHistory({
-                sessionId,
-                mountId,
-                backupRef: backup.refName,
-                shouldPush: hasUpstream,
+              attempt({
+                key: 'restore',
+                failureTitle: "Couldn't restore the backup",
+                task: () =>
+                  restoreHistory({
+                    sessionId,
+                    mountId,
+                    backupRef: backup.refName,
+                    shouldPush: hasUpstream,
+                  }),
               })
             }
             onClose={() => setIsShowingBackups(false)}
@@ -554,21 +564,27 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
                 hasUpstream={hasUpstream}
                 prNumber={prNumber}
                 onPushWithLease={() =>
-                  void pushHistoryRewrite({
-                    sessionId,
-                    mountId,
-                    origin: run.origin,
-                    planId: run.planId,
-                    expectedRemoteSha: run.remoteSha,
+                  attempt({
+                    key: 'push',
+                    failureTitle: "Couldn't push the rewritten history",
+                    task: () =>
+                      pushHistoryRewrite({
+                        sessionId,
+                        mountId,
+                        origin: run.origin,
+                        planId: run.planId,
+                        expectedRemoteSha: run.remoteSha,
+                      }),
                   })
                 }
                 onUndo={() => {
-                  if (run.backupRef !== null) {
-                    void restoreHistory({
-                      sessionId,
-                      mountId,
-                      backupRef: run.backupRef,
-                      shouldPush: false,
+                  const backupRef = run.backupRef;
+                  if (backupRef !== null) {
+                    attempt({
+                      key: 'restore',
+                      failureTitle: "Couldn't undo the rewrite",
+                      task: () =>
+                        restoreHistory({ sessionId, mountId, backupRef, shouldPush: false }),
                     });
                   }
                 }}
@@ -592,7 +608,11 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
                 confirmLabel="Apply and push"
                 onConfirm={() => {
                   setIsConfirmingPush(false);
-                  void applyHistoryDraft({ sessionId, mountId, shouldPush: true });
+                  attempt({
+                    key: 'apply',
+                    failureTitle: "Couldn't apply the new history",
+                    task: () => applyHistoryDraft({ sessionId, mountId, shouldPush: true }),
+                  });
                 }}
                 onCancel={() => setIsConfirmingPush(false)}
               />
@@ -611,17 +631,41 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
                   setIsConfirmingPush(true);
                   return;
                 }
-                void applyHistoryDraft({ sessionId, mountId, shouldPush });
+                attempt({
+                  key: 'apply',
+                  failureTitle: "Couldn't apply the new history",
+                  task: () => applyHistoryDraft({ sessionId, mountId, shouldPush }),
+                });
               }}
               onDiscard={() => {
                 setUndoStack([]);
-                void discardHistoryDraft({ sessionId, mountId });
+                attempt({
+                  key: 'discard',
+                  failureTitle: "Couldn't discard the plan",
+                  task: () => discardHistoryDraft({ sessionId, mountId }),
+                });
               }}
-              onRewriteWithAgent={() => void rewriteDraftWithAgent({ sessionId, mountId })}
+              onRewriteWithAgent={() =>
+                attempt({
+                  key: 'rewrite',
+                  failureTitle: "Couldn't start the history rewriter",
+                  task: () => rewriteDraftWithAgent({ sessionId, mountId }),
+                })
+              }
               onUndoEdit={undoStack.length > 0 ? undo : null}
-              onBringOrigin={() => void bringOriginIntoHistory({ sessionId, mountId })}
+              onBringOrigin={() =>
+                attempt({
+                  key: 'bring-origin',
+                  failureTitle: "Couldn't bring origin into the history",
+                  task: () => bringOriginIntoHistory({ sessionId, mountId }),
+                })
+              }
               onApplyRewritten={(shouldPush) =>
-                void applyRewrittenHistory({ sessionId, mountId, shouldPush })
+                attempt({
+                  key: 'apply',
+                  failureTitle: "Couldn't apply the rewritten history",
+                  task: () => applyRewrittenHistory({ sessionId, mountId, shouldPush }),
+                })
               }
             />
           </div>

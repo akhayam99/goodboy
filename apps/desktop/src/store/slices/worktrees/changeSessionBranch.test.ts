@@ -116,6 +116,9 @@ const makeState = (): State => ({
   },
   emitNotification: h.emitNotification,
   recordSessionEvent: vi.fn(async () => undefined),
+  refreshSessionPr: vi.fn(async () => undefined),
+  refreshSessionMr: vi.fn(async () => undefined),
+  refreshSessionBitbucketPr: vi.fn(async () => undefined),
 });
 
 const runSwitch = async (state: State, mountId: MountId = MOUNT_ID): Promise<void> => {

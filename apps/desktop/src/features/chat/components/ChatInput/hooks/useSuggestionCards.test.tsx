@@ -7,6 +7,9 @@ import type { RightSizePending, RightSizeSuggestion } from './useRightSizeNudge'
 
 vi.mock('../../NudgeCard', () => ({ NudgeCard: () => null }));
 vi.mock('../../RightSizeCard', () => ({ RightSizeCard: () => null }));
+vi.mock('../../../../../shared/hooks/usePendingAction', () => ({
+  usePendingAction: () => ({ pendingKeys: new Set<string>(), run: async () => true }),
+}));
 vi.mock('../../../../suggestions', () => ({
   useSessionSuggestions: ({ session }: { session: Session }) =>
     session.workflowRuns.length === 0

@@ -111,6 +111,7 @@ import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import type { CreatePrInput } from './slices/github/createPrForSession';
 import type { RefreshPrOptions } from './slices/github/refreshMountPr';
+import type { PrWriteOptions } from './slices/github/prWriteOptions';
 import { createGitlabMrSlice, initialGitlabMrState } from './slices/gitlab-mr';
 import type { CreateMrInput, MergeMrInput, RefreshMrOptions } from './slices/gitlab-mr';
 import {
@@ -248,6 +249,8 @@ import type { BringOriginOutcome } from './slices/history/bringOriginIntoHistory
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
+import { createSessionSyncSlice } from './slices/session-sync';
+import { sessionSyncInitialState } from './slices/session-sync/state';
 import { createIssueBriefsSlice } from './slices/issue-briefs';
 import { issueBriefsInitialState } from './slices/issue-briefs/state';
 import { createDurationEstimatesSlice } from './slices/durationEstimates';
@@ -922,9 +925,14 @@ type AppActions = {
     mountId: MountId;
   }): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: string }>;
   createPrForSession(input: CreatePrInput): Promise<void>;
-  markPrReady(sessionId: SessionId, prNumber?: number): Promise<void>;
+  markPrReady(sessionId: SessionId, prNumber?: number, opts?: PrWriteOptions): Promise<void>;
   convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
-  mergePr(sessionId: SessionId, prNumber?: number, method?: PrMergeMethod): Promise<void>;
+  mergePr(
+    sessionId: SessionId,
+    prNumber?: number,
+    method?: PrMergeMethod,
+    opts?: PrWriteOptions,
+  ): Promise<void>;
   refreshSessionMr(sessionId: SessionId, opts?: RefreshMrOptions): Promise<void>;
   loadReviewDrafts(sessionId: SessionId): Promise<void>;
   addReviewDraft(input: AddReviewDraftInput): Promise<PrReviewDraft>;
@@ -1164,6 +1172,7 @@ export type AppStore = AppState &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createPrWritesSlice> &
+  ReturnType<typeof createSessionSyncSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
   ReturnType<typeof createDurationEstimatesSlice> &
   ReturnType<typeof createProviderLimitsSlice> &
@@ -1245,6 +1254,7 @@ export const initialState: AppState = {
   ...scribeInitialState,
   ...prSeriesInitialState,
   ...prWritesInitialState,
+  ...sessionSyncInitialState,
   ...issueBriefsInitialState,
   ...durationEstimatesInitialState,
   ...providerLimitsInitialState,
@@ -1411,6 +1421,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createScribeSlice(set, get),
   ...createPrSeriesSlice(set, get),
   ...createPrWritesSlice(set, get),
+  ...createSessionSyncSlice(set, get),
   ...createIssueBriefsSlice(set, get),
   ...createDurationEstimatesSlice(set, get),
   ...createProviderLimitsSlice(set, get),

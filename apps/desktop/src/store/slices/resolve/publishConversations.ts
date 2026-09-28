@@ -23,6 +23,7 @@ import { publicationOutcome, type PublicationOutcome } from './publicationOutcom
 import { sessionReplySettings } from '../../sessionReplySettings';
 import { resolveStepPlan } from './resolveStepPlan';
 import { isDriftChecked, mountTargetDrift, publicationDrift } from './publicationDrift';
+import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
 import { loadPublicationsInto } from './publicationState';
 import { startPublicationHeartbeat } from './publicationHeartbeat';
 import { withPublicationLock } from './publicationLock';
@@ -272,6 +273,10 @@ const publishOnce = async ({
             }),
         });
         await quietly({ publicationId, work: () => loadPublicationsInto({ set, sessionId }) });
+        await quietly({
+          publicationId,
+          work: () => loadResolveQueueItemsInto({ set, sessionId }),
+        });
         set((state) => ({
           activePublicationPreview: { ...state.activePublicationPreview, [sessionId]: null },
         }));
