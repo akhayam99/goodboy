@@ -22,6 +22,8 @@ const { state, viewPrefs, stageInfo, cost } = vi.hoisted(() => ({
     bulkDeleteTask: vi.fn(async () => undefined),
     currentWorkspaceId: 'ws-1' as string | null,
     currentSessionId: null as string | null,
+    openSessionDraftWorkspaceId: null as string | null,
+    sessionDrafts: {} as Record<string, unknown>,
   },
   viewPrefs: {
     current: { group: 'none' as 'none' | 'stage', sort: 'recent' as const },
@@ -138,6 +140,8 @@ beforeEach(() => {
   stageInfo.current = { stage: 'done', reason: 'idle', attention: null, prState: null };
   state.projects = [];
   viewPrefs.current = { group: 'none', sort: 'recent' };
+  state.openSessionDraftWorkspaceId = null;
+  state.sessionDrafts = {};
 });
 
 afterEach(cleanup);
@@ -177,6 +181,35 @@ describe('SessionActivityBar, baseline', () => {
     expect(listener).toHaveBeenCalledOnce();
     expect(screen.queryByRole('textbox')).toBeNull();
     window.removeEventListener('goodboy:new-session', listener);
+  });
+
+  it('holds New selected while the draft is open', () => {
+    state.openSessionDraftWorkspaceId = 'ws-1';
+    renderBar([]);
+
+    const button = screen.getByRole('button', { name: 'Create new session' });
+    expect(button.getAttribute('aria-pressed')).toBe('true');
+    expect(button.className).toContain('bg-selected');
+    expect(document.querySelector('[data-slot="draft-dot"]')).toBeNull();
+  });
+
+  it('marks New with a dot while a written draft waits elsewhere', () => {
+    state.sessionDrafts = {
+      'ws-1': {
+        choice: null,
+        issueQuery: '',
+        issueKey: null,
+        pickedIssue: null,
+        workflowGoal: 'Add rate limits',
+        workflowId: null,
+        agentPrompt: '',
+      },
+    };
+    renderBar([]);
+
+    const button = screen.getByRole('button', { name: /Draft in progress/ });
+    expect(button.getAttribute('aria-pressed')).toBe('false');
+    expect(document.querySelector('[data-slot="draft-dot"]')).not.toBeNull();
   });
 
   it('switches back from the archived tab when a new session is requested', () => {

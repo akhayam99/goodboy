@@ -6,6 +6,7 @@ import { WorkflowScene } from './scenes/WorkflowScene';
 import { ShellScene } from './scenes/ShellScene';
 import { ChatShellScene } from './scenes/ChatShellScene';
 import { InboxScene } from './scenes/InboxScene';
+import { InboxSourceScene } from './scenes/InboxSourceScene';
 import { ConversationScene } from './scenes/ConversationScene';
 import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
@@ -74,6 +75,7 @@ import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
 import { ListboxScene } from './scenes/ListboxScene';
+import { BrandKickoffScene } from './scenes/brand/KickoffScene';
 import { BrandLookupScene } from './scenes/brand/LookupScene';
 import { BrandSlackScene } from './scenes/brand/SlackScene';
 import { BrandContextScene } from './scenes/brand/ContextScene';
@@ -97,6 +99,7 @@ export const MOCK_SCENES = {
   shell: ShellScene,
   'chat-shell': ChatShellScene,
   inbox: InboxScene,
+  'inbox-source': InboxSourceScene,
   conversation: ConversationScene,
   mounts: MountsScene,
   'mount-mismatch': MountMismatchScene,
@@ -158,6 +161,7 @@ export const MOCK_SCENES = {
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,
+  'brand-kickoff': BrandKickoffScene,
   'brand-lookup': BrandLookupScene,
   'brand-slack': BrandSlackScene,
   'brand-context': BrandContextScene,

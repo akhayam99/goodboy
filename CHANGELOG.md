@@ -12,6 +12,44 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.11.5
+
+The Task, Workflow and Agent kickoff is back with Start blank and the full workflow builder, and sessions find pull requests made elsewhere.
+
+### New
+
+#### Run a workflow
+<!-- gb area=workflows image=kickoff-workflow -->
+
+New opens the kickoff again, with Pick up a task, Run a workflow and Ask an agent. It replaces the setup steps on the Overview from 0.11.4.
+
+Run a workflow is the same builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, add guidance, and set Can use, Starts, Autorun and a spend cap. Start workflow creates the session and starts the run in one action.
+
+#### Start blank
+<!-- gb area=sessions -->
+
+Start blank in the kickoff header opens a new session straight on its Overview, where you add the goal, projects and work when you are ready.
+
+#### Refresh a session
+<!-- gb area=sessions -->
+
+Pull requests an agent opened or you made in a terminal show up when the turn ends or when you come back to the window. Refresh, next to Archive and Delete in the session header, re-reads projects, branches and pull requests right away. It also runs from `Cmd+Shift+R` and the command palette.
+
+### Improved
+
+#### Inbox groups by project where it maps to code
+<!-- gb area=inbox screen=inbox image=inbox-source -->
+
+The Project filter shows for Sentry errors, and for GitHub or GitLab items when several projects live on that host. Linear and Jira stay one flat list.
+
+Launching a session from a Sentry error or a GitHub or GitLab item mounts the project it belongs to, and the launch panel says why.
+
+### Fixed
+
+- Deleting a workflow run deletes its agents and their open questions, for every kind of workflow. Leftovers from earlier deletes are cleaned up at startup. <!-- gb area=workflows -->
+- `Esc` no longer takes the window out of macOS full screen. It still closes menus and panels inside the app. <!-- gb area=app -->
+- Pasting an issue code such as a Sentry short code into the Overview link picker finds the issue and links it. <!-- gb area=inbox -->
+
 ## Goodboy v0.11.4
 
 New sessions open blank on their overview and set up in three short steps, with every kind of workflow one pick away.

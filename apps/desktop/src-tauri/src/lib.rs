@@ -64,6 +64,8 @@ mod worktree;
 mod worktree_writer;
 
 #[cfg(target_os = "macos")]
+mod fullscreen_escape;
+#[cfg(target_os = "macos")]
 mod help_menu;
 
 #[cfg(target_os = "macos")]
@@ -195,6 +197,8 @@ pub fn run() {
             if !windows.is_empty() {
                 boot_breadcrumb::record("window-created", Some("ok"));
                 for window in windows.values() {
+                    #[cfg(target_os = "macos")]
+                    fullscreen_escape::install(window);
                     let _ = window.show();
                 }
                 boot_breadcrumb::record("webview-attached", Some("ok"));

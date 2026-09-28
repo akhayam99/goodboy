@@ -1,28 +1,16 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from '../../../../store';
 
 export const NewSessionBridge = () => {
-  const startBlankSession = useAppStore((s) => s.startBlankSession);
-  const reportError = useAppStore((s) => s.reportError);
-  const isStartingRef = useRef(false);
+  const openSessionDraft = useAppStore((s) => s.openSessionDraft);
 
   useEffect(() => {
     const onNewSessionRequest = () => {
-      if (isStartingRef.current) {
-        return;
-      }
-      isStartingRef.current = true;
-      void startBlankSession()
-        .catch((error: unknown) =>
-          reportError({ severity: 'error', title: "Couldn't create the session", error }),
-        )
-        .finally(() => {
-          isStartingRef.current = false;
-        });
+      openSessionDraft();
     };
     window.addEventListener('goodboy:new-session', onNewSessionRequest);
     return () => window.removeEventListener('goodboy:new-session', onNewSessionRequest);
-  }, [reportError, startBlankSession]);
+  }, [openSessionDraft]);
 
   return null;
 };

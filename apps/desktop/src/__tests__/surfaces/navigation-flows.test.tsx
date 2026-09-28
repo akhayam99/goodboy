@@ -26,7 +26,6 @@ import {
 import type { MountGithubState } from '../../store/types';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
 import { App } from '../../App';
-import { sessionPlace } from '../../store/slices/navigation/place';
 import { APP_SECTIONS } from '../../features/settings/components/SettingsStudio/appSections';
 
 const COMMITS: ReadonlyArray<BranchCommit> = [
@@ -444,6 +443,12 @@ const ROWS: ReadonlyArray<Row> = [
     lands: () => visible('region', 'Context'),
   },
   {
+    name: 'palette: Refresh session',
+    covers: ['resyncSession', 'palette:Refresh session'],
+    open: () => openPalette(/^Refresh session/),
+    lands: () => visible('button', /^Refresh(ing)?$/),
+  },
+  {
     name: 'palette: Back to board',
     covers: ['navigate', 'palette:Back to board'],
     open: () => openPalette(/^Back to board/),
@@ -520,7 +525,25 @@ const ROWS: ReadonlyArray<Row> = [
   },
   {
     name: 'palette: New session',
-    covers: ['palette:New session'],
+    covers: ['openSessionDraft', 'palette:New session'],
+    open: () => openPalette(/^New session/),
+    lands: () => heading('New session'),
+  },
+  {
+    name: 'sidebar: New opens the kickoff',
+    covers: ['openSessionDraft', 'button:New'],
+    open: () => clickButton(/^Create new session/),
+    lands: both(
+      () => heading('New session'),
+      () => visible('tab', /Pick up a task/),
+      () => visible('tab', /Run a workflow/),
+      () => visible('tab', /Ask an agent/),
+      () => visible('button', /Start blank/),
+    ),
+  },
+  {
+    name: 'kickoff: Start blank lands on the overview',
+    covers: ['startBlankSession'],
     open: async (ctx) => {
       const seeded = useAppStore.getState().sessions.find((s) => s.id === ctx.sessionId)!;
       useAppStore.setState({
@@ -533,25 +556,39 @@ const ROWS: ReadonlyArray<Row> = [
           };
           useAppStore.setState((state) => ({
             sessions: [session, ...state.sessions],
+            currentSessionId: session.id,
             sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: [] },
             sessionSlots: { ...state.sessionSlots, [session.id]: [] },
+            sessionLoading: {
+              ...state.sessionLoading,
+              [session.id]: {
+                agents: false,
+                transcript: false,
+                telemetry: false,
+                slots: false,
+                plans: false,
+                summary: false,
+              },
+            },
             sessionProjectMounts: { ...state.sessionProjectMounts, [session.id]: [] },
           }));
-          useAppStore.getState().navigate({ to: sessionPlace({ sessionId: session.id }) });
           return { session };
         },
       } as never);
-      await openPalette(/^New session/);
+      await clickButton(/^Create new session/);
+      await clickButton(/Start blank/);
     },
-    lands: both(async (ctx) => {
-      await waitFor(() => {
-        const state = useAppStore.getState();
-        const current = state.sessions.find((candidate) => candidate.id === state.currentSessionId);
-        expect(current?.id).not.toBe(ctx.sessionId);
-        expect(current?.goal).toBe('');
-        expect(state.activeLens[current!.id] ?? null).toBeNull();
-      }, WAIT);
-    }),
+    lands: both(
+      async (ctx) => {
+        await waitFor(() => {
+          const state = useAppStore.getState();
+          expect(state.currentSessionId).not.toBe(ctx.sessionId);
+          expect(state.openSessionDraftWorkspaceId).toBeNull();
+        }, WAIT);
+      },
+      () => visible('button', /Untitled session/),
+      async () => expect(await screen.findByTestId('context-chip')).toBeDefined(),
+    ),
   },
   {
     name: 'palette: Connect a provider',

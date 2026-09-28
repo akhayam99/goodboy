@@ -245,5 +245,5 @@ describe('m184 turn spans backfill', () => {
       ),
     ).toEqual([{ count: runCount, total: runCount * 5_000 }]);
     expect(elapsedMs).toBeLessThan(5_000);
-  });
+  }, 60_000);
 });

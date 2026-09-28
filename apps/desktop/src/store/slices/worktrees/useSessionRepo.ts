@@ -4,9 +4,11 @@ import { useAppStore } from '../../store';
 import { resolveSessionRepo, type SessionRepo } from './resolveSessionRepo';
 
 type Params = {
-  readonly sessionId: SessionId;
+  readonly sessionId: SessionId | null;
 };
 
 export const useSessionRepo = ({ sessionId }: Params): SessionRepo | null => {
-  return useAppStore(useShallow((state) => resolveSessionRepo({ state, sessionId })));
+  return useAppStore(
+    useShallow((state) => (sessionId === null ? null : resolveSessionRepo({ state, sessionId }))),
+  );
 };

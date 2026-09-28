@@ -86,16 +86,20 @@ Tell agents once who you are and how you like to work, in four short parts. **Se
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s02-kickoff-dark.webp">
-  <img src="./docs/readme/s02-kickoff-light.webp" alt="A blank session's overview with the goal set and Start the work listing your workflows, built-in ones, and an orchestrated or custom workflow">
+  <img src="./docs/readme/s02-kickoff-light.webp" alt="The kickoff with Pick up a task, Run a workflow and Ask an agent, Start blank in the header, and HBL-412 picked with a drafted brief">
 </picture>
 
-### Start blank, set it up step by step
+### How do you want to start?
 
-**New** opens a fresh session right away, with nothing to fill in first. Its overview walks you through **Goal**, **Project** and **Start the work**, one step at a time, and any step can be skipped or reopened. Press New again before touching it and you land back on the same session, so empty sessions do not pile up.
+Start from an issue, a workflow or a question, in one draft with three tabs: **Pick up a task**, **Run a workflow** and **Ask an agent**. The draft becomes a session only when you press Start, so empty sessions do not pile up.
+
+### Start blank
+
+Start from the goal instead: **Start blank** in the kickoff header opens the session straight on its Overview, and you add the goal, projects and work from there.
 
 ### Pick up a task, with a drafted brief
 
-Turn an issue into a briefed session from the Inbox. Goodboy drafts a short title and goal linked back to the issue, and you keep it or edit it.
+Turn an issue into a briefed session in one pick. Goodboy drafts a short title and goal linked back to the issue, and you keep it, edit it, or use the issue text.
 
 ### Ask an agent
 
@@ -103,7 +107,7 @@ Map an unfamiliar repo before you plan: **Scout** is the default and can start w
 
 ### Run a workflow
 
-Start the work lists your own workflows, the built-in ones, an orchestrated workflow and a custom one. Picking any of them opens the full workflow form, filled in with your goal, so you can change the steps before it starts.
+The full workflow builder, right in the kickoff: pick **Orchestrated**, **Custom** or **Preset**, see the plan you will run, edit the steps, choose which providers it can use, and set Starts, Autorun and a spend cap. **Start workflow** creates the session and starts the run in one step.
 
 ### Named by Goodboy
 
@@ -146,6 +150,10 @@ Know what needs you from any screen. A top-bar chip counts sessions that need yo
 ### Session overview
 
 Find the goal, linked issues, projects, cost and the buttons to start an agent or a workflow on one screen. **Run workflow** turns into **Open run** while a run is live, so a second one does not start on top.
+
+### Refresh a session
+
+See pull requests made outside Goodboy without reloading. One an agent opened or you made in a terminal shows up when the turn ends or when you come back to the window. **Refresh**, next to Archive and Delete in the session header, re-reads projects, branches and pull requests right away, also from **⌘⇧R** and the command palette.
 
 ### Activity
 
@@ -293,7 +301,7 @@ Line work up behind work: start a run now, by hand, or after another run finishe
 
 ### Workflow run
 
-Follow a run as a tree with one pinned next action, and add steps to a live or finished run.
+Follow a run as a tree with one pinned next action, and add steps to a live or finished run. Deleting a run deletes its agents and their open questions with it.
 
 ### Step handoff summary
 
@@ -373,7 +381,7 @@ Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Line
   <img src="./docs/readme/s19-inbox-light.webp" alt="The Inbox with HBL-412 pasted and found outside your inbox, a starred issue and a Slack thread">
 </picture>
 
-Work from one list instead of seven tabs: issues, Slack threads and Sentry errors from your connected tools, plus pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket, grouped by day, with keyboard navigation. Projects with nothing in them fold under **Show N empty**.
+Work from one list instead of seven tabs: issues, Slack threads and Sentry errors from your connected tools, plus pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket, grouped by day, with keyboard navigation. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list.
 
 ### Find any issue by code or link
 
@@ -385,11 +393,11 @@ Keep the issues you follow on top of the Inbox and of **Pick up a task**.
 
 ### Launch a session from any item
 
-Start a session from an issue, a Slack thread or an error, with the brief already drafted.
+Start a session from an issue, a Slack thread or an error, with the brief already drafted. A Sentry error or a GitHub or GitLab item opens in its project, and the popover says why.
 
 ### Link an item to a session
 
-Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick.
+Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session, paste an issue code or a link into the Overview link picker to find the issue and link it.
 
 ### Trackers
 
@@ -721,7 +729,7 @@ Open a real login shell in the session's worktree with **⌘T**, and find it sti
 
 ### Keyboard shortcuts, back and forward
 
-Drive Goodboy from the keyboard: about 40 shortcuts, a key for each view, workspaces 1 to 9, and **⌘[** and **⌘]** through history. One registry drives the keys, the help screen and the tooltips.
+Drive Goodboy from the keyboard: about 40 shortcuts, a key for each view, workspaces 1 to 9, and **⌘[** and **⌘]** through history. One registry drives the keys, the help screen and the tooltips. **Esc** closes what is open inside the app and never takes the window out of macOS full screen.
 
 ### Notifications
 

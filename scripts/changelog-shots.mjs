@@ -5,11 +5,13 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const DEV_URL = 'http://localhost:1421';
+const DEV_URL = process.env.GOODBOY_SHOT_URL ?? 'http://localhost:1421';
 const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const CSS_WIDTH = 680;
 const CSS_HEIGHT = 425;
 const DEVICE_SCALE_FACTOR = 2;
+const WINDOW_WIDTH = CSS_WIDTH * DEVICE_SCALE_FACTOR;
+const WINDOW_HEIGHT = CSS_HEIGHT * DEVICE_SCALE_FACTOR;
 const RENDER_WAIT_MS = 4000;
 const THEMES = ['dark', 'light'];
 const OUT_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/changelog/next');
@@ -97,21 +99,23 @@ const captureThemePng = async ({ theme }) => {
   );
   try {
     const { send } = await openCdpClient({ port });
-    await send({
-      method: 'Emulation.setDeviceMetricsOverride',
-      params: {
-        width: CSS_WIDTH,
-        height: CSS_HEIGHT,
-        deviceScaleFactor: DEVICE_SCALE_FACTOR,
-        mobile: false,
-      },
-    });
+    const openScene = async ({ width, height, deviceScaleFactor }) => {
+      await send({
+        method: 'Emulation.setDeviceMetricsOverride',
+        params: { width, height, deviceScaleFactor, mobile: false },
+      });
+      await send({
+        method: 'Page.navigate',
+        params: { url: `${DEV_URL}/?scene=${scene}&theme=${theme}` },
+      });
+      await sleep({ ms: RENDER_WAIT_MS });
+    };
     await send({ method: 'Page.enable' });
-    await send({
-      method: 'Page.navigate',
-      params: { url: `${DEV_URL}/?scene=${scene}&theme=${theme}` },
+    await openScene({
+      width: CSS_WIDTH,
+      height: CSS_HEIGHT,
+      deviceScaleFactor: DEVICE_SCALE_FACTOR,
     });
-    await sleep({ ms: RENDER_WAIT_MS });
 
     const documentResult = await send({ method: 'DOM.getDocument', params: { depth: -1 } });
     const rootNodeId = documentResult.result?.root?.nodeId;
@@ -124,7 +128,15 @@ const captureThemePng = async ({ theme }) => {
     });
     const nodeId = queryResult.result?.nodeId;
     if (nodeId === undefined || nodeId === 0) {
-      throw new Error(`scene "${scene}" has no [data-shot] element`);
+      await openScene({ width: WINDOW_WIDTH, height: WINDOW_HEIGHT, deviceScaleFactor: 1 });
+      const windowShot = await send({
+        method: 'Page.captureScreenshot',
+        params: { format: 'png' },
+      });
+      if (windowShot.result?.data === undefined) {
+        throw new Error(`could not capture scene "${scene}"`);
+      }
+      return Buffer.from(windowShot.result.data, 'base64');
     }
     const boxResult = await send({ method: 'DOM.getBoxModel', params: { nodeId } });
     const quad = boxResult.result?.model?.content;
@@ -142,7 +154,7 @@ const captureThemePng = async ({ theme }) => {
     return Buffer.from(shot.result.data, 'base64');
   } finally {
     proc.kill('SIGKILL');
-    rmSync(profileDir, { recursive: true, force: true });
+    rmSync(profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
   }
 };
 

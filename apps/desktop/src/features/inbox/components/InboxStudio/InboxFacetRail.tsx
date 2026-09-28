@@ -167,7 +167,7 @@ export const InboxFacetRail = ({
           ))}
         </FacetSection>
       ) : null}
-      {projects.length > 1 ? (
+      {projects.length > 1 && (counts.hasProjectMapping || filters.project != null) ? (
         <InboxProjectFacets
           projects={projects}
           filters={filters}

@@ -19,8 +19,8 @@ export const HowItWorks = () => (
         why.
       </p>
       <p>
-        Press New and the session opens blank on its overview. Set a goal and a project, then pick
-        your own workflow, a built-in one, or an orchestrated or custom one.
+        Press New and pick Run a workflow: the same builder opens there, and the session and its run
+        start together. Or start blank and add the goal later.
       </p>
       <p>
         Heading somewhere you did not mean? Leave a hint for the next decision, or have it read

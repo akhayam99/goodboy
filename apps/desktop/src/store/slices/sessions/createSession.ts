@@ -53,6 +53,7 @@ type ExternalTaskInput = {
 type Input = {
   workspaceId: WorkspaceId;
   projectId?: ProjectId;
+  projectReason?: string;
   goal: string;
   title?: string;
   branchPrefix?: string;
@@ -75,6 +76,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
     projectId,
+    projectReason,
     goal,
     title,
     branchPrefix,
@@ -92,11 +94,13 @@ export const createSession = (set: SetFn, get: GetFn) => {
     attachmentInputs,
     omitGoalSlot = false,
   }: Input): Promise<{ session: Session }> => {
-    const workspace = await getWorkspaceById({ db: tauriDatabase, id: workspaceId });
+    const [workspace, projects] = await Promise.all([
+      getWorkspaceById({ db: tauriDatabase, id: workspaceId }),
+      listProjectsForWorkspace({ db: tauriDatabase, workspaceId }),
+    ]);
     if (workspace === null) {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
-    const projects = await listProjectsForWorkspace({ db: tauriDatabase, workspaceId });
     const project = projectId !== undefined ? resolveSessionProject({ projects, projectId }) : null;
 
     const trimmedPrefix = branchPrefix?.trim();
@@ -210,7 +214,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
           reason:
             trimmedExisting !== undefined && trimmedExisting !== ''
               ? `adopted existing branch ${trimmedExisting}`
-              : 'the session works in this project',
+              : (projectReason ?? 'the session works in this project'),
           taskIdentifiers: (externalTasks ?? []).map((task) => task.identifier),
         });
       } catch (error) {

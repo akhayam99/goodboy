@@ -120,25 +120,25 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
   {
     id: 'kickoff',
     group: 'task',
-    title: 'New session and setup',
+    title: 'New session and kickoff',
     concept: 'sessions',
-    lead: 'A session is one task: a goal, the agents working on it, and a branch for each project they edit. New opens a blank session on its Overview right away, with nothing to fill in first.',
+    lead: 'A session is one task: a goal, the agents working on it, and a branch for each project they edit. It starts as a draft and becomes a session only when you press Start or Start blank.',
     points: [
       {
-        term: 'Set up this session',
-        desc: 'The Overview walks you through Goal, Project and Start the work, one step at a time. Skip any step and reopen it later. Press New again before touching it and you land back on the same session.',
+        term: 'Pick up a task',
+        desc: 'Choose an issue from your tools or the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them. A Sentry error or a GitHub or GitLab item opens in its project and says why.',
       },
       {
         term: 'Run a workflow',
-        desc: 'Start the work lists your workflows, the built-in ones, and an orchestrated or custom workflow. Picking one opens the workflow form, filled in with your goal.',
+        desc: 'The same workflow builder as in a session: pick Orchestrated, Custom or Preset, see and edit the plan, then Start workflow creates the session and starts the run.',
       },
       {
-        term: 'Start an agent',
-        desc: 'Or start one agent and work with it directly. Scout is the default and maps an unfamiliar repo before you plan.',
+        term: 'Ask an agent',
+        desc: 'Ask a question about the code. Scout is the default and maps an unfamiliar repo before you plan.',
       },
       {
-        term: 'Pick up a task',
-        desc: 'Launch a session from an issue in the Inbox. Goodboy drafts a short title and goal linked back to it, and you keep or edit them.',
+        term: 'Start blank',
+        desc: 'Start from the goal: the session opens on its Overview, where you add the goal, projects and work when you are ready.',
       },
       {
         term: 'Named for you',
@@ -195,7 +195,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Workflows',
-        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step has its own provider, model and effort.',
+        desc: 'Start from Refactor, Plan and ship or Fix a bug, or build your own. Each step has its own provider, model and effort. Deleting a run deletes its agents and their open questions.',
       },
       {
         term: 'Orchestrated',
@@ -251,7 +251,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Inbox',
-        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue.',
+        desc: 'Issues, pull requests, threads and errors from your connected tools in one list, grouped by day. Paste a code like HBL-412 or a link to open any issue. Sentry errors, and GitHub or GitLab items when several projects live on that host, filter by project.',
       },
       {
         term: 'Start from anything',
@@ -299,6 +299,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Pull request page',
         desc: 'Whether a GitHub pull request can merge, in plain words, with checks and activity. Merge asks for confirmation.',
+      },
+      {
+        term: 'Refresh',
+        desc: 'A pull request an agent or your terminal opened shows up when the turn ends or when you come back to the window. Refresh in the session header, or ⌘⇧R, reads it right away.',
       },
       {
         term: 'Write it for me',
@@ -495,6 +499,10 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       {
         term: 'Command palette',
         desc: 'Find workspaces, sessions, agents, pages, scripts and actions, with the same prefixes as the message box: $ for scripts, ~ for workflows, @ for agents.',
+      },
+      {
+        term: 'Esc',
+        desc: 'Closes the menu, panel or dialog in front. It never takes the window out of macOS full screen.',
       },
     ],
     links: [

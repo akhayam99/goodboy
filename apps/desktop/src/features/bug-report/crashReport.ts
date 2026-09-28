@@ -103,7 +103,8 @@ const followScreens = (): void => {
       state.currentSessionId !== previous.currentSessionId ||
       state.appStudio !== previous.appStudio ||
       state.activeLens !== previous.activeLens ||
-      state.sessionStudio !== previous.sessionStudio;
+      state.sessionStudio !== previous.sessionStudio ||
+      state.openSessionDraftWorkspaceId !== previous.openSessionDraftWorkspaceId;
     if (moved) {
       note();
     }

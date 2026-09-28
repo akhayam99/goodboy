@@ -174,6 +174,12 @@ export const SHORTCUTS = {
     plane: 'session',
     group: 'session',
   },
+  'session.refresh': {
+    combo: 'cmd+shift+KeyR',
+    label: 'Refresh session',
+    plane: 'session',
+    group: 'session',
+  },
 
   'lens.overview': { combo: 'cmd+alt+KeyO', label: 'Overview', plane: 'lens', group: 'views' },
   'lens.context': { combo: 'cmd+alt+KeyC', label: 'Show context', plane: 'lens', group: 'views' },

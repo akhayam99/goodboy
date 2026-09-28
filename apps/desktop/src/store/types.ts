@@ -20,6 +20,7 @@ import type { HistoryState } from './slices/history/state';
 import type { ScribeState } from './slices/scribe/state';
 import type { PrSeriesState } from './slices/pr-series/state';
 import type { PrWritesState } from './slices/pr-writes/state';
+import type { SessionSyncState } from './slices/session-sync/state';
 import type { IssueBriefsState } from './slices/issue-briefs/state';
 import type { DurationEstimatesState } from './slices/durationEstimates/state';
 import type { ProviderLimitsState } from './slices/providerLimits/state';
@@ -110,7 +111,7 @@ import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
-import type { SessionStartState } from './slices/sessionStart/state';
+import type { SessionDraftState } from './slices/sessionDraft/state';
 import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
@@ -133,7 +134,7 @@ import type {
 import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
 import type { NewerDatabase } from '../shared/lib/newerDatabase';
-import type { WorkflowBuilderDraft } from './slices/workflowDrafts/types';
+import type { WorkflowBuilderDraft, WorkflowDraftKey } from './slices/workflowDrafts/types';
 import type { SessionArtifactDrafts } from './slices/artifactDrafts/types';
 import type { WorkflowGeneration, WorkflowStudioDraft } from './slices/workflowStudio/types';
 
@@ -255,6 +256,7 @@ type AppSliceState = ArtifactsState &
   ResolveState &
   ReviewNavigationState &
   PrWritesState &
+  SessionSyncState &
   IssueBriefsState &
   DurationEstimatesState &
   ProviderLimitsState &
@@ -265,7 +267,7 @@ type AppSliceState = ArtifactsState &
   ChangelogState &
   SlackThreadsSliceState &
   BugReportDraftState &
-  SessionStartState &
+  SessionDraftState &
   ContextDrawerSliceState &
   DecisionsSliceState &
   DrawerSliceState &
@@ -418,7 +420,7 @@ export type AppState = AppSliceState & {
   readonly agentEffortOverride: Readonly<Record<AgentId, EffortLevel>>;
   readonly agentKindOverride: Readonly<Record<AgentId, AgentKind>>;
   readonly agentDraft: Readonly<Record<AgentId, string>>;
-  readonly workflowDrafts: Readonly<Record<SessionId, WorkflowBuilderDraft | undefined>>;
+  readonly workflowDrafts: Readonly<Record<WorkflowDraftKey, WorkflowBuilderDraft | undefined>>;
   readonly artifactDrafts: Readonly<Record<SessionId, SessionArtifactDrafts>>;
   readonly workflowStudioDrafts: Readonly<Record<WorkspaceId, WorkflowStudioDraft | undefined>>;
   readonly workflowGenerations: Readonly<Record<WorkspaceId, WorkflowGeneration | undefined>>;

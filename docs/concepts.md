@@ -265,8 +265,8 @@ whether you clicked it on the board or in the session overview.
 - **`NextStepSlot`** (`features/suggestions/components/NextStepSlot/`) sits
   in the session overview, above Activity, outside its filter and its
   grouping: a suggestion is not activity, it is a pointer to what activity
-  should happen next. A session with nothing started shows its setup steps
-  instead; the two never compete for the same moment.
+  should happen next. A new session shows the kickoff instead; the two never
+  compete for the same moment.
 - Every suggestion carries a **band** (0 waits on you, 1 unblocks something,
   2 ships something, 3 improves something), a **why** (the second line, the
   concrete reason), a **fingerprint** (kind, object, trigger version) and a
@@ -808,12 +808,19 @@ item and its link. Agents read the whole item through the
 [query bridge](query-bridge.md). A proposed session title is cut at a word and
 ends with an ellipsis.
 
-Opening Launch session on an inbox issue asks the **Issue briefs** task model
-for a brief: a title, a goal of one to three sentences and up to five "done
-when" criteria, in the issue's language. It reads the issue text, not its
-comments, and answers in checked JSON, so a reply with a preamble fails
-instead of leaking into the goal. The brief is only a proposal: in the Launch
-session popover it fills the goal only while you have not edited it, and
+Picking an issue in the new session draft, or opening Launch session on an
+inbox issue, asks the **Issue briefs** task model for a brief: a title, a goal
+of one to three sentences and up to five "done when" criteria, in the issue's
+language. It reads the issue text, not its comments, and answers in checked
+JSON, so a reply with a preamble fails instead of leaking into the goal. The
+brief is only a proposal. In the draft you pick Use brief, Edit, Use issue
+text or Dismiss, and a failure stays inline in the card with Retry. The first
+three settle the title and goal and open How to work on it (`HowToWorkOnIt`,
+`SessionKickoff/`) underneath: Run a workflow (preselected, the workspace's
+first library preset) or Ask an agent, precompiled with that goal and
+editable. Its own action links the issue, creates the session and starts the
+workflow or agent in the same gesture; nothing exists before that. In the
+Launch session popover the brief fills the goal only while you have not edited it, and
 Launch works with the issue text while the brief is still loading. Briefs are
 kept in memory per issue text, so the same issue is not briefed twice. With no
 connected provider free for the task, the card shows the issue text alone.
@@ -865,7 +872,22 @@ the workspace with Link to a session, or open the session already linked to it.
 A record shows its session whichever way the link was made: launched from the
 inbox, picked there, or linked from the session's own link button, by search or
 by pasted URL. The session link button searches the issues of every Sentry
-project linked to the workspace, not only the connected one.
+project linked to the workspace, not only the connected one. A code or link
+pasted there goes through the same lookup as the inbox search
+(`useWorkspaceIssueLookup`, scoped to the picked tracker) and links the task
+`launchSpecFor` builds from the resolved record, so a Sentry short code such as
+`PAYMENTS-API-3` resolves and a Sentry link keeps its short id. A paste the
+lookup cannot resolve falls back to the fields read from the URL.
+
+Launch session mounts the item's project when it maps to one
+(`launchMountFor`). A Sentry error reads the projects linked to its Sentry
+project and the ones a Sentry code mapping points at; a GitHub or GitLab item
+reads the project whose remote is its repo. One match is mounted, several
+preselect the best (linked and mapped, then a name equal to the Sentry
+project) and the popover lets you pick another or none, and no match mounts
+nothing. Linear, Jira and Slack items never mount one. The popover names the
+project and the reason ("from Sentry project payments-api"), and the mount
+keeps that reason.
 
 Pull and merge requests come from the code hosts. GitHub lists the open pull
 requests of the workspace root repo that ask for your review, plus your own
@@ -874,9 +896,15 @@ open ones updated in the last seven days, through the same `gh` login as issues
 Bitbucket the pull requests of the linked repo. Open ones show as open, merged
 and closed ones as closed.
 
-With two or more projects in the workspace, the rail also filters by project.
-Projects with no records hide behind a quiet "Show N empty" toggle at the end
-of the section; the selected project stays listed even at zero. Code host records belong to the project at the workspace root. A Sentry error
+With two or more projects in the workspace, the rail also filters by project,
+but only when a record in the current scope belongs to one: a Linear, Jira or
+Slack view shows no Project section at all. Projects with no records hide
+behind a quiet "Show N empty" toggle at the end of the section; the selected
+project stays listed even at zero. A GitHub or GitLab record belongs to the
+project whose remote (`Project.remoteUrl`) is its repo, and only when two or
+more projects have a remote on that host; with one, the list stays flat. A
+tracker record never belongs to a project; its row shows the tracker's own
+project or team instead. A Sentry error
 belongs to every project linked to its Sentry project in Settings, Integrations,
 Sentry, where each project can read several Sentry projects and one Sentry
 project can serve several projects (`project_sentry_links`, m191). Links can be

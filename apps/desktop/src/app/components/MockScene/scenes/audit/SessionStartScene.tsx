@@ -1,59 +1,20 @@
 import { useEffect, useState } from 'react';
-import type {
-  IsoDateTime,
-  Project,
-  ProjectId,
-  Session,
-  SessionId,
-  StepId,
-  Workflow,
-  WorkflowId,
-} from '@goodboy/types';
+import type { IsoDateTime, Session, SessionId, StepId, Workflow, WorkflowId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
+import {
+  EMPTY_SESSION_DRAFT,
+  type StartChoice,
+} from '../../../../../store/slices/sessionDraft/state';
+import { NewSessionBridge } from '../../../../../features/session/components/NewSessionBridge';
 import { SESSION, WORKSPACE_ID, seedWorkflowScene } from '../workflowSeed';
 import { WorkspaceFrame } from './WorkspaceFrame';
+import { SessionStartMain } from './SessionStartMain';
 import { WORKSPACE_SIBLINGS, seedWorkspaceChrome } from './workspaceChrome';
 import { sceneParam } from './sceneParams';
 import { sceneClock } from '../../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-27T09:00:00.000Z' });
 const T0 = clock.iso({ at: '2026-09-27T08:59:00.000Z' });
-
-const BLANK_ID = 'mock-session-start-blank' as SessionId;
-const GOAL = 'Stop notify-relay from retrying settled webhooks. Then surface the stuck ones.';
-const TITLE = 'Stop notify-relay from retrying settled webhooks.';
-
-const projectOf = ({ name }: { readonly name: string }): Project => ({
-  id: `mock-session-start-${name}` as ProjectId,
-  workspaceId: WORKSPACE_ID,
-  name,
-  rootPath: `/mock/northwind/${name}`,
-  kind: 'repo',
-  overrides: {
-    defaultProviderId: null,
-    defaultBranchPrefix: null,
-    defaultVerbosity: null,
-    providerBindings: null,
-    taskModels: null,
-    roleModels: null,
-    parallelAgents: null,
-    providerPool: null,
-    attributionFooter: null,
-    replyVoice: null,
-    replyStyleNote: null,
-    replyTemplateFixed: null,
-    replyTemplateNoChange: null,
-    resolveOnGithub: null,
-    resolveCommitStyle: null,
-    afterMerge: null,
-  },
-  createdAt: T0,
-  updatedAt: T0,
-});
-
-const PROJECTS: ReadonlyArray<Project> = ['payments-api', 'notify-relay', 'ledger-core'].map(
-  (name) => projectOf({ name }),
-);
 
 type PresetParams = {
   readonly id: string;
@@ -84,13 +45,6 @@ const presetOf = ({ id, name, description, origin, steps }: PresetParams): Workf
 
 const PRESETS: ReadonlyArray<Workflow> = [
   presetOf({
-    id: 'mock-session-start-harborline-release',
-    name: 'Harborline release',
-    description: 'Bump, changelog, tag and publish payments-api.',
-    origin: 'custom',
-    steps: ['Bump the version', 'Write the changelog', 'Tag and publish'],
-  }),
-  presetOf({
     id: 'mock-session-start-fix-bug',
     name: 'Fix a bug',
     description: 'Reproduce it, fix it, prove it stays fixed.',
@@ -104,91 +58,106 @@ const PRESETS: ReadonlyArray<Workflow> = [
     origin: 'library',
     steps: ['Plan', 'Implement', 'Test', 'Review', 'Open the pull request'],
   }),
+  presetOf({
+    id: 'mock-session-start-harborline-release',
+    name: 'Harborline release',
+    description: 'Bump, changelog, tag and publish payments-api.',
+    origin: 'custom',
+    steps: ['Bump the version', 'Write the changelog', 'Tag and publish'],
+  }),
 ];
 
-type Variant = 'goal' | 'project' | 'work';
+const choiceOf = ({ value }: { readonly value: string | null }): StartChoice | null =>
+  value === 'task' || value === 'workflow' || value === 'scout' ? value : null;
 
-const variantOf = ({ value }: { readonly value: string | null }): Variant =>
-  value === 'project' || value === 'work' ? value : 'goal';
-
-const blankSession = ({ variant }: { readonly variant: Variant }): Session => ({
+const blankSessionOf = ({
+  id,
+  goal,
+}: {
+  readonly id: SessionId;
+  readonly goal: string;
+}): Session => ({
   ...SESSION,
-  id: BLANK_ID,
-  goal: variant === 'goal' ? '' : TITLE,
+  id,
+  goal,
   state: { kind: 'draft' },
   contextSlots: [],
   workflowRuns: [],
   autoRun: false,
   titleUserEdited: false,
   activeProjectId: undefined,
-  createdAt: T0,
-  updatedAt: T0,
+  createdAt: new Date().toISOString() as IsoDateTime,
+  updatedAt: new Date().toISOString() as IsoDateTime,
 });
 
-const seedBlankSession = ({ variant }: { readonly variant: Variant }): void => {
+const createInMemory = async ({
+  goal,
+  title,
+}: {
+  readonly goal: string;
+  readonly title?: string;
+}): Promise<{ session: Session }> => {
+  const session = blankSessionOf({
+    id: `mock-session-start-${crypto.randomUUID()}` as SessionId,
+    goal: (title ?? goal).trim(),
+  });
+  useAppStore.setState((state) => ({
+    sessions: [session, ...state.sessions],
+    currentSessionId: session.id,
+    sessionProjectMounts: { ...state.sessionProjectMounts, [session.id]: [] },
+    sessionWorktreeRecords: { ...state.sessionWorktreeRecords, [session.id]: [] },
+    sessionSlots: { ...state.sessionSlots, [session.id]: [] },
+    sessionSlotsLoad: { ...state.sessionSlotsLoad, [session.id]: 'loaded' },
+    sessionPhaseRuns: { ...state.sessionPhaseRuns, [session.id]: [] },
+    sessionPlans: { ...state.sessionPlans, [session.id]: [] },
+    sessionEvents: { ...state.sessionEvents, [session.id]: [] },
+    sessionOpenQuestions: { ...state.sessionOpenQuestions, [session.id]: [] },
+    sessionWorkflows: { ...state.sessionWorkflows, [session.id]: [] },
+    sessionExternalTasks: { ...state.sessionExternalTasks, [session.id]: [] },
+  }));
+  return { session };
+};
+
+const seedStart = (): void => {
+  const navigate = useAppStore.getState().navigate;
+  seedWorkflowScene();
+  seedWorkspaceChrome({ session: SESSION, siblings: WORKSPACE_SIBLINGS });
   const base = useAppStore.getState();
+  const choice = choiceOf({ value: sceneParam({ key: 'kind' }) });
+  const isOpen = sceneParam({ key: 'open' }) === '1';
   useAppStore.setState({
-    projects: [
-      ...base.projects.filter((project) => project.workspaceId !== WORKSPACE_ID),
-      ...PROJECTS,
-    ],
+    navigate,
     phaseTemplates: { ...base.phaseTemplates, [WORKSPACE_ID]: PRESETS },
     loadPhaseTemplates: async () => undefined,
     loadSessionMounts: async () => [],
     loadPrSeries: async () => [],
-    sessionProjectMounts: { ...base.sessionProjectMounts, [BLANK_ID]: [] },
-    sessionWorktreeRecords: { ...base.sessionWorktreeRecords, [BLANK_ID]: [] },
-    sessionSlots: {
-      ...base.sessionSlots,
-      [BLANK_ID]: variant === 'goal' ? [] : [{ key: 'goal', value: GOAL, enabled: true }],
-    },
-    sessionSlotsLoad: { ...base.sessionSlotsLoad, [BLANK_ID]: 'loaded' },
-    sessionLoading: {
-      ...base.sessionLoading,
-      [BLANK_ID]: {
-        agents: false,
-        transcript: false,
-        telemetry: false,
-        slots: false,
-        plans: false,
-        summary: false,
-      },
-    },
-    sessionPhaseRuns: { ...base.sessionPhaseRuns, [BLANK_ID]: [] },
-    sessionPlans: { ...base.sessionPlans, [BLANK_ID]: [] },
-    sessionEvents: { ...base.sessionEvents, [BLANK_ID]: [] },
-    sessionArtifacts: { ...base.sessionArtifacts, [BLANK_ID]: [] },
-    sessionOpenQuestions: { ...base.sessionOpenQuestions, [BLANK_ID]: [] },
-    sessionAnsweredQuestions: { ...base.sessionAnsweredQuestions, [BLANK_ID]: [] },
-    sessionDismissedQuestions: { ...base.sessionDismissedQuestions, [BLANK_ID]: [] },
-    sessionExternalTasks: { ...base.sessionExternalTasks, [BLANK_ID]: [] },
-    sessionWorkflows: { ...base.sessionWorkflows, [BLANK_ID]: [] },
-    sessionSetupSkips: variant === 'work' ? { [BLANK_ID]: ['project'] } : {},
-    goodboyNamedSessionId: variant === 'goal' ? null : BLANK_ID,
-    blankSessionId: BLANK_ID,
-  });
+    createSession: createInMemory as never,
+    attachWorkflowToSession: async () => undefined,
+    savePhaseTemplate: async () => undefined,
+    generateWorkflowTitle: async () => undefined,
+    spawnAgent: async () => undefined,
+    workspaceIntegrations: {},
+    starredIssues: {},
+    sessionDrafts: { [WORKSPACE_ID]: { ...EMPTY_SESSION_DRAFT, choice } },
+    ...(isOpen && { currentSessionId: null, openSessionDraftWorkspaceId: WORKSPACE_ID }),
+  } as never);
 };
 
 export const SessionStartScene = () => {
-  const [session, setSession] = useState<Session | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedWorkflowScene();
-    const variant = variantOf({ value: sceneParam({ key: 'v' }) });
-    const next = blankSession({ variant });
-    seedWorkspaceChrome({ session: next, siblings: [SESSION, ...WORKSPACE_SIBLINGS] });
-    seedBlankSession({ variant });
-    setSession(next);
-    const openBuilder = () =>
-      useAppStore.setState((state) => ({
-        sessionStudio: { ...state.sessionStudio, [BLANK_ID]: { kind: 'workflow' } },
-      }));
-    window.addEventListener('goodboy:open-workflow-builder', openBuilder);
-    return () => window.removeEventListener('goodboy:open-workflow-builder', openBuilder);
+    seedStart();
+    setIsReady(true);
   }, []);
 
-  if (session === null) {
+  if (!isReady) {
     return null;
   }
-  return <WorkspaceFrame session={session} />;
+  return (
+    <>
+      <NewSessionBridge />
+      <WorkspaceFrame session={SESSION} main={<SessionStartMain />} />
+    </>
+  );
 };

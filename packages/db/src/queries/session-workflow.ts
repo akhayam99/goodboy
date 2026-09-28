@@ -16,7 +16,8 @@ import type {
   WorkflowSpendLimitMode,
   WorkflowTriggerMode,
 } from '@goodboy/types';
-import type { Database, PlainStatement } from '../client';
+import type { Database, PlainStatement, TransactionOutcome } from '../client';
+import { openQuestionPurgeStatements } from './agent';
 import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
 import { serializeProviderPool, toProviderPool } from './provider-pool-column';
 
@@ -221,14 +222,116 @@ export const attachWorkflowToSession = async ({
   await bumpSessionUpdatedAt(db, sessionId, updatedAt);
 };
 
+type RunAgentsPurgeParams = {
+  readonly runFilter: string;
+  readonly params: ReadonlyArray<unknown>;
+  readonly deletedAt: number;
+};
+
+const runAgentsPurgeStatements = ({
+  runFilter,
+  params,
+  deletedAt,
+}: RunAgentsPurgeParams): ReadonlyArray<PlainStatement> => {
+  const owned = `WITH RECURSIVE owned(id) AS (
+          SELECT id FROM agents WHERE ${runFilter}
+          UNION
+          SELECT a.id FROM agents a JOIN owned o ON a.parent_agent_id = o.id
+        )`;
+  return [
+    ...openQuestionPurgeStatements({
+      prefix: owned,
+      agentMatch: 'IN (SELECT id FROM owned)',
+      params,
+    }),
+    {
+      sql: `${owned}
+        UPDATE agents SET deleted_at = ?
+        WHERE deleted_at IS NULL AND id IN (SELECT id FROM owned)`,
+      params: [...params, deletedAt],
+    },
+  ];
+};
+
+const PURGED_QUESTIONS_INDEX = 0;
+const PURGED_AGENTS_INDEX = 2;
+
+export type RemovedOpenQuestion = {
+  readonly sessionId: SessionId;
+  readonly text: string;
+};
+
+const removedOpenQuestions = (outcome: TransactionOutcome): ReadonlyArray<RemovedOpenQuestion> => {
+  if (outcome.status === 'aborted') {
+    return [];
+  }
+  const rows = outcome.results[PURGED_QUESTIONS_INDEX]?.rows ?? [];
+  return rows.flatMap((row) =>
+    typeof row.text === 'string' && typeof row.session_id === 'string'
+      ? [{ sessionId: row.session_id as SessionId, text: row.text }]
+      : [],
+  );
+};
+
 export const detachWorkflowFromSession = async (
   db: Database,
   sessionId: SessionId,
   workflowRunId: WorkflowRunId,
   updatedAt: IsoDateTime,
-): Promise<void> => {
-  await db.execute('DELETE FROM session_workflows WHERE workflow_run_id = ?', [workflowRunId]);
-  await bumpSessionUpdatedAt(db, sessionId, updatedAt);
+): Promise<ReadonlyArray<string>> => {
+  const outcome = await db.transaction({
+    statements: [
+      ...runAgentsPurgeStatements({
+        runFilter: 'workflow_run_id = ?',
+        params: [workflowRunId],
+        deletedAt: Date.parse(updatedAt),
+      }),
+      {
+        sql: 'DELETE FROM session_workflows WHERE workflow_run_id = ?',
+        params: [workflowRunId],
+      },
+      sessionTouchStatement({ sessionId, updatedAt }),
+    ],
+  });
+  return removedOpenQuestions(outcome).map((question) => question.text);
+};
+
+type DeleteOrphanedWorkflowAgentsParams = {
+  readonly db: Database;
+  readonly now: number;
+};
+
+export type OrphanedWorkflowAgentsResult = {
+  readonly agentsDeleted: number;
+  readonly removedQuestions: ReadonlyArray<RemovedOpenQuestion>;
+};
+
+export const deleteOrphanedWorkflowAgents = async ({
+  db,
+  now,
+}: DeleteOrphanedWorkflowAgentsParams): Promise<OrphanedWorkflowAgentsResult> => {
+  const outcome = await db.transaction({
+    statements: runAgentsPurgeStatements({
+      runFilter: `deleted_at IS NULL
+            AND workflow_run_id IS NULL
+            AND parent_agent_id IS NULL
+            AND step_id IS NOT NULL
+            AND NOT EXISTS (
+              SELECT 1 FROM steps st
+              JOIN session_workflows sw ON sw.workflow_id = st.workflow_id
+              WHERE st.id = agents.step_id AND sw.session_id = agents.session_id
+            )`,
+      params: [],
+      deletedAt: now,
+    }),
+  });
+  if (outcome.status === 'aborted') {
+    return { agentsDeleted: 0, removedQuestions: [] };
+  }
+  return {
+    agentsDeleted: outcome.results[PURGED_AGENTS_INDEX]?.rowsAffected ?? 0,
+    removedQuestions: removedOpenQuestions(outcome),
+  };
 };
 
 export const updateWorkflowOrder = async (
@@ -236,7 +339,7 @@ export const updateWorkflowOrder = async (
   sessionId: SessionId,
   workflowRunIds: ReadonlyArray<WorkflowRunId>,
   updatedAt: IsoDateTime,
-): Promise<void> => {
+): Promise<ReadonlyArray<string>> => {
   const placeholders = workflowRunIds.map(() => '?').join(', ');
   const prune: PlainStatement =
     workflowRunIds.length === 0
@@ -246,8 +349,20 @@ export const updateWorkflowOrder = async (
            WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})`,
           params: [sessionId, ...workflowRunIds],
         };
-  await db.transaction({
+  const prunedRunAgents = runAgentsPurgeStatements({
+    runFilter:
+      workflowRunIds.length === 0
+        ? 'workflow_run_id IN (SELECT workflow_run_id FROM session_workflows WHERE session_id = ?)'
+        : `workflow_run_id IN (
+             SELECT workflow_run_id FROM session_workflows
+             WHERE session_id = ? AND workflow_run_id NOT IN (${placeholders})
+           )`,
+    params: [sessionId, ...workflowRunIds],
+    deletedAt: Date.parse(updatedAt),
+  });
+  const outcome = await db.transaction({
     statements: [
+      ...prunedRunAgents,
       prune,
       ...workflowRunIds.map((runId, ordinal) => ({
         sql: 'UPDATE session_workflows SET ordinal = ? WHERE workflow_run_id = ? AND session_id = ?',
@@ -256,6 +371,7 @@ export const updateWorkflowOrder = async (
       sessionTouchStatement({ sessionId, updatedAt }),
     ],
   });
+  return removedOpenQuestions(outcome).map((question) => question.text);
 };
 
 export const discardWorkflowInSession = async (
