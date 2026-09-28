@@ -23,6 +23,7 @@ const VIEWPORTS = [
   { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 13000 },
 ];
 const THEMES = ['dark', 'light'];
+const PAGE_EYEBROWS = ['Agentic development environment', 'Questions', 'Install', 'All features'];
 
 const parseArgs = ({ argv }) => {
   const shotsIndex = argv.indexOf('--shots');
@@ -115,8 +116,8 @@ const connect = async ({ socketUrl }) => {
   return { send, evaluate, close: () => socket.close() };
 };
 
-const readFeatureGroups = () =>
-  readFileSync(resolve(WEBSITE_DIRECTORY, '../FEATURES.md'), 'utf8')
+const readHeadings = ({ file }) =>
+  readFileSync(resolve(WEBSITE_DIRECTORY, '..', file), 'utf8')
     .split('\n')
     .filter((line) => line.startsWith('## '))
     .map((line) => line.slice(3).trim());
@@ -174,6 +175,7 @@ const PAGE_PROBE = `(async () => {
     eyebrows: [...document.querySelectorAll('.eyebrow')].map((node) => ({
       text: node.textContent.trim(),
       group: node.getAttribute('data-group'),
+      audience: node.getAttribute('data-audience'),
     })),
     brandPaths: [...document.querySelectorAll('svg[data-brand] path')].map((node) => ({
       brand: node.closest('svg').getAttribute('data-brand'),
@@ -200,7 +202,7 @@ const scrollThrough = ({ evaluate }) =>
     return true;
   })()`);
 
-const checkRun = ({ viewport, theme, probe, groups, brands }) => {
+const checkRun = ({ viewport, theme, probe, groups, audiences, brands }) => {
   const label = `${viewport.name} ${theme}`;
   const failures = [];
   const fail = (message) => failures.push(`${label}: ${message}`);
@@ -240,6 +242,13 @@ const checkRun = ({ viewport, theme, probe, groups, brands }) => {
   probe.eyebrows
     .filter((eyebrow) => eyebrow.group !== null && !groups.includes(eyebrow.group))
     .forEach((eyebrow) => fail(`eyebrow "${eyebrow.text}" is not a FEATURES.md group`));
+  probe.eyebrows
+    .filter((eyebrow) => eyebrow.audience !== null && !audiences.includes(eyebrow.audience))
+    .forEach((eyebrow) => fail(`eyebrow "${eyebrow.text}" is not a README.md section`));
+  probe.eyebrows
+    .filter((eyebrow) => eyebrow.group === null && eyebrow.audience === null)
+    .filter((eyebrow) => !PAGE_EYEBROWS.includes(eyebrow.text))
+    .forEach((eyebrow) => fail(`eyebrow "${eyebrow.text}" names neither a feature nor a page`));
   probe.brandPaths.forEach((mark) => {
     const source = brands.find((entry) => entry.id === mark.brand);
     if (source === undefined) {
@@ -297,7 +306,8 @@ const pageName = ({ url }) => new URL(url).pathname.replace(/\//g, '') || 'home'
 
 const run = async () => {
   const { urls, shots, isVerifyingIcons } = parseArgs({ argv: process.argv.slice(2) });
-  const groups = readFeatureGroups();
+  const groups = readHeadings({ file: 'FEATURES.md' });
+  const audiences = readHeadings({ file: 'README.md' });
   const brands = readBrandSources();
   const chrome = await launchChrome();
   const timer = setTimeout(() => {
@@ -332,7 +342,7 @@ const run = async () => {
           const probe = await cdp.evaluate(PAGE_PROBE);
           heights.push(`${page} ${viewport.name} ${theme}: ${probe.height} px`);
           failures.push(
-            ...checkRun({ viewport, theme, probe, groups, brands }).map(
+            ...checkRun({ viewport, theme, probe, groups, audiences, brands }).map(
               (failure) => `${page} ${failure}`,
             ),
           );

@@ -6,7 +6,7 @@ The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai
 - [Start a task](#start-a-task)
 - [Inside a session](#inside-a-session)
 - [Switch between tasks](#switch-between-tasks)
-- [Go anywhere, find anything](#go-anywhere-find-anything)
+- [Search and navigation](#search-and-navigation)
 - [Workspace and projects](#workspace-and-projects)
 - [Branch history](#branch-history)
 - [Review, resolve and pull requests](#review-resolve-and-pull-requests)
@@ -143,7 +143,7 @@ Catch up in one place. Everything Goodboy has to tell you, from a pull request o
 
 Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice. After a reload or an update, and on every launch with **Reopen last** on, every window comes back on the screen, tab and panel it showed.
 
-## Go anywhere, find anything
+## Search and navigation
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s28-search-dark.webp">

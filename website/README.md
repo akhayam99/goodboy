@@ -115,7 +115,11 @@ twice the pixel density. It fails on horizontal overflow, an image drawn below
 2x, a frame, fragment or grid with a shadow, a page taller than 13,500 px on
 the desktop or 13,000 on a phone, an em dash or a middot triplet in visible
 text, Inter not loaded, a hero frame that starts below the first screen, and a
-consent card over the h1. `--shots <dir>` also saves every heading, and
+consent card over the h1, and an eyebrow outside the one register: a feature
+eyebrow (`kind="group"`, the default) must be a `FEATURES.md` group name
+verbatim, an audience eyebrow a `README.md` section, and the few page eyebrows
+(hero, Questions, Install, All features) are listed in the script. The heading
+rule itself lives in [docs/tone-of-voice.md](../docs/tone-of-voice.md). `--shots <dir>` also saves every heading, and
 `--verify-icons` compares the provider marks with their pinned simple-icons
 files over the network. Tag Manager is blocked during the run.
 
