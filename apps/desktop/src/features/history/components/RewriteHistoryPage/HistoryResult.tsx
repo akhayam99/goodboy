@@ -1,18 +1,23 @@
 import { Check, Cloud, RotateCcw, ShieldCheck } from 'lucide-react';
-import { Button, FormActions, cn } from '@goodboy/ui';
+import { Button, CopyButton, FormActions, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type {
   HistoryApplied,
   HistoryRunPhase,
   HistoryStop,
 } from '../../../../store/slices/history/types';
+import { formatClockTime } from '../../../../shared/utils/formatClockTime';
+import { formatShortDate } from '../../../../shared/utils/formatShortDate';
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
+import { historyBackupTimeMs } from '../../historyBackupRef';
 
 type Props = {
   readonly applied: HistoryApplied;
   readonly phase: HistoryRunPhase;
   readonly stop: HistoryStop | null;
   readonly backupRef: string | null;
+  readonly branch: string;
+  readonly nowMs: number;
   readonly hasUpstream: boolean;
   readonly prNumber: number | null;
   readonly onPush: () => void;
@@ -21,16 +26,27 @@ type Props = {
   readonly onDone: () => void;
 };
 
-const REFS_PREFIX = 'refs/';
+const isSameDay = ({ left, right }: { readonly left: number; readonly right: number }) =>
+  new Date(left).toDateString() === new Date(right).toDateString();
 
-const shortRef = ({ ref }: { readonly ref: string }): string =>
-  ref.startsWith(REFS_PREFIX) ? ref.slice(REFS_PREFIX.length) : ref;
+const backupWhen = ({ ref, nowMs }: { readonly ref: string; readonly nowMs: number }): string => {
+  const atMs = historyBackupTimeMs({ ref });
+  if (atMs === null) {
+    return 'just now';
+  }
+  const clock = formatClockTime({ iso: atMs });
+  return isSameDay({ left: atMs, right: nowMs })
+    ? `today ${clock}`
+    : `${formatShortDate({ iso: atMs })} ${clock}`;
+};
 
 export const HistoryResult = ({
   applied,
   phase,
   stop,
   backupRef,
+  branch,
+  nowMs,
   hasUpstream,
   prNumber,
   onPush,
@@ -131,10 +147,19 @@ export const HistoryResult = ({
               aria-hidden
               className="shrink-0 text-faint-foreground"
             />
-            <span>Backup saved as</span>
-            <code className="min-w-0 truncate rounded-sm border border-border-soft bg-fill px-1.5 text-code text-muted-foreground">
-              {shortRef({ ref: backupRef })}
-            </code>
+            <span className="min-w-0 truncate">
+              Backup of <span className="text-foreground">{branch}</span> ·{' '}
+              {backupWhen({ ref: backupRef, nowMs })}
+            </span>
+            <CopyButton
+              value={backupRef}
+              label="Copy the backup ref"
+              presentation="icon"
+              className="gap-1"
+              size={ICON_SIZE.row}
+            >
+              Copy ref
+            </CopyButton>
           </span>
         )}
       </div>

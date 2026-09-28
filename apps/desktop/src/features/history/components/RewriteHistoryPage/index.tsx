@@ -771,6 +771,8 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
             phase={run.phase}
             stop={run.stop}
             backupRef={run.backupRef}
+            branch={mount.branch}
+            nowMs={nowMs}
             hasUpstream={hasUpstream}
             prNumber={prNumber}
             onPush={() =>

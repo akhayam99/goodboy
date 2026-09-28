@@ -12,6 +12,9 @@ import {
 } from '../../historyPlan';
 import { LEDGER, LEDGER_COMMITS, LEDGER_GRAPH } from '../../testing/ledgerFixture';
 import { LEDGER_PRESET } from '../../testing/ledgerPreset';
+import { historyBackupRef } from '../../historyBackupRef';
+
+const BACKUP_REF = historyBackupRef({ branch: 'hl/ledger-export', atMs: Date.now() });
 
 const SESSION_ID = 'session-ledger' as SessionId;
 const MOUNT_ID = 'mount-ledger' as MountId;
@@ -402,7 +405,7 @@ describe('RewriteHistoryPage', () => {
         copyPath: null,
         stop: null,
         result: null,
-        backupRef: 'refs/goodboy/backup/hl-ledger-export/1790000000',
+        backupRef: BACKUP_REF,
         remoteSha: null,
         holder: null,
         progress: null,
@@ -422,7 +425,11 @@ describe('RewriteHistoryPage', () => {
     });
     expect(screen.getByText('History rewritten')).toBeDefined();
     expect(screen.getByText('7 commits became 4')).toBeDefined();
-    expect(screen.getByText('goodboy/backup/hl-ledger-export/1790000000')).toBeDefined();
+    expect(screen.getByText(/^Backup of/).textContent).toMatch(
+      /^Backup of hl\/ledger-export · today \d/,
+    );
+    expect(document.body.textContent).not.toMatch(/b-[0-9a-f]{8}/);
+    expect(screen.getByRole('button', { name: 'Copy the backup ref' })).toBeDefined();
     expect(
       screen.getByText(/only the files of removed commits changed \(logger\.ts\)/),
     ).toBeDefined();
@@ -430,7 +437,7 @@ describe('RewriteHistoryPage', () => {
     expect(actions.restoreHistory).toHaveBeenCalledWith({
       sessionId: SESSION_ID,
       mountId: MOUNT_ID,
-      backupRef: 'refs/goodboy/backup/hl-ledger-export/1790000000',
+      backupRef: BACKUP_REF,
       shouldPush: true,
     });
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
