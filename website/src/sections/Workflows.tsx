@@ -11,7 +11,6 @@ export const Workflows = () => (
     headingId="h2-workflows"
     heading="Workflows"
     sub="Give Goodboy a goal and a workflow runs it as steps, each one a fresh agent with a short brief."
-    isAlt
   >
     <Shot figure={BUILDER} />
     <div className="stackText">

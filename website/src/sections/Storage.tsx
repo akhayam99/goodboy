@@ -11,7 +11,6 @@ export const Storage = () => (
     headingId="h2-privacy"
     heading="Storage and security"
     sub="No account, no server. Your tasks, decisions and settings live on your computer, and prompts go to the provider you picked."
-    isAlt
   >
     <Shot figure={STORAGE} />
     <div className="stackText">

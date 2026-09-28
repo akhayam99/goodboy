@@ -55,7 +55,7 @@ export const Routing = () => {
   const { ref, inView } = useInViewOnce<HTMLDivElement>();
 
   return (
-    <section className="block" id="routing" aria-labelledby="h2-routing">
+    <section className="block alt" id="routing" aria-labelledby="h2-routing">
       <div className="wrap">
         <div className="blockHead">
           <h2 id="h2-routing">Providers, limits and cost</h2>

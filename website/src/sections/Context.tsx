@@ -11,7 +11,6 @@ export const Context = () => (
     headingId="h2-context"
     heading="Shared context"
     sub="The briefing belongs to the task, not the chat. Every agent reads the same goal, the decisions so far and a summary that updates after each turn."
-    isAlt
   >
     <Shot figure={CONTEXT} />
     <div className="stackText">

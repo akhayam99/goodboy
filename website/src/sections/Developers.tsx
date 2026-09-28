@@ -2,7 +2,7 @@ import { Benefits, type Benefit } from '../components/Benefits';
 import { Block } from '../components/Block';
 import { SeeHow } from '../components/SeeHow';
 import { Shot } from '../components/Shot';
-import { CHAT } from '../figures';
+import { DEVELOPERS } from '../figures';
 
 const ITEMS: readonly Benefit[] = [
   {
@@ -18,16 +18,16 @@ const ITEMS: readonly Benefit[] = [
     text: 'Agents edit in their own copy of the repo, so several tasks can run at once without touching your branch.',
   },
   {
-    lead: 'Many repos, one goal.',
-    text: 'A task can span payments-api and notify-relay, with a branch and a pull request in each.',
+    lead: 'Pull request, diff and review in one path.',
+    text: 'The pull request page opens its diff and its review comments one step away, and Back walks you out the way you came.',
   },
   {
-    lead: 'Review comments come back as commits.',
-    text: 'An agent fixes each one and drafts the reply in your voice. You accept or edit it.',
+    lead: 'History you can rewrite without worry.',
+    text: 'Drag commits to fold, squash, move or drop them, and see the branch after Apply before anything moves. Every rewrite keeps a backup for 30 days.',
   },
   {
-    lead: 'Find anything, act on anything.',
-    text: '⌘F searches every session, message and plan, on your machine. Right click any object, or press ⌘K, for every action it has.',
+    lead: 'Branches that do not pile up.',
+    text: 'Goodboy knows which branches it made, which ones merged and which are safe to delete, and you choose what happens after a merge.',
   },
   {
     lead: 'Nothing lost when a plan runs out.',
@@ -41,12 +41,11 @@ export const Developers = () => (
     headingId="h2-developers"
     heading="For developers"
     sub="Less time explaining, more time reviewing finished work."
-    isAlt
   >
-    <Shot figure={CHAT} />
+    <Shot figure={DEVELOPERS} />
     <Benefits items={ITEMS} />
     <div className="linkRow">
-      <SeeHow anchor="agents-and-chat" />
+      <SeeHow anchor="branch-history" />
     </div>
   </Block>
 );

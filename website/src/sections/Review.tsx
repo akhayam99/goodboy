@@ -9,7 +9,6 @@ export const Review = () => (
     headingId="h2-review"
     heading="Pull request review"
     sub="Draft fixes for the open comments. An agent writes each fix as a commit and drafts the reply in your voice, and you accept or edit it."
-    isAlt
   >
     <Shot figure={RESOLVE} />
     <div className="stackText">
@@ -18,8 +17,8 @@ export const Review = () => (
         a no, and the agent can say so with a reason.
       </p>
       <p>
-        Want the branch tidy afterwards? Drag commits to fold, squash or move them, see what the
-        branch becomes before you apply, and restore the backup within 30 days.
+        Replies come out in your voice, terse, friendly or formal, or learned from the last replies
+        you wrote. A fix still lands when the branch got new commits in the meantime.
       </p>
       <div className="linkRow">
         <SeeHow anchor="resolve" />
