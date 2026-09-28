@@ -127,3 +127,87 @@ The index keeps its own copy of the text, which `snippet()` needs, plus
 positions for every word. On a fixture shaped like a real database (2,343
 messages averaging 2 KB, 87 artifacts, 464 short objects, 6.8 MB of text)
 it takes 15 MB. `readSearchIndexStatus` reads the real size from `dbstat`.
+
+## The surface
+
+⌘F (`search.open`, app plane) opens the search overlay. Until the palette
+overlay of UX6 lands, `SearchOverlayHost`
+(`features/search/components/SearchOverlayHost`) renders it from the
+`searchOverlay` key of the search-index slice. The body is `SearchMode`,
+which takes the `OverlayModeProps` of `features/search/overlayMode.ts`:
+the text carried over, `onSwitchMode` for ⇥, and `onClose`. ⇥ hands the
+text to the command palette through `goodboy:open-command-palette`.
+
+- **Scope.** It opens on the session you are in, or on the workspace from
+  the board. The scope is the first chip; Backspace in an empty field
+  removes the last filter chip, then widens the scope from the session to
+  the workspace to everything.
+- **Filters.** Type, Project, Provider, Status and Date are chips, picked
+  from the filter row or typed: `type:plan`, `in:ledger-core`, `from:codex`,
+  `is:open`, `is:archived`, `after:2026-09-01`, `before:7d`. A qualifier
+  turns into a chip once the word is finished; an unknown value stays a
+  word. `features/search/grammar.ts` owns the grammar.
+- **Rows.** The kind glyph, the title with the matched words marked, the
+  snippet, a crumb (session, agent, repo or key) and the date. With an empty
+  field it lists the newest sessions, artifacts, decisions, questions,
+  issues and pull requests of the scope.
+- **Issue keys.** A key or a link (`HAR-231`, `#482`, a Linear or GitHub
+  URL) that the index does not hold is looked up through
+  `useWorkspaceIssueLookup`, with the same sign in and retry rows as the
+  Inbox. A found issue opens in its provider.
+- **Preview and actions.** The selected hit shows its facts, the Open
+  button named after where it lands, and the actions of its object from the
+  action registry (`features/actions`): a session and an agent get their
+  full menu, an issue or a pull request with a link gets Open link and Copy
+  link. → moves into those actions. Search never builds its own verb list.
+
+## Landing on a hit
+
+`searchHitTarget` (`features/search/searchHitTarget.ts`) turns a hit into
+one target from its kind and its state, and `openSearchHit` runs it through
+the one door (`navigate`, or the opener the rest of the app uses).
+
+| Kind                    | Lands on                                                              | Refuses when                               |
+| ----------------------- | --------------------------------------------------------------------- | ------------------------------------------ |
+| Session                 | The session                                                           | It is archived                             |
+| Message                 | Its agent's transcript, scrolled to the message                       | The session is archived, the agent is gone |
+| Agent                   | The agent                                                             | Same                                       |
+| Plan, report, wireframe | The artifact viewer                                                   | The session is archived                    |
+| Decision                | The Context drawer on its number, highlighted                         | The decision is gone                       |
+| Question                | The Questions lens with the question focused                          | The session is archived                    |
+| Issue                   | The issue lens of its session, or the Inbox record when it is starred | Nothing to open                            |
+| Pull request            | Review, or its page on the code host when no session has the branch   | No session and no link                     |
+| Branch                  | The Diff of its mount                                                 | The branch left the session                |
+
+A refused hit stays in the list, dimmed, and the preview says why; Enter
+does nothing on it. A hit in another workspace switches to it first, the
+way a notification does.
+
+## Find in the view
+
+After a jump into a transcript or an artifact, the words stay marked and a
+small bar reads "2 of 5". ⌘G (`find.next`) and ⇧⌘G (`find.previous`) walk
+the marks, Escape stops, and leaving the view stops too. With no search
+running, ⌘G walks the last search text in the view you are on.
+`FindInViewController` marks the text with the CSS Custom Highlight API
+(`::highlight(find-match)` and `find-current` in `styles.css`), so it never
+rewrites the DOM of the view it reads. A view opts in by putting
+`data-find-root` on the element that holds its text: the transcript list,
+`ArtifactProse` and `ArtifactDocument` do. `data-find-skip` leaves a region
+out.
+
+## Find in the terminal
+
+A focused terminal keeps ⌘F for itself: `GenericTerminalPanel` claims the
+chord in `attachCustomKeyEventHandler` before the app dispatcher sees it,
+and opens `TerminalFindBar` over the scrollback through
+`@xterm/addon-search`. Enter and ⌘G walk forward, Shift+Enter and ⇧⌘G walk
+back, Escape closes and gives the terminal its focus back. Terminal output
+is never indexed, so this is the one view global search cannot reach.
+
+## Settings
+
+Settings, App, General has a Search band: the size of the index (from
+`dbstat`) and its item count, the backfill progress while it runs, Rebuild,
+and the projects search leaves out. There is no switch to turn search off:
+the index costs little and holds nothing new.

@@ -715,9 +715,13 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
 
 Find workspaces, sessions, agents, pages, scripts and actions with **⌘K**, using the same prefixes as the composer.
 
+### Search
+
+Find a message, a plan, a decision, an issue or a branch with **⌘F**, across every session, filtered by type, project, provider, status or date. Pick a hit to land on it in context, then walk the other matches in that view with **⌘G**. The index stays on your computer.
+
 ### Terminal
 
-Open a real login shell in the session's worktree with **⌘T**, and find it still there after a reload.
+Open a real login shell in the session's worktree with **⌘T**, and find it still there after a reload. **⌘F** finds in its scrollback.
 
 ### Keyboard shortcuts, back and forward
 
