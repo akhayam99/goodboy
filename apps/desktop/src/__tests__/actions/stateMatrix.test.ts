@@ -7,6 +7,15 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(async () => () => undefined),
   emit: vi.fn(async () => undefined),
 }));
+vi.mock('../../features/actions/dispatchAfterNavigation', () => ({
+  dispatchAfterNavigation: ({
+    name,
+    detail,
+  }: {
+    readonly name: string;
+    readonly detail?: unknown;
+  }) => window.dispatchEvent(new CustomEvent(name, { detail })),
+}));
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
