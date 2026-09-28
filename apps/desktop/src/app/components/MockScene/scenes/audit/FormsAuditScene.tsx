@@ -173,6 +173,8 @@ const FORMS: Readonly<Record<string, () => ReactNode>> = {
   locate: () => column(<LocateMovedProjects workspaceId={WORKSPACE_ID} onChoose={noop} />),
 };
 
+const FORM_RENDERERS: ReadonlyMap<string, () => ReactNode> = new Map(Object.entries(FORMS));
+
 export const FormsAuditScene = () => {
   const [isReady, setIsReady] = useState(false);
 
@@ -221,6 +223,6 @@ export const FormsAuditScene = () => {
     return null;
   }
 
-  const render = FORMS[FORM] ?? FORMS.pr;
+  const render = FORM_RENDERERS.get(FORM) ?? FORMS.pr;
   return <ShellFrame session={SESSION} main={render === undefined ? null : render()} />;
 };
