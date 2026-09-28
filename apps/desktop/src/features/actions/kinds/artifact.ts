@@ -198,7 +198,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Run plan',
     icon: Play,
     group: 'act',
-    emphasis: () => 'primary',
+    slot: () => 'primary',
     when: ({ facts }) => planIn({ facts, statuses: ['active'] }),
     blockedReason: ({ facts }) => portBlocked({ facts, id: 'runPlan' }),
     isBusy: ({ facts }) => portBusy({ facts, id: 'runPlan' }),
@@ -209,7 +209,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Edit',
     icon: Pencil,
     group: 'act',
-    emphasis: () => 'secondary',
+    slot: () => 'secondary',
     when: ({ facts }) =>
       planIn({ facts, statuses: ['active'] }) || (facts.kind === 'report' && isStored({ facts })),
     run: ported({
@@ -228,7 +228,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Run again',
     icon: RotateCw,
     group: 'act',
-    emphasis: () => 'secondary',
+    slot: () => 'secondary',
     when: ({ facts }) => planIn({ facts, statuses: ['consumed', 'superseded'] }),
     blockedReason: ({ facts }) => portBlocked({ facts, id: 'runAgain' }),
     isBusy: ({ facts }) => portBusy({ facts, id: 'runAgain' }),
@@ -245,7 +245,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Restore',
     icon: ArchiveRestore,
     group: 'act',
-    emphasis: () => 'secondary',
+    slot: () => 'secondary',
     when: ({ facts }) => planIn({ facts, statuses: ['discarded'] }),
     run: ported({
       id: 'restore',
@@ -311,7 +311,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Stop',
     icon: Square,
     group: 'act',
-    emphasis: () => 'secondary',
+    slot: () => 'secondary',
     when: ({ facts }) => facts.generation?.canStop === true,
     run: async ({ facts, env }) => {
       if (facts.generation !== null) {
@@ -327,7 +327,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Try again',
     icon: RotateCcw,
     group: 'act',
-    emphasis: () => 'secondary',
+    slot: () => 'secondary',
     when: ({ facts }) => facts.generation?.state === 'unproduced',
     run: async ({ facts, env }) => {
       if (facts.generation !== null) {
@@ -400,7 +400,7 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Open in browser',
     icon: ExternalLink,
     group: 'copy',
-    emphasis: ({ facts }) => (facts.kind === 'wireframe' ? 'secondary' : null),
+    slot: ({ facts }) => (facts.kind === 'wireframe' ? 'secondary' : 'menu'),
     when: isStored,
     description: ({ facts }) =>
       portOf({ facts, id: 'openInBrowser' })?.description ??

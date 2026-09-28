@@ -56,8 +56,6 @@ export type ActionChoice = {
   readonly isCurrent: boolean;
 };
 
-export type ActionEmphasis = 'primary' | 'secondary';
-
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
 export type ActionEnv = {
@@ -94,7 +92,6 @@ export type ActionDefinition<F> = {
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
   readonly slot?: (params: FactsParams<F>) => ActionSlot;
   readonly pendingLabel?: (params: FactsParams<F>) => string;
-  readonly emphasis?: (params: FactsParams<F>) => ActionEmphasis | null;
   readonly isBusy?: (params: FactsParams<F>) => boolean;
   readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
 };
@@ -125,7 +122,6 @@ export type ResolvedAction = {
   readonly confirm: ActionConfirm | null;
   readonly isUndoable: boolean;
   readonly choices: ReadonlyArray<ActionChoice> | null;
-  readonly emphasis: ActionEmphasis | null;
   readonly isBusy: boolean;
 };
 

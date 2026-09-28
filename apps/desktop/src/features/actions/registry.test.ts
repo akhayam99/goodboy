@@ -62,6 +62,16 @@ describe('action registry', () => {
     expect(unguarded).toEqual([]);
   });
 
+  it('puts an action without a slot in the menu only', () => {
+    const [resolved] = resolveActions({
+      definitions: [
+        { id: 'x', label: 'x', icon: Copy, group: 'act', when: () => true, run: () => undefined },
+      ],
+      facts: null,
+    });
+    expect(resolved?.slot).toBe('menu');
+  });
+
   it('resolves in the order Open, Act, Copy, Danger whatever the definition order', () => {
     const make = (id: string, group: (typeof ACTION_GROUPS)[number]): ActionDefinition<null> => ({
       id,

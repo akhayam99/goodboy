@@ -31,7 +31,6 @@ export const resolveOne = <F>({
     confirm: definition.confirm?.({ facts }) ?? null,
     isUndoable: definition.isUndoable === true,
     choices: definition.choices?.({ facts }) ?? null,
-    emphasis: definition.emphasis?.({ facts }) ?? null,
     isBusy: definition.isBusy?.({ facts }) ?? false,
   };
 };
