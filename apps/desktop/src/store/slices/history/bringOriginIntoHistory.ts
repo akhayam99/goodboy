@@ -95,6 +95,7 @@ export const bringOriginIntoHistory = (set: SetFn, get: GetFn) => {
       shouldPush: false,
       byAgent: false,
       summary: `${ahead.commits.length} from origin brought in`,
+      incorporatedRemoteSha: ahead.remoteSha,
     });
     await get().loadHistoryDraft({ sessionId, mountId });
     return outcome;

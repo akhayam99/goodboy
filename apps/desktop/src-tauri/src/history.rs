@@ -2252,6 +2252,87 @@ pub async fn history_origin_ahead(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum RemoteLease {
+    Absent,
+    Included { sha: String },
+    NotIncluded { sha: String },
+    Unknown { reason: String },
+}
+
+pub(crate) fn remote_lease(
+    cwd: &Path,
+    branch: &str,
+    expected_head: &str,
+    incorporated: Option<&str>,
+    token: Option<&str>,
+) -> RemoteLease {
+    let reference = format!("refs/heads/{branch}");
+    let cwd_text = cwd.to_string_lossy().to_string();
+    let run = match crate::github::run_git_authenticated(
+        &["ls-remote", "origin", &reference],
+        &cwd_text,
+        token,
+    ) {
+        Ok(run) if run.exit_code == 0 => run,
+        Ok(run) => {
+            return RemoteLease::Unknown {
+                reason: run.stderr.trim().to_string(),
+            }
+        }
+        Err(error) => {
+            return RemoteLease::Unknown {
+                reason: error.to_string(),
+            }
+        }
+    };
+    let found = run.stdout.lines().find_map(|line| {
+        let (sha, name) = line.split_once('\t')?;
+        (name.trim() == reference).then(|| sha.trim().to_string())
+    });
+    let Some(sha) = found else {
+        return RemoteLease::Absent;
+    };
+    let is_incorporated = incorporated.map(str::trim) == Some(sha.as_str());
+    let Ok(expected) = resolve_commit(cwd, expected_head) else {
+        return RemoteLease::Unknown {
+            reason: "the branch head the plan started from is missing".to_string(),
+        };
+    };
+    if is_incorporated || is_ancestor(cwd, &sha, &expected) {
+        return RemoteLease::Included { sha };
+    }
+    RemoteLease::NotIncluded { sha }
+}
+
+#[tauri::command]
+pub async fn history_remote_lease(
+    worktree_path: String,
+    branch: String,
+    expected_head: String,
+    incorporated: Option<String>,
+    workspace_id: Option<String>,
+    project_id: Option<String>,
+) -> Result<RemoteLease, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(worktree_path));
+        }
+        let token = crate::github::read_token(workspace_id.as_deref(), project_id.as_deref());
+        Ok(remote_lease(
+            &cwd,
+            &branch,
+            &expected_head,
+            incorporated.as_deref(),
+            token.as_deref(),
+        ))
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RewriterPrepareArgs {
@@ -4179,5 +4260,66 @@ mod tests {
             to: Some(kept.clone()),
         }));
         assert!(!copy.exists());
+    }
+
+    #[test]
+    fn the_lease_is_the_online_sha_the_plan_includes_and_never_a_later_push() {
+        let l = ledger("lease-bound");
+        let remote = l.root.join("remote.git");
+        git_ok(&l.root, &["init", "-q", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &l.root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        assert_eq!(
+            remote_lease(&l.root, "feature", &l.typo, None, None),
+            RemoteLease::Absent
+        );
+        git_ok(
+            &l.root,
+            &[
+                "push",
+                "-q",
+                "origin",
+                &format!("{}:refs/heads/feature", l.webhook),
+            ],
+        );
+        assert_eq!(
+            remote_lease(&l.root, "feature", &l.typo, None, None),
+            RemoteLease::Included {
+                sha: l.webhook.clone()
+            }
+        );
+        let other = l.root.join("other");
+        git_ok(
+            &l.root,
+            &[
+                "clone",
+                "-q",
+                "-b",
+                "feature",
+                remote.to_str().unwrap(),
+                other.to_str().unwrap(),
+            ],
+        );
+        git_ok(&other, &["config", "user.email", "tomas@harborline.test"]);
+        git_ok(&other, &["config", "user.name", "Tomas Vey"]);
+        let theirs = commit(
+            &other,
+            "teammate.ts",
+            "hi\n",
+            "Teammate change during the trial",
+        );
+        git_ok(&other, &["push", "-q", "origin", "feature"]);
+        assert_eq!(
+            remote_lease(&l.root, "feature", &l.typo, None, None),
+            RemoteLease::NotIncluded {
+                sha: theirs.clone()
+            }
+        );
+        assert_eq!(
+            remote_lease(&l.root, "feature", &l.typo, Some(&theirs), None),
+            RemoteLease::Included { sha: theirs }
+        );
     }
 }

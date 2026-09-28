@@ -1,7 +1,8 @@
 import { formatError } from '@goodboy/ui';
 import { pushWithLease, restoreHistoryBackup } from '../../../features/history/historyEngine';
-import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/worktree';
+import { worktreeStatus } from '../../../features/worktree/worktree';
 import { historyTargetOf } from './historyTargetOf';
+import { remoteForPush } from './remoteForPush';
 import { recordHistoryEvent } from './recordHistoryEvent';
 import { reportHistoryStop } from './reportHistoryStop';
 import { setHistoryRun } from './setHistoryRun';
@@ -37,13 +38,16 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
         sha: null,
       });
     }
-    const remoteSha =
-      shouldPush && status.upstream !== null
-        ? await worktreeRemoteHead({
-            worktreePath: target.worktreePath,
-            branch: target.branch,
-          }).catch(() => null)
-        : null;
+    const remote = await remoteForPush({
+      target,
+      expectedHead: status.head,
+      incorporated: null,
+      shouldPush,
+    });
+    if (remote.stop !== null) {
+      return stopWith(remote.stop);
+    }
+    const remoteSha = remote.sha;
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'applying', stop: null } });
     const moved = await restoreHistoryBackup({
       worktreePath: target.worktreePath,
@@ -89,7 +93,7 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       extra: { backupRef },
     });
     await get().loadHistoryDraft({ sessionId, mountId });
-    if (!shouldPush || status.upstream === null) {
+    if (!shouldPush || !remote.hasUpstream) {
       return 'restored';
     }
     const pushed = await pushWithLease({

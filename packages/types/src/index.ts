@@ -287,6 +287,7 @@ export type {
   HistoryPlannedStep,
   HistoryRebaseCommit,
   HistoryRebasePlan,
+  HistoryRemoteLease,
   HistoryRewriterCheck,
   HistoryRunOutcome,
   HistoryShaMove,

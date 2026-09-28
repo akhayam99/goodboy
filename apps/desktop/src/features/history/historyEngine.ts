@@ -7,6 +7,7 @@ import type {
   HistoryPlanArgs,
   HistoryPlanPrediction,
   HistoryRebasePlan,
+  HistoryRemoteLease,
   HistoryRewriterCheck,
   HistoryRunOutcome,
   HistoryTrialProgress,
@@ -118,6 +119,32 @@ export const pushWithLease = async ({
     cwd: worktreePath,
     branch,
     expectedRemoteSha,
+    workspaceId,
+    projectId,
+  });
+
+type RemoteLeaseParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+  readonly expectedHead: string;
+  readonly incorporated: string | null;
+  readonly workspaceId: string | null;
+  readonly projectId: string | null;
+};
+
+export const readRemoteLease = async ({
+  worktreePath,
+  branch,
+  expectedHead,
+  incorporated,
+  workspaceId,
+  projectId,
+}: RemoteLeaseParams): Promise<HistoryRemoteLease> =>
+  invoke<HistoryRemoteLease>('history_remote_lease', {
+    worktreePath,
+    branch,
+    expectedHead,
+    incorporated,
     workspaceId,
     projectId,
   });

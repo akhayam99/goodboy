@@ -21,6 +21,8 @@ const engine = vi.hoisted(() => ({
   readOriginAhead: vi.fn(),
   runHistoryPlan: vi.fn(),
   readHistoryGraph: vi.fn(),
+  readRemoteLease: vi.fn(),
+  discardHistoryCopy: vi.fn(),
 }));
 
 const worktree = vi.hoisted(() => ({
@@ -141,6 +143,8 @@ beforeEach(() => {
     backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
   });
   engine.pushWithLease.mockResolvedValue({ kind: 'pushed' });
+  engine.readRemoteLease.mockResolvedValue({ kind: 'included', sha: 'remote-sha' });
+  engine.discardHistoryCopy.mockResolvedValue(undefined);
 });
 
 describe('rebase on main', () => {
@@ -613,6 +617,45 @@ describe('apply a planned rewrite', () => {
     expect(run?.applied).not.toBeNull();
     expect(engine.pushWithLease).toHaveBeenCalledWith(
       expect.objectContaining({ expectedRemoteSha: 'remote-sha' }),
+    );
+  });
+
+  it('stops before moving anything when a teammate pushed during the trial', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
+    engine.readRemoteLease.mockResolvedValue({ kind: 'not-included', sha: 'teammate-sha' });
+
+    await expect(
+      harnessed.slice.applyHistoryDraft({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('stopped');
+
+    expect(engine.readRemoteLease).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedHead: 'head-sha', incorporated: null }),
+    );
+    expect(harnessed.read().historyRuns[MOUNT_ID]?.stop?.reason).toBe('origin-moved');
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+
+  it('pushes with the online sha the plan includes', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
+    engine.readRemoteLease.mockResolvedValue({ kind: 'included', sha: 'included-sha' });
+
+    await harnessed.slice.applyHistoryDraft({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      shouldPush: true,
+    });
+
+    expect(engine.pushWithLease).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedRemoteSha: 'included-sha' }),
     );
   });
 

@@ -2,9 +2,9 @@ import { markHistoryPlan } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { applyHistoryPlan, pushWithLease } from '../../../features/history/historyEngine';
-import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/worktree';
 import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
 import { historyTargetOf } from './historyTargetOf';
+import { remoteForPush } from './remoteForPush';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
 import { setHistoryRun } from './setHistoryRun';
 import { recordHistoryEvent } from './recordHistoryEvent';
@@ -25,23 +25,6 @@ const sleep = ({ ms }: { readonly ms: number }): Promise<void> =>
     setTimeout(resolve, ms);
   });
 
-type RemoteParams = {
-  readonly worktreePath: string;
-  readonly branch: string;
-};
-
-const remoteHeadOf = async ({
-  worktreePath,
-  branch,
-}: RemoteParams): Promise<{ readonly hasUpstream: boolean; readonly sha: string | null }> => {
-  const status = await worktreeStatus({ worktreePath }).catch(() => null);
-  if (status === null) {
-    return { hasUpstream: false, sha: null };
-  }
-  const sha = await worktreeRemoteHead({ worktreePath, branch }).catch(() => null);
-  return { hasUpstream: sha !== null || status.upstream !== null, sha };
-};
-
 export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
   return async (input: ApplyHistoryRewriteInput): Promise<ApplyHistoryRewriteOutcome> => {
     const { sessionId, mountId, origin, planId } = input;
@@ -51,7 +34,15 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       await reportHistoryStop({ get, set, target, origin, stop, planId });
       return 'stopped';
     };
-    const remote = await remoteHeadOf({ worktreePath: target.worktreePath, branch: target.branch });
+    const remote = await remoteForPush({
+      target,
+      expectedHead: input.expectedHead,
+      incorporated: input.incorporatedRemoteSha ?? null,
+      shouldPush: input.shouldPush,
+    });
+    if (remote.stop !== null) {
+      return stopWith(remote.stop);
+    }
     const startedAt = Date.now();
     setHistoryRun({ set, sessionId, mountId, origin, patch: { phase: 'applying', planId } });
     while (true) {

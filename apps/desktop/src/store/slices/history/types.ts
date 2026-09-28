@@ -130,6 +130,7 @@ export type ApplyHistoryRewriteInput = HistoryMountInput & {
   readonly byAgent: boolean;
   readonly summary?: string;
   readonly isTreeEqual?: boolean;
+  readonly incorporatedRemoteSha?: string | null;
 };
 
 export type ApplyHistoryRewriteOutcome = 'applied' | 'pushed' | 'stopped' | 'busy';

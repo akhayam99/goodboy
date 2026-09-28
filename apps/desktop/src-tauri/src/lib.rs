@@ -287,6 +287,7 @@ pub fn run() {
             history::history_plan_predict,
             history::history_plan_try,
             history::history_plan_run,
+            history::history_remote_lease,
             history_graph::history_graph,
             history::history_plan_apply,
             history::history_restore,

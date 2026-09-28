@@ -155,6 +155,12 @@ export type HistoryBackup = {
   readonly createdAt: number;
 };
 
+export type HistoryRemoteLease =
+  | { readonly kind: 'absent' }
+  | { readonly kind: 'included'; readonly sha: string }
+  | { readonly kind: 'not-included'; readonly sha: string }
+  | { readonly kind: 'unknown'; readonly reason: string };
+
 export type LeasePushOutcome =
   | { readonly kind: 'pushed' }
   | { readonly kind: 'stale'; readonly message: string }

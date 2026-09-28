@@ -16,6 +16,7 @@ import {
   predictHistoryPlan,
   pushWithLease,
   readHistoryGraph,
+  readRemoteLease,
   runHistoryPlan,
   restoreHistoryBackup,
   tryHistoryPlan,
@@ -67,6 +68,25 @@ describe('history engine bridge', () => {
     });
     payload.onProgress.onmessage({ stage: 'step', index: 1, total: 2, sha: 'a' });
     expect(seen).toEqual([{ stage: 'step', index: 1, total: 2, sha: 'a' }]);
+  });
+
+  it('reads the lease against the head the plan started from', async () => {
+    await readRemoteLease({
+      worktreePath: '/w',
+      branch: 'hl/ledger-export',
+      expectedHead: 'head',
+      incorporated: null,
+      workspaceId: 'ws',
+      projectId: 'p',
+    });
+    expect(invoke).toHaveBeenCalledWith('history_remote_lease', {
+      worktreePath: '/w',
+      branch: 'hl/ledger-export',
+      expectedHead: 'head',
+      incorporated: null,
+      workspaceId: 'ws',
+      projectId: 'p',
+    });
   });
 
   it('reads the graph for the branch against its base', async () => {
