@@ -221,9 +221,11 @@ keeps its own proportions and the footer stays pinned.
 ## Landing crops
 
 The website shows three kinds of picture, and each one is cut a different
-way. Every one exists in both themes, and each file is exported at 1200, 2400
-and 3840 wide, as `<id>-<width>.webp` for dark and `<id>-<width>-light.webp`
-for light, so `<picture>` can pick one from `srcset`.
+way. Every one exists in both themes, and each file is exported at the widths
+its entry in `website/src/figures.ts` lists, as `<id>-<width>.webp` for dark
+and `<id>-<width>-light.webp` for light, so `<picture>` can pick one from
+`srcset`. A frame uses `FRAME_WIDTHS`, a phone crop `PHONE_WIDTHS`, and a
+fragment one, two and three times its recorded display width.
 
 - **A frame** is the whole window. Capture it at `1024x640`, the app's minimum
   width, at device scale factor 4. That gives 4096x2560, which exports down to
@@ -235,8 +237,9 @@ for light, so `<picture>` can pick one from `srcset`.
   screen continues. Where the component ends in its own border (a popover, a
   palette), keep 8 px on that side, because the screen behind it is noise.
   Clip through CDP `Page.captureScreenshot` with `clip.scale`, so the clip
-  renders at 4 times that scale. Pick the scale so the clip reaches 3840 px:
-  a 400 px wide popover needs scale 2.5, which is 10x. Chrome lays the text out
+  renders at 4 times that scale. Pick the scale so the clip reaches three
+  times its display width: a 400 px popover shown at 780 needs 2340 px, so
+  scale 1.5, which is 6x. Chrome lays the text out
   again at that size, so it stays sharp. Never enlarge a smaller capture.
 - **A phone crop** is a 4:5 cut of the same window a frame uses. Do not narrow
   the window to make the content fit: the rows truncate their branch names and

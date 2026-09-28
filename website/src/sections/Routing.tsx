@@ -67,7 +67,7 @@ export const Routing = () => (
           fresh agent per step reads a short brief, and the heavy model runs only where it matters.
         </p>
       </div>
-      <div className="billPair" aria-hidden="true" data-reveal="">
+      <div className="billPair" data-reveal="">
         <div className="bill">
           <p className="billTitle">
             One agent, the whole chat each time
@@ -76,7 +76,7 @@ export const Routing = () => (
           {TURNS.map((turn) => (
             <div className="billRow" key={turn.ask}>
               <span className="billAsk">{turn.ask}</span>
-              <span className="billBar dull" style={bar(turn.run)} />
+              <span className="billBar dull" style={bar(turn.run)} aria-hidden="true" />
               <span className="billValue">{money(turn.run)}</span>
             </div>
           ))}
@@ -96,7 +96,7 @@ export const Routing = () => (
                 {step.brand === undefined ? null : <BrandMark brand={step.brand} size={13} />}
                 {step.model === undefined ? null : <small>{step.model}</small>}
               </span>
-              <span className="billBar fresh" style={bar(step.run)} />
+              <span className="billBar fresh" style={bar(step.run)} aria-hidden="true" />
               <span className="billValue">{money(step.run)}</span>
             </div>
           ))}
