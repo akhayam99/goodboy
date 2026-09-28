@@ -85,18 +85,3 @@ describe('opening the diff from the resolve queue', () => {
     expect(getState().resolveQueueView['session-2' as SessionId]).toBeUndefined();
   });
 });
-
-describe('reviewing the publication from a comment', () => {
-  it('closes the conversation and asks the publish strip to take the focus', () => {
-    const { actions, getState } = buildSlice();
-
-    actions.openResolvePublication({ sessionId: SESSION_ID, reconcile: true });
-    actions.openResolvePublication({ sessionId: SESSION_ID, reconcile: false });
-
-    expect(closeDrawer).toHaveBeenCalledTimes(2);
-    expect(getState().resolvePublicationRequest[SESSION_ID]).toEqual({
-      reconcile: false,
-      requestId: 2,
-    });
-  });
-});

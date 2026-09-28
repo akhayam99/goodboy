@@ -2,19 +2,24 @@ import type { AppStore } from '../../store/store';
 import { resolveActions } from './resolveActions';
 import { AGENT_KIND } from './kinds/agent';
 import { ARTIFACT_KIND } from './kinds/artifact';
+import { COMMIT_KIND } from './kinds/commit';
+import { DIFF_KIND } from './kinds/diff';
+import { DIFF_FILE_KIND } from './kinds/diffFile';
 import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
-import { RECORD_KIND } from './kinds/record';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
-import { COMMIT_KIND } from './kinds/commit';
-import { DIFF_FILE_KIND } from './kinds/diffFile';
-import { MOUNT_KIND } from './kinds/mount';
-import { WORKTREE_KIND } from './kinds/worktree';
-import { SCRIPT_KIND } from './kinds/script';
 import { MESSAGE_KIND } from './kinds/message';
+import { MOUNT_KIND } from './kinds/mount';
+import { PROJECT_KIND } from './kinds/project';
+import { RECORD_KIND } from './kinds/record';
+import { SCRIPT_KIND } from './kinds/script';
+import { WORKTREE_KIND } from './kinds/worktree';
 import { SESSION_KIND } from './kinds/session';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
+import { REVIEW_KIND } from './kinds/review';
+import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
+import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import type {
   ActionDefinition,
   ActionEnv,
@@ -103,12 +108,16 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: RECORD_KIND, state, target });
     case 'pullRequest':
       return bind({ definition: PULL_REQUEST_KIND, state, target });
+    case 'diff':
+      return bind({ definition: DIFF_KIND, state, target });
     case 'commit':
       return bind({ definition: COMMIT_KIND, state, target });
     case 'diffFile':
       return bind({ definition: DIFF_FILE_KIND, state, target });
     case 'mount':
       return bind({ definition: MOUNT_KIND, state, target });
+    case 'project':
+      return bind({ definition: PROJECT_KIND, state, target });
     case 'worktree':
       return bind({ definition: WORKTREE_KIND, state, target });
     case 'script':
@@ -117,6 +126,12 @@ export const bindTarget = ({ state, target }: TargetParams): BoundObject | null 
       return bind({ definition: MESSAGE_KIND, state, target });
     case 'link':
       return bind({ definition: LINK_KIND, state, target });
+    case 'review':
+      return bind({ definition: REVIEW_KIND, state, target });
+    case 'reviewComment':
+      return bind({ definition: REVIEW_COMMENT_KIND, state, target });
+    case 'writeReview':
+      return bind({ definition: WRITE_REVIEW_KIND, state, target });
     default: {
       const exhaustive: never = target;
       return exhaustive;

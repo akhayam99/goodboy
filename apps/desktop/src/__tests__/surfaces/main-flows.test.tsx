@@ -213,26 +213,25 @@ describe('main flows on the real store', () => {
     expectNoRenderLoop();
   });
 
-  it('resolves a review comment and publishes the reply', async () => {
+  it('accepts a review comment in Review without talking to GitHub', async () => {
     seedResolveScene({ expandedThreadId: EXPANDED_THREAD_ID });
     const acceptResolveQueueItem = vi.fn(async () => undefined);
-    const publishResolveThread = vi.fn(async () => undefined);
+    const publishConversations = vi.fn(async () => undefined);
     stubActions({
       acceptResolveQueueItem:
         acceptResolveQueueItem as unknown as StoreState['acceptResolveQueueItem'],
-      publishResolveThread: publishResolveThread as unknown as StoreState['publishResolveThread'],
+      publishConversations: publishConversations as unknown as StoreState['publishConversations'],
     });
 
     await mountFlow(<ReviewPane session={RESOLVE_SESSION} />);
-    expect(publishResolveThread).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /^Resolve \d+ comments?$/ }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Resolve' }));
+    const comment = screen.getByRole('article', { name: 'Comment' });
+    fireEvent.click(within(comment).getByRole('button', { name: /^Accept/ }));
 
-    await waitFor(() => expect(publishResolveThread).toHaveBeenCalledOnce());
-    expect(publishResolveThread).toHaveBeenCalledWith({
-      sessionId: RESOLVE_SESSION.id,
-      threadId: EXPANDED_THREAD_ID,
-    });
+    await waitFor(() => expect(acceptResolveQueueItem).toHaveBeenCalledOnce());
+    expect(acceptResolveQueueItem).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: RESOLVE_SESSION.id, revision: 1 }),
+    );
+    expect(publishConversations).not.toHaveBeenCalled();
     expectNoRenderLoop();
   });
 

@@ -31,14 +31,15 @@ describe('resolveAttentionTarget', () => {
     ).toEqual({ kind: 'lens', lens: 'questions', label: 'Answer it' });
   });
 
-  it.each(['ci-failed', 'changes-requested', 'pr-approved'] as const)(
-    'sends %s to the pull request',
-    (attention) => {
-      expect(
-        resolveAttentionTarget({ stage: stage({ stage: 'attention', attention }), agent: null }),
-      ).toEqual({ kind: 'lens', lens: 'pr', label: 'Open the pull request' });
-    },
-  );
+  it.each([
+    ['changes-requested', 'review', 'Open Review'],
+    ['ci-failed', 'pr', 'Open the checks'],
+    ['pr-approved', 'pr', 'Open the pull request'],
+  ] as const)('routes %s to the layer of its cause', (attention, lens, label) => {
+    expect(
+      resolveAttentionTarget({ stage: stage({ stage: 'attention', attention }), agent: null }),
+    ).toEqual({ kind: 'lens', lens, label });
+  });
 
   it('opens the failed agent itself, not the agents lens', () => {
     expect(

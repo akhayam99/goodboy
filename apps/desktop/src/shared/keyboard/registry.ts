@@ -2,7 +2,8 @@ import { currentPlatform } from '../platform';
 
 export type ShortcutPlane = 'app' | 'session' | 'lens';
 
-export type ShortcutGroup = 'general' | 'workspaces' | 'navigate' | 'session' | 'views' | 'window';
+export type ShortcutGroup =
+  'general' | 'workspaces' | 'navigate' | 'session' | 'views' | 'review' | 'window';
 
 export type ShortcutFamily = 'workspace-digit';
 
@@ -153,7 +154,7 @@ export const SHORTCUTS = {
   },
   'composer.submit': {
     combo: 'cmd+Enter',
-    label: 'Submit comment',
+    label: 'Submit, or push in Review',
     plane: 'app',
     group: 'session',
   },
@@ -239,6 +240,20 @@ export const SHORTCUTS = {
     plane: 'lens',
     group: 'views',
   },
+
+  'review.next': { combo: 'KeyJ', label: 'Next comment', plane: 'app', group: 'review' },
+  'review.previous': {
+    combo: 'KeyK',
+    label: 'Previous comment',
+    plane: 'app',
+    group: 'review',
+  },
+  'review.accept': { combo: 'KeyA', label: 'Accept', plane: 'app', group: 'review' },
+  'review.edit': { combo: 'KeyE', label: 'Edit or answer', plane: 'app', group: 'review' },
+  'review.reply': { combo: 'KeyR', label: 'Reply', plane: 'app', group: 'review' },
+  'review.skip': { combo: 'KeyS', label: 'Skip', plane: 'app', group: 'review' },
+  'review.undo': { combo: 'KeyU', label: 'Undo', plane: 'app', group: 'review' },
+  'review.draft': { combo: 'KeyD', label: 'Draft fixes', plane: 'app', group: 'review' },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },

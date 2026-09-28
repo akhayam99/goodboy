@@ -632,34 +632,51 @@ A **review conversation** is Goodboy's saved record of one review, issue or
 note. It keeps its state, its verdict, its draft reply and the commits that
 answer it.
 
-Review exists with or without a pull request. Without one, its header reads the
-session title and `branch → base · No pull request`, with `Open pull request`,
-and Conversations lists the notes. With a pull request, Conversations mixes the
-GitHub threads and the notes, and a filter `All · GitHub · Notes` appears when
-both are there. Every open note gets a conversation, and deleting or resolving
-the note closes it. An agent reviewer's comments on a branch without a pull
-request are kept as notes. When a pull request arrives the notes stay notes;
-`Post open notes to the PR` in the Conversations menu turns them into draft
-review comments, never on its own.
+Review exists with or without a pull request. Without one, its header reads
+`No pull request yet` with `Open a pull request`, and the list holds the notes.
+With a pull request, the list mixes the GitHub threads and the notes. Every
+open note gets a conversation, and deleting or resolving the note closes it. An
+agent reviewer's comments on a branch without a pull request are kept as
+notes. When a pull request arrives the notes stay notes; `Post open notes to
+the PR` in the Review menu turns them into draft review comments, never on its
+own.
 
-A note resolves like a review thread, with the same resolver and the same
-panel, but there is no reply to write: `Resolve` keeps the fix on the branch
-and closes the note, and `Close note` closes it without a change. Reopening a
-closed note opens a new conversation generation instead of reviving the
-closed one, so the resolved history stays next to the reopened conversation.
+A note goes through the same flow with the same resolver, but there is no
+reply to write: without a pull request, `Accept` keeps the fix on the branch
+and closes the note, and `Close the note` closes it without a change.
+Reopening a closed note opens a new conversation generation instead of
+reviving the closed one, so the resolved history stays next to the reopened
+conversation.
 
 Every open review thread on the pull request gets a conversation as soon as
 Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
-reads every page of threads GitHub returns. If the read fails, Conversations
+reads every page of threads GitHub returns. If the read fails, Review
 shows the error from `gh` instead of an empty list.
 
-Conversations is a work tree: every open comment is a row grouped under its
-file, and the agent that worked on it is a child row with its model, its time
-and the one sha that lands on the branch (`Fixed in 4f21c8b`). Each comment
-shows one of eight states (New, Working, Needs you, Ready to review,
-Approved, Resolved, Failed, Later) and at most one action. Selecting comments
-opens a bar with `Later`, `Approve N` (only the ones with a proposal) and
-`Resolve N`; the publish bar says `Close N on GitHub`.
+Review is one flow: the list on the left, the focused comment on the right.
+Every comment shows one state word, grouped in three:
+
+- **Open**: Not started, Drafting (one live line says what the agent does),
+  Needs you (the agent asked), Ready (the fix and the reply under the comment,
+  with an Edited tag once you changed the reply), Outdated (the comment changed
+  since the draft), Draft failed or Push failed
+- **Waiting for the push**: Accepted, Reply only (with a Resolve only tag when
+  nothing is posted), Skipped
+- **Done**: Pushed, and Resolved on GitHub when someone else closed it
+
+Each comment has four verbs, with single keys while the list has focus:
+`Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the
+draft is outdated or failed), `Reply` (R, a reply without a change) and `Skip`
+(S), plus `Undo` (U) until the push and `Draft a fix` (D) on a comment nobody
+drafted. J and K move. Edit, Answer and Reply share one text box: Enter sends,
+Shift+Enter adds a line, Esc cancels. Clicking the reply edits it in place.
+`…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
+transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
+next open comment. Accept never talks to GitHub: it marks the comment for the
+push and, for a fix, lands the commit on the local branch. The actions are the
+`review` and `reviewComment` kinds of the action registry
+(`features/actions/kinds/`), so the buttons, `…`, the right click and the
+palette list the same set.
 
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.
@@ -682,18 +699,28 @@ with a local commit and never pushes.
   sha fails, preparing the publication (or **Recheck fix**) records it again
   before it checks the branch
 
-- Every start goes through one path (`startResolve`): `Resolve N new` in the
-  Conversations header, a selection with `Resolve N`, or the Activity
-  suggestion. Each carries the thread ids and the marker contract. The click
-  uses the last model picked in the session, or the suggested resolver model;
-  the chevron opens the shared picker with every connected provider, a
-  **Suggested** row that says why, and **Last used here** when it differs
+- Every start goes through one path (`startResolve`): `Draft fixes for N` in
+  the Review header, `Draft a fix` on one comment, or the Activity suggestion.
+  Opening Review never starts an agent. Each start carries the thread ids and
+  the marker contract. It uses the model chosen in `…` → `Model for drafts…`
+  (the shared picker with every connected provider and a **Suggested** row),
+  or the suggested resolver model
 - Fixes run one at a time in the session worktree, so two fixes never fight
   over the same branch
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 
-Nothing reaches GitHub until a **publication** runs. A publication:
+Nothing reaches GitHub until you push. `Push N` in the Review header is the
+one way out, for every accepted comment at once. It
+confirms inline under the header with exactly what goes out (`Push 2 to
+hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
+resolved on GitHub.`), naming the commit style set in Review replies. A
+blocker (uncommitted changes, a commit nobody approved, a fix still running)
+replaces the confirm with its reason and the one move that clears it. The
+result stays on the layer in one line with its commit; a partial push says how
+many landed and marks the comment that did not with its reason, and `Retry
+push for N` picks it up. ⌘↵ with the list focused pushes too. Behind it runs a
+**publication**, which:
 
 1. Locks the conversations it will publish
 2. Pushes the branch once, if there is code to send
@@ -714,9 +741,6 @@ How a reply reads is set in Settings, Workspace, **Review replies**:
   everything Goodboy posts
 - **Resolve the thread after replying** (on by default) and **Commits** (new
   commit, or fixup of the commit that added the line)
-
-The drawer shows these under the reply in one line, with a link to the
-section.
 
 Goodboy saves a receipt for every step, and the outcome it reports is read from
 those receipts: a thread shows as resolved only after GitHub confirmed it. If a

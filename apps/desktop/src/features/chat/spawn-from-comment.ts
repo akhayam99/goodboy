@@ -380,26 +380,6 @@ export type ResolveModelChoice = {
   readonly hint?: string;
 };
 
-export const buildCommentAgentArgs = (
-  c: PrComment,
-  pr: PullRequestState,
-  choice: ResolveModelChoice = {},
-  replies: ReadonlyArray<PrComment> = [],
-): CommentAgentArgs => {
-  return {
-    name: buildCommentAgentTitle(c),
-    kind: 'resolver',
-    initialPrompt: buildResolverKickoff({
-      threads: [{ head: c, replies }],
-      pr,
-      hint: choice.hint ?? '',
-    }),
-    ...(c.source === 'review' && c.threadId ? { sourceThreadId: c.threadId } : {}),
-    sourceCommentUrl: c.url,
-    sourceKind: c.source === 'review' ? 'review_comment' : 'issue_comment',
-  };
-};
-
 function truncate(s: string, max: number): string {
   if (s.length <= max) {
     return s;

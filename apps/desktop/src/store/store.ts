@@ -137,6 +137,7 @@ import type {
   AddReviewDraftInput,
   PublishPrReviewOpts,
   PublishPrReviewResult,
+  ReviewSubmission,
 } from './slices/review-drafts';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
@@ -950,6 +951,12 @@ type AppActions = {
     markers: ReadonlyArray<ExtractedReviewComment>,
   ): Promise<void>;
   publishPrReview(sessionId: SessionId, opts: PublishPrReviewOpts): Promise<PublishPrReviewResult>;
+  setReviewSubmission(params: {
+    readonly sessionId: SessionId;
+    readonly patch: Partial<ReviewSubmission>;
+  }): void;
+  submitReview(params: { readonly sessionId: SessionId }): Promise<PublishPrReviewResult>;
+  discardReview(params: { readonly sessionId: SessionId }): Promise<void>;
   createMrForSession(input: CreateMrInput): Promise<void>;
   mergeMrForSession(input: MergeMrInput): Promise<void>;
   refreshSessionBitbucketPr(
@@ -1151,10 +1158,6 @@ type AppActions = {
     readonly order: ReadonlyArray<string>;
     readonly scrollTop: number;
   }): void;
-  openResolvePublication(params: {
-    readonly sessionId: SessionId;
-    readonly reconcile: boolean;
-  }): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   beginSessionCreation(
     sessionId: SessionId,
@@ -1332,6 +1335,7 @@ export const initialState: AppState = {
   ...initialBitbucketPrState,
   ...initialSlackThreadsState,
   reviewDrafts: {},
+  reviewSubmission: {},
   volatilePermissionAllows: new Set<string>(),
   agentModelOverride: {},
   agentProviderOverride: {},

@@ -3,7 +3,7 @@ import type { AgentId, BranchCommit, PrComment, PullRequestState, SessionId } fr
 import type { CommentThread } from '../github/comment-threads';
 import type { SpawnAgentFn } from '../review/startFixAttempt';
 import type { BlameLineParams } from '../worktree/worktree';
-import { resolveAgentCount, startResolve } from './startResolve';
+import { startResolve } from './startResolve';
 
 const { listBranchCommits, worktreeBlameLine } = vi.hoisted(() => ({
   listBranchCommits: vi.fn<(path: string) => Promise<ReadonlyArray<BranchCommit>>>(),
@@ -135,15 +135,5 @@ describe('startResolve', () => {
 
     expect(worktreeBlameLine).not.toHaveBeenCalled();
     expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).not.toContain('How to commit');
-  });
-
-  it('counts one agent for a small selection', () => {
-    expect(
-      resolveAgentCount({
-        threads: [threadOf('PRRT_1'), threadOf('PRRT_2')],
-        pr: PR,
-        routing: { provider: 'anthropic', model: 'claude-sonnet-5', effort: 'medium' },
-      }),
-    ).toBe(1);
   });
 });

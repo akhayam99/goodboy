@@ -14,8 +14,6 @@ export const drawerKey = (content: DrawerContent): string => {
       return `scriptRun:${content.payload.mountId ?? ''}:${content.payload.scriptKey}`;
     case 'diff-notes':
       return 'diff-notes';
-    case 'review-drafts':
-      return 'review-drafts';
     case 'conversation':
       return `conversation:${content.payload.threadId}`;
     case 'file-diff':

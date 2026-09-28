@@ -13,7 +13,14 @@ vi.mock('../../../../store', () => ({ useCurrentWorkspace: () => ({ id: 'ws-1' }
 import { ReviewerPicker } from './ReviewerPicker';
 
 const renderPicker = ({ onAdd = vi.fn() }: { readonly onAdd?: () => void } = {}) => {
-  render(<ReviewerPicker projectRoot="/tmp/repo" exclude={new Set<string>()} onAdd={onAdd} />);
+  render(
+    <ReviewerPicker
+      projectRoot="/tmp/repo"
+      exclude={new Set<string>()}
+      openEventName="goodboy:test-request-review"
+      onAdd={onAdd}
+    />,
+  );
   return { onAdd };
 };
 

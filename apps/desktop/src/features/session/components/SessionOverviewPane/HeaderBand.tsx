@@ -103,7 +103,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
           </div>
         </div>
       </div>
-      <ProjectMountRows session={session} onSelectLens={onSelectLens} />
+      <ProjectMountRows session={session} />
     </div>
   );
 };

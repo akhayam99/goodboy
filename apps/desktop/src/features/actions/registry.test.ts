@@ -2,8 +2,10 @@ import { Copy } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 import { AGENT_KIND } from './kinds/agent';
 import { ARTIFACT_KIND } from './kinds/artifact';
+import { DIFF_KIND } from './kinds/diff';
 import { LINK_KIND } from './kinds/link';
 import { PLAN_PART_KIND } from './kinds/planPart';
+import { PROJECT_KIND } from './kinds/project';
 import { PULL_REQUEST_KIND } from './kinds/pullRequest';
 import { COMMIT_KIND } from './kinds/commit';
 import { DIFF_FILE_KIND } from './kinds/diffFile';
@@ -15,6 +17,9 @@ import { RECORD_KIND } from './kinds/record';
 import { SESSION_KIND } from './kinds/session';
 import { SESSIONS_KIND } from './kinds/sessions';
 import { WORKFLOW_RUN_KIND } from './kinds/workflowRun';
+import { REVIEW_KIND } from './kinds/review';
+import { REVIEW_COMMENT_KIND } from './kinds/reviewComment';
+import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import { resolveActions } from './resolveActions';
 import { ACTION_GROUPS, type ActionDefinition } from './types';
 
@@ -32,10 +37,15 @@ const KINDS: ReadonlyArray<readonly [string, ReadonlyArray<AnyDefinition>]> = [
   ['commit', COMMIT_KIND.actions],
   ['diffFile', DIFF_FILE_KIND.actions],
   ['mount', MOUNT_KIND.actions],
+  ['project', PROJECT_KIND.actions],
   ['worktree', WORKTREE_KIND.actions],
   ['script', SCRIPT_KIND.actions],
   ['message', MESSAGE_KIND.actions],
+  ['diff', DIFF_KIND.actions],
   ['link', LINK_KIND.actions],
+  ['review', REVIEW_KIND.actions],
+  ['reviewComment', REVIEW_COMMENT_KIND.actions],
+  ['writeReview', WRITE_REVIEW_KIND.actions],
 ];
 
 describe('action registry', () => {

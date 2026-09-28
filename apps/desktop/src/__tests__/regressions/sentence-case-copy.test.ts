@@ -2,16 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { ARTIFACT_GENERATION_PRESENTATION } from '../../features/artifacts/artifactCollection';
 import { ARTIFACT_STATUS_PRESENTATION } from '../../features/artifacts/artifact-status';
 import { ARTIFACT_CTA_BLOCK_COPY } from '../../features/artifacts/artifactCtaState';
-import {
-  RESOLVE_DELIVERY_SUPPORT,
-  RESOLVE_QUEUE_ACTION_LABEL,
-  RESOLVE_QUEUE_NEXT_STEP,
-  RESOLVE_QUEUE_TITLE,
-} from '../../features/resolve/resolveQueueCopy';
-import {
-  RESOLVE_ROW_ACTION_LABEL,
-  RESOLVE_UI_STATE_LABEL,
-} from '../../features/resolve/resolveRowState';
+import { REVIEW_COMMENT_GROUP_LABEL } from '../../features/resolve/reviewCommentState';
+import { COMPOSE_COPY, REVIEW_FLOW_LABEL } from '../../features/resolve/reviewFlowCopy';
 import { SCRIPT_RUN_PRESENTATION } from '../../features/scripts/scriptRunPresentation';
 import { LENS_LABEL } from '../../features/session/lens-labels';
 import {
@@ -31,12 +23,9 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
     (presentation) => presentation.label,
   ),
   ARTIFACT_CTA_BLOCK_COPY: Object.values(ARTIFACT_CTA_BLOCK_COPY),
-  RESOLVE_QUEUE_TITLE: [RESOLVE_QUEUE_TITLE],
-  RESOLVE_UI_STATE_LABEL: Object.values(RESOLVE_UI_STATE_LABEL),
-  RESOLVE_ROW_ACTION_LABEL: Object.values(RESOLVE_ROW_ACTION_LABEL),
-  RESOLVE_QUEUE_NEXT_STEP: Object.values(RESOLVE_QUEUE_NEXT_STEP),
-  RESOLVE_QUEUE_ACTION_LABEL: Object.values(RESOLVE_QUEUE_ACTION_LABEL),
-  RESOLVE_DELIVERY_SUPPORT: Object.values(RESOLVE_DELIVERY_SUPPORT),
+  REVIEW_COMMENT_GROUP_LABEL: Object.values(REVIEW_COMMENT_GROUP_LABEL),
+  REVIEW_FLOW_LABEL: Object.values(REVIEW_FLOW_LABEL).filter((label) => !label.startsWith('↵')),
+  COMPOSE_COPY: Object.values(COMPOSE_COPY).flatMap((copy) => [copy.label, copy.submit]),
   SCRIPT_RUN_PRESENTATION: Object.values(SCRIPT_RUN_PRESENTATION).map(
     (presentation) => presentation.statusLabel,
   ),

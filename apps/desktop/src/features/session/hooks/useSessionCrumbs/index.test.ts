@@ -151,6 +151,52 @@ beforeEach(() => {
   store.answeredQuestions = [];
 });
 
+describe('useSessionCrumbs code host layers', () => {
+  const standOn = (lens: LensKind, layers: ReadonlyArray<string>) => {
+    store.state = {
+      ...store.state,
+      activeLens: { [SESSION_ID]: lens },
+      sessionSelectedPrNumber: { [SESSION_ID]: 318 },
+      currentWorkspaceId: 'workspace-1',
+      navigation: {
+        'workspace-1': {
+          entries: [{ place: sessionPlace({ sessionId: SESSION_ID, lens }), layers }],
+          index: 0,
+        },
+      },
+    };
+  };
+
+  it('shows the path taken between the Overview and the layer on top', () => {
+    standOn('review', ['pr']);
+    const { result } = renderHook(() => useSessionCrumbs({ session }));
+
+    expect(result.current.map((crumb) => crumb.label)).toEqual(['Overview', 'PR #318', 'Review']);
+  });
+
+  it('reads Overview, Diff, then the pull request when the diff opened it', () => {
+    standOn('pr', ['diff']);
+    const { result } = renderHook(() => useSessionCrumbs({ session }));
+
+    expect(result.current.map((crumb) => crumb.label).slice(0, 3)).toEqual([
+      'Overview',
+      'Diff',
+      'Pull request',
+    ]);
+  });
+
+  it('pops to a layer from its crumb through the one door', () => {
+    standOn('review', ['pr']);
+    const { result } = renderHook(() => useSessionCrumbs({ session }));
+
+    result.current[1]?.onClick?.();
+
+    expect(actions.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'pr' }),
+    });
+  });
+});
+
 describe('useSessionCrumbs', () => {
   it('attaches the shared concept icon to a lens crumb', () => {
     openOn({ lens: 'agents', selectedAgentId: ADHOC_AGENT_ID });

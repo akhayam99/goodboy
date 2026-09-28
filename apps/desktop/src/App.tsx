@@ -53,8 +53,8 @@ import { useAsyncSubscription } from './app/hooks/useAsyncSubscription';
 import { useSessionSidebarVisibility } from './features/workspace/hooks/useSessionSidebarVisibility';
 import { shellArrangement } from './app/shellArrangement';
 import { DrawerHost } from './app/components/DrawerHost';
-import { selectOpenDrawer } from './store/slices/drawer/selectOpenDrawer';
 import { selectIsSessionDraftShown } from './store/slices/sessionDraft/selectIsSessionDraftShown';
+import { selectDrawerPanel } from './store/slices/drawer/selectDrawerPanel';
 import { ReportSheetHost } from './features/bug-report/components/ReportSheetHost';
 import { LastCrashBridge } from './features/bug-report/components/LastCrashBridge';
 
@@ -69,7 +69,7 @@ export const App = () => {
   const retryHydrate = useAppStore((s) => s.retryHydrate);
   const checkForUpdates = useAppStore((s) => s.checkForUpdates);
   const hydrated = useAppStore((s) => s.hydrated);
-  const isDrawerOpen = useAppStore((s) => selectOpenDrawer(s) !== null);
+  const isDrawerOpen = useAppStore((s) => selectDrawerPanel(s) !== null);
   const bootPhase = useAppStore((s) => s.bootPhase);
   const bootFailedPhase = useAppStore((s) => s.bootFailedPhase);
   const error = useAppStore((s) => s.error);

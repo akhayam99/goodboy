@@ -6,7 +6,8 @@ import { runDbMigrations, tauriDatabase } from '../../../shared/lib/db';
 import { newerDatabaseFromError } from '../../../shared/lib/newerDatabase';
 import { hydrateOnboardingFromDb } from '../../../features/onboarding/onboarding-store';
 import { setWindowTitle, targetWorkspaceFromHash } from '../../../features/workspace/window';
-import { consumeReloadIntent } from '../../../features/workspace/windowView';
+import { consumeReloadIntent, restoredLayers } from '../../../features/workspace/windowView';
+import { sessionPlace } from '../navigation/place';
 import { restoreLaunchLayout, type LaunchLayout } from './restoreLaunchLayout';
 import { reopenSecondaryWindows } from './reopenSecondaryWindows';
 import {
@@ -172,8 +173,25 @@ export const hydrate = (set: SetFn, get: GetFn) => {
           if (snapWorkspace) {
             await get().setCurrentWorkspace(snapWorkspace.id);
             void setWindowTitle(snapWorkspace.name);
-            if (reloadIntent.location !== undefined) {
-              get().restoreLocation({ location: reloadIntent.location });
+            const { location } = reloadIntent;
+            if (location !== undefined) {
+              const layerSessionId =
+                location.place.at === 'session' ? location.place.sessionId : null;
+              const layers =
+                layerSessionId === null
+                  ? []
+                  : restoredLayers({ intent: reloadIntent, sessionId: layerSessionId });
+              if (
+                layerSessionId !== null &&
+                layers.length > 0 &&
+                get().sessions.some((s) => s.id === layerSessionId)
+              ) {
+                get().navigate({ to: sessionPlace({ sessionId: layerSessionId }) });
+                for (const place of layers) {
+                  get().navigate({ to: place });
+                }
+              }
+              get().restoreLocation({ location });
             }
             const snapSessionId =
               reloadIntent.location === undefined ? reloadIntent.sessionId : null;
@@ -185,6 +203,13 @@ export const hydrate = (set: SetFn, get: GetFn) => {
                 (get().sessionPhaseRuns[snapSessionId] ?? []).some((r) => r.id === snapAgentId)
               ) {
                 await get().selectAgent(snapSessionId, snapAgentId);
+              }
+              const layers = restoredLayers({ intent: reloadIntent, sessionId: snapSessionId });
+              if (layers.length > 0) {
+                get().navigate({ to: sessionPlace({ sessionId: snapSessionId }) });
+                for (const place of layers) {
+                  get().navigate({ to: place });
+                }
               }
             }
           }

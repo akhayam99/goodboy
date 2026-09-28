@@ -43,12 +43,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'hosts the rewrite event menu of useHistoryRowActions',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
     'artifact files from deleted sessions: storage keep and delete',
-  'features/diff/components/SessionDiffPane/index.tsx':
-    'Diff branch header menu; the branch kind lands with ux5 on this registry',
-  'features/resolve/components/ResolvePanelHeader/index.tsx':
-    'Review conversation menu; the conversation kind lands with ux5-review on this registry',
-  'features/resolve/components/ResolveQueueHome/index.tsx':
-    'Review queue header menu; the conversation kind lands with ux5-review on this registry',
 };
 
 const isSource = (path: string): boolean =>

@@ -305,17 +305,21 @@ const viewsFromProjectMounts = ({
     ];
   });
 
+export const sessionMountViews = ({
+  state,
+  sessionId,
+}: {
+  readonly state: Pick<MountRowState, 'sessionMounts' | 'sessionProjectMounts'>;
+  readonly sessionId: SessionId;
+}): ReadonlyArray<SessionMountView> =>
+  state.sessionMounts?.[sessionId] ??
+  viewsFromProjectMounts({ mounts: state.sessionProjectMounts?.[sessionId] ?? [], sessionId });
+
 export const buildMountRows = ({
   state,
   sessionId,
 }: SessionParams): ReadonlyArray<MountProjectGroup> => {
-  const stored = state.sessionMounts?.[sessionId];
-  const views =
-    stored ??
-    viewsFromProjectMounts({
-      mounts: state.sessionProjectMounts?.[sessionId] ?? [],
-      sessionId,
-    });
+  const views = sessionMountViews({ state, sessionId });
   const observations = state.mountBranchObservations?.[sessionId] ?? [];
   const series = state.prSeries?.[sessionId] ?? [];
   const order: Array<ProjectId> = [];

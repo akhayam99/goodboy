@@ -207,6 +207,11 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   agent on that mount finishes it), `Open terminal`, and `Abort rebase`
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).
+- **A row names its layers.** Each Projects row links the three code host
+  layers by name: `PR #318` with its state opens the pull request, the diff
+  stat opens the Diff, and `N to resolve` (only while review comments of
+  that pull request wait) opens Review on them. `Rewrite history` sits in the
+  row menu.
 - **Merged rows move under `Show completed`.** A row is merged when its
   request merged, or when a pushed branch that tracks its own name has a
   clean tree and nothing past the base. A merged request whose branch moved
@@ -312,16 +317,25 @@ action the user can see, or allows one on a mount the user sees as gone.
 
 Every row of every project shares one grid (each project group and its list
 are subgrids of it), so the columns line up down the whole section: branch,
-series part, sync, diff, state, action, menu. A column no row fills takes no
-width, and below a 36rem container the sync and diff cells empty out (the Changes lens still has the
-diff). Every row action lives in the always visible row menu
-(`MountActionsMenu`): start new turns here (only with two or more mounts),
-terminal, scripts, editors, copy path, then close (unmount) or remove. A
-closed row offers Reopen in its action cell. The terminal and scripts icons on the row are
-hover accelerators, shown at rest only while something runs there; a hover
-icon is never the only way to an action. Below a 28rem container the idle
-accelerators take no room and New worktree shows its icon only. The project menu holds Detach
-project and renders nothing when the project has no mount to detach.
+series part, distance to main, diff, state, action, menu. A column no row
+fills takes no width, and below a 36rem container the distance and diff cells
+empty out (the Changes lens still has the diff). The row's actions come from
+the `mount` kind of the action registry
+(`features/actions/kinds/mount.ts`). The action cell shows the one action
+the state calls for, picked by its `inline` slot: `Rebase on main` when main
+moved, `Push N commits` when commits wait on a branch with a pull request,
+`Create PR` when the branch has commits and no pull request, `Remove worktree`
+once the pull request merged, `Reopen` on a closed row. A blocked action stays
+visible, disabled, with its reason in the tooltip. The always visible row menu
+(`⋯`, also on right click) lists every available action of the worktree: open
+the pull request, the diff, Review, the terminal, the editor (one submenu level
+of detected editors), scripts, Rebase, Push, Rewrite history, Switch branch,
+Start new turns here (only with two or more mounts), the copies, then Close
+worktree, or Remove from session on a closed row. There are no hover-only icons
+on the row. When a rebase stops, the notice under the row brings the terminal
+and Abort rebase forward. Below a 28rem container New worktree shows its icon
+only. The project menu (`MountActionsMenu`, the `project` kind) holds Detach project
+and renders nothing when the project has no mount to detach.
 
 With two or more mounts, a row shows its presence (`MountPresence`): the
 state node of each agent whose turn runs, waits on an answer or needs you in
@@ -330,5 +344,6 @@ badge for the mount new turns start in; the chat header owns that choice.
 
 The branch chip is the branch control: on a mounted repo row the whole chip
 opens the branch switcher, whose header copies the branch name. Where the
-branch cannot switch (unmounted rows, folder projects) the chip copies the
-name. Copy feedback is the check icon, never a toast.
+branch cannot switch (unmounted rows, folder projects, a rebase in progress)
+the chip only shows the name, and with uncommitted changes it says why in its
+tooltip. Copy branch name lives in the row menu.

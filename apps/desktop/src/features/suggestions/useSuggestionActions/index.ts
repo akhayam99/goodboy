@@ -12,7 +12,7 @@ import { kindRouting } from '../../session/agent-kind';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
 import { useWorktreeStatuses } from '../../session/hooks/useWorktreeStatuses';
 import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent';
-import { resolveNewLabel } from '../../resolve/resolveQueueCopy';
+import { draftFixesLabel } from '../../actions/kinds/review';
 import { prLifecycleFailureTitle } from '../../review/prLifecycle';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
@@ -198,7 +198,7 @@ export const useSuggestionActions = ({
     if (suggestion.kind === 'resolve-threads') {
       return {
         primary: {
-          label: resolveNewLabel({ count: unresolvedThreads.length }),
+          label: draftFixesLabel({ fresh: unresolvedThreads.length }),
           isDisabled: false,
           failureTitle: "The fix didn't start",
           run: startResolving,

@@ -18,7 +18,6 @@ export const createInitialSessionViewState = ({}: Params) => ({
   diffPage: {},
   terminalMountPath: {},
   resolveQueueView: {},
-  resolvePublicationRequest: {},
   resolveItemDrafts: {},
   sessionCreations: {},
   revealedActivityRows: {},

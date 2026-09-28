@@ -20,7 +20,7 @@ const harness = () => {
 };
 
 describe('openMountRequest', () => {
-  it('opens an existing github request in review, on the mount it belongs to', async () => {
+  it('opens an existing github request on its page, on the mount it belongs to', async () => {
     const { state, run } = harness();
 
     await run({

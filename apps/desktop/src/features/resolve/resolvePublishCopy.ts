@@ -3,16 +3,6 @@ import type {
   ResolvePublicationDrift,
   ResolvePublicationPreview,
 } from '@goodboy/types';
-import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
-import { closingThreadCount } from './closingThreadCount';
-import type { ResolvePublishIntent } from './publishIntent';
-import { formatClockTime } from '../../shared/utils/formatClockTime';
-
-export type PublishCounts = Readonly<{
-  commits: number;
-  replies: number;
-  notes: number;
-}>;
 
 const plural = ({
   count,
@@ -23,92 +13,6 @@ const plural = ({
   readonly one: string;
   readonly many: string;
 }): string => `${count} ${count === 1 ? one : many}`;
-
-export const REVIEW_PUBLICATION = 'Review publication';
-
-export const publishIntentLabel = ({
-  intent,
-  preview,
-}: {
-  readonly intent: ResolvePublishIntent;
-  readonly preview: ResolvePublicationPreview;
-}): string => {
-  switch (intent) {
-    case 'publish_fix':
-      return `Close ${preview.replies.length + preview.notes.length} on GitHub`;
-    case 'close_without_fix':
-      return 'Resolve threads without the fix';
-    case 'post_replies':
-      return `Send ${plural({ count: preview.replies.length, one: 'reply', many: 'replies' })}`;
-    default: {
-      const exhaustive: never = intent;
-      return exhaustive;
-    }
-  }
-};
-
-export const CLOSE_WITHOUT_FIX_CONFIRM = {
-  title: 'Resolve threads without the fix',
-  description:
-    'No commit goes out with this batch. The reviewer threads read as resolved on the pull request and the code stays as it is.',
-  confirmLabel: 'Resolve them anyway',
-  cancelLabel: 'Keep them open',
-} as const;
-
-export const publishIntentSummary = ({
-  preview,
-}: {
-  readonly preview: ResolvePublicationPreview;
-}): string => {
-  const closing = closingThreadCount({ preview });
-  const counts = publicationCountsLine({ preview });
-  const scope = `${plural({ count: closing, one: 'thread', many: 'threads' })} on #${preview.prNumber}`;
-  return counts === null ? scope : `${counts}. ${scope}`;
-};
-
-export const publicationCountsLine = ({
-  preview,
-}: {
-  readonly preview: ResolvePublicationPreview;
-}): string | null => {
-  const resolutions = closingThreadCount({ preview });
-  const parts = [
-    preview.commits.length === 0
-      ? null
-      : `${plural({ count: preview.commits.length, one: 'commit', many: 'commits' })} to push`,
-    preview.replies.length === 0
-      ? null
-      : `${plural({ count: preview.replies.length, one: 'reply', many: 'replies' })} to post`,
-    resolutions === 0
-      ? null
-      : `${plural({ count: resolutions, one: 'thread', many: 'threads' })} to resolve`,
-  ].flatMap((part) => (part === null ? [] : [part]));
-  return parts.length === 0 ? null : parts.join(' · ');
-};
-
-export const frozenAtLabel = ({ frozenAt }: { readonly frozenAt: number }): string =>
-  `as of ${formatClockTime({ iso: frozenAt })}`;
-
-export const HELD_BACK_REASON: Record<'comment_changed' | 'approval_withdrawn', string> = {
-  comment_changed: 'the comment changed',
-  approval_withdrawn: 'you took the approval back',
-};
-
-export const heldBackNote = ({
-  preview,
-}: {
-  readonly preview: ResolvePublicationPreview;
-}): string | null => {
-  const held = preview.drift.filter((entry) => entry.threadId !== null);
-  if (held.length === 0) {
-    return null;
-  }
-  const reason =
-    held[0]?.kind === 'approval_withdrawn'
-      ? HELD_BACK_REASON.approval_withdrawn
-      : HELD_BACK_REASON.comment_changed;
-  return `${held.length} held back, ${reason}`;
-};
 
 export const excludedLine = ({
   preview,
@@ -121,9 +25,6 @@ export const excludedLine = ({
   }
   return `${plural({ count, one: 'comment', many: 'comments' })} ${count === 1 ? 'needs' : 'need'} you first`;
 };
-
-export const UPDATE_AND_REVIEW = 'Update branch and review again';
-export const CHECK_AND_RETRY = 'Check and retry';
 
 export const driftSentence = ({
   drift,
@@ -147,12 +48,6 @@ export const driftSentence = ({
   }
   return drift.length === 0 ? null : 'Something changed while you were looking';
 };
-
-export const heldBackChipLabel = ({
-  kind,
-}: {
-  readonly kind: 'comment_changed' | 'approval_withdrawn';
-}): string => `Held back, ${HELD_BACK_REASON[kind]}`;
 
 export type BlockerCopy = {
   readonly sentence: string;
@@ -190,35 +85,4 @@ export const blockerCopy = ({
       return { sentence: never, action: null };
     }
   }
-};
-
-const SHORT_SHA_LENGTH = 7;
-
-export const publicationOutcomeSentence = ({
-  outcome,
-}: {
-  readonly outcome: PublicationOutcome;
-}): string => {
-  const parts = [
-    outcome.pushedHead === null ? null : `${outcome.pushedHead.slice(0, SHORT_SHA_LENGTH)} pushed`,
-    outcome.replies === 0
-      ? null
-      : outcome.replied === outcome.replies
-        ? `${plural({ count: outcome.replied, one: 'reply', many: 'replies' })} posted`
-        : `${outcome.replied} of ${plural({ count: outcome.replies, one: 'reply', many: 'replies' })} posted`,
-    outcome.resolved === 0
-      ? null
-      : `${plural({ count: outcome.resolved, one: 'thread', many: 'threads' })} resolved on GitHub`,
-    outcome.leftOpen === 0 ? null : `${outcome.leftOpen} left open for the reviewer`,
-  ].flatMap((part) => (part === null ? [] : [part]));
-  const done = parts.length === 0 ? null : `${parts.join(', ')}.`;
-  if (outcome.failed > 0) {
-    const failure = `${outcome.failed} failed${outcome.error === null ? '' : `: ${outcome.error}`}.`;
-    return done === null ? failure : `${done} ${failure}`;
-  }
-  if (outcome.total === 0 || outcome.resolved !== outcome.total) {
-    return done ?? '';
-  }
-  const lead = `Closed ${outcome.total} on GitHub.`;
-  return done === null ? lead : `${lead} ${done}`;
 };

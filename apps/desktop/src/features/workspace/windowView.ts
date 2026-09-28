@@ -1,5 +1,5 @@
 import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
-import type { Location } from '../../store/slices/navigation/types';
+import type { Location, Place } from '../../store/slices/navigation/types';
 import { parseLocation } from './windowLayout';
 
 const RELOAD_INTENT_KEY = 'goodboy:window-reload-intent';
@@ -10,7 +10,26 @@ type RestoreIntent = {
   readonly sessionId: SessionId | null;
   readonly agentId: AgentId | null;
   readonly location?: Location;
+  readonly layers?: ReadonlyArray<Place>;
 };
+
+type LayersParams = {
+  readonly intent: WindowReloadIntent;
+  readonly sessionId: SessionId;
+};
+
+export const restoredLayers = ({ intent, sessionId }: LayersParams): ReadonlyArray<Place> =>
+  intent.mode !== 'restore' || !Array.isArray(intent.layers)
+    ? []
+    : intent.layers.every(
+          (place) =>
+            typeof place === 'object' &&
+            place !== null &&
+            place.at === 'session' &&
+            place.sessionId === sessionId,
+        )
+      ? intent.layers
+      : [];
 
 type FreshIntent = {
   readonly mode: 'fresh';

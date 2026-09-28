@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { CountToggle, Tooltip } from '@goodboy/ui';
 import type { SessionId, WorktreeStatus } from '@goodboy/types';
-import type { LensKind, MountDiffStat } from '../../../../../store';
+import type { MountDiffStat } from '../../../../../store';
 import type {
   MountProjectGroup,
   MountRowView,
@@ -20,7 +20,6 @@ type Props = {
   readonly diffStats: ReadonlyMap<string, MountDiffStat>;
   readonly worktreeStatuses: ReadonlyMap<string, WorktreeStatus>;
   readonly pendingWorktrees: ReadonlySet<string>;
-  readonly onSelectLens: (lens: LensKind) => void;
 };
 
 type LabelParams = {
@@ -36,7 +35,6 @@ export const ProjectMountGroup = ({
   diffStats,
   worktreeStatuses,
   pendingWorktrees,
-  onSelectLens,
 }: Props) => {
   const [isCompletedShown, setIsCompletedShown] = useState(false);
   const statusOf = (row: MountRowView): WorktreeStatus | null =>
@@ -76,13 +74,11 @@ export const ProjectMountGroup = ({
       sessionId={sessionId}
       row={row}
       label={rowLabel({ row })}
-      workspaceId={group.workspaceId}
       diffStat={row.worktreePath === null ? null : (diffStats.get(row.worktreePath) ?? null)}
       worktreeStatus={statusOf(row)}
       isMerged={isMergedRow(row)}
       commitsAfterMerge={commitsAfterMergeOf(row)}
       isStatusPending={row.worktreePath !== null && pendingWorktrees.has(row.worktreePath)}
-      onSelectLens={onSelectLens}
     />
   );
 
@@ -123,26 +119,6 @@ export const ProjectMountGroup = ({
             workspaceId={group.workspaceId ?? undefined}
             projectName={group.projectName}
             worktreePath={headPath}
-            worktreeStatus={worktreeStatuses.get(headPath) ?? null}
-            target={{
-              kind: 'mount',
-              facts: {
-                mountKey: `project:${group.projectId}`,
-                noun: 'worktree',
-                worktreePath: headPath,
-                branch: '',
-                hasTools: false,
-                canStartTurnsHere: false,
-                hasMount: false,
-                isAttached: false,
-                canDetach: true,
-                editors: [],
-                onTerminal: () => undefined,
-                onScripts: () => undefined,
-                onStartTurnsHere: () => undefined,
-                onOpenEditor: () => undefined,
-              },
-            }}
           />
         </div>
       </div>

@@ -14,7 +14,7 @@ import { resolverThread } from '../../../../store/slices/navigation/resolverThre
 import { useResolveQueueRows } from '../../../resolve/hooks/useResolveQueueRows';
 import { threadLocationOf } from '../../../resolve/threadLocationOf';
 import { clipQuestionText, isQuestionDelegate } from '../../../context/questionDelegate';
-import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
+import { LAYER_CRUMB_PREFIX, type BreadcrumbCrumb } from '../../breadcrumbCrumb';
 import { useIsBranchlessSession } from '../useIsBranchlessSession';
 import { workflowKindName } from '../../../workspace/components/WorkspacesSidebar/lib';
 import { useAttachedWorkflowRuns } from '../../../workflows/useAttachedWorkflowRuns';
@@ -31,9 +31,21 @@ import { focusedArtifactTitleOf } from '../../../artifacts/focusedArtifactTitleO
 import { resolveDiffMount } from '../../components/SessionWorkspace/parts/resolveDiffMount';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { REWRITE_HISTORY_TITLE } from '../../../history/rewriteHistoryTitle';
+import { layerPlace } from '../../../../store/slices/navigation/layers';
+import type { LayerKind } from '../../../../store/slices/navigation/types';
+import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
+import { LENS_ICON } from '../../lens-labels';
 
 type Params = {
   readonly session: Session;
+};
+
+const NO_LAYERS: ReadonlyArray<LayerKind> = [];
+
+const LAYER_LENS: Record<Exclude<LayerKind, 'history'>, LensKind> = {
+  pr: 'pr',
+  review: 'review',
+  diff: 'files',
 };
 
 export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbCrumb> => {
@@ -171,7 +183,33 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       : (selectedWorkflowRun.run.title ?? workflowKindName(selectedWorkflowRun.workflow));
   const selectedWorkflowRunId = selectedWorkflowRun?.run.id ?? null;
 
-  return useMemo(
+  const layers = useAppStore((s) => {
+    const stack = s.navigation?.[s.currentWorkspaceId ?? ''];
+    const top = stack?.entries[stack.index];
+    return top?.place.at === 'session' && top.place.sessionId === sessionId
+      ? (top.layers ?? NO_LAYERS)
+      : NO_LAYERS;
+  });
+  const layerCrumbs = useMemo(
+    (): ReadonlyArray<BreadcrumbCrumb> =>
+      layers.map((kind) => ({
+        id: `${LAYER_CRUMB_PREFIX}${kind}`,
+        label:
+          kind === 'pr'
+            ? pullRequestNumber === null
+              ? lensLabelFor({ lens: 'pr', isBranchless })
+              : `PR #${pullRequestNumber}`
+            : kind === 'history'
+              ? REWRITE_HISTORY_TITLE
+              : lensLabelFor({ lens: LAYER_LENS[kind], isBranchless }),
+        icon: kind === 'history' ? CONCEPT_ICONS.history : LENS_ICON[LAYER_LENS[kind]],
+        onClick: () =>
+          navigate({ to: layerPlace({ state: useAppStore.getState(), sessionId, kind }) }),
+      })),
+    [isBranchless, layers, navigate, pullRequestNumber, sessionId],
+  );
+
+  const crumbs = useMemo(
     () =>
       buildSessionBreadcrumb({
         lens,
@@ -238,7 +276,7 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
               drawer: {
                 kind: 'conversation',
                 sessionId,
-                payload: { threadId: resolverThreadId, tab: 'comment' },
+                payload: { threadId: resolverThreadId },
               },
             });
           },
@@ -277,5 +315,13 @@ export const useSessionCrumbs = ({ session }: Params): ReadonlyArray<BreadcrumbC
       navigate,
       setPullRequestMode,
     ],
+  );
+
+  return useMemo(
+    () =>
+      layerCrumbs.length === 0 || crumbs.length < 2
+        ? crumbs
+        : [crumbs[0]!, ...layerCrumbs, ...crumbs.slice(1)],
+    [crumbs, layerCrumbs],
   );
 };
