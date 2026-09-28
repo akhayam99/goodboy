@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import { CommandPalette } from '../../../features/session/components/CommandPalette';
+import { SearchOverlayHost } from '../../../features/search/components/SearchOverlayHost';
 
 type Props = {
   readonly studio: ReactElement | null;
@@ -14,5 +15,6 @@ export const AppScopeOverlays = ({ studio, paletteOpen, palettePrefix, closePale
       <div className="fixed inset-0 z-studio flex flex-col bg-background">{studio}</div>
     )}
     {paletteOpen && <CommandPalette initialQuery={palettePrefix} onClose={closePalette} />}
+    <SearchOverlayHost />
   </>
 );

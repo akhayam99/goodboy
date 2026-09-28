@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useShortcut } from '../../../shared/keyboard/useShortcut';
+import { isTerminalFocused } from '../../../shared/keyboard/isTerminalFocused';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import {
   useAppStore,
@@ -145,6 +146,12 @@ export const useAppShortcuts = ({
   useShortcut('settings.open', openSettings);
   useShortcut('settings.shortcuts', openShortcutHelp);
   useShortcut('palette.open', () => openPalette());
+  useShortcut('search.open', () => {
+    if (isTerminalFocused()) {
+      return;
+    }
+    useAppStore.getState().openSearchOverlay({ text: '' });
+  });
   useShortcut('session.new', openNewSession);
   useShortcut('workspace.switcher', () =>
     window.dispatchEvent(new CustomEvent('goodboy:open-workspace-switcher')),

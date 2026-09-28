@@ -33,6 +33,12 @@ const backfillUntilDone = async (get: GetFn): Promise<void> => {
 
 export const createSearchIndexSlice = (set: SetFn, get: GetFn): SearchIndexSlice => ({
   ...searchIndexInitialState,
+  openSearchOverlay: ({ text }) => {
+    set({ searchOverlay: { text } });
+  },
+  closeSearchOverlay: () => {
+    set({ searchOverlay: null });
+  },
   startViewFind: ({ query, target }) => {
     set({ viewFind: { query, target, startedAt: Date.now(), steps: 0 }, lastSearchText: query });
   },
