@@ -11,7 +11,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   border: 1px solid var(--line);
-  border-radius: var(--r-frame);
+  border-radius: var(--r-card);
   overflow: hidden;
 }
 
@@ -121,6 +121,40 @@
   padding: 0 36px;
   font: var(--t-caption);
   color: var(--t4);
+}
+
+.reveals .billPair .billBar {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 900ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.reveals .billPair[data-shown] .billBar {
+  transform: none;
+}
+
+.reveals .billPair .billRow:nth-child(2) .billBar {
+  transition-delay: 200ms;
+}
+
+.reveals .billPair .billRow:nth-child(3) .billBar {
+  transition-delay: 270ms;
+}
+
+.reveals .billPair .billRow:nth-child(4) .billBar {
+  transition-delay: 340ms;
+}
+
+.reveals .billPair .billRow:nth-child(5) .billBar {
+  transition-delay: 410ms;
+}
+
+.reveals .billPair .billRow:nth-child(6) .billBar {
+  transition-delay: 480ms;
+}
+
+.reveals .billPair .billRow:nth-child(7) .billBar {
+  transition-delay: 550ms;
 }
 
 @media (max-width: 960px) {

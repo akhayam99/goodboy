@@ -54,20 +54,20 @@ export const Routing = () => (
     id="routing"
     head={{
       eyebrow: 'Providers, limits and cost',
-      heading: 'Know what a task costs before the bill',
-      lead: 'The top bar shows what is left of each plan, and every step records what it spent.',
+      heading: 'Know what a task costs while it runs',
+      lead: 'The top bar shows what is left of each plan, every step records what it spent, and a monthly cap warns you before you cross it.',
     }}
   >
     <Frame figure={IMPACT} />
     <div className="bills">
       <div className="billsHead">
-        <h3 className="sectionTitle">The same task, two bills</h3>
+        <h3 className="sectionTitle">The same task, run two ways</h3>
         <p className="body">
           The same six steps, twice. One agent carrying the whole chat pays for it on every step. A
           fresh agent per step reads a short brief, and the heavy model runs only where it matters.
         </p>
       </div>
-      <div className="billPair" aria-hidden="true">
+      <div className="billPair" aria-hidden="true" data-reveal="">
         <div className="bill">
           <p className="billTitle">
             One agent, the whole chat each time
@@ -87,7 +87,7 @@ export const Routing = () => (
         <div className="bill">
           <p className="billTitle">
             A fresh agent for each step
-            <small>A short brief each time, the heavy model only where it matters</small>
+            <small>Each step on the model that fits it</small>
           </p>
           {STEPS.map((step) => (
             <div className="billRow" key={step.role}>

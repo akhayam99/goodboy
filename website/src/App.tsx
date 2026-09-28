@@ -11,23 +11,28 @@ import { Install } from './sections/Install';
 import { Support } from './sections/Support';
 import { Closer } from './sections/Closer';
 import { Footer } from './sections/Footer';
+import { useReveal } from './hooks/useReveal';
 
-export const App = () => (
-  <>
-    <Nav />
-    <main id="main">
-      <Hero />
-      <Providers />
-      <Sessions />
-      <Teams />
-      <Workflows />
-      <Routing />
-      <Faq />
-      <Install />
-      <Support />
-      <Closer />
-    </main>
-    <Footer />
-    <Analytics />
-  </>
-);
+export const App = () => {
+  useReveal();
+
+  return (
+    <>
+      <Nav />
+      <main id="main">
+        <Hero />
+        <Providers />
+        <Sessions />
+        <Teams />
+        <Workflows />
+        <Routing />
+        <Faq />
+        <Install />
+        <Support />
+        <Closer />
+      </main>
+      <Footer />
+      <Analytics />
+    </>
+  );
+};
