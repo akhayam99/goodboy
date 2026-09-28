@@ -55,6 +55,10 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'debt',
   },
+  'apps/desktop/src/features/palette/components/CommandsMode/index.tsx': {
+    count: 2,
+    reason: 'chrome',
+  },
   'apps/desktop/src/features/github/components/PullRequest/CreatePrPanel.tsx': {
     count: 5,
     reason: 'debt',
@@ -99,10 +103,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
   },
   'apps/desktop/src/features/resolve/components/ResolveItemView/index.tsx': {
     count: 2,
-    reason: 'chrome',
-  },
-  'apps/desktop/src/features/session/components/CommandPalette/index.tsx': {
-    count: 1,
     reason: 'chrome',
   },
   'apps/desktop/src/features/session/components/CreateAgentPopover/index.tsx': {

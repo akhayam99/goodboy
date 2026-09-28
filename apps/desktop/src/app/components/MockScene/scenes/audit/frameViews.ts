@@ -1,4 +1,5 @@
 import type { useAppOverlays } from '../../../../hooks/useAppOverlays';
+import { useAppStore } from '../../../../../store';
 
 type Openers = ReturnType<typeof useAppOverlays>;
 
@@ -64,6 +65,10 @@ export const triggerFrameView = ({ view, openers }: TriggerParams): void => {
       fire({ name: 'goodboy:open-pair-device' });
       return;
     case 'palette':
+      openers.openPalette();
+      return;
+    case 'palette-session':
+      useAppStore.setState({ selectedAgentId: {} });
       openers.openPalette();
       return;
     case 'stack':

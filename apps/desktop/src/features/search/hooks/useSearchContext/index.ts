@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../../../../store';
 import { sessionTitle } from '../../../session/sessionTitle';
+import type { PaletteScope } from '../../../palette/types';
 import type { SearchProjectOption } from '../../grammar';
 import type { SearchScope } from '../../searchScope';
 
@@ -10,16 +11,22 @@ export type SearchContext = {
   readonly projects: ReadonlyArray<SearchProjectOption>;
 };
 
-export const useSearchContext = (): SearchContext => {
-  const workspaceId = useAppStore((state) => state.currentWorkspaceId);
-  const sessionId = useAppStore((state) => state.currentSessionId);
-  const workspaceLabel = useAppStore(
-    (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null,
-  );
+type Params = {
+  readonly paletteScope: PaletteScope | null;
+};
+
+export const useSearchContext = ({ paletteScope }: Params): SearchContext => {
+  const sessionId =
+    paletteScope === null || paletteScope.kind === 'workspace' ? null : paletteScope.sessionId;
   const session = useAppStore((state) =>
     sessionId === null
       ? null
       : (state.sessions.find((candidate) => candidate.id === sessionId) ?? null),
+  );
+  const workspaceId =
+    paletteScope?.kind === 'workspace' ? paletteScope.workspaceId : (session?.workspaceId ?? null);
+  const workspaceLabel = useAppStore(
+    (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? null,
   );
   const allProjects = useAppStore((state) => state.projects);
   const projects = useMemo(

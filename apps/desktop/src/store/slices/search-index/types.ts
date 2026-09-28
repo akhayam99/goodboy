@@ -25,13 +25,7 @@ export type RememberSearchParams = {
   readonly text: string;
 };
 
-export type OpenSearchOverlayParams = {
-  readonly text: string;
-};
-
 export type SearchIndexSlice = SearchIndexState & {
-  openSearchOverlay(params: OpenSearchOverlayParams): void;
-  closeSearchOverlay(): void;
   startViewFind(params: StartViewFindParams): void;
   stepViewFind(params: StepViewFindParams): void;
   stopViewFind(): void;

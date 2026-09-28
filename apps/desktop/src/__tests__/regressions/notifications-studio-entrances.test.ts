@@ -10,7 +10,7 @@ const EVENT_CONSTANT = 'NOTIFICATIONS_STUDIO_EVENT';
 const STUDIO_COMPONENT = 'NotificationsStudio';
 
 const BELL_FILE = 'features/notifications/components/NotificationCenter/index.tsx';
-const PALETTE_FILE = 'features/session/components/CommandPalette/index.tsx';
+const PALETTE_FILE = 'features/palette/hooks/useCommandEntries.ts';
 const DISPATCHER_FILES = [BELL_FILE, PALETTE_FILE];
 const EVENT_LISTENER_FILE = 'app/hooks/useAppOverlays/useStudioEvents.ts';
 const MOUNT_FILE = 'app/components/AppOverlayRouter/index.tsx';

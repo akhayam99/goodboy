@@ -2,11 +2,14 @@ import { useEffect, useState } from 'react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { ToastProvider } from '../../../Toast';
-import { SearchOverlayHost } from '../../../../../features/search/components/SearchOverlayHost';
+import { PaletteOverlay } from '../../../../../features/palette/components/PaletteOverlay';
+import { FindInViewController } from '../../../../../features/search/findInView/FindInViewController';
 import { TranscriptFeed } from '../flow-audit/TranscriptFeed';
 import { seedChatSurfaces } from '../flow-audit/seeds';
 import { sceneParam } from '../audit/sceneParams';
 import { mockRunSearch } from './searchFixtures';
+
+const noop = () => undefined;
 
 const VIEW = sceneParam({ key: 'view' }) ?? 'overlay';
 
@@ -39,16 +42,11 @@ export const SearchScene = () => {
   }, []);
 
   useEffect(() => {
-    if (!isReady) {
+    if (!isReady || VIEW !== 'jump') {
       return;
     }
     const id = window.setTimeout(() => {
-      const state = useAppStore.getState();
-      if (VIEW === 'jump') {
-        state.startViewFind({ query: 'credit', target: JUMP_TARGET });
-        return;
-      }
-      state.openSearchOverlay({ text: OPEN_TEXT[VIEW] ?? '' });
+      useAppStore.getState().startViewFind({ query: 'credit', target: JUMP_TARGET });
     }, 30);
     return () => window.clearTimeout(id);
   }, [isReady]);
@@ -63,7 +61,10 @@ export const SearchScene = () => {
         <div data-find-root className={PANE_RHYTHM.body}>
           <TranscriptFeed />
         </div>
-        <SearchOverlayHost />
+        <FindInViewController />
+        {VIEW === 'jump' ? null : (
+          <PaletteOverlay mode="search" initialQuery={OPEN_TEXT[VIEW] ?? ''} onClose={noop} />
+        )}
       </main>
     </ToastProvider>
   );

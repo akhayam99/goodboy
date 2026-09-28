@@ -13,13 +13,14 @@ import {
 } from '../../../store';
 import { requestNewSession } from '../../../features/session/requestNewSession';
 import { openLens } from '../../../features/session/openLens';
+import type { OpenPaletteParams } from '../../../features/palette/paletteModeTypes';
 import type { ContextDrawerTab } from '../../../store/slices/drawer/state';
 import { useMouseHistoryButtons } from '../useMouseHistoryButtons';
 import { useGoToBoard } from '../useGoToBoard';
 
 type AppShortcutsParams = {
   readonly armDeleteConfirm: () => void;
-  readonly openPalette: (prefix?: string) => void;
+  readonly openPalette: (params?: OpenPaletteParams) => void;
   readonly openSettings: () => void;
   readonly openShortcutHelp: () => void;
   readonly toggleSidebar: () => void;
@@ -150,7 +151,7 @@ export const useAppShortcuts = ({
     if (isTerminalFocused()) {
       return;
     }
-    useAppStore.getState().openSearchOverlay({ text: '' });
+    openPalette({ mode: 'search' });
   });
   useShortcut('session.new', openNewSession);
   useShortcut('workspace.switcher', () =>

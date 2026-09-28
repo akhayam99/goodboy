@@ -130,18 +130,20 @@ it takes 15 MB. `readSearchIndexStatus` reads the real size from `dbstat`.
 
 ## The surface
 
-⌘F (`search.open`, app plane) opens the search overlay. Until the palette
-overlay of UX6 lands, `SearchOverlayHost`
-(`features/search/components/SearchOverlayHost`) renders it from the
-`searchOverlay` key of the search-index slice. The body is `SearchMode`,
-which takes the `OverlayModeProps` of `features/search/overlayMode.ts`:
-the text carried over, `onSwitchMode` for ⇥, and `onClose`. ⇥ hands the
-text to the command palette through `goodboy:open-command-palette`.
+⌘F (`search.open`, app plane) opens the palette overlay in its Search mode,
+the second entry of `PALETTE_MODES` (`features/palette/paletteModes.ts`).
+The overlay shell owns the scrim, the width (920px for search), the text and
+the mode; ⇥ or the mode switch moves between Commands and Search and keeps
+the text. `SearchMode` (`features/search/components/SearchMode`) is the
+mode body: it takes `PaletteModeProps`, draws the shared `PaletteInputRow`
+with its scope and filter chips in the chip slot, and owns its keys, its
+results and its preview.
 
 - **Scope.** It opens on the session you are in, or on the workspace from
   the board. The scope is the first chip; Backspace in an empty field
   removes the last filter chip, then widens the scope from the session to
-  the workspace to everything.
+  the workspace to everything, where it also clears the shell's scope.
+  Qualifiers in text carried over from Commands become chips on arrival.
 - **Filters.** Type, Project, Provider, Status and Date are chips, picked
   from the filter row or typed: `type:plan`, `in:ledger-core`, `from:codex`,
   `is:open`, `is:archived`, `after:2026-09-01`, `before:7d`. A qualifier

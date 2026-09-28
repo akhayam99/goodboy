@@ -17,8 +17,9 @@ import { searchHitTarget } from '../../searchHitTarget';
 import { openSearchHit } from '../../openSearchHit';
 import { useSearchResults } from '../../hooks/useSearchResults';
 import { useSearchContext } from '../../hooks/useSearchContext';
-import type { OverlayModeProps } from '../../overlayMode';
-import { SearchInputRow } from './SearchInputRow';
+import type { PaletteModeProps } from '../../../palette/paletteModeTypes';
+import { PaletteInputRow } from '../../../palette/components/PaletteOverlay/PaletteInputRow';
+import { SearchChips } from './SearchChips';
 import { SearchFilterBar, filterGroupOf, type GroupChangeParams } from './SearchFilterBar';
 import { SearchResultRow } from './SearchResultRow';
 import { SearchPreview } from './SearchPreview';
@@ -44,18 +45,25 @@ type MoveParams = {
 
 const RECENT_KINDS = ['session', 'plan', 'report', 'decision', 'question', 'issue', 'pr'] as const;
 
-export const SearchMode = ({ initialText, onSwitchMode, onClose }: OverlayModeProps) => {
-  const context = useSearchContext();
+export const SearchMode = ({
+  query: text,
+  onQueryChange,
+  scope: paletteScope,
+  onClearScope,
+  onSwitchMode,
+  onClose,
+  modeSwitch,
+}: PaletteModeProps) => {
+  const context = useSearchContext({ paletteScope });
   const status = useAppStore((state) => state.searchIndexStatus);
   const loadStatus = useAppStore((state) => state.loadSearchIndexStatus);
   const reportError = useAppStore((state) => state.reportError);
   const [scope, setScope] = useState<SearchScope>(context.initialScope);
   const [now] = useState(() => Date.now());
   const [initial] = useState(() =>
-    extractQualifiers({ text: initialText, projects: context.projects, now, isFinal: true }),
+    extractQualifiers({ text, projects: context.projects, now, isFinal: true }),
   );
   const [chips, setChips] = useState<ReadonlyArray<SearchChip>>(initial.chips);
-  const [text, setText] = useState(initial.text);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
@@ -64,7 +72,10 @@ export const SearchMode = ({ initialText, onSwitchMode, onClose }: OverlayModePr
   useEffect(() => {
     inputRef.current?.focus();
     void loadStatus().catch(() => undefined);
-  }, [loadStatus]);
+    if (initial.chips.length > 0) {
+      onQueryChange(initial.text);
+    }
+  }, []);
 
   const isEmptyQuery = text.trim().length === 0 && chips.length === 0;
   const query = useMemo(() => {
@@ -158,11 +169,15 @@ export const SearchMode = ({ initialText, onSwitchMode, onClose }: OverlayModePr
     if (extracted.chips.length > 0) {
       setChips((previous) => [...previous, ...extracted.chips]);
     }
-    setText(extracted.text);
+    onQueryChange(extracted.text);
   };
 
   const widen = () => {
-    setScope((previous) => widenScope({ scope: previous, workspaceLabel: context.workspaceLabel }));
+    const next = widenScope({ scope, workspaceLabel: context.workspaceLabel });
+    setScope(next);
+    if (next.kind === 'all') {
+      onClearScope();
+    }
   };
 
   const removeChip = (index: number) => {
@@ -204,7 +219,7 @@ export const SearchMode = ({ initialText, onSwitchMode, onClose }: OverlayModePr
     }
     if (event.key === 'Tab' && !event.shiftKey) {
       event.preventDefault();
-      onSwitchMode({ text });
+      onSwitchMode();
       return;
     }
     const isAtEnd = event.currentTarget.selectionStart === text.length;
@@ -231,18 +246,20 @@ export const SearchMode = ({ initialText, onSwitchMode, onClose }: OverlayModePr
   const showEmpty = !results.isLoading && items.length === 0 && statuses.length === 0;
 
   return (
-    <div className="flex max-h-[70vh] min-h-0 flex-col">
-      <SearchInputRow
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PaletteInputRow
         inputRef={inputRef}
-        text={text}
-        scope={scope}
-        chips={chips}
+        value={text}
+        placeholder={
+          scope.kind === 'all' ? 'Search everything' : 'Search, or type type: in: from: is:'
+        }
+        ariaLabel="Search"
         listboxId={listboxId}
-        activeOptionId={selected === null ? null : optionId({ id: selected.id })}
-        onTextChange={changeText}
+        activeDescendant={selected === null ? undefined : optionId({ id: selected.id })}
+        chip={<SearchChips scope={scope} chips={chips} onWiden={widen} onRemoveChip={removeChip} />}
+        modeSwitch={modeSwitch}
+        onChange={changeText}
         onKeyDown={handleKeyDown}
-        onWiden={widen}
-        onRemoveChip={removeChip}
       />
       <SearchFilterBar
         chips={chips}

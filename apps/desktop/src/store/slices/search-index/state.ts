@@ -7,12 +7,7 @@ export type ViewFind = {
   readonly steps: number;
 };
 
-export type SearchOverlayState = {
-  readonly text: string;
-};
-
 export type SearchIndexState = {
-  readonly searchOverlay: SearchOverlayState | null;
   readonly searchIndexStatus: SearchIndexStatus | null;
   readonly isSearchIndexRebuilding: boolean;
   readonly viewFind: ViewFind | null;
@@ -20,7 +15,6 @@ export type SearchIndexState = {
 };
 
 export const searchIndexInitialState: SearchIndexState = {
-  searchOverlay: null,
   searchIndexStatus: null,
   isSearchIndexRebuilding: false,
   viewFind: null,

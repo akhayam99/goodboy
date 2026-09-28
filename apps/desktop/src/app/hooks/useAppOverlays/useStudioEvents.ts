@@ -16,7 +16,7 @@ import type { StudioPlace } from '../../../store';
 type Params = {
   readonly open: (params: { readonly overlay: StudioPlace }) => void;
   readonly close: () => void;
-  readonly openPalette: (prefix?: string) => void;
+  readonly openPalette: () => void;
 };
 
 type Listener = readonly [string, (event: Event) => void];
@@ -53,13 +53,7 @@ export const useStudioEvents = ({ open, close, openPalette }: Params) => {
       ['goodboy:open-pair-device', () => open({ overlay: { kind: 'companion' } })],
       ['goodboy:open-workflow-studio', () => open({ overlay: { kind: 'workflow' } })],
       [CHANGELOG_STUDIO_EVENT, () => open({ overlay: { kind: 'changelog' } })],
-      [
-        OPEN_COMMAND_PALETTE_EVENT,
-        (event) => {
-          const text = eventValue({ event, key: 'text' });
-          openPalette(typeof text === 'string' ? text : '');
-        },
-      ],
+      [OPEN_COMMAND_PALETTE_EVENT, () => openPalette()],
     ];
     listeners.forEach(([name, listener]) => window.addEventListener(name, listener));
     return () =>

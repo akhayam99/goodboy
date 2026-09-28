@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 
+import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
@@ -98,10 +99,31 @@ const flush = async (): Promise<void> => {
   });
 };
 
-const renderMode = async (): Promise<void> => {
+const onClearScope = vi.fn();
+
+type RenderParams = {
+  readonly initialQuery?: string;
+};
+
+const Harness = ({ initialQuery = '' }: RenderParams) => {
+  const [query, setQuery] = useState(initialQuery);
+  return (
+    <SearchMode
+      query={query}
+      onQueryChange={setQuery}
+      scope={{ kind: 'session', sessionId: SESSION }}
+      onClearScope={onClearScope}
+      onSwitchMode={onSwitchMode}
+      onClose={onClose}
+      modeSwitch={null}
+    />
+  );
+};
+
+const renderMode = async ({ initialQuery }: RenderParams = {}): Promise<void> => {
   render(
     <ToastProvider>
-      <SearchMode initialText="" onSwitchMode={onSwitchMode} onClose={onClose} />
+      <Harness initialQuery={initialQuery} />
     </ToastProvider>,
   );
   await flush();
@@ -170,6 +192,13 @@ describe('search mode', () => {
     fireEvent.keyDown(input(), { key: 'Backspace' });
     await flush();
     expect(lastQuery()).toMatchObject({ sessionId: null, workspaceId: null });
+    expect(onClearScope).toHaveBeenCalledTimes(1);
+  });
+
+  it('turns qualifiers carried over from commands into chips', async () => {
+    await renderMode({ initialQuery: 'drift type:plan' });
+    expect(input().value).toBe('drift ');
+    expect(lastQuery()).toMatchObject({ text: 'drift ', kinds: ['plan'] });
   });
 
   it('marks the matched words and lands a message in its transcript on Enter', async () => {
@@ -229,6 +258,7 @@ describe('search mode', () => {
     await renderMode();
     fireEvent.change(input(), { target: { value: 'payout' } });
     fireEvent.keyDown(input(), { key: 'Tab' });
-    expect(onSwitchMode).toHaveBeenCalledWith({ text: 'payout' });
+    expect(onSwitchMode).toHaveBeenCalledTimes(1);
+    expect(input().value).toBe('payout');
   });
 });
