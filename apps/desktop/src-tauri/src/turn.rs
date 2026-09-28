@@ -1006,6 +1006,39 @@ mod tests {
     }
 
     #[test]
+    fn no_provider_gets_write_access_to_the_goodboy_data() {
+        let empty: Vec<String> = vec![];
+        let socket_directory = crate::query_bridge::socket_directory()
+            .and_then(|path| path.to_str())
+            .expect("a home directory")
+            .to_string();
+        let data = dirs::home_dir().expect("a home directory").join(".goodboy");
+        let protected = [
+            data.clone(),
+            crate::db::resolve_db_path().expect("a database path"),
+            crate::history::reservations_dir(),
+        ];
+        let mut args = make_args(None, None, &empty);
+        args.query_socket_directory = Some(&socket_directory);
+        for binary in ["claude", "codex", "cursor-agent"] {
+            for mode in ["acceptEdits", "bypassPermissions", "default"] {
+                args.permission_mode = mode;
+                let cli = build_provider_cli_args(binary, &args);
+                for pair in cli.windows(2).filter(|pair| pair[0] == "--add-dir") {
+                    let root = std::path::Path::new(&pair[1]);
+                    for path in &protected {
+                        assert!(
+                            !path.starts_with(root),
+                            "{binary} {mode} can write {}",
+                            path.display()
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
     fn codex_rewriter_turns_cannot_write_the_temp_folders() {
         let empty: Vec<String> = vec![];
         let mut args = make_args(None, None, &empty);

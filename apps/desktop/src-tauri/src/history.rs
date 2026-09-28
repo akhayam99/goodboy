@@ -1099,7 +1099,7 @@ fn blocked(sha: &str) -> StepPrediction {
     prediction(sha, StepOutcome::Blocked)
 }
 
-fn reservations_dir() -> PathBuf {
+pub(crate) fn reservations_dir() -> PathBuf {
     dirs::home_dir()
         .map(|home| home.join(".goodboy").join(RESERVATIONS_DIR))
         .unwrap_or_default()

@@ -86,6 +86,12 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   then does nothing, while jsdom tests stay green. Turning `dragDropEnabled`
   off is not the fix, because the composer's file drop listens through
   `onDragDropEvent`. `history-drag-keeps-file-drop.test.ts` holds both.
+- The query socket sits in `~/.goodboy/query/`, not in `~/.goodboy`. Codex
+  and Claude turns get the socket folder as a writable directory
+  (`--add-dir`), so they can connect. Moving the socket back beside the
+  database hands every agent write access to `data.db`, `file-versions/` and
+  `history-copies/`. `turn.rs` has a test that fails when any provider gets a
+  writable directory containing those paths.
 
 ## Hand-maintained lists the compiler does not check
 

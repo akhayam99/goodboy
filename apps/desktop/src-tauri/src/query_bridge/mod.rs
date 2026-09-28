@@ -20,6 +20,7 @@ use protocol::{
 pub(crate) use cli::dispatch as run_cli;
 
 const APP_DIR: &str = ".goodboy";
+const SOCKET_DIR: &str = "query";
 const SWEEP_SUFFIX: &str = ".sweep-";
 
 static SOCKET_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
@@ -43,6 +44,7 @@ fn socket_path() -> Option<&'static Path> {
         .get_or_init(|| {
             dirs::home_dir().map(|home| {
                 home.join(APP_DIR)
+                    .join(SOCKET_DIR)
                     .join(socket_file_name(std::process::id()))
             })
         })
@@ -208,6 +210,13 @@ fn sweep_abandoned_sockets(dir: &Path) {
 }
 
 #[cfg(unix)]
+fn is_private_dir(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::symlink_metadata(path)
+        .is_ok_and(|meta| meta.file_type().is_dir() && meta.permissions().mode() & 0o077 == 0)
+}
+
+#[cfg(unix)]
 pub(crate) fn start(app: tauri::AppHandle) {
     use std::os::unix::fs::PermissionsExt;
     use tokio::net::UnixListener;
@@ -215,12 +224,22 @@ pub(crate) fn start(app: tauri::AppHandle) {
     let Some(path) = socket_path() else {
         return;
     };
-    if let Some(parent) = path.parent() {
-        if let Err(error) = std::fs::create_dir_all(parent) {
-            log::warn!("query bridge: state directory unavailable: {error}");
-            return;
-        }
-        sweep_abandoned_sockets(parent);
+    let Some(parent) = path.parent() else {
+        return;
+    };
+    if let Err(error) = std::fs::create_dir_all(parent)
+        .and_then(|_| std::fs::set_permissions(parent, std::fs::Permissions::from_mode(0o700)))
+    {
+        log::warn!("query bridge: socket directory unavailable: {error}");
+        return;
+    }
+    if !is_private_dir(parent) {
+        log::warn!("query bridge: socket directory is not a private folder");
+        return;
+    }
+    sweep_abandoned_sockets(parent);
+    if let Some(state) = parent.parent() {
+        sweep_abandoned_sockets(state);
     }
     let _ = std::fs::remove_file(path);
     tauri::async_runtime::spawn(async move {
@@ -301,14 +320,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_socket_lives_beside_the_database_in_the_state_directory() {
+    fn the_socket_lives_in_its_own_folder_inside_the_state_directory() {
         let path = socket_path().expect("a home directory");
 
         assert!(path.ends_with(format!(
-            "{}/{}",
+            "{}/{}/{}",
             APP_DIR,
+            SOCKET_DIR,
             socket_file_name(std::process::id())
         )));
+        assert_eq!(
+            socket_directory().and_then(Path::file_name),
+            Some(std::ffi::OsStr::new(SOCKET_DIR))
+        );
     }
 
     #[test]
