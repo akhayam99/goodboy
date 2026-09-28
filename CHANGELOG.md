@@ -41,6 +41,10 @@ Each question is one card: who asks, whether it blocks, the question and its ans
 
 The Questions view lists every question waiting on you next to the one you are answering, and `j` and `k` move through the list. Scrolled up in a transcript, the pill reads 1 question waiting and brings its card back into view.
 
+### Fixed
+
+- What's new in the update popover now shows every release the update brings, marked In the update, not only the one you have. <!-- gb area=app -->
+
 ## Goodboy v0.12.3
 
 Link any tracker item to a session with `L`, copy a worktree path from `Cmd+K`, and open or undo a decision right where it sits.
