@@ -1079,6 +1079,35 @@ discarded read as three answers instead of one long list.
 What "empty" means, and the copy rule for it, are product rules and live in
 [DESIGN.md](../../DESIGN.md).
 
+## Workspace chat
+
+The chat page (`features/workspace-chat/components/ChatStudio`) is a studio
+on `StudioRailLayout`: the chat list is the rail on `chrome`, one
+conversation is the wrapped sheet, and "Turn into work" is the
+`DrawerColumn` drawer beside it, never a dialog.
+
+- **List rows** are `InteractiveRow`s: title `text-label`, the last answer
+  as a `text-secondary` snippet, time as `text-meta` on the right. Pin and
+  Archive are ghost `IconButton`s that replace the time on hover. Groups are
+  `Eyebrow` headings (Pinned, Today, This week, Idle). An idle row keeps its
+  shape and only drops a text step (`faint` title, `disabled` snippet); a
+  group action ("Archive idle") is a quiet text button at the end of its
+  heading, and its Undo line takes the group's place.
+- **The conversation** is one `max-w-2xl` column. The question is a `bg-subtle`
+  bubble on the right in `text-prose`; the answer is `Markdown` in
+  `text-prose` with no bubble. Under it, in order: `Read N files` (a quiet
+  disclosure listing paths in `text-code`), then Copy and "Start work from
+  here". A streaming answer with no text yet shows a pulsing `StatusDot` and
+  "Reading {workspace}", never a spinner.
+- **The header** holds the chat title as `text-heading`, three
+  `border-soft` chips (workspace and project count, Read-only, the model with
+  its provider glyph) that hide below `@3xl/chat`, and one secondary
+  `Start work` button.
+- **The composer** is the only pinned row: a `bg-subtle` box with the
+  textarea, the model menu (provider glyph, never a sparkle), the Enter hint
+  from `@2xl/chat`, and a square send button that turns into Stop while an
+  answer streams.
+
 ## Motion registry
 
 Eight animations, one meaning each. Transition keyframes (`fade-in`,
