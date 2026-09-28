@@ -13,7 +13,7 @@ use crate::live_child::{
 };
 use crate::turn_backlog::{AttachSnapshot, TurnBacklog};
 
-const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
+pub(crate) const MAX_TURN_LINE_BYTES: usize = 64 * 1024 * 1024;
 
 #[derive(Debug, Error)]
 pub enum TurnError {
@@ -162,7 +162,7 @@ pub struct TurnEventEnvelope {
 pub const EVENT_NAME: &str = "turn_event";
 
 /// Per-binary CLI flag set. Unknown binaries fall through to claude.
-fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
+pub(crate) fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
     let bin = std::path::Path::new(binary)
         .file_name()
         .and_then(|s| s.to_str())
@@ -366,7 +366,7 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
     }
 }
 
-struct SpawnOneArgs<'a> {
+pub(crate) struct SpawnOneArgs<'a> {
     pub run_id: &'a str,
     pub binary: &'a str,
     pub model: &'a str,
@@ -639,13 +639,13 @@ pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Resu
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum CappedLine {
+pub(crate) enum CappedLine {
     Line,
     Eof,
     Overflow,
 }
 
-fn read_capped_line<R: BufRead>(
+pub(crate) fn read_capped_line<R: BufRead>(
     reader: &mut R,
     buf: &mut Vec<u8>,
     cap: usize,
