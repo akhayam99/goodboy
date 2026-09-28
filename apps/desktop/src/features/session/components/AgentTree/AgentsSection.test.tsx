@@ -232,6 +232,7 @@ vi.mock('../../agent-kind', () => ({
 }));
 
 import { AgentsSection } from './AgentsSection';
+import { isOpenAgentReveal } from '../AgentDetailPane/agentOpenTab';
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const SESSION_ID = 'session-1' as SessionId;
@@ -380,7 +381,7 @@ describe('AgentsSection collapse defaults', () => {
     const navigate = vi.fn();
     h.state.navigate = navigate;
     h.state.sessionPhaseRuns = { [SESSION_ID]: [buildAgent({ id: 'agent-1' as AgentId })] };
-    const reveal = vi.fn();
+    const reveal = vi.fn((event: Event) => isOpenAgentReveal(event));
     window.addEventListener('goodboy:reveal-chat', reveal);
     render(<AgentsSection task={buildSession()} />);
 
@@ -390,6 +391,7 @@ describe('AgentsSection collapse defaults', () => {
       to: { at: 'agent', sessionId: SESSION_ID, agentId: 'agent-1' },
     });
     expect(reveal).toHaveBeenCalled();
+    expect(reveal.mock.results.map((result) => result.value)).toEqual([true]);
     window.removeEventListener('goodboy:reveal-chat', reveal);
   });
 

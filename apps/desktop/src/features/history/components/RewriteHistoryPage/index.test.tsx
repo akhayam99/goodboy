@@ -7,6 +7,7 @@ import {
   combineInto,
   initialPlanItems,
   moveAbove,
+  resetStep,
   setCombineMode,
   setVerb,
 } from '../../historyPlan';
@@ -240,7 +241,22 @@ describe('RewriteHistoryPage', () => {
     fireEvent.click(within(row(b)).getByRole('button', { name: 'Remove' }));
     expect(lastItems(actions)).toEqual(setVerb({ items: LEDGER_PRESET, sha: b, verb: 'drop' }));
     expect(within(row(x)).getByRole('button', { name: 'Keep' })).toBeDefined();
-    expect(within(row(e)).getByRole('button', { name: 'Separate' })).toBeDefined();
+    const folded = within(row(e));
+    expect(folded.getAllByRole('button', { name: 'Separate' })).toHaveLength(1);
+    expect(folded.queryByRole('button', { name: 'Rename' })).toBeNull();
+    expect(folded.getByRole('button', { name: /More for/ })).toBeDefined();
+  });
+
+  it('offers keep title, keep both and separate as one control on a folded row', () => {
+    const actions = setup({ items: LEDGER_PRESET });
+    const control = within(within(row(e)).getByRole('group', { name: 'Where this commit goes' }));
+    expect(control.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Keep title',
+      'Keep both',
+      'Separate',
+    ]);
+    fireEvent.click(control.getByRole('button', { name: 'Separate' }));
+    expect(lastItems(actions)).toEqual(resetStep({ items: LEDGER_PRESET, sha: e }));
   });
 
   it('opens the rename editor with R and undoes the last edit with command Z', () => {
@@ -257,8 +273,8 @@ describe('RewriteHistoryPage', () => {
   it('switches a fold between keep title and keep both on the row and on its change', () => {
     const folded = combineInto({ items: BASE, sha: f, target: a, mode: 'fixup' });
     const actions = setup({ items: folded });
-    const switches = screen.getAllByRole('group', { name: 'What to keep' });
-    expect(switches).toHaveLength(2);
+    expect(screen.getAllByRole('group', { name: 'Where this commit goes' })).toHaveLength(1);
+    expect(screen.getAllByRole('group', { name: 'What to keep' })).toHaveLength(1);
     fireEvent.click(within(row(f)).getByRole('button', { name: 'Keep both' }));
     expect(lastItems(actions)).toEqual(setCombineMode({ items: folded, sha: f, mode: 'squash' }));
   });
@@ -267,6 +283,8 @@ describe('RewriteHistoryPage', () => {
     setup({ items: LEDGER_PRESET });
     fireEvent.pointerEnter(row(d));
     expect(row(d).dataset.highlighted).toBe('true');
+    expect(row(e).dataset.highlighted).toBe('true');
+    expect(row(c).dataset.highlighted).toBeUndefined();
     expect(
       document.querySelector(`[data-after-node="${d}"]`)?.getAttribute('data-highlighted'),
     ).toBe('true');
@@ -277,6 +295,31 @@ describe('RewriteHistoryPage', () => {
     fireEvent.pointerEnter(document.querySelector(`[data-edit="drop:${x}"]`) as Element);
     expect(row(x).dataset.highlighted).toBe('true');
     expect(row(d).dataset.highlighted).toBeUndefined();
+  });
+
+  it('lights the whole group from any member and from the node in After Apply', () => {
+    const three = [f, e, x].reduce(
+      (items, sha) => combineInto({ items, sha, target: d, mode: 'fixup' }),
+      BASE,
+    );
+    setup({ items: three });
+    const lit = () =>
+      [...document.querySelectorAll('[data-history-row][data-highlighted="true"]')]
+        .map((node) => node.getAttribute('data-history-row'))
+        .sort();
+    const group = [d, x, e, f].sort();
+    fireEvent.pointerEnter(row(x));
+    expect(lit()).toEqual(group);
+    expect(
+      document.querySelector(`[data-after-node="${d}"]`)?.getAttribute('data-highlighted'),
+    ).toBe('true');
+    fireEvent.pointerLeave(row(x));
+    expect(lit()).toEqual([]);
+    fireEvent.pointerEnter(document.querySelector(`[data-after-node="${d}"]`) as Element);
+    expect(lit()).toEqual(group);
+    fireEvent.pointerLeave(document.querySelector(`[data-after-node="${d}"]`) as Element);
+    fireEvent.pointerEnter(row(b));
+    expect(lit()).toEqual([b]);
   });
 
   it('offers apply here only and apply and update online when online commits change', async () => {

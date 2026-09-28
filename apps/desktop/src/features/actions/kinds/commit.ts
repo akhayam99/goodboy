@@ -77,7 +77,6 @@ export const COMMIT_KIND: ObjectKindDefinition<CommitActionTarget, CommitFacts> 
       label: 'Separate',
       icon: Undo2,
       group: 'act',
-      slot: () => 'hover',
       description: () => 'Make it its own commit again',
       when: ({ facts }) => facts.isFolded,
       run: ({ facts }) => facts.onSeparate(),

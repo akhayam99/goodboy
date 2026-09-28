@@ -22,6 +22,8 @@ const LIVE: SessionFacts = {
   hasMount: true,
   branch: 'feat/stream-payout-export',
   worktreePath: '/worktrees/ledger-core',
+  mounts: [],
+  worktreePaths: ['/worktrees/ledger-core'],
   prUrl: 'https://example.test/harborline/ledger-core/pull/318',
 };
 
@@ -62,6 +64,8 @@ const view = ({ target, verbs, query }: RowsParams) =>
       scopeVerbs: verbs,
       scopeTitle: 'For this object',
       scopeKey: `${target.kind}:scope`,
+      parentVerbs: [],
+      parentTitle: null,
       frecency: EMPTY_FRECENCY,
       now: NOW,
     }),
@@ -132,8 +136,9 @@ describe('palette verbs follow the session state', () => {
       'Open in editor',
       'Rename',
       'Start agent',
-      'Link an issue',
+      'Link work',
       'Copy title',
+      'Copy worktree path',
       'Copy branch name',
       'Copy PR link',
       'Archive',
@@ -142,14 +147,21 @@ describe('palette verbs follow the session state', () => {
   });
 
   it('hides Diff and the editor on a session with no project until they are searched', () => {
-    const facts = { ...LIVE, hasMount: false, branch: null, worktreePath: null, prUrl: null };
+    const facts = {
+      ...LIVE,
+      hasMount: false,
+      branch: null,
+      worktreePath: null,
+      worktreePaths: [],
+      prUrl: null,
+    };
 
     expect(sessionView({ facts, query: '' })).toEqual([
       'Open Review',
       'Open Terminal',
       'Rename',
       'Start agent',
-      'Link an issue',
+      'Link work',
       'Copy title',
       'Archive',
       'Delete',
@@ -168,6 +180,7 @@ describe('palette verbs follow the session state', () => {
     expect(sessionView({ facts, query: '' })).toEqual([
       'Restore',
       'Copy title',
+      'Copy worktree path',
       'Copy branch name',
       'Copy PR link',
       'Delete',

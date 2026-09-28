@@ -110,3 +110,18 @@ export const historyRowMarks = ({
   }
   return marks;
 };
+
+export const historyGroupOf = ({
+  marks,
+  sha,
+}: {
+  readonly marks: ReadonlyMap<string, HistoryRowMark>;
+  readonly sha: string;
+}): ReadonlyArray<string> => {
+  const target = marks.get(sha)?.into?.target ?? sha;
+  const takesIn = marks.get(target)?.takesIn ?? [];
+  if (takesIn.length === 0) {
+    return [sha];
+  }
+  return [target, ...takesIn.map((taken) => taken.sha)];
+};

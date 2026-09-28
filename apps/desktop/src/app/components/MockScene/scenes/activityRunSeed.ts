@@ -325,6 +325,16 @@ const DECISIONS: ReadonlyArray<SessionDecision> = [
     closedByAgentId: BACKFILL_AGENT_ID,
     updatedAt: at({ day: DAY_TWO, time: '09:10:00' }),
   }),
+  decision({
+    number: 9,
+    text: 'Email a copy of the retry log to the on-call engineer every hour',
+    author: 'user',
+    agentId: null,
+    turnOrdinal: null,
+    status: 'withdrawn',
+    closedBy: 'user',
+    updatedAt: at({ day: DAY_TWO, time: '08:30:00' }),
+  }),
 ];
 
 const WORKFLOW_STEPS: ReadonlyArray<Step> = [

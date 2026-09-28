@@ -94,7 +94,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Usage limits',
-        desc: 'A top-bar chip shows the 5-hour window and the week for Claude and Codex, warns at 80%, and at 100% says when it comes back.',
+        desc: 'The top bar shows each provider as its icon and two bars, the 5-hour window and the week. A bar changes color as it fills, and the tooltip gives the percentage and when it resets.',
       },
       {
         term: 'Use reset',
@@ -221,7 +221,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Decisions',
-        desc: 'Each decision gets a number and a byline. A decision Goodboy records keeps why it was made, shown under it in the context drawer. Replacing or withdrawing one needs a reason that stays next to it.',
+        desc: 'Each decision gets a number and a byline. A decision Goodboy records keeps why it was made. Click one in the context drawer to open it and edit or remove it. A removal takes effect at once and can be undone while the drawer stays open.',
       },
       {
         term: 'Running summary',
@@ -255,7 +255,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Start from anything',
-        desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted. Link to a session attaches the item to one you already have.',
+        desc: 'Launch a session from an issue, a Slack thread or an error, with the brief already drafted. Link to a session attaches the item to one you already have, and Link work on a session, or L, searches your trackers from there.',
       },
       {
         term: 'Slack',
@@ -336,7 +336,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Rewrite history',
-        desc: 'Drag a commit to move it or onto another to fold it in, or rename, squash or remove it from the row. Now and After Apply sit side by side. Apply tries the plan on a temporary copy, and your branch moves only when it comes out clean.',
+        desc: 'Drag a commit to move it or onto another to fold it in, or rename, squash or remove it from the row. A folded commit chooses Keep title, Keep both or Separate. Now and After Apply sit side by side. Apply tries the plan on a temporary copy, and your branch moves only when it comes out clean.',
       },
       {
         term: 'Conflicts ahead of time',
@@ -506,7 +506,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
     points: [
       {
         term: 'Command palette',
-        desc: 'Opens on what you are looking at, with its actions first. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row.',
+        desc: 'Opens on what you are looking at, with its actions first. Type a few letters to find sessions of every workspace, agents, plans, pages, scripts and actions. The right arrow shows every action of a row. Copy worktree path copies where a session works.',
       },
       {
         term: 'Search',

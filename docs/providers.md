@@ -246,9 +246,10 @@ pays for every turn.
   After two minutes, **Run in my terminal** runs the same command in your own
   terminal. Goodboy notices when it finishes
 - **How close am I to a limit?** Each Limits chip in the top bar stacks two bars:
-  the 5-hour window above, the week below. From 80% it adds the worse window's
-  number with its short name (`5h 86%`, `wk 94%`). Hover one for every window and
-  its reset, click it for the provider page. Claude's numbers update at boot,
+  the 5-hour window above, the week below. A bar turns amber from 80%, red and
+  full when the window is used up, and fades when the figures are old; the chip
+  shows no number. Hover one for every window with its percentage and reset,
+  click it for the provider page. A provider with no figures yet sits under `+N`. Claude's numbers update at boot,
   every 15 minutes, and during a turn
 - **Rate limit reached**: every turn counts against your plan's limit. Wait for the
   reset (about 5 hours on Claude Max), or let the fallback order send the next turn to

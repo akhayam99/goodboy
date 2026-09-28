@@ -5,6 +5,7 @@ import type { CombineMode } from '../../historyPlan';
 type Props = {
   readonly mode: CombineMode;
   readonly onChange: (mode: CombineMode) => void;
+  readonly onSeparate?: () => void;
   readonly isDisabled?: boolean;
 };
 
@@ -21,10 +22,13 @@ const OPTIONS: ReadonlyArray<{
   { mode: 'squash', label: 'Keep both', hint: 'Combine (squash): keeps both commit messages.' },
 ];
 
-export const HistoryModeSwitch = ({ mode, onChange, isDisabled = false }: Props) => (
+const OPTION_CLASS = 'rounded-sm border px-2 text-secondary whitespace-nowrap';
+const IDLE_CLASS = 'border-transparent text-muted-foreground hover:text-foreground';
+
+export const HistoryModeSwitch = ({ mode, onChange, onSeparate, isDisabled = false }: Props) => (
   <span
     role="group"
-    aria-label="What to keep"
+    aria-label={onSeparate === undefined ? 'What to keep' : 'Where this commit goes'}
     className="inline-flex shrink-0 gap-px rounded-md border border-border-soft bg-fill p-0.5"
   >
     {OPTIONS.map((option) => {
@@ -41,16 +45,29 @@ export const HistoryModeSwitch = ({ mode, onChange, isDisabled = false }: Props)
             onChange(option.mode);
           }}
           className={cn(
-            'rounded-sm border px-2 text-secondary whitespace-nowrap',
+            OPTION_CLASS,
             FOCUS_RING,
-            isPressed
-              ? HISTORY_ACTION_CLASSES[option.mode].mark
-              : 'border-transparent text-muted-foreground hover:text-foreground',
+            isPressed ? HISTORY_ACTION_CLASSES[option.mode].mark : IDLE_CLASS,
           )}
         >
           {option.label}
         </button>
       );
     })}
+    {onSeparate === undefined ? null : (
+      <button
+        type="button"
+        title="Make it its own commit again"
+        aria-pressed={false}
+        disabled={isDisabled}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSeparate();
+        }}
+        className={cn(OPTION_CLASS, FOCUS_RING, IDLE_CLASS)}
+      >
+        Separate
+      </button>
+    )}
   </span>
 );

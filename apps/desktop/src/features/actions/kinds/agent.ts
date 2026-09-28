@@ -10,6 +10,7 @@ import {
   isTurnStateLive,
 } from '../../session/agent-lifecycle';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
+import { OPEN_AGENT_INTENT } from '../../session/components/AgentDetailPane/agentOpenTab';
 import type { ActionEnv, AgentActionTarget, ObjectKindDefinition } from '../types';
 
 export type AgentFacts = {
@@ -115,7 +116,10 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       when: ({ facts }) => !facts.isClosedByUser,
       run: ({ facts, env }) => {
         openAgent({ env, facts });
-        dispatchAfterNavigation({ name: 'goodboy:reveal-chat' });
+        dispatchAfterNavigation({
+          name: 'goodboy:reveal-chat',
+          detail: { intent: OPEN_AGENT_INTENT },
+        });
       },
     },
     {

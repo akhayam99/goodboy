@@ -53,7 +53,7 @@ import {
   targetOf,
   type CombineMode,
 } from '../../historyPlan';
-import { historyRowMarks, type HistoryAction } from '../../historyRowMarks';
+import { historyGroupOf, historyRowMarks, type HistoryAction } from '../../historyRowMarks';
 import { REWRITE_HISTORY_TITLE } from '../../rewriteHistoryTitle';
 import { useHistoryDrag } from '../../useHistoryDrag';
 import { useRowPositions } from '../../useRowPositions';
@@ -245,17 +245,18 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
   const stopSha = run !== null && run.phase === 'stopped' ? (run.stop?.sha ?? null) : null;
   const focus: Hover | null =
     hover ?? (stopSha === null || isDone ? null : { kind: 'row', sha: stopSha });
+  const isPointed = hover !== null && !isDone;
   const highlightedRows = useMemo(() => {
     const hover = focus;
     if (hover === null) {
       return new Set<string>();
     }
     if (hover.kind === 'row') {
-      return new Set([hover.sha]);
+      return new Set(isPointed ? historyGroupOf({ marks, sha: hover.sha }) : [hover.sha]);
     }
     const edit = edits.find((candidate) => candidate.key === hover.key);
     return new Set(edit === undefined ? [] : rowsOfEdit({ edit }));
-  }, [edits, focus]);
+  }, [edits, focus, isPointed, marks]);
   const highlightedEdits = useMemo(() => {
     const hover = focus;
     if (hover === null) {
