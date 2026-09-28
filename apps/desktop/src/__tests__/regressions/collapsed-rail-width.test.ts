@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
+import { PLAIN_INSET } from '../../shared/hooks/useTitlebarInset';
 
 const SOURCE_ROOT = join(__dirname, '..', '..');
 const SPACING_PX = 4;
@@ -14,6 +15,7 @@ const IDENTITY_ROW = readFileSync(
   join(SOURCE_ROOT, 'features', 'workspace', 'components', 'WorkspaceIdentityRow', 'index.tsx'),
   'utf8',
 );
+const STYLES = readFileSync(join(SOURCE_ROOT, 'styles.css'), 'utf8');
 const COLLAPSED_RAIL = readFileSync(
   join(
     SOURCE_ROOT,
@@ -57,11 +59,14 @@ describe('workspace tile and collapsed rail axis', () => {
 
     const tileCenter =
       spacingOf({ className: bar, prefix: 'pl' }) +
+      Number.parseFloat(PLAIN_INSET) +
       spacingOf({ className: trigger, prefix: 'px' }) +
       spacingOf({ className: tile, prefix: 'size' }) / 2;
 
+    expect(tileCenter).toBe(22);
     expect(tileCenter).toBe(COLLAPSED_RAIL_WIDTH / 2);
     expect(row).toContain('ml-(--titlebar-inset)');
+    expect(STYLES).toContain(`--titlebar-inset: ${PLAIN_INSET};`);
   });
 
   it('sizes the rail from the shell constant and centers its buttons', () => {
