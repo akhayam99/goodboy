@@ -12,11 +12,8 @@ export const WorkflowRunScene = () => {
   const [session] = useState(() => (isParallelRun() ? PARALLEL_SESSION : FLOW_SESSION));
 
   useEffect(() => {
-    if (session === PARALLEL_SESSION) {
-      seedWorkflowRunParallel();
-    } else {
-      seedWorkflowRun();
-    }
+    const seed = session === PARALLEL_SESSION ? seedWorkflowRunParallel : seedWorkflowRun;
+    seed();
     seedShellChrome({
       session,
       siblings: SESSIONS.filter((session) => session.id !== FLOW_SESSION_ID),
