@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { StudioRailLayout } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import { useAppStore } from '../../../../store';
+import type { ChatHandoff } from '../../chatHandoff';
 import { ChatList } from '../ChatList';
 import { ChatRoom } from '../ChatRoom';
 
@@ -14,11 +15,15 @@ type Props = {
 };
 
 const NO_CHATS: ReadonlyArray<ChatSummary> = [];
+const NO_HANDOFFS: ReadonlyArray<ChatHandoff> = [];
 
 export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   const chats = useAppStore((state) => state.chatsByWorkspace[workspaceId] ?? NO_CHATS);
   const loadChats = useAppStore((state) => state.loadChats);
   const amendStudio = useAppStore((state) => state.amendStudio);
+  const [handoffs, setHandoffs] = useState<Readonly<Record<string, ReadonlyArray<ChatHandoff>>>>(
+    {},
+  );
 
   useEffect(() => {
     void loadChats({ workspaceId });
@@ -61,6 +66,18 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
               workspaceId={workspaceId}
               chat={activeChat}
               onCreated={select}
+              handoffs={
+                activeChat === null ? NO_HANDOFFS : (handoffs[activeChat.id] ?? NO_HANDOFFS)
+              }
+              onHandoff={(handoff) => {
+                if (activeChat === null) {
+                  return;
+                }
+                setHandoffs((current) => ({
+                  ...current,
+                  [activeChat.id]: [...(current[activeChat.id] ?? []), handoff],
+                }));
+              }}
             />
           }
         />

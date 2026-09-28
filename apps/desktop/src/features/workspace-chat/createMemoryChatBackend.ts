@@ -7,7 +7,7 @@ import type {
   ProviderRunId,
   WorkspaceId,
 } from '@goodboy/types';
-import type { ChatBackend } from './chatBackend';
+import type { ChatBackend, SummarizeForWorkParams } from './chatBackend';
 import type { ChatTurnOutcome, RunChatTurnParams } from './runChatTurn';
 
 const PREVIEW_LENGTH = 240;
@@ -27,9 +27,12 @@ export type ChatSeedParams = {
   readonly workspaceId: WorkspaceId;
 };
 
+export type ChatSummarizer = (params: SummarizeForWorkParams) => Promise<string>;
+
 type Params = {
   readonly respond: ChatResponder;
   readonly seed?: (params: ChatSeedParams) => ChatSeed;
+  readonly summarize?: ChatSummarizer;
 };
 
 type MessageParams = {
@@ -50,7 +53,7 @@ type ChatRef = {
   readonly chatId: ChatId;
 };
 
-export const createMemoryChatBackend = ({ respond, seed }: Params): ChatBackend => {
+export const createMemoryChatBackend = ({ respond, seed, summarize }: Params): ChatBackend => {
   const chats = new Map<ChatId, Chat>();
   const messages = new Map<ChatId, ReadonlyArray<ChatMessage>>();
   const seeded = new Set<WorkspaceId>();
@@ -171,5 +174,6 @@ export const createMemoryChatBackend = ({ respond, seed }: Params): ChatBackend 
     cancelTurn: async ({ runId }) => {
       cancelled.add(runId);
     },
+    summarizeForWork: async (params) => (summarize === undefined ? '' : summarize(params)),
   };
 };

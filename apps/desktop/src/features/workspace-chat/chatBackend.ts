@@ -58,6 +58,13 @@ export type CancelTurnParams = {
   readonly runId: ProviderRunId;
 };
 
+export type SummarizeForWorkParams = {
+  readonly provider: ProviderId;
+  readonly model: ModelKey;
+  readonly systemPrompt: string;
+  readonly userMessage: string;
+};
+
 export type ChatBackend = {
   readonly listChats: (params: ListChatsParams) => Promise<ReadonlyArray<ChatSummary>>;
   readonly listMessages: (params: ChatRefParams) => Promise<ReadonlyArray<ChatMessage>>;
@@ -71,4 +78,5 @@ export type ChatBackend = {
   readonly settleStreaming: (params: SettleParams) => Promise<number>;
   readonly runTurn: (params: RunChatTurnParams) => Promise<ChatTurnOutcome>;
   readonly cancelTurn: (params: CancelTurnParams) => Promise<void>;
+  readonly summarizeForWork: (params: SummarizeForWorkParams) => Promise<string>;
 };

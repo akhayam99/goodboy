@@ -14,6 +14,7 @@ import { tauriDatabase } from '../../shared/lib/db';
 import { cancelChatTurn } from './cancelChatTurn';
 import type { ChatBackend } from './chatBackend';
 import { runChatTurn } from './runChatTurn';
+import { summarizeForWorkViaAux } from './summarizeForWorkViaAux';
 
 export const tauriChatBackend: ChatBackend = {
   listChats: (params) => listChats({ db: tauriDatabase, ...params }),
@@ -28,4 +29,5 @@ export const tauriChatBackend: ChatBackend = {
   settleStreaming: ({ now }) => settleStreamingChatMessages({ db: tauriDatabase, now }),
   runTurn: runChatTurn,
   cancelTurn: cancelChatTurn,
+  summarizeForWork: summarizeForWorkViaAux,
 };

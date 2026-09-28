@@ -1,18 +1,30 @@
 import { useLayoutEffect, useRef } from 'react';
 import { ScrollFade } from '@goodboy/ui';
 import type { ChatMessage, ChatMessageId } from '@goodboy/types';
+import type { ChatHandoff } from '../../chatHandoff';
 import { ChatAssistantMessage } from './ChatAssistantMessage';
+import { ChatHandoffNote } from './ChatHandoffNote';
 import { ChatUserMessage } from './ChatUserMessage';
 
 type Props = {
   readonly messages: ReadonlyArray<ChatMessage>;
   readonly workspaceName: string;
   readonly onStartWork?: (messageId: ChatMessageId) => void;
+  readonly handoffs?: ReadonlyArray<ChatHandoff>;
+  readonly onOpenHandoff?: (handoff: ChatHandoff) => void;
 };
+
+const NO_HANDOFFS: ReadonlyArray<ChatHandoff> = [];
 
 const STICK_PX = 48;
 
-export const ChatThread = ({ messages, workspaceName, onStartWork }: Props) => {
+export const ChatThread = ({
+  messages,
+  workspaceName,
+  onStartWork,
+  handoffs = NO_HANDOFFS,
+  onOpenHandoff,
+}: Props) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const isPinnedRef = useRef(true);
 
@@ -22,7 +34,7 @@ export const ChatThread = ({ messages, workspaceName, onStartWork }: Props) => {
       return;
     }
     viewport.scrollTop = viewport.scrollHeight;
-  }, [messages]);
+  }, [messages, handoffs]);
 
   const onScroll = (): void => {
     const viewport = viewportRef.current;
@@ -52,6 +64,13 @@ export const ChatThread = ({ messages, workspaceName, onStartWork }: Props) => {
             )}
           </li>
         ))}
+        {onOpenHandoff === undefined
+          ? null
+          : handoffs.map((handoff) => (
+              <li key={handoff.id} className="flex flex-col">
+                <ChatHandoffNote handoff={handoff} onOpen={onOpenHandoff} />
+              </li>
+            ))}
       </ol>
     </ScrollFade>
   );

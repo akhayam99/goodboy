@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Play } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import type { ChatId, ChatMessage, ChatSummary, WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
+import { Button, DrawerColumn } from '@goodboy/ui';
+import type { ChatId, ChatMessage, ChatMessageId, ChatSummary, WorkspaceId } from '@goodboy/types';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { sessionPlace, useAppStore } from '../../../../store';
+import type { ChatHandoff } from '../../chatHandoff';
 import { chatModelLabel } from '../../chatModelLabel';
 import { chatSuggestions } from '../../chatSuggestions';
 import { defaultChatModel, type ChatModelChoice } from '../../defaultChatModel';
 import { ChatComposer } from '../ChatComposer';
+import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
 import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
 import { ChatThread } from './ChatThread';
@@ -14,13 +19,20 @@ type Props = {
   readonly workspaceId: WorkspaceId;
   readonly chat: ChatSummary | null;
   readonly onCreated: (chatId: ChatId) => void;
+  readonly handoffs: ReadonlyArray<ChatHandoff>;
+  readonly onHandoff: (handoff: ChatHandoff) => void;
+};
+
+type WorkRequest = {
+  readonly anchorMessageId: ChatMessageId | null;
+  readonly key: number;
 };
 
 const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
 export const NEW_CHAT_HEADING = 'New chat';
 
-export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
+export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: Props) => {
   const chatId = chat?.id ?? null;
   const workspaceName = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
@@ -50,7 +62,9 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   const sendChatMessage = useAppStore((state) => state.sendChatMessage);
   const stopChatReply = useAppStore((state) => state.stopChatReply);
   const setChatModel = useAppStore((state) => state.setChatModel);
+  const navigate = useAppStore((state) => state.navigate);
   const [draftModel, setDraftModel] = useState<ChatModelChoice | null>(null);
+  const [work, setWork] = useState<WorkRequest | null>(null);
 
   useEffect(() => {
     if (chatId === null || messages !== undefined) {
@@ -85,9 +99,16 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   };
 
   const shown = messages ?? NO_MESSAGES;
+  const canStartWork = shown.some(
+    (message) => message.role === 'assistant' && message.status === 'done',
+  );
+  const openWork = (anchorMessageId: ChatMessageId | null): void =>
+    setWork((current) => ({ anchorMessageId, key: (current?.key ?? 0) + 1 }));
+  const openSession = (handoff: ChatHandoff): void =>
+    navigate({ to: sessionPlace({ sessionId: handoff.sessionId }) });
   const modelLabel = chatModelLabel({ provider: model.provider, model: model.model });
 
-  return (
+  const main = (
     <section
       aria-label={chat?.title ?? NEW_CHAT_HEADING}
       className="@container/chat flex h-full min-h-0 min-w-0 flex-1 flex-col bg-background"
@@ -98,6 +119,20 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
         projectCount={projectNames.length}
         provider={model.provider}
         modelLabel={modelLabel}
+        action={
+          chat === null ? null : (
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={!canStartWork}
+              aria-expanded={work !== null}
+              onClick={() => openWork(null)}
+            >
+              <Play size={ICON_SIZE.row} aria-hidden />
+              Start work
+            </Button>
+          )
+        }
       />
       {shown.length === 0 ? (
         <div className="flex min-h-0 flex-1 flex-col px-6">
@@ -109,7 +144,13 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
           />
         </div>
       ) : (
-        <ChatThread messages={shown} workspaceName={workspaceName} />
+        <ChatThread
+          messages={shown}
+          workspaceName={workspaceName}
+          onStartWork={openWork}
+          handoffs={handoffs}
+          onOpenHandoff={openSession}
+        />
       )}
       <div className="shrink-0 px-6 pb-3.5 pt-1.5">
         <ChatComposer
@@ -129,5 +170,29 @@ export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
         />
       </div>
     </section>
+  );
+
+  return (
+    <DrawerColumn
+      className="h-full"
+      main={main}
+      drawerKey={String(work?.key ?? 0)}
+      ariaLabel={TURN_INTO_WORK_LABEL}
+      resizeLabel="Resize the work panel"
+      drawer={
+        work === null || chat === null ? null : (
+          <TurnIntoWorkPanel
+            chat={chat}
+            messages={shown}
+            anchorMessageId={work.anchorMessageId}
+            onClose={() => setWork(null)}
+            onDone={(handoff) => {
+              setWork(null);
+              onHandoff(handoff);
+            }}
+          />
+        )
+      }
+    />
   );
 };

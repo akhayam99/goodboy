@@ -560,6 +560,16 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 - **Storage.** `chats` and `chat_messages` (m212). A chat stores its model as a
   catalog key. Idle is derived: a chat with no activity for seven days moves
   to the idle group, and only the user archives it.
+- **Turn into work.** "Start work" drafts a brief (title, goal, what we know,
+  files, project) with one `summarize_session` call through `runAuxOneShot`
+  on the chat's own provider and model, with no tools and no working folder
+  (`summarizeChatForWork.ts`). The model must answer one JSON object; anything
+  else, a failure or 45 seconds without an answer falls back to a brief drafted
+  from the last answer (`draftWorkBrief`). The brief then starts a session
+  (`createSession` with the goal and a `generic` first agent whose kickoff is
+  the brief) or goes into an existing session as the next message
+  (`sendTurn`). Nothing runs until the user presses the button.
 - **Mock mode.** With `VITE_GOODBOY_MOCK=1` the slice runs on an in-memory
-  backend with Harborline chats and a fake streaming responder, so scenes can
-  send and stop replies.
+  backend with Harborline chats, a fake streaming responder and a canned
+  brief for the consent and retry chats, so scenes can send, stop and turn a
+  chat into work.
