@@ -17,6 +17,8 @@ const TIMEOUT_MS = 240000;
 const MIN_DENSITY = 2;
 const HERO_FRAME_VISIBLE_PX = 380;
 const INTER_PROBE = '500 64px Inter';
+const REPO_BLOB_PREFIX = 'https://github.com/akhayam99/goodboy/blob/main/';
+const FEATURE_GUIDE_URL = `${REPO_BLOB_PREFIX}FEATURES.md`;
 
 const VIEWPORTS = [
   {
@@ -138,6 +140,26 @@ const BRAND_SOURCES_PATH = resolve(WEBSITE_DIRECTORY, 'src/components/brandIcons
 const readBrandSources = () =>
   existsSync(BRAND_SOURCES_PATH) ? JSON.parse(readFileSync(BRAND_SOURCES_PATH, 'utf8')) : [];
 
+const githubSlug = (text) =>
+  text
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\- ]+/g, '')
+    .replace(/\s+/g, '-');
+
+const readFeatureAnchors = () => {
+  const seen = new Map();
+  return readFileSync(resolve(WEBSITE_DIRECTORY, '..', 'FEATURES.md'), 'utf8')
+    .split('\n')
+    .filter((line) => /^#{2,3} /.test(line))
+    .map((line) => githubSlug(line.replace(/^#{2,3} /, '')))
+    .map((slug) => {
+      const count = seen.get(slug) ?? 0;
+      seen.set(slug, count + 1);
+      return count === 0 ? slug : `${slug}-${count}`;
+    });
+};
+
 const PAGE_PROBE = `(async () => {
   await document.fonts.ready;
   const root = document.documentElement;
@@ -229,6 +251,25 @@ const PAGE_PROBE = `(async () => {
       brand: node.closest('svg').getAttribute('data-brand'),
       d: node.getAttribute('d'),
     })),
+    docLinks: [
+      ...document.querySelectorAll('.textLink, .navLinks a, nav[aria-label="Docs"] a'),
+    ].map((node) => node.getAttribute('href')),
+    brandInkColors: (() => {
+      const inkProbe = document.createElement('span');
+      inkProbe.style.color = 'var(--brand-ink)';
+      inkProbe.style.position = 'absolute';
+      inkProbe.style.opacity = '0';
+      document.body.appendChild(inkProbe);
+      const inkColor = getComputedStyle(inkProbe).color;
+      inkProbe.remove();
+      return [...document.querySelectorAll('.provider svg[data-brand]')]
+        .filter((node) => node.getAttribute('fill') === 'currentColor')
+        .map((node) => ({
+          brand: node.getAttribute('data-brand'),
+          color: getComputedStyle(node).color,
+          ink: inkColor,
+        }));
+    })(),
   };
 })()`;
 
@@ -248,7 +289,7 @@ const scrollThrough = ({ evaluate }) =>
     return true;
   })()`);
 
-const checkRun = ({ viewport, theme, probe, groups, audiences, brands }) => {
+const checkRun = ({ viewport, theme, probe, groups, audiences, brands, featureAnchors }) => {
   const label = `${viewport.name} ${theme}`;
   const failures = [];
   const fail = (message) => failures.push(`${label}: ${message}`);
@@ -308,6 +349,22 @@ const checkRun = ({ viewport, theme, probe, groups, audiences, brands }) => {
       fail(`provider mark ${mark.brand} differs from simple-icons ${source.slug}`);
     }
   });
+  probe.brandInkColors
+    .filter((mark) => mark.color === mark.ink)
+    .forEach((mark) => fail(`provider mark ${mark.brand} uses the text color`));
+  probe.docLinks.forEach((href) => {
+    if (!href.startsWith(REPO_BLOB_PREFIX)) {
+      return;
+    }
+    if (!href.startsWith(FEATURE_GUIDE_URL)) {
+      fail(`doc link ${href} does not point to FEATURES.md`);
+      return;
+    }
+    const anchor = href.includes('#') ? href.split('#')[1] : null;
+    if (anchor !== null && !featureAnchors.includes(anchor)) {
+      fail(`doc link ${href} has no matching FEATURES.md anchor`);
+    }
+  });
   return failures;
 };
 
@@ -355,6 +412,7 @@ const run = async () => {
   const groups = readHeadings({ file: 'FEATURES.md' });
   const audiences = readHeadings({ file: 'README.md' });
   const brands = readBrandSources();
+  const featureAnchors = readFeatureAnchors();
   const chrome = await launchChrome();
   const timer = setTimeout(() => {
     console.error('check-page: timed out');
@@ -388,7 +446,7 @@ const run = async () => {
           const probe = await cdp.evaluate(PAGE_PROBE);
           heights.push(`${page} ${viewport.name} ${theme}: ${probe.height} px`);
           failures.push(
-            ...checkRun({ viewport, theme, probe, groups, audiences, brands }).map(
+            ...checkRun({ viewport, theme, probe, groups, audiences, brands, featureAnchors }).map(
               (failure) => `${page} ${failure}`,
             ),
           );

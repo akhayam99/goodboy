@@ -34,6 +34,22 @@
   color: #94a3b8;
 }
 
+.provider svg[data-brand='codex'] {
+  color: #10a37f;
+}
+
+.provider svg[data-brand='cursor'] {
+  color: #f54e00;
+}
+
+.provider svg[data-brand='opencode'] {
+  color: #007aff;
+}
+
+.provider svg[data-brand='moonshot'] {
+  color: #007cff;
+}
+
 .providerBelt {
   display: none;
 }
