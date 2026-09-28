@@ -137,13 +137,13 @@ describe('usePrVerbs', () => {
     renderVerbs({});
     expect(screen.queryByRole('button', { name: 'Decline' })).toBeNull();
     openMenu();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Decline…' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Decline' }));
     expect(handlers.onDecline).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(handlers.onDecline).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Decline…' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Decline' }));
     fireEvent.click(screen.getByRole('button', { name: 'Confirm decline' }));
     await waitFor(() => expect(handlers.onDecline).toHaveBeenCalledTimes(1));
   });
@@ -159,6 +159,9 @@ describe('usePrVerbs', () => {
 
     expect(screen.queryByRole('button', { name: 'Merge' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Approve' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'More actions for #42' })).toBeNull();
+    openMenu();
+    expect(
+      screen.getAllByRole('menuitem').map((item) => item.getAttribute('data-menu-label')),
+    ).toEqual(['Copy #42']);
   });
 });
