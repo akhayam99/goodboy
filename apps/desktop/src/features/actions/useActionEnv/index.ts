@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../../../store';
-import { useToast } from '../../../app/components/Toast';
+import { useShowToast } from '../../../app/components/Toast';
 import { copyText } from '../copyText';
 import type { ActionEnv, ActionOrigin } from '../types';
 
@@ -10,7 +10,7 @@ type Params = {
 };
 
 export const useActionEnv = ({ origin, anchorKey = null }: Params): ActionEnv => {
-  const { showToast } = useToast();
+  const showToast = useShowToast();
   return useMemo<ActionEnv>(
     () => ({
       getState: useAppStore.getState,

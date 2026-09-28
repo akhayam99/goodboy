@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, ArtifactId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -106,6 +106,15 @@ export type WorkflowRunActionTarget = {
   readonly runId: WorkflowRunId;
 };
 
+export type PlanPartActionTarget = {
+  readonly kind: 'planPart';
+  readonly sessionId: SessionId;
+  readonly planId: ArtifactId;
+  readonly index: number;
+  readonly instructions: string;
+  readonly agentId: AgentId | null;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -116,6 +125,7 @@ export type ObjectTarget =
   | SessionsActionTarget
   | AgentActionTarget
   | WorkflowRunActionTarget
+  | PlanPartActionTarget
   | LinkActionTarget;
 
 export type ObjectKindId = ObjectTarget['kind'];

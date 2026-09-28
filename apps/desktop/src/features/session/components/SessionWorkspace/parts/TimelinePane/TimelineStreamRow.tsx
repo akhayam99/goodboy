@@ -1,4 +1,5 @@
 import type { KeyboardEvent, ReactNode } from 'react';
+import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import { Button, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
@@ -41,6 +42,7 @@ type Props = {
   readonly detail?: ReactNode;
   readonly detailHeight?: number;
   readonly expansion?: { readonly isExpanded: boolean; readonly controlsId: string } | null;
+  readonly contextMenu?: ObjectMenuTrigger;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -65,6 +67,7 @@ export const TimelineStreamRow = ({
   detail = null,
   detailHeight = 0,
   expansion = null,
+  contextMenu,
 }: Props) => {
   const hover = useHoverMarkViewed({
     sessionId,
@@ -121,6 +124,8 @@ export const TimelineStreamRow = ({
       style={{ height: item.height }}
       onMouseEnter={hover.onMouseEnter}
       onMouseLeave={hover.onMouseLeave}
+      onContextMenu={contextMenu?.onContextMenu}
+      onKeyDown={contextMenu?.onKeyDown}
     >
       <span
         className={cn('flex shrink-0 flex-col justify-end', TIMELINE_GUTTER)}

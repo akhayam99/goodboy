@@ -3,6 +3,7 @@ import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import type { AgentCardDensity } from './agentCardDensity';
 import type { AgentCardTone } from './agentCardTone';
+import type { ObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 const AGENT_CARD_TONE: Record<Exclude<AgentCardTone, 'default'>, Tone> = {
   running: 'info',
@@ -49,6 +50,7 @@ type Props = {
   readonly onRenameStart?: () => void;
   readonly onMouseEnter?: () => void;
   readonly onMouseLeave?: () => void;
+  readonly menu?: ObjectMenuTrigger;
 };
 
 export const AgentCard = ({
@@ -73,6 +75,7 @@ export const AgentCard = ({
   onRenameStart,
   onMouseEnter,
   onMouseLeave,
+  menu,
 }: Props) => (
   <li className="flex flex-col gap-1" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
     <div
@@ -82,8 +85,13 @@ export const AgentCard = ({
       aria-pressed={isInert ? undefined : isSelected}
       onClick={isInert ? undefined : onOpen}
       onDoubleClick={isInert || onRenameStart == null ? undefined : onRenameStart}
+      onContextMenu={isInert ? undefined : menu?.onContextMenu}
       onKeyDown={(event) => {
         if (isInert) {
+          return;
+        }
+        menu?.onKeyDown(event);
+        if (event.defaultPrevented) {
           return;
         }
         if (event.key !== 'Enter' && event.key !== ' ') {

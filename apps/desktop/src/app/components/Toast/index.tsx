@@ -165,6 +165,10 @@ export const useToast = (): ToastContextValue => {
   return ctx;
 };
 
+const NO_TOAST: ShowToast = () => undefined;
+
+export const useShowToast = (): ShowToast => useContext(ToastContext)?.showToast ?? NO_TOAST;
+
 export const useToastLift = ({ ref }: { ref: RefObject<HTMLElement | null> }) => {
   const lift = useContext(ToastLiftContext);
   const setLift = lift?.setLift;
