@@ -57,7 +57,7 @@ export const SearchScene = () => {
 
   return (
     <ToastProvider>
-      <main data-shot className="h-screen overflow-auto bg-background text-foreground">
+      <main data-shot className="h-screen overflow-hidden bg-background text-foreground">
         <div data-find-root className={PANE_RHYTHM.body}>
           <TranscriptFeed />
         </div>
