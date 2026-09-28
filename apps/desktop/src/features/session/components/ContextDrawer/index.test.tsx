@@ -202,10 +202,110 @@ describe('ContextDrawer', () => {
     expect(screen.getByText('Use event.id as idempotency key')).toBeDefined();
   });
 
-  it('withdraws, restores and adds decisions as yours', () => {
+  it('opens a decision on click, revealing Edit and Remove, and adds decisions as yours', () => {
+    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
+    const { container } = renderDrawer('decisions');
+    const actor = { author: 'user', agentId: null, turnOrdinal: null };
+
+    expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove decision 1' })).toBeNull();
+
+    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    expect(screen.getByRole('button', { name: 'Edit decision 1' })).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Remove decision 1' })).toBeDefined();
+
+    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
+
+    const field = screen.getByRole('textbox', { name: 'Add a decision' });
+    fireEvent.change(field, { target: { value: 'Keep processed ids for 30 days' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
+      sessionId: SID,
+      ops: [{ kind: 'add', text: 'Keep processed ids for 30 days' }],
+      actor,
+    });
+  });
+
+  it('removes a decision, keeps it in place with undo, and counts it on the visit banner', () => {
+    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
+    const { container } = renderDrawer('decisions');
+    const actor = { author: 'user', agentId: null, turnOrdinal: null };
+
+    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
+
+    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
+      sessionId: SID,
+      ops: [{ kind: 'withdraw', number: 1, reason: null }],
+      actor,
+    });
+    expect(screen.getByText('Key redeliveries by event id')).toBeDefined();
+    expect(screen.getByText('Removed')).toBeDefined();
+    expect(screen.getByText('1 change on this visit')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Undo all' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo remove of decision 1' }));
+    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
+      sessionId: SID,
+      ops: [{ kind: 'restore', number: 1 }],
+      actor,
+    });
+    expect(screen.queryByText('1 change on this visit')).toBeNull();
+    expect(screen.queryByText('Removed')).toBeNull();
+  });
+
+  it('undoes every removal on this visit at once', () => {
     store.sessionDecisions = {
       [SID]: [
         decision({ number: 1 }),
+        decision({ number: 2, text: 'Return 200 on a duplicate delivery' }),
+      ],
+    };
+    const { container } = renderDrawer('decisions');
+    const actor = { author: 'user', agentId: null, turnOrdinal: null };
+
+    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
+    fireEvent.click(container.querySelector('[data-decision="2"]')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 2' }));
+    expect(screen.getByText('2 changes on this visit')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Undo all' }));
+    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
+      sessionId: SID,
+      ops: [
+        { kind: 'restore', number: 1 },
+        { kind: 'restore', number: 2 },
+      ],
+      actor,
+    });
+    expect(screen.queryByText(/changes on this visit/)).toBeNull();
+  });
+
+  it('drops a removed decision into Removed by you after leaving and re-entering', () => {
+    store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
+    const { container, unmount } = renderDrawer('decisions');
+
+    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
+    expect(screen.getByText('Removed')).toBeDefined();
+    unmount();
+
+    store.sessionDecisions = {
+      [SID]: [decision({ number: 1, status: 'withdrawn', closedBy: 'user', reason: null })],
+    };
+    renderDrawer('decisions');
+
+    expect(screen.queryByText('Key redeliveries by event id')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Replaced and removed/ }));
+    expect(screen.getByText('Key redeliveries by event id')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Restore' })).toBeDefined();
+  });
+
+  it('offers Restore only on decisions you removed, not on ones an agent closed', () => {
+    store.sessionDecisions = {
+      [SID]: [
         decision({
           number: 2,
           text: 'Add a retry counter column to invoices',
@@ -217,32 +317,11 @@ describe('ContextDrawer', () => {
       ],
     };
     renderDrawer('decisions');
-    const actor = { author: 'user', agentId: null, turnOrdinal: null };
 
-    fireEvent.click(screen.getByRole('button', { name: 'Withdraw decision 1' }));
-    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
-      sessionId: SID,
-      ops: [{ kind: 'withdraw', number: 1, reason: null }],
-      actor,
-    });
-
-    fireEvent.click(screen.getByRole('button', { name: /Replaced and withdrawn/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Replaced and removed/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Replaced/ }));
     expect(screen.getByText('"The ledger already keeps retry state"')).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
-    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
-      sessionId: SID,
-      ops: [{ kind: 'restore', number: 2 }],
-      actor,
-    });
-
-    const field = screen.getByRole('textbox', { name: 'Add a decision' });
-    fireEvent.change(field, { target: { value: 'Keep processed ids for 30 days' } });
-    fireEvent.keyDown(field, { key: 'Enter' });
-    expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
-      sessionId: SID,
-      ops: [{ kind: 'add', text: 'Keep processed ids for 30 days' }],
-      actor,
-    });
+    expect(screen.queryByRole('button', { name: 'Restore' })).toBeNull();
   });
 
   it('points a replaced decision at the one that replaced it', () => {
@@ -266,7 +345,8 @@ describe('ContextDrawer', () => {
     renderDrawer('decisions');
 
     expect(screen.getByText(/replaces 5/)).toBeDefined();
-    fireEvent.click(screen.getByRole('button', { name: /Replaced and withdrawn/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Replaced and removed/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /Replaced/ }));
     expect(screen.getByText(/^You · replaced by/)).toBeDefined();
     expect(screen.getByRole('button', { name: 'Go to decision 9' })).toBeDefined();
   });
@@ -310,10 +390,12 @@ describe('ContextDrawer', () => {
   it('keeps the decisions readable but not editable while the context updates', () => {
     store.summarizer = { status: 'running', lastUpdate: null, lastAttempt: null };
     store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
-    renderDrawer('decisions');
+    const { container } = renderDrawer('decisions');
 
+    fireEvent.click(container.querySelector('[data-decision="1"]')!);
     expect(screen.getByText('Key redeliveries by event id')).toBeDefined();
-    expect(screen.queryByRole('button', { name: 'Withdraw decision 1' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Remove decision 1' })).toBeNull();
     expect(screen.getByText('Editing opens when the update finishes.')).toBeDefined();
   });
 
