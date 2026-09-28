@@ -266,8 +266,17 @@ on one row as tabs (`StartChoiceTabs`, `SegmentedTabs` `card` variant).
   Use brief, Edit or Use issue text settles the title and goal and opens
   **How to work on it** (`HowToWorkOnIt`) underneath: the same Run a workflow
   or Ask an agent choice as the other two tabs, precompiled with that goal,
-  Run a workflow preselected. Its own primary links the issue, creates the
-  session and starts the workflow or agent in one gesture. Without a tracker
+  Run a workflow preselected. Run a workflow is the same embedded
+  `WorkflowBuilderView` as the Workflow tab (Orchestrated, Custom or Preset,
+  the plan, guidance, Can use, Starts, Autorun, Spend cap), with the issue as
+  its goal and its own draft under `kickoff-task:<workspace>`. When the issue
+  maps to a project (`launchMountFor`, the Inbox rule: a GitHub or GitLab repo
+  path, or a Sentry project linked or code-mapped to a project) a
+  `LaunchMountRow` above the choice says which project the session works in
+  and why, and lets you pick another or none. Start workflow, or Start on the
+  agent side, links the issue, mounts that project, creates the session and
+  starts the run or agent in one gesture (`startSessionFromDraft`, kind
+  `task` with a `mount` and a `then`). Without a tracker
   it shows the connect links. The search, like the Inbox search, reads an issue
   code or link (`parseIssueCode`: `CAS-231`, a Sentry short id, `#482`,
   `owner/repo#482`, a tracker URL; anything else stays a local filter). When

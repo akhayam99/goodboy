@@ -17,7 +17,7 @@ import type {
   WorkflowTriggerMode,
 } from '@goodboy/types';
 import type { Database, PlainStatement, TransactionOutcome } from '../client';
-import { openQuestionPurgeStatements } from './agent';
+import { PURGED_QUESTION_TEXTS_INDEX, agentPurgeStatements } from './agent';
 import { serializeOrchestratorHintLog, toOrchestratorHintLog } from './orchestrator-hint-log';
 import { serializeProviderPool, toProviderPool } from './provider-pool-column';
 
@@ -239,26 +239,35 @@ const runAgentsPurgeStatements = ({
           SELECT a.id FROM agents a JOIN owned o ON a.parent_agent_id = o.id
         )`;
   return [
-    ...openQuestionPurgeStatements({
-      prefix: owned,
-      agentMatch: 'IN (SELECT id FROM owned)',
-      params,
-    }),
     {
-      sql: `${owned}
-        UPDATE agents SET deleted_at = ?
+      sql: `${owned} SELECT COUNT(*) AS purged FROM agents
         WHERE deleted_at IS NULL AND id IN (SELECT id FROM owned)`,
-      params: [...params, deletedAt],
+      params,
     },
+    ...agentPurgeStatements({
+      prefix: owned,
+      prefixParams: params,
+      agentMatch: 'IN (SELECT id FROM owned)',
+      matchParams: [],
+      deletedAt,
+    }),
   ];
 };
 
-const PURGED_QUESTIONS_INDEX = 0;
-const PURGED_AGENTS_INDEX = 2;
+const PURGED_AGENTS_INDEX = 0;
+const PURGED_QUESTIONS_INDEX = PURGED_AGENTS_INDEX + 1 + PURGED_QUESTION_TEXTS_INDEX;
 
 export type RemovedOpenQuestion = {
   readonly sessionId: SessionId;
   readonly text: string;
+};
+
+const purgedAgentCount = ({ outcome }: { readonly outcome: TransactionOutcome }): number => {
+  if (outcome.status === 'aborted') {
+    return 0;
+  }
+  const count = outcome.results[PURGED_AGENTS_INDEX]?.rows?.[0]?.purged;
+  return typeof count === 'number' ? count : 0;
 };
 
 const removedOpenQuestions = (outcome: TransactionOutcome): ReadonlyArray<RemovedOpenQuestion> => {
@@ -329,7 +338,7 @@ export const deleteOrphanedWorkflowAgents = async ({
     return { agentsDeleted: 0, removedQuestions: [] };
   }
   return {
-    agentsDeleted: outcome.results[PURGED_AGENTS_INDEX]?.rowsAffected ?? 0,
+    agentsDeleted: purgedAgentCount({ outcome }),
     removedQuestions: removedOpenQuestions(outcome),
   };
 };

@@ -8,17 +8,22 @@ export type DiscardSessionDraftParams = {
 
 export const discardSessionDraft = (set: SetFn) => {
   return ({ workspaceId }: DiscardSessionDraftParams): void => {
-    const builderKey = kickoffDraftKey({ workspaceId });
+    const builderKeys = [
+      kickoffDraftKey({ workspaceId }),
+      kickoffDraftKey({ workspaceId, lane: 'task' }),
+    ];
     set((state) => {
       const hasDraft = state.sessionDrafts[workspaceId] !== undefined;
-      const hasBuilderDraft = state.workflowDrafts?.[builderKey] !== undefined;
+      const hasBuilderDraft = builderKeys.some((key) => state.workflowDrafts?.[key] !== undefined);
       if (!hasDraft && !hasBuilderDraft) {
         return {};
       }
       const sessionDrafts = { ...state.sessionDrafts };
       delete sessionDrafts[workspaceId];
       const workflowDrafts = { ...state.workflowDrafts };
-      delete workflowDrafts[builderKey];
+      for (const key of builderKeys) {
+        delete workflowDrafts[key];
+      }
       return { sessionDrafts, workflowDrafts };
     });
   };

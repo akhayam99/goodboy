@@ -84,6 +84,9 @@ vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
   useWorkspaceIssueLookup: () =>
     hooks.lookup.current ?? { code: null, state: { status: 'idle' }, retry: () => undefined },
 }));
+vi.mock('../../../integrations/sentry/client', () => ({
+  sentryListCodeMappings: async () => [],
+}));
 vi.mock('../../../integrations/fetchIssueCandidates', () => ({
   fetchIssueCandidates: (params: unknown) => spies.fetchIssueCandidates(params as never),
 }));
@@ -163,6 +166,7 @@ const resetStore = () => {
       sessionPhaseRuns: {},
       issueBriefs: {},
       sessionDrafts: {},
+      projectSentryLinks: {},
       phaseTemplates: {
         'ws-1': [
           { id: 'wf-1', name: 'Plan and build', description: 'Plan, then implement' },
@@ -439,7 +443,7 @@ describe('SessionKickoff', () => {
     });
   });
 
-  it('proposes the brief of a picked issue and opens how to work on it, without linking first', async () => {
+  it('proposes the brief of a picked issue and opens the workflow builder on it, without linking first', async () => {
     store().setState({ workspaceIntegrations: { 'ws-1': [{ provider: 'linear' }] } });
     spies.fetchIssueCandidates.mockResolvedValue([
       candidate({}),
@@ -468,8 +472,13 @@ describe('SessionKickoff', () => {
     expect(screen.getByRole('tab', { name: 'Run a workflow' }).getAttribute('aria-selected')).toBe(
       'true',
     );
-    fireEvent.click(screen.getByRole('button', { name: /Fix a bug/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Run workflow' }));
+    const builder = screen.getByTestId('workflow-builder');
+    const goalField = within(builder).getByRole('textbox', { name: 'Goal' });
+    expect((goalField as HTMLTextAreaElement).value).toBe(
+      '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
+    );
+    fireEvent.change(goalField, { target: { value: 'Fix the login redirect loop' } });
+    fireEvent.click(within(builder).getByRole('button', { name: 'Start workflow' }));
 
     await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
     expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
@@ -478,9 +487,81 @@ describe('SessionKickoff', () => {
         kind: 'task',
         candidate: candidate({}),
         title: 'Fix the login redirect',
-        goal: '[ENG-1] Fix the login redirect\n\nThe redirect loops.',
-        then: { kind: 'workflow', workflowId: 'wf-2' },
+        goal: 'Fix the login redirect loop',
+        then: { kind: 'workflow-run', run: spies.runBuilder },
       },
+    });
+    expect(screen.queryByRole('button', { name: /Fix a bug/ })).toBeNull();
+  });
+
+  it('mounts the project of a github issue and lets you pick none before starting', async () => {
+    hooks.isGithubAuthenticated.current = true;
+    store().setState({
+      projects: [project({ remoteUrl: 'git@github.com:acme/ledger-core.git' })],
+    });
+    const githubIssue = candidate({
+      provider: 'github',
+      externalId: 'gh-7',
+      identifier: '#7',
+      title: 'Ledger totals drift',
+      url: 'https://github.com/acme/ledger-core/issues/7',
+    });
+    spies.fetchIssueCandidates.mockResolvedValue([githubIssue]);
+    renderKickoff();
+    await screen.findByText('#7');
+
+    fireEvent.click(screen.getByRole('button', { name: /#7/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick up #7' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
+
+    expect(screen.getByText('from GitHub repo acme/ledger-core')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: expect.objectContaining({
+        kind: 'task',
+        candidate: githubIssue,
+        mount: { projectId: 'project-ledger-core', reason: 'from GitHub repo acme/ledger-core' },
+      }),
+    });
+  });
+
+  it('mounts the project linked to the sentry project of an error', async () => {
+    store().setState({
+      workspaceIntegrations: { 'ws-1': [{ provider: 'sentry' }] },
+      projects: [project({})],
+      projectSentryLinks: {
+        'ws-1': [{ projectId: 'project-ledger-core', sentryProject: 'ledger-api' }],
+      },
+    });
+    const sentryIssue = candidate({
+      provider: 'sentry',
+      externalId: 'se-1',
+      identifier: 'LEDGER-API-4',
+      title: 'TypeError in totals',
+      url: 'https://harborline.sentry.io/issues/1/',
+      sentryProject: 'ledger-api',
+    });
+    spies.fetchIssueCandidates.mockResolvedValue([sentryIssue]);
+    renderKickoff();
+    await screen.findByText('LEDGER-API-4');
+
+    fireEvent.click(screen.getByRole('button', { name: /LEDGER-API-4/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pick up LEDGER-API-4' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Use issue text' }));
+
+    expect(screen.getByText('from Sentry project ledger-api')).toBeDefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Start workflow' }));
+
+    await waitFor(() => expect(spies.startSessionFromDraft).toHaveBeenCalledOnce());
+    expect(spies.startSessionFromDraft).toHaveBeenCalledWith({
+      workspaceId: WORKSPACE_ID,
+      start: expect.objectContaining({
+        mount: { projectId: 'project-ledger-core', reason: 'from Sentry project ledger-api' },
+        then: { kind: 'workflow-run', run: spies.runBuilder },
+      }),
     });
   });
 

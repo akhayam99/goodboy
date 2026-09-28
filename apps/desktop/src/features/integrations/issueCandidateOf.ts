@@ -71,5 +71,6 @@ export const sentryIssueCandidate = (issue: SentryIssue): IssueCandidate => {
     goal,
     body: goal,
     branchSlug: slugifyBranch({ input: issue.title, maxLength: SENTRY_SLUG_MAX_LEN }),
+    ...(issue.project?.slug != null && { sentryProject: issue.project.slug }),
   };
 };

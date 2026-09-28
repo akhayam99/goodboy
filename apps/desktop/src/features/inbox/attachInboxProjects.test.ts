@@ -49,7 +49,7 @@ const other = (key: string, provider: 'github' | 'linear'): InboxRecord =>
   ({ key, provider, kind: 'issue', payload: { provider } }) as unknown as InboxRecord;
 
 describe('attachInboxProjects', () => {
-  it('leaves github items flat when only one project has a github remote', () => {
+  it('gives a github item its project even when only one project has a github remote', () => {
     const [github, linear] = attachInboxProjects({
       records: [
         githubRecord('gh', 'https://github.com/acme/ledger-core/issues/4'),
@@ -58,7 +58,7 @@ describe('attachInboxProjects', () => {
       projects: [GITHUB_PROJECTS[0] as Project, project('docs', '/code/docs')],
       links: [],
     });
-    expect(github?.projectIds).toBeUndefined();
+    expect(github?.projectIds).toEqual(['ledger']);
     expect(linear?.projectIds).toBeUndefined();
   });
 

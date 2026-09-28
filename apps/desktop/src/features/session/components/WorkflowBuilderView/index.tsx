@@ -46,6 +46,7 @@ import { workflowStartGate } from './workflowStartGate';
 import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';
 import type {
+  KickoffLane,
   Mode,
   WorkflowBuilderDraft,
   WorkflowDraftKey,
@@ -103,6 +104,7 @@ import { usePlanEstimates } from './usePlanEstimates';
 
 export type BuilderKickoff = {
   readonly workspaceId: WorkspaceId;
+  readonly lane?: KickoffLane;
   readonly goal: string;
   readonly goalPlaceholder: string;
   readonly onGoalChange: (goal: string) => void;
@@ -175,7 +177,9 @@ export const WorkflowBuilderView = (props: Props) => {
   const workspaceId: WorkspaceId =
     props.session !== undefined ? props.session.workspaceId : props.kickoff.workspaceId;
   const draftKey: WorkflowDraftKey =
-    props.session !== undefined ? props.session.id : kickoffDraftKey({ workspaceId });
+    props.session !== undefined
+      ? props.session.id
+      : kickoffDraftKey({ workspaceId, lane: props.kickoff.lane ?? 'workflow' });
   const savePhaseTemplate = useAppStore((s) => s.savePhaseTemplate);
   const deleteWorkflow = useAppStore((s) => s.deleteWorkflow);
   const attachWorkflowToSession = useAppStore((s) => s.attachWorkflowToSession);

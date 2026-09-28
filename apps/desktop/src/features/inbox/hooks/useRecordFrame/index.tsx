@@ -12,6 +12,7 @@ import { LaunchSessionPopover } from '../../components/LaunchSessionPopover';
 import { LinkToSessionPicker } from '../../components/LinkToSessionPicker';
 import { launchSpecFor } from '../../launchSpecFor';
 import { useLaunchMount } from '../../useLaunchMount';
+import { launchMountSourceOf } from '../../launchMountSourceOf';
 import type { InboxRecord } from '../../types';
 
 type Params = {
@@ -36,7 +37,7 @@ export const useRecordFrame = ({
   const openSession = useOpenSession();
   const [isUnlinking, setIsUnlinking] = useState(false);
   const spec = launchSpecFor({ record });
-  const mount = useLaunchMount({ workspaceId, record });
+  const mount = useLaunchMount({ workspaceId, source: launchMountSourceOf({ record }) });
   const linkedSessionId = spec?.linkedSessionId ?? null;
   const handled = useRef(launchRequest);
 

@@ -227,30 +227,45 @@ export const updateAgentStatus = async (
   await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
 };
 
-const OPEN_QUESTION_TEXTS_INDEX = 2;
+export const PURGED_QUESTION_TEXTS_INDEX = 0;
 
-type OpenQuestionPurgeParams = {
+type AgentPurgeParams = {
   readonly prefix: string;
+  readonly prefixParams: ReadonlyArray<unknown>;
   readonly agentMatch: string;
-  readonly params: ReadonlyArray<unknown>;
+  readonly matchParams: ReadonlyArray<unknown>;
+  readonly deletedAt: number;
 };
 
-export const openQuestionPurgeStatements = ({
+export const agentPurgeStatements = ({
   prefix,
+  prefixParams,
   agentMatch,
-  params,
-}: OpenQuestionPurgeParams): readonly [PlainStatement, PlainStatement] => [
-  {
-    sql: `${prefix} SELECT session_id, text FROM open_questions
+  matchParams,
+  deletedAt,
+}: AgentPurgeParams): ReadonlyArray<PlainStatement> => {
+  const params = [...prefixParams, ...matchParams];
+  return [
+    {
+      sql: `${prefix} SELECT session_id, text FROM open_questions
           WHERE created_by_agent_id ${agentMatch} AND status = 'open'`,
-    params,
-  },
-  {
-    sql: `${prefix} DELETE FROM open_questions
+      params,
+    },
+    {
+      sql: `${prefix} DELETE FROM open_questions
           WHERE created_by_agent_id ${agentMatch} AND status = 'open'`,
-    params,
-  },
-];
+      params,
+    },
+    { sql: `${prefix} DELETE FROM messages WHERE agent_id ${agentMatch}`, params },
+    { sql: `${prefix} DELETE FROM turn_events WHERE agent_id ${agentMatch}`, params },
+    {
+      sql: `${prefix} UPDATE agents
+          SET deleted_at = COALESCE(deleted_at, ?), output_summary = NULL
+          WHERE id ${agentMatch}`,
+      params: [...prefixParams, deletedAt, ...matchParams],
+    },
+  ];
+};
 
 export const purgeAgentForDelete = async ({
   db,
@@ -260,20 +275,18 @@ export const purgeAgentForDelete = async ({
   readonly id: AgentId;
 }): Promise<ReadonlyArray<string>> => {
   const outcome = await db.transaction({
-    statements: [
-      { sql: 'DELETE FROM messages WHERE agent_id = ?', params: [id] },
-      { sql: 'DELETE FROM turn_events WHERE agent_id = ?', params: [id] },
-      ...openQuestionPurgeStatements({ prefix: '', agentMatch: '= ?', params: [id] }),
-      {
-        sql: 'UPDATE agents SET deleted_at = ?, output_summary = NULL WHERE id = ?',
-        params: [Date.now(), id],
-      },
-    ],
+    statements: agentPurgeStatements({
+      prefix: '',
+      prefixParams: [],
+      agentMatch: '= ?',
+      matchParams: [id],
+      deletedAt: Date.now(),
+    }),
   });
   if (outcome.status === 'aborted') {
     return [];
   }
-  const rows = outcome.results[OPEN_QUESTION_TEXTS_INDEX]?.rows ?? [];
+  const rows = outcome.results[PURGED_QUESTION_TEXTS_INDEX]?.rows ?? [];
   return rows.flatMap((row) => (typeof row.text === 'string' ? [row.text] : []));
 };
 
