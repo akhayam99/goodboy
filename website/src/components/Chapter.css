@@ -1,0 +1,29 @@
+.chapterInner {
+  display: grid;
+  gap: 64px;
+  padding: 112px 0;
+}
+
+.chapter.band {
+  background: var(--band);
+  border-block: 1px solid var(--line-soft);
+}
+
+.chapterBody {
+  display: grid;
+  gap: 96px;
+}
+
+.chapterBody > * {
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .chapterInner {
+    gap: 40px;
+    padding: 64px 0;
+  }
+  .chapterBody {
+    gap: 56px;
+  }
+}

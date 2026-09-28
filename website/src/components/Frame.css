@@ -1,0 +1,90 @@
+.frameBlock {
+  display: grid;
+  gap: 48px;
+}
+
+.frame {
+  position: relative;
+  overflow: hidden;
+  padding: 64px;
+  border-radius: var(--r-frame);
+  background: var(--stage);
+  border: 1px solid var(--stage-line);
+}
+
+.view {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 0 0 1px var(--win-edge);
+}
+
+.view img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.frame.capped .view {
+  max-height: var(--cap);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
+}
+
+.frame.canvas {
+  padding-block: 64px;
+}
+
+.canvasShade {
+  border-radius: 12px;
+  box-shadow:
+    0 -28px 48px -32px rgb(0 0 0 / 0.28),
+    0 28px 48px -32px rgb(0 0 0 / 0.28);
+}
+
+.frame.canvas .view {
+  box-shadow: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 7%, #000 90%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 7%, #000 90%, transparent);
+}
+
+@media (max-width: 1100px) {
+  .frame {
+    padding: 40px;
+  }
+  .frame.canvas {
+    padding-block: 40px;
+  }
+}
+
+@media (max-width: 860px) {
+  .frameBlock {
+    gap: 28px;
+  }
+  .frame,
+  .frame.canvas {
+    margin: 0 -24px;
+    padding: 12px;
+    border-radius: 0;
+    border-inline: 0;
+  }
+  .view {
+    border-radius: 8px;
+  }
+  .frame.capped .view {
+    max-height: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .frame.canvas {
+    padding-block: 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .frame,
+  .frame.canvas {
+    margin: 0 -20px;
+  }
+}

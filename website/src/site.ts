@@ -1,13 +1,23 @@
+const REPO = 'https://github.com/akhayam99/goodboy';
+const BLOB = `${REPO}/blob/main`;
+const POLICY = 'https://www.iubenda.com/privacy-policy/46359357';
+
 export const SITE = {
-  version: 'v0.12.2',
-  repo: 'https://github.com/akhayam99/goodboy',
-  releases: 'https://github.com/akhayam99/goodboy/releases',
-  latest: 'https://github.com/akhayam99/goodboy/releases/latest',
-  linux: 'https://github.com/akhayam99/goodboy/releases',
-  issues: 'https://github.com/akhayam99/goodboy/issues',
-  features: 'https://github.com/akhayam99/goodboy/blob/main/FEATURES.md',
-  concepts: 'https://github.com/akhayam99/goodboy/blob/main/docs/concepts.md',
-  privacy: 'https://github.com/akhayam99/goodboy#where-your-work-lives',
-  providersDoc: 'https://github.com/akhayam99/goodboy/blob/main/docs/providers.md',
+  repo: REPO,
+  releases: `${REPO}/releases`,
+  latest: `${REPO}/releases/latest`,
+  linux: `${REPO}/releases`,
+  issues: `${REPO}/issues`,
+  newIssue: `${REPO}/issues/new`,
+  featureGuide: `${BLOB}/FEATURES.md`,
+  gettingStarted: `${REPO}#install`,
+  docs: `${BLOB}/docs/README.md`,
+  concepts: `${BLOB}/docs/concepts.md`,
+  providersDoc: `${BLOB}/docs/providers.md`,
+  workflowsDoc: `${BLOB}/docs/workflows.md`,
+  changelog: `${BLOB}/CHANGELOG.md`,
+  security: `${BLOB}/SECURITY.md`,
+  privacy: POLICY,
+  cookies: `${POLICY}/cookie-policy`,
   brew: 'brew install --cask akhayam99/tap/goodboy',
 } as const;

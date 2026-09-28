@@ -1,31 +1,41 @@
-import { SeeHow } from '../components/SeeHow';
-import { Shot } from '../components/Shot';
-import { SESSION } from '../figures';
+import './Hero.css';
+import type { CSSProperties } from 'react';
+import { Eyebrow } from '../components/Eyebrow';
+import { Frame } from '../components/Frame';
+import { HERO_SESSION } from '../figures';
 import { SITE } from '../site';
 
+type RiseStyle = CSSProperties & {
+  readonly '--i': number;
+};
+
+const rise = (index: number): RiseStyle => ({ '--i': index });
+
 export const Hero = () => (
-  <section id="hero" aria-labelledby="h2-hero">
-    <div className="wrap">
+  <section className="hero" aria-labelledby="hero-title">
+    <div className="shell">
       <div className="heroCopy">
-        <p className="eyebrow">A desktop app for coding agents, and much more</p>
-        <h1 id="h2-hero">Stop re&#8209;explaining yourself</h1>
-        <p className="sub">
-          Goodboy is an ADE, an agentic development environment. Use Claude, Codex, Cursor and more
-          in the same session, give each chat one job, and keep the whole task in one place.
+        <Eyebrow text="Desktop ADE for macOS and Linux" kind="page" className="rise" />
+        <h1 id="hero-title" className="display rise" style={rise(1)}>
+          A development environment that structures agent work
+        </h1>
+        <p className="lead rise" style={rise(2)}>
+          Every task keeps its goal, decisions and summary, so each model that picks it up starts
+          briefed.
         </p>
-        <div className="ctaRow">
-          <a className="btn" href="#install">
-            Install
+        <div className="ctaRow rise" style={rise(3)}>
+          <a className="btn" href={SITE.latest}>
+            Download for macOS
           </a>
           <a className="btn ghost" href={SITE.repo}>
-            Star on GitHub
+            View on GitHub
           </a>
+          <span className="heroMeta">Free, no account needed.</span>
         </div>
-        <SeeHow anchor="inside-a-session" />
       </div>
-    </div>
-    <div className="wrap">
-      <Shot figure={SESSION} isEager />
+      <div className="heroFrame rise" style={rise(4)}>
+        <Frame figure={HERO_SESSION} cap={640} isEager />
+      </div>
     </div>
   </section>
 );

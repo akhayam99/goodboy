@@ -31,7 +31,7 @@ Below, `X` is the new version and `X-1` is the current latest.
 
 ## Process
 
-1. Apply the version bump in the six places listed in
+1. Apply the version bump in the five places listed in
    [release.md](release.md) → The version bump.
    Bump each file in its own command. One `perl -i -pe '... if $. <= 5'` over
    several files never resets `$.` between them, so every file after the first
@@ -53,14 +53,15 @@ Below, `X` is the new version and `X-1` is the current latest.
      section updated in the same PR, text and figure, or a new section when
      none tells it yet. Re-shoot every figure the change made stale, in
      `website/public/img/` and `docs/readme/`, from the mock scenes as
-     [mock-screenshots.md](mock-screenshots.md) describes, and cut the detail
-     crops again from the new capture. A release that only fixes bugs changes
-     no figure.
+     [mock-screenshots.md](mock-screenshots.md) describes, at a scale of 4 or
+     more, at every width, in both themes, with the phone crop of a frame. A
+     release that only fixes bugs changes no figure.
    - Run `node scripts/snapshot-features.mjs X`. It reads `FEATURES.md` and the
      `## Goodboy vX` entry in `CHANGELOG.md`, and writes one JSON file named
      after the version into `website/src/data/releases/`: the feature map the
-     site shows for that version, with its New items highlighted. Run it after
-     the edits above, so the snapshot matches what shipped.
+     site shows for that version, with its New items highlighted, and the
+     version the site footer shows. Run it after the edits above, so the
+     snapshot matches what shipped.
    - Commit the edits and the new JSON in the release PR.
 2. Create the release branch following the branch-naming rule in
    [CONVENTIONS.md](../CONVENTIONS.md). Commit

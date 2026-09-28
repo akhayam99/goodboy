@@ -3,5 +3,6 @@
   "framework": null,
   "installCommand": "pnpm install --ignore-workspace --frozen-lockfile",
   "buildCommand": "pnpm build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "cleanUrls": true
 }

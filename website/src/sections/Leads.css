@@ -1,0 +1,10 @@
+.leads {
+  display: grid;
+  gap: 64px;
+}
+
+@media (max-width: 600px) {
+  .leads {
+    gap: 40px;
+  }
+}
