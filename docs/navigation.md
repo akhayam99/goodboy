@@ -1388,15 +1388,21 @@ a `Now | After Apply` toggle. Every action has one color (Keep green, Fold in
 azure, Combine yellow, Move violet, Rename neutral, Remove red, Start from
 today's main grey) used on the row's change mark, its node, a 2px edge, the
 dot of its "what happens" line and its planned change. Drag a row between two
-others to move it, drop it onto a row to fold it in (fixup, `Keep title`), and
-switch `Keep title | Keep both` on the folded row or its change to combine
-(squash). The drag is pointer events with our own hit testing
+others to move it and drop it onto a row to fold it in (fixup, `Keep title`).
+A folded row carries one always visible control, `Keep title · Keep both ·
+Separate`: `Keep both` combines (squash) and `Separate` makes it its own commit
+again, the same edit as `Separate` in its menu; its planned change keeps
+`Keep title | Keep both`. The row buttons (icons) and the `⋯` menu sit in a
+slot reserved at the end of the row, so they never cover the control; a folded
+row shows only the menu. The drag is pointer events with our own hit testing
 (`useHistoryDrag`), never HTML5 drag and drop: the window's native file drop
 owns the drag session on macOS, and the composer's file drop needs it on. Keys
 on a focused row: Alt with the arrows moves, C folds into the one below, S
 combines keeping both messages, R or Enter renames, Delete or Backspace
 removes, ⌘Z undoes the last edit. Hovering a row, a node in After Apply or a
-planned change lights up the same commit in all three places. Nothing touches
+planned change lights up the same commit in all three places; on a fold,
+hovering any member or the node lights the whole group, the commit that takes
+them in and every commit it takes in. Nothing touches
 git while you edit: the plan is a draft saved per worktree in `history_plans`,
 the planned changes are derived from it (each with its own `Undo`, plus
 `Reset all`), and once the plan rests for a quarter of a second the engine

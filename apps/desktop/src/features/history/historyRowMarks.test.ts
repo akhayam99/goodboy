@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { combineInto, initialPlanItems, setVerb } from './historyPlan';
-import { historyRowMarks } from './historyRowMarks';
+import { historyGroupOf, historyRowMarks } from './historyRowMarks';
 import { LEDGER, LEDGER_COMMITS, LEDGER_ORIGINAL } from './testing/ledgerFixture';
 import { LEDGER_PRESET, LEDGER_RENAME } from './testing/ledgerPreset';
 
@@ -68,5 +68,23 @@ describe('history row marks', () => {
       original: LEDGER_ORIGINAL,
     });
     expect(removed.get(b)?.action).toBe('drop');
+  });
+
+  it('gives every member of a three into one fold the whole group, target first', () => {
+    const three = [f, e, x].reduce(
+      (items, sha) => combineInto({ items, sha, target: d, mode: 'fixup' }),
+      initialPlanItems({ commits: LEDGER_COMMITS }),
+    );
+    const groupMarks = historyRowMarks({ items: three, original: LEDGER_ORIGINAL });
+    for (const sha of [d, f, e, x]) {
+      expect(historyGroupOf({ marks: groupMarks, sha })).toEqual([d, x, e, f]);
+    }
+    expect(historyGroupOf({ marks: groupMarks, sha: c })).toEqual([c]);
+  });
+
+  it('keeps a lone commit to itself and lights a fold from either end', () => {
+    expect(historyGroupOf({ marks, sha: b })).toEqual([b]);
+    expect(historyGroupOf({ marks, sha: e })).toEqual([d, e]);
+    expect(historyGroupOf({ marks, sha: a })).toEqual([a, f]);
   });
 });

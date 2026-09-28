@@ -1,6 +1,6 @@
 import type { PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { Cloud, GitMerge, GripVertical } from 'lucide-react';
-import { Button, cn } from '@goodboy/ui';
+import { cn } from '@goodboy/ui';
 import type { BranchCommit, SessionId } from '@goodboy/types';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
@@ -196,13 +196,14 @@ export const HistoryCommitRow = ({
                 >
                   {title}
                 </span>
+                <HistoryRowPills {...pills} />
                 {isFolded && view === 'now' && isInteractive && mark?.into != null ? (
                   <HistoryModeSwitch
                     mode={mark.into.mode}
                     onChange={(mode) => onModeChange(commit.sha, mode)}
+                    onSeparate={() => onSeparate(commit.sha)}
                   />
                 ) : null}
-                <HistoryRowPills {...pills} />
               </span>
               <span
                 className={cn(
@@ -241,19 +242,11 @@ export const HistoryCommitRow = ({
                         {taken.commit.shortSha}
                       </span>
                       {isInteractive ? (
-                        <>
-                          <HistoryModeSwitch
-                            mode={taken.mode}
-                            onChange={(mode) => onModeChange(taken.commit.sha, mode)}
-                          />
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onSeparate(taken.commit.sha)}
-                          >
-                            Separate
-                          </Button>
-                        </>
+                        <HistoryModeSwitch
+                          mode={taken.mode}
+                          onChange={(mode) => onModeChange(taken.commit.sha, mode)}
+                          onSeparate={() => onSeparate(taken.commit.sha)}
+                        />
                       ) : null}
                     </span>
                   ))}
