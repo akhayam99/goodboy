@@ -11,13 +11,13 @@ type Props = {
 };
 
 export const Shot = ({ figure, isEager = false }: Props) => {
-  const { ref, inView } = useInViewOnce<HTMLElement>();
+  const { ref, inView } = useInViewOnce<HTMLDivElement>({ isEager });
   const id = themedId({ id: figure.id, theme: useTheme() });
 
   return (
-    <figure className={inView ? 'shot in' : 'shot'} ref={ref}>
+    <figure className={inView ? 'shot in' : 'shot'}>
       <div className="stage">
-        <div className="win">
+        <div className="win" ref={ref}>
           <div className="winBar" aria-hidden="true">
             <i />
             <i />

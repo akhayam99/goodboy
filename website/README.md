@@ -57,6 +57,17 @@ the page never flashes. Colours come from the tokens at the top of
 `website/src/styles.css`, with a dark set under `:root[data-theme='dark']`. The
 logo is always the dark tile with the white dog, in both themes.
 
+## Cookie consent
+
+The consent card is iubenda's Cookie Solution, embedded in `website/index.html`
+rather than through Google Tag Manager, so the repo owns its language, position
+and look. It asks in English, sits at the bottom left, and takes its colours
+from `website/src/styles/consent.css`; the `onBannerShown` callback drops
+iubenda's inline colours so the site tokens apply in both themes. Consent Mode
+defaults to denied before any tag loads. iubenda shows no card for a language
+the cookie policy lacks, so the policy needs an English version in the iubenda
+dashboard, and the GTM iubenda tag stays paused so the card never loads twice.
+
 ## Verify with the page
 
 Check the rendered page, not the diff:

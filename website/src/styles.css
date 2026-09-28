@@ -695,15 +695,6 @@ section.block.alt {
   color: var(--gray6);
 }
 
-.contrastCard.after {
-  border-color: color-mix(in srgb, var(--accent) 35%, var(--gray3));
-  box-shadow: 0 18px 40px -30px color-mix(in srgb, var(--accent-deep) 60%, transparent);
-}
-
-.contrastCard.after h3 {
-  color: var(--accent-deep);
-}
-
 .benefits {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));

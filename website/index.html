@@ -21,6 +21,61 @@
       })();
     </script>
 
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () {
+        window.dataLayer.push(arguments);
+      };
+      window.gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
+        wait_for_update: 500,
+      });
+      var _iub = window._iub || [];
+      window._iub = _iub;
+      _iub.csConfiguration = {
+        siteId: 4548648,
+        cookiePolicyId: 46359357,
+        lang: 'en',
+        storage: { useSiteId: true },
+        askConsentAtCookiePolicyUpdate: true,
+        enableFadp: true,
+        enableLgpd: true,
+        fadpApplies: true,
+        perPurposeConsent: true,
+        preferenceCookie: { expireAfter: 180 },
+        floatingPreferencesButtonDisplay: false,
+        callback: {
+          onBannerShown: function () {
+            document
+              .querySelectorAll('#iubenda-cs-banner .iubenda-cs-content, #iubenda-cs-banner .iubenda-cs-opt-group')
+              .forEach(function (node) {
+                node.removeAttribute('style');
+              });
+          },
+        },
+        banner: {
+          position: 'float-bottom-left',
+          acceptButtonDisplay: true,
+          rejectButtonDisplay: true,
+          customizeButtonDisplay: true,
+          closeButtonDisplay: false,
+          explicitWithdrawal: true,
+          listPurposes: true,
+          ownerName: 'goodboy-ai.dev',
+          showTitle: false,
+          showTotalNumberOfProviders: true,
+          backgroundOverlay: false,
+        },
+      };
+    </script>
+    <script src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
+
     <!-- Google Tag Manager -->
     <script>
       (function (w, d, s, l, i) {
