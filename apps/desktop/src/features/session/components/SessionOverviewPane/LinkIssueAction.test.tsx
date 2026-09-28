@@ -1,15 +1,20 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session, SessionId } from '@goodboy/types';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { Session, SessionExternalTaskProvider, SessionId } from '@goodboy/types';
+import type { LinkWorkItem } from './linkWorkRows';
 
-const { store, hooks } = vi.hoisted(() => ({
+const { store, work } = vi.hoisted(() => ({
   store: {
-    workspaceIntegrations: {} as Record<string, ReadonlyArray<{ provider: string }>>,
+    linkSessionExternalTask: vi.fn(async () => undefined),
   },
-  hooks: {
-    isGithubAuthenticated: { current: false },
+  work: {
+    items: [] as ReadonlyArray<LinkWorkItem>,
+    lookedUp: [] as ReadonlyArray<LinkWorkItem>,
+    linkedKeys: new Set<string>(),
+    sources: [] as ReadonlyArray<SessionExternalTaskProvider>,
+    isLoading: false,
   },
 }));
 
@@ -18,13 +23,8 @@ vi.mock('../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
 }));
 
-vi.mock('../../../integrations/github/useGithubConnection', () => ({
-  useGithubConnection: () => ({
-    isAuthenticated: hooks.isGithubAuthenticated.current,
-    isResolved: true,
-    isScoped: false,
-    refresh: vi.fn(),
-  }),
+vi.mock('./useLinkWorkItems', () => ({
+  useLinkWorkItems: () => work,
 }));
 
 vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
@@ -33,146 +33,189 @@ vi.mock('../../../integrations/components/IntegrationGlyph', () => ({
   ),
 }));
 
-const linkIssueFormCalls: Array<{ provider: string; providerLabel: string }> = [];
-
-vi.mock('../SessionWorkspace/parts/IntegrationPane/LinkIssueForm', () => ({
-  LinkIssueForm: ({ provider, providerLabel }: { provider: string; providerLabel: string }) => {
-    linkIssueFormCalls.push({ provider, providerLabel });
-    return <div data-testid="link-issue-form">{provider}</div>;
-  },
-}));
-
 import { LinkIssueAction } from './LinkIssueAction';
 
 const SESSION_ID = 'sess-1' as SessionId;
 const session = { id: SESSION_ID, workspaceId: 'ws-1' } as unknown as Session;
 
+const item = ({
+  provider,
+  identifier,
+  title,
+  status,
+  updatedAt,
+}: {
+  readonly provider: SessionExternalTaskProvider;
+  readonly identifier: string;
+  readonly title: string;
+  readonly status: string;
+  readonly updatedAt: string;
+}): LinkWorkItem => ({
+  key: `${provider}:${identifier}`,
+  task: {
+    provider,
+    externalId: identifier,
+    identifier,
+    title,
+    url: `https://example.test/${identifier}`,
+  },
+  status,
+  updatedAt,
+});
+
+const INBOX_ITEMS: ReadonlyArray<LinkWorkItem> = [
+  item({
+    provider: 'sentry',
+    identifier: 'LEDGER-2M',
+    title: 'Timeout in ledger sync job',
+    status: 'Unresolved',
+    updatedAt: '2026-09-28T08:50:00Z',
+  }),
+  item({
+    provider: 'github',
+    identifier: 'notify-relay#88',
+    title: 'Retry webhook on 502',
+    status: 'Open',
+    updatedAt: '2026-09-28T08:00:00Z',
+  }),
+  item({
+    provider: 'linear',
+    identifier: 'HAR-219',
+    title: 'Checkout totals round the wrong way',
+    status: 'Todo',
+    updatedAt: '2026-09-28T06:00:00Z',
+  }),
+  item({
+    provider: 'linear',
+    identifier: 'HAR-214',
+    title: 'Payment sheet loses focus on step change',
+    status: 'In progress',
+    updatedAt: '2026-09-27T06:00:00Z',
+  }),
+];
+
+const trigger = () => screen.getByRole('button', { name: 'Link work' });
+
+const search = () => screen.getByRole('combobox', { name: 'Search work to link' });
+
+const optionNames = () =>
+  screen.queryAllByRole('option').map((option) => option.getAttribute('aria-label'));
+
 beforeEach(() => {
-  store.workspaceIntegrations = {};
-  hooks.isGithubAuthenticated.current = false;
-  linkIssueFormCalls.length = 0;
+  store.linkSessionExternalTask.mockClear();
+  work.items = INBOX_ITEMS;
+  work.lookedUp = [];
+  work.linkedKeys = new Set<string>();
+  work.sources = ['linear', 'sentry', 'github'];
+  work.isLoading = false;
 });
 
 afterEach(cleanup);
 
 describe('LinkIssueAction', () => {
-  it('guides to the integrations studios when no tracker is connected', () => {
+  it('always names the action and its L shortcut', () => {
     render(<LinkIssueAction session={session} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
-
-    expect(screen.getByText(/No tracker connected yet/)).toBeDefined();
-    expect(screen.queryByTestId('link-issue-form')).toBeNull();
+    expect(trigger().textContent).toContain('Link work');
+    expect(trigger().textContent).toContain('L');
   });
 
-  it('goes straight to the search when exactly one tracker is connected', () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
+  it('opens on L, never while typing in a field', () => {
+    render(
+      <>
+        <input aria-label="Composer" />
+        <LinkIssueAction session={session} />
+      </>,
+    );
 
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'Composer' }), {
+      code: 'KeyL',
+      key: 'l',
+    });
+    expect(screen.queryByRole('combobox', { name: 'Search work to link' })).toBeNull();
+
+    fireEvent.keyDown(document.body, { code: 'KeyL', key: 'l' });
+    expect(search()).toBeDefined();
+  });
+
+  it('puts the recent inbox items on top, the rest under results', () => {
     render(<LinkIssueAction session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+    fireEvent.click(trigger());
 
-    expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
-    expect(linkIssueFormCalls.at(-1)).toEqual({ provider: 'linear', providerLabel: 'Linear' });
-    expect(screen.queryByRole('button', { name: /All trackers/ })).toBeNull();
+    expect(screen.getByText('From your inbox')).toBeDefined();
+    expect(screen.getByText('Results')).toBeDefined();
+    expect(optionNames()).toEqual([
+      'Timeout in ledger sync job (LEDGER-2M)',
+      'Retry webhook on 502 (notify-relay#88)',
+      'Checkout totals round the wrong way (HAR-219)',
+      'Payment sheet loses focus on step change (HAR-214)',
+    ]);
   });
 
-  it('offers a provider list first when several trackers are connected', () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }, { provider: 'jira' }] };
-    hooks.isGithubAuthenticated.current = true;
-
+  it('searches every tracker at once and narrows by source', () => {
     render(<LinkIssueAction session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+    fireEvent.click(trigger());
 
-    expect(screen.queryByTestId('link-issue-form')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Linear' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'Jira' })).toBeDefined();
-    expect(screen.getByRole('button', { name: 'GitHub' })).toBeDefined();
+    fireEvent.change(search(), { target: { value: 'checkout' } });
+    expect(optionNames()).toEqual(['Checkout totals round the wrong way (HAR-219)']);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Jira' }));
-
-    expect(screen.getByTestId('link-issue-form').textContent).toBe('jira');
-    fireEvent.click(screen.getByRole('button', { name: /All trackers/ }));
-    expect(screen.queryByTestId('link-issue-form')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Linear' })).toBeDefined();
+    fireEvent.change(search(), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('tab', { name: 'Sentry' }));
+    expect(optionNames()).toEqual(['Timeout in ledger sync job (LEDGER-2M)']);
   });
 
-  it('opens the same flow from the quiet chip presentation, spelling out the invite', () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
-
-    render(<LinkIssueAction session={session} presentation="chip" />);
-    const trigger = screen.getByRole('button', { name: 'Link an issue' });
-
-    expect(trigger.textContent).toContain('Link an issue');
-    fireEvent.click(trigger);
-    expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
-  });
-
-  it('collapses the chip to the bare plus and still opens the same flow', () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }] };
-
-    render(<LinkIssueAction session={session} presentation="chip" isCollapsed />);
-    const trigger = screen.getByRole('button', { name: 'Link an issue' });
-
-    expect(trigger.textContent).not.toContain('Link an issue');
-    fireEvent.click(trigger);
-    expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
-  });
-
-  it('offers sentry once the workspace binds it', () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'sentry' }] };
-
+  it('links the picked item with the same call as the inbox and closes', async () => {
     render(<LinkIssueAction session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+    fireEvent.click(trigger());
 
-    expect(screen.getByTestId('link-issue-form').textContent).toBe('sentry');
-    expect(linkIssueFormCalls.at(-1)).toEqual({ provider: 'sentry', providerLabel: 'Sentry' });
+    fireEvent.keyDown(search(), { key: 'ArrowDown' });
+    await act(async () => {
+      fireEvent.keyDown(search(), { key: 'Enter' });
+    });
+
+    expect(store.linkSessionExternalTask).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ provider: 'github', identifier: 'notify-relay#88' }),
+    );
+    expect(screen.queryByRole('combobox', { name: 'Search work to link' })).toBeNull();
   });
 
-  it('lists sentry beside the other trackers', () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }, { provider: 'sentry' }] };
-
+  it('hides what is already linked', () => {
+    work.linkedKeys = new Set(['sentry:LEDGER-2M']);
     render(<LinkIssueAction session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+    fireEvent.click(trigger());
 
-    expect(screen.getByRole('button', { name: 'Sentry' })).toBeDefined();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Sentry' }));
-
-    expect(screen.getByTestId('link-issue-form').textContent).toBe('sentry');
+    expect(optionNames()).not.toContain('Timeout in ledger sync job (LEDGER-2M)');
   });
 
-  it('never offers slack or bitbucket, which link no issues', () => {
-    store.workspaceIntegrations = {
-      'ws-1': [{ provider: 'slack' }, { provider: 'bitbucket' }, { provider: 'linear' }],
-    };
-
+  it('links a pasted URL even with no tracker connected', async () => {
+    work.items = [];
+    work.sources = [];
     render(<LinkIssueAction session={session} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+    fireEvent.click(trigger());
 
-    expect(screen.queryByRole('button', { name: 'Slack' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Bitbucket' })).toBeNull();
-    expect(screen.getByTestId('link-issue-form').textContent).toBe('linear');
+    expect(search().getAttribute('placeholder')).toBe('Paste a link to an issue');
+    fireEvent.change(search(), {
+      target: { value: 'https://linear.app/harborline/issue/HAR-230/refund-copy' },
+    });
+    expect(optionNames()).toEqual(['Link HAR-230']);
+    await act(async () => {
+      fireEvent.keyDown(search(), { key: 'Enter' });
+    });
+
+    expect(store.linkSessionExternalTask).toHaveBeenCalledWith(
+      SESSION_ID,
+      expect.objectContaining({ provider: 'linear', identifier: 'HAR-230' }),
+    );
   });
 
-  it('names sentry in the empty state it points people to', () => {
+  it('says which links it knows when the host is unknown', () => {
     render(<LinkIssueAction session={session} />);
+    fireEvent.click(trigger());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Link an issue' }));
+    fireEvent.change(search(), { target: { value: 'https://example.test/some/page' } });
 
-    expect(screen.getByText(/No tracker connected yet/).textContent).toContain('Sentry');
-  });
-
-  it('reopens on the provider list after a tracker was picked', () => {
-    store.workspaceIntegrations = { 'ws-1': [{ provider: 'linear' }, { provider: 'jira' }] };
-
-    render(<LinkIssueAction session={session} />);
-    const trigger = screen.getByRole('button', { name: 'Link an issue' });
-    fireEvent.click(trigger);
-    fireEvent.click(screen.getByRole('button', { name: 'Jira' }));
-    fireEvent.click(trigger);
-    fireEvent.click(trigger);
-
-    expect(screen.queryByTestId('link-issue-form')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Linear' })).toBeDefined();
+    expect(screen.getByText(/^Goodboy links Linear, Sentry/)).toBeDefined();
+    expect(optionNames()).toEqual([]);
   });
 });

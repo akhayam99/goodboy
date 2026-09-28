@@ -20,6 +20,8 @@ type Params = {
   readonly scopeVerbs: ReadonlyArray<PaletteEntry>;
   readonly scopeTitle: string | null;
   readonly scopeKey: string | null;
+  readonly parentVerbs: ReadonlyArray<PaletteEntry>;
+  readonly parentTitle: string | null;
   readonly frecency: FrecencyState;
   readonly now: number;
 };
@@ -68,11 +70,13 @@ export const buildCommandList = ({
   scopeVerbs,
   scopeTitle,
   scopeKey,
+  parentVerbs,
+  parentTitle,
   frecency,
   now,
 }: Params): ReadonlyArray<CommandSection> => {
   const parsed = parseQuery(query);
-  const pool = [...scopeVerbs, ...entries];
+  const pool = [...scopeVerbs, ...parentVerbs, ...entries];
   if (parsed.prefix !== null) {
     const group = parsed.prefix.group;
     const inGroup = pool.filter((entry) => entry.group === group);
@@ -96,6 +100,7 @@ export const buildCommandList = ({
     return [{ title: null, rows }];
   }
   const verbs = scopeVerbs.filter((entry) => isRunnable(entry) && !isScopeOpen(entry));
+  const parents = parentVerbs.filter((entry) => isRunnable(entry) && !isScopeOpen(entry));
   const byKey = new Map(entries.map((entry) => [entry.key, entry] as const));
   const recents = recentKeys({ state: frecency, now, limit: RECENT_LIMIT * 4 })
     .filter((key) => key !== scopeKey)
@@ -106,6 +111,7 @@ export const buildCommandList = ({
     .slice(0, RECENT_LIMIT);
   const sections: Array<CommandSection> = [
     { title: scopeTitle, rows: verbs.map(plain) },
+    { title: parentTitle, rows: parents.map(plain) },
     { title: 'Recent', rows: recents.map(plain) },
     ...EMPTY_SECTION_KINDS.map(([title, kinds]) => ({
       title,

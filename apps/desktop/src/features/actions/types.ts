@@ -54,7 +54,11 @@ export type ActionChoice = {
   readonly id: string;
   readonly label: string;
   readonly isCurrent: boolean;
+  readonly detail?: string;
+  readonly keywords?: ReadonlyArray<string>;
 };
+
+export const ALL_CHOICES_ID = 'choice.all';
 
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
