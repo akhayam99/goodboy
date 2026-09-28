@@ -669,15 +669,18 @@ viewport, so app zoom takes the same path as a narrow window:
 1. Below `chrome-wide` the command center narrows and says only `Search`, and
    Limits keeps two chips instead of four.
 2. Below `chrome-labels` it becomes an icon with ⌘K, the signal words
-   (`need you`, `running`, `scripts`, `today`, `Limits`) drop and Limits keeps
+   (`need you`, `running`, `scripts`, `today`) drop and Limits keeps
    one chip. Counts, dots, glyphs and the spend figure stay, and their
    tooltips carry the words.
 
 The traffic lights, identity, the movement cluster (Board keeps its word),
 the command center, the needs-you count, the
-spend figure, the first Limits chip and the bell never hide. The Limits chips
-past the ones that fit are the only overflow: a `+N` chip takes the tone of
-the worst hidden provider and lists them. No other control moves into an
+spend figure, the first Limits chip and the bell never hide. A Limits chip is
+the provider glyph and two bars, with no card, label or number around it; the
+percentage lives in its tooltip and its accessible name. A provider with no
+figures yet draws no chip. The Limits chips past the ones that fit, and the
+providers with no figures, are the only overflow: a `+N` chip takes the tone
+of the worst hidden provider and lists them. No other control moves into an
 overflow menu. `chrome-labels` sits below the 1024px minimum window, so words
 only drop under zoom.
 
@@ -701,7 +704,7 @@ only drop under zoom.
 - **Theme is in the bar, after the fourth round of removing it.** A dark room,
   a projector, a shared screen: the theme changes several times a day, and a
   detour through Settings is friction each time. The toggle sits after the
-  vertical divider and before the bell, alternates dark and light on a click,
+  Limits chips and before the bell, with no divider, alternates dark and light on a click,
   and turns Match system into an explicit choice the first time it is
   clicked. Below the 720px `chrome-narrow` width it leaves the bar; it is not
   in the never-hide list. The three-way choice (dark, light, Match system)
