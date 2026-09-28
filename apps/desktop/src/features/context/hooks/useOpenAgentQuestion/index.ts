@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { AgentId, OpenQuestionId, SessionId } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
+import { openAgentRevealEvent } from '../../../session/components/AgentDetailPane/agentOpenTab';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -24,7 +25,7 @@ export const useOpenAgentQuestion = ({ sessionId }: Params) => {
       }
       navigate({ to: agentPlace({ sessionId, agentId: question.createdByAgentId }) });
       requestOpenQuestionScroll({ agentId: question.createdByAgentId, questionId: question.id });
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      window.dispatchEvent(openAgentRevealEvent());
     },
     [navigate, requestOpenQuestionScroll, sessionId],
   );
