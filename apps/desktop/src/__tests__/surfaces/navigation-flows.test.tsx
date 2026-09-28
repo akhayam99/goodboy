@@ -640,7 +640,7 @@ const SEARCH_JUMPS: ReadonlyArray<{
     overrides: () => ({ kind: 'question', refId: 'q-1' }),
     lands: lens('questions'),
   },
-  { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: lens('review') },
+  { kind: 'pr', overrides: () => ({ kind: 'pr' }), lands: lens('pr') },
   {
     kind: 'comment',
     overrides: () => ({ kind: 'comment', refId: 'c-1' }),

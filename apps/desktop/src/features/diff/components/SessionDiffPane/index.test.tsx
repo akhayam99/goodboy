@@ -290,6 +290,8 @@ describe('SessionDiffPane header', () => {
     h.status = statusOf({ changed: 3, inProgress: 'rebase' });
     renderPane();
 
+    expect(screen.getByText('Rebase stopped')).toBeDefined();
+    expect(screen.queryByText('On origin')).toBeNull();
     expect(screen.getByRole('button', { name: 'Open terminal' })).toBeDefined();
     fireEvent.click(screen.getByRole('button', { name: 'Abort rebase' }));
 

@@ -224,10 +224,12 @@ never exists on one surface only.
   an open record), a pull request, a worktree row of the Overview (`mount`), a
   project, the Diff of a branch (`diff`), a diff file, a commit on the rewrite
   page, a storage worktree, a script, a transcript message and a link in
-  rendered text have their own kinds. The pull request, `mount` and `diff`
-  kinds read their facts from the store and carry a `slot` per action: which
-  available actions also get a visible control on their layer (`primary`,
-  `secondary`, `inline`, `nudge`, `notice`, `hover`, `section`, `chip`), at
+  rendered text have their own kinds. One field says which available actions
+  also get a visible control on their surface: `slot` (`primary`,
+  `secondary`, `inline`, `nudge`, `notice`, `hover`, `section`, `chip`,
+  `empty`, and `menu`, the default, for the menu alone). A surface reads its
+  buttons from it (the artifact viewer header its primary and secondaries,
+  the pull request page, the Diff header and the worktree row theirs), at
   most one primary and three secondaries; the menu, the right click and the
   palette ignore `slot` and list every available action.
   `useActionControls` renders those controls with the pending words on the
@@ -562,11 +564,13 @@ activity yet show the plain overview with its actions.
   instruction, through the same `useResolveAgain` hook Review uses.
 - **The Diff ends on the branch it shows**, with its `+N -M`, and that segment
   lists the session's branches by repo with one state word each, the first
-  that applies of `Merged`, `Gone on origin`, `Local only`, `Diverged from
-origin`, `Behind main by N` and `On origin` (`branchPriorityOf`), and `All
-branches in Overview`. `Local only` and `Diverged from origin` read the
-  branch's own remote copy (`branchPushStateOf`), never the base it was cut
-  from. A
+  that applies of `Rebase stopped` (or `Rebasing on main` while the rewriter
+  works), `Merged`, `Gone on origin`, `Local only`, `Diverged from origin`,
+  `Behind main by N` and `On origin` (`branchPriorityOf`), and `All branches in
+Overview`. `Local only` and `Diverged from origin` read the branch's own
+  remote copy (`branchPushStateOf`), never the base it was cut from. The Diff
+  header reads the same word, so a stopped rebase never reads `On origin`
+  next to Open terminal and Abort rebase. A
   branch whose pull request merged reads `Merged` even with no git ancestry
   (a squash merge), in the menu and in the Diff header alike
   (`isMountRequestMerged`). It never

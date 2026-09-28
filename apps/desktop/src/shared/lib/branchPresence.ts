@@ -122,7 +122,8 @@ type PriorityParams = {
   readonly main: MainPresence;
 };
 
-export type BranchPriorityKind = BranchPresenceKind | 'behind-main';
+export type BranchPriorityKind =
+  BranchPresenceKind | 'behind-main' | 'rebase-stopped' | 'rebasing-on-main';
 
 export type BranchPriority = {
   readonly kind: BranchPriorityKind;
@@ -130,6 +131,9 @@ export type BranchPriority = {
 };
 
 export const branchPriorityOf = ({ presence, main }: PriorityParams): BranchPriority => {
+  if (main.kind === 'rebase-stopped' || main.kind === 'rebasing-on-main') {
+    return { kind: main.kind, word: main.label };
+  }
   if (presence.kind !== 'on-origin') {
     return { kind: presence.kind, word: presence.label };
   }

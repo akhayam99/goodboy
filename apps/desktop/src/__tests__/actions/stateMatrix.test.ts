@@ -739,6 +739,28 @@ describe('artifact menu in every state', () => {
     expect(matrixOf(target)).toEqual(expected);
   });
 
+  it.each(ARTIFACT_STATES)(
+    '%s: its header buttons come from slot, one primary at most',
+    (_state, artifact, target) => {
+      seed({});
+      useAppStore.setState({
+        sessionArtifacts: { [SESSION]: artifact === null ? [] : [artifact] },
+      });
+      const actions = bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? [];
+      expect(actions.filter((action) => action.slot === 'primary').length).toBeLessThanOrEqual(1);
+    },
+  );
+
+  it('makes Run plan the primary of a plan ready to run', () => {
+    seed({});
+    useAppStore.setState({ sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'plan' })] } });
+    const actions =
+      bindTarget({ state: useAppStore.getState(), target: storedTarget() })?.resolve() ?? [];
+    expect(
+      actions.filter((action) => action.slot === 'primary').map((action) => action.id),
+    ).toEqual(['artifact.runPlan']);
+  });
+
   it('shows nothing for an artifact that is gone', () => {
     seed({});
     expect(matrixOf(storedTarget())).toEqual([]);

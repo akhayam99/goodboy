@@ -15,10 +15,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'creation menu: picks the kind of artifact to create',
   'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
     'Create split menu: picks what to create',
-  'features/session/components/SessionOverviewPane/OverviewActions/useArtifactCreateItems/index.ts':
-    'Create split menu items: picks what to create',
-  'features/session/components/SessionSetup/WorkStep.tsx':
-    'setup step: picks how to start the work',
   'features/integrations/linear/LinearAssigneeMenu/index.tsx':
     'property picker: sets the assignee value from the control that shows it',
   'features/integrations/linear/LinearStateMenu/index.tsx':
@@ -41,6 +37,8 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'rewrite event rows in Activity: event verbs, not an object in the map',
   'features/session/components/SessionWorkspace/parts/TimelinePane/index.tsx':
     'hosts the rewrite event menu of useHistoryRowActions',
+  'features/search/components/SearchMode/SearchHitActions.tsx':
+    'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
     'artifact files from deleted sessions: storage keep and delete',
 };

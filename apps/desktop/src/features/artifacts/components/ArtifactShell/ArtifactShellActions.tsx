@@ -4,7 +4,7 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
-import type { ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
+import type { ActionSlot, ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
 
 const HEADER_OMISSIONS: ReadonlyArray<string> = ['artifact.open'];
 
@@ -16,19 +16,15 @@ type Props = {
   }) => void;
 };
 
-const EMPHASIS_ORDER = { secondary: 0, primary: 1 } as const;
+const BUTTON_ORDER: Readonly<Partial<Record<ActionSlot, number>>> = { secondary: 0, primary: 1 };
 
 export const ArtifactShellActions = ({ target, onArm }: Props) => {
   const env = useActionEnv({ origin: 'button' });
   const { actions, run } = useObjectActions({ target, env });
   const buttons = actions
-    .filter((action) => action.emphasis !== null)
+    .filter((action) => BUTTON_ORDER[action.slot] !== undefined)
     .slice()
-    .sort(
-      (left, right) =>
-        EMPHASIS_ORDER[left.emphasis ?? 'secondary'] -
-        EMPHASIS_ORDER[right.emphasis ?? 'secondary'],
-    );
+    .sort((left, right) => (BUTTON_ORDER[left.slot] ?? 0) - (BUTTON_ORDER[right.slot] ?? 0));
   const omit = [...HEADER_OMISSIONS, ...buttons.map((action) => action.id)];
   const hasOverflow = actions.some((action) => !omit.includes(action.id));
 
@@ -37,7 +33,7 @@ export const ArtifactShellActions = ({ target, onArm }: Props) => {
       {buttons.map((action) => (
         <Button
           key={action.id}
-          variant={action.emphasis === 'primary' ? 'primary' : 'secondary'}
+          variant={action.slot === 'primary' ? 'primary' : 'secondary'}
           size="sm"
           onClick={() => {
             if (action.confirm !== null) {

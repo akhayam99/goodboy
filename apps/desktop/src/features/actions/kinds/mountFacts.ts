@@ -6,7 +6,11 @@ import type {
   WorktreeStatus,
 } from '@goodboy/types';
 import { changedCount, distanceAhead, distanceBehind } from '../../../shared/lib/gitStatus';
-import { branchPushStateOf, commitsToPush } from '../../../shared/lib/branchPushState';
+import {
+  branchPushStateOf,
+  commitsToPush,
+  type BranchPushState,
+} from '../../../shared/lib/branchPushState';
 import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
 
 export type MountRequestPhase = 'open' | 'draft' | 'merged' | 'closed';
@@ -63,6 +67,9 @@ const CREATABLE: Readonly<Partial<Record<RemoteHostKind, MountPullRequestProvide
   gitlab: 'gitlab',
 };
 
+const unpushedOf = ({ state }: { readonly state: BranchPushState }): number =>
+  state.kind === 'diverged' ? state.ahead : commitsToPush({ state });
+
 type Params = {
   readonly sessionId: SessionId;
   readonly mountId: MountId;
@@ -113,6 +120,7 @@ export const mountFacts = ({
   editors,
 }: Params): MountFacts => {
   const ahead = status === null ? 0 : (distanceAhead({ distance: status.mainDistance }) ?? 0);
+  const pushState = status === null ? null : branchPushStateOf({ status });
   const upstreamBehind =
     status === null ? null : distanceBehind({ distance: status.upstreamDistance });
   return {
@@ -133,7 +141,7 @@ export const mountFacts = ({
     requestProvider: request?.provider ?? null,
     createProvider: remoteKind === null ? null : (CREATABLE[remoteKind] ?? null),
     ahead,
-    unpushed: status === null ? 0 : commitsToPush({ state: branchPushStateOf({ status }) }),
+    unpushed: pushState === null ? 0 : unpushedOf({ state: pushState }),
     behind: status === null ? 0 : (distanceBehind({ distance: status.mainDistance }) ?? 0),
     dirty: status === null ? 0 : (changedCount({ workingTree: status.workingTree }) ?? 0),
     isDiverged: upstreamBehind !== null && upstreamBehind > 0,

@@ -339,6 +339,30 @@ describe('branchMenu', () => {
     ]);
   });
 
+  it('names a stopped rebase before any other word, on a merged branch too', () => {
+    const stopped = {
+      ...status('origin/fix/ledger-backfill', 4),
+      inProgress: 'rebase',
+    } as WorktreeStatus;
+    const menu = branchMenu({
+      mounts: [
+        mount('ledger-core', 'fix/ledger-backfill', '/w/stopped'),
+        mount('ledger-core', 'fix/ledger-rounding', '/w/merged'),
+      ],
+      currentPath: null,
+      statOf: () => null,
+      statusOf: () => stopped,
+      isRequestMergedOf: (candidate) => candidate.worktreePath === '/w/merged',
+      actions: [],
+      onSelect: vi.fn(),
+    });
+
+    expect(rowsOf(menu).map((row) => [row.state?.word, row.state?.tone])).toEqual([
+      ['Rebase stopped', 'warning'],
+      ['Rebase stopped', 'warning'],
+    ]);
+  });
+
   it('reads a squash-merged branch as Merged from its pull request', () => {
     const squashed = mount('ledger-core', 'fix/ledger-backfill', '/w/squashed');
     const menu = branchMenu({
