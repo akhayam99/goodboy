@@ -1273,7 +1273,8 @@ body into items, one per top-level bullet with its sub-bullets, or one per
 sentence for prose. Summary shows State, Next, Open questions (the session's
 open questions, read only) and Learned, then any section the summarizer did not
 name. Goal is one block with Edit and Versions in its header. Decisions shows
-the changes block, then Active, then the folded Replaced and withdrawn group.
+the changes block, then Active, then the folded Replaced and removed group,
+split into Removed by you and Replaced with a search across both.
 
 The Decisions tab reads the decisions ledger ([turns.md](turns.md#the-decisions-ledger)).
 When something changed since the previous look (`sessionDecisionsBaseline`,
@@ -1286,10 +1287,16 @@ text, its why as one muted line under the text when the row has one (clamped
 to two lines, **Show more** when longer; older rows show nothing), and who
 settled it (`Implementer · turn 9 · 1h`, `You · 2h`,
 `replaces 5`). An added row also carries `New` until the next open. A row the summarizer reworded says `Reworded by Goodboy` with
-**Show previous**. On hover a row offers edit (a reword of yours) and
-Withdraw, with no confirm because the bottom group, **Replaced and withdrawn**,
-offers Restore; its rows are struck through, point at the decision that
-replaced them (`→ 7` scrolls there and highlights it), and quote the reason.
+**Show previous**. Clicking a row opens it (**Show more** on the text when it
+was clamped, same toggle), revealing Edit (a reword of yours) and Remove.
+Remove withdraws at once, with no confirm, so agents see it retired, but the
+row stays where it was, struck through, with a per-row Undo, and the block
+opens with `N changes on this visit · Undo all` while any are pending.
+Leaving the drawer, by closing it or switching session, drops them into the
+bottom group, **Replaced and removed**, split by a `Removed by you` /
+`Replaced` filter with a search over both; only the rows you removed offer
+Restore. Every closed row is struck through, points at the decision that
+replaced it (`→ 7` scrolls there and highlights it), and quotes the reason.
 The dock adds a decision of yours on Enter. While the summarizer writes, rows
 stay readable and every edit waits. A row that arrives while the drawer is open
 comes in with `Reveal` (200ms), and a reworded text fades in (180ms,
