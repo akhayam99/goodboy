@@ -1161,7 +1161,8 @@ backup, or is the last rewrite this page pushed and the online copy it replaced
 was already in that backup; otherwise it stays restored here and the page says
 nothing was pushed.
 The backups restores leave skip the 30 days and keep the newest 20 per
-branch, and the newest backup of a branch is never pruned. Backups made before the current
+branch, never dropping one that is the only ref to its commits, and the
+newest backup of a branch is never pruned. Backups made before the current
 naming never move: they show read-only as older backups under every branch
 whose name matches, can't be restored from the page and are never pruned. History rewriter may write only its
 copy, that copy's own git admin folder, the object store and the packed-refs lock

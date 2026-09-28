@@ -2200,6 +2200,23 @@ fn stamp_of(ref_name: &str) -> Option<(bool, u128)> {
     Some((digits.is_some(), nanos))
 }
 
+fn is_kept_elsewhere(cwd: &Path, ref_name: &str, sha: &str) -> bool {
+    git(
+        cwd,
+        &[
+            "for-each-ref",
+            "--format=%(refname)",
+            "--contains",
+            sha,
+            "refs/heads",
+            "refs/remotes",
+            "refs/tags",
+            BACKUP_PREFIX,
+        ],
+    )
+    .is_ok_and(|raw| raw.lines().any(|line| line.trim() != ref_name))
+}
+
 fn prune_backups_before(cwd: &Path, cutoff: u64) {
     let Ok(refs) = backup_refs(cwd) else {
         return;
@@ -2227,7 +2244,7 @@ fn prune_backups_before(cwd: &Path, cutoff: u64) {
                 kept_seen += 1;
             }
             let is_prunable = if *is_kept {
-                kept_seen > KEPT_BACKUP_CAP
+                kept_seen > KEPT_BACKUP_CAP && is_kept_elsewhere(cwd, ref_name, sha)
             } else {
                 let created = created_at_of(ref_name);
                 created > 0 && created < cutoff
@@ -5427,6 +5444,54 @@ mod tests {
         assert!(left.contains(&lone));
         assert!(left.contains(&newer));
         assert!(!left.contains(&older));
+    }
+
+    #[test]
+    fn the_restore_backup_cap_never_drops_the_only_ref_to_its_commits() {
+        let b = branch("prune-only-ref");
+        let space = backup_namespace("feature");
+        let stamp = |index: u128| 1_000_000_000_000_000_000u128 + index * 1_000_000_000;
+        let tree = git_ok(&b.root, &["rev-parse", &format!("{}^{{tree}}", b.b)]);
+        let dangling = git_ok(
+            &b.root,
+            &[
+                "commit-tree",
+                &tree,
+                "-p",
+                &b.a,
+                "-m",
+                "Only kept by a backup",
+            ],
+        );
+        let oldest = format!("{space}/{KEPT_STAMP}{}", stamp(0));
+        let second = format!("{space}/{KEPT_STAMP}{}", stamp(1));
+        git_ok(&b.root, &["update-ref", &oldest, &dangling]);
+        git_ok(&b.root, &["update-ref", &second, &b.a]);
+        for index in 2..22 {
+            git_ok(
+                &b.root,
+                &[
+                    "update-ref",
+                    &format!("{space}/{KEPT_STAMP}{}", stamp(index)),
+                    &b.c,
+                ],
+            );
+        }
+
+        prune_backups_before(&b.root, u64::MAX);
+
+        assert_eq!(git_ok(&b.root, &["rev-parse", &oldest]), dangling);
+        assert!(
+            git_run(
+                &b.root,
+                &["rev-parse", "--verify", "--quiet", &second],
+                None,
+                None
+            )
+            .unwrap()
+            .status
+                != 0
+        );
     }
 
     #[test]
