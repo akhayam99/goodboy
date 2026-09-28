@@ -27,6 +27,20 @@ describe('m212 chats', () => {
     expect(row?.archived_at).toBeNull();
   });
 
+  it('keeps only the providers that can run a read-only chat', async () => {
+    const db = await seed();
+    await expect(
+      db.execute(
+        `INSERT INTO chats (id, workspace_id, title, provider, model, last_activity_at, created_at, updated_at)
+         VALUES ('cursor-chat', 'harborline', 'Flaky test', 'cursor', 'auto', 1, 1, 1)`,
+      ),
+    ).rejects.toThrow();
+    await db.execute(
+      `INSERT INTO chats (id, workspace_id, title, provider, model, last_activity_at, created_at, updated_at)
+       VALUES ('codex-chat', 'harborline', 'Flaky test', 'codex', 'gpt-5.6-sol', 1, 1, 1)`,
+    );
+  });
+
   it('refuses a message role or status outside the enum', async () => {
     const db = await seed();
     await expect(

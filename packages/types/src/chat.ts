@@ -9,6 +9,19 @@ export const CHAT_MESSAGE_STATUSES = ['streaming', 'done', 'failed', 'stopped'] 
 
 export type ChatMessageStatus = (typeof CHAT_MESSAGE_STATUSES)[number];
 
+export const CHAT_PROVIDER_IDS = [
+  'anthropic',
+  'codex',
+] as const satisfies ReadonlyArray<ProviderId>;
+
+export type ChatProviderId = (typeof CHAT_PROVIDER_IDS)[number];
+
+export const CHAT_PROVIDER_REFUSAL =
+  'Chat needs a provider that can run read-only: Claude or Codex';
+
+export const isChatProvider = (provider: ProviderId): provider is ChatProviderId =>
+  CHAT_PROVIDER_IDS.some((candidate) => candidate === provider);
+
 export const CHAT_IDLE_AFTER_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type Chat = Readonly<{

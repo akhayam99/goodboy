@@ -3,7 +3,7 @@ CREATE TABLE chats (
   id TEXT PRIMARY KEY,
   workspace_id TEXT NOT NULL,
   title TEXT NOT NULL,
-  provider TEXT NOT NULL,
+  provider TEXT NOT NULL CHECK (provider IN ('anthropic', 'codex')),
   model TEXT NOT NULL,
   pinned_at INTEGER NULL,
   archived_at INTEGER NULL,
