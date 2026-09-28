@@ -96,6 +96,8 @@ pub struct SpawnArgs {
     pub writer_lease: Option<WriterLeaseBinding>,
     #[serde(default)]
     pub blocks_push: bool,
+    #[serde(default)]
+    pub excludes_tmp: bool,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -223,6 +225,15 @@ fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String>
             if sandbox == "workspace-write" {
                 v.push("-c".to_string());
                 v.push("sandbox_workspace_write.network_access=true".to_string());
+                if args.excludes_tmp {
+                    for setting in [
+                        "sandbox_workspace_write.exclude_tmpdir_env_var=true",
+                        "sandbox_workspace_write.exclude_slash_tmp=true",
+                    ] {
+                        v.push("-c".to_string());
+                        v.push(setting.to_string());
+                    }
+                }
                 for root in args.writable_roots {
                     v.push("--add-dir".to_string());
                     v.push(root.to_string());
@@ -349,6 +360,7 @@ struct SpawnOneArgs<'a> {
     pub cursor_max_mode: bool,
     pub writer_lease: Option<&'a WriterLeaseBinding>,
     pub blocks_push: bool,
+    pub excludes_tmp: bool,
 }
 
 pub(crate) const PUSH_BLOCK_URL: &str = "goodboy-blocked://history-rewriter";
@@ -553,6 +565,7 @@ pub async fn turn_spawn(
             cursor_max_mode: args.cursor_max_mode,
             writer_lease: args.writer_lease.as_ref(),
             blocks_push: args.blocks_push,
+            excludes_tmp: args.excludes_tmp,
         },
     )
 }
@@ -814,6 +827,7 @@ mod tests {
             cursor_max_mode: false,
             writer_lease: None,
             blocks_push: false,
+            excludes_tmp: false,
         };
         assert_eq!(args.run_id, "run-1");
         assert_eq!(args.binary, "echo");
@@ -847,6 +861,7 @@ mod tests {
             cursor_max_mode: false,
             writer_lease: None,
             blocks_push: false,
+            excludes_tmp: false,
         }
     }
 
@@ -988,6 +1003,26 @@ mod tests {
             added_directories,
             vec!["/repo/one/.git", "/repo/two/.git", "/tmp/goodboy-query"]
         );
+    }
+
+    #[test]
+    fn codex_rewriter_turns_cannot_write_the_temp_folders() {
+        let empty: Vec<String> = vec![];
+        let mut args = make_args(None, None, &empty);
+        let settings = |cli: &[String]| -> Vec<String> {
+            cli.windows(2)
+                .filter(|pair| pair[0] == "-c")
+                .map(|pair| pair[1].clone())
+                .collect()
+        };
+        let plain = settings(&build_provider_cli_args("codex", &args));
+        assert!(!plain.iter().any(|setting| setting.contains("exclude_")));
+        args.excludes_tmp = true;
+        let isolated = settings(&build_provider_cli_args("codex", &args));
+        assert!(
+            isolated.contains(&"sandbox_workspace_write.exclude_tmpdir_env_var=true".to_string())
+        );
+        assert!(isolated.contains(&"sandbox_workspace_write.exclude_slash_tmp=true".to_string()));
     }
 
     #[test]
@@ -1371,6 +1406,7 @@ mod tests {
             cursor_max_mode: false,
             writer_lease: None,
             blocks_push: false,
+            excludes_tmp: false,
         };
         let cli = build_provider_cli_args("codex", &args);
         let out = std::process::Command::new("codex")

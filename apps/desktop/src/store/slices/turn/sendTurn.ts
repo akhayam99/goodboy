@@ -1229,6 +1229,7 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
           ...(resolvedModel.maxMode === true && { cursorMaxMode: true }),
           ...(writerLease !== undefined && { writerLease }),
           ...((rewriterCopy !== null || isScribeTurn) && { blocksPush: true }),
+          ...(rewriterCopy !== null && { excludesTmp: true }),
           ...(apiKeyBinding ?? {}),
           ...claudeFlags,
         },

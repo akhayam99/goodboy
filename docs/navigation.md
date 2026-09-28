@@ -1166,11 +1166,14 @@ naming never move: they show read-only as older backups under every branch
 whose name matches, can't be restored from the page and are never pruned. History rewriter may write only its
 copy, that copy's own git admin folder, the object store and the packed-refs lock
 file git takes when it clears a rebase marker. Temporary copies left by a crash are removed when the
-app starts. Each copy lives in a folder Goodboy reserves atomically, with an
+app starts. Each copy lives in a folder Goodboy reserves atomically under
+`~/.goodboy/history-copies`, never in a temp folder an agent can write, with an
 owner file and a lock it holds while the copy is in use, and nothing deletes a
 copy without both, so a second window never removes a copy in use. The owner
 file records the copy's git admin folder when the copy is made; the rewriter's
-roots and the cleanup read it from there, never from the copy's own `.git`. `Branch vs main` sits in the file
+roots and the cleanup use it only while it is `<common>/worktrees/<name>` and
+its `gitdir` names exactly that reserved copy, never the copy's own `.git`.
+Codex rewriter turns also lose write access to the temp folders. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,

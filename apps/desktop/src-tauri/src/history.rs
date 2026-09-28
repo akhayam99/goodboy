@@ -26,6 +26,7 @@ const JOURNAL_FILE: &str = "goodboy-history.journal";
 const COPY_PREFIX: &str = "goodboy-history-";
 const TRIAL_SLUG_PREFIX: &str = "try-";
 const COPY_DIR: &str = "copy";
+const RESERVATIONS_DIR: &str = "history-copies";
 const RESERVATION_FILE: &str = "goodboy-history-owner";
 const RESERVATION_HEADER: &str = "goodboy history copy v1";
 const RESERVATION_LOCK: &str = "goodboy-history.lock";
@@ -1098,8 +1099,14 @@ fn blocked(sha: &str) -> StepPrediction {
     prediction(sha, StepOutcome::Blocked)
 }
 
+fn reservations_dir() -> PathBuf {
+    dirs::home_dir()
+        .map(|home| home.join(".goodboy").join(RESERVATIONS_DIR))
+        .unwrap_or_default()
+}
+
 fn reservation_of(slug: &str) -> PathBuf {
-    std::env::temp_dir().join(format!("{COPY_PREFIX}{}", sanitize_slug(slug)))
+    reservations_dir().join(format!("{COPY_PREFIX}{}", sanitize_slug(slug)))
 }
 
 pub(crate) fn copy_path_of(slug: &str) -> PathBuf {
@@ -1150,7 +1157,6 @@ fn reservation_root_of(copy: &Path) -> Option<PathBuf> {
 struct Owner {
     repo: PathBuf,
     admin: Option<PathBuf>,
-    gitdir: Option<String>,
 }
 
 fn read_owner(root: &Path) -> Option<Owner> {
@@ -1166,28 +1172,21 @@ fn read_owner(root: &Path) -> Option<Owner> {
         .map(str::trim)
         .filter(|line| !line.is_empty())
         .map(PathBuf::from);
-    let gitdir = lines
-        .next()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .map(str::to_string);
-    Some(Owner {
-        repo,
-        admin,
-        gitdir,
-    })
+    Some(Owner { repo, admin })
 }
 
 fn owner_repo(root: &Path) -> Option<PathBuf> {
     read_owner(root).map(|owner| owner.repo)
 }
 
-fn owner_text(repo: &Path, admin: &Path, gitdir: &str) -> String {
+fn owner_text(repo: &Path, admin: Option<&Path>) -> String {
     format!(
-        "{RESERVATION_HEADER}\n{}\n{}\n{}\n{gitdir}\n",
+        "{RESERVATION_HEADER}\n{}\n{}\n{}\n",
         repo.to_string_lossy(),
         std::process::id(),
-        admin.to_string_lossy()
+        admin
+            .map(|dir| dir.to_string_lossy().to_string())
+            .unwrap_or_default()
     )
 }
 
@@ -1203,7 +1202,22 @@ fn is_real_dir(path: &Path) -> bool {
     std::fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_dir())
 }
 
-fn created_admin_dir(copy: &Path, repo: &Path) -> Option<(PathBuf, String)> {
+fn is_plain_name(name: &std::ffi::OsStr) -> bool {
+    let text = name.to_string_lossy();
+    !text.is_empty() && text != "." && text != ".." && !text.contains('/')
+}
+
+fn expected_gitdir(root: &Path) -> Option<String> {
+    let root = std::fs::canonicalize(root).ok()?;
+    Some(
+        root.join(COPY_DIR)
+            .join(".git")
+            .to_string_lossy()
+            .to_string(),
+    )
+}
+
+fn created_admin_dir(copy: &Path, repo: &Path) -> Option<PathBuf> {
     let pointer_file = copy.join(".git");
     if !is_regular_file(&pointer_file) {
         return None;
@@ -1211,19 +1225,15 @@ fn created_admin_dir(copy: &Path, repo: &Path) -> Option<(PathBuf, String)> {
     let pointer = std::fs::read_to_string(&pointer_file).ok()?;
     let named = PathBuf::from(pointer.trim().strip_prefix("gitdir:")?.trim());
     let admin = std::fs::canonicalize(copy.join(named)).ok()?;
-    if admin.parent()? != repo.join("worktrees") || !is_real_dir(&admin) {
-        return None;
-    }
-    let gitdir = std::fs::read_to_string(admin.join("gitdir")).ok()?;
-    let gitdir = gitdir.trim().to_string();
-    let registered = std::fs::canonicalize(admin.join(&gitdir)).ok()?;
-    (registered == std::fs::canonicalize(&pointer_file).ok()?).then_some((admin, gitdir))
+    (admin.parent()? == repo.join("worktrees")).then_some(admin)
 }
 
 fn recorded_admin_dir(root: &Path) -> Option<PathBuf> {
     let owner = read_owner(root)?;
-    let admin = owner.admin?;
-    if admin.parent()? != owner.repo.join("worktrees") || !is_real_dir(&admin) {
+    let recorded = owner.admin?;
+    let name = recorded.file_name().filter(|name| is_plain_name(name))?;
+    let admin = owner.repo.join("worktrees").join(name);
+    if admin != recorded || !is_real_dir(&admin) {
         return None;
     }
     let gitdir_file = admin.join("gitdir");
@@ -1231,7 +1241,7 @@ fn recorded_admin_dir(root: &Path) -> Option<PathBuf> {
         return None;
     }
     let gitdir = std::fs::read_to_string(&gitdir_file).ok()?;
-    (Some(gitdir.trim()) == owner.gitdir.as_deref()).then_some(admin)
+    (gitdir.trim() == expected_gitdir(root)?).then_some(admin)
 }
 
 fn remove_reservation(root: &Path, held: Option<std::fs::File>) -> bool {
@@ -1437,19 +1447,16 @@ fn common_dir_of(cwd: &Path) -> Result<PathBuf, WorktreeError> {
 
 fn create_copy(cwd: &Path, copy: &Path, start: &str) -> Result<CopyGuard, WorktreeError> {
     let root = reservation_root_of(copy)
+        .filter(|root| root.is_absolute())
         .ok_or_else(|| plan_error("the temporary copy has no reserved folder"))?;
     let repo = common_dir_of(cwd)?;
+    if let Some(parent) = root.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     std::fs::create_dir(&root).map_err(|_| {
         plan_error("a folder already sits where the temporary copy goes, so nothing was changed")
     })?;
-    let written = std::fs::write(
-        root.join(RESERVATION_FILE),
-        format!(
-            "{RESERVATION_HEADER}\n{}\n{}\n",
-            repo.to_string_lossy(),
-            std::process::id()
-        ),
-    );
+    let written = std::fs::write(root.join(RESERVATION_FILE), owner_text(&repo, None));
     let lock = open_lock(&root);
     if written.is_err() || lock.is_none() {
         let _ = std::fs::remove_dir_all(&root);
@@ -1463,12 +1470,22 @@ fn create_copy(cwd: &Path, copy: &Path, start: &str) -> Result<CopyGuard, Worktr
     let copy_text = copy.to_string_lossy().to_string();
     let added = git(
         cwd,
-        &["worktree", "add", "--detach", "--quiet", &copy_text, start],
+        &[
+            "-c",
+            "worktree.useRelativePaths=false",
+            "worktree",
+            "add",
+            "--detach",
+            "--quiet",
+            &copy_text,
+            start,
+        ],
     );
-    let recorded = created_admin_dir(copy, &repo).is_some_and(|(admin, gitdir)| {
+    let recorded = created_admin_dir(copy, &repo).is_some_and(|admin| {
         let staged = guard.root.join(format!("{RESERVATION_FILE}.next"));
-        std::fs::write(&staged, owner_text(&repo, &admin, &gitdir)).is_ok()
+        std::fs::write(&staged, owner_text(&repo, Some(&admin))).is_ok()
             && std::fs::rename(&staged, guard.root.join(RESERVATION_FILE)).is_ok()
+            && recorded_admin_dir(&guard.root).as_deref() == Some(admin.as_path())
     });
     if !recorded {
         let _ = git(cwd, &["worktree", "remove", "--force", &copy_text]);
@@ -2368,7 +2385,10 @@ pub(crate) fn clean_stale_copies_in(
 }
 
 pub(crate) fn clean_stale_copies() {
-    clean_stale_copies_in(&std::env::temp_dir(), STALE_TRIAL_SECS, STALE_REWRITER_SECS);
+    let dir = reservations_dir();
+    if dir.is_absolute() {
+        clean_stale_copies_in(&dir, STALE_TRIAL_SECS, STALE_REWRITER_SECS);
+    }
 }
 
 #[tauri::command]
@@ -4418,6 +4438,78 @@ mod tests {
             "my work\n"
         );
         assert_eq!(worktree_count(&l.root), 2);
+    }
+
+    #[test]
+    fn copies_are_reserved_in_the_app_folder_and_never_in_tmp() {
+        let copy = copy_path_of(&slug("tmp-check"));
+        let tmp = std::env::temp_dir();
+        for outside in [
+            tmp.clone(),
+            std::fs::canonicalize(&tmp).unwrap(),
+            PathBuf::from("/tmp"),
+            PathBuf::from("/private/tmp"),
+        ] {
+            assert!(!copy.starts_with(&outside), "{}", copy.display());
+        }
+        assert!(copy.starts_with(dirs::home_dir().unwrap().join(".goodboy")));
+    }
+
+    fn forged_owner(l: &Ledger, name: &str) -> (PathBuf, PathBuf, String) {
+        let other = temp_root(&format!("{name}-other")).join("review");
+        git_ok(
+            &l.root,
+            &[
+                "worktree",
+                "add",
+                "--detach",
+                "--quiet",
+                other.to_str().unwrap(),
+                &l.base,
+            ],
+        );
+        let review_admin =
+            std::fs::canonicalize(git_ok(&other, &["rev-parse", "--absolute-git-dir"])).unwrap();
+        let review_gitdir = std::fs::read_to_string(review_admin.join("gitdir"))
+            .unwrap()
+            .trim()
+            .to_string();
+        let common = std::fs::canonicalize(l.root.join(".git")).unwrap();
+        let text = format!(
+            "{RESERVATION_HEADER}\n{}\n1\n{}\n{review_gitdir}\n",
+            common.to_string_lossy(),
+            review_admin.to_string_lossy()
+        );
+        (other, review_admin, text)
+    }
+
+    #[test]
+    fn a_forged_owner_file_never_reaches_another_worktree() {
+        let l = ledger("forged-owner");
+        let (other, review_admin, forged) = forged_owner(&l, "forged-owner");
+        let root = temp_root("forged-owner-copies").join(format!("{COPY_PREFIX}forged"));
+        let copy = root.join(COPY_DIR);
+        let mut guard = create_copy(&l.root, &copy, &l.base).unwrap();
+        guard.is_kept = true;
+        std::fs::write(root.join(RESERVATION_FILE), forged).unwrap();
+        assert!(copy_git_dirs(&copy).is_none_or(|dirs| PathBuf::from(dirs.git_dir) != review_admin));
+        drop(guard);
+        discard_copy(&copy.to_string_lossy());
+        assert!(review_admin.join("gitdir").exists());
+        assert_eq!(git_ok(&other, &["rev-parse", "HEAD"]), l.base);
+    }
+
+    #[test]
+    fn a_planted_old_reservation_never_removes_another_worktree() {
+        let l = ledger("planted-owner");
+        let (other, review_admin, forged) = forged_owner(&l, "planted-owner");
+        let scratch = temp_root("planted-owner-copies");
+        let root = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}planted"));
+        std::fs::create_dir_all(root.join(COPY_DIR)).unwrap();
+        std::fs::write(root.join(RESERVATION_FILE), forged).unwrap();
+        clean_stale_copies_in(&scratch, 0, 0);
+        assert!(review_admin.join("gitdir").exists());
+        assert_eq!(git_ok(&other, &["rev-parse", "HEAD"]), l.base);
     }
 
     #[test]
