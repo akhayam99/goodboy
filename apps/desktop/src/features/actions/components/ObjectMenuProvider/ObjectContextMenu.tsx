@@ -11,7 +11,11 @@ type Props = {
 };
 
 export const ObjectContextMenu = ({ request, onClose }: Props) => {
-  const env = useActionEnv({ origin: 'menu', anchorKey: request.anchorKey });
+  const env = useActionEnv({
+    origin: 'menu',
+    anchorKey: request.anchorKey,
+    viewing: request.viewing ?? null,
+  });
   const { noun, actions, run } = useObjectActions({ target: request.target, env });
   const entries = useMemo(() => toMenuEntries({ actions, env, run }), [actions, env, run]);
   const isGone = noun === null || entries.length === 0;

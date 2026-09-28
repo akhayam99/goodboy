@@ -26,8 +26,25 @@ import type { BoardNavigation } from '../../features/workspace/components/StageB
 import { FileHeader } from '../../features/diff/components/DiffView/FileHeader';
 import { ScriptRow } from '../../features/scripts/components/ScriptRow';
 import { RecordHeader } from '../../shared/components/StudioDetail/RecordHeader';
+import { ArtifactShellHeader } from '../../features/artifacts/components/ArtifactShell/ArtifactShellHeader';
+import { ArtifactShellActions } from '../../features/artifacts/components/ArtifactShell/ArtifactShellActions';
+import { bindTarget } from '../../features/actions/registry';
+import { WorkflowRunDetail } from '../../features/session/components/SessionWorkspace/parts/WorkflowRunDetail';
+import { AgentHeaderActions } from '../../features/session/components/AgentHeaderActions';
+import type { ArtifactActionTarget } from '../../features/actions/types';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';
-import { SESSION, mountFixture, seedActionState, sessionFixture } from '../helpers/actionFixtures';
+import {
+  AGENT,
+  FIXTURE_NOW,
+  RUN,
+  SESSION,
+  agentFixture,
+  mountFixture,
+  runFixture,
+  seedActionState,
+  sessionFixture,
+  workflowFixture,
+} from '../helpers/actionFixtures';
 
 let useAppStore: StoryStore;
 
@@ -172,6 +189,104 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     });
     expect(fromOverflow).toEqual(['Show output', 'Run', 'Save as script', 'Copy command']);
     expect(fromContext).toEqual(fromOverflow);
+  });
+
+  it('artifact viewer header: the ⋯ and the right click list every action, buttons included, in registry order', async () => {
+    seedActionState({ useAppStore, seed: {} });
+    useAppStore.setState({
+      sessionPlans: { [SESSION]: [] },
+      sessionArtifacts: {
+        [SESSION]: [
+          {
+            id: 'artifact-payout',
+            sessionId: SESSION,
+            agentId: AGENT,
+            workflowRunId: null,
+            kind: 'plan',
+            schemaVersion: 1,
+            title: 'Speed up the payout export',
+            sourceFormat: 'markdown',
+            sourceText: '# Speed up the payout export',
+            metadata: {},
+            status: 'active',
+            revision: 1,
+            createdAt: FIXTURE_NOW,
+            updatedAt: FIXTURE_NOW,
+          } as never,
+        ],
+      },
+    });
+    const target: ArtifactActionTarget = {
+      kind: 'artifact',
+      sessionId: SESSION,
+      subject: { kind: 'stored', artifactId: 'artifact-payout' as never, isPlanRunning: false },
+    };
+    withMenus(
+      <ArtifactShellHeader
+        kind="plan"
+        title="Speed up the payout export"
+        chip={null}
+        actions={<ArtifactShellActions target={target} onArm={() => undefined} />}
+        toggles={null}
+        meta={null}
+      />,
+    );
+    const viewing = { kind: 'artifact', id: 'artifact-payout' } as const;
+    const resolved =
+      bindTarget({ state: useAppStore.getState(), target })?.resolve({ viewing }) ?? [];
+    const registry = resolved.map((action) => action.label);
+    const buttoned = resolved
+      .filter((action) => action.slot === 'primary' || action.slot === 'secondary')
+      .map((action) => action.label);
+    const { fromOverflow, fromContext } = await overflowThenContext({
+      overflow: screen.getByRole('button', { name: 'More' }),
+      context: screen.getByTestId('artifact-title'),
+    });
+
+    expect(buttoned.length).toBeGreaterThan(0);
+    expect(fromOverflow).not.toContain('Open');
+    expect(fromOverflow).toEqual(registry);
+    expect(fromContext).toEqual(fromOverflow);
+  });
+
+  it('run page: the ⋯ and the right click list every action, buttons included, never Open run', async () => {
+    const session = sessionFixture({ workflowRuns: [runFixture()] });
+    seedActionState({
+      useAppStore,
+      seed: { session, workflows: [workflowFixture()], mounts: [mountFixture()] },
+    });
+    withMenus(<WorkflowRunDetail session={session} workflowRunId={RUN} />);
+    const registry = (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'workflowRun', sessionId: SESSION, runId: RUN },
+      })?.resolve({ viewing: { kind: 'workflowRun', id: RUN } }) ?? []
+    ).map((action) => action.label);
+    const { fromOverflow, fromContext } = await overflowThenContext({
+      overflow: screen.getByRole('button', { name: /workflow actions$/ }),
+      context: screen.getByRole('heading', { name: 'Settlement export' }),
+    });
+
+    expect(fromOverflow).not.toContain('Open run');
+    expect(fromOverflow).toEqual(registry);
+    expect(fromContext).toEqual(fromOverflow);
+  });
+
+  it('agent header: the ⋯ lists every action, buttons included, never Open agent', async () => {
+    const agent = agentFixture({ status: 'failed' });
+    seedActionState({ useAppStore, seed: { agents: [agent], mounts: [mountFixture()] } });
+    withMenus(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
+    const registry = (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'agent', sessionId: SESSION, agentId: AGENT },
+      })?.resolve({ viewing: { kind: 'agent', id: AGENT } }) ?? []
+    ).map((action) => action.label);
+    fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
+
+    expect(menuLabels()).not.toContain('Open agent');
+    expect(menuLabels()).toContain('Delete agent');
+    expect(menuLabels()).toEqual(registry);
   });
 
   it('record header: the ⋯ plus its Open in tool button make the right click list', async () => {

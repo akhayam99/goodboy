@@ -53,6 +53,13 @@ type Props = {
   readonly menu?: ObjectMenuTrigger;
 };
 
+const CONTROL_SELECTOR = 'button, a, input, textarea, [role="group"]';
+
+const isOnControl = ({ target }: { readonly target: EventTarget }): boolean =>
+  target instanceof Element &&
+  target.closest(CONTROL_SELECTOR) !== null &&
+  target.closest('[data-agent-card-open]') === null;
+
 export const AgentCard = ({
   tone = 'default',
   density = 'sidebar',
@@ -81,11 +88,20 @@ export const AgentCard = ({
   return (
     <li className="flex flex-col gap-1" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
       <div
-        onClick={isInert ? undefined : onOpen}
-        onDoubleClick={isInert || onRenameStart == null ? undefined : onRenameStart}
+        data-agent-card
         onContextMenu={isInert ? undefined : menu?.onContextMenu}
+        onClick={(event) => {
+          if (!isInert && !isOnControl({ target: event.target })) {
+            onOpen();
+          }
+        }}
+        onDoubleClick={(event) => {
+          if (!isInert && onRenameStart != null && !isOnControl({ target: event.target })) {
+            onRenameStart();
+          }
+        }}
         className={cn(
-          'group/agent-card relative grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-lg border transition-colors has-[>button:focus-visible]:ring-2 has-[>button:focus-visible]:ring-focus-ring',
+          'group/agent-card relative grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-lg border transition-colors has-[[data-agent-card-open]:focus-visible]:ring-2 has-[[data-agent-card-open]:focus-visible]:ring-focus-ring',
           DENSITY_PADDING[density],
           isInert ? '' : 'cursor-pointer',
           isMuted && 'opacity-60',
@@ -98,26 +114,17 @@ export const AgentCard = ({
         {isInert ? null : (
           <button
             type="button"
+            data-agent-card-open
             aria-label={ariaLabel}
             aria-labelledby={ariaLabel === undefined ? titleId : undefined}
             aria-pressed={isSelected}
-            className="absolute inset-0 rounded-lg focus-visible:outline-none"
-            onKeyDown={(event) => {
-              menu?.onKeyDown(event);
-              if (event.defaultPrevented) {
-                return;
-              }
-              if (event.key !== 'Enter' && event.key !== ' ') {
-                return;
-              }
-              event.preventDefault();
-              onOpen();
-            }}
+            onKeyDown={menu?.onKeyDown}
+            className="absolute inset-0 cursor-pointer rounded-lg focus-visible:outline-none"
           />
         )}
         <div
+          className={cn('relative col-start-1 row-start-1 flex min-w-0 items-center gap-2')}
           id={titleId}
-          className="relative col-start-1 row-start-1 flex min-w-0 items-center gap-2"
           title={rowTitle}
         >
           {leading}

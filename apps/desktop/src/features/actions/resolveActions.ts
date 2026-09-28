@@ -1,8 +1,14 @@
-import { ACTION_GROUPS, type ActionDefinition, type ResolvedAction } from './types';
+import {
+  ACTION_GROUPS,
+  type ActionDefinition,
+  type ActionViewing,
+  type ResolvedAction,
+} from './types';
 
 type Params<F> = {
   readonly definitions: ReadonlyArray<ActionDefinition<F>>;
   readonly facts: F;
+  readonly viewing?: ActionViewing | null;
 };
 
 const groupRank = ({ group }: { readonly group: ResolvedAction['group'] }): number =>
@@ -38,9 +44,10 @@ export const resolveOne = <F>({
 export const resolveActions = <F>({
   definitions,
   facts,
+  viewing = null,
 }: Params<F>): ReadonlyArray<ResolvedAction> =>
   definitions
-    .filter((definition) => definition.when({ facts }))
+    .filter((definition) => definition.when({ facts, viewing }))
     .map((definition, index) => ({ resolved: resolveOne({ definition, facts }), index }))
     .sort(
       (a, b) =>

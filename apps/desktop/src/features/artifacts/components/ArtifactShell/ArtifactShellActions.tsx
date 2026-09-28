@@ -1,12 +1,12 @@
+import { useContext, useEffect } from 'react';
 import { Ellipsis } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
+import { ArtifactHeaderMenuContext, artifactViewingOf } from './artifactHeaderMenu';
 import type { ActionSlot, ArtifactActionTarget, ResolvedAction } from '../../../actions/types';
-
-const HEADER_OMISSIONS: ReadonlyArray<string> = ['artifact.open'];
 
 type Props = {
   readonly target: ArtifactActionTarget;
@@ -19,14 +19,19 @@ type Props = {
 const BUTTON_ORDER: Readonly<Partial<Record<ActionSlot, number>>> = { secondary: 0, primary: 1 };
 
 export const ArtifactShellActions = ({ target, onArm }: Props) => {
-  const env = useActionEnv({ origin: 'button' });
+  const viewing = artifactViewingOf({ target });
+  const env = useActionEnv({ origin: 'button', viewing });
   const { actions, run } = useObjectActions({ target, env });
+  const registerMenu = useContext(ArtifactHeaderMenuContext);
+
+  useEffect(() => {
+    registerMenu?.(target);
+    return () => registerMenu?.(null);
+  }, [registerMenu, target]);
   const buttons = actions
     .filter((action) => BUTTON_ORDER[action.slot] !== undefined)
     .slice()
     .sort((left, right) => (BUTTON_ORDER[left.slot] ?? 0) - (BUTTON_ORDER[right.slot] ?? 0));
-  const omit = [...HEADER_OMISSIONS, ...buttons.map((action) => action.id)];
-  const hasOverflow = actions.some((action) => !omit.includes(action.id));
 
   return (
     <span data-testid="artifact-actions" className="flex min-w-0 shrink-0 items-center gap-1.5">
@@ -51,14 +56,14 @@ export const ArtifactShellActions = ({ target, onArm }: Props) => {
           {action.label}
         </Button>
       ))}
-      {hasOverflow ? (
+      {actions.length > 0 ? (
         <ObjectOverflowMenu
           target={target}
           label="More"
           tooltip="More actions"
           trigger={<Ellipsis size={ICON_SIZE.control} aria-hidden />}
           triggerClassName="p-1.5"
-          omit={omit}
+          viewing={viewing}
         />
       ) : null}
     </span>

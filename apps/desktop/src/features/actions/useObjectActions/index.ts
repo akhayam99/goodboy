@@ -43,7 +43,8 @@ export const useObjectActions = ({ target, env }: Params): ObjectActions => {
   }, [target]);
 
   const bound = useSyncExternalStore(useAppStore.subscribe, getSnapshot, getSnapshot);
-  const actions = useMemo(() => bound?.resolve() ?? [], [bound]);
+  const viewing = env.viewing;
+  const actions = useMemo(() => bound?.resolve({ viewing }) ?? [], [bound, viewing]);
 
   const run = useCallback(
     async ({

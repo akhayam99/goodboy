@@ -1,7 +1,7 @@
 import { useCallback, useContext, type KeyboardEvent, type MouseEvent } from 'react';
 import { keepsNativeMenu } from '../../../app/hooks/useNativeMenuPolicy/keepsNativeMenu';
 import { ObjectMenuContext } from '../components/ObjectMenuProvider/objectMenuContext';
-import type { ObjectTarget } from '../types';
+import type { ActionViewing, ObjectTarget } from '../types';
 import { eventMatches } from '../../../shared/keyboard/dispatcher';
 import { SHORTCUTS } from '../../../shared/keyboard/registry';
 
@@ -9,6 +9,7 @@ type Params = {
   readonly target: ObjectTarget | null;
   readonly anchorKey?: string | null;
   readonly onBeforeOpen?: () => ObjectTarget | null;
+  readonly viewing?: ActionViewing | null;
 };
 
 export type ObjectMenuTrigger = {
@@ -25,6 +26,7 @@ export const useObjectMenuTrigger = ({
   target,
   anchorKey = null,
   onBeforeOpen,
+  viewing = null,
 }: Params): ObjectMenuTrigger => {
   const context = useContext(ObjectMenuContext);
 
@@ -43,10 +45,10 @@ export const useObjectMenuTrigger = ({
       if (resolved === null) {
         return false;
       }
-      context.open({ target: resolved, point, anchorKey, opener });
+      context.open({ target: resolved, point, anchorKey, opener, viewing });
       return true;
     },
-    [anchorKey, context, onBeforeOpen, target],
+    [anchorKey, context, onBeforeOpen, target, viewing],
   );
 
   const onContextMenu = useCallback(

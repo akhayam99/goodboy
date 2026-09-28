@@ -204,9 +204,17 @@ never exists on one surface only.
 
 - **One order.** Open, then Act, then Copy, then the lifecycle and destructive
   verbs last, with a rule between groups. A surface that shows some verbs as
-  buttons (the agent header, the artifact viewer, the run page) puts the rest
-  in its overflow, and the buttons plus the overflow equal the right click.
-  `__tests__/actions/menuParity.test.tsx` checks it, and
+  buttons still lists every verb in its `⋯`, the buttoned ones included, in
+  the registry order, and that list equals its right click: the artifact
+  viewer (right click anywhere on its header), the agent header, the run
+  page, the pull request page, the Diff header and the worktree row.
+- **No verb that does nothing.** A surface tells the registry what it shows
+  through `env.viewing` (`useActionEnv`, `ObjectOverflowMenu` and
+  `useObjectMenuTrigger` take `viewing`): the artifact viewer its artifact,
+  the agent header its agent, the run page its run. Open, Open agent and Open
+  run are not offered for the object already on screen, on any of its menus.
+  `__tests__/actions/menuParity.test.tsx` checks both rules on these
+  surfaces, `stateMatrix.test.ts` pins the Open rows, and
   `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
   outside the registry, against a shrinking list of menus that are not objects
   (creation pickers, property pickers, page chrome).

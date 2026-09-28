@@ -24,6 +24,7 @@ import {
   mountFixture,
   seedActionState,
 } from '../../../__tests__/helpers/actionFixtures';
+import { bindTarget } from '../../actions/registry';
 import { AgentHeaderActions } from './AgentHeaderActions';
 
 type BridgeArgs = {
@@ -100,18 +101,22 @@ describe('AgentHeaderActions', () => {
     expect(onDeleted).toHaveBeenCalled();
   });
 
-  it('keeps the rest of the verbs in the overflow, never the buttons again', () => {
-    renderFor(agentFixture({ status: 'failed' }));
+  it('lists every available verb in the overflow, the buttoned ones too, in the registry order', () => {
+    const agent = agentFixture({ status: 'failed' });
+    renderFor(agent);
     fireEvent.click(screen.getByRole('button', { name: 'More agent actions' }));
     const labels = screen
       .getAllByRole('menuitem')
       .map((item) => item.getAttribute('data-menu-label'));
-    expect(labels).toEqual([
-      'Open agent',
-      'Show its changes',
-      'Message this agent',
-      'Change model',
-      'Copy name',
-    ]);
+    const registry = (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'agent', sessionId: SESSION, agentId: agent.id },
+      })?.resolve({ viewing: { kind: 'agent', id: agent.id } }) ?? []
+    ).map((action) => action.label);
+
+    expect(labels).toEqual(registry);
+    expect(labels).toContain('Delete agent');
+    expect(labels).not.toContain('Open agent');
   });
 });

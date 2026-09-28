@@ -152,7 +152,8 @@ export const WORKFLOW_RUN_KIND: ObjectKindDefinition<WorkflowRunActionTarget, Wo
       label: 'Open run',
       icon: CONCEPT_ICONS.workflows,
       group: 'open',
-      when: () => true,
+      when: ({ facts, viewing }) =>
+        !(viewing?.kind === 'workflowRun' && viewing.id === facts.run.id),
       run: ({ facts, env }) => openRun({ env, facts }),
     },
     {

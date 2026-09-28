@@ -200,6 +200,7 @@ const renderDetail = ({
       actionableStepIdByRunId={new Map([[RUN_ID, actionableStepId]])}
       blockReasonByRunId={new Map([[RUN_ID, blockReason]])}
       focusedWorkflowRunId={focusedWorkflowRunId}
+      viewedWorkflowRunId={null}
       workflowExpand={workflowExpand}
       workflowNameByRunId={new Map()}
       toggleWorkflowExpand={toggleWorkflowExpand}

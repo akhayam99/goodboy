@@ -3,7 +3,7 @@ import { MenuList } from '@goodboy/ui';
 import { useActionEnv } from '../../useActionEnv';
 import { useObjectActions } from '../../useObjectActions';
 import { toMenuEntries } from '../../toMenuEntries';
-import type { ObjectTarget } from '../../types';
+import type { ActionViewing, ObjectTarget } from '../../types';
 
 type Props = {
   readonly target: ObjectTarget;
@@ -11,10 +11,18 @@ type Props = {
   readonly anchorKey: string | null;
   readonly omit: ReadonlyArray<string>;
   readonly onClose: () => void;
+  readonly viewing?: ActionViewing | null;
 };
 
-export const ObjectOverflowList = ({ target, label, anchorKey, omit, onClose }: Props) => {
-  const env = useActionEnv({ origin: 'overflow', anchorKey });
+export const ObjectOverflowList = ({
+  target,
+  label,
+  anchorKey,
+  omit,
+  onClose,
+  viewing = null,
+}: Props) => {
+  const env = useActionEnv({ origin: 'overflow', anchorKey, viewing });
   const { actions, run } = useObjectActions({ target, env });
   const entries = useMemo(
     () =>

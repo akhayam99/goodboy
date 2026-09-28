@@ -77,6 +77,7 @@ type Props = {
   readonly actionableStepIdByRunId: ReadonlyMap<string, string | null>;
   readonly blockReasonByRunId: ReadonlyMap<string, WorkflowBlockReason | null>;
   readonly focusedWorkflowRunId: string | null;
+  readonly viewedWorkflowRunId: WorkflowRunId | null;
   readonly workflowExpand: Readonly<Record<string, boolean>> | undefined;
   readonly workflowNameByRunId: ReadonlyMap<string, string>;
   readonly toggleWorkflowExpand: AppStore['toggleWorkflowExpand'];
@@ -93,12 +94,6 @@ type Props = {
   readonly onPickAgent: (id: AgentId) => void;
   readonly onAnswerQuestion: (question: OpenQuestion | null) => void;
 };
-
-const RUN_BUTTON_ACTIONS: ReadonlyArray<string> = [
-  'workflowRun.close',
-  'workflowRun.restore',
-  'workflowRun.start',
-];
 
 type TreeCountParams = {
   readonly agent: Agent;
@@ -119,6 +114,7 @@ export const WorkflowRow = ({
   actionableStepIdByRunId,
   blockReasonByRunId,
   focusedWorkflowRunId,
+  viewedWorkflowRunId,
   workflowExpand,
   workflowNameByRunId,
   toggleWorkflowExpand,
@@ -182,9 +178,12 @@ export const WorkflowRow = ({
   }).length;
   const hasStarted = wfAgents.length > 0;
   const runTarget = { kind: 'workflowRun', sessionId: task.id, runId: run.id } as const;
+  const runViewing =
+    viewedWorkflowRunId === run.id ? ({ kind: 'workflowRun', id: run.id } as const) : null;
   const runMenu = useObjectMenuTrigger({
     target: runTarget,
     anchorKey: `workflow-run:${run.id}`,
+    viewing: runViewing,
   });
   const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
   const predecessorName = run.chainAfterId
@@ -367,7 +366,7 @@ export const WorkflowRow = ({
                       target={runTarget}
                       label={`${name} workflow actions`}
                       anchorKey={`workflow-run:${run.id}`}
-                      omit={RUN_BUTTON_ACTIONS}
+                      viewing={runViewing}
                     />
                   </div>
                 </CardActionSlot>

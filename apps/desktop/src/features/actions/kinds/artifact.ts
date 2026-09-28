@@ -176,7 +176,8 @@ const ARTIFACT_ACTIONS: ReadonlyArray<ActionDefinition<ArtifactFacts>> = [
     label: 'Open',
     icon: CONCEPT_ICONS.artifacts,
     group: 'open',
-    when: isStored,
+    when: ({ facts, viewing }) =>
+      isStored({ facts }) && !(viewing?.kind === 'artifact' && viewing.id === idOf({ facts })),
     run: openArtifact,
   },
   {

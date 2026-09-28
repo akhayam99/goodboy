@@ -23,6 +23,7 @@ import { WRITE_REVIEW_KIND } from './kinds/writeReview';
 import type {
   ActionDefinition,
   ActionEnv,
+  ActionViewing,
   ObjectKindDefinition,
   ObjectTarget,
   ResolvedAction,
@@ -37,7 +38,9 @@ export type RunActionParams = {
 export type BoundObject = {
   readonly noun: string;
   readonly facts: object;
-  readonly resolve: () => ReadonlyArray<ResolvedAction>;
+  readonly resolve: (params?: {
+    readonly viewing?: ActionViewing | null;
+  }) => ReadonlyArray<ResolvedAction>;
   readonly run: (params: RunActionParams) => Promise<void>;
 };
 
@@ -71,10 +74,10 @@ const bind = <T, F extends object>({
   return {
     noun: definition.noun,
     facts,
-    resolve: () => resolveActions({ definitions, facts }),
+    resolve: ({ viewing = null } = {}) => resolveActions({ definitions, facts, viewing }),
     run: async ({ actionId, env, choice = null }) => {
       const found = definitions.find((candidate) => candidate.id === actionId);
-      if (found === undefined || !found.when({ facts })) {
+      if (found === undefined || !found.when({ facts, viewing: env.viewing })) {
         return;
       }
       if ((found.blockedReason?.({ facts }) ?? null) !== null) {
