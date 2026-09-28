@@ -218,19 +218,43 @@ fn is_private_dir(path: &Path) -> bool {
 
 #[cfg(unix)]
 fn prepare_socket_dir(dir: &Path) -> std::io::Result<()> {
+    prepare_socket_dir_racing(dir, &|| {})
+}
+
+#[cfg(unix)]
+fn tolerate(outcome: std::io::Result<()>, kind: std::io::ErrorKind) -> std::io::Result<()> {
+    match outcome {
+        Err(error) if error.kind() == kind => Ok(()),
+        other => other,
+    }
+}
+
+#[cfg(unix)]
+fn is_real_dir(path: &Path) -> bool {
+    std::fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_dir())
+}
+
+#[cfg(unix)]
+fn prepare_socket_dir_racing(dir: &Path, between: &dyn Fn()) -> std::io::Result<()> {
+    use std::io::ErrorKind;
     use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 
     match std::fs::symlink_metadata(dir) {
         Ok(meta) if meta.file_type().is_dir() => {}
         Ok(_) => {
-            std::fs::remove_file(dir)?;
-            std::fs::create_dir(dir)?;
+            between();
+            let removed = tolerate(std::fs::remove_file(dir), ErrorKind::NotFound);
+            if removed.is_err() && !is_real_dir(dir) {
+                return removed;
+            }
+            tolerate(std::fs::create_dir(dir), ErrorKind::AlreadyExists)?;
         }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+        Err(error) if error.kind() == ErrorKind::NotFound => {
             if let Some(parent) = dir.parent() {
                 std::fs::create_dir_all(parent)?;
             }
-            std::fs::create_dir(dir)?;
+            between();
+            tolerate(std::fs::create_dir(dir), ErrorKind::AlreadyExists)?;
         }
         Err(error) => return Err(error),
     }
@@ -341,6 +365,64 @@ async fn answer(app: &tauri::AppHandle, line: &str) -> QueryResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    fn race_scratch(name: &str) -> PathBuf {
+        let scratch = std::env::temp_dir().join(format!(
+            "goodboy-query-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|elapsed| elapsed.as_nanos())
+                .unwrap_or_default()
+        ));
+        std::fs::create_dir_all(&scratch).unwrap();
+        scratch
+    }
+
+    #[cfg(unix)]
+    fn assert_private(folder: &Path) {
+        use std::os::unix::fs::PermissionsExt;
+        let meta = std::fs::symlink_metadata(folder).unwrap();
+        assert!(meta.file_type().is_dir());
+        assert_eq!(meta.permissions().mode() & 0o777, 0o700);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn two_starts_that_both_create_the_socket_folder_both_bind() {
+        let scratch = race_scratch("create-race");
+        let folder = scratch.join("state").join(SOCKET_DIR);
+        prepare_socket_dir_racing(&folder, &|| {
+            prepare_socket_dir(&folder).unwrap();
+        })
+        .unwrap();
+        prepare_socket_dir(&folder).unwrap();
+        assert_private(&folder);
+        std::fs::remove_dir_all(&scratch).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn two_starts_that_both_replace_a_planted_link_both_bind() {
+        let scratch = race_scratch("link-race");
+        let target = scratch.join("projects");
+        std::fs::create_dir_all(&target).unwrap();
+        let folder = scratch.join(SOCKET_DIR);
+        for other_finishes in [false, true] {
+            let _ = std::fs::remove_dir(&folder);
+            std::os::unix::fs::symlink(&target, &folder).unwrap();
+            prepare_socket_dir_racing(&folder, &|| {
+                std::fs::remove_file(&folder).unwrap();
+                if other_finishes {
+                    std::fs::create_dir(&folder).unwrap();
+                }
+            })
+            .unwrap();
+            assert_private(&folder);
+        }
+        std::fs::remove_dir_all(&scratch).unwrap();
+    }
 
     #[cfg(unix)]
     #[test]
