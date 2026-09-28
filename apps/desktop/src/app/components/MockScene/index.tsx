@@ -99,7 +99,7 @@ import { BrandSecurityFindingsScene } from './scenes/brand/SecurityFindingsScene
 import { BrandToolsScene } from './scenes/brand/ToolsScene';
 import { useBrandChrome } from './scenes/brand/brandChrome';
 import { applyDocumentTheme } from '../../../shared/lib/theme';
-import { AgentBriefScene } from './scenes/AgentBriefScene';
+import { AgentBriefQuestionScene, AgentBriefScene } from './scenes/AgentBriefScene';
 import { ReportSheetHost } from '../../../features/bug-report/components/ReportSheetHost';
 import { CrashReportScene, useReportSheetParam } from './scenes/audit/ReportScenes';
 
@@ -194,6 +194,7 @@ export const MOCK_SCENES = {
   'brand-security-findings': BrandSecurityFindingsScene,
   'brand-tools': BrandToolsScene,
   'agent-brief': AgentBriefScene,
+  'agent-brief-question': AgentBriefQuestionScene,
   'crash-report': CrashReportScene,
 };
 

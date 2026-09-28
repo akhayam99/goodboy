@@ -5,6 +5,8 @@ import type {
   IsoDateTime,
   Message,
   MessageId,
+  OpenQuestion,
+  OpenQuestionId,
   ProviderRunId,
   Session,
   SessionId,
@@ -67,18 +69,44 @@ const TELEMETRY: TelemetryRecord = {
   recordedAt: NOW,
 };
 
-export const AgentBriefScene = () => {
+const WAITING_AGENT: Agent = {
+  ...AGENT,
+  status: 'running',
+  completedAt: undefined,
+};
+
+const QUESTION: OpenQuestion = {
+  id: 'mock-agent-brief-question' as OpenQuestionId,
+  sessionId: SESSION_ID,
+  createdByAgentId: AGENT_ID,
+  text: 'Should the brief footer show cached tokens, or only input and output?',
+  suggestedAnswers: ['Show cached tokens', 'Input and output only'],
+  recommendedAnswer: 'Show cached tokens',
+  isBlocking: true,
+  userAnswer: null,
+  status: 'open',
+  createdAt: NOW,
+};
+
+type Props = {
+  readonly hasQuestion?: boolean;
+};
+
+export const AgentBriefQuestionScene = () => <AgentBriefScene hasQuestion />;
+
+export const AgentBriefScene = ({ hasQuestion = false }: Props) => {
   const [isReady, setIsReady] = useState(false);
+  const agent = hasQuestion ? WAITING_AGENT : AGENT;
 
   useEffect(() => {
     useAppStore.setState({
       sessions: [SESSION],
       currentSessionId: SESSION_ID,
-      sessionPhaseRuns: { [SESSION_ID]: [AGENT] },
+      sessionPhaseRuns: { [SESSION_ID]: [agent] },
       sessionTelemetry: { [SESSION_ID]: [TELEMETRY] },
       agentRunHistory: { [AGENT_ID]: [RUN_ID] },
       sessionPlans: { [SESSION_ID]: [] },
-      sessionOpenQuestions: { [SESSION_ID]: [] },
+      sessionOpenQuestions: { [SESSION_ID]: hasQuestion ? [QUESTION] : [] },
       sessionAnsweredQuestions: { [SESSION_ID]: [] },
       messages: {
         [SESSION_ID]: [1, 2, 3].map((turn): Message => ({
@@ -92,7 +120,7 @@ export const AgentBriefScene = () => {
       },
     });
     setIsReady(true);
-  }, []);
+  }, [agent, hasQuestion]);
 
   if (!isReady) {
     return null;
@@ -102,7 +130,7 @@ export const AgentBriefScene = () => {
     <main className="flex h-screen flex-col bg-background text-foreground">
       <AgentDetailPane
         session={SESSION}
-        agent={AGENT}
+        agent={agent}
         isChatActive={false}
         onBack={() => undefined}
       />
