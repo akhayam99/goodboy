@@ -7,7 +7,6 @@ export type Cell = {
   readonly figure: FragmentFigure;
   readonly title: string;
   readonly text: string;
-  readonly group?: string;
 };
 
 type Props = {
@@ -33,9 +32,7 @@ export const GridCell = ({ cell }: Props) => {
         />
       </div>
       <div>
-        <h3 className="cellTitle" data-group={cell.group}>
-          {cell.title}
-        </h3>
+        <h3 className="cellTitle">{cell.title}</h3>
         <p className="cellText">{cell.text}</p>
       </div>
     </li>

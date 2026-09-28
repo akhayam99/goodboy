@@ -25,28 +25,24 @@ not the section.
 
 ## Figures
 
-Product figures are real app screenshots from the brand mock scenes (see
-[docs/mock-screenshots.md](../docs/mock-screenshots.md)), captured at 1440 by
-900 CSS pixels with a device scale factor of 4, in both app themes. Headless
-Chrome needs `--disable-site-isolation-trials`, or a wireframe or report frame
-renders at scale 1 and comes out soft. They live in `website/public/img/` as
-WebP:
+Product figures are real app screenshots from the mock scenes (see
+[docs/mock-screenshots.md](../docs/mock-screenshots.md), Landing crops),
+captured at a device scale factor of 4 or more, in both app themes. They live
+in `website/public/img/` as WebP, each at three widths and never upscaled:
 
-- `<id>.webp`, the full capture scaled down to 3840 pixels wide at quality 90,
-  and `<id>-light.webp`, the same scene in the app's light theme.
-- `<id>-d1.webp`, `<id>-d2.webp` and their `-light` twins, crops of one part of
-  the scale 4 capture at quality 92, never resized. Keep a crop between 1:1 and
-  3:1: a longer strip turns into a sliver on a phone.
+- `<id>-<width>.webp` in the dark theme and `<id>-<width>-light.webp` in the
+  light one, for `<width>` 1200, 2400 and 3840.
+- A frame has a `<id>-phone` twin, a 4:5 cut of the same screen that a phone
+  shows instead of the whole window shrunk.
+- A fragment is one component, drawn on the page at its `displayWidth`, at
+  least 1.3 times its size in the app, so its smallest text lands at 13 CSS
+  pixels or more.
 
-Every image carries at least twice the pixels of its largest rendered size, at
-1440 and at 390 wide. `website/src/figures.ts` holds each figure's size, alt
-text and its detail crops with their captions. `Shot` in
-`website/src/components/Shot.tsx` frames the capture as a window on a stage and
-loads only the image of the active theme. On a wide screen the detail crops
-overlap the bottom of the stage at equal height. A phone gets the same page:
-the same sections, text and figures in the same order, with the stage full
-bleed, the window at full width and the crops stacked under it. When a
-screenshot is recaptured, cut its detail crops again from the new capture.
+`website/src/figures.ts` holds each figure's id, pixel size, display width and
+alt text. `Picture` loads only the active theme and lets the browser pick the
+width through `srcset`, and `pnpm check:page` fails when any image draws below
+twice its displayed size. When a scene changes, reshoot every width and both
+themes of its figures in one pass.
 
 ## Theme
 

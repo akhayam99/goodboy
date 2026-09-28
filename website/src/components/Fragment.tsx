@@ -2,7 +2,7 @@ import './Fragment.css';
 import type { CSSProperties, ReactNode } from 'react';
 import type { FragmentFigure } from '../figures';
 import { useTheme } from '../theme/theme';
-import { Eyebrow } from './Eyebrow';
+import { Eyebrow, type EyebrowKind } from './Eyebrow';
 import { Picture } from './Picture';
 
 type Link = {
@@ -13,6 +13,7 @@ type Link = {
 type Props = {
   readonly id?: string;
   readonly eyebrow: string;
+  readonly eyebrowKind?: EyebrowKind;
   readonly heading: string;
   readonly body: ReactNode;
   readonly link?: Link;
@@ -22,13 +23,18 @@ type Props = {
 
 type WidthStyle = CSSProperties & {
   readonly '--w': string;
+  readonly '--cap'?: string;
 };
 
-const widthStyle = (figure: FragmentFigure): WidthStyle => ({ '--w': `${figure.displayWidth}px` });
+const widthStyle = (figure: FragmentFigure): WidthStyle => ({
+  '--w': `${figure.displayWidth}px`,
+  '--cap': figure.cap === undefined ? undefined : `${figure.cap}px`,
+});
 
 export const Fragment = ({
   id,
   eyebrow,
+  eyebrowKind = 'group',
   heading,
   body,
   link,
@@ -45,7 +51,7 @@ export const Fragment = ({
       aria-labelledby={headingId}
     >
       <div className="splitText">
-        <Eyebrow text={eyebrow} />
+        <Eyebrow text={eyebrow} kind={eyebrowKind} />
         <h3 id={headingId} className="sectionTitle">
           {heading}
         </h3>
@@ -58,7 +64,11 @@ export const Fragment = ({
       </div>
       <div className="splitMedia">
         {figures.map((figure) => (
-          <div className="frag" key={figure.source.id} style={widthStyle(figure)}>
+          <div
+            className={figure.cap === undefined ? 'frag' : 'frag capped'}
+            key={figure.source.id}
+            style={widthStyle(figure)}
+          >
             <Picture
               source={figure.source}
               theme={theme}

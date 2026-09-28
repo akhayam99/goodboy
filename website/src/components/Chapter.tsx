@@ -1,27 +1,33 @@
 import './Chapter.css';
 import type { ReactNode } from 'react';
+import type { EyebrowKind } from './Eyebrow';
 import { Statement } from './Statement';
 
-type Props = {
-  readonly id: string;
+type Head = {
   readonly eyebrow: string;
+  readonly eyebrowKind?: EyebrowKind;
   readonly heading: string;
   readonly dim?: string;
   readonly lead?: ReactNode;
+};
+
+type Props = {
+  readonly id: string;
+  readonly label?: string;
+  readonly head?: Head;
   readonly children: ReactNode;
 };
 
-export const Chapter = ({ id, eyebrow, heading, dim, lead, children }: Props) => (
-  <section className="chapter" id={id} aria-labelledby={`${id}-title`}>
+export const Chapter = ({ id, label, head, children }: Props) => (
+  <section
+    className="chapter"
+    id={id}
+    aria-label={head === undefined ? label : undefined}
+    aria-labelledby={head === undefined ? undefined : `${id}-title`}
+  >
     <div className="shell">
       <div className="chapterInner">
-        <Statement
-          headingId={`${id}-title`}
-          eyebrow={eyebrow}
-          heading={heading}
-          dim={dim}
-          lead={lead}
-        />
+        {head === undefined ? null : <Statement headingId={`${id}-title`} {...head} />}
         <div className="chapterBody">{children}</div>
       </div>
     </div>

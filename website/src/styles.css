@@ -362,6 +362,15 @@ h3 {
   color: var(--t1);
 }
 
+.logoTile {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--brand-tile);
+  box-shadow: inset 0 0 0 1px var(--tile-ring);
+}
+
 .logo-tile {
   display: inline-grid;
   place-items: center;
@@ -413,8 +422,8 @@ h3 {
 .ctaRow {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 12px;
-  margin-top: 30px;
 }
 
 .ctaRow.center {
@@ -453,89 +462,6 @@ h3 {
   transform: translateX(3px);
 }
 
-#hero {
-  padding: 64px 0 40px;
-}
-
-#hero .heroCopy {
-  max-width: 780px;
-  margin: 0 auto;
-  text-align: center;
-}
-
-#hero .heroCopy .sub {
-  margin-left: auto;
-  margin-right: auto;
-}
-
-#hero .heroCopy .ctaRow {
-  justify-content: center;
-}
-
-#hero .heroCopy h1 {
-  margin-top: 16px;
-}
-
-#hero .shot {
-  margin-top: 56px;
-}
-
-#providers {
-  padding: 44px 0 56px;
-  text-align: center;
-  border-bottom: 1px solid var(--line);
-}
-
-.belt {
-  margin: 18px auto 0;
-  max-width: 1100px;
-  overflow: hidden;
-  -webkit-mask: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-  mask: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
-}
-
-.beltTrack {
-  display: flex;
-  width: max-content;
-  animation: belt 38s linear infinite;
-}
-
-.beltCopy {
-  display: flex;
-  gap: 12px;
-  padding-right: 12px;
-}
-
-.bchip {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  height: 46px;
-  padding: 0 18px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--raise);
-  font-weight: 600;
-  font-size: 15px;
-}
-
-@keyframes belt {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.beltMore {
-  margin-top: 20px;
-  padding: 0 24px;
-  color: var(--t2);
-  font-size: 15px;
-}
-
-.beltMore a {
-  color: var(--accent);
-  font-weight: 600;
-}
 
 section.block {
   padding: 112px 0;
@@ -607,11 +533,6 @@ section.block.alt {
   margin-top: 18px;
 }
 
-.beltHow {
-  margin-top: 10px;
-  padding: 0 24px;
-}
-
 .toolGroups {
   display: grid;
   gap: 32px;
@@ -662,63 +583,8 @@ section.block.alt {
   color: var(--t3);
 }
 
-.contrast {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  max-width: 1040px;
-}
-
-.contrastCard {
-  display: grid;
-  gap: 8px;
-  align-content: start;
-  padding: 24px 26px;
-  border-radius: var(--r-frame);
-  border: 1px solid var(--line);
-  background: var(--bg);
-}
-
-.contrastCard h3 {
-  margin-bottom: 0;
-  font-size: 19px;
-}
-
-.contrastCard p {
-  color: var(--t2);
-  font-size: 16px;
-}
-
-.contrastCard.before {
-  background: var(--raise);
-}
-
 .contrastCard.before h3 {
   color: var(--t3);
-}
-
-.benefits {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 28px 40px;
-  list-style: none;
-  padding: 0;
-}
-
-.benefits li {
-  color: var(--t2);
-  font-size: 16px;
-  line-height: 1.55;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-}
-
-.benefits b {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--t1);
-  font-weight: 600;
-  font-size: 17px;
 }
 
 .billsHead {

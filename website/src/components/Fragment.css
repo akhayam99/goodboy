@@ -67,6 +67,18 @@
   mask-image: linear-gradient(to right, #000 70%, transparent);
 }
 
+.frag.capped {
+  max-height: var(--cap);
+  -webkit-mask-image:
+    linear-gradient(to right, #000 70%, transparent),
+    linear-gradient(to bottom, #000 70%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, #000 70%, transparent),
+    linear-gradient(to bottom, #000 70%, transparent);
+  mask-composite: intersect;
+}
+
 .frag img {
   display: block;
   width: var(--w);

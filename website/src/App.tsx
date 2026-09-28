@@ -3,11 +3,7 @@ import { Nav } from './sections/Nav';
 import { Hero } from './sections/Hero';
 import { Providers } from './sections/Providers';
 import { Sessions } from './sections/Sessions';
-import { Switch } from './sections/Switch';
-import { Find } from './sections/Find';
-import { Workspace } from './sections/Workspace';
-import { Developers } from './sections/Developers';
-import { Leads } from './sections/Leads';
+import { Teams } from './sections/Teams';
 import { Workflows } from './sections/Workflows';
 import { Inbox } from './sections/Inbox';
 import { Review } from './sections/Review';
@@ -31,11 +27,7 @@ export const App = () => (
       <Hero />
       <Providers />
       <Sessions />
-      <Switch />
-      <Find />
-      <Workspace />
-      <Developers />
-      <Leads />
+      <Teams />
       <Workflows />
       <Inbox />
       <Review />

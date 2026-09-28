@@ -1,0 +1,33 @@
+.providerRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 26px;
+  padding: 40px 36px 72px;
+  list-style: none;
+  font: 500 15px/20px var(--sans);
+  color: var(--t3);
+}
+
+.providerLead {
+  font-weight: 400;
+  color: var(--t4);
+}
+
+.provider {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.provider svg {
+  flex: none;
+}
+
+@media (max-width: 600px) {
+  .providerRow {
+    gap: 8px 18px;
+    padding: 32px 0 56px;
+    font-size: 14px;
+  }
+}

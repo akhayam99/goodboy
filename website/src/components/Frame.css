@@ -46,6 +46,8 @@
   }
   .view {
     border-radius: 6px;
+    -webkit-mask-image: linear-gradient(to right, #000 86%, transparent);
+    mask-image: linear-gradient(to right, #000 86%, transparent);
   }
   .frame.capped .view {
     max-height: none;

@@ -1,5 +1,4 @@
 import type { Theme } from '../theme/theme';
-import { themedId } from './themedSrc';
 
 export type Source = {
   readonly id: string;
@@ -26,13 +25,18 @@ type SrcSetParams = {
   readonly theme: Theme;
 };
 
+type FileParams = SrcSetParams & {
+  readonly width: number;
+};
+
+const fileOf = ({ source, theme, width }: FileParams) =>
+  `/img/${source.id}-${width}${theme === 'light' ? '-light' : ''}.webp`;
+
 const srcSet = ({ source, theme }: SrcSetParams) =>
-  source.widths
-    .map((width) => `/img/${themedId({ id: source.id, theme })}-${width}.webp ${width}w`)
-    .join(', ');
+  source.widths.map((width) => `${fileOf({ source, theme, width })} ${width}w`).join(', ');
 
 const fallback = ({ source, theme }: SrcSetParams) =>
-  `/img/${themedId({ id: source.id, theme })}-${source.widths[source.widths.length - 1]}.webp`;
+  fileOf({ source, theme, width: source.widths[source.widths.length - 1] });
 
 export const Picture = ({
   source,

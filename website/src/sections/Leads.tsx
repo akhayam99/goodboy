@@ -1,7 +1,7 @@
+import './Leads.css';
 import { Benefits, type Benefit } from '../components/Benefits';
-import { Block } from '../components/Block';
-import { SeeHow } from '../components/SeeHow';
-import { Shot } from '../components/Shot';
+import { Frame } from '../components/Frame';
+import { Statement } from '../components/Statement';
 import { BOARD } from '../figures';
 
 const ITEMS: readonly Benefit[] = [
@@ -28,17 +28,16 @@ const ITEMS: readonly Benefit[] = [
 ];
 
 export const Leads = () => (
-  <Block
-    id="leads"
-    headingId="h2-leads"
-    heading="For leads and project managers"
-    sub="Look once and you know where every task stands, without asking anyone."
-    isAlt
-  >
-    <Shot figure={BOARD} />
-    <Benefits items={ITEMS} />
-    <div className="linkRow">
-      <SeeHow anchor="the-board" />
-    </div>
-  </Block>
+  <section className="leads" id="leads" aria-labelledby="leads-title">
+    <Statement
+      headingId="leads-title"
+      eyebrow="For leads and project managers"
+      eyebrowKind="audience"
+      heading="See what is building, running or waiting on you"
+      lead="The board sorts every task by where it stands, with its pull request and its cost so far."
+    />
+    <Frame figure={BOARD}>
+      <Benefits items={ITEMS} />
+    </Frame>
+  </section>
 );
