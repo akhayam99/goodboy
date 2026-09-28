@@ -20,8 +20,7 @@ export const Hero = () => (
           A development environment that structures agent work
         </h1>
         <p className="lead rise" style={rise(2)}>
-          Every task keeps its goal, decisions and summary, so each agent starts briefed. Runs on
-          the providers you already use.
+          Every task keeps its goal, decisions and summary, so each agent starts briefed.
         </p>
         <div className="ctaRow rise" style={rise(3)}>
           <a className="btn" href={SITE.latest}>

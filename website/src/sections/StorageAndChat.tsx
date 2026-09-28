@@ -7,8 +7,8 @@ export const StorageAndChat = () => (
     cells={[
       {
         figure: STORAGE_LOCAL,
-        title: 'Storage and security',
-        text: 'Tasks, decisions and settings stay on your computer. No account, no server.',
+        title: 'Storage',
+        text: 'See what Goodboy keeps on disk, from worktrees to archived history, and free the space that can go.',
       },
       {
         figure: CHAT_PLAIN,

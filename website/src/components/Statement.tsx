@@ -7,7 +7,6 @@ type Props = {
   readonly eyebrow?: string;
   readonly eyebrowKind?: EyebrowKind;
   readonly heading: string;
-  readonly dim?: string;
   readonly lead?: ReactNode;
   readonly level?: 1 | 2;
   readonly isCentered?: boolean;
@@ -20,7 +19,6 @@ export const Statement = ({
   eyebrow,
   eyebrowKind = 'group',
   heading,
-  dim,
   lead,
   level = 2,
   isCentered = false,
@@ -35,12 +33,6 @@ export const Statement = ({
       {eyebrow === undefined ? null : <Eyebrow text={eyebrow} kind={eyebrowKind} />}
       <Heading id={headingId} className={level === 1 ? 'display' : 'chapterTitle'}>
         {heading}
-        {dim === undefined ? null : (
-          <>
-            {' '}
-            <span className="dim">{dim}</span>
-          </>
-        )}
       </Heading>
       {lead === undefined ? null : <p className="lead">{lead}</p>}
       {children}

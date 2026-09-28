@@ -32,10 +32,6 @@
   text-wrap: balance;
 }
 
-.chapterTitle .dim {
-  color: var(--t3);
-}
-
 .lead {
   max-width: 640px;
   font: var(--t-lead);

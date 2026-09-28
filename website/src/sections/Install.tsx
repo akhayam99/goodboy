@@ -41,7 +41,7 @@ export const Install = () => {
         eyebrow: 'Install',
         eyebrowKind: 'page',
         heading: 'Set up with a folder and a provider',
-        lead: 'Install it on macOS or Linux, connect a provider, and point it at a folder you already work in.',
+        lead: 'Install it, connect a provider, and point it at a folder you already work in.',
       }}
     >
       <div className="install">
@@ -62,9 +62,7 @@ export const Install = () => {
             Linux builds
           </a>
         </div>
-        <p className="installNote">
-          No account and no waitlist. Most people are working in five minutes.
-        </p>
+        <p className="installNote">Most people are working in five minutes.</p>
       </div>
     </Chapter>
   );
