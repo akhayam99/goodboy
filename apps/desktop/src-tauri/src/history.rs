@@ -1010,10 +1010,7 @@ fn predict_with(
             }
             MergeResult::Tree(tree) => {
                 let is_folding = matches!(step.verb, HistoryVerb::Squash | HistoryVerb::Fixup);
-                if !is_folding && tree == tip_tree {
-                    outcomes.insert(step.sha.clone(), prediction(&step.sha, StepOutcome::Empty));
-                    continue;
-                }
+                let is_empty = !is_folding && tree == tip_tree;
                 if is_folding {
                     let Some(current) = group.as_mut() else {
                         return Err(plan_error("a squash has no commit to merge into"));
@@ -1038,7 +1035,12 @@ fn predict_with(
                         members: vec![step.sha.clone()],
                     });
                 }
-                outcomes.insert(step.sha.clone(), prediction(&step.sha, StepOutcome::Clean));
+                let outcome = if is_empty {
+                    StepOutcome::Empty
+                } else {
+                    StepOutcome::Clean
+                };
+                outcomes.insert(step.sha.clone(), prediction(&step.sha, outcome));
             }
         }
     }
@@ -1201,11 +1203,6 @@ fn unmerged_files(copy: &Path) -> Vec<String> {
         .unwrap_or_default()
 }
 
-fn has_staged_changes(copy: &Path) -> Result<bool, WorktreeError> {
-    let run = git_run(copy, &["diff", "--cached", "--quiet"], None, None)?;
-    Ok(run.status != 0)
-}
-
 struct Replay {
     head: String,
     map: Vec<ShaMove>,
@@ -1285,13 +1282,6 @@ fn replay_in_copy(
             });
         }
         let is_folding = matches!(step.verb, HistoryVerb::Squash | HistoryVerb::Fixup);
-        if !is_folding && !has_staged_changes(copy)? {
-            map.push(ShaMove {
-                from: step.sha.clone(),
-                to: None,
-            });
-            continue;
-        }
         let commit = if is_folding {
             let Some(current) = group.as_mut() else {
                 return Err(plan_error("a squash has no commit to merge into"));
@@ -1310,7 +1300,12 @@ fn replay_in_copy(
             finish_group(group.take(), &tip, &mut map);
             let message = message_of(step, &info);
             let author = info.author();
-            let run = git_run(copy, &["commit", "-F", "-"], Some(&author), Some(&message))?;
+            let run = git_run(
+                copy,
+                &["commit", "--allow-empty", "-F", "-"],
+                Some(&author),
+                Some(&message),
+            )?;
             group = Some(Group {
                 message,
                 author,
@@ -1451,12 +1446,15 @@ pub(crate) fn trial_with(
         });
     }
     progress(TrialProgress::Check);
-    let made = replay
-        .map
+    let made = ordered
         .iter()
-        .filter_map(|moved| moved.to.as_deref())
-        .collect::<std::collections::HashSet<_>>()
-        .len();
+        .filter(|step| {
+            !matches!(
+                step.verb,
+                HistoryVerb::Drop | HistoryVerb::Squash | HistoryVerb::Fixup
+            )
+        })
+        .count();
     let check = check_trial(
         cwd,
         Some(&copy),
@@ -4597,5 +4595,51 @@ mod tests {
             "refs/goodboy/backup/feature-a/1000"
         ));
         assert!(!is_backup_of("feature-a", &format!("{dash}/../x")));
+    }
+
+    #[test]
+    fn an_empty_commit_is_kept_and_a_redundant_one_is_never_dropped_silently() {
+        let root = init_repo("empty-commits");
+        let base = commit(&root, "a.txt", "one\n", "base");
+        git_ok(&root, &["checkout", "-q", "-b", "feature"]);
+        let first = commit(&root, "a.txt", "two\n", "first");
+        git_ok(
+            &root,
+            &[
+                "commit",
+                "-q",
+                "--no-verify",
+                "--allow-empty",
+                "-m",
+                "Mark the release",
+            ],
+        );
+        let marker = git_ok(&root, &["rev-parse", "HEAD"]);
+        let revert = commit(&root, "a.txt", "one\n", "revert");
+        let again = commit(&root, "a.txt", "two\n", "again");
+        let mut reword = step(&marker, HistoryVerb::Reword);
+        reword.message = Some("Mark the ledger release".to_string());
+        let args = plan(
+            &root,
+            &base,
+            &again,
+            vec![
+                step(&first, HistoryVerb::Pick),
+                reword,
+                step(&revert, HistoryVerb::Drop),
+                step(&again, HistoryVerb::Pick),
+            ],
+        );
+        let result = trial(&args, &slug("empty-commits"), false).unwrap();
+        let check = result.check.clone().unwrap();
+        assert!(check.is_passed, "{:?}", check.problems);
+        let head = result.head.unwrap();
+        assert_eq!(
+            subjects(&root, &format!("{base}..{head}")),
+            vec!["again", "Mark the ledger release", "first"]
+        );
+        let prediction = predict(&args).unwrap();
+        assert_eq!(prediction.steps[3].outcome, StepOutcome::Empty);
+        assert!(prediction.steps[3].new_sha.is_some());
     }
 }
