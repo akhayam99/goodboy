@@ -15,18 +15,13 @@ type Props = {
 };
 
 export const FileJumpPopover = ({ files, activePath, commentCountOf, isViewed, onPick }: Props) => {
-  const jump = useFileJump({ files, onPick });
+  const jump = useFileJump({ files, activePath, onPick });
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  const { setActiveIndex } = jump;
 
   useEffect(() => {
     inputRef.current?.focus();
-    const index = files.findIndex((file) => file.path === activePath);
-    if (index > 0) {
-      setActiveIndex(index);
-    }
-  }, [activePath, files, setActiveIndex]);
+  }, []);
 
   useEffect(() => {
     listRef.current

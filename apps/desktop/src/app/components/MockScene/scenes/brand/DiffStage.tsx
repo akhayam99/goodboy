@@ -5,16 +5,21 @@ import { CTX_COMMITS, CTX_STATUS } from './contextBranch';
 import { CTX_PATCH } from './contextDiffPatch';
 import { useFakeTauri, type FakeHandlers } from './fakeTauri';
 
-const HANDLERS: FakeHandlers = {
-  worktree_diff: () => CTX_PATCH,
+export const handlersFor = (patch: string): FakeHandlers => ({
+  worktree_diff: () => patch,
   worktree_commits: () => CTX_COMMITS,
   worktree_status: () => CTX_STATUS,
-};
+});
+
+const DEFAULT_HANDLERS = handlersFor(CTX_PATCH);
 
 const NOTE_PREFIX = 'Log the duplicate at info';
 
-const useCenterNote = (): void => {
+const useCenterNote = (isEnabled: boolean): void => {
   useEffect(() => {
+    if (!isEnabled) {
+      return;
+    }
     let tries = 0;
     const interval = window.setInterval(() => {
       tries += 1;
@@ -31,12 +36,17 @@ const useCenterNote = (): void => {
       }
     }, 150);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [isEnabled]);
 };
 
-export const DiffStage = () => {
-  useFakeTauri({ handlers: HANDLERS, holdMs: 1500 });
-  useCenterNote();
+type Props = {
+  readonly handlers?: FakeHandlers;
+  readonly centerNote?: boolean;
+};
+
+export const DiffStage = ({ handlers = DEFAULT_HANDLERS, centerNote = true }: Props) => {
+  useFakeTauri({ handlers, holdMs: 1500 });
+  useCenterNote(centerNote);
   return (
     <FilesPane
       sessionId={CTX_SESSION_ID}

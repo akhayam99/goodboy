@@ -7,6 +7,7 @@ import { classifyAgent, isStandaloneAgent, type AgentKind } from '../../agent-ki
 import { isAgentFinished } from '../../agent-lifecycle';
 import { useAgentLifecycleSignals } from '../../hooks/useAgentLifecycleSignals';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
+import { openAgentRevealEvent } from '../AgentDetailPane/agentOpenTab';
 
 type Params = {
   readonly session: Session;
@@ -164,7 +165,7 @@ export const useStandaloneAgentsLane = ({ session }: Params) => {
       if (agentId !== selectedAgentId) {
         navigate({ to: agentPlace({ sessionId, agentId }) });
       }
-      window.dispatchEvent(new CustomEvent('goodboy:reveal-chat'));
+      window.dispatchEvent(openAgentRevealEvent());
     },
     [navigate, selectedAgentId, sessionId],
   );

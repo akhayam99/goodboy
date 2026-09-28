@@ -56,4 +56,21 @@ describe('useFileJump', () => {
     expect(result.current.activeIndex).toBe(0);
     expect(result.current.results).toHaveLength(1);
   });
+
+  it('starts on the active file and maps it into the filtered list', () => {
+    const onPick = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ activePath }: { activePath: string }) => useFileJump({ files: FILES, activePath, onPick }),
+      { initialProps: { activePath: 'payments-api/src/allocate.test.ts' } },
+    );
+    expect(result.current.activeIndex).toBe(2);
+    act(() => result.current.setQuery('alloc'));
+    expect(result.current.activeIndex).toBe(0);
+    rerender({ activePath: 'notify-relay/src/retry/skipSettled.ts' });
+    expect(result.current.activeIndex).toBe(0);
+    rerender({ activePath: 'payments-api/src/allocate.test.ts' });
+    expect(result.current.activeIndex).toBe(1);
+    act(() => result.current.onKeyDown(key('Enter')));
+    expect(onPick).toHaveBeenCalledWith('payments-api/src/allocate.test.ts');
+  });
 });

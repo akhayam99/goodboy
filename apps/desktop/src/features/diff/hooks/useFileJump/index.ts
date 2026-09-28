@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { FileDiff } from '@goodboy/types';
 
 type Match = {
@@ -47,6 +47,7 @@ export const filterFiles = (
 
 type Params = {
   readonly files: ReadonlyArray<FileDiff>;
+  readonly activePath?: string | null;
   readonly onPick: (path: string) => void;
 };
 
@@ -59,11 +60,20 @@ export type FileJump = {
   readonly onKeyDown: (event: KeyboardEvent) => void;
 };
 
-export const useFileJump = ({ files, onPick }: Params): FileJump => {
+export const useFileJump = ({ files, activePath = null, onPick }: Params): FileJump => {
   const [query, setQueryState] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const results = useMemo(() => filterFiles(files, query), [files, query]);
+  const resultsRef = useRef(results);
+  resultsRef.current = results;
   const clampedIndex = Math.min(activeIndex, Math.max(0, results.length - 1));
+
+  useEffect(() => {
+    const index = resultsRef.current.findIndex((file) => file.path === activePath);
+    if (index >= 0) {
+      setActiveIndex(index);
+    }
+  }, [activePath, files]);
 
   const setQuery = (next: string) => {
     setQueryState(next);
