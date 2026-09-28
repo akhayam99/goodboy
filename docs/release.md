@@ -117,6 +117,19 @@ instead, next to the installed version, the last check time and **Check now**.
 The changelog opens on the focused or installed release and marks newer ones
 "available".
 
+The changelog bundled in a build (`CHANGELOG.md?raw` in
+`features/changelog/changelogSource.ts`) stops at that build's own version, so
+it can't describe the update. When a check finds one, `checkForUpdates` starts
+`loadChangelogUpcoming` without waiting for it. The `release_changelog` command
+(`src-tauri/src/releases.rs`) fetches `CHANGELOG.md` at the update's tag from
+raw.githubusercontent.com in Rust, so the webview CSP stays closed. The text
+goes through the same `parseChangelog`, and `releasesInUpdate` keeps the
+releases after the installed version up to the update, skipped ones included.
+The result is kept per target for the session. A failed fetch keeps nothing, so
+the next check or open tries again, and until then the changelog falls back to
+the update's own notes (`updateNotes`). Pictures in those entries load through
+`changelog_image` like any other release.
+
 Installing never relaunches straight away. `relaunchWithResume`
 (`store/slices/updater/prepareRestart.ts`) writes `restart.reason` in the
 settings table, then calls `restart_prepare`, which records the live turns in

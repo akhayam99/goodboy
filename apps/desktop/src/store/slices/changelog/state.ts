@@ -3,6 +3,11 @@ import type { ReleaseEntry } from '../../../features/changelog/parseChangelog';
 
 export type ChangelogDatesStatus = 'idle' | 'loading' | 'ready' | 'error';
 
+export type ChangelogUpcoming = {
+  readonly target: string;
+  readonly releases: ReadonlyArray<ReleaseEntry>;
+};
+
 export const SETTING_CHANGELOG_SEEN = 'changelog.lastSeenVersion';
 
 export type ChangelogState = {
@@ -13,6 +18,7 @@ export type ChangelogState = {
   readonly changelogSeenVersion: string | null;
   readonly changelogSeenHydrated: boolean;
   readonly changelogFocusVersion: string | null;
+  readonly changelogUpcoming: ChangelogUpcoming | null;
 };
 
 export const initialChangelogState: ChangelogState = {
@@ -23,4 +29,5 @@ export const initialChangelogState: ChangelogState = {
   changelogSeenVersion: null,
   changelogSeenHydrated: false,
   changelogFocusVersion: null,
+  changelogUpcoming: null,
 };

@@ -57,6 +57,7 @@ const baseState = (releases: ReadonlyArray<ReleaseEntry>): ChangelogState => ({
   changelogSeenVersion: null,
   changelogSeenHydrated: true,
   changelogFocusVersion: null,
+  changelogUpcoming: null,
 });
 
 beforeEach(() => {
