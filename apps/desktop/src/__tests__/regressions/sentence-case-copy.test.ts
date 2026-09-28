@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { ARTIFACT_GENERATION_PRESENTATION } from '../../features/artifacts/artifactCollection';
 import { ARTIFACT_STATUS_PRESENTATION } from '../../features/artifacts/artifact-status';
 import { ARTIFACT_CTA_BLOCK_COPY } from '../../features/artifacts/artifactCtaState';
-import { RESOLVE_QUEUE_TITLE } from '../../features/resolve/resolveQueueCopy';
 import { REVIEW_COMMENT_GROUP_LABEL } from '../../features/resolve/reviewCommentState';
 import { COMPOSE_COPY, REVIEW_FLOW_LABEL } from '../../features/resolve/reviewFlowCopy';
 import { SCRIPT_RUN_PRESENTATION } from '../../features/scripts/scriptRunPresentation';
@@ -24,7 +23,6 @@ const NAMED_COPY: Readonly<Record<string, ReadonlyArray<string | null>>> = {
     (presentation) => presentation.label,
   ),
   ARTIFACT_CTA_BLOCK_COPY: Object.values(ARTIFACT_CTA_BLOCK_COPY),
-  RESOLVE_QUEUE_TITLE: [RESOLVE_QUEUE_TITLE],
   REVIEW_COMMENT_GROUP_LABEL: Object.values(REVIEW_COMMENT_GROUP_LABEL),
   REVIEW_FLOW_LABEL: Object.values(REVIEW_FLOW_LABEL).filter((label) => !label.startsWith('↵')),
   COMPOSE_COPY: Object.values(COMPOSE_COPY).flatMap((copy) => [copy.label, copy.submit]),

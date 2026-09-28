@@ -24,7 +24,7 @@ export const GithubPrStrip = ({ sessionId, pullRequest }: Props) => {
           destination: { kind: 'pull_request', mountId: null, prNumber: pullRequest.number },
         })
       }
-      title="Open pull request in Review"
+      title="Open pull request"
       className={cn(
         'flex min-w-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-label',
         'ring-1 ring-border-soft transition-colors hover:bg-hover',

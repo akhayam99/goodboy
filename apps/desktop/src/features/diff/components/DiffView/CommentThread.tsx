@@ -112,7 +112,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
               Reopen
             </button>
           ) : null}
-          {comments.onDelete ? (
+          {thread.canDelete !== false && comments.onDelete ? (
             <button
               type="button"
               className={ACTION_CLASS}

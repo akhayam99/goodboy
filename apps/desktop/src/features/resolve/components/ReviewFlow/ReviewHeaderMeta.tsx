@@ -56,6 +56,7 @@ export const ReviewHeaderMeta = ({ sessionId, entries, noPullRequestLine }: Prop
         <button
           type="button"
           onClick={() => void run({ actionId: link.id })}
+          aria-label={link.label.replace(/^Open PR/, 'Open pull request')}
           className="inline-flex w-fit items-center gap-1.5 rounded-sm text-secondary text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring motion-safe:transition-colors"
         >
           <link.icon size={ICON_SIZE.row} aria-hidden />

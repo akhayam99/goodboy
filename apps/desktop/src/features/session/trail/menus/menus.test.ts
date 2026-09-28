@@ -63,7 +63,6 @@ describe('pageMenu', () => {
     const menu = pageMenu({
       destinations: lensDestinations({
         isBranchless: false,
-        isGithubCodeHost: false,
         connectedTools: { linear: true, gitlab: false, jira: false, slack: false },
       }),
       activeLens: 'agents',

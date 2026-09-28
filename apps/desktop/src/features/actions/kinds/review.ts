@@ -92,8 +92,11 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
       shortcut: 'lens.pr',
       when: ({ facts }) => facts.prNumber !== null,
       slot: () => 'link',
-      run: ({ facts, env }) =>
-        env.getState().navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'pr' }) }),
+      run: ({ facts, env }) => {
+        const state = env.getState();
+        state.setPullRequestMode({ sessionId: facts.sessionId, mode: 'overview' });
+        state.navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'pr' }) });
+      },
     },
     {
       id: 'review.draftFixes',

@@ -10,6 +10,10 @@ const { store, useWorktreeStatuses, useWorktreeStatusPending } = vi.hoisted(() =
     sessionMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     sessionProjectMounts: {} as Record<string, ReadonlyArray<Record<string, unknown>>>,
     mountGithub: {} as Record<string, Record<string, unknown>>,
+    sessionGithub: {},
+    sessionResolveThreads: {},
+    openReviewTarget: async () => ({ kind: 'opened' as const }),
+    openRewriteHistory: () => undefined,
     mountGitlabMr: {},
     mountBitbucketPr: {},
     mountBranchObservations: {},
@@ -262,8 +266,8 @@ describe('ProjectMountRows', () => {
     render(<ProjectMountRows session={session} onSelectLens={vi.fn()} />);
 
     const [first, second] = screen.getAllByTestId('project-mount-row');
-    expect(within(first as HTMLElement).getByText('#11')).toBeDefined();
-    expect(within(second as HTMLElement).getByText('#12')).toBeDefined();
+    expect(within(first as HTMLElement).getByText('PR #11')).toBeDefined();
+    expect(within(second as HTMLElement).getByText('PR #12')).toBeDefined();
   });
 
   it('creates a request for a row that is not the active mount', async () => {

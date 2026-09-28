@@ -37,6 +37,7 @@ export type MountFacts = {
   readonly onScripts: () => void;
   readonly onStartTurnsHere: () => void;
   readonly onOpenEditor: (binary: string) => void;
+  readonly onRewriteHistory?: (() => void) | null;
 };
 
 type FactsOnly = { readonly facts: MountFacts };
@@ -92,6 +93,14 @@ export const MOUNT_KIND: ObjectKindDefinition<MountActionTarget, MountFacts> = {
       group: 'act',
       when: ({ facts }) => facts.hasTools && facts.canStartTurnsHere,
       run: ({ facts }) => facts.onStartTurnsHere(),
+    },
+    {
+      id: 'mount.rewriteHistory',
+      label: 'Rewrite history',
+      icon: CONCEPT_ICONS.history,
+      group: 'act',
+      when: ({ facts }) => facts.hasTools && facts.onRewriteHistory != null,
+      run: ({ facts }) => facts.onRewriteHistory?.(),
     },
     {
       id: 'mount.copyPath',

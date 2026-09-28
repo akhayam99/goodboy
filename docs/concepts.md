@@ -625,7 +625,7 @@ conversation.
 
 Every open review thread on the pull request gets a conversation as soon as
 Goodboy reads the pull request, even if no agent has touched it yet. Goodboy
-reads every page of threads GitHub returns. If the read fails, Conversations
+reads every page of threads GitHub returns. If the read fails, Review
 shows the error from `gh` instead of an empty list.
 
 Review is one flow: the list on the left, the focused comment on the right.

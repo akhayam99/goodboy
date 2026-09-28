@@ -66,7 +66,7 @@ describe('ReviewPane', () => {
     for (const name of [/^GitHub$/, /Refresh the pull request/, /^Checks /, /Switch pull/]) {
       expect(screen.queryByRole('button', { name })).toBeNull();
     }
-    fireEvent.click(screen.getByRole('button', { name: /^PR #318/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Open pull request #318/ }));
     expect(navigate).toHaveBeenCalledWith({
       to: expect.objectContaining({ view: expect.objectContaining({ lens: 'pr' }) }),
     });

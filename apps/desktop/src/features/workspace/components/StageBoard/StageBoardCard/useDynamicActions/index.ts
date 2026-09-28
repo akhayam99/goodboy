@@ -194,7 +194,7 @@ export const useDynamicActions = (
         icon: SUGGESTION_ICONS['resolve-threads'],
         tone: 'primary',
         label: `Resolve ${eligibleThreads} ${eligibleThreads === 1 ? 'comment' : 'comments'}`,
-        onClick: () => nav.openGithub(session),
+        onClick: () => nav.openReview(session),
       });
     }
     if (nextStepReady) {

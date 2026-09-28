@@ -21,6 +21,7 @@ import { MountKindGlyph } from './MountKindGlyph';
 import { MountPresence } from './MountPresence';
 import { MountRequestAction } from './MountRequestAction';
 import { MountRequestLink } from './MountRequestLink';
+import { MountResolveLink } from './MountResolveLink';
 import { ProjectBranchChip } from './ProjectBranchChip';
 import { ProjectSyncControl } from './ProjectSyncControl';
 import { RebaseStoppedNotice } from './RebaseStoppedNotice';
@@ -81,6 +82,7 @@ export const ProjectMountRow = ({
   const setScriptsLensScope = useAppStore((state) => state.setScriptsLensScope);
   const setSessionActiveMount = useAppStore((state) => state.setSessionActiveMount);
   const openMountTerminal = useAppStore((state) => state.openMountTerminal);
+  const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
   const attachMount = useAppStore((state) => state.attachMount);
   const activeMountId = useAppStore((state) => selectActiveMountId({ state, sessionId }));
   const turnMountCount = useAppStore((state) => selectTurnMountCount({ state, sessionId }));
@@ -166,6 +168,8 @@ export const ProjectMountRow = ({
       onTerminal: () => openLens({ lens: 'terminal' }),
       onScripts: () => openLens({ lens: 'scripts' }),
       onStartTurnsHere: () => void startTurnsHere(),
+      onRewriteHistory:
+        isRepo && row.branch !== '' ? () => openRewriteHistory(sessionId, worktreePath) : null,
       onOpenEditor: (binary) => {
         if (worktreePath === null) {
           return;
@@ -275,7 +279,10 @@ export const ProjectMountRow = ({
         )}
         <div className={CELL}>
           {row.isAttached ? (
-            <MountRequestLink sessionId={sessionId} row={row} label={label} />
+            <span className="flex min-w-0 items-center gap-1">
+              <MountRequestLink sessionId={sessionId} row={row} label={label} />
+              <MountResolveLink sessionId={sessionId} row={row} label={label} />
+            </span>
           ) : (
             <Chip
               tone="neutral"

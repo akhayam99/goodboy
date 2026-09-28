@@ -76,7 +76,8 @@ const NAV: BoardNavigation = {
   openIDE: vi.fn(),
   openQuestions: vi.fn(),
   openWorkflows: vi.fn(),
-  openGithub: vi.fn(),
+  openPullRequest: vi.fn(),
+  openReview: vi.fn(),
 };
 
 describe('every ⋯ menu and its right click list the same actions in the same order', () => {

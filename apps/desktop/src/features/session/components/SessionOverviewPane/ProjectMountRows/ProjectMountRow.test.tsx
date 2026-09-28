@@ -53,6 +53,11 @@ const { store, remoteKind } = vi.hoisted(() => ({
     agentTurnDestination: {} as Record<string, { kind: string; mountId?: string }>,
     navigate: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
+    openRewriteHistory: vi.fn(),
+    openReviewTarget: vi.fn(async () => ({ kind: 'opened' as const })),
+    mountGithub: {} as Record<string, unknown>,
+    sessionGithub: {} as Record<string, unknown>,
+    sessionResolveThreads: {} as Record<string, ReadonlyArray<unknown>>,
   },
 }));
 
@@ -91,6 +96,11 @@ vi.mock('./MountActionsMenu', () => ({
           {target.facts.canStartTurnsHere ? (
             <button type="button" role="menuitem" onClick={target.facts.onStartTurnsHere}>
               Start new turns here
+            </button>
+          ) : null}
+          {target.facts.onRewriteHistory != null ? (
+            <button type="button" role="menuitem" onClick={target.facts.onRewriteHistory}>
+              Rewrite history
             </button>
           ) : null}
         </>
@@ -198,9 +208,83 @@ beforeEach(() => {
   store.sessionOpenQuestions = {};
   store.agentTurnState = {};
   store.agentTurnDestination = {};
+  store.mountGithub = {};
+  store.sessionGithub = {};
+  store.sessionResolveThreads = {};
 });
 
 afterEach(cleanup);
+
+const REQUEST_ROW: MountRowView = {
+  ...baseRow,
+  request: {
+    provider: 'github',
+    number: 318,
+    label: 'PR #318',
+    state: 'open',
+    isDraft: false,
+  } as unknown as MountRowView['request'],
+};
+
+const reviewComment = (threadId: string) => ({
+  id: `c-${threadId}`,
+  source: 'review',
+  threadId,
+  resolved: false,
+  inReplyToId: null,
+  author: 'kenji-w',
+  body: 'Cap the retries.',
+  createdAt: '2026-09-27T10:00:00.000Z',
+  path: 'src/webhooks.ts',
+  line: 12,
+});
+
+describe('ProjectMountRow layer links', () => {
+  it('names the pull request with its number and state, and opens its page', async () => {
+    renderRow({ row: REQUEST_ROW });
+
+    const link = screen.getByRole('button', { name: 'Open PR #318 of API' });
+    expect(link.textContent).toContain('PR #318');
+    fireEvent.click(link);
+
+    await waitFor(() =>
+      expect(store.openMountRequest).toHaveBeenCalledWith({
+        sessionId,
+        mountId: 'mount-1',
+        provider: 'github',
+        requestNumber: 318,
+      }),
+    );
+  });
+
+  it('counts the comments to resolve on this pull request and opens Review on them', async () => {
+    store.mountGithub = {
+      'mount-1': {
+        pr: { number: 318 },
+        detail: { comments: [reviewComment('PRRT_1'), reviewComment('PRRT_2')] },
+      },
+    };
+    renderRow({ row: REQUEST_ROW });
+
+    const link = screen.getByRole('button', { name: 'Open Review for API, 2 to resolve' });
+    expect(link.textContent).toBe('2 to resolve');
+    fireEvent.click(link);
+
+    await waitFor(() =>
+      expect(store.openReviewTarget).toHaveBeenCalledWith({
+        sessionId,
+        destination: { kind: 'comments', mountId: 'mount-1', prNumber: 318 },
+      }),
+    );
+  });
+
+  it('shows no resolve link when nothing waits', () => {
+    store.mountGithub = { 'mount-1': { pr: { number: 318 }, detail: { comments: [] } } };
+    renderRow({ row: REQUEST_ROW });
+
+    expect(screen.queryByRole('button', { name: /to resolve/ })).toBeNull();
+  });
+});
 
 describe('ProjectMountRow request action', () => {
   it('opens the pull request for this mount in review, without touching the window bus', async () => {
@@ -413,7 +497,7 @@ describe('ProjectMountRow column grammar', () => {
       diffStat: { additions: 3, deletions: 1 },
       row: { ...baseRow, request: openRequest },
     });
-    expect(slotsOf()[4]?.textContent).toBe('In review·#12');
+    expect(slotsOf()[4]?.textContent).toBe('PR #12In review');
     cleanup();
 
     renderRow({ row: detached });
@@ -444,6 +528,14 @@ describe('ProjectMountRow menu', () => {
     expect(screen.getByRole('menuitem', { name: 'Open terminal' })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: 'Open scripts' })).toBeDefined();
     expect(screen.getByRole('menuitem', { name: 'VS Code' })).toBeDefined();
+  });
+
+  it('opens rewrite history for this worktree from the row menu', () => {
+    renderRow({});
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rewrite history' }));
+
+    expect(store.openRewriteHistory).toHaveBeenCalledWith(sessionId, '/api');
   });
 
   it('opens the worktree of the mount, not the first worktree of the session', () => {
