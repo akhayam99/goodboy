@@ -7,6 +7,7 @@ import { hitHeadline } from '../../hitLabels';
 import type { SearchHitTarget } from '../../searchHitTarget';
 import { hitActionTarget } from '../../hitActionTarget';
 import { MarkedText } from './MarkedText';
+import { providerLabel } from '../../searchFilterOptions';
 import { SearchHitActions } from './SearchHitActions';
 
 type Props = {
@@ -41,7 +42,7 @@ export const SearchPreview = ({ hit, target, onOpen, onDone }: Props) => {
     { label: 'Agent', value: hit.kind === 'agent' ? null : hit.agentName },
     { label: 'Where', value: hit.container },
     { label: 'Status', value: statusOf({ hit }) },
-    { label: 'From', value: hit.provider },
+    { label: 'From', value: providerLabel({ provider: hit.provider }) },
     { label: 'When', value: formatAbsoluteDateTime({ iso: hit.occurredAt }) },
   ];
   const isBlocked = target.kind === 'blocked';

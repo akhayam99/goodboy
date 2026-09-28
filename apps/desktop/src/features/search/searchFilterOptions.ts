@@ -127,3 +127,14 @@ export const chipValue = ({ chip }: ChipValueParams): string => {
     }
   }
 };
+
+type ProviderLabelParams = {
+  readonly provider: string | null;
+};
+
+export const providerLabel = ({ provider }: ProviderLabelParams): string | null => {
+  if (provider === null) {
+    return null;
+  }
+  return PROVIDER_OPTIONS.find((option) => option.value === provider)?.label ?? provider;
+};

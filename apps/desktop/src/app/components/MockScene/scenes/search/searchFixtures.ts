@@ -175,7 +175,7 @@ type MatchParams = {
 };
 
 const matches = ({ doc, query, tokens }: MatchParams): boolean => {
-  const words = findTokens({ text: `${doc.title} ${doc.body}` });
+  const words = `${doc.title} ${doc.body}`.toLowerCase().split(/[^\p{L}\p{N}]+/u);
   const hasWords = tokens.every((token) => words.some((word) => word.startsWith(token)));
   const isKind = query.kinds.length === 0 || query.kinds.includes(doc.kind);
   const isProvider = query.providers.length === 0 || query.providers.includes(doc.provider ?? '');
