@@ -53,7 +53,7 @@ const report = {
 afterEach(cleanup);
 
 describe('artifactDocument.css', () => {
-  it('embeds Inter as a variable font, never a runtime style tag', () => {
+  it('reads Inter from the global face, never its own face or a runtime style tag', () => {
     const { container } = render(
       <div className="print-sheet" data-medium="screen">
         <ArtifactDocument artifact={report} medium="screen" workspaceName="harborline" />
@@ -61,9 +61,8 @@ describe('artifactDocument.css', () => {
     );
     expect(container.querySelectorAll('style')).toHaveLength(0);
     expect(container.querySelectorAll('[style]')).toHaveLength(0);
-    expect(SHEET_CSS).toMatch(/@font-face \{[^}]*font-family: 'Inter';/);
-    expect(SHEET_CSS).toMatch(/InterVariable-latin\.woff2/);
-    expect(SHEET_CSS).toContain("format('woff2-variations')");
+    expect(SHEET_CSS).not.toContain('@font-face');
+    expect(SHEET_CSS).toContain("font-family: 'Inter', var(--font-sans);");
   });
 
   it('numbers every h2 section with a css counter, never a hardcoded digit', () => {

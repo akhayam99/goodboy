@@ -97,6 +97,21 @@ The background is white on the site and charcoal in the app, and both are
 correct. An asset made for one does not automatically work on the other. So a
 social image says which background it was built for.
 
+## Type
+
+The app is set in **Inter**, one variable Latin file with weights 100 to 900
+and an optical axis from 14 to 32. It ships once, in
+`apps/desktop/src/assets/fonts/`, and the exported report embeds the same bytes
+as a data URI. `app-font-is-inter.test.ts` fails when the two copies differ.
+Another surface that sets Inter uses this exact file, never a different cut or
+a second subset.
+
+The file carries `calt`, `tnum`, fractions and kerning, and no character
+variants or stylistic sets. The single-storey `a` and the open digits that
+Inter is known for are not in it, so they are not part of the brand. Code stays
+in the system mono stack. The type roles and where each feature is on live in
+[DESIGN-SYSTEM.md](../packages/ui/DESIGN-SYSTEM.md#type-scale).
+
 ## Provider and integration marks
 
 When an asset shows what Goodboy works with, the logos come from the code, not
