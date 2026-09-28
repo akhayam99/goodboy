@@ -229,4 +229,77 @@ describe('Review as one flow', () => {
       .map((button) => button.getAttribute('data-review-verb'));
     expect(verbs).toEqual(['reviewComment.draft', 'reviewComment.reply', 'reviewComment.skip']);
   });
+
+  it('pushes once from the header: confirm names what goes out, then one result line', async () => {
+    const preview = {
+      publicationId: 'pub-318',
+      repo: 'harborline/payments-api',
+      prNumber: 318,
+      branch: 'hl/fix-duplicate-credit',
+      localHead: 'a41c9e2aaaa',
+      remoteHead: '7d02b11bbbb',
+      requiresPush: true,
+      frozenAt: 1,
+      commits: [
+        {
+          sha: 'a41c9e2aaaa',
+          shortSha: 'a41c9e2',
+          subject: 'Redact the webhook payload',
+          author: 'resolver',
+          timestamp: 1,
+          pushed: false,
+          parentSha: null,
+          threadIds: ['PRRT_thread_log_redact'],
+        },
+      ],
+      unapproved: [],
+      replies: [
+        { threadId: 'PRRT_thread_log_redact', body: 'Redacted.', revision: 1, closes: true },
+      ],
+      notes: [],
+      excluded: [],
+      drift: [],
+      blocker: null,
+    };
+    const prepare = vi.fn(async () => preview);
+    const publish = vi.fn(async () => ({
+      kind: 'done' as const,
+      pushed: true,
+      pushedHead: 'a41c9e2aaaa',
+      total: 1,
+      replies: 1,
+      replied: 1,
+      closed: 1,
+      resolved: 1,
+      leftOpen: 0,
+      failed: 0,
+      error: null,
+    }));
+    stub({
+      preparePublication: prepare as unknown as StoreState['preparePublication'],
+      publishConversations: publish as unknown as StoreState['publishConversations'],
+    });
+    await mount({ threadId: EXPANDED_THREAD_ID });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Push 1/ }));
+    const confirm = await screen.findByRole('group', {
+      name: 'Push 1 to hl/fix-duplicate-credit?',
+    });
+    expect(
+      within(confirm).getByText(/1 fix in 1 new commit, 1 reply, 1 thread resolved/),
+    ).toBeDefined();
+    expect(publish).not.toHaveBeenCalled();
+    fireEvent.click(within(confirm).getByRole('button', { name: 'Push' }));
+
+    await waitFor(() =>
+      expect(publish).toHaveBeenCalledWith({
+        sessionId: SESSION.id,
+        publicationId: 'pub-318',
+      }),
+    );
+    expect(
+      await screen.findByText('Pushed a41c9e2, 1 reply posted, 1 thread resolved on GitHub.'),
+    ).toBeDefined();
+    expect(screen.queryByRole('button', { name: 'Review publication' })).toBeNull();
+  });
 });

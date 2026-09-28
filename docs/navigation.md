@@ -879,7 +879,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   "Resolve" names the area, never a button. Review exists with or without a
   pull request: without one it lists the session's notes under a
   `No pull request yet` line with `Open a pull request` (see Pull request
-  review in `docs/concepts.md`). Its dock holds only the publication.
+  review in `docs/concepts.md`). It has no dock: `Push N` sits in the header,
+  a secondary while comments are still open and the primary once none is, and
+  it confirms inline under the header.
   The `pr` lens is the pull request page on GitHub too (`Merge request` on
   GitLab, still their own studios there). Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's

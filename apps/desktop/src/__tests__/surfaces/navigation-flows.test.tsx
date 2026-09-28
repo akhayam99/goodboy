@@ -176,7 +176,6 @@ const EXEMPT: Readonly<Record<string, string>> = {
   openArtifactConversation: 'an effect of the artifact studio, no control calls it',
   openDiffLens: 'only resolver thread cards and the resolve publish strip call it',
   openResolveDiff: 'resolve queue control, covered by the resolve flows in main-flows',
-  openResolvePublication: 'resolve queue control, covered by the resolve flows in main-flows',
   openStorageArtifact:
     'storage rows list artifacts read from disk, which the bridge mock has none of',
 };

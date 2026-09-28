@@ -4,7 +4,6 @@ import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn }
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { openUrl } from '../../../../shared/lib/editor';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import {
@@ -168,10 +167,7 @@ export const ReviewComment = ({
       </header>
 
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
-        <ReviewerCommentBlock
-          commentThread={row.commentThread}
-          onOpenUrl={(url) => void openUrl(url)}
-        />
+        <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
       {row.attempt !== null && <AgentLine attempt={row.attempt} state={state} word={word} />}

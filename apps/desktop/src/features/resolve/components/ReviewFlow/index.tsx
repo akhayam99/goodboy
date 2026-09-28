@@ -38,20 +38,20 @@ import { useResolveAgain } from '../../hooks/useResolveAgain';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { RESOLVE_QUEUE_REFRESH_LABEL } from '../../resolveQueueCopy';
 import { REVIEW_FLOW_LABEL, REVIEW_TITLE, counterLabel } from '../../reviewFlowCopy';
+import { isPushFailure } from '../../reviewCommentState';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewComment, type ReviewCompose } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
 import { ReviewHeaderMeta } from './ReviewHeaderMeta';
+import { PushBanner } from './PushBanner';
 import { ReviewList } from './ReviewList';
+import { useReviewPush } from './useReviewPush';
 import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
 
 type Props = {
   readonly session: Session;
   readonly noPullRequestLine?: ReactNode;
-  readonly dock?: ReactNode;
 };
-
-const HIDDEN_HEADER_ACTIONS: ReadonlyArray<string> = ['review.push'];
 
 const ADVANCING = new Set([
   'reviewComment.accept',
@@ -92,7 +92,7 @@ const nextOpenAfter = ({
   return open[index + 1]?.threadId ?? open[index - 1]?.threadId ?? null;
 };
 
-export const ReviewFlow = ({ session, noPullRequestLine = null, dock = null }: Props) => {
+export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
   const { entries, groups } = useReviewEntries({ sessionId });
@@ -120,6 +120,9 @@ export const ReviewFlow = ({ session, noPullRequestLine = null, dock = null }: P
   const [modelPickerRequest, setModelPickerRequest] = useState(0);
   const listRef = useRef<HTMLDivElement | null>(null);
   const hasPr = github?.pr != null;
+  const push = useReviewPush({ sessionId });
+  const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
+  const isPushBusy = push.phase.kind === 'preparing' || push.phase.kind === 'pushing';
 
   useEffect(() => {
     void loadResolveSession({ sessionId });
@@ -279,6 +282,13 @@ export const ReviewFlow = ({ session, noPullRequestLine = null, dock = null }: P
         setEditingReplyId(request.threadId);
         return;
       }
+      if (request.kind === 'push') {
+        event.preventDefault();
+        if (!isPushBusy) {
+          void push.arm({ isRetry: hasPushFailure });
+        }
+        return;
+      }
       if (request.kind === 'draft_model') {
         event.preventDefault();
         setModelPickerRequest((count) => count + 1);
@@ -286,7 +296,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null, dock = null }: P
     };
     window.addEventListener(REVIEW_REQUEST_EVENT, onRequest);
     return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
-  }, [select, sessionId]);
+  }, [hasPushFailure, isPushBusy, push, select, sessionId]);
 
   useEffect(() => {
     if (reviewTarget === null || reviewTarget.status !== 'ready') {
@@ -303,10 +313,26 @@ export const ReviewFlow = ({ session, noPullRequestLine = null, dock = null }: P
   }, [consumeReviewTarget, entries, reviewTarget, select, sessionId]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    const native = event.nativeEvent;
+    if (eventMatches({ event: native, entry: SHORTCUTS['composer.submit'] })) {
+      if (compose !== null || editingReplyId !== null) {
+        return;
+      }
+      event.preventDefault();
+      if (push.phase.kind === 'confirm') {
+        void push.confirm();
+        return;
+      }
+      void runObjectAction({
+        target: { kind: 'review', sessionId },
+        actionId: 'review.push',
+        env,
+      });
+      return;
+    }
     if (isEditable(event.target) || compose !== null || editingReplyId !== null) {
       return;
     }
-    const native = event.nativeEvent;
     if (eventMatches({ event: native, entry: SHORTCUTS['review.next'] })) {
       event.preventDefault();
       step(1);
@@ -453,12 +479,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null, dock = null }: P
       icon={CONCEPT_ICONS.review}
       tone={CONCEPT_TONE.review}
       scroll="self"
-      dock={dock}
       actions={
         <ReviewHeaderActions
           sessionId={sessionId}
           modelPickerRequest={modelPickerRequest}
-          hiddenActionIds={HIDDEN_HEADER_ACTIONS}
+          busyActionId={isPushBusy ? 'review.push' : null}
         />
       }
       subheader={
@@ -473,6 +498,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null, dock = null }: P
     >
       <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
         <PageColumn className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+          <PushBanner sessionId={sessionId} push={push} />
           {refreshError !== null && !isWholeError && (
             <ErrorStrip
               label={RESOLVE_QUEUE_REFRESH_LABEL}

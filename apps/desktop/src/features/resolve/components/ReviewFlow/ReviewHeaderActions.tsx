@@ -14,33 +14,21 @@ import { DraftModelPicker } from './DraftModelPicker';
 type Props = {
   readonly sessionId: SessionId;
   readonly modelPickerRequest: number;
-  readonly hiddenActionIds?: ReadonlyArray<string>;
+  readonly busyActionId: string | null;
 };
 
-const NONE: ReadonlyArray<string> = [];
+const buttonsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<ResolvedAction> => [
+  ...actions.filter((action) => action.slot === 'secondary'),
+  ...actions.filter((action) => action.slot === 'primary'),
+];
 
-const buttonsOf = (
-  actions: ReadonlyArray<ResolvedAction>,
-  hidden: ReadonlyArray<string>,
-): ReadonlyArray<ResolvedAction> => {
-  const shown = actions.filter((action) => !hidden.includes(action.id));
-  return [
-    ...shown.filter((action) => action.slot === 'secondary'),
-    ...shown.filter((action) => action.slot === 'primary'),
-  ];
-};
-
-export const ReviewHeaderActions = ({
-  sessionId,
-  modelPickerRequest,
-  hiddenActionIds = NONE,
-}: Props) => {
+export const ReviewHeaderActions = ({ sessionId, modelPickerRequest, busyActionId }: Props) => {
   const target = useMemo(() => ({ kind: 'review' as const, sessionId }), [sessionId]);
   const env = useActionEnv({ origin: 'button' });
   const { actions, run } = useObjectActions({ target, env });
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const buttons = buttonsOf(actions, hiddenActionIds);
+  const buttons = buttonsOf(actions);
 
   const press = async (actionId: string): Promise<void> => {
     if (pendingId !== null) {
@@ -70,7 +58,7 @@ export const ReviewHeaderActions = ({
               variant={action.slot === 'primary' ? 'primary' : 'secondary'}
               data-review-action={action.id}
               disabled={action.blockedReason !== null}
-              isBusy={pendingId === action.id}
+              isBusy={pendingId === action.id || busyActionId === action.id}
               onClick={() => void press(action.id)}
             >
               <action.icon size={ICON_SIZE.control} aria-hidden />

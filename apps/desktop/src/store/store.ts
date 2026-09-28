@@ -1145,10 +1145,6 @@ type AppActions = {
     readonly order: ReadonlyArray<string>;
     readonly scrollTop: number;
   }): void;
-  openResolvePublication(params: {
-    readonly sessionId: SessionId;
-    readonly reconcile: boolean;
-  }): void;
   openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
   beginSessionCreation(
     sessionId: SessionId,

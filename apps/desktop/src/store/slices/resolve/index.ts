@@ -13,8 +13,6 @@ import { updateResolveThreads } from './updateResolveThreads';
 import { updateResolveThread } from './updateResolveThread';
 import { acceptResolveQueueItem } from './acceptResolveQueueItem';
 import { refuseResolveQueueItem } from './refuseResolveQueueItem';
-import { discussResolveThread } from './discussResolveThread';
-import { publishResolveThread } from './publishResolveThread';
 import { beginResolveCandidate } from './beginResolveCandidate';
 import { captureResolveCandidate } from './captureResolveCandidate';
 import { runResolveCheck } from './runResolveCheck';
@@ -42,7 +40,6 @@ import type {
   UpdateParams,
   WorktreeDrainParams,
   ItemParams,
-  DiscussParams,
   ThreadParams,
   ItemRevisionParams,
   CandidateBeginParams,
@@ -72,16 +69,6 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       serialize({
         sessionId: params.sessionId,
         run: () => resolveWithoutReply({ set, get, ...params }),
-      }),
-    discussResolveThread: (params: DiscussParams) =>
-      serialize({
-        sessionId: params.sessionId,
-        run: () => discussResolveThread({ set, get, ...params }),
-      }),
-    publishResolveThread: (params: ThreadParams) =>
-      serialize({
-        sessionId: params.sessionId,
-        run: () => publishResolveThread({ set, get, ...params }),
       }),
     deferResolveQueueItem: (params: ItemParams) =>
       serialize({

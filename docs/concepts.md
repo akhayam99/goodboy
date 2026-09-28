@@ -685,7 +685,17 @@ with a local commit and never pushes.
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 
-Nothing reaches GitHub until a **publication** runs. A publication:
+Nothing reaches GitHub until you push. `Push N` in the Review header is the
+one way out: the per-comment publish and the publication dock are gone. It
+confirms inline under the header with exactly what goes out (`Push 2 to
+hl/fix-duplicate-credit?`, then `1 fix in 1 new commit, 2 replies, 2 threads
+resolved on GitHub.`), naming the commit style set in Review replies. A
+blocker (uncommitted changes, a commit nobody approved, a fix still running)
+replaces the confirm with its reason and the one move that clears it. The
+result stays on the layer in one line with its commit; a partial push says how
+many landed and marks the comment that did not with its reason, and `Retry
+push for N` picks it up. ⌘↵ with the list focused pushes too. Behind it runs a
+**publication**, which:
 
 1. Locks the conversations it will publish
 2. Pushes the branch once, if there is code to send

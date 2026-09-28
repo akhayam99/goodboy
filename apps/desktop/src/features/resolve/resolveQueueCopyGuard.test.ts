@@ -80,7 +80,7 @@ describe('resolve queue copy guard', () => {
     const sentences = prose({
       contents: readFileSync(join(HERE, 'resolvePublishCopy.ts'), 'utf8'),
     });
-    expect(sentences).toContain('Update branch and review again');
+    expect(sentences).toContain('Worktree has uncommitted changes');
     expect(sentences).toContain('The branch carries a commit you did not approve');
   });
 

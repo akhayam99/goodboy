@@ -10,7 +10,6 @@ import { useGithubConnection } from '../../../integrations/github/useGithubConne
 import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
 import { ReviewFlow } from '../../../resolve/components/ReviewFlow';
 import { REVIEW_TITLE } from '../../../resolve/reviewFlowCopy';
-import { PublishConversationsBar } from './PublishConversationsBar';
 import { NoPullRequestLine } from './NoPullRequestLine';
 
 type Props = {
@@ -75,5 +74,5 @@ export const ReviewPane = ({ session }: Props) => {
     );
   }
 
-  return <ReviewFlow session={session} dock={<PublishConversationsBar sessionId={sessionId} />} />;
+  return <ReviewFlow session={session} />;
 };

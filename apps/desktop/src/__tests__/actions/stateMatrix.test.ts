@@ -1030,7 +1030,28 @@ const REVIEW_COMMENT_STATES: ReadonlyArray<readonly [string, string, ReadonlyArr
       'reviewComment.copyLink',
     ],
   ],
-  ['skipped', 'PRRT_thread_flaky_test', ['reviewComment.undo']],
+  [
+    'skipped',
+    'PRRT_thread_flaky_test',
+    [
+      'reviewComment.openInDiff',
+      'reviewComment.openOnGithub',
+      'reviewComment.undo',
+      'reviewComment.copyLink',
+    ],
+  ],
+  [
+    'outdated',
+    'PRRT_thread_typo',
+    [
+      'reviewComment.openInDiff',
+      'reviewComment.openOnGithub',
+      'reviewComment.accept (The comment changed since this draft. Redraft first.)',
+      'reviewComment.edit',
+      ...COMMENT_DECIDE,
+      'reviewComment.copyLink',
+    ],
+  ],
   [
     'pushed',
     'PRRT_thread_timeout_config',
