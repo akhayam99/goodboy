@@ -222,6 +222,19 @@ describe('every ⋯ menu and its right click list the same actions in the same o
     expect(fromContext[0]).toBe('Open in GitLab');
   });
 
+  it('opens the same menu from the keyboard with Shift+F10 and gives focus back on Escape', async () => {
+    seedActionState({ useAppStore, seed: { mounts: [mountFixture()] } });
+    withMenus(<StageBoardCard session={sessionFixture()} nav={NAV} />);
+    const title = screen.getByRole('button', { name: /Speed up the payout export/ });
+    title.focus();
+    fireEvent.keyDown(title, { key: 'F10', code: 'F10', shiftKey: true });
+    expect(screen.getByRole('menu', { name: 'Session actions' })).toBeDefined();
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Escape' });
+    await act(async () => undefined);
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement?.closest('article')).not.toBeNull();
+  });
+
   it('never opens a menu for a session that is gone', async () => {
     seedActionState({ useAppStore, seed: {} });
     const { container } = withMenus(

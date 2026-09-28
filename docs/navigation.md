@@ -78,9 +78,11 @@ workspaces, a **Go to** group, scripts, actions and help. Workspaces are rows
 of its own that open the chosen workspace. Go to reaches studios by name: Back
 to board inside a session, then Inbox, Workflows, Impact, Changelog,
 Notifications and Workspace settings inside a workspace, and Add workspace
-everywhere. It never lists archive or delete, which are lifecycle, not
-navigation. The first row is highlighted on open, and the highlighted row is
-the one Enter runs.
+everywhere. Verbs of an object come from the action registry (see Context
+menus): the palette may archive, with the same Undo toast, and delete, with the
+same confirm shown inline in its row, because the right click already does. The
+first row is highlighted on open, and the highlighted row is the one Enter
+runs.
 
 In the composer, `$` lists every script of the session's mounted projects
 (`useSessionScripts`): saved scripts first, then `package.json` and
@@ -135,6 +137,66 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   falls back to its home lens.
 - **Keys.** ⌘[ and ⌘] (`nav.back`, `nav.forward`, app plane) and the mouse's
   back and forward buttons walk the stack.
+
+## Context menus
+
+Every object's actions are written once, in the action registry
+(`features/actions/`). A kind (`kinds/session.ts`, `kinds/agent.ts`,
+`kinds/artifact.ts` and the rest) lists each verb with its label, icon, group,
+shortcut from `SHORTCUTS`, when it shows, the reason it is blocked, and its
+confirm or undo rule. `useObjectActions` resolves the verbs of one target live
+from the store, and `useActionEnv` runs them. The overflow menu
+(`ObjectOverflowMenu`), the right click (`useObjectMenuTrigger` and the one
+`ObjectMenuProvider` in `App`) and the palette read the same list, so a verb
+never exists on one surface only.
+
+- **One order.** Open, then Act, then Copy, then the lifecycle and destructive
+  verbs last, with a rule between groups. A surface that shows some verbs as
+  buttons (the agent header, the artifact viewer, the run page) puts the rest
+  in its overflow, and the buttons plus the overflow equal the right click.
+  `__tests__/actions/menuParity.test.tsx` checks it, and
+  `__tests__/actions/handBuiltMenus.test.ts` fails on a menu built by hand
+  outside the registry, against a shrinking list of menus that are not objects
+  (creation pickers, property pickers, page chrome).
+- **What each object offers.** A session: Open, Review, Diff, Terminal, Open in
+  editor; Rename (inline, in the row that opened the menu), Start agent, Link
+  an issue; copy the title, branch and pull request link; Archive with Undo and
+  Delete with its confirm (Restore once archived). Several sessions: Copy
+  titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
+  changes; Message this agent, Interrupt while a turn runs, Close or Reopen,
+  Change model (one submenu); copy the last reply and the name; Delete agent. A
+  workflow run: Open run, View diff; Answer, Start run, Continue step, Restart
+  step, Start the next step, Restore; Copy run summary; Close, Discard and
+  Delete, each confirmed. An artifact: the viewer's verbs by kind and status,
+  from the list row too. A plan part, an inbox record (with the tool verbs of
+  an open record), a pull request, a diff file, a commit on the rewrite page, a
+  project mount, a storage worktree, a script, a transcript message and a link
+  in rendered text have their own kinds. `__tests__/actions/stateMatrix.test.ts`
+  pins, per kind and per state, which verbs show and why a verb is blocked, and
+  runs them on the real store.
+- **Pointer and keys.** The menu opens at the pointer and flips to stay 8px
+  inside the window. Shift+F10 (`menu.open`) and the Menu key open it on the
+  focused row, and Control-click is a right click. The arrows, Home and End
+  move, typing jumps to the first match, Enter runs, ArrowRight opens the one
+  submenu level, Escape closes and gives focus back. The row the menu acts on
+  keeps a primary outline (`data-menu-open`) while the menu is open.
+- **Selection, like Finder.** A right click on a row that is part of a
+  multi-selection acts on the whole selection (the several sessions kind). On
+  an unselected row it clears the selection and acts on that row alone.
+- **Confirm and undo.** A verb that loses work confirms inside the menu with
+  `InlineConfirm` (Delete, Discard, Close run, Merge, Close pull request,
+  Delete script). A mount's Close, Remove and Detach and a storage worktree's
+  Remove keep their detailed confirm (the detach plan, the forced remove) in
+  their own menu. A reversible verb runs at once with an Undo toast (Archive,
+  Close agent). A draft verb on the rewrite page (Drop) needs neither.
+- **Blocked verbs stay.** A verb that cannot run now stays in the menu, dimmed,
+  with its reason under the label, and does nothing when chosen. A verb that
+  does not apply to the state is not shown.
+- **Where the webview menu stays.** Text selected inside the clicked element,
+  editable fields, the composer and the terminal keep the native menu
+  (`useNativeMenuPolicy`). A link in rendered text gets Open link and Copy
+  link. Everywhere else the webview menu, and its Reload, is suppressed, and a
+  blank area opens nothing.
 
 ## Surfaces
 
@@ -604,7 +666,8 @@ A few entries are keys a focused control answers, not global chords: Submit
 comment (⌘↵) and Open the workflow of an activity row (⇧↵, the only combo
 without ⌘). They sit in the registry so the list and the tooltips name them.
 The control that owns each one handles its own key event and never registers
-it with the dispatcher; the activity row matches through `eventMatches`.
+it with the dispatcher; the activity row matches through `eventMatches`, and so
+does Shift+F10 (`menu.open`), which opens the context menu of the focused row.
 **A shortcut is taught where it
 is used.** A control that has one shows it: as a pill on hover in dense rows,
 and as a glyph in parentheses in tooltips. Where the row is too tight, the
