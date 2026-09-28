@@ -63,7 +63,6 @@ export const PullRequestPage = ({ session }: Props) => {
   );
   const refreshSessionPr = useAppStore((s) => s.refreshSessionPr);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const selectSessionPr = useAppStore((s) => s.selectSessionPr);
   const navigate = useAppStore((s) => s.navigate);
   const publishPrReview = useAppStore((s) => s.publishPrReview);
   const loadReviewDrafts = useAppStore((s) => s.loadReviewDrafts);
@@ -189,7 +188,6 @@ export const PullRequestPage = ({ session }: Props) => {
         header={
           <PullRequestHeader
             pr={pr}
-            prs={prOptions}
             repo={repo?.repoRoot ?? null}
             actions={
               <GhostActionButton
@@ -203,7 +201,6 @@ export const PullRequestPage = ({ session }: Props) => {
                 onClick={() => setMode('overview')}
               />
             }
-            onSelectPr={(number) => void selectSessionPr(sessionId, number)}
           />
         }
         scroll="self"
@@ -229,10 +226,8 @@ export const PullRequestPage = ({ session }: Props) => {
           <div className="flex min-w-0 flex-col gap-3">
             <PullRequestHeader
               pr={pr}
-              prs={prOptions}
               repo={repo?.repoRoot ?? null}
               actions={<ActionButtons controls={controls} menuLabel="Pull request actions" />}
-              onSelectPr={(number) => void selectSessionPr(sessionId, number)}
             />
             <ActionStatusLine controls={controls} />
             <ActionConfirmPanel controls={controls} />
