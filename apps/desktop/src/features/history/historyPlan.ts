@@ -1,30 +1,6 @@
-import type { BranchCommit, HistoryStep, HistoryVerb } from '@goodboy/types';
+import type { BranchCommit, HistoryStep } from '@goodboy/types';
 
-export type HistoryEdit =
-  | { readonly kind: 'verb'; readonly sha: string; readonly verb: HistoryVerb }
-  | { readonly kind: 'reword'; readonly sha: string }
-  | { readonly kind: 'squash'; readonly shas: ReadonlyArray<string> }
-  | { readonly kind: 'fold'; readonly sha: string; readonly target: string }
-  | { readonly kind: 'move'; readonly sha: string; readonly other: string };
-
-export const VERB_WORD: Readonly<Record<HistoryVerb, string>> = {
-  pick: 'Pick',
-  reword: 'Reword',
-  squash: 'Squash',
-  fixup: 'Fold into',
-  drop: 'Drop',
-};
-
-export const VERB_LINE: Readonly<Record<HistoryVerb | 'move', string>> = {
-  pick: 'Keep this commit as it is.',
-  reword: 'Keep the changes, write a new message.',
-  squash: 'Merge it into the older commit below and keep both messages.',
-  fixup: "Merge its changes into a commit you pick and keep that commit's message.",
-  drop: 'Remove this commit and its changes from the branch.',
-  move: 'Change the order. Moving commits can cause conflicts.',
-};
-
-export const SQUASH_LINE = 'The selected commits become one, messages combined.';
+export type CombineMode = 'fixup' | 'squash';
 
 type CommitsParams = {
   readonly commits: ReadonlyArray<BranchCommit>;
@@ -32,6 +8,21 @@ type CommitsParams = {
 
 export const initialPlanItems = ({ commits }: CommitsParams): ReadonlyArray<HistoryStep> =>
   [...commits].reverse().map((commit) => ({ sha: commit.sha, verb: 'pick' as const }));
+
+type StepParams = {
+  readonly step: HistoryStep;
+};
+
+export const targetOf = ({ step }: StepParams): string | null =>
+  step.target === undefined || step.target === null || step.target === '' ? null : step.target;
+
+export const isFolded = ({ step }: StepParams): boolean =>
+  (step.verb === 'fixup' || step.verb === 'squash') && targetOf({ step }) !== null;
+
+export const messageOf = ({ step }: StepParams): string | null =>
+  step.message === undefined || step.message === null || step.message.trim() === ''
+    ? null
+    : step.message;
 
 type ItemsParams = {
   readonly items: ReadonlyArray<HistoryStep>;
@@ -41,6 +32,56 @@ type ShaParams = ItemsParams & {
   readonly sha: string;
 };
 
+export const planOrder = ({ items }: ItemsParams): ReadonlyArray<string> =>
+  items.filter((step) => !isFolded({ step })).map((step) => step.sha);
+
+export const keptOrder = ({ items }: ItemsParams): ReadonlyArray<string> =>
+  items.filter((step) => !isFolded({ step }) && step.verb !== 'drop').map((step) => step.sha);
+
+const stepOf = ({ items, sha }: ShaParams): HistoryStep | null =>
+  items.find((step) => step.sha === sha) ?? null;
+
+const rootOf = ({ items, sha }: ShaParams): string | null => {
+  const seen = new Set<string>();
+  let current = stepOf({ items, sha });
+  while (current !== null && isFolded({ step: current })) {
+    if (seen.has(current.sha)) {
+      return null;
+    }
+    seen.add(current.sha);
+    current = stepOf({ items, sha: targetOf({ step: current }) ?? '' });
+  }
+  return current === null || current.verb === 'drop' ? null : current.sha;
+};
+
+export const normalizePlanItems = ({ items }: ItemsParams): ReadonlyArray<HistoryStep> => {
+  let previousKept: string | null = null;
+  const withTargets = items.map((step): HistoryStep => {
+    const isCombine = step.verb === 'fixup' || step.verb === 'squash';
+    if (isCombine && targetOf({ step }) === null) {
+      if (previousKept === null) {
+        return { sha: step.sha, verb: 'pick' };
+      }
+      return { sha: step.sha, verb: step.verb, target: previousKept };
+    }
+    if (!isCombine && step.verb !== 'drop') {
+      previousKept = step.sha;
+    }
+    return step;
+  });
+  const next = withTargets.map((step): HistoryStep => {
+    if (!isFolded({ step })) {
+      return step;
+    }
+    const root = rootOf({ items: withTargets, sha: targetOf({ step }) ?? '' });
+    if (root === null || root === step.sha) {
+      return { sha: step.sha, verb: 'pick' };
+    }
+    return root === step.target ? step : { ...step, target: root };
+  });
+  return next.every((step, index) => step === items[index]) ? items : next;
+};
+
 const replace = ({
   items,
   sha,
@@ -48,200 +89,183 @@ const replace = ({
 }: ShaParams & { readonly next: (step: HistoryStep) => HistoryStep }) =>
   items.map((step) => (step.sha === sha ? next(step) : step));
 
+export const takenInBy = ({ items, sha }: ShaParams): ReadonlyArray<HistoryStep> =>
+  items.filter((step) => isFolded({ step }) && step.target === sha);
+
+export const canRemove = ({ items, sha }: ShaParams): boolean =>
+  takenInBy({ items, sha }).length === 0;
+
 export const setVerb = ({
   items,
   sha,
   verb,
-}: ShaParams & { readonly verb: 'pick' | 'drop' }): ReadonlyArray<HistoryStep> =>
-  replace({ items, sha, next: (step) => ({ sha: step.sha, verb }) });
+}: ShaParams & { readonly verb: 'pick' | 'drop' }): ReadonlyArray<HistoryStep> => {
+  if (verb === 'drop' && !canRemove({ items, sha })) {
+    return items;
+  }
+  const current = stepOf({ items, sha });
+  if (current === null || (current.verb === verb && messageOf({ step: current }) === null)) {
+    return items;
+  }
+  return replace({ items, sha, next: (step) => ({ sha: step.sha, verb }) });
+};
+
+export const resetStep = ({ items, sha }: ShaParams): ReadonlyArray<HistoryStep> => {
+  const current = stepOf({ items, sha });
+  if (current === null || (current.verb === 'pick' && messageOf({ step: current }) === null)) {
+    return items;
+  }
+  return replace({ items, sha, next: (step) => ({ sha: step.sha, verb: 'pick' }) });
+};
 
 export const rewordStep = ({
   items,
   sha,
   message,
-}: ShaParams & { readonly message: string }): ReadonlyArray<HistoryStep> => {
+  original,
+}: ShaParams & {
+  readonly message: string;
+  readonly original: string;
+}): ReadonlyArray<HistoryStep> => {
   const trimmed = message.trim();
-  if (trimmed === '') {
+  const current = stepOf({ items, sha });
+  if (trimmed === '' || current === null || isFolded({ step: current })) {
+    return items;
+  }
+  if (trimmed === original.trim()) {
+    return current.verb === 'reword' ? resetStep({ items, sha }) : items;
+  }
+  if (current.verb === 'reword' && current.message === trimmed) {
     return items;
   }
   return replace({
     items,
     sha,
-    next: (step) =>
-      step.verb === 'squash' || step.verb === 'fixup'
-        ? { ...step, message: trimmed }
-        : { sha: step.sha, verb: 'reword', message: trimmed },
+    next: (step) => ({ sha: step.sha, verb: 'reword', message: trimmed }),
   });
 };
 
-export const foldInto = ({
+type CombineParams = ShaParams & {
+  readonly target: string;
+  readonly mode: CombineMode;
+};
+
+export const canCombine = ({
   items,
   sha,
   target,
-}: ShaParams & { readonly target: string }): ReadonlyArray<HistoryStep> =>
-  sha === target
-    ? items
-    : replace({ items, sha, next: (step) => ({ sha: step.sha, verb: 'fixup', target }) });
-
-export const isContiguous = ({
-  items,
-  shas,
-}: ItemsParams & { readonly shas: ReadonlyArray<string> }): boolean => {
-  const indexes = shas
-    .map((sha) => items.findIndex((step) => step.sha === sha))
-    .filter((index) => index >= 0)
-    .sort((left, right) => left - right);
-  if (indexes.length !== shas.length || indexes.length < 2) {
-    return false;
-  }
-  return indexes.every(
-    (index, position) => position === 0 || index === (indexes[position - 1] ?? -2) + 1,
+}: ShaParams & { readonly target: string }): boolean => {
+  const step = stepOf({ items, sha });
+  const into = stepOf({ items, sha: target });
+  return (
+    sha !== target &&
+    step !== null &&
+    into !== null &&
+    !isFolded({ step }) &&
+    !isFolded({ step: into }) &&
+    step.verb !== 'drop' &&
+    into.verb !== 'drop'
   );
 };
 
-export const squashSteps = ({
+export const combineInto = ({
   items,
-  shas,
-  message,
-}: ItemsParams & {
-  readonly shas: ReadonlyArray<string>;
-  readonly message: string;
-}): ReadonlyArray<HistoryStep> => {
-  if (!isContiguous({ items, shas })) {
+  sha,
+  target,
+  mode,
+}: CombineParams): ReadonlyArray<HistoryStep> => {
+  if (!canCombine({ items, sha, target })) {
     return items;
   }
-  const selected = new Set(shas);
-  const ordered = items.filter((step) => selected.has(step.sha));
-  const oldest = ordered[0]?.sha ?? null;
-  const newest = ordered[ordered.length - 1]?.sha ?? null;
-  const trimmed = message.trim();
-  return items.map((step) => {
-    if (!selected.has(step.sha)) {
-      return step;
+  return items.map((step): HistoryStep => {
+    if (step.sha === sha) {
+      return { sha, verb: mode, target };
     }
-    if (step.sha === oldest) {
-      return step.verb === 'reword' ? step : { sha: step.sha, verb: 'pick' as const };
+    if (isFolded({ step }) && step.target === sha) {
+      return { ...step, target };
     }
-    return {
-      sha: step.sha,
-      verb: 'squash' as const,
-      ...(step.sha === newest && trimmed !== '' && { message: trimmed }),
-    };
+    return step;
   });
 };
 
-export const moveStep = ({
+export const setCombineMode = ({
+  items,
+  sha,
+  mode,
+}: ShaParams & { readonly mode: CombineMode }): ReadonlyArray<HistoryStep> => {
+  const current = stepOf({ items, sha });
+  if (current === null || !isFolded({ step: current }) || current.verb === mode) {
+    return items;
+  }
+  return replace({ items, sha, next: (step) => ({ ...step, verb: mode }) });
+};
+
+export const combineDown = ({
+  items,
+  sha,
+  mode,
+}: ShaParams & { readonly mode: CombineMode }): ReadonlyArray<HistoryStep> => {
+  const order = planOrder({ items });
+  const index = order.indexOf(sha);
+  const older = order
+    .slice(0, Math.max(index, 0))
+    .reverse()
+    .find((candidate) => stepOf({ items, sha: candidate })?.verb !== 'drop');
+  if (index < 0 || older === undefined) {
+    return items;
+  }
+  return combineInto({ items, sha, target: older, mode });
+};
+
+const sameOrder = ({
+  left,
+  right,
+}: {
+  readonly left: ReadonlyArray<HistoryStep>;
+  readonly right: ReadonlyArray<HistoryStep>;
+}): boolean => left.every((step, index) => step.sha === right[index]?.sha);
+
+export const moveAbove = ({
+  items,
+  sha,
+  anchor,
+}: ShaParams & { readonly anchor: string | null }): ReadonlyArray<HistoryStep> => {
+  const step = stepOf({ items, sha });
+  if (step === null || isFolded({ step }) || anchor === sha) {
+    return items;
+  }
+  const rest = items.filter((candidate) => candidate.sha !== sha);
+  const at = anchor === null ? 0 : rest.findIndex((candidate) => candidate.sha === anchor) + 1;
+  if (anchor !== null && at === 0) {
+    return items;
+  }
+  const next = [...rest.slice(0, at), step, ...rest.slice(at)];
+  return sameOrder({ left: next, right: items }) ? items : next;
+};
+
+export const moveBy = ({
   items,
   sha,
   direction,
-}: ShaParams & { readonly direction: 'newer' | 'older' }): {
-  readonly items: ReadonlyArray<HistoryStep>;
-  readonly other: string | null;
-} => {
-  const index = items.findIndex((step) => step.sha === sha);
-  const target = direction === 'newer' ? index + 1 : index - 1;
-  const step = items[index];
-  const other = items[target];
-  if (index < 0 || step === undefined || other === undefined) {
-    return { items, other: null };
+}: ShaParams & { readonly direction: 'newer' | 'older' }): ReadonlyArray<HistoryStep> => {
+  const order = planOrder({ items });
+  const index = order.indexOf(sha);
+  if (index < 0) {
+    return items;
   }
-  const next = [...items];
-  next[index] = other;
-  next[target] = step;
-  return { items: next, other: other.sha };
+  if (direction === 'newer') {
+    const newer = order[index + 1];
+    return newer === undefined ? items : moveAbove({ items, sha, anchor: newer });
+  }
+  if (index === 0) {
+    return items;
+  }
+  return moveAbove({ items, sha, anchor: order[index - 2] ?? null });
 };
 
-export const moveStepOnto = ({
+export const slotAnchorIsNoop = ({
   items,
   sha,
-  onto,
-}: ShaParams & { readonly onto: string }): {
-  readonly items: ReadonlyArray<HistoryStep>;
-  readonly direction: 'newer' | 'older' | null;
-} => {
-  const from = items.findIndex((step) => step.sha === sha);
-  const to = items.findIndex((step) => step.sha === onto);
-  const step = items[from];
-  if (from < 0 || to < 0 || from === to || step === undefined) {
-    return { items, direction: null };
-  }
-  const rest = items.filter((candidate) => candidate.sha !== sha);
-  return {
-    items: [...rest.slice(0, to), step, ...rest.slice(to)],
-    direction: from < to ? 'newer' : 'older',
-  };
-};
-
-export const resetStep = ({ items, sha }: ShaParams): ReadonlyArray<HistoryStep> =>
-  replace({ items, sha, next: (step) => ({ sha: step.sha, verb: 'pick' }) });
-
-export type PlanSummary = {
-  readonly reworded: number;
-  readonly squashed: number;
-  readonly folded: number;
-  readonly dropped: number;
-  readonly moved: number;
-};
-
-export const planSummary = ({
-  items,
-  original,
-}: ItemsParams & { readonly original: ReadonlyArray<string> }): PlanSummary => {
-  const count = (verb: HistoryVerb) => items.filter((step) => step.verb === verb).length;
-  const kept = items.filter((step) => step.verb !== 'fixup').map((step) => step.sha);
-  const originalKept = original.filter((sha) => kept.includes(sha));
-  const moved = kept.filter((sha, index) => originalKept[index] !== sha).length;
-  return {
-    reworded: count('reword'),
-    squashed: count('squash'),
-    folded: count('fixup'),
-    dropped: count('drop'),
-    moved,
-  };
-};
-
-const plural = ({
-  count,
-  one,
-  many,
-}: {
-  readonly count: number;
-  readonly one: string;
-  readonly many: string;
-}) => `${count} ${count === 1 ? one : many}`;
-
-export const summaryLine = ({ summary }: { readonly summary: PlanSummary }): string => {
-  const parts = [
-    summary.reworded > 0
-      ? plural({ count: summary.reworded, one: 'reword', many: 'rewords' })
-      : null,
-    summary.squashed > 0 ? `${summary.squashed} squashed` : null,
-    summary.folded > 0 ? `${summary.folded} folded` : null,
-    summary.dropped > 0 ? `${summary.dropped} dropped` : null,
-    summary.moved > 0 ? `${summary.moved} moved` : null,
-  ].filter((part): part is string => part !== null);
-  return parts.length === 0 ? 'No changes yet' : parts.join(' · ');
-};
-
-export const hasChanges = ({ summary }: { readonly summary: PlanSummary }): boolean =>
-  summary.reworded + summary.squashed + summary.folded + summary.dropped + summary.moved > 0;
-
-const short = ({ sha }: { readonly sha: string }): string => sha.slice(0, 7);
-
-export const editPhrase = ({ edit }: { readonly edit: HistoryEdit }): string => {
-  if (edit.kind === 'move') {
-    return `Moving ${short({ sha: edit.sha })} above ${short({ sha: edit.other })}`;
-  }
-  if (edit.kind === 'fold') {
-    return `Folding ${short({ sha: edit.sha })} into ${short({ sha: edit.target })}`;
-  }
-  if (edit.kind === 'squash') {
-    return `Squashing ${edit.shas.map((sha) => short({ sha })).join(', ')}`;
-  }
-  if (edit.kind === 'reword') {
-    return `Rewording ${short({ sha: edit.sha })}`;
-  }
-  return edit.verb === 'drop'
-    ? `Dropping ${short({ sha: edit.sha })}`
-    : `Keeping ${short({ sha: edit.sha })}`;
-};
+  anchor,
+}: ShaParams & { readonly anchor: string | null }): boolean =>
+  moveAbove({ items, sha, anchor }) === items;

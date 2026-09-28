@@ -79,6 +79,14 @@ status` directly. A branch cut from a remote-tracking ref (`worktree add -b
   with `--no-track` and the in-app push passes `--set-upstream`, but old
   branches still track main, so do not "simplify" back to `@{u}`.
 
+- Rewrite history drags rows with pointer events and its own hit testing
+  (`useHistoryDrag`), not HTML5 drag and drop. In the Tauri window the native
+  file drop handler owns every drag session while `dragDropEnabled` is on, so
+  WebKit never sends `dragover` or `drop` to the page: an HTML5 drag starts and
+  then does nothing, while jsdom tests stay green. Turning `dragDropEnabled`
+  off is not the fix, because the composer's file drop listens through
+  `onDragDropEvent`. `history-drag-keeps-file-drop.test.ts` holds both.
+
 ## Hand-maintained lists the compiler does not check
 
 Each of these is a set or array written out by hand next to an exhaustive
