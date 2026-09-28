@@ -391,6 +391,7 @@ export const InboxStudio = ({
                 workspaceName={workspaceName}
                 selectedKey={selectedKey}
                 onSelect={(hit) => selectKey(hit.record.key)}
+                onActivate={(record) => activate(record.key)}
                 starOf={starOf}
               />
               <InboxStarredGroup
@@ -398,6 +399,7 @@ export const InboxStudio = ({
                 selectedKey={selectedKey}
                 unstarredCount={unstarredClosed.length}
                 onSelect={(record) => selectKey(record.key)}
+                onActivate={(record) => activate(record.key)}
                 onUnstar={(row) =>
                   void unstarIssue({
                     workspaceId,
@@ -418,6 +420,7 @@ export const InboxStudio = ({
                 hasFiltersActive={hasFiltersActive}
                 selectedKey={selectedKey}
                 onSelect={(record) => selectKey(record.key)}
+                onActivate={(record) => activate(record.key)}
                 onRetry={refetch}
                 onOpenSettings={openSettings}
                 onClearFilters={clearFilters}

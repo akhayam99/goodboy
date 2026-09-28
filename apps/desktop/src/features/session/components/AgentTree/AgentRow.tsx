@@ -20,6 +20,7 @@ import { AgentMetrics, type AgentAggregate } from '../AgentMetrics';
 import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 import type { ProviderContextUsage } from './ContextWindowBar';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 type Props = {
   readonly run: Agent;
@@ -105,6 +106,10 @@ export const AgentRow = ({
       });
     }) ?? null;
   const hasUnread = agentHasUnread(run, isSelected && isTaskActive);
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'agent', sessionId: run.sessionId, agentId: run.id },
+    anchorKey: `agent:${run.id}`,
+  });
   const hoverMarkViewed = useHoverMarkViewed({
     sessionId: run.sessionId,
     agentId: run.id,
@@ -127,6 +132,7 @@ export const AgentRow = ({
       onRenameStart={onRenameStart}
       onMouseEnter={hoverMarkViewed.onMouseEnter}
       onMouseLeave={hoverMarkViewed.onMouseLeave}
+      menu={menu}
       leading={
         <>
           <span

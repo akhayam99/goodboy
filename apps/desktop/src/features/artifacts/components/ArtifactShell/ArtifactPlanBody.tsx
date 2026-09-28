@@ -28,6 +28,8 @@ export const ArtifactPlanBody = ({ plan, rows, hasRun, splitSentence, onOpenPart
     <div data-testid="plan-body" className="flex min-w-0 flex-col gap-6">
       {hasLead ? <ArtifactProse text={body.lead} /> : null}
       <PlanParts
+        sessionId={plan.sessionId}
+        planId={plan.id}
         rows={rows}
         hasRun={hasRun}
         splitSentence={splitSentence}

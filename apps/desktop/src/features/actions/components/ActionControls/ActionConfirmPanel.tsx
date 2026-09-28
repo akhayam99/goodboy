@@ -22,6 +22,15 @@ export const ActionConfirmPanel = ({ controls }: Props) => {
       onConfirm={controls.confirm}
       onCancel={controls.cancel}
       isBusy={controls.pendingId === action.id}
+      note={
+        (action.confirm.notes ?? []).length === 0 ? undefined : (
+          <div className="flex min-w-0 flex-col gap-1 text-muted-foreground">
+            {(action.confirm.notes ?? []).map((note) => (
+              <p key={note}>{note}</p>
+            ))}
+          </div>
+        )
+      }
     />
   );
 };

@@ -1,5 +1,16 @@
 import type { LucideIcon } from 'lucide-react';
-import type { AgentId, MountId, SessionId, WorkflowRunId, WorktreeStatus } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  MountId,
+  SessionId,
+  WorkflowRunId,
+  WorktreeStatus,
+} from '@goodboy/types';
+import type { ArtifactGeneration } from '../artifacts/artifactCollection';
+import type { RecordFacts } from './kinds/record';
+import type { CommitFacts } from './kinds/commit';
+import type { DiffFileFacts } from './kinds/diffFile';
 import type { AppStore } from '../../store/store';
 import type { ShowToast } from '../../app/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
@@ -32,6 +43,7 @@ export type ActionConfirm = {
   readonly description: string;
   readonly confirmLabel: string;
   readonly role: ActionConfirmRole;
+  readonly notes?: ReadonlyArray<string>;
   readonly altActionId?: string;
 };
 
@@ -40,6 +52,8 @@ export type ActionChoice = {
   readonly label: string;
   readonly isCurrent: boolean;
 };
+
+export type ActionEmphasis = 'primary' | 'secondary';
 
 export type ActionOrigin = 'menu' | 'overflow' | 'palette' | 'button';
 
@@ -76,6 +90,8 @@ export type ActionDefinition<F> = {
   readonly choices?: (params: FactsParams<F>) => ReadonlyArray<ActionChoice>;
   readonly slot?: (params: FactsParams<F>) => ActionSlot;
   readonly pendingLabel?: (params: FactsParams<F>) => string;
+  readonly emphasis?: (params: FactsParams<F>) => ActionEmphasis | null;
+  readonly isBusy?: (params: FactsParams<F>) => boolean;
   readonly run: (params: ActionRunParams<F>) => void | Promise<void>;
 };
 
@@ -105,6 +121,8 @@ export type ResolvedAction = {
   readonly confirm: ActionConfirm | null;
   readonly isUndoable: boolean;
   readonly choices: ReadonlyArray<ActionChoice> | null;
+  readonly emphasis: ActionEmphasis | null;
+  readonly isBusy: boolean;
 };
 
 export type SessionActionTarget = {
@@ -127,6 +145,58 @@ export type WorkflowRunActionTarget = {
   readonly kind: 'workflowRun';
   readonly sessionId: SessionId;
   readonly runId: WorkflowRunId;
+};
+
+export type PlanPartActionTarget = {
+  readonly kind: 'planPart';
+  readonly sessionId: SessionId;
+  readonly planId: ArtifactId;
+  readonly index: number;
+  readonly instructions: string;
+  readonly agentId: AgentId | null;
+};
+
+export type ArtifactPortId =
+  | 'runPlan'
+  | 'runAgain'
+  | 'restore'
+  | 'edit'
+  | 'regenerate'
+  | 'newVariant'
+  | 'copySource'
+  | 'saveSource'
+  | 'openInBrowser'
+  | 'showInFinder'
+  | 'discard';
+
+export type ArtifactPort = {
+  readonly run: () => void | Promise<void>;
+  readonly label?: string;
+  readonly description?: string | null;
+  readonly blockedReason?: string | null;
+  readonly isBusy?: boolean;
+};
+
+export type ArtifactPorts = Readonly<Partial<Record<ArtifactPortId, ArtifactPort>>>;
+
+export type ArtifactActionSubject =
+  | {
+      readonly kind: 'stored';
+      readonly artifactId: ArtifactId;
+      readonly isPlanRunning: boolean;
+    }
+  | { readonly kind: 'generation'; readonly generation: ArtifactGeneration };
+
+export type ArtifactActionTarget = {
+  readonly kind: 'artifact';
+  readonly sessionId: SessionId;
+  readonly subject: ArtifactActionSubject;
+  readonly ports?: ArtifactPorts;
+};
+
+export type RecordActionTarget = {
+  readonly kind: 'record';
+  readonly facts: RecordFacts;
 };
 
 export type PullRequestActionTarget = {
@@ -153,6 +223,16 @@ export type DiffActionTarget = {
   readonly rebaseConflicts: number;
 };
 
+export type CommitActionTarget = {
+  readonly kind: 'commit';
+  readonly facts: CommitFacts;
+};
+
+export type DiffFileActionTarget = {
+  readonly kind: 'diffFile';
+  readonly facts: DiffFileFacts;
+};
+
 export type LinkActionTarget = {
   readonly kind: 'link';
   readonly href: string;
@@ -163,9 +243,12 @@ export type ObjectTarget =
   | SessionsActionTarget
   | AgentActionTarget
   | WorkflowRunActionTarget
+  | PlanPartActionTarget
+  | ArtifactActionTarget
+  | RecordActionTarget
   | PullRequestActionTarget
   | WorktreeActionTarget
   | DiffActionTarget
+  | CommitActionTarget
+  | DiffFileActionTarget
   | LinkActionTarget;
-
-export type ObjectKindId = ObjectTarget['kind'];

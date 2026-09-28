@@ -19,6 +19,7 @@ import { GithubConnectionEmptyState } from '../../../github/components/GithubCon
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
 import { ActionButtons } from '../../../actions/components/ActionControls/ActionButtons';
+import { ObjectMenuArea } from '../../../actions/components/ObjectMenuArea';
 import { ActionConfirmPanel } from '../../../actions/components/ActionControls/ActionConfirmPanel';
 import { ActionNudgeList } from '../../../actions/components/ActionControls/ActionNudgeList';
 import { ActionStatusLine } from '../../../actions/components/ActionControls/ActionStatusLine';
@@ -222,35 +223,37 @@ export const PullRequestPage = ({ session }: Props) => {
   }
 
   return (
-    <PaneShell
-      header={
-        <div className="flex min-w-0 flex-col gap-3">
-          <PullRequestHeader
+    <ObjectMenuArea target={target} anchorKey={`pull-request:${pr.number}`}>
+      <PaneShell
+        header={
+          <div className="flex min-w-0 flex-col gap-3">
+            <PullRequestHeader
+              pr={pr}
+              prs={prOptions}
+              repo={repo?.repoRoot ?? null}
+              actions={<ActionButtons controls={controls} menuLabel="Pull request actions" />}
+              onSelectPr={(number) => void selectSessionPr(sessionId, number)}
+            />
+            <ActionStatusLine controls={controls} />
+            <ActionConfirmPanel controls={controls} />
+          </div>
+        }
+        scroll="body"
+      >
+        <div className="flex min-w-0 flex-col gap-8">
+          <ActionNudgeList controls={controls} />
+          <PrDetailsMode
+            sessionId={sessionId}
             pr={pr}
-            prs={prOptions}
-            repo={repo?.repoRoot ?? null}
-            actions={<ActionButtons controls={controls} menuLabel="Pull request actions" />}
-            onSelectPr={(number) => void selectSessionPr(sessionId, number)}
+            detail={github?.detail ?? null}
+            canEdit={canEdit}
+            canRequestReview={canRequestReview}
+            onSelectLens={(lens) => navigate({ to: sessionPlace({ sessionId, lens }) })}
+            onMutated={onMutated}
           />
-          <ActionStatusLine controls={controls} />
-          <ActionConfirmPanel controls={controls} />
+          <ChecksMode checks={checks} fallbackUrl={pr.url} onOpenUrl={(url) => void openUrl(url)} />
         </div>
-      }
-      scroll="body"
-    >
-      <div className="flex min-w-0 flex-col gap-8">
-        <ActionNudgeList controls={controls} />
-        <PrDetailsMode
-          sessionId={sessionId}
-          pr={pr}
-          detail={github?.detail ?? null}
-          canEdit={canEdit}
-          canRequestReview={canRequestReview}
-          onSelectLens={(lens) => navigate({ to: sessionPlace({ sessionId, lens }) })}
-          onMutated={onMutated}
-        />
-        <ChecksMode checks={checks} fallbackUrl={pr.url} onOpenUrl={(url) => void openUrl(url)} />
-      </div>
-    </PaneShell>
+      </PaneShell>
+    </ObjectMenuArea>
   );
 };

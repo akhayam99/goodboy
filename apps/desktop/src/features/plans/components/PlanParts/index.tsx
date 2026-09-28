@@ -1,15 +1,25 @@
 import { Eyebrow } from '@goodboy/ui';
+import type { ArtifactId, SessionId } from '@goodboy/types';
 import type { PlanPartRow as Row } from './planPartRows';
 import { PlanPartRow } from './PlanPartRow';
 
 type Props = {
+  readonly sessionId: SessionId;
+  readonly planId: ArtifactId;
   readonly rows: ReadonlyArray<Row>;
   readonly hasRun: boolean;
   readonly splitSentence: string;
   readonly onOpenPart: (row: Row) => void;
 };
 
-export const PlanParts = ({ rows, hasRun, splitSentence, onOpenPart }: Props) => {
+export const PlanParts = ({
+  sessionId,
+  planId,
+  rows,
+  hasRun,
+  splitSentence,
+  onOpenPart,
+}: Props) => {
   if (rows.length === 0) {
     return null;
   }
@@ -25,7 +35,19 @@ export const PlanParts = ({ rows, hasRun, splitSentence, onOpenPart }: Props) =>
       <ol className="flex min-w-0 flex-col">
         {rows.map((row) => (
           <li key={row.index} className="min-w-0">
-            <PlanPartRow row={row} hasRun={hasRun} onOpen={() => onOpenPart(row)} />
+            <PlanPartRow
+              row={row}
+              hasRun={hasRun}
+              onOpen={() => onOpenPart(row)}
+              target={{
+                kind: 'planPart',
+                sessionId,
+                planId,
+                index: row.index,
+                instructions: row.instructions,
+                agentId: row.agentId,
+              }}
+            />
           </li>
         ))}
       </ol>

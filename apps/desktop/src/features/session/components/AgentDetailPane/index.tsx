@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { HeaderBand, PageColumn, StudioDetailTabs } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
@@ -78,6 +79,10 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       : null;
   const observedEffort = executed?.effort ?? null;
   const isTranscript = tab === 'transcript';
+  const headerMenu = useObjectMenuTrigger({
+    target: { kind: 'agent', sessionId: session.id, agentId: agent.id },
+    anchorKey: `agent-header:${agent.id}`,
+  });
   const lead = (
     <>
       {context}
@@ -96,7 +101,15 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
       scroll={isTranscript ? 'self' : 'body'}
       header={
         <HeaderBand
-          title={<AgentTitle agent={agent} sessionId={session.id} />}
+          title={
+            <span
+              className="flex min-w-0"
+              onContextMenu={headerMenu.onContextMenu}
+              onKeyDown={headerMenu.onKeyDown}
+            >
+              <AgentTitle agent={agent} sessionId={session.id} />
+            </span>
+          }
           meta={
             <>
               <AgentKindChip kind={kind} />

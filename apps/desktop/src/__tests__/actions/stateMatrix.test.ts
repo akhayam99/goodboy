@@ -1,0 +1,1580 @@
+// @vitest-environment happy-dom
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn((command: string, args?: BridgeArgs) => bridge(command, args)),
+}));
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn(async () => () => undefined),
+  emit: vi.fn(async () => undefined),
+}));
+
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import type {
+  AgentId,
+  MountId,
+  SessionProjectMount,
+  TurnState,
+  WorktreeStatus,
+} from '@goodboy/types';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStoryStore,
+  type StoryStore,
+} from '../../store/storyHarness';
+import { bindTarget, runObjectAction } from '../../features/actions/registry';
+import type { ActionEnv, ObjectTarget } from '../../features/actions/types';
+import {
+  AGENT,
+  FIXTURE_NOW,
+  RUN,
+  SESSION,
+  STEP_BUILD,
+  STEP_PLAN,
+  WORKSPACE,
+  agentFixture,
+  mountFixture,
+  questionFixture,
+  runFixture,
+  seedActionState,
+  sessionFixture,
+  stepAgent,
+  workflowFixture,
+  type ActionSeed,
+} from '../helpers/actionFixtures';
+
+type BridgeArgs = {
+  readonly statements?: ReadonlyArray<unknown>;
+};
+
+const bridge = (command: string, args?: BridgeArgs): Promise<unknown> => {
+  if (command === 'db_transaction') {
+    return Promise.resolve({
+      status: 'committed',
+      results: (args?.statements ?? []).map(() => ({ rowsAffected: 1, rows: [] })),
+    });
+  }
+  if (command === 'db_select') {
+    return Promise.resolve([]);
+  }
+  if (command === 'db_execute') {
+    return Promise.resolve({ rowsAffected: 1, lastInsertId: 0 });
+  }
+  return Promise.resolve(command.includes('_list') ? [] : null);
+};
+
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+beforeEach(async () => {
+  await resetStoryStore();
+});
+
+const seed = (value: ActionSeed): void => seedActionState({ useAppStore, seed: value });
+
+const matrixOf = (target: ObjectTarget): ReadonlyArray<string> =>
+  (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map((action) =>
+    action.blockedReason === null ? action.id : `${action.id} (${action.blockedReason})`,
+  );
+
+const toasts: Array<string> = [];
+const copies: Array<string> = [];
+
+const env: ActionEnv = {
+  getState: () => useAppStore.getState(),
+  showToast: ({ title, message }) => {
+    toasts.push(title ?? message);
+  },
+  copyText: async ({ text }) => {
+    copies.push(text);
+  },
+  origin: 'menu',
+  anchorKey: null,
+};
+
+const run = (target: ObjectTarget, actionId: string, choice: string | null = null) =>
+  runObjectAction({ target, actionId, env, choice });
+
+const SESSION_TARGET: ObjectTarget = { kind: 'session', sessionId: SESSION };
+const AGENT_TARGET: ObjectTarget = { kind: 'agent', sessionId: SESSION, agentId: AGENT };
+const RUN_TARGET: ObjectTarget = { kind: 'workflowRun', sessionId: SESSION, runId: RUN };
+
+const RUNNING: TurnState = {
+  kind: 'running',
+  runId: 'provider-run' as never,
+  startedAt: FIXTURE_NOW,
+};
+const STARTING: TurnState = { kind: 'starting', startedAt: FIXTURE_NOW };
+
+const SESSION_STATES: ReadonlyArray<readonly [string, ActionSeed | null, ReadonlyArray<string>]> = [
+  [
+    'draft',
+    { session: sessionFixture({ goal: '' }) },
+    [
+      'session.open',
+      'session.review',
+      'session.diff (Add a project to this session first)',
+      'session.terminal',
+      'session.editor (This session has no worktree yet)',
+      'session.rename',
+      'session.startAgent',
+      'session.linkIssue',
+      'session.copyTitle',
+      'session.archive',
+      'session.delete',
+    ],
+  ],
+  [
+    'running',
+    {
+      agents: [agentFixture({ status: 'running' })],
+      turnStates: { [AGENT]: RUNNING },
+      mounts: [mountFixture()],
+      branch: 'hl/payout-export',
+    },
+    [
+      'session.open',
+      'session.review',
+      'session.diff',
+      'session.terminal',
+      'session.editor',
+      'session.rename',
+      'session.startAgent',
+      'session.linkIssue',
+      'session.copyTitle',
+      'session.copyBranch',
+      'session.archive',
+      'session.delete',
+    ],
+  ],
+  [
+    'needs you, with a pull request',
+    {
+      agents: [agentFixture({ status: 'completed' })],
+      questions: [questionFixture({ createdByAgentId: AGENT })],
+      mounts: [mountFixture()],
+      branch: 'hl/payout-export',
+      prUrl: 'https://github.com/harborline/ledger-core/pull/482',
+    },
+    [
+      'session.open',
+      'session.review',
+      'session.diff',
+      'session.terminal',
+      'session.editor',
+      'session.rename',
+      'session.startAgent',
+      'session.linkIssue',
+      'session.copyTitle',
+      'session.copyBranch',
+      'session.copyPr',
+      'session.archive',
+      'session.delete',
+    ],
+  ],
+  [
+    'archived',
+    {
+      session: sessionFixture({ archivedAt: FIXTURE_NOW }),
+      isArchived: true,
+      mounts: [mountFixture()],
+      branch: 'hl/payout-export',
+    },
+    [
+      'session.open',
+      'session.restore',
+      'session.copyTitle',
+      'session.copyBranch',
+      'session.delete',
+    ],
+  ],
+  ['deleted', null, []],
+];
+
+describe('session menu in every state', () => {
+  it.each(SESSION_STATES)('%s', (_state, value, expected) => {
+    if (value !== null) {
+      seed(value);
+    }
+    expect(matrixOf(SESSION_TARGET)).toEqual(expected);
+  });
+
+  it('confirms delete with the archive alternative, and none once archived', () => {
+    seed({});
+    const live = bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })?.resolve();
+    expect(live?.find((action) => action.id === 'session.delete')?.confirm).toMatchObject({
+      role: 'danger',
+      altActionId: 'session.archive',
+    });
+    seed({ session: sessionFixture({ archivedAt: FIXTURE_NOW }), isArchived: true });
+    const archived = bindTarget({
+      state: useAppStore.getState(),
+      target: SESSION_TARGET,
+    })?.resolve();
+    expect(archived?.find((action) => action.id === 'session.delete')?.confirm?.altActionId).toBe(
+      undefined,
+    );
+  });
+
+  it('names the branchless delete as final, files and all', () => {
+    seed({ branch: '' });
+    const action = bindTarget({ state: useAppStore.getState(), target: SESSION_TARGET })
+      ?.resolve()
+      .find((candidate) => candidate.id === 'session.delete');
+    expect(action?.confirm?.description).toContain('every saved file version');
+  });
+});
+
+describe('several sessions', () => {
+  const PAIR = ['session-a', 'session-b'] as const;
+
+  const seedPair = ({ archived }: { readonly archived: ReadonlyArray<string> }) => {
+    const sessions = PAIR.map((id) =>
+      sessionFixture({
+        id: id as never,
+        goal: `Northwind ${id}`,
+        ...(archived.includes(id) && { archivedAt: FIXTURE_NOW }),
+      }),
+    );
+    useAppStore.setState({
+      sessions: sessions.filter((session) => session.archivedAt == null),
+      archivedSessions: { [WORKSPACE]: sessions.filter((session) => session.archivedAt != null) },
+    });
+  };
+
+  const labels = (): ReadonlyArray<string> =>
+    (
+      bindTarget({
+        state: useAppStore.getState(),
+        target: { kind: 'sessions', sessionIds: [...PAIR] as never },
+      })?.resolve() ?? []
+    ).map((action) => action.label);
+
+  it('offers the bulk bar verbs on an active selection', () => {
+    seedPair({ archived: [] });
+    expect(labels()).toEqual(['Copy titles', 'Archive 2 sessions', 'Delete 2 sessions']);
+  });
+
+  it('offers restore on an archived selection', () => {
+    seedPair({ archived: [...PAIR] });
+    expect(labels()).toEqual(['Restore 2 sessions', 'Copy titles', 'Delete 2 sessions']);
+  });
+
+  it('splits a mixed selection by what each verb can touch', () => {
+    seedPair({ archived: ['session-b'] });
+    expect(labels()).toEqual([
+      'Restore 1 session',
+      'Copy titles',
+      'Archive 1 session',
+      'Delete 2 sessions',
+    ]);
+  });
+});
+
+const standalone = (value: Partial<ActionSeed> & { readonly status: string }): ActionSeed => ({
+  agents: [agentFixture({ status: value.status as never, ...(value.agents?.[0] ?? {}) })],
+  mounts: [mountFixture()],
+  ...value,
+});
+
+const AGENT_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArray<string>]> = [
+  [
+    'starting',
+    standalone({ status: 'pending', turnStates: { [AGENT]: STARTING } }),
+    [
+      'agent.open',
+      'agent.changes',
+      'agent.message',
+      'agent.model',
+      'agent.copyName',
+      'agent.delete',
+    ],
+  ],
+  [
+    'running',
+    standalone({ status: 'running', turnStates: { [AGENT]: RUNNING } }),
+    [
+      'agent.open',
+      'agent.changes',
+      'agent.message',
+      'agent.interrupt',
+      'agent.model',
+      'agent.copyName',
+      'agent.delete',
+    ],
+  ],
+  [
+    'waiting on you',
+    standalone({
+      status: 'completed',
+      questions: [questionFixture({ createdByAgentId: AGENT })],
+    }),
+    [
+      'agent.open',
+      'agent.changes',
+      'agent.message',
+      'agent.close',
+      'agent.model',
+      'agent.copyName',
+      'agent.delete',
+    ],
+  ],
+  [
+    'stopped',
+    standalone({ status: 'stopped' }),
+    [
+      'agent.open',
+      'agent.changes',
+      'agent.message',
+      'agent.model',
+      'agent.copyName',
+      'agent.delete',
+    ],
+  ],
+  [
+    'failed',
+    standalone({ status: 'failed' }),
+    [
+      'agent.open',
+      'agent.changes',
+      'agent.message',
+      'agent.close',
+      'agent.model',
+      'agent.copyName',
+      'agent.delete',
+    ],
+  ],
+  [
+    'done',
+    standalone({ status: 'completed' }),
+    [
+      'agent.open',
+      'agent.changes',
+      'agent.message',
+      'agent.model',
+      'agent.copyName',
+      'agent.delete',
+    ],
+  ],
+  [
+    'closed by you',
+    { agents: [agentFixture({ status: 'failed', doneAt: FIXTURE_NOW })], mounts: [mountFixture()] },
+    ['agent.open', 'agent.changes', 'agent.reopen', 'agent.copyName', 'agent.delete'],
+  ],
+  [
+    'a running workflow step',
+    {
+      agents: [agentFixture({ status: 'running', workflowRunId: RUN })],
+      turnStates: { [AGENT]: RUNNING },
+      mounts: [mountFixture()],
+    },
+    [
+      'agent.open',
+      'agent.changes',
+      'agent.message',
+      'agent.interrupt',
+      'agent.copyName',
+      'agent.delete',
+    ],
+  ],
+  [
+    'in a session with no project',
+    { agents: [agentFixture({ status: 'completed' })] },
+    [
+      'agent.open',
+      'agent.changes (This session has no project yet)',
+      'agent.message',
+      'agent.model',
+      'agent.copyName',
+      'agent.delete',
+    ],
+  ],
+];
+
+describe('agent menu in every state', () => {
+  it.each(AGENT_STATES)('%s', (_state, value, expected) => {
+    seed(value);
+    expect(matrixOf(AGENT_TARGET)).toEqual(expected);
+  });
+
+  it('offers the last reply once the agent answered', () => {
+    seed(standalone({ status: 'completed' }));
+    useAppStore.setState({
+      transcripts: {
+        [AGENT]: [
+          { kind: 'user_text', text: 'Where does the export slow down?' } as never,
+          { kind: 'assistant_text', delta: 'The ledger-core ', runId: 'r' } as never,
+          { kind: 'assistant_text', delta: 'join is unindexed.', runId: 'r' } as never,
+        ],
+      },
+    });
+    expect(matrixOf(AGENT_TARGET)).toContain('agent.copyReply');
+  });
+
+  it('shows nothing for an agent that is gone', () => {
+    seed({ agents: [agentFixture({ deletedAt: FIXTURE_NOW })] });
+    expect(matrixOf(AGENT_TARGET)).toEqual([]);
+  });
+
+  it('lists the visible models of the agent provider with the current one checked', () => {
+    seed(standalone({ status: 'completed' }));
+    useAppStore.setState({ agentModelOverride: { [AGENT]: 'opus-5.5' } });
+    const model = bindTarget({ state: useAppStore.getState(), target: AGENT_TARGET })
+      ?.resolve()
+      .find((action) => action.id === 'agent.model');
+    expect(model?.choices?.find((choice) => choice.isCurrent)?.id).toBe('opus-5.5');
+    expect(model?.choices?.length).toBeGreaterThan(1);
+  });
+});
+
+const withRun = (value: {
+  readonly run?: Parameters<typeof runFixture>[0];
+  readonly agents?: ActionSeed['agents'];
+  readonly questions?: ActionSeed['questions'];
+  readonly turnStates?: ActionSeed['turnStates'];
+}): ActionSeed => ({
+  session: sessionFixture({ workflowRuns: [runFixture(value.run)] }),
+  workflows: [workflowFixture()],
+  agents: value.agents ?? [],
+  questions: value.questions ?? [],
+  turnStates: value.turnStates ?? {},
+  mounts: [mountFixture()],
+});
+
+const RUN_STATES: ReadonlyArray<readonly [string, ActionSeed, ReadonlyArray<string>]> = [
+  [
+    'queued by hand',
+    withRun({ run: { triggerMode: 'manual' } }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.start',
+      'workflowRun.copySummary',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'running',
+    withRun({
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'running' })],
+      turnStates: { 'agent-plan': RUNNING },
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'paused before the next step',
+    withRun({
+      agents: [
+        stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'completed' }),
+        stepAgent({ id: 'agent-build', stepId: STEP_BUILD, status: 'pending' }),
+      ],
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.nextStep',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'paused on a stopped step',
+    withRun({ agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'stopped' })] }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.continue',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'waiting on a question',
+    withRun({
+      agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'completed' })],
+      questions: [questionFixture({ workflowRunId: RUN })],
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.answer',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'failed',
+    withRun({ agents: [stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'failed' })] }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.restartStep',
+      'workflowRun.copySummary',
+      'workflowRun.close',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'done',
+    withRun({
+      agents: [
+        stepAgent({ id: 'agent-plan', stepId: STEP_PLAN, status: 'completed' }),
+        stepAgent({ id: 'agent-build', stepId: STEP_BUILD, status: 'completed' }),
+      ],
+    }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.copySummary',
+      'workflowRun.discard',
+      'workflowRun.delete',
+    ],
+  ],
+  [
+    'discarded',
+    withRun({ run: { discardedAt: FIXTURE_NOW } }),
+    [
+      'workflowRun.open',
+      'workflowRun.diff',
+      'workflowRun.restore',
+      'workflowRun.copySummary',
+      'workflowRun.delete',
+    ],
+  ],
+];
+
+describe('workflow run menu in every state', () => {
+  it.each(RUN_STATES)('%s', (_state, value, expected) => {
+    seed(value);
+    expect(matrixOf(RUN_TARGET)).toEqual(expected);
+  });
+});
+
+describe('plan part menu', () => {
+  const part = (agentId: string | null, instructions: string): ObjectTarget => ({
+    kind: 'planPart',
+    sessionId: SESSION,
+    planId: 'plan-payout' as never,
+    index: 0,
+    instructions,
+    agentId: agentId as never,
+  });
+
+  it.each([
+    [
+      'not run yet',
+      part(null, 'Index the ledger-core join'),
+      ['planPart.open', 'planPart.copyInstructions'],
+    ],
+    [
+      'running under its agent',
+      part(AGENT, 'Index the ledger-core join'),
+      ['planPart.open', 'planPart.agent', 'planPart.copyInstructions'],
+    ],
+    ['with no instructions', part(null, '  '), ['planPart.open']],
+  ] as const)('%s', (_state, target, expected) => {
+    expect(matrixOf(target)).toEqual(expected);
+  });
+
+  it('opens the part in the drawer', async () => {
+    seed({});
+    await run(part(null, 'Index'), 'planPart.open');
+    expect(useAppStore.getState().drawer).toMatchObject({ kind: 'plan-part' });
+  });
+});
+
+const storedArtifact = (fields: {
+  readonly kind: 'plan' | 'report' | 'wireframe';
+  readonly status?: string;
+}) =>
+  ({
+    id: 'artifact-payout',
+    sessionId: SESSION,
+    agentId: AGENT,
+    workflowRunId: null,
+    kind: fields.kind,
+    schemaVersion: 1,
+    title: 'Speed up the payout export',
+    sourceFormat: fields.kind === 'wireframe' ? 'json' : 'markdown',
+    sourceText: '# Speed up the payout export',
+    metadata: fields.kind === 'report' ? { reportType: 'session-summary' } : {},
+    status: fields.status ?? 'active',
+    revision: 1,
+    createdAt: FIXTURE_NOW,
+    updatedAt: FIXTURE_NOW,
+  }) as never;
+
+const storedTarget = ({ isPlanRunning = false } = {}): ObjectTarget => ({
+  kind: 'artifact',
+  sessionId: SESSION,
+  subject: { kind: 'stored', artifactId: 'artifact-payout' as never, isPlanRunning },
+});
+
+const generationTarget = (state: 'generating' | 'waiting' | 'unproduced', canStop: boolean) =>
+  ({
+    kind: 'artifact',
+    sessionId: SESSION,
+    subject: {
+      kind: 'generation',
+      generation: {
+        agentId: AGENT,
+        kind: 'report',
+        title: 'Session summary',
+        state,
+        startedAt: FIXTURE_NOW,
+        provider: null,
+        model: null,
+        isTurnRunning: state === 'generating',
+        scouts: [],
+        canStop,
+      },
+    },
+  }) as ObjectTarget;
+
+const EXPORTS = [
+  'artifact.copySource',
+  'artifact.saveSource',
+  'artifact.openInBrowser (This session has no workspace folder)',
+  'artifact.showInFinder (This session has no workspace folder)',
+];
+
+const ARTIFACT_STATES: ReadonlyArray<
+  readonly [string, ReturnType<typeof storedArtifact> | null, ObjectTarget, ReadonlyArray<string>]
+> = [
+  [
+    'plan ready to run',
+    storedArtifact({ kind: 'plan' }),
+    storedTarget(),
+    [
+      'artifact.open',
+      'artifact.openAgent',
+      'artifact.runPlan',
+      'artifact.edit',
+      ...EXPORTS,
+      'artifact.discard',
+    ],
+  ],
+  [
+    'plan running',
+    storedArtifact({ kind: 'plan' }),
+    storedTarget({ isPlanRunning: true }),
+    ['artifact.open', 'artifact.openAgent', ...EXPORTS],
+  ],
+  [
+    'plan that already ran',
+    storedArtifact({ kind: 'plan', status: 'consumed' }),
+    storedTarget(),
+    ['artifact.open', 'artifact.openAgent', 'artifact.runAgain', ...EXPORTS],
+  ],
+  [
+    'plan replaced by a newer one',
+    storedArtifact({ kind: 'plan', status: 'superseded' }),
+    storedTarget(),
+    ['artifact.open', 'artifact.openAgent', 'artifact.runAgain', ...EXPORTS, 'artifact.discard'],
+  ],
+  [
+    'plan discarded',
+    storedArtifact({ kind: 'plan', status: 'discarded' }),
+    storedTarget(),
+    ['artifact.open', 'artifact.openAgent', 'artifact.restore', ...EXPORTS],
+  ],
+  [
+    'report ready, its evidence gone',
+    storedArtifact({ kind: 'report' }),
+    storedTarget(),
+    [
+      'artifact.open',
+      'artifact.edit',
+      'artifact.regenerate (The evidence pack this report was built from is no longer in memory, so regenerating would build a different report)',
+      ...EXPORTS,
+    ],
+  ],
+  [
+    'wireframe ready',
+    storedArtifact({ kind: 'wireframe' }),
+    storedTarget(),
+    ['artifact.open', 'artifact.newVariant', ...EXPORTS],
+  ],
+  [
+    'generating',
+    null,
+    generationTarget('generating', true),
+    ['artifact.openAgent', 'artifact.stop'],
+  ],
+  ['waiting on you', null, generationTarget('waiting', false), ['artifact.openAgent']],
+  [
+    'failed to produce',
+    null,
+    generationTarget('unproduced', false),
+    ['artifact.openAgent', 'artifact.retry'],
+  ],
+];
+
+describe('artifact menu in every state', () => {
+  it.each(ARTIFACT_STATES)('%s', (_state, artifact, target, expected) => {
+    seed({});
+    useAppStore.setState({ sessionArtifacts: { [SESSION]: artifact === null ? [] : [artifact] } });
+    expect(matrixOf(target)).toEqual(expected);
+  });
+
+  it('shows nothing for an artifact that is gone', () => {
+    seed({});
+    expect(matrixOf(storedTarget())).toEqual([]);
+  });
+
+  it('asks before a plan runs again and before a discard', () => {
+    seed({});
+    useAppStore.setState({
+      sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'plan', status: 'superseded' })] },
+    });
+    const actions = bindTarget({
+      state: useAppStore.getState(),
+      target: storedTarget(),
+    })?.resolve();
+    expect(actions?.find((action) => action.id === 'artifact.runAgain')?.confirm?.role).toBe(
+      'alert',
+    );
+    expect(actions?.find((action) => action.id === 'artifact.discard')?.confirm?.role).toBe(
+      'danger',
+    );
+  });
+
+  it('discards and restores a plan on the real store', async () => {
+    seed({});
+    const deletePlan = vi.fn(async () => undefined);
+    const restorePlan = vi.fn(async () => undefined);
+    useAppStore.setState({
+      sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'plan' })] },
+      deletePlan,
+      restorePlan,
+    });
+    await run(storedTarget(), 'artifact.discard');
+    expect(deletePlan).toHaveBeenCalledWith(SESSION, 'artifact-payout');
+    useAppStore.setState({
+      sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'plan', status: 'discarded' })] },
+    });
+    await run(storedTarget(), 'artifact.restore');
+    expect(restorePlan).toHaveBeenCalledWith(SESSION, 'artifact-payout');
+  });
+
+  it('copies the source of a stored artifact', async () => {
+    seed({});
+    useAppStore.setState({ sessionArtifacts: { [SESSION]: [storedArtifact({ kind: 'report' })] } });
+    copies.length = 0;
+    await run(storedTarget(), 'artifact.copySource');
+    expect(copies).toEqual(['# Speed up the payout export']);
+  });
+});
+
+const slottedOf = (target: ObjectTarget): ReadonlyArray<string> =>
+  (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map((action) =>
+    action.blockedReason === null
+      ? `${action.id} ${action.slot}`
+      : `${action.id} ${action.slot} (${action.blockedReason})`,
+  );
+
+const PR_TARGET: ObjectTarget = { kind: 'pullRequest', sessionId: SESSION, prNumber: null };
+
+const seedPullRequest = (
+  fields: Partial<{
+    state: 'open' | 'merged' | 'closed' | 'queued';
+    isDraft: boolean;
+    checks: 'success' | 'failure' | 'pending' | null;
+    reviewDecision: 'approved' | 'changes_requested' | 'review_required' | null;
+    mergeable: boolean | null;
+    author: string;
+    openThreads: number;
+  }> | null,
+): void => {
+  seed({});
+  if (fields === null) {
+    useAppStore.setState({
+      sessionGithub: { [SESSION]: { pr: null, detail: null } as never },
+    });
+    return;
+  }
+  const comments = Array.from({ length: fields.openThreads ?? 0 }, (_, index) => ({
+    id: `c-${index}`,
+    author: 'kenji-w',
+    authorAvatarUrl: null,
+    body: 'Cap the retries',
+    createdAt: FIXTURE_NOW,
+    url: `https://github.com/harborline/ledger-core/pull/482#discussion_${index}`,
+    source: 'review',
+    resolved: false,
+    threadId: `PRRT_${index}`,
+    path: 'src/payout.ts',
+    line: 10 + index,
+  }));
+  useAppStore.setState({
+    githubStatus: { mode: 'gh-cli', available: true, user: 'mara-l' },
+    sessionGithub: {
+      [SESSION]: {
+        pr: {
+          number: 482,
+          title: 'Export payouts in one pass',
+          url: 'https://github.com/harborline/ledger-core/pull/482',
+          state: fields.state ?? 'open',
+          mergeable: fields.mergeable ?? true,
+          checks: fields.checks ?? 'success',
+          baseBranch: 'main',
+          headBranch: 'hl/payout-export',
+          isDraft: fields.isDraft ?? false,
+          reviewDecision: fields.reviewDecision ?? null,
+          body: '',
+          updatedAt: FIXTURE_NOW,
+          author: fields.author ?? 'mara-l',
+        },
+        detail: {
+          prNumber: 482,
+          comments,
+          reviews:
+            fields.reviewDecision === 'changes_requested'
+              ? [
+                  {
+                    id: 'r-1',
+                    author: 'kenji-w',
+                    authorAvatarUrl: null,
+                    state: 'changes_requested',
+                    submittedAt: FIXTURE_NOW,
+                    body: '',
+                  },
+                ]
+              : [],
+          reviewRequests: [],
+          checks:
+            fields.checks === 'failure'
+              ? [{ name: 'unit tests', conclusion: 'failure', detailsUrl: null, durationMs: 1 }]
+              : [],
+        },
+      } as never,
+    },
+  });
+};
+
+const PR_OWN_TAIL = ['pullRequest.editDetails hover', 'pullRequest.requestReview section'];
+const PR_COPIES = ['pullRequest.copyLink menu', 'pullRequest.copyBranch menu'];
+
+const UX5_PR_STATES: ReadonlyArray<
+  readonly [string, Parameters<typeof seedPullRequest>[0], ReadonlyArray<string>]
+> = [
+  [
+    'draft',
+    { isDraft: true },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.markReady primary',
+      ...PR_OWN_TAIL,
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'checks running',
+    { checks: 'pending', reviewDecision: 'review_required' },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (Checks are still running.)',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'checks failing',
+    { checks: 'failure', reviewDecision: 'changes_requested', openThreads: 3 },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openReview nudge',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (1 check failing: unit tests.)',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'changes requested',
+    { reviewDecision: 'changes_requested', openThreads: 3 },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openReview nudge',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (kenji-w asked for changes.)',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'approved, green',
+    { reviewDecision: 'approved' },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge primary',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'conflicts with main',
+    { reviewDecision: 'approved', mergeable: false },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (Conflicts with main. Rebase in the Diff.)',
+      ...PR_OWN_TAIL,
+      'pullRequest.convertToDraft menu',
+      ...PR_COPIES,
+      'pullRequest.close menu',
+    ],
+  ],
+  [
+    'merged',
+    { state: 'merged' },
+    ['pullRequest.openOnGithub secondary', 'pullRequest.openDiff nudge', ...PR_COPIES],
+  ],
+  [
+    'closed',
+    { state: 'closed' },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.reopen secondary',
+      ...PR_COPIES,
+    ],
+  ],
+  [
+    "someone else's",
+    { reviewDecision: 'review_required', author: 'kenji-w' },
+    [
+      'pullRequest.openOnGithub secondary',
+      'pullRequest.openDiff nudge',
+      'pullRequest.checkLog hover',
+      'pullRequest.merge secondary (Needs an approving review.)',
+      'pullRequest.writeReview secondary',
+      ...PR_COPIES,
+    ],
+  ],
+  ['no pull request yet', null, ['pullRequest.create primary']],
+];
+
+describe('pull request actions in every state, on the real store', () => {
+  it.each(UX5_PR_STATES)('%s', (_state, fields, expected) => {
+    seedPullRequest(fields);
+    expect(slottedOf(PR_TARGET)).toEqual(expected);
+  });
+});
+
+const LEDGER_MOUNT = mountFixture();
+
+const gitStatus = (
+  fields: Partial<{
+    ahead: number;
+    behind: number;
+    unpushed: number;
+    originAhead: number;
+    changed: number;
+    rebase: boolean;
+    upstream: string | null;
+  }>,
+): WorktreeStatus => ({
+  branch: LEDGER_MOUNT.branch,
+  head: null,
+  headSubject: null,
+  upstream: fields.upstream === undefined ? 'origin/hl/payout-export' : fields.upstream,
+  mainDistance: { kind: 'known', ahead: fields.ahead ?? 5, behind: fields.behind ?? 0 },
+  upstreamDistance: {
+    kind: 'known',
+    ahead: fields.unpushed ?? 0,
+    behind: fields.originAhead ?? 0,
+  },
+  workingTree: {
+    kind: 'known',
+    staged: 0,
+    unstaged: fields.changed ?? 0,
+    untracked: 0,
+    unmerged: 0,
+    changed: fields.changed ?? 0,
+  },
+  inProgress: fields.rebase === true ? 'rebase' : null,
+});
+
+const seedMount = ({
+  pr,
+  isAttached = true,
+  mounts = [LEDGER_MOUNT],
+  openThreads = 0,
+}: {
+  readonly pr: 'open' | 'draft' | 'merged' | 'closed' | null;
+  readonly isAttached?: boolean;
+  readonly mounts?: ReadonlyArray<SessionProjectMount>;
+  readonly openThreads?: number;
+}): void => {
+  seed({ mounts });
+  useAppStore.setState({
+    projects: [
+      {
+        id: LEDGER_MOUNT.projectId,
+        name: 'ledger-core',
+        kind: 'repo',
+        baseBranch: 'main',
+        rootPath: LEDGER_MOUNT.repoRoot,
+      } as never,
+    ],
+    sessionMounts: {
+      [SESSION]: mounts.map((mount) => ({
+        id: mount.mountId ?? LEDGER_MOUNT.mountId,
+        sessionId: SESSION,
+        projectId: mount.projectId,
+        worktreePath: isAttached || mount !== LEDGER_MOUNT ? mount.worktreePath : null,
+        lastWorktreePath: mount.worktreePath,
+        branch: mount.branch,
+        baseBranch: mount.baseBranch ?? null,
+        parallelIndex: mount.parallelIndex ?? 0,
+        mountName: mount.mountName,
+        repoSlug: null,
+        repoRoot: mount.repoRoot,
+        isAttached: isAttached || mount !== LEDGER_MOUNT,
+        diskState: 'present',
+        revision: 1,
+        createdAt: FIXTURE_NOW,
+        updatedAt: FIXTURE_NOW,
+      })) as never,
+    },
+    mountGithub:
+      pr === null
+        ? {}
+        : ({
+            [LEDGER_MOUNT.mountId as string]: {
+              pr: {
+                number: 482,
+                title: 'Export payouts in one pass',
+                url: 'https://github.com/harborline/ledger-core/pull/482',
+                state: pr === 'draft' ? 'open' : pr,
+                isDraft: pr === 'draft',
+                headSha: null,
+              },
+              repository: null,
+              host: null,
+              detail: {
+                prNumber: 482,
+                comments: Array.from({ length: openThreads }, (_, index) => ({
+                  id: `c-${index}`,
+                  author: 'kenji-w',
+                  authorAvatarUrl: null,
+                  body: 'Cap the retries',
+                  createdAt: FIXTURE_NOW,
+                  url: `https://github.com/harborline/ledger-core/pull/482#discussion_${index}`,
+                  source: 'review',
+                  resolved: false,
+                  threadId: `PRRT_${index}`,
+                })),
+                reviews: [],
+                reviewRequests: [],
+                checks: [],
+              },
+            },
+          } as never),
+  });
+};
+
+const worktreeTarget = (status: WorktreeStatus | null): ObjectTarget => ({
+  kind: 'worktree',
+  sessionId: SESSION,
+  mountId: LEDGER_MOUNT.mountId as MountId,
+  status,
+  remoteKind: 'github',
+});
+
+const WT_TOOLS = [
+  'worktree.openTerminal menu',
+  'worktree.openInEditor menu',
+  'worktree.scripts menu',
+];
+const WT_COPIES = ['worktree.copyBranch menu', 'worktree.copyPath menu'];
+const WT_HISTORY = ['worktree.rewriteHistory menu', 'worktree.switchBranch chip'];
+const WT_PR = ['worktree.openPullRequest inline', 'worktree.openDiff inline'];
+
+const WORKTREE_STATES: ReadonlyArray<
+  readonly [string, Parameters<typeof seedMount>[0], WorktreeStatus | null, ReadonlyArray<string>]
+> = [
+  [
+    'PR open, 3 to resolve',
+    { pr: 'open', openThreads: 3 },
+    gitStatus({}),
+    [
+      ...WT_PR,
+      'worktree.openReview inline',
+      ...WT_TOOLS,
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'worktree.close menu',
+    ],
+  ],
+  [
+    'no PR, not pushed',
+    { pr: null },
+    gitStatus({ ahead: 3, upstream: null }),
+    [
+      'worktree.openDiff inline',
+      ...WT_TOOLS,
+      'worktree.createPullRequest inline',
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'worktree.close menu',
+    ],
+  ],
+  [
+    'no PR, pushed',
+    { pr: null },
+    gitStatus({ ahead: 3 }),
+    [
+      'worktree.openDiff inline',
+      ...WT_TOOLS,
+      'worktree.createPullRequest inline',
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'worktree.close menu',
+    ],
+  ],
+  [
+    'draft PR',
+    { pr: 'draft' },
+    gitStatus({ ahead: 4 }),
+    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'worktree.close menu'],
+  ],
+  [
+    'PR open, 2 not pushed',
+    { pr: 'open' },
+    gitStatus({ ahead: 6, unpushed: 2 }),
+    [
+      ...WT_PR,
+      ...WT_TOOLS,
+      'worktree.push inline',
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'worktree.close menu',
+    ],
+  ],
+  [
+    'behind main by 4',
+    { pr: 'open' },
+    gitStatus({ behind: 4 }),
+    [
+      ...WT_PR,
+      ...WT_TOOLS,
+      'worktree.rebase inline',
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'worktree.close menu',
+    ],
+  ],
+  [
+    'behind, 2 uncommitted',
+    { pr: 'open' },
+    gitStatus({ behind: 4, changed: 2 }),
+    [
+      ...WT_PR,
+      ...WT_TOOLS,
+      'worktree.rebase inline (Commit or discard the 2 uncommitted changes first.)',
+      'worktree.rewriteHistory menu (Commit or discard the 2 uncommitted changes first.)',
+      'worktree.switchBranch chip (The 2 uncommitted changes would follow you. Commit or discard them first.)',
+      ...WT_COPIES,
+      'worktree.close menu',
+    ],
+  ],
+  [
+    'diverged from origin',
+    { pr: 'open' },
+    gitStatus({ unpushed: 1, originAhead: 1 }),
+    [
+      ...WT_PR,
+      ...WT_TOOLS,
+      'worktree.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
+      ...WT_HISTORY,
+      ...WT_COPIES,
+      'worktree.close menu',
+    ],
+  ],
+  [
+    'rebase stopped',
+    { pr: 'open' },
+    gitStatus({ changed: 3, rebase: true }),
+    [
+      ...WT_PR,
+      'worktree.openTerminal notice',
+      'worktree.openInEditor menu',
+      'worktree.scripts menu',
+      'worktree.abortRebase notice',
+      'worktree.rewriteHistory menu (Finish or abort the rebase first.)',
+      ...WT_COPIES,
+    ],
+  ],
+  [
+    'merged',
+    { pr: 'merged' },
+    gitStatus({ ahead: 0 }),
+    [
+      'worktree.openPullRequest inline',
+      ...WT_TOOLS,
+      'worktree.switchBranch chip',
+      ...WT_COPIES,
+      'worktree.close inline',
+    ],
+  ],
+  [
+    'PR closed',
+    { pr: 'closed' },
+    gitStatus({}),
+    [...WT_PR, ...WT_TOOLS, ...WT_HISTORY, ...WT_COPIES, 'worktree.close menu'],
+  ],
+  [
+    'new branch, no changes, one of two mounts',
+    {
+      pr: null,
+      mounts: [
+        LEDGER_MOUNT,
+        mountFixture({
+          mountId: 'mount-ledger-core-2' as MountId,
+          worktreePath: '/work/harborline/ledger-core-2',
+          branch: 'hl/payout-docs',
+        }),
+      ],
+    },
+    gitStatus({ ahead: 0 }),
+    [
+      ...WT_TOOLS,
+      'worktree.switchBranch chip',
+      'worktree.startTurnsHere menu',
+      ...WT_COPIES,
+      'worktree.close menu',
+    ],
+  ],
+  [
+    'worktree closed, files kept',
+    { pr: 'open', isAttached: false },
+    null,
+    ['worktree.reopen inline', ...WT_COPIES, 'worktree.forget menu'],
+  ],
+];
+
+describe('worktree actions in every state, on the real store', () => {
+  it.each(WORKTREE_STATES)('%s', (_state, mountSeed, status, expected) => {
+    seedMount(mountSeed);
+    if (_state.startsWith('new branch')) {
+      useAppStore.setState({ sessionActiveMount: { [SESSION]: 'mount-ledger-core-2' as MountId } });
+    }
+    expect(slottedOf(worktreeTarget(status))).toEqual(expected);
+  });
+});
+
+const diffTarget = (status: WorktreeStatus | null, patch = 'diff --git a/x b/x'): ObjectTarget => ({
+  kind: 'diff',
+  sessionId: SESSION,
+  worktreePath: LEDGER_MOUNT.worktreePath,
+  status,
+  remoteKind: 'github',
+  patch,
+  rebaseConflicts: 0,
+});
+
+const DIFF_TOOLS = ['diff.openTerminal menu', 'diff.openInEditor menu'];
+const DIFF_COPIES = ['diff.copyBranch menu', 'diff.copyPatch menu'];
+const DIFF_TAIL = ['diff.changeBase menu', 'diff.restoreBackup menu', ...DIFF_COPIES];
+
+const DIFF_STATES: ReadonlyArray<
+  readonly [string, 'open' | null, WorktreeStatus, ReadonlyArray<string>]
+> = [
+  [
+    'on origin, PR open',
+    'open',
+    gitStatus({}),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    '3 not pushed, no PR',
+    null,
+    gitStatus({ ahead: 3, upstream: null }),
+    [
+      ...DIFF_TOOLS,
+      'diff.createPullRequest primary',
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    '2 not pushed, PR open',
+    'open',
+    gitStatus({ ahead: 6, unpushed: 2 }),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.push primary',
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    'behind main by 4',
+    'open',
+    gitStatus({ behind: 4 }),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.rebase primary',
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    '2 uncommitted',
+    'open',
+    gitStatus({ behind: 4, changed: 2 }),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.rebase primary (Commit or discard the 2 uncommitted changes first.)',
+      'diff.rewriteHistory secondary (Commit or discard the 2 uncommitted changes first.)',
+      'diff.changeBase menu',
+      'diff.restoreBackup menu (Commit or discard the 2 uncommitted changes first.)',
+      ...DIFF_COPIES,
+    ],
+  ],
+  [
+    'diverged',
+    'open',
+    gitStatus({ unpushed: 1, originAhead: 1 }),
+    [
+      'diff.openPullRequest secondary',
+      ...DIFF_TOOLS,
+      'diff.push menu (Origin has a commit this branch lacks. Rebase on it first; Rewrite history owns force pushes.)',
+      'diff.rewriteHistory secondary',
+      ...DIFF_TAIL,
+    ],
+  ],
+  [
+    'rebase stopped',
+    'open',
+    gitStatus({ changed: 3, rebase: true }),
+    [
+      'diff.openPullRequest secondary',
+      'diff.continueRebase primary',
+      'diff.openInEditor menu',
+      'diff.abortRebase secondary',
+      'diff.rewriteHistory secondary (Finish or abort the rebase first.)',
+      'diff.restoreBackup menu (Commit or discard the 3 uncommitted changes first.)',
+      ...DIFF_COPIES,
+    ],
+  ],
+  [
+    'no changes',
+    null,
+    gitStatus({ ahead: 0 }),
+    [...DIFF_TOOLS, 'diff.changeBase menu', 'diff.copyBranch menu'],
+  ],
+];
+
+describe('diff actions in every state, on the real store', () => {
+  it.each(DIFF_STATES)('%s', (state, pr, status, expected) => {
+    seedMount({ pr });
+    expect(
+      slottedOf(diffTarget(status, state === 'no changes' ? '' : 'diff --git a/x b/x')),
+    ).toEqual(expected);
+  });
+});
+
+const record = (
+  fields: Partial<{ sessionId: string | null; isStarred: boolean | null; url: string }>,
+): ObjectTarget => ({
+  kind: 'record',
+  facts: {
+    identifier: 'HAR-231',
+    title: 'Payout export times out for Northwind',
+    url: fields.url ?? 'https://linear.app/harborline/issue/HAR-231',
+    providerLabel: 'Linear',
+    sessionId: (fields.sessionId ?? null) as never,
+    isStarred: fields.isStarred === undefined ? false : fields.isStarred,
+    onOpen: () => undefined,
+    onLaunch: () => undefined,
+    onToggleStar: () => undefined,
+    onRefresh: null,
+    verbs: [],
+    sessionVerbs: [],
+    destructive: [],
+  },
+});
+
+describe('inbox record menu in every state', () => {
+  it.each([
+    [
+      'new, not starred',
+      record({}),
+      [
+        'record.open',
+        'record.openInProvider',
+        'record.launch',
+        'record.star',
+        'record.copyLink',
+        'record.copyKey',
+      ],
+    ],
+    [
+      'linked to a session, starred',
+      record({ sessionId: SESSION, isStarred: true }),
+      [
+        'record.open',
+        'record.openSession',
+        'record.openInProvider',
+        'record.star',
+        'record.copyLink',
+        'record.copyKey',
+      ],
+    ],
+    [
+      'with no link in its tool',
+      record({ url: '' }),
+      ['record.open', 'record.launch', 'record.star', 'record.copyKey'],
+    ],
+  ] as const)('%s', (_state, target, expected) => {
+    expect(matrixOf(target)).toEqual(expected);
+  });
+
+  it('labels the star by its state', () => {
+    const labels = (target: ObjectTarget) =>
+      (bindTarget({ state: useAppStore.getState(), target })?.resolve() ?? []).map(
+        (action) => action.label,
+      );
+    expect(labels(record({ isStarred: true }))).toContain('Unstar');
+    expect(labels(record({ isStarred: false }))).toContain('Star');
+  });
+});
+
+describe('actions run against the real store', () => {
+  it('archives a session with an undo toast, and restores it', async () => {
+    seed({});
+    await run(SESSION_TARGET, 'session.archive');
+    expect(useAppStore.getState().sessions.map((session) => session.id)).not.toContain(SESSION);
+    expect(toasts).toContain('Session archived');
+    seed({ session: sessionFixture({ archivedAt: FIXTURE_NOW }), isArchived: true });
+    await run(SESSION_TARGET, 'session.restore');
+    expect(
+      (useAppStore.getState().archivedSessions[WORKSPACE] ?? []).map((session) => session.id),
+    ).not.toContain(SESSION);
+  });
+
+  it('deletes a session', async () => {
+    seed({});
+    await run(SESSION_TARGET, 'session.delete');
+    expect(useAppStore.getState().sessions).toEqual([]);
+  });
+
+  it('opens Review and Diff through the one door', async () => {
+    seed({ mounts: [mountFixture()] });
+    await run(SESSION_TARGET, 'session.review');
+    expect(useAppStore.getState().activeLens[SESSION]).toBe('review');
+    await run(SESSION_TARGET, 'session.diff');
+    expect(useAppStore.getState().activeLens[SESSION]).toBe('files');
+  });
+
+  it('never runs a blocked verb', async () => {
+    seed({});
+    await run(SESSION_TARGET, 'session.diff');
+    expect(useAppStore.getState().activeLens[SESSION]).toBeUndefined();
+  });
+
+  it('copies the branch name', async () => {
+    seed({ mounts: [mountFixture()], branch: 'hl/payout-export' });
+    copies.length = 0;
+    await run(SESSION_TARGET, 'session.copyBranch');
+    expect(copies).toEqual(['hl/payout-export']);
+  });
+
+  it('closes and reopens an agent', async () => {
+    seed(standalone({ status: 'failed' }));
+    await run(AGENT_TARGET, 'agent.close');
+    const closed = useAppStore.getState().sessionPhaseRuns[SESSION]?.[0];
+    expect(closed?.doneAt).not.toBeUndefined();
+    await run(AGENT_TARGET, 'agent.reopen');
+    expect(useAppStore.getState().sessionPhaseRuns[SESSION]?.[0]?.doneAt).toBeUndefined();
+  });
+
+  it('changes the model of an agent from the submenu', async () => {
+    seed(standalone({ status: 'completed' }));
+    await run(AGENT_TARGET, 'agent.model', 'sonnet-5');
+    expect(useAppStore.getState().agentModelOverride[AGENT as AgentId]).toBe('sonnet-5');
+  });
+
+  it('deletes an agent', async () => {
+    seed(standalone({ status: 'completed' }));
+    await run(AGENT_TARGET, 'agent.delete');
+    const left = (useAppStore.getState().sessionPhaseRuns[SESSION] ?? []).filter(
+      (agent) => agent.deletedAt == null,
+    );
+    expect(left).toEqual([]);
+  });
+
+  it('discards a workflow run and restores it', async () => {
+    seed(withRun({}));
+    await run(RUN_TARGET, 'workflowRun.discard');
+    const discarded = useAppStore
+      .getState()
+      .sessions[0]?.workflowRuns.find((candidate) => candidate.id === RUN);
+    expect(discarded?.discardedAt).not.toBeUndefined();
+    await run(RUN_TARGET, 'workflowRun.restore');
+    const restored = useAppStore
+      .getState()
+      .sessions[0]?.workflowRuns.find((candidate) => candidate.id === RUN);
+    expect(restored?.discardedAt).toBeUndefined();
+  });
+
+  it('archives several sessions at once', async () => {
+    const sessions = ['session-a', 'session-b'].map((id) =>
+      sessionFixture({ id: id as never, goal: `Acme ${id}` }),
+    );
+    useAppStore.setState({ sessions, archivedSessions: { [WORKSPACE]: [] } });
+    await run(
+      { kind: 'sessions', sessionIds: sessions.map((session) => session.id) },
+      'sessions.archive',
+    );
+    expect(useAppStore.getState().sessions).toEqual([]);
+    expect(toasts).toContain('2 sessions archived');
+  });
+});
