@@ -65,7 +65,13 @@ export const Fragment = ({
       <div className="splitMedia">
         {figures.map((figure) => (
           <div
-            className={figure.cap === undefined ? 'frag' : 'frag capped'}
+            className={[
+              'frag',
+              figure.cap === undefined ? null : 'capped',
+              figure.isClosed === true ? 'closed' : null,
+            ]
+              .filter(Boolean)
+              .join(' ')}
             key={figure.source.id}
             style={widthStyle(figure)}
           >

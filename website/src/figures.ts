@@ -10,6 +10,7 @@ export type FragmentFigure = {
   readonly source: Source;
   readonly displayWidth: number;
   readonly cap?: number;
+  readonly isClosed?: boolean;
   readonly alt: string;
 };
 
@@ -26,6 +27,7 @@ type FragmentParams = {
   readonly height: number;
   readonly displayWidth: number;
   readonly cap?: number;
+  readonly isClosed?: boolean;
   readonly alt: string;
 };
 
@@ -35,10 +37,18 @@ const frame = ({ id, height = 2400, alt }: FrameParams): FrameFigure => ({
   alt,
 });
 
-const fragment = ({ id, height, displayWidth, cap, alt }: FragmentParams): FragmentFigure => ({
+const fragment = ({
+  id,
+  height,
+  displayWidth,
+  cap,
+  isClosed = false,
+  alt,
+}: FragmentParams): FragmentFigure => ({
   source: { id, widths: WIDTHS, width: 3840, height },
   displayWidth,
   cap,
+  isClosed,
   alt,
 });
 
@@ -62,6 +72,7 @@ export const SWITCH_BELL = fragment({
   id: 'switch-bell',
   height: 2688,
   displayWidth: 520,
+  isClosed: true,
   alt: 'The notification bell with four unread rows and Open all notifications',
 });
 
@@ -94,6 +105,59 @@ export const DEV_DIFF = fragment({
   alt: 'One hunk of applyWebhook.ts in the diff, where the fix passes the event id along',
 });
 
+export const BUILDER = frame({
+  id: 'builder',
+  alt: 'The workflow builder for the duplicate credit fix: its goal, Orchestrated mode, the plan, the orchestrator on GPT-5.6 Sol and guidance to ask before any change to ledger-core',
+});
+
+export const IMPACT = frame({
+  id: 'impact',
+  alt: 'Impact for the last 7 days: Claude spend against its monthly cap with the cap ring at 42 percent, spent, cap and remaining',
+});
+
+export const INBOX_ISSUE = fragment({
+  id: 'inbox-issue',
+  height: 3102,
+  displayWidth: 541,
+  alt: 'Issue HBL-412 open in the Inbox, with its fields, Launch session and Link to a session',
+});
+
+export const REVIEW_REPLY = fragment({
+  id: 'review-reply',
+  height: 1737,
+  displayWidth: 546,
+  alt: 'A review comment from kenji-w on config.ts and the reply drafted for it',
+});
+
+export const ARTIFACTS_COMPARE = fragment({
+  id: 'artifacts-compare',
+  height: 3816,
+  displayWidth: 416,
+  alt: 'Version 3 of the deliveries wireframe, with the stuck delivery banner above the deliveries table',
+});
+
+export const CONTEXT_DECISIONS = fragment({
+  id: 'context-decisions',
+  height: 4071,
+  displayWidth: 540,
+  isClosed: true,
+  alt: 'The Decisions tab of the Context panel: two active decisions and one replaced, with its reason',
+});
+
+export const STORAGE_LOCAL = fragment({
+  id: 'storage-local',
+  height: 1986,
+  displayWidth: 686,
+  alt: 'The storage summary: 5.1 GB used, 5.0 GB that can go, and the usage bar with its legend',
+});
+
+export const CHAT_PLAIN = fragment({
+  id: 'chat-plain',
+  height: 1306,
+  displayWidth: 591,
+  alt: 'One exchange in a plain chat: the first message, its plan, the operations and the reply',
+});
+
 export type Detail = {
   readonly id: string;
   readonly width: number;
@@ -107,137 +171,6 @@ export type Figure = {
   readonly height: number;
   readonly alt: string;
   readonly details: readonly Detail[];
-};
-
-export const CHAT: Figure = {
-  id: 'chat',
-  width: 3840,
-  height: 2400,
-  alt: 'An implementer chat on Codex: the ask, three groups of operations, both pull requests up and a Slack reply for #payments-oncall waiting to be sent',
-  details: [],
-};
-
-export const BUILDER: Figure = {
-  id: 'builder',
-  width: 3840,
-  height: 2508,
-  alt: 'A new orchestrated workflow for the duplicate credit fix, with its goal, the orchestrator on GPT-5.6 Sol and guidance to ask before any change to ledger-core',
-  details: [
-    {
-      id: 'builder-d1',
-      width: 2740,
-      height: 1460,
-      caption: 'Orchestrated, custom or preset, with an orchestrator on the model you set',
-    },
-  ],
-};
-
-export const INBOX: Figure = {
-  id: 'inbox',
-  width: 3840,
-  height: 2400,
-  alt: 'The Inbox with HBL-412 pasted in the search and open on the right, with Launch session',
-  details: [
-    {
-      id: 'inbox-d1',
-      width: 1600,
-      height: 1296,
-      caption: 'HBL-412, one press away from a session',
-    },
-    {
-      id: 'inbox-d2',
-      width: 1000,
-      height: 640,
-      caption: 'GitHub, Linear, Sentry and Slack in one list',
-    },
-  ],
-};
-
-export const RESOLVE: Figure = {
-  id: 'resolve',
-  width: 3840,
-  height: 2400,
-  alt: 'Review for pull request 318: comments grouped as open, waiting for the push and done, one reply open on the right, and Push 1 in the header',
-  details: [
-    {
-      id: 'resolve-d1',
-      width: 2520,
-      height: 1160,
-      caption: 'A drafted reply with Redraft, Accept, Reply and Skip',
-    },
-  ],
-};
-
-export const COMPARE: Figure = {
-  id: 'compare',
-  width: 3840,
-  height: 2400,
-  alt: 'Wireframe compare for the deliveries screen, v2 to v3, where v3 adds a stuck delivery banner and an attempts column',
-  details: [
-    {
-      id: 'compare-d1',
-      width: 2260,
-      height: 1280,
-      caption: 'v3 adds a stuck-delivery banner and an attempts column',
-    },
-    {
-      id: 'compare-d2',
-      width: 3400,
-      height: 1960,
-      caption: 'The session report, as a document',
-    },
-  ],
-};
-
-export const CONTEXT: Figure = {
-  id: 'context',
-  width: 3840,
-  height: 2400,
-  alt: 'The brief an implementer received on Codex, next to the Context drawer where decision 3 replaced decision 1 with its reason',
-  details: [
-    {
-      id: 'context-d1',
-      width: 1608,
-      height: 1900,
-      caption: 'Decision 3 replaced decision 1, and says why',
-    },
-    {
-      id: 'context-d2',
-      width: 3760,
-      height: 1320,
-      caption: 'The brief the agent received, part by part',
-    },
-  ],
-};
-
-export const IMPACT: Figure = {
-  id: 'impact',
-  width: 3840,
-  height: 2400,
-  alt: 'Claude spend for the last 30 days: $151.72 of a $170 cap, a warning at 80 percent, and the spend by model',
-  details: [
-    {
-      id: 'impact-d1',
-      width: 3860,
-      height: 1280,
-      caption: 'What is left of the Codex plan, with a free reset',
-    },
-  ],
-};
-
-export const STORAGE: Figure = {
-  id: 'storage',
-  width: 3840,
-  height: 2400,
-  alt: 'Storage settings: working copies of old sessions with what each weighs, 5.0 GB in all, and one button to remove the three that are safe',
-  details: [
-    {
-      id: 'storage-d1',
-      width: 3840,
-      height: 1328,
-      caption: 'What each working copy weighs, and which are safe to remove',
-    },
-  ],
 };
 
 export const SUPPORT: Figure = {

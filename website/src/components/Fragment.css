@@ -59,24 +59,31 @@
 }
 
 .frag {
+  width: fit-content;
+  max-width: 100%;
   overflow: hidden;
   border-radius: var(--r-frag);
   border: 1px solid var(--line);
   background: var(--bg);
-  -webkit-mask-image: linear-gradient(to right, #000 70%, transparent);
-  mask-image: linear-gradient(to right, #000 70%, transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 80%, transparent);
+  mask-image: linear-gradient(to right, #000 80%, transparent);
 }
 
 .frag.capped {
   max-height: var(--cap);
   -webkit-mask-image:
-    linear-gradient(to right, #000 70%, transparent),
+    linear-gradient(to right, #000 80%, transparent),
     linear-gradient(to bottom, #000 70%, transparent);
   -webkit-mask-composite: source-in;
   mask-image:
-    linear-gradient(to right, #000 70%, transparent),
+    linear-gradient(to right, #000 80%, transparent),
     linear-gradient(to bottom, #000 70%, transparent);
   mask-composite: intersect;
+}
+
+.frag.closed {
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 
 .frag img {

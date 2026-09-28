@@ -39,6 +39,11 @@
   mask-composite: intersect;
 }
 
+.cellMedia.closed {
+  -webkit-mask-image: linear-gradient(to bottom, #000 66%, transparent);
+  mask-image: linear-gradient(to bottom, #000 66%, transparent);
+}
+
 .cellMedia img {
   display: block;
   width: var(--w);

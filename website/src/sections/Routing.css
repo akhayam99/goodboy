@@ -1,156 +1,153 @@
 .bills {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 40px;
 }
 
-.bills > * {
-  min-width: 0;
+.billsHead {
+  padding: 0 36px;
 }
 
-.bill {
-  background: var(--raise);
+.billPair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   border: 1px solid var(--line);
   border-radius: var(--r-frame);
-  padding: 22px;
-}
-
-.bill.dull {
-  background: var(--raise);
-}
-
-.bhead {
-  font-weight: 650;
-  font-size: 16px;
-  margin-bottom: 14px;
-}
-
-.bhead small {
-  display: block;
-  font-weight: 400;
-  color: var(--t3);
-  font-size: 13.5px;
-  margin-top: 2px;
-}
-
-.brow {
-  display: grid;
-  grid-template-columns: 210px 1fr 64px;
-  align-items: center;
-  gap: 12px;
-  height: 38px;
-  font-size: 14px;
-}
-
-.bask {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--t2);
-  white-space: nowrap;
   overflow: hidden;
 }
 
-.bask small {
+.bill {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: 28px 32px;
+}
+
+.bill + .bill {
+  border-left: 1px solid var(--line);
+}
+
+.billTitle {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 16px;
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+  color: var(--t1);
+}
+
+.billTitle small {
+  font: var(--t-caption);
   color: var(--t3);
-  font-size: 13px;
 }
 
-.role {
-  font: 600 11.5px/1 var(--sans);
-  padding: 4px 7px;
-  border-radius: 6px;
-  color: #fff;
+.billRow {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 12px;
+  height: 36px;
+  font: 400 14px/20px var(--sans);
 }
 
-.role.scout {
-  background: var(--scout);
-}
-
-.role.planner {
-  background: var(--planner);
-}
-
-.role.implementer {
-  background: var(--implementer);
-}
-
-.role.tester {
-  background: var(--codex);
-}
-
-.role.reviewer {
-  background: var(--reviewer);
-}
-
-.bbar {
-  height: 10px;
-  border-radius: 6px;
-  width: 4px;
-  min-width: 4px;
-  transition: width 700ms cubic-bezier(0.2, 0.7, 0.3, 1) var(--d);
-}
-
-.bills.in .bbar {
-  width: var(--w);
-}
-
-.bbar.hot {
-  background: linear-gradient(90deg, var(--warn), var(--danger));
-}
-
-.bbar.cool {
-  background: linear-gradient(90deg, var(--accent), var(--accent));
-}
-
-.bval {
-  text-align: right;
+.billAsk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  white-space: nowrap;
   color: var(--t2);
 }
 
-.bfoot {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--line);
+.billAsk svg {
+  flex: none;
+  color: var(--t3);
+}
+
+.billAsk small {
+  font: var(--t-caption);
+  color: var(--t4);
+}
+
+.billRole {
+  color: var(--t1);
+  font-weight: 500;
+}
+
+.billBar {
+  width: var(--w);
+  min-width: 3px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.billBar.dull {
+  background: var(--t4);
+}
+
+.billBar.fresh {
+  background: var(--accent);
+}
+
+.billValue {
+  text-align: right;
+  font: 400 13px/20px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--t3);
+}
+
+.billTotal {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font: var(--t-caption);
   color: var(--t3);
-  font-size: 14px;
 }
 
-.bfoot b {
-  font-size: 20px;
+.billTotal b {
+  font: 500 20px/28px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--t2);
 }
 
-.hotx b {
-  color: var(--danger-text);
-}
-
-.coolx b {
+.billTotal.fresh b {
   color: var(--accent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bbar {
-    width: var(--w);
-    transition: none;
-  }
+.billNote {
+  padding: 0 36px;
+  font: var(--t-caption);
+  color: var(--t4);
 }
 
 @media (max-width: 960px) {
-  .bills {
-    grid-template-columns: 1fr;
+  .billPair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bill + .bill {
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
 }
 
-@media (max-width: 560px) {
-  .brow {
-    grid-template-columns: 1fr 50px;
+@media (max-width: 600px) {
+  .billsHead,
+  .billNote {
+    padding: 0;
+  }
+  .bill {
+    padding: 20px;
+  }
+  .billRow {
+    grid-template-columns: minmax(0, 1fr) 52px;
     row-gap: 4px;
     height: auto;
     padding: 6px 0;
   }
-  .brow .bbar {
+  .billRow .billBar {
     grid-column: 1 / -1;
     grid-row: 2;
   }

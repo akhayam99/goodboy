@@ -23,7 +23,10 @@ export const GridCell = ({ cell }: Props) => {
 
   return (
     <li className="cell">
-      <div className="cellMedia" style={style}>
+      <div
+        className={cell.figure.isClosed === true ? 'cellMedia closed' : 'cellMedia'}
+        style={style}
+      >
         <Picture
           source={cell.figure.source}
           theme={theme}

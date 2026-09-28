@@ -1,12 +1,10 @@
 import './Routing.css';
 import type { CSSProperties } from 'react';
-import { BrandMark, type BrandId } from '../components/BrandIcons';
-import { More } from '../components/More';
-import { SeeHow } from '../components/SeeHow';
-import { delay, useInViewOnce } from '../components/Reveal';
-import { Shot } from '../components/Shot';
+import { BrandMark, type ProviderId } from '../components/BrandIcons';
+import { Chapter } from '../components/Chapter';
+import { Frame } from '../components/Frame';
 import { IMPACT } from '../figures';
-import { SITE } from '../site';
+import { StorageAndChat } from './StorageAndChat';
 
 type Turn = {
   readonly ask: string;
@@ -15,123 +13,103 @@ type Turn = {
 
 type Step = {
   readonly role: string;
-  readonly tone: string;
-  readonly brand?: BrandId;
+  readonly brand?: ProviderId;
   readonly model?: string;
   readonly run: number;
 };
 
+type BarStyle = CSSProperties & {
+  readonly '--w': string;
+};
+
 const TURNS: readonly Turn[] = [
-  { ask: 'read the webhook handler', run: 0.4 },
-  { ask: 'plan the dedupe', run: 1.3 },
-  { ask: 'write the fix', run: 2.7 },
-  { ask: 'fix the tests', run: 4.6 },
-  { ask: 'review the diff', run: 7.0 },
-  { ask: 'answer the review', run: 9.8 },
+  { ask: 'Read the webhook handler', run: 0.4 },
+  { ask: 'Plan the dedupe', run: 1.3 },
+  { ask: 'Write the fix', run: 2.7 },
+  { ask: 'Fix the tests', run: 4.6 },
+  { ask: 'Review the diff', run: 7.0 },
+  { ask: 'Answer the review', run: 9.8 },
 ];
 
 const STEPS: readonly Step[] = [
-  { role: 'Scouts', tone: 'scout', run: 0.13 },
-  { role: 'Plan', tone: 'planner', brand: 'anthropic', model: 'Opus 5.5 High', run: 1.41 },
-  { role: 'Implement', tone: 'implementer', brand: 'codex', model: 'GPT 5.6 Sol', run: 2.35 },
-  { role: 'Test', tone: 'tester', brand: 'anthropic', model: 'Haiku 4.5', run: 2.56 },
-  { role: 'Review', tone: 'reviewer', brand: 'codex', model: 'GPT 5.6 Terra', run: 2.85 },
-  { role: 'Resolve', tone: 'scout', brand: 'anthropic', model: 'Sonnet 5', run: 3.07 },
+  { role: 'Scouts', run: 0.13 },
+  { role: 'Plan', brand: 'anthropic', model: 'Opus 5.5 High', run: 1.41 },
+  { role: 'Implement', brand: 'codex', model: 'GPT 5.6 Sol', run: 2.35 },
+  { role: 'Test', brand: 'anthropic', model: 'Haiku 4.5', run: 2.56 },
+  { role: 'Review', brand: 'codex', model: 'GPT 5.6 Terra', run: 2.85 },
+  { role: 'Resolve', brand: 'anthropic', model: 'Sonnet 5', run: 3.07 },
 ];
 
 const TOTAL_ONE_AGENT = 9.8;
 const TOTAL_FRESH = 3.07;
-const ROW_STAGGER = 140;
 
 const money = (value: number) => `$${value.toFixed(2)}`;
 
-const bar = (run: number, index: number) =>
-  ({
-    '--w': `${((run / TOTAL_ONE_AGENT) * 100).toFixed(1)}%`,
-    ...delay(index * ROW_STAGGER),
-  }) as CSSProperties;
+const bar = (run: number): BarStyle => ({
+  '--w': `${((run / TOTAL_ONE_AGENT) * 100).toFixed(1)}%`,
+});
 
-export const Routing = () => {
-  const { ref, inView } = useInViewOnce<HTMLDivElement>();
-
-  return (
-    <section className="block alt" id="routing" aria-labelledby="h2-routing">
-      <div className="wrap">
-        <div className="blockHead">
-          <h2 id="h2-routing">Providers, limits and cost</h2>
-          <p className="sub">
-            See what is left of each plan before you start, and what every step spent after.
-          </p>
-        </div>
-        <div className="stack">
-          <Shot figure={IMPACT} />
-          <div className="stackText">
-            <p>
-              The top bar shows what is left of your Claude and Codex plans. When one runs out
-              mid-task and another eligible provider is connected, the turn can move there, and the
-              chat says where it went.
-            </p>
-            <p>
-              Set a monthly cap per provider and Goodboy taps you on the shoulder before you cross
-              it, not after. When Codex offers a free reset, it sits right on the usage page.
-            </p>
-            <div className="linkRow">
-              <More href={`${SITE.concepts}#providers-and-routing`}>See how routing works</More>
-              <SeeHow anchor="providers-limits-and-cost" />
-            </div>
-          </div>
-        </div>
-        <div className="billsHead">
-          <h3>The same task, two very different bills</h3>
-          <p>
-            The same six steps, twice. On the left one agent carries the whole chat into each step,
-            and the bars climb. On the right a fresh agent takes each step with a short brief, and
-            the heavy model runs only where it matters.
-          </p>
-        </div>
-        <div className={inView ? 'bills in' : 'bills'} ref={ref} aria-hidden="true">
-          <div className="bill dull">
-            <div className="bhead">
-              One agent, the whole chat carried into each step
-              <small>the same heavy model on every step</small>
-            </div>
-            {TURNS.map((turn, index) => (
-              <div className="brow" key={turn.ask}>
-                <span className="bask">{turn.ask}</span>
-                <span className="bbar hot" style={bar(turn.run, index)} />
-                <span className="bval mono">{money(turn.run)}</span>
-              </div>
-            ))}
-            <div className="bfoot hotx">
-              total <b className="mono">{money(TOTAL_ONE_AGENT)}</b>
-            </div>
-          </div>
-          <div className="bill">
-            <div className="bhead">
-              A fresh agent for each step
-              <small>a short brief each time, the heavy model only where it matters</small>
-            </div>
-            {STEPS.map((step, index) => (
-              <div className="brow" key={step.role}>
-                <span className="bask">
-                  <em className={`role ${step.tone}`}>{step.role}</em>
-                  {step.brand != null && <BrandMark brand={step.brand} size={13} />}
-                  <small>{step.model}</small>
-                </span>
-                <span className="bbar cool" style={bar(step.run, index)} />
-                <span className="bval mono">{money(step.run)}</span>
-              </div>
-            ))}
-            <div className="bfoot coolx">
-              total <b className="mono">{money(TOTAL_FRESH)}</b>
-            </div>
-          </div>
-        </div>
-        <p className="caption">
-          <span>Example run.</span> Running totals for six steps on the Harborline webhook fix. The
-          first three match the workflow run shown earlier.
+export const Routing = () => (
+  <Chapter
+    id="routing"
+    head={{
+      eyebrow: 'Providers, limits and cost',
+      heading: 'Know what a task costs before the bill',
+      lead: 'The top bar shows what is left of each plan, and every step records what it spent.',
+    }}
+  >
+    <Frame figure={IMPACT} />
+    <div className="bills">
+      <div className="billsHead">
+        <h3 className="sectionTitle">The same task, two bills</h3>
+        <p className="body">
+          The same six steps, twice. One agent carrying the whole chat pays for it on every step. A
+          fresh agent per step reads a short brief, and the heavy model runs only where it matters.
         </p>
       </div>
-    </section>
-  );
-};
+      <div className="billPair" aria-hidden="true">
+        <div className="bill">
+          <p className="billTitle">
+            One agent, the whole chat each time
+            <small>The same heavy model on every step</small>
+          </p>
+          {TURNS.map((turn) => (
+            <div className="billRow" key={turn.ask}>
+              <span className="billAsk">{turn.ask}</span>
+              <span className="billBar dull" style={bar(turn.run)} />
+              <span className="billValue">{money(turn.run)}</span>
+            </div>
+          ))}
+          <p className="billTotal">
+            Total <b>{money(TOTAL_ONE_AGENT)}</b>
+          </p>
+        </div>
+        <div className="bill">
+          <p className="billTitle">
+            A fresh agent for each step
+            <small>A short brief each time, the heavy model only where it matters</small>
+          </p>
+          {STEPS.map((step) => (
+            <div className="billRow" key={step.role}>
+              <span className="billAsk">
+                <span className="billRole">{step.role}</span>
+                {step.brand === undefined ? null : <BrandMark brand={step.brand} size={13} />}
+                {step.model === undefined ? null : <small>{step.model}</small>}
+              </span>
+              <span className="billBar fresh" style={bar(step.run)} />
+              <span className="billValue">{money(step.run)}</span>
+            </div>
+          ))}
+          <p className="billTotal fresh">
+            Total <b>{money(TOTAL_FRESH)}</b>
+          </p>
+        </div>
+      </div>
+      <p className="billNote">
+        Example run: running totals for six steps on the Harborline webhook fix. The first three
+        match the workflow run shown earlier.
+      </p>
+    </div>
+    <StorageAndChat />
+  </Chapter>
+);
