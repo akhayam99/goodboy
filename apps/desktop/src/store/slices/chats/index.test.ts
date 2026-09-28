@@ -282,6 +282,38 @@ describe('chats slice', () => {
     expect(read().chatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([chatId]);
   });
 
+  it('archives only the idle chats and returns them for undo', async () => {
+    const { slice, read } = harness({});
+    const old = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() as IsoDateTime;
+    await holder.backend?.insertChat({
+      chat: {
+        id: 'lunch' as ChatId,
+        workspaceId: WORKSPACE,
+        title: 'Lunch ideas near the office',
+        provider: 'anthropic',
+        model: 'sonnet-5',
+        pinnedAt: null,
+        archivedAt: null,
+        lastActivityAt: old,
+        createdAt: old,
+        updatedAt: old,
+      },
+    });
+    const fresh = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    await slice.loadChats({ workspaceId: WORKSPACE });
+
+    const archived = await slice.archiveIdleChats({ workspaceId: WORKSPACE });
+
+    expect(archived).toEqual(['lunch']);
+    expect(read().chatsByWorkspace[WORKSPACE]?.map((chat) => chat.id)).toEqual([fresh]);
+    await slice.restoreChats({ workspaceId: WORKSPACE, chatIds: archived });
+    expect(read().chatsByWorkspace[WORKSPACE]).toHaveLength(2);
+  });
+
   it('pins, renames and switches the model of a chat', async () => {
     const { slice, read } = harness({});
     const chatId = await slice.createChat({

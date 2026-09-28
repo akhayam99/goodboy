@@ -3,7 +3,8 @@
 > **Read this when** changing what happens between a sent message and its
 > recorded outcome: where a turn runs, which provider and model it runs on,
 > how the CLI is spawned and read, what a turn event means, how a failure
-> falls back, or the session summarizer that follows. **Not for** installing or
+> falls back, the session summarizer that follows, or a read-only workspace
+> chat turn. **Not for** installing or
 > connecting a provider CLI ([providers.md](providers.md)), how a workflow run
 > advances ([workflows.md](workflows.md)), or mount lifecycle
 > ([mounts.md](mounts.md)).
@@ -511,3 +512,37 @@ for {role}` while a turn runs, `{role}` being the agent's own name over its
 A workflow agent's own handoff (`summarizeAgentOutput`) runs once per agent at
 a time with a 90 second timeout, and a failure falls back to the deterministic
 summary flagged `degraded`.
+
+## Workspace chat turns
+
+A workspace chat asks the provider a question without a session, an agent or a
+worktree. It has its own pipeline next to the session turn:
+`apps/desktop/src/store/slices/chats/` drives it,
+`apps/desktop/src/features/workspace-chat/runChatTurn.ts` reads the stream,
+and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
+
+- **Always read-only.** `chat_turn` reuses the session turn's argument builder
+  but pins the read-only shape, and takes no permission mode, writable roots,
+  allowed tools or resume id from the frontend (unknown fields are refused).
+  Claude runs in plan mode with only Read, Grep and Glob and without session
+  persistence; codex runs with the read-only sandbox; cursor and Gemini run in
+  plan mode. opencode, OpenRouter and Moonshot cannot be limited to reading,
+  so a chat on them is refused with a clear error. A check on the final
+  argument list refuses any write flag outside the prompt, and the binary must
+  be the provider's own CLI. The Rust tests in `chat.rs` pin all of this.
+- **Where it reads.** The CLI runs in the folder that holds every project of
+  the workspace, or the first project when that folder would be the home
+  folder or wider; the other projects are extra read roots for Claude.
+- **Its own channel.** Output streams as `chat_event` with the chat id, never
+  as `turn_event`, so no session sees it. There is no reload backlog: a reply
+  still streaming when the window closes is marked stopped at the next load.
+- **What it carries.** Each turn sends the workspace system prompt and the
+  last turns of the chat as text; Goodboy owns the conversation, not the CLI.
+  The files a read tool opened are kept on the reply for the "Read N files"
+  trace.
+- **Storage.** `chats` and `chat_messages` (m212). A chat stores its model as a
+  catalog key. Idle is derived: a chat with no activity for seven days moves
+  to the idle group, and only the user archives it.
+- **Mock mode.** With `VITE_GOODBOY_MOCK=1` the slice runs on an in-memory
+  backend with Harborline chats and a fake streaming responder, so scenes can
+  send and stop replies.

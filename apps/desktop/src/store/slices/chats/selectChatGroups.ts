@@ -1,7 +1,7 @@
 import type { ChatSummary } from '@goodboy/types';
 import { isChatIdle } from './isChatIdle';
 
-export type ChatGroups = {
+type ChatGroups = {
   readonly pinned: ReadonlyArray<ChatSummary>;
   readonly today: ReadonlyArray<ChatSummary>;
   readonly week: ReadonlyArray<ChatSummary>;

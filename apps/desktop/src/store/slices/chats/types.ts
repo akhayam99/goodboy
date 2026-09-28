@@ -27,6 +27,10 @@ export type ArchiveChatsParams = {
   readonly chatIds: ReadonlyArray<ChatId>;
 };
 
+export type ArchiveIdleChatsParams = {
+  readonly workspaceId: WorkspaceId;
+};
+
 export type PinChatParams = ChatParams & {
   readonly isPinned: boolean;
 };
@@ -47,6 +51,7 @@ export type ChatsSlice = ChatsState & {
   sendChatMessage(params: SendChatMessageParams): Promise<void>;
   stopChatReply(params: ChatParams): Promise<void>;
   archiveChats(params: ArchiveChatsParams): Promise<void>;
+  archiveIdleChats(params: ArchiveIdleChatsParams): Promise<ReadonlyArray<ChatId>>;
   restoreChats(params: ArchiveChatsParams): Promise<void>;
   pinChat(params: PinChatParams): Promise<void>;
   renameChat(params: RenameChatParams): Promise<void>;

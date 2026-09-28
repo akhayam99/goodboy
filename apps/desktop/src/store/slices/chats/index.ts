@@ -1,4 +1,5 @@
 import { archiveChats } from './archiveChats';
+import { archiveIdleChats } from './archiveIdleChats';
 import { createChat } from './createChat';
 import { loadChatMessages } from './loadChatMessages';
 import { loadChats } from './loadChats';
@@ -11,9 +12,6 @@ import { chatsInitialState } from './state';
 import { stopChatReply } from './stopChatReply';
 import type { ChatsSlice, GetFn, SetFn } from './types';
 
-export { selectChatGroups, type ChatGroups } from './selectChatGroups';
-export { isChatIdle } from './isChatIdle';
-
 export const createChatsSlice = (set: SetFn, get: GetFn): ChatsSlice => ({
   ...chatsInitialState,
   loadChats: loadChats(set, get),
@@ -22,6 +20,7 @@ export const createChatsSlice = (set: SetFn, get: GetFn): ChatsSlice => ({
   sendChatMessage: sendChatMessage(set, get),
   stopChatReply: stopChatReply(set, get),
   archiveChats: archiveChats(set),
+  archiveIdleChats: archiveIdleChats(get),
   restoreChats: restoreChats(set),
   pinChat: pinChat(set),
   renameChat: renameChat(set),
