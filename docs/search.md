@@ -192,7 +192,7 @@ the one door (`navigate`, or the opener the rest of the app uses).
 | Decision                | The Context drawer on its number, highlighted                               | The decision is gone                       |
 | Question                | The Questions lens with the question focused                                | The session is archived                    |
 | Issue                   | The issue lens of its session, or the Inbox record when it is starred       | Nothing to open                            |
-| Pull request            | Review, or its page on the code host when no session has the branch         | No session and no link                     |
+| Pull request            | Its pull request page, or its page on the code host when no session has it  | No session and no link                     |
 | Branch                  | The Diff of its mount                                                       | The branch left the session                |
 | Workflow                | The workflow studio with that workflow open (a step hit opens its workflow) | Its workspace is gone                      |
 | Comment                 | The Diff lens with the Diff notes drawer open                               | The session is archived                    |

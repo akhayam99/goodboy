@@ -14,18 +14,73 @@ onto its own paragraph.
 
 ## Goodboy v0.12.0
 
-Decisions in the context drawer now show why they were made, in a quiet line right under each one.
+Right click any object, reach any action from `Cmd+K`, find anything with `Cmd+F`, and take review comments from draft to push in one flow.
 
 This version updates your data in one direction. To go back to 0.11, restore the backup Goodboy made before updating.
 
 ### New
 
+#### Right click on everything
+<!-- gb area=app -->
+
+Sessions, agents, workflow runs, artifacts, pull requests, worktree rows, diff files and messages open a menu at the pointer with every action they have. The `⋯` menu, the right click and the command palette list the same actions in the same order, and an action that cannot run says why.
+
+`Shift+F10` and the Menu key open it on the focused row, and Control-click works like a right click.
+
+#### A command palette built around actions
+<!-- gb area=app image=palette -->
+
+`Cmd+K` opens on what you are looking at, named in a chip, with its actions first. Typing gives one list ranked by how well it matches and what you used lately, so a few letters of each word find the session. Sessions from every workspace are listed.
+
+The right arrow opens every action of a row, and a preview on the side describes the highlighted one.
+
+#### Search sessions, messages, plans and more
+<!-- gb area=app image=search -->
+
+`Cmd+F` searches sessions, messages, agents, plans, reports, decisions, questions, issues, pull requests, branches, workflows and diff comments. Narrow it by type, project, provider, status and date, from the filter row or typed (`type:plan`, `in:ledger-core`, `after:7d`). A result opens where it lives with the words marked, and `Cmd+G` walks the matches.
+
+The index lives in Goodboy's database on your machine. In a focused terminal, `Cmd+F` finds text in the scrollback.
+
 #### See why each decision was made
-<!-- gb area=sessions image=decision-why -->
+<!-- gb area=sessions -->
 
 When Goodboy records a decision from a session, it now keeps the reason that came with it. The Decisions tab of the context drawer shows that reason as a muted line under the decision, cut to two lines with Show more when it runs longer.
 
-Decisions you add yourself, decisions from agents and decisions recorded before this version have no reason line.
+#### Pull request, Diff and Review open as layers
+<!-- gb area=review -->
+
+From a session, the pull request, its Diff and its Review open as one path in the trail, and Back walks it. Every link to a pull request lands on its page, which shows the next step as its one main action: Mark ready for review on a draft, Squash and merge once approved and green.
+
+Merge and Close confirm right under the header.
+
+#### Review as one flow with one push
+<!-- gb area=review image=review -->
+
+Review lists the comments on the left, grouped as Open, Waiting for the push and Done, with the one you picked on the right. Draft fixes for several comments at once, then accept, edit or skip each reply. One Push in the header sends them all, and it confirms before it goes.
+
+Without a pull request, Review lists the session's notes with Open a pull request.
+
+#### Write a review as a form
+<!-- gb area=review -->
+
+Write review puts its form under the diff: your line comments with Edit and Delete, the verdict and the summary, then one button named after the verdict (Approve, Request changes, Submit comments). `Cmd+Enter` in the summary sends it.
+
+#### A quieter changelog list
+<!-- gb area=app -->
+
+The release list drops the date on every row. Only minor and major releases carry a mark, the ones that update your data in one direction.
+
+### Improved
+
+#### Worktree rows and the Diff offer the next step
+<!-- gb area=sessions -->
+
+The worktree row and the Diff header show one main action picked from the branch state, such as Rebase on main, Push 3 commits or Create PR. A branch whose rebase stopped reads Rebase stopped, next to Open terminal and Abort rebase.
+
+### Fixed
+
+- Menus no longer offer Open for the artifact, agent or run already on screen. <!-- gb area=app -->
+- The actions on an agent card are reachable with the keyboard and a screen reader. <!-- gb area=agents -->
 
 ## Goodboy v0.11.6
 
