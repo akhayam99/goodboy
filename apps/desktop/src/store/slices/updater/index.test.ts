@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const { checkMock, relaunchMock, invokeMock } = vi.hoisted(() => ({
   checkMock: vi.fn(),
   relaunchMock: vi.fn(async () => undefined),
-  invokeMock: vi.fn(async () => null),
+  invokeMock: vi.fn(async (_command: string, _args?: unknown): Promise<unknown> => null),
 }));
 
 vi.mock('@tauri-apps/plugin-updater', () => ({ check: checkMock }));
