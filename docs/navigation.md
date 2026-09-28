@@ -1161,7 +1161,8 @@ backup; otherwise it stays restored here and the page says nothing was pushed.
 The backup a restore leaves is never pruned. Backups made before the current
 naming move to their branch when exactly one local branch matches, and show
 read-only as older backups otherwise. History rewriter may write only its
-copy, that copy's own git admin folder and the object store. Temporary copies left by a crash are removed when the
+copy, that copy's own git admin folder, the object store and the packed-refs lock
+file git takes when it clears a rebase marker. Temporary copies left by a crash are removed when the
 app starts. Each copy lives in a folder Goodboy reserves atomically, with an
 owner file and a lock it holds while the copy is in use, and nothing deletes a
 copy without both, so a second window never removes a copy in use. `Branch vs main` sits in the file

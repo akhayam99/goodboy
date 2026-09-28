@@ -193,6 +193,7 @@ export const collectHistoryRewrite = async ({
 export type HistoryCopyGitDirs = {
   readonly gitDir: string;
   readonly objectsDir: string;
+  readonly packedRefsLock: string;
 };
 
 export const readHistoryCopyGitDirs = async ({

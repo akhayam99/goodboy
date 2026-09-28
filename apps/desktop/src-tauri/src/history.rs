@@ -2843,6 +2843,7 @@ pub async fn history_rewriter_collect(
 pub struct CopyGitDirs {
     pub git_dir: String,
     pub objects_dir: String,
+    pub packed_refs_lock: String,
 }
 
 pub(crate) fn copy_git_dirs(copy: &Path) -> Option<CopyGitDirs> {
@@ -2850,9 +2851,14 @@ pub(crate) fn copy_git_dirs(copy: &Path) -> Option<CopyGitDirs> {
     let repo = owner_repo(&root)?;
     let admin = own_admin_dir(copy, &repo)?;
     let objects = std::fs::canonicalize(repo.join("objects")).ok()?;
+    let common = objects.parent()?;
     Some(CopyGitDirs {
         git_dir: admin.to_string_lossy().to_string(),
         objects_dir: objects.to_string_lossy().to_string(),
+        packed_refs_lock: common
+            .join("packed-refs.lock")
+            .to_string_lossy()
+            .to_string(),
     })
 }
 
@@ -5014,6 +5020,10 @@ mod tests {
             common.join("worktrees").join("review")
         );
         assert!(!common.join("refs").join("heads").starts_with(&dirs.git_dir));
+        assert_eq!(
+            PathBuf::from(&dirs.packed_refs_lock),
+            common.join("packed-refs.lock")
+        );
         drop(guard);
         assert_eq!(copy_git_dirs(&l.root.join("copy")), None);
     }
@@ -5095,5 +5105,230 @@ mod tests {
         assert!(listed
             .iter()
             .any(|backup| backup.ref_name == restore_backup));
+    }
+
+    #[cfg(unix)]
+    struct WritableAgain(PathBuf);
+
+    #[cfg(unix)]
+    impl Drop for WritableAgain {
+        fn drop(&mut self) {
+            set_writable(&self.0, true, &[]);
+        }
+    }
+
+    #[cfg(unix)]
+    fn set_writable(path: &Path, is_writable: bool, keep: &[PathBuf]) {
+        use std::os::unix::fs::PermissionsExt;
+        if keep.iter().any(|kept| path.starts_with(kept)) {
+            return;
+        }
+        let Ok(meta) = std::fs::symlink_metadata(path) else {
+            return;
+        };
+        if meta.file_type().is_symlink() {
+            return;
+        }
+        if meta.is_dir() {
+            if is_writable {
+                let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755));
+            }
+            if let Ok(entries) = std::fs::read_dir(path) {
+                for entry in entries.flatten() {
+                    set_writable(&entry.path(), is_writable, keep);
+                }
+            }
+            if !is_writable {
+                let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o555));
+            }
+            return;
+        }
+        let mode = meta.permissions().mode();
+        let next = if is_writable {
+            mode | 0o200
+        } else {
+            mode & !0o222
+        };
+        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(next));
+    }
+
+    fn snapshot(root: &Path, paths: &[PathBuf]) -> std::collections::BTreeMap<PathBuf, Vec<u8>> {
+        let mut found = std::collections::BTreeMap::new();
+        let mut pending: Vec<PathBuf> = paths.to_vec();
+        while let Some(path) = pending.pop() {
+            let Ok(meta) = std::fs::symlink_metadata(&path) else {
+                continue;
+            };
+            if meta.is_dir() {
+                if let Ok(entries) = std::fs::read_dir(&path) {
+                    pending.extend(entries.flatten().map(|entry| entry.path()));
+                }
+                continue;
+            }
+            let relative = path.strip_prefix(root).unwrap_or(&path).to_path_buf();
+            found.insert(relative, std::fs::read(&path).unwrap_or_default());
+        }
+        found
+    }
+
+    fn git_in(copy: &Path, args: &[&str], todo: Option<&str>) -> std::process::Output {
+        let mut command = crate::path_env::command("git");
+        command
+            .args(args)
+            .current_dir(copy)
+            .env("GIT_EDITOR", "true")
+            .env("GIT_TERMINAL_PROMPT", "0");
+        if let Some(todo) = todo {
+            command.env("GIT_SEQUENCE_EDITOR", format!("cp {todo}"));
+        }
+        command.output().unwrap()
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_rewriter_git_sequence_works_inside_its_roots_and_leaves_the_user_refs_untouched() {
+        let l = ledger("rewriter-roots");
+        let other = temp_root("rewriter-roots-other").join("ledger-review");
+        git_ok(
+            &l.root,
+            &[
+                "worktree",
+                "add",
+                "-q",
+                "-b",
+                "review",
+                other.to_str().unwrap(),
+                &l.base,
+            ],
+        );
+        std::fs::write(l.root.join("export.ts"), "work in progress\n").unwrap();
+        git_ok(&l.root, &["stash", "push", "-q", "-m", "keep this"]);
+        git_ok(&l.root, &["pack-refs", "--all"]);
+        let copy = copy_path_of(&slug("rewriter-roots"));
+        let mut guard = create_copy(&l.root, &copy, &l.base).unwrap();
+        guard.is_kept = true;
+        let dirs = copy_git_dirs(&copy).unwrap();
+        let root = std::fs::canonicalize(&l.root).unwrap();
+        let common = root.join(".git");
+        let watched = vec![
+            common.join("refs"),
+            common.join("packed-refs"),
+            common.join("logs"),
+            common.join("worktrees").join("ledger-review"),
+            root.join("export.ts"),
+            root.join("ledger.ts"),
+        ];
+        let before = snapshot(&root, &watched);
+        assert!(before
+            .keys()
+            .any(|path| path.ends_with("refs/stash") || path.ends_with("logs/refs/stash")));
+
+        let todo = temp_root("rewriter-roots-todo").join("todo");
+        std::fs::write(
+            &todo,
+            [
+                &l.typo, &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests,
+            ]
+            .iter()
+            .map(|sha| format!("pick {sha}\n"))
+            .collect::<String>(),
+        )
+        .unwrap();
+        let keep = vec![
+            PathBuf::from(&dirs.objects_dir),
+            PathBuf::from(&dirs.git_dir),
+        ];
+        set_writable(&root, false, &keep);
+        let restore = WritableAgain(root.clone());
+        let lock = PathBuf::from(&dirs.packed_refs_lock);
+        assert_eq!(lock.parent(), Some(common.as_path()));
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&common, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        let names = |dir: &Path| -> Vec<String> {
+            let mut found: Vec<String> = std::fs::read_dir(dir)
+                .unwrap()
+                .flatten()
+                .map(|entry| entry.file_name().to_string_lossy().to_string())
+                .collect();
+            found.sort();
+            found
+        };
+        let common_names = names(&common);
+
+        let todo_text = todo.to_string_lossy().to_string();
+        let started = git_in(
+            &copy,
+            &["rebase", "-i", "--onto", "HEAD", &l.base, &l.tests],
+            Some(&todo_text),
+        );
+        assert!(
+            !started.status.success(),
+            "the planned conflict should stop the rebase"
+        );
+        std::fs::write(copy.join("export.ts"), "export v2\n").unwrap();
+        let added = git_in(&copy, &["add", "export.ts"], None);
+        assert!(
+            added.status.success(),
+            "{}",
+            String::from_utf8_lossy(&added.stderr)
+        );
+        let next = git_in(&copy, &["rebase", "--continue"], None);
+        assert!(
+            !next.status.success(),
+            "the second step should conflict too"
+        );
+        std::fs::write(copy.join("export.ts"), "export v2\n").unwrap();
+        git_in(&copy, &["add", "export.ts"], None);
+        let empty = git_in(
+            &copy,
+            &[
+                "commit",
+                "--allow-empty",
+                "-m",
+                "Add ledger export endpoint",
+            ],
+            None,
+        );
+        assert!(
+            empty.status.success(),
+            "{}",
+            String::from_utf8_lossy(&empty.stderr)
+        );
+        let finished = git_in(&copy, &["rebase", "--continue"], None);
+        assert!(
+            finished.status.success(),
+            "{}",
+            String::from_utf8_lossy(&finished.stderr)
+        );
+        let amended = git_in(
+            &copy,
+            &["commit", "--amend", "-m", "Add the export test fixtures"],
+            None,
+        );
+        assert!(
+            amended.status.success(),
+            "{}",
+            String::from_utf8_lossy(&amended.stderr)
+        );
+
+        assert_eq!(names(&common), common_names);
+        assert!(!lock.exists());
+        drop(restore);
+        assert_eq!(
+            git_ok(&copy, &["log", "-1", "--format=%s"]),
+            "Add the export test fixtures"
+        );
+        assert_eq!(
+            git_ok(
+                &copy,
+                &["rev-list", "--count", &format!("{}..HEAD", l.base)]
+            ),
+            "7"
+        );
+        assert_eq!(snapshot(&root, &watched), before);
+        drop(guard);
+        discard_copy(&copy.to_string_lossy());
     }
 }

@@ -26,6 +26,7 @@ describe('rewriterWritableRoots', () => {
     engine.readHistoryCopyGitDirs.mockResolvedValue({
       gitDir: `${COMMON}/worktrees/copy`,
       objectsDir: `${COMMON}/objects`,
+      packedRefsLock: `${COMMON}/packed-refs.lock`,
     });
   });
 
@@ -34,6 +35,7 @@ describe('rewriterWritableRoots', () => {
     expect(isWritable({ roots, path: `${COPY}/src/ledger.ts` })).toBe(true);
     expect(isWritable({ roots, path: `${COMMON}/worktrees/copy/HEAD` })).toBe(true);
     expect(isWritable({ roots, path: `${COMMON}/objects/ab/cdef` })).toBe(true);
+    expect(isWritable({ roots, path: `${COMMON}/packed-refs.lock` })).toBe(true);
   });
 
   it('never lets it write the branch refs, the stash or another checkout', async () => {
@@ -42,6 +44,8 @@ describe('rewriterWritableRoots', () => {
     expect(isWritable({ roots, path: `${COMMON}/refs/stash` })).toBe(false);
     expect(isWritable({ roots, path: `${COMMON}/worktrees/ledger-review/HEAD` })).toBe(false);
     expect(isWritable({ roots, path: `${COMMON}/packed-refs` })).toBe(false);
+    expect(isWritable({ roots, path: `${COMMON}/logs/refs/heads/hl/ledger-export` })).toBe(false);
+    expect(isWritable({ roots, path: `${COMMON}/config` })).toBe(false);
   });
 
   it('keeps only the copy when its git folders cannot be proven', async () => {

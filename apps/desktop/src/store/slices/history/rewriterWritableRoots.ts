@@ -8,5 +8,5 @@ export const rewriterWritableRoots = async ({
   copyPath,
 }: Params): Promise<ReadonlyArray<string>> => {
   const dirs = await readHistoryCopyGitDirs({ copyPath }).catch(() => null);
-  return dirs === null ? [copyPath] : [copyPath, dirs.gitDir, dirs.objectsDir];
+  return dirs === null ? [copyPath] : [copyPath, dirs.gitDir, dirs.objectsDir, dirs.packedRefsLock];
 };
