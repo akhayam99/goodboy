@@ -1137,8 +1137,9 @@ removes the copy on every exit. A stop names the step and why and says the
 branch is exactly as it was. Only a passing check moves the branch, after a
 backup ref: the files move first with a two-way `read-tree` that refuses to
 overwrite local or untracked work (ignored files and folders included), then
-HEAD moves with a compare and swap, and nothing ever runs a hard reset on your
-checkout. Commits before the first change keep their shas, so an edit to local
+the branch ref moves with a compare and swap while HEAD still points at that
+branch, and nothing ever runs a hard reset on your checkout. Empty commits are
+kept; only what the plan removes or folds disappears. Commits before the first change keep their shas, so an edit to local
 commits never rewrites what is online. The push always carries
 `--force-with-lease` on the online sha the plan already contains
 (`history_remote_lease`), never a bare force or a sha read after the trial;
@@ -1148,12 +1149,13 @@ plan`, which fetches the commits origin gained, replays them on top of the
 rewrite in a copy and leaves `Push with lease` on the new origin sha. The
 result section lists what changed in the action colors, says whether the
 online copy was updated, what the check found, and the backup, with `Restore
-it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, kept
-30 days; `Backups` in the page menu lists them with `Restore previous
+it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, in a
+namespace made from the full branch name, kept 30 days; `Backups` in the page menu lists them with `Restore previous
 history`, which moves the branch back and, on a branch with an upstream,
 pushes it with a lease. Temporary copies left by a crash are removed when the
-app starts, but only copies that carry Goodboy's owner marker, match their
-registered worktree and are not locked. `Branch vs main` sits in the file
+app starts. Each copy lives in a folder Goodboy reserves atomically, with an
+owner file and a lock it holds while the copy is in use, and nothing deletes a
+copy without both, so a second window never removes a copy in use. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
