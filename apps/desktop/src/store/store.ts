@@ -111,6 +111,7 @@ import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
 import type { CreatePrInput } from './slices/github/createPrForSession';
 import type { RefreshPrOptions } from './slices/github/refreshMountPr';
+import type { PrWriteOptions } from './slices/github/prWriteOptions';
 import { createGitlabMrSlice, initialGitlabMrState } from './slices/gitlab-mr';
 import type { CreateMrInput, MergeMrInput, RefreshMrOptions } from './slices/gitlab-mr';
 import {
@@ -924,9 +925,14 @@ type AppActions = {
     mountId: MountId;
   }): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: string }>;
   createPrForSession(input: CreatePrInput): Promise<void>;
-  markPrReady(sessionId: SessionId, prNumber?: number): Promise<void>;
+  markPrReady(sessionId: SessionId, prNumber?: number, opts?: PrWriteOptions): Promise<void>;
   convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
-  mergePr(sessionId: SessionId, prNumber?: number, method?: PrMergeMethod): Promise<void>;
+  mergePr(
+    sessionId: SessionId,
+    prNumber?: number,
+    method?: PrMergeMethod,
+    opts?: PrWriteOptions,
+  ): Promise<void>;
   refreshSessionMr(sessionId: SessionId, opts?: RefreshMrOptions): Promise<void>;
   loadReviewDrafts(sessionId: SessionId): Promise<void>;
   addReviewDraft(input: AddReviewDraftInput): Promise<PrReviewDraft>;

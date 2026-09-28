@@ -408,7 +408,10 @@ export const useSuggestionActions = ({
             action: 'ready',
             prNumber: suggestion.payload.prNumber,
           }),
-          run: () => markPrReady(sessionId, suggestion.payload.prNumber),
+          run: () =>
+            markPrReady(sessionId, suggestion.payload.prNumber, {
+              mountId: suggestion.payload.mountId,
+            }),
         },
         onDismiss: null,
       };
@@ -424,7 +427,9 @@ export const useSuggestionActions = ({
             prNumber: suggestion.payload.prNumber,
           }),
           run: () =>
-            mergePr(sessionId, suggestion.payload.prNumber, suggestion.payload.defaultMethod),
+            mergePr(sessionId, suggestion.payload.prNumber, suggestion.payload.defaultMethod, {
+              mountId: suggestion.payload.mountId,
+            }),
         },
         onDismiss: null,
       };

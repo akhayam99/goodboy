@@ -733,7 +733,7 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.label).toBe('Mark ready');
     actions.primary?.run();
 
-    expect(spies.markPrReady).toHaveBeenCalledWith(SESSION_ID, 618);
+    expect(spies.markPrReady).toHaveBeenCalledWith(SESSION_ID, 618, { mountId: WEB_MOUNT_ID });
   });
 
   it('merges the named pull request behind a confirm', () => {
@@ -756,7 +756,9 @@ describe('useSuggestionActions', () => {
     expect(actions.primary?.requiresConfirm).toBe(true);
     actions.primary?.run();
 
-    expect(spies.mergePr).toHaveBeenCalledWith(SESSION_ID, 618, 'squash');
+    expect(spies.mergePr).toHaveBeenCalledWith(SESSION_ID, 618, 'squash', {
+      mountId: WEB_MOUNT_ID,
+    });
   });
 
   it('removes the worktree on close, keeps it on dismiss', () => {
