@@ -535,10 +535,15 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
     `~/.config`, `~/.goodboy`, `~/.claude`, `~/.codex`, keychains and `.env`
     files. The question goes after `--`, so a question that looks like a flag
     stays text.
-  - Codex runs with the read-only sandbox, `--ignore-user-config`,
-    `--ignore-rules`, `--ephemeral` and `-c mcp_servers={}`. Its read-only
-    sandbox can still read any file on disk; only Claude is scoped to the
-    project folders.
+  - Codex runs with the read-only sandbox (`-s read-only`),
+    `--ignore-user-config`, `--ignore-rules`, `--ephemeral` and
+    `-c mcp_servers={}`. This is a known limit, kept on purpose: the sandbox
+    lets Codex read any file your user can read, not only the project
+    folders. It blocks writes and network access for every command Codex
+    runs, so no command can change a file or send one anywhere. What Codex
+    reads goes only to its own model, as in any Codex session. Only Claude is
+    confined to the project folders; pick Claude for a chat that must not
+    look outside them.
   - Cursor, Gemini, opencode, OpenRouter and Moonshot are refused with "Chat
     needs a provider that can run read-only: Claude or Codex". m212 keeps
     `chats.provider` to `anthropic` and `codex`, and `CHAT_PROVIDER_IDS` in
