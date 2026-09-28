@@ -20,6 +20,7 @@ const BATCHED_REPLAY_MIN: (u32, u32) = (2, 45);
 const PREDICT_REF: &str = "refs/goodboy/predict";
 const BACKUP_PREFIX: &str = "refs/goodboy/backup";
 const BACKUP_KEEP_SECS: u64 = 30 * 24 * 60 * 60;
+const KEPT_BACKUP_CAP: usize = 20;
 const LEASE_HOLDER: &str = "history-rewrite";
 const JOURNAL_FILE: &str = "goodboy-history.journal";
 const COPY_PREFIX: &str = "goodboy-history-";
@@ -2175,21 +2176,48 @@ pub(crate) fn prune_backups(cwd: &Path) {
     prune_backups_before(cwd, now_secs().saturating_sub(BACKUP_KEEP_SECS));
 }
 
+fn stamp_of(ref_name: &str) -> Option<(bool, u128)> {
+    let stamp = ref_name.rsplit('/').next()?;
+    let digits = stamp.strip_prefix(KEPT_STAMP);
+    let nanos = digits.unwrap_or(stamp).parse::<u128>().ok()?;
+    Some((digits.is_some(), nanos))
+}
+
 fn prune_backups_before(cwd: &Path, cutoff: u64) {
     let Ok(refs) = backup_refs(cwd) else {
         return;
     };
+    let mut spaces: HashMap<String, Vec<(bool, u128, String, String)>> = HashMap::new();
     for (ref_name, sha, _) in refs {
-        let is_kept = ref_name
-            .rsplit('/')
-            .next()
-            .is_some_and(|stamp| stamp.starts_with(KEPT_STAMP));
-        if is_kept || legacy_backup_of(&ref_name).is_some() || !ref_name.contains("/b-") {
+        if legacy_backup_of(&ref_name).is_some() || !ref_name.contains("/b-") {
             continue;
         }
-        let created = created_at_of(&ref_name);
-        if created > 0 && created < cutoff {
-            let _ = git_run(cwd, &["update-ref", "-d", &ref_name, &sha], None, None);
+        let (Some((space, _)), Some((is_kept, nanos))) =
+            (ref_name.rsplit_once('/'), stamp_of(&ref_name))
+        else {
+            continue;
+        };
+        spaces
+            .entry(space.to_string())
+            .or_default()
+            .push((is_kept, nanos, ref_name.clone(), sha));
+    }
+    for backups in spaces.values_mut() {
+        backups.sort_by(|left, right| right.1.cmp(&left.1));
+        let mut kept_seen = 0;
+        for (index, (is_kept, _, ref_name, sha)) in backups.iter().enumerate() {
+            if *is_kept {
+                kept_seen += 1;
+            }
+            let is_prunable = if *is_kept {
+                kept_seen > KEPT_BACKUP_CAP
+            } else {
+                let created = created_at_of(ref_name);
+                created > 0 && created < cutoff
+            };
+            if index > 0 && is_prunable {
+                let _ = git_run(cwd, &["update-ref", "-d", ref_name, sha], None, None);
+            }
         }
     }
 }
@@ -5266,6 +5294,47 @@ mod tests {
             ),
             deleted
         );
+    }
+
+    #[test]
+    fn pruning_keeps_twenty_restore_backups_and_always_the_newest_backup_of_a_branch() {
+        let b = branch("prune-caps");
+        let kept_space = backup_namespace("feature");
+        let stamp = |index: u128| 1_000_000_000_000_000_000u128 + index * 1_000_000_000;
+        for index in 0..22 {
+            git_ok(
+                &b.root,
+                &[
+                    "update-ref",
+                    &format!("{kept_space}/{KEPT_STAMP}{}", stamp(index)),
+                    &b.a,
+                ],
+            );
+        }
+        let lone = format!("{}/{}", backup_namespace("team/lone"), stamp(1));
+        git_ok(&b.root, &["update-ref", &lone, &b.b]);
+        let older = format!("{}/{}", backup_namespace("team/pair"), stamp(1));
+        let newer = format!("{}/{}", backup_namespace("team/pair"), stamp(2));
+        git_ok(&b.root, &["update-ref", &older, &b.b]);
+        git_ok(&b.root, &["update-ref", &newer, &b.c]);
+
+        prune_backups_before(&b.root, u64::MAX);
+
+        let left = lines_of(&git_ok(
+            &b.root,
+            &["for-each-ref", "--format=%(refname)", BACKUP_PREFIX],
+        ));
+        let kept: Vec<&String> = left
+            .iter()
+            .filter(|name| name.starts_with(&kept_space))
+            .collect();
+        assert_eq!(kept.len(), 20);
+        assert!(left.contains(&format!("{kept_space}/{KEPT_STAMP}{}", stamp(21))));
+        assert!(!left.contains(&format!("{kept_space}/{KEPT_STAMP}{}", stamp(0))));
+        assert!(!left.contains(&format!("{kept_space}/{KEPT_STAMP}{}", stamp(1))));
+        assert!(left.contains(&lone));
+        assert!(left.contains(&newer));
+        assert!(!left.contains(&older));
     }
 
     #[test]
