@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { ChatId } from '@goodboy/types';
 import { ChatStudio } from '../../../../features/workspace-chat/components/ChatStudio';
+import { OPEN_COMMAND_PALETTE_EVENT } from '../../../../features/onboarding/openCommandPaletteEvent';
+import { PaletteOverlay } from '../../../../features/palette/components/PaletteOverlay';
 import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import { useAppStore } from '../../../../store';
 import { StudioFrame as AppStudioFrame } from '../../StudioFrame';
@@ -38,6 +40,7 @@ const initialChatId = (): ChatId | null =>
 
 export const ChatRoomScene = () => {
   const [isReady, setIsReady] = useState(false);
+  const [paletteQuery, setPaletteQuery] = useState<string | null>(() => sceneParam({ key: 'ask' }));
   const chatId = useAppStore((state) =>
     state.appStudio?.kind === 'chat' ? state.appStudio.chatId : null,
   );
@@ -45,9 +48,21 @@ export const ChatRoomScene = () => {
   useEffect(() => {
     seedBoardScene();
     seedStudioChrome();
-    useAppStore.setState({ providers: [CLAUDE, OPENCODE] });
+    useAppStore.setState((state) => ({
+      providers: [CLAUDE, OPENCODE],
+      projects: state.projects.map((project) => ({
+        ...project,
+        rootPath: project.rootPath.replace(/^~/, '/mock'),
+      })),
+    }));
     useAppStore.getState().openStudio({ studio: { kind: 'chat', chatId: initialChatId() } });
     setIsReady(true);
+  }, []);
+
+  useEffect(() => {
+    const open = () => setPaletteQuery('');
+    window.addEventListener(OPEN_COMMAND_PALETTE_EVENT, open);
+    return () => window.removeEventListener(OPEN_COMMAND_PALETTE_EVENT, open);
   }, []);
 
   if (!isReady) {
@@ -55,13 +70,18 @@ export const ChatRoomScene = () => {
   }
 
   return (
-    <StudioFrame
-      target={null}
-      main={
-        <AppStudioFrame kind="chat" onClose={noop}>
-          <ChatStudio workspaceId={WORKSPACE_ID} chatId={chatId} onClose={noop} />
-        </AppStudioFrame>
-      }
-    />
+    <>
+      <StudioFrame
+        target={null}
+        main={
+          <AppStudioFrame kind="chat" onClose={noop}>
+            <ChatStudio workspaceId={WORKSPACE_ID} chatId={chatId} onClose={noop} />
+          </AppStudioFrame>
+        }
+      />
+      {paletteQuery === null ? null : (
+        <PaletteOverlay initialQuery={paletteQuery} onClose={() => setPaletteQuery(null)} />
+      )}
+    </>
   );
 };

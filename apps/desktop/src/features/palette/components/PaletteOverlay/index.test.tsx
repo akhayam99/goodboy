@@ -10,7 +10,7 @@ vi.mock('../../hooks/useSessionsEverywhere', () => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { AgentId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
+import type { AgentId, ChatId, IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import type { SessionTitleRef } from '@goodboy/db';
 import {
   STORE_IMPORT_TIMEOUT_MS,
@@ -404,5 +404,59 @@ describe('PaletteOverlay on a focused commit row', () => {
 
     expect(screen.getByText('For this session')).toBeDefined();
     release();
+  });
+});
+
+describe('PaletteOverlay, Ask in Chat', () => {
+  it('puts Ask in Chat first on every search, with the query, above Jump to', () => {
+    const { input } = openIn(null);
+
+    type(input, 'pay export');
+
+    expect(optionNames()[0]).toBe('Ask in Chat');
+    expect(
+      screen.getByRole('option', { name: 'Ask in Chat' }).getAttribute('aria-description'),
+    ).toBe('"pay export"');
+    expect(screen.getByText('Jump to')).toBeDefined();
+  });
+
+  it('keeps the best match picked for a name, and Ask in Chat picked for a question', () => {
+    const { input } = openIn(null);
+
+    type(input, 'pay export');
+    expect(selectedName()).toBe('Speed up the payout export for large merchants');
+
+    type(input, 'Where do we validate IBANs?');
+    expect(selectedName()).toBe('Ask in Chat');
+  });
+
+  it('opens a new chat with the query as its first message on Enter', async () => {
+    const createChat = vi.fn(async () => 'chat-ask' as ChatId);
+    const sendChatMessage = vi.fn(async () => undefined);
+    useAppStore.setState({ createChat, sendChatMessage });
+    const { input, onClose } = openIn(null);
+
+    type(input, 'Where do we validate IBANs?');
+    await act(async () => {
+      fireEvent.keyDown(input, { key: 'Enter' });
+    });
+
+    expect(onClose).toHaveBeenCalled();
+    expect(createChat).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: useAppStore.getState().currentWorkspaceId }),
+    );
+    expect(useAppStore.getState().appStudio).toEqual({ kind: 'chat', chatId: 'chat-ask' });
+    expect(sendChatMessage).toHaveBeenCalledWith({
+      chatId: 'chat-ask',
+      content: 'Where do we validate IBANs?',
+    });
+  });
+
+  it('offers no Ask in Chat on an empty input or a prefixed search', () => {
+    const { input } = openIn(null);
+
+    expect(optionNames()).not.toContain('Ask in Chat');
+    type(input, '>refresh');
+    expect(optionNames()).not.toContain('Ask in Chat');
   });
 });

@@ -8,7 +8,7 @@ export const CommandCenter = () => {
   const workspace = useCurrentWorkspace();
   const glyph = shortcutGlyphs('palette.open');
   const place = workspace?.name ?? 'Goodboy';
-  const label = `Search ${place} (${glyph})`;
+  const label = `Search or ask in ${place} (${glyph})`;
 
   return (
     <button
@@ -20,8 +20,8 @@ export const CommandCenter = () => {
     >
       <Search size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       <span className="hidden min-w-0 flex-1 truncate text-left @min-chrome-labels/topbar:inline">
-        Search
-        <span className="hidden @min-chrome-wide/topbar:inline"> {place}</span>
+        Search or ask
+        <span className="hidden @min-chrome-wide/topbar:inline"> in {place}</span>
       </span>
       <kbd className="shrink-0 font-sans text-secondary text-faint-foreground">{glyph}</kbd>
     </button>

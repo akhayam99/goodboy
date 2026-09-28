@@ -161,7 +161,7 @@ Reach any screen without the mouse. **⌘K** opens on what you are looking at, a
   <img src="./docs/readme/s29-palette-light.webp" alt="The command palette on the resolver agent of payments-api 318: its actions first, then Go to">
 </picture>
 
-Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too.
+Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
 
 ### Search
 
