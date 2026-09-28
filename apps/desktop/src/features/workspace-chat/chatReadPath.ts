@@ -7,7 +7,11 @@ type Params = {
 
 const PATH_KEYS = ['file_path', 'filePath', 'path'] as const;
 
-const pathOf = (input: unknown): string | null => {
+type InputParams = {
+  readonly input: unknown;
+};
+
+const pathOf = ({ input }: InputParams): string | null => {
   if (typeof input !== 'object' || input === null) {
     return null;
   }
@@ -24,7 +28,7 @@ export const chatReadPath = ({ event, workingDir }: Params): string | null => {
   if (event.kind !== 'tool_call_start' || !/read/i.test(event.toolName)) {
     return null;
   }
-  const path = pathOf(event.input);
+  const path = pathOf({ input: event.input });
   if (path === null) {
     return null;
   }

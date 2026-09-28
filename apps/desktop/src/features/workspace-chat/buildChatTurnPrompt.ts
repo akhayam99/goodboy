@@ -8,15 +8,23 @@ type Params = {
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_HISTORY_CHARS = 24_000;
 
-const speakerOf = (message: ChatMessage): string =>
+type MessageParams = {
+  readonly message: ChatMessage;
+};
+
+const speakerOf = ({ message }: MessageParams): string =>
   message.role === 'user' ? 'User' : 'Assistant';
 
-const usableHistory = (history: ReadonlyArray<ChatMessage>): ReadonlyArray<string> => {
+type HistoryParams = {
+  readonly history: ReadonlyArray<ChatMessage>;
+};
+
+const usableHistory = ({ history }: HistoryParams): ReadonlyArray<string> => {
   const lines = history
     .filter((message) => message.content.trim() !== '')
     .filter((message) => message.role === 'user' || message.status !== 'failed')
     .slice(-MAX_HISTORY_MESSAGES)
-    .map((message) => `${speakerOf(message)}: ${message.content.trim()}`);
+    .map((message) => `${speakerOf({ message })}: ${message.content.trim()}`);
   const kept: string[] = [];
   let total = 0;
   for (const line of [...lines].reverse()) {
@@ -30,7 +38,7 @@ const usableHistory = (history: ReadonlyArray<ChatMessage>): ReadonlyArray<strin
 };
 
 export const buildChatTurnPrompt = ({ history, question }: Params): string => {
-  const earlier = usableHistory(history);
+  const earlier = usableHistory({ history });
   if (earlier.length === 0) {
     return question.trim();
   }

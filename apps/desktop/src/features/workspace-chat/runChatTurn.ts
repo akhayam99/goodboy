@@ -42,7 +42,11 @@ type ChatEnvelope =
     }
   | { readonly runId: string; readonly type: 'error'; readonly message: string };
 
-const messageOf = (error: unknown): string => {
+type ErrorParams = {
+  readonly error: unknown;
+};
+
+const messageOf = ({ error }: ErrorParams): string => {
   if (error instanceof Error) {
     return error.message;
   }
@@ -53,6 +57,22 @@ const messageOf = (error: unknown): string => {
     }
   }
   return String(error);
+};
+
+type LineParams = {
+  readonly line: string;
+};
+
+type EndParams = {
+  readonly envelope: Extract<ChatEnvelope, { readonly type: 'end' }>;
+};
+
+type SettleParams = {
+  readonly outcome: ChatTurnOutcome;
+};
+
+type EnvelopeParams = {
+  readonly envelope: ChatEnvelope;
 };
 
 const isoNow = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
@@ -69,7 +89,7 @@ export const runChatTurn = async ({
   let failure: string | null = null;
   const unparsed: string[] = [];
 
-  const handleLine = (line: string) => {
+  const handleLine = ({ line }: LineParams) => {
     const events = parseProviderLine({ provider: request.provider, line, ctx });
     if (events.length === 0 && line.trim() !== '' && !line.trim().startsWith('{')) {
       unparsed.push(line.trim());
@@ -91,12 +111,9 @@ export const runChatTurn = async ({
     }
   };
 
-  const endOutcome = (envelope: {
-    readonly exit_code: number | null;
-    readonly stderr: string;
-  }): ChatTurnOutcome => {
+  const endOutcome = ({ envelope }: EndParams): ChatTurnOutcome => {
     for (const line of assembler.flush()) {
-      handleLine(line);
+      handleLine({ line });
     }
     if (failure !== null && !hasText) {
       return { status: 'failed', error: failure };
@@ -111,7 +128,7 @@ export const runChatTurn = async ({
   return new Promise<ChatTurnOutcome>((resolve) => {
     let isSettled = false;
     let stopListening: (() => void) | null = null;
-    const settle = (outcome: ChatTurnOutcome) => {
+    const settle = ({ outcome }: SettleParams) => {
       if (isSettled) {
         return;
       }
@@ -119,15 +136,15 @@ export const runChatTurn = async ({
       stopListening?.();
       resolve(outcome);
     };
-    const handleEnvelope = (envelope: ChatEnvelope) => {
+    const handleEnvelope = ({ envelope }: EnvelopeParams) => {
       switch (envelope.type) {
         case 'line': {
           const assembled = assembler.push({ line: envelope.line });
           if (assembled.kind === 'line') {
-            handleLine(assembled.line);
+            handleLine({ line: assembled.line });
           }
           if (assembled.kind === 'overflow') {
-            assembled.lines.forEach(handleLine);
+            assembled.lines.forEach((line) => handleLine({ line }));
           }
           return;
         }
@@ -135,7 +152,7 @@ export const runChatTurn = async ({
           failure = envelope.message;
           return;
         case 'end':
-          settle(endOutcome(envelope));
+          settle({ outcome: endOutcome({ envelope }) });
           return;
         default: {
           const exhaustive: never = envelope;
@@ -147,7 +164,7 @@ export const runChatTurn = async ({
       if (event.payload.runId !== request.runId) {
         return;
       }
-      handleEnvelope(event.payload);
+      handleEnvelope({ envelope: event.payload });
     })
       .then((unlisten) => {
         if (isSettled) {
@@ -170,6 +187,8 @@ export const runChatTurn = async ({
           },
         });
       })
-      .catch((error: unknown) => settle({ status: 'failed', error: messageOf(error) }));
+      .catch((error: unknown) =>
+        settle({ outcome: { status: 'failed', error: messageOf({ error }) } }),
+      );
   });
 };

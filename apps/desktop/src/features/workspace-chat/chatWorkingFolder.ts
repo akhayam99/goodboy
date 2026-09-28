@@ -9,12 +9,20 @@ type Params = {
 
 const MIN_SHARED_SEGMENTS = 3;
 
-const trimTrailingSlash = (path: string): string => path.trim().replace(/\/+$/, '');
+type PathParams = {
+  readonly path: string;
+};
 
-const segmentsOf = (path: string): ReadonlyArray<string> =>
+const trimTrailingSlash = ({ path }: PathParams): string => path.trim().replace(/\/+$/, '');
+
+const segmentsOf = ({ path }: PathParams): ReadonlyArray<string> =>
   path.split('/').filter((segment) => segment !== '');
 
-const sharedPrefix = (paths: ReadonlyArray<ReadonlyArray<string>>): ReadonlyArray<string> => {
+type SharedPrefixParams = {
+  readonly paths: ReadonlyArray<ReadonlyArray<string>>;
+};
+
+const sharedPrefix = ({ paths }: SharedPrefixParams): ReadonlyArray<string> => {
   const [first, ...rest] = paths;
   if (first === undefined) {
     return [];
@@ -29,16 +37,23 @@ const sharedPrefix = (paths: ReadonlyArray<ReadonlyArray<string>>): ReadonlyArra
   return shared;
 };
 
-const isInside = ({ root, folder }: { readonly root: string; readonly folder: string }) =>
+type InsideParams = {
+  readonly root: string;
+  readonly folder: string;
+};
+
+const isInside = ({ root, folder }: InsideParams): boolean =>
   root === folder || root.startsWith(`${folder}/`);
 
 export const chatWorkingFolder = ({ roots }: Params): ChatFolder | null => {
-  const cleaned = [...new Set(roots.map(trimTrailingSlash).filter((root) => root !== ''))];
+  const cleaned = [
+    ...new Set(roots.map((path) => trimTrailingSlash({ path })).filter((root) => root !== '')),
+  ];
   const [first] = cleaned;
   if (first === undefined) {
     return null;
   }
-  const shared = sharedPrefix(cleaned.map(segmentsOf));
+  const shared = sharedPrefix({ paths: cleaned.map((path) => segmentsOf({ path })) });
   const isAbsolute = cleaned.every((root) => root.startsWith('/'));
   const canShare = cleaned.length > 1 && isAbsolute && shared.length >= MIN_SHARED_SEGMENTS;
   const workingDir = canShare ? `/${shared.join('/')}` : first;
