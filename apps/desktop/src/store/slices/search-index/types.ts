@@ -12,7 +12,24 @@ export type ProjectSearchParams = {
   readonly isExcluded: boolean;
 };
 
+export type StartViewFindParams = {
+  readonly query: string;
+  readonly target: string | null;
+};
+
+export type StepViewFindParams = {
+  readonly delta: 1 | -1;
+};
+
+export type RememberSearchParams = {
+  readonly text: string;
+};
+
 export type SearchIndexSlice = SearchIndexState & {
+  startViewFind(params: StartViewFindParams): void;
+  stepViewFind(params: StepViewFindParams): void;
+  stopViewFind(): void;
+  rememberSearchText(params: RememberSearchParams): void;
   runSearch(params: RunSearchParams): Promise<ReadonlyArray<SearchHit>>;
   loadSearchIndexStatus(): Promise<void>;
   backfillSearchIndex(): Promise<void>;

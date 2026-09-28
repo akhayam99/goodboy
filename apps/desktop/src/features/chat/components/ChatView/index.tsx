@@ -481,6 +481,7 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
             </div>
           ) : (
             <ul
+              data-find-root
               className={cn('flex flex-col gap-2.5', PANE_RHYTHM.column)}
               aria-live="polite"
               aria-relevant="additions"

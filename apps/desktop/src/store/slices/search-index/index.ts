@@ -33,6 +33,27 @@ const backfillUntilDone = async (get: GetFn): Promise<void> => {
 
 export const createSearchIndexSlice = (set: SetFn, get: GetFn): SearchIndexSlice => ({
   ...searchIndexInitialState,
+  startViewFind: ({ query, target }) => {
+    set({ viewFind: { query, target, startedAt: Date.now(), steps: 0 }, lastSearchText: query });
+  },
+  stepViewFind: ({ delta }) => {
+    const current = get().viewFind;
+    if (current !== null) {
+      set({ viewFind: { ...current, target: null, steps: current.steps + delta } });
+      return;
+    }
+    const text = get().lastSearchText;
+    if (text.trim().length === 0) {
+      return;
+    }
+    set({ viewFind: { query: text, target: null, startedAt: Date.now(), steps: 0 } });
+  },
+  stopViewFind: () => {
+    set({ viewFind: null });
+  },
+  rememberSearchText: ({ text }) => {
+    set({ lastSearchText: text });
+  },
   runSearch: async ({ query }) => searchIndex({ db: tauriDatabase, query, now: Date.now() }),
   loadSearchIndexStatus: async () => {
     const status = await readSearchIndexStatus({ db: tauriDatabase });

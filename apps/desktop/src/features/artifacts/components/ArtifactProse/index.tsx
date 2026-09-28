@@ -9,6 +9,7 @@ type Props = {
 export const ArtifactProse = ({ text, hasLead = true }: Props) => (
   <div
     data-testid="artifact-prose"
+    data-find-root
     data-lead={hasLead ? 'true' : 'false'}
     className="artifact-prose min-w-0"
   >
