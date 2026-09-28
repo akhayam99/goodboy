@@ -1006,7 +1006,7 @@ mod tests {
     }
 
     #[test]
-    fn no_provider_gets_write_access_to_the_goodboy_data() {
+    fn no_provider_add_dir_contains_the_goodboy_data() {
         let empty: Vec<String> = vec![];
         let socket_directory = crate::query_bridge::socket_directory()
             .and_then(|path| path.to_str())
@@ -1020,7 +1020,7 @@ mod tests {
         ];
         let mut args = make_args(None, None, &empty);
         args.query_socket_directory = Some(&socket_directory);
-        for binary in ["claude", "codex", "cursor-agent"] {
+        for binary in ["claude", "codex", "cursor-agent", "agy", "opencode"] {
             for mode in ["acceptEdits", "bypassPermissions", "default"] {
                 args.permission_mode = mode;
                 let cli = build_provider_cli_args(binary, &args);

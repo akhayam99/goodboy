@@ -1164,11 +1164,14 @@ The backups restores leave skip the 30 days and keep the newest 20 per
 branch, never dropping one that is the only ref to its commits, and the
 newest backup of a branch is never pruned. Backups made before the current
 naming never move: they show read-only as older backups under every branch
-whose name matches, can't be restored from the page and are never pruned. History rewriter may write only its
-copy, that copy's own git admin folder, the object store and the packed-refs lock
-file git takes when it clears a rebase marker. Temporary copies left by a crash are removed when the
+whose name matches, can't be restored from the page and are never pruned. History rewriter's writable directories
+are its copy, that copy's own git admin folder, the object store and the
+packed-refs lock file git takes when it clears a rebase marker. They confine
+it only under an OS sandbox or permission check (Codex in `workspace-write`,
+Claude outside `bypassPermissions`); in `bypassPermissions`, the default, the
+kickoff's rules are what keep it inside the copy. Temporary copies left by a crash are removed when the
 app starts. Each copy lives in a folder Goodboy reserves atomically under
-`~/.goodboy/history-copies`, never in a temp folder an agent can write, with an
+`~/.goodboy/history-copies`, never in a temp folder a sandboxed agent can write, with an
 owner file and a lock it holds while the copy is in use, and nothing deletes a
 copy without both, so a second window never removes a copy in use. The owner
 file records the copy's git admin folder when the copy is made; the rewriter's
