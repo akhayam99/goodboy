@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
+const { invoke, Channel } = vi.hoisted(() => ({
+  invoke: vi.fn(),
+  Channel: class {
+    onmessage: (message: unknown) => void = () => undefined;
+  },
+}));
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke, Channel }));
 
 import {
   applyHistoryPlan,
@@ -10,6 +15,8 @@ import {
   listHistoryBackups,
   predictHistoryPlan,
   pushWithLease,
+  readHistoryGraph,
+  runHistoryPlan,
   restoreHistoryBackup,
   tryHistoryPlan,
 } from './historyEngine';
@@ -40,7 +47,34 @@ describe('history engine bridge', () => {
           { sha: 'a', verb: 'pick', message: null, target: null },
           { sha: 'b', verb: 'fixup', message: null, target: 'a' },
         ],
+        onto: null,
       },
+    });
+  });
+
+  it('runs the plan on a copy with the branch and streams each step back', async () => {
+    const seen: unknown[] = [];
+    await runHistoryPlan({
+      plan: { worktreePath: '/w', base: 'b', head: 'h', steps: [], onto: 'main-sha' },
+      branch: 'hl/ledger-export',
+      onProgress: (progress) => seen.push(progress),
+    });
+    const [command, payload] = invoke.mock.calls[0] ?? [];
+    expect(command).toBe('history_plan_run');
+    expect(payload.args).toEqual({
+      plan: { worktreePath: '/w', base: 'b', head: 'h', steps: [], onto: 'main-sha' },
+      branch: 'hl/ledger-export',
+    });
+    payload.onProgress.onmessage({ stage: 'step', index: 1, total: 2, sha: 'a' });
+    expect(seen).toEqual([{ stage: 'step', index: 1, total: 2, sha: 'a' }]);
+  });
+
+  it('reads the graph for the branch against its base', async () => {
+    await readHistoryGraph({ worktreePath: '/w', baseBranch: 'main', branch: 'hl/ledger-export' });
+    expect(invoke).toHaveBeenCalledWith('history_graph', {
+      worktreePath: '/w',
+      baseBranch: 'main',
+      branch: 'hl/ledger-export',
     });
   });
 

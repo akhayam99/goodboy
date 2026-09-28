@@ -16,6 +16,7 @@ export type HistoryPlanArgs = {
   readonly base: string;
   readonly head: string;
   readonly steps: ReadonlyArray<HistoryStep>;
+  readonly onto?: string | null;
 };
 
 export type HistoryStepOutcome = 'clean' | 'conflict' | 'empty' | 'dropped' | 'blocked';
@@ -64,6 +65,52 @@ export type HistoryTrialResult = {
   readonly stop: HistoryTrialStop | null;
   readonly copyPath: string | null;
   readonly order: ReadonlyArray<HistoryPlannedStep>;
+  readonly check: HistoryTrialCheck | null;
+};
+
+export type HistoryTrialCheck = {
+  readonly isPassed: boolean;
+  readonly expectsSameCode: boolean;
+  readonly problems: ReadonlyArray<string>;
+  readonly unexpectedFiles: ReadonlyArray<string>;
+  readonly removedFiles: ReadonlyArray<string>;
+};
+
+export type HistoryTrialProgress =
+  | { readonly stage: 'copy' }
+  | {
+      readonly stage: 'step';
+      readonly index: number;
+      readonly total: number;
+      readonly sha: string;
+    }
+  | { readonly stage: 'check' }
+  | { readonly stage: 'cleanup' };
+
+export type HistoryRunOutcome =
+  | { readonly kind: 'blocked'; readonly reason: string }
+  | { readonly kind: 'tried'; readonly result: HistoryTrialResult };
+
+export type HistoryGraphCommit = {
+  readonly sha: string;
+  readonly subject: string;
+  readonly author: string;
+  readonly timestamp: number;
+};
+
+export type HistoryCommitFiles = {
+  readonly sha: string;
+  readonly files: ReadonlyArray<string>;
+};
+
+export type HistoryGraph = {
+  readonly baseRef: string;
+  readonly mergeBase: HistoryGraphCommit;
+  readonly mainHead: string;
+  readonly mainCommits: ReadonlyArray<HistoryGraphCommit>;
+  readonly behind: number;
+  readonly remoteSha: string | null;
+  readonly files: ReadonlyArray<HistoryCommitFiles>;
 };
 
 export type HistoryRebaseCommit = {

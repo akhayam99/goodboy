@@ -1,12 +1,15 @@
-import { invoke } from '@tauri-apps/api/core';
+import { Channel, invoke } from '@tauri-apps/api/core';
 import type {
   HistoryBackup,
+  HistoryGraph,
   HistoryMoveOutcome,
   HistoryOriginAhead,
   HistoryPlanArgs,
   HistoryPlanPrediction,
   HistoryRebasePlan,
   HistoryRewriterCheck,
+  HistoryRunOutcome,
+  HistoryTrialProgress,
   HistoryTrialResult,
   LeasePushOutcome,
 } from '@goodboy/types';
@@ -48,6 +51,7 @@ const toArgs = (plan: HistoryPlanArgs) => ({
     message: step.message ?? null,
     target: step.target ?? null,
   })),
+  onto: plan.onto ?? null,
 });
 
 export const predictHistoryPlan = async (plan: HistoryPlanArgs): Promise<HistoryPlanPrediction> =>
@@ -55,6 +59,38 @@ export const predictHistoryPlan = async (plan: HistoryPlanArgs): Promise<History
 
 export const tryHistoryPlan = async (plan: HistoryPlanArgs): Promise<HistoryTrialResult> =>
   invoke<HistoryTrialResult>('history_plan_try', { args: toArgs(plan) });
+
+type RunPlanParams = {
+  readonly plan: HistoryPlanArgs;
+  readonly branch: string;
+  readonly onProgress: (progress: HistoryTrialProgress) => void;
+};
+
+export const runHistoryPlan = async ({
+  plan,
+  branch,
+  onProgress,
+}: RunPlanParams): Promise<HistoryRunOutcome> => {
+  const channel = new Channel<HistoryTrialProgress>();
+  channel.onmessage = onProgress;
+  return invoke<HistoryRunOutcome>('history_plan_run', {
+    args: { plan: toArgs(plan), branch },
+    onProgress: channel,
+  });
+};
+
+type GraphParams = {
+  readonly worktreePath: string;
+  readonly baseBranch: string;
+  readonly branch: string;
+};
+
+export const readHistoryGraph = async ({
+  worktreePath,
+  baseBranch,
+  branch,
+}: GraphParams): Promise<HistoryGraph> =>
+  invoke<HistoryGraph>('history_graph', { worktreePath, baseBranch, branch });
 
 export const applyHistoryPlan = async (params: MoveBranchParams): Promise<HistoryMoveOutcome> =>
   invoke<HistoryMoveOutcome>('history_plan_apply', { args: params });

@@ -23,6 +23,9 @@ const BACKUP_KEEP_SECS: u64 = 30 * 24 * 60 * 60;
 const LEASE_HOLDER: &str = "history-rewrite";
 const JOURNAL_FILE: &str = "goodboy-history.journal";
 const COPY_PREFIX: &str = "goodboy-history-";
+const TRIAL_SLUG_PREFIX: &str = "try-";
+const STALE_TRIAL_SECS: u64 = 10 * 60;
+const STALE_REWRITER_SECS: u64 = 24 * 60 * 60;
 
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -52,6 +55,8 @@ pub struct HistoryPlanArgs {
     pub base: String,
     pub head: String,
     pub steps: Vec<HistoryStep>,
+    #[serde(default)]
+    pub onto: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone, Copy, PartialEq, Eq)]
@@ -117,6 +122,30 @@ pub struct TrialResult {
     pub stop: Option<TrialStop>,
     pub copy_path: Option<String>,
     pub order: Vec<PlannedStep>,
+    pub check: Option<TrialCheck>,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct TrialCheck {
+    pub is_passed: bool,
+    pub expects_same_code: bool,
+    pub problems: Vec<String>,
+    pub unexpected_files: Vec<String>,
+    pub removed_files: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+#[serde(tag = "stage", rename_all = "kebab-case")]
+pub enum TrialProgress {
+    Copy,
+    Step {
+        index: usize,
+        total: usize,
+        sha: String,
+    },
+    Check,
+    Cleanup,
 }
 
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
@@ -394,17 +423,26 @@ fn steps_from(steps: &[HistoryStep], resolved: Vec<String>) -> Vec<HistoryStep> 
 }
 
 struct ResolvedPlan {
-    base: String,
-    base_tree: String,
+    start: String,
+    start_tree: String,
     head_tree: String,
     steps: Vec<HistoryStep>,
 }
 
+fn start_of(args: &HistoryPlanArgs) -> &str {
+    args.onto
+        .as_deref()
+        .map(str::trim)
+        .filter(|onto| !onto.is_empty())
+        .unwrap_or(args.base.trim())
+}
+
 fn resolve_plan(cwd: &Path, args: &HistoryPlanArgs) -> Result<ResolvedPlan, WorktreeError> {
     let head_commit = commit_rev(&args.head);
+    let start = start_of(args);
     let mut revs = vec![
-        commit_rev(&args.base),
-        format!("{}^{{tree}}", args.base.trim()),
+        commit_rev(start),
+        format!("{start}^{{tree}}"),
         format!("{head_commit}^{{tree}}"),
     ];
     revs.extend(step_revs(&args.steps));
@@ -412,19 +450,19 @@ fn resolve_plan(cwd: &Path, args: &HistoryPlanArgs) -> Result<ResolvedPlan, Work
         let rest = resolved.split_off(3);
         let mut ends = resolved.into_iter();
         return Ok(ResolvedPlan {
-            base: ends.next().unwrap_or_default(),
-            base_tree: ends.next().unwrap_or_default(),
+            start: ends.next().unwrap_or_default(),
+            start_tree: ends.next().unwrap_or_default(),
             head_tree: ends.next().unwrap_or_default(),
             steps: steps_from(&args.steps, rest),
         });
     }
-    let base = resolve_commit(cwd, &args.base)?;
+    let start = resolve_commit(cwd, start)?;
     let head = resolve_commit(cwd, &args.head)?;
     Ok(ResolvedPlan {
-        base_tree: tree_of(cwd, &base)?,
+        start_tree: tree_of(cwd, &start)?,
         head_tree: tree_of(cwd, &head)?,
         steps: resolved_steps(cwd, &args.steps)?,
-        base,
+        start,
     })
 }
 
@@ -459,28 +497,40 @@ fn group_end(ordered: &[HistoryStep], start: usize) -> usize {
     end
 }
 
+fn is_targeted_fold(step: &HistoryStep) -> bool {
+    matches!(step.verb, HistoryVerb::Fixup | HistoryVerb::Squash) && step.target.is_some()
+}
+
 pub(crate) fn order_steps(steps: &[HistoryStep]) -> Result<Vec<HistoryStep>, WorktreeError> {
-    let (folds, mut ordered): (Vec<HistoryStep>, Vec<HistoryStep>) = steps
-        .iter()
-        .cloned()
-        .partition(|step| step.verb == HistoryVerb::Fixup && step.target.is_some());
-    for fold in folds {
-        let target = fold.target.clone().unwrap_or_default();
-        let Some(index) = ordered.iter().position(|step| step.sha == target) else {
+    let (mut pending, mut ordered): (Vec<HistoryStep>, Vec<HistoryStep>) =
+        steps.iter().cloned().partition(is_targeted_fold);
+    while !pending.is_empty() {
+        let before = pending.len();
+        let mut waiting = Vec::new();
+        for fold in pending {
+            let target = fold.target.clone().unwrap_or_default();
+            let Some(index) = ordered.iter().position(|step| step.sha == target) else {
+                waiting.push(fold);
+                continue;
+            };
+            if ordered[index].verb == HistoryVerb::Drop {
+                return Err(plan_error(&format!(
+                    "{} folds into {}, which the plan drops",
+                    short(&fold.sha),
+                    short(&target)
+                )));
+            }
+            let at = group_end(&ordered, index);
+            ordered.insert(at, fold);
+        }
+        if waiting.len() == before {
+            let fold = &waiting[0];
             return Err(plan_error(&format!(
                 "{} folds into a commit that is not in the plan",
                 short(&fold.sha)
             )));
-        };
-        if ordered[index].verb == HistoryVerb::Drop {
-            return Err(plan_error(&format!(
-                "{} folds into {}, which the plan drops",
-                short(&fold.sha),
-                short(&target)
-            )));
         }
-        let at = group_end(&ordered, index);
-        ordered.insert(at, fold);
+        pending = waiting;
     }
     let mut has_commit = false;
     for step in &ordered {
@@ -906,8 +956,8 @@ fn predict_with(
     let mut infos = read_commits(cwd, &replayed)?;
     let mut replayer = Replayer::start(cwd, batched)?;
     let mut outcomes: HashMap<String, StepPrediction> = HashMap::new();
-    let mut tip = resolved.base.clone();
-    let mut tip_tree = resolved.base_tree.clone();
+    let mut tip = resolved.start.clone();
+    let mut tip_tree = resolved.start_tree.clone();
     let mut group: Option<Group> = None;
     let mut map = Vec::new();
     let mut stopped = false;
@@ -927,6 +977,19 @@ fn predict_with(
             Some(found) => one_parent(&step.sha, found)?,
             None => single_parent(cwd, &step.sha)?,
         };
+        if step.verb == HistoryVerb::Pick && info.parents[0] == tip {
+            finish_group(group.take(), &tip, &mut map);
+            group = Some(Group {
+                message: info.message.clone(),
+                author: info.author(),
+                parent: tip.clone(),
+                members: vec![step.sha.clone()],
+            });
+            tip = step.sha.clone();
+            tip_tree = tree_of(cwd, &tip)?;
+            outcomes.insert(step.sha.clone(), prediction(&step.sha, StepOutcome::Clean));
+            continue;
+        }
         let merge_base = info.parents[0].clone();
         match replayer.merge(cwd, &merge_base, &tip, &tip_tree, &step.sha)? {
             MergeResult::Conflict(files) => {
@@ -1082,11 +1145,17 @@ fn replay_in_copy(
     copy: &Path,
     steps: &[HistoryStep],
     ordered: &[HistoryStep],
+    progress: &dyn Fn(TrialProgress),
 ) -> Result<Replay, WorktreeError> {
     let mut group: Option<Group> = None;
     let mut map = Vec::new();
     let mut tip = resolve_commit(copy, "HEAD")?;
-    for step in ordered {
+    for (position, step) in ordered.iter().enumerate() {
+        progress(TrialProgress::Step {
+            index: position + 1,
+            total: ordered.len(),
+            sha: step.sha.clone(),
+        });
         if step.verb == HistoryVerb::Drop {
             map.push(ShaMove {
                 from: step.sha.clone(),
@@ -1095,6 +1164,18 @@ fn replay_in_copy(
             continue;
         }
         let info = single_parent(copy, &step.sha)?;
+        if step.verb == HistoryVerb::Pick && info.parents[0] == tip {
+            git(copy, &["reset", "--hard", "--quiet", &step.sha])?;
+            finish_group(group.take(), &tip, &mut map);
+            group = Some(Group {
+                message: info.message.clone(),
+                author: info.author(),
+                parent: tip.clone(),
+                members: vec![step.sha.clone()],
+            });
+            tip = step.sha.clone();
+            continue;
+        }
         let pick = git_run(copy, &["cherry-pick", "--no-commit", &step.sha], None, None)?;
         if pick.status != 0 {
             let files = unmerged_files(copy);
@@ -1175,52 +1256,95 @@ fn replay_in_copy(
     })
 }
 
+struct CopyGuard<'a> {
+    cwd: &'a Path,
+    path: String,
+    is_kept: bool,
+}
+
+impl Drop for CopyGuard<'_> {
+    fn drop(&mut self) {
+        if !self.is_kept {
+            discard_copy(self.cwd, &self.path);
+        }
+    }
+}
+
 pub(crate) fn trial(
     args: &HistoryPlanArgs,
     slug: &str,
     keeps_copy_on_stop: bool,
+) -> Result<TrialResult, WorktreeError> {
+    trial_with(args, slug, keeps_copy_on_stop, &|_| {})
+}
+
+pub(crate) fn trial_with(
+    args: &HistoryPlanArgs,
+    slug: &str,
+    keeps_copy_on_stop: bool,
+    progress: &dyn Fn(TrialProgress),
 ) -> Result<TrialResult, WorktreeError> {
     let cwd = Path::new(&args.worktree_path);
     if !cwd.exists() {
         return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
     }
     let base = resolve_commit(cwd, &args.base)?;
+    let start = resolve_commit(cwd, start_of(args))?;
     let old_head = resolve_commit(cwd, &args.head)?;
     let steps = resolved_steps(cwd, &args.steps)?;
     let ordered = order_steps(&steps)?;
     let order = planned_order(cwd, &ordered)?;
     let copy = copy_path_of(slug);
     let copy_text = copy.to_string_lossy().to_string();
+    progress(TrialProgress::Copy);
     discard_copy(cwd, &copy_text);
     git(
         cwd,
-        &["worktree", "add", "--detach", "--quiet", &copy_text, &base],
+        &["worktree", "add", "--detach", "--quiet", &copy_text, &start],
     )?;
-    let replay = match replay_in_copy(&copy, &steps, &ordered) {
-        Ok(replay) => replay,
-        Err(error) => {
-            discard_copy(cwd, &copy_text);
-            return Err(error);
-        }
+    let mut guard = CopyGuard {
+        cwd,
+        path: copy_text.clone(),
+        is_kept: false,
     };
+    let replay = replay_in_copy(&copy, &steps, &ordered, progress)?;
     if replay.stop.is_some() {
-        let copy_path = if keeps_copy_on_stop {
-            Some(copy_text)
-        } else {
-            discard_copy(cwd, &copy_text);
-            None
-        };
+        progress(TrialProgress::Cleanup);
+        guard.is_kept = keeps_copy_on_stop;
+        drop(guard);
         return Ok(TrialResult {
             head: None,
             map: replay.map,
             is_tree_equal: false,
             changed_files: Vec::new(),
             stop: replay.stop,
-            copy_path,
+            copy_path: keeps_copy_on_stop.then_some(copy_text),
             order,
+            check: None,
         });
     }
-    discard_copy(cwd, &copy_text);
+    progress(TrialProgress::Check);
+    let made = replay
+        .map
+        .iter()
+        .filter_map(|moved| moved.to.as_deref())
+        .collect::<std::collections::HashSet<_>>()
+        .len();
+    let check = check_trial(
+        cwd,
+        Some(&copy),
+        &CheckInput {
+            base: &base,
+            start: &start,
+            old_head: &old_head,
+            new_head: &replay.head,
+            steps: &steps,
+            ordered: &ordered,
+            made: Some(made),
+        },
+    );
+    progress(TrialProgress::Cleanup);
+    drop(guard);
     Ok(TrialResult {
         is_tree_equal: tree_of(cwd, &replay.head)? == tree_of(cwd, &old_head)?,
         changed_files: changed_files(cwd, &old_head, &replay.head),
@@ -1229,7 +1353,147 @@ pub(crate) fn trial(
         stop: None,
         copy_path: None,
         order,
+        check: Some(check),
     })
+}
+
+struct CheckInput<'a> {
+    base: &'a str,
+    start: &'a str,
+    old_head: &'a str,
+    new_head: &'a str,
+    steps: &'a [HistoryStep],
+    ordered: &'a [HistoryStep],
+    made: Option<usize>,
+}
+
+fn lines_of(raw: &str) -> Vec<String> {
+    raw.lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
+        .collect()
+}
+
+fn files_of_commit(cwd: &Path, sha: &str) -> Vec<String> {
+    git(
+        cwd,
+        &[
+            "diff-tree",
+            "--no-commit-id",
+            "--name-only",
+            "-r",
+            "--root",
+            sha,
+        ],
+    )
+    .map(|raw| lines_of(&raw))
+    .unwrap_or_default()
+}
+
+fn count_of(cwd: &Path, args: &[&str]) -> Option<usize> {
+    git(cwd, args).ok()?.trim().parse::<usize>().ok()
+}
+
+fn is_ancestor(cwd: &Path, older: &str, newer: &str) -> bool {
+    git_run(
+        cwd,
+        &["merge-base", "--is-ancestor", older, newer],
+        None,
+        None,
+    )
+    .is_ok_and(|run| run.status == 0)
+}
+
+fn plural_files(count: usize) -> &'static str {
+    if count == 1 {
+        "file"
+    } else {
+        "files"
+    }
+}
+
+fn check_trial(cwd: &Path, copy: Option<&Path>, input: &CheckInput<'_>) -> TrialCheck {
+    let mut problems = Vec::new();
+    if let Some(problem) = copy.and_then(copy_problem) {
+        problems.push(problem);
+    }
+    if !is_ancestor(cwd, input.start, input.new_head) {
+        problems.push("The result is not built on the commit it should start from.".to_string());
+    }
+    let range = format!("{}..{}", input.start, input.new_head);
+    let merges = count_of(cwd, &["rev-list", "--count", "--min-parents=2", &range]);
+    if merges != Some(0) {
+        problems.push("The result contains a merge commit.".to_string());
+    }
+    if let Some(made) = input.made {
+        let counted = count_of(cwd, &["rev-list", "--count", "--first-parent", &range]);
+        if counted != Some(made) {
+            problems.push(format!(
+                "The result has {} commits, the plan makes {made}.",
+                counted.map_or_else(|| "an unknown number of".to_string(), |n| n.to_string())
+            ));
+        }
+    }
+    let dropped: Vec<&HistoryStep> = input
+        .ordered
+        .iter()
+        .filter(|step| step.verb == HistoryVerb::Drop)
+        .collect();
+    let mut removed_files: Vec<String> = dropped
+        .iter()
+        .flat_map(|step| files_of_commit(cwd, &step.sha))
+        .collect();
+    removed_files.sort();
+    removed_files.dedup();
+    let own: std::collections::HashSet<String> = git(
+        cwd,
+        &["rev-list", &format!("{}..{}", input.base, input.old_head)],
+    )
+    .map(|raw| lines_of(&raw).into_iter().collect())
+    .unwrap_or_default();
+    let planned: std::collections::HashSet<String> =
+        input.steps.iter().map(|step| step.sha.clone()).collect();
+    let is_rewrite = !own.is_empty() && own == planned;
+    let is_rebase = input.start != input.base;
+    let mut unexpected_files = Vec::new();
+    if is_rewrite {
+        let new_tree = tree_of(cwd, input.new_head).unwrap_or_default();
+        let (expected, main_files) = if is_rebase {
+            let merged = supports_merge_tree_base()
+                .then(|| merge_in_memory(cwd, input.base, input.start, input.old_head).ok())
+                .flatten();
+            match merged {
+                Some(MergeResult::Tree(tree)) => (Some(tree), Vec::new()),
+                _ => (None, changed_files(cwd, input.base, input.start)),
+            }
+        } else {
+            (tree_of(cwd, input.old_head).ok(), Vec::new())
+        };
+        let differing = match expected {
+            Some(tree) => changed_files(cwd, &tree, &new_tree),
+            None => changed_files(cwd, input.old_head, &new_tree),
+        };
+        unexpected_files = differing
+            .into_iter()
+            .filter(|file| !removed_files.contains(file) && !main_files.contains(file))
+            .collect();
+        if !unexpected_files.is_empty() {
+            problems.push(format!(
+                "The result differs from what the plan should make in {} {}: {}.",
+                unexpected_files.len(),
+                plural_files(unexpected_files.len()),
+                unexpected_files.join(", ")
+            ));
+        }
+    }
+    TrialCheck {
+        is_passed: problems.is_empty(),
+        expects_same_code: is_rewrite && !is_rebase && dropped.is_empty(),
+        problems,
+        unexpected_files,
+        removed_files,
+    }
 }
 
 fn planned_order(cwd: &Path, ordered: &[HistoryStep]) -> Result<Vec<PlannedStep>, WorktreeError> {
@@ -1320,12 +1584,60 @@ fn blocking_reason(cwd: &Path) -> Option<String> {
                 return None;
             }
             Some(format!(
-                "Commit or stash {pending} {} first.",
-                if pending == 1 { "file" } else { "files" }
+                "{pending} {} here {} changes that are not committed. Commit or stash {} first: rewriting needs a clean worktree.",
+                if pending == 1 { "file" } else { "files" },
+                if pending == 1 { "has" } else { "have" },
+                if pending == 1 { "it" } else { "them" }
             ))
         }
         GitWorkingTree::Unknown { .. } => Some("Couldn't read the worktree status.".to_string()),
     }
+}
+
+fn untracked_in_the_way(cwd: &Path, target: &str) -> Option<String> {
+    let untracked = lines_of(&git(cwd, &["ls-files", "--others", "--exclude-standard"]).ok()?);
+    if untracked.is_empty() {
+        return None;
+    }
+    let tracked: std::collections::HashSet<String> =
+        lines_of(&git(cwd, &["ls-tree", "-r", "--name-only", target]).ok()?)
+            .into_iter()
+            .collect();
+    let blocking: Vec<String> = untracked
+        .into_iter()
+        .filter(|file| tracked.contains(file))
+        .collect();
+    if blocking.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "{} untracked {} would be overwritten: {}. Move or commit {} first.",
+        blocking.len(),
+        plural_files(blocking.len()),
+        blocking.join(", "),
+        if blocking.len() == 1 { "it" } else { "them" }
+    ))
+}
+
+pub(crate) fn preflight(cwd: &Path, branch: &str, expected_head: &str) -> Option<String> {
+    let current_branch = crate::worktree::current_branch_name(cwd).unwrap_or_default();
+    if current_branch != branch {
+        return Some(format!(
+            "This worktree is on {current_branch}, not {branch}. Nothing was changed."
+        ));
+    }
+    if let Some(reason) = blocking_reason(cwd) {
+        return Some(reason);
+    }
+    let head = resolve_commit(cwd, "HEAD").ok()?;
+    let expected = resolve_commit(cwd, expected_head).ok()?;
+    if head != expected {
+        return Some(
+            "The branch moved since this plan was made. Refresh to plan on the new commits."
+                .to_string(),
+        );
+    }
+    None
 }
 
 pub(crate) fn move_branch_blocking(
@@ -1349,6 +1661,9 @@ pub(crate) fn move_branch_blocking(
     let head = resolve_commit(cwd, "HEAD")?;
     if head != expected {
         return Ok(MoveOutcome::HeadMoved { head });
+    }
+    if let Some(reason) = untracked_in_the_way(cwd, &target) {
+        return Ok(MoveOutcome::Blocked { reason });
     }
     let backup_ref = format!("{}/{}", backup_namespace(branch), now_nanos());
     git(cwd, &["update-ref", &backup_ref, &expected])?;
@@ -1464,11 +1779,117 @@ pub async fn history_plan_predict(args: HistoryPlanArgs) -> Result<PlanPredictio
 #[tauri::command]
 pub async fn history_plan_try(args: HistoryPlanArgs) -> Result<TrialResult, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let slug = format!("try-{}", now_nanos());
+        let slug = format!("{TRIAL_SLUG_PREFIX}{}", now_nanos());
         trial(&args, &slug, false)
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryRunArgs {
+    pub plan: HistoryPlanArgs,
+    pub branch: String,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum RunOutcome {
+    Blocked { reason: String },
+    Tried { result: TrialResult },
+}
+
+pub(crate) fn run_plan(
+    args: &HistoryRunArgs,
+    slug: &str,
+    progress: &dyn Fn(TrialProgress),
+) -> Result<RunOutcome, WorktreeError> {
+    let cwd = Path::new(&args.plan.worktree_path);
+    if !cwd.exists() {
+        return Err(WorktreeError::RepoNotFound(args.plan.worktree_path.clone()));
+    }
+    if let Some(reason) = preflight(cwd, &args.branch, &args.plan.head) {
+        return Ok(RunOutcome::Blocked { reason });
+    }
+    let result = trial_with(&args.plan, slug, false, progress)?;
+    Ok(RunOutcome::Tried { result })
+}
+
+#[tauri::command]
+pub async fn history_plan_run(
+    args: HistoryRunArgs,
+    on_progress: tauri::ipc::Channel<TrialProgress>,
+) -> Result<RunOutcome, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let slug = format!("{TRIAL_SLUG_PREFIX}{}", now_nanos());
+        run_plan(&args, &slug, &|event| {
+            let _ = on_progress.send(event);
+        })
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+fn copy_git_dir(copy: &Path) -> Option<PathBuf> {
+    let pointer = std::fs::read_to_string(copy.join(".git")).ok()?;
+    let git_dir = PathBuf::from(pointer.trim().strip_prefix("gitdir:")?.trim());
+    let worktrees = git_dir.parent()?;
+    if worktrees.file_name()? != "worktrees" {
+        return None;
+    }
+    Some(worktrees.parent()?.to_path_buf())
+}
+
+fn age_secs(path: &Path) -> u64 {
+    std::fs::metadata(path)
+        .and_then(|meta| meta.modified())
+        .ok()
+        .and_then(|modified| modified.elapsed().ok())
+        .map(|elapsed| elapsed.as_secs())
+        .unwrap_or_default()
+}
+
+pub(crate) fn clean_stale_copies_in(
+    dir: &Path,
+    trial_after_secs: u64,
+    other_after_secs: u64,
+) -> usize {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return 0;
+    };
+    let mut cleaned = 0;
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        let Some(slug) = name.strip_prefix(COPY_PREFIX) else {
+            continue;
+        };
+        let path = entry.path();
+        let Some(common) = copy_git_dir(&path) else {
+            continue;
+        };
+        let limit = if slug.starts_with(TRIAL_SLUG_PREFIX) {
+            trial_after_secs
+        } else {
+            other_after_secs
+        };
+        if age_secs(&path) < limit {
+            continue;
+        }
+        if std::fs::remove_dir_all(&path).is_err() {
+            continue;
+        }
+        let _ = crate::path_env::command("git")
+            .arg(format!("--git-dir={}", common.to_string_lossy()))
+            .args(["worktree", "prune"])
+            .output();
+        cleaned += 1;
+    }
+    cleaned
+}
+
+pub(crate) fn clean_stale_copies() {
+    clean_stale_copies_in(&std::env::temp_dir(), STALE_TRIAL_SECS, STALE_REWRITER_SECS);
 }
 
 #[tauri::command]
@@ -1801,6 +2222,7 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
         return Err(WorktreeError::RepoNotFound(args.copy_path.clone()));
     }
     let base = resolve_commit(cwd, &args.plan.base)?;
+    let start = resolve_commit(cwd, start_of(&args.plan))?;
     let old_head = resolve_commit(cwd, &args.plan.head)?;
     let steps = resolved_steps(cwd, &args.plan.steps)?;
     let ordered = order_steps(&steps)?;
@@ -1815,14 +2237,14 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
         problems.push(problem);
     }
     let copy_head = resolve_commit(copy, "HEAD")?;
-    let range = format!("{base}..{copy_head}");
+    let range = format!("{start}..{copy_head}");
     let made: Vec<String> = git(copy, &["rev-list", "--reverse", "--first-parent", &range])?
         .lines()
         .map(str::trim)
         .filter(|line| !line.is_empty())
         .map(str::to_string)
         .collect();
-    if git(copy, &["merge-base", "--is-ancestor", &base, &copy_head]).is_err() {
+    if !is_ancestor(copy, &start, &copy_head) {
         problems.push("The copy is no longer built on the plan base.".to_string());
     }
     if made.len() != groups.len() {
@@ -1842,7 +2264,7 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
             changed_files: Vec::new(),
         });
     }
-    let mut tip = base.clone();
+    let mut tip = start.clone();
     let mut map = Vec::new();
     for (commit, group) in made.iter().zip(groups.iter()) {
         let tree = tree_of(copy, commit)?;
@@ -1861,6 +2283,28 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
         map.push(ShaMove {
             from: step.sha.clone(),
             to: None,
+        });
+    }
+    let check = check_trial(
+        cwd,
+        None,
+        &CheckInput {
+            base: &base,
+            start: &start,
+            old_head: &old_head,
+            new_head: &tip,
+            steps: &steps,
+            ordered: &ordered,
+            made: Some(groups.len()),
+        },
+    );
+    if !check.is_passed {
+        return Ok(RewriterCheck {
+            head: None,
+            map: Vec::new(),
+            problems: check.problems,
+            is_tree_equal: false,
+            changed_files: Vec::new(),
         });
     }
     if !args.keeps_copy {
@@ -1960,6 +2404,7 @@ mod tests {
             base: base.to_string(),
             head: head.to_string(),
             steps,
+            onto: None,
         }
     }
 
@@ -2459,13 +2904,14 @@ mod tests {
     fn plan_args_for_rebase(root: &Path, plan: &RebasePlan) -> HistoryPlanArgs {
         HistoryPlanArgs {
             worktree_path: root.to_string_lossy().into_owned(),
-            base: plan.onto.clone(),
+            base: plan.merge_base.clone(),
             head: plan.head.clone(),
             steps: plan
                 .commits
                 .iter()
                 .map(|c| step(&c.sha, HistoryVerb::Pick))
                 .collect(),
+            onto: Some(plan.onto.clone()),
         }
     }
 
@@ -2659,5 +3105,690 @@ mod tests {
                 "prediction took {elapsed} ms with {per_spawn} ms per git spawn"
             );
         }
+    }
+
+    struct Ledger {
+        root: PathBuf,
+        base: String,
+        export: String,
+        batch: String,
+        webhook: String,
+        retries: String,
+        logging: String,
+        tests: String,
+        typo: String,
+    }
+
+    fn ledger(name: &str) -> Ledger {
+        let root = init_repo(name);
+        let base = commit(&root, "ledger.ts", "ledger\n", "Release 2.14");
+        git_ok(&root, &["checkout", "-q", "-b", "feature"]);
+        let export = commit(
+            &root,
+            "export.ts",
+            "export v1\n",
+            "Add ledger export endpoint",
+        );
+        let batch = commit(
+            &root,
+            "batch.ts",
+            "batch 500\n",
+            "Stream rows in batches of 500",
+        );
+        let webhook = commit(
+            &root,
+            "webhook.ts",
+            "verify\n",
+            "Fix webhook signature check",
+        );
+        let retries = commit(
+            &root,
+            "retries.ts",
+            "retry 3\n",
+            "Add retries to the export job",
+        );
+        let logging = commit(
+            &root,
+            "logger.ts",
+            "debug\n",
+            "Add debug logging to the export",
+        );
+        let tests = commit(&root, "export.test.ts", "tests\n", "wip export tests");
+        let typo = commit(&root, "export.ts", "export v2\n", "Fix typo in CSV header");
+        Ledger {
+            root,
+            base,
+            export,
+            batch,
+            webhook,
+            retries,
+            logging,
+            tests,
+            typo,
+        }
+    }
+
+    fn picks(shas: &[&String]) -> Vec<HistoryStep> {
+        shas.iter()
+            .map(|sha| step(sha, HistoryVerb::Pick))
+            .collect()
+    }
+
+    fn fold(sha: &str, target: &str, verb: HistoryVerb) -> HistoryStep {
+        HistoryStep {
+            sha: sha.to_string(),
+            verb,
+            message: None,
+            target: Some(target.to_string()),
+        }
+    }
+
+    fn run_args(root: &Path, plan: HistoryPlanArgs) -> HistoryRunArgs {
+        let _ = root;
+        HistoryRunArgs {
+            plan,
+            branch: "feature".to_string(),
+        }
+    }
+
+    fn tried(outcome: RunOutcome) -> TrialResult {
+        match outcome {
+            RunOutcome::Tried { result } => result,
+            RunOutcome::Blocked { reason } => panic!("the run was blocked: {reason}"),
+        }
+    }
+
+    fn worktree_count(root: &Path) -> usize {
+        git_ok(root, &["worktree", "list", "--porcelain"])
+            .lines()
+            .filter(|line| line.starts_with("worktree "))
+            .count()
+    }
+
+    fn ledger_plan(l: &Ledger, steps: Vec<HistoryStep>) -> HistoryPlanArgs {
+        plan(&l.root, &l.base, &l.typo, steps)
+    }
+
+    fn run_ok(l: &Ledger, steps: Vec<HistoryStep>, name: &str) -> TrialResult {
+        let result = tried(
+            run_plan(
+                &run_args(&l.root, ledger_plan(l, steps)),
+                &slug(name),
+                &|_| {},
+            )
+            .unwrap(),
+        );
+        assert_eq!(result.stop, None);
+        let check = result.check.clone().unwrap();
+        assert!(check.is_passed, "{:?}", check.problems);
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+        assert_eq!(worktree_count(&l.root), 1);
+        assert!(!copy_path_of(&slug(name)).exists());
+        result
+    }
+
+    #[test]
+    fn reordering_independent_commits_keeps_the_same_code_and_passes_the_check() {
+        let l = ledger("run-reorder");
+        let result = run_ok(
+            &l,
+            picks(&[
+                &l.export, &l.webhook, &l.batch, &l.retries, &l.logging, &l.tests, &l.typo,
+            ]),
+            "run-reorder",
+        );
+        assert!(result.is_tree_equal);
+        assert!(result.check.unwrap().expects_same_code);
+        let head = result.head.unwrap();
+        assert_eq!(
+            subjects(&l.root, &format!("{}..{head}", l.base))[5],
+            "Fix webhook signature check"
+        );
+    }
+
+    #[test]
+    fn folding_into_an_older_commit_keeps_only_the_target_title() {
+        let l = ledger("run-fixup-older");
+        let mut steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests,
+        ]);
+        steps.push(fold(&l.typo, &l.export, HistoryVerb::Fixup));
+        let result = run_ok(&l, steps, "run-fixup-older");
+        assert!(result.is_tree_equal);
+        let head = result.head.unwrap();
+        let listed = subjects(&l.root, &format!("{}..{head}", l.base));
+        assert_eq!(listed.len(), 6);
+        assert_eq!(listed[5], "Add ledger export endpoint");
+        assert!(!listed.iter().any(|s| s == "Fix typo in CSV header"));
+        let first = git_ok(
+            &l.root,
+            &["rev-list", "--reverse", &format!("{}..{head}", l.base)],
+        );
+        let oldest = first.lines().next().unwrap();
+        assert_eq!(
+            git_ok(&l.root, &["log", "-1", "--format=%B", oldest]),
+            "Add ledger export endpoint"
+        );
+    }
+
+    #[test]
+    fn folding_into_a_newer_commit_moves_it_up_and_keeps_the_newer_title() {
+        let l = ledger("run-fixup-newer");
+        let steps = vec![
+            fold(&l.export, &l.batch, HistoryVerb::Fixup),
+            step(&l.batch, HistoryVerb::Pick),
+            step(&l.webhook, HistoryVerb::Pick),
+            step(&l.retries, HistoryVerb::Pick),
+            step(&l.logging, HistoryVerb::Pick),
+            step(&l.tests, HistoryVerb::Pick),
+            step(&l.typo, HistoryVerb::Pick),
+        ];
+        let result = run_ok(&l, steps, "run-fixup-newer");
+        assert!(result.is_tree_equal);
+        let head = result.head.unwrap();
+        let listed = subjects(&l.root, &format!("{}..{head}", l.base));
+        assert_eq!(listed.last().unwrap(), "Stream rows in batches of 500");
+        assert_eq!(listed.len(), 6);
+    }
+
+    #[test]
+    fn combining_with_a_target_keeps_both_messages() {
+        let l = ledger("run-squash-target");
+        let mut steps = picks(&[&l.export, &l.batch, &l.webhook, &l.retries, &l.logging]);
+        steps.push(fold(&l.tests, &l.retries, HistoryVerb::Squash));
+        steps.push(step(&l.typo, HistoryVerb::Pick));
+        let result = run_ok(&l, steps, "run-squash-target");
+        let head = result.head.unwrap();
+        let listed = subjects(&l.root, &format!("{}..{head}", l.base));
+        assert_eq!(listed.len(), 6);
+        let combined = git_ok(&l.root, &["log", "-1", "--format=%B", &format!("{head}~2")]);
+        assert!(combined.starts_with("Add retries to the export job"));
+        assert!(combined.contains("wip export tests"));
+        assert!(result.is_tree_equal);
+    }
+
+    #[test]
+    fn a_fold_into_a_commit_that_folds_elsewhere_follows_the_chain() {
+        let l = ledger("run-chain");
+        let steps = vec![
+            step(&l.export, HistoryVerb::Pick),
+            step(&l.batch, HistoryVerb::Pick),
+            step(&l.webhook, HistoryVerb::Pick),
+            step(&l.retries, HistoryVerb::Pick),
+            fold(&l.logging, &l.tests, HistoryVerb::Fixup),
+            fold(&l.tests, &l.retries, HistoryVerb::Squash),
+            step(&l.typo, HistoryVerb::Pick),
+        ];
+        let result = run_ok(&l, steps, "run-chain");
+        assert!(result.is_tree_equal);
+        let head = result.head.unwrap();
+        assert_eq!(subjects(&l.root, &format!("{}..{head}", l.base)).len(), 5);
+    }
+
+    #[test]
+    fn renaming_changes_only_the_message() {
+        let l = ledger("run-reword");
+        let mut steps = picks(&[&l.export, &l.batch]);
+        let mut reword = step(&l.webhook, HistoryVerb::Reword);
+        reword.message = Some("Verify webhook signatures before crediting".to_string());
+        steps.push(reword);
+        steps.extend(picks(&[&l.retries, &l.logging, &l.tests, &l.typo]));
+        let result = run_ok(&l, steps, "run-reword");
+        assert!(result.is_tree_equal);
+        let head = result.head.unwrap();
+        assert!(subjects(&l.root, &format!("{}..{head}", l.base))
+            .contains(&"Verify webhook signatures before crediting".to_string()));
+    }
+
+    #[test]
+    fn removing_a_commit_changes_only_its_own_files() {
+        let l = ledger("run-drop");
+        let mut steps = picks(&[&l.export, &l.batch, &l.webhook, &l.retries]);
+        steps.push(step(&l.logging, HistoryVerb::Drop));
+        steps.extend(picks(&[&l.tests, &l.typo]));
+        let result = run_ok(&l, steps, "run-drop");
+        assert!(!result.is_tree_equal);
+        assert_eq!(result.changed_files, vec!["logger.ts".to_string()]);
+        let check = result.check.unwrap();
+        assert_eq!(check.removed_files, vec!["logger.ts".to_string()]);
+        assert!(!check.expects_same_code);
+    }
+
+    #[test]
+    fn starting_from_today_main_replays_the_branch_on_top_of_it() {
+        let l = ledger("run-onto");
+        git_ok(&l.root, &["checkout", "-q", "main"]);
+        commit(&l.root, "rounding.ts", "round\n", "Cascadia rounding rules");
+        let main = commit(&l.root, "keys.ts", "keys\n", "Rotate Acme sandbox keys");
+        git_ok(&l.root, &["checkout", "-q", "feature"]);
+        let mut args = ledger_plan(
+            &l,
+            picks(&[
+                &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+            ]),
+        );
+        args.onto = Some(main.clone());
+        let prediction = predict(&args).unwrap();
+        assert!(prediction.head.is_some());
+        let result = tried(run_plan(&run_args(&l.root, args), &slug("run-onto"), &|_| {}).unwrap());
+        let check = result.check.unwrap();
+        assert!(check.is_passed, "{:?}", check.problems);
+        let head = result.head.unwrap();
+        assert!(is_ancestor(&l.root, &main, &head));
+        assert_eq!(subjects(&l.root, &format!("{main}..{head}")).len(), 7);
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+    }
+
+    #[test]
+    fn a_mixed_plan_of_every_action_passes_the_check() {
+        let l = ledger("run-mixed");
+        let mut reword = step(&l.webhook, HistoryVerb::Reword);
+        reword.message = Some("Verify webhook signatures before crediting".to_string());
+        let steps = vec![
+            step(&l.export, HistoryVerb::Pick),
+            step(&l.batch, HistoryVerb::Pick),
+            step(&l.retries, HistoryVerb::Pick),
+            reword,
+            step(&l.logging, HistoryVerb::Drop),
+            fold(&l.tests, &l.retries, HistoryVerb::Squash),
+            fold(&l.typo, &l.export, HistoryVerb::Fixup),
+        ];
+        let result = run_ok(&l, steps, "run-mixed");
+        let head = result.head.unwrap();
+        assert_eq!(
+            subjects(&l.root, &format!("{}..{head}", l.base)),
+            vec![
+                "Verify webhook signatures before crediting",
+                "Add retries to the export job",
+                "Stream rows in batches of 500",
+                "Add ledger export endpoint",
+            ]
+        );
+        assert_eq!(result.changed_files, vec!["logger.ts".to_string()]);
+    }
+
+    #[test]
+    fn a_conflict_stops_names_the_step_discards_the_copy_and_leaves_the_branch() {
+        let l = ledger("run-conflict");
+        let events = std::sync::Mutex::new(Vec::new());
+        let steps = vec![
+            step(&l.typo, HistoryVerb::Pick),
+            step(&l.export, HistoryVerb::Pick),
+            step(&l.batch, HistoryVerb::Pick),
+            step(&l.webhook, HistoryVerb::Pick),
+            step(&l.retries, HistoryVerb::Pick),
+            step(&l.logging, HistoryVerb::Pick),
+            step(&l.tests, HistoryVerb::Pick),
+        ];
+        let result = tried(
+            run_plan(
+                &run_args(&l.root, ledger_plan(&l, steps)),
+                &slug("run-conflict"),
+                &|event| events.lock().unwrap().push(event),
+            )
+            .unwrap(),
+        );
+        let stop = result.stop.unwrap();
+        assert_eq!(stop.sha, l.typo);
+        assert_eq!(stop.kind, StopKind::Merge);
+        assert_eq!(stop.files, vec!["export.ts".to_string()]);
+        assert_eq!(result.head, None);
+        assert_eq!(result.check, None);
+        assert_eq!(result.copy_path, None);
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+        assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
+        assert_eq!(worktree_count(&l.root), 1);
+        assert!(!copy_path_of(&slug("run-conflict")).exists());
+        assert_eq!(events.lock().unwrap().last(), Some(&TrialProgress::Cleanup));
+    }
+
+    #[test]
+    fn progress_reports_the_copy_every_step_the_check_and_the_cleanup() {
+        let l = ledger("run-progress");
+        let events = std::sync::Mutex::new(Vec::new());
+        let steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+        ]);
+        tried(
+            run_plan(
+                &run_args(&l.root, ledger_plan(&l, steps)),
+                &slug("run-progress"),
+                &|event| events.lock().unwrap().push(event),
+            )
+            .unwrap(),
+        );
+        let seen = events.lock().unwrap().clone();
+        assert_eq!(seen.first(), Some(&TrialProgress::Copy));
+        assert_eq!(
+            seen[1],
+            TrialProgress::Step {
+                index: 1,
+                total: 7,
+                sha: l.export.clone()
+            }
+        );
+        assert_eq!(seen.len(), 10);
+        assert_eq!(seen[8], TrialProgress::Check);
+        assert_eq!(seen[9], TrialProgress::Cleanup);
+    }
+
+    #[test]
+    fn a_dirty_worktree_blocks_the_run_before_any_copy_is_made() {
+        let l = ledger("run-dirty");
+        std::fs::write(l.root.join("export.ts"), "half done\n").unwrap();
+        let outcome = run_plan(
+            &run_args(&l.root, ledger_plan(&l, picks(&[&l.export]))),
+            &slug("run-dirty"),
+            &|_| panic!("a blocked run must not start"),
+        )
+        .unwrap();
+        let RunOutcome::Blocked { reason } = outcome else {
+            panic!("expected the dirty worktree to block the run");
+        };
+        assert!(reason.contains("not committed"), "{reason}");
+        assert_eq!(worktree_count(&l.root), 1);
+        assert_eq!(
+            std::fs::read_to_string(l.root.join("export.ts")).unwrap(),
+            "half done\n"
+        );
+    }
+
+    #[test]
+    fn a_moved_head_or_another_branch_blocks_the_run() {
+        let l = ledger("run-moved");
+        let stale = plan(&l.root, &l.base, &l.tests, picks(&[&l.export]));
+        let RunOutcome::Blocked { reason } =
+            run_plan(&run_args(&l.root, stale), &slug("run-moved"), &|_| {}).unwrap()
+        else {
+            panic!("expected the moved head to block");
+        };
+        assert!(reason.contains("moved"), "{reason}");
+        git_ok(&l.root, &["checkout", "-q", "-b", "other"]);
+        let RunOutcome::Blocked { reason } = run_plan(
+            &run_args(&l.root, ledger_plan(&l, picks(&[&l.export]))),
+            &slug("run-branch"),
+            &|_| {},
+        )
+        .unwrap() else {
+            panic!("expected the other branch to block");
+        };
+        assert!(reason.contains("not feature"), "{reason}");
+    }
+
+    #[test]
+    fn a_failing_commit_hook_stops_the_trial_and_discards_the_copy() {
+        let l = ledger("run-hook");
+        let hooks = l.root.join(".git").join("hooks");
+        std::fs::create_dir_all(&hooks).unwrap();
+        let hook = hooks.join("commit-msg");
+        std::fs::write(&hook, "#!/bin/sh\necho refused by policy\nexit 1\n").unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+        let mut reword = step(&l.export, HistoryVerb::Reword);
+        reword.message = Some("Add the ledger export endpoint".to_string());
+        let mut steps = vec![reword];
+        steps.extend(picks(&[
+            &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+        ]));
+        let result = tried(
+            run_plan(
+                &run_args(&l.root, ledger_plan(&l, steps)),
+                &slug("run-hook"),
+                &|_| {},
+            )
+            .unwrap(),
+        );
+        let stop = result.stop.unwrap();
+        assert_eq!(stop.kind, StopKind::Hook);
+        assert!(stop.message.contains("refused by policy"));
+        assert_eq!(worktree_count(&l.root), 1);
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+    }
+
+    #[test]
+    fn the_check_names_files_that_differ_when_no_removed_commit_explains_them() {
+        let l = ledger("check-mismatch");
+        let steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+        ]);
+        let ordered = order_steps(&steps).unwrap();
+        git_ok(&l.root, &["checkout", "-q", "-b", "tampered"]);
+        let tampered = commit(
+            &l.root,
+            "webhook.ts",
+            "skip verify\n",
+            "Fix typo in CSV header",
+        );
+        git_ok(&l.root, &["checkout", "-q", "feature"]);
+        let check = check_trial(
+            &l.root,
+            None,
+            &CheckInput {
+                base: &l.base,
+                start: &l.base,
+                old_head: &l.typo,
+                new_head: &tampered,
+                steps: &steps,
+                ordered: &ordered,
+                made: Some(8),
+            },
+        );
+        assert!(!check.is_passed);
+        assert_eq!(check.unexpected_files, vec!["webhook.ts".to_string()]);
+        assert!(check.problems.iter().any(|p| p.contains("webhook.ts")));
+    }
+
+    #[test]
+    fn the_check_refuses_a_result_with_the_wrong_number_of_commits() {
+        let l = ledger("check-count");
+        let steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+        ]);
+        let ordered = order_steps(&steps).unwrap();
+        let check = check_trial(
+            &l.root,
+            None,
+            &CheckInput {
+                base: &l.base,
+                start: &l.base,
+                old_head: &l.typo,
+                new_head: &l.typo,
+                steps: &steps,
+                ordered: &ordered,
+                made: Some(3),
+            },
+        );
+        assert!(!check.is_passed);
+        assert!(check.problems[0].contains("7 commits"));
+    }
+
+    #[test]
+    fn apply_backs_up_to_the_branch_namespace_and_restore_returns_exactly() {
+        let l = ledger("run-apply-restore");
+        let mut steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests,
+        ]);
+        steps.push(fold(&l.typo, &l.export, HistoryVerb::Fixup));
+        let head = run_ok(&l, steps, "run-apply-restore").head.unwrap();
+        let MoveOutcome::Moved { backup_ref, .. } =
+            move_branch_blocking(&l.root, "feature", &l.typo, &head).unwrap()
+        else {
+            panic!("expected the branch to move");
+        };
+        assert!(backup_ref.starts_with("refs/goodboy/backup/feature/"));
+        assert_eq!(git_ok(&l.root, &["rev-parse", &backup_ref]), l.typo);
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), head);
+        let restored = move_branch_blocking(&l.root, "feature", &head, &backup_ref).unwrap();
+        assert!(matches!(restored, MoveOutcome::Moved { .. }));
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+        assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
+    }
+
+    #[test]
+    fn apply_refuses_to_overwrite_an_untracked_file() {
+        let l = ledger("apply-untracked");
+        git_ok(&l.root, &["rm", "-q", "logger.ts"]);
+        git_ok(
+            &l.root,
+            &["commit", "-q", "--no-verify", "-m", "Stop logging"],
+        );
+        let now = git_ok(&l.root, &["rev-parse", "HEAD"]);
+        std::fs::write(l.root.join("logger.ts"), "mine\n").unwrap();
+        let blocked = move_branch_blocking(&l.root, "feature", &now, &l.typo).unwrap();
+        let MoveOutcome::Blocked { reason } = blocked else {
+            panic!("expected the untracked file to block");
+        };
+        assert!(reason.contains("logger.ts"), "{reason}");
+        assert_eq!(
+            std::fs::read_to_string(l.root.join("logger.ts")).unwrap(),
+            "mine\n"
+        );
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), now);
+    }
+
+    #[test]
+    fn after_apply_the_lease_push_stops_when_someone_else_pushed() {
+        let l = ledger("run-remote-moved");
+        let remote = l.root.join("remote.git");
+        git_ok(&l.root, &["init", "-q", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &l.root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        git_ok(&l.root, &["push", "-q", "-u", "origin", "feature"]);
+        let other = l.root.join("other");
+        git_ok(
+            &l.root,
+            &[
+                "clone",
+                "-q",
+                "-b",
+                "feature",
+                remote.to_str().unwrap(),
+                other.to_str().unwrap(),
+            ],
+        );
+        git_ok(&other, &["config", "user.email", "tomas@harborline.test"]);
+        git_ok(&other, &["config", "user.name", "Tomas Vey"]);
+        let theirs = commit(&other, "teammate.ts", "hi\n", "Teammate change");
+        git_ok(&other, &["push", "-q", "origin", "feature"]);
+        let mut steps = picks(&[
+            &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests,
+        ]);
+        steps.push(fold(&l.typo, &l.export, HistoryVerb::Fixup));
+        let head = run_ok(&l, steps, "run-remote-moved").head.unwrap();
+        move_branch_blocking(&l.root, "feature", &l.typo, &head).unwrap();
+        let cwd = l.root.to_string_lossy().into_owned();
+        let pushed = crate::github::run_git_authenticated(
+            &[
+                "push",
+                &crate::github::lease_argument("feature", Some(&l.typo)),
+                "origin",
+                "refs/heads/feature:refs/heads/feature",
+            ],
+            &cwd,
+            None,
+        )
+        .unwrap();
+        assert!(matches!(
+            crate::github::lease_push_outcome(&pushed),
+            crate::github::LeasePushOutcome::Stale { .. }
+        ));
+        assert_eq!(
+            git_ok(&remote, &["rev-parse", "refs/heads/feature"]),
+            theirs
+        );
+    }
+
+    #[test]
+    fn stale_copies_are_cleaned_and_real_repositories_are_left_alone() {
+        let l = ledger("stale");
+        let scratch = l.root.join("scratch");
+        std::fs::create_dir_all(&scratch).unwrap();
+        let trial_copy = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}1"));
+        let rewriter_copy = scratch.join(format!("{COPY_PREFIX}mount-1"));
+        for copy in [&trial_copy, &rewriter_copy] {
+            git_ok(
+                &l.root,
+                &[
+                    "worktree",
+                    "add",
+                    "--detach",
+                    "--quiet",
+                    copy.to_str().unwrap(),
+                    &l.base,
+                ],
+            );
+        }
+        let lookalike = scratch.join(format!("{COPY_PREFIX}test-repo"));
+        std::fs::create_dir_all(lookalike.join(".git")).unwrap();
+        assert_eq!(worktree_count(&l.root), 3);
+
+        assert_eq!(clean_stale_copies_in(&scratch, 0, u64::MAX), 1);
+        assert!(!trial_copy.exists());
+        assert!(rewriter_copy.exists());
+        assert_eq!(worktree_count(&l.root), 2);
+
+        assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 1);
+        assert!(!rewriter_copy.exists());
+        assert!(lookalike.exists());
+        assert_eq!(worktree_count(&l.root), 1);
+    }
+
+    #[test]
+    fn starting_from_a_main_that_changed_the_same_lines_stops_and_leaves_the_branch() {
+        let l = ledger("run-onto-conflict");
+        git_ok(&l.root, &["checkout", "-q", "main"]);
+        let main = commit(
+            &l.root,
+            "export.ts",
+            "export from main\n",
+            "Cascadia rounding rules",
+        );
+        git_ok(&l.root, &["checkout", "-q", "feature"]);
+        let mut args = ledger_plan(
+            &l,
+            picks(&[
+                &l.export, &l.batch, &l.webhook, &l.retries, &l.logging, &l.tests, &l.typo,
+            ]),
+        );
+        args.onto = Some(main);
+        let prediction = predict(&args).unwrap();
+        assert_eq!(prediction.steps[0].outcome, StepOutcome::Conflict);
+        let result = tried(
+            run_plan(
+                &run_args(&l.root, args),
+                &slug("run-onto-conflict"),
+                &|_| {},
+            )
+            .unwrap(),
+        );
+        assert_eq!(result.stop.unwrap().sha, l.export);
+        assert_eq!(git_ok(&l.root, &["rev-parse", "HEAD"]), l.typo);
+        assert_eq!(worktree_count(&l.root), 1);
+    }
+
+    #[test]
+    fn commits_before_the_first_change_keep_their_shas() {
+        let l = ledger("run-keep-prefix");
+        let mut steps = picks(&[&l.export, &l.batch, &l.webhook, &l.retries]);
+        steps.push(step(&l.logging, HistoryVerb::Drop));
+        steps.extend(picks(&[&l.tests, &l.typo]));
+        let prediction = predict(&ledger_plan(&l, steps.clone())).unwrap();
+        assert_eq!(
+            prediction.steps[3].new_sha.as_deref(),
+            Some(l.retries.as_str())
+        );
+        assert_ne!(
+            prediction.steps[5].new_sha.as_deref(),
+            Some(l.tests.as_str())
+        );
+        let result = run_ok(&l, steps, "run-keep-prefix");
+        let head = result.head.clone().unwrap();
+        assert!(is_ancestor(&l.root, &l.retries, &head));
+        assert!(!is_ancestor(&l.root, &l.tests, &head));
     }
 }
