@@ -58,8 +58,8 @@ const renderColumn = (
       sessions={sessions}
       nav={nav}
       selection={selection}
-      onArchive={noop}
-      onDelete={noop}
+      selectedIds={[]}
+      onClearSelection={noop}
       onRestore={noop}
       collapse={collapse}
     />,

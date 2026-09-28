@@ -87,8 +87,8 @@ type StageColumnProps = {
   readonly sessions: ReadonlyArray<Session>;
   readonly nav: BoardNavigation;
   readonly selection: MultiSelect<SessionId>;
-  readonly onArchive: (session: Session) => void;
-  readonly onDelete: (session: Session) => void;
+  readonly selectedIds: ReadonlyArray<SessionId>;
+  readonly onClearSelection: () => void;
   readonly onRestore: (session: Session) => void;
   readonly collapse?: ColumnCollapse;
 };
@@ -98,8 +98,8 @@ export const StageColumn = ({
   sessions,
   nav,
   selection,
-  onArchive,
-  onDelete,
+  selectedIds,
+  onClearSelection,
   onRestore,
   collapse,
 }: StageColumnProps) => {
@@ -181,8 +181,8 @@ export const StageColumn = ({
                 archived={view.archived}
                 selected={isSelected(session.id as SessionId)}
                 onModifierClick={selection.handleItemClick}
-                onArchive={onArchive}
-                onDelete={onDelete}
+                selectedIds={selectedIds}
+                onClearSelection={onClearSelection}
                 onRestore={onRestore}
               />
             ))}
