@@ -159,6 +159,6 @@ describe('ChatRoom', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: Sonnet 5/ }));
     const refused = screen.getByRole('menuitem', { name: /OpenCode/ });
     expect(refused.hasAttribute('disabled')).toBe(true);
-    expect(refused.textContent).toContain('Cannot be limited to reading files');
+    expect(refused.textContent).toContain('Chat needs a provider that can run read-only');
   });
 });

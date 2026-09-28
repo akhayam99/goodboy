@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { chatModelLabel } from './chatModelLabel';
-import { isChatProviderRefused } from './chatProviders';
 import { defaultChatModel } from './defaultChatModel';
 
 describe('defaultChatModel', () => {
@@ -12,9 +11,7 @@ describe('defaultChatModel', () => {
   });
 
   it('skips the providers a chat refuses', () => {
-    const choice = defaultChatModel({ connected: ['opencode', 'codex'] });
-    expect(choice.provider).toBe('codex');
-    expect(isChatProviderRefused({ provider: 'opencode' })).toBe(true);
+    expect(defaultChatModel({ connected: ['opencode', 'cursor', 'codex'] }).provider).toBe('codex');
   });
 
   it('labels a model from its catalog', () => {

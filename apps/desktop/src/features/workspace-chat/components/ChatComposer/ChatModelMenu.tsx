@@ -2,14 +2,19 @@ import { Check, ChevronDown } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { visibleCatalog } from '@goodboy/core';
 import { AnchoredPopover, MenuItems, cn, useDropdown, type OverflowMenuItem } from '@goodboy/ui';
-import { PROVIDER_IDS, type ModelKey, type ProviderId } from '@goodboy/types';
+import {
+  CHAT_PROVIDER_IDS,
+  CHAT_PROVIDER_REFUSAL,
+  isChatProvider,
+  type ModelKey,
+  type ProviderId,
+} from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ProviderGlyph } from '../../../../shared/components/RoutingPicker/ProviderGlyph';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useHiddenModels } from '../../../providers/hooks/useHiddenModels';
 import { useAppStore } from '../../../../store';
 import { chatModelLabel } from '../../chatModelLabel';
-import { CHAT_REFUSED_REASON, isChatProviderRefused } from '../../chatProviders';
 import type { ChatModelChoice } from '../../defaultChatModel';
 
 type Props = {
@@ -34,36 +39,20 @@ export const ChatModelMenu = ({ provider, model, onPick }: Props) => {
         .map((candidate) => candidate.id),
     ),
   );
-  const shown = PROVIDER_IDS.filter(
+  const offered = CHAT_PROVIDER_IDS.filter(
     (candidate) => candidate === provider || connected.includes(candidate),
   );
-  const items: ReadonlyArray<OverflowMenuItem> = shown.flatMap(
+  const chatProviders = offered.length === 0 ? CHAT_PROVIDER_IDS : offered;
+  const refused = connected.filter((candidate) => !isChatProvider(candidate));
+  const modelItems: ReadonlyArray<OverflowMenuItem> = chatProviders.flatMap(
     (candidate): ReadonlyArray<OverflowMenuItem> => {
-      const header: OverflowMenuItem = {
-        kind: 'header',
-        key: `header:${candidate}`,
-        label: PROVIDER_LABEL[candidate],
-      };
-      if (isChatProviderRefused({ provider: candidate })) {
-        return [
-          header,
-          {
-            kind: 'item',
-            key: `refused:${candidate}`,
-            label: PROVIDER_LABEL[candidate],
-            description: CHAT_REFUSED_REASON,
-            disabled: true,
-            onClick: () => undefined,
-          },
-        ];
-      }
       const models = visibleCatalog({
         provider: candidate,
         hidden,
         currentKey: candidate === provider ? model : '',
       }).filter((entry) => entry.legacy !== true || entry.key === model);
       return [
-        header,
+        { kind: 'header', key: `header:${candidate}`, label: PROVIDER_LABEL[candidate] },
         ...models.map((entry): OverflowMenuItem => ({
           kind: 'item',
           key: `${candidate}:${entry.key}`,
@@ -74,6 +63,21 @@ export const ChatModelMenu = ({ provider, model, onPick }: Props) => {
       ];
     },
   );
+  const refusedItems: ReadonlyArray<OverflowMenuItem> =
+    refused.length === 0
+      ? []
+      : [
+          { kind: 'separator', key: 'refused-separator' },
+          {
+            kind: 'item',
+            key: 'refused',
+            label: refused.map((candidate) => PROVIDER_LABEL[candidate]).join(', '),
+            description: CHAT_PROVIDER_REFUSAL,
+            disabled: true,
+            onClick: () => undefined,
+          },
+        ];
+  const items = [...modelItems, ...refusedItems];
 
   return (
     <AnchoredPopover

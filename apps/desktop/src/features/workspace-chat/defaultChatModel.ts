@@ -1,6 +1,5 @@
 import { MODEL_CATALOGS } from '@goodboy/core';
-import type { CatalogModel, ModelKey, ProviderId } from '@goodboy/types';
-import { isChatProviderRefused } from './chatProviders';
+import { isChatProvider, type CatalogModel, type ModelKey, type ProviderId } from '@goodboy/types';
 
 export type ChatModelChoice = {
   readonly provider: ProviderId;
@@ -27,7 +26,7 @@ export const defaultChatModel = ({ connected }: Params): ChatModelChoice => {
   if (connected.includes(PREFERRED_CHAT_MODEL.provider)) {
     return PREFERRED_CHAT_MODEL;
   }
-  const provider = connected.find((candidate) => !isChatProviderRefused({ provider: candidate }));
+  const provider = connected.find((candidate) => isChatProvider(candidate));
   if (provider === undefined) {
     return PREFERRED_CHAT_MODEL;
   }
