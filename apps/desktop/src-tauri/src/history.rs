@@ -24,8 +24,10 @@ const LEASE_HOLDER: &str = "history-rewrite";
 const JOURNAL_FILE: &str = "goodboy-history.journal";
 const COPY_PREFIX: &str = "goodboy-history-";
 const TRIAL_SLUG_PREFIX: &str = "try-";
-const COPY_MARKER: &str = "goodboy-history-copy";
-const CLEANUP_LOCK: &str = "goodboy-history-cleanup.lock";
+const COPY_DIR: &str = "copy";
+const RESERVATION_FILE: &str = "goodboy-history-owner";
+const RESERVATION_HEADER: &str = "goodboy history copy v1";
+const RESERVATION_LOCK: &str = "goodboy-history.lock";
 const STALE_TRIAL_SECS: u64 = 10 * 60;
 const STALE_REWRITER_SECS: u64 = 24 * 60 * 60;
 
@@ -1092,16 +1094,99 @@ fn blocked(sha: &str) -> StepPrediction {
     prediction(sha, StepOutcome::Blocked)
 }
 
-pub(crate) fn copy_path_of(slug: &str) -> PathBuf {
+fn reservation_of(slug: &str) -> PathBuf {
     std::env::temp_dir().join(format!("{COPY_PREFIX}{}", sanitize_slug(slug)))
 }
 
-pub(crate) fn discard_copy(cwd: &Path, path: &str) {
-    let _ = git(cwd, &["worktree", "remove", "--force", path]);
-    if Path::new(path).exists() {
-        let _ = std::fs::remove_dir_all(path);
+pub(crate) fn copy_path_of(slug: &str) -> PathBuf {
+    reservation_of(slug).join(COPY_DIR)
+}
+
+fn held_locks() -> &'static std::sync::Mutex<HashMap<PathBuf, std::fs::File>> {
+    static HELD: OnceLock<std::sync::Mutex<HashMap<PathBuf, std::fs::File>>> = OnceLock::new();
+    HELD.get_or_init(|| std::sync::Mutex::new(HashMap::new()))
+}
+
+fn take_held(root: &Path) -> Option<std::fs::File> {
+    held_locks().lock().ok()?.remove(root)
+}
+
+fn is_held(root: &Path) -> bool {
+    held_locks()
+        .lock()
+        .map(|held| held.contains_key(root))
+        .unwrap_or(true)
+}
+
+#[cfg(unix)]
+fn try_lock_exclusive(file: &std::fs::File) -> bool {
+    use std::os::unix::io::AsRawFd;
+    unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) == 0 }
+}
+
+#[cfg(not(unix))]
+fn try_lock_exclusive(file: &std::fs::File) -> bool {
+    file.try_lock().is_ok()
+}
+
+fn open_lock(root: &Path) -> Option<std::fs::File> {
+    let file = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(root.join(RESERVATION_LOCK))
+        .ok()?;
+    try_lock_exclusive(&file).then_some(file)
+}
+
+fn reservation_root_of(copy: &Path) -> Option<PathBuf> {
+    (copy.file_name()? == COPY_DIR).then(|| copy.parent().map(Path::to_path_buf))?
+}
+
+fn owner_repo(root: &Path) -> Option<PathBuf> {
+    let owner = std::fs::read_to_string(root.join(RESERVATION_FILE)).ok()?;
+    let mut lines = owner.lines();
+    if lines.next()? != RESERVATION_HEADER {
+        return None;
     }
-    let _ = git(cwd, &["worktree", "prune"]);
+    Some(PathBuf::from(lines.next()?.trim()))
+}
+
+pub(crate) fn is_owned_copy(copy: &Path) -> bool {
+    reservation_root_of(copy).is_some_and(|root| owner_repo(&root).is_some())
+}
+
+fn remove_reservation(root: &Path, held: Option<std::fs::File>) -> bool {
+    let Some(repo) = owner_repo(root) else {
+        return false;
+    };
+    let Some(lock) = held.or_else(|| open_lock(root)) else {
+        return false;
+    };
+    let copy = root.join(COPY_DIR);
+    let git_dir = format!("--git-dir={}", repo.to_string_lossy());
+    if copy.exists() {
+        let _ = crate::path_env::command("git")
+            .arg(&git_dir)
+            .args(["worktree", "remove", "--force"])
+            .arg(&copy)
+            .output();
+    }
+    let removed = std::fs::remove_dir_all(root).is_ok();
+    drop(lock);
+    let _ = crate::path_env::command("git")
+        .arg(&git_dir)
+        .args(["worktree", "prune"])
+        .output();
+    removed
+}
+
+pub(crate) fn discard_copy(path: &str) {
+    let Some(root) = reservation_root_of(Path::new(path)) else {
+        return;
+    };
+    let held = take_held(&root);
+    remove_reservation(&root, held);
 }
 
 fn unmerged_files(copy: &Path) -> Vec<String> {
@@ -1258,82 +1343,67 @@ fn replay_in_copy(
     })
 }
 
-struct CopyGuard<'a> {
-    cwd: &'a Path,
-    path: String,
+struct CopyGuard {
+    root: PathBuf,
+    lock: Option<std::fs::File>,
     is_kept: bool,
 }
 
-impl Drop for CopyGuard<'_> {
+impl Drop for CopyGuard {
     fn drop(&mut self) {
+        let lock = self.lock.take();
         if !self.is_kept {
-            discard_copy(self.cwd, &self.path);
+            remove_reservation(&self.root, lock);
+            return;
+        }
+        if let (Some(lock), Ok(mut held)) = (lock, held_locks().lock()) {
+            held.insert(self.root.clone(), lock);
         }
     }
 }
 
-fn create_copy<'a>(
-    cwd: &'a Path,
-    copy: &Path,
-    start: &str,
-) -> Result<CopyGuard<'a>, WorktreeError> {
-    if copy.exists() {
-        return Err(plan_error(
-            "a folder already sits where the temporary copy goes, so nothing was changed",
-        ));
+fn common_dir_of(cwd: &Path) -> Result<PathBuf, WorktreeError> {
+    let raw = git(cwd, &["rev-parse", "--git-common-dir"])?;
+    let path = PathBuf::from(raw.trim());
+    let absolute = if path.is_absolute() {
+        path
+    } else {
+        cwd.join(path)
+    };
+    Ok(std::fs::canonicalize(absolute)?)
+}
+
+fn create_copy(cwd: &Path, copy: &Path, start: &str) -> Result<CopyGuard, WorktreeError> {
+    let root = reservation_root_of(copy)
+        .ok_or_else(|| plan_error("the temporary copy has no reserved folder"))?;
+    let repo = common_dir_of(cwd)?;
+    std::fs::create_dir(&root).map_err(|_| {
+        plan_error("a folder already sits where the temporary copy goes, so nothing was changed")
+    })?;
+    let written = std::fs::write(
+        root.join(RESERVATION_FILE),
+        format!(
+            "{RESERVATION_HEADER}\n{}\n{}\n",
+            repo.to_string_lossy(),
+            std::process::id()
+        ),
+    );
+    let lock = open_lock(&root);
+    if written.is_err() || lock.is_none() {
+        let _ = std::fs::remove_dir_all(&root);
+        return Err(plan_error("couldn't reserve the temporary copy"));
     }
-    let copy_text = copy.to_string_lossy().to_string();
     let guard = CopyGuard {
-        cwd,
-        path: copy_text.clone(),
+        root,
+        lock,
         is_kept: false,
     };
+    let copy_text = copy.to_string_lossy().to_string();
     git(
         cwd,
         &["worktree", "add", "--detach", "--quiet", &copy_text, start],
     )?;
-    mark_copy(copy)?;
     Ok(guard)
-}
-
-fn admin_dir_of(copy: &Path) -> Option<PathBuf> {
-    let pointer = std::fs::read_to_string(copy.join(".git")).ok()?;
-    let admin = PathBuf::from(pointer.trim().strip_prefix("gitdir:")?.trim());
-    let worktrees = admin.parent()?;
-    (worktrees.file_name()? == "worktrees").then_some(admin)
-}
-
-fn canonical_text(path: &Path) -> Option<String> {
-    Some(
-        std::fs::canonicalize(path)
-            .ok()?
-            .to_string_lossy()
-            .to_string(),
-    )
-}
-
-fn mark_copy(copy: &Path) -> Result<(), WorktreeError> {
-    let admin =
-        admin_dir_of(copy).ok_or_else(|| plan_error("the temporary copy has no git link"))?;
-    let owner = canonical_text(copy).ok_or_else(|| plan_error("the temporary copy vanished"))?;
-    std::fs::write(admin.join(COPY_MARKER), owner)?;
-    Ok(())
-}
-
-pub(crate) fn owned_copy_repo(copy: &Path) -> Option<PathBuf> {
-    let admin = admin_dir_of(copy)?;
-    let owner = std::fs::read_to_string(admin.join(COPY_MARKER)).ok()?;
-    if owner.trim() != canonical_text(copy)? {
-        return None;
-    }
-    let registered = std::fs::read_to_string(admin.join("gitdir")).ok()?;
-    if canonical_text(Path::new(registered.trim()))? != canonical_text(&copy.join(".git"))? {
-        return None;
-    }
-    if admin.join("locked").exists() {
-        return None;
-    }
-    Some(admin.parent()?.parent()?.to_path_buf())
 }
 
 pub(crate) fn trial(
@@ -1983,39 +2053,24 @@ pub(crate) fn clean_stale_copies_in(
         let Some(slug) = name.strip_prefix(COPY_PREFIX) else {
             continue;
         };
-        let path = entry.path();
-        let Some(common) = owned_copy_repo(&path) else {
+        let root = entry.path();
+        if owner_repo(&root).is_none() || is_held(&root) {
             continue;
-        };
+        }
         let limit = if slug.starts_with(TRIAL_SLUG_PREFIX) {
             trial_after_secs
         } else {
             other_after_secs
         };
-        if age_secs(&path) < limit {
+        if age_secs(&root.join(RESERVATION_FILE)) < limit {
             continue;
         }
-        let Some(admin) = admin_dir_of(&path) else {
+        let Some(lock) = open_lock(&root) else {
             continue;
         };
-        let lock = admin.join(CLEANUP_LOCK);
-        if std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&lock)
-            .is_err()
-        {
-            continue;
+        if remove_reservation(&root, Some(lock)) {
+            cleaned += 1;
         }
-        if owned_copy_repo(&path).is_none() || std::fs::remove_dir_all(&path).is_err() {
-            let _ = std::fs::remove_file(&lock);
-            continue;
-        }
-        let _ = crate::path_env::command("git")
-            .arg(format!("--git-dir={}", common.to_string_lossy()))
-            .args(["worktree", "prune"])
-            .output();
-        cleaned += 1;
     }
     cleaned
 }
@@ -2531,8 +2586,8 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
             changed_files: Vec::new(),
         });
     }
-    if !args.keeps_copy && owned_copy_repo(copy).is_some() {
-        discard_copy(cwd, &args.copy_path);
+    if !args.keeps_copy {
+        discard_copy(&args.copy_path);
     }
     Ok(RewriterCheck {
         is_tree_equal: tree_of(cwd, &tip)? == tree_of(cwd, &old_head)?,
@@ -2562,10 +2617,10 @@ pub async fn history_copy_discard(
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(worktree_path));
         }
-        if owned_copy_repo(Path::new(&copy_path)).is_none() {
+        if !is_owned_copy(Path::new(&copy_path)) {
             return Err(plan_error("that folder is not a history copy Goodboy made"));
         }
-        discard_copy(&cwd, &copy_path);
+        discard_copy(&copy_path);
         Ok(())
     })
     .await
@@ -2867,7 +2922,7 @@ mod tests {
         assert_eq!(git_ok(&b.root, &["rev-parse", "HEAD"]), b.c);
         let copy = result.copy_path.unwrap();
         assert!(Path::new(&copy).exists());
-        discard_copy(&b.root, &copy);
+        discard_copy(&copy);
     }
 
     #[test]
@@ -3217,7 +3272,7 @@ mod tests {
         .unwrap();
         assert_eq!(check.head, None);
         assert_eq!(check.problems.len(), 1);
-        discard_copy(&b.root, &copy.to_string_lossy());
+        discard_copy(&copy.to_string_lossy());
     }
 
     #[test]
@@ -3927,15 +3982,26 @@ mod tests {
         );
     }
 
+    fn clean_released(dir: &Path, trial_after: u64, other_after: u64) -> usize {
+        for _ in 0..40 {
+            let cleaned = clean_stale_copies_in(dir, trial_after, other_after);
+            if cleaned > 0 {
+                return cleaned;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(50));
+        }
+        0
+    }
+
     #[test]
     fn stale_copies_are_cleaned_and_real_repositories_are_left_alone() {
         let l = ledger("stale");
         let scratch = l.root.join("scratch");
         std::fs::create_dir_all(&scratch).unwrap();
-        let trial_copy = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}1"));
-        let rewriter_copy = scratch.join(format!("{COPY_PREFIX}mount-1"));
-        for copy in [&trial_copy, &rewriter_copy] {
-            let mut guard = create_copy(&l.root, copy, &l.base).unwrap();
+        let trial_root = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}1"));
+        let rewriter_root = scratch.join(format!("{COPY_PREFIX}mount-1"));
+        for root in [&trial_root, &rewriter_root] {
+            let mut guard = create_copy(&l.root, &root.join(COPY_DIR), &l.base).unwrap();
             guard.is_kept = true;
         }
         let users = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}mine"));
@@ -3955,28 +4021,73 @@ mod tests {
         std::fs::create_dir_all(lookalike.join(".git")).unwrap();
         assert_eq!(worktree_count(&l.root), 4);
 
-        assert_eq!(clean_stale_copies_in(&scratch, 0, u64::MAX), 1);
-        assert!(!trial_copy.exists());
-        assert!(rewriter_copy.exists());
-        assert!(users.join("work.txt").exists());
-        assert_eq!(worktree_count(&l.root), 3);
-
-        git_ok(
-            &l.root,
-            &["worktree", "lock", rewriter_copy.to_str().unwrap()],
-        );
         assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 0);
-        git_ok(
-            &l.root,
-            &["worktree", "unlock", rewriter_copy.to_str().unwrap()],
-        );
-        assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 1);
-        assert!(!rewriter_copy.exists());
+        assert!(trial_root.join(COPY_DIR).exists());
+
+        drop(take_held(&trial_root));
+        drop(take_held(&rewriter_root));
+        assert_eq!(clean_released(&scratch, 0, u64::MAX), 1);
+        assert!(!trial_root.exists());
+        assert!(rewriter_root.exists());
+        assert_eq!(worktree_count(&l.root), 3);
+        assert_eq!(clean_released(&scratch, 0, 0), 1);
+        assert!(!rewriter_root.exists());
         assert!(lookalike.exists());
         assert_eq!(
             std::fs::read_to_string(users.join("work.txt")).unwrap(),
             "my work\n"
         );
+        assert_eq!(worktree_count(&l.root), 2);
+    }
+
+    #[test]
+    fn a_copy_another_process_holds_is_never_cleaned() {
+        let l = ledger("stale-held");
+        let scratch = l.root.join("scratch");
+        std::fs::create_dir_all(&scratch).unwrap();
+        let root = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}active"));
+        let mut guard = create_copy(&l.root, &root.join(COPY_DIR), &l.base).unwrap();
+        guard.is_kept = true;
+        drop(guard);
+        let active = take_held(&root).unwrap();
+        let other_process = std::fs::OpenOptions::new()
+            .write(true)
+            .open(root.join(RESERVATION_LOCK))
+            .unwrap();
+        assert!(!try_lock_exclusive(&other_process));
+        drop(other_process);
+        assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 0);
+        assert!(root.join(COPY_DIR).exists());
+        drop(active);
+        assert_eq!(clean_released(&scratch, 0, 0), 1);
+        assert!(!root.exists());
+    }
+
+    #[test]
+    fn discard_never_deletes_a_folder_goodboy_did_not_reserve() {
+        let scratch = temp_root("not-reserved");
+        let root = scratch.join(format!("{COPY_PREFIX}{TRIAL_SLUG_PREFIX}theirs"));
+        std::fs::create_dir_all(root.join(COPY_DIR)).unwrap();
+        std::fs::write(root.join(COPY_DIR).join("work.txt"), "theirs\n").unwrap();
+        discard_copy(&root.join(COPY_DIR).to_string_lossy());
+        assert_eq!(
+            std::fs::read_to_string(root.join(COPY_DIR).join("work.txt")).unwrap(),
+            "theirs\n"
+        );
+        assert_eq!(clean_stale_copies_in(&scratch, 0, 0), 0);
+        assert!(root.exists());
+        let l = ledger("reserved-by-someone");
+        let name = slug("reserved-by-someone");
+        let taken = copy_path_of(&name);
+        std::fs::create_dir_all(taken.parent().unwrap()).unwrap();
+        std::fs::write(taken.parent().unwrap().join("note.txt"), "mine\n").unwrap();
+        let args = ledger_plan(&l, picks(&[&l.export]));
+        assert!(trial(&args, &name, false).is_err());
+        assert_eq!(
+            std::fs::read_to_string(taken.parent().unwrap().join("note.txt")).unwrap(),
+            "mine\n"
+        );
+        std::fs::remove_dir_all(taken.parent().unwrap()).unwrap();
     }
 
     #[test]
