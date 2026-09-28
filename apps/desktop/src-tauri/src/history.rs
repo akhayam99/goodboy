@@ -1146,46 +1146,101 @@ fn reservation_root_of(copy: &Path) -> Option<PathBuf> {
     (copy.file_name()? == COPY_DIR).then(|| copy.parent().map(Path::to_path_buf))?
 }
 
-fn owner_repo(root: &Path) -> Option<PathBuf> {
+struct Owner {
+    repo: PathBuf,
+    admin: Option<PathBuf>,
+    gitdir: Option<String>,
+}
+
+fn read_owner(root: &Path) -> Option<Owner> {
     let owner = std::fs::read_to_string(root.join(RESERVATION_FILE)).ok()?;
     let mut lines = owner.lines();
     if lines.next()? != RESERVATION_HEADER {
         return None;
     }
-    Some(PathBuf::from(lines.next()?.trim()))
+    let repo = PathBuf::from(lines.next()?.trim());
+    let _pid = lines.next();
+    let admin = lines
+        .next()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(PathBuf::from);
+    let gitdir = lines
+        .next()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .map(str::to_string);
+    Some(Owner {
+        repo,
+        admin,
+        gitdir,
+    })
+}
+
+fn owner_repo(root: &Path) -> Option<PathBuf> {
+    read_owner(root).map(|owner| owner.repo)
+}
+
+fn owner_text(repo: &Path, admin: &Path, gitdir: &str) -> String {
+    format!(
+        "{RESERVATION_HEADER}\n{}\n{}\n{}\n{gitdir}\n",
+        repo.to_string_lossy(),
+        std::process::id(),
+        admin.to_string_lossy()
+    )
 }
 
 pub(crate) fn is_owned_copy(copy: &Path) -> bool {
     reservation_root_of(copy).is_some_and(|root| owner_repo(&root).is_some())
 }
 
-fn own_admin_dir(copy: &Path, repo: &Path) -> Option<PathBuf> {
-    let pointer = std::fs::read_to_string(copy.join(".git")).ok()?;
-    let admin = std::fs::canonicalize(pointer.trim().strip_prefix("gitdir:")?.trim()).ok()?;
-    if admin.parent()? != std::fs::canonicalize(repo.join("worktrees")).ok()? {
+fn is_regular_file(path: &Path) -> bool {
+    std::fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_file())
+}
+
+fn is_real_dir(path: &Path) -> bool {
+    std::fs::symlink_metadata(path).is_ok_and(|meta| meta.file_type().is_dir())
+}
+
+fn created_admin_dir(copy: &Path, repo: &Path) -> Option<(PathBuf, String)> {
+    let pointer_file = copy.join(".git");
+    if !is_regular_file(&pointer_file) {
         return None;
     }
-    let registered = std::fs::read_to_string(admin.join("gitdir")).ok()?;
-    let registered = std::fs::canonicalize(registered.trim()).ok()?;
-    (registered == std::fs::canonicalize(copy.join(".git")).ok()?).then_some(admin)
+    let pointer = std::fs::read_to_string(&pointer_file).ok()?;
+    let named = PathBuf::from(pointer.trim().strip_prefix("gitdir:")?.trim());
+    let admin = std::fs::canonicalize(copy.join(named)).ok()?;
+    if admin.parent()? != repo.join("worktrees") || !is_real_dir(&admin) {
+        return None;
+    }
+    let gitdir = std::fs::read_to_string(admin.join("gitdir")).ok()?;
+    let gitdir = gitdir.trim().to_string();
+    let registered = std::fs::canonicalize(admin.join(&gitdir)).ok()?;
+    (registered == std::fs::canonicalize(&pointer_file).ok()?).then_some((admin, gitdir))
+}
+
+fn recorded_admin_dir(root: &Path) -> Option<PathBuf> {
+    let owner = read_owner(root)?;
+    let admin = owner.admin?;
+    if admin.parent()? != owner.repo.join("worktrees") || !is_real_dir(&admin) {
+        return None;
+    }
+    let gitdir_file = admin.join("gitdir");
+    if !is_regular_file(&gitdir_file) {
+        return None;
+    }
+    let gitdir = std::fs::read_to_string(&gitdir_file).ok()?;
+    (Some(gitdir.trim()) == owner.gitdir.as_deref()).then_some(admin)
 }
 
 fn remove_reservation(root: &Path, held: Option<std::fs::File>) -> bool {
-    let Some(repo) = owner_repo(root) else {
+    if owner_repo(root).is_none() {
         return false;
-    };
+    }
     let Some(lock) = held.or_else(|| open_lock(root)) else {
         return false;
     };
-    let copy = root.join(COPY_DIR);
-    let admin = own_admin_dir(&copy, &repo);
-    if copy.exists() {
-        let _ = crate::path_env::command("git")
-            .arg(format!("--git-dir={}", repo.to_string_lossy()))
-            .args(["worktree", "remove", "--force"])
-            .arg(&copy)
-            .output();
-    }
+    let admin = recorded_admin_dir(root);
     let removed = std::fs::remove_dir_all(root).is_ok();
     drop(lock);
     if let Some(admin) = admin.filter(|admin| admin.exists()) {
@@ -1405,10 +1460,22 @@ fn create_copy(cwd: &Path, copy: &Path, start: &str) -> Result<CopyGuard, Worktr
         is_kept: false,
     };
     let copy_text = copy.to_string_lossy().to_string();
-    git(
+    let added = git(
         cwd,
         &["worktree", "add", "--detach", "--quiet", &copy_text, start],
-    )?;
+    );
+    let recorded = created_admin_dir(copy, &repo).is_some_and(|(admin, gitdir)| {
+        let staged = guard.root.join(format!("{RESERVATION_FILE}.next"));
+        std::fs::write(&staged, owner_text(&repo, &admin, &gitdir)).is_ok()
+            && std::fs::rename(&staged, guard.root.join(RESERVATION_FILE)).is_ok()
+    });
+    if !recorded {
+        let _ = git(cwd, &["worktree", "remove", "--force", &copy_text]);
+    }
+    added?;
+    if !recorded {
+        return Err(plan_error("couldn't record the temporary copy"));
+    }
     Ok(guard)
 }
 
@@ -2812,16 +2879,18 @@ pub struct CopyGitDirs {
 pub(crate) fn copy_git_dirs(copy: &Path) -> Option<CopyGitDirs> {
     let root = reservation_root_of(copy)?;
     let repo = owner_repo(&root)?;
-    let admin = own_admin_dir(copy, &repo)?;
-    let objects = std::fs::canonicalize(repo.join("objects")).ok()?;
-    let common = objects.parent()?;
+    if !is_regular_file(&copy.join(".git")) {
+        return None;
+    }
+    let admin = recorded_admin_dir(&root)?;
+    let objects = repo.join("objects");
+    if !is_real_dir(&objects) {
+        return None;
+    }
     Some(CopyGitDirs {
         git_dir: admin.to_string_lossy().to_string(),
         objects_dir: objects.to_string_lossy().to_string(),
-        packed_refs_lock: common
-            .join("packed-refs.lock")
-            .to_string_lossy()
-            .to_string(),
+        packed_refs_lock: repo.join("packed-refs.lock").to_string_lossy().to_string(),
     })
 }
 
@@ -4989,6 +5058,77 @@ mod tests {
         );
         drop(guard);
         assert_eq!(copy_git_dirs(&l.root.join("copy")), None);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_copy_whose_git_file_becomes_a_link_never_reaches_another_worktree() {
+        let l = ledger("copy-git-link");
+        let other = temp_root("copy-git-link-other").join("review");
+        git_ok(
+            &l.root,
+            &[
+                "worktree",
+                "add",
+                "--detach",
+                "--quiet",
+                other.to_str().unwrap(),
+                &l.base,
+            ],
+        );
+        let review_admin =
+            std::fs::canonicalize(git_ok(&other, &["rev-parse", "--absolute-git-dir"])).unwrap();
+        let copy = copy_path_of(&slug("copy-git-link"));
+        let mut guard = create_copy(&l.root, &copy, &l.base).unwrap();
+        guard.is_kept = true;
+        let own_admin = PathBuf::from(copy_git_dirs(&copy).unwrap().git_dir);
+
+        std::fs::remove_file(copy.join(".git")).unwrap();
+        std::os::unix::fs::symlink(other.join(".git"), copy.join(".git")).unwrap();
+        assert_eq!(copy_git_dirs(&copy), None);
+
+        drop(guard);
+        discard_copy(&copy.to_string_lossy());
+        assert!(!copy.exists());
+        assert!(review_admin.join("gitdir").exists());
+        assert_eq!(git_ok(&other, &["rev-parse", "HEAD"]), l.base);
+        assert!(!own_admin.exists());
+    }
+
+    #[test]
+    fn a_copy_whose_git_file_names_another_admin_dir_keeps_its_recorded_one() {
+        let l = ledger("copy-git-retarget");
+        let other = temp_root("copy-git-retarget-other").join("review");
+        git_ok(
+            &l.root,
+            &[
+                "worktree",
+                "add",
+                "--detach",
+                "--quiet",
+                other.to_str().unwrap(),
+                &l.base,
+            ],
+        );
+        let review_admin =
+            std::fs::canonicalize(git_ok(&other, &["rev-parse", "--absolute-git-dir"])).unwrap();
+        let copy = copy_path_of(&slug("copy-git-retarget"));
+        let mut guard = create_copy(&l.root, &copy, &l.base).unwrap();
+        guard.is_kept = true;
+        let own_admin = PathBuf::from(copy_git_dirs(&copy).unwrap().git_dir);
+        std::fs::write(
+            copy.join(".git"),
+            format!("gitdir: {}\n", review_admin.to_string_lossy()),
+        )
+        .unwrap();
+        assert_eq!(
+            copy_git_dirs(&copy).map(|dirs| PathBuf::from(dirs.git_dir)),
+            Some(own_admin.clone())
+        );
+        drop(guard);
+        discard_copy(&copy.to_string_lossy());
+        assert!(review_admin.join("gitdir").exists());
+        assert!(!own_admin.exists());
     }
 
     #[test]

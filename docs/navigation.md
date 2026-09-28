@@ -1165,7 +1165,9 @@ copy, that copy's own git admin folder, the object store and the packed-refs loc
 file git takes when it clears a rebase marker. Temporary copies left by a crash are removed when the
 app starts. Each copy lives in a folder Goodboy reserves atomically, with an
 owner file and a lock it holds while the copy is in use, and nothing deletes a
-copy without both, so a second window never removes a copy in use. `Branch vs main` sits in the file
+copy without both, so a second window never removes a copy in use. The owner
+file records the copy's git admin folder when the copy is made; the rewriter's
+roots and the cleanup read it from there, never from the copy's own `.git`. `Branch vs main` sits in the file
 toolbar under the title, with `N files +N -M`, because it decides which files
 you see, not what you do to the branch. The file toolbar row holds `N files` (the file jump, also `T`: filter,
 arrows, Enter), `N of M viewed`, `Unified | Split` and `Wrap` (on by default,
