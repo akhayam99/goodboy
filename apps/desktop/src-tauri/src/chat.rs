@@ -370,13 +370,6 @@ fn harden_claude(cli: Vec<String>, prompt: &str, read_roots: &[String]) -> Vec<S
     hardened
 }
 
-fn flag_value<'a>(cli: &'a [String], flag: &str) -> Option<&'a str> {
-    cli.iter()
-        .position(|arg| arg == flag)
-        .and_then(|index| cli.get(index + 1))
-        .map(|value| value.as_str())
-}
-
 fn has_pair(cli: &[String], flag: &str, value: &str) -> bool {
     cli.windows(2)
         .any(|pair| pair[0] == flag && pair[1] == value)
@@ -592,6 +585,13 @@ pub async fn chat_cancel(state: State<'_, ChatRegistry>, run_id: String) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn flag_value<'a>(cli: &'a [String], flag: &str) -> Option<&'a str> {
+        cli.iter()
+            .position(|arg| arg == flag)
+            .and_then(|index| cli.get(index + 1))
+            .map(|value| value.as_str())
+    }
 
     const PROVIDERS: [&str; 2] = ["anthropic", "codex"];
     const HOME: &str = "/Users/mara";
