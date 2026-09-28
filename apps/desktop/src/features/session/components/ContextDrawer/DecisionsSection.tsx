@@ -119,7 +119,8 @@ export const DecisionsSection = ({
       const hasReplaced = closedWanted.some((row) => !isRemovedByYou(row));
       if (hasRemoved && !hasReplaced) {
         setClosedFilter('removed');
-      } else if (hasReplaced && !hasRemoved) {
+      }
+      if (hasReplaced && !hasRemoved) {
         setClosedFilter('replaced');
       }
     }
@@ -263,7 +264,7 @@ export const DecisionsSection = ({
               <button
                 type="button"
                 onClick={undoAllRemovals}
-                className="inline-flex items-center gap-1.5 rounded-sm px-1 py-0.5 font-medium text-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                className="inline-flex items-center gap-1.5 rounded-sm px-1 py-0.5 text-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
               >
                 <Undo2 size={ICON_SIZE.row} aria-hidden />
                 Undo all

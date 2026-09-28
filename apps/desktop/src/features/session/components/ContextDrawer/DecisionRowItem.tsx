@@ -129,7 +129,9 @@ export const DecisionRowItem = ({
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
           onToggleOpen();
-        } else if (event.key === 'Escape' && isOpen) {
+          return;
+        }
+        if (event.key === 'Escape' && isOpen) {
           onToggleOpen();
         }
       }}
@@ -154,7 +156,7 @@ export const DecisionRowItem = ({
         {isLong ? (
           <button
             type="button"
-            className="w-fit rounded-sm text-secondary font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            className="w-fit rounded-sm text-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             onClick={(event) => {
               event.stopPropagation();
               onToggleOpen();
