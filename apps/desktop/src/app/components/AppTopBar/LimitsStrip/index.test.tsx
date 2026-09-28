@@ -45,6 +45,11 @@ const limits = (patch: Partial<ProviderLimits>): ProviderLimits => ({
   ...patch,
 });
 
+const bothReporting = (): Partial<Record<ProviderId, ProviderLimits>> => ({
+  anthropic: limits({}),
+  codex: limits({ providerId: 'codex', plan: 'Plus' }),
+});
+
 beforeEach(() => {
   vi.useFakeTimers({ now: NOW, toFake: ['Date'] });
   store.providers = connected(['anthropic', 'codex', 'cursor', 'gemini']);
@@ -62,19 +67,31 @@ const chipButtons = () =>
     .filter((button) => button.getAttribute('data-limits-chip') !== 'overflow');
 
 describe('LimitsStrip', () => {
-  it('draws one chip per connected plan provider in a fixed order, no data last', () => {
+  it('draws a chip only for providers with data and keeps the rest under +N', () => {
     store.providers = connected(['anthropic', 'codex', 'cursor', 'gemini', 'opencode']);
+    store.providerLimits = bothReporting();
     render(<LimitsStrip />);
 
     expect(chipButtons().map((button) => button.getAttribute('data-limits-chip'))).toEqual([
       'anthropic',
       'codex',
-      'cursor',
-      'gemini',
     ]);
+    const [overflow] = screen.getAllByRole('button', { name: '2 more providers' });
+    fireEvent.click(overflow as HTMLElement);
+    const list = screen.getByRole('list', { name: 'More provider limits' });
+    expect(list.textContent).toContain('Cursor');
+    expect(list.textContent).toContain('Gemini');
+    expect(list.textContent).toContain('no data');
   });
 
-  it('shows only the bar at rest and the number from 80 percent', () => {
+  it('draws no chip for a provider still waiting for its first figures', () => {
+    render(<LimitsStrip />);
+
+    expect(chipButtons()).toEqual([]);
+    expect(screen.getAllByRole('button', { name: '4 more providers' }).length).toBeGreaterThan(0);
+  });
+
+  it('shows only the icon and bars, the number stays in the label', () => {
     store.providerLimits = {
       anthropic: limits({}),
       codex: limits({
@@ -97,7 +114,8 @@ describe('LimitsStrip', () => {
     const [claude, codex] = chipButtons();
     expect(claude?.textContent).toBe('');
     expect(claude?.getAttribute('aria-label')).toContain('Claude Max · 47% of the week used');
-    expect(codex?.textContent).toBe('5h 82%');
+    expect(codex?.textContent).toBe('');
+    expect(codex?.getAttribute('data-limits-state')).toBe('warning');
     expect(codex?.getAttribute('aria-label')).toContain('Codex is about to run out');
   });
 
@@ -135,10 +153,10 @@ describe('LimitsStrip', () => {
       '4%',
       '94%',
     ]);
-    expect(claude?.textContent).toBe('wk 94%');
+    expect(claude?.textContent).toBe('');
   });
 
-  it('says out with the reset day when the provider stopped', () => {
+  it('fills the bar when the provider stopped and says out only in the label', () => {
     store.providerLimits = {
       codex: limits({
         providerId: 'codex',
@@ -159,26 +177,39 @@ describe('LimitsStrip', () => {
     const codex = chipButtons().find(
       (button) => button.getAttribute('data-limits-chip') === 'codex',
     );
-    expect(codex?.textContent).toMatch(/^Out· \S+$/);
+    const weekly = codex?.querySelector('[data-limits-track="weekly"]')
+      ?.firstElementChild as HTMLElement;
+    expect(codex?.textContent).toBe('');
+    expect(weekly.style.width).toBe('100%');
     expect(codex?.getAttribute('aria-label')).toContain('Codex is out for the week');
   });
 
+  it('sits on the bar without a card or a label', () => {
+    store.providerLimits = bothReporting();
+    const { container } = render(<LimitsStrip />);
+
+    const toolbar = screen.getByRole('toolbar', { name: 'Provider limits' });
+    expect(toolbar.className).not.toContain('bg-');
+    expect(container.textContent).not.toContain('Limits');
+  });
+
   it('shows the fewest chips below chrome-labels and moves the rest into +N', () => {
+    store.providerLimits = bothReporting();
     render(<LimitsStrip />);
 
     const buttons = chipButtons();
     expect(buttons[0]?.className).toContain('flex');
     expect(buttons[0]?.className).not.toContain('hidden');
     expect(buttons[1]?.className).toContain('@min-chrome-labels/topbar:flex');
-    expect(buttons[2]?.className).toContain('@min-chrome-wide/topbar:flex');
     expect(screen.getByRole('button', { name: '3 more providers' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: '2 more providers' })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: '2 more providers' })).toHaveLength(2);
     expect(screen.queryByRole('button', { name: '0 more providers' })).toBeNull();
   });
 
   it('gives +N the tone of the worst hidden provider and lists them', () => {
     store.providers = connected(['anthropic', 'codex']);
     store.providerLimits = {
+      anthropic: limits({}),
       codex: limits({
         providerId: 'codex',
         windows: [
@@ -203,6 +234,7 @@ describe('LimitsStrip', () => {
   });
 
   it('moves between chips with the arrow keys', () => {
+    store.providerLimits = bothReporting();
     render(<LimitsStrip />);
     const buttons = chipButtons();
     buttons[0]?.focus();
@@ -216,6 +248,7 @@ describe('LimitsStrip', () => {
   });
 
   it('presses the chip of the provider open in settings and opens its usage on click', () => {
+    store.providerLimits = bothReporting();
     const listener = vi.fn();
     window.addEventListener('goodboy:open-settings', listener);
     render(<LimitsStrip openProviderId="codex" />);

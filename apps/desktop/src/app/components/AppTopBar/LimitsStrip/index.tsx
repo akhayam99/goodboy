@@ -35,6 +35,13 @@ type IndexParams = {
 
 const chipVisibility = ({ index }: IndexParams): string => CHIP_VISIBILITY[index] ?? 'hidden';
 
+type ChipParams = {
+  readonly chip: LimitsChipModel;
+};
+
+const hasData = ({ chip }: ChipParams): boolean =>
+  chip.state !== 'none' && chip.state !== 'waiting';
+
 const moveFocus = (event: KeyboardEvent<HTMLDivElement>): void => {
   if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') {
     return;
@@ -62,37 +69,36 @@ export const LimitsStrip = ({ openProviderId = null }: Props) => {
     return null;
   }
   const onOpen = (chip: LimitsChipModel) => openProviderUsage({ providerId: chip.providerId });
+  const withData = chips.filter((chip) => hasData({ chip }));
+  const noData = chips.filter((chip) => !hasData({ chip }));
   return (
-    <div className="flex shrink-0 items-center gap-1.5">
-      <span className="hidden text-2xs text-faint-foreground @min-chrome-labels/topbar:inline">
-        Limits
-      </span>
-      <div
-        role="toolbar"
-        aria-label="Provider limits"
-        onKeyDown={moveFocus}
-        className="flex items-center gap-px rounded-md bg-subtle"
-      >
-        {chips.map((chip, index) => (
-          <LimitsChip
-            key={chip.providerId}
-            chip={chip}
-            nowMs={nowMs}
-            isPressed={chip.providerId === openProviderId}
-            className={chipVisibility({ index })}
-            onOpen={onOpen}
-          />
-        ))}
-        {OVERFLOW_STEPS.filter((step) => chips.length > step.shown).map((step) => (
+    <div
+      role="toolbar"
+      aria-label="Provider limits"
+      onKeyDown={moveFocus}
+      className="flex shrink-0 items-center gap-1"
+    >
+      {withData.map((chip, index) => (
+        <LimitsChip
+          key={chip.providerId}
+          chip={chip}
+          nowMs={nowMs}
+          isPressed={chip.providerId === openProviderId}
+          className={chipVisibility({ index })}
+          onOpen={onOpen}
+        />
+      ))}
+      {OVERFLOW_STEPS.filter((step) => withData.length > step.shown || noData.length > 0).map(
+        (step) => (
           <LimitsOverflowPopover
             key={step.shown}
-            hidden={chips.slice(step.shown)}
+            hidden={[...withData.slice(step.shown), ...noData]}
             nowMs={nowMs}
             className={step.className}
             onOpen={onOpen}
           />
-        ))}
-      </div>
+        ),
+      )}
     </div>
   );
 };

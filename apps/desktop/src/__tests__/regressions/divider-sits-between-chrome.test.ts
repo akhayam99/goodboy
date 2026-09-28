@@ -33,7 +33,6 @@ const ALLOWED: Readonly<Record<string, Allowance>> = {
     count: 2,
     reason: 'chrome',
   },
-  'apps/desktop/src/app/components/AppTopBar/index.tsx': { count: 1, reason: 'chrome' },
   'apps/desktop/src/app/components/AppTopBar/NowChip/index.tsx': { count: 1, reason: 'debt' },
   'apps/desktop/src/features/artifacts/components/ArtifactStudio/ArtifactConversation/index.tsx': {
     count: 1,

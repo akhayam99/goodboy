@@ -71,7 +71,7 @@ const trackFill = ({ window }: FillParams): string =>
   window === null ? WINDOW_TONE_FILL.neutral : WINDOW_TONE_FILL[windowTone({ window })];
 
 export const LimitsBars = ({ state, windows, isStale, className }: Props) => {
-  const isEmpty = state === 'reset' || state === 'waiting' || state === 'none';
+  const isEmpty = state === 'waiting' || state === 'none';
   if (isEmpty) {
     return (
       <span

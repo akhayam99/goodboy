@@ -613,7 +613,7 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 
 ### Usage limits chip
 
-See how much of your Claude and Codex plans is left before a run stops. A top-bar chip shows the 5-hour window and the week, warns at 80%, and at 100% says when it comes back. Checking Claude spends no model tokens: Goodboy runs Claude's own `/usage` in an empty folder.
+See how much of your Claude and Codex plans is left before a run stops. A top-bar chip draws the 5-hour window and the week as two bars: amber from 80%, red and full at 100%, faded when the figures are old. Hover it for the percentages and when each window comes back. Checking Claude spends no model tokens: Goodboy runs Claude's own `/usage` in an empty folder.
 
 ### Use reset
 
