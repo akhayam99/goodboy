@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { ScrollFade } from '../ScrollFade';
 import { MenuList } from './MenuList';
 import { placeContextMenu } from './placeContextMenu';
 import type { MenuEntry, MenuPoint } from './menuTypes';
@@ -68,9 +69,16 @@ export const ContextMenu = ({ label, point, entries, onClose }: Props) => {
         top: placed?.y ?? point.y,
         visibility: placed === null ? 'hidden' : 'visible',
       }}
-      className="fixed z-popover flex max-h-[calc(100vh-16px)] max-w-sm flex-col overflow-y-auto rounded-lg border border-border bg-floating text-label shadow-lg motion-safe:animate-popover-in"
+      className="fixed z-popover flex max-h-[calc(100vh-16px)] max-w-sm flex-col rounded-lg border border-border bg-floating text-label shadow-lg motion-safe:animate-popover-in"
     >
-      <MenuList label={label} entries={entries} onClose={onClose} />
+      <ScrollFade
+        className="flex min-h-0 flex-1 flex-col"
+        viewportClassName="h-auto min-h-0 flex-1"
+        fadeSize={12}
+        fadeFrom="floating"
+      >
+        <MenuList label={label} entries={entries} onClose={onClose} />
+      </ScrollFade>
     </div>,
     document.body,
   );
