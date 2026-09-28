@@ -98,6 +98,21 @@ box, weight and tracking together. `cn` reads every role as a font size, so a
 later role or grade replaces an earlier one and a text colour never drops it.
 The list is `TYPE_ROLES` in `typeRoles.ts`.
 
+The family is Inter: the variable Latin file in `apps/desktop/src/assets/fonts/`,
+declared once as a global face in `styles.css` and first in `--font-sans`, with
+the system stack behind it as the fallback. `--font-mono` stays the system mono
+stack. The body turns on `calt` and sets `font-optical-sizing: auto`, so the
+drawing tightens along the file's optical axis (14 to 32) as the size grows.
+Tabular figures are not global: Inter's `tnum` also widens the hyphen, which
+set `storefront-web` apart as `storefront - web`. `text-meta` carries
+`tabular-nums` itself, and any other number that lines up in a column adds
+`tabular-nums`. The file has no character variants and no stylistic sets, so
+`cv11` or `ss01` would change nothing. `app-font-is-inter.test.ts` reads the
+file's feature list and fails on a feature the file lacks. The face is upright
+only, so emphasis gets a synthetic slant. The boot shell in
+`apps/desktop/index.html` stays on `system-ui`, because it paints before the
+stylesheet loads, and the exported report embeds the same file as a data URI.
+
 | role             | measure                       | used for                                                                               |
 | ---------------- | ----------------------------- | -------------------------------------------------------------------------------------- |
 | `text-display`   | 24/32, 600, -0.01em           | onboarding titles, the `EmptyState` hero, the Impact title                             |
