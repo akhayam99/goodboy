@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { SkeletonText } from '@goodboy/ui';
+import { ChevronDown, ChevronRight, Undo2 } from 'lucide-react';
+import { Input, SegmentedTabs, SkeletonText, type SegmentedTabOption } from '@goodboy/ui';
 import { activeDecisionsNewestFirst, type DecisionOp } from '@goodboy/core';
 import type { AgentId, SessionDecision, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -28,6 +28,19 @@ const OPENED_HIGHLIGHT_MS = 2400;
 const EMPTY_LEDGER: ReadonlyArray<SessionDecision> = [];
 const NO_NUMBERS: ReadonlySet<number> = new Set();
 
+type ClosedFilter = 'removed' | 'replaced';
+
+const isRemovedByYou = (row: SessionDecision): boolean =>
+  row.status === 'withdrawn' && row.closedBy === 'user';
+
+const matchesClosedSearch = (row: SessionDecision, query: string): boolean => {
+  const trimmed = query.trim().toLowerCase().replace(/^#/, '');
+  if (trimmed === '') {
+    return true;
+  }
+  return row.text.toLowerCase().includes(trimmed) || String(row.number).startsWith(trimmed);
+};
+
 type Props = {
   readonly sessionId: SessionId;
   readonly changes: DecisionChangesSince;
@@ -37,6 +50,10 @@ type Props = {
   readonly sourceValue: string;
   readonly onWriteSource: (next: string) => void;
   readonly onCloseRawEditor: () => void;
+  readonly pendingRemovals: ReadonlySet<number>;
+  readonly onMarkRemoved: (number: number) => void;
+  readonly onUnmarkRemoved: (number: number) => void;
+  readonly onClearRemovals: () => void;
 };
 
 export const DecisionsSection = ({
@@ -48,6 +65,10 @@ export const DecisionsSection = ({
   sourceValue,
   onWriteSource,
   onCloseRawEditor,
+  pendingRemovals,
+  onMarkRemoved,
+  onUnmarkRemoved,
+  onClearRemovals,
 }: Props) => {
   const ledger = useAppStore((state) => state.sessionDecisions[sessionId]);
   const baseline = useAppStore((state) => state.sessionDecisionsBaseline[sessionId]);
@@ -55,6 +76,9 @@ export const DecisionsSection = ({
   const loadSessionDecisions = useAppStore((state) => state.loadSessionDecisions);
   const applySessionDecisionOps = useAppStore((state) => state.applySessionDecisionOps);
   const [isClosedOpen, setIsClosedOpen] = useState(false);
+  const [closedFilter, setClosedFilter] = useState<ClosedFilter>('removed');
+  const [closedQuery, setClosedQuery] = useState('');
+  const [openNumber, setOpenNumber] = useState<number | null>(null);
   const [highlighted, setHighlighted] = useState<ReadonlySet<number>>(NO_NUMBERS);
   const [highlightMs, setHighlightMs] = useState(HIGHLIGHT_MS);
   const rows = useRef(new Map<number, HTMLDivElement>());
@@ -73,16 +97,31 @@ export const DecisionsSection = ({
   }, [highlighted, highlightMs]);
 
   const hasLedger = ledger !== undefined;
+  const decisions = ledger ?? EMPTY_LEDGER;
+  const closed = useMemo(
+    () =>
+      decisions
+        .filter((row) => row.status !== 'active' && !pendingRemovals.has(row.number))
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    [decisions, pendingRemovals],
+  );
+
   useEffect(() => {
     if (highlight.length === 0 || !hasLedger) {
       return;
     }
     const wanted = new Set(highlight);
-    const hasClosed = (ledger ?? EMPTY_LEDGER).some(
-      (row) => wanted.has(row.number) && row.status !== 'active',
-    );
-    if (hasClosed) {
+    const closedWanted = closed.filter((row) => wanted.has(row.number));
+    if (closedWanted.length > 0) {
       setIsClosedOpen(true);
+      setClosedQuery('');
+      const hasRemoved = closedWanted.some((row) => isRemovedByYou(row));
+      const hasReplaced = closedWanted.some((row) => !isRemovedByYou(row));
+      if (hasRemoved && !hasReplaced) {
+        setClosedFilter('removed');
+      } else if (hasReplaced && !hasRemoved) {
+        setClosedFilter('replaced');
+      }
     }
     setHighlightMs(OPENED_HIGHLIGHT_MS);
     setHighlighted(wanted);
@@ -93,20 +132,26 @@ export const DecisionsSection = ({
       first?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [highlight, hasLedger]);
+  }, [highlight, hasLedger, closed]);
 
-  const decisions = ledger ?? EMPTY_LEDGER;
   const agentNames = useMemo(
     () => new Map<AgentId, string>((agents ?? []).map((agent) => [agent.id, agent.name])),
     [agents],
   );
   const active = useMemo(() => activeDecisionsNewestFirst({ ledger: decisions }), [decisions]);
-  const closed = useMemo(
+  const activeRows = useMemo(
     () =>
       decisions
-        .filter((row) => row.status !== 'active')
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-    [decisions],
+        .filter((row) => row.status === 'active' || pendingRemovals.has(row.number))
+        .sort((a, b) => b.number - a.number),
+    [decisions, pendingRemovals],
+  );
+  const removedByYou = useMemo(() => closed.filter((row) => isRemovedByYou(row)), [closed]);
+  const replaced = useMemo(() => closed.filter((row) => !isRemovedByYou(row)), [closed]);
+  const closedRows = closedFilter === 'removed' ? removedByYou : replaced;
+  const filteredClosedRows = useMemo(
+    () => closedRows.filter((row) => matchesClosedSearch(row, closedQuery)),
+    [closedRows, closedQuery],
   );
   const addedNumbers = useMemo(
     () => new Set(changes.added.map((row) => row.number)),
@@ -142,17 +187,21 @@ export const DecisionsSection = ({
   }
   const seenAtFirst = firstNumbers.current;
   const nowMs = Date.now();
+  const actor = { author: 'user' as const, agentId: null, turnOrdinal: null };
   const write = (op: DecisionOp) => {
-    void applySessionDecisionOps({
-      sessionId,
-      ops: [op],
-      actor: { author: 'user', agentId: null, turnOrdinal: null },
-    });
+    void applySessionDecisionOps({ sessionId, ops: [op], actor });
   };
   const jumpTo = (number: number) => {
-    const isClosed = decisions.some((row) => row.number === number && row.status !== 'active');
-    if (isClosed && !isClosedOpen) {
-      setIsClosedOpen(true);
+    const isClosed = closed.some((row) => row.number === number);
+    if (isClosed) {
+      if (!isClosedOpen) {
+        setIsClosedOpen(true);
+      }
+      setClosedQuery('');
+      const row = closed.find((candidate) => candidate.number === number);
+      if (row !== undefined) {
+        setClosedFilter(isRemovedByYou(row) ? 'removed' : 'replaced');
+      }
     }
     window.requestAnimationFrame(() => {
       rows.current.get(number)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -167,20 +216,62 @@ export const DecisionsSection = ({
     }
     rows.current.set(number, element);
   };
+  const removeDecision = (number: number) => {
+    write({ kind: 'withdraw', number, reason: null });
+    onMarkRemoved(number);
+    if (openNumber === number) {
+      setOpenNumber(null);
+    }
+  };
+  const undoRemove = (number: number) => {
+    write({ kind: 'restore', number });
+    onUnmarkRemoved(number);
+  };
+  const undoAllRemovals = () => {
+    const numbers = [...pendingRemovals];
+    if (numbers.length === 0) {
+      return;
+    }
+    void applySessionDecisionOps({
+      sessionId,
+      ops: numbers.map((number) => ({ kind: 'restore' as const, number })),
+      actor,
+    });
+    onClearRemovals();
+  };
+
+  const closedFilterOptions: ReadonlyArray<SegmentedTabOption<ClosedFilter>> = [
+    { value: 'removed', label: 'Removed by you', badge: String(removedByYou.length) },
+    { value: 'replaced', label: 'Replaced', badge: String(replaced.length) },
+  ];
 
   return (
     <div className="flex flex-col gap-3">
       {hasDecisionChanges(changes) ? (
         <DecisionChangesList changes={changes} onJump={jumpTo} />
       ) : null}
-      {active.length === 0 ? (
+      {activeRows.length === 0 ? (
         <p className="text-body text-muted-foreground">
           No decisions yet. Agents record one when they settle a choice; you can add your own.
         </p>
       ) : (
         <ContextBlock title="Active" icon={CONCEPT_ICONS.decisions} count={active.length}>
+          {pendingRemovals.size === 0 ? null : (
+            <div className="flex items-center gap-1.5 px-2 text-secondary text-muted-foreground">
+              <span>{`${pendingRemovals.size} change${pendingRemovals.size > 1 ? 's' : ''} on this visit`}</span>
+              <span aria-hidden>·</span>
+              <button
+                type="button"
+                onClick={undoAllRemovals}
+                className="inline-flex items-center gap-1.5 rounded-sm px-1 py-0.5 font-medium text-foreground hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+              >
+                <Undo2 size={ICON_SIZE.row} aria-hidden />
+                Undo all
+              </button>
+            </div>
+          )}
           <div className="-mx-2 flex flex-col gap-0.5">
-            {active.map((row) => (
+            {activeRows.map((row) => (
               <EnteringRow key={row.id} isEntering={!seenAtFirst.has(row.number)}>
                 <DecisionRowItem
                   number={row.number}
@@ -207,9 +298,15 @@ export const DecisionsSection = ({
                   }
                   isLocked={isLocked}
                   isHighlighted={highlighted.has(row.number)}
+                  isOpen={openNumber === row.number}
+                  isRemoved={pendingRemovals.has(row.number)}
                   rowRef={refFor(row.number)}
+                  onToggleOpen={() =>
+                    setOpenNumber((current) => (current === row.number ? null : row.number))
+                  }
                   onReword={(text) => write({ kind: 'reword', number: row.number, text })}
-                  onWithdraw={() => write({ kind: 'withdraw', number: row.number, reason: null })}
+                  onRemove={() => removeDecision(row.number)}
+                  onUndoRemove={() => undoRemove(row.number)}
                 />
               </EnteringRow>
             ))}
@@ -217,7 +314,7 @@ export const DecisionsSection = ({
         </ContextBlock>
       )}
       {closed.length === 0 ? null : (
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1">
           <button
             type="button"
             aria-expanded={isClosedOpen}
@@ -229,29 +326,56 @@ export const DecisionsSection = ({
             ) : (
               <ChevronRight size={ICON_SIZE.row} aria-hidden />
             )}
-            Replaced and withdrawn
+            Replaced and removed
             <span className="text-faint-foreground tabular-nums">{closed.length}</span>
           </button>
-          {isClosedOpen
-            ? closed.map((row) => (
-                <ClosedDecisionRow
-                  key={row.id}
-                  number={row.number}
-                  isHighlighted={highlighted.has(row.number)}
-                  rowRef={refFor(row.number)}
-                  text={row.text}
-                  reason={row.reason}
-                  byline={closedDecisionByline({ decision: row, agentNames })}
-                  isLocked={isLocked}
-                  onJump={jumpTo}
-                  onRestore={
-                    row.status === 'withdrawn'
-                      ? () => write({ kind: 'restore', number: row.number })
-                      : null
-                  }
+          {isClosedOpen ? (
+            <div className="flex flex-col gap-2 px-1">
+              <div className="flex items-center gap-2">
+                <SegmentedTabs
+                  size="sm"
+                  ariaLabel="Show"
+                  options={closedFilterOptions}
+                  value={closedFilter}
+                  onChange={setClosedFilter}
                 />
-              ))
-            : null}
+                <Input
+                  type="search"
+                  aria-label="Search replaced and removed decisions"
+                  placeholder="Search"
+                  value={closedQuery}
+                  onChange={(event) => setClosedQuery(event.target.value)}
+                  className="h-7 flex-1"
+                />
+              </div>
+              <div className="flex flex-col gap-0.5">
+                {filteredClosedRows.length === 0 ? (
+                  <p className="px-2 text-secondary text-faint-foreground">
+                    {`Nothing matches "${closedQuery}"`}
+                  </p>
+                ) : (
+                  filteredClosedRows.map((row) => (
+                    <ClosedDecisionRow
+                      key={row.id}
+                      number={row.number}
+                      isHighlighted={highlighted.has(row.number)}
+                      rowRef={refFor(row.number)}
+                      text={row.text}
+                      reason={row.reason}
+                      byline={closedDecisionByline({ decision: row, agentNames })}
+                      isLocked={isLocked}
+                      onJump={jumpTo}
+                      onRestore={
+                        isRemovedByYou(row)
+                          ? () => write({ kind: 'restore', number: row.number })
+                          : null
+                      }
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       )}
       <AddDecisionRow isLocked={isLocked} onAdd={(text) => write({ kind: 'add', text })} />

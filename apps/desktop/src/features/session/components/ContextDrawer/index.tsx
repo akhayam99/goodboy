@@ -41,6 +41,7 @@ type SlotValueParams = {
 };
 
 const NO_HIGHLIGHT: ReadonlyArray<number> = [];
+const NO_PENDING_REMOVALS: ReadonlySet<number> = new Set();
 
 const slotValue = ({ slots, key }: SlotValueParams): string =>
   slots.find((slot) => slot.key === key)?.value ?? '';
@@ -77,6 +78,7 @@ export const ContextDrawer = ({
   const slotKey = CONTEXT_TAB_SLOT[tab];
   const historyCount = useSlotHistoryCount(sessionId, slotKey);
   const [isRawEditing, setIsRawEditing] = useState(false);
+  const [pendingRemovals, setPendingRemovals] = useState<ReadonlySet<number>>(NO_PENDING_REMOVALS);
 
   const goal = slotValue({ slots, key: 'goal' });
   const decisions = slotValue({ slots, key: 'decisions' });
@@ -195,6 +197,16 @@ export const ContextDrawer = ({
           sourceValue={value}
           onWriteSource={onWrite}
           onCloseRawEditor={() => setIsRawEditing(false)}
+          pendingRemovals={pendingRemovals}
+          onMarkRemoved={(number) => setPendingRemovals((current) => new Set(current).add(number))}
+          onUnmarkRemoved={(number) =>
+            setPendingRemovals((current) => {
+              const next = new Set(current);
+              next.delete(number);
+              return next;
+            })
+          }
+          onClearRemovals={() => setPendingRemovals(NO_PENDING_REMOVALS)}
         />
       );
     }
