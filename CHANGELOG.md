@@ -12,6 +12,48 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.12.3
+
+Link any tracker item to a session with `L`, copy a worktree path from `Cmd+K`, and open or undo a decision right where it sits.
+
+### Improved
+
+#### Link work from one search
+<!-- gb area=sessions -->
+
+The session overview always shows Link work, and `L` opens it. One search covers every connected tracker, with your recent inbox items on top and a filter per source. An issue code or a pasted link works too.
+
+#### Decisions open in place, and a remove can be undone
+<!-- gb area=sessions -->
+
+Click a decision to open it, with Edit and Remove inside the open row. A removed decision is retired at once but stays in the list, struck through, with Undo until you leave. Closed decisions are split into Removed by you and Replaced, and the ones you removed can be restored.
+
+#### One control for a folded commit
+<!-- gb area=review image=history-row -->
+
+A commit folded into another carries Keep title, Keep both and Separate in one control, and the row buttons no longer cover it. Hovering any commit of a fold, or its After Apply node, highlights the whole group.
+
+#### Copy a worktree path
+<!-- gb area=sessions -->
+
+Copy worktree path in `Cmd+K` copies a session's only worktree at once. With several, pick one by project, branch and path, or press `Cmd+Enter` to copy them all. With an agent selected, the session actions are listed under their own group.
+
+#### Limits as icons and bars
+<!-- gb area=providers image=limits -->
+
+The top bar shows each provider's limits as its icon and bars, without the card, the label or the weekly percentage. Providers with no figures sit under +N, and the percentage is in the tooltip.
+
+#### The app is set in Inter
+<!-- gb area=app image=inter pr=1924 -->
+
+The app is now set in Inter, the same type as the website and the documents it creates.
+
+### Fixed
+
+- Picking a file in a long diff lands on that file, instead of stopping a few files away. <!-- gb area=review -->
+- An agent waiting on your answer opens on its Brief. Any other agent opens on the transcript, scrolled to the latest line. <!-- gb area=agents -->
+- The workspace tile sits on the same line as the collapsed sidebar icons. <!-- gb area=app -->
+
 ## Goodboy v0.12.2
 
 Typing the start of any word in `Cmd+K` finds the action you meant, and a waiting agent is the one thing marked in the activity.
