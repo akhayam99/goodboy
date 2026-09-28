@@ -38,6 +38,7 @@ import {
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { ResolveItemView } from './index';
 import type { ResolveDecisionMode, ResolveItemDraft } from '../../resolveItemDraft';
+import { resolveDecisionVerb } from '../../resolveDecisionVerb';
 import type { PanelPosition } from '../ResolvePanelHeader';
 import type { ConversationTab } from '../../../../store/slices/drawer/state';
 
@@ -364,7 +365,10 @@ export const ResolveItemContainer = ({
   const onReopen = (actionId: ResolveItemActionId): void => {
     void guard({
       actionId,
-      failureTitle: "Couldn't reopen the comment",
+      failureTitle:
+        actionId === 'change_decision'
+          ? "Couldn't change the decision"
+          : "Couldn't reopen the comment",
       run: () =>
         reopenResolveQueueItem({ sessionId, itemId: row.item.id, revision: row.thread.revision }),
     });
@@ -479,7 +483,8 @@ export const ResolveItemContainer = ({
       setMode('resolve');
       return;
     }
-    if (id === 'resume_comment' || id === 'change_decision') {
+    const decisionVerb = resolveDecisionVerb({ actionId: id });
+    if (decisionVerb === 'take_up') {
       void guard({
         actionId: id,
         failureTitle: "Couldn't take the comment up",
@@ -487,7 +492,7 @@ export const ResolveItemContainer = ({
       });
       return;
     }
-    if (id === 'review_changed' || id === 'reopen_locally') {
+    if (decisionVerb === 'reopen') {
       onReopen(id);
       return;
     }
