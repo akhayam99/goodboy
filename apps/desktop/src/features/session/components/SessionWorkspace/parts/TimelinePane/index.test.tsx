@@ -544,22 +544,18 @@ describe('TimelinePane run row menu', () => {
     return row;
   };
 
-  it('offers Close workflow from the menu of a run nobody closes', () => {
+  it('gives every run row the registry menu', () => {
     attachedRuns.list = [RUN];
     storeState.sessionPhaseRuns = { 'session-1': [STEP] };
 
     render(<TimelinePane session={SESSION} actions={null} />);
-    fireEvent.click(
-      within(runRow()).getByRole('button', { name: 'Add rate limiting workflow actions' }),
-    );
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Close workflow' }));
-    const panel = screen.getByRole('group', { name: 'Close this workflow?' });
-    fireEvent.click(within(panel).getByRole('button', { name: 'Close workflow' }));
 
-    expect(storeState.closeWorkflowRun).toHaveBeenCalledWith('session-1', 'run-1');
+    expect(
+      within(runRow()).getByRole('button', { name: 'Add rate limiting workflow actions' }),
+    ).toBeDefined();
   });
 
-  it('reads a closed run as closed by you and drops its menu', () => {
+  it('reads a closed run as closed by you', () => {
     attachedRuns.list = [
       {
         ...RUN,
@@ -575,9 +571,6 @@ describe('TimelinePane run row menu', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
 
     expect(within(runRow()).getByText('Closed by you')).toBeDefined();
-    expect(
-      within(runRow()).queryByRole('button', { name: 'Add rate limiting workflow actions' }),
-    ).toBeNull();
   });
 
   it('lands the closure in the feed as its own row', () => {

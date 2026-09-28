@@ -113,9 +113,7 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
   const navigate = useAppStore((s) => s.navigate);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const activateWorkflowAgent = useAppStore((s) => s.activateWorkflowAgent);
-  const detachWorkflowFromSession = useAppStore((s) => s.detachWorkflowFromSession);
   const attachedRuns = useAttachedWorkflowRuns({ session: task });
-  const discardWorkflow = useAppStore((s) => s.discardWorkflow);
   const setWorkflowRunAutoRun = useAppStore((s) => s.setWorkflowRunAutoRun);
   const startWorkflowRun = useAppStore((s) => s.startWorkflowRun);
   const workflowNameByRunId = useMemo(() => {
@@ -172,28 +170,6 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     return { actionableStepIdByRunId, blockReasonByRunId };
   }, [attachedRuns, tree.agentsByRunId, openQuestions, summarizerBusy, agentTurnState]);
   const { actionableStepIdByRunId, blockReasonByRunId } = workflowAdvance;
-
-  const onDiscardWorkflow = useCallback(
-    async (runId: WorkflowRunId) => {
-      try {
-        await discardWorkflow(task.id, runId);
-      } catch (err) {
-        setSpawnError(formatError(err));
-      }
-    },
-    [discardWorkflow, task.id],
-  );
-
-  const onDeleteWorkflow = useCallback(
-    async (runId: WorkflowRunId) => {
-      try {
-        await detachWorkflowFromSession(task.id, runId);
-      } catch (err) {
-        setSpawnError(formatError(err));
-      }
-    },
-    [detachWorkflowFromSession, task.id],
-  );
 
   const standaloneAgentCount = useMemo(
     () =>
@@ -280,8 +256,6 @@ export const useAgentsSection = ({ task, workflowRunId }: Params) => {
     hasAnyWorkflow: attachedRuns.length > 0,
     onAnswerQuestion,
     metrics,
-    onDiscardWorkflow,
-    onDeleteWorkflow,
     onPickAgent,
     onStartStepAgent,
     selectedAgentId,

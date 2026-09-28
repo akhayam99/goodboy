@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PullRequestActionTarget } from '../../../actions/types';
+import { ObjectMenuArea } from '../../../actions/components/ObjectMenuArea';
 import { PencilLine } from 'lucide-react';
 import { Button, GhostActionButton, Notice } from '@goodboy/ui';
 import type {
@@ -275,58 +277,64 @@ export const PullRequestPage = ({ session }: Props) => {
       ? null
       : describePrWriteInFlight({ action: prWriteClaim.action, prNumber: pr.number });
 
+  const prTarget: PullRequestActionTarget = {
+    kind: 'pullRequest',
+    facts: {
+      number: pr.number,
+      state: pr.state,
+      isDraft: pr.isDraft,
+      url: pr.url,
+      headBranch: pr.headBranch,
+      baseBranch: pr.baseBranch,
+      mergeReadiness,
+      writeInFlight,
+      isBusy: lifecycleBusy !== null || writeInFlight !== null,
+      canCreateNew: !isDraftAgentRunning,
+      onMerge: () => runLifecycle({ kind: 'merge', action: () => mergePr(sessionId, pr.number) }),
+      onMarkReady: () =>
+        void runLifecycle({ kind: 'ready', action: () => markPrReady(sessionId, pr.number) }),
+      onConvertDraft: () =>
+        void runLifecycle({
+          kind: 'undraft',
+          action: () => convertPrToDraft(sessionId, pr.number),
+        }),
+      onClose: () =>
+        void runLifecycle({ kind: 'close', action: () => closePr(sessionId, pr.number) }),
+      onReopen: () =>
+        void runLifecycle({ kind: 'reopen', action: () => reopenPr(sessionId, pr.number) }),
+      onCreateNew: () => setMode('create_pr'),
+    },
+  };
+
   const header = (
-    <PrContextRow
-      pr={pr}
-      prs={prOptions}
-      repo={repo?.repoRoot ?? null}
-      checks={checks}
-      isRefreshing={github?.detailLoading === true}
-      actions={
-        <>
-          <GhostActionButton
-            icon={PencilLine}
-            label={
-              openDrafts.length > 0
-                ? `${WRITE_REVIEW_LABEL} (${openDrafts.length})`
-                : WRITE_REVIEW_LABEL
-            }
-            pressed={mode === 'write_review'}
-            onClick={() => setMode(mode === 'write_review' ? 'overview' : 'write_review')}
-          />
-          <PrActionsMenu
-            pr={pr}
-            busy={lifecycleBusy}
-            mergeReadiness={mergeReadiness}
-            writeInFlight={writeInFlight}
-            canCreateNew={!isDraftAgentRunning}
-            onMarkReady={() =>
-              void runLifecycle({ kind: 'ready', action: () => markPrReady(sessionId, pr.number) })
-            }
-            onConvertDraft={() =>
-              void runLifecycle({
-                kind: 'undraft',
-                action: () => convertPrToDraft(sessionId, pr.number),
-              })
-            }
-            onClosePr={() =>
-              void runLifecycle({ kind: 'close', action: () => closePr(sessionId, pr.number) })
-            }
-            onReopen={() =>
-              void runLifecycle({ kind: 'reopen', action: () => reopenPr(sessionId, pr.number) })
-            }
-            onMerge={() =>
-              runLifecycle({ kind: 'merge', action: () => mergePr(sessionId, pr.number) })
-            }
-            onCreateNew={() => setMode('create_pr')}
-          />
-        </>
-      }
-      onSelectPr={(prNumber) => void selectSessionPr(sessionId, prNumber)}
-      onRefresh={() => void refreshSessionPrDetail(sessionId, { force: true })}
-      onOpenChecks={() => checksRef.current?.scrollIntoView({ block: 'start' })}
-      onOpenOnGithub={() => void openUrl(pr.url)}
-    />
+    <ObjectMenuArea target={prTarget} anchorKey={`pull-request:${pr.number}`}>
+      <PrContextRow
+        pr={pr}
+        prs={prOptions}
+        repo={repo?.repoRoot ?? null}
+        checks={checks}
+        isRefreshing={github?.detailLoading === true}
+        actions={
+          <>
+            <GhostActionButton
+              icon={PencilLine}
+              label={
+                openDrafts.length > 0
+                  ? `${WRITE_REVIEW_LABEL} (${openDrafts.length})`
+                  : WRITE_REVIEW_LABEL
+              }
+              pressed={mode === 'write_review'}
+              onClick={() => setMode(mode === 'write_review' ? 'overview' : 'write_review')}
+            />
+            <PrActionsMenu target={prTarget} />
+          </>
+        }
+        onSelectPr={(prNumber) => void selectSessionPr(sessionId, prNumber)}
+        onRefresh={() => void refreshSessionPrDetail(sessionId, { force: true })}
+        onOpenChecks={() => checksRef.current?.scrollIntoView({ block: 'start' })}
+        onOpenOnGithub={() => void openUrl(pr.url)}
+      />
+    </ObjectMenuArea>
   );
 
   if (mode === 'write_review') {

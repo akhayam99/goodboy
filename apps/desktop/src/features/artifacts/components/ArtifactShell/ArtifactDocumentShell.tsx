@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { RotateCw, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button, InlineConfirm, Textarea, formatError } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
@@ -24,11 +23,12 @@ import { WireframeViewer } from '../../../wireframes/components/WireframeViewer'
 import { WireframeDivergenceChip } from '../../../wireframes/components/WireframeDivergenceChip';
 import { WireframeShellActions } from './WireframeShellActions';
 import { ArtifactPlanBody } from './ArtifactPlanBody';
-import { artifactActions, type ArtifactActionSubject } from './artifactActions';
 import type { ArtifactDocumentSubject } from './artifactShellSubject';
 import { ArtifactDrawerToggles } from './ArtifactDrawerToggles';
 import { ArtifactExportStatus } from './ArtifactExportStatus';
-import { ArtifactShellActions, type ArtifactActionHandles } from './ArtifactShellActions';
+import { ArtifactShellActions } from './ArtifactShellActions';
+import { ARTIFACT_EDIT_EVENT } from '../../../actions/kinds/artifact';
+import type { ArtifactActionTarget, ArtifactPorts, ResolvedAction } from '../../../actions/types';
 import { ArtifactShellHeader } from './ArtifactShellHeader';
 import { ArtifactShellMeta } from './ArtifactShellMeta';
 import { ArtifactStateChip } from './ArtifactStateChip';
@@ -39,7 +39,12 @@ type Props = {
   readonly agents: ReadonlyArray<Agent>;
 };
 
-type Armed = 'runAgain' | 'discard' | null;
+type Armed = {
+  readonly action: ResolvedAction;
+  readonly run: () => Promise<void>;
+} | null;
+
+const COPY_NOT_READY = 'The saved copy is not ready yet';
 
 const PLAN_TITLE_MISSING = 'The first line is the plan title. Add one before saving.';
 
@@ -48,8 +53,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const plan = subject.kind === 'plan' ? subject.plan : null;
   const openQuestionCount = useSessionOpenQuestions(sessionId).length;
   const runPlan = useAppStore((s) => s.runPlan);
-  const deletePlan = useAppStore((s) => s.deletePlan);
-  const restorePlan = useAppStore((s) => s.restorePlan);
   const updatePlanBody = useAppStore((s) => s.updatePlanBody);
   const updateArtifactSource = useAppStore((s) => s.updateArtifactSource);
   const loadSessionArtifacts = useAppStore((s) => s.loadSessionArtifacts);
@@ -71,11 +74,6 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
   const progress = planPartsProgress({ rows: partRows, hasRun });
   const isPlanRunning = progress.kind === 'running' || progress.kind === 'question';
 
-  const actionSubject: ArtifactActionSubject =
-    subject.kind === 'plan'
-      ? { kind: 'plan', status: subject.plan.status, isRunning: isPlanRunning }
-      : { kind: subject.kind, status: artifact.status };
-  const set = artifactActions({ subject: actionSubject });
   const copyLabel = artifact.sourceFormat === 'json' ? 'Copy JSON' : 'Copy markdown';
 
   const run = async () => {
@@ -143,72 +141,68 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
       .finally(() => setIsSaving(false));
   };
 
-  const handles: ArtifactActionHandles = {
-    runPlan: { onClick: () => void run(), isBusy: isSpawning, isDisabled: isSpawning },
-    runAgain: { onClick: () => setArmed('runAgain'), isDisabled: isSpawning },
-    restore: {
-      onClick: () => {
-        if (plan !== null) {
-          void restorePlan(sessionId, plan.id);
-        }
-      },
-    },
-    edit: { onClick: startEditing },
+  const isCopyMissing = savedCopy.location === null || !savedCopy.location.exists;
+  const regenerateBlocked = `${regenerate.hint.charAt(0).toUpperCase()}${regenerate.hint.slice(1)}`;
+  const ports: ArtifactPorts = {
+    runPlan: { run, isBusy: isSpawning },
+    runAgain: { run, isBusy: isSpawning },
+    edit: { run: startEditing },
     openInBrowser: {
-      onClick: savedCopy.openInBrowser,
-      isDisabled: savedCopy.location === null || !savedCopy.location.exists,
-      hint: savedCopy.error ?? undefined,
+      run: savedCopy.openInBrowser,
+      blockedReason: isCopyMissing ? COPY_NOT_READY : null,
+      description: savedCopy.error,
     },
     copySource: {
-      onClick: () => void exporter.copySource(),
+      run: exporter.copySource,
       label: copyLabel,
-      isDisabled: exporter.status.kind === 'busy',
+      isBusy: exporter.status.kind === 'busy',
     },
     saveSource: {
-      onClick: () => void exporter.saveSource(),
+      run: exporter.saveSource,
       label: `${exporter.sourceActionLabel} to…`,
-      isDisabled: exporter.status.kind === 'busy',
+      isBusy: exporter.status.kind === 'busy',
     },
     showInFinder: {
-      onClick: savedCopy.reveal,
-      isDisabled: savedCopy.location === null || !savedCopy.location.exists,
-      hint: savedCopy.error ?? undefined,
+      run: savedCopy.reveal,
+      blockedReason: isCopyMissing ? COPY_NOT_READY : null,
     },
     regenerate: {
-      onClick: regenerate.regenerate,
-      isDisabled: !regenerate.canRegenerate || regenerate.isRegenerating,
-      hint: regenerate.hint,
+      run: regenerate.regenerate,
+      blockedReason: regenerate.canRegenerate ? null : regenerateBlocked,
+      isBusy: regenerate.isRegenerating,
     },
-    discard: { onClick: () => setArmed('discard') },
+  };
+  const target: ArtifactActionTarget = {
+    kind: 'artifact',
+    sessionId,
+    subject: { kind: 'stored', artifactId: artifact.id, isPlanRunning },
+    ports,
   };
 
+  useEffect(() => {
+    const onEditRequest = (event: Event) => {
+      if (!(event instanceof CustomEvent) || event.detail?.artifactId !== artifact.id) {
+        return;
+      }
+      startEditing();
+    };
+    window.addEventListener(ARTIFACT_EDIT_EVENT, onEditRequest);
+    return () => window.removeEventListener(ARTIFACT_EDIT_EVENT, onEditRequest);
+  });
+
+  const armedConfirm = armed?.action.confirm ?? null;
   const confirm =
-    armed === 'runAgain' ? (
+    armed !== null && armedConfirm !== null ? (
       <InlineConfirm
-        role="alert"
-        icon={<RotateCw size={ICON_SIZE.row} aria-hidden />}
-        title="Run this plan again?"
-        description="It already ran once. Running it again starts a new agent."
-        confirmLabel="Run again"
+        role={armedConfirm.role}
+        icon={<armed.action.icon size={ICON_SIZE.row} aria-hidden />}
+        title={armedConfirm.title}
+        description={armedConfirm.description}
+        confirmLabel={armedConfirm.confirmLabel}
         autoDisarmMs={4000}
         isBusy={isSpawning}
         onConfirm={async () => {
-          await run();
-          setArmed(null);
-        }}
-        onCancel={() => setArmed(null)}
-        className="shrink-0"
-      />
-    ) : armed === 'discard' && plan !== null ? (
-      <InlineConfirm
-        role="danger"
-        icon={<Trash2 size={ICON_SIZE.row} aria-hidden />}
-        title={`Discard "${plan.title}"?`}
-        description="It stays in the list, faint, and can be restored."
-        confirmLabel="Discard"
-        autoDisarmMs={4000}
-        onConfirm={() => {
-          void deletePlan(sessionId, plan.id);
+          await armed.run();
           setArmed(null);
         }}
         onCancel={() => setArmed(null)}
@@ -240,13 +234,13 @@ export const ArtifactDocumentShell = ({ sessionId, subject, agents }: Props) => 
             <WireframeShellActions
               sessionId={sessionId}
               artifact={subject.artifact}
-              set={set}
-              handles={handles}
+              target={target}
               exporter={exporter}
               screenId={wireframeScreenId}
+              onArm={setArmed}
             />
           ) : (
-            <ArtifactShellActions set={set} handles={handles} />
+            <ArtifactShellActions target={target} onArm={setArmed} />
           )}
         </span>
       ))

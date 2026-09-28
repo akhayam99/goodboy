@@ -156,6 +156,15 @@ export const MenuList = ({ label, entries, onClose, isAutoFocus = true }: Props)
           confirmLabel={confirm.confirmLabel}
           surface="plain"
           isBusy={isBusy}
+          note={
+            confirm.notes === undefined || confirm.notes.length === 0 ? undefined : (
+              <ul className="flex min-w-0 flex-col gap-0.5 text-muted-foreground">
+                {confirm.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            )
+          }
           {...(confirm.alt !== undefined && {
             altAction: {
               label: confirm.alt.label,

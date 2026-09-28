@@ -162,7 +162,6 @@ type RenderParams = {
   readonly actionableStepId?: string | null;
   readonly blockReason?: WorkflowBlockReason | null;
   readonly childrenByParentId?: ReadonlyMap<string, Agent[]>;
-  readonly onDeleteWorkflow?: (runId: WorkflowRunId) => Promise<void>;
   readonly onPickAgent?: (agentId: AgentId) => void;
   readonly startWorkflowRun?: (sessionId: SessionId, runId: WorkflowRunId) => Promise<void>;
   readonly setWorkflowRunAutoRun?: (
@@ -181,7 +180,6 @@ const renderDetail = ({
   actionableStepId = 'step-2',
   blockReason = null,
   childrenByParentId = new Map(),
-  onDeleteWorkflow = vi.fn(async () => undefined),
   onPickAgent = vi.fn(),
   startWorkflowRun = vi.fn(async () => undefined),
   setWorkflowRunAutoRun = vi.fn(async () => undefined),
@@ -202,8 +200,6 @@ const renderDetail = ({
       toggleWorkflowExpand={vi.fn()}
       startWorkflowRun={startWorkflowRun}
       setWorkflowRunAutoRun={setWorkflowRunAutoRun}
-      onDiscardWorkflow={vi.fn(async () => undefined)}
-      onDeleteWorkflow={onDeleteWorkflow}
       agentKindOverride={{}}
       agentModelOverride={{}}
       agentProviderOverride={{}}
@@ -500,19 +496,6 @@ describe('WorkflowRow detail dashboard', () => {
 
     expect(screen.queryByTestId('workflow-run-summary')).toBeNull();
   });
-
-  it('deletes the workflow run after confirmation', () => {
-    const onDeleteWorkflow = vi.fn(async () => undefined);
-    renderDetail({ onDeleteWorkflow });
-
-    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Refactor workflow actions' }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Delete workflow run' }));
-    const confirm = screen.getByRole('group', { name: 'Delete workflow run?' });
-    fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
-
-    expect(onDeleteWorkflow).toHaveBeenCalledWith(RUN_ID);
-  });
 });
 
 describe('WorkflowRow step-in-flight predicate', () => {
@@ -744,16 +727,5 @@ describe('WorkflowRow dynamic runs', () => {
     expect(screen.getByTitle('Closed by you').textContent).toBe('Closed');
     expect(screen.queryByRole('button', { name: 'Close workflow' })).toBeNull();
     expect(screen.queryByTestId('workflow-autorun-toggle')).toBeNull();
-  });
-
-  it('keeps Discard in the actions menu, next to Delete', () => {
-    renderDetail();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Refactor workflow actions' }));
-
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
-      'Discard workflow',
-      'Delete workflow run',
-    ]);
   });
 });

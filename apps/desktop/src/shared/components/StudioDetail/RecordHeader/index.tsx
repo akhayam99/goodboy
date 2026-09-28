@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { ArrowUpRight, X } from 'lucide-react';
-import { IconButton, useCopyLink } from '@goodboy/ui';
+import { ArrowUpRight, Ellipsis, X } from 'lucide-react';
+import { IconButton } from '@goodboy/ui';
 import {
   IntegrationGlyph,
   integrationLabel,
@@ -10,8 +10,12 @@ import { openUrl } from '../../../lib/editor';
 import { ICON_SIZE } from '../../conceptIcons';
 import { RecordActions } from '../RecordActions';
 import { NO_RECORD_VERBS, type RecordFrame, type RecordVerbs } from '../RecordActions/types';
-import { RecordOverflowMenu } from './RecordOverflowMenu';
+import { ObjectOverflowMenu } from '../../../../features/actions/components/ObjectOverflowMenu';
+import { useObjectMenuTrigger } from '../../../../features/actions/useObjectMenuTrigger';
+import type { RecordActionTarget } from '../../../../features/actions/types';
 import { useInheritedPaneActions } from '../../PaneShell/paneActionsContext';
+
+const RECORD_HEADER_OMISSIONS: ReadonlyArray<string> = ['record.openInProvider'];
 
 type ExternalRef = {
   readonly url: string;
@@ -44,10 +48,28 @@ export const RecordHeader = ({
   onRefresh = null,
 }: Props) => {
   const [armedKey, setArmedKey] = useState<string | null>(null);
-  const { copy } = useCopyLink();
   const hostLabel = integrationLabel({ provider });
   const armed = verbs.secondary.find((verb) => verb.key === armedKey) ?? null;
   const inheritedActions = useInheritedPaneActions();
+  const target: RecordActionTarget = {
+    kind: 'record',
+    facts: {
+      identifier,
+      title,
+      url: externalRef?.url ?? '',
+      providerLabel: hostLabel,
+      sessionId: null,
+      isStarred: null,
+      onOpen: null,
+      onLaunch: null,
+      onToggleStar: null,
+      onRefresh: onRefresh ?? frame?.onRefresh ?? null,
+      verbs: verbs.overflow,
+      sessionVerbs: frame?.sessionVerbs ?? [],
+      destructive: verbs.destructive,
+    },
+  };
+  const menu = useObjectMenuTrigger({ target, anchorKey: `record-header:${identifier}` });
 
   useEffect(() => {
     setArmedKey(null);
@@ -72,13 +94,13 @@ export const RecordHeader = ({
             onClick={() => void openUrl(externalRef.url)}
           />
         ) : null}
-        <RecordOverflowMenu
+        <ObjectOverflowMenu
+          target={target}
           label={`More actions for ${identifier}`}
-          overflow={verbs.overflow}
-          sessionVerbs={frame?.sessionVerbs ?? []}
-          destructive={verbs.destructive}
-          onRefresh={onRefresh ?? frame?.onRefresh ?? null}
-          onCopyLink={externalRef == null ? null : () => void copy({ text: externalRef.url })}
+          anchorKey={`record-header:${identifier}`}
+          trigger={<Ellipsis size={ICON_SIZE.control} aria-hidden />}
+          triggerClassName="p-1.5"
+          omit={RECORD_HEADER_OMISSIONS}
         />
         {frame?.onClose != null ? (
           <IconButton
@@ -90,7 +112,12 @@ export const RecordHeader = ({
           />
         ) : null}
       </div>
-      <h1 className="line-clamp-3 text-base font-semibold leading-snug text-foreground">{title}</h1>
+      <h1
+        onContextMenu={menu.onContextMenu}
+        className="line-clamp-3 text-base font-semibold leading-snug text-foreground"
+      >
+        {title}
+      </h1>
       {byline == null ? null : <p className="truncate text-meta text-faint-foreground">{byline}</p>}
       {facts}
       <RecordActions

@@ -138,6 +138,18 @@ export const ArtifactList = ({
               <li key={row.key} className="min-w-0">
                 <ArtifactListRow
                   row={row}
+                  target={{
+                    kind: 'artifact',
+                    sessionId,
+                    subject:
+                      row.target.kind === 'generation'
+                        ? { kind: 'generation', generation: row.target.generation }
+                        : {
+                            kind: 'stored',
+                            artifactId: row.target.artifactId,
+                            isPlanRunning: row.node === 'running' || row.node === 'question',
+                          },
+                  }}
                   onOpen={() => onOpen(row)}
                   onStop={() => {
                     if (row.target.kind === 'generation') {

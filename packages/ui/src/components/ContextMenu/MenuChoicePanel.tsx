@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Check } from 'lucide-react';
 import { cn } from '../../cn';
+import { ScrollFade } from '../ScrollFade';
 import { focusFirstMenuItem, isMenuNavigationKey, moveMenuFocus } from './menuKeys';
 import type { MenuChoice } from './menuTypes';
 
@@ -84,28 +85,35 @@ export const MenuChoicePanel = ({ label, choices, anchor, onChoose, onBack, onCl
         width: PANEL_WIDTH,
         visibility: position === null ? 'hidden' : 'visible',
       }}
-      className="fixed z-popover flex max-h-80 flex-col overflow-y-auto rounded-lg border border-border bg-floating p-1 text-label shadow-lg motion-safe:animate-popover-in"
+      className="fixed z-popover flex max-h-80 flex-col rounded-lg border border-border bg-floating text-label shadow-lg motion-safe:animate-popover-in"
     >
-      {choices.map((choice) => (
-        <button
-          key={choice.id}
-          type="button"
-          role="menuitemradio"
-          aria-checked={choice.isCurrent}
-          tabIndex={-1}
-          data-menu-label={choice.label}
-          onClick={() => onChoose(choice.id)}
-          className={cn(
-            'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-foreground hover:bg-hover focus:bg-hover focus-visible:outline-none',
-            choice.isCurrent && 'text-row',
-          )}
-        >
-          <span className="min-w-0 flex-1 truncate">{choice.label}</span>
-          {choice.isCurrent ? (
-            <Check size={12} aria-hidden className="shrink-0 text-muted-foreground" />
-          ) : null}
-        </button>
-      ))}
+      <ScrollFade
+        className="flex min-h-0 flex-1 flex-col"
+        viewportClassName="flex h-auto min-h-0 flex-1 flex-col p-1"
+        fadeSize={12}
+        fadeFrom="floating"
+      >
+        {choices.map((choice) => (
+          <button
+            key={choice.id}
+            type="button"
+            role="menuitemradio"
+            aria-checked={choice.isCurrent}
+            tabIndex={-1}
+            data-menu-label={choice.label}
+            onClick={() => onChoose(choice.id)}
+            className={cn(
+              'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-foreground hover:bg-hover focus:bg-hover focus-visible:outline-none',
+              choice.isCurrent && 'text-row',
+            )}
+          >
+            <span className="min-w-0 flex-1 truncate">{choice.label}</span>
+            {choice.isCurrent ? (
+              <Check size={12} aria-hidden className="shrink-0 text-muted-foreground" />
+            ) : null}
+          </button>
+        ))}
+      </ScrollFade>
     </div>,
     document.body,
   );

@@ -74,8 +74,6 @@ export const AgentsSection = ({ task, only, workflowRunId, showWorkflowAttach = 
                 toggleWorkflowExpand={section.toggleWorkflowExpand}
                 startWorkflowRun={section.startWorkflowRun}
                 setWorkflowRunAutoRun={section.setWorkflowRunAutoRun}
-                onDiscardWorkflow={section.onDiscardWorkflow}
-                onDeleteWorkflow={section.onDeleteWorkflow}
                 agentKindOverride={section.agentKindOverride}
                 agentModelOverride={section.agentModelOverride}
                 agentProviderOverride={section.agentProviderOverride}

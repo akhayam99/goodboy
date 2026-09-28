@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { MoreVertical } from 'lucide-react';
 import { AnchoredPopover, Tooltip, cn, useDropdown } from '@goodboy/ui';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { ObjectTarget } from '../../types';
 import { ObjectOverflowList } from './ObjectOverflowList';
 
@@ -55,7 +56,7 @@ export const ObjectOverflowMenu = ({
               triggerClassName,
             )}
           >
-            {trigger ?? <MoreVertical size={13} aria-hidden />}
+            {trigger ?? <MoreVertical size={ICON_SIZE.control} aria-hidden />}
           </button>
         </Tooltip>
       }
