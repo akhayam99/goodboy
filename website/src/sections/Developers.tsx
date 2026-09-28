@@ -27,7 +27,7 @@ const ITEMS: readonly Benefit[] = [
   },
   {
     lead: 'Nothing lost when a plan runs out.',
-    text: 'If Claude hits its limit mid-task, the turn can move to another connected provider, and the chat says where it went.',
+    text: 'If Claude hits its limit mid-task, the turn can move to another connected provider, and the chat says where it went. After a restart or an update, running agents pick up where they stopped.',
   },
 ];
 

@@ -59,7 +59,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'One window per workspace',
-        desc: 'Open each workspace in its own window, so switching never interrupts running agents.',
+        desc: 'Open each workspace in its own window, so switching never interrupts running agents. After a restart, every window reopens where it was.',
       },
       {
         term: 'Moved folders',
@@ -191,7 +191,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Talking to an agent',
-        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue.',
+        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working pick up where they stopped, and one that cannot reads Stopped by restart and offers Resume.',
       },
       {
         term: 'Workflows',
@@ -207,7 +207,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Open questions',
-        desc: 'Agents ask as cards, and a blocking question holds its step until you answer. You can hand a question to another agent.',
+        desc: 'Agents ask as cards, and a blocking question holds its step until you answer. Each question shows once, on the row of the agent that asked. You can hand a question to another agent.',
       },
     ],
     links: [{ label: 'Open Workflows', target: { kind: 'studio', studio: { kind: 'workflow' } } }],

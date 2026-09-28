@@ -314,7 +314,7 @@ Start each step from a short brief instead of the whole previous chat. If the su
   <img src="./docs/readme/s07-questions-light.webp" alt="An open question from the stuck-delivery banner agent with suggested answers, two picked, and Let an agent answer">
 </picture>
 
-Get questions as cards instead of lines buried in a chat. An agent can mark a question as blocking, which holds its step until you answer, and a question can include suggested answers next to free text.
+Get questions as cards instead of lines buried in a chat. An agent can mark a question as blocking, which holds its step until you answer, and a question can include suggested answers next to free text. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
 
 ### Let an agent answer
 
