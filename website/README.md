@@ -54,8 +54,23 @@ The page follows the system theme until the visitor picks one with the header
 toggle, which is kept in `localStorage` under `goodboy-site:theme`. A script at
 the top of `website/index.html` sets `data-theme` before the first paint, so
 the page never flashes. Colours come from the tokens at the top of
-`website/src/styles.css`, with a dark set under `:root[data-theme='dark']`. The
-logo is always the dark tile with the white dog, in both themes.
+`website/src/styles.css`, with a dark set under `:root[data-theme='dark']`:
+one page background, one raised surface, hairlines instead of shadows, four
+text tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and
+focus rings only. The logo is always the dark tile with the white dog, in both
+themes.
+
+## Type
+
+The site is set in Inter, the same 72,920 byte Latin variable file the app
+ships, copied to `website/public/fonts/InterVariable-latin-v19.woff2` and
+preloaded from `website/index.html`. `font-optical-sizing: auto` picks the
+display drawing from 32 px up, so there is no separate display file. The type
+roles live as `--t-*` tokens next to the colours: 64, 48 and 32 for headings,
+20 for a lead, 16 for body, 15 for a cell, and weights 400, 500 and 600 only.
+The subset carries no `cv11` or `ss01` alternates, so the site sets only
+`calt`. `website/scripts/build-brand-assets.mjs` embeds the same file, so the
+OG image renders in Inter on a machine without it installed.
 
 ## Cookie consent
 

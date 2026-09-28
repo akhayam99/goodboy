@@ -9,15 +9,14 @@
 }
 
 .bill {
-  background: var(--surface);
-  border: 1px solid var(--gray3);
-  border-radius: 16px;
+  background: var(--raise);
+  border: 1px solid var(--line);
+  border-radius: var(--r-frame);
   padding: 22px;
-  box-shadow: var(--window-shadow);
 }
 
 .bill.dull {
-  background: var(--gray0);
+  background: var(--raise);
 }
 
 .bhead {
@@ -29,7 +28,7 @@
 .bhead small {
   display: block;
   font-weight: 400;
-  color: var(--gray6);
+  color: var(--t3);
   font-size: 13.5px;
   margin-top: 2px;
 }
@@ -47,14 +46,14 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: var(--gray7);
+  color: var(--t2);
   white-space: nowrap;
   overflow: hidden;
 }
 
 .bask small {
-  color: var(--gray6);
-  font-size: 12.5px;
+  color: var(--t3);
+  font-size: 13px;
 }
 
 .role {
@@ -101,21 +100,21 @@
 }
 
 .bbar.cool {
-  background: linear-gradient(90deg, var(--accent-bright), var(--accent));
+  background: linear-gradient(90deg, var(--accent), var(--accent));
 }
 
 .bval {
   text-align: right;
-  color: var(--gray7);
+  color: var(--t2);
 }
 
 .bfoot {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px dashed var(--gray3);
+  border-top: 1px dashed var(--line);
   display: flex;
   justify-content: space-between;
-  color: var(--gray6);
+  color: var(--t3);
   font-size: 14px;
 }
 
@@ -128,7 +127,7 @@
 }
 
 .coolx b {
-  color: var(--accent-deep);
+  color: var(--accent);
 }
 
 @media (prefers-reduced-motion: reduce) {

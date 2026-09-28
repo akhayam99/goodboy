@@ -1,14 +1,3 @@
-:root {
-  --consent-bg: var(--gray0);
-  --consent-line: rgb(16 17 19 / 0.09);
-  --consent-ghost-line: rgb(16 17 19 / 0.16);
-}
-
-:root[data-theme='dark'] {
-  --consent-line: rgb(255 255 255 / 0.08);
-  --consent-ghost-line: rgb(255 255 255 / 0.16);
-}
-
 #iubenda-cs-banner#iubenda-cs-banner {
   inset: auto auto 16px 16px !important;
   width: auto !important;
@@ -29,11 +18,11 @@
 #iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-content {
   margin: 0 !important;
   padding: 20px !important;
-  border: 1px solid var(--consent-line) !important;
+  border: 1px solid var(--line) !important;
   border-radius: 12px !important;
-  background: var(--consent-bg) !important;
+  background: var(--raise) !important;
   box-shadow: none !important;
-  color: var(--gray7) !important;
+  color: var(--t2) !important;
   font: 400 14px/22px var(--sans) !important;
 }
 
@@ -53,7 +42,7 @@
 #iubenda-cs-banner#iubenda-cs-banner #iubenda-cs-paragraph .iub-p {
   display: block !important;
   margin: 0 !important;
-  color: var(--gray7) !important;
+  color: var(--t2) !important;
   font: 400 14px/22px var(--sans) !important;
 }
 
@@ -66,7 +55,7 @@
 }
 
 #iubenda-cs-banner#iubenda-cs-banner #iubenda-cs-paragraph strong {
-  color: var(--ink) !important;
+  color: var(--t1) !important;
   font-weight: 500 !important;
 }
 
@@ -135,13 +124,13 @@
 
 #iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-reject-btn {
   background: transparent !important;
-  color: var(--ink) !important;
-  box-shadow: inset 0 0 0 1px var(--consent-ghost-line) !important;
+  color: var(--t1) !important;
+  box-shadow: inset 0 0 0 1px var(--line-strong) !important;
 }
 
 #iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-reject-btn:hover,
 #iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-customize-btn:hover {
-  background: var(--gray1) !important;
+  background: var(--hover) !important;
   transition: none !important;
 }
 
@@ -150,7 +139,7 @@
   padding: 0 8px !important;
   margin-left: -8px !important;
   background: transparent !important;
-  color: var(--gray6) !important;
+  color: var(--t3) !important;
   font-size: 13px !important;
 }
 
