@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { ToastProvider } from '../Toast';
+import { ObjectMenuProvider } from '../../../features/actions/components/ObjectMenuProvider';
 import { finish as finishOnboarding } from '../../../features/onboarding/onboarding-store';
 import { WorkspaceScene } from './scenes/WorkspaceScene';
 import { WorkflowScene } from './scenes/WorkflowScene';
@@ -224,8 +225,10 @@ export const MockScene = () => {
 
   return (
     <ToastProvider>
-      <Scene />
-      <ReportSheetHost />
+      <ObjectMenuProvider>
+        <Scene />
+        <ReportSheetHost />
+      </ObjectMenuProvider>
     </ToastProvider>
   );
 };

@@ -647,6 +647,11 @@ body {
   border-radius: var(--radius-sm);
 }
 
+[data-menu-open] {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
 dialog {
   margin: auto;
   opacity: 0;

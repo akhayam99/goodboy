@@ -1,15 +1,14 @@
 import { memo, useEffect, useMemo } from 'react';
-import { Archive, ChevronRight, Code, MessageSquareDiff, Trash2 } from 'lucide-react';
+import { ChevronRight, MessageSquareDiff } from 'lucide-react';
 import {
   Chip,
   cn,
   formatUsd,
+  Input,
   Tooltip,
   InlineMarkdown,
   inlineMarkdownText,
-  OverflowMenu,
   ToneBar,
-  type OverflowMenuItem,
 } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionPrFetchState } from '../../../../../store';
@@ -32,6 +31,12 @@ import { getLinkedRequest } from './getLinkedRequest';
 import { PrRequestSlot } from './PrRequestSlot';
 import { ProjectMountChips } from './ProjectMountChips';
 import { useDynamicActions, type DynamicAction } from './useDynamicActions';
+import { ObjectOverflowMenu } from '../../../../actions/components/ObjectOverflowMenu';
+import { useObjectMenuTrigger } from '../../../../actions/useObjectMenuTrigger';
+import { useRenameRequest } from '../../../../actions/useRenameRequest';
+import { sessionObjectKey } from '../../../../actions/kinds/session';
+import { sessionSelectionTarget } from '../../../../actions/sessionSelectionTarget';
+import { useSessionTitleRename } from '../../../../session/hooks/useSessionTitleRename';
 
 const SESSION_CARD_REVEAL =
   'opacity-0 group-hover/session-card:opacity-100 group-focus-within/session-card:opacity-100 aria-expanded:opacity-100';
@@ -51,20 +56,22 @@ type StageBoardCardProps = {
   readonly nav: BoardNavigation;
   readonly archived?: boolean;
   readonly selected?: boolean;
+  readonly selectedIds?: ReadonlyArray<SessionId>;
+  readonly onClearSelection?: () => void;
   readonly onModifierClick?: (id: SessionId, event: CardSelectionEvent) => void;
-  readonly onArchive?: (session: Session) => void;
-  readonly onDelete?: (session: Session) => void;
   readonly onRestore?: (session: Session) => void;
 };
+
+const NO_SELECTION: ReadonlyArray<SessionId> = [];
 
 export const StageBoardCard = memo(function StageBoardCard({
   session,
   nav,
   archived,
   selected,
+  selectedIds = NO_SELECTION,
+  onClearSelection,
   onModifierClick,
-  onArchive,
-  onDelete,
   onRestore,
 }: StageBoardCardProps) {
   const id = session.id as SessionId;
@@ -78,7 +85,6 @@ export const StageBoardCard = memo(function StageBoardCard({
   const prFetchState = useSessionPrFetchState(id);
   const mergeRequest = useAppStore((s) => s.sessionGitlabMr[id]?.mr ?? null);
   const agentCountLabel = `${agentCount} ${agentCount === 1 ? 'agent' : 'agents'}`;
-  const worktreePath = useAppStore((s) => s.sessionWorktrees[id]?.[0] ?? null);
   const mounts = useAppStore((s) => s.sessionProjectMounts?.[id] ?? EMPTY_ARRAY);
   const workspaceProjectCount = useAppStore(
     (s) =>
@@ -104,54 +110,26 @@ export const StageBoardCard = memo(function StageBoardCard({
     ? (reviewDrafts ?? []).filter((draft) => draft.status === 'draft').length
     : 0;
 
-  const [visibleAction, ...revealedActions] = dynamicActions;
+  const [visibleAction] = dynamicActions;
+  const anchorKey = `board:${id}`;
+  const rename = useSessionTitleRename({ sessionId: id, currentTitle: session.goal });
+  useRenameRequest({
+    objectKey: sessionObjectKey({ sessionId: id }),
+    anchorKeys: [anchorKey],
+    onRename: rename.start,
+  });
+  const menu = useObjectMenuTrigger({
+    target: { kind: 'session', sessionId: id },
+    anchorKey,
+    onBeforeOpen: () =>
+      sessionSelectionTarget({
+        sessionId: id,
+        selectedIds,
+        clearSelection: () => onClearSelection?.(),
+      }),
+  });
   const linkedRequest = getLinkedRequest({ pullRequest, mergeRequest });
   const isGitlab = mergeRequest != null && pullRequest == null;
-  const lifecycleItems: ReadonlyArray<OverflowMenuItem> = [
-    ...(archived === true
-      ? []
-      : [
-          {
-            kind: 'item',
-            key: 'editor',
-            label: 'Open in editor',
-            icon: Code,
-            onClick: () => nav.openIDE(session),
-            disabled: worktreePath == null,
-          } satisfies OverflowMenuItem,
-          {
-            kind: 'item',
-            key: 'terminal',
-            label: 'Open terminal',
-            icon: CONCEPT_ICONS.terminal,
-            onClick: () => nav.openTerminal(session),
-          } satisfies OverflowMenuItem,
-          ...revealedActions.map((action): OverflowMenuItem => ({
-            kind: 'item',
-            key: action.key,
-            label: action.label,
-            icon: action.icon,
-            onClick: action.onClick,
-          })),
-          { kind: 'separator', key: 'lifecycle-separator' } satisfies OverflowMenuItem,
-          {
-            kind: 'item',
-            key: 'archive',
-            label: 'Archive',
-            icon: Archive,
-            onClick: () => onArchive?.(session),
-          } satisfies OverflowMenuItem,
-        ]),
-    {
-      kind: 'item',
-      key: 'delete',
-      label: 'Delete',
-      icon: Trash2,
-      destructive: true,
-      onClick: () => onDelete?.(session),
-    },
-  ];
-
   const handlePrClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (mergeRequest != null && pullRequest == null) {
@@ -183,6 +161,7 @@ export const StageBoardCard = memo(function StageBoardCard({
     <article
       data-archived={archived || undefined}
       data-select-id={id}
+      onContextMenu={menu.onContextMenu}
       onClick={(event) => {
         if (selectFromEvent(event)) {
           return;
@@ -203,29 +182,44 @@ export const StageBoardCard = memo(function StageBoardCard({
             prFetchState={prFetchState}
             onOpen={handlePrClick}
           />
-          <button
-            type="button"
-            title={inlineMarkdownText({ text: sessionTitle({ session }) })}
-            aria-pressed={selected === true}
-            aria-keyshortcuts="Alt+Enter"
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter' && event.key !== ' ') {
-                return;
-              }
-              event.preventDefault();
-              event.stopPropagation();
-              if (event.altKey && selectFromEvent(event)) {
-                return;
-              }
-              nav.selectCard(session);
-            }}
-            className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-          >
-            <InlineMarkdown
-              text={sessionTitle({ session })}
-              className="line-clamp-2 min-h-10 text-row"
+          {rename.editing ? (
+            <Input
+              autoFocus
+              value={rename.draft}
+              maxLength={rename.maxLength}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => rename.setDraft(event.target.value)}
+              onBlur={() => void rename.commit()}
+              onKeyDown={rename.onKeyDown}
+              aria-label="Session title"
+              className="min-w-0 flex-1"
             />
-          </button>
+          ) : (
+            <button
+              type="button"
+              title={inlineMarkdownText({ text: sessionTitle({ session }) })}
+              aria-pressed={selected === true}
+              aria-keyshortcuts="Alt+Enter Shift+F10"
+              onKeyDown={(event) => {
+                menu.onKeyDown(event);
+                if (event.key !== 'Enter' && event.key !== ' ') {
+                  return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.altKey && selectFromEvent(event)) {
+                  return;
+                }
+                nav.selectCard(session);
+              }}
+              className="min-w-0 flex-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+            >
+              <InlineMarkdown
+                text={sessionTitle({ session })}
+                className="line-clamp-2 min-h-10 text-row"
+              />
+            </button>
+          )}
         </span>
 
         {progress !== null ? (
@@ -255,9 +249,10 @@ export const StageBoardCard = memo(function StageBoardCard({
               onClick={() => onRestore?.(session)}
             />
           )}
-          <OverflowMenu
-            items={lifecycleItems}
+          <ObjectOverflowMenu
+            target={{ kind: 'session', sessionId: id }}
             label="Session actions"
+            anchorKey={anchorKey}
             trigger={<CONCEPT_ICONS.more size={ICON_SIZE.row} aria-hidden />}
             triggerClassName={SESSION_CARD_REVEAL}
           />

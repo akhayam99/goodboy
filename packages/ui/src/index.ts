@@ -70,6 +70,15 @@ export type { NoticePlacement, NoticeTone } from './components/Notice';
 export { OverlayHeader } from './components/OverlayHeader';
 export { OverflowMenu } from './components/OverflowMenu';
 export { MenuItems } from './components/MenuItems';
+export { ContextMenu } from './components/ContextMenu/ContextMenu';
+export { MenuList } from './components/ContextMenu/MenuList';
+export type {
+  MenuChoice,
+  MenuConfirm,
+  MenuEntry,
+  MenuItemEntry,
+  MenuPoint,
+} from './components/ContextMenu/menuTypes';
 export type { OverflowMenuItem } from './components/MenuItems';
 export { SplitButton } from './components/SplitButton';
 export type { SplitButtonPrimaryParams } from './components/SplitButton';

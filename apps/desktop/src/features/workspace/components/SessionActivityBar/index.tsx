@@ -210,6 +210,8 @@ export const SessionActivityBar = ({
                         isActive={session.id === currentSessionId}
                         isDimmed={isArchivedView}
                         isSelected={isSelected(session.id as SessionId)}
+                        selectedIds={selection.selected}
+                        onClearSelection={clearSelection}
                         onModifierClick={selection.handleItemClick}
                         onClick={() => onSelectSession(session.id as SessionId)}
                       />

@@ -1,4 +1,5 @@
 import { useContext, type ReactNode } from 'react';
+import { useObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrigger';
 import type { EffortLevel, ProviderId, RoleModelPreferences, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
 import { WorkTimeContext } from '../../../../../workTreeModel/workTimeSource';
@@ -50,6 +51,10 @@ export const TimelineRunStreamRow = ({
   isRevealed = false,
 }: Props) => {
   const source = useContext(WorkTimeContext);
+  const contextMenu = useObjectMenuTrigger({
+    target: { kind: 'workflowRun', sessionId, runId: entry.run.id },
+    anchorKey: `activity:${item.id}`,
+  });
   const time =
     source === null
       ? undefined
@@ -75,6 +80,7 @@ export const TimelineRunStreamRow = ({
       stateNote={time?.note ?? null}
       isRevealed={isRevealed}
       menu={menu}
+      contextMenu={contextMenu}
       lanes={lanes}
       runLane={runLane}
     />

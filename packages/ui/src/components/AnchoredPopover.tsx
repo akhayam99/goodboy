@@ -4,6 +4,7 @@ import { cn } from '../cn';
 import type { DropdownController } from '../useDropdown';
 import { DropdownBackdrop } from '../useDropdown/DropdownBackdrop';
 import { Popover } from './Popover';
+import { useMenuKeys } from './ContextMenu/useMenuKeys';
 
 export type AnchoredPopoverProps = {
   readonly dropdown: DropdownController;
@@ -27,26 +28,34 @@ export const AnchoredPopover = ({
   anchorClassName,
   hasBackdrop = false,
   tabIndex,
-}: AnchoredPopoverProps) => (
-  <div ref={dropdown.containerRef} className={cn('relative', anchorClassName)}>
-    {trigger}
-    {dropdown.open && children != null
-      ? createPortal(
-          <div data-dropdown-portal>
-            {hasBackdrop ? <DropdownBackdrop onClose={dropdown.close} /> : null}
-            <Popover
-              innerRef={dropdown.popupRef}
-              role={role}
-              ariaLabel={ariaLabel}
-              tabIndex={tabIndex}
-              style={dropdown.popupStyle}
-              className={cn(dropdown.popupClassName, className)}
-            >
-              {children}
-            </Popover>
-          </div>,
-          dropdown.portalTarget,
-        )
-      : null}
-  </div>
-);
+}: AnchoredPopoverProps) => {
+  const onMenuKeyDown = useMenuKeys({
+    containerRef: dropdown.popupRef,
+    isOpen: dropdown.open,
+    isEnabled: role === 'menu',
+  });
+  return (
+    <div ref={dropdown.containerRef} className={cn('relative', anchorClassName)}>
+      {trigger}
+      {dropdown.open && children != null
+        ? createPortal(
+            <div data-dropdown-portal>
+              {hasBackdrop ? <DropdownBackdrop onClose={dropdown.close} /> : null}
+              <Popover
+                innerRef={dropdown.popupRef}
+                role={role}
+                ariaLabel={ariaLabel}
+                tabIndex={tabIndex}
+                onKeyDown={onMenuKeyDown}
+                style={dropdown.popupStyle}
+                className={cn(dropdown.popupClassName, className)}
+              >
+                {children}
+              </Popover>
+            </div>,
+            dropdown.portalTarget,
+          )
+        : null}
+    </div>
+  );
+};

@@ -90,7 +90,10 @@ vi.mock('../../../../store', async () => {
   };
   return {
     EMPTY_ARRAY: Object.freeze([]),
-    useAppStore: Object.assign(useAppStore, { getState: () => h.state }),
+    useAppStore: Object.assign(useAppStore, {
+      getState: () => h.state,
+      subscribe: () => () => undefined,
+    }),
     useCurrentWorkspace: () => ({ id: 'workspace-1', name: 'goodboy' }),
     useDiffComments: (sessionId: string) => h.state.diffComments[sessionId] ?? [],
     useSessionById: () => ({ id: 'session-1', workspaceId: 'workspace-1' }),
@@ -365,7 +368,7 @@ describe('PullRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
     const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
 
-    expect(merge.disabled).toBe(true);
+    expect(merge.getAttribute('aria-disabled')).toBe('true');
     expect(merge.textContent).toContain('Resolve the conflicts with main first');
 
     fireEvent.click(merge);
@@ -379,7 +382,7 @@ describe('PullRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
     const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
 
-    expect(merge.disabled).toBe(false);
+    expect(merge.getAttribute('aria-disabled')).toBeNull();
     fireEvent.click(merge);
 
     const confirm = screen.getByRole('group', { name: 'Squash merge #248?' });
@@ -417,8 +420,8 @@ describe('PullRequestPage', () => {
     const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
     const close = screen.getByRole('menuitem', { name: /^Close/ }) as HTMLButtonElement;
 
-    expect(merge.disabled).toBe(true);
-    expect(close.disabled).toBe(true);
+    expect(merge.getAttribute('aria-disabled')).toBe('true');
+    expect(close.getAttribute('aria-disabled')).toBe('true');
     expect(merge.textContent).toContain('Goodboy is already merging #248');
   });
 
@@ -429,7 +432,7 @@ describe('PullRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
     const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
 
-    expect(merge.disabled).toBe(true);
+    expect(merge.getAttribute('aria-disabled')).toBe('true');
     expect(merge.textContent).toContain('This pull request is already merged');
   });
 
@@ -440,7 +443,7 @@ describe('PullRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
     const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
 
-    expect(merge.disabled).toBe(true);
+    expect(merge.getAttribute('aria-disabled')).toBe('true');
     expect(merge.textContent).toContain('Reopen this pull request before merging');
   });
 
@@ -451,7 +454,7 @@ describe('PullRequestPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'PR actions' }));
     const merge = screen.getByRole('menuitem', { name: /^Merge/ }) as HTMLButtonElement;
 
-    expect(merge.disabled).toBe(true);
+    expect(merge.getAttribute('aria-disabled')).toBe('true');
     expect(merge.textContent).toContain('GitHub is already set to merge this pull request');
   });
 

@@ -5,6 +5,8 @@ import type { BranchCommit, HistoryStep, HistoryStepPrediction } from '@goodboy/
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
 import { VERB_LINE } from '../../historyPlan';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import type { CommitActionTarget } from '../../../actions/types';
 
 type Props = {
   readonly commit: BranchCommit;
@@ -14,6 +16,7 @@ type Props = {
   readonly isEditing: boolean;
   readonly editor: ReactNode;
   readonly verbControl: ReactNode;
+  readonly contextMenu: { readonly target: CommitActionTarget; readonly anchorKey: string };
   readonly onToggleSelect: () => void;
   readonly onStartReword: () => void;
   readonly onKey: (key: string, withAlt: boolean) => boolean;
@@ -32,6 +35,7 @@ export const HistoryCommitRow = ({
   isEditing,
   editor,
   verbControl,
+  contextMenu,
   onToggleSelect,
   onStartReword,
   onKey,
@@ -48,8 +52,13 @@ export const HistoryCommitRow = ({
     step.message != null && step.message !== ''
       ? (step.message.split('\n')[0] ?? '')
       : commit.subject;
+  const menu = useObjectMenuTrigger(contextMenu);
   const onKeyDown = (event: KeyboardEvent<HTMLLIElement>) => {
     if (event.target !== event.currentTarget) {
+      return;
+    }
+    menu.onKeyDown(event);
+    if (event.defaultPrevented) {
       return;
     }
     if (onKey(event.key, event.altKey)) {
@@ -83,6 +92,7 @@ export const HistoryCommitRow = ({
       aria-label={`${commit.shortSha} ${subject}`}
       data-testid={`history-row-${commit.shortSha}`}
       onKeyDown={onKeyDown}
+      onContextMenu={menu.onContextMenu}
       className={cn(
         'group flex min-w-0 flex-col gap-1.5 rounded-md px-2 py-1.5 outline-none focus-visible:bg-hover hover:bg-hover',
         isSelected && 'bg-selected',

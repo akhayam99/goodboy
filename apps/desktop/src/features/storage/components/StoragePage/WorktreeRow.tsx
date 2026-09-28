@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { useWorktreeActionTarget } from './useWorktreeActionTarget';
 import { Checkbox, Skeleton, Tooltip, cn } from '@goodboy/ui';
 import {
   isStorageFolderIdle,
@@ -57,12 +59,18 @@ export const WorktreeRow = ({
     folder.origin !== 'in-use' &&
     !isStorageFolderIdle({ folder, now, suggestAfterDays });
   const lastChange = storageFolderLastChange({ folder });
+  const actions = useWorktreeActionTarget({ folder, status, onRemove: setIntent });
+  const menu = useObjectMenuTrigger({
+    target: actions.target,
+    anchorKey: `worktree:${folder.path}`,
+  });
 
   return (
     <div className="flex flex-col">
       <div
         data-testid="storage-folder-row"
         data-status={status}
+        onContextMenu={menu.onContextMenu}
         className={cn(
           'group flex h-10 items-center gap-2.5 rounded-sm px-2 text-body hover:bg-hover',
           isRemoving && 'opacity-60',
@@ -112,6 +120,8 @@ export const WorktreeRow = ({
           folder={folder}
           status={status}
           isBusy={isRemoving || isSelecting}
+          target={actions.target}
+          onEditor={actions.onEditor}
           onRemove={setIntent}
         />
       </div>

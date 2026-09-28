@@ -62,7 +62,8 @@ import { workflowKindName } from '../../../workspace/components/WorkspacesSideba
 import { WorkflowRunAsk } from './WorkflowRunAsk';
 import { WorkflowRunStartButton } from './WorkflowRunStartButton';
 import { WorkflowCloseButton } from '../../../workflows/components/WorkflowCloseButton';
-import { WorkflowRunMenu } from '../../../workflows/components/WorkflowRunMenu';
+import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMenu';
+import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import { isWorkflowRunClosable } from '../../../workflows/isWorkflowRunClosable';
 import { isWorkflowRunClosedByUser } from '../../../workflows/isWorkflowRunClosedByUser';
 import { WorkflowRunMeta } from './WorkflowRunMeta';
@@ -81,8 +82,6 @@ type Props = {
   readonly toggleWorkflowExpand: AppStore['toggleWorkflowExpand'];
   readonly startWorkflowRun: AppStore['startWorkflowRun'];
   readonly setWorkflowRunAutoRun: AppStore['setWorkflowRunAutoRun'];
-  readonly onDiscardWorkflow: (runId: WorkflowRunId) => Promise<void>;
-  readonly onDeleteWorkflow: (runId: WorkflowRunId) => Promise<void>;
   readonly agentKindOverride: Readonly<Record<string, AgentKind>>;
   readonly agentModelOverride: Readonly<Record<string, string>>;
   readonly agentProviderOverride: Readonly<Record<string, ProviderId>>;
@@ -94,6 +93,12 @@ type Props = {
   readonly onPickAgent: (id: AgentId) => void;
   readonly onAnswerQuestion: (question: OpenQuestion | null) => void;
 };
+
+const RUN_BUTTON_ACTIONS: ReadonlyArray<string> = [
+  'workflowRun.close',
+  'workflowRun.restore',
+  'workflowRun.start',
+];
 
 type TreeCountParams = {
   readonly agent: Agent;
@@ -119,8 +124,6 @@ export const WorkflowRow = ({
   toggleWorkflowExpand,
   startWorkflowRun,
   setWorkflowRunAutoRun,
-  onDiscardWorkflow,
-  onDeleteWorkflow,
   agentKindOverride,
   agentModelOverride,
   agentProviderOverride,
@@ -178,6 +181,11 @@ export const WorkflowRow = ({
     run: { id: run.id, workflowId: run.workflowId ?? null },
   }).length;
   const hasStarted = wfAgents.length > 0;
+  const runTarget = { kind: 'workflowRun', sessionId: task.id, runId: run.id } as const;
+  const runMenu = useObjectMenuTrigger({
+    target: runTarget,
+    anchorKey: `workflow-run:${run.id}`,
+  });
   const isQueuedManual = !isDiscarded && run.triggerMode === 'manual' && !hasStarted;
   const predecessorName = run.chainAfterId
     ? (workflowNameByRunId.get(run.chainAfterId) ?? 'previous')
@@ -243,7 +251,10 @@ export const WorkflowRow = ({
                         className="text-xl font-semibold"
                       />
                     ) : (
-                      <div className="group/name flex min-w-0 items-start gap-1.5">
+                      <div
+                        className="group/name flex min-w-0 items-start gap-1.5"
+                        onContextMenu={runMenu.onContextMenu}
+                      >
                         <h2
                           title={name}
                           className="line-clamp-2 min-w-0 break-words text-title text-foreground"
@@ -352,10 +363,11 @@ export const WorkflowRow = ({
                         onClick={() => void restoreWorkflow(task.id, run.id)}
                       />
                     ) : null}
-                    <WorkflowRunMenu
-                      workflowName={name}
-                      onDiscard={isDiscarded ? null : () => void onDiscardWorkflow(run.id)}
-                      onDelete={() => void onDeleteWorkflow(run.id)}
+                    <ObjectOverflowMenu
+                      target={runTarget}
+                      label={`${name} workflow actions`}
+                      anchorKey={`workflow-run:${run.id}`}
+                      omit={RUN_BUTTON_ACTIONS}
                     />
                   </div>
                 </CardActionSlot>

@@ -28,11 +28,9 @@ type StoreState = {
   readonly workspaceIntegrations: Readonly<Record<string, never>>;
 };
 
-vi.mock('../../../../store', async () => ({
-  ...(await import('../../../../store/slices/navigation/place')),
-  EMPTY_ARRAY: Object.freeze([]),
-  useAppStore: <T,>(selector: (state: StoreState) => T) =>
-    selector({
+vi.mock('../../../../store', async () => {
+  const state = (): StoreState =>
+    ({
       projects: [],
       projectSentryLinks: {},
       workspaceIntegrations: {},
@@ -44,8 +42,16 @@ vi.mock('../../../../store', async () => ({
       issueBriefs: {},
       sessions: [],
       linkSessionExternalTask: h.linkSessionExternalTask,
-    }),
-}));
+    }) as StoreState;
+  const useAppStore = <T,>(selector: (value: StoreState) => T) => selector(state());
+  useAppStore.getState = state;
+  useAppStore.subscribe = () => () => undefined;
+  return {
+    ...(await import('../../../../store/slices/navigation/place')),
+    EMPTY_ARRAY: Object.freeze([]),
+    useAppStore,
+  };
+});
 
 vi.mock('../../../../app/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),

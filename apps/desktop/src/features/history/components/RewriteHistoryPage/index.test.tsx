@@ -34,7 +34,10 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (state: Record<string, unknown>) => T) => selector(h.state),
+  useAppStore: Object.assign(
+    <T,>(selector: (state: Record<string, unknown>) => T) => selector(h.state),
+    { getState: () => h.state, subscribe: () => () => undefined },
+  ),
 }));
 
 vi.mock('../../../../store/slices/project-mounts/selectors', () => ({

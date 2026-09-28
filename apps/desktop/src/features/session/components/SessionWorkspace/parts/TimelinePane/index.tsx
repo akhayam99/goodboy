@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { runsForWorkflowRun } from '@goodboy/core';
 import type { ReactNode } from 'react';
 import { CheckCheck } from 'lucide-react';
 import { Button, IconButton, OverflowMenu, SectionHeader, useCopyLink } from '@goodboy/ui';
@@ -32,8 +31,7 @@ import { useAttachedWorkflowRuns } from '../../../../../workflows/useAttachedWor
 import { useAdvanceWorkflowAgent } from '../../../../../workflows/useAdvanceWorkflowAgent';
 import { usePendingAction } from '../../../../../../shared/hooks/usePendingAction';
 import { useWorkflowAdvanceStates } from '../../../../../workflows/useWorkflowAdvanceStates';
-import { isWorkflowRunClosable } from '../../../../../workflows/isWorkflowRunClosable';
-import { WorkflowRunMenu } from '../../../../../workflows/components/WorkflowRunMenu';
+import { ObjectOverflowMenu } from '../../../../../actions/components/ObjectOverflowMenu';
 import {
   activityCategoryOf,
   activityCounts,
@@ -106,7 +104,6 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const markAllAgentsSeen = useAppStore((s) => s.markAllAgentsSeen);
   const navigate = useAppStore((s) => s.navigate);
   const openMountDiff = useAppStore((s) => s.openMountDiff);
-  const closeWorkflowRun = useAppStore((s) => s.closeWorkflowRun);
   const continueStoppedAgent = useAppStore((s) => s.continueStoppedAgent);
   const focusQuestion = useOpenQuestions((s) => s.focusQuestion);
   const openAgentQuestion = useOpenAgentQuestion({ sessionId });
@@ -558,14 +555,12 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
       return null;
     }
     const { run, workflow } = entry;
-    if (!isWorkflowRunClosable({ run, workflow, agents: runsForWorkflowRun(agents, run.id) })) {
-      return null;
-    }
     return (
-      <WorkflowRunMenu
-        workflowName={run.title ?? workflow.name}
-        onClose={() => void closeWorkflowRun(sessionId, run.id)}
-        triggerClassName="size-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 motion-safe:transition-opacity"
+      <ObjectOverflowMenu
+        target={{ kind: 'workflowRun', sessionId, runId: run.id }}
+        label={`${run.title ?? workflow.name} workflow actions`}
+        anchorKey={`activity:${item.id}`}
+        triggerClassName="size-6 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 aria-expanded:opacity-100 motion-safe:transition-opacity"
       />
     );
   };
