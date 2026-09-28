@@ -48,7 +48,7 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
   AppShell: () => null,
 }));
 vi.mock('../app/components/AppFooter', () => ({ AppFooter: () => null }));
-vi.mock('../features/session/components/CommandPalette', () => ({ CommandPalette: () => null }));
+vi.mock('../features/palette/components/PaletteOverlay', () => ({ PaletteOverlay: () => null }));
 vi.mock('../app/components/BootSplash', () => ({
   BootSplash: ({ onFinished }: { onFinished: () => void }) => {
     useEffect(() => {
