@@ -1,38 +1,52 @@
-import { Database } from 'lucide-react';
+import { DoorClosedLocked, Milestone, type LucideIcon } from 'lucide-react';
 import { Chip, SelectableRow } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatReleaseDate } from '../../formatReleaseDate';
 import { isInstalledRelease } from '../../isInstalledRelease';
 import { isNewerRelease } from '../../isNewerRelease';
+import { releaseKindOf } from '../../releaseKind';
 import type { ReleaseEntry } from '../../parseChangelog';
 import { releaseSummary } from '../../releaseSummary';
 
-const dateLabelFor = ({
-  dates,
-  version,
-}: {
-  readonly dates: Readonly<Record<string, string>>;
-  readonly version: string;
-}): string | null => {
-  const iso = dates[version];
-  if (iso === undefined) {
+type OneWayMark = {
+  readonly icon: LucideIcon;
+  readonly label: string;
+};
+
+const ONE_WAY_MARK = {
+  minor: {
+    icon: DoorClosedLocked,
+    label:
+      "This release changes your data. You can't go back to an older version after installing it.",
+  },
+  major: {
+    icon: Milestone,
+    label:
+      "This is a major release. It can remove or replace older ways of working, and you can't go back after installing it.",
+  },
+} as const satisfies Record<'minor' | 'major', OneWayMark>;
+
+const oneWayMarkFor = ({ release }: { readonly release: ReleaseEntry }): OneWayMark | null => {
+  if (release.shape !== 'v2' || release.oneWayFrom === null) {
     return null;
   }
-  return formatReleaseDate({ iso, style: 'short' });
+  const kind = releaseKindOf({ version: release.version });
+  if (kind === 'patch') {
+    return null;
+  }
+  return ONE_WAY_MARK[kind];
 };
 
 type Props = {
   readonly release: ReleaseEntry;
   readonly isActive: boolean;
-  readonly dates: Readonly<Record<string, string>>;
   readonly installedVersion: string | null;
   readonly onSelect: (version: string) => void;
 };
 
-export const ReleaseRow = ({ release, isActive, dates, installedVersion, onSelect }: Props) => {
+export const ReleaseRow = ({ release, isActive, installedVersion, onSelect }: Props) => {
   const isInstalled = isInstalledRelease({ tag: release.version, installed: installedVersion });
   const isAvailable = isNewerRelease({ tag: release.version, installed: installedVersion });
-  const date = dateLabelFor({ dates, version: release.version });
+  const oneWayMark = oneWayMarkFor({ release });
   return (
     <SelectableRow
       selected={isActive}
@@ -42,19 +56,17 @@ export const ReleaseRow = ({ release, isActive, dates, installedVersion, onSelec
     >
       <div className="flex items-center gap-1.5">
         <span className="min-w-0 flex-1 truncate text-body">{release.version}</span>
-        {release.shape === 'v2' && release.oneWayFrom !== null ? (
+        {oneWayMark !== null ? (
           <Chip
             tone="warning"
             size="sm"
-            icon={<Database size={ICON_SIZE.row} aria-hidden />}
-            label="data"
+            icon={<oneWayMark.icon size={ICON_SIZE.row} aria-hidden />}
+            ariaLabel={oneWayMark.label}
+            title={oneWayMark.label}
           />
         ) : null}
         {isInstalled ? <Chip tone="neutral" width="sm" label="installed" /> : null}
         {isAvailable ? <Chip tone="primary" width="sm" label="available" /> : null}
-        {date !== null ? (
-          <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">{date}</span>
-        ) : null}
       </div>
       <span className="truncate text-secondary text-muted-foreground">
         {releaseSummary({ release })}
