@@ -47,6 +47,12 @@ import {
   noop,
 } from './fixtures';
 import { sceneClock } from '../../sceneClock';
+import {
+  PARALLEL_AGENTS,
+  PARALLEL_SESSIONS,
+  PARALLEL_TELEMETRY,
+  PARALLEL_TURNS,
+} from './parallelRun';
 
 const clock = sceneClock({ anchor: '2026-09-16T11:20:00.000Z' });
 
@@ -193,6 +199,18 @@ export const seedWorkflowRun = () => {
     focusedWorkflowRunId: { [FLOW_SESSION_ID]: DYNAMIC_RUN_ID },
     sessionOpenQuestions: { [FLOW_SESSION_ID]: [] },
     budgetAlerts: [],
+  });
+};
+
+export const seedWorkflowRunParallel = () => {
+  seedWorkflowRun();
+  const running = PARALLEL_AGENTS.find((agent) => agent.status === 'running');
+  useAppStore.setState({
+    sessions: PARALLEL_SESSIONS,
+    sessionPhaseRuns: { [FLOW_SESSION_ID]: PARALLEL_AGENTS, [CHAT_SESSION_ID]: CHAT_AGENTS },
+    sessionTelemetry: { [FLOW_SESSION_ID]: PARALLEL_TELEMETRY },
+    agentTurnState: PARALLEL_TURNS,
+    selectedAgentId: { [FLOW_SESSION_ID]: running?.id ?? AGENT_ROUNDING_ID },
   });
 };
 

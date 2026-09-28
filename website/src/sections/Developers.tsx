@@ -1,51 +1,41 @@
+import './Developers.css';
 import { Benefits, type Benefit } from '../components/Benefits';
-import { Block } from '../components/Block';
-import { SeeHow } from '../components/SeeHow';
-import { Shot } from '../components/Shot';
-import { DEVELOPERS } from '../figures';
+import { Fragment } from '../components/Fragment';
+import { Frame } from '../components/Frame';
+import { DEV_DIFF, DEV_HISTORY } from '../figures';
 
 const ITEMS: readonly Benefit[] = [
   {
-    lead: 'Every chat starts briefed.',
-    text: 'The goal, the decisions and the plan travel with it, so you stop pasting the backstory.',
-  },
-  {
-    lead: 'The right model for each job.',
-    text: 'A light model reads the code, a strong one plans. You stop paying top price for a file search.',
-  },
-  {
-    lead: 'Your checkout stays yours.',
-    text: 'Agents edit in their own copy of the repo, so several tasks can run at once without touching your branch.',
-  },
-  {
-    lead: 'Pull request, diff and review in one path.',
-    text: 'The pull request page opens its diff and its review comments one step away, and Back walks you out the way you came.',
-  },
-  {
-    lead: 'History you can rewrite without worry.',
-    text: 'Drag commits to fold, squash, move or drop them, and see the branch after Apply before anything moves. Every rewrite keeps a backup for 30 days.',
+    lead: 'Rewrite history before you push.',
+    text: 'Drag commits to fold, squash, reorder or drop them, and see the branch after Apply before it moves. Every rewrite keeps a backup for 30 days.',
   },
   {
     lead: 'Branches that do not pile up.',
-    text: 'Goodboy knows which branches it made, which ones merged and which are safe to delete, and you choose what happens after a merge.',
+    text: 'Goodboy knows which branches it made and which have merged, and lists the ones safe to delete. You choose what happens after a merge.',
   },
   {
-    lead: 'Nothing lost when a plan runs out.',
-    text: 'If Claude hits its limit mid-task, the turn can move to another connected provider, and the chat says where it went. After a restart or an update, running agents pick up where they stopped.',
+    lead: 'Review comments become commits.',
+    text: 'An agent writes each fix as a local commit and drafts the reply in your voice. Accept, edit or skip, then Push posts the replies and resolves the threads.',
+  },
+  {
+    lead: 'A reviewer agent goes first.',
+    text: 'Start a Review agent on the branch. Its comments land as notes on the diff, and reach the pull request only when you post them.',
   },
 ];
 
 export const Developers = () => (
-  <Block
-    id="developers"
-    headingId="h2-developers"
-    heading="For developers"
-    sub="Less time explaining, more time reviewing finished work."
-  >
-    <Shot figure={DEVELOPERS} />
-    <Benefits items={ITEMS} />
-    <div className="linkRow">
-      <SeeHow anchor="branch-history" />
-    </div>
-  </Block>
+  <div className="developers">
+    <Fragment
+      id="developers"
+      eyebrow="For developers"
+      eyebrowKind="audience"
+      heading="Review what the agents wrote before it merges"
+      body="The diff has syntax colors, word-level changes, split or unified view and a Viewed tick per file. Quote any line into a note or a question for an agent."
+      figures={[DEV_DIFF]}
+      isMirrored
+    />
+    <Frame figure={DEV_HISTORY}>
+      <Benefits items={ITEMS} />
+    </Frame>
+  </div>
 );

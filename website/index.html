@@ -21,6 +21,63 @@
       })();
     </script>
 
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () {
+        window.dataLayer.push(arguments);
+      };
+      window.gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
+        wait_for_update: 500,
+      });
+      var _iub = window._iub || [];
+      window._iub = _iub;
+      _iub.csConfiguration = {
+        siteId: 4548648,
+        cookiePolicyId: 46359357,
+        lang: 'it',
+        storage: { useSiteId: true },
+        askConsentAtCookiePolicyUpdate: true,
+        enableFadp: true,
+        enableLgpd: true,
+        fadpApplies: true,
+        perPurposeConsent: true,
+        preferenceCookie: { expireAfter: 180 },
+        floatingPreferencesButtonDisplay: false,
+        callback: {
+          onBannerShown: function () {
+            document
+              .querySelectorAll(
+                '#iubenda-cs-banner .iubenda-cs-content, #iubenda-cs-banner .iubenda-cs-opt-group',
+              )
+              .forEach(function (node) {
+                node.removeAttribute('style');
+              });
+          },
+        },
+        banner: {
+          position: 'float-bottom-left',
+          acceptButtonDisplay: true,
+          rejectButtonDisplay: true,
+          customizeButtonDisplay: true,
+          closeButtonDisplay: false,
+          explicitWithdrawal: true,
+          listPurposes: true,
+          ownerName: 'goodboy-ai.dev',
+          showTitle: false,
+          showTotalNumberOfProviders: true,
+          backgroundOverlay: false,
+        },
+      };
+    </script>
+    <script src="https://cdn.iubenda.com/cs/iubenda_cs.js" charset="UTF-8" async></script>
+
     <!-- Google Tag Manager -->
     <script>
       (function (w, d, s, l, i) {
@@ -62,14 +119,21 @@
     </script>
     <!-- End Google Tag Manager -->
 
+    <link
+      rel="preload"
+      href="/fonts/InterVariable-latin-v19.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Primary -->
-    <title>Goodboy: stop re-explaining yourself to coding agents</title>
+    <title>Goodboy: a development environment that structures agent work</title>
     <meta
       name="description"
-      content="Goodboy is a free ADE, an agentic development environment: agents from the providers you connect do the work, and Goodboy gives it structure. Each task keeps its goal, decisions and summary, so the next agent starts briefed."
+      content="Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed."
     />
     <meta
       name="keywords"
@@ -82,10 +146,13 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Goodboy" />
     <meta property="og:url" content="https://goodboy-ai.dev/" />
-    <meta property="og:title" content="Goodboy: stop re-explaining yourself to coding agents" />
+    <meta
+      property="og:title"
+      content="Goodboy: a development environment that structures agent work"
+    />
     <meta
       property="og:description"
-      content="Goodboy is a free ADE, an agentic development environment: agents from the providers you connect do the work, and Goodboy gives it structure. Each task keeps its goal, decisions and summary, so the next agent starts briefed."
+      content="Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed."
     />
     <meta property="og:image" content="https://goodboy-ai.dev/og-image.png" />
     <meta property="og:image:width" content="1200" />
@@ -97,10 +164,13 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@GoodboyWorks" />
     <meta name="twitter:creator" content="@GoodboyWorks" />
-    <meta name="twitter:title" content="Goodboy: stop re-explaining yourself to coding agents" />
+    <meta
+      name="twitter:title"
+      content="Goodboy: a development environment that structures agent work"
+    />
     <meta
       name="twitter:description"
-      content="Goodboy is a free ADE, an agentic development environment: agents from the providers you connect do the work, and Goodboy gives it structure. Each task keeps its goal, decisions and summary, so the next agent starts briefed."
+      content="Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed."
     />
     <meta name="twitter:image" content="https://goodboy-ai.dev/og-image.png" />
     <meta
@@ -119,7 +189,7 @@
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "Goodboy",
-        "description": "Goodboy is a free ADE, an agentic development environment: agents from the providers you connect do the work, and Goodboy gives it structure. Each task keeps its goal, decisions and summary, so the next agent starts briefed.",
+        "description": "Goodboy is a free agentic development environment for macOS and Linux. The providers you connect do the work and Goodboy gives it structure: each task keeps its goal, decisions and summary, so the next agent starts briefed.",
         "url": "https://goodboy-ai.dev/",
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": ["macOS", "Linux"],
@@ -174,14 +244,6 @@
           },
           {
             "@type": "Question",
-            "name": "Is it really free?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes. Goodboy is a free desktop app, with no account to create."
-            }
-          },
-          {
-            "@type": "Question",
             "name": "Will it cost me anything on top of what I already pay?",
             "acceptedAnswer": {
               "@type": "Answer",
@@ -190,34 +252,10 @@
           },
           {
             "@type": "Question",
-            "name": "Do I need to connect every provider?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "One is enough to start. Connect a second when you want to spread the work around, or to give a turn somewhere to go when the first one hits a limit."
-            }
-          },
-          {
-            "@type": "Question",
             "name": "Where does my data go?",
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Your tasks, decisions and settings stay on your computer. Your prompts go from you to the provider you picked."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What if I do not like what the agents did?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Agents open pull requests as drafts, and you read the diff before you merge."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Which platforms does it run on?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "macOS and Linux. Download the Mac app from this page, the Linux builds are on the release page."
             }
           }
         ]

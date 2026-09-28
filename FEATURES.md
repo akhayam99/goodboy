@@ -4,9 +4,9 @@ The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai
 
 - [Set up](#set-up)
 - [Start a task](#start-a-task)
-- [Inside a session](#inside-a-session)
+- [Overview and activity](#overview-and-activity)
 - [Switch between tasks](#switch-between-tasks)
-- [Go anywhere, find anything](#go-anywhere-find-anything)
+- [Search and navigation](#search-and-navigation)
 - [Workspace and projects](#workspace-and-projects)
 - [Branch history](#branch-history)
 - [Review, resolve and pull requests](#review-resolve-and-pull-requests)
@@ -18,7 +18,7 @@ The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai
 - [Providers, limits and cost](#providers-limits-and-cost)
 - [Storage](#storage)
 - [Security, backup and updates](#security-backup-and-updates)
-- [Agents and chat](#agents-and-chat)
+- [Agents](#agents)
 - [Support Goodboy](#support-goodboy)
 - [Keyboard and terminal](#keyboard-and-terminal)
 - [Also there](#also-there)
@@ -89,7 +89,7 @@ The full workflow builder, right in the kickoff: pick **Orchestrated**, **Custom
 
 Get a short title without writing one. A new session is named for you and marked "Named by Goodboy" until you rename it.
 
-## Inside a session
+## Overview and activity
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s03-activity-dark.webp">
@@ -143,7 +143,7 @@ Catch up in one place. Everything Goodboy has to tell you, from a pull request o
 
 Give each workspace its own window, so switching does not interrupt running agents. A workspace that is already open brings its window forward instead of opening twice. After a reload or an update, and on every launch with **Reopen last** on, every window comes back on the screen, tab and panel it showed.
 
-## Go anywhere, find anything
+## Search and navigation
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s28-search-dark.webp">
@@ -728,7 +728,7 @@ See a change instead of reading about it. Release notes can show **Before** and 
 
 Learn how Goodboy works in 18 short chapters that follow a task, with search and links that open each screen. Open **Guide** from the palette.
 
-## Agents and chat
+## Agents
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s09-transcript-dark.webp">
@@ -743,7 +743,7 @@ Give each agent the job it is good at. Nine roles come with the app, **Scout**, 
 
 Check exactly what an agent was told. The top of each chat shows who sent it and a chip for each part of its brief, and **View as sent** shows the exact text, with Copy.
 
-### Agent chat
+### Agent transcript
 
 Follow one agent's work: grouped file edits, questions, permission cards and chips for the plans and reports it writes.
 

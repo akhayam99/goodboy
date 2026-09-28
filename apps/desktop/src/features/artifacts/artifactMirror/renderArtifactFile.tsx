@@ -15,8 +15,6 @@ const FILE_RULES = [
   '',
 ].join('\n');
 
-const BUNDLED_FONT_FACE_RE = /@font-face \{[^}]*InterVariable-latin\.woff2[^}]*\}/;
-
 const fileFontFace = (): string =>
   [
     '@font-face {',
@@ -29,11 +27,7 @@ const fileFontFace = (): string =>
   ].join('\n');
 
 export const artifactDocumentCss = (): string =>
-  [
-    documentTokens({ styles: appStyles }),
-    documentSheet.replace(BUNDLED_FONT_FACE_RE, fileFontFace()),
-    FILE_RULES,
-  ].join('\n');
+  [documentTokens({ styles: appStyles }), fileFontFace(), documentSheet, FILE_RULES].join('\n');
 
 const CSP = "default-src 'none'; style-src 'self' file:; font-src data:; img-src data:";
 

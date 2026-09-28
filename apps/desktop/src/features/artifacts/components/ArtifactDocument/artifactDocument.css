@@ -1,10 +1,3 @@
-@font-face {
-  font-family: 'Inter';
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('../../../../assets/fonts/InterVariable-latin.woff2') format('woff2-variations');
-}
 @page {
   margin: 16mm 16mm 20mm;
   size: A4;

@@ -204,8 +204,8 @@
       ]
     },
     {
-      "id": "inside-a-session",
-      "title": "Inside a session",
+      "id": "overview-and-activity",
+      "title": "Overview and activity",
       "image": "s03-activity",
       "features": [
         {
@@ -260,8 +260,8 @@
       ]
     },
     {
-      "id": "agents-and-chat",
-      "title": "Agents and chat",
+      "id": "agents",
+      "title": "Agents",
       "image": "s09-transcript",
       "features": [
         {
@@ -279,8 +279,8 @@
           "isNew": false
         },
         {
-          "id": "agent-chat",
-          "title": "Agent chat",
+          "id": "agent-transcript",
+          "title": "Agent transcript",
           "copy": "Follow one agent's work: grouped file edits, questions, permission cards and chips for the plans and reports it writes.",
           "image": null,
           "isNew": false

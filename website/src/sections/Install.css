@@ -1,0 +1,59 @@
+.install {
+  display: grid;
+  justify-items: start;
+  gap: 24px;
+  padding: 0 36px;
+}
+
+.cmd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(100%, 620px);
+  padding: 10px 10px 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-btn);
+  background: var(--raise);
+  font: 400 14px/20px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--t1);
+}
+
+.cmd code {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: inherit;
+}
+
+.cmdPrompt {
+  color: var(--t4);
+}
+
+.cmd button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font: 500 13px/20px var(--sans);
+  color: var(--t2);
+  transition: background 0.16s ease-out;
+}
+
+.cmd button:hover {
+  background: var(--hover);
+  transition: none;
+}
+
+.installNote {
+  font: var(--t-caption);
+  color: var(--t4);
+}
+
+@media (max-width: 600px) {
+  .install {
+    padding: 0;
+  }
+  .cmd {
+    font-size: 13px;
+  }
+}

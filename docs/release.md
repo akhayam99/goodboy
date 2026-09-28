@@ -40,8 +40,9 @@ from `tauri.conf.json`. So the two must match.
 
 ## The version bump
 
-Six places hold the version. They must all match the tag without the `v`.
-The website is the exception: it keeps the `v`.
+Five places hold the version. They must all match the tag without the `v`.
+The website footer has no copy of its own: it shows the newest snapshot in
+`website/src/data/releases/`, which the release PR adds.
 
 - `package.json`
 - `apps/desktop/package.json`
@@ -49,9 +50,6 @@ The website is the exception: it keeps the `v`.
 - `apps/desktop/src-tauri/Cargo.toml` (`package.version`)
 - `apps/desktop/src-tauri/Cargo.lock` (the `goodboy-desktop` package entry.
   `rust.yml` runs `cargo test --locked`, so an out-of-date lock turns CI red)
-- `website/src/site.ts` (`SITE.version`, keeping the leading `v`, so `v0.1.74`).
-  Nothing breaks if it is out of date, and that is why it gets forgotten: the
-  site keeps showing an old version.
 
 The release build reads its notes from the `## Goodboy vX` section of
 `CHANGELOG.md`. If that section is missing, the build fails. That is why the
