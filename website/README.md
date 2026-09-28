@@ -43,12 +43,13 @@ resamples it:
 
 - `<id>-<width>.webp` in the dark theme and `<id>-<width>-light.webp` in the
   light one.
-- A frame is drawn 1250 CSS pixels wide at 1440, so its files are 1250, 2500
-  and 3750 wide. A 1024 pixel app window lands at 1.22 times its size, the
-  board's 1250 pixel window at 1:1.
+- A frame is drawn 1144 CSS pixels wide at 1440, inside its stage, so its
+  files are 1144, 2288 and 3432 wide. A 1024 pixel app window lands at 1.12
+  times its size; the board keeps a 1250 pixel window so its four columns fit,
+  and draws at 0.92.
 - A frame has a `<id>-phone` twin, a 4:5 cut of 288 by 360 app pixels that a
-  phone draws 336 wide, at 1.17 times the app, instead of the whole window
-  shrunk. Its files are 672, 1008 and 1344 wide.
+  390 phone draws 366 wide, at 1.27 times the app, instead of the whole
+  window shrunk. Its files are 732, 1098 and 1464 wide.
 - A fragment is one component, drawn at its `displayWidth`, at least 1.18
   times its size in the app, with files at 1, 2 and 3 times that width. App
   text never draws below its size in the app.
@@ -67,8 +68,9 @@ the top of `website/index.html` sets `data-theme` before the first paint, so
 the page never flashes. Colours come from the tokens at the top of
 `website/src/styles.css`, with a dark set under `:root[data-theme='dark']`:
 one page background, a `--band` a step above it for every other chapter, a
-`--plate` for the bezel around product images, one raised surface for
-controls, hairlines instead of shadows, four text tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and
+`--stage` for product images (a flat 160 degree linear gradient, teal to
+page gray, taken from the earlier site, with no sheen, glow or shadow), one
+raised surface for controls, hairlines instead of shadows, four text tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and
 focus rings only. The logo is always the dark tile with the white dog, in both
 themes.
 
@@ -106,32 +108,40 @@ its own CSS file:
   chapters between them are not.
 - `Statement`, an eyebrow, a heading and a lead of 20 words or fewer. The
   hero and the closer use it too. No h1, h2 or h3 ends with a period.
-- `Frame`, one full product view: a 10 px plate on `--plate` with a hairline,
-  an inner view with its own hairline, capped at 600 px (640 in the hero) and
-  faded out over 140 px, and on a phone a 4:5 crop of its own.
-- `Fragment`, a split of text beside one or two components shown larger than
-  in the app, on the same plate, faded to the right where the screen
-  continues. It stacks below 900 px.
-- `Grid`, two or three cells in one bordered box, each a fragment on a plate,
-  a title and one line.
+- `Frame`, one full product view on a stage: 64 px of stage around the view
+  (40 below 1100 px), radius 28, the view capped at 600 px (640 in the hero)
+  and faded out over 140 px. Below 860 px the stage runs edge to edge with 12
+  px around the view, and a phone shows a 4:5 crop of its own. `isCanvas`
+  fades the view's top and bottom into the stage and adds a soft neutral
+  shadow above and below it: the one shadow on the page, used only for the
+  workflow step graph and marked `data-shadow-exception` for the check.
+- `Fragment`, a split of text beside one or two components on a smaller
+  stage (radius 20), the component bleeding off its right and bottom edge
+  where the screen continues. It stacks below 900 px.
+- `Grid`, two or three cells, each a stage with a component bleeding off it,
+  then a title and one line. No box around the cells.
 
 Motion: the hero rises in on load. Below it, every frame, fragment, grid
 image and frame note fades and rises 14 px as it scrolls into view
 (`useReveal`, which marks `[data-reveal]` nodes shown), and the cost bars grow
-from zero when their pair appears. The provider marks scroll as a marquee on a
-phone and sit still on wider screens. `prefers-reduced-motion` turns all of it
+from zero when their pair appears. The provider marks in the Works with row are in their
+brand colours (Claude orange, OpenRouter slate, the Gemini gradient from its
+2025 mark; Codex, Cursor, OpenCode and Moonshot black on light and white on
+dark), with the names in tier 3. They scroll as a marquee on a phone and sit
+still on wider screens. `prefers-reduced-motion` turns all of it
 off.
 
-`Picture` serves every image as a `srcset` of 1200, 2400 and 3840 pixel files,
-so a browser downloads only what its screen needs.
+`Picture` serves every image as a `srcset` of its three widths, so a browser
+downloads only what its screen needs.
 
 ## Check the page
 
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
 `http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
 both themes, at twice the pixel density. It fails on horizontal overflow, an
-image drawn below 2x, a frame, fragment or grid with a shadow, a page taller
-than 13,500 px at 1440 or on a phone, an em dash or a middot triplet in
+image drawn below 2x, a frame, fragment or grid with a shadow (outside
+`data-shadow-exception`), a page taller
+than 13,500 px at 1440 or 14,000 on a phone, an em dash or a middot triplet in
 visible text, a heading that ends with a period, a section that runs into the
 next one or whose content spills below it, Inter not loaded, a hero frame that
 starts below the first screen at 1440, and a consent card over the h1, and an
@@ -140,8 +150,9 @@ eyebrow (`kind="group"`, the default) must be a `FEATURES.md` group name
 verbatim, an audience eyebrow a `README.md` section, and the few page eyebrows
 (hero, Questions, Install, All features) are listed in the script. The heading
 rule itself lives in [docs/tone-of-voice.md](../docs/tone-of-voice.md). `--shots <dir>` also saves every heading, and
-`--verify-icons` compares the provider marks with their pinned simple-icons
-files over the network. Tag Manager is blocked during the run.
+`--verify-icons` compares the provider mark paths with their pinned
+simple-icons files over the network; the fill is free, since the marks
+carry brand colours. Tag Manager is blocked during the run.
 
 ## One invented world
 

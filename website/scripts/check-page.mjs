@@ -30,11 +30,11 @@ const VIEWPORTS = [
   { name: 'laptop', width: 1024, height: 768, isMobile: false, maxHeight: Infinity },
   { name: 'tablet', width: 768, height: 1024, isMobile: false, maxHeight: Infinity },
   { name: 'narrow', width: 660, height: 900, isMobile: false, maxHeight: Infinity },
-  { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 13500 },
+  { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 14000 },
 ];
 const OVERLAP_TOLERANCE_PX = 1;
 const THEMES = ['dark', 'light'];
-const PAGE_EYEBROWS = ['Agentic development environment', 'Questions', 'Install', 'All features'];
+const PAGE_EYEBROWS = ['Desktop app for macOS and Linux', 'Questions', 'Install', 'All features'];
 
 const parseArgs = ({ argv }) => {
   const shotsIndex = argv.indexOf('--shots');
@@ -154,6 +154,7 @@ const PAGE_PROBE = `(async () => {
     });
   };
   const shadowed = [...document.querySelectorAll('.frame, .frame *, .frag, .frag *, .grid, .grid *')]
+    .filter((node) => !node.hasAttribute('data-shadow-exception'))
     .filter((node) => isShadow(getComputedStyle(node).boxShadow) || getComputedStyle(node).filter.includes('drop-shadow'))
     .map((node) => String(node.className || node.tagName));
   const images = [...document.querySelectorAll('picture img')].map((image) => {
@@ -227,8 +228,6 @@ const PAGE_PROBE = `(async () => {
     brandPaths: [...document.querySelectorAll('svg[data-brand] path')].map((node) => ({
       brand: node.closest('svg').getAttribute('data-brand'),
       d: node.getAttribute('d'),
-      fill: getComputedStyle(node.closest('svg')).fill,
-      color: getComputedStyle(node.closest('svg')).color,
     })),
   };
 })()`;
@@ -307,9 +306,6 @@ const checkRun = ({ viewport, theme, probe, groups, audiences, brands }) => {
     }
     if (source.path !== mark.d) {
       fail(`provider mark ${mark.brand} differs from simple-icons ${source.slug}`);
-    }
-    if (mark.fill !== mark.color) {
-      fail(`provider mark ${mark.brand} is not drawn in currentColor`);
     }
   });
   return failures;
