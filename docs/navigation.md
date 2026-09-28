@@ -1156,7 +1156,12 @@ online copy was updated, what the check found, and the backup, with `Restore
 it` and `Done`. Every move leaves a backup under `refs/goodboy/backup/`, in a
 namespace made from the full branch name, kept 30 days; `Backups` in the page menu lists them with `Restore previous
 history`, which moves the branch back and, on a branch with an upstream,
-pushes it with a lease. Temporary copies left by a crash are removed when the
+pushes it with a lease only when the online copy has nothing newer than that
+backup; otherwise it stays restored here and the page says nothing was pushed.
+The backup a restore leaves is never pruned. Backups made before the current
+naming move to their branch when exactly one local branch matches, and show
+read-only as older backups otherwise. History rewriter may write only its
+copy, that copy's own git admin folder and the object store. Temporary copies left by a crash are removed when the
 app starts. Each copy lives in a folder Goodboy reserves atomically, with an
 owner file and a lock it holds while the copy is in use, and nothing deletes a
 copy without both, so a second window never removes a copy in use. `Branch vs main` sits in the file
