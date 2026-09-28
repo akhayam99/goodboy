@@ -120,6 +120,23 @@ export const LEDGER_SCENE_PLAN: ReadonlyArray<HistoryStep> = [
   (items: ReadonlyArray<HistoryStep>) => setVerb({ items, sha: SHA.x, verb: 'drop' }),
 ].reduce((items, apply) => apply(items), initialPlanItems({ commits: LEDGER_SCENE_COMMITS }));
 
+export const LEDGER_SCENE_GROUP_PLAN: ReadonlyArray<HistoryStep> = [
+  (items: ReadonlyArray<HistoryStep>) => moveAbove({ items, sha: SHA.d, anchor: SHA.b }),
+  (items: ReadonlyArray<HistoryStep>) =>
+    combineInto({ items, sha: SHA.x, target: SHA.d, mode: 'fixup' }),
+  (items: ReadonlyArray<HistoryStep>) =>
+    combineInto({ items, sha: SHA.e, target: SHA.d, mode: 'squash' }),
+  (items: ReadonlyArray<HistoryStep>) =>
+    combineInto({ items, sha: SHA.f, target: SHA.d, mode: 'fixup' }),
+  (items: ReadonlyArray<HistoryStep>) =>
+    rewordStep({
+      items,
+      sha: SHA.c,
+      message: 'Verify webhook signatures before crediting',
+      original: 'Fix webhook signature check',
+    }),
+].reduce((items, apply) => apply(items), initialPlanItems({ commits: LEDGER_SCENE_COMMITS }));
+
 const conflictPrediction = ({
   items,
 }: {
