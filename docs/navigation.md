@@ -230,7 +230,7 @@ never exists on one surface only.
   (creation pickers, property pickers, page chrome).
 - **What each object offers.** A session: Open, Review, Diff, Terminal, Open in
   editor; Rename (inline, in the row that opened the menu), Start agent, Link
-  an issue; copy the title, worktree path, branch and pull request link; Archive with Undo and
+  work (L on the Overview); copy the title, worktree path, branch and pull request link; Archive with Undo and
   Delete with its confirm (Restore once archived). Several sessions: Copy
   titles, Archive N, Restore N, Delete N. An agent: Open agent, Show its
   changes; Message this agent, Interrupt while a turn runs, Close or Reopen,

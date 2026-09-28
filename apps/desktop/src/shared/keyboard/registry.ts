@@ -189,6 +189,12 @@ export const SHORTCUTS = {
     plane: 'session',
     group: 'session',
   },
+  'session.linkWork': {
+    combo: 'KeyL',
+    label: 'Link work, on the overview',
+    plane: 'app',
+    group: 'session',
+  },
   'session.refresh': {
     combo: 'cmd+shift+KeyR',
     label: 'Refresh session',

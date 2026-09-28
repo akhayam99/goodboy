@@ -1,6 +1,6 @@
 import { Input, Tooltip, InlineMarkdown, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, SessionId } from '@goodboy/types';
-import { EMPTY_ARRAY, useAppStore } from '../../../../store';
+import { useAppStore } from '../../../../store';
 import type { LensKind } from '../../../../store';
 import { useSessionTitleRename } from '../../hooks/useSessionTitleRename';
 import { sessionTitle } from '../../sessionTitle';
@@ -31,12 +31,6 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
     anchorKeys: [null, SESSION_HEADER_ANCHOR],
     onRename: rename.start,
   });
-  const hasLinkedWork = useAppStore((s) => {
-    const linkedIssues = s.sessionGithub[sessionId]?.linkedIssues ?? EMPTY_ARRAY;
-    const externalTasks = s.sessionExternalTasks[sessionId] ?? EMPTY_ARRAY;
-    return linkedIssues.length > 0 || externalTasks.length > 0;
-  });
-
   const titleText = sessionTitle({ session });
   const isNamedByGoodboy = useAppStore(
     (s) => s.goodboyNamedSessionId === sessionId && !session.titleUserEdited,
@@ -98,7 +92,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <LinkedWorkChips sessionId={sessionId} onSelectLens={onSelectLens} />
-            <LinkIssueAction session={session} presentation="chip" isCollapsed={hasLinkedWork} />
+            {isArchived ? null : <LinkIssueAction session={session} />}
             <SessionCostChip sessionId={sessionId} />
           </div>
         </div>

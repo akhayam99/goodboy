@@ -249,9 +249,10 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
   },
   {
     id: 'session.linkIssue',
-    label: 'Link an issue',
+    label: 'Link work',
     icon: Link2,
     group: 'act',
+    shortcut: 'session.linkWork',
     when: isLive,
     run: ({ facts, env }) => {
       openLens({ env, sessionId: facts.sessionId, lens: null });
