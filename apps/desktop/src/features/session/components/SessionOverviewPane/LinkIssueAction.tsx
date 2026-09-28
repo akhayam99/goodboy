@@ -22,7 +22,7 @@ const isTypingTarget = (target: EventTarget | null): boolean =>
 
 export const LinkIssueAction = ({ session }: Props) => {
   const dropdown = useDropdown({
-    align: 'start',
+    align: 'end',
     expectedHeight: 440,
     expectedWidth: 480,
     width: 'w-[30rem] max-w-[calc(100vw-2rem)]',

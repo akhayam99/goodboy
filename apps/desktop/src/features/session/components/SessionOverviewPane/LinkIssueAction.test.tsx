@@ -218,4 +218,35 @@ describe('LinkIssueAction', () => {
     expect(screen.getByText(/^Goodboy links Linear, Sentry/)).toBeDefined();
     expect(optionNames()).toEqual([]);
   });
+
+  it('opens under the chip with its right edges aligned', () => {
+    const rectOf = (element: Element): DOMRect => {
+      const isTrigger = element.querySelector('button[aria-label="Link work"]') !== null;
+      const left = isTrigger ? 900 : 0;
+      const width = isTrigger ? 120 : 480;
+      return {
+        x: left,
+        y: 40,
+        left,
+        top: 40,
+        right: left + width,
+        bottom: 68,
+        width,
+        height: 28,
+        toJSON: () => ({}),
+      };
+    };
+    const spy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        return rectOf(this);
+      });
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 });
+    render(<LinkIssueAction session={session} />);
+    fireEvent.click(trigger());
+
+    const panel = screen.getByRole('dialog', { name: 'Link work' });
+    expect(panel.style.left).toBe('540px');
+    spy.mockRestore();
+  });
 });
