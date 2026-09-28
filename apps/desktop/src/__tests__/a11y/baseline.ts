@@ -35,7 +35,7 @@ export const A11Y_BASELINE = {
   'scene lens-switcher-closed': [],
   'scene session-states': [],
   'scene session-start': [],
-  'scene workspace-states': ['nested-interactive'],
+  'scene workspace-states': [],
   'scene review-modes': [],
   'scene workflow-studio': ['label'],
   'scene workflow-builder-modes': ['label'],

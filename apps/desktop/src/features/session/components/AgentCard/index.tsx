@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
 import { CardActionSlot } from '@goodboy/ui';
 import type { AgentCardDensity } from './agentCardDensity';
@@ -53,6 +53,13 @@ type Props = {
   readonly menu?: ObjectMenuTrigger;
 };
 
+const CONTROL_SELECTOR = 'button, a, input, textarea, [role="group"]';
+
+const isOnControl = ({ target }: { readonly target: EventTarget }): boolean =>
+  target instanceof Element &&
+  target.closest(CONTROL_SELECTOR) !== null &&
+  target.closest('[data-agent-card-open]') === null;
+
 export const AgentCard = ({
   tone = 'default',
   density = 'sidebar',
@@ -76,74 +83,83 @@ export const AgentCard = ({
   onMouseEnter,
   onMouseLeave,
   menu,
-}: Props) => (
-  <li className="flex flex-col gap-1" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
-    <div
-      role={isInert ? undefined : 'button'}
-      tabIndex={isInert ? -1 : 0}
-      aria-label={isInert ? undefined : ariaLabel}
-      aria-pressed={isInert ? undefined : isSelected}
-      onClick={isInert ? undefined : onOpen}
-      onDoubleClick={isInert || onRenameStart == null ? undefined : onRenameStart}
-      onContextMenu={isInert ? undefined : menu?.onContextMenu}
-      onKeyDown={(event) => {
-        if (isInert) {
-          return;
-        }
-        menu?.onKeyDown(event);
-        if (event.defaultPrevented) {
-          return;
-        }
-        if (event.key !== 'Enter' && event.key !== ' ') {
-          return;
-        }
-        event.preventDefault();
-        onOpen();
-      }}
-      className={cn(
-        'group/agent-card grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-        DENSITY_PADDING[density],
-        isInert ? '' : 'cursor-pointer',
-        isMuted && 'opacity-60',
-        isSelected ? 'bg-elevated' : 'bg-subtle hover:bg-hover',
-        tone === 'default' && (isSelected ? 'border-border' : 'border-transparent'),
-        agentCardBorderClass(tone),
-        isInspected && 'ring-1 ring-inset ring-border',
-      )}
-    >
-      <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-2" title={rowTitle}>
-        {leading}
-        {title}
-      </div>
-      <CardActionSlot
-        label="Agent navigation actions"
-        className="col-start-2 row-start-1 self-start"
+}: Props) => {
+  const titleId = useId();
+  return (
+    <li className="flex flex-col gap-1" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>
+      <div
+        data-agent-card
+        onContextMenu={isInert ? undefined : menu?.onContextMenu}
+        onClick={(event) => {
+          if (!isInert && !isOnControl({ target: event.target })) {
+            onOpen();
+          }
+        }}
+        onDoubleClick={(event) => {
+          if (!isInert && onRenameStart != null && !isOnControl({ target: event.target })) {
+            onRenameStart();
+          }
+        }}
+        className={cn(
+          'group/agent-card relative grid grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto] gap-x-2 gap-y-1 rounded-lg border transition-colors has-[[data-agent-card-open]:focus-visible]:ring-2 has-[[data-agent-card-open]:focus-visible]:ring-focus-ring',
+          DENSITY_PADDING[density],
+          isInert ? '' : 'cursor-pointer',
+          isMuted && 'opacity-60',
+          isSelected ? 'bg-elevated' : 'bg-subtle hover:bg-hover',
+          tone === 'default' && (isSelected ? 'border-border' : 'border-transparent'),
+          agentCardBorderClass(tone),
+          isInspected && 'ring-1 ring-inset ring-border',
+        )}
       >
-        {navigationAction}
-      </CardActionSlot>
-      {status != null || meta != null || children != null || footer != null ? (
+        {isInert ? null : (
+          <button
+            type="button"
+            data-agent-card-open
+            aria-label={ariaLabel}
+            aria-labelledby={ariaLabel === undefined ? titleId : undefined}
+            aria-pressed={isSelected}
+            onKeyDown={menu?.onKeyDown}
+            className="absolute inset-0 cursor-pointer rounded-lg focus-visible:outline-none"
+          />
+        )}
         <div
-          className={cn(
-            'row-start-2 flex min-w-0 flex-col',
-            DENSITY_BODY_GAP[density],
-            lifecycleActions == null ? 'col-span-2' : 'col-start-1',
-          )}
+          className={cn('relative col-start-1 row-start-1 flex min-w-0 items-center gap-2')}
+          id={titleId}
+          title={rowTitle}
         >
-          {status != null && <div className="flex flex-wrap items-center gap-1.5">{status}</div>}
-          {meta}
-          {children}
-          {footer}
+          {leading}
+          {title}
         </div>
-      ) : null}
-      {lifecycleActions != null && (
         <CardActionSlot
-          label="Agent lifecycle actions"
-          className="col-start-2 row-start-2 self-end"
+          label="Agent navigation actions"
+          className="relative col-start-2 row-start-1 self-start"
         >
-          {lifecycleActions}
+          {navigationAction}
         </CardActionSlot>
-      )}
-    </div>
-    {confirmation}
-  </li>
-);
+        {status != null || meta != null || children != null || footer != null ? (
+          <div
+            className={cn(
+              'relative row-start-2 flex min-w-0 flex-col',
+              DENSITY_BODY_GAP[density],
+              lifecycleActions == null ? 'col-span-2' : 'col-start-1',
+            )}
+          >
+            {status != null && <div className="flex flex-wrap items-center gap-1.5">{status}</div>}
+            {meta}
+            {children}
+            {footer}
+          </div>
+        ) : null}
+        {lifecycleActions != null && (
+          <CardActionSlot
+            label="Agent lifecycle actions"
+            className="relative col-start-2 row-start-2 self-end"
+          >
+            {lifecycleActions}
+          </CardActionSlot>
+        )}
+      </div>
+      {confirmation}
+    </li>
+  );
+};

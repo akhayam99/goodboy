@@ -587,7 +587,7 @@ const ROWS: ReadonlyArray<Row> = [
         throw new Error('the seeded session has no standalone agent');
       }
       const [name] = await screen.findAllByText(agent.name, undefined, WAIT);
-      const card = name?.closest('[aria-pressed]');
+      const card = name?.closest('[data-agent-card]');
       if (card === null || card === undefined) {
         throw new Error('the agents lens shows no agent card');
       }
