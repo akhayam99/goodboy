@@ -202,3 +202,115 @@ describe('applied theme', () => {
     expect(painter).toHaveBeenCalledTimes(1);
   });
 });
+
+type FakeTransition = {
+  readonly finish: () => Promise<void>;
+};
+
+const stubViewTransitions = () => {
+  const transitions: Array<FakeTransition> = [];
+  const start = vi.fn((update: () => void) => {
+    let resolveFinished: () => void = () => undefined;
+    const finished = new Promise<void>((resolve) => {
+      resolveFinished = resolve;
+    });
+    update();
+    transitions.push({
+      finish: async () => {
+        resolveFinished();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      },
+    });
+    return {
+      ready: Promise.resolve(),
+      updateCallbackDone: Promise.resolve(),
+      finished,
+      skipTransition: () => undefined,
+    };
+  });
+  Object.defineProperty(document, 'startViewTransition', {
+    configurable: true,
+    writable: true,
+    value: start,
+  });
+  return { start, transitions };
+};
+
+const stubMotion = ({ isReduced }: { readonly isReduced: boolean }) => {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query.includes('reduced-motion') ? isReduced : false,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
+};
+
+describe('theme switch transition', () => {
+  const isSwitching = () => document.documentElement.hasAttribute('data-theme-switching');
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'startViewTransition');
+    document.documentElement.removeAttribute('data-theme-switching');
+  });
+
+  it('cross-fades the swap in one view transition and holds transitions off until it ends', async () => {
+    stubMotion({ isReduced: false });
+    const { start, transitions } = stubViewTransitions();
+
+    useThemeStore.getState().setPreference('light');
+
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(isLightApplied()).toBe(true);
+    expect(isSwitching()).toBe(true);
+    await transitions[0]?.finish();
+    expect(isSwitching()).toBe(false);
+  });
+
+  it('swaps at once under reduced motion', () => {
+    stubMotion({ isReduced: true });
+    const { start } = stubViewTransitions();
+
+    useThemeStore.getState().setPreference('light');
+
+    expect(start).not.toHaveBeenCalled();
+    expect(isLightApplied()).toBe(true);
+  });
+
+  it('swaps at once where view transitions do not exist', () => {
+    stubMotion({ isReduced: false });
+
+    useThemeStore.getState().setPreference('light');
+
+    expect(isLightApplied()).toBe(true);
+  });
+
+  it('never animates the first paint', () => {
+    stubMotion({ isReduced: false });
+    const { start } = stubViewTransitions();
+    localStorage.setItem(STORAGE_KEYS.theme, 'light');
+
+    stop = bootstrapTheme();
+
+    expect(start).not.toHaveBeenCalled();
+    expect(isLightApplied()).toBe(true);
+  });
+
+  it('folds clicks made during a fade into one follow-up fade', async () => {
+    stubMotion({ isReduced: false });
+    const { start, transitions } = stubViewTransitions();
+
+    useThemeStore.getState().toggleTheme();
+    useThemeStore.getState().toggleTheme();
+    useThemeStore.getState().toggleTheme();
+    useThemeStore.getState().toggleTheme();
+
+    expect(start).toHaveBeenCalledTimes(1);
+    expect(isLightApplied()).toBe(true);
+    await transitions[0]?.finish();
+    expect(start).toHaveBeenCalledTimes(2);
+    expect(isLightApplied()).toBe(false);
+    await transitions[1]?.finish();
+    expect(start).toHaveBeenCalledTimes(2);
+  });
+});
