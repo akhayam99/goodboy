@@ -2,6 +2,7 @@ import { memo } from 'react';
 import type { SearchHit } from '@goodboy/types';
 import { cn, tintClasses } from '@goodboy/ui';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SEARCH_KIND_META } from '../../searchKindMeta';
 import { hitCrumb, hitHeadline } from '../../hitLabels';
 import { MarkedText } from './MarkedText';
@@ -38,7 +39,7 @@ export const SearchResultRow = memo(
         }}
       >
         <Icon
-          size={14}
+          size={ICON_SIZE.row}
           aria-hidden
           className={cn('mt-0.5 shrink-0', tintClasses(meta.tone).text)}
         />

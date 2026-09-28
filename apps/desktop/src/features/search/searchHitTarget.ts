@@ -171,7 +171,7 @@ const sessionBound = ({ hit }: Params): SearchHitTarget | null => {
               title: plainTitle({ hit }),
               createdAt: hit.occurredAt,
             },
-            label: `Open in ${PROVIDER_NAME[hit.provider]} lens`,
+            label: `Open the ${PROVIDER_NAME[hit.provider]} issue`,
           }
         : viaUrl({ hit });
     case 'pr':
@@ -180,7 +180,7 @@ const sessionBound = ({ hit }: Params): SearchHitTarget | null => {
       return hit.status === 'detached' || hit.mountId === null
         ? {
             kind: 'blocked',
-            reason: 'This branch is not mounted any more, so there is no diff to show.',
+            reason: 'This branch is no longer in the session, so there is no diff to show.',
             label: 'Open in Diff',
           }
         : { kind: 'diff', ...base, mountId: hit.mountId, label: 'Open in Diff' };

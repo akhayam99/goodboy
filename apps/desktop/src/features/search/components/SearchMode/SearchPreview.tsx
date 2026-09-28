@@ -1,6 +1,7 @@
 import type { SearchHit } from '@goodboy/types';
 import { Button, Eyebrow, tintClasses } from '@goodboy/ui';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SEARCH_KIND_META } from '../../searchKindMeta';
 import { hitHeadline } from '../../hitLabels';
 import type { SearchHitTarget } from '../../searchHitTarget';
@@ -52,7 +53,7 @@ export const SearchPreview = ({ hit, target, onOpen, onDone }: Props) => {
       <div className="flex flex-col gap-2">
         <Eyebrow
           label={meta.label}
-          icon={<Icon size={12} aria-hidden className={tintClasses(meta.tone).text} />}
+          icon={<Icon size={ICON_SIZE.row} aria-hidden className={tintClasses(meta.tone).text} />}
         />
         <h3 className="line-clamp-3 text-heading text-foreground">
           <MarkedText segments={hitHeadline({ hit })} />

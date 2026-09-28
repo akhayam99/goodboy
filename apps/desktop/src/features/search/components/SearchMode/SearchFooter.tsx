@@ -19,7 +19,7 @@ type Props = {
 };
 
 export const SearchFooter = ({ progress }: Props) => (
-  <div className="flex items-center gap-4 border-t border-border-soft px-4 py-2">
+  <div className="flex items-center gap-4 bg-fill px-4 py-2">
     <ul className="flex flex-1 flex-wrap items-center gap-4" aria-label="Keys">
       {HINTS.map((hint) => (
         <li

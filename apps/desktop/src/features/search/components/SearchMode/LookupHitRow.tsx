@@ -1,6 +1,6 @@
 import { cn, tintClasses } from '@goodboy/ui';
 import type { InboxRecord } from '../../../inbox/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly record: InboxRecord;
@@ -27,7 +27,7 @@ export const LookupHitRow = ({ record, optionId, isSelected, onHover, onOpen }: 
     }}
   >
     <CONCEPT_ICONS.issues
-      size={14}
+      size={ICON_SIZE.row}
       aria-hidden
       className={cn('mt-0.5 shrink-0', tintClasses(CONCEPT_TONE.issues).text)}
     />

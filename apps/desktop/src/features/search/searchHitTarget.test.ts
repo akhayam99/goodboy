@@ -92,7 +92,7 @@ describe('search hit target', () => {
     ).toMatchObject({
       kind: 'linked-issue',
       task: { provider: 'linear', externalId: 'lin-231', identifier: 'HAR-231' },
-      label: 'Open in Linear lens',
+      label: 'Open the Linear issue',
     });
     expect(
       searchHitTarget({
