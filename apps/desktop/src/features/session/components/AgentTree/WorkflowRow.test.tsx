@@ -36,6 +36,7 @@ const storeMocks = vi.hoisted(() => ({
 vi.mock('../../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useRunSpendUsd: () => storeMocks.runSpendUsd,
+  useSessionOpenQuestions: () => [],
   useExecutedAgentRouting: () => null,
   useAppStore: <T,>(selector: (state: unknown) => T) =>
     selector({
@@ -172,6 +173,8 @@ type RenderParams = {
   ) => Promise<void>;
   readonly focusedWorkflowRunId?: WorkflowRunId | null;
   readonly taskOverride?: Session;
+  readonly workflowExpand?: Readonly<Record<string, boolean>>;
+  readonly toggleWorkflowExpand?: (sessionId: SessionId, runId: string, current: boolean) => void;
 };
 
 const renderDetail = ({
@@ -187,6 +190,8 @@ const renderDetail = ({
   setWorkflowRunAutoRun = vi.fn(async () => undefined),
   focusedWorkflowRunId = null,
   taskOverride = session,
+  workflowExpand,
+  toggleWorkflowExpand = vi.fn(),
 }: RenderParams = {}) =>
   render(
     <WorkflowRow
@@ -197,9 +202,9 @@ const renderDetail = ({
       actionableStepIdByRunId={new Map([[RUN_ID, actionableStepId]])}
       blockReasonByRunId={new Map([[RUN_ID, blockReason]])}
       focusedWorkflowRunId={focusedWorkflowRunId}
-      workflowExpand={undefined}
+      workflowExpand={workflowExpand}
       workflowNameByRunId={new Map()}
-      toggleWorkflowExpand={vi.fn()}
+      toggleWorkflowExpand={toggleWorkflowExpand}
       startWorkflowRun={startWorkflowRun}
       setWorkflowRunAutoRun={setWorkflowRunAutoRun}
       onDiscardWorkflow={vi.fn(async () => undefined)}
@@ -233,6 +238,30 @@ afterEach(() => {
   storeMocks.orchestratingWorkflowRuns = {};
   storeMocks.runSpendUsd = 0;
   storeMocks.workspaceDurationHistory = {};
+});
+
+describe('WorkflowRow open question', () => {
+  it('says nothing about the question while the run tree shows the agent that asked', () => {
+    renderDetail({ blockReason: 'questions' });
+
+    expect(screen.queryByTestId('workflow-run-needs-you')).toBeNull();
+    expect(screen.queryByText('Blocked')).toBeNull();
+  });
+
+  it('shows one quiet count when collapsed, which opens the run again', () => {
+    const toggleWorkflowExpand = vi.fn();
+    renderDetail({
+      blockReason: 'questions',
+      workflowExpand: { [RUN_ID]: false },
+      toggleWorkflowExpand,
+    });
+    const chip = screen.getByTestId('workflow-run-needs-you');
+
+    expect(chip.textContent).toBe('1');
+    expect(screen.queryByRole('button', { name: 'Answer' })).toBeNull();
+    fireEvent.click(chip);
+    expect(toggleWorkflowExpand).toHaveBeenCalledWith(SESSION_ID, RUN_ID, false);
+  });
 });
 
 describe('WorkflowRow detail dashboard', () => {

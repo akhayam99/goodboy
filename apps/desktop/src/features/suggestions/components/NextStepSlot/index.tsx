@@ -12,12 +12,29 @@ import { NextStepRow } from './NextStepRow';
 type Props = {
   readonly session: Session;
   readonly onSelectLens: (lens: LensKind) => void;
+  readonly shownQuestionIds?: ReadonlySet<string>;
+  readonly shownAgentIds?: ReadonlySet<string>;
 };
 
-export const NextStepSlot = ({ session, onSelectLens }: Props) => {
+const NO_AGENTS: ReadonlySet<string> = new Set();
+
+const isShownElsewhere = ({
+  suggestion,
+  shownAgentIds,
+}: {
+  readonly suggestion: SessionSuggestion;
+  readonly shownAgentIds: ReadonlySet<string>;
+}): boolean => suggestion.kind === 'approve-tool' && shownAgentIds.has(suggestion.payload.agentId);
+
+export const NextStepSlot = ({
+  session,
+  onSelectLens,
+  shownQuestionIds,
+  shownAgentIds = NO_AGENTS,
+}: Props) => {
   const sessionId = session.id;
   const agents = useAppStore((s) => s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY);
-  const suggestions = useSessionSuggestions({ session, agents });
+  const suggestions = useSessionSuggestions({ session, agents, shownQuestionIds });
   const transcriptProposals = useTranscriptMountProposals({ session });
   const transcriptOwned = useMemo(
     () => transcriptOwnedProjectIds({ proposals: transcriptProposals }),
@@ -34,6 +51,7 @@ export const NextStepSlot = ({ session, onSelectLens }: Props) => {
   const visible = suggestions.filter(
     (suggestion) =>
       !notNowIds.has(suggestion.id) &&
+      !isShownElsewhere({ suggestion, shownAgentIds }) &&
       (suggestion.kind !== 'mount-project' || !transcriptOwned.has(suggestion.payload.projectId)),
   );
   const [first, ...rest] = visible;

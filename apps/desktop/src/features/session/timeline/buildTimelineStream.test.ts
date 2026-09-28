@@ -31,6 +31,7 @@ import {
   type TimelineStreamItem,
 } from './buildTimelineStream';
 import { dayLabel } from './dayLabel';
+import { needsYouRootIds } from './needsYou';
 import { layoutTimelineRail } from '../../workTreeModel/railGeometry';
 import { rowStateNode, rowStateTone } from '../../workTreeModel/rowStateCopy';
 import { runIdentity, runIdentitySeed } from './runIdentity';
@@ -2426,7 +2427,7 @@ describe('buildTimelineStream, question artifact rows', () => {
 
     expect(questionRows).toHaveLength(2);
   });
-  it('puts the run row on the question marker while one of its steps waits on an answer', () => {
+  it('keeps the run row quiet while the step that asks shows the question', () => {
     const { items } = stream({
       workflows: [
         attachedWorkflow({
@@ -2462,7 +2463,8 @@ describe('buildTimelineStream, question artifact rows', () => {
     });
     const runRow = items.find((item) => item.id === 'run:run-1');
 
-    expect(stateOf(runRow)).toBe('waiting:question');
+    expect(stateOf(runRow)).toBe('waiting:stepAsking');
+    expect(runRow?.kind === 'row' ? runRow.rowState.ask : undefined).toBeNull();
   });
 
   it('lifts a question asked by a nested subagent up to the run row', () => {
@@ -2495,10 +2497,161 @@ describe('buildTimelineStream, question artifact rows', () => {
         }),
       ],
       showWorkflowSubagents: false,
+      showQuestions: false,
     });
     const runRow = items.find((item) => item.id === 'run:run-1');
 
     expect(stateOf(runRow)).toBe('waiting:question');
+  });
+
+  it('keeps the run row quiet when a hidden subagent asks but its question row shows', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+        agent({
+          id: 'child',
+          ordinal: 2,
+          status: 'running',
+          startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
+          workflowRunId: RUN_ID,
+          parentAgentId: 'one',
+        }),
+      ],
+      questions: [
+        openQuestionFor({
+          id: 'nested-question',
+          createdByAgentId: 'child',
+          createdAt: localIso({ day: 18, hour: 9, minute: 20 }),
+        }),
+      ],
+      showWorkflowSubagents: false,
+    });
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(stateOf(runRow)).toBe('waiting:stepAsking');
+  });
+
+  it('offers one Answer for a one-step workflow question, on the question row', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+      questions: [
+        openQuestionFor({
+          id: 'only-question',
+          createdByAgentId: 'one',
+          createdAt: localIso({ day: 18, hour: 9, minute: 30 }),
+        }),
+      ],
+    });
+    const asks = items.flatMap((item) =>
+      item.kind === 'row' && item.rowState.ask?.kind === 'answer' ? [item.entry.kind] : [],
+    );
+
+    expect(asks).toEqual(['question']);
+    expect(needsYouRootIds({ items }).size).toBe(1);
+  });
+
+  it('puts the one Restart on the failed step row, never on the run row', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one', 'two'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'failed',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const asks = items.flatMap((item) =>
+      item.kind === 'row' && item.rowState.ask != null
+        ? [`${item.entry.kind}:${item.rowState.ask.kind}`]
+        : [],
+    );
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(asks).toEqual(['agent:restartStep']);
+    expect(stateOf(runRow)).toBe('failed:stepFailed');
+    expect(needsYouRootIds({ items }).size).toBe(1);
+  });
+
+  it('puts the one Continue on the stopped step row, never on the run row', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one', 'two'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          status: 'stopped',
+          startedAt: localIso({ day: 18, hour: 9 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
+    const asks = items.flatMap((item) =>
+      item.kind === 'row' && item.rowState.ask != null
+        ? [`${item.entry.kind}:${item.rowState.ask.kind}`]
+        : [],
+    );
+    const runRow = items.find((item) => item.id === 'run:run-1');
+
+    expect(asks).toEqual(['agent:continue']);
+    expect(stateOf(runRow)).toBe('waiting:stepStopped');
+  });
+
+  it('gives the Answer back to the asking agent when question rows are hidden', () => {
+    const { items } = stream({
+      workflows: [
+        attachedWorkflow({ createdAt: localIso({ day: 18, hour: 8 }), stepIds: ['one'] }),
+      ],
+      agents: [
+        agent({
+          id: 'one',
+          ordinal: 1,
+          startedAt: localIso({ day: 18, hour: 9 }),
+          completedAt: localIso({ day: 18, hour: 9, minute: 30 }),
+          workflowRunId: RUN_ID,
+        }),
+      ],
+      questions: [
+        openQuestionFor({
+          id: 'only-question',
+          createdByAgentId: 'one',
+          createdAt: localIso({ day: 18, hour: 9, minute: 30 }),
+        }),
+      ],
+      showQuestions: false,
+    });
+    const asks = items.flatMap((item) =>
+      item.kind === 'row' && item.rowState.ask?.kind === 'answer' ? [item.entry.kind] : [],
+    );
+
+    expect(asks).toEqual(['agent']);
+    expect(needsYouRootIds({ items }).size).toBe(1);
   });
 
   it('leaves the run row off the question marker once the question is answered', () => {

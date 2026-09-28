@@ -241,6 +241,18 @@ waiting for your click, then the spend limit. A summarizer writing the handoff
 and an agent still running are Goodboy at work, so the row shows them as
 running, never as waiting on you. The rule lives in `resolveRunRowState`.
 
+An open question belongs to the agent that asked it, not to the run. While
+the asking agent's row or its question row is in the feed, the run row stays
+quiet (`stepAsking`: a neutral "Waiting on a step" node, no sentence, no
+Answer). The run row takes the question only when the filter hides both, and
+its Answer then opens the asking agent at that question.
+
+A failed, blocked or stopped step works the same way. The run row names it
+("Step 4 failed", "Step 4 stopped by you") and offers nothing; the step's own
+row carries the one **Restart the step** or **Continue**. The run row keeps the
+Restart only when the run is held on a failed step that no row of the run
+shows.
+
 The workflow detail draws the run as a run tree (`RunTree`), the same stream
 the activity feed builds, limited to one run (`buildRunTreeStream`). Time runs
 the same way: the first step sits at the bottom, queued steps sit above the
@@ -323,13 +335,18 @@ orchestrator strip carries no answer or skip button of its own.
 - A failed step: "Implement stopped before finishing." with the steps that wait on it. **Check completion** asks the same agent to verify its work and finish, **Skip step** skips it. The error the turn ended with sits behind **Show details**
 - A blocked step: "Implement stopped without finishing and without asking you anything. Tell it what to do next." with the same **Check completion** and **Skip step**, on the warning rail instead of the danger one. Writing to the agent in its chat also resumes it
 - A stopped step: no strip. The agent header already offers Continue, and a step you stopped is never an alarm. The orchestrator strip says "Step 2 stopped by you" in a neutral tone
-- An open question: "Implement asks: ..." with the step that waits on it, or "This step waits on your answer." when the agent that asked is that step, and **Answer**, which opens the agent that asked at its question. This shows in the workflow detail only, because the agent detail already shows its own questions
+- An open question that no row of the run tree shows, such as one the orchestrator holds or one a question delegate asked: "Answer for Implement asks: ...", or "An agent asks: ..." when no agent asked, with the step that waits on it, and **Answer**, which opens the agent that asked at its question, or the questions view when no agent asked. A question a run tree agent asked stays on that agent's row, which already carries the question mark and **Answer**, so the strip never repeats it. This shows in the workflow detail only, because the agent detail already shows its own questions
 - The summarizer holding the run: "Writing the handoff from Plan." with nothing to click
 
 In the agent detail, the strip shows only on the agent the failed step is
 waiting on, or on one of its sub-agents. `resolveNextAction` picks the strip
 from the advance state. It reads `resolveWorkflowAdvance` and never decides
 on its own whether the run can move.
+
+The workflow detail header says nothing about an open question while the run
+tree is open, because the asking agent's row shows it. Collapsed, the header
+keeps one quiet needs-you count in place of the status, and clicking it opens
+the run again on the row that waits on you.
 
 ### Skipping a failed step
 

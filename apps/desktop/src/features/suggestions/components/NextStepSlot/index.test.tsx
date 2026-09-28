@@ -97,6 +97,27 @@ describe('NextStepSlot', () => {
     });
   });
 
+  it('leaves an approval to the needs-you callout that already shows that agent', () => {
+    const approve = (agentId: string) =>
+      suggestion({
+        id: `approve-tool:${agentId}`,
+        kind: 'approve-tool',
+        title: `Approve for ${agentId}`,
+        payload: { agentId, agentLabel: agentId, toolUseId: 't', toolName: 'Bash' },
+      } as Partial<SessionSuggestion>);
+    suggestionState.list = [approve('agent-shown'), approve('agent-other')];
+    render(
+      <NextStepSlot
+        session={SESSION}
+        onSelectLens={vi.fn()}
+        shownAgentIds={new Set(['agent-shown'])}
+      />,
+    );
+
+    expect(screen.queryByText('Approve for agent-shown')).toBeNull();
+    expect(screen.getByText('Approve for agent-other')).toBeTruthy();
+  });
+
   it('collapses the rest behind "N more" until expanded', () => {
     suggestionState.list = [
       suggestion({ id: 'a' }),

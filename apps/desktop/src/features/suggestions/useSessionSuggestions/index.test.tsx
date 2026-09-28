@@ -5,7 +5,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
 import type { NudgeEvent } from '@goodboy/db';
 
-const { store, worktreeStatus, listNudgeEvents } = vi.hoisted(() => ({
+const { store, worktreeStatus, listNudgeEvents, openQuestions } = vi.hoisted(() => ({
+  openQuestions: { list: [] as ReadonlyArray<unknown> },
   worktreeStatus: vi.fn(),
   listNudgeEvents: vi.fn(async (): Promise<ReadonlyArray<NudgeEvent>> => []),
   store: {
@@ -45,7 +46,7 @@ vi.mock('../../../store', () => ({
   EMPTY_ARRAY: Object.freeze([]),
   useAppStore: <T,>(selector: (state: typeof store) => T) => selector(store),
   useSessionPlans: () => [],
-  useSessionOpenQuestions: () => [],
+  useSessionOpenQuestions: () => openQuestions.list,
 }));
 
 vi.mock('../../workflows/useAttachedWorkflowRuns', () => ({
@@ -94,6 +95,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  openQuestions.list = [];
   resetWorktreeStatusCache();
   store.sessionEvents = {};
   store.sessionPhaseRuns = {};
@@ -354,6 +356,48 @@ describe('useSessionSuggestions demotion', () => {
     await waitFor(() => {
       const kinds = view.result.current.map((suggestion) => suggestion.kind);
       expect(kinds).toEqual(['mount-project', 'rebase-project']);
+    });
+  });
+});
+
+describe('useSessionSuggestions open questions', () => {
+  const question = (id: string, createdAt: string) => ({
+    id,
+    sessionId: 'session-1',
+    createdByAgentId: `agent-${id}`,
+    text: 'Round half up?',
+    status: 'open',
+    createdAt,
+  });
+
+  it('offers no answer suggestion for a question already on screen', async () => {
+    openQuestions.list = [question('q-1', '2026-09-28T09:00:00.000Z')];
+
+    const view = renderHook(() =>
+      useSessionSuggestions({ session, withRebase: false, shownQuestionIds: new Set(['q-1']) }),
+    );
+    await waitFor(() => expect(view.result.current).toBeDefined());
+
+    expect(view.result.current.some((s) => s.kind === 'answer-questions')).toBe(false);
+  });
+
+  it('counts only the questions out of view and points at the oldest', async () => {
+    openQuestions.list = [
+      question('q-late', '2026-09-28T10:00:00.000Z'),
+      question('q-early', '2026-09-28T09:00:00.000Z'),
+      question('q-shown', '2026-09-28T08:00:00.000Z'),
+    ];
+
+    const view = renderHook(() =>
+      useSessionSuggestions({ session, withRebase: false, shownQuestionIds: new Set(['q-shown']) }),
+    );
+
+    await waitFor(() => {
+      const answer = view.result.current.find((s) => s.kind === 'answer-questions');
+      expect(answer?.kind === 'answer-questions' ? answer.payload : null).toEqual({
+        count: 2,
+        firstQuestion: { id: 'q-early', createdByAgentId: 'agent-q-early' },
+      });
     });
   });
 });

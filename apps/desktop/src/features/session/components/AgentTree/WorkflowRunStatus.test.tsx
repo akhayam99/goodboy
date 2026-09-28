@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
-import { afterEach, describe, expect, it } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type {
   Agent,
   AgentId,
@@ -227,5 +227,56 @@ describe('WorkflowRunStatus', () => {
     );
     expect(screen.getByText('Blocked')).toBeDefined();
     expect(screen.queryByText('Ready')).toBeNull();
+  });
+});
+
+describe('WorkflowRunStatus question owned by the asking agent', () => {
+  const started: ReadonlyArray<Agent> = [
+    {
+      id: 'agent-1' as AgentId,
+      sessionId: 'session-1' as SessionId,
+      workflowRunId: RUN_ID,
+      ordinal: 0,
+      name: 'Implement',
+      status: 'completed',
+    },
+  ];
+  const staticRun: WorkflowRun = { ...run, executionMode: 'static' };
+
+  const renderQuestion = ({ isInView }: { readonly isInView: boolean }) => {
+    const onReveal = vi.fn();
+    render(
+      <WorkflowRunStatus
+        run={staticRun}
+        workflow={workflow}
+        agents={started}
+        predecessorName=""
+        isOrchestrating={false}
+        blockReason="questions"
+        question={{ count: 1, isInView, onReveal }}
+      />,
+    );
+    return onReveal;
+  };
+
+  it('says nothing about the question while the run tree shows the agent that asked', () => {
+    const { container } = render(<div />);
+    renderQuestion({ isInView: true });
+
+    expect(screen.queryByText('Blocked')).toBeNull();
+    expect(screen.queryByTestId('workflow-run-needs-you')).toBeNull();
+    expect(container.textContent).toBe('');
+  });
+
+  it('shows one quiet count when collapsed, and opens the run on click', () => {
+    const onReveal = renderQuestion({ isInView: false });
+    const chip = screen.getByRole('button', {
+      name: '1 question waits on you, show the agent that asked',
+    });
+
+    expect(chip.textContent).toBe('1');
+    expect(screen.queryByText('Blocked')).toBeNull();
+    fireEvent.click(chip);
+    expect(onReveal).toHaveBeenCalledTimes(1);
   });
 });

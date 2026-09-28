@@ -217,7 +217,7 @@ describe('resolveRunRowState', () => {
     [
       'R7 a step failed',
       { failedStep: { stepLabel: '4.1', isBlocked: false }, advance: blocked('failed-step') },
-      { node: 'failed', sentence: 'Step 4.1 failed', tone: 'danger', ask: 'restartStep' },
+      { node: 'failed', sentence: 'Step 4.1 failed', tone: 'danger', ask: null },
     ],
     [
       'R7b a step is blocked, alive but stuck',
@@ -226,7 +226,7 @@ describe('resolveRunRowState', () => {
         node: 'approval',
         sentence: 'Step 4.1 is blocked, tell the agent what to do next',
         tone: 'warning',
-        ask: 'restartStep',
+        ask: null,
       },
     ],
     [
@@ -317,6 +317,27 @@ describe('resolveRunRowState', () => {
     expect(state.reason?.kind).toBe('question');
   });
 
+  it('keeps the restart on the run only when no step row owns the failure', () => {
+    expect(read(runState({ advance: blocked('failed-step') })).ask).toBe('restartStep');
+  });
+
+  it('says nothing about a question its own step already shows', () => {
+    const state = runState({ isQuestionShown: true, advance: blocked('questions') });
+
+    expect(read(state)).toEqual({ node: 'queued', sentence: null, tone: 'neutral', ask: null });
+    expect(rowStateNode({ state }).label).toBe('Waiting on a step');
+    expect(isRowNeedingYou({ state })).toBe(false);
+  });
+
+  it('still answers a question no row on screen shows, even when another one is shown', () => {
+    const state = runState({
+      question: { question: QUESTION, stepLabel: '2' },
+      isQuestionShown: true,
+    });
+
+    expect(read(state).ask).toBe('answer');
+  });
+
   it('drops the chain sentence once the run it waits on has started its own work', () => {
     expect(runState({ chainedAfterTitle: 'Fix checkout', hasRunningStep: true }).reason).toBeNull();
   });
@@ -371,25 +392,23 @@ describe('stopped agents', () => {
     expect(rowStateNode({ state }).label).toBe('Stopped by restart');
   });
 
-  it('names the stopped step on the run and asks to continue it', () => {
-    const agent = agentOf({ status: 'stopped', stoppedBy: 'you' });
-    const state = runState({ stoppedStep: { agent, stepLabel: '4' } });
+  it('names the stopped step on the run and leaves Continue to the step row', () => {
+    const state = runState({ stoppedStep: { stepLabel: '4' } });
 
     expect(read(state)).toEqual({
       node: 'stopped',
       sentence: 'Step 4 stopped by you',
       tone: 'neutral',
-      ask: 'continue',
+      ask: null,
     });
     expect(rowStateShortSentence({ state })).toBe('Stopped');
     expect(isRowNeedingYou({ state })).toBe(false);
   });
 
   it('puts a blocked step ahead of a stopped one and keeps it a warning', () => {
-    const agent = agentOf({ status: 'stopped', stoppedBy: 'you' });
     const state = runState({
       failedStep: { stepLabel: '3', isBlocked: true },
-      stoppedStep: { agent, stepLabel: '4' },
+      stoppedStep: { stepLabel: '4' },
     });
 
     expect(state.reason?.kind).toBe('stepBlocked');

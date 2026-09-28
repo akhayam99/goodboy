@@ -20,19 +20,18 @@ import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import type { AgentKind } from '../session/agent-kind';
-import type { RebaseSuggestionTarget, SessionSuggestion, SuggestionKind } from './types';
-
-export type SuggestionFailedStep = {
-  readonly stepId: StepId;
-  readonly label: string | null;
-};
+import type {
+  RebaseSuggestionTarget,
+  SessionSuggestion,
+  SuggestionKind,
+  SuggestionQuestion,
+} from './types';
 
 export type SuggestionWorkflowRun = {
   readonly id: WorkflowRunId;
   readonly title: string;
   readonly advanceState: { readonly kind: string; readonly stepId?: StepId };
   readonly isRunning: boolean;
-  readonly failedStep?: SuggestionFailedStep | null;
 };
 
 export type SuggestionAgent = {
@@ -175,6 +174,7 @@ type Params = {
   readonly plans: ReadonlyArray<SuggestionPlan>;
   readonly consumedPlanIds: ReadonlySet<PlanId>;
   readonly openQuestionCount: number;
+  readonly firstOpenQuestion?: SuggestionQuestion | null;
   readonly hasPullRequest: boolean;
   readonly eligibleThreadCount: number;
   readonly projects: ReadonlyArray<SuggestionProject>;
@@ -197,6 +197,7 @@ export const deriveNextSteps = ({
   plans,
   consumedPlanIds,
   openQuestionCount,
+  firstOpenQuestion = null,
   hasPullRequest,
   eligibleThreadCount,
   projects,
@@ -244,7 +245,7 @@ export const deriveNextSteps = ({
       sessionId,
       targetKey: null,
       fingerprint: `answer-questions:${sessionId}:${openQuestionCount}`,
-      payload: { count: openQuestionCount },
+      payload: { count: openQuestionCount, firstQuestion: firstOpenQuestion },
     });
   }
   for (const agent of agents) {
@@ -343,28 +344,6 @@ export const deriveNextSteps = ({
     });
   }
   for (const run of workflowRuns) {
-    if (run.failedStep != null) {
-      suggestions.push({
-        id: `unblock-step:${run.id}`,
-        kind: 'unblock-step',
-        priority: 3,
-        band: 0,
-        title:
-          run.failedStep.label == null
-            ? `Step failed: ${run.title}`
-            : `Step failed: ${run.failedStep.label}`,
-        detail: 'Tell the agent what to do next, or skip it',
-        sessionId,
-        targetKey: `workflow-run:${run.id}`,
-        fingerprint: `unblock-step:${run.id}:${run.failedStep.stepId}`,
-        payload: {
-          runId: run.id,
-          stepId: run.failedStep.stepId,
-          stepLabel: run.failedStep.label,
-        },
-      });
-      continue;
-    }
     if (run.advanceState.kind !== 'ready' || run.advanceState.stepId == null) {
       continue;
     }

@@ -35,6 +35,8 @@ export const SessionActivityItem = ({
   const summary = useSessionSummary({ session });
   const tone = sessionTone({ stage: summary.stage, attention: summary.attention });
   const hasCost = summary.cost > 0;
+  const isReasonInMeta =
+    summary.attention === 'open-question' && summary.actionable?.kind === 'questions';
 
   return (
     <button
@@ -97,7 +99,7 @@ export const SessionActivityItem = ({
             <SessionProgress progress={summary.progress} tone={summary.tone} className="flex-1" />
           ) : (
             <span className="min-w-0 flex-1 truncate text-secondary text-muted-foreground">
-              {summary.reason}
+              {isReasonInMeta ? null : summary.reason}
             </span>
           )}
           {summary.meta.map((item) => (

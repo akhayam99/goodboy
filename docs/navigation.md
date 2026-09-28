@@ -215,7 +215,9 @@ workflow progress when a run is active (one segment per step, then
 `Implement · 3 of 5`, counted from the steps that started, never estimated),
 otherwise the stage reason. At most two marks follow it, in this order: what
 waits on you (open questions, then review drafts), the first linked task with a
-`+n` for the rest, the agent count. The row starts with a 20px node: the pull
+`+n` for the rest, the agent count. When open questions are the stage reason,
+the row says it once, as the "1 to answer" mark, and leaves the reason blank.
+The row starts with a 20px node: the pull
 request glyph in its state colour when there is a request, otherwise the stage
 icon, a ring while an agent runs, and `?` or `!` when the session needs you.
 Every row carries a `ToneBar`, the same tone primitive as its card

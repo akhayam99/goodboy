@@ -16,6 +16,7 @@ import { useAdvanceWorkflowAgent } from '../../workflows/useAdvanceWorkflowAgent
 import { resolveNewLabel } from '../../resolve/resolveQueueCopy';
 import { eligibleReviewThreads } from '../eligibleThreads';
 import { useMountProposalActions } from '../useMountProposalActions';
+import { useOpenAgentQuestion } from '../../context/hooks/useOpenAgentQuestion';
 import type { RebaseSuggestionTarget, SessionSuggestion } from '../types';
 
 const openProviderSignIn = ({ providerId }: { readonly providerId: string }) =>
@@ -69,6 +70,7 @@ export const useSuggestionActions = ({
   onSelectQuestions,
 }: Params): SuggestionActionResolver => {
   const sessionId = session.id;
+  const openAgentQuestion = useOpenAgentQuestion({ sessionId });
   const github = useAppStore((state) => state.sessionGithub[sessionId] ?? null);
   const mounts = useAppStore(
     (state) =>
@@ -94,7 +96,6 @@ export const useSuggestionActions = ({
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const proposalActions = useMountProposalActions({ sessionId });
   const runPlan = useAppStore((state) => state.runPlan);
-  const skipStuckStepAndAdvance = useAppStore((state) => state.skipStuckStepAndAdvance);
   const pushSessionBranch = useAppStore((state) => state.pushSessionBranch);
   const openRewriteHistory = useAppStore((state) => state.openRewriteHistory);
   const createPrForSession = useAppStore((state) => state.createPrForSession);
@@ -266,8 +267,16 @@ export const useSuggestionActions = ({
       };
     }
     if (suggestion.kind === 'answer-questions') {
+      const { count, firstQuestion } = suggestion.payload;
       return {
-        primary: { label: 'Answer', isDisabled: false, onAct: onSelectQuestions },
+        primary: {
+          label: 'Answer',
+          isDisabled: false,
+          onAct:
+            count === 1 && firstQuestion != null
+              ? () => openAgentQuestion({ question: firstQuestion })
+              : onSelectQuestions,
+        },
         onDismiss: null,
       };
     }
@@ -300,21 +309,6 @@ export const useSuggestionActions = ({
           label: 'Sign in',
           isDisabled: false,
           onAct: () => openProviderSignIn({ providerId: suggestion.payload.providerId }),
-        },
-        onDismiss: null,
-      };
-    }
-    if (suggestion.kind === 'unblock-step') {
-      return {
-        primary: {
-          label: 'Skip',
-          isDisabled: false,
-          requiresConfirm: true,
-          onAct: () => {
-            void skipStuckStepAndAdvance(sessionId, suggestion.payload.runId, {
-              onlyWhenBlocked: true,
-            });
-          },
         },
         onDismiss: null,
       };

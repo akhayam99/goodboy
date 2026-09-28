@@ -254,6 +254,18 @@ activity column is narrower than 28rem, the needs-you chip keeps its count
 and Filter keeps its icon. Suggestions live in **Next steps**, above Activity
 and outside its filter, not as a row inside the feed.
 
+An open question shows once on screen, on the agent that asked it. Its
+question row, on that agent's lane, carries the text and the one **Answer**;
+the agent row keeps its "Needs you" state without a second button, and takes
+the Answer back when the filter hides question rows. The workflow row says
+nothing about a question its step or the question row already shows: no
+sentence, no Answer, only a neutral "Waiting on a step" node. It names the
+question only when neither is in view (a sub-agent and question rows both
+filtered out), and then its Answer opens the asking agent at the question.
+The activity reports which open questions its rows show (`shownQuestionIds`),
+so Next steps and the needs-you callout above it do not repeat them. The
+needs-you count counts each family once, so one question never counts twice.
+
 ## Next steps
 
 One engine, `deriveNextSteps` (`features/suggestions/`), decides everything
@@ -287,11 +299,19 @@ whether you clicked it on the board or in the session overview.
   dismiss writes a `next:<kind>` row to `nudge_events`
   (`useNextStepOutcomes`); the demotion window reads the session's own
   history, not the workspace's.
-- Eighteen suggestion kinds ship: the original six (answer open questions,
+- The answer-open-questions suggestion counts only the open questions the
+  Activity does not show, so it never sits above a question already in view.
+  With one such question, **Answer** opens the agent that asked at that
+  question (`useOpenAgentQuestion`); with more, it opens the questions view.
+- An approval has one place in the overview: the **Needs you** callout,
+  whose **Answer the approval** opens the blocked agent. The approve-tool
+  suggestion for that same agent stays out of Next steps; an approval the
+  callout does not name (a second blocked agent) still shows there.
+- Seventeen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
-  project, run a ready plan, add a proposed project) plus twelve more that
+  project, run a ready plan, add a proposed project) plus eleven more that
   landed on the same engine, not a second one: approve a pending permission,
-  sign back in after `auth_required`, unblock a failed workflow step, retry
+  sign back in after `auth_required`, retry
   the last standalone agent that failed, fix a pull request's failing checks,
   push unpushed commits on a clean worktree (counted against the branch's
   own copy on origin by `branchPushStateOf`; `Push the branch` with `Not
@@ -305,15 +325,16 @@ pushed yet` when origin has no copy, and `Branch diverged from origin`
   with a goal set and no workflow attached yet (a discarded run does not
   count as attached, so the offer comes back) - its "Set up" action attaches
   the workspace's first library workflow with the session's own goal in one
-  click, no form. Merge, close-worktree and unblock-step's Skip arm a
+  click, no form. Merge and close-worktree arm a
   confirm on the row before they act; the other new kinds run on one click,
   like the original six. Two simplifications from the design: the "never
   while an agent works on the same mount" rule (E7-6) is session-wide, not
   per-mount, for the new push/open-pr/mark-ready/merge-pr/fix-checks kinds
   only - rebase-project keeps its own narrower per-request check; and the
-  demotion window (above) reads the session, not the workspace. unblock-step
-  only ships Skip; retrying the step itself needs a per-step retry action the
-  workflow engine does not expose yet. approve-tool opens the agent's
+  demotion window (above) reads the session, not the workspace. A failed
+  workflow step has no suggestion: its own row in Activity carries the one
+  **Restart the step**, which opens the step where Check completion and Skip
+  step live. approve-tool opens the agent's
   chat rather than the permission card directly; sign-in dispatches the
   same `goodboy:open-settings` event the palette's "Connect a provider"
   uses. continue-with-workflow always offers the workspace's first library
