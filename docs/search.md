@@ -159,9 +159,16 @@ results and its preview.
   Inbox. A found issue opens in its provider.
 - **Preview and actions.** The selected hit shows its facts, the Open
   button named after where it lands, and the actions of its object from the
-  action registry (`features/actions`): a session and an agent get their
-  full menu, an issue or a pull request with a link gets Open link and Copy
-  link. → moves into those actions. Search never builds its own verb list.
+  action registry (`features/actions`), resolved on the live store so they
+  match the object's current state: a session and an agent get their full
+  menu, a plan, report or wireframe gets the artifact menu (Run plan only
+  while it is ready, dimmed with its reason otherwise). An issue or a pull
+  request gets Open link and Copy link: their record and pull request
+  menus read facts that only the Inbox and Review pages hold (merge
+  readiness, the provider's verbs), so search opens those pages instead of
+  guessing. Decisions, questions and branches have no registry kind and
+  show only Open. → moves into the actions. `hitActionTarget.ts` owns the
+  mapping; search never builds its own verb list.
 
 ## Landing on a hit
 

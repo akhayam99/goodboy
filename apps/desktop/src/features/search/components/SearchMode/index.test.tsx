@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   AgentId,
+  ArtifactId,
   IsoDateTime,
   SearchHit,
   SearchQuery,
@@ -83,6 +84,15 @@ const HITS: ReadonlyArray<SearchHit> = [
     title: [{ text: 'Old settlement run', isMatch: false }],
     snippet: [],
   }),
+  makeHit({
+    docId: 'artifact:plan-1',
+    kind: 'plan',
+    refId: 'plan-1',
+    agentId: null,
+    status: 'active',
+    title: [{ text: 'Stream the settlement rows', isMatch: false }],
+    snippet: [],
+  }),
 ];
 
 const runSearch = vi.fn(async (_params: { readonly query: SearchQuery }) => HITS);
@@ -140,6 +150,24 @@ beforeEach(() => {
       { id: SESSION, workspaceId: WORKSPACE, goal: 'Speed up the payout export' } as never,
     ],
     projects: [],
+    sessionPlans: {
+      [SESSION]: [
+        {
+          id: 'plan-1',
+          sessionId: SESSION,
+          agentId: 'agent-planner',
+          title: 'Stream the settlement rows',
+          bodyMd: '## Goal',
+          status: 'active',
+          createdAt: AT,
+          updatedAt: AT,
+          consumptionCount: 0,
+        } as never,
+      ],
+    },
+    sessionArtifacts: { [SESSION]: [] },
+    sessionPhaseRuns: { [SESSION]: [] },
+    sessionOpenQuestions: { [SESSION]: [] },
     runSearch,
     navigate,
     startViewFind,
@@ -250,6 +278,33 @@ describe('search mode', () => {
         ?.resolve()
         .map((action) => action.label) ?? [];
     expect(expected.length).toBeGreaterThan(0);
+    expect(shown).toHaveLength(expected.length);
+    expect(shown.every((label, index) => label.startsWith(expected[index] ?? '\u0000'))).toBe(true);
+  });
+
+  it('shows the registry actions of a plan, in its current state', async () => {
+    await renderMode();
+    fireEvent.change(input(), { target: { value: 'settlement' } });
+    await flush();
+    fireEvent.keyDown(input(), { key: 'ArrowDown' });
+    fireEvent.keyDown(input(), { key: 'ArrowDown' });
+    fireEvent.keyDown(input(), { key: 'ArrowDown' });
+    const preview = screen.getByRole('complementary', { name: 'Preview' });
+    const shown = within(preview)
+      .getAllByRole('menuitem')
+      .map((item) => item.getAttribute('aria-label') ?? item.textContent ?? '');
+    const expected =
+      bindTarget({
+        state: useAppStore.getState(),
+        target: {
+          kind: 'artifact',
+          sessionId: SESSION,
+          subject: { kind: 'stored', artifactId: 'plan-1' as ArtifactId, isPlanRunning: false },
+        },
+      })
+        ?.resolve()
+        .map((action) => action.label) ?? [];
+    expect(expected).toContain('Run plan');
     expect(shown).toHaveLength(expected.length);
     expect(shown.every((label, index) => label.startsWith(expected[index] ?? '\u0000'))).toBe(true);
   });

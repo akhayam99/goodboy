@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { SearchHit } from '@goodboy/types';
 import { Button, Eyebrow, tintClasses } from '@goodboy/ui';
 import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
@@ -5,7 +6,8 @@ import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SEARCH_KIND_META } from '../../searchKindMeta';
 import { hitHeadline } from '../../hitLabels';
 import type { SearchHitTarget } from '../../searchHitTarget';
-import { hitActionTarget } from '../../hitActionTarget';
+import { hitActionTarget, hitPlanRunning } from '../../hitActionTarget';
+import { useAppStore } from '../../../../store';
 import { MarkedText } from './MarkedText';
 import { providerLabel } from '../../searchFilterOptions';
 import { SearchHitActions } from './SearchHitActions';
@@ -36,7 +38,8 @@ type Fact = {
 export const SearchPreview = ({ hit, target, onOpen, onDone }: Props) => {
   const meta = SEARCH_KIND_META[hit.kind];
   const Icon = meta.icon;
-  const actionTarget = hitActionTarget({ hit });
+  const isPlanRunning = useAppStore((state) => hitPlanRunning({ hit, state }));
+  const actionTarget = useMemo(() => hitActionTarget({ hit, isPlanRunning }), [hit, isPlanRunning]);
   const facts: ReadonlyArray<Fact> = [
     { label: 'Session', value: hit.kind === 'session' ? null : hit.sessionTitle },
     { label: 'Agent', value: hit.kind === 'agent' ? null : hit.agentName },
