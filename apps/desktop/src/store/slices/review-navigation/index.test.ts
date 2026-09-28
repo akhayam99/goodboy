@@ -184,6 +184,22 @@ describe('the review navigation target', () => {
     expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();
   });
 
+  it('opens the comments of a pull request in Review, with that pull request selected', async () => {
+    const live = createHarness();
+    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+
+    const outcome = await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: { kind: 'comments', mountId: MOUNT_ID, prNumber: 248 },
+    });
+
+    expect(outcome).toEqual({ kind: 'opened' });
+    expect(live.state.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 248, MOUNT_ID);
+    expect(live.state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'review' }),
+    });
+  });
+
   it('stays in place and reports a pull request it cannot show', async () => {
     const live = createHarness();
     live.seePr({ [SESSION_ID]: { pr: { number: 12 } } });

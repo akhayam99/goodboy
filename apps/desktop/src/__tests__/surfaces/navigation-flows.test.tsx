@@ -367,6 +367,36 @@ const both =
     }
   };
 
+const seedReviewComment = ({ sessionId }: Ctx): void => {
+  const state = useAppStore.getState();
+  const mount = state.sessionProjectMounts[sessionId]?.[0];
+  const github = mount === undefined ? undefined : state.mountGithub[mount.mountId];
+  if (mount === undefined || github === undefined || github.pr === null) {
+    throw new Error('the pr seed has no mount pull request');
+  }
+  const comment = {
+    id: 'navigation-comment-1',
+    source: 'review',
+    threadId: 'PRRT_navigation_1',
+    resolved: false,
+    inReplyToId: null,
+    author: 'kenji-w',
+    body: 'Cap the retries at three.',
+    createdAt: STORY_NOW,
+    path: 'src/importer.ts',
+    line: 12,
+  } as unknown as NonNullable<typeof github.detail>['comments'][number];
+  useAppStore.setState({
+    mountGithub: {
+      ...state.mountGithub,
+      [mount.mountId]: {
+        ...github,
+        detail: { ...(github.detail ?? { reviews: [], checks: [] }), comments: [comment] },
+      } as typeof github,
+    },
+  });
+};
+
 const openDiffHistory = async (): Promise<void> => {
   await openCrumb(/^Diff/);
   await clickButton(/Rewrite history/);
@@ -754,6 +784,26 @@ const ROWS: ReadonlyArray<Row> = [
     covers: ['openMountRequest', 'openReviewTarget'],
     open: () => clickFirstButton(/^Open PR #\d+ of /),
     lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+  },
+  {
+    name: 'mount row: comments to resolve open Review',
+    covers: ['openReviewTarget', 'lens:review'],
+    open: async (ctx) => {
+      seedReviewComment(ctx);
+      await settle();
+      await clickFirstButton(/^Open Review for .+, 1 to resolve$/);
+    },
+    lands: both(lens('review'), () => heading('Conversations')),
+  },
+  {
+    name: 'mount row menu: rewrite history',
+    covers: ['openRewriteHistory'],
+    open: async () => {
+      const [row] = await screen.findAllByTestId('project-mount-row');
+      await click(within(row!).getByRole('button', { name: / on .+ actions$/ }));
+      await click(await screen.findByRole('menuitem', { name: /^Rewrite history/ }));
+    },
+    lands: () => heading('Rewrite history'),
   },
   {
     name: 'review header pull request link',

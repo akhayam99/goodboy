@@ -879,7 +879,9 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   GitLab, still their own studios there). Every door to a pull request lands
   here: the worktree row chip, the board card badge, the context strip, the
   Review header link and its Checks chip. `Resolve N comments` on the board
-  card opens Review. Its trail is
+  card and `N to resolve` on the worktree row open Review. The Overview
+  attention callout routes by cause: requested changes open Review, failed
+  checks and an approval open the pull request. Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
   pull requests by branch, with `New pull request`. The page header carries the
   state action (`Merge`, `Mark ready for review`), `Write review` and `GitHub`.

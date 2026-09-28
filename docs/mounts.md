@@ -207,6 +207,11 @@ turn already carries `GOODBOY_WORKSPACE_ID`, `GOODBOY_SESSION_ID`,
   agent on that mount finishes it), `Open terminal`, and `Abort rebase`
   behind an inline confirm (`worktree_abort_rebase`, which refuses when no
   rebase is stopped).
+- **A row names its layers.** Each Projects row links the three code host
+  layers by name: `PR #318` with its state opens the pull request, the diff
+  stat opens the Diff, and `N to resolve` (only while review comments of
+  that pull request wait) opens Review on them. `Rewrite history` sits in the
+  row menu.
 - **Merged rows move under `Show completed`.** A row is merged when its
   request merged, or when a pushed branch that tracks its own name has a
   clean tree and nothing past the base. A merged request whose branch moved
