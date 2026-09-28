@@ -2,7 +2,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/readme-hero-dark.webp">
-  <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy, stop re-explaining yourself" width="880">
+  <img src="./docs/readme/readme-hero-light.webp" alt="Goodboy, stop re-explaining yourself: the board, a session with its activity bar, a workflow run and Rewrite history" width="880">
 </picture>
 
 [![ci](https://img.shields.io/github/actions/workflow/status/akhayam99/goodboy/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=ci&labelColor=15181b)](https://github.com/akhayam99/goodboy/actions/workflows/ci.yml)
@@ -25,79 +25,21 @@
 
 <br>
 
-Goodboy started as a free desktop app for coding agents, on **macOS** and **Linux**. It grew into an ADE, an agentic development environment: agents from the providers you connect do the work, and Goodboy gives that work its structure.
-
-The idea is small. A task keeps its own goal, decisions and summary, so the agents working on it do not need the story told twice. Here is what happens when you hand it one.
+Goodboy is a desktop app for coding agents, on **macOS** and **Linux**. Connect the providers you already use, Claude, Codex, Cursor and four more, point it at your repos, and hand it a task. Each task becomes a session that keeps its own goal, decisions and summary, so every agent that works on it starts briefed and nobody tells the story twice.
 
 <br>
 
-## The board
+## For developers
 
-You pick an issue from Linear. Goodboy drafts a title and a goal from it, and the task lands on the **board** as a session. From there the board moves it for you, between **building**, **running**, **needs you** and **in review**, with done work folded to the side, as the work changes. Each card shows its pull request and what it has cost so far.
+Inside a session every chat has one job. A scout reads the code on a light model, a planner decides on a strong one, implementers write and a tester checks. Agents work in their own copy of each repo, so your checkout stays yours, and a task that spans payments-api and notify-relay gets a branch and a pull request in each.
 
-Tasks come from the tools you connect: [GitHub, GitLab, Bitbucket, Jira, Linear, Sentry and Slack](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#supported-tools). Or press **New** to pick up a task, run a workflow or ask an agent, or to [start blank](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#start-blank) and add the goal later.
-
-[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#the-board)
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s01-board-dark.webp">
-  <img src="./docs/readme/s01-board-light.webp" alt="The Harborline board: eleven sessions across building, running, needs you and in review, with the webhook fix in review on pull request 318 at $3.47">
-</picture>
+Five tasks in flight? The activity bar keeps each one where you left it, and **⌘K** and **⌘F** take you anywhere. Review comments come back as commits with the reply drafted in your voice, and a messy branch gets tidied by dragging its commits around.
 
 <br>
 
-## Workflows
+## For leads and project managers
 
-A **workflow** splits the task into steps, and each step is a fresh agent with a short brief. In **Orchestrated** mode a model picks the next step after each one finishes and writes down why. The same builder opens from **New**, so the session and its run start together.
-
-That is also where the money goes. In the run below, a scout read the posting path for two cents. The planner spent $1.28, because that is the step that has to think. Want to steer? Queue a hint for the next decision, or have the orchestrator read it now.
-
-[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#workflows)
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s04-workflow-run-dark.webp">
-  <img src="./docs/readme/s04-workflow-run-light.webp" alt="An orchestrated run with scouts, a planner, two implementers and a tester, each on its own model with its own cost, a hint waiting for the next decision, and a short recap">
-</picture>
-
-<br>
-
-## Shared context
-
-Every agent on the task reads the same **goal**, the numbered **decisions** and a **summary** that updates after each turn. Decisions Goodboy records keep why they were made, shown right under them in the context drawer. When the plan changes its mind, the new decision says what it replaced and why, and the next agent starts from there. Open any agent and **View as sent** shows the exact text it received.
-
-Claude runs out halfway through? With another eligible provider connected, the turn can move there, and the chat says where it went. The top bar shows how much of your Claude and Codex plans is left before you start.
-
-[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#shared-context)
-
-<img src=".github/providers.png" alt="Claude, Cursor, Codex, Gemini, OpenCode, OpenRouter and Moonshot" width="880">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s08-context-dark.webp">
-  <img src="./docs/readme/s08-context-light.webp" alt="An implementer's brief as sent to Codex next to the Context drawer, where decision 3 replaced decision 1 with its reason">
-</picture>
-
-<br>
-
-## Pull request review
-
-The review comes back with seven comments. Review lists them next to the one you picked. Press **Draft fixes** and an agent writes each fix as a local commit and drafts the reply in your voice, and you accept it, edit it or skip the comment. One **Push** pushes the fixes, posts the replies and resolves the threads on GitHub.
-
-[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#resolve)
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s12-resolve-dark.webp">
-  <img src="./docs/readme/s12-resolve-light.webp" alt="Review for pull request 318: comments grouped as open, waiting for the push and done, one outdated reply open on the right, and Push 1 in the header">
-</picture>
-
-<br>
-
-## Chat
-
-Every agent still has its own chat when you want to steer by hand. Type while it works and your message waits for its turn, or send it now and interrupt. Restart Goodboy or install an update, and the agents that were working pick up where they stopped.
-
-Right click anything for its actions, press **⌘K** to run one from the keyboard, and **⌘F** searches every session, message and plan. The inbox, plans and wireframes, history rewriting, storage cleanup, security findings and the rest are in [FEATURES.md](./FEATURES.md), with screenshots. Something broke? Press **⌘I** in the app and report it in one line. [goodboy-ai.dev](https://goodboy-ai.dev) tells the story in a minute.
-
-[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#agents-and-chat)
+The board shows where every task stands, **building**, **running**, **needs you** or **in review**, with its pull request and what it has cost so far. Work starts from Linear, Jira, GitHub, GitLab, Bitbucket, Sentry or Slack with the brief already drafted, and plans and decisions are written down next to the task instead of lost in a chat. Set a monthly cap per provider and Goodboy warns you before you cross it, not after.
 
 <br>
 
@@ -114,7 +56,11 @@ Or pick a package from the [latest release](https://github.com/akhayam99/goodboy
 - **macOS**: the `.dmg`, then drop Goodboy in Applications
 - **Linux**: `AppImage`, `.deb` or `.rpm`
 
-[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#set-up)
+<br>
+
+## Features
+
+Every feature, with pictures, is in [FEATURES.md](./FEATURES.md). [goodboy-ai.dev](https://goodboy-ai.dev) tells the same story in a minute.
 
 <br>
 
@@ -126,8 +72,6 @@ Or pick a package from the [latest release](https://github.com/akhayam99/goodboy
 - Prompts go to the provider you chose
 - Tool keys go in your system credential store
 - No account, and no Goodboy server
-
-[See how it works →](https://github.com/akhayam99/goodboy/blob/main/FEATURES.md#security-backup-and-updates)
 
 <br>
 
@@ -173,7 +117,8 @@ Start at the [documentation index](./docs/README.md). From there:
 The best support is using it.
 
 - Run it on your real work
-- Open an [issue](https://github.com/akhayam99/goodboy/issues) when something feels off
+- Press **⌘I** in the app when something feels off, or you have an idea
+- Open an [issue](https://github.com/akhayam99/goodboy/issues)
 - Send a pull request
 - Leave a star if it earns one
 
