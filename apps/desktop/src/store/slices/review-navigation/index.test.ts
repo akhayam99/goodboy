@@ -166,6 +166,38 @@ describe('the review navigation target', () => {
     expect(live.get().reviewTargets[SESSION_ID]?.destination).toEqual({ kind: 'home' });
   });
 
+  it('opens a pull request on its own page, not on Review', async () => {
+    const live = createHarness();
+    live.seePr({ [SESSION_ID]: { pr: { number: 248 } } });
+
+    const outcome = await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: { kind: 'pull_request', mountId: MOUNT_ID, prNumber: 248 },
+    });
+
+    expect(outcome).toEqual({ kind: 'opened' });
+    expect(live.state.selectSessionPr).toHaveBeenCalledWith(SESSION_ID, 248, MOUNT_ID);
+    expect(live.state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'pr' }),
+    });
+    expect(live.state.navigate).toHaveBeenCalledTimes(1);
+    expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();
+  });
+
+  it('stays in place and reports a pull request it cannot show', async () => {
+    const live = createHarness();
+    live.seePr({ [SESSION_ID]: { pr: { number: 12 } } });
+
+    const outcome = await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: { kind: 'pull_request', mountId: MOUNT_ID, prNumber: 248 },
+    });
+
+    expect(outcome).toEqual({ kind: 'unavailable', reason: 'no_pull_request' });
+    expect(live.state.navigate).not.toHaveBeenCalled();
+    expect(live.get().reviewTargets[SESSION_ID] ?? null).toBeNull();
+  });
+
   it('lands on review with the pull request marked unavailable instead of guessing another', async () => {
     const live = createHarness();
     live.seePr({ [SESSION_ID]: { pr: { number: 12 } } });

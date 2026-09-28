@@ -144,7 +144,7 @@ export const StageBoardCard = memo(function StageBoardCard({
       );
       return;
     }
-    nav.openGithub(session);
+    nav.openPullRequest(session);
   };
 
   const selectFromEvent = (event: CardSelectionEvent): boolean => {

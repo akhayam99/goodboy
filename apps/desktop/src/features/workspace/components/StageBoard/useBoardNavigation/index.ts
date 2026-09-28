@@ -11,7 +11,8 @@ export type BoardNavigation = {
   readonly openIDE: (session: Session) => void;
   readonly openQuestions: (session: Session) => void;
   readonly openWorkflows: (session: Session) => void;
-  readonly openGithub: (session: Session) => void;
+  readonly openPullRequest: (session: Session) => void;
+  readonly openReview: (session: Session) => void;
 };
 
 type OpenLensParams = {
@@ -50,8 +51,7 @@ export const useBoardNavigation = (): BoardNavigation => {
       }
     };
 
-    const openGithub = (session: Session): void => {
-      openLens({ session, lens: null });
+    const openReviewOf = (session: Session): void => {
       void openReview({ sessionId: session.id as SessionId });
     };
 
@@ -62,7 +62,8 @@ export const useBoardNavigation = (): BoardNavigation => {
       openIDE,
       openQuestions: (session) => openLens({ session, lens: 'questions' }),
       openWorkflows: (session) => openLens({ session, lens: 'workflows' }),
-      openGithub,
+      openPullRequest: (session) => openLens({ session, lens: 'pr' }),
+      openReview: openReviewOf,
     };
   }, [navigate]);
 };

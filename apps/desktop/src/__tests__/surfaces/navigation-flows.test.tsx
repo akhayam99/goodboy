@@ -374,6 +374,7 @@ const openDiffHistory = async (): Promise<void> => {
 
 const LENS_ROWS: ReadonlyArray<{
   readonly label: string;
+  readonly note?: string;
   readonly lens: string | null;
   readonly seed?: Seed;
   readonly lands: (ctx: Ctx) => Promise<void>;
@@ -392,6 +393,12 @@ const LENS_ROWS: ReadonlyArray<{
   {
     label: 'Pull request',
     lens: 'pr',
+    lands: () => heading(/Stop retried webhooks/),
+  },
+  {
+    label: 'Pull request',
+    note: 'no pull request yet',
+    lens: 'pr',
     seed: 'issue',
     lands: () => heading(/^(Code host work|GitHub|GitLab|Bitbucket)$/),
   },
@@ -402,14 +409,14 @@ const LENS_ROWS: ReadonlyArray<{
 
 const ROWS: ReadonlyArray<Row> = [
   ...LENS_ROWS.map((row): Row => ({
-    name: `crumb menu: ${row.label}`,
+    name: `crumb menu: ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `crumb:${row.label}`, `lens:${row.lens ?? 'overview'}`],
     ...(row.seed !== undefined && { seed: row.seed }),
     open: () => openCrumb(new RegExp(`^${row.label}`)),
     lands: both(lens(row.lens), row.lands),
   })),
   ...LENS_ROWS.map((row): Row => ({
-    name: `palette: Open ${row.label}`,
+    name: `palette: Open ${row.label}${row.note === undefined ? '' : `, ${row.note}`}`,
     covers: ['navigate', `palette:Open ${row.label}`],
     ...(row.seed !== undefined && { seed: row.seed }),
     open: () => openPalette(new RegExp(`^Open ${row.label}`)),
@@ -746,7 +753,16 @@ const ROWS: ReadonlyArray<Row> = [
     name: 'pull request page from the mount row',
     covers: ['openMountRequest', 'openReviewTarget'],
     open: () => clickFirstButton(/^Open PR #\d+ of /),
-    lands: both(lens('review'), () => heading(/Stop retried webhooks/)),
+    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
+  },
+  {
+    name: 'review header pull request link',
+    covers: ['navigate', 'lens:pr'],
+    open: async () => {
+      await openCrumb(/^Review/);
+      await clickButton(/^Open pull request #\d+/);
+    },
+    lands: both(lens('pr'), () => heading(/Stop retried webhooks/)),
   },
   {
     name: 'mount row: changes to the mount diff',

@@ -114,9 +114,10 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   `shared/` calls `setActiveLens`, `setCurrentSession`, `selectAgent` or
   `setSessionStudio`.
 - **Aliases live in `canonicalLocation`, and only there.** An agent resolves
-  to its home lens (an unknown agent to Agents). `pr` on a GitHub session
-  becomes `review` before it is recorded, so no view redirects after it
-  mounts.
+  to its home lens (an unknown agent to Agents), before it is recorded, so no
+  view redirects after it mounts. The pull request and Review are two lenses
+  and never alias each other: a door to the pull request lands on `pr`, a door
+  to comments lands on `review`.
 - **Push, amend, replace.** A new place pushes: board and session, session to
   session, lens, a child, a sibling from a switcher, a session studio. Pushing
   the place you are on replaces it. Page state amends the current entry and
@@ -875,7 +876,10 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   notes (see Pull request review in `docs/concepts.md`). Its dock holds only the
   publication, and its header links the pull request page (`PR #528 ›`).
   The `pr` lens is the pull request page on GitHub too (`Merge request` on
-  GitLab, still their own studios there). Its trail is
+  GitLab, still their own studios there). Every door to a pull request lands
+  here: the worktree row chip, the board card badge, the context strip, the
+  Review header link and its Checks chip. `Resolve N comments` on the board
+  card opens Review. Its trail is
   `Overview › Pull request › #528`, and `#528` opens a menu of the session's
   pull requests by branch, with `New pull request`. The page header carries the
   state action (`Merge`, `Mark ready for review`), `Write review` and `GitHub`.
@@ -905,8 +909,8 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   palette offers **Show context** (⌘⌥C) and neither lists a Context page.
   Explore is always listed and
   browses the active working directory. Diff and the other branch lenses need a
-  branch. The code-host lens hides on GitHub. A tool lens appears once that
-  tool is connected.
+  branch. Pull request is listed on every code host, GitHub included. A tool
+  lens appears once that tool is connected.
 - **A lens surface is reached from the overview or from the trail's
   destination switcher, never from a rail.** Rows and chips inside the
   overview route to it, by expanding in place or opening a side panel. Counts

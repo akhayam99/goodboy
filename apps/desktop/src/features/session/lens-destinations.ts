@@ -38,13 +38,11 @@ const TOOL_OF_LENS: Partial<Record<LensKind, LensTool>> = {
 
 type Params = {
   readonly isBranchless: boolean;
-  readonly isGithubCodeHost: boolean;
   readonly connectedTools: ConnectedLensTools;
 };
 
 export const lensDestinations = ({
   isBranchless,
-  isGithubCodeHost,
   connectedTools,
 }: Params): ReadonlyArray<LensDestination> =>
   DESTINATIONS.filter(({ lens }) => {
@@ -56,9 +54,6 @@ export const lensDestinations = ({
     }
     if (isBranchless && !SIMPLE_LENSES.has(lens)) {
       return false;
-    }
-    if (lens === 'pr') {
-      return !isGithubCodeHost;
     }
     const tool = TOOL_OF_LENS[lens];
     return tool === undefined || connectedTools[tool];

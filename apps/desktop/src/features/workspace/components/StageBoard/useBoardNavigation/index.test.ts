@@ -116,11 +116,21 @@ describe('useBoardNavigation', () => {
     expect(openInEditorMock).not.toHaveBeenCalled();
   });
 
-  it('openGithub opens the session then the review target, with no studio overlay', () => {
+  it('openPullRequest lands on the pull request in one push', () => {
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openPullRequest(session);
+    expect(navigateMock).toHaveBeenCalledTimes(1);
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'pr' }),
+    });
+    expect(openReviewTargetMock).not.toHaveBeenCalled();
+  });
+
+  it('openReview opens the review target alone, with no studio overlay', () => {
     const dispatch = vi.spyOn(window, 'dispatchEvent');
     const { result } = renderHook(() => useBoardNavigation());
-    result.current.openGithub(session);
-    expect(navigateMock).toHaveBeenCalledWith({ to: sessionPlace({ sessionId: SESSION_ID }) });
+    result.current.openReview(session);
+    expect(navigateMock).not.toHaveBeenCalled();
     expect(openReviewTargetMock).toHaveBeenCalledWith({ sessionId: SESSION_ID });
     expect(
       dispatch.mock.calls

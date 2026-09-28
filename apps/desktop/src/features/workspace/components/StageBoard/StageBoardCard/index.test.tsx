@@ -89,7 +89,8 @@ const nav = {
   openIDE: vi.fn(),
   openQuestions: vi.fn(),
   openWorkflows: vi.fn(),
-  openGithub: vi.fn(),
+  openPullRequest: vi.fn(),
+  openReview: vi.fn(),
 } satisfies BoardNavigation;
 
 const session = {
@@ -320,13 +321,13 @@ describe('StageBoardCard linked request', () => {
     expect(screen.getByText(session.goal)).toBeTruthy();
   });
 
-  it('renders a clickable GitHub PR button that calls nav.openGithub', () => {
+  it('renders a clickable GitHub PR button that opens the pull request', () => {
     state.sessionGithub = { [SESSION_ID]: { pr: pullRequest } };
     render(<StageBoardCard session={session} nav={nav} />);
     const btn = screen.getByLabelText('Draft · #9484, open in GitHub');
     expect(btn.tagName).toBe('BUTTON');
     fireEvent.click(btn);
-    expect(nav.openGithub).toHaveBeenCalledWith(session);
+    expect(nav.openPullRequest).toHaveBeenCalledWith(session);
     expect(screen.queryByLabelText('No pull request')).toBeNull();
   });
 

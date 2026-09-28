@@ -183,12 +183,13 @@ describe('navigation slice', () => {
     expect(store.getState().activeLens[S1]).toBeNull();
   });
 
-  it('turns a pull request lens on a GitHub PR into Review with one voice', () => {
+  it('keeps the pull request lens on a GitHub PR, apart from Review', () => {
     const store = makeStore();
     store.setState({ sessionGithub: { [S1]: { pr: { number: 528 } } } } as never);
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'linear' }) });
     store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'pr' }) });
-    expect(store.getState().activeLens[S1]).toBe('review');
+    expect(store.getState().activeLens[S1]).toBe('pr');
+    expect(keyOf(store)).toBe(`s/${S1}/pr`);
 
     store.getState().back();
     expect(store.getState().activeLens[S1]).toBe('linear');
