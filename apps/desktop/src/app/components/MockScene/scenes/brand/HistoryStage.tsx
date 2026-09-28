@@ -14,6 +14,7 @@ const BACKUPS: ReadonlyArray<HistoryBackup> = [
     sha: '5e2b8d0f4a7c1e9b3d6f8a2c5e0b7d4f1a9c3e6b',
     subject: 'Dedupe webhook retries in the handler',
     createdAt: Math.floor(BACKUP_AT_MS / 1000),
+    isLegacy: false,
   },
 ];
 

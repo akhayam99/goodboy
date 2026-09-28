@@ -72,9 +72,18 @@ export const HistoryBackups = ({
                   nowMs: Date.now(),
                 })}
               </span>
-              <Button size="sm" variant="ghost" onClick={() => setConfirming(backup.refName)}>
-                Restore previous history
-              </Button>
+              {backup.isLegacy ? (
+                <span
+                  title="Made by an older Goodboy before backups named their branch, so it is shown read-only."
+                  className="shrink-0 text-meta text-faint-foreground"
+                >
+                  Older backup, read-only
+                </span>
+              ) : (
+                <Button size="sm" variant="ghost" onClick={() => setConfirming(backup.refName)}>
+                  Restore previous history
+                </Button>
+              )}
             </div>
             {confirming === backup.refName ? (
               <InlineConfirm

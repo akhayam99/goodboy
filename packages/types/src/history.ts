@@ -153,6 +153,7 @@ export type HistoryBackup = {
   readonly sha: string;
   readonly subject: string;
   readonly createdAt: number;
+  readonly isLegacy: boolean;
 };
 
 export type HistoryRemoteLease =

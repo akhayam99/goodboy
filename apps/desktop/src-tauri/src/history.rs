@@ -204,6 +204,7 @@ pub struct HistoryBackup {
     pub sha: String,
     pub subject: String,
     pub created_at: u64,
+    pub is_legacy: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -2015,47 +2016,107 @@ fn created_at_of(ref_name: &str) -> u64 {
         .unwrap_or_default()
 }
 
-pub(crate) fn list_backups(cwd: &Path, branch: &str) -> Result<Vec<HistoryBackup>, WorktreeError> {
-    let namespace = backup_namespace(branch);
+const ZERO_OID: &str = "0000000000000000000000000000000000000000";
+
+fn legacy_backup_of(ref_name: &str) -> Option<(&str, &str)> {
+    let rest = ref_name.strip_prefix(&format!("{BACKUP_PREFIX}/"))?;
+    let (slug, stamp) = rest.split_once('/')?;
+    let is_legacy = !slug.starts_with("b-")
+        && !stamp.is_empty()
+        && stamp.bytes().all(|byte| byte.is_ascii_digit());
+    is_legacy.then_some((slug, stamp))
+}
+
+fn backup_refs(cwd: &Path) -> Result<Vec<(String, String, String)>, WorktreeError> {
     let raw = git(
         cwd,
         &[
             "for-each-ref",
             "--format=%(refname)%1f%(objectname)%1f%(subject)",
-            &namespace,
+            BACKUP_PREFIX,
         ],
     )?;
-    let mut backups: Vec<HistoryBackup> = raw
+    Ok(raw
         .lines()
         .filter_map(|line| {
             let mut parts = line.split('\u{1f}');
             let ref_name = parts.next()?.trim().to_string();
-            if !is_backup_of(branch, &ref_name) {
-                return None;
-            }
             let sha = parts.next()?.trim().to_string();
             let subject = parts.next().unwrap_or_default().trim().to_string();
+            Some((ref_name, sha, subject))
+        })
+        .collect())
+}
+
+fn local_branches(cwd: &Path) -> Vec<String> {
+    git(
+        cwd,
+        &["for-each-ref", "--format=%(refname:short)", "refs/heads"],
+    )
+    .map(|raw| lines_of(&raw))
+    .unwrap_or_default()
+}
+
+pub(crate) fn migrate_legacy_backups(cwd: &Path) {
+    let Ok(refs) = backup_refs(cwd) else {
+        return;
+    };
+    let branches = local_branches(cwd);
+    for (ref_name, sha, _) in &refs {
+        let Some((slug, stamp)) = legacy_backup_of(ref_name) else {
+            continue;
+        };
+        let owners: Vec<&String> = branches
+            .iter()
+            .filter(|branch| sanitize_slug(branch) == slug)
+            .collect();
+        let [owner] = owners.as_slice() else {
+            continue;
+        };
+        let migrated = format!("{}/{stamp}", backup_namespace(owner));
+        let created = git_run(cwd, &["update-ref", &migrated, sha, ZERO_OID], None, None);
+        if created.is_ok_and(|run| run.status == 0) {
+            let _ = git_run(cwd, &["update-ref", "-d", ref_name, sha], None, None);
+        }
+    }
+}
+
+pub(crate) fn list_backups(cwd: &Path, branch: &str) -> Result<Vec<HistoryBackup>, WorktreeError> {
+    migrate_legacy_backups(cwd);
+    let slug = sanitize_slug(branch);
+    let mut backups: Vec<HistoryBackup> = backup_refs(cwd)?
+        .into_iter()
+        .filter_map(|(ref_name, sha, subject)| {
+            let is_legacy = legacy_backup_of(&ref_name).is_some_and(|(legacy, _)| legacy == slug);
+            if !is_legacy && !is_backup_of(branch, &ref_name) {
+                return None;
+            }
             Some(HistoryBackup {
                 created_at: created_at_of(&ref_name),
                 ref_name,
                 sha,
                 subject,
+                is_legacy,
             })
         })
         .collect();
-    backups.sort_by(|left, right| right.ref_name.cmp(&left.ref_name));
+    backups.sort_by(|left, right| right.created_at.cmp(&left.created_at));
     Ok(backups)
 }
 
 pub(crate) fn prune_backups(cwd: &Path) {
-    let Ok(raw) = git(cwd, &["for-each-ref", "--format=%(refname)", BACKUP_PREFIX]) else {
+    migrate_legacy_backups(cwd);
+    let Ok(refs) = backup_refs(cwd) else {
         return;
     };
     let cutoff = now_secs().saturating_sub(BACKUP_KEEP_SECS);
-    for ref_name in raw.lines().map(str::trim).filter(|line| !line.is_empty()) {
-        let created = created_at_of(ref_name);
+    for (ref_name, sha, _) in refs {
+        if legacy_backup_of(&ref_name).is_some() || !ref_name.contains("/b-") {
+            continue;
+        }
+        let created = created_at_of(&ref_name);
         if created > 0 && created < cutoff {
-            let _ = git(cwd, &["update-ref", "-d", ref_name]);
+            let _ = git_run(cwd, &["update-ref", "-d", &ref_name, &sha], None, None);
         }
     }
 }
@@ -4740,6 +4801,7 @@ mod tests {
         let listed: Vec<String> = list_backups(&b.root, "feature-a")
             .unwrap()
             .into_iter()
+            .filter(|backup| !backup.is_legacy)
             .map(|backup| backup.ref_name)
             .collect();
         assert_eq!(listed, vec![dash.clone()]);
@@ -4912,5 +4974,43 @@ mod tests {
         assert!(!common.join("refs").join("heads").starts_with(&dirs.git_dir));
         drop(guard);
         assert_eq!(copy_git_dirs(&l.root.join("copy")), None);
+    }
+
+    #[test]
+    fn an_older_backup_moves_to_its_one_branch_and_an_ambiguous_one_stays_read_only() {
+        let b = branch("legacy-backups");
+        git_ok(&b.root, &["branch", "hl/ledger-export"]);
+        git_ok(&b.root, &["branch", "team/a"]);
+        git_ok(&b.root, &["branch", "team-a"]);
+        let unique = "refs/goodboy/backup/hl-ledger-export/1000000000000000000";
+        let shared = "refs/goodboy/backup/team-a/1000000000000000001";
+        git_ok(&b.root, &["update-ref", unique, &b.a]);
+        git_ok(&b.root, &["update-ref", shared, &b.b]);
+
+        let mine = list_backups(&b.root, "hl/ledger-export").unwrap();
+        assert_eq!(mine.len(), 1);
+        assert!(!mine[0].is_legacy);
+        assert!(is_backup_of("hl/ledger-export", &mine[0].ref_name));
+        assert_eq!(mine[0].sha, b.a);
+        assert!(
+            git_run(
+                &b.root,
+                &["rev-parse", "--verify", "--quiet", unique],
+                None,
+                None
+            )
+            .unwrap()
+            .status
+                != 0
+        );
+
+        for owner in ["team/a", "team-a"] {
+            let listed = list_backups(&b.root, owner).unwrap();
+            assert_eq!(listed.len(), 1, "{owner}");
+            assert!(listed[0].is_legacy);
+            assert_eq!(listed[0].ref_name, shared);
+        }
+        prune_backups(&b.root);
+        assert_eq!(git_ok(&b.root, &["rev-parse", shared]), b.b);
     }
 }
