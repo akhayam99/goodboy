@@ -417,11 +417,11 @@ Start each step from a short brief instead of the whole previous chat. If the su
   <img src="./docs/readme/s07-questions-light.webp" alt="An open question from the stuck-delivery banner agent with suggested answers, two picked, and Let an agent answer">
 </picture>
 
-Get questions as cards instead of lines buried in a chat. An agent can mark a question as blocking, which holds its step until you answer, and a question can include suggested answers next to free text. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
+Get each question as one card: who asks, whether it blocks, the question, and its answers as numbered tiles with the recommended one tagged. Pick with a number key, answer with Enter, or write something else in line. The Questions lens lists what waits on you next to the question you are answering, and j and k move through the list. The same card sits at the end of the transcript and at the top of the agent's Brief. The answers to one agent go out together once you answered its last question, and until then each one keeps an Undo. An agent can mark a question as blocking, which holds its step until you answer. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
 
-### Let an agent answer
+### Let an agent decide
 
-Hand a question to another agent with a hint and a model, and its answer counts as yours. **Answer it yourself** takes it back.
+Hand a question to another agent with a hint and a model from **Let an agent decide**, and its answer counts as yours. **Answer it yourself** takes it back.
 
 ### Import workflows
 

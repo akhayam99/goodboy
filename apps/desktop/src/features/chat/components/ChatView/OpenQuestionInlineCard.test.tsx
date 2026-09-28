@@ -16,8 +16,10 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../store', async () => ({
+  ...(await import('../../../../store/slices/navigation/place')),
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+  useSessionOpenQuestions: () => [],
 }));
 
 import { OpenQuestionInlineCard } from './OpenQuestionInlineCard';
@@ -38,7 +40,7 @@ const baseQuestion: OpenQuestion = {
 beforeEach(() => {
   state.answerOpenQuestions.mockClear();
   state.dismissOpenQuestion.mockClear();
-  useOpenQuestions.setState({ drafts: {}, justAnswered: [], pendingUndo: null });
+  useOpenQuestions.setState({ drafts: {}, staged: [], pendingUndo: null });
 });
 afterEach(cleanup);
 

@@ -1,61 +1,131 @@
 import { Bot, RotateCcw } from 'lucide-react';
-import { cn, Tooltip } from '@goodboy/ui';
+import { cn, Textarea, Tooltip } from '@goodboy/ui';
+import type { ProviderId } from '@goodboy/types';
+import { clampEffortForModel, getDefaultTurnModel } from '@goodboy/core';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { RoutingPicker } from '../../../../../shared/components/RoutingPicker';
 import { QUESTION_DELEGATE_COPY, type DelegateRowState } from '../../../questionDelegate';
+import type { DelegateRouting } from '../useOpenQuestions';
 
 type Props = {
   readonly state: DelegateRowState;
+  readonly hints: string;
+  readonly routing: DelegateRouting;
+  readonly connectedProviders: ReadonlyArray<ProviderId>;
   readonly onChoose: () => void;
+  readonly onCancel: () => void;
+  readonly onHints: (hints: string) => void;
+  readonly onRouting: (routing: DelegateRouting) => void;
 };
 
-const ROW_FRAME =
-  'flex w-full min-w-0 items-center gap-2 rounded-md border border-dashed px-2 py-1.5 text-left text-row';
+const LINK_CLASS = cn(
+  'inline-flex min-w-0 items-center gap-2 rounded-sm text-label text-muted-foreground',
+  'motion-safe:transition-colors enabled:hover:text-foreground disabled:text-faint-foreground',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+);
 
-const LABEL: Readonly<Record<DelegateRowState, string>> = {
-  available: QUESTION_DELEGATE_COPY.offer,
-  chosen: QUESTION_DELEGATE_COPY.offer,
-  running: QUESTION_DELEGATE_COPY.running,
-  retry: QUESTION_DELEGATE_COPY.retry,
-  blocked: QUESTION_DELEGATE_COPY.offer,
-};
+export const DelegateAnswerRow = ({
+  state,
+  hints,
+  routing,
+  connectedProviders,
+  onChoose,
+  onCancel,
+  onHints,
+  onRouting,
+}: Props) => {
+  if (state === 'running') {
+    return null;
+  }
 
-export const DelegateAnswerRow = ({ state, onChoose }: Props) => {
+  if (state === 'chosen') {
+    const onProvider = (provider: ProviderId | '') => {
+      if (provider === '') {
+        onRouting({ ...routing, provider });
+        return;
+      }
+      const model = getDefaultTurnModel({ id: provider });
+      onRouting({
+        provider,
+        model,
+        effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+      });
+    };
+
+    return (
+      <div data-testid="delegate-answer-row" data-state={state} className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-label text-foreground">
+          <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0 text-muted-foreground" />
+          <span>{QUESTION_DELEGATE_COPY.chosen}</span>
+          <RoutingPicker
+            ariaLabel="Delegated agent routing"
+            variant="pill"
+            connectedProviders={connectedProviders}
+            provider={routing.provider}
+            model={routing.model}
+            effort={{
+              editable: true,
+              value: routing.effort,
+              onChange: (effort) => onRouting({ ...routing, effort }),
+            }}
+            disabled={false}
+            onProvider={onProvider}
+            onModel={(model) =>
+              onRouting({
+                ...routing,
+                model,
+                effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+              })
+            }
+          />
+          <button type="button" onClick={onCancel} className={LINK_CLASS}>
+            {QUESTION_DELEGATE_COPY.cancel}
+          </button>
+        </div>
+        <Textarea
+          aria-label="Hints for the delegated agent"
+          value={hints}
+          onChange={(event) => onHints(event.target.value)}
+          onKeyDown={(event) => event.stopPropagation()}
+          placeholder={QUESTION_DELEGATE_COPY.hintsPlaceholder}
+          autoGrow
+          minRows={1}
+          maxRows={4}
+          className="text-label"
+        />
+      </div>
+    );
+  }
+
   const isBlocked = state === 'blocked';
-  const isInert = isBlocked || state === 'running' || state === 'chosen';
-
-  const row = (
+  const link = (
     <button
       type="button"
       data-testid="delegate-answer-row"
       data-state={state}
-      disabled={isInert}
+      disabled={isBlocked}
       title={isBlocked ? QUESTION_DELEGATE_COPY.blocked : undefined}
       onClick={onChoose}
-      className={cn(
-        ROW_FRAME,
-        'transition-[color,background-color,border-color] duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-        isInert
-          ? 'border-border-soft text-faint-foreground'
-          : 'border-border-soft text-muted-foreground hover:border-border hover:bg-hover hover:text-foreground',
-      )}
+      className={LINK_CLASS}
     >
       {state === 'retry' ? (
         <RotateCcw size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       ) : (
         <Bot size={ICON_SIZE.row} aria-hidden className="shrink-0" />
       )}
-      <span className="min-w-0 whitespace-normal break-words">{LABEL[state]}</span>
+      <span className="min-w-0 break-words text-left">
+        {state === 'retry' ? QUESTION_DELEGATE_COPY.retry : QUESTION_DELEGATE_COPY.offer}
+      </span>
     </button>
   );
 
   if (!isBlocked) {
-    return row;
+    return <div className="flex min-w-0 items-center">{link}</div>;
   }
 
   return (
-    <Tooltip content={QUESTION_DELEGATE_COPY.blocked} anchorClassName="w-full">
-      {row}
-    </Tooltip>
+    <div className="flex min-w-0 items-center">
+      <Tooltip content={QUESTION_DELEGATE_COPY.blocked}>{link}</Tooltip>
+    </div>
   );
 };

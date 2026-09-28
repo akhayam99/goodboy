@@ -50,6 +50,7 @@ import { ChatImageLoaderProvider } from './ChatImageLoaderProvider';
 import { useScrollPin } from './useScrollPin';
 import { TranscriptSkeleton } from './parts/TranscriptSkeleton';
 import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
+import { QuestionWaitingPill } from './parts/QuestionWaitingPill';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAttachments';
 import { useToast } from '../../../../app/components/Toast';
@@ -398,6 +399,14 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
     return map;
   }, [openQuestions, answeredQuestions, selectedAgentId]);
 
+  const waitingHere = useMemo(
+    () =>
+      openQuestions.filter(
+        (question) => question.status === 'open' && question.createdByAgentId === selectedAgentId,
+      ),
+    [openQuestions, selectedAgentId],
+  );
+
   const otherAgentQuestion = useMemo(
     () =>
       openQuestions.find(
@@ -514,7 +523,10 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
             </ul>
           )}
         </ScrollFade>
-        {!pinned && (
+        {!pinned && waitingHere[0] !== undefined && (
+          <QuestionWaitingPill count={waitingHere.length} questionId={waitingHere[0].id} />
+        )}
+        {!pinned && waitingHere.length === 0 && (
           <Tooltip content="Jump to latest">
             <button
               type="button"

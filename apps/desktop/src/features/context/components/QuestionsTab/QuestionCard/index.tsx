@@ -1,241 +1,312 @@
-import { useEffect, useId, useState } from 'react';
-import { Check, MessageCircleQuestion, X } from 'lucide-react';
-import { cn, Markdown, tintClasses, Tooltip } from '@goodboy/ui';
-import type {
-  OpenQuestion,
-  OpenQuestionId,
-  OpenQuestionSelectMode,
-  ProviderId,
-} from '@goodboy/types';
-import { CONCEPT_TONE, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { TranscriptShell } from '../../../../chat/components/TranscriptShell';
-import type { DelegateRowState } from '../../../questionDelegate';
-import { AnswerOptionRow } from '../AnswerOptionRow';
-import { CustomAnswerField } from '../CustomAnswerField';
+import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
+import { FileText } from 'lucide-react';
+import { cn, Markdown } from '@goodboy/ui';
+import type { OpenQuestion } from '@goodboy/types';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import type { AgentKind } from '../../../../session/agent-kind';
+import type { QuestionDelegateControls } from '../../../hooks/useQuestionDelegateControls';
+import { AnswerSubmitButton } from '../AnswerSubmitButton';
+import type { AnswerInputMode } from '../AnswerSubmitButton/answerInputMode';
 import { DelegateAnswerRow } from '../DelegateAnswerRow';
-import { DelegateAnswerPanel } from '../DelegateAnswerPanel';
 import { DelegateWaitingRow } from '../DelegateWaitingRow';
 import { deriveSuggestions } from '../deriveSuggestions';
 import { orderSuggestions } from '../orderSuggestions';
-import type { DelegateRouting } from '../useOpenQuestions';
+import { questionParts } from '../questionParts';
+import { isDraftReady, type QuestionDraft } from '../useOpenQuestions';
+import { QuestionAnswerDone } from './QuestionAnswerDone';
+import { QuestionAnswerInput } from './QuestionAnswerInput';
+import { QuestionCardTop } from './QuestionCardTop';
+import type { QuestionPagerModel } from './QuestionPager';
 
-const warningTint = tintClasses(CONCEPT_TONE.questions);
-
-const BLOCKING_DESCRIPTION = 'This answer is required before the artifact or plan can be produced.';
+export type QuestionCardState = 'open' | 'staged' | 'answered' | 'dismissed';
 
 type Props = {
   readonly question: OpenQuestion;
-  readonly selectedSuggestions: ReadonlyArray<string>;
-  readonly customAnswer: string;
-  readonly showCustomField: boolean;
-  readonly justAnswered: boolean;
-  readonly askedByName?: string | null;
-  readonly onToggleSuggestion: (
-    questionId: OpenQuestionId,
-    suggestion: string,
-    mode: OpenQuestionSelectMode,
-  ) => void;
-  readonly onSetCustomAnswer: (questionId: OpenQuestionId, text: string) => void;
-  readonly onToggleCustomField: (questionId: OpenQuestionId) => void;
-  readonly onDismiss: (id: OpenQuestionId) => void;
-  readonly onClearJustAnswered: (id: OpenQuestionId) => void;
-  readonly delegateState: DelegateRowState;
-  readonly delegateHints: string;
-  readonly delegateRouting: DelegateRouting;
-  readonly connectedProviders: ReadonlyArray<ProviderId>;
-  readonly onChooseDelegate: () => void;
-  readonly onCancelDelegate: () => void;
-  readonly onDelegateHints: (hints: string) => void;
-  readonly onDelegateRouting: (routing: DelegateRouting) => void;
-  readonly onOpenDelegate?: (() => void) | null;
-  readonly onTakeBackDelegate?: (() => void) | null;
+  readonly variant: 'full' | 'compact';
+  readonly state: QuestionCardState;
+  readonly askerName: string | null;
+  readonly askerKind: AgentKind | null;
+  readonly age: string;
+  readonly draft: QuestionDraft | undefined;
+  readonly pager: QuestionPagerModel | null;
+  readonly delegate: QuestionDelegateControls;
+  readonly answeredByName?: string | null;
+  readonly autoFocus?: boolean;
+  readonly onToggleSuggestion: (suggestion: string) => void;
+  readonly onToggleCustomField: () => void;
+  readonly onSetCustomAnswer: (text: string) => void;
+  readonly onAnswer: () => void;
+  readonly onSkip: (() => void) | null;
+  readonly onUndo: (() => void) | null;
+  readonly onDismiss: (() => void) | null;
+};
+
+const BLOCKING_DESCRIPTION = 'This answer is required before the agent can go on.';
+const RESOLVED_BY_AGENT = '[resolved by agent]';
+
+type DoneParams = {
+  readonly state: QuestionCardState;
+  readonly question: OpenQuestion;
+  readonly askerName: string | null;
+  readonly answeredByName: string | null;
+  readonly isHandedOff: boolean;
+};
+
+const doneLabel = ({
+  state,
+  question,
+  askerName,
+  answeredByName,
+  isHandedOff,
+}: DoneParams): string => {
+  const asker = askerName ?? 'the agent';
+  if (state === 'dismissed') {
+    return 'Dismissed';
+  }
+  if (state === 'staged') {
+    return isHandedOff
+      ? 'Handed to an agent · sends with the rest'
+      : 'Answered · sends with the rest';
+  }
+  if (question.userAnswer === RESOLVED_BY_AGENT) {
+    return 'Resolved by the agent';
+  }
+  if (question.answerSource === 'agent') {
+    return answeredByName === null ? 'Answered by an agent' : `Answered by ${answeredByName}`;
+  }
+  return `Answered · sent to ${asker}`;
+};
+
+const inputModeOf = ({
+  question,
+  suggestions,
+}: {
+  readonly question: OpenQuestion;
+  readonly suggestions: ReadonlyArray<string>;
+}): AnswerInputMode => {
+  if (suggestions.length === 0) {
+    return 'text';
+  }
+  return question.selectMode === 'many' ? 'many' : 'one';
 };
 
 export const QuestionCard = ({
   question,
-  selectedSuggestions,
-  customAnswer,
-  showCustomField,
-  justAnswered,
-  askedByName = null,
+  variant,
+  state,
+  askerName,
+  askerKind,
+  age,
+  draft,
+  pager,
+  delegate,
+  answeredByName = null,
+  autoFocus = false,
   onToggleSuggestion,
-  onSetCustomAnswer,
   onToggleCustomField,
+  onSetCustomAnswer,
+  onAnswer,
+  onSkip,
+  onUndo,
   onDismiss,
-  onClearJustAnswered,
-  delegateState,
-  delegateHints,
-  delegateRouting,
-  connectedProviders,
-  onChooseDelegate,
-  onCancelDelegate,
-  onDelegateHints,
-  onDelegateRouting,
-  onOpenDelegate = null,
-  onTakeBackDelegate = null,
 }: Props) => {
-  const [animate, setAnimate] = useState(false);
+  const articleRef = useRef<HTMLElement>(null);
   const blockingId = useId();
+  const isCompact = variant === 'compact';
+  const Title = isCompact ? 'h3' : 'h2';
 
   useEffect(() => {
-    if (!justAnswered) {
+    if (!autoFocus) {
       return;
     }
-    setAnimate(true);
-    const t = setTimeout(() => {
-      setAnimate(false);
-      onClearJustAnswered(question.id);
-    }, 800);
-    return () => clearTimeout(t);
-  }, [justAnswered, question.id, onClearJustAnswered]);
+    articleRef.current?.focus({ preventScroll: true });
+  }, [autoFocus, question.id]);
 
-  const baseSuggestions =
-    question.suggestedAnswers.length > 0
-      ? question.suggestedAnswers
-      : deriveSuggestions(question.text);
-
+  const parts = questionParts({ text: question.text });
   const recommended = question.recommendedAnswer?.trim() ?? '';
   const suggestions = orderSuggestions({
-    suggestions: baseSuggestions,
+    suggestions:
+      question.suggestedAnswers.length > 0
+        ? question.suggestedAnswers
+        : deriveSuggestions(question.text),
     recommendedAnswer: recommended,
   });
+  const inputMode = inputModeOf({ question, suggestions });
+  const isOpen = state === 'open';
+  const isWaiting = delegate.delegateState === 'running';
+  const isHandedOff = delegate.delegateState === 'chosen';
+  const canAnswer = isOpen && !isWaiting && (isHandedOff || isDraftReady(draft));
+  const isLive = state === 'open' || state === 'staged';
+  const answerText = question.userAnswer ?? '';
+  const showsAnswerBox =
+    state === 'answered' && answerText.length > 0 && answerText !== RESOLVED_BY_AGENT;
 
-  const mode: OpenQuestionSelectMode = question.selectMode ?? 'one';
-  const groupRole = mode === 'many' ? 'group' : 'radiogroup';
-  const groupLabel = mode === 'many' ? 'Pick one or more answers' : 'Pick one answer';
-  const customFilled = customAnswer.trim().length > 0;
-  const isDelegating = delegateState === 'chosen';
-  const isWaiting = delegateState === 'running';
-  const hasMeta =
-    question.isBlocking || question.ownedByStepOrdinal != null || askedByName !== null;
+  const focusCard = () => articleRef.current?.focus({ preventScroll: true });
+
+  const submit = () => {
+    if (!canAnswer) {
+      return;
+    }
+    onAnswer();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (!isOpen || isWaiting || event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    const target = event.target;
+    if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+      return;
+    }
+    if (/^[1-9]$/.test(event.key) && inputMode !== 'text' && !isHandedOff) {
+      const index = Number(event.key) - 1;
+      if (index < suggestions.length) {
+        event.preventDefault();
+        onToggleSuggestion(suggestions[index]!);
+        return;
+      }
+      if (index === suggestions.length) {
+        event.preventDefault();
+        onToggleCustomField();
+      }
+      return;
+    }
+    if (event.key !== 'Enter') {
+      return;
+    }
+    const role = target instanceof HTMLElement ? target.getAttribute('role') : null;
+    const isOptionButton = role === 'radio' || role === 'checkbox';
+    if (target instanceof HTMLButtonElement && !isOptionButton) {
+      return;
+    }
+    event.preventDefault();
+    submit();
+  };
 
   return (
-    <TranscriptShell
-      tone={CONCEPT_TONE.questions}
-      variant="leftBorder"
-      className="group flex flex-col gap-4 transition-[background-color,transform] duration-200 motion-safe:animate-fade-in"
+    <article
+      ref={articleRef}
+      tabIndex={-1}
+      data-question-card={question.id}
+      data-state={state}
+      aria-label={parts.title}
+      aria-describedby={question.isBlocking && isOpen ? blockingId : undefined}
+      onKeyDown={handleKeyDown}
+      style={{ outline: 'none' }}
+      className={cn(
+        '@container flex min-w-0 flex-col outline-none motion-safe:animate-fade-in',
+        isCompact ? 'gap-3 rounded-lg border border-border-soft bg-elevated p-4' : 'gap-5',
+      )}
     >
-      <div
-        data-testid="question-header"
-        className="grid grid-cols-[minmax(0,1fr)_28px] items-start gap-2"
-      >
-        <div className="flex min-w-0 flex-col gap-2">
-          <div className="flex min-w-0 items-start gap-2">
-            <MessageCircleQuestion
-              size={ICON_SIZE.control}
-              aria-hidden
-              className={cn('shrink-0 translate-y-0.5', warningTint.icon)}
-            />
-            <Markdown
-              text={question.text}
-              className="min-w-0 gap-2 break-words text-sm font-medium leading-relaxed text-foreground"
-            />
-          </div>
-          {hasMeta && (
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              {question.isBlocking && (
-                <span
-                  className={cn(
-                    'rounded-md px-1.5 py-0.5 text-secondary font-medium',
-                    warningTint.solid,
-                  )}
-                >
-                  Blocking
-                </span>
-              )}
-              {question.ownedByStepOrdinal != null && (
-                <span className="text-meta text-muted-foreground">
-                  step {question.ownedByStepOrdinal}
-                </span>
-              )}
-              {askedByName !== null && (
-                <span className="min-w-0 truncate text-meta text-muted-foreground">
-                  asked by {askedByName}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="flex justify-end">
-          {!question.isBlocking && !isWaiting && (
-            <Tooltip content="Dismiss question">
-              <button
-                type="button"
-                onClick={() => onDismiss(question.id)}
-                className={cn(
-                  'shrink-0 rounded-md p-1 text-faint-foreground',
-                  'transition-[color,background-color] duration-150',
-                  'hover:bg-hover hover:text-foreground',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-                )}
-                aria-label="Dismiss question"
-              >
-                {animate ? (
-                  <Check size={ICON_SIZE.row} className={warningTint.icon} />
-                ) : (
-                  <X size={ICON_SIZE.row} />
-                )}
-              </button>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-
-      <div
-        className="flex flex-col gap-2"
-        aria-describedby={question.isBlocking ? blockingId : undefined}
-      >
-        {isDelegating && (
-          <DelegateAnswerPanel
-            hiddenOptionCount={suggestions.length + 1}
-            hints={delegateHints}
-            routing={delegateRouting}
-            connectedProviders={connectedProviders}
-            onHints={onDelegateHints}
-            onRouting={onDelegateRouting}
-            onCancel={onCancelDelegate}
-          />
-        )}
-        {!isDelegating && !isWaiting && (
-          <>
-            {suggestions.length > 0 && (
-              <div
-                role={groupRole}
-                aria-label={groupLabel}
-                aria-describedby={question.isBlocking ? blockingId : undefined}
-                className="flex flex-col gap-2"
-              >
-                {suggestions.map((suggestion) => (
-                  <AnswerOptionRow
-                    key={suggestion}
-                    label={suggestion}
-                    mode={mode}
-                    selected={!customFilled && selectedSuggestions.includes(suggestion)}
-                    recommended={recommended.length > 0 && suggestion === recommended}
-                    onToggle={() => onToggleSuggestion(question.id, suggestion, mode)}
-                  />
-                ))}
-              </div>
+      <QuestionCardTop
+        askerName={askerName}
+        askerKind={askerKind}
+        isBlocking={question.isBlocking && isOpen}
+        age={age}
+        pager={pager}
+        onDismiss={isOpen && !question.isBlocking && !isWaiting ? onDismiss : null}
+      />
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-1.5')}>
+          <Title
+            className={cn(
+              'min-w-0 break-words text-foreground select-text',
+              isCompact ? 'text-heading' : 'text-title',
             )}
-            <CustomAnswerField
-              value={customAnswer}
-              open={showCustomField}
-              onToggle={() => onToggleCustomField(question.id)}
-              onChange={(text) => onSetCustomAnswer(question.id, text)}
+          >
+            {parts.title}
+          </Title>
+          {parts.context.length > 0 && (
+            <Markdown
+              text={parts.context}
+              className={cn(
+                'min-w-0 gap-2 break-words text-body text-muted-foreground select-text',
+                isCompact && 'line-clamp-3',
+              )}
             />
-          </>
-        )}
-        {isWaiting ? (
-          <DelegateWaitingRow onOpen={onOpenDelegate} onTakeBack={onTakeBackDelegate} />
-        ) : (
-          <DelegateAnswerRow state={delegateState} onChoose={onChooseDelegate} />
-        )}
-        {question.isBlocking && (
-          <span id={blockingId} className="sr-only">
-            {BLOCKING_DESCRIPTION}
-          </span>
+          )}
+        </div>
+        {!isCompact && parts.files.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {parts.files.map((file) => (
+              <span
+                key={file}
+                className="inline-flex items-center gap-1 rounded-sm border border-border-soft bg-fill px-1.5 text-code text-muted-foreground"
+              >
+                <FileText
+                  size={ICON_SIZE.row}
+                  aria-hidden
+                  className="shrink-0 text-faint-foreground"
+                />
+                {file}
+              </span>
+            ))}
+          </div>
         )}
       </div>
-    </TranscriptShell>
+      {showsAnswerBox && (
+        <p className="rounded-md bg-fill px-3 py-2 text-body text-foreground select-text">
+          {answerText}
+        </p>
+      )}
+      {isLive && isWaiting && (
+        <DelegateWaitingRow
+          onOpen={delegate.onOpenDelegate}
+          onTakeBack={delegate.onTakeBackDelegate}
+        />
+      )}
+      {isLive && !isWaiting && (
+        <QuestionAnswerInput
+          inputMode={inputMode}
+          suggestions={suggestions}
+          recommended={recommended}
+          selectedSuggestions={draft?.selectedSuggestions ?? []}
+          customAnswer={draft?.customAnswer ?? ''}
+          showCustomField={draft?.showCustomField ?? false}
+          askerName={askerName}
+          isSettled={state === 'staged'}
+          isHandedOff={isHandedOff}
+          isCompact={isCompact}
+          onToggleSuggestion={onToggleSuggestion}
+          onToggleCustomField={onToggleCustomField}
+          onSetCustomAnswer={onSetCustomAnswer}
+          onSubmit={submit}
+          onEscape={focusCard}
+        />
+      )}
+      {isOpen && !isWaiting && (
+        <>
+          <DelegateAnswerRow
+            state={delegate.delegateState}
+            hints={delegate.delegateHints}
+            routing={delegate.delegateRouting}
+            connectedProviders={delegate.connectedProviders}
+            onChoose={delegate.onChooseDelegate}
+            onCancel={delegate.onCancelDelegate}
+            onHints={delegate.onDelegateHints}
+            onRouting={delegate.onDelegateRouting}
+          />
+          <AnswerSubmitButton
+            inputMode={inputMode}
+            optionCount={suggestions.length}
+            canAnswer={canAnswer}
+            isHandOff={isHandedOff}
+            onAnswer={submit}
+            onSkip={onSkip}
+          />
+        </>
+      )}
+      {!isOpen && (
+        <QuestionAnswerDone
+          label={doneLabel({ state, question, askerName, answeredByName, isHandedOff })}
+          onUndo={onUndo}
+        />
+      )}
+      {question.isBlocking && isOpen && (
+        <span id={blockingId} className="sr-only">
+          {BLOCKING_DESCRIPTION}
+        </span>
+      )}
+    </article>
   );
 };

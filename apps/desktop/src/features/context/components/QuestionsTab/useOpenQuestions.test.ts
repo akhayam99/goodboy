@@ -8,7 +8,7 @@ const qid = 'q1' as OpenQuestionId;
 const other = 'q2' as OpenQuestionId;
 
 beforeEach(() => {
-  useOpenQuestions.setState({ drafts: {}, justAnswered: [], pendingUndo: null });
+  useOpenQuestions.setState({ drafts: {}, staged: [], pendingUndo: null });
 });
 
 describe('useOpenQuestions.toggleSuggestion', () => {
@@ -20,11 +20,18 @@ describe('useOpenQuestions.toggleSuggestion', () => {
     expect(useOpenQuestions.getState().drafts[qid]?.selectedSuggestions).toEqual(['b']);
   });
 
-  it('single-choice clears the selection when the same option is clicked twice', () => {
+  it('single-choice keeps the pick when the same option is picked twice', () => {
     const { toggleSuggestion } = useOpenQuestions.getState();
     toggleSuggestion(qid, 'a');
     toggleSuggestion(qid, 'a');
-    expect(useOpenQuestions.getState().drafts[qid]?.selectedSuggestions).toEqual([]);
+    expect(useOpenQuestions.getState().drafts[qid]?.selectedSuggestions).toEqual(['a']);
+  });
+
+  it('single-choice closes the written answer when an option is picked', () => {
+    const { toggleCustomField, toggleSuggestion } = useOpenQuestions.getState();
+    toggleCustomField(qid, 'one');
+    toggleSuggestion(qid, 'a', 'one');
+    expect(useOpenQuestions.getState().drafts[qid]?.showCustomField).toBe(false);
   });
 
   it('multi-choice accumulates selections in click order and toggles them off individually', () => {
@@ -67,6 +74,50 @@ describe('useOpenQuestions drafts as the staging area', () => {
     clearDraft(qid);
 
     expect(useOpenQuestions.getState().drafts[qid]).toBeUndefined();
+  });
+});
+
+describe('deriveDraftAnswer', () => {
+  it('uses the written answer in place of the pick for a single choice', () => {
+    const { toggleSuggestion, toggleCustomField, setCustomAnswer } = useOpenQuestions.getState();
+    toggleSuggestion(qid, 'a', 'one');
+    toggleCustomField(qid, 'one');
+    setCustomAnswer(qid, 'neither');
+    expect(deriveDraftAnswer(useOpenQuestions.getState().drafts[qid])).toBe('neither');
+  });
+
+  it('adds the written answer to the picks of a multiple choice', () => {
+    const { toggleSuggestion, setCustomAnswer } = useOpenQuestions.getState();
+    toggleSuggestion(qid, 'a', 'many');
+    setCustomAnswer(qid, 'and c');
+    expect(deriveDraftAnswer(useOpenQuestions.getState().drafts[qid])).toBe('a, and c');
+  });
+
+  it('drops a written answer once its field is closed', () => {
+    const { toggleSuggestion, setCustomAnswer, toggleCustomField } = useOpenQuestions.getState();
+    toggleSuggestion(qid, 'a', 'many');
+    setCustomAnswer(qid, 'and c');
+    toggleCustomField(qid, 'many');
+    expect(deriveDraftAnswer(useOpenQuestions.getState().drafts[qid])).toBe('a');
+  });
+});
+
+describe('useOpenQuestions staged answers', () => {
+  it('stages an answer once and unstages it on undo', () => {
+    const { stageAnswer, unstageAnswer } = useOpenQuestions.getState();
+    stageAnswer(qid);
+    stageAnswer(qid);
+    expect(useOpenQuestions.getState().staged).toEqual([qid]);
+    unstageAnswer(qid);
+    expect(useOpenQuestions.getState().staged).toEqual([]);
+  });
+
+  it('forgets the staged answers that were sent', () => {
+    const { stageAnswer, flashAnswered } = useOpenQuestions.getState();
+    stageAnswer(qid);
+    stageAnswer(other);
+    flashAnswered([qid]);
+    expect(useOpenQuestions.getState().staged).toEqual([other]);
   });
 });
 

@@ -1,73 +1,75 @@
+import type { KeyboardEvent } from 'react';
 import { Pencil } from 'lucide-react';
-import { Textarea, cn, tintClasses } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { Textarea } from '@goodboy/ui';
+import type { OpenQuestionSelectMode } from '@goodboy/types';
+import { AnswerOptionRow } from '../AnswerOptionRow';
 
 type Props = {
   readonly value: string;
   readonly open: boolean;
+  readonly mode: OpenQuestionSelectMode;
+  readonly disabled?: boolean;
+  readonly dimmed?: boolean;
+  readonly placeholder?: string;
   readonly onToggle: () => void;
   readonly onChange: (value: string) => void;
-  readonly placeholder?: string;
+  readonly onSubmit: () => void;
+  readonly onEscape: () => void;
 };
-
-const ROW_FRAME = 'flex w-full min-w-0 rounded-md border px-2 py-1.5';
 
 export const CustomAnswerField = ({
   value,
   open,
+  mode,
+  disabled = false,
+  dimmed = false,
+  placeholder = 'Tell the agent what you want instead',
   onToggle,
   onChange,
-  placeholder = 'write your own answer…',
+  onSubmit,
+  onEscape,
 }: Props) => {
-  const filled = value.trim().length > 0;
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={onToggle}
-        className={cn(
-          ROW_FRAME,
-          'items-center gap-2 border-border-soft text-left text-row text-muted-foreground',
-          'transition-[color,background-color,border-color] duration-150',
-          'hover:border-border hover:bg-hover hover:text-foreground',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-        )}
-      >
-        <Pencil size={ICON_SIZE.row} aria-hidden className="shrink-0" />
-        <span>Other</span>
-      </button>
-    );
-  }
+  const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    event.stopPropagation();
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      onSubmit();
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onEscape();
+    }
+  };
 
   return (
-    <div
-      className={cn(
-        ROW_FRAME,
-        'flex-col gap-2 motion-safe:animate-fade-in',
-        filled
-          ? cn(tintClasses('primary').border, tintClasses('primary').bg)
-          : 'border-border-soft',
-      )}
+    <AnswerOptionRow
+      label="Something else"
+      keyHint={<Pencil size={11} aria-hidden />}
+      selected={open}
+      mode={mode}
+      dimmed={dimmed}
+      disabled={disabled}
+      onToggle={onToggle}
     >
-      <span
-        className={cn(
-          'text-secondary font-medium',
-          filled ? 'text-primary' : 'text-muted-foreground',
-        )}
-      >
-        your answer
-      </span>
-      <Textarea
-        autoFocus
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoGrow
-        minRows={1}
-        maxRows={4}
-        className="min-h-5 w-full resize-none border-0 bg-transparent p-0 text-body shadow-none focus-visible:ring-0 focus-visible:shadow-none"
-      />
-    </div>
+      {open && !disabled ? (
+        <Textarea
+          autoFocus
+          aria-label="Your answer"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          autoGrow
+          minRows={2}
+          maxRows={6}
+          className="relative z-10 w-full resize-none bg-background text-body"
+        />
+      ) : (
+        <span className="text-label text-muted-foreground">
+          {open && value.trim().length > 0 ? value : 'Write your own answer'}
+        </span>
+      )}
+    </AnswerOptionRow>
   );
 };
