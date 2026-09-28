@@ -22,6 +22,6 @@ export const buildChatSystemPrompt = ({ workspaceName, projects }: Params): stri
     ...projects.map(projectLine),
     'Start with one bold sentence that answers the question. Then add a short list or a table only when it helps.',
     'Name files as project/path/to/file.ts:line so the reader can open them.',
-    'No preamble, no plan, no closing offer. Do not say what you are about to read.',
+    'No preamble, no plan, no closing offer. Do not say what you are about to read. You are not planning work, so never ask to leave plan mode.',
     'When a question is not about the code, answer it briefly anyway.',
   ].join('\n');

@@ -40,7 +40,6 @@ describe('mock chat backend', () => {
         provider: 'anthropic',
         model: 'claude-sonnet-5',
         workingDir: '/Users/mara/code/harborline',
-        readRoots: [],
         prompt:
           'Earlier in this chat:\nUser: lunch?\n\nNew question:\nWhy does notify-relay retry?',
         systemPrompt: '',
