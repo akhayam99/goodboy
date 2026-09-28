@@ -2217,11 +2217,11 @@ fn is_kept_elsewhere(cwd: &Path, ref_name: &str, sha: &str) -> bool {
     .is_ok_and(|raw| raw.lines().any(|line| line.trim() != ref_name))
 }
 
-fn prune_backups_before(cwd: &Path, cutoff: u64) {
-    let Ok(refs) = backup_refs(cwd) else {
-        return;
-    };
-    let mut spaces: HashMap<String, Vec<(bool, u128, String, String)>> = HashMap::new();
+type BackupSpaces = HashMap<String, Vec<(bool, u128, String, String)>>;
+
+fn backup_spaces(cwd: &Path) -> Option<BackupSpaces> {
+    let refs = backup_refs(cwd).ok()?;
+    let mut spaces: BackupSpaces = HashMap::new();
     for (ref_name, sha, _) in refs {
         if legacy_backup_of(&ref_name).is_some() || !ref_name.contains("/b-") {
             continue;
@@ -2238,18 +2238,33 @@ fn prune_backups_before(cwd: &Path, cutoff: u64) {
     }
     for backups in spaces.values_mut() {
         backups.sort_by(|left, right| right.1.cmp(&left.1));
+    }
+    Some(spaces)
+}
+
+fn prune_backups_before(cwd: &Path, cutoff: u64) {
+    let Some(spaces) = backup_spaces(cwd) else {
+        return;
+    };
+    for backups in spaces.values() {
+        for (is_kept, _, ref_name, sha) in backups.iter().skip(1) {
+            let created = created_at_of(ref_name);
+            if !*is_kept && created > 0 && created < cutoff {
+                let _ = git_run(cwd, &["update-ref", "-d", ref_name, sha], None, None);
+            }
+        }
+    }
+    let Some(spaces) = backup_spaces(cwd) else {
+        return;
+    };
+    for backups in spaces.values() {
         let mut kept_seen = 0;
         for (index, (is_kept, _, ref_name, sha)) in backups.iter().enumerate() {
-            if *is_kept {
-                kept_seen += 1;
+            if !*is_kept {
+                continue;
             }
-            let is_prunable = if *is_kept {
-                kept_seen > KEPT_BACKUP_CAP && is_kept_elsewhere(cwd, ref_name, sha)
-            } else {
-                let created = created_at_of(ref_name);
-                created > 0 && created < cutoff
-            };
-            if index > 0 && is_prunable {
+            kept_seen += 1;
+            if index > 0 && kept_seen > KEPT_BACKUP_CAP && is_kept_elsewhere(cwd, ref_name, sha) {
                 let _ = git_run(cwd, &["update-ref", "-d", ref_name, sha], None, None);
             }
         }
@@ -5492,6 +5507,54 @@ mod tests {
             .status
                 != 0
         );
+    }
+
+    #[test]
+    fn the_cap_never_leans_on_a_timed_backup_that_expires_in_the_same_prune() {
+        let b = branch("prune-expiring-witness");
+        let space = backup_namespace("feature");
+        let stamp = |index: u128| 1_000_000_000_000_000_000u128 + index * 1_000_000_000;
+        let tree = git_ok(&b.root, &["rev-parse", &format!("{}^{{tree}}", b.b)]);
+        let only = git_ok(
+            &b.root,
+            &[
+                "commit-tree",
+                &tree,
+                "-p",
+                &b.a,
+                "-m",
+                "Reached by two backups",
+            ],
+        );
+        let expiring = format!("{space}/{}", stamp(0));
+        let capped = format!("{space}/{KEPT_STAMP}{}", stamp(1));
+        git_ok(&b.root, &["update-ref", &expiring, &only]);
+        git_ok(&b.root, &["update-ref", &capped, &only]);
+        for index in 2..22 {
+            git_ok(
+                &b.root,
+                &[
+                    "update-ref",
+                    &format!("{space}/{KEPT_STAMP}{}", stamp(index)),
+                    &b.c,
+                ],
+            );
+        }
+
+        prune_backups_before(&b.root, u64::MAX);
+
+        assert!(
+            git_run(
+                &b.root,
+                &["rev-parse", "--verify", "--quiet", &expiring],
+                None,
+                None
+            )
+            .unwrap()
+            .status
+                != 0
+        );
+        assert_eq!(git_ok(&b.root, &["rev-parse", &capped]), only);
     }
 
     #[test]
