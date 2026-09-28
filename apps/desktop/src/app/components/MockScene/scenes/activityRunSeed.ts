@@ -1398,3 +1398,50 @@ export const seedActivityRunScene = () => {
     loadAgentTranscript: async () => undefined,
   });
 };
+
+type SiblingStageParams = {
+  readonly attentionId: SessionId;
+  readonly reviewId: SessionId;
+  readonly reviewBranch: string;
+};
+
+export const seedSiblingStages = ({
+  attentionId,
+  reviewId,
+  reviewBranch,
+}: SiblingStageParams): void => {
+  const state = useAppStore.getState();
+  useAppStore.setState({
+    sessionOpenQuestions: {
+      ...state.sessionOpenQuestions,
+      [attentionId]: [
+        {
+          ...OPEN_QUESTIONS[0],
+          id: 'mock-run-question-rounding' as OpenQuestionId,
+          sessionId: attentionId,
+          text: 'Round half up or half to even on the settlement export?',
+          suggestedAnswers: ['Half up', 'Half to even'],
+          selectMode: 'one',
+        },
+      ],
+    },
+    sessionGithub: {
+      ...state.sessionGithub,
+      [reviewId]: {
+        ...EMPTY_GITHUB,
+        pr: {
+          ...PR({
+            number: 90,
+            title: 'Reconcile the settlement export against the ledger',
+            headBranch: reviewBranch,
+            repo: 'payments-api',
+            state: 'open',
+            checks: 'success',
+            reviewDecision: 'review_required',
+          }),
+          isDraft: true,
+        },
+      },
+    },
+  });
+};

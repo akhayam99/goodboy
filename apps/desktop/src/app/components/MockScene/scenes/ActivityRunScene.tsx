@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { IsoDateTime, Session, SessionId } from '@goodboy/types';
+import type { IsoDateTime, ProviderRunId, Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { ContextDrawerTab } from '../../../../store/slices/drawer/state';
 import { SessionOverviewPane } from '../../../../features/session/components/SessionOverviewPane';
-import { SESSION, seedActivityRunScene } from './activityRunSeed';
+import { SESSION, seedActivityRunScene, seedSiblingStages } from './activityRunSeed';
 import { useHoveredMountRow, useShowCompletedMounts } from './sceneReveal';
 import { ShellFrame, seedShellChrome } from './shellChrome';
 
@@ -20,10 +20,24 @@ const sibling = (id: string, goal: string, hoursAgo: number): Session => ({
   updatedAt: isoAgo(hoursAgo * HOUR),
 });
 
+const running = (id: string, goal: string, minutesAgo: number): Session => ({
+  ...sibling(id, goal, 0),
+  state: {
+    kind: 'running',
+    runId: `${id}-run` as ProviderRunId,
+    startedAt: isoAgo(minutesAgo * 60_000),
+  },
+});
+
+const ROUNDING_ID = 'mock-run-sibling-export' as SessionId;
+const RECONCILE_ID = 'mock-run-sibling-reconcile' as SessionId;
+
 const SIBLINGS: ReadonlyArray<Session> = [
   sibling('mock-run-sibling-refunds', 'Draft the payout delay notice for the help center', 1),
   sibling('mock-run-sibling-rate-limit', 'Per-tenant limits on the public API', 3),
-  sibling('mock-run-sibling-export', 'Fix the rounding drift in the settlement export', 6),
+  running('mock-run-sibling-payout-speed', 'Speed up the payout export for large merchants', 12),
+  sibling(ROUNDING_ID, 'Fix the rounding drift in the settlement export', 6),
+  sibling(RECONCILE_ID, 'Reconcile the settlement export against the ledger', 26),
 ];
 
 type Props = {
@@ -42,9 +56,16 @@ export const ActivityRunScene = ({ contextTab }: Props) => {
         'mock-run-sibling-refunds': 'hl/payout-delay-notice',
         'mock-run-sibling-rate-limit': 'hl/per-tenant-limits',
         'mock-run-sibling-export': 'hl/fix-export-rounding',
+        'mock-run-sibling-payout-speed': 'hl/faster-payout-export',
+        'mock-run-sibling-reconcile': 'hl/reconcile-settlement-export',
       },
       telemetryAt: isoAgo(HOUR),
       lens: null,
+    });
+    seedSiblingStages({
+      attentionId: ROUNDING_ID,
+      reviewId: RECONCILE_ID,
+      reviewBranch: 'hl/reconcile-settlement-export',
     });
     useAppStore.setState({ selectedAgentId: {} });
     if (contextTab !== undefined) {
