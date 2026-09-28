@@ -9,7 +9,7 @@ type Params = {
 
 const placeStillThere = ({ get, location }: { readonly get: GetFn } & Params): Location => {
   const { place } = location;
-  if (place.at === 'board') {
+  if (place.at !== 'session') {
     return location;
   }
   const exists = get().sessions.some((session) => session.id === place.sessionId);
