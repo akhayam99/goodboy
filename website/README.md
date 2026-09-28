@@ -36,15 +36,22 @@ not the section.
 Product figures are real app screenshots from the mock scenes (see
 [docs/mock-screenshots.md](../docs/mock-screenshots.md), Landing crops),
 captured at a device scale factor of 4 or more, in both app themes. They live
-in `website/public/img/` as WebP, each at three widths and never upscaled:
+in `website/public/img/` as WebP, each at three widths and never upscaled.
+The widths are exactly 1, 2 and 3 times the size the image is drawn at, so a
+screen at 1x, 2x or 3x shows the file pixel for pixel and the browser never
+resamples it:
 
 - `<id>-<width>.webp` in the dark theme and `<id>-<width>-light.webp` in the
-  light one, for `<width>` 1200, 2400 and 3840.
-- A frame has a `<id>-phone` twin, a 4:5 cut of the same screen that a phone
-  shows instead of the whole window shrunk.
-- A fragment is one component, drawn on the page at its `displayWidth`, at
-  least 1.3 times its size in the app, so its smallest text lands at 13 CSS
-  pixels or more.
+  light one.
+- A frame is drawn 1250 CSS pixels wide at 1440, so its files are 1250, 2500
+  and 3750 wide. A 1024 pixel app window lands at 1.22 times its size, the
+  board's 1250 pixel window at 1:1.
+- A frame has a `<id>-phone` twin, a 4:5 cut of 288 by 360 app pixels that a
+  phone draws 336 wide, at 1.17 times the app, instead of the whole window
+  shrunk. Its files are 672, 1008 and 1344 wide.
+- A fragment is one component, drawn at its `displayWidth`, at least 1.18
+  times its size in the app, with files at 1, 2 and 3 times that width. App
+  text never draws below its size in the app.
 
 `website/src/figures.ts` holds each figure's id, pixel size, display width and
 alt text. `Picture` loads only the active theme and lets the browser pick the
@@ -59,8 +66,9 @@ toggle, which is kept in `localStorage` under `goodboy-site:theme`. A script at
 the top of `website/index.html` sets `data-theme` before the first paint, so
 the page never flashes. Colours come from the tokens at the top of
 `website/src/styles.css`, with a dark set under `:root[data-theme='dark']`:
-one page background, one raised surface, hairlines instead of shadows, four
-text tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and
+one page background, a `--band` a step above it for every other chapter, a
+`--plate` for the bezel around product images, one raised surface for
+controls, hairlines instead of shadows, four text tiers (`--t1` to `--t4`) and a teal `--accent` that marks text links and
 focus rings only. The logo is always the dark tile with the white dog, in both
 themes.
 
@@ -92,17 +100,27 @@ dashboard, and the GTM iubenda tag stays paused so the card never loads twice.
 The page is built from five formats in `website/src/components/`, each with
 its own CSS file:
 
-- `Chapter`, a section under a hairline rule: a `Statement` head, then its
-  blocks 96 px apart (64 on a phone).
-- `Statement`, an eyebrow, a heading with an optional second sentence in tier
-  3, and a lead of 20 words or fewer. The hero and the closer use it too.
-- `Frame`, one full product view: an 8 px bezel on the raised surface, a view
-  capped at 600 px (640 in the hero) that fades out over 140 px, and on a
-  phone a 4:5 crop of its own.
+- `Chapter`, a section with a `Statement` head, then its blocks 96 px apart
+  (64 on a phone). `isBand` puts it on `--band` with a hairline above and
+  below; How it works, Workflows, Questions and the closer are banded, the
+  chapters between them are not.
+- `Statement`, an eyebrow, a heading and a lead of 20 words or fewer. The
+  hero and the closer use it too. No h1, h2 or h3 ends with a period.
+- `Frame`, one full product view: a 10 px plate on `--plate` with a hairline,
+  an inner view with its own hairline, capped at 600 px (640 in the hero) and
+  faded out over 140 px, and on a phone a 4:5 crop of its own.
 - `Fragment`, a split of text beside one or two components shown larger than
-  in the app, faded to the right where the screen continues.
-- `Grid`, two or three cells in one bordered box, each a fragment, a title and
-  one line.
+  in the app, on the same plate, faded to the right where the screen
+  continues. It stacks below 900 px.
+- `Grid`, two or three cells in one bordered box, each a fragment on a plate,
+  a title and one line.
+
+Motion: the hero rises in on load. Below it, every frame, fragment, grid
+image and frame note fades and rises 14 px as it scrolls into view
+(`useReveal`, which marks `[data-reveal]` nodes shown), and the cost bars grow
+from zero when their pair appears. The provider marks scroll as a marquee on a
+phone and sit still on wider screens. `prefers-reduced-motion` turns all of it
+off.
 
 `Picture` serves every image as a `srcset` of 1200, 2400 and 3840 pixel files,
 so a browser downloads only what its screen needs.
@@ -110,12 +128,14 @@ so a browser downloads only what its screen needs.
 ## Check the page
 
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
-`http://localhost:1499/`) at 1440 by 900 and 390 by 844, in both themes, at
-twice the pixel density. It fails on horizontal overflow, an image drawn below
-2x, a frame, fragment or grid with a shadow, a page taller than 13,500 px on
-the desktop or 13,000 on a phone, an em dash or a middot triplet in visible
-text, Inter not loaded, a hero frame that starts below the first screen, and a
-consent card over the h1, and an eyebrow outside the one register: a feature
+`http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
+both themes, at twice the pixel density. It fails on horizontal overflow, an
+image drawn below 2x, a frame, fragment or grid with a shadow, a page taller
+than 13,500 px at 1440 or on a phone, an em dash or a middot triplet in
+visible text, a heading that ends with a period, a section that runs into the
+next one or whose content spills below it, Inter not loaded, a hero frame that
+starts below the first screen at 1440, and a consent card over the h1, and an
+eyebrow outside the one register: a feature
 eyebrow (`kind="group"`, the default) must be a `FEATURES.md` group name
 verbatim, an audience eyebrow a `README.md` section, and the few page eyebrows
 (hero, Questions, Install, All features) are listed in the script. The heading

@@ -19,9 +19,20 @@ const HERO_FRAME_VISIBLE_PX = 380;
 const INTER_PROBE = '500 64px Inter';
 
 const VIEWPORTS = [
-  { name: 'desktop', width: 1440, height: 900, isMobile: false, maxHeight: 13500 },
-  { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 13000 },
+  {
+    name: 'desktop',
+    width: 1440,
+    height: 900,
+    isMobile: false,
+    maxHeight: 13500,
+    isHeroChecked: true,
+  },
+  { name: 'laptop', width: 1024, height: 768, isMobile: false, maxHeight: Infinity },
+  { name: 'tablet', width: 768, height: 1024, isMobile: false, maxHeight: Infinity },
+  { name: 'narrow', width: 660, height: 900, isMobile: false, maxHeight: Infinity },
+  { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 13500 },
 ];
+const OVERLAP_TOLERANCE_PX = 1;
 const THEMES = ['dark', 'light'];
 const PAGE_EYEBROWS = ['Agentic development environment', 'Questions', 'Install', 'All features'];
 
@@ -159,6 +170,39 @@ const PAGE_PROBE = `(async () => {
   const heroBox = heroFrame === null ? null : heroFrame.getBoundingClientRect();
   const banner = document.querySelector('#iubenda-cs-banner .iubenda-cs-content');
   const h1 = document.querySelector('h1');
+  const periods = [...document.querySelectorAll('h1, h2, h3')]
+    .map((node) => node.textContent.trim())
+    .filter((text) => text.endsWith('.'));
+  const blocks = [...document.querySelectorAll('body > #root > nav, main > *, body > #root > footer')]
+    .map((node) => ({ node, box: node.getBoundingClientRect() }))
+    .filter(({ box }) => box.height > 0);
+  const name = (node) => node.id || node.getAttribute('aria-label') || String(node.className || node.tagName).split(' ')[0];
+  const collisions = blocks.slice(1).flatMap(({ node, box }, index) => {
+    const previous = blocks[index];
+    if (previous.node.tagName === 'NAV') {
+      return [];
+    }
+    const gap = box.top - previous.box.bottom;
+    return gap < -${OVERLAP_TOLERANCE_PX} ? [name(previous.node) + ' runs ' + Math.round(-gap) + ' px into ' + name(node)] : [];
+  });
+  const spills = blocks
+    .filter(({ node }) => node.tagName !== 'NAV')
+    .flatMap(({ node, box }) => {
+      const deepest = Math.max(
+        ...[...node.querySelectorAll('a, button, p, h1, h2, h3, img, li, code, summary')]
+          .map((child) => {
+            let bottom = child.getBoundingClientRect().height > 0 ? child.getBoundingClientRect().bottom : -Infinity;
+            for (let parent = child.parentElement; parent !== null && parent !== node; parent = parent.parentElement) {
+              if (getComputedStyle(parent).overflowY !== 'visible') {
+                bottom = Math.min(bottom, parent.getBoundingClientRect().bottom);
+              }
+            }
+            return bottom;
+          }),
+        box.top,
+      );
+      return deepest > box.bottom + ${OVERLAP_TOLERANCE_PX} ? [name(node) + ' content spills ' + Math.round(deepest - box.bottom) + ' px below it'] : [];
+    });
   const overlaps = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
   return {
     isInter: document.fonts.check(${JSON.stringify(INTER_PROBE)}),
@@ -169,6 +213,9 @@ const PAGE_PROBE = `(async () => {
     middot: (text.match(middot) ?? [null])[0],
     shadowed,
     images,
+    periods,
+    collisions,
+    spills,
     heroTop: heroBox === null ? null : heroBox.top + window.scrollY,
     heroOpacity: heroFrame === null ? null : Number(getComputedStyle(heroFrame.closest('.rise') ?? heroFrame).opacity),
     bannerCoversH1: banner !== null && h1 !== null && overlaps(banner.getBoundingClientRect(), h1.getBoundingClientRect()),
@@ -228,7 +275,10 @@ const checkRun = ({ viewport, theme, probe, groups, audiences, brands }) => {
   probe.images
     .filter((image) => image.density !== null && image.density < MIN_DENSITY)
     .forEach((image) => fail(`${image.src} drawn at ${image.density.toFixed(2)}x`));
-  if (!viewport.isMobile && probe.heroTop !== null) {
+  probe.periods.forEach((text) => fail(`heading ends with a period: "${text}"`));
+  probe.collisions.forEach((message) => fail(message));
+  probe.spills.forEach((message) => fail(message));
+  if (viewport.isHeroChecked === true && probe.heroTop !== null) {
     if (probe.heroTop + HERO_FRAME_VISIBLE_PX > viewport.height) {
       fail(`the hero frame starts at ${Math.round(probe.heroTop)} px, below the first screen`);
     }
