@@ -210,11 +210,11 @@ describe('ContextDrawer', () => {
     expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove decision 1' })).toBeNull();
 
-    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
     expect(screen.getByRole('button', { name: 'Edit decision 1' })).toBeDefined();
     expect(screen.getByRole('button', { name: 'Remove decision 1' })).toBeDefined();
 
-    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
     expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
 
     const field = screen.getByRole('textbox', { name: 'Add a decision' });
@@ -232,7 +232,7 @@ describe('ContextDrawer', () => {
     const { container } = renderDrawer('decisions');
     const actor = { author: 'user', agentId: null, turnOrdinal: null };
 
-    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
     fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
 
     expect(store.applySessionDecisionOps).toHaveBeenLastCalledWith({
@@ -265,9 +265,9 @@ describe('ContextDrawer', () => {
     const { container } = renderDrawer('decisions');
     const actor = { author: 'user', agentId: null, turnOrdinal: null };
 
-    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
     fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
-    fireEvent.click(container.querySelector('[data-decision="2"]')!);
+    fireEvent.click(container.querySelector('[data-decision="2"] button')!);
     fireEvent.click(screen.getByRole('button', { name: 'Remove decision 2' }));
     expect(screen.getByText('2 changes on this visit')).toBeDefined();
 
@@ -287,7 +287,7 @@ describe('ContextDrawer', () => {
     store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
     const { container, unmount } = renderDrawer('decisions');
 
-    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
     fireEvent.click(screen.getByRole('button', { name: 'Remove decision 1' }));
     expect(screen.getByText('Removed')).toBeDefined();
     unmount();
@@ -392,7 +392,7 @@ describe('ContextDrawer', () => {
     store.sessionDecisions = { [SID]: [decision({ number: 1 })] };
     const { container } = renderDrawer('decisions');
 
-    fireEvent.click(container.querySelector('[data-decision="1"]')!);
+    fireEvent.click(container.querySelector('[data-decision="1"] button')!);
     expect(screen.getByText('Key redeliveries by event id')).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Edit decision 1' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove decision 1' })).toBeNull();

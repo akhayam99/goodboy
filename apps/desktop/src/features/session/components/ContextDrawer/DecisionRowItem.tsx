@@ -121,50 +121,41 @@ export const DecisionRowItem = ({
     <div
       ref={rowRef}
       data-decision={number}
-      role="button"
-      tabIndex={0}
-      aria-expanded={isOpen}
-      onClick={onToggleOpen}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onToggleOpen();
-          return;
-        }
-        if (event.key === 'Escape' && isOpen) {
-          onToggleOpen();
-        }
-      }}
       className={cn(
-        'group/decision-row flex cursor-pointer items-start gap-2.5 rounded-lg px-2 py-2 motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        'group/decision-row flex items-start gap-2.5 rounded-lg px-2 py-2 motion-safe:transition-colors',
         isOpen ? 'bg-fill' : isHighlighted ? 'bg-selected' : 'hover:bg-hover',
       )}
     >
       <DecisionNumber number={number} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div
-          key={text}
-          data-swapped={isSwapped ? 'true' : undefined}
-          className={cn(
-            '[overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap',
-            !isOpen && 'line-clamp-2',
-            isSwapped && 'motion-safe:animate-text-swap',
-          )}
-        >
-          <Markdown text={text} className="text-label" />
-        </div>
-        {isLong ? (
-          <button
-            type="button"
-            className="w-fit rounded-sm text-secondary text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-            onClick={(event) => {
-              event.stopPropagation();
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          onClick={onToggleOpen}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && isOpen) {
               onToggleOpen();
-            }}
+            }
+          }}
+          className="flex w-full flex-col items-start gap-1 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+        >
+          <div
+            key={text}
+            data-swapped={isSwapped ? 'true' : undefined}
+            className={cn(
+              '[overflow-wrap:anywhere] [&_pre]:whitespace-pre-wrap',
+              !isOpen && 'line-clamp-2',
+              isSwapped && 'motion-safe:animate-text-swap',
+            )}
           >
-            {isOpen ? 'Show less' : 'Show more'}
-          </button>
-        ) : null}
+            <Markdown text={text} className="text-label" />
+          </div>
+          {isLong ? (
+            <span className="text-secondary text-muted-foreground">
+              {isOpen ? 'Show less' : 'Show more'}
+            </span>
+          ) : null}
+        </button>
         {why === null ? null : (
           <div data-decision-why={number} className="[overflow-wrap:anywhere]">
             <ClampedProse text={why} lines={2} className="text-secondary text-muted-foreground" />
@@ -181,8 +172,7 @@ export const DecisionRowItem = ({
                 variant="ghost"
                 size="sm"
                 aria-label={`Edit ${label.toLowerCase()}`}
-                onClick={(event) => {
-                  event.stopPropagation();
+                onClick={() => {
                   setDraft(text);
                   setIsEditing(true);
                 }}
@@ -194,10 +184,7 @@ export const DecisionRowItem = ({
                 variant="ghost"
                 size="sm"
                 aria-label={`Remove ${label.toLowerCase()}`}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onRemove();
-                }}
+                onClick={onRemove}
               >
                 <Trash2 size={ICON_SIZE.row} aria-hidden />
                 Remove
@@ -212,10 +199,7 @@ export const DecisionRowItem = ({
             <button
               type="button"
               aria-expanded={isPreviousShown}
-              onClick={(event) => {
-                event.stopPropagation();
-                setIsPreviousShown(!isPreviousShown);
-              }}
+              onClick={() => setIsPreviousShown(!isPreviousShown)}
               className="rounded-sm text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               {isPreviousShown ? 'Hide previous' : 'Show previous'}
