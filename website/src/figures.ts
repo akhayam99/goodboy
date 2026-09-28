@@ -1,3 +1,17 @@
+import type { Source } from './components/Picture';
+
+export type FrameFigure = {
+  readonly source: Source;
+  readonly phone: Source;
+  readonly alt: string;
+};
+
+export type FragmentFigure = {
+  readonly source: Source;
+  readonly displayWidth: number;
+  readonly alt: string;
+};
+
 export type Detail = {
   readonly id: string;
   readonly width: number;

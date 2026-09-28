@@ -83,15 +83,37 @@ defaults to denied before any tag loads. iubenda shows no card for a language
 the cookie policy lacks, so the policy needs an English version in the iubenda
 dashboard, and the GTM iubenda tag stays paused so the card never loads twice.
 
-## Verify with the page
+## Page kit
 
-Check the rendered page, not the diff:
+The page is built from five formats in `website/src/components/`, each with
+its own CSS file:
 
-- Headless Chrome with `--force-prefers-reduced-motion` renders every
-  section's final state. It drives neither CSS animations nor intersection
-  observers, so check each figure's play in a real browser.
-- No horizontal overflow at 375px wide.
-- `pnpm build` clean and no em dash anywhere in the copy.
+- `Chapter`, a section under a hairline rule: a `Statement` head, then its
+  blocks 96 px apart (64 on a phone).
+- `Statement`, an eyebrow, a heading with an optional second sentence in tier
+  3, and a lead of 20 words or fewer. The hero and the closer use it too.
+- `Frame`, one full product view: an 8 px bezel on the raised surface, a view
+  capped at 600 px (640 in the hero) that fades out over 140 px, and on a
+  phone a 4:5 crop of its own.
+- `Fragment`, a split of text beside one or two components shown larger than
+  in the app, faded to the right where the screen continues.
+- `Grid`, two or three cells in one bordered box, each a fragment, a title and
+  one line.
+
+`Picture` serves every image as a `srcset` of 1200, 2400 and 3840 pixel files,
+so a browser downloads only what its screen needs.
+
+## Check the page
+
+`pnpm check:page [url...]` drives headless Chrome over a running page (default
+`http://localhost:1499/`) at 1440 by 900 and 390 by 844, in both themes, at
+twice the pixel density. It fails on horizontal overflow, an image drawn below
+2x, a frame, fragment or grid with a shadow, a page taller than 13,500 px on
+the desktop or 13,000 on a phone, an em dash or a middot triplet in visible
+text, Inter not loaded, a hero frame that starts below the first screen, and a
+consent card over the h1. `--shots <dir>` also saves every heading, and
+`--verify-icons` compares the provider marks with their pinned simple-icons
+files over the network. Tag Manager is blocked during the run.
 
 ## One invented world
 

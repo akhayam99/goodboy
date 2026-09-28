@@ -1,0 +1,86 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: var(--r-frame);
+  overflow: hidden;
+  list-style: none;
+}
+
+.grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  min-width: 0;
+  padding: 32px;
+}
+
+.cell + .cell {
+  border-left: 1px solid var(--line);
+}
+
+.cellMedia {
+  height: 236px;
+  overflow: hidden;
+  border-radius: var(--r-view);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  -webkit-mask-image:
+    linear-gradient(to right, #000 72%, transparent),
+    linear-gradient(to bottom, #000 66%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right, #000 72%, transparent),
+    linear-gradient(to bottom, #000 66%, transparent);
+  mask-composite: intersect;
+}
+
+.cellMedia img {
+  display: block;
+  width: var(--w);
+  max-width: none;
+  height: auto;
+}
+
+.cellTitle {
+  font: var(--t-cell);
+  letter-spacing: var(--tr-cell);
+}
+
+.cellText {
+  max-width: 44ch;
+  margin-top: 4px;
+  font: var(--t-cell-text);
+  color: var(--t3);
+}
+
+@media (max-width: 960px) {
+  .grid.three {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .grid.three .cell + .cell {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cell {
+    gap: 20px;
+    padding: 20px;
+  }
+  .cell + .cell {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .cellMedia {
+    height: 200px;
+  }
+}

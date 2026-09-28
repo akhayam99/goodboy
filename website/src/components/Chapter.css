@@ -1,0 +1,25 @@
+.chapterInner {
+  display: grid;
+  gap: 64px;
+  padding: 112px 0;
+  border-top: 1px solid var(--line);
+}
+
+.chapterBody {
+  display: grid;
+  gap: 96px;
+}
+
+.chapterBody > * {
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .chapterInner {
+    gap: 40px;
+    padding: 72px 0;
+  }
+  .chapterBody {
+    gap: 64px;
+  }
+}

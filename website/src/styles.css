@@ -212,6 +212,25 @@ p code {
   max-width: 820px;
 }
 
+.shell {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.inset {
+  padding: 0 36px;
+}
+
+@media (max-width: 600px) {
+  .shell {
+    padding: 0 20px;
+  }
+  .inset {
+    padding: 0;
+  }
+}
+
 h1 {
   font: var(--t-h1);
   letter-spacing: var(--tr-h1);

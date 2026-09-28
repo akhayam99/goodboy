@@ -1,0 +1,57 @@
+.frameBlock {
+  display: grid;
+  gap: 40px;
+}
+
+.frame {
+  position: relative;
+  padding: 8px;
+  border-radius: var(--r-frame);
+  background: var(--raise);
+  border: 1px solid var(--line);
+}
+
+.view {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-view);
+  background: var(--bg);
+  box-shadow:
+    0 0 0 1px var(--line-soft),
+    var(--ring);
+}
+
+.view img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.frame.capped .view {
+  max-height: var(--cap);
+}
+
+.frame.capped {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 140px), transparent);
+}
+
+@media (max-width: 600px) {
+  .frameBlock {
+    gap: 28px;
+  }
+  .frame {
+    padding: 6px;
+    border-radius: var(--r-frag);
+  }
+  .view {
+    border-radius: 6px;
+  }
+  .frame.capped .view {
+    max-height: none;
+  }
+  .frame.capped {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
