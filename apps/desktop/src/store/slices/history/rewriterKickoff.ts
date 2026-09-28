@@ -52,7 +52,7 @@ export const rewriterKickoff = ({ branch, base, copyPath, order, stop, note }: P
       ? `Step ${position + 1} (${short({ sha: stop.sha })}) stopped on a hook: ${stop.message}`
       : `Step ${position + 1} (${short({ sha: stop.sha })}) stopped on a conflict in ${files}. The conflict markers are in the copy now and the step is not committed yet.`,
     `Settle it, commit step ${position + 1} with its message, then replay the remaining steps in order.`,
-    'When a step brings nothing new because its changes are already there, skip it and report it with to="none".',
+    'Every planned step stays a commit. When a step brings nothing new because its changes are already there, commit it anyway with git commit --allow-empty and its message; never skip a step.',
   ];
   if (note !== undefined && note.trim() !== '') {
     lines.push('', `A note from the person who asked for this rewrite: ${note.trim()}`);

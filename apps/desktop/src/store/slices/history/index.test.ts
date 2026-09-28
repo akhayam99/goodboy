@@ -891,7 +891,7 @@ describe('bring origin into the plan', () => {
 });
 
 describe('rewriterKickoff', () => {
-  it('numbers the plan, names the stopped step and asks for markers on skips', () => {
+  it('numbers the plan, names the stopped step and asks to keep empty steps as commits', () => {
     const text = rewriterKickoff({
       branch: 'fix/ledger-postings',
       base: 'onto-sha-1234567',
@@ -907,7 +907,8 @@ describe('rewriterKickoff', () => {
     expect(text).toContain('1. pick a1');
     expect(text).toContain('2. squash into the step above b2');
     expect(text).toContain('Step 2 (b2) stopped on a conflict in src/ledger/postings.ts');
-    expect(text).toContain('to="none"');
+    expect(text).toContain('git commit --allow-empty');
+    expect(text).not.toContain('skip it');
     expect(text).toContain('keep the retry key from main');
   });
 });

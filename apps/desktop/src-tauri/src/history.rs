@@ -2561,7 +2561,6 @@ struct ExpectedGroup {
 fn expected_groups(
     cwd: &Path,
     ordered: &[HistoryStep],
-    skipped: &[String],
 ) -> Result<Vec<ExpectedGroup>, WorktreeError> {
     let mut groups: Vec<ExpectedGroup> = Vec::new();
     for step in ordered {
@@ -2576,9 +2575,6 @@ fn expected_groups(
                 current.members.push(step.sha.clone());
                 continue;
             }
-        }
-        if skipped.iter().any(|sha| sha == &step.sha) {
-            continue;
         }
         groups.push(ExpectedGroup {
             members: vec![step.sha.clone()],
@@ -2621,13 +2617,18 @@ pub(crate) fn collect_rewrite(args: &RewriterCollectArgs) -> Result<RewriterChec
     let old_head = resolve_commit(cwd, &args.plan.head)?;
     let steps = resolved_steps(cwd, &args.plan.steps)?;
     let ordered = order_steps(&steps)?;
-    let skipped: Vec<String> = args
-        .skipped
-        .iter()
-        .filter_map(|sha| resolve_commit(cwd, sha).ok())
-        .collect();
-    let groups = expected_groups(cwd, &ordered, &skipped)?;
+    let groups = expected_groups(cwd, &ordered)?;
     let mut problems = Vec::new();
+    if !args.skipped.is_empty() {
+        problems.push(format!(
+            "The rewriter skipped {} that the plan keeps; every planned commit must stay, even an empty one.",
+            args.skipped
+                .iter()
+                .map(|sha| short(sha))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
     if let Some(problem) = copy_problem(copy) {
         problems.push(problem);
     }
@@ -4826,5 +4827,34 @@ mod tests {
         assert!(!journal.exists());
         assert_eq!(git_ok(&l.root, &["rev-parse", "refs/heads/feature"]), head);
         assert_eq!(git_ok(&l.root, &["status", "--porcelain"]), "");
+    }
+
+    #[test]
+    fn an_agent_that_skips_a_planned_commit_is_refused() {
+        let b = branch("rewriter-skip");
+        let args = plan(
+            &b.root,
+            &b.base,
+            &b.c,
+            vec![step(&b.b, HistoryVerb::Pick), step(&b.a, HistoryVerb::Pick)],
+        );
+        let prepared = trial(&args, &slug("rewriter-skip"), true).unwrap();
+        let copy = PathBuf::from(prepared.copy_path.unwrap());
+        std::fs::write(copy.join("policy.txt"), "three\n").unwrap();
+        git_ok(&copy, &["add", "policy.txt"]);
+        git_ok(
+            &copy,
+            &["commit", "--no-verify", "-m", "B edits the policy again"],
+        );
+        let check = collect_rewrite(&RewriterCollectArgs {
+            plan: args,
+            copy_path: copy.to_string_lossy().into_owned(),
+            skipped: vec![b.a.clone()],
+            keeps_copy: false,
+        })
+        .unwrap();
+        assert_eq!(check.head, None);
+        assert!(!check.problems.is_empty());
+        discard_copy(&copy.to_string_lossy());
     }
 }
