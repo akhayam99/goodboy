@@ -15,8 +15,8 @@ type CapStyle = CSSProperties & {
   readonly '--cap': string;
 };
 
-const VIEW_WIDTH = 1254;
-const SIZES = '(max-width: 600px) calc(100vw - 54px), min(1254px, calc(100vw - 66px))';
+const VIEW_WIDTH = 1250;
+const SIZES = '(max-width: 600px) calc(100vw - 54px), min(1250px, calc(100vw - 70px))';
 
 export const Frame = ({ figure, cap = 600, isEager = false, children }: Props) => {
   const theme = useTheme();
@@ -25,7 +25,11 @@ export const Frame = ({ figure, cap = 600, isEager = false, children }: Props) =
 
   return (
     <div className="frameBlock">
-      <div className={isCapped ? 'frame capped' : 'frame'} style={style}>
+      <div
+        className={isCapped ? 'frame capped' : 'frame'}
+        style={style}
+        data-reveal={isEager ? undefined : ''}
+      >
         <div className="view">
           <Picture
             source={figure.source}
@@ -37,7 +41,11 @@ export const Frame = ({ figure, cap = 600, isEager = false, children }: Props) =
           />
         </div>
       </div>
-      {children === undefined ? null : <div className="frameNote">{children}</div>}
+      {children === undefined ? null : (
+        <div className="frameNote" data-reveal="">
+          {children}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import { Fragment } from '../components/Fragment';
-import { CONTEXT_DECISIONS } from '../figures';
+import { CONTEXT_CHANGES } from '../figures';
 import { SITE } from '../site';
 
 export const Context = () => (
@@ -7,8 +7,8 @@ export const Context = () => (
     id="context"
     eyebrow="Shared context"
     heading="Decisions stay with the task"
-    body="Every agent reads the same goal and decisions. A replaced decision says why, and the next agent reads the current one."
+    body="Every agent reads the same goal and decisions. When a decision changes, the panel shows what was added, replaced or withdrawn since you last looked, and the next agent is briefed on the current set."
     link={{ href: `${SITE.concepts}#shared-context-and-lenses`, label: 'How shared context works' }}
-    figures={[CONTEXT_DECISIONS]}
+    figures={[CONTEXT_CHANGES]}
   />
 );
