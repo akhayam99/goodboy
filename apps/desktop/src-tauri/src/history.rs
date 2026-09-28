@@ -2735,6 +2735,32 @@ pub async fn history_rewriter_collect(
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct CopyGitDirs {
+    pub git_dir: String,
+    pub objects_dir: String,
+}
+
+pub(crate) fn copy_git_dirs(copy: &Path) -> Option<CopyGitDirs> {
+    let root = reservation_root_of(copy)?;
+    let repo = owner_repo(&root)?;
+    let admin = own_admin_dir(copy, &repo)?;
+    let objects = std::fs::canonicalize(repo.join("objects")).ok()?;
+    Some(CopyGitDirs {
+        git_dir: admin.to_string_lossy().to_string(),
+        objects_dir: objects.to_string_lossy().to_string(),
+    })
+}
+
+#[tauri::command]
+pub async fn history_copy_git_dirs(copy_path: String) -> Option<CopyGitDirs> {
+    tauri::async_runtime::spawn_blocking(move || copy_git_dirs(Path::new(&copy_path)))
+        .await
+        .ok()
+        .flatten()
+}
+
 #[tauri::command]
 pub async fn history_copy_discard(
     worktree_path: String,
@@ -4856,5 +4882,35 @@ mod tests {
         assert_eq!(check.head, None);
         assert!(!check.problems.is_empty());
         discard_copy(&copy.to_string_lossy());
+    }
+
+    #[test]
+    fn the_copy_git_dirs_are_its_own_admin_folder_and_the_objects_only() {
+        let l = ledger("copy-git-dirs");
+        let other = temp_root("copy-git-dirs-other").join("review");
+        git_ok(
+            &l.root,
+            &[
+                "worktree",
+                "add",
+                "--detach",
+                "--quiet",
+                other.to_str().unwrap(),
+                &l.base,
+            ],
+        );
+        let copy = copy_path_of(&slug("copy-git-dirs"));
+        let guard = create_copy(&l.root, &copy, &l.base).unwrap();
+        let dirs = copy_git_dirs(&copy).unwrap();
+        let common = std::fs::canonicalize(l.root.join(".git")).unwrap();
+        assert_eq!(PathBuf::from(&dirs.objects_dir), common.join("objects"));
+        assert!(PathBuf::from(&dirs.git_dir).starts_with(common.join("worktrees")));
+        assert_ne!(
+            PathBuf::from(&dirs.git_dir),
+            common.join("worktrees").join("review")
+        );
+        assert!(!common.join("refs").join("heads").starts_with(&dirs.git_dir));
+        drop(guard);
+        assert_eq!(copy_git_dirs(&l.root.join("copy")), None);
     }
 }

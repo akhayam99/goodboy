@@ -190,6 +190,18 @@ export const collectHistoryRewrite = async ({
     args: { plan: toArgs(plan), copyPath, skipped, keepsCopy },
   });
 
+export type HistoryCopyGitDirs = {
+  readonly gitDir: string;
+  readonly objectsDir: string;
+};
+
+export const readHistoryCopyGitDirs = async ({
+  copyPath,
+}: {
+  readonly copyPath: string;
+}): Promise<HistoryCopyGitDirs | null> =>
+  invoke<HistoryCopyGitDirs | null>('history_copy_git_dirs', { copyPath });
+
 type DiscardCopyParams = {
   readonly worktreePath: string;
   readonly copyPath: string;

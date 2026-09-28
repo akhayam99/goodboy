@@ -945,6 +945,7 @@ describe('rewriterKickoff', () => {
     expect(text).toContain('2. squash into the step above b2');
     expect(text).toContain('Step 2 (b2) stopped on a conflict in src/ledger/postings.ts');
     expect(text).toContain('git commit --allow-empty');
+    expect(text).toContain('never run git worktree, git stash');
     expect(text).not.toContain('skip it');
     expect(text).toContain('keep the retry key from main');
   });
