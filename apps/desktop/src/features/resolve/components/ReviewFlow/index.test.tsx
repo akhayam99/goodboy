@@ -114,7 +114,11 @@ describe('Review as one flow', () => {
 
   it('never starts an agent by opening Review, and drafts the new ones in one click', async () => {
     const spawnAgent = vi.fn(async () => undefined);
-    stub({ spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'] });
+    const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
+    stub({
+      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
+      createResolveBatch: createResolveBatch as unknown as StoreState['createResolveBatch'],
+    });
     await mount({ threadId: null });
 
     expect(spawnAgent).not.toHaveBeenCalled();

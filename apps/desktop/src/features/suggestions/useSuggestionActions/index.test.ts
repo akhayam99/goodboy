@@ -39,6 +39,7 @@ const { storeState, spies } = vi.hoisted(() => {
     void fields;
   });
   const navigate = vi.fn();
+  const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
   const rebaseRun = vi.fn(async () => undefined);
   const runPlan = vi.fn(async () => 'agent-implementer');
   const pushSessionBranch = vi.fn(async () => ({ ok: true as const }));
@@ -59,6 +60,7 @@ const { storeState, spies } = vi.hoisted(() => {
       advanceAgent: vi.fn(async () => undefined),
       spawnAgent,
       setAgentConfig,
+      createResolveBatch,
       navigate,
       rebaseRun,
       runPlan,
@@ -93,6 +95,7 @@ const { storeState, spies } = vi.hoisted(() => {
       reportError,
       spawnAgent,
       setAgentConfig,
+      createResolveBatch,
       runPlan,
       navigate,
       pushSessionBranch,
@@ -253,7 +256,7 @@ describe('useSuggestionActions', () => {
     );
   });
 
-  it('combines every eligible conversation into one attempt instead of one agent each', async () => {
+  it('gives every eligible conversation its own agent inside one batch', async () => {
     storeState.sessionGithub = {
       [SESSION_ID]: {
         pr: { number: 12, headBranch: 'feature/retry', title: 't', url: 'u' },
@@ -307,12 +310,13 @@ describe('useSuggestionActions', () => {
     });
     actions.primary?.run();
 
-    await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(1));
-    expect(spies.spawnAgent.mock.calls[0]?.[1].sourceThreadIds).toEqual([
-      'thread-1',
-      'thread-2',
-      'thread-3',
+    await vi.waitFor(() => expect(spies.spawnAgent).toHaveBeenCalledTimes(3));
+    expect(spies.spawnAgent.mock.calls.map((call) => call[1].sourceThreadIds)).toEqual([
+      ['thread-1'],
+      ['thread-2'],
+      ['thread-3'],
     ]);
+    expect(spies.createResolveBatch).toHaveBeenCalledOnce();
   });
 
   it('rebases the mount the suggestion names without moving the write destination', async () => {

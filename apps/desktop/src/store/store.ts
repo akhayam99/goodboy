@@ -761,6 +761,7 @@ type AppActions = {
     agentId?: AgentId;
     mountId?: MountId;
     mountTarget?: MountTargetSnapshot;
+    resolveCopyPath?: string;
     content: string;
     attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;

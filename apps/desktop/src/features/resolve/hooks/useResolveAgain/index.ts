@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import type { PrComment, SessionId } from '@goodboy/types';
+import type { PrComment, ResolveAttempt, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { replyVoiceOf } from '../../../../store/sessionReplySettings';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
@@ -8,6 +8,7 @@ import { groupThreads } from '../../../github/comment-threads';
 import { kindRouting } from '../../../session/agent-kind';
 import { startFixAttempt } from '../../../review/startFixAttempt';
 import { conversationSourceOf } from '../../notes/conversationSource';
+import { retryBatchOf } from '../../launchChoice';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 
 type Params = {
@@ -30,6 +31,9 @@ export const useResolveAgain = ({
   const comments = useAppStore(
     (s) =>
       s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
+  );
+  const attempts = useAppStore(
+    (s) => s.sessionResolveAttempts[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<ResolveAttempt>),
   );
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
@@ -78,6 +82,7 @@ export const useResolveAgain = ({
             },
           ],
           style: replyVoice,
+          batch: retryBatchOf({ attempts, threadId }),
           spawnAgent,
           setAgentConfig,
         });
@@ -88,6 +93,7 @@ export const useResolveAgain = ({
       }
     },
     [
+      attempts,
       pr,
       replyVoice,
       reportError,
