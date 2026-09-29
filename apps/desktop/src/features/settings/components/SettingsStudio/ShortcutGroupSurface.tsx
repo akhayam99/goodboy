@@ -12,6 +12,7 @@ const GROUP_LABEL: Readonly<Record<ShortcutGroup, string>> = {
   session: 'Session',
   views: 'Views',
   review: 'Review',
+  diff: 'Diff',
   window: 'Window',
 };
 
@@ -22,6 +23,7 @@ const GROUP_ICON: Readonly<Record<ShortcutGroup, LucideIcon>> = {
   session: CONCEPT_ICONS.sessions,
   views: PanelsTopLeft,
   review: CONCEPT_ICONS.review,
+  diff: CONCEPT_ICONS.diff,
   window: AppWindow,
 };
 

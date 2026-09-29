@@ -11,6 +11,7 @@ import {
 import { PageColumn, ScrollFade, Skeleton, useDropdown, type DiffLayoutMode } from '@goodboy/ui';
 import type { FileDiff } from '@goodboy/types';
 import { useDiffLayoutMode } from '../../../../shared/hooks/useDiffLayoutMode';
+import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { useDiffWrap } from '../../hooks/useDiffWrap';
 import { DiffFile } from './DiffFile';
 import { DiffToolbar } from './DiffToolbar';
@@ -39,13 +40,6 @@ const EMPTY_THREADS: ReadonlyArray<DiffThread> = [];
 
 const matchPath = (files: ReadonlyArray<FileDiff>, path: string): string | null =>
   files.find((file) => file.path === path || path.endsWith(`/${file.path}`))?.path ?? null;
-
-const isTypingTarget = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable ||
-    target.tagName === 'INPUT' ||
-    target.tagName === 'TEXTAREA' ||
-    target.tagName === 'SELECT');
 
 const offsetFromTop = (element: HTMLElement, viewport: HTMLElement | null): number =>
   element.getBoundingClientRect().top - (viewport?.getBoundingClientRect().top ?? 0);
@@ -351,32 +345,10 @@ export const DiffView = ({
 
   const toggleJump = jump.toggle;
 
-  useEffect(() => {
-    if (presentation !== 'pane') {
-      return;
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) {
-        return;
-      }
-      if (event.code === 'KeyT' && !event.shiftKey) {
-        event.preventDefault();
-        toggleJump();
-        return;
-      }
-      if (event.code === 'BracketLeft') {
-        event.preventDefault();
-        step(-1);
-        return;
-      }
-      if (event.code === 'BracketRight') {
-        event.preventDefault();
-        step(1);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [presentation, toggleJump, step]);
+  const hasPaneKeys = presentation === 'pane';
+  useShortcut('diff.jump', toggleJump, hasPaneKeys);
+  useShortcut('diff.previousFile', () => step(-1), hasPaneKeys);
+  useShortcut('diff.nextFile', () => step(1), hasPaneKeys);
 
   const body = (
     <div className="flex flex-col gap-3 pb-6">

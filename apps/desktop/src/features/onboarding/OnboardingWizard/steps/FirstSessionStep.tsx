@@ -2,6 +2,7 @@ import { useId, useState, type KeyboardEvent } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Button, KbdPill, Textarea, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { formatCombo } from '../../../../shared/keyboard/registry';
 import { StepHeading } from './StepHeading';
 import { NoIssueSource } from './NoIssueSource';
 import { HandOff } from './HandOff';
@@ -170,7 +171,7 @@ export const FirstSessionStep = ({
                 aria-label="What Scout should do"
                 onChange={(event) => setPrompt(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter' && event.metaKey) {
+                  if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
                     event.preventDefault();
                     start();
                   }
@@ -185,7 +186,7 @@ export const FirstSessionStep = ({
                 <Button size="sm" disabled={!canStart} isBusy={busy} onClick={start}>
                   Start Scout
                   <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
-                    ⌘↵
+                    {formatCombo('cmd+Enter')}
                   </KbdPill>
                 </Button>
               </div>

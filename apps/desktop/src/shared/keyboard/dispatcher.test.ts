@@ -295,3 +295,97 @@ describe('typing wins over the lens plane off darwin', () => {
     expect(onAgents).toHaveBeenCalledOnce();
   });
 });
+
+describe('shortcut dispatcher with a bare key', () => {
+  beforeEach(() => {
+    platform.current = 'darwin';
+  });
+
+  const focusInto = (tag: string): HTMLElement => {
+    const element = document.createElement(tag);
+    document.body.appendChild(element);
+    element.focus();
+    return element;
+  };
+
+  it('fires a bare key and hands the event to the handler', () => {
+    const onJump = vi.fn();
+    bind('diff.jump', onJump);
+
+    const event = press({ key: 't', code: 'KeyT' });
+
+    expect(onJump).toHaveBeenCalledWith(event);
+    expect(event.defaultPrevented).toBe(true);
+  });
+
+  it('never fires a bare key with a modifier held', () => {
+    const onJump = vi.fn();
+    bind('diff.jump', onJump);
+
+    press({ key: 't', code: 'KeyT', shiftKey: true });
+    press({ key: 't', code: 'KeyT', metaKey: true });
+
+    expect(onJump).not.toHaveBeenCalled();
+  });
+
+  it.each(['input', 'textarea', 'select'])('leaves a bare key to a focused %s', (tag) => {
+    const onJump = vi.fn();
+    bind('diff.jump', onJump);
+    const field = focusInto(tag);
+
+    const event = typeInto({ target: field, init: { key: 't', code: 'KeyT' } });
+
+    expect(onJump).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('leaves a bare key to the terminal', () => {
+    const onJump = vi.fn();
+    bind('diff.jump', onJump);
+    const terminal = document.createElement('div');
+    terminal.className = 'xterm';
+    const surface = document.createElement('textarea');
+    terminal.appendChild(surface);
+    document.body.appendChild(terminal);
+    surface.focus();
+
+    const event = press({ key: 't', code: 'KeyT' });
+
+    expect(onJump).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('leaves a bare key alone while a modal dialog is open', () => {
+    const onJump = vi.fn();
+    bind('diff.jump', onJump);
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+    document.body.appendChild(dialog);
+
+    press({ key: 't', code: 'KeyT' });
+
+    expect(onJump).not.toHaveBeenCalled();
+  });
+
+  it('leaves a bare key that a handler below already claimed', () => {
+    const onJump = vi.fn();
+    bind('diff.jump', onJump);
+    const button = focusInto('button');
+    button.addEventListener('keydown', (event) => event.preventDefault());
+
+    typeInto({ target: button, init: { key: 't', code: 'KeyT' } });
+
+    expect(onJump).not.toHaveBeenCalled();
+  });
+
+  it('still fires a modified combo inside a field', () => {
+    const onPalette = vi.fn();
+    bind('palette.open', onPalette);
+    const field = focusInto('input');
+
+    typeInto({ target: field, init: { key: 'k', code: 'KeyK', metaKey: true } });
+
+    expect(onPalette).toHaveBeenCalledOnce();
+  });
+});
