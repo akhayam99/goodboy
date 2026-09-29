@@ -11,8 +11,8 @@ const INHERITED_REPO_ENV: [&str; 3] = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FI
 const NETWORK_VERBS: [&str; 5] = ["fetch", "push", "pull", "ls-remote", "clone"];
 const KILL_GRACE: Duration = Duration::from_secs(1);
 
-pub(crate) const LOCAL_TIMEOUT: Duration = Duration::from_secs(600);
-pub(crate) const NETWORK_TIMEOUT: Duration = Duration::from_secs(300);
+pub(crate) const LOCAL_TIMEOUT: Duration = Duration::from_secs(1800);
+pub(crate) const NETWORK_TIMEOUT: Duration = Duration::from_secs(1800);
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum GitError {
