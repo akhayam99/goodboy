@@ -82,5 +82,11 @@ describe('handoffChipLabel', () => {
     expect(
       handoffChipLabel({ section: section({ kind: 'role', summary: 'Implementer · built in' }) }),
     ).toBe('Implementer instructions');
+    expect(
+      handoffChipLabel({ section: section({ kind: 'role', summary: 'Resolver instructions' }) }),
+    ).toBe('Resolver instructions');
+    expect(
+      handoffChipLabel({ section: section({ kind: 'role', summary: 'Resolver · built in' }) }),
+    ).toBe('Resolver instructions');
   });
 });

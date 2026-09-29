@@ -69,7 +69,7 @@ export const liveHandoff = ({ agentId }: { readonly agentId: AgentId }): AgentHa
     },
     {
       kind: 'role',
-      summary: 'Resolver instructions',
+      summary: 'Resolver · built in',
       bodyMd: 'You are the resolver. Change only what the comment asks for, then reply.',
       refs: [],
     },
@@ -93,13 +93,8 @@ export const liveTranscript = ({ agentId, runId }: LiveParams): ReadonlyArray<Tu
   {
     kind: 'assistant_text',
     runId,
-    delta: 'Reading the retry loop and the comment.',
-    at: isoAgo({ minutes: 0.5 }),
-  },
-  {
-    kind: 'assistant_text',
-    runId,
-    delta: 'Capping the loop at five tries and adding jitter to every delay.',
+    delta:
+      'Reading the retry loop and the comment.\n\nCapping the loop at five tries and adding jitter to every delay.',
     at: isoAgo({ minutes: 0.3 }),
   },
 ];
