@@ -3,7 +3,7 @@ type Step = {
   readonly isDone: (element: HTMLElement) => boolean;
 };
 
-export type ChatWorkStage = 'drawer' | 'project' | 'add' | 'session';
+export type ChatWorkStage = 'drawer' | 'project' | 'add' | 'session' | 'started' | 'back';
 
 const isExpanded = (element: HTMLElement): boolean =>
   element.getAttribute('aria-expanded') === 'true';
@@ -32,6 +32,20 @@ const comboboxLabelled = (label: string): Step => ({
   isDone: isExpanded,
 });
 
+const landedButtonStartingWith = (prefix: string): Step => ({
+  find: () => {
+    if (document.querySelector('[data-scene-view="session"]') === null) {
+      return null;
+    }
+    return (
+      Array.from(document.querySelectorAll('button')).find((button) =>
+        button.getAttribute('aria-label')?.startsWith(prefix),
+      ) ?? null
+    );
+  },
+  isDone: () => false,
+});
+
 const STEPS: Readonly<Record<ChatWorkStage, ReadonlyArray<Step>>> = {
   drawer: [buttonWithText('Start work')],
   project: [buttonWithText('Start work'), comboboxLabelled('Project')],
@@ -40,6 +54,12 @@ const STEPS: Readonly<Record<ChatWorkStage, ReadonlyArray<Step>>> = {
     buttonWithText('Start work'),
     tabWithText('Add to a session'),
     comboboxLabelled('Session'),
+  ],
+  started: [buttonWithText('Start work'), buttonWithText('Start session')],
+  back: [
+    buttonWithText('Start work'),
+    buttonWithText('Start session'),
+    landedButtonStartingWith('Back to '),
   ],
 };
 
@@ -57,16 +77,22 @@ const isReachable = (element: HTMLElement): boolean =>
 export const driveChatWork = ({ stage }: DriveParams): (() => void) => {
   const steps = STEPS[stage];
   const clicked = new WeakSet<HTMLElement>();
+  const completed = new Set<Step>();
   const advance = (): void => {
     for (const step of steps) {
+      if (completed.has(step)) {
+        continue;
+      }
       const element = step.find();
       if (element === null || !isReachable(element)) {
         return;
       }
       if (step.isDone(element) || clicked.has(element)) {
+        completed.add(step);
         continue;
       }
       clicked.add(element);
+      completed.add(step);
       element.click();
     }
     observer.disconnect();
