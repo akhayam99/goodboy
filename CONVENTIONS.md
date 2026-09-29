@@ -73,18 +73,24 @@ Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md)
 
 ## CI pipeline
 
-The steps are in `.github/workflows/ci.yml`, in this order. All of them block. A warning never counts as green.
+`.github/workflows/ci.yml` runs five kinds of job. The required check `lint + typecheck + test + build` is the `gate` job. It passes only when every other job passed. A warning never counts as green.
 
-- `lint`: `turbo run lint --affected`. No package has a `lint` script and the repo has no eslint config, so this step checks nothing today. Root `pnpm lint` also runs `check:tauri-commands` and `check:doc-refs`.
-- `typecheck`: `turbo run typecheck --affected`, `tsc --noEmit` in each package.
-- `tauri commands`: `check:tauri-commands`. Every frontend `invoke` name is registered in `generate_handler!`, and every registered command is invoked somewhere.
-- `doc refs`: `check:doc-refs`. Outside fenced code, every relative link in a tracked doc must resolve, every backticked repo path must exist, and every backticked PascalCase, camelCase or SCREAMING_SNAKE name must occur in tracked source. Each allowlist entry carries a reason: `vocabulary` for words that are not code, `stale` for a known dead reference that another change removes. An unused entry fails, so the list only shrinks.
-- `knip`: unused files, duplicate exports, unlisted dependencies and declared dependencies nothing imports, across the repo.
-- `knip production`: walks `apps/desktop` from `src/main.tsx` over production code only (the `!` project patterns). Tests, `src/__tests__/`, `testing/` folders and `storyHarness.ts` are left out, so code that only its own tests keep alive fails as unused files, exports and types. Module-state test seams (`reset*`, `clear*`) and exports that another change still has to remove sit in `ignoreIssues` by file. That list only shrinks.
-- `test`: `turbo run test --affected`, vitest in every package.
-- `a11y`: `pnpm --filter @goodboy/desktop test:a11y`, axe over the smoke cases and every mock scene, compared to the violation baseline.
-- `build`: `turbo run build --affected`.
-- `pnpm audit --prod` (its own job): known vulnerabilities in production dependencies.
+- `changes`: on a pull request it diffs `HEAD^1..HEAD` on the merge ref (`scripts/ci-changes.mjs`). The tests are skipped only when every changed path is inert: `docs/**` except `docs/changelog/**` (a test reads its images), `website/**` except the four files `brand-mark-is-centered-in-its-tile.test.ts` reads (`website/src/components/Logo.tsx`, `website/src/styles.css`, `website/public/favicon.svg`, `website/scripts/build-brand-assets.mjs`), the images in `.github/` and the pull request template. `scripts/ci-changes.test.mjs` scans every test under `apps/desktop/src` and `packages/*/src` for `join` and `resolve` calls into `website` or `docs` and fails when one of those paths counts as inert, so a new test that reads the site cannot be skipped silently. Markdown is not inert by itself: `CHANGELOG.md` is imported as code and tests read it. A push to `main`, a merge group, an empty diff or an unreadable diff runs everything. The workflow has `permissions: contents: read` and also triggers on `merge_group`.
+- `checks`: always runs, one job, in this order. Every step blocks except `audit`.
+  - `typecheck`: `turbo run typecheck`, `tsc --noEmit` in each package.
+  - `tauri commands`: `check:tauri-commands`. Every frontend `invoke` name is registered in `generate_handler!`, and every registered command is invoked somewhere.
+  - `doc refs`: `check:doc-refs`. Outside fenced code, every relative link in a tracked doc must resolve, every backticked repo path must exist, and every backticked PascalCase, camelCase or SCREAMING_SNAKE name must occur in tracked source. Each allowlist entry carries a reason: `vocabulary` for words that are not code, `stale` for a known dead reference that another change removes. An unused entry fails, so the list only shrinks.
+  - `script tests`: `test:scripts`, `node --test` over the scripts, including the gate and the change classifier.
+  - `knip`: unused files, duplicate exports, unlisted dependencies and declared dependencies nothing imports, across the repo.
+  - `knip production`: walks `apps/desktop` from `src/main.tsx` over production code only (the `!` project patterns). Tests, `src/__tests__/`, `testing/` folders and `storyHarness.ts` are left out, so code that only its own tests keep alive fails as unused files, exports and types. Module-state test seams (`reset*`, `clear*`) and exports that another change still has to remove sit in `ignoreIssues` by file. That list only shrinks.
+  - `test shards cover every file`: `scripts/check-test-shards.mjs` replays vitest's sharding and fails unless the four desktop shards list every unit test file exactly once. Vitest slices the hash-sorted file list, so coverage holds by construction. The check guards an empty shard and a custom sequencer that drops or repeats a file.
+  - `build`: `vite build` of the desktop app. The type check already ran in `typecheck`; `pnpm build` (`tsc -b && vite build`) stays for `tauri build`.
+  - `audit`: `pnpm audit --prod`. It reports but does not block, so a new advisory never stops an unrelated pull request. The step times out after 2 minutes and a failure prints a `::warning::`.
+- `test-desktop`: four parallel shards, `vitest run --project unit --shard=i/4`, `fail-fast: false`. Skipped when `changes` says so.
+- `test-packages`: `turbo run test` over `packages/*`, then the `a11y` suite (`pnpm --filter @goodboy/desktop test:a11y`, axe over the smoke cases and every mock scene, compared to the violation baseline). Skipped when `changes` says so. `a11y` runs with `--no-passWithNoTests`.
+- `gate`: `if: always()`, reads `needs` (`scripts/ci-gate.mjs`). It judges every key of `needs`, and `gate.needs` must list every other job of the workflow (a script test checks it). Red unless `changes` succeeded and every other job succeeded, or the test jobs were skipped because `changes` output `tests=false`. A missing or empty `tests` output is red. A cancelled, failed or otherwise skipped job is red.
+
+The shared setup (pnpm, Node 22, frozen install) lives in `.github/actions/setup-workspace`. The checkout stays in each job. The Turbo cache is restored in `checks` on pull requests and saved only on `main`, so pull requests add no Turbo cache entries. The pnpm store cache from `setup-node` is separate: each job saves it when the lockfile key misses.
 
 Outside `ci.yml`, `website.yml` builds `website/` (`pnpm install --ignore-workspace --frozen-lockfile && pnpm build`) on pull requests that touch it. It is not a required check, because a required check with a path filter blocks unrelated pull requests as "expected". `rust.yml` runs `cargo fmt --check` and `clippy` as advisory (`continue-on-error`). Only `cargo test --locked` blocks. `main` is not clean under fmt or clippy.
 

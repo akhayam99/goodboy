@@ -17,6 +17,10 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 - For hooks: `renderHook` from `@testing-library/react`.
 - Some suites have a per-test hook that dynamically `import()`s a large module graph. Such a suite loads that import once in `beforeAll`, with a timeout that fits it. Never in `beforeEach`. There, the import cost lands on whichever test runs first, and on a busy machine it goes past the 15s hook timeout in `apps/desktop/vitest.config.ts`. Never raise the global timeouts to hide it.
 
+## Desktop unit tests run in four shards
+
+CI splits the desktop `unit` project with `vitest run --project unit --shard=i/4`. Vitest sorts the files by the hash of their path and cuts the list into four equal slices, so adding or removing a test file can move other files to a different shard. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/4`. `node scripts/check-test-shards.mjs` runs in the `checks` job. Coverage holds by construction, so it guards an empty shard and a custom sequencer that drops or repeats a file.
+
 ## Store tests share one harness
 
 Every desktop test that loads the real store goes through `apps/desktop/src/store/storyHarness.ts`. It is the only file allowed to `import()` the store module.
@@ -28,7 +32,7 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 
 ## Accessibility suite
 
-`apps/desktop/src/__tests__/a11y/` runs as its own vitest project: `pnpm --filter @goodboy/desktop test:a11y` (CI step `a11y`, blocking). `pnpm test` skips it to stay fast.
+`apps/desktop/src/__tests__/a11y/` runs as its own vitest project: `pnpm --filter @goodboy/desktop test:a11y` (CI job `packages tests + a11y`, blocking). `pnpm test` skips it to stay fast.
 
 - Every case calls `expectBaseline({ name, container })`, which runs axe and compares the sorted violation ids to `A11Y_BASELINE` in `baseline.ts`. A new violation fails; a fixed one also fails until its id is deleted from the baseline. The baseline only shrinks: never add an entry to silence a violation you introduced. Delete the file when it is empty.
 - `scenes.test.tsx` renders every entry of `MOCK_SCENES` (the tracked registry in `app/components/MockScene/index.tsx`) with a fresh store and a Tauri bridge that never answers, so a new scene is scanned the day it is registered. Timers are fake while the scene mounts: the test advances them until the scene's scripted clicks and reveals have run, then restores real timers before axe, so no scene timer mutates the DOM mid-scan and the result is the same in isolation, filtered, or in the full run.
