@@ -45,7 +45,6 @@
     "packages/core/src/planner/parser.ts": 1,
     "packages/core/src/providers/shared/anthropic-envelope-parser.ts": 3,
     "packages/core/src/skills/executor.ts": 1,
-    "packages/core/src/skills/parser.ts": 2,
     "packages/core/src/skills/slash.ts": 1,
     "packages/ui/src/components/Dialog.tsx": 2,
     "packages/ui/src/components/Markdown/parseInline.ts": 1,

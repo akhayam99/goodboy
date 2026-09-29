@@ -16,8 +16,6 @@ export type GhRunner = {
   run(args: ReadonlyArray<string>, opts?: GhRunOptions): Promise<GhResult>;
 };
 
-export const DEFAULT_GH_TIMEOUT_MS = 8_000;
-
 export class GhCliError extends Error {
   readonly stderr: string;
   readonly exitCode: number;

@@ -8,14 +8,6 @@ export type RoleLibraryEntry = Readonly<{
   aliases: ReadonlyArray<string>;
 }>;
 
-export const ROLE_LIBRARY_GROUPS = [
-  'Engineering',
-  'Data and AI',
-  'Lead',
-  'Product and design',
-  'Other',
-] satisfies ReadonlyArray<RoleLibraryGroup>;
-
 export const ROLE_LIBRARY = [
   {
     id: 'software-engineer',

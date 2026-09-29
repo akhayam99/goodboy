@@ -265,7 +265,6 @@ export {
   updateSessionWorktreeRepoSlug,
   listAllSessionWorktrees,
   detachSessionMounts,
-  listArchivedSessionMounts,
   listMountPathOwnership,
   type MountDetachment,
   type MountPathOwnership,

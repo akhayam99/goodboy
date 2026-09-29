@@ -221,12 +221,7 @@ export {
 
 export { classifyFirstTurn, type AgentKindLabel } from './first-turn-classifier';
 
-export {
-  ROLE_LIBRARY,
-  ROLE_LIBRARY_GROUPS,
-  type RoleLibraryEntry,
-  type RoleLibraryGroup,
-} from './profile/roleLibrary';
+export { ROLE_LIBRARY, type RoleLibraryEntry, type RoleLibraryGroup } from './profile/roleLibrary';
 export { matchRoleLibrary } from './profile/matchRoleLibrary';
 export { PROFILE_ACCESS, type ProfileAudience, type ProfileField } from './profile/profileAccess';
 
@@ -403,8 +398,6 @@ export { CURSOR_AUTO_MODEL, CURSOR_DEFAULT_MODEL, CURSOR_MODELS } from './provid
 export { parseCursorStreamLine } from './providers/cursor/parser';
 
 export {
-  SkillParseError,
-  parseSkillMarkdown,
   parseSlashCommand,
   serializeSkillMarkdown,
   SkillExecutor,
@@ -412,16 +405,14 @@ export {
   type SkillScriptRunner,
 } from './skills';
 
-export { CODEX_DEFAULT_MODEL, CODEX_MODELS } from './providers/codex/constants';
 export { computeCodexCostUsd } from './providers/codex/cost';
 export { parseJsonLine as parseCodexJsonLine } from './providers/codex/parser';
 
-export { OPENCODE_MODELS } from './providers/opencode/constants';
 export { OPENROUTER_MODELS } from './providers/openrouter/constants';
 export { computeOpenCodeCostUsd } from './providers/opencode/cost';
 export { parseJsonLine as parseOpenCodeJsonLine } from './providers/opencode/parser';
 
-export { GEMINI_DEFAULT_MODEL, GEMINI_MODELS } from './providers/gemini/constants';
+export { GEMINI_DEFAULT_MODEL } from './providers/gemini/constants';
 export { computeGeminiCostUsd } from './providers/gemini/cost';
 export { parseJsonLine as parseGeminiJsonLine } from './providers/gemini/parser';
 
@@ -503,7 +494,6 @@ export {
   PermissionEngine,
   type PermissionEngineDeps,
   parseToolPattern,
-  parseArgsMatcher,
   formatToolPattern,
   type ToolMatcher,
   buildClaudeFlags,
@@ -524,7 +514,6 @@ export { resolveSettings, type ResolveSettingsInput } from './settings/resolver'
 export { devWarn } from './dev-log';
 
 export {
-  DEFAULT_GH_TIMEOUT_MS,
   DEFAULT_PR_CACHE_TTL_MS,
   GhCliError,
   GhJsonParseError,
