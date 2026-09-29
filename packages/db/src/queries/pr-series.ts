@@ -268,24 +268,80 @@ export const upsertPrSeriesMember = async ({
   );
 };
 
+type MembershipRow = {
+  readonly memberId: PrSeriesMember['id'];
+  readonly memberSeriesId: PrSeriesId;
+  readonly memberMountId: MountId | null;
+  readonly memberBranch: string | null;
+  readonly memberOrdinal: number;
+  readonly memberLabel: string;
+  readonly memberStatus: PrSeriesMemberStatus;
+  readonly memberCreatedAt: number;
+  readonly memberUpdatedAt: number;
+  readonly seriesId: PrSeriesId;
+  readonly seriesSessionId: SessionId;
+  readonly seriesProjectId: ProjectId;
+  readonly seriesName: string;
+  readonly seriesWorkItemIdentifier: string | null;
+  readonly seriesWorkItemUrl: string | null;
+  readonly seriesPlannedCount: number | null;
+  readonly seriesParentRequest: string | null;
+  readonly seriesCreatedAt: number;
+  readonly seriesUpdatedAt: number;
+};
+
+const MEMBERSHIP_COLUMNS = `member.id AS memberId, member.series_id AS memberSeriesId,
+    member.mount_id AS memberMountId, member.branch AS memberBranch,
+    member.ordinal AS memberOrdinal, member.label AS memberLabel, member.status AS memberStatus,
+    member.created_at AS memberCreatedAt, member.updated_at AS memberUpdatedAt,
+    series.id AS seriesId, series.session_id AS seriesSessionId,
+    series.project_id AS seriesProjectId, series.name AS seriesName,
+    series.work_item_identifier AS seriesWorkItemIdentifier,
+    series.work_item_url AS seriesWorkItemUrl, series.planned_count AS seriesPlannedCount,
+    series.parent_request_json AS seriesParentRequest,
+    series.created_at AS seriesCreatedAt, series.updated_at AS seriesUpdatedAt`;
+
+const toMembership = (row: MembershipRow): PrSeriesMembership => ({
+  series: toSeries({
+    id: row.seriesId,
+    sessionId: row.seriesSessionId,
+    projectId: row.seriesProjectId,
+    name: row.seriesName,
+    workItemIdentifier: row.seriesWorkItemIdentifier,
+    workItemUrl: row.seriesWorkItemUrl,
+    plannedCount: row.seriesPlannedCount,
+    parentRequest: row.seriesParentRequest,
+    createdAt: row.seriesCreatedAt,
+    updatedAt: row.seriesUpdatedAt,
+  }),
+  member: toMember({
+    id: row.memberId,
+    seriesId: row.memberSeriesId,
+    mountId: row.memberMountId,
+    branch: row.memberBranch,
+    ordinal: row.memberOrdinal,
+    label: row.memberLabel,
+    status: row.memberStatus,
+    createdAt: row.memberCreatedAt,
+    updatedAt: row.memberUpdatedAt,
+  }),
+});
+
 export const findPrSeriesMembership = async ({
   db,
   sessionId,
   mountId,
   branch,
 }: FindPrSeriesMembershipParams): Promise<PrSeriesMembership | null> => {
-  const rows = await db.select<MemberRow>(
-    `SELECT ${MEMBER_COLUMNS} FROM pr_series_members
-     WHERE mount_id = ? AND branch = ? AND status != 'omitted'
-     ORDER BY ordinal`,
-    [mountId, branch],
+  const rows = await db.select<MembershipRow>(
+    `SELECT ${MEMBERSHIP_COLUMNS}
+     FROM pr_series_members member
+     JOIN pr_series series ON series.id = member.series_id AND series.session_id = ?
+     WHERE member.mount_id = ? AND member.branch = ? AND member.status != 'omitted'
+     ORDER BY member.ordinal, member.id
+     LIMIT 1`,
+    [sessionId, mountId, branch],
   );
-  for (const row of rows) {
-    const member = toMember(row);
-    const series = await getPrSeries({ db, sessionId, seriesId: member.seriesId });
-    if (series !== null) {
-      return { series, member };
-    }
-  }
-  return null;
+  const row = rows[0];
+  return row === undefined ? null : toMembership(row);
 };

@@ -19,6 +19,7 @@ import {
   getPrSeries,
   insertPrSeries,
   listPrSeries,
+  listPrSeriesMembers,
   upsertPrSeriesMember,
 } from './pr-series';
 
@@ -335,5 +336,122 @@ describe('pr series', () => {
       [seriesId, ['m-a1', 'm-a2']],
       [otherId, ['m-b1']],
     ]);
+  });
+});
+
+describe('finding a series membership', () => {
+  const branch = 'ak/admin-patient-header';
+  const otherSessionId = 'session-other' as SessionId;
+  const laterId = 'series-later' as PrSeriesId;
+  const omittedId = 'series-omitted' as PrSeriesId;
+  const foreignId = 'series-foreign' as PrSeriesId;
+
+  const seedCrowdedMount = async (): Promise<MountId> => {
+    const mountId = await seedMount({ db, id: 'mount-1', branch });
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at)
+       VALUES (?, ?, 'Another split', 'idle', ?, ?)`,
+      [otherSessionId, workspaceId, now, now],
+    );
+    await insertPrSeries({
+      db,
+      series: series({ id: foreignId, sessionId: otherSessionId, name: 'foreign' }),
+    });
+    await insertPrSeries({ db, series: series({ workItemIdentifier: 'ENG-3240' }) });
+    await insertPrSeries({ db, series: series({ id: laterId, name: 'later' }) });
+    await insertPrSeries({ db, series: series({ id: omittedId, name: 'omitted' }) });
+    const entries = [
+      { id: 'm-foreign', seriesId: foreignId, ordinal: 1, status: 'active' as const },
+      { id: 'm-omitted', seriesId: omittedId, ordinal: 1, status: 'omitted' as const },
+      { id: 'm-first', seriesId, ordinal: 2, status: 'active' as const },
+      { id: 'm-later', seriesId: laterId, ordinal: 3, status: 'planned' as const },
+    ];
+    for (const entry of entries) {
+      await upsertPrSeriesMember({
+        db,
+        member: member({
+          id: entry.id as PrSeriesMemberId,
+          seriesId: entry.seriesId,
+          ordinal: entry.ordinal,
+          status: entry.status,
+          label: `${entry.ordinal}/6`,
+          mountId,
+          branch,
+        }),
+      });
+    }
+    return mountId;
+  };
+
+  type LegacyParams = {
+    readonly db: Database;
+    readonly sessionId: SessionId;
+    readonly mountId: MountId;
+    readonly branch: string;
+  };
+
+  const legacyMembership = async (params: LegacyParams) => {
+    const rows = await params.db.select<{ readonly id: string; readonly seriesId: PrSeriesId }>(
+      `SELECT id, series_id AS seriesId FROM pr_series_members
+       WHERE mount_id = ? AND branch = ? AND status != 'omitted'
+       ORDER BY ordinal`,
+      [params.mountId, params.branch],
+    );
+    for (const row of rows) {
+      const found = await getPrSeries({
+        db: params.db,
+        sessionId: params.sessionId,
+        seriesId: row.seriesId,
+      });
+      if (found !== null) {
+        const members = await listPrSeriesMembers({ db: params.db, seriesId: row.seriesId });
+        return { series: found, member: members.find((entry) => entry.id === row.id) };
+      }
+    }
+    return null;
+  };
+
+  it('returns what one query per candidate row used to return', async () => {
+    const mountId = await seedCrowdedMount();
+    const lookups: ReadonlyArray<LegacyParams> = [
+      { db, sessionId, mountId, branch },
+      { db, sessionId: otherSessionId, mountId, branch },
+      { db, sessionId, mountId, branch: 'ak/admin-other' },
+      { db, sessionId: 'session-unknown' as SessionId, mountId, branch },
+    ];
+
+    for (const lookup of lookups) {
+      const found = await findPrSeriesMembership(lookup);
+      expect(found).toEqual(await legacyMembership(lookup));
+    }
+    const own = await findPrSeriesMembership({ db, sessionId, mountId, branch });
+    expect(own?.member.id).toBe('m-first');
+    expect(own?.series.workItemIdentifier).toBe('ENG-3240');
+    const foreign = await findPrSeriesMembership({
+      db,
+      sessionId: otherSessionId,
+      mountId,
+      branch,
+    });
+    expect(foreign?.member.id).toBe('m-foreign');
+  });
+
+  it('asks the database once however many members sit on the branch', async () => {
+    const mountId = await seedCrowdedMount();
+    let selects = 0;
+    const counting: Database = {
+      exec: (sql) => db.exec(sql),
+      execute: (sql, params) => db.execute(sql, params),
+      select: <T>(sql: string, params?: ReadonlyArray<unknown>) => {
+        selects += 1;
+        return db.select<T>(sql, params);
+      },
+      transaction: (params) => db.transaction(params),
+    };
+
+    const found = await findPrSeriesMembership({ db: counting, sessionId, mountId, branch });
+
+    expect(found?.member.id).toBe('m-first');
+    expect(selects).toBe(1);
   });
 });
