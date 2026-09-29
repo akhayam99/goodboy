@@ -419,13 +419,15 @@ describe('completeResolvedAgent', () => {
   });
 
   it('persists the resolver outcome before the summary and the agent status update', async () => {
-    const { state, set, get } = createHarness({});
+    const { state, set, get, actions } = createHarness({});
     const order: Array<string> = [];
-    const persist = state.persistResolveTurn;
-    state.persistResolveTurn = async (params) => {
-      order.push('persist');
-      await persist(params);
-    };
+    const persist = actions.persistResolveTurn;
+    Object.assign(state, {
+      persistResolveTurn: async (params: Parameters<typeof persist>[0]) => {
+        order.push('persist');
+        await persist(params);
+      },
+    });
     h.summarizeStepOutput.mockImplementationOnce(async () => {
       order.push('summary');
       return 'the model summary';

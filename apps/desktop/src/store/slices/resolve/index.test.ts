@@ -26,7 +26,7 @@ import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
 import { createResolveThread } from './createResolveThread';
 import { threadOutcome } from './threadOutcome';
-import { markTurnActive, markTurnSettled } from '../turn/turnSettled';
+import { SETTLE_CEILING_MS, markTurnActive, markTurnSettled } from '../turn/turnSettled';
 
 const h = vi.hoisted(() => ({
   execute: vi.fn(),
@@ -410,6 +410,45 @@ describe('durable resolve store', () => {
       PRRT_2: { kind: 'wontfix', reason: 'intentional' },
     });
     expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('finished');
+  });
+
+  it('stops trusting a leaked turn mark once the process has been gone past the ceiling', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+      isCandidate: true,
+      attemptId,
+    });
+    markTurnActive({ agentId: AGENT_ID });
+    const realNow = Date.now();
+    const clock = vi.spyOn(Date, 'now');
+    try {
+      clock.mockReturnValue(realNow);
+      await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+      expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('running');
+      clock.mockReturnValue(realNow + SETTLE_CEILING_MS + 1);
+      await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+      expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('failed');
+      expect(
+        live.get().sessionResolveThreads[SESSION_ID]?.every((row) => row.state === 'failed'),
+      ).toBe(true);
+    } finally {
+      clock.mockRestore();
+      markTurnSettled({ agentId: AGENT_ID });
+    }
   });
 
   it('records a committed outcome that arrives after reconcile already marked the attempt interrupted', async () => {
