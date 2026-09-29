@@ -2,7 +2,7 @@
 
 > **Read this when** you're writing code inside `@goodboy/core` and need to know what belongs here and how it is built. **Not for** process rules for the whole repo (`CONVENTIONS.md`) or TypeScript style (`docs/typescript/`).
 
-Pure TypeScript logic that the desktop webview imports directly. **No React. No Tauri APIs. No DOM.** The main entry (`src/index.ts`) must run in the webview, in Node, and in tests without changes. Only `@goodboy/core/node` (`src/node.ts`, the git worktree helpers) may import `node:` modules.
+Pure TypeScript logic that the desktop webview imports directly. **No React. No Tauri APIs. No DOM.** The main entry (`src/index.ts`) must run in the webview, in Node, and in tests without changes. No `node:` imports in production code.
 
 ## Boundaries
 
