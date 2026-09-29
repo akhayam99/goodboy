@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { registerEscapeLayer } from '@goodboy/ui';
 import { ImageLightbox } from './index';
 
 afterEach(cleanup);
@@ -30,5 +31,37 @@ describe('ImageLightbox', () => {
     render(<ImageLightbox src="img.png" alt="x" onClose={onClose} />);
     fireEvent.click(screen.getByAltText('x'));
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('closes on Escape, and leaves it to a layer opened above it', () => {
+    vi.useFakeTimers();
+    const onClose = vi.fn();
+    const closeAbove = vi.fn();
+    render(<ImageLightbox src="img.png" alt="x" onClose={onClose} />);
+    const offAbove = registerEscapeLayer(closeAbove);
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+    expect(closeAbove).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
+
+    offAbove();
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    act(() => {
+      vi.advanceTimersByTime(250);
+    });
+    expect(onClose).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it('frees the page scroll again once it unmounts', () => {
+    const view = render(<ImageLightbox src="img.png" alt="x" onClose={vi.fn()} />);
+    expect(document.body.style.overflow).toBe('hidden');
+
+    view.unmount();
+
+    expect(document.body.style.overflow).toBe('');
   });
 });

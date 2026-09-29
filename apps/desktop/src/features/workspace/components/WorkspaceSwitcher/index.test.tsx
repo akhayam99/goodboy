@@ -85,6 +85,38 @@ describe('WorkspaceSwitcher', () => {
     expect(state.openWorkspace).toHaveBeenCalledWith({ id: 'ws-b', title: 'bravo' });
   });
 
+  it.each([{ metaKey: true }, { ctrlKey: true }])(
+    'opens the picked workspace in a new window on %o and Enter',
+    async (modifier) => {
+      const onClose = vi.fn();
+      render(<WorkspaceSwitcher onClose={onClose} />);
+
+      fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or project'), {
+        key: 'Enter',
+        ...modifier,
+      });
+
+      await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+      expect(state.openWorkspace).toHaveBeenCalledWith({
+        id: 'ws-b',
+        title: 'bravo',
+        target: 'new-window',
+      });
+    },
+  );
+
+  it('opens the picked workspace here on a bare Enter', async () => {
+    const onClose = vi.fn();
+    render(<WorkspaceSwitcher onClose={onClose} />);
+
+    fireEvent.keyDown(screen.getByPlaceholderText('Find a workspace or project'), {
+      key: 'Enter',
+    });
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(state.openWorkspace).toHaveBeenCalledWith({ id: 'ws-b', title: 'bravo' });
+  });
+
   it('shows an inline confirm instead of switching when opening asks for one', async () => {
     state.openWorkspace = vi.fn(async () => ({ kind: 'needs-confirm' as const, running: 2 }));
     const onClose = vi.fn();

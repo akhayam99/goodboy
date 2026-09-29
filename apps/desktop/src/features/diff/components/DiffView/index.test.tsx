@@ -395,6 +395,23 @@ describe('DiffView navigation', () => {
     expect(screen.queryByRole('combobox')).toBeNull();
   });
 
+  it('leaves T to a modal dialog that opened over the diff', () => {
+    render(
+      <div>
+        <div role="dialog" aria-modal="true" aria-label="Preview" />
+        <DiffView files={[LEDGER]} />
+      </div>,
+    );
+    fireEvent.keyDown(window, { code: 'KeyT', key: 't' });
+    expect(screen.queryByRole('combobox')).toBeNull();
+  });
+
+  it('leaves T alone while shift is held', () => {
+    render(<DiffView files={[LEDGER]} />);
+    fireEvent.keyDown(window, { code: 'KeyT', key: 'T', shiftKey: true });
+    expect(screen.queryByRole('combobox')).toBeNull();
+  });
+
   it('keeps the peek free of the toolbar and shortcuts', () => {
     render(<DiffView files={[LEDGER]} presentation="peek" />);
     expect(screen.queryByRole('button', { name: /files/ })).toBeNull();

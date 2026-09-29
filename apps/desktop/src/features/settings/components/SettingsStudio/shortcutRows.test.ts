@@ -29,6 +29,14 @@ describe('shortcutRows', () => {
     expect(labels).toContain('Slack threads');
   });
 
+  it('lists the diff keys under their own group', () => {
+    expect(shortcutRows({ group: 'diff' }).map((row) => row.first)).toEqual([
+      'diff.jump',
+      'diff.previousFile',
+      'diff.nextFile',
+    ]);
+  });
+
   it('lays every group out exactly once across the columns', () => {
     const groups = SHORTCUT_COLUMNS.flat();
     const registered = new Set(Object.values(SHORTCUTS).map((entry) => entry.group));

@@ -35,6 +35,15 @@ describe('escape layers', () => {
     expect(closeUnder).not.toHaveBeenCalled();
   });
 
+  it('reads the key name as well as the physical code', () => {
+    const close = vi.fn();
+    layer(close);
+
+    press({ code: '', key: 'Escape' });
+
+    expect(close).toHaveBeenCalledOnce();
+  });
+
   it('leaves the key alone when nothing is open', () => {
     expect(press().defaultPrevented).toBe(false);
   });

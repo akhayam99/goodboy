@@ -2,6 +2,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { formatCombo } from '../../../../shared/keyboard/registry';
 import { FirstSessionStep } from './FirstSessionStep';
 
 afterEach(cleanup);
@@ -42,6 +43,33 @@ describe('FirstSessionStep', () => {
     fireEvent.click(screen.getByRole('button', { name: /start scout/i }));
     expect(onStartScout).toHaveBeenCalledWith(
       "Find one small bug in ledger-core and propose a fix. Don't change any files yet.",
+    );
+  });
+
+  it.each([{ metaKey: true }, { ctrlKey: true }])('starts Scout on %o and Enter', (modifier) => {
+    const { onStartScout } = renderStep();
+    const field = screen.getByRole('textbox', { name: 'What Scout should do' });
+
+    fireEvent.keyDown(field, { key: 'Enter', ...modifier });
+
+    expect(onStartScout).toHaveBeenCalledOnce();
+  });
+
+  it('does not start Scout on a bare Enter', () => {
+    const { onStartScout } = renderStep();
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'What Scout should do' }), {
+      key: 'Enter',
+    });
+
+    expect(onStartScout).not.toHaveBeenCalled();
+  });
+
+  it('names the start chord the way this platform spells it', () => {
+    renderStep();
+
+    expect(screen.getByRole('button', { name: /start scout/i }).textContent).toContain(
+      formatCombo('cmd+Enter'),
     );
   });
 

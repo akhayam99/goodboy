@@ -6,7 +6,11 @@ const stack: Layer[] = [];
 let listening = false;
 
 const onKeyDown = (event: KeyboardEvent): void => {
-  if (event.code !== 'Escape' || event.defaultPrevented || event.isComposing) {
+  if (
+    (event.code !== 'Escape' && event.key !== 'Escape') ||
+    event.defaultPrevented ||
+    event.isComposing
+  ) {
     return;
   }
   if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {

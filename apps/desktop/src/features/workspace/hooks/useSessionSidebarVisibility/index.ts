@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEscapeLayer } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 
 type Params = {
@@ -144,19 +145,12 @@ export const useSessionSidebarVisibility = ({ hasActiveSession }: Params) => {
     closePeek();
   }, [closePeek, hasActiveSession, isCollapsed]);
 
-  useEffect(() => {
-    if (!isPeeking) {
+  useEscapeLayer(() => {
+    if (holdCount.current > 0) {
       return;
     }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || holdCount.current > 0) {
-        return;
-      }
-      closePeek();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [closePeek, isPeeking]);
+    closePeek();
+  }, isPeeking);
 
   useEffect(() => {
     return () => {

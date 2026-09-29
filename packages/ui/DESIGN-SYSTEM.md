@@ -654,6 +654,11 @@ A popover opened from inside the command palette does not need a higher token.
 palette's own layer, so the popover stacks at `z-popover` within the palette's
 `z-command-palette` context and renders above its panel.
 
+`useDropdown` also holds an escape layer while its popover is open, so Esc closes
+the popover before whatever it opened from, and it returns focus to the trigger
+when Esc closed it from inside. Pass `isEscapeEnabled: false` only when the
+surface must keep Esc for itself.
+
 ## Primitives
 
 The register taxonomy, and the rule that all registers share one family, live

@@ -156,7 +156,7 @@ describe('NowChip', () => {
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
   });
 
-  it('opens on the named popover layer and closes on escape and on the backdrop', async () => {
+  it('opens on the named popover layer, closes on escape with focus back, and on the backdrop', async () => {
     hooks.groups = [{ key: 'attention', sessions: [NEEDS] }];
     render(<NowChip onOpenScript={vi.fn()} />);
 
@@ -167,7 +167,7 @@ describe('NowChip', () => {
       fireEvent.keyDown(window, { key: 'Escape' });
     });
     expect(screen.queryByRole('dialog', { name: 'Now' })).toBeNull();
-    expect(document.activeElement).not.toBe(trigger());
+    expect(document.activeElement).toBe(trigger());
 
     await open();
     const backdrop = document.body.querySelector('.z-popover-backdrop');

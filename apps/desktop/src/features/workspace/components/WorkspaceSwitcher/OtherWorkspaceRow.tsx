@@ -6,6 +6,7 @@ import { linkedProjectsLabel } from '../../linkedProjectsLabel';
 import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
 import { workspaceAccent } from '../../color';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { formatCombo } from '../../../../shared/keyboard/registry';
 import { useWorkspaceWindowState } from './useWorkspaceWindowState';
 
 type Props = {
@@ -62,7 +63,7 @@ export const OtherWorkspaceRow = ({ workspace, highlighted, onOpen, onOpenNewWin
         Open
         <KbdPill>↵</KbdPill>
       </button>
-      <Tooltip content="Open in new window (⌘↵)">
+      <Tooltip content={`Open in new window (${formatCombo('cmd+Enter')})`}>
         <button
           type="button"
           onClick={onOpenNewWindow}

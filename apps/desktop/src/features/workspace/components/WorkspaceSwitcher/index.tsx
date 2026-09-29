@@ -11,6 +11,7 @@ import {
 import { filterWorkspaces, sortWorkspacesByRecent } from '../../recent';
 import { openSettings } from '../../../settings/openSettings';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import { CurrentWorkspaceRow } from './CurrentWorkspaceRow';
 import { OtherWorkspaceRow } from './OtherWorkspaceRow';
 import { DisconnectedWorkspaces } from './DisconnectedWorkspaces';
@@ -120,7 +121,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
       setActiveIndex((i) => Math.max(i - 1, 0));
       return;
     }
-    if (e.key === 'Enter' && e.metaKey) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       const picked = filtered[activeIndex];
       if (picked !== undefined) {
@@ -150,7 +151,7 @@ export const WorkspaceSwitcher = ({ onClose }: Props) => {
           aria-label="Find a workspace or project"
           className="flex-1 bg-transparent text-label focus-visible:outline-none"
         />
-        <KbdPill>⌘O</KbdPill>
+        <KbdPill>{shortcutGlyphs('workspace.switcher')}</KbdPill>
       </div>
       <Divider />
       <ScrollFade
