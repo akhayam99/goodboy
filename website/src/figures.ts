@@ -20,6 +20,7 @@ const PHONE_WIDTHS = [732, 1098, 1464] as const;
 type FrameParams = {
   readonly id: string;
   readonly height?: number;
+  readonly phoneHeight?: number;
   readonly alt: string;
 };
 
@@ -32,9 +33,9 @@ type FragmentParams = {
   readonly alt: string;
 };
 
-const frame = ({ id, height = 2145, alt }: FrameParams): FrameFigure => ({
+const frame = ({ id, height = 2145, phoneHeight = 1830, alt }: FrameParams): FrameFigure => ({
   source: { id, widths: FRAME_WIDTHS, width: 3432, height },
-  phone: { id: `${id}-phone`, widths: PHONE_WIDTHS, width: 1464, height: 1830 },
+  phone: { id: `${id}-phone`, widths: PHONE_WIDTHS, width: 1464, height: phoneHeight },
   alt,
 });
 
@@ -65,12 +66,14 @@ export const HERO_SESSION = frame({
 
 export const RUN_AGENTS = frame({
   id: 'run-agents',
+  phoneHeight: 1408,
   alt: 'A workflow run on the duplicate credit fix: the run header, the orchestrator and the agents by role, each with its model and cost',
 });
 
 export const BOARD = frame({
   id: 'board',
   height: 1430,
+  phoneHeight: 1408,
   alt: 'The Harborline board: sessions in Building, Running, Needs you and In review, each card with its pull request and its cost',
 });
 
@@ -106,12 +109,14 @@ export const DEV_DIFF = fragment({
 
 export const DEV_HISTORY = frame({
   id: 'dev-history',
+  phoneHeight: 1408,
   alt: 'Rewrite history on payments-api hl/fix-duplicate-credit: a backup to restore, the branch as it is now with two fixups folding into their commits, and the three commits it becomes after Apply',
 });
 
 export const RUN_CANVAS = frame({
   id: 'run-canvas',
   height: 1841,
+  phoneHeight: 1408,
   alt: 'The step graph of the duplicate credit fix run: the orchestrator waiting on step 1, three scouts working at the same time with one done, and the plan, two implementers and the tester still to come',
 });
 
