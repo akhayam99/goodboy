@@ -5,6 +5,7 @@ import {
   REVIEW_STATE_FILTER_LABEL,
   type ReviewStateFilter,
 } from '../../reviewCommentState';
+import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { REVIEW_FLOW_LABEL } from '../../reviewFlowCopy';
 
 type Props = {
@@ -33,7 +34,7 @@ export const ReviewListMenu = ({ filter, onFilter }: Props) => {
       <OverflowMenu
         items={items}
         label={REVIEW_FLOW_LABEL.listMenu}
-        trigger={<ListFilter size={13} aria-hidden />}
+        trigger={<ListFilter size={ICON_SIZE.control} aria-hidden />}
         triggerClassName={cn(filter !== 'all' && 'text-foreground')}
       />
     </div>
