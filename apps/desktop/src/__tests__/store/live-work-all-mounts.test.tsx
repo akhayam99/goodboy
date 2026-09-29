@@ -12,7 +12,7 @@ import type {
   TurnState,
   Workspace,
 } from '@goodboy/types';
-import { aSession, aWorkspace, anAgent, TEST_NOW } from '@goodboy/types/testing';
+import { aSession, aWorkflowRun, aWorkspace, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -327,6 +327,47 @@ describe('live work across every mount of a session', () => {
     expect(view.stage()).toMatchObject({ stage: 'attention', attention: 'needs-approval' });
     expect(view.columnOf()).toBe('attention');
     expect(view.chipLabel()).toBe('1 session needs you');
+    expect(view.here()).toBe(1);
+    expect(view.footer()).toBe(1);
+  });
+
+  it('keeps a merged request on one mount from hiding an open failing one on the other', () => {
+    useAppStore.setState({
+      mountGithub: {
+        [MOUNT_ONE]: githubMount({
+          mountId: MOUNT_ONE,
+          projectId: PROJECT_ONE,
+          pr: pullRequest({ number: 3, state: 'merged' }),
+        }),
+        [MOUNT_TWO]: githubMount({
+          mountId: MOUNT_TWO,
+          projectId: PROJECT_TWO,
+          pr: pullRequest({ number: 8, checks: 'failure' }),
+        }),
+      },
+    });
+    const view = surfaces();
+
+    expect(view.stage()).toMatchObject({
+      attention: 'ci-failed',
+      reason: 'PR #8: CI failed',
+    });
+    expect(view.columnOf()).toBe('attention');
+    expect(view.chipLabel()).toBe('1 session needs you');
+  });
+
+  it('shows work that is only deciding its next step on the stage, the board and the chip', () => {
+    const run = aWorkflowRun();
+    session = { ...session, workflowRuns: [run] };
+    useAppStore.setState({
+      sessions: [session],
+      orchestratingWorkflowRuns: { [run.id]: true },
+    });
+    const view = surfaces();
+
+    expect(view.stage()).toMatchObject({ stage: 'running', reason: 'deciding the next step' });
+    expect(view.columnOf()).toBe('running');
+    expect(view.chipLabel()).toBe('1 running');
     expect(view.here()).toBe(1);
     expect(view.footer()).toBe(1);
   });
