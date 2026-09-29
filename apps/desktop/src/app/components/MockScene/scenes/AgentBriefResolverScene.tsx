@@ -21,6 +21,11 @@ const SINGLE_THREAD = 'PRRT_thread_retry_backoff';
 const SINGLE_ITEM = 'mock-resolve-item-retry-backoff';
 const BATCH_THREADS = ['PRRT_thread_typo', 'PRRT_thread_retry_constant'] as const;
 const MINUTE = 60_000;
+const AUTHORS: Readonly<Record<string, string>> = {
+  [SINGLE_THREAD]: 'Mara Quint',
+  [BATCH_THREADS[0]]: 'Theo Varga',
+  [BATCH_THREADS[1]]: 'Mara Quint',
+};
 
 const runIdOf = (agentId: AgentId): ProviderRunId => `${agentId}-run` as ProviderRunId;
 
@@ -151,6 +156,29 @@ const stagePush = (): void => {
     remoteHead: '7d02b11bbbb',
     requiresPush: true,
     frozenAt: 1,
+    earlierCommits:
+      sceneParam({ key: 'earlier' }) === '1'
+        ? [
+            {
+              sha: '3b7d10eaaaa',
+              shortSha: '3b7d10e',
+              subject: 'Rename the delivery row helper',
+              author: 'resolver',
+              timestamp: 1,
+              pushed: false,
+              parentSha: null,
+            },
+            {
+              sha: '91fa2c4aaaa',
+              shortSha: '91fa2c4',
+              subject: 'Log the redelivery count',
+              author: 'resolver',
+              timestamp: 1,
+              pushed: false,
+              parentSha: null,
+            },
+          ]
+        : [],
     commits: [
       {
         sha: `${SHORT_SHA}aaaa`,
@@ -200,8 +228,27 @@ export const AgentBriefResolverScene = () => {
       ...entry,
       items: entry.items.filter((item) => item.queueItemId === SINGLE_ITEM),
     }));
+    const github = state.sessionGithub[SESSION_ID];
+    const detail = github?.detail ?? null;
+    const sessionGithub =
+      github === undefined || detail === null
+        ? state.sessionGithub
+        : {
+            ...state.sessionGithub,
+            [SESSION_ID]: {
+              ...github,
+              detail: {
+                ...detail,
+                comments: detail.comments.map((comment) => ({
+                  ...comment,
+                  author: AUTHORS[comment.threadId ?? ''] ?? comment.author,
+                })),
+              },
+            },
+          };
     useAppStore.setState({
       navigate,
+      sessionGithub,
       selectedAgentId: {},
       currentSessionId: SESSION_ID,
       activeLens: { [SESSION_ID]: null },
