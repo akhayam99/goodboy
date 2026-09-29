@@ -8,7 +8,7 @@ const seed = async () => {
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('harborline', 'Harborline', 'harborline', 1, 1)",
   );
   const result = await migrate(db);
-  expect(result.applied).toEqual([212]);
+  expect(result.applied).toEqual([212, 213]);
   await db.execute(
     `INSERT INTO chats (id, workspace_id, title, provider, model, last_activity_at, created_at, updated_at)
      VALUES ('chat', 'harborline', 'Ledger rounding on refunds', 'anthropic', 'sonnet', 1, 1, 1)`,
