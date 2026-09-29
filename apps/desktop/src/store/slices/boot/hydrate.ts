@@ -25,7 +25,7 @@ import { drainAuditRetryQueue } from './auditRetryQueue';
 import { scheduleStorageCheck } from '../storage/scheduleStorageCheck';
 import { scheduleSearchBackfill } from '../search-index/scheduleSearchBackfill';
 import type { GetFn, SetFn } from './types';
-import type { BootPhase } from '../../types';
+import type { BootPhase } from './state';
 
 const INTEGRATION_KEY_ADOPTION_COALESCE_KEY = 'boot:integration-key-adoption';
 

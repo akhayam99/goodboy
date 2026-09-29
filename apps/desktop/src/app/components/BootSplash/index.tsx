@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { BootPhase } from '../../../store/types';
+import type { BootPhase } from '../../../store/slices/boot/state';
 import { DATABASE_UNAVAILABLE_MESSAGE } from '../../../shared/lib/db';
 import type { NewerDatabase } from '../../../shared/lib/newerDatabase';
 import { BootBrand } from './BootBrand';

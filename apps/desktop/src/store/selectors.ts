@@ -31,12 +31,8 @@ import { isBranchlessSession } from '../shared/utils/isBranchlessSession';
 import { useAppStore } from './store';
 import { selectMountBaseBranch } from './slices/project-mounts/selectors';
 import { sessionMatchesProjectFilter } from './slices/sessionFilters';
-import type {
-  AppState,
-  SessionLoadingFlags,
-  SessionSlotsLoad,
-  SummarizerSessionStatus,
-} from './types';
+import type { AppState, SessionSlotsLoad, SummarizerSessionStatus } from './types';
+import type { SessionLoadingFlags } from './slices/sessions/state';
 import {
   deriveSessionStage,
   isPrReviewSession,

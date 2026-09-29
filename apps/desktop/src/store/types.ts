@@ -1,10 +1,7 @@
-import type { CliRequirement } from '@goodboy/core';
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
-import type { ProjectCheckoutUpdate } from './slices/projects/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
-import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
   StorageArtifact,
   StorageFocus,
@@ -41,55 +38,36 @@ import type {
   FileVersion,
   GhTokenStatus,
   GoalAttachment,
-  IntegrationBinding,
-  IntegrationCredential,
-  IntegrationCredentialUsage,
   IntegrationDraft,
   IsoDateTime,
   LinkedIssue,
-  Message,
-  MountBranchObservation,
   MountId,
   MountPullRequestIdentity,
   MountPullRequestLink,
   OpenQuestion,
   OpenQuestionId,
   OrchestratorRouting,
-  OverrideSettings,
   PlanConsumption,
   PlanId,
   PlanWithCount,
   PrDetail,
-  Project,
   ProjectId,
   ProjectScript,
-  ProviderCredential,
   ProviderId,
   ProviderRunId,
   PrReviewDraft,
   PullRequestState,
-  Session,
   SessionBudget,
-  SessionEvent,
-  SessionExternalTask,
   SessionId,
-  SessionMountView,
-  SessionProjectMount,
   SessionViewPrefs,
   Skill,
   StepDef,
-  TelemetryRecord,
-  TelemetrySummary,
-  TurnEvent,
   TurnState,
   Workflow,
   WorkflowRunId,
-  Workspace,
-  WorkspaceGitStatus,
   WorkspaceId,
   WorkflowId,
 } from '@goodboy/types';
-import type { SessionWorktree } from '@goodboy/db';
 import type { AgentKind } from '../features/session/agent-kind';
 import type { GitlabMergeRequest } from '../features/integrations/gitlab/client';
 import type {
@@ -98,15 +76,8 @@ import type {
 } from '../features/integrations/bitbucket/client';
 import type { SessionBitbucketPrEntry } from './slices/bitbucket-pr/state';
 import type { SlackThreadsSliceState } from './slices/slack-threads/state';
-import type {
-  ProviderAuthResults,
-  ProviderDisplayInfo,
-  ProviderStatus,
-} from '../features/providers/providers';
-import type { ProviderCooldowns } from '../features/providers/routing';
 import type { ScriptGroup, ScriptRunRecord } from '../features/scripts/scripts';
 import type { DiscoveredScriptScan } from './slices/scripts/state';
-import type { DetectedEditor } from '../shared/lib/editor';
 import type { TerminalTab, TerminalTabId } from '../shared/types/terminal';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agentQueue/types';
@@ -119,11 +90,9 @@ import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
-import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import type { ReviewSubmission } from './slices/review-drafts/reviewSubmission';
-import type { WriteDestination } from './slices/project-mounts/writeDestination';
 import type {
   ArtifactCreationTarget,
   DiffFocus,
@@ -133,22 +102,26 @@ import type {
   SessionCreation,
   SessionStudio,
 } from './slices/session-view';
-import type { PanelSection } from './slices/sidebar/types';
 import type { UpdaterState } from './slices/updater/state';
-import type { NewerDatabase } from '../shared/lib/newerDatabase';
 import type { WorkflowBuilderDraft, WorkflowDraftKey } from './slices/workflowDrafts/types';
 import type { SessionArtifactDrafts } from './slices/artifactDrafts/types';
 import type { WorkflowGeneration, WorkflowStudioDraft } from './slices/workflowStudio/types';
-
-export type BootPhase =
-  | 'pending'
-  | 'migrating'
-  | 'loading-settings'
-  | 'detecting-cli'
-  | 'loading-workspaces'
-  | 'restoring-session'
-  | 'ready'
-  | 'error';
+import type { SessionFiltersState } from './slices/sessionFilters/state';
+import type { WorkspacesState } from './slices/workspaces/state';
+import type { ProjectsState } from './slices/projects/state';
+import type { SessionsState } from './slices/sessions/state';
+import type { SessionEventsState } from './slices/session-events/state';
+import type { PresenceState } from './slices/presence/state';
+import type { SettingsState } from './slices/settings/state';
+import type { ProvidersState } from './slices/providers/state';
+import type { CredentialsState } from './slices/credentials/state';
+import type { IntegrationsState } from './slices/integrations/state';
+import type { BootState } from './slices/boot/state';
+import type { TranscriptsState } from './slices/transcripts/state';
+import type { WorktreesState } from './slices/worktrees/state';
+import type { ProjectMountsState } from './slices/project-mounts/state';
+import type { OverridesState } from './slices/overrides/state';
+import type { SidebarState } from './slices/sidebar/state';
 
 export type SessionNudge =
   | {
@@ -166,15 +139,6 @@ export type SessionNudge =
       readonly reason: string;
       readonly planId: PlanId | null;
     };
-
-export type SessionLoadingFlags = {
-  readonly agents: boolean;
-  readonly transcript: boolean;
-  readonly telemetry: boolean;
-  readonly slots: boolean;
-  readonly plans: boolean;
-  readonly summary: boolean;
-};
 
 export type SessionSlotsLoad = 'loaded' | 'failed';
 
@@ -274,70 +238,32 @@ type AppSliceState = ArtifactsState &
   ContextDrawerSliceState &
   DecisionsSliceState &
   DrawerSliceState &
-  NavigationSliceState;
+  NavigationSliceState &
+  SessionFiltersState &
+  WorkspacesState &
+  ProjectsState &
+  SessionsState &
+  SessionEventsState &
+  PresenceState &
+  SettingsState &
+  ProvidersState &
+  CredentialsState &
+  IntegrationsState &
+  BootState &
+  TranscriptsState &
+  WorktreesState &
+  ProjectMountsState &
+  MountCleanupState &
+  HistoryState &
+  ScribeState &
+  PrSeriesState &
+  OverridesState &
+  SidebarState;
 
 export type NotificationScope = 'workspace' | 'all';
 
 export type AppState = AppSliceState & {
-  readonly selectedProjectIds: Readonly<Record<WorkspaceId, ReadonlyArray<string>>>;
-  readonly workspaces: ReadonlyArray<Workspace>;
-  readonly disconnectedWorkspaces: ReadonlyArray<Workspace>;
-  readonly projects: ReadonlyArray<Project>;
-  readonly workspaceIntegrations: Readonly<Record<WorkspaceId, ReadonlyArray<IntegrationBinding>>>;
-  readonly integrationCredentials: ReadonlyArray<IntegrationCredential>;
-  readonly integrationCredentialUsage: IntegrationCredentialUsage;
-  readonly projectGitStatus: Readonly<Record<ProjectId, WorkspaceGitStatus>>;
-  readonly projectCheckoutPulling: Readonly<Record<ProjectId, boolean>>;
-  readonly projectFetchedAt: Readonly<Record<ProjectId, number>>;
-  readonly projectCheckoutResult: Readonly<Record<ProjectId, ProjectCheckoutUpdate>>;
-  readonly sessionExternalTasks: Readonly<Record<SessionId, ReadonlyArray<SessionExternalTask>>>;
-  readonly sessionEvents: Readonly<Record<SessionId, ReadonlyArray<SessionEvent> | undefined>>;
-  readonly currentWorkspaceId: WorkspaceId | null;
-  readonly windowPresence: Readonly<Record<string, WorkspaceId | null>>;
-  readonly sessions: ReadonlyArray<Session>;
-  readonly archivedSessions: Readonly<Record<WorkspaceId, ReadonlyArray<Session>>>;
-  readonly currentSessionId: SessionId | null;
-  readonly settings: Readonly<Record<string, string>>;
-  readonly sessionSummary: TelemetrySummary | null;
-  readonly providerStatus: ProviderStatus | null;
-  readonly cursorStatus: ProviderStatus | null;
-  readonly codexStatus: ProviderStatus | null;
-  readonly geminiStatus: ProviderStatus | null;
-  readonly authResults: ProviderAuthResults | null;
-  readonly providers: ReadonlyArray<ProviderDisplayInfo>;
-  readonly providerLifecycle: ProviderLifecycleMap;
-  readonly providerConnect: ProviderConnectMap;
-  readonly cliRequirements: ReadonlyArray<CliRequirement>;
-  readonly providerCredentials: ReadonlyArray<ProviderCredential>;
-  readonly providerCooldowns: ProviderCooldowns;
-  readonly hydrated: boolean;
-  readonly bootPhase: BootPhase;
-  readonly bootFailedPhase: BootPhase | null;
-  readonly newerDatabase: NewerDatabase | null;
-  readonly error: string | null;
-  readonly transcripts: Readonly<Record<string, ReadonlyArray<TurnEvent>>>;
-  readonly messages: Readonly<Record<string, ReadonlyArray<Message>>>;
-  readonly sessionWorktrees: Readonly<Record<string, ReadonlyArray<string>>>;
-  readonly sessionWorktreeRecords?: Readonly<Record<string, ReadonlyArray<SessionWorktree>>>;
-  readonly orphanWorktrees: Readonly<Record<string, ReadonlyArray<OrphanWorktree>>>;
-  readonly sessionProjectMounts: Readonly<Record<string, ReadonlyArray<SessionProjectMount>>>;
-  readonly sessionMounts: Readonly<Record<string, ReadonlyArray<SessionMountView>>>;
-  readonly mountBranchObservations: Readonly<Record<string, ReadonlyArray<MountBranchObservation>>>;
-  readonly sessionActiveMount: Readonly<Record<string, MountId | null>>;
-  readonly agentTurnDestination: Readonly<Record<AgentId, WriteDestination>>;
-  readonly mountCleanupProposals: MountCleanupState['mountCleanupProposals'];
-  readonly retainedWorktreePaths: MountCleanupState['retainedWorktreePaths'];
-  readonly historyRuns: HistoryState['historyRuns'];
-  readonly historyRewriters: HistoryState['historyRewriters'];
-  readonly historyDrafts: HistoryState['historyDrafts'];
-  readonly scribeWork: ScribeState['scribeWork'];
-  readonly scribeAgents: ScribeState['scribeAgents'];
-  readonly prSeries: PrSeriesState['prSeries'];
   readonly sessionLanguageAnchor: Readonly<Record<SessionId, string>>;
-  readonly sessionActiveProject: Readonly<Record<string, ProjectId>>;
-  readonly sessionBranches: Readonly<Record<string, string>>;
-  readonly sessionTelemetry: Readonly<Record<string, ReadonlyArray<TelemetryRecord>>>;
-  readonly workspaceSummary: TelemetrySummary | null;
   readonly sessionSlots: Readonly<Record<string, ReadonlyArray<ContextSlot>>>;
   readonly slotHistory: Readonly<
     Record<string, Readonly<Record<string, ReadonlyArray<ContextSlotHistoryEntry>>>>
@@ -393,14 +319,6 @@ export type AppState = AppSliceState & {
   readonly stepSummaryDegraded: Readonly<Record<AgentId, boolean>>;
   readonly degradedStepOutputs: Readonly<Record<AgentId, string>>;
   readonly scoutSelfExploreTasked: Readonly<Record<AgentId, true>>;
-  readonly unknownPayloadCounts: Readonly<Record<string, number>>;
-  readonly detectedEditors: ReadonlyArray<DetectedEditor>;
-  readonly workspaceOverrides: Readonly<Record<WorkspaceId, OverrideSettings>>;
-  readonly sessionOverrides: Readonly<Record<SessionId, OverrideSettings>>;
-  readonly unreadWorkspaceIds: ReadonlySet<WorkspaceId>;
-  readonly sessionPanelExpanded: Readonly<
-    Record<SessionId, Partial<Record<PanelSection, boolean>>>
-  >;
   readonly githubStatus: GhTokenStatus | null;
   readonly githubWorkspaceStatus: Readonly<Record<WorkspaceId, GhTokenStatus | null>>;
   readonly mountGithub: Readonly<Record<MountId, MountGithubState>>;
@@ -457,8 +375,6 @@ export type AppState = AppSliceState & {
     readonly questionId: OpenQuestionId;
   } | null;
   readonly sessionNudges: Readonly<Record<SessionId, SessionNudge | null>>;
-  readonly sessionLoading: Readonly<Record<SessionId, SessionLoadingFlags>>;
-  readonly boardReady: boolean;
   readonly scriptsLensScope: { readonly projectId: ProjectId } | null;
   readonly sessionViewPrefs: Readonly<Record<WorkspaceId, SessionViewPrefs>>;
   readonly activeLens: Readonly<Record<SessionId, LensKind | null>>;

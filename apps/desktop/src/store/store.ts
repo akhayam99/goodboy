@@ -3,9 +3,8 @@ import { createReviewNavigationSlice } from './slices/review-navigation';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
-import type { AgentId, SessionId, WorkspaceId, PrReviewDraft } from '@goodboy/types';
+import type { AgentId, SessionId, PrReviewDraft } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
-import { buildProviderList } from '../features/providers/providers';
 import { createNotificationsSlice } from './slices/notifications';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
@@ -39,11 +38,7 @@ import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { initialScriptsState } from './slices/scripts/state';
 import { createPermissionsSlice } from './slices/permissions';
-import {
-  createProvidersSlice,
-  INITIAL_CONNECT_MAP,
-  INITIAL_LIFECYCLE_MAP,
-} from './slices/providers';
+import { createProvidersSlice } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
@@ -114,6 +109,21 @@ import { initialDrawerState } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
+import { sessionFiltersInitialState } from './slices/sessionFilters/state';
+import { workspacesInitialState } from './slices/workspaces/state';
+import { projectsInitialState } from './slices/projects/state';
+import { sessionsInitialState } from './slices/sessions/state';
+import { sessionEventsInitialState } from './slices/session-events/state';
+import { presenceInitialState } from './slices/presence/state';
+import { settingsInitialState } from './slices/settings/state';
+import { providersInitialState } from './slices/providers/state';
+import { credentialsInitialState } from './slices/credentials/state';
+import { integrationsInitialState } from './slices/integrations/state';
+import { bootInitialState } from './slices/boot/state';
+import { transcriptsInitialState } from './slices/transcripts/state';
+import { worktreesInitialState } from './slices/worktrees/state';
+import { overridesInitialState } from './slices/overrides/state';
+import { sidebarInitialState } from './slices/sidebar/state';
 export type { ProviderSpendEntry };
 export type { AppState } from './types';
 
@@ -227,56 +237,19 @@ export const initialState: AppState = {
   ...backupInitialState,
   ...budgetInitialState,
   ...createInitialSessionViewState({}),
-  selectedProjectIds: {},
-  workspaces: [],
-  disconnectedWorkspaces: [],
-  projects: [],
-  workspaceIntegrations: {},
-  integrationCredentials: [],
-  integrationCredentialUsage: {},
-  projectGitStatus: {},
-  projectCheckoutPulling: {},
-  projectFetchedAt: {},
-  projectCheckoutResult: {},
-  sessionExternalTasks: {},
-  sessionEvents: {},
-  currentWorkspaceId: null,
-  windowPresence: {},
-  sessions: [],
-  archivedSessions: {},
-  currentSessionId: null,
-  settings: {},
-  sessionSummary: null,
-  providerStatus: null,
-  cursorStatus: null,
-  codexStatus: null,
-  geminiStatus: null,
-  authResults: null,
-  providers: buildProviderList({
-    anthropic: null,
-    cursor: null,
-    codex: null,
-    gemini: null,
-    opencode: null,
-    openrouter: null,
-    moonshot: null,
-  }),
-  providerLifecycle: INITIAL_LIFECYCLE_MAP,
-  providerConnect: INITIAL_CONNECT_MAP,
-  cliRequirements: [],
-  providerCredentials: [],
-  providerCooldowns: {},
-  hydrated: false,
-  bootPhase: 'pending',
-  bootFailedPhase: null,
-  newerDatabase: null,
-  error: null,
-  transcripts: {},
-  messages: {},
-  sessionWorktrees: {},
-  sessionWorktreeRecords: {},
-  orphanWorktrees: {},
-  sessionProjectMounts: {},
+  ...sessionFiltersInitialState,
+  ...workspacesInitialState,
+  ...projectsInitialState,
+  ...integrationsInitialState,
+  ...sessionEventsInitialState,
+  ...presenceInitialState,
+  ...sessionsInitialState,
+  ...settingsInitialState,
+  ...providersInitialState,
+  ...credentialsInitialState,
+  ...bootInitialState,
+  ...transcriptsInitialState,
+  ...worktreesInitialState,
   ...projectMountsInitialState,
   ...mountCleanupInitialState,
   ...historyInitialState,
@@ -290,10 +263,6 @@ export const initialState: AppState = {
   ...sentryLinksInitialState,
   ...handoffsInitialState,
   sessionLanguageAnchor: {},
-  sessionActiveProject: {},
-  sessionBranches: {},
-  sessionTelemetry: {},
-  workspaceSummary: null,
   sessionSlots: {},
   slotHistory: {},
   slotHistoryCounts: {},
@@ -337,12 +306,8 @@ export const initialState: AppState = {
   stepSummaryDegraded: {},
   degradedStepOutputs: {},
   scoutSelfExploreTasked: {},
-  unknownPayloadCounts: {},
-  detectedEditors: [],
-  workspaceOverrides: {},
-  sessionOverrides: {},
-  unreadWorkspaceIds: new Set<WorkspaceId>(),
-  sessionPanelExpanded: {},
+  ...overridesInitialState,
+  ...sidebarInitialState,
   githubStatus: null,
   githubWorkspaceStatus: {},
   mountGithub: {},
@@ -390,8 +355,6 @@ export const initialState: AppState = {
   sessionQuestionsLoadError: {},
   sessionSlackDrafts: {},
   openQuestionScrollTarget: null,
-  sessionLoading: {},
-  boardReady: true,
   terminalSessions: {},
   terminalTabs: {},
   activeTerminalTab: {},
