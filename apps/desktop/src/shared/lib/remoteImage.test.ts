@@ -28,11 +28,15 @@ describe('loadRemoteImage', () => {
   });
 
   it('lets a refusal from the backend reach the caller', async () => {
-    invoke.mockRejectedValue('example.com points at a private address, so nothing was loaded');
+    invoke.mockRejectedValue({
+      kind: 'refused',
+      message: 'example.com points at a private address, so nothing was loaded',
+    });
 
-    await expect(loadRemoteImage({ url: 'https://example.com/a.png' })).rejects.toBe(
-      'example.com points at a private address, so nothing was loaded',
-    );
+    await expect(loadRemoteImage({ url: 'https://example.com/a.png' })).rejects.toMatchObject({
+      kind: 'refused',
+      message: 'example.com points at a private address, so nothing was loaded',
+    });
   });
 });
 
