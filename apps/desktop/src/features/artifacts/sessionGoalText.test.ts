@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ContextSlot, Session } from '@goodboy/types';
 import { REDACTED } from '../../shared/utils/redactSecrets';

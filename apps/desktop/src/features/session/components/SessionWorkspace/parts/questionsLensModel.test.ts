@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { buildQuestionsLens, nextWaitingQuestion, visibleQuestionRows } from './questionsLensModel';

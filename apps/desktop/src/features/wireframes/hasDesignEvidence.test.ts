@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { DesignProfile } from './collectDesignProfile';
 import { hasDesignEvidence } from './hasDesignEvidence';

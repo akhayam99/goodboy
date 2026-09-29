@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, OpenQuestion, OpenQuestionId, SessionId } from '@goodboy/types';
 

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { placeholderRecordOf } from './placeholderRecordOf';

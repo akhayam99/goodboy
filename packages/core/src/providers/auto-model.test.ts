@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { autoModelForRole, recommendedModelForRole } from './auto-model';
 import { PROVIDER_CAPABILITIES } from './capabilities';
 import { CURSOR_MODELS } from './cursor/models';
@@ -47,10 +47,13 @@ describe('autoModelForRole', () => {
     });
 
     it('treats an unknown role as the custom default tier', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
       expect(autoModelForRole({ role: 'totally-made-up', providers: ['gemini'] })).toEqual({
         provider: 'gemini',
         model: 'gemini-3.1-pro',
       });
+      expect(warn).toHaveBeenCalledWith('[roles] unknown role "totally-made-up"; using custom');
+      warn.mockRestore();
     });
 
     it('picks the expensive codex model for a high-tier role', () => {

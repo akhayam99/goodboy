@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { RunnableScript } from './buildSessionScripts';
 import { defaultClosedPackageKeys } from './defaultClosedPackageKeys';

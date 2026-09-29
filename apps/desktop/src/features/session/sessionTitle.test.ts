@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Session } from '@goodboy/types';
 import { sessionTitle } from './sessionTitle';

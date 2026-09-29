@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_IDS, type ProviderId } from '@goodboy/types';
 import { MODEL_CATALOGS, modelAxes } from '@goodboy/core';

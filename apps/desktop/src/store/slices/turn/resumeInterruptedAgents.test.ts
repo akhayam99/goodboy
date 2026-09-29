@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, IsoDateTime, ProviderRunId, SessionId, TurnEvent } from '@goodboy/types';
 

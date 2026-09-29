@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import type { SpawnedChild } from '../../../../shared/utils/spawnedChildren';

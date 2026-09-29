@@ -20,7 +20,12 @@ describe('parseCursorStreamLine', () => {
   });
 
   it('returns [] for malformed json', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(parse('{not json')).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(
+      '[cursor-adapter] dropped a stream-json line that is not json',
+    );
+    warn.mockRestore();
   });
 
   it('ignores system events', () => {
@@ -156,6 +161,7 @@ describe('parseCursorStreamLine', () => {
   });
 
   it('reports no context when the turn summed several requests', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const turnContext: ParseContext = { runId: 'run_cursor_multi' as ProviderRunId, now: () => at };
     parseCursorStreamLine(JSON.stringify({ type: 'tool_call', subtype: 'started' }), turnContext);
     parseCursorStreamLine(JSON.stringify({ type: 'tool_call', subtype: 'completed' }), turnContext);
@@ -175,9 +181,14 @@ describe('parseCursorStreamLine', () => {
 
     expect(events[0]).toMatchObject({ kind: 'usage', usage: { inputTokens: 21134 } });
     expect(events[0]?.kind === 'usage' && events[0].usage.contextTokens).toBeFalsy();
+    expect(warn).toHaveBeenCalledWith(
+      '[cursor-adapter] unknown stream-json payload type: tool_call',
+    );
+    warn.mockRestore();
   });
 
   it('emits unknown_payload for unrecognised payload types', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const raw = { type: 'cursor_internal', seq: 7 };
     const events = parse(JSON.stringify(raw));
     expect(events).toHaveLength(1);
@@ -189,13 +200,22 @@ describe('parseCursorStreamLine', () => {
       raw,
       at,
     });
+    expect(warn).toHaveBeenCalledWith(
+      '[cursor-adapter] unknown stream-json payload type: cursor_internal',
+    );
+    warn.mockRestore();
   });
 
   it('calls onUnknown hook for unrecognised payload types', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const onUnknown = vi.fn();
     const raw = { type: 'unknown_event', x: 1 };
     parse(JSON.stringify(raw), { onUnknown });
     expect(onUnknown).toHaveBeenCalledWith('unknown_event', raw);
+    expect(warn).toHaveBeenCalledWith(
+      '[cursor-adapter] unknown stream-json payload type: unknown_event',
+    );
+    warn.mockRestore();
   });
 
   it('does not call onUnknown for known types', () => {

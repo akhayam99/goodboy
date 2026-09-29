@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import { emptyOverrides } from '../../../../../store/storyHarness';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { MODEL_CATALOGS } from '@goodboy/core';
 import type { CatalogModel } from '@goodboy/types';

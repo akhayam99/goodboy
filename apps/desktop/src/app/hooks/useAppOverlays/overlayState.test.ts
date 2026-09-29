@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { footerTarget, type ConnectedIntegrations, type FooterTarget } from './overlayState';
 import type { StudioPlace } from '../../../store';

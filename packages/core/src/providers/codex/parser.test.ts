@@ -20,8 +20,11 @@ describe('parseJsonLine (codex v0.130.0)', () => {
   });
 
   it('returns [] for malformed json', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(parse('{not json')).toEqual([]);
     expect(parse('not json at all')).toEqual([]);
+    expect(warn).toHaveBeenCalledWith('[codex-adapter] dropped a json line that does not parse');
+    warn.mockRestore();
   });
 
   it('emits provider_session_init from thread.started', () => {
@@ -219,6 +222,7 @@ describe('parseJsonLine (codex v0.130.0)', () => {
   });
 
   it('emits unknown_payload for unrecognized types', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const onUnknown = vi.fn();
     const raw = { type: 'mystery_event', payload: { x: 1 } };
     const events = parse(JSON.stringify(raw), { onUnknown });
@@ -232,6 +236,8 @@ describe('parseJsonLine (codex v0.130.0)', () => {
       at,
     });
     expect(onUnknown).toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith('[codex-adapter] unknown json payload type: mystery_event');
+    warn.mockRestore();
   });
 
   it('does not call onUnknown for known types', () => {

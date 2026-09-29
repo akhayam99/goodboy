@@ -339,8 +339,6 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   bridge.routes = {};
-  vi.spyOn(console, 'error').mockImplementation(() => undefined);
-  vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
 
 afterEach(() => {

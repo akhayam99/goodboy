@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import { extractQualifiers } from './grammar';

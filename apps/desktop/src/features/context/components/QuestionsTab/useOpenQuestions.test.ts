@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { OpenQuestionId } from '@goodboy/types';
 import { deriveDraftAnswer, useOpenQuestions, type DelegateRouting } from './useOpenQuestions';

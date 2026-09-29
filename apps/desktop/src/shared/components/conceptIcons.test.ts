@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { Folder, FolderGit2, ListVideo, SquareTerminal } from 'lucide-react';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE, projectGlyph } from './conceptIcons';

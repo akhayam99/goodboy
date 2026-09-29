@@ -36,8 +36,10 @@ beforeAll(async () => {
 beforeEach(async () => {
   await resetStoryStore();
   consoleErrors = [];
+  const logError = console.error;
   vi.spyOn(console, 'error').mockImplementation((...args: ReadonlyArray<unknown>) => {
     consoleErrors.push(args.map(String).join(' '));
+    logError(...args);
   });
   seedSettingsBase();
 });

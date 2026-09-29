@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi, type Mock } from 'vitest';
 import type { AgentId, IsoDateTime, MountId, SessionId, WorkflowRunId } from '@goodboy/types';
 import type { ArtifactSpawnActions } from '../artifacts/artifactCreationAdapter';

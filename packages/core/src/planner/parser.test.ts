@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parsePlannerOutput, PlannerParseError } from './parser';
 import { PLANNER_SYSTEM_PROMPT } from './prompt';
 
@@ -130,6 +130,7 @@ describe('parsePlannerOutput', () => {
   });
 
   it('falls back to custom when role is not a canonical AgentRole', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const translated = JSON.stringify({
       workflowName: 'X',
       reasoning: 'x',
@@ -137,9 +138,12 @@ describe('parsePlannerOutput', () => {
     });
     const out = parsePlannerOutput(translated);
     expect(out.steps[0]!.role).toBe('custom');
+    expect(warn).toHaveBeenCalledWith('[roles] unknown role "implementatore"; using custom');
+    warn.mockRestore();
   });
 
   it('maps the non-canonical "other" role to custom', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const other = JSON.stringify({
       workflowName: 'X',
       reasoning: 'x',
@@ -147,6 +151,8 @@ describe('parsePlannerOutput', () => {
     });
     const out = parsePlannerOutput(other);
     expect(out.steps[0]!.role).toBe('custom');
+    expect(warn).toHaveBeenCalledWith('[roles] unknown role "other"; using custom');
+    warn.mockRestore();
   });
 
   it('keeps the shipped wireframe role available', () => {

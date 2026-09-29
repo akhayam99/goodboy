@@ -1,0 +1,180 @@
+{
+  "entries": [
+    {
+      "file": "src/__tests__/surfaces/navigation-flows.test.tsx",
+      "message": "Encountered two children with the same key, `#:choice:session.copyWorktreePath:mount-fixture-#`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omi"
+    },
+    {
+      "file": "src/__tests__/surfaces/navigation-flows.test.tsx",
+      "message": "Encountered two children with the same key, `mount-fixture-#`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted \u2014 the behavior is unsupported"
+    },
+    {
+      "file": "src/features/chat/components/WriteDestinationControl/useWriteDestination/index.test.tsx",
+      "message": "The current testing environment is not configured to support act(...)"
+    },
+    {
+      "file": "src/features/chat/turn.test.ts",
+      "message": "[cursor-adapter] dropped a stream-json line that is not json"
+    },
+    {
+      "file": "src/features/explore/components/ExplorePane/index.test.tsx",
+      "message": "TypeError: Cannot read properties of undefined (reading 'then')"
+    },
+    {
+      "file": "src/features/providers/components/ProviderStudio/DefaultsPanel/RoleModelRow/index.test.tsx",
+      "message": "[role-models] invalid planner model auto for anthropic; using the anthropic default model"
+    },
+    {
+      "file": "src/features/providers/components/ProviderStudio/DefaultsPanel/RoleModelRow/index.test.tsx",
+      "message": "[role-models] invalid planner model kimi-k#-low for anthropic; using the anthropic default model"
+    },
+    {
+      "file": "src/features/session/agent-kind.test.ts",
+      "message": "[role-models] invalid reviewer model claude-opus-# for anthropic; using the anthropic default model"
+    },
+    {
+      "file": "src/features/session/agent-kind.test.ts",
+      "message": "[roles] unknown role \"unknown\"; using custom"
+    },
+    {
+      "file": "src/features/session/components/AgentDetailPane/AgentBriefChildren.test.tsx",
+      "message": "duration history load failed TypeError: Cannot read properties of undefined (reading 'invoke')"
+    },
+    {
+      "file": "src/features/session/components/AgentDetailPane/AgentBriefChildren.test.tsx",
+      "message": "turn spans load failed TypeError: Cannot read properties of undefined (reading 'invoke')"
+    },
+    {
+      "file": "src/features/session/components/AgentTree/AgentsSection.test.tsx",
+      "message": "Each child in a list should have a unique \"key\" prop. | Check the render method of `MetaRow`. It was passed a child from WorkflowRow. See https://react.dev/link/warning-keys for more information."
+    },
+    {
+      "file": "src/features/session/components/WorkflowBuilderView/index.test.tsx",
+      "message": "[roles] unknown role \"engineer\"; using custom"
+    },
+    {
+      "file": "src/features/workflows/engine/index.test.ts",
+      "message": "[roles] unknown role \"emperor\"; using custom"
+    },
+    {
+      "file": "src/features/workspace-chat/runChatTurn.test.ts",
+      "message": "[claude-adapter] dropped a stream-json line that is not json"
+    },
+    {
+      "file": "src/features/workspace/components/WorkspaceIdentityRow/index.test.tsx",
+      "message": "The current testing environment is not configured to support act(...)"
+    },
+    {
+      "file": "src/store/slices/artifacts/artifactScoutRun.test.ts",
+      "message": "[step-output] summarization failed, using deterministic fallback: Cannot read properties of undefined (reading 'invoke')"
+    },
+    {
+      "file": "src/store/slices/artifacts/spawnReportAgent.test.ts",
+      "message": "[artifact-provenance] report agent-#: database is locked"
+    },
+    {
+      "file": "src/store/slices/artifacts/spawnWireframeAgent.test.ts",
+      "message": "[artifact-provenance] wireframe agent-#: database is locked"
+    },
+    {
+      "file": "src/store/slices/session-events/index.test.ts",
+      "message": "[session-events] persist pr_closed failed Error: disk full"
+    },
+    {
+      "file": "src/store/slices/workflows/activateWorkflowAgent.test.ts",
+      "message": "[artifact-provenance] report agent-step: database is locked"
+    },
+    {
+      "file": "src/store/slices/workflows/attachWorkflowToSession.navigation.test.ts",
+      "message": "[roles] unknown role \"engineer\"; using custom"
+    },
+    {
+      "file": "src/store/slices/workflows/generateWorkflowRunTitle.test.ts",
+      "message": "[workflow] run title generation failed: provider unavailable"
+    },
+    {
+      "file": "src/store/slices/workflows/generateWorkflowTitle.test.ts",
+      "message": "[workflow] title generation failed: provider unavailable"
+    },
+    {
+      "file": "src/store/slices/workflows/preSpawnWorkflowAgents.test.ts",
+      "message": "[role-models] invalid scout model gpt-#.#-sol for cursor; using the anthropic default model"
+    },
+    {
+      "file": "src/store/slices/workflows/suggestWorkflowTitle.test.ts",
+      "message": "[workflow] title suggestion failed: provider unavailable"
+    },
+    {
+      "file": "src/store/store.artifact-outcome.test.ts",
+      "message": "[artifact-capture] failed for session session-report: disk full"
+    },
+    {
+      "file": "src/store/store.audit-retry.test.ts",
+      "message": "files_touched_numstat slot write failed Error: [vitest] No \"worktreeChangedFiles\" export is defined on the \"../features/worktree/worktree\" mock. Did you forget "
+    },
+    {
+      "file": "src/store/store.idle-on-empty-stream.test.ts",
+      "message": "files_touched_numstat slot write failed Error: [vitest] No \"worktreeChangedFiles\" export is defined on the \"../features/worktree/worktree\" mock. Did you forget "
+    },
+    {
+      "file": "src/store/store.permissions.test.ts",
+      "message": "files_touched_numstat slot write failed Error: [vitest] No \"worktreeChangedFiles\" export is defined on the \"../features/worktree/worktree\" mock. Did you forget "
+    },
+    {
+      "file": "src/store/store.plan-consumption-ordering.test.ts",
+      "message": "[artifact-capture] failed for session ses-#: db unavailable"
+    },
+    {
+      "file": "src/store/store.plan-consumption-ordering.test.ts",
+      "message": "files_touched_numstat slot write failed Error: [vitest] No \"worktreeChangedFiles\" export is defined on the \"../features/worktree/worktree\" mock. Did you forget "
+    },
+    {
+      "file": "src/store/store.sendturn-agent-routing.test.ts",
+      "message": "[summarizer] failed for session session-rt-#: [vitest] No \"listSessionDecisions\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \""
+    },
+    {
+      "file": "src/store/store.sendturn-agent-routing.test.ts",
+      "message": "agent handoff write failed Error: [vitest] No \"insertAgentHandoff\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \"vi.mock\"?"
+    },
+    {
+      "file": "src/store/store.sendturn-agent-routing.test.ts",
+      "message": "agent turn span write failed Error: [vitest] No \"insertAgentTurnSpan\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \"vi.mock\"?"
+    },
+    {
+      "file": "src/store/store.sendturn-agent-routing.test.ts",
+      "message": "touched worktrees check failed Error: [vitest] No \"hasOtherSessionTurnSince\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \"vi.m"
+    },
+    {
+      "file": "src/store/store.story-autorun-turn.test.ts",
+      "message": "autoPopulateContext failed TypeError: Cannot read properties of undefined (reading 'inserted')"
+    },
+    {
+      "file": "src/store/store.summarizer-notifications.test.ts",
+      "message": "[summarizer] failed for session session-notif-test: 401 unauthorized"
+    },
+    {
+      "file": "src/store/store.summarizer-notifications.test.ts",
+      "message": "[summarizer] failed for session session-notif-test: 429 too many requests"
+    },
+    {
+      "file": "src/store/store.summarizer-notifications.test.ts",
+      "message": "[summarizer] failed for session session-notif-test: Claude usage limit reached"
+    },
+    {
+      "file": "src/store/store.summarizer-notifications.test.ts",
+      "message": "[summarizer] failed for session session-notif-test: model overloaded"
+    },
+    {
+      "file": "src/store/store.summarizer-notifications.test.ts",
+      "message": "[summarizer] failed for session session-notif-test: not valid JSON"
+    },
+    {
+      "file": "src/store/store.summarizer-notifications.test.ts",
+      "message": "[summarizer] failed for session session-notif-test: the model produced nonsense"
+    },
+    {
+      "file": "src/store/turn-helpers.artifact-capture.test.ts",
+      "message": "[artifact-capture] artifact refresh failed for session session-#: artifact list unavailable"
+    }
+  ]
+}

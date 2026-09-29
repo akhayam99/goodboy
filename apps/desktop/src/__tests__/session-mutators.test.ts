@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TurnState } from '@goodboy/types';
 import { deriveSessionState } from '../store/session-mutators';

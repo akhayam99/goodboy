@@ -25,8 +25,6 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 vi.mock('../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(async () => undefined),
-  wipeDb: vi.fn(async () => undefined),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 

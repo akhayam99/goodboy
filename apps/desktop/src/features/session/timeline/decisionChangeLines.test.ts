@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { DECISION_DETAIL_LINE_HEIGHT, decisionChangeDetail } from './decisionChangeLines';
 

@@ -20,6 +20,7 @@ const parse = ({ payload, ctx = CTX }: Params) => {
 
 describe('parseJsonLine, opencode 1.14.48', () => {
   it('captures the session id once and ignores malformed input', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     resetOpenCodeParseState({ runId: RUN_ID });
     const first = parse({
       payload: {
@@ -45,6 +46,8 @@ describe('parseJsonLine, opencode 1.14.48', () => {
     ]);
     expect(second).toEqual([]);
     expect(parseJsonLine({ line: 'not json', ctx: CTX })).toEqual([]);
+    expect(warn).toHaveBeenCalledWith('[opencode-adapter] dropped a json line that does not parse');
+    warn.mockRestore();
   });
 
   it('converts cumulative text replacements into deltas by part id', () => {
@@ -142,6 +145,7 @@ describe('parseJsonLine, opencode 1.14.48', () => {
   });
 
   it('maps nested API errors and emits unknown payloads defensively', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     resetOpenCodeParseState({ runId: RUN_ID });
     const onUnknown = vi.fn();
     const error = parse({
@@ -161,5 +165,9 @@ describe('parseJsonLine, opencode 1.14.48', () => {
       payloadType: 'snapshot_ready',
     });
     expect(onUnknown).toHaveBeenCalledOnce();
+    expect(warn).toHaveBeenCalledWith(
+      '[opencode-adapter] unknown json payload type: snapshot_ready',
+    );
+    warn.mockRestore();
   });
 });

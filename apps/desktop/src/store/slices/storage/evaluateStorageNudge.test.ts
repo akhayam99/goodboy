@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { evaluateStorageNudge, type StorageNudgeInput } from './evaluateStorageNudge';
 

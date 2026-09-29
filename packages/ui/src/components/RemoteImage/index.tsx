@@ -79,15 +79,15 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
 
   if (state.kind === 'loading') {
     return (
-      <div
-        className={cn('my-1.5', className)}
+      <span
+        className={cn('my-1.5 block', className)}
         role="status"
         aria-label={`Loading an image from ${host}`}
       >
         <Skeleton
           className={isAutoLoad ? 'aspect-video h-40 w-full rounded-md' : 'h-32 w-full rounded-md'}
         />
-      </div>
+      </span>
     );
   }
 
@@ -99,9 +99,9 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
   const openInTool = isFailed && isAutoLoad ? tool : null;
 
   return (
-    <div className={cn(BLOCK_CLASS, className)}>
+    <span className={cn(BLOCK_CLASS, className)}>
       <ImageOff size={14} aria-hidden className="mt-0.5 shrink-0 text-muted-foreground" />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <span className="flex min-w-0 flex-1 flex-col gap-1">
         {alt !== '' && <span className="text-label font-medium text-foreground">{alt}</span>}
         <span className="text-xs leading-relaxed text-muted-foreground">
           {isFailed ? "Couldn't load this image from " : 'Image from '}
@@ -109,7 +109,7 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
             <code className={HOST_CLASS}>{host}</code>
           </Tooltip>
         </span>
-      </div>
+      </span>
       {openInTool != null ? (
         <Button
           size="sm"
@@ -124,6 +124,6 @@ export const RemoteImage = ({ url, alt, load, className }: Props) => {
           {isFailed ? 'Try again' : 'Load'}
         </Button>
       ) : null}
-    </div>
+    </span>
   );
 };

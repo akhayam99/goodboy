@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { WORKFLOW_LIBRARY } from '@goodboy/core';
 import type { AgentRole, StepId, Workflow, WorkflowId } from '@goodboy/types';

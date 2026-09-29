@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { EMPTY_FRECENCY, recordUse, type FrecencyState } from './frecency';
 import { rankCandidates, type RankCandidate } from './rank';

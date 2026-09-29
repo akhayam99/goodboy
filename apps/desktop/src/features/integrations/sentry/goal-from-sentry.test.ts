@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { goalFromSentry } from './goal-from-sentry';
 import type { SentryIssue, SentryIssueDetail, SentryStackFrame } from './client';

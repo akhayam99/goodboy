@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { AgentId, MeasuredTurnSpan, MountId } from '@goodboy/types';
 import { agentTouchedWorktrees } from './agentTouchedWorktrees';

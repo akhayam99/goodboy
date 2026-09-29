@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { composerPlaceholder } from './composerPlaceholder';
 import { fixtureMessage } from './testing/conversationFixtures';

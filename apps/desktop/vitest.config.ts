@@ -9,8 +9,15 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     passWithNoTests: true,
+    silent: 'passed-only',
     testTimeout: 15000,
     hookTimeout: 15000,
+    setupFiles: [
+      'src/test/failOnConsole.ts',
+      'src/test/failOnUnexpectedCalls.ts',
+      'src/test/dbBootDouble.ts',
+    ],
+    globalSetup: ['src/test/consoleBaselineReport.ts'],
     css: { include: [/\.css\?raw$/] },
     projects: [
       {

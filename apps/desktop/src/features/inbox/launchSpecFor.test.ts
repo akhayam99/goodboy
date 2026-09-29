@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { launchSpecFor } from './launchSpecFor';
 import type { SessionId, WorkspaceId } from '@goodboy/types';

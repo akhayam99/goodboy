@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Step } from '@goodboy/types';
 import { agentRowRouting } from './agentRowRouting';

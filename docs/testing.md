@@ -21,14 +21,49 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 
 CI splits the desktop `unit` project with `vitest run --project unit --shard=i/4`. Vitest sorts the files by the hash of their path and cuts the list into four equal slices, so adding or removing a test file can move other files to a different shard. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/4`. `node scripts/check-test-shards.mjs` runs in the `checks` job. Coverage holds by construction, so it guards an empty shard and a custom sequencer that drops or repeats a file.
 
+## Test environment
+
+`apps/desktop/vitest.config.ts` runs every file under happy-dom. A file that never reads a DOM global, directly or through the modules it imports (`window`, `document`, `localStorage`, `navigator`, `requestAnimationFrame` and the like), starts with `// @vitest-environment node`, which skips the DOM setup and cuts the file's cost by about a third. The docblock is the only comment a test file may carry. Node is never the default: product code that guards on `typeof window` would take its fallback path under node and stay green, so a forgotten docblock must cost time, never correctness. A new file starts on happy-dom, and gets the docblock only when it is pure logic. A file that fails under node with `document is not defined` or `window is not defined` stays on happy-dom.
+
+## The boot module is a global double
+
+`apps/desktop/src/shared/lib/dbBoot.ts` runs the migrations, restores a snapshot and wipes the database at launch. It is the only desktop module that imports `@goodboy/db/migrations`, which pulls the 200-odd migration files, and `__tests__/regressions/migrations-boot-only.test.ts` keeps it that way. `src/test/dbBootDouble.ts` is a vitest setup file that replaces it with no-op spies for every test, so a test that only reaches it through the store never loads the migrations. A test that drives boot itself replaces the double with `dbBootModuleMock()` from `store/storyHarness.ts`. `shared/lib/dbBoot.test.ts` loads the real module with `vi.importActual` over an in-memory database, and covers a fresh boot, a repeat boot, a database from a newer build and a wipe. A test that needs a migrated schema imports `migrate` from `@goodboy/db/migrations`, never from the `@goodboy/db` root.
+
+Vitest runs with `silent: 'passed-only'`: the stdout of a passing test is dropped and the stdout of a failing one is kept. `console.error` and `console.warn` never reach stdout anyway, the guard below catches them.
+
+## Console output fails the test
+
+An unexpected `console.error` or `console.warn` fails the test that produced it. `apps/desktop/src/test/failOnConsole.ts` is a vitest setup file. At import it replaces both channels with a recorder, and `afterEach` throws unless every recorded message is in `apps/desktop/src/test/console-baseline.json`. An `afterAll` does the same for output from `beforeAll`, `afterAll` or a timer that fires after the last test. A test that spies on the console itself (`vi.spyOn(console, 'error')`) handles its own output. A spy that only counts or collects must forward the lines it does not expect to the original it captured (`const logError = console.error`), or it silences the guard.
+
+- The baseline lists what the suite already printed when the guard landed: one entry per test file and message, with uuids and digits collapsed to `#` (an HTTP status code before a status word stays). The message is its first line, or its first two lines for a React format-string warning, so a new "unique key" warning in a baselined file does not hide under the old one. It is a ratchet, like `forbidden-patterns.baseline.json`: `__tests__/regressions/console-baseline.test.ts` pins the entry count in `BASELINE_CEILING` and a hash of the entries in `BASELINE_SHA256`, so swapping an entry fails too. Never add an entry to silence output you introduced. Fix the cause: complete the mock, stabilize the hook input, fix the invalid DOM nesting.
+- A test that exercises an error path on purpose spies on the console and asserts the message. That is the alternative to a baseline entry. `packages/core` tests do this for every expected `console.warn`.
+- Output that arrives from a timer after its test ended lands in the next test of the same file, or in the `afterAll` for the last one. A late timer can therefore fail an innocent neighbour: stop the timer in the test that starts it.
+- To shrink it, fix the cause, then run the affected files with `GOODBOY_UPDATE_CONSOLE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run <path> --maxWorkers=3`. The run rewrites the entries of the files it ran and refuses to add a new one. Update the two constants in `console-baseline.test.ts` in the same commit. Three traps: an update run with `-t` (a test name filter) runs part of a file and drops the entries of the tests it skipped; two update runs in parallel overwrite each other; `GOODBOY_CONSOLE_REPORT` alone is refused, the guard would be off. `GOODBOY_SEED_CONSOLE_BASELINE=1` is the one switch that lets an update run add entries, and it never removes any: use it only to seed.
+- A mock that throws inside code that catches it prints through `console.error` and lands on this guard. The catch swallows the throw, the console line does not. The shared db and invoke mocks below no longer throw: they record the call and fail the test in `afterEach`.
+- `__tests__/regressions/console-guard.test.ts` runs fixtures through the real setup file. `console-guard-wiring.test.ts` (unit project) and `a11y/console-guard-wiring.test.ts` check that `console.error` carries the guard marker, so dropping `setupFiles` or `extends: true` from `vitest.config.ts` goes red.
+- `packages/ui` and `packages/core` load their own strict `src/test/failOnConsole.ts` (no baseline: any console output fails). Their vitest config lists it in `setupFiles`.
+
 ## Store tests share one harness
 
 Every desktop test that loads the real store goes through `apps/desktop/src/store/storyHarness.ts`. It is the only file allowed to `import()` the store module.
 
-- Module mocks come from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test. It never keeps a private copy of the whole mock.
+- Module mocks come from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test. It never keeps a private copy of the whole mock. `tauriInvoke` answers the commands in `storyInvokeHandlers`; `stubStoryInvoke` adds or replaces one for a test.
 - Spies live in `storySpies`, named after the function they stand in for (`storySpies.invokeBudgetRuleList`). `resetStorySpies()` restores every default.
 - The store loads once: `useAppStore = await importStore()` in `beforeAll` with `STORE_IMPORT_TIMEOUT_MS`. Then `await resetStoryStore()` runs in `beforeEach` (spies reset, `initialState` applied, local storage cleared) before the test seeds its own state.
 - `__tests__/regressions/store-import-pattern.test.ts` fails on any test that `import()`s the store module itself. A test that needs another export of the store module (`summarizerQueues`) takes it from `importStoreModule()`.
+
+## Unstubbed calls fail the test
+
+`createDbMock(stubs)` in `apps/desktop/src/test/dbMock.ts` builds the mock of `@goodboy/db` from the real module: every export of the package is on it. A function you did not stub records its call (name and arguments) and returns an inert value (`[]` for `list*`, `null` for `get*` and `find*`, `0` for `count*`, `false` for `has*`). Constants and classes of the real module stay real. A stub whose name the package no longer exports throws when the mock is built, so a rename shows up at once.
+
+`createInvokeMock({ handlers, unknownResult })` in `src/test/invokeMock.ts` does the same for Tauri commands: a command with no handler records its name and payload and resolves to `unknownResult`. It never throws, because a throw becomes an unhandled rejection in the fire-and-forget code that calls `invoke`.
+
+`src/test/failOnUnexpectedCalls.ts` is a setup file. It clears the record before each test and throws in `afterEach` when the record is not empty, naming every call. The record exists because the product code often catches the error a missing stub used to raise, so the console alone cannot see it.
+
+- Fix a hit by stubbing the call with the value the real code returns: `storyDbStubs()` in `store/storyHarness.ts` for a db function every store test needs, `stubStoryInvoke({ command: value })` for a command one test needs, a local stub for one test. Do not stub it with `undefined` to make the message go away.
+- A test that makes the call on purpose reads the record with `drainUnexpectedCalls()` and asserts it. That empties it, so the guard passes.
+- A store test that keeps a private db mock still builds it with `createDbMock({ ...storyDbStubs(), ...own })`, so the calls it forgot are recorded. Moving it to `dbModuleMock()` is the target.
+- `__tests__/regressions/console-guard.test.ts` runs a fixture through the real setup file and checks that an unstubbed db call and an unstubbed command fail their test.
 
 ## Accessibility suite
 

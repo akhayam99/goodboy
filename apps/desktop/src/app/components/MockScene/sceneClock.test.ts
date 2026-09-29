@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const LOADED_AT = Date.parse('2027-01-10T08:00:00.000Z');

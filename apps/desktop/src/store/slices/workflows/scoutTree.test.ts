@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
 import { SCOUT_DEPTH_CAP, FAN_OUT_MAX_CHILDREN, scoutDepth } from './scoutTree';

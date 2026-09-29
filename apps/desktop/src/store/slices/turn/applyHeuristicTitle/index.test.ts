@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, AgentId, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../../store';

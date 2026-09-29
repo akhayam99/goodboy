@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import { WORKSPACE_ACCENTS, workspaceAccent } from '../../features/workspace/color';

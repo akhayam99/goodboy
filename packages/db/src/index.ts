@@ -11,12 +11,6 @@ export type {
   TransactionParams,
 } from './client';
 
-export { migrate, type MigrateResult } from './migrations/runner';
-export {
-  runRuntimeMigrations,
-  type MigrationSnapshotStorage,
-} from './migrations/runRuntimeMigrations';
-export { migrations, type Migration } from './migrations';
 export {
   DatabaseFromNewerBuildError,
   NEWER_BUILD_MESSAGE,

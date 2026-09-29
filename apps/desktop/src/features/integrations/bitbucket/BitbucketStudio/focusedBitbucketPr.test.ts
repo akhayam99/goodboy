@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { BitbucketPullRequest } from '../client';
 import { focusedBitbucketPr } from './focusedBitbucketPr';

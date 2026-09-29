@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   IsoDateTime,
@@ -28,19 +29,22 @@ const h = vi.hoisted(() => ({
   updateSessionWriteDestination: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listAgentsForSessions: vi.fn(async () => new Map()),
-  listExternalTasksForWorkspace: vi.fn(async () => []),
-  listProjectsForWorkspace: vi.fn(async () => h.projects),
-  listSessionsForWorkspace: vi.fn(async () => h.sessions),
-  listWorktreesForSessions: vi.fn(async () => h.worktrees),
-  setSetting: vi.fn(async () => undefined),
-  summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-  summarizeWorkspaceTelemetry: vi.fn(async () => null),
-  touchWorkspaceLastAccessed: vi.fn(async () => undefined),
-  updateSessionActiveProject: vi.fn(async () => undefined),
-  updateSessionWriteDestination: h.updateSessionWriteDestination,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getSetting: vi.fn(async () => null),
+    listAgentsForSessions: vi.fn(async () => new Map()),
+    listExternalTasksForWorkspace: vi.fn(async () => []),
+    listProjectsForWorkspace: vi.fn(async () => h.projects),
+    listSessionsForWorkspace: vi.fn(async () => h.sessions),
+    listWorktreesForSessions: vi.fn(async () => h.worktrees),
+    setSetting: vi.fn(async () => undefined),
+    summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
+    summarizeWorkspaceTelemetry: vi.fn(async () => null),
+    touchWorkspaceLastAccessed: vi.fn(async () => undefined),
+    updateSessionActiveProject: vi.fn(async () => undefined),
+    updateSessionWriteDestination: h.updateSessionWriteDestination,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/chat/turn', () => ({
   cancelTurn: vi.fn(async () => undefined),

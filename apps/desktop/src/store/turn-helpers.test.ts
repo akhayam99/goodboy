@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   AgentId,
@@ -17,7 +18,6 @@ import type {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-  runDbMigrations: vi.fn(),
 }));
 
 import { captureMaterializeRequestsFromTurn } from './turn-helpers';

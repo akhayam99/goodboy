@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Notification } from '@goodboy/db';
 import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';

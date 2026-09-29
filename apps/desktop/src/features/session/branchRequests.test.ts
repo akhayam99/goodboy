@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, SessionExternalTask, SessionId } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../integrations/gitlab/client';

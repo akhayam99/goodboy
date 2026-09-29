@@ -5,6 +5,7 @@ const PERF_TESTS = '**/*.perf.test.ts';
 export default defineConfig({
   test: {
     passWithNoTests: true,
+    setupFiles: ['src/test/failOnConsole.ts'],
     projects: [
       {
         extends: true,

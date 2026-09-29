@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
 import {
@@ -7,6 +8,7 @@ import {
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { saveResolveThread } from './saveResolveThread';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';

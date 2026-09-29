@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { createHash } from 'crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { dirname, join, resolve } from 'path';

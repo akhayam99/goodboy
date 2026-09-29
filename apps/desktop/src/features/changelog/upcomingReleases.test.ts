@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ReleaseEntry } from './parseChangelog';
 import { releasesInUpdate, upcomingEntries, withUpcomingReleases } from './upcomingReleases';

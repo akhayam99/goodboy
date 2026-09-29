@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SessionAttentionReason, SessionStageInfo } from '@goodboy/types';
 import { ATTENTION_REASON_META, describeSessionStage, describeStageBucket } from './session-stage';

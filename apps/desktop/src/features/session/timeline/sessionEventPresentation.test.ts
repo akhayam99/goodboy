@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SessionEvent, SessionEventKind, SessionEventPayload } from '@goodboy/types';
 import { SESSION_EVENT_KINDS } from '@goodboy/types';

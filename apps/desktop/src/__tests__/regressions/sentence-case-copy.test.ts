@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { ARTIFACT_GENERATION_PRESENTATION } from '../../features/artifacts/artifactCollection';
 import { ARTIFACT_STATUS_PRESENTATION } from '../../features/artifacts/artifact-status';

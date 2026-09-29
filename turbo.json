@@ -14,8 +14,11 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "transit": {
+      "dependsOn": ["^transit"]
+    },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["transit"]
     },
     "test": {
       "dependsOn": ["^build"]

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import { describe, expect, it } from 'vitest';
 import type {

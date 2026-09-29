@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, OrchestratorHint } from '@goodboy/types';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';

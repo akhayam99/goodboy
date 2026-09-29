@@ -5,10 +5,10 @@ import {
   getWorkflow,
   insertWorkspace,
   listWorkflows,
-  migrate,
   upsertWorkflow,
   type Database as DbInterface,
 } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { WORKFLOW_LIBRARY } from './library';
 import { restoreWorkflowLibrary, seedMissingBuiltinWorkflows, seedWorkflowLibrary } from './seeder';
 import { PROVIDER_CAPABILITIES } from '../providers/capabilities';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ResolvePublicationPreview } from '@goodboy/types';
 import type { PublicationOutcome } from '../../store/slices/resolve/publicationOutcome';
