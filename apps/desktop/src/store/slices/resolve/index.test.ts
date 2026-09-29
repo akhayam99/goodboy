@@ -448,6 +448,42 @@ describe('durable resolve store', () => {
     });
   });
 
+  it('lands a committed resolver with no reply text as a fix ready for review', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText:
+        'Committed a8c81d935.\n<<comment-resolved threadId="PRRT_1" commitSha="a8c81d935">>',
+      attemptId,
+    });
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.find((item) => item.threadId === 'PRRT_1')).toMatchObject({
+      state: 'fixed',
+      disposition: 'fix',
+      commitShas: ['a8c81d935'],
+      replyDraft: null,
+      stage: 'proposed',
+    });
+    expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]).toMatchObject({
+      phase: 'finished',
+      error: null,
+    });
+    const queued = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+    expect(queued.some(({ thread }) => thread.threadId === 'PRRT_1')).toBe(true);
+  });
+
   it('brings back the verdicts and the same ResolverStatus after restart without reading messages', async () => {
     const live = createHarness();
     await live.actions.loadResolveSession({ sessionId: SESSION_ID });
