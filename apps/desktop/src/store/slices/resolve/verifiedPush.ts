@@ -1,6 +1,7 @@
 import type { ResolvePublication, SessionId } from '@goodboy/types';
 import { worktreeIsAncestor, worktreeRemoteHead } from '../../../features/worktree/worktree';
 import { pushSessionBranch } from '../github/pushSessionBranch';
+import { remoteCarriesWorkError, remoteMovedError } from './remoteMovedError';
 import type { GetFn } from './types';
 
 type Params = {
@@ -29,7 +30,7 @@ export const verifiedPush = async ({
     return `the state of ${branch} on the remote could not be read, so nothing was pushed`;
   }
   if (before !== publication.remoteHead) {
-    return `${branch} on the remote is at ${shortOf({ sha: before })}, not the ${shortOf({ sha: publication.remoteHead })} you reviewed`;
+    return remoteMovedError({ branch, remote: before, reviewed: publication.remoteHead });
   }
   const isFastForward =
     before === null ||
@@ -37,7 +38,7 @@ export const verifiedPush = async ({
       () => false,
     ));
   if (!isFastForward) {
-    return `${branch} on the remote carries work that ${shortOf({ sha: publication.localHead })} does not contain, so nothing was pushed`;
+    return remoteCarriesWorkError({ branch, local: publication.localHead });
   }
   const push = await pushSessionBranch({
     get,
@@ -53,7 +54,7 @@ export const verifiedPush = async ({
     return `the state of ${branch} on the remote could not be read, so the push of ${shortOf({ sha: publication.localHead })} stays unverified`;
   }
   if (after !== publication.localHead) {
-    return `${branch} on the remote is at ${shortOf({ sha: after })}, not the ${shortOf({ sha: publication.localHead })} you reviewed`;
+    return remoteMovedError({ branch, remote: after, reviewed: publication.localHead });
   }
   return null;
 };

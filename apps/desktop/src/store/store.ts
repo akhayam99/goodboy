@@ -249,6 +249,7 @@ import type {
 import type { StartHistoryRewriterOutcome } from './slices/history/startHistoryRewriter';
 import type { RestoreHistoryInput, RestoreHistoryOutcome } from './slices/history/restoreHistory';
 import type { BringOriginOutcome } from './slices/history/bringOriginIntoHistory';
+import type { SyncBranchOutcome } from './slices/history/syncBranchWithRemote';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
@@ -645,6 +646,7 @@ type AppActions = {
   rewriteDraftWithAgent(input: HistoryMountInput & { note?: string }): Promise<void>;
   restoreHistory(input: RestoreHistoryInput): Promise<RestoreHistoryOutcome>;
   bringOriginIntoHistory(input: HistoryMountInput): Promise<BringOriginOutcome>;
+  syncBranchWithRemote(input: HistoryMountInput): Promise<SyncBranchOutcome>;
   requestScribe(input: RequestScribeInput): Promise<string>;
   settleScribe(input: SettleScribeInput): Promise<void>;
   refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;

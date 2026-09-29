@@ -1,6 +1,7 @@
 import type { ResolveStage } from '@goodboy/types';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProposalKind';
+import { isRemoteMovedError } from '../../store/slices/resolve/remoteMovedError';
 import { shortSha } from './resolveItemCopy';
 
 export type ResolveUiState =
@@ -17,6 +18,7 @@ export type ResolveRowState = {
   readonly sentence: string | null;
   readonly action: ResolveRowAction | null;
   readonly failedStep: ResolveFailedStep | null;
+  readonly isRemoteMoved: boolean;
 };
 
 type Params = {
@@ -131,11 +133,32 @@ export const resolveRowState = ({
   const state = uiStateOf({ stage });
   switch (state) {
     case 'new':
-      return { state, node: 'queued', sentence: null, action: 'resolve', failedStep: null };
+      return {
+        state,
+        node: 'queued',
+        sentence: null,
+        action: 'resolve',
+        failedStep: null,
+        isRemoteMoved: false,
+      };
     case 'working':
-      return { state, node: 'running', sentence: 'Working', action: null, failedStep: null };
+      return {
+        state,
+        node: 'running',
+        sentence: 'Working',
+        action: null,
+        failedStep: null,
+        isRemoteMoved: false,
+      };
     case 'needs_you':
-      return { state, node: 'question', sentence: 'Needs you', action: 'answer', failedStep: null };
+      return {
+        state,
+        node: 'question',
+        sentence: 'Needs you',
+        action: 'answer',
+        failedStep: null,
+        isRemoteMoved: false,
+      };
     case 'ready':
       return {
         state,
@@ -143,9 +166,17 @@ export const resolveRowState = ({
         sentence: readySentence({ proposalKind }),
         action: 'review',
         failedStep: null,
+        isRemoteMoved: false,
       };
     case 'approved':
-      return { state, node: 'queued', sentence: 'Approved', action: null, failedStep: null };
+      return {
+        state,
+        node: 'queued',
+        sentence: 'Approved',
+        action: null,
+        failedStep: null,
+        isRemoteMoved: false,
+      };
     case 'resolved':
       return {
         state,
@@ -153,6 +184,7 @@ export const resolveRowState = ({
         sentence: isLeftOpen ? 'Replied, left open' : 'Resolved on GitHub',
         action: null,
         failedStep: null,
+        isRemoteMoved: false,
       };
     case 'failed': {
       const step = failedStep ?? 'run';
@@ -162,10 +194,18 @@ export const resolveRowState = ({
         sentence: failedSentence({ step, pushedSha, pushError, runFailure }),
         action: failedAction({ step }),
         failedStep: step,
+        isRemoteMoved: step === 'push' && isRemoteMovedError({ error: pushError }),
       };
     }
     case 'later':
-      return { state, node: 'skipped', sentence: 'Later', action: 'resume', failedStep: null };
+      return {
+        state,
+        node: 'skipped',
+        sentence: 'Later',
+        action: 'resume',
+        failedStep: null,
+        isRemoteMoved: false,
+      };
     default: {
       const exhaustive: never = state;
       return exhaustive;
