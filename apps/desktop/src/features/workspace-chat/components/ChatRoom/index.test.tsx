@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   ChatId,
   ChatMessage,
@@ -25,6 +25,8 @@ const { store } = vi.hoisted(() => ({
       { id: 'anthropic', connection: 'connected' },
       { id: 'opencode', connection: 'connected' },
     ],
+    cliRequirements: [] as ReadonlyArray<unknown>,
+    settings: {} as Record<string, string>,
     chatMessages: {} as Record<string, ReadonlyArray<unknown>>,
     chatStreams: {} as Record<string, unknown>,
     loadChatMessages: vi.fn(async () => undefined),
@@ -365,13 +367,34 @@ describe('ChatRoom', () => {
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
-  it('disables the providers a chat cannot use, with the reason', () => {
+  it('offers the full picker with only chat providers and says why the others are out', () => {
     store.chatMessages = { [CHAT_ID]: [] };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: Sonnet 5/ }));
-    const refused = screen.getByRole('menuitem', { name: /OpenCode/ });
-    expect(refused.hasAttribute('disabled')).toBe(true);
-    expect(refused.textContent).toContain('Chat needs a provider that can run read-only');
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    expect(within(dialog).getByText(/OpenCode can't chat/)).toBeDefined();
+    expect(within(dialog).getByText(/Chat needs a provider that can run read-only/)).toBeDefined();
+    expect(within(dialog).getByText('Effort')).toBeDefined();
+    expect(within(dialog).queryByRole('button', { name: /OpenCode/ })).toBeNull();
+  });
+
+  it('saves the picked model and effort on the chat in one write', async () => {
+    store.chatMessages = { [CHAT_ID]: [] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'High' }));
+    });
+
+    expect(store.setChatModel).toHaveBeenCalledTimes(1);
+    expect(store.setChatModel).toHaveBeenCalledWith({
+      chatId: CHAT_ID,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: 'high',
+    });
   });
 });

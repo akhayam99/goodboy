@@ -8,7 +8,8 @@ import { sessionPlace, useAppStore } from '../../../../store';
 import type { ChatHandoff } from '../../chatHandoff';
 import { chatModelLabel } from '../../chatModelLabel';
 import { chatSuggestions } from '../../chatSuggestions';
-import { defaultChatModel, type ChatModelChoice } from '../../defaultChatModel';
+import type { ChatRouting } from '../../chatRouting';
+import { defaultChatModel } from '../../defaultChatModel';
 import { ChatComposer } from '../ChatComposer';
 import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
 import { ChatEmpty } from './ChatEmpty';
@@ -63,7 +64,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
   const stopChatReply = useAppStore((state) => state.stopChatReply);
   const setChatModel = useAppStore((state) => state.setChatModel);
   const navigate = useAppStore((state) => state.navigate);
-  const [draftModel, setDraftModel] = useState<ChatModelChoice | null>(null);
+  const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const [work, setWork] = useState<WorkRequest | null>(null);
 
   useEffect(() => {
@@ -73,12 +74,12 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
     void loadChatMessages({ chatId });
   }, [chatId, messages, loadChatMessages]);
 
-  const model = useMemo<ChatModelChoice>(() => {
+  const model = useMemo<ChatRouting>(() => {
     if (chat !== null) {
-      return { provider: chat.provider, model: chat.model };
+      return { provider: chat.provider, model: chat.model, effort: chat.effort };
     }
-    return draftModel ?? defaultChatModel({ connected });
-  }, [chat, draftModel, connected]);
+    return draftRouting ?? { ...defaultChatModel({ connected }), effort: null };
+  }, [chat, draftRouting, connected]);
 
   const send = async (text: string): Promise<void> => {
     if (chatId !== null) {
@@ -86,16 +87,29 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
       return;
     }
     const created = await createChat({ workspaceId, provider: model.provider, model: model.model });
+    if (model.effort !== null) {
+      await setChatModel({
+        chatId: created,
+        provider: model.provider,
+        model: model.model,
+        effort: model.effort,
+      });
+    }
     onCreated(created);
     await sendChatMessage({ chatId: created, content: text });
   };
 
-  const pickModel = (choice: ChatModelChoice): void => {
+  const pickRouting = (choice: ChatRouting): void => {
     if (chatId === null) {
-      setDraftModel(choice);
+      setDraftRouting(choice);
       return;
     }
-    void setChatModel({ chatId, provider: choice.provider, model: choice.model });
+    void setChatModel({
+      chatId,
+      provider: choice.provider,
+      model: choice.model,
+      effort: choice.effort,
+    });
   };
 
   const shown = messages ?? NO_MESSAGES;
@@ -155,8 +169,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
       <div className="shrink-0 px-6 pb-3.5 pt-1.5">
         <ChatComposer
           placeholder={`Ask anything about ${workspaceName}`}
-          provider={model.provider}
-          model={model.model}
+          routing={model}
           isStreaming={stream !== undefined}
           isStopping={stream?.isStopping === true}
           isAutoFocused={chatId === null}
@@ -166,7 +179,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
               void stopChatReply({ chatId });
             }
           }}
-          onModel={pickModel}
+          onRouting={pickRouting}
         />
       </div>
     </section>
