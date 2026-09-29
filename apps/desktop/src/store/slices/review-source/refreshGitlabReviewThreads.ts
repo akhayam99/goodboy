@@ -4,9 +4,8 @@ import type { IsoDateTime, SessionId } from '@goodboy/types';
 import { gitlabReviewTransport } from '../../../features/integrations/gitlab/gitlabReviewTransport';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { syncSourceThreads } from './syncSourceThreads';
-import type { GetFn, ReviewSourceThreads, SetFn } from './types';
-
-const THREADS_TTL_MS = 30_000;
+import type { GetFn, SetFn } from './types';
+import { THREADS_TTL_MS, writeReviewSourceThreads } from './writeReviewSourceThreads';
 
 type Params = {
   readonly set: SetFn;
@@ -15,29 +14,6 @@ type Params = {
   readonly force?: boolean;
   readonly silent?: boolean;
 };
-
-const EMPTY: ReviewSourceThreads = { comments: [], fetchedAt: null, loading: false, error: null };
-
-const write = ({
-  set,
-  sessionId,
-  url,
-  patch,
-}: {
-  readonly set: SetFn;
-  readonly sessionId: SessionId;
-  readonly url: string;
-  readonly patch: (current: ReviewSourceThreads) => ReviewSourceThreads;
-}): void =>
-  set((state) => ({
-    reviewSourceThreads: {
-      ...state.reviewSourceThreads,
-      [sessionId]: {
-        ...state.reviewSourceThreads[sessionId],
-        [url]: patch(state.reviewSourceThreads[sessionId]?.[url] ?? EMPTY),
-      },
-    },
-  }));
 
 export const refreshGitlabReviewThreads = async ({
   set,
@@ -72,10 +48,10 @@ export const refreshGitlabReviewThreads = async ({
       if (!force && (existing?.loading === true || age < THREADS_TTL_MS)) {
         return;
       }
-      write({
+      writeReviewSourceThreads({
         set,
         sessionId,
-        url,
+        key: url,
         patch: (current) => ({ ...current, loading: true, error: null }),
       });
       try {
@@ -99,10 +75,10 @@ export const refreshGitlabReviewThreads = async ({
           projectId: target.projectId,
           comments,
         });
-        write({
+        writeReviewSourceThreads({
           set,
           sessionId,
-          url,
+          key: url,
           patch: () => ({
             comments,
             fetchedAt: new Date().toISOString() as IsoDateTime,
@@ -111,10 +87,10 @@ export const refreshGitlabReviewThreads = async ({
           }),
         });
       } catch (error) {
-        write({
+        writeReviewSourceThreads({
           set,
           sessionId,
-          url,
+          key: url,
           patch: (current) => ({
             ...current,
             loading: false,

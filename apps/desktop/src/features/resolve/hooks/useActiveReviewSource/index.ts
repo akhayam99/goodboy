@@ -32,6 +32,8 @@ export const useActiveReviewSource = ({ sessionId }: { readonly sessionId: Sessi
       sessionGitlabMr: s.sessionGitlabMr,
       mountGithub: s.mountGithub,
       mountGitlabMr: s.mountGitlabMr,
+      mountBitbucketPr: s.mountBitbucketPr,
+      sessionBitbucketPr: s.sessionBitbucketPr,
       diffComments: s.diffComments,
       reviewSourceThreads: s.reviewSourceThreads,
       reviewSourceKeys: s.reviewSourceKeys,

@@ -1,5 +1,6 @@
 import { selectActiveMountId } from '../project-mounts/selectors';
 import { reviewSourceEntriesOf } from './reviewSourceEntries';
+import { refreshBitbucketReviewThreads } from './refreshBitbucketReviewThreads';
 import { refreshGitlabReviewThreads } from './refreshGitlabReviewThreads';
 import type { GetFn, SelectReviewSourceParams, SetFn } from './types';
 
@@ -25,5 +26,8 @@ export const selectReviewSource = async ({ set, get, sessionId, key }: Params): 
   set((state) => ({ reviewSourceKeys: { ...state.reviewSourceKeys, [sessionId]: key } }));
   if (entry.kind === 'gitlab') {
     await refreshGitlabReviewThreads({ set, get, sessionId, force: true, silent: true });
+  }
+  if (entry.kind === 'bitbucket') {
+    await refreshBitbucketReviewThreads({ set, get, sessionId, force: true, silent: true });
   }
 };

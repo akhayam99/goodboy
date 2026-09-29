@@ -2,11 +2,11 @@ import type { SessionId } from '@goodboy/types';
 import { REVIEW_SOURCE_CAPABILITIES } from '@goodboy/core';
 import type { AppState } from '../../types';
 import { selectActiveMountId } from '../project-mounts/selectors';
-import { reviewSourceEntriesOf } from './reviewSourceEntries';
+import { openBitbucketPullRequestsOf, reviewSourceEntriesOf } from './reviewSourceEntries';
 import { LOCAL_SOURCE_KEY, type ActiveReviewSource, type ReviewSourceEntry } from './types';
 
 export type ReviewSourceSelectionState = Parameters<typeof reviewSourceEntriesOf>[0]['state'] &
-  Pick<AppState, 'sessionActiveMount' | 'reviewSourceKeys'>;
+  Pick<AppState, 'sessionActiveMount' | 'reviewSourceKeys' | 'sessionBitbucketPr'>;
 
 type Params = {
   readonly state: ReviewSourceSelectionState;
@@ -37,11 +37,13 @@ export const selectedReviewEntryOf = ({ state, sessionId }: Params): ReviewSourc
   }
   const github = state.sessionGithub?.[sessionId]?.pr ?? null;
   const gitlab = state.sessionGitlabMr?.[sessionId]?.mr ?? null;
+  const bitbucket = state.sessionBitbucketPr?.[sessionId]?.pr ?? null;
   const remote = entries.filter((entry) => entry.kind !== 'local');
   const onActive = remote.filter((entry) => isOnActiveMount({ entry, activeMountId }));
   return (
     onActive.find((entry) => entry.kind === 'github' && entry.number === github?.number) ??
     onActive.find((entry) => entry.kind === 'gitlab' && entry.number === gitlab?.iid) ??
+    onActive.find((entry) => entry.kind === 'bitbucket' && entry.number === bitbucket?.id) ??
     onActive[0] ??
     remote[0] ??
     entries.find((entry) => entry.key === LOCAL_SOURCE_KEY) ?? {
@@ -99,6 +101,33 @@ export const activeReviewSourceOf = ({ state, sessionId }: Params): ActiveReview
       error: threads?.error ?? null,
       fetchedAt: threads?.fetchedAt ?? null,
       capabilities: REVIEW_SOURCE_CAPABILITIES.gitlab,
+    };
+  }
+  if (entry.kind === 'bitbucket' && entry.number !== null) {
+    const mountBitbucket =
+      entry.mountId === null ? undefined : state.mountBitbucketPr?.[entry.mountId];
+    const pr =
+      mountBitbucket === undefined
+        ? null
+        : (openBitbucketPullRequestsOf({ bitbucket: mountBitbucket }).find(
+            (candidate) => candidate.id === entry.number,
+          ) ?? null);
+    const threads = state.reviewSourceThreads?.[sessionId]?.[entry.url ?? entry.key];
+    return {
+      kind: 'bitbucket',
+      entry,
+      mountId: entry.mountId,
+      projectId: entry.projectId,
+      prNumber: entry.number,
+      url: entry.url,
+      repo: mountBitbucket?.repository ?? null,
+      headBranch: pr?.sourceBranch ?? null,
+      comments: threads?.comments ?? [],
+      hasDetail: threads !== undefined && threads.fetchedAt !== null,
+      isLoading: threads === undefined || threads.loading,
+      error: threads?.error ?? null,
+      fetchedAt: threads?.fetchedAt ?? null,
+      capabilities: REVIEW_SOURCE_CAPABILITIES.bitbucket,
     };
   }
   return null;

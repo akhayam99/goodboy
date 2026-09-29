@@ -1,7 +1,8 @@
 import type { MountId, ProjectId, PullRequestState, SessionId } from '@goodboy/types';
+import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
 import { isOpenNote } from '../../../features/resolve/notes/noteThread';
-import type { AppState } from '../../types';
+import type { AppState, MountBitbucketPrState } from '../../types';
 import { sessionMountTargets } from '../project-mounts/mountRequests';
 import { openReviewThreadIds } from '../resolve/openReviewThreadIds';
 import { LOCAL_SOURCE_KEY, type ReviewSourceEntry } from './types';
@@ -19,6 +20,7 @@ type State = Pick<
   | 'sessionGitlabMr'
   | 'mountGithub'
   | 'mountGitlabMr'
+  | 'mountBitbucketPr'
   | 'diffComments'
   | 'reviewSourceThreads'
 >;
@@ -53,7 +55,24 @@ export const gitlabSourceKey = ({
   readonly number: number;
 }): string => `gitlab:${mountId ?? 'session'}:${number}`;
 
-const REPO_NAME = /^https?:\/\/[^/]+\/(?:.+\/)?([^/]+)\/(?:-\/merge_requests|pull)\/\d+/;
+export const bitbucketSourceKey = ({
+  mountId,
+  number,
+}: {
+  readonly mountId: MountId | null;
+  readonly number: number;
+}): string => `bitbucket:${mountId ?? 'session'}:${number}`;
+
+export const bitbucketThreadsKey = ({
+  mountId,
+  pr,
+}: {
+  readonly mountId: MountId | null;
+  readonly pr: Pick<BitbucketPullRequest, 'id' | 'webUrl'>;
+}): string => pr.webUrl ?? bitbucketSourceKey({ mountId, number: pr.id });
+
+const REPO_NAME =
+  /^https?:\/\/[^/]+\/(?:.+\/)?([^/]+)\/(?:-\/merge_requests|pull-requests|pull)\/\d+/;
 
 const repoNameOf = ({ url }: { readonly url: string }): string =>
   REPO_NAME.exec(url)?.[1] ?? 'Request';
@@ -121,6 +140,52 @@ const gitlabEntry = ({
   };
 };
 
+const bitbucketEntry = ({
+  state,
+  sessionId,
+  mountId,
+  projectId,
+  repository,
+  pr,
+}: {
+  readonly state: State;
+  readonly sessionId: SessionId;
+  readonly mountId: MountId;
+  readonly projectId: ProjectId;
+  readonly repository: string | null;
+  readonly pr: BitbucketPullRequest;
+}): ReviewSourceEntry => {
+  const threads = state.reviewSourceThreads?.[sessionId]?.[bitbucketThreadsKey({ mountId, pr })];
+  return {
+    key: bitbucketSourceKey({ mountId, number: pr.id }),
+    kind: 'bitbucket',
+    mountId,
+    projectId,
+    number: pr.id,
+    label: `${projectNameOf({ state, projectId, fallback: repository?.split('/').at(-1) ?? 'Request' })} #${pr.id}`,
+    url: pr.webUrl,
+    openCount:
+      threads === undefined ? null : openReviewThreadIds({ comments: threads.comments }).length,
+  };
+};
+
+export const openBitbucketPullRequestsOf = ({
+  bitbucket,
+}: {
+  readonly bitbucket: Pick<MountBitbucketPrState, 'prs' | 'pr'>;
+}): ReadonlyArray<BitbucketPullRequest> => {
+  const open = bitbucket.prs.filter((candidate) => candidate.state === 'OPEN');
+  const displayed = bitbucket.pr;
+  if (
+    displayed === null ||
+    displayed.state !== 'OPEN' ||
+    open.some((candidate) => candidate.id === displayed.id)
+  ) {
+    return open;
+  }
+  return [displayed, ...open];
+};
+
 const pullRequestsOf = ({
   prs,
   displayed,
@@ -170,6 +235,21 @@ export const reviewSourceEntriesOf = ({
           mr: gitlab.mr,
         }),
       );
+    }
+    const bitbucket = state.mountBitbucketPr?.[target.id];
+    if (bitbucket !== undefined) {
+      for (const pr of openBitbucketPullRequestsOf({ bitbucket })) {
+        entries.push(
+          bitbucketEntry({
+            state,
+            sessionId,
+            mountId: target.id,
+            projectId: target.projectId,
+            repository: bitbucket.repository,
+            pr,
+          }),
+        );
+      }
     }
   }
   const projectId = state.sessionActiveProject?.[sessionId] ?? null;

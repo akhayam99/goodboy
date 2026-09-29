@@ -5,6 +5,18 @@ const h = vi.hoisted(() => ({
   ghCalls: [] as Array<ReadonlyArray<string>>,
   gitlabReplies: [] as Array<string>,
   gitlabResolves: [] as Array<string>,
+  bitbucketReplies: [] as Array<number>,
+}));
+
+vi.mock('../../../features/integrations/bitbucket/client', () => ({
+  bitbucketListPullRequestComments: vi.fn(async () => []),
+  bitbucketGetPullRequest: vi.fn(async () => ({ sourceCommit: '9a8b7c6' })),
+  bitbucketReplyToPullRequestComment: vi.fn(
+    async ({ parentCommentId }: { readonly parentCommentId: number }) => {
+      h.bitbucketReplies.push(parentCommentId);
+      return { id: 4004 };
+    },
+  ),
 }));
 
 vi.mock('../../../features/github/github', () => ({
@@ -84,6 +96,21 @@ const get = (() => ({
       },
     },
   },
+  mountBitbucketPr: {
+    bbmount: {
+      mountId: 'bbmount',
+      projectId: 'bbproject',
+      repo: { workspaceSlug: 'northwind', repoSlug: 'storefront-web' },
+      repository: 'northwind/storefront-web',
+      pr: {
+        id: 12,
+        state: 'OPEN',
+        sourceBranch: 'nw/cart-total',
+        webUrl: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12',
+      },
+      prs: [],
+    },
+  },
   diffComments: {},
   projects: [],
   sessionProjectMounts: {},
@@ -106,6 +133,7 @@ beforeEach(() => {
   h.ghCalls.length = 0;
   h.gitlabReplies.length = 0;
   h.gitlabResolves.length = 0;
+  h.bitbucketReplies.length = 0;
 });
 
 describe('reviewSourceFor', () => {
@@ -131,6 +159,31 @@ describe('reviewSourceFor', () => {
     expect(h.gitlabReplies).toEqual(['d41']);
     expect(h.gitlabResolves).toEqual(['d41']);
     expect(h.ghCalls).toEqual([]);
+  });
+
+  it('replies on a bitbucket pull request and refuses to resolve', async () => {
+    const source = reviewSourceFor({
+      get,
+      sessionId: SESSION,
+      row: row({ threadId: 'bitbucket:4001', sourceKind: 'bitbucket', prNumber: 12 }),
+    });
+    const reply = await source.reply({ providerThreadId: '4001', body: 'Fixed' });
+    expect(reply.id).toBe('4004');
+    expect(h.bitbucketReplies).toEqual([4001]);
+    expect(source.capabilities).toEqual({ canReply: true, canResolve: false });
+    await expect(source.resolve({ providerThreadId: '4001' })).rejects.toThrow();
+    expect(await source.readRemoteHead()).toBe('9a8b7c6');
+    expect(h.ghCalls).toEqual([]);
+  });
+
+  it('refuses a bitbucket thread whose pull request is not in the session', () => {
+    expect(() =>
+      reviewSourceFor({
+        get,
+        sessionId: SESSION,
+        row: row({ threadId: 'bitbucket:1', sourceKind: 'bitbucket', prNumber: 999 }),
+      }),
+    ).toThrow();
   });
 
   it('closes a note on this machine and cannot reply to it', async () => {

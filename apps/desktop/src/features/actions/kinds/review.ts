@@ -18,7 +18,7 @@ import type { ObjectKindDefinition, ReviewActionTarget } from '../types';
 export type ReviewFacts = {
   readonly sessionId: SessionId;
   readonly prNumber: number | null;
-  readonly sourceKind: 'github' | 'gitlab' | null;
+  readonly sourceKind: 'github' | 'gitlab' | 'bitbucket' | null;
   readonly open: number;
   readonly fresh: number;
   readonly ready: number;

@@ -24,7 +24,7 @@ export type ReviewSourceEntry = Readonly<{
 }>;
 
 export type ActiveReviewSource = Readonly<{
-  kind: 'github' | 'gitlab';
+  kind: 'github' | 'gitlab' | 'bitbucket';
   entry: ReviewSourceEntry;
   mountId: MountId | null;
   projectId: ProjectId | null;

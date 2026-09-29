@@ -6,7 +6,7 @@ import type { GetFn } from './types';
 type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
-  readonly kind: Extract<ResolveSourceKind, 'github' | 'gitlab'>;
+  readonly kind: Exclude<ResolveSourceKind, 'local'>;
   readonly prNumber: number;
   readonly projectId: ProjectId | null;
   readonly comments: ReadonlyArray<PrComment>;
