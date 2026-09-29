@@ -1,8 +1,9 @@
 import type { ReviewSourceKind } from './types';
 
-const PULL_SUFFIX = /\/pull\/\d+(?:\/.*)?$/;
-const MR_SUFFIX = /\/-\/merge_requests\/\d+(?:\/.*)?$/;
-const BITBUCKET_SUFFIX = /\/pull-requests\/\d+(?:\/.*)?$/;
+const PULL_SUFFIX = '/pull/';
+const MR_SUFFIX = '/-/merge_requests/';
+const BITBUCKET_SUFFIX = '/pull-requests/';
+const DIGIT = /\d/;
 
 type Params = Readonly<{
   kind: ReviewSourceKind;
@@ -16,11 +17,21 @@ const replaced = ({
   path,
 }: {
   readonly url: string;
-  readonly suffix: RegExp;
+  readonly suffix: string;
   readonly path: string;
 }): string | null => {
-  const next = url.replace(suffix, path);
-  return next === url ? null : next;
+  let start = url.indexOf(suffix);
+  while (start !== -1) {
+    let end = start + suffix.length;
+    while (end < url.length && DIGIT.test(url[end] ?? '')) {
+      end += 1;
+    }
+    if (end > start + suffix.length && (end === url.length || url[end] === '/')) {
+      return `${url.slice(0, start)}${path}`;
+    }
+    start = url.indexOf(suffix, start + 1);
+  }
+  return null;
 };
 
 export const commitLinkOf = ({ kind, url, sha }: Params): string | null => {
