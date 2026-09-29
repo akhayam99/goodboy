@@ -105,6 +105,9 @@ const attemptOn = ({
     endedAt: null,
     error: null,
     createdAt,
+    batchId: null,
+    copyPath: null,
+    launchChoice: null,
   }) satisfies ResolveAttempt;
 
 const mount = ({ mountId, worktreePath }: { mountId: MountId; worktreePath: string }) => ({

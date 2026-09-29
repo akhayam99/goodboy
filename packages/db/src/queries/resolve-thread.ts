@@ -52,8 +52,8 @@ export const upsertResolveThread = async ({
   expectedRevision,
 }: UpsertParams): Promise<boolean> => {
   const result = await db.execute(
-    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, diff_comment_id, state, stage, state_reason, revision, generation, reopened_from_thread_id, active_attempt_id, disposition, reply_draft, commit_shas_json, fixup_of_sha, replaces_sha, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO resolve_threads (id, session_id, project_id, pr_number, thread_id, origin_kind, diff_comment_id, state, stage, state_reason, revision, generation, reopened_from_thread_id, active_attempt_id, disposition, reply_draft, commit_shas_json, fixup_of_sha, replaces_sha, question, reply_posted_at, reply_id, github_resolved, closed_at, closed_source, created_at, updated_at, source_kind)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT (session_id, thread_id) DO UPDATE SET
        project_id = excluded.project_id,
        pr_number = excluded.pr_number,
@@ -105,6 +105,7 @@ export const upsertResolveThread = async ({
       row.closedSource,
       row.createdAt,
       row.updatedAt,
+      row.originKind === 'diff_comment' ? 'local' : 'github',
       expectedRevision,
       expectedRevision,
     ],

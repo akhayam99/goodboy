@@ -362,6 +362,9 @@ const makeAttempt = ({
   endedAt: createdAt + 1,
   error: 'interrupted',
   createdAt,
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 });
 
 type StartParams = {

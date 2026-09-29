@@ -532,6 +532,9 @@ const ATTEMPT_RETRY: ResolveAttempt = {
   endedAt: msAgo({ minutes: 52 }),
   error: null,
   createdAt: msAgo({ minutes: 70 }),
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 };
 
 const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
@@ -550,6 +553,9 @@ const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
   endedAt: null,
   error: null,
   createdAt: msAgo({ minutes: 6 }),
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 };
 
 const CANDIDATE_RETRY: ResolveCandidate = {

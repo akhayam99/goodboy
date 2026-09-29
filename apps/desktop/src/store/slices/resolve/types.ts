@@ -6,6 +6,7 @@ import type {
   ProjectId,
   ResolveAttemptPhase,
   ResolveCheckBreadth,
+  ResolveLaunchChoice,
   ResolvePublicationDrift,
   ResolvePublicationPreview,
   ResolveThread,
@@ -41,6 +42,11 @@ export type AttemptParams = SessionParams & {
   readonly phase: 'queued' | 'running';
   readonly threadIds?: ReadonlyArray<string>;
   readonly candidateMode?: ResolveCandidateMode;
+  readonly batch?: ResolveAttemptBatch;
+};
+export type ResolveAttemptBatch = {
+  readonly batchId: string;
+  readonly launchChoice: ResolveLaunchChoice;
 };
 export type CandidateBeginParams = SessionParams & {
   readonly attemptId: string;
