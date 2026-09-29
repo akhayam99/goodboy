@@ -8,6 +8,7 @@ const base = {
   isLeftOpen: false,
   pushedSha: null,
   pushError: null,
+  runFailure: 'The run failed and no reason was recorded',
 } as const;
 
 const EXPECTED: Record<ResolveStage, ResolveUiState> = {
@@ -64,6 +65,17 @@ describe('resolveRowState', () => {
     expect(resolveRowState({ ...base, stage: 'failed', failedStep: 'uncertain' }).action).toBe(
       'open_github',
     );
+  });
+
+  it('names the specific reason a run failed', () => {
+    expect(
+      resolveRowState({
+        ...base,
+        stage: 'failed',
+        failedStep: 'run',
+        runFailure: 'The run failed: every provider is over its budget cap',
+      }).sentence,
+    ).toBe('The run failed: every provider is over its budget cap');
   });
 
   it('tells a thread left for the reviewer from one resolved on GitHub', () => {

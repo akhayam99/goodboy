@@ -51,11 +51,16 @@ export const persistResolveTurn = async ({
   }
   const attempts = await listResolveAttempts({ db, sessionId });
   const attempt = [...attempts].reverse().find((item) => item.agentId === agent.id);
+  const isRecoverable =
+    !isCandidate &&
+    hasOwnedMarkers &&
+    attempt?.phase === 'failed' &&
+    attempt.error === 'interrupted';
   if (
     attemptId !== undefined &&
     (attempt?.id !== attemptId ||
       attempt.phase === 'cancelled' ||
-      attempt.phase === 'failed' ||
+      (attempt.phase === 'failed' && !isRecoverable) ||
       (isCandidate && attempt.phase !== 'running'))
   ) {
     return;

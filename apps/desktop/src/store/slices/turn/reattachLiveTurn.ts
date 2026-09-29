@@ -81,15 +81,23 @@ export const reattachLiveTurn = async ({ set, get, runId, cursor }: Params): Pro
   const { owner } = cursor;
   const { agentId, sessionId } = owner;
   markTurnActive({ agentId });
-  const idle: TurnState = { kind: 'idle', lastActivityAt: now() };
-  await writeTurnState({
-    set,
-    sessionId,
-    agentId,
-    state: turnReducer(idle, { kind: 'send', runId, at: now() }),
+  const prepared = await (async () => {
+    const idle: TurnState = { kind: 'idle', lastActivityAt: now() };
+    await writeTurnState({
+      set,
+      sessionId,
+      agentId,
+      state: turnReducer(idle, { kind: 'send', runId, at: now() }),
+    });
+    const writableMounts = selectWritableMounts({ state: get(), sessionId }).filter(
+      isTurnWritableMount,
+    );
+    return { mounts: writableMounts, before: snapshotMountChanges({ mounts: writableMounts }) };
+  })().catch((error: unknown) => {
+    markTurnSettled({ agentId });
+    throw error;
   });
-  const mounts = selectWritableMounts({ state: get(), sessionId }).filter(isTurnWritableMount);
-  const mountChangesBefore = snapshotMountChanges({ mounts });
+  const { mounts, before: mountChangesBefore } = prepared;
   const editedPaths = new Set<string>();
   let assistantText = '';
   let receivedProviderError = false;

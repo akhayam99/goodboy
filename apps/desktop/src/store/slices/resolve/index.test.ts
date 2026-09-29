@@ -4,6 +4,7 @@ import {
   hasResolveImport,
   insertMessage,
   insertOpenQuestion,
+  listResolveAttempts,
   listResolveQueueItems,
   listResolveThreads,
   migrate,
@@ -24,7 +25,9 @@ import type { GetFn, SetFn } from './types';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
 import { createResolveThread } from './createResolveThread';
+import { reconcileResolveAttempts } from './reconcileResolveAttempts';
 import { threadOutcome } from './threadOutcome';
+import { SETTLE_CEILING_MS, markTurnActive, markTurnSettled } from '../turn/turnSettled';
 
 const h = vi.hoisted(() => ({
   execute: vi.fn(),
@@ -365,6 +368,208 @@ describe('durable resolve store', () => {
       live.get().sessionResolveThreads[SESSION_ID]?.every((row) => row.state === 'working'),
     ).toBe(true);
     expect(h.select.mock.calls.some(([sql]) => String(sql).includes('FROM messages'))).toBe(false);
+  });
+
+  it('keeps a committed resolver working while its turn is still settling after the process exited', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+      isCandidate: true,
+      attemptId,
+    });
+    markTurnActive({ agentId: AGENT_ID });
+    try {
+      await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+      expect(
+        live.get().sessionResolveThreads[SESSION_ID]?.every((row) => row.state === 'working'),
+      ).toBe(true);
+      expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('running');
+    } finally {
+      markTurnSettled({ agentId: AGENT_ID });
+    }
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+      attemptId,
+    });
+    expect(outcomesFor({ get: live.get })).toEqual({
+      PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+      PRRT_2: { kind: 'wontfix', reason: 'intentional' },
+    });
+    expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('finished');
+  });
+
+  it('stops trusting a leaked turn mark once the process has been gone past the ceiling', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+      isCandidate: true,
+      attemptId,
+    });
+    markTurnActive({ agentId: AGENT_ID });
+    const realNow = Date.now();
+    const clock = vi.spyOn(Date, 'now');
+    try {
+      clock.mockReturnValue(realNow);
+      await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+      expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('running');
+      clock.mockReturnValue(realNow + SETTLE_CEILING_MS + 1);
+      await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+      expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]?.phase).toBe('failed');
+      expect(
+        live.get().sessionResolveThreads[SESSION_ID]?.every((row) => row.state === 'failed'),
+      ).toBe(true);
+    } finally {
+      clock.mockRestore();
+      markTurnSettled({ agentId: AGENT_ID });
+    }
+  });
+
+  it('projects the rows it marked interrupted so the store never keeps showing them as working', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+      isCandidate: true,
+      attemptId,
+    });
+    await live.actions.recordResolvePhase({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      phase: 'running',
+    });
+    expect(live.get().sessionResolveThreads[SESSION_ID]?.map((row) => row.state)).toEqual([
+      'working',
+      'working',
+    ]);
+
+    await reconcileResolveAttempts({
+      set: live.store.setState as unknown as SetFn,
+      get: live.get,
+      sessionId: SESSION_ID,
+      rows: await listResolveThreads({ db, sessionId: SESSION_ID }),
+      attempts: await listResolveAttempts({ db, sessionId: SESSION_ID }),
+    });
+
+    expect(
+      (await listResolveThreads({ db, sessionId: SESSION_ID })).map((row) => row.state),
+    ).toEqual(['failed', 'failed']);
+    expect(live.get().sessionResolveThreads[SESSION_ID]?.map((row) => row.state)).toEqual([
+      'failed',
+      'failed',
+    ]);
+    expect(live.get().sessionResolveAttempts[SESSION_ID]?.[0]?.phase).toBe('failed');
+  });
+
+  it('records a committed outcome that arrives after reconcile already marked the attempt interrupted', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+      isCandidate: true,
+      attemptId,
+    });
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    expect(
+      live.get().sessionResolveThreads[SESSION_ID]?.every((row) => row.state === 'failed'),
+    ).toBe(true);
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+      attemptId,
+    });
+    expect(outcomesFor({ get: live.get })).toEqual({
+      PRRT_1: { kind: 'resolved', commitSha: 'abcdef1234567890' },
+      PRRT_2: { kind: 'wontfix', reason: 'intentional' },
+    });
+  });
+
+  it('lands a committed resolver with no reply text as a fix ready for review', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText:
+        'Committed a8c81d935.\n<<comment-resolved threadId="PRRT_1" commitSha="a8c81d935">>',
+      attemptId,
+    });
+    const rows = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(rows.find((item) => item.threadId === 'PRRT_1')).toMatchObject({
+      state: 'fixed',
+      disposition: 'fix',
+      commitShas: ['a8c81d935'],
+      replyDraft: null,
+      stage: 'proposed',
+    });
+    expect((await listResolveAttempts({ db, sessionId: SESSION_ID }))[0]).toMatchObject({
+      phase: 'finished',
+      error: null,
+    });
+    const queued = await listResolveQueueItems({ db, sessionId: SESSION_ID });
+    expect(queued.some(({ thread }) => thread.threadId === 'PRRT_1')).toBe(true);
   });
 
   it('brings back the verdicts and the same ResolverStatus after restart without reading messages', async () => {
