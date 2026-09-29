@@ -35,6 +35,16 @@ file holds those explanations. Everything below has been "fixed" at least once a
   also not the union the pull-request screens switch on. That one is
   `PullRequestProvider`, which already has `'bitbucket'`. So Bitbucket pull
   requests do not need a `RemoteHostKind` member to work.
+- `syncBranchWithRemote` (the `Sync and try again` of a push that failed on a
+  moved remote) has no Rust command of its own. It calls `history_rebase_plan`
+  with the branch itself as the base, which fetches `origin/<branch>` and
+  plans the rebase of the unpushed commits on it, then replays that plan in a
+  copy. A conflict discards the copy and stops. It must never start the
+  history rewriter the way `rebaseBranch` does, because the promise on screen
+  is that nothing is touched. A failed push counts as "remote moved" only when
+  the error matches `isRemoteMovedError`; `verifiedPush` builds its two
+  messages through the same module, so changing their wording elsewhere turns
+  the button off.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every
   `pending_resolutions` row into it, and `m143` dropped that table. Nothing
   reads a separate queue any more. What the user sees comes from one column,
