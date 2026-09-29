@@ -1,0 +1,20 @@
+name: setup workspace
+description: >-
+  Installs pnpm and Node 22 with the pnpm store cache, then runs a frozen
+  install. The caller checks the repository out first.
+
+runs:
+  using: composite
+  steps:
+    - name: setup pnpm
+      uses: pnpm/action-setup@v6
+
+    - name: setup node
+      uses: actions/setup-node@v7
+      with:
+        node-version: 22
+        cache: pnpm
+
+    - name: install
+      shell: bash
+      run: pnpm install --frozen-lockfile

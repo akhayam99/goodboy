@@ -10,26 +10,44 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  ci:
-    name: lint + typecheck + test + build
+  changes:
+    name: changes
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 3
+    outputs:
+      tests: ${{ steps.decide.outputs.tests }}
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
-      - name: setup pnpm
-        uses: pnpm/action-setup@v6
+      - name: decide
+        id: decide
+        run: node scripts/ci-changes.mjs
 
-      - name: setup node
-        uses: actions/setup-node@v7
+  checks:
+    name: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: setup workspace
+        uses: ./.github/actions/setup-workspace
+
+      - name: restore turbo cache
+        if: github.ref != 'refs/heads/main'
+        uses: actions/cache/restore@v6
         with:
-          node-version: 22
-          cache: pnpm
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
 
       - name: cache turbo
+        if: github.ref == 'refs/heads/main'
         uses: actions/cache@v6
         with:
           path: .turbo
@@ -37,22 +55,8 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-
 
-      - name: install
-        run: pnpm install --frozen-lockfile
-
-      - name: resolve turbo base
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            echo "TURBO_SCM_BASE=${{ github.event.pull_request.base.sha }}" >> "$GITHUB_ENV"
-          else
-            echo "TURBO_SCM_BASE=${{ github.event.before }}" >> "$GITHUB_ENV"
-          fi
-
-      - name: lint
-        run: pnpm turbo run lint --affected
-
       - name: typecheck
-        run: pnpm turbo run typecheck --affected
+        run: pnpm turbo run typecheck
 
       - name: tauri commands
         run: pnpm run check:tauri-commands
@@ -69,34 +73,69 @@ jobs:
       - name: knip production
         run: pnpm run knip:production
 
-      - name: test
-        run: pnpm turbo run test --affected --continue
-
-      - name: a11y
-        run: pnpm --filter @goodboy/desktop test:a11y
+      - name: test shards cover every file
+        run: node scripts/check-test-shards.mjs
 
       - name: build
-        run: pnpm turbo run build --affected
+        run: pnpm --filter @goodboy/desktop exec vite build
 
-  audit:
-    name: pnpm audit
+      - name: audit
+        continue-on-error: true
+        run: pnpm audit --prod
+
+  test-desktop:
+    name: desktop tests ${{ matrix.shard }}/4
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - name: checkout
         uses: actions/checkout@v7.0.1
 
-      - name: setup pnpm
-        uses: pnpm/action-setup@v6
+      - name: setup workspace
+        uses: ./.github/actions/setup-workspace
 
-      - name: setup node
-        uses: actions/setup-node@v7
+      - name: test
+        run: pnpm --filter @goodboy/desktop exec vitest run --project unit --no-passWithNoTests --shard=${{ matrix.shard }}/4
+
+  test-packages:
+    name: packages tests + a11y
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: setup workspace
+        uses: ./.github/actions/setup-workspace
+
+      - name: test packages
+        run: pnpm turbo run test --filter='./packages/*' --continue
+
+      - name: a11y
+        if: ${{ !cancelled() }}
+        run: pnpm --filter @goodboy/desktop test:a11y
+
+  gate:
+    name: lint + typecheck + test + build
+    needs: [changes, checks, test-desktop, test-packages]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
         with:
-          node-version: 22
-          cache: pnpm
+          sparse-checkout: scripts
 
-      - name: install
-        run: pnpm install --frozen-lockfile
-
-      - name: audit
-        run: pnpm audit --prod
+      - name: gate
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: node scripts/ci-gate.mjs
