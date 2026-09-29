@@ -88,6 +88,28 @@ describe('the push confirm', () => {
   });
 });
 
+describe('the push confirm on another provider', () => {
+  it('names the provider that resolves the threads', () => {
+    const body = pushConfirmBody({
+      preview: previewOf({}),
+      commitStyle: 'new',
+      provider: 'GitLab',
+    });
+    expect(body).toContain('resolved on GitLab');
+  });
+
+  it('says nothing about resolving when the provider cannot resolve', () => {
+    const body = pushConfirmBody({
+      preview: previewOf({}),
+      commitStyle: 'new',
+      provider: 'Bitbucket',
+      canResolve: false,
+    });
+    expect(body).not.toContain('resolved');
+    expect(body).toContain('replies');
+  });
+});
+
 describe('the push result line', () => {
   it('names the commit and what landed when everything did', () => {
     expect(pushResultOf({ outcome: outcomeOf({}) })).toEqual({

@@ -42,12 +42,14 @@ export const pushConfirmBody = ({
   preview,
   commitStyle,
   provider = 'GitHub',
+  canResolve = true,
 }: {
   readonly preview: ResolvePublicationPreview;
   readonly commitStyle: ResolveCommitStyle;
   readonly provider?: string;
+  readonly canResolve?: boolean;
 }): string => {
-  const closing = closingThreadCount({ preview });
+  const closing = canResolve ? closingThreadCount({ preview }) : 0;
   const parts = [
     fixesPart({ preview, commitStyle }),
     preview.replies.length === 0 ? null : plural(preview.replies.length, 'reply', 'replies'),

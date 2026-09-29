@@ -110,7 +110,12 @@ export const PushBanner = ({ sessionId, push }: Props) => {
       role="primary"
       icon={<ArrowUp size={ICON_SIZE.control} aria-hidden />}
       title={pushConfirmTitle({ preview })}
-      description={pushConfirmBody({ preview, commitStyle, provider })}
+      description={pushConfirmBody({
+        preview,
+        commitStyle,
+        provider,
+        canResolve: source?.capabilities.canResolve ?? true,
+      })}
       confirmLabel={PUSH_LABEL}
       isBusy={phase.kind === 'pushing'}
       onConfirm={push.confirm}

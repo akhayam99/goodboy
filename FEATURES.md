@@ -269,13 +269,17 @@ Decide what happens to a merged branch, **Ask me**, **Delete on this Mac** or **
 
 Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Draft fixes for N** and each comment gets its own agent, working in its own copy of the branch, up to four at a time while the rest wait for a free slot. Each agent writes its fix as a commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment. Accepting puts the fix on your branch; if it collides with a fix you accepted before, the branch stays as it was and the comment says to redo it on top. A retry keeps the model, commit style and hint the comment started with.
 
+### Review sources
+
+Read the comments of every request in the session from one place. The picker under the Review title lists each pull request and merge request of the session with its provider icon and open count, and **Notes on this machine** last. A session with two projects on two providers shows two entries, and picking one makes its project the active one. Draft, reply, resolve and push work the same on GitHub and GitLab. Where a provider cannot resolve a thread, the confirm says so and leaves the thread open after the reply.
+
 ### Comment states
 
 Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Ready to push** and **Done**. A single summary line under the title counts them, and the list menu filters by state.
 
 ### Close on GitHub
 
-Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.
+Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads (on a GitLab merge request too), after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.
 
 ### Review replies in your voice
 

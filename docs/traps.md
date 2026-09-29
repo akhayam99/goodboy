@@ -35,6 +35,18 @@ file holds those explanations. Everything below has been "fixed" at least once a
   also not the union the pull-request screens switch on. That one is
   `PullRequestProvider`, which already has `'bitbucket'`. So Bitbucket pull
   requests do not need a `RemoteHostKind` member to work.
+- Review comments come from a `ReviewSource` (`packages/core/src/review-source/`),
+  never from `sessionGithub` alone. `activeReviewSourceOf` (review-source slice)
+  picks the source of the active mount: its comments, PR or MR number, url,
+  head branch and capabilities. Replies and resolves go through
+  `reviewSourceFor`, keyed by `resolve_threads.source_kind` and
+  `provider_thread_id`; a GitLab thread id is `gitlab:<discussionId>` and its
+  `pr_number` is the MR iid. A publication is scoped to the rows of the picked
+  source (`approvedPublicationScope({ include })`), so pushing GitLab never
+  posts GitHub rows. `resolveStepPlan` leaves a thread open when the source
+  cannot resolve (`REVIEW_SOURCE_CAPABILITIES`, Bitbucket replies only).
+  Read `sessionGitlabMr` and `reviewSourceThreads` through the selectors, not
+  by hand: picking a source in another project calls `setSessionActiveMount`.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every
   `pending_resolutions` row into it, and `m143` dropped that table. Nothing
   reads a separate queue any more. What the user sees comes from one column,
