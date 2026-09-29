@@ -38,3 +38,6 @@ describe('actionRing', () => {
     expect(ring.isActionName({ name: 'lens.agents' })).toBe(true);
   });
 });
+
+import { it, expect } from 'vitest';
+it('probe fails', () => { expect(1).toBe(2); });
