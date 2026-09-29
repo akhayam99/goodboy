@@ -173,7 +173,7 @@ fn codex_side_jobs_spawn_read_only_with_the_prompt_after_the_separator() {
 }
 
 #[test]
-fn opencode_side_jobs_spawn_the_plan_agent_with_the_turn_permission_flag() {
+fn opencode_side_jobs_spawn_the_plan_agent_without_the_skip_permissions_flag() {
     for job in JOBS {
         let argv = run_side_job(job, "opencode", "opencode", Some("max"));
 
@@ -185,7 +185,6 @@ fn opencode_side_jobs_spawn_the_plan_agent_with_the_turn_permission_flag() {
             "fake-model",
             "--dir",
             "WORK",
-            "--dangerously-skip-permissions",
             "--agent",
             "plan",
             "--variant",
@@ -197,6 +196,23 @@ fn opencode_side_jobs_spawn_the_plan_agent_with_the_turn_permission_flag() {
         assert!(argv[dir].ends_with("/work"), "{argv:?}");
         expected[dir] = argv[dir].clone();
         assert_eq!(argv, expected, "{job:?}");
+        assert!(!argv.contains(&"--dangerously-skip-permissions".to_string()));
+    }
+}
+
+#[test]
+fn no_side_job_spawns_with_a_permission_bypass_flag() {
+    for (provider_id, binary) in PROVIDERS {
+        for job in JOBS {
+            let argv = run_side_job(job, provider_id, binary, Some("high"));
+
+            for flag in ["--dangerously-skip-permissions", "--force", "--yolo"] {
+                assert!(
+                    !argv.contains(&flag.to_string()),
+                    "{provider_id} {job:?}: {argv:?}"
+                );
+            }
+        }
     }
 }
 

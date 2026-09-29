@@ -68,6 +68,16 @@ pub(crate) fn effort_args(cli: Cli, effort: Option<&str>) -> Vec<String> {
     }
 }
 
+const SIDE_JOB_FORBIDDEN: &[&str] = &[
+    "--dangerously-skip-permissions",
+    "--force",
+    "-f",
+    "--yolo",
+    "-y",
+    "--full-auto",
+    "--dangerously-bypass-approvals-and-sandbox",
+];
+
 pub(crate) struct Policy {
     pub pairs: &'static [(&'static str, &'static str)],
     pub switches: &'static [&'static str],
@@ -146,9 +156,15 @@ pub(crate) fn read_only_violations(cli: Cli, job: Job, argv: &[String]) -> Vec<S
         after_prompt_flag = arg == "-p";
         flags.push(arg.as_str());
     }
-    for flag in policy.forbidden {
-        if flags.contains(flag) {
-            found.push(format!("{flag} must not be set"));
+    let side_job_forbidden: &[&str] = if job == Job::Turn {
+        &[]
+    } else {
+        SIDE_JOB_FORBIDDEN
+    };
+    for flag in policy.forbidden.iter().chain(side_job_forbidden) {
+        let message = format!("{flag} must not be set");
+        if flags.contains(flag) && !found.contains(&message) {
+            found.push(message);
         }
     }
     for (flag, value) in policy.pairs {
@@ -255,11 +271,7 @@ pub(crate) fn side_job_args(side: &SideJob<'_>) -> Result<Vec<String>, ArgsError
                 v.push("--dir".to_string());
                 v.push(dir.to_string());
             }
-            v.extend([
-                "--dangerously-skip-permissions".to_string(),
-                "--agent".to_string(),
-                "plan".to_string(),
-            ]);
+            v.extend(["--agent".to_string(), "plan".to_string()]);
             v.extend(effort);
             v.push("--".to_string());
             v.push(combined);
@@ -560,6 +572,28 @@ mod tests {
             read_only_violations(Cli::Codex, Job::Summarizer, &argv),
             strings(&["the prompt must follow a single --"])
         );
+    }
+
+    #[test]
+    fn side_jobs_reject_every_bypass_flag_but_an_opencode_turn_keeps_its_own() {
+        for flag in ["--dangerously-skip-permissions", "--force", "--yolo"] {
+            let argv = strings(&["run", "--agent", "plan", flag, "--", "a prompt"]);
+            for job in [Job::Planner, Job::Summarizer] {
+                assert_eq!(
+                    read_only_violations(Cli::Opencode, job, &argv),
+                    vec![format!("{flag} must not be set")]
+                );
+            }
+        }
+        let turn = strings(&[
+            "run",
+            "--dangerously-skip-permissions",
+            "--agent",
+            "plan",
+            "--",
+            "a prompt",
+        ]);
+        assert!(read_only_violations(Cli::Opencode, Job::Turn, &turn).is_empty());
     }
 
     #[test]

@@ -272,7 +272,6 @@ mod tests {
                 "cheap-model",
                 "--dir",
                 "/tmp/project",
-                "--dangerously-skip-permissions",
                 "--agent",
                 "plan",
                 "--",
