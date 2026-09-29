@@ -167,6 +167,15 @@ the repo's docs other than `FEATURES.md`, or whose anchor is not a heading in
 the current `FEATURES.md`; the GitHub repo, releases, changelog, security and
 legal links are unaffected. Tag Manager is blocked during the run.
 
+Phones: a touch device is told by pointer, `(hover: none) and (pointer: coarse)`,
+never by width. `.onlyFine` hides an element on touch and `.onlyCoarse` hides it
+with a mouse, both in `src/styles.css`. On touch the nav Download, the hero
+download buttons, the install block (Homebrew command, Download for macOS, Linux
+builds and the five-minutes note) and the closer buttons give way to
+`StarButton`, a Star on GitHub link to `SITE.repo`. The phone run of
+`check:page` emulates touch and fails on a visible `[data-download]` element or
+a missing `[data-star]` one, and on a Star button with a mouse.
+
 ## One invented world
 
 Every name, number and time on the page belongs to one invented world, and

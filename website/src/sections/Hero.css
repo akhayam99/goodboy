@@ -21,6 +21,10 @@
   margin-top: 32px;
 }
 
+.heroCopy .ctaRow.onlyCoarse {
+  width: 100%;
+}
+
 .heroMeta {
   margin-left: 8px;
   font: var(--t-caption);

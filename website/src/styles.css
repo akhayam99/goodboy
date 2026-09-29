@@ -247,6 +247,18 @@ code {
   gap: 12px;
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .onlyFine {
+    display: none !important;
+  }
+}
+
+@media not ((hover: none) and (pointer: coarse)) {
+  .onlyCoarse {
+    display: none !important;
+  }
+}
+
 .themeToggle svg {
   fill: none;
   stroke: currentColor;
