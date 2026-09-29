@@ -131,9 +131,52 @@ const TONE_BORDER_RAIL = /(?<![\w-])(?:[\w-]+:)*border-l-(?:2|4)(?![\w-])/;
 const ROUNDED = /(?<![\w-])(?:[\w-]+:)*rounded(?:-|\b)/;
 const FORMAT_ERROR_OWNER = 'packages/ui/src/formatError.ts';
 const INVOKE_OWNER = 'apps/desktop/src/shared/lib/invokeCommand.ts';
-const UI_SOURCE = /^(?:apps\/desktop\/src|packages\/ui\/src)\//;
-const CAUGHT_NAME = '(?:e|err|error|cause|rejection|caught|thrown|\\w+Err(?:or)?)';
-const STRINGIFIED_ERROR = new RegExp(`\\bString\\(${CAUGHT_NAME}\\)|\\$\\{${CAUGHT_NAME}\\}`);
+const CAUGHT_SOURCE = /^(?:apps\/desktop\/src|packages\/ui\/src|packages\/core\/src)\//;
+const TAURI_CORE_IMPORT =
+  /import\s+\{[^}]*\binvoke\b[^}]*\}\s*from\s*['"]@tauri-apps\/api\/core['"]|import\s+\*\s+as\s+\w+\s+from\s*['"]@tauri-apps\/api\/core['"]|import\(\s*['"]@tauri-apps\/api\/core['"]\s*\)|require\(\s*['"]@tauri-apps\/api\/core['"]\s*\)/g;
+const CATCH_BINDING = /\bcatch\s*\(\s*(\w+)|\.catch\(\s*\(?\s*(\w+)/;
+const CATCH_CONTINUATION_BINDING = /^\s*\(?\s*(\w+)\s*(?::[^)=]*)?\)?\s*=>/;
+
+type CatchScope = {
+  readonly name: string;
+  readonly depth: number;
+};
+
+const braceDelta = (text: string): number => {
+  const code = withoutStrings(text);
+  return code.split('{').length - code.split('}').length;
+};
+
+const stringifies = (line: string, name: string): boolean =>
+  new RegExp(
+    `\\bString\\(\\s*${name}\\s*\\)|\\$\\{\\s*${name}\\s*\\}|\\b${name}\\s*\\+\\s*(?:''|"")|(?:''|"")\\s*\\+\\s*${name}\\b|\\b${name}\\.toString\\(\\)|new Error\\(\\s*${name}\\s*\\)`,
+  ).test(line);
+
+const countStringifiedCaughtErrors = (file: SourceFile): number => {
+  let depth = 0;
+  let scopes: ReadonlyArray<CatchScope> = [];
+  let previous = '';
+  let count = 0;
+  for (const line of file.lines) {
+    const binding = CATCH_BINDING.exec(line);
+    const continuation = /\.catch\(\s*$/.test(previous)
+      ? CATCH_CONTINUATION_BINDING.exec(line)
+      : null;
+    const name = binding?.[1] ?? binding?.[2] ?? continuation?.[1];
+    if (name !== undefined) {
+      const at = binding?.index ?? 0;
+      scopes = [...scopes, { name, depth: depth + braceDelta(line.slice(0, at)) }];
+    }
+    if (scopes.some((scope) => stringifies(line, scope.name))) {
+      count += 1;
+    }
+    depth += braceDelta(line);
+    scopes = scopes.filter((scope) => depth > scope.depth);
+    previous = line;
+  }
+  return count;
+};
+
 const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade/index.tsx';
 const FOOTER_CTA_BAR =
   /<footer\b|\bPopoverFooter\b|\bPANE_RHYTHM\.dock\b|\bdock=\{(?![^}]*\bconversation\.composer\b)/;
@@ -237,19 +280,15 @@ const RULES: ReadonlyArray<Rule> = [
     count: (file) =>
       file.path === INVOKE_OWNER
         ? 0
-        : countLines({
-            file,
-            matches: (line) =>
-              /^import \{[^}]*\binvoke\b[^}]*\} from '@tauri-apps\/api\/core'/.test(line),
-          }),
+        : (file.lines.join('\n').match(TAURI_CORE_IMPORT) ?? []).length,
     hint: 'call invokeCommand from shared/lib/invokeCommand.ts, never invoke: it gives every rejection a kind and a message',
   },
   {
     id: 'stringified-error',
     kinds: ['ts'],
     count: (file) =>
-      UI_SOURCE.test(file.path) && file.path !== FORMAT_ERROR_OWNER
-        ? countLines({ file, matches: (line) => STRINGIFIED_ERROR.test(line) })
+      CAUGHT_SOURCE.test(file.path) && file.path !== FORMAT_ERROR_OWNER
+        ? countStringifiedCaughtErrors(file)
         : 0,
     hint: 'show a caught error with formatError from @goodboy/ui: String(error) prints [object Object] on a {kind, message} rejection',
   },
@@ -346,6 +385,41 @@ describe('forbidden code patterns only ever shrink', () => {
     expect(scanned.some((file) => file.kind === 'ts')).toBe(true);
     expect(scanned.some((file) => file.kind === 'rust')).toBe(true);
     expect(scanned.some((file) => file.kind === 'config')).toBe(true);
+  });
+
+  it('counts a stringified caught error and nothing else', () => {
+    const scan = (lines: ReadonlyArray<string>): number =>
+      countStringifiedCaughtErrors({ path: 'apps/desktop/src/x.ts', kind: 'ts', lines });
+    const flagged = [
+      ['try {', '  run();', '} catch (error) {', '  setError(String(error));', '}'],
+      ['try {', '} catch (err: unknown) {', '  log(`${err}`);', '}'],
+      ['run().catch((cause) => show(cause + ""));'],
+      ['run().catch(', '  (failure: unknown) => show(failure.toString()),', ');'],
+      ['} catch (error) {', '  throw new Error(error);', '}'],
+    ];
+    const allowed = [
+      ['const label = String(count);'],
+      [
+        'try {',
+        '} catch (error) {',
+        '  setError(formatError(error));',
+        '}',
+        'const s = String(error);',
+      ],
+      ['} catch {', '  setError(`${reason}`);', '}'],
+    ];
+    expect(flagged.map(scan)).toEqual([1, 1, 1, 1, 1]);
+    expect(allowed.map(scan)).toEqual([0, 0, 0]);
+  });
+
+  it('counts every way of importing invoke straight from tauri', () => {
+    const count = (text: string): number => (text.match(TAURI_CORE_IMPORT) ?? []).length;
+    expect(count("import { invoke } from '@tauri-apps/api/core';")).toBe(1);
+    expect(count("import {\n  Channel,\n  invoke,\n} from '@tauri-apps/api/core';")).toBe(1);
+    expect(count("import * as core from '@tauri-apps/api/core';")).toBe(1);
+    expect(count("const core = await import('@tauri-apps/api/core');")).toBe(1);
+    expect(count("import type { InvokeArgs } from '@tauri-apps/api/core';")).toBe(0);
+    expect(count("import { listen } from '@tauri-apps/api/event';")).toBe(0);
   });
 
   it('flags every footer CTA bar shape the form actions replaced', () => {
