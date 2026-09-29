@@ -181,20 +181,26 @@ describe('buildTimelineStream resolve batches', () => {
     expect(children.every((row) => row.explode?.total === 10)).toBe(true);
   });
 
-  it('keeps unrelated rows out of the exploded block', () => {
+  it('stays newest first with the batch closed and open, the group at the batch start', () => {
     const between = agentAt({ id: 'other', ordinal: 5 });
-    const { items } = streamOf({
-      setup: tenResolvers(),
-      extraAgents: [between],
-      expanded: [GROUP_ID],
-    });
-    const ids = rowsOf(items).map((row) => row.id);
-    const groupIndex = ids.indexOf(GROUP_ID);
+    const newer = agentAt({ id: 'newer', ordinal: 30 });
+    const older = agentAt({ id: 'older', ordinal: -3 });
+    for (const expanded of [[], [GROUP_ID]]) {
+      const { items } = streamOf({
+        setup: tenResolvers(),
+        extraAgents: [between, newer, older],
+        expanded,
+      });
+      const times = rowsOf(items).flatMap((row) => (row.at === null ? [] : [row.at]));
+      const sorted = [...times].sort((first, second) => second.localeCompare(first));
+      const group = rowsOf(items).find((row) => row.id === GROUP_ID);
+      const ids = rowsOf(items).map((row) => row.id);
 
-    expect(ids.slice(groupIndex - 10, groupIndex).every((id) => id.startsWith('agent:r'))).toBe(
-      true,
-    );
-    expect(ids.includes('agent:other')).toBe(true);
+      expect(times).toEqual(sorted);
+      expect(group?.at).toBe(agentAt({ id: 'r0', ordinal: 1 }).startedAt);
+      expect(ids.indexOf('agent:older')).toBeGreaterThan(ids.indexOf(GROUP_ID));
+      expect(ids.indexOf('agent:other')).toBeLessThan(ids.indexOf(GROUP_ID));
+    }
   });
 
   it('counts ready and failed children in the need-you count without opening the group', () => {

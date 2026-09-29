@@ -223,6 +223,25 @@ export const seedActivityResolvesScene = (): void => {
     sessionResolveAttempts: { ...state.sessionResolveAttempts, [SESSION.id]: attempts },
     sessionResolvePublications: { ...state.sessionResolvePublications, [SESSION.id]: [] },
     loadResolveSession: async () => undefined,
+    agentTurnState: {
+      ...state.agentTurnState,
+      ...Object.fromEntries(
+        SEEDS.flatMap((seed, index) =>
+          seed.kind === 'drafting'
+            ? [
+                [
+                  agentIdOf({ index }),
+                  {
+                    kind: 'running',
+                    runId: `mock-resolves-run-${index}` as ProviderRunId,
+                    startedAt: isoOf({ minutesAgo: index + 2 }),
+                  },
+                ] as const,
+              ]
+            : [],
+        ),
+      ),
+    },
     selectedAgentId: {},
   });
 };

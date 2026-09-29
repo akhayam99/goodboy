@@ -1113,7 +1113,7 @@ const batchRows = ({
     familyId: batch.id,
     groupId: null,
     ordinal: null,
-    sortOrdinal: Math.max(...batch.children.map((child) => child.ordinal)),
+    sortOrdinal: Math.min(...batch.children.map((child) => child.ordinal)) - 1,
     rowState: resolveBatchRowState({ summary: batch.summary }),
     hasUnread: batch.children.some((child) => unreadAgentIds.has(child.agent.id)),
     isPending: false,
@@ -1165,20 +1165,6 @@ const batchRows = ({
   };
 };
 
-const withBatchChildren = ({
-  drafts,
-  childRowsByBatchId,
-}: {
-  readonly drafts: ReadonlyArray<DraftRow>;
-  readonly childRowsByBatchId: ReadonlyMap<string, ReadonlyArray<DraftRow>>;
-}): ReadonlyArray<DraftRow> =>
-  drafts.flatMap((draft) => {
-    if (draft.entry.kind !== 'resolveBatch') {
-      return [draft];
-    }
-    return [...(childRowsByBatchId.get(draft.entry.id) ?? []), draft];
-  });
-
 export const buildTimelineStream = ({
   entries,
   unreadAgentIds,
@@ -1226,11 +1212,9 @@ export const buildTimelineStream = ({
     factsByAgentId: resolveFactsByAgentId,
     expandedBatchIds,
   });
-  const childRowsByBatchId = new Map<string, ReadonlyArray<DraftRow>>();
   for (const batch of grouped.batches) {
     const { header, children } = batchRows({ batch, context, unreadAgentIds });
-    rows.push(header);
-    childRowsByBatchId.set(batch.id, children);
+    rows.push(header, ...children);
   }
 
   for (const entry of grouped.remaining) {
@@ -1319,9 +1303,7 @@ export const buildTimelineStream = ({
     }),
   });
   const withDays = withDayBreaks({
-    drafts: withPendingAtFamilyHead({
-      drafts: withBatchChildren({ drafts: merged, childRowsByBatchId }),
-    }),
+    drafts: withPendingAtFamilyHead({ drafts: merged }),
     dayLabelFor,
   });
 

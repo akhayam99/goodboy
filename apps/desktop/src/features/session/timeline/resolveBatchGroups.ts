@@ -41,6 +41,11 @@ const compareNewestFirst = ({
   return second.ordinal - first.ordinal || first.id.localeCompare(second.id);
 };
 
+const earliestAt = ({ members }: { readonly members: ReadonlyArray<Member> }): string | null => {
+  const times = members.flatMap((member) => (member.entry.at === null ? [] : [member.entry.at]));
+  return times.length === 0 ? null : times.reduce((a, b) => (a <= b ? a : b));
+};
+
 export const groupResolveBatches = ({
   entries,
   batchByAgentId,
@@ -82,7 +87,7 @@ export const groupResolveBatches = ({
     batches.push({
       kind: 'resolveBatch',
       id,
-      at: ordered[0]?.entry.at ?? null,
+      at: earliestAt({ members: ordered }),
       batchId,
       prNumber: ref.prNumber,
       children: ordered.map((member) => member.entry),
