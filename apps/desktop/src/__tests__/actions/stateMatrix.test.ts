@@ -1896,7 +1896,7 @@ const REVIEW_COMMENT_STATES: ReadonlyArray<readonly [string, string, ReadonlyArr
     [
       'reviewComment.openInDiff',
       'reviewComment.openOnGithub',
-      'reviewComment.accept (The comment changed since this draft. Redraft first.)',
+      'reviewComment.keepDraft',
       'reviewComment.edit',
       ...COMMENT_DECIDE,
       'reviewComment.copyLink',

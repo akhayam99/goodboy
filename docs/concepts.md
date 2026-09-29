@@ -663,8 +663,8 @@ Every comment shows one state word, grouped in three:
 
 - **Open**: Not started, Drafting (one live line says what the agent does),
   Needs you (the agent asked), Ready (the fix and the reply under the comment,
-  with an Edited tag once you changed the reply), Outdated (the comment changed
-  since the draft), Draft failed or Push failed (the line under the comment
+  with an Edited tag once you changed the reply), Comment changed (the reviewer
+  edited it or answered in the thread since the draft), Draft failed or Push failed (the line under the comment
   names the reason, such as the run ended before a result or the provider
   error, never a generic error)
 - **Waiting for the push**: Accepted, Reply only (with a Resolve only tag when
@@ -672,8 +672,8 @@ Every comment shows one state word, grouped in three:
 - **Done**: Pushed, and Resolved on GitHub when someone else closed it
 
 Each comment has four verbs, with single keys while the list has focus:
-`Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the
-draft is outdated or failed), `Reply` (R, a reply without a change) and `Skip`
+`Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft with the new comment` when the
+reviewer changed it, `Redraft` when the draft failed), `Reply` (R, a reply without a change) and `Skip`
 (S), plus `Undo` (U) until the push and `Draft a fix` (D) on a comment nobody
 drafted. J and K move. Edit, Answer and Reply share one text box: Enter sends,
 Shift+Enter adds a line, Esc cancels. Clicking the reply edits it in place.
@@ -684,6 +684,16 @@ push and, for a fix, lands the commit on the local branch. The actions are the
 `review` and `reviewComment` kinds of the action registry
 (`features/actions/kinds/`), so the buttons, `…`, the right click and the
 palette list the same set.
+
+A comment turns to Comment changed only when its text changes. Every refresh of
+the pull request compares the fingerprint of the thread with the one stored in
+`resolve_threads.source_snapshot_json` when the draft was made, and a mismatch
+stores the new text, who wrote it and when Goodboy saw it. A plain write to the
+thread (a resolved flag, a phase) never marks it: those writes keep the draft in
+step with the thread revision. `Keep the draft` adopts the new text as the
+baseline and keeps the draft acceptable; `Redraft with the new comment` moves
+the baseline when the agent starts. GitHub's outdated flag is a fact on the
+comment (The line moved), not a state.
 
 A **fix attempt** is one agent working on one or more conversations. It ends
 with a local commit and never pushes.

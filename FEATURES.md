@@ -271,7 +271,7 @@ Turn review comments into commits without writing the fix yourself. Review lists
 
 ### Comment states
 
-Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Waiting for the push** and **Done**.
+Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Comment changed**, grouped as **Open**, **Waiting for the push** and **Done**. A comment is marked changed only when the reviewer really edited it or answered in the thread after the draft: the card shows the text before and after and who wrote it, and you choose **Redraft with the new comment** or **Keep the draft**. A comment whose line moved on GitHub says so, and stays as it is.
 
 ### Close on GitHub
 

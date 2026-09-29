@@ -142,6 +142,35 @@ describe('Review as one flow', () => {
     await waitFor(() => expect(focusedThread()).not.toBe(EXPANDED_THREAD_ID));
   });
 
+  it('names a real edit with the text before and after, who wrote it, and Keep the draft', async () => {
+    await mount({ threadId: 'PRRT_thread_typo' });
+
+    expect(row(/Comment changed/)).toBeDefined();
+    const card = within(comment()).getByRole('region', { name: 'Comment edited' });
+    expect(within(card).getByText(/Edited by kenji-w/)).toBeDefined();
+    expect(card.textContent).toContain('Also rename the flag to shouldRetry.');
+    expect(
+      within(comment()).getByRole('button', { name: /^Redraft with the new comment/ }),
+    ).toBeDefined();
+    const settle = vi.fn(async () => undefined);
+    stub({ settleResolveSourceChange: settle });
+    fireEvent.click(within(comment()).getByRole('button', { name: /^Keep the draft/ }));
+    await waitFor(() =>
+      expect(settle).toHaveBeenCalledWith({
+        sessionId: SESSION.id,
+        threadId: 'PRRT_thread_typo',
+        keepDraft: true,
+      }),
+    );
+  });
+
+  it('shows the moved line as a fact on the comment without changing its state', async () => {
+    await mount({ threadId: 'PRRT_thread_flaky_test' });
+
+    expect(within(comment()).getByText('The line moved')).toBeDefined();
+    expect(row(/This test sleeps/).textContent).not.toContain('Comment changed');
+  });
+
   it('moves with J and K while the list has focus', async () => {
     await mount({ threadId: EXPANDED_THREAD_ID });
     row(/retryPolicy\.ts:42/).focus();

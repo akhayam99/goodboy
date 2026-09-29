@@ -48,18 +48,17 @@ export const reviewCommentGroup = ({
   return DECIDED_STATES.has(state) ? 'waiting' : 'done';
 };
 
-const isOutdated = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
-  row.item.candidateRevision !== row.thread.revision;
-
 const isReplyOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.item.approvalState === 'wont_fix' || row.proposalKind !== 'fix';
 
 export const reviewCommentStateOf = ({
   row,
   isEdited = false,
+  isChanged = false,
 }: {
   readonly row: ResolveQueueRow;
   readonly isEdited?: boolean;
+  readonly isChanged?: boolean;
 }): ReviewCommentState => {
   switch (row.thread.stage) {
     case 'new':
@@ -69,7 +68,7 @@ export const reviewCommentStateOf = ({
     case 'asking':
       return 'needs';
     case 'proposed':
-      if (isOutdated({ row })) {
+      if (isChanged) {
         return 'outdated';
       }
       return isEdited ? 'edited' : 'ready';
@@ -116,7 +115,7 @@ export const reviewCommentWord = ({
     case 'edited':
       return 'Ready';
     case 'outdated':
-      return 'Outdated';
+      return 'Comment changed';
     case 'failed':
       return isPushFailure({ row }) ? 'Push failed' : 'Draft failed';
     case 'accepted':
@@ -157,7 +156,7 @@ export const REVIEW_COUNT_NOUN: Record<ReviewCommentState, string> = {
   needs: 'need you',
   ready: 'ready',
   edited: 'ready',
-  outdated: 'outdated',
+  outdated: 'changed',
   failed: 'failed',
   accepted: 'accepted',
   replied: 'reply only',

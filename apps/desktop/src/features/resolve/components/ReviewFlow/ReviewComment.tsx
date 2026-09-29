@@ -15,7 +15,6 @@ import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMe
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
-import { OUTDATED_REASON } from '../../../actions/kinds/reviewComment';
 import type { ReviewComposeMode } from '../../../review/reviewRequest';
 import { conversationSha } from '../../conversationAgentResult';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
@@ -34,6 +33,7 @@ import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCa
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { AgentLine } from './AgentLine';
 import { ProposedChange } from './ProposedChange';
+import { SourceChangeCard } from './SourceChangeCard';
 import type { ReviewEntry } from './useReviewEntries';
 
 export type ReviewCompose = {
@@ -169,6 +169,9 @@ export const ReviewComment = ({
         {note?.location != null && (
           <span className="min-w-0 truncate font-mono text-faint-foreground">{note.location}</span>
         )}
+        {row.commentThread?.head.outdated === true && (
+          <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.lineMoved} />
+        )}
         <span className="ml-auto flex shrink-0 items-center">
           <ObjectOverflowMenu target={target} label={REVIEW_FLOW_LABEL.commentActions} />
         </span>
@@ -177,6 +180,8 @@ export const ReviewComment = ({
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
+
+      {state === 'outdated' && entry.change !== null && <SourceChangeCard change={entry.change} />}
 
       {row.attempt !== null && <AgentLine attempt={row.attempt} state={state} word={word} />}
 
@@ -285,17 +290,6 @@ export const ReviewComment = ({
             state: state as 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved',
             sha: conversationSha({ row }),
           })}
-        </p>
-      )}
-
-      {state === 'outdated' && (
-        <p className="flex min-w-0 items-start gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-foreground">
-          <AlertCircle
-            size={ICON_SIZE.control}
-            aria-hidden
-            className="mt-0.5 shrink-0 text-warning"
-          />
-          {OUTDATED_REASON}
         </p>
       )}
 

@@ -13,6 +13,7 @@ import type {
   ResolveQueueApprovalState,
   ResolveQueueItem,
   ResolveQueueItemWithThread,
+  ResolveSourceSnapshot,
   ResolveThread,
   ResolveThreadState,
   ResolveStage,
@@ -384,7 +385,7 @@ const ITEM_TYPO = buildItem({
   approvedRevision: null,
   deferredAt: null,
   deliveredAt: null,
-  candidateRevision: 1,
+  candidateRevision: 2,
   createdMinutesAgo: 500,
 });
 
@@ -418,6 +419,7 @@ type NoteSeed = {
   readonly path: string;
   readonly line: number;
   readonly createdMinutesAgo: number;
+  readonly isOutdated?: boolean;
 };
 
 const buildNote = (seed: NoteSeed): PrComment => ({
@@ -431,9 +433,12 @@ const buildNote = (seed: NoteSeed): PrComment => ({
   path: seed.path,
   line: seed.line,
   resolved: false,
-  outdated: false,
+  outdated: seed.isOutdated ?? false,
   threadId: seed.threadId,
 });
+
+const TYPO_BEFORE = "Typo: 'shoudl' should be 'should' in the comment above the retry constant.";
+const TYPO_ADDED = 'Also rename the flag to shouldRetry.';
 
 const COMMENTS: ReadonlyArray<PrComment> = [
   buildNote({
@@ -490,6 +495,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     path: 'src/webhooks/retryPolicy.test.ts',
     line: 31,
     createdMinutesAgo: 300,
+    isOutdated: true,
     body: 'This test sleeps for real between retries and flakes on a loaded runner. Can it use fake timers?',
   }),
   buildNote({
@@ -498,7 +504,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     path: 'src/webhooks/config.ts',
     line: 3,
     createdMinutesAgo: 500,
-    body: "Typo: 'shoudl' should be 'should' in the comment above the retry constant.",
+    body: `${TYPO_BEFORE} ${TYPO_ADDED}`,
   }),
   buildNote({
     threadId: T9,
@@ -509,6 +515,19 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     body: 'MAX_RETRY_ATTEMPTS now lives here and in config.ts. Can config own it so the two never drift?',
   }),
 ];
+
+const TYPO_SNAPSHOT: ResolveSourceSnapshot = {
+  body: TYPO_BEFORE,
+  author: 'kenji-w',
+  fingerprint: 'mock-typo-before',
+  seenAt: msAgo({ minutes: 480 }),
+  changed: {
+    body: `${TYPO_BEFORE} ${TYPO_ADDED}`,
+    author: 'kenji-w',
+    fingerprint: 'mock-typo-after',
+    seenAt: msAgo({ minutes: 30 }),
+  },
+};
 
 const MOUNT_TARGET: MountTargetSnapshot = {
   mountId: 'mock-resolve-mount-payments-api' as MountId,
@@ -742,6 +761,7 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
     sessionResolveCheckRuns: { [SESSION_ID]: CHECK_RUNS },
     sessionResolvePublications: { [SESSION_ID]: [PUBLICATION] },
     sessionResolveUncapturedWork: { [SESSION_ID]: null },
+    sessionResolveSourceChanges: { [SESSION_ID]: { [T8]: TYPO_SNAPSHOT } },
     resolveQueueView: {
       [SESSION_ID]: EMPTY_RESOLVE_QUEUE_VIEW,
     },

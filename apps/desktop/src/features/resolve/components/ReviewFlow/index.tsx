@@ -106,6 +106,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
+  const settleResolveSourceChange = useAppStore((s) => s.settleResolveSourceChange);
   const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
   const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
   const requestAttempt = useResolveAgain({
@@ -241,6 +242,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       }
       if (outcome === 'started') {
         setCompose(null);
+        await settleResolveSourceChange({
+          sessionId,
+          threadId: entry.threadId,
+          keepDraft: false,
+        });
       }
     } catch (caught) {
       if (!isReportedError(caught)) {
@@ -259,6 +265,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     select,
     sessionId,
     setError,
+    settleResolveSourceChange,
   ]);
 
   useEffect(() => {

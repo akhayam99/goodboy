@@ -37,8 +37,6 @@ export type ReviewCommentFacts = {
   readonly approval: 'none' | 'accepted' | 'wont_fix' | 'deferred';
 };
 
-export const OUTDATED_REASON = 'The comment changed since this draft. Redraft first.';
-
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
   'new',
   'needs',
@@ -52,6 +50,13 @@ const DECIDED: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied',
 
 const isRedraft = ({ state }: { readonly state: ReviewCommentState }): boolean =>
   state === 'outdated' || state === 'failed';
+
+const editLabel = ({ state }: { readonly state: ReviewCommentState }): string => {
+  if (state === 'outdated') {
+    return 'Redraft with the new comment';
+  }
+  return isRedraft({ state }) ? 'Redraft' : 'Edit';
+};
 
 type RunParams = {
   readonly facts: ReviewCommentFacts;
@@ -202,14 +207,27 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: Check,
       group: 'act',
       shortcut: 'review.accept',
-      when: ({ facts }) => DRAFTED.has(facts.state),
-      blockedReason: ({ facts }) => (facts.state === 'outdated' ? OUTDATED_REASON : null),
-      slot: ({ facts }) => (facts.state === 'outdated' ? 'secondary' : 'primary'),
+      when: ({ facts }) => DRAFTED.has(facts.state) && facts.state !== 'outdated',
+      slot: () => 'primary',
       run: accept,
     },
     {
+      id: 'reviewComment.keepDraft',
+      label: 'Keep the draft',
+      icon: Check,
+      group: 'act',
+      when: ({ facts }) => facts.state === 'outdated',
+      slot: () => 'secondary',
+      run: ({ facts, env }) =>
+        env.getState().settleResolveSourceChange({
+          sessionId: facts.sessionId,
+          threadId: facts.threadId,
+          keepDraft: true,
+        }),
+    },
+    {
       id: 'reviewComment.edit',
-      label: ({ facts }) => (isRedraft(facts) ? 'Redraft' : 'Edit'),
+      label: ({ facts }) => editLabel(facts),
       icon: RefreshCw,
       group: 'act',
       shortcut: 'review.edit',
