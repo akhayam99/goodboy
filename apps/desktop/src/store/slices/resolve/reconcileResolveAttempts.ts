@@ -8,6 +8,7 @@ import {
 } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { resolverTurnOutcomes } from '../../../features/session/resolverTurnOutcomes';
+import { isTurnActive } from '../turn/turnSettled';
 import { outcomePatch } from './outcomePatch';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import type { SessionParams, SliceParams } from './types';
@@ -108,7 +109,10 @@ export const reconcileResolveAttempts = async ({
       lease.holder === attempt.agentId &&
       lease.runId !== null &&
       !lease.hasExited;
-    const isRunning = isLeased || (runId !== undefined && liveRunIds.has(runId));
+    const isRunning =
+      isLeased ||
+      (runId !== undefined && liveRunIds.has(runId)) ||
+      isTurnActive({ agentId: attempt.agentId });
     if (attempt.phase === 'queued' || (attempt.phase === 'running' && isRunning)) {
       continue;
     }

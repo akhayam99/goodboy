@@ -38,5 +38,7 @@ export const markTurnSettled = ({ agentId }: Params): void => {
   existing.resolve();
 };
 
+export const isTurnActive = ({ agentId }: Params): boolean => active.has(agentId);
+
 export const waitTurnSettled = ({ agentId }: Params): Promise<void> =>
   active.get(agentId)?.promise ?? Promise.resolve();

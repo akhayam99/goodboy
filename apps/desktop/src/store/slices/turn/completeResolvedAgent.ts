@@ -132,6 +132,15 @@ export const completeResolvedAgent = async ({
     return shouldAutoAdvance;
   }
 
+  if (ranKind === 'resolver' && ranAgent !== undefined) {
+    await get().persistResolveTurn({
+      sessionId,
+      agent: ranAgent,
+      assistantText,
+      attemptId: resolveAttemptId,
+    });
+  }
+
   const outputSummary =
     ranAgent === undefined
       ? fallbackStepOutputSummary({ output: assistantText })
@@ -161,17 +170,5 @@ export const completeResolvedAgent = async ({
     return null;
   }
 
-  if (ranKind !== 'resolver') {
-    return null;
-  }
-
-  if (ranAgent !== undefined) {
-    await get().persistResolveTurn({
-      sessionId,
-      agent: ranAgent,
-      assistantText,
-      attemptId: resolveAttemptId,
-    });
-  }
   return null;
 };
