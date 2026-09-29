@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { toEntryId, type ConsoleBaseline, type ConsoleBaselineEntry } from './consoleKey';
 
 const BASELINE_PATH = join(import.meta.dirname, 'console-baseline.json');
@@ -32,12 +32,14 @@ const readReport = (path: string): ReadonlyArray<ReportLine> =>
 const sortEntries = (entries: ReadonlyArray<ConsoleBaselineEntry>): ConsoleBaselineEntry[] =>
   [...entries].sort((a, b) => toEntryId(a).localeCompare(toEntryId(b)));
 
+let createdDir: string | null = null;
+
 export const setup = (): void => {
   if (!IS_UPDATING || process.env['GOODBOY_CONSOLE_REPORT'] !== undefined) {
     return;
   }
-  const reportDir = mkdtempSync(join(tmpdir(), 'goodboy-console-'));
-  const reportPath = join(reportDir, 'report.jsonl');
+  createdDir = mkdtempSync(join(tmpdir(), 'goodboy-console-'));
+  const reportPath = join(createdDir, 'report.jsonl');
   writeFileSync(reportPath, '');
   process.env['GOODBOY_CONSOLE_REPORT'] = reportPath;
 };
@@ -74,6 +76,9 @@ export const teardown = (): void => {
     const next = sortEntries([...merged.values()]);
     writeFileSync(BASELINE_PATH, `${JSON.stringify({ entries: next }, null, 2)}\n`);
   } finally {
-    rmSync(dirname(reportPath), { recursive: true, force: true });
+    if (createdDir !== null) {
+      rmSync(createdDir, { recursive: true, force: true });
+      createdDir = null;
+    }
   }
 };

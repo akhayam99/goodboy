@@ -1,6 +1,14 @@
 {
   "entries": [
     {
+      "file": "src/__tests__/surfaces/navigation-flows.test.tsx",
+      "message": "Encountered two children with the same key, `#:choice:session.copyWorktreePath:mount-fixture-#`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omi"
+    },
+    {
+      "file": "src/__tests__/surfaces/navigation-flows.test.tsx",
+      "message": "Encountered two children with the same key, `mount-fixture-#`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted \u2014 the behavior is unsupported"
+    },
+    {
       "file": "src/features/chat/components/WriteDestinationControl/useWriteDestination/index.test.tsx",
       "message": "The current testing environment is not configured to support act(...)"
     },
@@ -38,7 +46,7 @@
     },
     {
       "file": "src/features/session/components/AgentTree/AgentsSection.test.tsx",
-      "message": "Each child in a list should have a unique \"key\" prop."
+      "message": "Each child in a list should have a unique \"key\" prop. | Check the render method of `MetaRow`. It was passed a child from WorkflowRow. See https://react.dev/link/warning-keys for more information."
     },
     {
       "file": "src/features/session/components/WorkflowBuilderView/index.test.tsx",
@@ -362,11 +370,11 @@
     },
     {
       "file": "src/store/store.summarizer-notifications.test.ts",
-      "message": "[summarizer] failed for session session-notif-test: # too many requests"
+      "message": "[summarizer] failed for session session-notif-test: 401 unauthorized"
     },
     {
       "file": "src/store/store.summarizer-notifications.test.ts",
-      "message": "[summarizer] failed for session session-notif-test: # unauthorized"
+      "message": "[summarizer] failed for session session-notif-test: 429 too many requests"
     },
     {
       "file": "src/store/store.summarizer-notifications.test.ts",

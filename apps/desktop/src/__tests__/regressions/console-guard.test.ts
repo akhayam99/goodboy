@@ -11,15 +11,22 @@ type AssertionResult = {
   readonly failureMessages: ReadonlyArray<string>;
 };
 
-type JsonReport = {
-  readonly testResults: ReadonlyArray<{
-    readonly assertionResults: ReadonlyArray<AssertionResult>;
-  }>;
+type FileResult = {
+  readonly name: string;
+  readonly status: string;
+  readonly message: string;
+  readonly assertionResults: ReadonlyArray<AssertionResult>;
 };
 
-const runFixture = (): ReadonlyArray<AssertionResult> => {
-  const env = { ...process.env };
-  delete env['GOODBOY_CONSOLE_REPORT'];
+type JsonReport = { readonly testResults: ReadonlyArray<FileResult> };
+
+type RunParams = { readonly extraEnv?: Record<string, string> };
+
+const runFixtures = ({ extraEnv = {} }: RunParams = {}): ReadonlyArray<FileResult> => {
+  const env = { ...process.env, ...extraEnv };
+  if (extraEnv['GOODBOY_CONSOLE_REPORT'] === undefined) {
+    delete env['GOODBOY_CONSOLE_REPORT'];
+  }
   delete env['GOODBOY_UPDATE_CONSOLE_BASELINE'];
   const run = spawnSync(
     'pnpm',
@@ -27,7 +34,7 @@ const runFixture = (): ReadonlyArray<AssertionResult> => {
     { cwd: DESKTOP_ROOT, env, encoding: 'utf8' },
   );
   const report: JsonReport = JSON.parse(run.stdout.slice(run.stdout.indexOf('{')));
-  return report.testResults.flatMap((file) => file.assertionResults);
+  return report.testResults;
 };
 
 const byTitle = (results: ReadonlyArray<AssertionResult>, title: string): AssertionResult => {
@@ -42,7 +49,7 @@ describe('failOnConsole', () => {
   it(
     'fails the test that logs an unexpected console.error or console.warn, and only that one',
     () => {
-      const results = runFixture();
+      const results = runFixtures().flatMap((file) => file.assertionResults);
 
       const error = byTitle(results, 'logs output that is not in the baseline');
       expect(error.status).toBe('failed');
@@ -60,6 +67,29 @@ describe('failOnConsole', () => {
       expect(byTitle(results, 'may spy on the console itself and log through the spy').status).toBe(
         'passed',
       );
+    },
+    RUN_TIMEOUT_MS,
+  );
+
+  it(
+    'fails the file when output arrives outside a test',
+    () => {
+      const late = runFixtures().find((file) => file.name.endsWith('late-output.fixture.ts'));
+
+      expect(late?.status).toBe('failed');
+      expect(late?.message).toContain('outside a test');
+      expect(late?.message).toContain('late fixture output');
+    },
+    RUN_TIMEOUT_MS,
+  );
+
+  it(
+    'refuses to run when GOODBOY_CONSOLE_REPORT is set without the update switch',
+    () => {
+      const results = runFixtures({ extraEnv: { GOODBOY_CONSOLE_REPORT: '/dev/null' } });
+
+      expect(results.length).toBeGreaterThan(0);
+      expect(results.every((file) => file.status === 'failed')).toBe(true);
     },
     RUN_TIMEOUT_MS,
   );
