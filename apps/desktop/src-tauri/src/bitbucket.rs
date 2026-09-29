@@ -1097,6 +1097,7 @@ pub async fn bitbucket_unrequest_changes(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn bitbucket_merge_pull_request(
     workspace_id: String,
     project_id: Option<String>,
@@ -1148,6 +1149,7 @@ pub async fn bitbucket_decline_pull_request(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn bitbucket_create_pull_request_comment(
     workspace_id: String,
     project_id: Option<String>,
@@ -1176,6 +1178,7 @@ pub async fn bitbucket_create_pull_request_comment(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn bitbucket_reply_to_pull_request_comment(
     workspace_id: String,
     project_id: Option<String>,

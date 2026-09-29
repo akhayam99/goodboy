@@ -1,6 +1,5 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use serde::{Deserialize, Serialize};
 
@@ -377,7 +376,7 @@ fn open_with_browser(path: &Path) -> std::io::Result<()> {
     #[cfg(target_os = "macos")]
     {
         if let Some(app_path) = macos_default_browser_app_path() {
-            let status = Command::new("open")
+            let status = std::process::Command::new("open")
                 .arg("-a")
                 .arg(&app_path)
                 .arg(path)
@@ -396,7 +395,9 @@ fn open_with_browser(path: &Path) -> std::io::Result<()> {
             } else {
                 format!("{template} \"{path_str}\"")
             };
-            let status = Command::new("cmd").args(["/C", &invocation]).status();
+            let status = std::process::Command::new("cmd")
+                .args(["/C", &invocation])
+                .status();
             if status.map(|s| s.success()).unwrap_or(false) {
                 return Ok(());
             }
