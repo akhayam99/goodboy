@@ -3,7 +3,16 @@
 import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Project, Session, Workspace, WorkspaceGitStatus, WorkspaceId } from '@goodboy/types';
+import type {
+  Project,
+  ProjectId,
+  Session,
+  SessionId,
+  Workspace,
+  WorkspaceGitStatus,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 
 const { state, gitStatuses, groups } = vi.hoisted(() => ({
   state: {
@@ -129,14 +138,10 @@ vi.mock('@goodboy/ui', async (importOriginal) => {
 
 import { StageBoard } from './index';
 
-const session = { id: 's-1' } as Session;
+const session = aSession({ id: 's-1' as SessionId });
 const wsId = 'ws-a' as WorkspaceId;
 
-const workspace = {
-  id: wsId,
-  name: 'fresh-idea',
-  slug: 'fresh-idea',
-} as Workspace;
+const workspace = aWorkspace({ id: wsId, name: 'fresh-idea', slug: 'fresh-idea' });
 
 const boxOf = (left: number, top: number, width: number, height: number) =>
   ({
@@ -168,7 +173,8 @@ const projectOf = ({
   readonly id: string;
   readonly kind?: Project['kind'];
   readonly name?: string;
-}): Project => ({ id, workspaceId: wsId, kind, name, rootPath: `/tmp/${id}` }) as Project;
+}): Project =>
+  aProject({ id: id as ProjectId, workspaceId: wsId, kind, name, rootPath: `/tmp/${id}` });
 
 const storeCollapse = (next: { done: boolean; archived: boolean }, workspaceId = wsId) =>
   localStorage.setItem(`goodboy:board-collapsed:v1:${workspaceId}`, JSON.stringify(next));
@@ -212,7 +218,7 @@ describe('StageBoard loading gate', () => {
   });
 
   it('renders the board with the archived column instead of the hero when only archived sessions exist', () => {
-    const shelved = { id: 's-9' } as Session;
+    const shelved = aSession({ id: 's-9' as SessionId });
     state.archivedSessions = { [wsId]: [shelved] };
     storeCollapse({ done: true, archived: false });
     render(<StageBoard workspaceId={wsId} sessions={[]} />);
@@ -410,8 +416,8 @@ describe('StageBoard instant create', () => {
 });
 
 describe('StageBoard selection', () => {
-  const other = { id: 's-2' } as Session;
-  const shelved = { id: 's-9' } as Session;
+  const other = aSession({ id: 's-2' as SessionId });
+  const shelved = aSession({ id: 's-9' as SessionId });
 
   it('never renders a standing selection hint', () => {
     groups.current = [{ key: 'building', sessions: [session] }];
@@ -551,8 +557,8 @@ describe('StageBoard selection', () => {
 });
 
 describe('StageBoard dock', () => {
-  const done = { id: 's-5' } as Session;
-  const shelved = { id: 's-9' } as Session;
+  const done = aSession({ id: 's-5' as SessionId });
+  const shelved = aSession({ id: 's-9' as SessionId });
 
   const renderBoard = (workspaceId: WorkspaceId = wsId) => {
     groups.current = [
