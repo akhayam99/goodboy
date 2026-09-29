@@ -1,5 +1,6 @@
 import type { AgentId, PullRequestState, SessionId, EffortLevel } from '@goodboy/types';
 import {
+  buildRecheckAgentArgs,
   buildResolverAgentArgs,
   buildResolverKickoff,
   type PriorContext,
@@ -17,10 +18,10 @@ type SpawnAgentArgs = {
   readonly provider?: ResolveModelChoice['provider'];
   readonly effort?: EffortLevel;
   readonly initialPrompt: string;
-  readonly kindOverride: 'resolver';
+  readonly kindOverride: 'resolver' | 'scout';
   readonly sourceThreadIds?: ReadonlyArray<string>;
   readonly sourceCommentUrl: string;
-  readonly sourceKind: 'review_comment';
+  readonly sourceKind: 'review_comment' | 'comment_recheck';
   readonly focus: 'none';
 };
 
@@ -63,7 +64,7 @@ export const fixAttemptChunks = ({
   readonly hint: string;
   readonly contextWindow: number | null;
 }): ReadonlyArray<ReadonlyArray<CommentThread>> => {
-  if (mode === 'separate') {
+  if (mode === 'separate' || mode === 'recheck') {
     return threads.map((thread) => [thread]);
   }
   return chunkConversations({
@@ -95,23 +96,32 @@ export const startFixAttempt = async ({
       chunk.flatMap((thread) => (thread.head.threadId == null ? [] : [thread.head.threadId])),
     );
     const scoped = priorContext?.filter((entry) => owned.has(entry.threadId)) ?? [];
-    const args = buildResolverAgentArgs({
-      threads: chunk,
-      pr,
-      hint,
-      ...(scoped.length > 0 && { priorContext: scoped }),
-      ...(style !== undefined && { style }),
-    });
+    const first = chunk[0];
+    const args =
+      mode === 'recheck' && first !== undefined
+        ? buildRecheckAgentArgs({
+            thread: first,
+            pr,
+            hint,
+            ...(scoped.length > 0 && { priorContext: scoped }),
+          })
+        : buildResolverAgentArgs({
+            threads: chunk,
+            pr,
+            hint,
+            ...(scoped.length > 0 && { priorContext: scoped }),
+            ...(style !== undefined && { style }),
+          });
     const agentId = await spawnAgent(sessionId, {
       name: args.name,
       ...(choice.model !== undefined && { model: choice.model }),
       ...(choice.provider !== undefined && { provider: choice.provider }),
       ...(choice.effort !== undefined && { effort: choice.effort }),
       initialPrompt: args.initialPrompt,
-      kindOverride: 'resolver',
+      kindOverride: mode === 'recheck' ? 'scout' : 'resolver',
       ...(args.sourceThreadIds !== undefined && { sourceThreadIds: args.sourceThreadIds }),
       sourceCommentUrl: args.sourceCommentUrl,
-      sourceKind: 'review_comment',
+      sourceKind: args.sourceKind === 'comment_recheck' ? 'comment_recheck' : 'review_comment',
       focus: 'none',
     });
     await setAgentConfig(sessionId, agentId, {

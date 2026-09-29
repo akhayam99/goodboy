@@ -1,4 +1,5 @@
 import type {
+  AgentId,
   ResolveAttempt,
   ResolveCandidate,
   ResolveCandidateItem,
@@ -17,6 +18,11 @@ export type ResolveCandidateWithItems = Readonly<{
   items: ReadonlyArray<ResolveCandidateItem>;
 }>;
 
+export type ThreadRecheck = Readonly<{
+  agentId: AgentId | null;
+  error: string | null;
+}>;
+
 export type ResolveState = {
   readonly sessionResolveThreads: Readonly<Record<SessionId, ReadonlyArray<ResolveThread>>>;
   readonly sessionResolveAttempts: Readonly<Record<SessionId, ReadonlyArray<ResolveAttempt>>>;
@@ -33,6 +39,9 @@ export type ResolveState = {
   readonly sessionResolveUncapturedWork: Readonly<Record<SessionId, ResolveUncapturedWork | null>>;
   readonly activePublicationPreview: Readonly<Record<SessionId, ResolvePublicationPreview | null>>;
   readonly sessionThreadGit: Readonly<Record<SessionId, Readonly<Record<string, ThreadGitFacts>>>>;
+  readonly sessionThreadRechecks: Readonly<
+    Record<SessionId, Readonly<Record<string, ThreadRecheck>>>
+  >;
   readonly threadFixDismissals: Readonly<
     Record<SessionId, Readonly<Record<string, ReadonlyArray<string>>>>
   >;
@@ -48,5 +57,6 @@ export const resolveInitialState: ResolveState = {
   sessionResolveUncapturedWork: {},
   activePublicationPreview: {},
   sessionThreadGit: {},
+  sessionThreadRechecks: {},
   threadFixDismissals: {},
 };

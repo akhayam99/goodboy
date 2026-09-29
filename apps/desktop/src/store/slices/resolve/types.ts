@@ -14,6 +14,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { PublishConversationsResult } from './publishConversations';
+import type { RecheckOutcome } from './recheckThread';
 import type { ResolveCandidateMode } from './resolveCandidateMode';
 import type { ResolveCheckPair } from './runResolveCheck';
 import type { GetFn, SetFn } from '../../slice-types';
@@ -123,10 +124,22 @@ export type ResolveActions = {
   readonly acceptResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;
   readonly refuseResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;
   readonly resolveWithoutReply: (params: ItemParams) => Promise<void>;
-  readonly answerItemWithoutFix: (params: ItemParams & { readonly reply: string }) => Promise<void>;
+  readonly answerItemWithoutFix: (
+    params: ItemParams & { readonly reply: string; readonly allowIntegrated?: boolean },
+  ) => Promise<void>;
   readonly refreshThreadGitState: (params: SessionParams) => Promise<void>;
   readonly dismissThreadFix: (params: ThreadParams & { readonly sha: string }) => void;
-  readonly replyAndResolveThread: (params: ThreadParams) => Promise<void>;
+  readonly replyAndResolveThread: (
+    params: ThreadParams & { readonly reply?: string },
+  ) => Promise<void>;
+  readonly recheckThread: (params: ThreadParams) => Promise<RecheckOutcome>;
+  readonly settleThreadRecheck: (
+    params: SessionParams & {
+      readonly agentId: AgentId;
+      readonly assistantText: string;
+      readonly didAgentDie?: boolean;
+    },
+  ) => Promise<void>;
   readonly resolveThreadOnly: (params: ThreadParams) => Promise<void>;
   readonly deferResolveQueueItem: (params: ItemParams) => Promise<void>;
   readonly takeUpResolveQueueItem: (params: ItemParams) => Promise<void>;

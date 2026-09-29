@@ -13,7 +13,8 @@ import { projectResolveRows } from './projectResolveRows';
 import { saveResolveThread } from './saveResolveThread';
 import type { ItemParams, SliceParams } from './types';
 
-type Params = SliceParams & ItemParams & { readonly reply: string };
+type Params = SliceParams &
+  ItemParams & { readonly reply: string; readonly allowIntegrated?: boolean };
 
 export const RESOLVE_ONLY_REASON = 'resolve_only';
 export const RESOLVE_ONLY_AFTER_INTEGRATION =
@@ -25,6 +26,7 @@ export const settleItemAnswered = async ({
   sessionId,
   itemId,
   reply,
+  allowIntegrated = false,
 }: Params): Promise<void> => {
   const db = tauriDatabase;
   const target = (await listResolveQueueItems({ db, sessionId })).find(
@@ -33,7 +35,7 @@ export const settleItemAnswered = async ({
   if (target === undefined) {
     throw new Error('This comment is no longer in Review');
   }
-  if (target.item.integratedSha !== null) {
+  if (target.item.integratedSha !== null && !allowIntegrated) {
     throw new Error(RESOLVE_ONLY_AFTER_INTEGRATION);
   }
   const previous = (await listResolveThreads({ db, sessionId })).find(
