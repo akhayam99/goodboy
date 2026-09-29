@@ -1,0 +1,36 @@
+#!/bin/sh
+. "$(dirname "$0")/common.sh"
+case "$1" in
+  --version)
+    fake_version "codex-cli 0.130.0"
+    ;;
+  exec)
+    fake_turn codex.jsonl "$@"
+    ;;
+  login)
+    case "$fake_mode" in
+      auth-hang)
+        exec sleep 30
+        ;;
+      legacy-status | unsupported)
+        fake_usage_error "$1"
+        ;;
+      *)
+        printf 'Logged in as avery@harborline.test\n' >&2
+        ;;
+    esac
+    ;;
+  status)
+    case "$fake_mode" in
+      legacy-status)
+        printf 'Logged in as avery@harborline.test\n' >&2
+        ;;
+      unsupported)
+        fake_usage_error "$1"
+        ;;
+    esac
+    ;;
+  *)
+    fake_usage_error "$1"
+    ;;
+esac

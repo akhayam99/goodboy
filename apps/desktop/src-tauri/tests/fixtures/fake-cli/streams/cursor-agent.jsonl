@@ -1,0 +1,6 @@
+{"type":"system","subtype":"init","session_id":"sess-cascadia-01","model":"Claude Sonnet 5.5"}
+{"type":"assistant","message":{"content":[{"type":"text","text":"Checking storefront-web."}]}}
+{"type":"tool_call","subtype":"started","call_id":"call_1"}
+{"type":"tool_call","subtype":"completed","call_id":"call_1"}
+{"type":"assistant","message":{"content":[{"type":"text","text":"storefront-web builds with one command."}]}}
+{"type":"result","subtype":"success","is_error":false,"result":"storefront-web builds with one command.","usage":{"inputTokens":90,"outputTokens":30}}

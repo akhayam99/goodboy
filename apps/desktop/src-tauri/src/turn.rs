@@ -161,6 +161,16 @@ pub struct TurnEventEnvelope {
 
 pub const EVENT_NAME: &str = "turn_event";
 
+pub(crate) trait TurnEmitter: Clone + Send + 'static {
+    fn emit_turn<S: Serialize + Clone>(&self, event: &str, payload: S);
+}
+
+impl TurnEmitter for AppHandle {
+    fn emit_turn<S: Serialize + Clone>(&self, event: &str, payload: S) {
+        let _ = self.emit(event, payload);
+    }
+}
+
 /// Per-binary CLI flag set. Unknown binaries fall through to claude.
 pub(crate) fn build_provider_cli_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
     let bin = std::path::Path::new(binary)
@@ -440,8 +450,8 @@ fn spawn_leased_child(
     Ok((child, guard))
 }
 
-fn spawn_one(
-    app: &AppHandle,
+fn spawn_one<E: TurnEmitter>(
+    app: &E,
     registry: &ChildRegistry,
     backlog: &TurnBacklog,
     leases: &crate::worktree_writer::WriterLeaseRegistry,
@@ -493,7 +503,7 @@ fn spawn_one(
         args.run_id,
         move || {
             if let Some(binding) = &event_binding {
-                let _ = event_app.emit(
+                event_app.emit_turn(
                     crate::worktree_writer::EVENT_NAME,
                     crate::worktree_writer::WriterLeaseEvent {
                         path: binding.path.clone(),
@@ -627,11 +637,15 @@ pub async fn turn_release(state: State<'_, TurnRegistry>, run_id: String) -> Res
 
 #[tauri::command]
 pub async fn turn_cancel(state: State<'_, TurnRegistry>, run_id: String) -> Result<(), TurnError> {
-    let map = state.0.lock().map_err(|_| TurnError::Poisoned)?;
+    cancel_run(&state.0, &run_id)
+}
+
+fn cancel_run(registry: &ChildRegistry, run_id: &str) -> Result<(), TurnError> {
+    let map = registry.lock().map_err(|_| TurnError::Poisoned)?;
     let live = map
-        .get(&run_id)
+        .get(run_id)
         .cloned()
-        .ok_or_else(|| TurnError::NotFound(run_id.clone()))?;
+        .ok_or_else(|| TurnError::NotFound(run_id.to_string()))?;
     drop(map);
 
     live.kill();
@@ -685,19 +699,19 @@ fn strip_line_ending(buf: &mut Vec<u8>) {
     }
 }
 
-struct TurnSink<'a> {
-    app: &'a AppHandle,
+struct TurnSink<'a, E: TurnEmitter> {
+    app: &'a E,
     backlog: &'a TurnBacklog,
     run_id: &'a str,
 }
 
-impl TurnSink<'_> {
+impl<E: TurnEmitter> TurnSink<'_, E> {
     fn send(&self, event: TurnEventPayload) {
         if is_exiting() && !matches!(event, TurnEventPayload::Line { .. }) {
             return;
         }
         let seq = self.backlog.record(self.run_id, event.clone());
-        let _ = self.app.emit(
+        self.app.emit_turn(
             EVENT_NAME,
             TurnEventEnvelope {
                 run_id: self.run_id.to_string(),
@@ -708,7 +722,7 @@ impl TurnSink<'_> {
     }
 }
 
-fn forward_lines(sink: &TurnSink<'_>, live: &LiveChild, stdout: ChildStdout) {
+fn forward_lines<E: TurnEmitter>(sink: &TurnSink<'_, E>, live: &LiveChild, stdout: ChildStdout) {
     let mut reader = BufReader::new(stdout);
     let mut buf: Vec<u8> = Vec::new();
     loop {
@@ -742,6 +756,9 @@ fn capture_stderr(stderr: ChildStderr) -> String {
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+#[cfg(all(test, unix))]
+mod fake_cli_tests;
 
 #[cfg(test)]
 mod tests {
@@ -1458,72 +1475,5 @@ mod tests {
         let args = make_args(None, None, &empty);
         let cli = build_provider_cli_args("agy", &args);
         assert!(!cli.contains(&"--effort".to_string()));
-    }
-
-    #[test]
-    #[ignore = "requires real codex binary + active login; opt in via GOODBOY_TEST_REAL_CODEX=1"]
-    fn codex_real_spawn_emits_json_events() {
-        if std::env::var("GOODBOY_TEST_REAL_CODEX")
-            .map(|v| v.is_empty())
-            .unwrap_or(true)
-        {
-            return;
-        }
-        let allowed: Vec<String> = vec![];
-        let disallowed: Vec<String> = vec![];
-        let args = SpawnOneArgs {
-            run_id: "smoke-test",
-            binary: "codex",
-            model: "gpt-5.5",
-            working_dir: "/tmp",
-            writable_roots: &[],
-            query_socket_directory: Some("/tmp/goodboy-query"),
-            prompt: "say hello",
-            permission_mode: "default",
-            allowed_tools: &allowed,
-            disallowed_tools: &disallowed,
-            resume_session_id: None,
-            system_prompt: None,
-            effort: None,
-            api_key_env: None,
-            credential_id: None,
-            workspace_id: None,
-            session_id: None,
-            mount_id: None,
-            cursor_max_mode: false,
-            writer_lease: None,
-            blocks_push: false,
-            excludes_tmp: false,
-        };
-        let cli = build_provider_cli_args("codex", &args);
-        let out = std::process::Command::new("codex")
-            .args(&cli)
-            .output()
-            .expect("spawn codex");
-
-        let stdout = String::from_utf8_lossy(&out.stdout);
-        let stderr = String::from_utf8_lossy(&out.stderr);
-        assert!(
-            out.status.success(),
-            "codex exited {:?}\nstdout: {}\nstderr: {}",
-            out.status.code(),
-            stdout,
-            stderr
-        );
-        assert!(
-            stdout.contains(r#""type":"thread.started""#),
-            "missing thread.started in stdout: {}",
-            stdout
-        );
-        assert!(
-            stdout.contains(r#""type":"item.completed""#),
-            "missing item.completed in stdout: {}",
-            stdout
-        );
-        assert!(
-            stdout.contains(r#""type":"turn.completed""#),
-            "missing turn.completed in stdout: {}",
-            stdout
-        );
     }
 }

@@ -1,0 +1,20 @@
+#!/bin/sh
+. "$(dirname "$0")/common.sh"
+case "$1" in
+  --version)
+    fake_version "2.1.4 (Claude Code)"
+    ;;
+  auth)
+    case "$fake_mode" in
+      logged-out)
+        printf '{"loggedIn":false}\n'
+        ;;
+      *)
+        printf '{"loggedIn":true,"email":"avery@harborline.test","subscriptionType":"max"}\n'
+        ;;
+    esac
+    ;;
+  *)
+    fake_turn claude.jsonl "$@"
+    ;;
+esac

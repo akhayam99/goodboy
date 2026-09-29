@@ -20,6 +20,8 @@ mod db;
 mod editor;
 mod explore;
 mod external_terminal;
+#[cfg(all(test, unix))]
+mod fake_cli;
 mod file_versions;
 mod frame_protocol;
 mod github;
