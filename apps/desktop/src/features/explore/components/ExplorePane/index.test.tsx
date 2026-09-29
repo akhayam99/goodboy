@@ -134,7 +134,9 @@ const PaneWithDrawer = () => {
 
 beforeEach(() => {
   h.exploreList.mockReset();
+  h.exploreList.mockResolvedValue([]);
   h.exploreOpen.mockReset();
+  h.exploreOpen.mockResolvedValue(undefined);
   h.exploreRead.mockReset();
   h.spawnAgent.mockReset();
   h.spawnAgent.mockResolvedValue('agent-1');

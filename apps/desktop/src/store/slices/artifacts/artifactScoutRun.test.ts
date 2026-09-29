@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
   AgentId,
@@ -51,6 +51,14 @@ const {
     }),
   };
 });
+
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('../../../shared/lib/db', async () =>
+  (await import('../../storyHarness')).dbLibModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock());
 
 vi.mock('../../../features/wireframes/collectWireframeScoutPlan', () => ({
   collectWireframeScoutPlan: scoutPlan,
@@ -115,6 +123,7 @@ vi.mock('../../../features/explore/explore', () => ({
   },
 }));
 
+import { resetStorySpies, stubStoryInvoke } from '../../storyHarness';
 import { WIREFRAME_SCOUTS } from '../../../features/wireframes/wireframeScoutRoles';
 import {
   WIREFRAME_SCOUT_DEADLINE_MS,
@@ -309,8 +318,29 @@ const childOf = ({
   name: string;
 }): Agent => agents.find((agent) => agent.name === name)!;
 
+const logWarn = console.warn;
+const SUMMARY_FALLBACK_PREFIX =
+  '[step-output] summarization failed, using deterministic fallback: ';
+let summaryFallbackLogs: string[] = [];
+
 beforeEach(() => {
   vi.clearAllMocks();
+  resetStorySpies();
+  stubStoryInvoke({
+    summarize_session: () => {
+      throw new Error('no aux provider in tests');
+    },
+    turn_cancel: null,
+  });
+  summaryFallbackLogs = [];
+  vi.spyOn(console, 'warn').mockImplementation((...args: ReadonlyArray<unknown>) => {
+    const line = String(args[0]);
+    if (line.startsWith(SUMMARY_FALLBACK_PREFIX)) {
+      summaryFallbackLogs.push(line.slice(SUMMARY_FALLBACK_PREFIX.length));
+      return;
+    }
+    logWarn(...args);
+  });
   provenanceRows.clear();
   resetArtifactScoutRegistry();
   resetTurnStartWindows();
@@ -382,6 +412,11 @@ const spawn = async (h: Harness): Promise<AgentId> => {
     focus: 'none',
   });
 };
+
+afterEach(() => {
+  expect(summaryFallbackLogs.filter((line) => line !== 'no aux provider in tests')).toEqual([]);
+  vi.restoreAllMocks();
+});
 
 describe('wireframe scouting gate', () => {
   it('takes the single agent path unchanged when no repository is mounted', async () => {

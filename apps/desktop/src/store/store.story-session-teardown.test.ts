@@ -64,27 +64,28 @@ const {
   tauriGhRunner: {},
 }));
 
-vi.mock('@goodboy/db', () => ({
-  archiveSession,
-  listWorktreesForSession,
-  detachSessionMounts,
-  updateSessionWorktreeBranch,
-  listSessionMounts,
-  updateSessionMountBranch,
-  updateSessionMountLifecycle: vi.fn(async () => true),
-  updateSessionActiveMount: vi.fn(async () => true),
-  updateSessionWriteDestination: vi.fn(async () => true),
-  updateSessionActiveProject: vi.fn(async () => undefined),
-  getMountOperation,
-  upsertMountOperation,
-  listMountOperations: vi.fn(async () => []),
-  deleteSession,
-  purgeSessionForDelete,
-  deleteFileVersionsForSession,
-  listMountPullRequestLinks: vi.fn(async () => []),
-  upsertMountPullRequestLink: vi.fn(async () => true),
-  upsertGithubPrCache: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../test/dbMock')).createDbMock({
+    archiveSession,
+    listWorktreesForSession,
+    detachSessionMounts,
+    updateSessionWorktreeBranch,
+    listSessionMounts,
+    updateSessionMountBranch,
+    updateSessionMountLifecycle: vi.fn(async () => true),
+    updateSessionWriteDestination: vi.fn(async () => true),
+    updateSessionActiveProject: vi.fn(async () => undefined),
+    getMountOperation,
+    upsertMountOperation,
+    listMountOperations: vi.fn(async () => []),
+    deleteSession,
+    purgeSessionForDelete,
+    deleteFileVersionsForSession,
+    listMountPullRequestLinks: vi.fn(async () => []),
+    upsertMountPullRequestLink: vi.fn(async () => true),
+    upsertGithubPrCache: vi.fn(async () => undefined),
+  }),
+);
 
 vi.mock('@goodboy/core', () => ({
   detectRepoSlug,

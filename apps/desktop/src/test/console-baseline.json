@@ -9,10 +9,6 @@
       "message": "[cursor-adapter] dropped a stream-json line that is not json"
     },
     {
-      "file": "src/features/explore/components/ExplorePane/index.test.tsx",
-      "message": "TypeError: Cannot read properties of undefined (reading 'then')"
-    },
-    {
       "file": "src/features/providers/components/ProviderStudio/DefaultsPanel/RoleModelRow/index.test.tsx",
       "message": "[role-models] invalid planner model auto for anthropic; using the anthropic default model"
     },
@@ -27,14 +23,6 @@
     {
       "file": "src/features/session/agent-kind.test.ts",
       "message": "[roles] unknown role \"unknown\"; using custom"
-    },
-    {
-      "file": "src/features/session/components/AgentDetailPane/AgentBriefChildren.test.tsx",
-      "message": "duration history load failed TypeError: Cannot read properties of undefined (reading 'invoke')"
-    },
-    {
-      "file": "src/features/session/components/AgentDetailPane/AgentBriefChildren.test.tsx",
-      "message": "turn spans load failed TypeError: Cannot read properties of undefined (reading 'invoke')"
     },
     {
       "file": "src/features/session/components/AgentTree/AgentsSection.test.tsx",
@@ -55,10 +43,6 @@
     {
       "file": "src/features/workspace/components/WorkspaceIdentityRow/index.test.tsx",
       "message": "The current testing environment is not configured to support act(...)"
-    },
-    {
-      "file": "src/store/slices/artifacts/artifactScoutRun.test.ts",
-      "message": "[step-output] summarization failed, using deterministic fallback: Cannot read properties of undefined (reading 'invoke')"
     },
     {
       "file": "src/store/slices/artifacts/spawnReportAgent.test.ts",
@@ -95,74 +79,6 @@
     {
       "file": "src/store/slices/workflows/suggestWorkflowTitle.test.ts",
       "message": "[workflow] title suggestion failed: provider unavailable"
-    },
-    {
-      "file": "src/store/store.artifact-outcome.test.ts",
-      "message": "[artifact-capture] failed for session session-report: disk full"
-    },
-    {
-      "file": "src/store/store.audit-retry.test.ts",
-      "message": "files_touched_numstat slot write failed Error: [vitest] No \"worktreeChangedFiles\" export is defined on the \"../features/worktree/worktree\" mock. Did you forget "
-    },
-    {
-      "file": "src/store/store.idle-on-empty-stream.test.ts",
-      "message": "files_touched_numstat slot write failed Error: [vitest] No \"worktreeChangedFiles\" export is defined on the \"../features/worktree/worktree\" mock. Did you forget "
-    },
-    {
-      "file": "src/store/store.permissions.test.ts",
-      "message": "files_touched_numstat slot write failed Error: [vitest] No \"worktreeChangedFiles\" export is defined on the \"../features/worktree/worktree\" mock. Did you forget "
-    },
-    {
-      "file": "src/store/store.plan-consumption-ordering.test.ts",
-      "message": "[artifact-capture] failed for session ses-#: db unavailable"
-    },
-    {
-      "file": "src/store/store.plan-consumption-ordering.test.ts",
-      "message": "files_touched_numstat slot write failed Error: [vitest] No \"worktreeChangedFiles\" export is defined on the \"../features/worktree/worktree\" mock. Did you forget "
-    },
-    {
-      "file": "src/store/store.sendturn-agent-routing.test.ts",
-      "message": "[summarizer] failed for session session-rt-#: [vitest] No \"listSessionDecisions\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \""
-    },
-    {
-      "file": "src/store/store.sendturn-agent-routing.test.ts",
-      "message": "agent handoff write failed Error: [vitest] No \"insertAgentHandoff\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \"vi.mock\"?"
-    },
-    {
-      "file": "src/store/store.sendturn-agent-routing.test.ts",
-      "message": "agent turn span write failed Error: [vitest] No \"insertAgentTurnSpan\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \"vi.mock\"?"
-    },
-    {
-      "file": "src/store/store.sendturn-agent-routing.test.ts",
-      "message": "touched worktrees check failed Error: [vitest] No \"hasOtherSessionTurnSince\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \"vi.m"
-    },
-    {
-      "file": "src/store/store.story-autorun-turn.test.ts",
-      "message": "autoPopulateContext failed TypeError: Cannot read properties of undefined (reading 'inserted')"
-    },
-    {
-      "file": "src/store/store.summarizer-notifications.test.ts",
-      "message": "[summarizer] failed for session session-notif-test: 401 unauthorized"
-    },
-    {
-      "file": "src/store/store.summarizer-notifications.test.ts",
-      "message": "[summarizer] failed for session session-notif-test: 429 too many requests"
-    },
-    {
-      "file": "src/store/store.summarizer-notifications.test.ts",
-      "message": "[summarizer] failed for session session-notif-test: Claude usage limit reached"
-    },
-    {
-      "file": "src/store/store.summarizer-notifications.test.ts",
-      "message": "[summarizer] failed for session session-notif-test: model overloaded"
-    },
-    {
-      "file": "src/store/store.summarizer-notifications.test.ts",
-      "message": "[summarizer] failed for session session-notif-test: not valid JSON"
-    },
-    {
-      "file": "src/store/store.summarizer-notifications.test.ts",
-      "message": "[summarizer] failed for session session-notif-test: the model produced nonsense"
     },
     {
       "file": "src/store/turn-helpers.artifact-capture.test.ts",

@@ -448,6 +448,7 @@ describe('autorun plan consumption ordering', () => {
   it('still auto-advances when plan capture fails, recording no consumption', async () => {
     seedStore(useAppStore);
     upsertPlanSpy.mockRejectedValueOnce(new Error('db unavailable'));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     runTurnSpy
       .mockImplementationOnce(streamText(PLAN_MARKER))
       .mockImplementationOnce(streamText(`<<step-done id="${IMPL_ID}">>`));
@@ -459,6 +460,8 @@ describe('autorun plan consumption ordering', () => {
     });
 
     expect(upsertPlanSpy).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('db unavailable'));
+    warn.mockRestore();
     expect(planBacking.plans).toHaveLength(0);
     expect(addPlanConsumptionSpy).not.toHaveBeenCalled();
     await vi.waitFor(() => expect(runTurnSpy).toHaveBeenCalledTimes(2));

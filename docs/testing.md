@@ -48,7 +48,7 @@ An unexpected `console.error` or `console.warn` fails the test that produced it.
 
 Every desktop test that loads the real store goes through `apps/desktop/src/store/storyHarness.ts`. It is the only file allowed to `import()` the store module.
 
-- Module mocks come from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test. It never keeps a private copy of the whole mock. `tauriInvoke` answers the commands in `storyInvokeHandlers`; `stubStoryInvoke` adds or replaces one for a test.
+- Module mocks come from the harness factories, one per mocked module: `vi.mock('@goodboy/db', async () => (await import('../../storyHarness')).dbModuleMock())`. A test that needs a different default overrides it on the spy for that test, or passes its own stubs: `dbModuleMock({ listContextSlotsForSession: mine })` adds them over `storyDbStubs()`. It never keeps a private copy of the whole mock. The permission and plan modules are in the same set: `storySpies.invokePermissionRuleList`, `storySpies.invokeAuditRetryDrain`, `storySpies.upsertPlan` and the rest are the spies behind `permissionsModuleMock()` and `plansModuleMock()`. `tauriInvoke` answers the commands in `storyInvokeHandlers`; `stubStoryInvoke` adds or replaces one for a test.
 - Spies live in `storySpies`, named after the function they stand in for (`storySpies.invokeBudgetRuleList`). `resetStorySpies()` restores every default.
 - The store loads once: `useAppStore = await importStore()` in `beforeAll` with `STORE_IMPORT_TIMEOUT_MS`. Then `await resetStoryStore()` runs in `beforeEach` (spies reset, `initialState` applied, local storage cleared) before the test seeds its own state.
 - `__tests__/regressions/store-import-pattern.test.ts` fails on any test that `import()`s the store module itself. A test that needs another export of the store module (`summarizerQueues`) takes it from `importStoreModule()`.
@@ -63,7 +63,8 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 
 - Fix a hit by stubbing the call with the value the real code returns: `storyDbStubs()` in `store/storyHarness.ts` for a db function every store test needs, `stubStoryInvoke({ command: value })` for a command one test needs, a local stub for one test. Do not stub it with `undefined` to make the message go away.
 - A test that makes the call on purpose reads the record with `drainUnexpectedCalls()` and asserts it. That empties it, so the guard passes.
-- A store test that keeps a private db mock still builds it with `createDbMock({ ...storyDbStubs(), ...own })`, so the calls it forgot are recorded. Moving it to `dbModuleMock()` is the target.
+- No test that loads the real store keeps a hand-written db mock. A slice test that fakes the store and needs its own db mock still builds it with `createDbMock({ ...own })` (or `createDbMock({ ...storyDbStubs(), ...own })`), so the calls it forgot are recorded and a stub for a name the package dropped fails the file at load.
+- A test that reaches an error path on purpose spies on `console.warn` or `console.error`, keeps the lines it expects and forwards the rest (`const logWarn = console.warn`), then asserts what it kept. That is how `store.summarizer-notifications.test.ts` and `artifactScoutRun.test.ts` stay out of the console baseline.
 - `__tests__/regressions/console-guard.test.ts` runs a fixture through the real setup file and checks that an unstubbed db call and an unstubbed command fail their test.
 
 ## Accessibility suite
