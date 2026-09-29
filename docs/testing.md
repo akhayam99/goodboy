@@ -108,3 +108,4 @@ non-empty `orchestration_error` carries the message. Empty means no stop at all
 and the sidebar row expanded. The plain pill then hides itself and the strip
 shows instead. Nothing is written back. Relaunch without the variable and it
 shows **Stopped** again. Never persist the in-flight flag.
+
