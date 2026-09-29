@@ -194,7 +194,11 @@ describe('rankCandidates performance', () => {
     return performance.now() - started;
   };
 
-  const min = (values: ReadonlyArray<number>): number => values.reduce((a, b) => Math.min(a, b));
+  type MinParams = {
+    readonly values: ReadonlyArray<number>;
+  };
+
+  const min = ({ values }: MinParams): number => values.reduce((a, b) => Math.min(a, b));
 
   const PERFORMANCE_CASES: ReadonlyArray<{ readonly query: string; readonly ratioBudget: number }> =
     [
@@ -210,13 +214,15 @@ describe('rankCandidates performance', () => {
     ({ query, ratioBudget }) => {
       rankCandidates({ items, query, frecency, now: NOW });
 
-      const calibrationMs = min(Array.from({ length: SAMPLE_COUNT }, () => measureCalibrationMs()));
+      const calibrationMs = min({
+        values: Array.from({ length: SAMPLE_COUNT }, () => measureCalibrationMs()),
+      });
       const rankSamples = Array.from({ length: SAMPLE_COUNT }, () => {
         const started = performance.now();
         const ranked = rankCandidates({ items, query, frecency, now: NOW });
         return { ms: performance.now() - started, length: ranked.length };
       });
-      const rankMs = min(rankSamples.map((sample) => sample.ms));
+      const rankMs = min({ values: rankSamples.map((sample) => sample.ms) });
 
       expect(rankSamples[0]?.length).toBeLessThanOrEqual(60);
       expect(rankMs / calibrationMs).toBeLessThan(ratioBudget);
