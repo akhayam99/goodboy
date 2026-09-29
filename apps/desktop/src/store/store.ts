@@ -4,17 +4,14 @@ import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
 import { type SlotKey } from '@goodboy/core';
-import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
 import type {
   AfterMergeRule,
   AgentId,
   AgentSourceKind,
-  ArtifactId,
   BudgetRule,
   ClaudePermissionMode,
   ContextSlot,
   AttachmentInput,
-  GoalAttachmentOwner,
   OverrideSettings,
   OpenQuestion,
   OpenQuestionId,
@@ -22,10 +19,8 @@ import type {
   PlanId,
   PlanStatus,
   StepId,
-  Session,
   SessionId,
   SessionBudgetOnExceed,
-  SessionProviderPreference,
   StepDef,
   StepDefId,
   Workflow,
@@ -41,17 +36,8 @@ import type {
   ProviderCredential,
   CredentialId,
   FileVersionId,
-  VerbosityLevel,
   SkillId,
-  TurnEvent,
-  UserTurnSentVia,
-  TurnProviderOverride,
-  HandoffDraft,
-  SessionExternalTaskProvider,
-  SessionExternalTask,
   SessionMountView,
-  SessionEventKind,
-  SessionEventPayload,
   IntegrationCredentialId,
   Workspace,
   WorkspaceId,
@@ -59,24 +45,18 @@ import type {
   WorkspaceIntegrationProvider,
   MountCleanupProposal,
   MountId,
-  MountTargetSnapshot,
   PrSeries,
   PrSeriesMember,
   PrSeriesView,
   GhTokenStatus,
   PrMergeMethod,
-  SessionViewPrefs,
-  SessionSortKey,
   SlackIntegrationConfig,
-  SessionGroupKey,
   TaskModelPreference,
   PrReviewDraft,
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList } from '../features/providers/providers';
 import { type SkillUpsertArgs } from '../features/skills/skills';
-import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
-import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
 import { type AgentKind } from '../features/session/agent-kind';
 import { createNotificationsSlice } from './slices/notifications';
@@ -135,18 +115,6 @@ import { createSidebarSlice } from './slices/sidebar';
 import { createSessionViewSlice } from './slices/session-view';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
-import type {
-  DiffFocus,
-  LensKind,
-  ResolveQueueView,
-  SessionCreationId,
-  SessionCreationKind,
-  SessionStudio,
-} from './slices/session-view';
-import type {
-  CloseArtifactCreationParams,
-  OpenArtifactCreationParams,
-} from './slices/session-view/types';
 import type { SpawnFocus } from './slices/session-view/spawnFocus';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
@@ -206,7 +174,6 @@ import { backupInitialState } from './slices/backup/state';
 import { budgetInitialState } from './slices/budget/state';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
-import type { BulkSessionResult } from './slices/sessions/types';
 import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
 import { createProjectsSlice } from './slices/projects';
@@ -294,10 +261,7 @@ import type {
 import type { ForgetMountResult } from './slices/project-mounts/forgetMount';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
-import type { SendTurnResult } from './slices/turn/types';
-import type { CancelTurnReason } from './slices/turn/cancelCurrentTurn';
 import { createWorktreesSlice } from './slices/worktrees';
-import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSessionBranch';
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
@@ -323,15 +287,11 @@ import type { SlackConnection } from '../features/integrations/slack/client';
 import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
-import type { EvictionMode } from './sessionEviction';
 export type { ProviderSpendEntry };
 export type { AppState } from './types';
 
 type AppActions = {
-  evictSession(params: { readonly sessionId: SessionId; readonly mode: EvictionMode }): void;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
-  setCurrentSession(id: SessionId | null): Promise<void>;
-  loadArchivedSessions(workspaceId: WorkspaceId): Promise<void>;
   refreshProviders(): Promise<void>;
   logoutProvider(providerId: ProviderId): Promise<void>;
   connectProvider(providerId: ProviderId): Promise<void>;
@@ -457,33 +417,6 @@ type AppActions = {
     workspaceId: WorkspaceId;
     config: SlackIntegrationConfig;
   }): Promise<void>;
-  createSession(input: {
-    workspaceId: WorkspaceId;
-    projectId?: ProjectId;
-    goal: string;
-    title?: string;
-    branchPrefix?: string;
-    branchSlug?: string;
-    existingBranch?: string;
-    fallbackRef?: string;
-    folderName?: string;
-    providerPreference?: SessionProviderPreference;
-    workflowId?: WorkflowId;
-    autoRun?: boolean;
-    firstAgentKind?: AgentKind;
-    firstAgentModel?: string;
-    kickoffPrompt?: string;
-    externalTasks?: ReadonlyArray<{
-      provider: SessionExternalTaskProvider;
-      projectId?: ProjectId;
-      externalId: string;
-      identifier: string;
-      url: string;
-      title: string;
-    }>;
-    omitGoalSlot?: boolean;
-    additionalProjectIds?: ReadonlyArray<ProjectId>;
-  }): Promise<{ session: Session }>;
   ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
   loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
@@ -533,22 +466,6 @@ type AppActions = {
   createPrSeries(input: CreatePrSeriesInput): Promise<PrSeries>;
   setPrSeriesMember(input: SetPrSeriesMemberInput): Promise<PrSeriesMember>;
   loadPrSeries(input: LoadPrSeriesInput): Promise<ReadonlyArray<PrSeriesView>>;
-  linkSessionExternalTask(
-    sessionId: SessionId,
-    task: Omit<SessionExternalTask, 'sessionId'>,
-  ): Promise<void>;
-  unlinkSessionExternalTask(
-    sessionId: SessionId,
-    provider: SessionExternalTaskProvider,
-    externalId: string,
-    projectId?: ProjectId,
-  ): Promise<void>;
-  changeSessionBranch(
-    sessionId: SessionId,
-    args: { mountId: MountId; branch: string; createNew: boolean },
-  ): Promise<void>;
-  reconcileSessionBranch(input: ReconcileSessionBranchInput): Promise<void>;
-  setSessionAutoRun(sessionId: SessionId, autoRun: boolean): Promise<void>;
   renameWorkflowRun(
     sessionId: SessionId,
     workflowRunId: WorkflowRunId,
@@ -636,28 +553,6 @@ type AppActions = {
     mode: WorkflowSpendLimitMode,
   ): Promise<void>;
   reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
-  appendTurnEvent(agentId: AgentId, sessionId: SessionId, event: TurnEvent): void;
-  sendTurn(input: {
-    sessionId: SessionId;
-    agentId?: AgentId;
-    mountId?: MountId;
-    mountTarget?: MountTargetSnapshot;
-    content: string;
-    attachments?: ReadonlyArray<AttachmentInput>;
-    override?: TurnProviderOverride;
-    force?: boolean;
-    origin?: 'operator' | 'workflow';
-    handoff?: HandoffDraft;
-    sentVia?: UserTurnSentVia;
-    permissionOnceAllow?: string;
-  }): Promise<SendTurnResult>;
-  cancelCurrentTurn(
-    sessionId: SessionId,
-    agentId?: AgentId,
-    reason?: CancelTurnReason,
-  ): Promise<void>;
-  continueStoppedAgent(params: { sessionId: SessionId; agentId: AgentId }): Promise<void>;
-  retrySummarizer(sessionId: SessionId, taskModelOverride?: TaskModelPreference): void;
   loadSessionTelemetry(sessionId: SessionId): Promise<void>;
   loadSessionSlots(sessionId: SessionId): Promise<void>;
   ensureSessionSlots(sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>>;
@@ -782,16 +677,6 @@ type AppActions = {
     apiKey: string,
   ): Promise<ProviderCredential>;
   deleteCredential(id: CredentialId): Promise<void>;
-  setAgentVerbosity(sessionId: SessionId, agentId: AgentId, level: VerbosityLevel): Promise<void>;
-  renameTask(sessionId: SessionId, goal: string): Promise<void>;
-  deleteTask(sessionId: SessionId): Promise<void>;
-  bulkDeleteTask(ids: ReadonlyArray<SessionId>): Promise<void>;
-  archiveTask(sessionId: SessionId): Promise<void>;
-  bulkArchiveTask(ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult>;
-  unarchiveTask(sessionId: SessionId): Promise<void>;
-  bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult>;
-  setSessionConfig(sessionId: SessionId, fields: SessionConfigUpdate): Promise<void>;
-  setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
   refreshGithubStatus(): Promise<void>;
   refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
   setGithubToken(params: {
@@ -873,7 +758,6 @@ type AppActions = {
     prNumber: number,
     reviewers: ReadonlyArray<string>,
   ): Promise<void>;
-  setSessionPermissionMode(sessionId: SessionId, mode: ClaudePermissionMode): Promise<void>;
   loadDiffComments(sessionId: SessionId): Promise<void>;
   addDiffComment(
     sessionId: SessionId,
@@ -885,17 +769,6 @@ type AppActions = {
   resolveDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   reopenDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
   deleteDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
-  loadSessionEvents(params: { sessionId: SessionId; force?: boolean }): Promise<void>;
-  recordSessionEvent(params: {
-    sessionId: SessionId;
-    kind: SessionEventKind;
-    payload?: SessionEventPayload;
-  }): Promise<void>;
-  recordSessionEventOnce(params: {
-    sessionId: SessionId;
-    kind: SessionEventKind;
-    payload?: SessionEventPayload;
-  }): Promise<void>;
   loadSessionFileVersions(params: { sessionId: SessionId; force?: boolean }): Promise<void>;
   selectSessionFileVersionPath(params: { sessionId: SessionId; relativePath: string | null }): void;
   restoreSessionFileVersion(params: {
@@ -908,12 +781,6 @@ type AppActions = {
     versionId: FileVersionId;
   }): Promise<void>;
   deleteAllSessionFileVersions(params: { sessionId: SessionId }): Promise<void>;
-  loadGoalAttachments(owner: GoalAttachmentOwner): Promise<void>;
-  addGoalAttachments(
-    owner: GoalAttachmentOwner,
-    inputs: ReadonlyArray<AttachmentInput>,
-  ): Promise<void>;
-  removeGoalAttachment(owner: GoalAttachmentOwner, id: string): Promise<void>;
   retryStepSummary(params: {
     sessionId: SessionId;
     agentId: AgentId;
@@ -950,61 +817,6 @@ type AppActions = {
   restorePlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   loadConsumptionsForPlan(planId: PlanId): Promise<void>;
   runPlan(sessionId: SessionId, planId: PlanId): Promise<AgentId | null>;
-  setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
-  getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
-  setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
-  setSessionGroup(workspaceId: WorkspaceId, group: SessionGroupKey): void;
-  toggleSessionGroup(params: { readonly key: string }): void;
-  setActiveLens(sessionId: SessionId, lens: LensKind | null): void;
-  toggleWorkflowExpand(sessionId: SessionId, runId: string, defaultExpanded: boolean): void;
-  setFocusedWorkflowRun(sessionId: SessionId, runId: string | null): void;
-  setSessionStudio(sessionId: SessionId, studio: SessionStudio | null): void;
-  setFocusedArtifactId(sessionId: SessionId, artifactId: ArtifactId | null): void;
-  setArtifactFilter(params: {
-    readonly sessionId: SessionId;
-    readonly filter: ArtifactFilter;
-  }): void;
-  openArtifactConversation(params: {
-    readonly sessionId: SessionId;
-    readonly agentId: AgentId;
-  }): void;
-  closeArtifactConversation(params: {
-    readonly sessionId: SessionId;
-    readonly agentId: AgentId;
-  }): void;
-  openArtifactCreation(params: OpenArtifactCreationParams): void;
-  closeArtifactCreation(params: CloseArtifactCreationParams): void;
-  setFocusedGithubIssueNumber(sessionId: SessionId, issueNumber: number | null): void;
-  setDiffFocus(sessionId: SessionId, focus: DiffFocus | null): void;
-  openDiffLens(sessionId: SessionId, focus: DiffFocus | null): void;
-  openMountDiff(sessionId: SessionId, worktreePath: string): void;
-  openRewriteHistory(sessionId: SessionId, worktreePath: string | null): void;
-  closeRewriteHistory(sessionId: SessionId): void;
-  openMountTerminal(sessionId: SessionId, worktreePath: string): void;
-  setResolveQueueView(params: {
-    readonly sessionId: SessionId;
-    readonly patch: Partial<ResolveQueueView>;
-  }): void;
-  setResolveItemDraft(params: {
-    readonly sessionId: SessionId;
-    readonly threadId: string;
-    readonly patch: Partial<ResolveItemDraft>;
-  }): void;
-  openResolveDiff(params: {
-    readonly sessionId: SessionId;
-    readonly sha: string;
-    readonly path: string | null;
-    readonly order: ReadonlyArray<string>;
-    readonly scrollTop: number;
-  }): void;
-  openExternalTaskLens(sessionId: SessionId, task: SessionExternalTask): void;
-  beginSessionCreation(
-    sessionId: SessionId,
-    creation: { readonly kind: SessionCreationKind; readonly label?: string | null },
-  ): SessionCreationId;
-  endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
-  revealActivityRow(sessionId: SessionId, rowId: string): void;
-  reconcileOrphanWorktrees(): Promise<void>;
 };
 
 export type AppStore = AppState &
@@ -1044,7 +856,15 @@ export type AppStore = AppState &
   ReturnType<typeof createNudgesSlice> &
   ReturnType<typeof createTerminalSlice> &
   ReturnType<typeof createScriptsSlice> &
-  ReturnType<typeof createPermissionsSlice>;
+  ReturnType<typeof createPermissionsSlice> &
+  ReturnType<typeof createSessionViewSlice> &
+  ReturnType<typeof createSessionsSlice> &
+  ReturnType<typeof createTranscriptsSlice> &
+  ReturnType<typeof createSummariesSlice> &
+  ReturnType<typeof createSessionEventsSlice> &
+  ReturnType<typeof createAttachmentsSlice> &
+  ReturnType<typeof createWorktreesSlice> &
+  ReturnType<typeof createTurnSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,

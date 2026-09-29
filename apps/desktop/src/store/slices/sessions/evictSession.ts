@@ -1,11 +1,11 @@
 import type { SessionId } from '@goodboy/types';
 import { SESSION_EVICTION, type EvictionMode, type EvictionScope } from '../../sessionEviction';
-import type { AppState } from '../../types';
 import { dropSession } from '../navigation/history';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
-  readonly set: (state: Partial<AppState>) => void;
-  readonly get: () => AppState;
+  readonly set: SetFn;
+  readonly get: GetFn;
 };
 
 type EvictParams = {
