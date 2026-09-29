@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { REPLY_VOICES, RESOLVE_COMMIT_STYLES, type WorkspaceId } from '@goodboy/types';
 import {
   Band,
@@ -15,6 +15,12 @@ import { useAppStore } from '../../../../store';
 import type { WorkspaceOverridesPatch } from '../../../../store/slices/overrides/patchWorkspaceOverrides';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { buildResolutionReplyBody } from '../../../../store/slices/github/buildResolutionReplyBody';
+import {
+  EDIT_POSTED_REPLY_OFF,
+  EDIT_POSTED_REPLY_ON,
+  editPostedReplyKey,
+  isEditPostedReplyOn,
+} from '../../../resolve/editPostedReplySetting';
 import {
   REPLY_TEMPLATE_FIXED_DEFAULT,
   REPLY_TEMPLATE_NO_CHANGE_DEFAULT,
@@ -51,9 +57,24 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
   const overrides = useAppStore((s) => s.workspaceOverrides[workspaceId] ?? null);
   const patchWorkspaceOverrides = useAppStore((s) => s.patchWorkspaceOverrides);
   const reportError = useAppStore((s) => s.reportError);
+  const editKey = editPostedReplyKey({ workspaceId });
+  const rawEdit = useAppStore((s) => s.settings[editKey]);
+  const loadSetting = useAppStore((s) => s.loadSetting);
+  const saveSetting = useAppStore((s) => s.saveSetting);
   const [isBusy, setIsBusy] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const settings = replySettingsOf({ layers: [overrides] });
+
+  useEffect(() => {
+    void loadSetting(editKey);
+  }, [loadSetting, editKey]);
+
+  const saveEditPostedReply = ({ isOn }: { readonly isOn: boolean }) => {
+    saveSetting(editKey, isOn ? EDIT_POSTED_REPLY_ON : EDIT_POSTED_REPLY_OFF).catch(
+      (error: unknown) =>
+        void reportError({ title: "Couldn't save the review reply settings", error, workspaceId }),
+    );
+  };
 
   const persist = async ({ patch }: { readonly patch: WorkspaceOverridesPatch }) => {
     setIsBusy(true);
@@ -169,6 +190,16 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
                 onChange={(next) => void persist({ patch: { resolveOnGithub: next } })}
               />
             </WorkspaceDefaultRow>
+            <WorkspaceDefaultRow
+              label="Edit the posted reply"
+              help="After a squash or fixup, adds an Update line to a reply Goodboy already posted. GitHub may notify people."
+            >
+              <Switch
+                label={isEditPostedReplyOn({ raw: rawEdit }) ? 'On' : 'Off'}
+                checked={isEditPostedReplyOn({ raw: rawEdit })}
+                onChange={(next) => saveEditPostedReply({ isOn: next })}
+              />
+            </WorkspaceDefaultRow>
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-label font-medium text-foreground">Commits</span>
@@ -189,10 +220,11 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
               role="alert"
               icon={<RotateCcw size={ICON_SIZE.row} aria-hidden />}
               title="Reset review replies to the default?"
-              description="Voice, style note, templates, resolving on GitHub and the commit style go back to the default. Signing stays as it is."
+              description="Voice, style note, templates, resolving on GitHub, editing the posted reply and the commit style go back to the default. Signing stays as it is."
               confirmLabel="Reset"
               isBusy={isBusy}
               onConfirm={() => {
+                saveEditPostedReply({ isOn: true });
                 void persist({ patch: RESET_PATCH }).then(() => setIsResetting(false));
               }}
               onCancel={() => setIsResetting(false)}

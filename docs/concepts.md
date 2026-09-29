@@ -769,6 +769,15 @@ e31b9f4` when a history rewrite folded the fix. Reply and page always read
   everything Goodboy posts
 - **Resolve the thread after replying** (on by default) and **Commits** (new
   commit, or fixup of the commit that added the line)
+- **Edit the posted reply** (on by default, stored per workspace in the
+  `settings` table under `review.edit_posted_reply.<workspaceId>`, `0` = off).
+  After a history rewrite is pushed and a reply Goodboy posted names a sha that
+  moved, Goodboy edits that reply in place with `updateReviewComment`: it adds
+  `Update: c81e5aa was squashed into e31b9f4.` (or `is now`) above the
+  signature, once per sha change. Replies from people are never edited. The
+  per-thread history (first sha, folded or not, posted sha and body, update
+  lines) lives in the `settings` table under
+  `resolve.commit_story.<sessionId>.<threadId>`, so it needs no migration
 
 Goodboy saves a receipt for every step, and the outcome it reports is read from
 those receipts: a thread shows as resolved only after GitHub confirmed it. If a

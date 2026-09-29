@@ -283,7 +283,7 @@ Finish a review in one action: **Push N** in the Review header pushes the fixes,
 
 ### Review replies in your voice
 
-Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit.
+Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit. When you squash or fold a fix, the reply names both commits, and a reply already posted gets an Update line, which you can turn off in Settings.
 
 ### Fixes on a branch that moved
 
