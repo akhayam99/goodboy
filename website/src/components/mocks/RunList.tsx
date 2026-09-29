@@ -1,5 +1,12 @@
 import './mocks.css';
-import {
+import { HARBORLINE, type ChipKind } from '../../data/harborline';
+import { useAlive } from '../../hooks/useAlive';
+import { formatCents } from './formatCents';
+import { RunRow } from './RunRow';
+import { RunTotal } from './RunTotal';
+import { WindowHead } from './WindowHead';
+
+const {
   RUN_DELAYS,
   RUN_HEAVY_CENTS,
   RUN_HEAVY_LABEL,
@@ -10,13 +17,7 @@ import {
   RUN_START_DONE,
   TASK_TITLE,
   RUN_TOTAL_LABEL,
-  type ChipKind,
-} from '../../data/harborline';
-import { useAlive } from '../../hooks/useAlive';
-import { formatCents } from './formatCents';
-import { RunRow } from './RunRow';
-import { RunTotal } from './RunTotal';
-import { WindowHead } from './WindowHead';
+} = HARBORLINE;
 
 type Props = {
   readonly className?: string;
@@ -45,6 +46,7 @@ export const RunList = ({ className }: Props) => {
       ref={ref}
       className={['mk-run', className].filter(Boolean).join(' ')}
       data-mock="run"
+      role="img"
       aria-label={RUN_LABEL}
     >
       <div className="mk-win">

@@ -1,16 +1,11 @@
 import './mocks.css';
-import {
-  BOARD_COLUMNS,
-  BOARD_DELAYS,
-  BOARD_HEAD,
-  BOARD_LABEL,
-  BOARD_TITLE,
-  type BoardColumnData,
-} from '../../data/harborline';
+import { HARBORLINE, type BoardColumnData } from '../../data/harborline';
 import { useAlive } from '../../hooks/useAlive';
 import { BoardCard } from './BoardCard';
 import { StateChip } from './StateChip';
 import { WindowHead } from './WindowHead';
+
+const { BOARD_COLUMNS, BOARD_DELAYS, BOARD_HEAD, BOARD_LABEL, BOARD_TITLE } = HARBORLINE;
 
 type Props = {
   readonly className?: string;
@@ -42,6 +37,7 @@ export const Board = ({ className }: Props) => {
       ref={ref}
       className={['mk-board', className].filter(Boolean).join(' ')}
       data-mock="board"
+      role="img"
       aria-label={BOARD_LABEL}
     >
       <div className="mk-win">

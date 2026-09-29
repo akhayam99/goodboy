@@ -1,4 +1,6 @@
-import { QUESTION } from '../../data/harborline';
+import { HARBORLINE } from '../../data/harborline';
+
+const { QUESTION } = HARBORLINE;
 
 type Props = {
   readonly isOpen: boolean;

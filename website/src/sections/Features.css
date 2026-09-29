@@ -113,6 +113,9 @@
 }
 
 @media (max-width: 600px) {
+  .featGroup li.isNew::after {
+    font-size: 13px;
+  }
   .featGroup h2 span {
     font-size: 13px;
   }

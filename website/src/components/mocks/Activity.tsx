@@ -1,18 +1,14 @@
 import './mocks.css';
 import { Fragment } from 'react';
-import {
-  ACTIVITY_DELAYS,
-  ACTIVITY_HEAD,
-  ACTIVITY_LABEL,
-  ACTIVITY_ROWS,
-  TASK_REPO,
-  TASK_TITLE,
-} from '../../data/harborline';
+import { HARBORLINE } from '../../data/harborline';
 import { useAlive } from '../../hooks/useAlive';
 import { ActivityQuestion } from './ActivityQuestion';
 import { ActivityRow } from './ActivityRow';
 import { StateChip } from './StateChip';
 import { WindowHead } from './WindowHead';
+
+const { ACTIVITY_DELAYS, ACTIVITY_HEAD, ACTIVITY_LABEL, ACTIVITY_ROWS, TASK_REPO, TASK_TITLE } =
+  HARBORLINE;
 
 type Props = {
   readonly className?: string;
@@ -27,6 +23,7 @@ export const Activity = ({ className }: Props) => {
       ref={ref}
       className={['mk-activity', className].filter(Boolean).join(' ')}
       data-mock="activity"
+      role="img"
       aria-label={ACTIVITY_LABEL}
     >
       <div className="mk-win">

@@ -1,4 +1,6 @@
-import { HANDOFF_CONTEXT, HANDOFF_DECISIONS, type ContextBlock } from '../../data/harborline';
+import { HARBORLINE, type ContextBlock } from '../../data/harborline';
+
+const { HANDOFF_CONTEXT, HANDOFF_DECISIONS } = HARBORLINE;
 
 type Props = {
   readonly tint: Readonly<Record<ContextBlock, boolean>>;

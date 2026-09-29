@@ -1,31 +1,27 @@
-type Iubenda = {
-  readonly cs?: {
-    readonly api?: {
-      readonly openPreferences?: () => void;
-    };
-  };
+type GetParams = {
+  readonly source: unknown;
+  readonly key: string;
 };
 
-const readIubenda = (): Iubenda | undefined => {
-  const candidate: unknown = Reflect.get(window, '_iub');
-  if (typeof candidate !== 'object' || candidate === null) {
+const readKey = ({ source, key }: GetParams): unknown => {
+  if (typeof source !== 'object' || source === null) {
     return undefined;
   }
-  return candidate;
+  return Reflect.get(source, key);
 };
 
-export const CookieSettings = () => {
-  const handleClick = () => {
-    const open = readIubenda()?.cs?.api?.openPreferences;
-    if (open === undefined) {
-      return;
-    }
-    open();
-  };
-
-  return (
-    <button type="button" className="footerLink" onClick={handleClick}>
-      Cookie settings
-    </button>
-  );
+const openConsentPreferences = () => {
+  const consent = readKey({ source: readKey({ source: window, key: '_iub' }), key: 'cs' });
+  const api = readKey({ source: consent, key: 'api' });
+  const open = readKey({ source: api, key: 'openPreferences' });
+  if (typeof open !== 'function') {
+    return;
+  }
+  Reflect.apply(open, api, []);
 };
+
+export const CookieSettings = () => (
+  <button type="button" className="footerLink" onClick={openConsentPreferences}>
+    Cookie settings
+  </button>
+);

@@ -1,5 +1,11 @@
 import './mocks.css';
-import {
+import { HARBORLINE } from '../../data/harborline';
+import { useAlive } from '../../hooks/useAlive';
+import { HandoffAgentRow } from './HandoffAgentRow';
+import { HandoffContext } from './HandoffContext';
+import { TurnIcon } from './TurnIcon';
+
+const {
   HANDOFF_BRIEF,
   HANDOFF_BRIEF_CHIPS,
   HANDOFF_DELAYS,
@@ -7,11 +13,7 @@ import {
   HANDOFF_LABEL,
   HANDOFF_NOTE,
   HANDOFF_TO,
-} from '../../data/harborline';
-import { useAlive } from '../../hooks/useAlive';
-import { HandoffAgentRow } from './HandoffAgentRow';
-import { HandoffContext } from './HandoffContext';
-import { TurnIcon } from './TurnIcon';
+} = HARBORLINE;
 
 type Props = {
   readonly className?: string;
@@ -42,6 +44,7 @@ export const Handoff = ({ className }: Props) => {
       ref={ref}
       className={['mk-handoff', className].filter(Boolean).join(' ')}
       data-mock="handoff"
+      role="img"
       aria-label={HANDOFF_LABEL}
     >
       <div className="mk-win">

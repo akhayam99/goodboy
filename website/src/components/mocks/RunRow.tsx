@@ -1,7 +1,9 @@
-import { PROVIDER_NAME, type ChipKind, type RunRowData } from '../../data/harborline';
+import { HARBORLINE, type ChipKind, type RunRowData } from '../../data/harborline';
 import { formatCents } from './formatCents';
 import { ProviderIcon } from './ProviderIcon';
 import { StateChip } from './StateChip';
+
+const { PROVIDER_NAME } = HARBORLINE;
 
 type Props = {
   readonly row: RunRowData;

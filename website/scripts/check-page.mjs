@@ -227,15 +227,17 @@ const PAGE_PROBE = `(async () => {
       );
       return deepest > box.bottom + ${OVERLAP_TOLERANCE_PX} ? [name(node) + ' content spills ' + Math.round(deepest - box.bottom) + ' px below it'] : [];
     });
-  const isVisible = (node) => {
+  const isVisible = ({ node }) => {
     const box = node.getBoundingClientRect();
     return box.width > 0 && box.height > 0 && getComputedStyle(node).visibility !== 'hidden';
   };
-  const textWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const isSkipped = ({ node }) =>
+    node.closest('script, style, noscript, #iubenda-cs-banner, .vh') !== null || !isVisible({ node });
   const smallText = [];
+  const textWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let node = textWalker.nextNode(); node !== null; node = textWalker.nextNode()) {
     const parent = node.parentElement;
-    if (parent === null || node.textContent.trim() === '' || parent.closest('script, style, noscript, #iubenda-cs-banner, .vh') !== null || !isVisible(parent)) {
+    if (parent === null || node.textContent.trim() === '' || isSkipped({ node: parent })) {
       continue;
     }
     const size = parseFloat(getComputedStyle(parent).fontSize);
@@ -243,6 +245,21 @@ const PAGE_PROBE = `(async () => {
       smallText.push(Math.round(size * 10) / 10 + ' px "' + node.textContent.trim().slice(0, 40) + '"');
     }
   }
+  [...document.body.querySelectorAll('*')]
+    .filter((node) => !isSkipped({ node }))
+    .forEach((node) => {
+      ['::before', '::after'].forEach((pseudo) => {
+        const style = getComputedStyle(node, pseudo);
+        const content = style.content;
+        if (content === 'none' || content === 'normal' || !/^["'].*\S.*["']$/.test(content)) {
+          return;
+        }
+        const size = parseFloat(style.fontSize);
+        if (size < ${MIN_PHONE_TEXT_PX}) {
+          smallText.push(Math.round(size * 10) / 10 + ' px ' + pseudo + ' ' + content.slice(0, 40));
+        }
+      });
+    });
   const leadIns = [...document.querySelectorAll('.leadIn')].map((node) => {
     const heading = node.parentElement.querySelector('h2');
     return {
@@ -254,8 +271,8 @@ const PAGE_PROBE = `(async () => {
   const overlaps = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
   return {
     isCoarse: matchMedia('(hover: none) and (pointer: coarse)').matches,
-    downloads: [...document.querySelectorAll('[data-download]')].filter(isVisible).length,
-    stars: [...document.querySelectorAll('[data-star]')].filter(isVisible).length,
+    downloads: [...document.querySelectorAll('[data-download]')].filter((node) => isVisible({ node })).length,
+    stars: [...document.querySelectorAll('[data-star]')].filter((node) => isVisible({ node })).length,
     smallText,
     leadIns,
     isInter: document.fonts.check(${JSON.stringify(INTER_PROBE)}),

@@ -1,4 +1,6 @@
-import { CHIP_LABEL, type ChipKind } from '../../data/harborline';
+import { HARBORLINE, type ChipKind } from '../../data/harborline';
+
+const { CHIP_LABEL } = HARBORLINE;
 
 type Props = {
   readonly kind: ChipKind;

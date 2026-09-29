@@ -73,12 +73,12 @@ export type ContextData = {
   readonly decisionCount: number;
 };
 
-export const PROVIDER_NAME = {
+const PROVIDER_NAME = {
   anthropic: 'Claude',
   codex: 'Codex',
 } satisfies Record<MockProvider, string>;
 
-export const CHIP_LABEL = {
+const CHIP_LABEL = {
   run: 'Running',
   done: 'Done',
   queued: 'Queued',
@@ -86,9 +86,9 @@ export const CHIP_LABEL = {
   limit: 'Limit reached',
 } satisfies Record<ChipKind, string>;
 
-export const BOARD_TITLE = 'Harborline';
+const BOARD_TITLE = 'Harborline';
 
-export const BOARD_COLUMNS: readonly BoardColumnData[] = [
+const BOARD_COLUMNS: readonly BoardColumnData[] = [
   {
     stage: 'building',
     name: 'Building',
@@ -173,25 +173,25 @@ export const BOARD_COLUMNS: readonly BoardColumnData[] = [
   },
 ];
 
-export const BOARD_HEAD = {
+const BOARD_HEAD = {
   needBefore: '1 needs you',
   needAfter: '2 need you',
   runBefore: '3 running',
   runAfter: '2 running',
 } satisfies Record<string, string>;
 
-export const BOARD_DELAYS: readonly number[] = [700, 950];
+const BOARD_DELAYS: readonly number[] = [700, 950];
 
-export const BOARD_LABEL =
+const BOARD_LABEL =
   'Example board: four columns of Harborline tasks, one moving from Running to Needs you.';
 
-export const TASK_TITLE = 'Duplicate credit fix';
+const TASK_TITLE = 'Duplicate credit fix';
 
-export const TASK_REPO = 'payments-api';
+const TASK_REPO = 'payments-api';
 
-export const RUN_SIDE = 'Example run';
+const RUN_SIDE = 'Example run';
 
-export const RUN_ROWS: readonly RunRowData[] = [
+const RUN_ROWS: readonly RunRowData[] = [
   {
     role: 'Scout ×4',
     step: 'Read the webhook handler and the retry notices',
@@ -236,20 +236,20 @@ export const RUN_ROWS: readonly RunRowData[] = [
   },
 ];
 
-export const RUN_HEAVY_CENTS = 980;
+const RUN_HEAVY_CENTS = 980;
 
-export const RUN_START_DONE = 2;
+const RUN_START_DONE = 2;
 
-export const RUN_DELAYS: readonly number[] = [700, 1400, 2100, 2800];
+const RUN_DELAYS: readonly number[] = [700, 1400, 2100, 2800];
 
-export const RUN_TOTAL_LABEL = 'This run';
+const RUN_TOTAL_LABEL = 'This run';
 
-export const RUN_HEAVY_LABEL = 'The same six steps on one heavy model:';
+const RUN_HEAVY_LABEL = 'The same six steps on one heavy model:';
 
-export const RUN_LABEL =
+const RUN_LABEL =
   'Example run: six steps of a duplicate credit fix, each on its own model, costing far less than one heavy model.';
 
-export const ACTIVITY_ROWS: readonly ActivityRowData[] = [
+const ACTIVITY_ROWS: readonly ActivityRowData[] = [
   {
     provider: 'anthropic',
     role: 'Planner',
@@ -281,31 +281,31 @@ export const ACTIVITY_ROWS: readonly ActivityRowData[] = [
   },
 ];
 
-export const ACTIVITY_HEAD = {
+const ACTIVITY_HEAD = {
   need: '1 needs you',
   run: '2 running',
 } satisfies Record<string, string>;
 
-export const QUESTION: QuestionData = {
+const QUESTION: QuestionData = {
   label: 'Question',
   text: 'A retried webhook already credited the merchant twice. Refund the second credit, or keep it and tell the merchant?',
   answers: ['Refund the second credit', 'Keep it and notify'],
   action: 'Answer',
 };
 
-export const ACTIVITY_DELAYS: readonly number[] = [800];
+const ACTIVITY_DELAYS: readonly number[] = [800];
 
-export const ACTIVITY_LABEL =
+const ACTIVITY_LABEL =
   'Example activity: four agents on a duplicate credit fix, the Implementer stopping to ask you a question.';
 
-export const HANDOFF_CONTEXT: ContextData = {
+const HANDOFF_CONTEXT: ContextData = {
   title: 'Context',
   tabs: { goal: 'Goal', dec: 'Decisions', sum: 'Summary' },
   goal: 'Goal: a retried webhook never posts a second credit',
   decisionCount: 2,
 };
 
-export const HANDOFF_DECISIONS: readonly DecisionData[] = [
+const HANDOFF_DECISIONS: readonly DecisionData[] = [
   {
     id: 'D3',
     title: 'Dedupe on the event id inside the transaction',
@@ -319,34 +319,68 @@ export const HANDOFF_DECISIONS: readonly DecisionData[] = [
   },
 ];
 
-export const HANDOFF_FROM: HandoffAgentData = {
+const HANDOFF_FROM: HandoffAgentData = {
   provider: 'anthropic',
   role: 'Implementer',
   what: 'Dedupe on the event id',
   model: 'Opus 5.5',
 };
 
-export const HANDOFF_TO: HandoffAgentData = {
+const HANDOFF_TO: HandoffAgentData = {
   provider: 'codex',
   role: 'Implementer',
   what: 'Dedupe on the event id',
   model: 'GPT-5.6 Sol',
 };
 
-export const HANDOFF_NOTE = 'Claude hit its usage limit. The turn moved to Codex.';
+const HANDOFF_NOTE = 'Claude hit its usage limit. The turn moved to Codex.';
 
-export const HANDOFF_BRIEF = 'Starts from the same brief';
+const HANDOFF_BRIEF = 'Starts from the same brief';
 
-export const HANDOFF_BRIEF_CHIPS: readonly BriefChipData[] = [
+const HANDOFF_BRIEF_CHIPS: readonly BriefChipData[] = [
   { label: 'Goal' },
   { label: 'Plan' },
   { label: 'Decisions', count: 2 },
   { label: 'Summary' },
 ];
 
-export const HANDOFF_DELAYS: readonly number[] = [
+const HANDOFF_DELAYS: readonly number[] = [
   800, 1300, 1800, 2150, 2270, 2390, 2510, 2700, 2940, 3060,
 ];
 
-export const HANDOFF_LABEL =
+const HANDOFF_LABEL =
   'Example handoff: Claude hits its usage limit and Codex picks up the same task from the same goal, decisions and summary.';
+
+export const HARBORLINE = {
+  PROVIDER_NAME,
+  CHIP_LABEL,
+  BOARD_TITLE,
+  BOARD_COLUMNS,
+  BOARD_HEAD,
+  BOARD_DELAYS,
+  BOARD_LABEL,
+  TASK_TITLE,
+  TASK_REPO,
+  RUN_SIDE,
+  RUN_ROWS,
+  RUN_HEAVY_CENTS,
+  RUN_START_DONE,
+  RUN_DELAYS,
+  RUN_TOTAL_LABEL,
+  RUN_HEAVY_LABEL,
+  RUN_LABEL,
+  ACTIVITY_ROWS,
+  ACTIVITY_HEAD,
+  QUESTION,
+  ACTIVITY_DELAYS,
+  ACTIVITY_LABEL,
+  HANDOFF_CONTEXT,
+  HANDOFF_DECISIONS,
+  HANDOFF_FROM,
+  HANDOFF_TO,
+  HANDOFF_NOTE,
+  HANDOFF_BRIEF,
+  HANDOFF_BRIEF_CHIPS,
+  HANDOFF_DELAYS,
+  HANDOFF_LABEL,
+} as const;

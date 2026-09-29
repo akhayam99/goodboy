@@ -36,8 +36,8 @@
   --btn-hover: color-mix(in srgb, var(--t1) 86%, var(--bg));
   --sel-bg: oklch(0.9 0.05 210);
   --sel-ink: oklch(0.35 0.09 210);
-  --st-run: oklch(0.52 0.13 230);
-  --st-need: oklch(0.56 0.15 60);
+  --st-run: oklch(0.47 0.13 230);
+  --st-need: oklch(0.48 0.13 60);
   --st-need-bg: oklch(0.95 0.05 75);
   --st-done: oklch(0.5 0.12 150);
   --st-review: oklch(0.5 0.13 295);
