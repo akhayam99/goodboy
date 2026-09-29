@@ -760,8 +760,11 @@ How a reply reads is set in Settings, Workspace, **Review replies**:
   voice goes into the agent's prompt
 - **Templates**: When fixed and When not changing. Goodboy fills them in code,
   the agent writes only `{reason}`. The other variables are `{commit}`,
-  `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`. The defaults are the
-  reason, then `Fixed in {commit}.` or `Leaving this as is.`
+  `{commit_story}`, `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`.
+  `{commit_story}` is the same sha as `{commit}`, plus `c81e5aa, squashed into
+e31b9f4` when a history rewrite folded the fix. Reply and page always read
+  the last commit of the thread after rewrites. The defaults are the
+  reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
 - **Sign replies** is the attribution line switch, so one value signs
   everything Goodboy posts
 - **Resolve the thread after replying** (on by default) and **Commits** (new

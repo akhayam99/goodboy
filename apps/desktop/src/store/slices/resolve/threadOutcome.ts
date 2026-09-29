@@ -1,3 +1,4 @@
+import { threadFixSha } from '../../../features/resolve/threadFixSha';
 import { resolveOutcomeReason } from './resolveOutcomeReason';
 import type { ResolveThread } from '@goodboy/types';
 import type { ResolverThreadOutcome } from '../../../features/session/resolverTurnOutcomes';
@@ -19,8 +20,9 @@ export const threadOutcome = ({
   }
   const stateReason = isCandidate ? (savedReason?.slice(10) ?? null) : savedReason;
   const reply = row.replyDraft === null ? {} : { reply: row.replyDraft };
-  if (row.disposition === 'fix' && row.commitShas?.[0] !== undefined) {
-    return { kind: 'resolved', commitSha: row.commitShas[0], ...reply };
+  const fixSha = threadFixSha({ commitShas: row.commitShas });
+  if (row.disposition === 'fix' && fixSha !== null) {
+    return { kind: 'resolved', commitSha: fixSha, ...reply };
   }
   if (stateReason?.startsWith('wontfix:') === true || stateReason === 'legacy_wontfix') {
     const reason = stateReason === 'legacy_wontfix' ? (row.replyDraft ?? '') : stateReason.slice(8);

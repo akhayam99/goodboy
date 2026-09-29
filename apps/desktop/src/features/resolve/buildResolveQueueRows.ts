@@ -19,6 +19,7 @@ import {
   type ResolveProposalKind,
 } from '../../store/slices/resolve/resolveProposalKind';
 import { runFailureReason } from './runFailureReason';
+import { threadFixSha } from './threadFixSha';
 import {
   resolveRowState,
   type ResolveFailedStep,
@@ -228,7 +229,7 @@ export const buildResolveQueueRows = ({
       proposalKind,
       failedStep: thread.stage === 'failed' ? failedStepOf({ receipts, thread }) : null,
       isLeftOpen: delivery !== null && !delivery.isThreadResolved,
-      pushedSha: item.integratedSha ?? thread.commitShas?.at(-1) ?? null,
+      pushedSha: threadFixSha({ commitShas: thread.commitShas, integratedSha: item.integratedSha }),
       pushError: publicationErrorOf({ thread }),
       runFailure: runFailureReason({ thread, attempt }),
     });

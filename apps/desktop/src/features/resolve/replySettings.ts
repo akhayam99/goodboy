@@ -11,7 +11,7 @@ export type ReplySettings = {
   readonly commitStyle: ResolveCommitStyle;
 };
 
-export const REPLY_TEMPLATE_FIXED_DEFAULT = '{reason}\n\nFixed in {commit}.';
+export const REPLY_TEMPLATE_FIXED_DEFAULT = '{reason}\n\nFixed in {commit_story}.';
 export const REPLY_TEMPLATE_NO_CHANGE_DEFAULT = '{reason}\n\nLeaving this as is.';
 
 export const REPLY_SETTINGS_DEFAULT: ReplySettings = {
