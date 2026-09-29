@@ -572,6 +572,79 @@ export const worktreeSyncBranchRef = async ({
     projectId,
   });
 
+type OriginBranchParams = {
+  readonly worktreePath: string;
+  readonly branch: string;
+};
+
+export type OriginFetch = {
+  readonly fetched: boolean;
+  readonly error: string | null;
+  readonly remoteHead: string | null;
+};
+
+type FetchOriginBranchParams = OriginBranchParams & {
+  readonly workspaceId?: WorkspaceId;
+  readonly projectId?: string;
+};
+
+export const worktreeFetchOriginBranch = async ({
+  worktreePath,
+  branch,
+  workspaceId,
+  projectId,
+}: FetchOriginBranchParams): Promise<OriginFetch> =>
+  invoke<OriginFetch>('worktree_fetch_origin_branch', {
+    worktreePath,
+    branch,
+    workspaceId,
+    projectId,
+  });
+
+export type FixOnOrigin = {
+  readonly onOrigin: boolean;
+  readonly landedAs: string | null;
+};
+
+export const worktreeFixOnOrigin = async ({
+  worktreePath,
+  branch,
+  sha,
+}: OriginBranchParams & { readonly sha: string }): Promise<FixOnOrigin> =>
+  invoke<FixOnOrigin>('worktree_fix_on_origin', { worktreePath, branch, sha });
+
+export type OriginCommit = {
+  readonly sha: string;
+  readonly author: string;
+  readonly email: string;
+  readonly subject: string;
+  readonly committedAt: number;
+};
+
+type OriginCommitsTouchingParams = OriginBranchParams & {
+  readonly path: string;
+  readonly startLine: number;
+  readonly endLine: number;
+  readonly sinceSecs: number;
+};
+
+export const worktreeOriginCommitsTouching = async ({
+  worktreePath,
+  branch,
+  path,
+  startLine,
+  endLine,
+  sinceSecs,
+}: OriginCommitsTouchingParams): Promise<ReadonlyArray<OriginCommit>> =>
+  invoke<ReadonlyArray<OriginCommit>>('worktree_origin_commits_touching', {
+    worktreePath,
+    branch,
+    path,
+    startLine,
+    endLine,
+    sinceSecs,
+  });
+
 export const worktreeStatus = async ({
   worktreePath,
   baseBranch,

@@ -60,6 +60,7 @@ mod slack;
 mod storage;
 mod summarize;
 mod terminal;
+mod thread_git;
 mod turn;
 mod turn_backlog;
 mod usage_probe;
@@ -317,6 +318,9 @@ pub fn run() {
             worktree::worktree_diff_working,
             worktree::worktree_status,
             branch_remote::worktree_sync_branch_ref,
+            thread_git::worktree_fetch_origin_branch,
+            thread_git::worktree_fix_on_origin,
+            thread_git::worktree_origin_commits_touching,
             worktree::checkout_fast_forward,
             worktree::worktree_list_local_branches,
             worktree::worktree_list_branch_names,
