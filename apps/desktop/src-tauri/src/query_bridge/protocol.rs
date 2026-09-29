@@ -1177,7 +1177,7 @@ mod tests {
         };
 
         assert_eq!(with.args["all"], serde_json::json!(true));
-        assert!(without.args.get("all").is_none());
+        assert!(!without.args.contains_key("all"));
     }
 
     #[test]
@@ -1280,7 +1280,7 @@ mod tests {
             panic!("expected a parsed command");
         };
 
-        assert!(parsed.args.get("workspace").is_none());
+        assert!(!parsed.args.contains_key("workspace"));
     }
 
     #[test]
@@ -1297,7 +1297,7 @@ mod tests {
             panic!("expected a parsed command");
         };
 
-        assert!(parsed.args.get("project").is_none());
+        assert!(!parsed.args.contains_key("project"));
     }
 
     #[test]
@@ -1380,7 +1380,7 @@ mod tests {
             panic!("expected a parsed command");
         };
 
-        assert!(parsed.args.get("mount").is_none());
+        assert!(!parsed.args.contains_key("mount"));
         assert!(UNIVERSAL_FLAGS.contains(&"mount"));
     }
 
@@ -1533,7 +1533,7 @@ mod tests {
         };
 
         assert_eq!(parsed.args["force-with-lease"], serde_json::json!(true));
-        assert!(parsed.args.get("branch").is_none());
+        assert!(!parsed.args.contains_key("branch"));
     }
 
     #[test]

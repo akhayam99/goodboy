@@ -310,7 +310,6 @@ fn macos_default_browser_app_path() -> Option<PathBuf> {
         let cf_url: CFURLRef =
             CFURLCreateWithString(kCFAllocatorDefault, cf_string, std::ptr::null());
         CFRelease(cf_string as CFTypeRef);
-        let cf_url = cf_url;
         if cf_url.is_null() {
             return None;
         }

@@ -219,6 +219,15 @@ pub(super) fn resolve_scope_mount(
     })
 }
 
+type OperationTuple = (
+    String,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+);
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct OperationRow {
     kind: String,
@@ -239,14 +248,7 @@ fn operation_row(
         .0
         .lock()
         .map_err(|_| "db mutex poisoned".to_string())?;
-    let row: Option<(
-        String,
-        String,
-        String,
-        Option<String>,
-        Option<String>,
-        Option<String>,
-    )> = conn
+    let row: Option<OperationTuple> = conn
         .query_row(
             "SELECT kind, status, input_json, result_json, error_code, mount_id
              FROM mount_operations

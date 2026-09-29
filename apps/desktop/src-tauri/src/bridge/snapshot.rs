@@ -14,6 +14,7 @@ const TRANSCRIPT_MAX_AGE_HOURS: i64 = 24;
 /// Raw-byte chunk size before base64. base64 grows ~1.33x and we add the JSON
 /// envelope + AEAD tag, so 32 KiB raw stays comfortably under the 65535 cap.
 const CHUNK_RAW_BYTES: usize = 32 * 1024;
+const _: () = assert!(CHUNK_RAW_BYTES < NOISE_MAX);
 
 /// A serialized snapshot ready to stream: the canonical body bytes plus the
 /// metadata the BEGIN/END frames carry.
@@ -29,7 +30,7 @@ impl Snapshot {
         if self.body.is_empty() {
             0
         } else {
-            (self.body.len() + CHUNK_RAW_BYTES - 1) / CHUNK_RAW_BYTES
+            self.body.len().div_ceil(CHUNK_RAW_BYTES)
         }
     }
 
@@ -303,7 +304,6 @@ pub fn build() -> Result<Snapshot, BridgeError> {
         format!("{:x}", h.finalize())
     };
 
-    debug_assert!(CHUNK_RAW_BYTES < NOISE_MAX);
     Ok(Snapshot {
         snapshot_id,
         head_migration: head,
