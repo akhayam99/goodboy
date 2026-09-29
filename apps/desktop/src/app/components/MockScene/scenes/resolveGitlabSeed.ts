@@ -146,7 +146,7 @@ const NOTE_SEEDS: ReadonlyArray<NoteSeed> = [
   },
 ];
 
-const NOTES: ReadonlyArray<DiffComment> = NOTE_SEEDS.map((seed) => ({
+export const NOTES: ReadonlyArray<DiffComment> = NOTE_SEEDS.map((seed) => ({
   id: seed.id,
   sessionId: SESSION_ID,
   filePath: seed.path,
@@ -157,7 +157,7 @@ const NOTES: ReadonlyArray<DiffComment> = NOTE_SEEDS.map((seed) => ({
   authorKind: 'user',
 }));
 
-const noteRow = ({ note }: { readonly note: DiffComment }): ResolveQueueItemWithThread => {
+export const noteRow = ({ note }: { readonly note: DiffComment }): ResolveQueueItemWithThread => {
   const threadId = `note:${note.id}`;
   const thread: ResolveThread = {
     ...buildThread({

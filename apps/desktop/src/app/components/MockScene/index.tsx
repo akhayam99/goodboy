@@ -14,6 +14,7 @@ import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveGitlabScene } from './scenes/ResolveGitlabScene';
+import { ResolveBitbucketScene } from './scenes/ResolveBitbucketScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { BoardScene } from './scenes/BoardScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
@@ -123,6 +124,7 @@ export const MOCK_SCENES = {
   resolve: ResolveScene,
   'resolve-item': ResolveItemScene,
   'resolve-gitlab': ResolveGitlabScene,
+  'resolve-bitbucket': ResolveBitbucketScene,
   board: BoardScene,
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,
