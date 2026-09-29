@@ -30,20 +30,14 @@ export const settleResolveSourceChange = async ({
   const comments = get().sessionGithub[sessionId]?.detail?.comments ?? [];
   const source = sourceTextOf({ comments, threadId });
   const fingerprint = await rootFingerprint({ comments, threadId });
-  if (source !== null && fingerprint !== null) {
-    await setResolveThreadSourceSnapshot({
-      db,
-      sessionId,
-      threadId,
-      snapshot: baselineSnapshot({ fingerprint, source, now: Date.now() }),
-    });
-  } else if (snapshot?.changed != null) {
-    await setResolveThreadSourceSnapshot({
-      db,
-      sessionId,
-      threadId,
-      snapshot: { ...snapshot.changed, replyIds: snapshot.replyIds, changed: null },
-    });
+  const next =
+    source !== null && fingerprint !== null
+      ? baselineSnapshot({ fingerprint, source, now: Date.now() })
+      : snapshot?.changed == null
+        ? null
+        : { ...snapshot.changed, replyIds: snapshot.replyIds, changed: null };
+  if (next !== null) {
+    await setResolveThreadSourceSnapshot({ db, sessionId, threadId, snapshot: next });
   }
   if (keepDraft) {
     await keepResolveDraftCurrent({ db, sessionId, threadId });
