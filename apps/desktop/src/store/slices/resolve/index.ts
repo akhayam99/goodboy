@@ -171,7 +171,7 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
     settleResolveSourceChange: (params: SettleSourceChangeParams) =>
       serialize({
         sessionId: params.sessionId,
-        run: () => settleResolveSourceChange({ set, ...params }),
+        run: () => settleResolveSourceChange({ set, get, ...params }),
       }),
     materializeReviewThreads: (params: MaterializeParams) =>
       serialize({

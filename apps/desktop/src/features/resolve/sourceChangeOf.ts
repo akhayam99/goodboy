@@ -1,4 +1,4 @@
-import type { ResolveSourceSnapshot } from '@goodboy/types';
+import type { PrComment, ResolveSourceSnapshot } from '@goodboy/types';
 
 export type ReviewSourceChange = {
   readonly before: string;
@@ -20,3 +20,12 @@ export const sourceChangeOf = ({
         author: snapshot.changed.author,
         seenAt: snapshot.changed.seenAt,
       };
+
+export const newRepliesOf = ({
+  snapshot,
+  replies,
+}: {
+  readonly snapshot: ResolveSourceSnapshot | undefined;
+  readonly replies: ReadonlyArray<PrComment>;
+}): ReadonlyArray<PrComment> =>
+  snapshot === undefined ? [] : replies.filter((reply) => !snapshot.replyIds.includes(reply.id));

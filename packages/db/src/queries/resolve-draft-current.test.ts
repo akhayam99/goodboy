@@ -134,6 +134,7 @@ describe('source snapshot with a pending change', () => {
       author: 'mquint',
       fingerprint: 'aaa',
       seenAt: 5,
+      replyIds: ['r1'],
       changed: {
         body: 'Move it and cap the backoff.',
         author: 'mquint',

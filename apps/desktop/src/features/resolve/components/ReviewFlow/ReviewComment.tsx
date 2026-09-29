@@ -33,6 +33,7 @@ import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCa
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { AgentLine } from './AgentLine';
 import { ProposedChange } from './ProposedChange';
+import { NewReplyNote } from './NewReplyNote';
 import { SourceChangeCard } from './SourceChangeCard';
 import type { ReviewEntry } from './useReviewEntries';
 
@@ -180,6 +181,8 @@ export const ReviewComment = ({
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
+
+      {entry.newReplies.length > 0 && <NewReplyNote replies={entry.newReplies} />}
 
       {state === 'outdated' && entry.change !== null && <SourceChangeCard change={entry.change} />}
 

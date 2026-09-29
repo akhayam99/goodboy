@@ -9,7 +9,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { Database } from '../client';
-import { isJsonRecord, parseJsonColumn } from '../shared/parseJsonColumn';
+import { isJsonRecord, isStringArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 type Row = {
   readonly threadId: string;
@@ -56,6 +56,7 @@ const isSnapshot = (value: unknown): value is ResolveSourceSnapshot =>
   (value.author === null || typeof value.author === 'string') &&
   typeof value.fingerprint === 'string' &&
   typeof value.seenAt === 'number' &&
+  isStringArray(value.replyIds) &&
   (value.changed === null || isChange(value.changed));
 
 const hydrate = ({ row }: { readonly row: Row }): ResolveThreadFacts => ({

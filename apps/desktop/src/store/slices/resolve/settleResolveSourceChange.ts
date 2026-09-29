@@ -3,19 +3,23 @@ import {
   listResolveThreadFacts,
   setResolveThreadSourceSnapshot,
 } from '@goodboy/db';
+import { baselineSnapshot, sourceTextOf } from './sourceSnapshot';
+import { rootFingerprint } from './sourceFingerprint';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';
-import { loadResolveSourceChangesInto } from './loadResolveSourceChangesInto';
-import type { SetFn, ThreadParams } from './types';
+import { loadResolveSourceSnapshotsInto } from './loadResolveSourceSnapshotsInto';
+import type { GetFn, SetFn, ThreadParams } from './types';
 
 type Params = ThreadParams & {
   readonly set: SetFn;
+  readonly get: GetFn;
   readonly keepDraft: boolean;
 };
 
 export const settleResolveSourceChange = async ({
   set,
+  get,
   sessionId,
   threadId,
   keepDraft,
@@ -23,12 +27,22 @@ export const settleResolveSourceChange = async ({
   const db = tauriDatabase;
   const facts = await listResolveThreadFacts({ db, sessionId });
   const snapshot = facts.find((fact) => fact.threadId === threadId)?.sourceSnapshot ?? null;
-  if (snapshot?.changed != null) {
+  const comments = get().sessionGithub[sessionId]?.detail?.comments ?? [];
+  const source = sourceTextOf({ comments, threadId });
+  const fingerprint = await rootFingerprint({ comments, threadId });
+  if (source !== null && fingerprint !== null) {
     await setResolveThreadSourceSnapshot({
       db,
       sessionId,
       threadId,
-      snapshot: { ...snapshot.changed, changed: null },
+      snapshot: baselineSnapshot({ fingerprint, source, now: Date.now() }),
+    });
+  } else if (snapshot?.changed != null) {
+    await setResolveThreadSourceSnapshot({
+      db,
+      sessionId,
+      threadId,
+      snapshot: { ...snapshot.changed, replyIds: snapshot.replyIds, changed: null },
     });
   }
   if (keepDraft) {
@@ -36,5 +50,5 @@ export const settleResolveSourceChange = async ({
     await loadResolveQueueItemsInto({ set, sessionId });
     await loadResolveCandidatesInto({ set, sessionId });
   }
-  await loadResolveSourceChangesInto({ set, sessionId });
+  await loadResolveSourceSnapshotsInto({ set, sessionId });
 };

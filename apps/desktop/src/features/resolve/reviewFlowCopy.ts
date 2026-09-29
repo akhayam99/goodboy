@@ -35,6 +35,17 @@ export const sourceChangeLine = ({
   return time === '' ? `${by}, after the draft.` : `${by}, seen at ${time}, after the draft.`;
 };
 
+export const newReplyLine = ({ authors }: { readonly authors: ReadonlyArray<string> }): string => {
+  const [first, second] = authors;
+  if (first === undefined) {
+    return 'New reply';
+  }
+  if (second === undefined) {
+    return `New reply from ${first}`;
+  }
+  return `New replies from ${authors.join(', ')}`;
+};
+
 export const replyHeading = ({ author }: { readonly author: string | null }): string =>
   author === null ? 'Reply' : `Reply to ${author}`;
 

@@ -114,6 +114,7 @@ export type ResolveSourceSnapshot = Readonly<{
   author: string | null;
   fingerprint: string;
   seenAt: number;
+  replyIds: ReadonlyArray<string>;
   changed: ResolveSourceChange | null;
 }>;
 

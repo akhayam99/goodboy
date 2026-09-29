@@ -89,11 +89,18 @@ const seedItem: ResolveQueueItem = {
 let db: Database;
 
 const createHarness = () => {
-  const store = createStore(() => ({ ...resolveInitialState, diffComments: {} }));
+  const store = createStore(() => ({
+    ...resolveInitialState,
+    diffComments: {},
+    sessionGithub: {},
+  }));
   const set = store.setState as unknown as SetFn;
   const get = store.getState as unknown as GetFn;
   return { get, actions: createResolveSlice({ set, get }) };
 };
+
+const hasChange = (snapshot: { readonly changed: unknown } | undefined): boolean =>
+  snapshot?.changed != null;
 
 const stateNow = async ({ isChanged }: { readonly isChanged: boolean }) => {
   const entries = await listResolveQueueItems({ db, sessionId });
@@ -142,7 +149,24 @@ describe('source changes', () => {
     expect(thread?.revision).toBe(2);
     expect(entry?.item.candidateRevision).toBe(2);
     await actions.syncSourceSnapshots({ sessionId, prNumber: 318, comments });
-    expect(get().sessionResolveSourceChanges[sessionId]).toEqual({});
+    expect(hasChange(get().sessionResolveSourceSnapshots[sessionId]?.[THREAD])).toBe(false);
+    expect(await stateNow({ isChanged: false })).toBe('ready');
+  });
+
+  it('does not mark a new reply as a change and keeps the reply out of the baseline until settled', async () => {
+    const { actions, get } = createHarness();
+    const root = comment('Move the timeout to config.');
+    await actions.syncSourceSnapshots({ sessionId, prNumber: 318, comments: [root] });
+    const reply = comment('Thanks, looks right.', {
+      id: 'c2',
+      author: 'tvarga',
+      createdAt: '2026-09-29T10:30:00Z',
+    });
+    await actions.syncSourceSnapshots({ sessionId, prNumber: 318, comments: [root, reply] });
+
+    const snapshot = get().sessionResolveSourceSnapshots[sessionId]?.[THREAD];
+    expect(hasChange(snapshot)).toBe(false);
+    expect(snapshot?.replyIds).toEqual([]);
     expect(await stateNow({ isChanged: false })).toBe('ready');
   });
 
@@ -159,7 +183,7 @@ describe('source changes', () => {
       comments: [comment('Move the timeout to config and cap the backoff at 30 seconds.')],
     });
 
-    const snapshot = get().sessionResolveSourceChanges[sessionId]?.[THREAD];
+    const snapshot = get().sessionResolveSourceSnapshots[sessionId]?.[THREAD];
     expect(snapshot?.body).toBe('Move the timeout to config.');
     expect(snapshot?.changed).toMatchObject({
       body: 'Move the timeout to config and cap the backoff at 30 seconds.',
@@ -185,11 +209,11 @@ describe('source changes', () => {
 
     await actions.settleResolveSourceChange({ sessionId, threadId: THREAD, keepDraft: true });
 
-    expect(get().sessionResolveSourceChanges[sessionId]).toEqual({});
+    expect(hasChange(get().sessionResolveSourceSnapshots[sessionId]?.[THREAD])).toBe(false);
     const [entry] = await listResolveQueueItems({ db, sessionId });
     expect(entry?.item.candidateRevision).toBe(entry?.thread.revision);
     await actions.syncSourceSnapshots({ sessionId, prNumber: 318, comments: edited });
-    expect(get().sessionResolveSourceChanges[sessionId]).toEqual({});
+    expect(hasChange(get().sessionResolveSourceSnapshots[sessionId]?.[THREAD])).toBe(false);
   });
 
   it('starting a redraft moves the baseline without touching the revision', async () => {
@@ -207,7 +231,7 @@ describe('source changes', () => {
 
     await actions.settleResolveSourceChange({ sessionId, threadId: THREAD, keepDraft: false });
 
-    expect(get().sessionResolveSourceChanges[sessionId]).toEqual({});
+    expect(hasChange(get().sessionResolveSourceSnapshots[sessionId]?.[THREAD])).toBe(false);
     const [entry] = await listResolveQueueItems({ db, sessionId });
     expect(entry?.item.candidateRevision).toBe(1);
   });

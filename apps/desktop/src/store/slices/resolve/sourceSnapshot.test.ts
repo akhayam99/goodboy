@@ -19,6 +19,7 @@ const baseline: ResolveSourceSnapshot = {
   author: 'mquint',
   fingerprint: 'fp1',
   seenAt: 1,
+  replyIds: [],
   changed: null,
 };
 
@@ -31,12 +32,21 @@ const source = ({ comments }: { readonly comments: ReadonlyArray<PrComment> }) =
 };
 
 describe('sourceTextOf', () => {
-  it('is the body for one comment and names the author once a thread has replies', () => {
-    expect(source({ comments: [comment({})] }).body).toBe('Move the timeout to config.');
+  it('is the root comment and lists the replies apart', () => {
     const thread = source({
-      comments: [comment({}), comment({ id: 'c2', author: 'tvarga', body: 'Agreed.' })],
+      comments: [
+        comment({}),
+        comment({
+          id: 'c2',
+          author: 'tvarga',
+          body: 'Agreed.',
+          createdAt: '2026-09-29T10:05:00Z',
+        }),
+      ],
     });
-    expect(thread.body).toBe('mquint: Move the timeout to config.\n\ntvarga: Agreed.');
+    expect(thread.body).toBe('Move the timeout to config.');
+    expect(thread.author).toBe('mquint');
+    expect(thread.replyIds).toEqual(['c2']);
   });
 
   it('is null for a thread with no comments', () => {
@@ -87,17 +97,26 @@ describe('nextSourceSnapshot', () => {
     });
   });
 
-  it('names the author of a new reply', () => {
-    const next = nextSourceSnapshot({
-      previous: baseline,
-      stage: 'proposed',
-      fingerprint: 'fp3',
-      source: source({
-        comments: [comment({}), comment({ id: 'c2', author: 'tvarga', body: 'Also cap it.' })],
+  it('does not touch the snapshot for a new reply, the root fingerprint is the same', () => {
+    expect(
+      nextSourceSnapshot({
+        previous: baseline,
+        stage: 'proposed',
+        fingerprint: 'fp1',
+        source: source({
+          comments: [
+            comment({}),
+            comment({
+              id: 'c2',
+              author: 'tvarga',
+              body: 'Thanks!',
+              createdAt: '2026-09-29T10:05:00Z',
+            }),
+          ],
+        }),
+        now: 9,
       }),
-      now: 9,
-    });
-    expect(next?.changed?.author).toBe('tvarga');
+    ).toBeNull();
   });
 
   it('does not rewrite a change it already saw', () => {

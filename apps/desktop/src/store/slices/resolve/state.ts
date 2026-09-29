@@ -31,7 +31,7 @@ export type ResolveState = {
     Record<SessionId, ReadonlyArray<ResolvePublication>>
   >;
   readonly sessionResolveUncapturedWork: Readonly<Record<SessionId, ResolveUncapturedWork | null>>;
-  readonly sessionResolveSourceChanges: Readonly<
+  readonly sessionResolveSourceSnapshots: Readonly<
     Record<SessionId, Readonly<Record<string, ResolveSourceSnapshot>>>
   >;
   readonly activePublicationPreview: Readonly<Record<SessionId, ResolvePublicationPreview | null>>;
@@ -45,6 +45,6 @@ export const resolveInitialState: ResolveState = {
   sessionResolveQueueItems: {},
   sessionResolvePublications: {},
   sessionResolveUncapturedWork: {},
-  sessionResolveSourceChanges: {},
+  sessionResolveSourceSnapshots: {},
   activePublicationPreview: {},
 };

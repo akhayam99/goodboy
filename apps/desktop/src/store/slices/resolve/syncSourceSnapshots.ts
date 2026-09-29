@@ -6,8 +6,8 @@ import {
 import type { PrComment, ResolveSourceSnapshot, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { nextSourceSnapshot, sourceTextOf } from './sourceSnapshot';
-import { sourceFingerprint } from './sourceFingerprint';
-import { loadResolveSourceChangesInto } from './loadResolveSourceChangesInto';
+import { rootFingerprint } from './sourceFingerprint';
+import { loadResolveSourceSnapshotsInto } from './loadResolveSourceSnapshotsInto';
 import type { SetFn } from './types';
 
 type Params = {
@@ -32,7 +32,7 @@ export const syncSourceSnapshots = async ({
       continue;
     }
     const source = sourceTextOf({ comments, threadId: row.threadId });
-    const fingerprint = await sourceFingerprint({ comments, threadId: row.threadId });
+    const fingerprint = await rootFingerprint({ comments, threadId: row.threadId });
     if (source === null || fingerprint === null) {
       continue;
     }
@@ -55,5 +55,5 @@ export const syncSourceSnapshots = async ({
       snapshot,
     });
   }
-  await loadResolveSourceChangesInto({ set, sessionId });
+  await loadResolveSourceSnapshotsInto({ set, sessionId });
 };

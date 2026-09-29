@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ResolveSourceSnapshot, SessionId } from '@goodboy/types';
+import type { PrComment, ResolveSourceSnapshot, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { ResolveItemDraft } from '../../../resolveItemDraft';
 import type { ResolveQueueRow } from '../../../buildResolveQueueRows';
@@ -7,7 +7,7 @@ import { groupConversationsByFile } from '../../../groupConversationsByFile';
 import { useResolveQueueRows } from '../../../hooks/useResolveQueueRows';
 import { conversationSourceOf } from '../../../notes/conversationSource';
 import { isReplyEdited } from '../../../reviewRows';
-import { sourceChangeOf, type ReviewSourceChange } from '../../../sourceChangeOf';
+import { newRepliesOf, sourceChangeOf, type ReviewSourceChange } from '../../../sourceChangeOf';
 import {
   REVIEW_COMMENT_GROUPS,
   reviewCommentGroup,
@@ -23,6 +23,7 @@ export type ReviewEntry = {
   readonly state: ReviewCommentState;
   readonly word: string;
   readonly change: ReviewSourceChange | null;
+  readonly newReplies: ReadonlyArray<PrComment>;
   readonly group: ReviewCommentGroup;
 };
 
@@ -43,7 +44,7 @@ export const useReviewEntries = ({
   readonly groups: ReadonlyArray<ReviewGroup>;
 } => {
   const rows = useResolveQueueRows({ sessionId });
-  const changes = useAppStore((s) => s.sessionResolveSourceChanges[sessionId] ?? EMPTY_CHANGES);
+  const changes = useAppStore((s) => s.sessionResolveSourceSnapshots[sessionId] ?? EMPTY_CHANGES);
   const hasPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr != null);
   const drafts = useAppStore((s) => s.resolveItemDrafts[sessionId] ?? EMPTY_DRAFTS);
   return useMemo(() => {
@@ -53,7 +54,7 @@ export const useReviewEntries = ({
       const state = reviewCommentStateOf({
         row,
         isEdited: isReplyEdited({ draft: drafts[row.thread.threadId], row }),
-        isChanged: changes[row.thread.threadId] !== undefined,
+        isChanged: changes[row.thread.threadId]?.changed != null,
       });
       return {
         row,
@@ -61,6 +62,13 @@ export const useReviewEntries = ({
         state,
         word: reviewCommentWord({ state, row }),
         change: sourceChangeOf({ snapshot: changes[row.thread.threadId] }),
+        newReplies:
+          row.thread.stage === 'new'
+            ? []
+            : newRepliesOf({
+                snapshot: changes[row.thread.threadId],
+                replies: row.commentThread?.replies ?? [],
+              }),
         group: reviewCommentGroup({ state }),
       };
     });

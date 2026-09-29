@@ -521,12 +521,38 @@ const TYPO_SNAPSHOT: ResolveSourceSnapshot = {
   author: 'kenji-w',
   fingerprint: 'mock-typo-before',
   seenAt: msAgo({ minutes: 480 }),
+  replyIds: [],
   changed: {
     body: `${TYPO_BEFORE} ${TYPO_ADDED}`,
     author: 'kenji-w',
     fingerprint: 'mock-typo-after',
     seenAt: msAgo({ minutes: 30 }),
   },
+};
+
+const METRICS_REPLY: PrComment = {
+  id: 'mock-resolve-comment-reply-metrics',
+  author: 'nadia-p',
+  authorAvatarUrl: null,
+  body: 'Agreed. A counter per give-up reason would help too.',
+  createdAt: isoAgo({ minutes: 20 }),
+  url: `${PR.url}#discussion_reply_metrics`,
+  source: 'review',
+  path: 'src/webhooks/metrics.ts',
+  line: 18,
+  resolved: false,
+  outdated: false,
+  threadId: T2,
+  inReplyToId: `mock-resolve-comment-${T2}`,
+};
+
+const METRICS_SNAPSHOT: ResolveSourceSnapshot = {
+  body: 'Same loop should emit a metric when it gives up, otherwise we will never see this happening in production.',
+  author: 'kenji-w',
+  fingerprint: 'mock-metrics-root',
+  seenAt: msAgo({ minutes: 85 }),
+  replyIds: [],
+  changed: null,
 };
 
 const MOUNT_TARGET: MountTargetSnapshot = {
@@ -761,7 +787,9 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
     sessionResolveCheckRuns: { [SESSION_ID]: CHECK_RUNS },
     sessionResolvePublications: { [SESSION_ID]: [PUBLICATION] },
     sessionResolveUncapturedWork: { [SESSION_ID]: null },
-    sessionResolveSourceChanges: { [SESSION_ID]: { [T8]: TYPO_SNAPSHOT } },
+    sessionResolveSourceSnapshots: {
+      [SESSION_ID]: { [T8]: TYPO_SNAPSHOT, [T2]: METRICS_SNAPSHOT },
+    },
     resolveQueueView: {
       [SESSION_ID]: EMPTY_RESOLVE_QUEUE_VIEW,
     },
@@ -779,7 +807,7 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
         pr: PR,
         detail: {
           prNumber: PR.number,
-          comments: COMMENTS,
+          comments: [...COMMENTS, METRICS_REPLY],
           reviews: [],
           reviewRequests: [],
           checks: [],

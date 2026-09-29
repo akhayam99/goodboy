@@ -164,6 +164,18 @@ describe('Review as one flow', () => {
     );
   });
 
+  it('shows a new reply as a fact and keeps Accept available', async () => {
+    await mount({ threadId: 'PRRT_thread_retry_metrics' });
+
+    expect(row(/Same loop should emit/).textContent).not.toContain('Comment changed');
+    const note = within(comment()).getByText('New reply from nadia-p');
+    expect(note).toBeDefined();
+    expect(within(comment()).getAllByText(/A counter per give-up reason/).length).toBeGreaterThan(
+      0,
+    );
+    expect(within(comment()).getByRole('button', { name: /^Accept/ })).toBeDefined();
+  });
+
   it('shows the moved line as a fact on the comment without changing its state', async () => {
     await mount({ threadId: 'PRRT_thread_flaky_test' });
 
