@@ -25,6 +25,9 @@ import { materializeReviewThreads } from './materializeReviewThreads';
 import { syncNoteThreads } from './syncNoteThreads';
 import { closeResolvedNote } from './closeResolvedNote';
 import { resolveWithoutReply } from './resolveWithoutReply';
+import { settleItemAnswered } from './settleItemAnswered';
+import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState';
+import { resolveThreadOnRemote } from './resolveThreadOnRemote';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type {
   ResolveActions,
@@ -70,6 +73,19 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         sessionId: params.sessionId,
         run: () => resolveWithoutReply({ set, get, ...params }),
       }),
+    answerItemWithoutFix: (params: ItemParams & { readonly reply: string }) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => settleItemAnswered({ set, get, ...params }),
+      }),
+    refreshThreadGitState: (params: SessionParams) =>
+      refreshThreadGitState({ set, get, ...params }),
+    dismissThreadFix: (params: ThreadParams & { readonly sha: string }) =>
+      dismissThreadFix({ set, get, ...params }),
+    replyAndResolveThread: (params: ThreadParams) =>
+      resolveThreadOnRemote({ set, get, ...params, mode: 'reply' }),
+    resolveThreadOnly: (params: ThreadParams) =>
+      resolveThreadOnRemote({ set, get, ...params, mode: 'resolve_only' }),
     deferResolveQueueItem: (params: ItemParams) =>
       serialize({
         sessionId: params.sessionId,

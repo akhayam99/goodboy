@@ -101,7 +101,8 @@ const probeFix = async ({
   row,
   branch,
   ports,
-}: Pick<Params, 'row' | 'branch' | 'ports'>): Promise<ThreadGitFacts | null> => {
+  isDismissed,
+}: Pick<Params, 'row' | 'branch' | 'ports' | 'isDismissed'>): Promise<ThreadGitFacts | null> => {
   const shas = row.disposition === 'fix' ? (row.commitShas ?? []) : [];
   if (shas.length === 0) {
     return null;
@@ -122,6 +123,9 @@ const probeFix = async ({
   const isEachPlaced = seen.every((item) => item?.onOrigin === true || item?.landedAs != null);
   const first = firstOf(landed);
   if (isEachPlaced && first !== null) {
+    if (isDismissed({ sha: first.sha })) {
+      return LOCAL;
+    }
     return {
       ...LOCAL,
       gitState: 'fixed_elsewhere',
@@ -207,7 +211,7 @@ export const computeThreadGitFacts = async ({
       ? null
       : { commentId: reply.id, createdAtMs: new Date(reply.createdAt).getTime() };
   const probed =
-    (await probeFix({ row, branch, ports })) ??
+    (await probeFix({ row, branch, ports, isDismissed })) ??
     (await probeElsewhere({ row, comments, ownShas, ports, isDismissed })) ??
     LOCAL;
   return { ...probed, userReply };

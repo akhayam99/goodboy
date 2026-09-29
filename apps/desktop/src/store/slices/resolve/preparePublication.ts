@@ -34,6 +34,7 @@ import { approvedPublicationScope } from './approvedPublicationScope';
 import { isLocalNoteThread } from './isLocalNoteThread';
 import { reconcileIntegratedCommits } from './reconcileIntegratedCommits';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
+import { refreshThreadGitState } from './refreshThreadGitState';
 import { selectPublishableThreads } from './selectPublishableThreads';
 import { sourceFingerprint } from './sourceFingerprint';
 import { threadOutcome } from './threadOutcome';
@@ -210,6 +211,8 @@ export const preparePublication = async ({
   const mount = selectActiveMount({ state: get(), sessionId });
   const repo = mount === null ? null : getSessionRepo({ get, sessionId, mountId: mount.mountId });
   await reconcileIntegratedCommits({ sessionId }).catch(() => undefined);
+  await refreshThreadGitState({ set, get, sessionId }).catch(() => undefined);
+  const threadGit = get().sessionThreadGit?.[sessionId] ?? {};
   const rows = await listResolveThreads({ db: tauriDatabase, sessionId });
   const scope = await approvedPublicationScope({ sessionId });
   const selection = selectPublishableThreads({
@@ -240,10 +243,11 @@ export const preparePublication = async ({
       const isRefused = scope.refusedThreadIds.has(row.threadId);
       const closure = isRefused ? { reply: row.replyDraft ?? '' } : closureOf({ row });
       const isNote = isLocalNoteThread({ row });
+      const hasHandReply = threadGit[row.threadId]?.userReply != null;
       return {
         row,
         body:
-          closure === null || isNote
+          closure === null || isNote || hasHandReply
             ? null
             : buildResolutionReplyBody({
                 closure,
@@ -257,7 +261,9 @@ export const preparePublication = async ({
     }),
   );
   const shippable = publishable.filter((row) => !scope.refusedThreadIds.has(row.threadId));
-  const shas = fixShas({ rows: shippable });
+  const shas = fixShas({
+    rows: shippable.filter((row) => threadGit[row.threadId]?.gitState !== 'on_origin'),
+  });
   const requiresPush = shas.length > 0;
   const git =
     requiresPush && repo !== null
