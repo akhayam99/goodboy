@@ -563,10 +563,13 @@ export {
   updateStarredIssueSnapshots,
 } from './queries/starred-issue';
 export {
+  deleteChats,
   finishChatMessage,
   insertChat,
   insertChatMessage,
+  insertChatSessionLink,
   listChatMessages,
+  listChatSessionLinks,
   listChats,
   renameChat,
   setChatModel,
