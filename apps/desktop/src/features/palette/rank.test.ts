@@ -179,16 +179,47 @@ describe('rankCandidates performance', () => {
     3,
   );
 
-  it.each(['pay export', 'p', 'set drift nort', 'zzqx', 'retry webhook merchant'])(
-    'ranks 5k items for %s within one frame budget',
-    (query) => {
-      rankCandidates({ items, query, frecency, now: NOW });
-      const started = performance.now();
-      const ranked = rankCandidates({ items, query, frecency, now: NOW });
-      const elapsed = performance.now() - started;
+  const CALIBRATION_OPS = 500_000;
+  const SAMPLE_COUNT = 5;
 
-      expect(ranked.length).toBeLessThanOrEqual(60);
-      expect(elapsed).toBeLessThan(120);
+  const measureCalibrationMs = (): number => {
+    const started = performance.now();
+    let acc = 0;
+    for (let index = 0; index < CALIBRATION_OPS; index += 1) {
+      acc += (index * 2654435761) % 97;
+    }
+    if (acc < 0) {
+      throw new Error('calibration loop did not run');
+    }
+    return performance.now() - started;
+  };
+
+  const min = (values: ReadonlyArray<number>): number => values.reduce((a, b) => Math.min(a, b));
+
+  const PERFORMANCE_CASES: ReadonlyArray<{ readonly query: string; readonly ratioBudget: number }> =
+    [
+      { query: 'pay export', ratioBudget: 0.9 },
+      { query: 'p', ratioBudget: 0.7 },
+      { query: 'set drift nort', ratioBudget: 1.8 },
+      { query: 'zzqx', ratioBudget: 0.22 },
+      { query: 'retry webhook merchant', ratioBudget: 1.9 },
+    ];
+
+  it.each(PERFORMANCE_CASES)(
+    'ranks 5k items for $query within a budget relative to a same-process baseline',
+    ({ query, ratioBudget }) => {
+      rankCandidates({ items, query, frecency, now: NOW });
+
+      const calibrationMs = min(Array.from({ length: SAMPLE_COUNT }, () => measureCalibrationMs()));
+      const rankSamples = Array.from({ length: SAMPLE_COUNT }, () => {
+        const started = performance.now();
+        const ranked = rankCandidates({ items, query, frecency, now: NOW });
+        return { ms: performance.now() - started, length: ranked.length };
+      });
+      const rankMs = min(rankSamples.map((sample) => sample.ms));
+
+      expect(rankSamples[0]?.length).toBeLessThanOrEqual(60);
+      expect(rankMs / calibrationMs).toBeLessThan(ratioBudget);
     },
   );
 });
