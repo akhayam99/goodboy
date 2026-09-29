@@ -41,10 +41,13 @@ file holds those explanations. Everything below has been "fixed" at least once a
   head branch and capabilities. Replies and resolves go through
   `reviewSourceFor`, keyed by `resolve_threads.source_kind` and
   `provider_thread_id`; a GitLab thread id is `gitlab:<discussionId>` and its
-  `pr_number` is the MR iid. A publication is scoped to the rows of the picked
+  `pr_number` is the MR iid, and a Bitbucket thread id is `bitbucket:<rootCommentId>`
+  (one thread per inline root comment, replies go under the root). A publication is scoped to the rows of the picked
   source (`approvedPublicationScope({ include })`), so pushing GitLab never
   posts GitHub rows. `resolveStepPlan` leaves a thread open when the source
-  cannot resolve (`REVIEW_SOURCE_CAPABILITIES`, Bitbucket replies only).
+  cannot resolve (`REVIEW_SOURCE_CAPABILITIES`, Bitbucket replies only). Wording
+  follows the same capabilities: where `canResolve` is false the comment has no
+  "Resolve without a reply" and the push confirm says the thread stays open.
   Read `sessionGitlabMr` and `reviewSourceThreads` through the selectors, not
   by hand: picking a source in another project calls `setSessionActiveMount`.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every

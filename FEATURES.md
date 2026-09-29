@@ -271,7 +271,14 @@ Turn review comments into commits without writing the fix yourself. Review lists
 
 ### Review sources
 
-Read the comments of every request in the session from one place. The picker under the Review title lists each pull request and merge request of the session with its provider icon and open count, and **Notes on this machine** last. A session with two projects on two providers shows two entries, and picking one makes its project the active one. Draft, reply, resolve and push work the same on GitHub and GitLab. Where a provider cannot resolve a thread, the confirm says so and leaves the thread open after the reply.
+Read the comments of every request in the session from one place. The picker under the Review title lists each pull request and merge request of the session with its provider icon and open count, and **Notes on this machine** last. A session with two projects on two providers shows two entries, and picking one makes its project the active one. Draft, reply and push work the same everywhere. Where a provider cannot resolve a thread, the comment offers **Reply** and no resolve, and the push confirm says the thread stays open for the reviewer.
+
+| Source                 | Read comments   | Reply | Resolve thread            |
+| ---------------------- | --------------- | ----- | ------------------------- |
+| GitHub pull request    | Yes             | Yes   | Yes                       |
+| GitLab merge request   | Yes             | Yes   | Yes                       |
+| Bitbucket pull request | Inline comments | Yes   | No, the thread stays open |
+| Notes on this machine  | Yes             | No    | Close the note            |
 
 ### Comment states
 
@@ -279,7 +286,7 @@ Know what each comment needs next. Each one shows a state like **Not started**, 
 
 ### Close on GitHub
 
-Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads (on a GitLab merge request too), after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.
+Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads (on a GitLab merge request too, not on Bitbucket), after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.
 
 ### Review replies in your voice
 
