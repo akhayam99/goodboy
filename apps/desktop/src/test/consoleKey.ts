@@ -13,7 +13,9 @@ export type ConsoleBaselineEntry = { file: string; message: string };
 
 export type ConsoleBaseline = { entries: ReadonlyArray<ConsoleBaselineEntry> };
 
-const collapseDigits = (line: string): string =>
+type CollapseDigitsParams = { line: string };
+
+const collapseDigits = ({ line }: CollapseDigitsParams): string =>
   line.replace(/\d+/g, (digits, offset: number) => {
     const isStatusCode =
       digits.length === 3 &&
@@ -23,7 +25,9 @@ const collapseDigits = (line: string): string =>
     return isStatusCode ? digits : '#';
   });
 
-export const toConsoleKey = (args: ReadonlyArray<unknown>): string => {
+type ToConsoleKeyParams = { args: ReadonlyArray<unknown> };
+
+export const toConsoleKey = ({ args }: ToConsoleKeyParams): string => {
   const [first] = args;
   const isFormatted = typeof first === 'string' && FORMAT_SPECIFIER.test(first);
   const lines = format(...args)
@@ -31,7 +35,7 @@ export const toConsoleKey = (args: ReadonlyArray<unknown>): string => {
     .map((line) => line.trim())
     .filter((line) => line !== '');
   const kept = isFormatted ? lines.slice(0, 2).join(' | ') : (lines[0] ?? '');
-  return collapseDigits(kept.replace(UUID, '#')).slice(
+  return collapseDigits({ line: kept.replace(UUID, '#') }).slice(
     0,
     isFormatted ? MAX_FORMATTED_KEY_LENGTH : MAX_KEY_LENGTH,
   );

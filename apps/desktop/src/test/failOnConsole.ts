@@ -40,9 +40,11 @@ const testFile = (): string => {
 
 const unexpected: string[] = [];
 
-const record = ({ channel, args }: { channel: Channel; args: ReadonlyArray<unknown> }): void => {
+type RecordParams = { channel: Channel; args: ReadonlyArray<unknown> };
+
+const record = ({ channel, args }: RecordParams): void => {
   const file = testFile();
-  const key = toConsoleKey(args);
+  const key = toConsoleKey({ args });
   if (REPORT_PATH !== undefined) {
     appendFileSync(REPORT_PATH, `${JSON.stringify({ file, message: key })}\n`);
     return;
@@ -59,7 +61,9 @@ CHANNELS.forEach((channel) => {
   console[channel] = wrapper;
 });
 
-const flush = (where: string): void => {
+type FlushParams = { where: string };
+
+const flush = ({ where }: FlushParams): void => {
   const found = [...unexpected];
   unexpected.length = 0;
   if (found.length > 0) {
@@ -76,9 +80,9 @@ beforeAll(() => {
 });
 
 afterEach(() => {
-  flush('in this test');
+  flush({ where: 'in this test' });
 });
 
 afterAll(() => {
-  flush('outside a test (beforeAll, afterAll or a timer that outlived its test)');
+  flush({ where: 'outside a test (beforeAll, afterAll or a timer that outlived its test)' });
 });
