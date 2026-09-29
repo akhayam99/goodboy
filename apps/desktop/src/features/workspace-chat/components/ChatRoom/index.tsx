@@ -11,6 +11,7 @@ import { chatSuggestions } from '../../chatSuggestions';
 import { defaultChatModel, type ChatModelChoice } from '../../defaultChatModel';
 import { ChatComposer } from '../ChatComposer';
 import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
+import { ChatArchivedBanner } from './ChatArchivedBanner';
 import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
 import { ChatThread } from './ChatThread';
@@ -61,6 +62,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
   const createChat = useAppStore((state) => state.createChat);
   const sendChatMessage = useAppStore((state) => state.sendChatMessage);
   const stopChatReply = useAppStore((state) => state.stopChatReply);
+  const restoreChats = useAppStore((state) => state.restoreChats);
   const setChatModel = useAppStore((state) => state.setChatModel);
   const navigate = useAppStore((state) => state.navigate);
   const [draftModel, setDraftModel] = useState<ChatModelChoice | null>(null);
@@ -82,6 +84,9 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
 
   const send = async (text: string): Promise<void> => {
     if (chatId !== null) {
+      if (chat !== null && chat.archivedAt !== null) {
+        await restoreChats({ workspaceId, chatIds: [chatId] });
+      }
       await sendChatMessage({ chatId, content: text });
       return;
     }
@@ -152,7 +157,12 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
           onOpenHandoff={openSession}
         />
       )}
-      <div className="shrink-0 px-6 pb-3.5 pt-1.5">
+      <div className="flex shrink-0 flex-col gap-1.5 px-6 pb-3.5 pt-1.5">
+        {chat === null || chat.archivedAt === null ? null : (
+          <ChatArchivedBanner
+            onRestore={() => void restoreChats({ workspaceId, chatIds: [chat.id] })}
+          />
+        )}
         <ChatComposer
           placeholder={`Ask anything about ${workspaceName}`}
           provider={model.provider}
