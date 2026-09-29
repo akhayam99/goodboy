@@ -76,6 +76,21 @@ finds one.
 one `git merge-tree --stdin` process open for a whole plan, so its caller owns
 the lifetime.
 
+### Worktree module
+
+The Rust side of worktrees and branch reads is one module,
+`apps/desktop/src-tauri/src/worktree/`. Each file owns one job: `create`,
+`remove`, `folder` and `orphans` for the folders on disk, `inspect` and
+`detach` for what a folder holds, `base`, `branches` and `merge_state` for
+base and branch resolution, `status`, `diff`, `changed_files`, `commits` and
+`fast_forward` for reads and updates, `candidates` for agent fixes, `scratch`
+and `exclude` for the goodboy directory, `git` for the shared runner, and
+`error`, `types` and `slug` for what they share. `mod.rs` only declares the
+files and re-exports their items, so callers keep writing
+`crate::worktree::git` and lib.rs registers `worktree::worktree_create`. A
+helper another file needs is `pub(super)`; nothing else leaves its file. Tests
+sit in a `tests.rs` beside the file they cover.
+
 ### Provider routing
 
 - The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
