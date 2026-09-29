@@ -2,6 +2,7 @@ import { ExternalLink, Unplug } from 'lucide-react';
 import type { Project } from '@goodboy/types';
 import { CopyButton, FOCUS_RING, Tooltip, cn } from '@goodboy/ui';
 import { openInEditor } from '../../lib/editor';
+import { resolveEditorBinary } from '../../lib/editorSettings';
 import { useAppStore } from '../../../store';
 import { ICON_SIZE } from '../conceptIcons';
 
@@ -18,11 +19,12 @@ const actionButtonClass = cn(
 
 export const ProjectRowActions = ({ project, busy, onArmUnlink }: Props) => {
   const reportError = useAppStore((state) => state.reportError);
+  const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
 
   const openProject = async (event: React.MouseEvent) => {
     event.stopPropagation();
     try {
-      await openInEditor({ path: project.rootPath });
+      await openInEditor({ path: project.rootPath, editor });
     } catch (error) {
       void reportError({ title: `Couldn't open ${project.name}`, error });
     }
