@@ -186,6 +186,7 @@ fn refresh_provider(provider_id: &str) -> (ProviderStatus, AuthState) {
 /// alongside the exit code in `provider-lifecycle-exit`. This is the coherence
 /// contract: the UI never has to guess what changed.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn provider_lifecycle_run(
     app: AppHandle,
     registry: State<'_, ProviderLifecycleRegistry>,

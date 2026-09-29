@@ -421,7 +421,7 @@ mod tests {
             collected.push_str(&String::from_utf8_lossy(&buf[..n]));
             if let Some(rest) = collected.split("BACKGROUND:").nth(1) {
                 let digits: String = rest.chars().take_while(|c| c.is_ascii_digit()).collect();
-                if digits.len() > 0 && rest.len() > digits.len() {
+                if !digits.is_empty() && rest.len() > digits.len() {
                     return digits.parse().unwrap();
                 }
             }

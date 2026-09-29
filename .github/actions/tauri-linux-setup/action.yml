@@ -34,6 +34,6 @@ runs:
           ~/.cargo/registry
           ~/.cargo/git
           apps/desktop/src-tauri/target
-        key: ${{ inputs.cache-key-prefix }}-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock') }}
+        key: ${{ inputs.cache-key-prefix }}-${{ runner.os }}-${{ hashFiles('apps/desktop/src-tauri/Cargo.lock', 'rust-toolchain.toml') }}
         restore-keys: |
           ${{ inputs.cache-key-prefix }}-${{ runner.os }}-
