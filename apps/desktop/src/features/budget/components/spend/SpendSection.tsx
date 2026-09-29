@@ -1,6 +1,7 @@
 import { ErrorStrip, PanelLoading, SectionHeader, StudioWidget, formatUsd } from '@goodboy/ui';
 import type { BudgetAlert, ProviderName } from '@goodboy/types';
-import type { ProviderSpendEntry } from '../../../../store';
+import type { ProviderBudgetEntry } from '../../hooks/useWorkspaceSpend';
+import { budgetPctUsed } from '../../providerBudgetView';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { QueryResult } from '../../../../shared/types/queryResult';
 import { ProviderIcon } from '../../../providers/components/ProviderIcon';
@@ -9,7 +10,7 @@ import { SpendBar } from './SpendBar';
 import { providerLabel } from './lib';
 
 type Props = {
-  readonly providers: ReadonlyArray<ProviderSpendEntry>;
+  readonly providers: ReadonlyArray<ProviderBudgetEntry>;
   readonly alerts: ReadonlyArray<BudgetAlert>;
   readonly rulesResult: QueryResult<void>;
   readonly alertsResult: QueryResult<void>;
@@ -23,13 +24,16 @@ type Props = {
 };
 
 type CapLabelParams = {
-  readonly entry: ProviderSpendEntry;
+  readonly entry: ProviderBudgetEntry;
 };
 
-const capLabel = ({ entry }: CapLabelParams): string =>
-  entry.capUsd === null
-    ? 'no cap'
-    : `${formatUsd(entry.capUsd)} cap · ${Math.round(entry.pct * 100)}% used`;
+const capLabel = ({ entry }: CapLabelParams): string => {
+  const { budget } = entry;
+  if (budget === null || budget.capUsd === null) {
+    return 'no cap';
+  }
+  return `${formatUsd(budget.capUsd)} cap · ${budgetPctUsed({ status: budget })}% used this month`;
+};
 
 export const SpendSection = ({
   providers,
@@ -52,7 +56,7 @@ export const SpendSection = ({
       <SectionHeader
         label="Spend"
         icon={<CONCEPT_ICONS.budget size={ICON_SIZE.control} aria-hidden />}
-        hint="Provider spend and caps for this window. Pick a provider to edit its cap."
+        hint="Spend in this workspace for the window. Caps count the whole month across all workspaces. Pick a provider to edit its cap."
         headingLevel={2}
       />
       <ErrorStrip label="budget rules" error={rulesResult.error} onRetry={onRetryRules} />

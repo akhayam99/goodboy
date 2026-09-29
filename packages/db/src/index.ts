@@ -213,7 +213,6 @@ export {
   listWorkspaceTurnSpans,
 } from './queries/agent-turn-span';
 export { listProviderLimits, upsertProviderLimits } from './queries/provider-limits';
-export { summarizeProviderSpendPeriods, type ProviderSpendPeriods } from './queries/provider-spend';
 export { getAgentHandoff, insertAgentHandoff } from './queries/agent-handoff';
 export {
   deleteSetting,

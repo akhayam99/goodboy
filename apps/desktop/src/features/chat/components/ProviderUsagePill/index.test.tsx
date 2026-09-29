@@ -3,26 +3,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 
-type Breakdown = {
-  readonly provider: string;
-  readonly spentUsd: number;
-  readonly capUsd: number | null;
-  readonly pct: number;
-};
+import type { ProviderBudgetStatus } from '@goodboy/types';
+import { providerBudgetStatusFor } from '../../../budget/testing/providerBudgetFixture';
 
 const { state } = vi.hoisted(() => ({
-  state: { providerSpendBreakdown: [] as ReadonlyArray<Breakdown> },
+  state: { providerBudgetStatus: {} as Record<string, ProviderBudgetStatus> },
 }));
 
 vi.mock('../../../../store', () => ({
-  useAppStore: <T,>(selector: (s: { providerSpendBreakdown: ReadonlyArray<Breakdown> }) => T) =>
-    selector(state),
+  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
 import { ProviderUsagePill } from './index';
 
 beforeEach(() => {
-  state.providerSpendBreakdown = [];
+  state.providerBudgetStatus = {};
 });
 afterEach(cleanup);
 
@@ -32,17 +27,27 @@ describe('ProviderUsagePill', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders nothing when capUsd is null', () => {
-    state.providerSpendBreakdown = [{ provider: 'anthropic', spentUsd: 1, capUsd: null, pct: 0 }];
+  it('renders nothing when the provider has no cap', () => {
+    state.providerBudgetStatus = {
+      anthropic: { ...providerBudgetStatusFor({ spentUsd: 1, capUsd: 100 }), capUsd: null },
+    };
     const { container } = render(<ProviderUsagePill provider="anthropic" />);
     expect(container.firstChild).toBeNull();
   });
 
   it('hides a healthy budget', () => {
-    state.providerSpendBreakdown = [
-      { provider: 'anthropic', spentUsd: 25, capUsd: 100, pct: 0.25 },
-    ];
+    state.providerBudgetStatus = {
+      anthropic: providerBudgetStatusFor({ spentUsd: 25, capUsd: 100 }),
+    };
     render(<ProviderUsagePill provider="anthropic" />);
     expect(screen.queryByText(/75% left/i)).toBeNull();
+  });
+
+  it('says how much is left once past half the cap', () => {
+    state.providerBudgetStatus = {
+      anthropic: providerBudgetStatusFor({ spentUsd: 70, capUsd: 100 }),
+    };
+    render(<ProviderUsagePill provider="anthropic" />);
+    expect(screen.getByText(/30% left/)).toBeDefined();
   });
 });

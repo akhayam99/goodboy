@@ -1303,6 +1303,7 @@ export const initialState: AppState = {
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],
+  providerBudgetStatus: {},
   budgetAlerts: [],
   skills: {},
   phaseTemplates: {},

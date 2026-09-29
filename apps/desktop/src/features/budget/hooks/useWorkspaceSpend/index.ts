@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type {
   BudgetAlert,
   BudgetRule,
+  ProviderBudgetStatus,
   ProviderName,
   SessionId,
   TelemetryRecord,
@@ -29,8 +30,12 @@ type RemoveProviderCapParams = {
   readonly provider: ProviderName;
 };
 
+export type ProviderBudgetEntry = ProviderSpendEntry & {
+  readonly budget: ProviderBudgetStatus | null;
+};
+
 export type WorkspaceSpend = {
-  readonly providers: ReadonlyArray<ProviderSpendEntry>;
+  readonly providers: ReadonlyArray<ProviderBudgetEntry>;
   readonly sessions: ReadonlyArray<SessionSpend>;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly alerts: ReadonlyArray<BudgetAlert>;
@@ -44,6 +49,7 @@ export type WorkspaceSpend = {
 
 const EMPTY_TELEMETRY = EMPTY_ARRAY as ReadonlyArray<TelemetryRecord>;
 const EMPTY_SPEND = EMPTY_ARRAY as ReadonlyArray<ProviderSpendEntry>;
+const EMPTY_STATUSES = {} as const;
 
 export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   const sessions = useSessions();
@@ -51,6 +57,7 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
   const currentWorkspaceId = useAppStore((s) => s.currentWorkspaceId);
   const telemetryMap = useTelemetryForSessions({ sessions });
   const storedProviders = useAppStore((s) => s.providerSpendBreakdown ?? EMPTY_SPEND);
+  const budgetStatuses = useAppStore((s) => s.providerBudgetStatus ?? EMPTY_STATUSES);
   const alerts = useAppStore((s) => s.budgetAlerts);
   const rules = useAppStore((s) => s.budgetRules);
 
@@ -150,7 +157,7 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
     [currentSessionId, windowedSessions],
   );
 
-  const providers = useMemo<ReadonlyArray<ProviderSpendEntry>>(() => {
+  const providers = useMemo<ReadonlyArray<ProviderBudgetEntry>>(() => {
     const spendByProvider = new Map<string, number>();
     for (const turn of turns) {
       const current = spendByProvider.get(turn.record.provider) ?? 0;
@@ -158,10 +165,9 @@ export const useWorkspaceSpend = ({ sinceMs }: Params): WorkspaceSpend => {
     }
     return storedProviders.map((entry) => {
       const spentUsd = spendByProvider.get(entry.provider) ?? 0;
-      const pct = entry.capUsd !== null && entry.capUsd > 0 ? spentUsd / entry.capUsd : 0;
-      return { ...entry, spentUsd, pct };
+      return { ...entry, spentUsd, budget: budgetStatuses[entry.provider] ?? null };
     });
-  }, [storedProviders, turns]);
+  }, [budgetStatuses, storedProviders, turns]);
 
   const dismissAlert = useCallback(
     (alertId: string) => {

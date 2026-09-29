@@ -74,7 +74,6 @@ import {
   routeTaskModel,
   withFailureCooldown,
 } from '../features/providers/taskModelRouting';
-import { invokeBudgetRuleList } from '../features/budget/budget';
 import {
   listPlansForSession as invokeListPlansForSession,
   upsertPlan as invokeUpsertPlan,
@@ -83,7 +82,7 @@ import {
   createArtifact as invokeCreateArtifact,
   listArtifactsForSession as invokeListArtifactsForSession,
 } from '../features/artifacts/artifacts';
-import { buildProviderSpendBreakdown } from './slices/budget';
+import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from './slices/budget';
 import type { SessionNudge } from './types';
 import type { SetFn, GetFn } from './slice-types';
 import {
@@ -541,7 +540,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       workspaceSummary,
       telemetry,
       providerSummaries,
-      budgetRules,
+      providerBudgetStatus,
       slotHistoryCounts,
       openHistory,
     ] = await Promise.all([
@@ -581,7 +580,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       summarizeWorkspaceTelemetry(tauriDatabase, session.workspaceId),
       listTelemetryForSession(tauriDatabase, sessionId),
       summarizeWorkspaceProviderTelemetry(tauriDatabase, session.workspaceId),
-      invokeBudgetRuleList(),
+      loadCurrentProviderBudgetStatuses(),
       countContextSlotHistoryForSession(tauriDatabase, sessionId),
       Promise.all(
         changedKeys
@@ -626,7 +625,8 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
           lastAttempt: null,
         },
       },
-      providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+      providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries),
+      providerBudgetStatus,
     }));
   } catch (err) {
     const message = formatError(err);
