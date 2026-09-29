@@ -228,6 +228,13 @@ export const seedResolveCommitsScene = (): void => {
     refreshThreadGitState: async () => undefined,
     loadHistoryDraft: async () => undefined,
     loadReviewCommitPreset: async () => undefined,
+    reviewCommitDrafts: {},
+    loadReviewCommitDraft: async () => undefined,
+    markReviewCommitDraft: async ({ mountId, signature }) => {
+      useAppStore.setState((state) => ({
+        reviewCommitDrafts: { ...state.reviewCommitDrafts, [mountId]: signature },
+      }));
+    },
     chooseReviewCommitPreset: async ({ projectId, preset }) => {
       useAppStore.setState((state) => ({
         reviewCommitPresets: { ...state.reviewCommitPresets, [projectId]: preset },

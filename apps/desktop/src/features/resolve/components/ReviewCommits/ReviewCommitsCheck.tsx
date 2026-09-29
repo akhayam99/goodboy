@@ -7,7 +7,7 @@ type Props = {
 };
 
 export const ReviewCommitsCheck = ({ model }: Props) => {
-  if (!model.hasChange) {
+  if (!model.hasChange || model.isForeign) {
     return null;
   }
   if (model.isPredicting) {

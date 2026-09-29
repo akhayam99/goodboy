@@ -7,12 +7,14 @@ import { selectActiveMount } from '../../../../store/slices/project-mounts/selec
 import { selectReviewCommitPreset } from '../../../../store/slices/reviewCommits/selectReviewCommitPreset';
 import {
   hasReviewRewrite,
+  isHistoryPlanDraft,
   predictedConflicts,
   presetChoices,
   presetOf,
   replacedOnOrigin,
   reviewAfterCommits,
   reviewCommitRows,
+  reviewDraftSignature,
   reviewPlanItems,
   samePlanItems,
   type ReviewCommitChoice,
@@ -71,6 +73,13 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
   const loadReviewCommitPreset = useAppStore((s) => s.loadReviewCommitPreset);
   const chooseReviewCommitPreset = useAppStore((s) => s.chooseReviewCommitPreset);
   const openRewriteHistory = useAppStore((s) => s.openRewriteHistory);
+  const ownDraft = useAppStore((s) =>
+    mountId === null ? null : (s.reviewCommitDrafts[mountId] ?? null),
+  );
+  const loadReviewCommitDraft = useAppStore((s) => s.loadReviewCommitDraft);
+  const markReviewCommitDraft = useAppStore((s) => s.markReviewCommitDraft);
+  const [ownershipMountId, setOwnershipMountId] = useState<string | null>(null);
+  const [replaceFor, setReplaceFor] = useState<string | null>(null);
   const [picked, setPicked] = useState<ReviewCommitChoices | null>(null);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -82,6 +91,23 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
     }
     void loadHistoryDraft({ sessionId, mountId });
   }, [loadHistoryDraft, mountId, sessionId]);
+
+  useEffect(() => {
+    if (mountId === null) {
+      return;
+    }
+    let isLive = true;
+    void loadReviewCommitDraft({ mountId })
+      .catch(() => undefined)
+      .then(() => {
+        if (isLive) {
+          setOwnershipMountId(mountId);
+        }
+      });
+    return () => {
+      isLive = false;
+    };
+  }, [loadReviewCommitDraft, mountId]);
 
   useEffect(() => {
     if (projectId === null) {
@@ -102,16 +128,55 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
   const isBusy = run !== null && isHistoryRunActive({ phase: run.phase });
   const isDraftCurrent =
     draft !== null && draft.onto === null && samePlanItems({ left: draft.items, right: items });
+  const draftSignature =
+    draft === null
+      ? null
+      : reviewDraftSignature({ headSha: draft.headSha, items: draft.items, onto: draft.onto });
+  const isOwnershipKnown = mountId !== null && ownershipMountId === mountId;
+  const isForeign =
+    draft !== null &&
+    !isDraftCurrent &&
+    isHistoryPlanDraft({ commits: draft.commits, items: draft.items, onto: draft.onto }) &&
+    draftSignature !== ownDraft &&
+    draftSignature !== replaceFor;
+  const headSha = draft?.headSha ?? null;
+
+  const writeDraft = useCallback(
+    async ({ next }: { readonly next: typeof items }): Promise<void> => {
+      if (mountId === null || headSha === null) {
+        return;
+      }
+      void markReviewCommitDraft({
+        mountId,
+        signature: reviewDraftSignature({ headSha, items: next, onto: null }),
+      });
+      await editHistoryDraft({ sessionId, mountId, items: next, onto: null });
+    },
+    [editHistoryDraft, headSha, markReviewCommitDraft, mountId, sessionId],
+  );
 
   useEffect(() => {
-    if (draft === null || mountId === null || isBusy || isStarting) {
+    if (draft === null || mountId === null || isBusy || isStarting || !isOwnershipKnown) {
       return;
     }
     if (draft.commits.length === 0 || draft.items.length !== items.length || isDraftCurrent) {
       return;
     }
-    void editHistoryDraft({ sessionId, mountId, items, onto: null });
-  }, [draft, editHistoryDraft, isBusy, isDraftCurrent, isStarting, items, mountId, sessionId]);
+    if (isForeign) {
+      return;
+    }
+    void writeDraft({ next: items });
+  }, [
+    draft,
+    isBusy,
+    isDraftCurrent,
+    isForeign,
+    isOwnershipKnown,
+    isStarting,
+    items,
+    mountId,
+    writeDraft,
+  ]);
 
   const prediction = isDraftCurrent && !draft.isPredicting ? draft.prediction : null;
   const isPredicting = !isDraftCurrent || draft.isPredicting;
@@ -130,7 +195,14 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
     mine.backupRef !== null;
   const isWorking = isStarting || (mine !== null && isHistoryRunActive({ phase: mine.phase }));
   const canRewrite =
-    hasChange && !isBusy && !isWorking && conflicts.length === 0 && mountId !== null && !isDone;
+    hasChange &&
+    !isBusy &&
+    !isWorking &&
+    !isForeign &&
+    isOwnershipKnown &&
+    conflicts.length === 0 &&
+    mountId !== null &&
+    !isDone;
 
   const stage: RewriteStage = (() => {
     if (mine === null || mine.phase === 'trying') {
@@ -174,7 +246,7 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
     setStartedAt(Date.now());
     try {
       if (!isDraftCurrent) {
-        await editHistoryDraft({ sessionId, mountId, items, onto: null });
+        await writeDraft({ next: items });
       }
       await applyHistoryDraft({ sessionId, mountId, shouldPush: replaced > 0 });
       setPicked(null);
@@ -186,12 +258,12 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
   }, [
     applyHistoryDraft,
     canRewrite,
-    editHistoryDraft,
     isDraftCurrent,
     items,
     mountId,
     replaced,
     sessionId,
+    writeDraft,
   ]);
 
   const undo = useCallback(async (): Promise<void> => {
@@ -211,6 +283,8 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
   const openHistory = useCallback((): void => {
     openRewriteHistory(sessionId, worktreePath);
   }, [openRewriteHistory, sessionId, worktreePath]);
+
+  const replaceDraft = useCallback((): void => setReplaceFor(draftSignature), [draftSignature]);
 
   const retry = useCallback((): void => {
     if (mountId !== null) {
@@ -232,6 +306,8 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
     replaced,
     hasChange,
     canRewrite,
+    isForeign: isForeign && isOwnershipKnown,
+    replaceDraft,
     isBusy,
     isWorking,
     isDone,

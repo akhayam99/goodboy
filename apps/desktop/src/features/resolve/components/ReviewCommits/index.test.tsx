@@ -14,7 +14,12 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { ToastProvider } from '../../../../app/components/Toast';
-import { PROJECT_ID, SESSION } from '../../../../app/components/MockScene/scenes/resolveSeed';
+import {
+  MOUNT_TARGET,
+  PROJECT_ID,
+  SESSION,
+} from '../../../../app/components/MockScene/scenes/resolveSeed';
+import { reviewDraftSignature } from '../../reviewCommits';
 import { seedResolveCommitsScene } from '../../../../app/components/MockScene/scenes/resolveCommitsSeed';
 import { ReviewFlow } from '../ReviewFlow';
 
@@ -125,5 +130,82 @@ describe('Review commits view', () => {
     expect(screen.getByRole('tab', { name: /^Comments/ }).getAttribute('aria-selected')).toBe(
       'true',
     );
+  });
+});
+
+const MOUNT_ID = MOUNT_TARGET.mountId;
+
+const planDraft = (): void => {
+  const state = useAppStore.getState();
+  const draft = state.historyDrafts[MOUNT_ID];
+  if (draft === undefined) {
+    throw new Error('no seeded draft');
+  }
+  const [first, second, ...rest] = draft.items;
+  if (first === undefined || second === undefined) {
+    throw new Error('seeded draft too short');
+  }
+  useAppStore.setState({
+    historyDrafts: {
+      ...state.historyDrafts,
+      [MOUNT_ID]: { ...draft, items: [second, first, ...rest] },
+    },
+  });
+};
+
+const mountWithPlan = async ({ isOwn }: { readonly isOwn: boolean }) => {
+  seedResolveCommitsScene();
+  planDraft();
+  const seeded = useAppStore.getState();
+  const draft = seeded.historyDrafts[MOUNT_ID];
+  const edit = vi.fn(seeded.editHistoryDraft);
+  useAppStore.setState({
+    editHistoryDraft: edit as StoreState['editHistoryDraft'],
+    loadReviewCommitDraft: async () => undefined,
+    reviewCommitDrafts:
+      isOwn && draft !== undefined
+        ? {
+            [MOUNT_ID]: reviewDraftSignature({
+              headSha: draft.headSha,
+              items: draft.items,
+              onto: draft.onto,
+            }),
+          }
+        : {},
+  });
+  render(
+    <ToastProvider>
+      <ReviewFlow session={SESSION} />
+    </ToastProvider>,
+  );
+  await settle();
+  await openCommits();
+  return { edit };
+};
+
+describe('a plan left in Rewrite history', () => {
+  it('is left alone until Replace it is clicked', async () => {
+    const { edit } = await mountWithPlan({ isOwn: false });
+
+    expect(screen.getByText('You have an unsaved plan in Rewrite history')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Fold each into its original' }));
+    await settle();
+    expect(edit).not.toHaveBeenCalled();
+    expect(
+      (screen.getByRole('button', { name: /Rewrite and push/ }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Replace it' }));
+    await settle();
+    expect(edit).toHaveBeenCalled();
+    expect(screen.queryByText('You have an unsaved plan in Rewrite history')).toBeNull();
+    expect(useAppStore.getState().reviewCommitDrafts[MOUNT_ID]).toBeDefined();
+  });
+
+  it('replaces a draft the Commits view made itself without asking', async () => {
+    const { edit } = await mountWithPlan({ isOwn: true });
+
+    expect(screen.queryByText('You have an unsaved plan in Rewrite history')).toBeNull();
+    expect(edit).toHaveBeenCalled();
   });
 });

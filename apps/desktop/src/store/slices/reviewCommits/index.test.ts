@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Project, ProjectId } from '@goodboy/types';
+import type { MountId, Project, ProjectId } from '@goodboy/types';
 
 const { getSettingMock, setSettingMock, updateStyleMock } = vi.hoisted(() => ({
   getSettingMock: vi.fn(async (_db: unknown, _key: string) => null as string | null),
@@ -18,7 +18,7 @@ vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: vi.fn(), se
 import type { AppState } from '../../types';
 import { createReviewCommitsSlice } from './index';
 import { selectReviewCommitPreset } from './selectReviewCommitPreset';
-import { reviewCommitPresetKey } from './state';
+import { reviewCommitDraftKey, reviewCommitPresetKey } from './state';
 
 const PROJECT_ID = 'project-payments-api' as ProjectId;
 
@@ -29,7 +29,11 @@ const project = ({ fixup }: { readonly fixup: boolean }): Project =>
   }) as unknown as Project;
 
 const harness = ({ fixup }: { readonly fixup: boolean }) => {
-  let state = { reviewCommitPresets: {}, projects: [project({ fixup })] } as unknown as AppState;
+  let state = {
+    reviewCommitPresets: {},
+    reviewCommitDrafts: {},
+    projects: [project({ fixup })],
+  } as unknown as AppState;
   const set = (patch: Partial<AppState> | ((s: AppState) => Partial<AppState>)) => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
@@ -80,5 +84,21 @@ describe('review commit preset memory', () => {
   it('falls back to fold when the project already commits as fixups', () => {
     const { read } = harness({ fixup: true });
     expect(selectReviewCommitPreset({ state: read(), projectId: PROJECT_ID })).toBe('fold');
+  });
+
+  it('marks the draft the Commits view wrote and reads the mark back', async () => {
+    const mountId = 'mount-payments-api' as MountId;
+    const { slice, read } = harness({ fixup: false });
+    await slice.markReviewCommitDraft({ mountId, signature: 'plan-a' });
+    expect(read().reviewCommitDrafts[mountId]).toBe('plan-a');
+    expect(setSettingMock).toHaveBeenCalledWith(
+      expect.anything(),
+      reviewCommitDraftKey({ mountId }),
+      'plan-a',
+    );
+    const other = harness({ fixup: false });
+    getSettingMock.mockResolvedValueOnce('plan-b');
+    await other.slice.loadReviewCommitDraft({ mountId });
+    expect(other.read().reviewCommitDrafts[mountId]).toBe('plan-b');
   });
 });

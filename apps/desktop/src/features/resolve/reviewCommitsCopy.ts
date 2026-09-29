@@ -30,6 +30,10 @@ export const REVIEW_COMMITS_LABEL = {
   noBranch: 'This session has no branch to show commits for.',
   empty: 'This branch has no commits of its own yet.',
   loading: 'Reading the branch',
+  foreignDraft: 'You have an unsaved plan in Rewrite history',
+  foreignDraftBody: 'The Commits view leaves it alone until you replace it.',
+  openDraft: 'Open it',
+  replaceDraft: 'Replace it',
 } as const;
 
 export const PRESET_LABEL: Record<ReviewCommitPreset, string> = {

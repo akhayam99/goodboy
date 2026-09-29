@@ -307,3 +307,31 @@ export const reviewAfterCommits = ({
     };
   });
 };
+
+type DraftShape = {
+  readonly headSha: string;
+  readonly items: ReadonlyArray<HistoryStep>;
+  readonly onto: string | null;
+};
+
+export const reviewDraftSignature = ({ headSha, items, onto }: DraftShape): string =>
+  JSON.stringify({
+    headSha,
+    onto,
+    items: items.map((step) => [step.sha, step.verb, targetOf({ step }), messageOf({ step })]),
+  });
+
+export const isHistoryPlanDraft = ({
+  commits,
+  items,
+  onto,
+}: {
+  readonly commits: ReadonlyArray<BranchCommit>;
+  readonly items: ReadonlyArray<HistoryStep>;
+  readonly onto: string | null;
+}): boolean =>
+  onto !== null ||
+  !samePlanItems({
+    left: items,
+    right: [...commits].reverse().map((commit) => ({ sha: commit.sha, verb: 'pick' })),
+  });

@@ -418,6 +418,11 @@ type AppActions = {
     readonly projectId: ProjectId;
     readonly preset: ReviewCommitPreset;
   }): Promise<void>;
+  loadReviewCommitDraft(params: { readonly mountId: MountId }): Promise<void>;
+  markReviewCommitDraft(params: {
+    readonly mountId: MountId;
+    readonly signature: string;
+  }): Promise<void>;
   loadChangelogUpcoming(params: LoadChangelogUpcomingParams): Promise<void>;
   setBugReportDraft(params: SetBugReportDraftParams): void;
   clearBugReportDraft(): void;
