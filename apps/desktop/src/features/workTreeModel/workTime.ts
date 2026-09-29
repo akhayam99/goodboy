@@ -1,6 +1,6 @@
 import type { CostRange, DurationEstimate, EstimateTier } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
-import { formatDuration } from '../chat/utils/format-duration';
+import { formatDuration } from '../../shared/utils/time/formatDuration';
 import type { RowPhase } from './rowState';
 
 export type WorkEstimate = {

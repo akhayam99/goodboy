@@ -3,11 +3,12 @@ import { Chip, KbdPill, Tooltip, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { workspaceAccent } from '../../color';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatCombo } from '../../../../shared/keyboard/registry';
 import { useWorkspaceWindowState } from './useWorkspaceWindowState';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly workspace: Workspace;
@@ -17,13 +18,16 @@ type Props = {
 };
 
 export const OtherWorkspaceRow = ({ workspace, highlighted, onOpen, onOpenNewWindow }: Props) => {
+  const now = useNow(30_000);
   const windowState = useWorkspaceWindowState({ workspaceId: workspace.id });
   const hasUnread = useWorkspaceHasUnread(workspace.id);
   const projectsLabel = useAppStore((state) =>
     linkedProjectsLabel({ projects: state.projects, workspaceId: workspace.id }),
   );
   const accent = workspaceAccent(workspace.id);
-  const lastSeen = workspace.lastAccessedAt ? formatRelativeDuration(workspace.lastAccessedAt) : '';
+  const lastSeen = workspace.lastAccessedAt
+    ? formatSpan({ from: workspace.lastAccessedAt, to: now })
+    : '';
 
   return (
     <div

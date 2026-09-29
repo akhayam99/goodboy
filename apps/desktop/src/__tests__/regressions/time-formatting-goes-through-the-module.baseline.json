@@ -1,0 +1,10 @@
+{
+  "own-date-formatting": {
+    "packages/core/src/providers/limits/zonedTimeToIso.ts": 1
+  },
+  "legacy-relative-age": {
+    "apps/desktop/src/features/resolve/components/ReviewFlow/AgentLine.tsx": 1,
+    "apps/desktop/src/features/resolve/components/ReviewFlow/ReviewComment.tsx": 1,
+    "apps/desktop/src/features/review/components/ReviewThreadContent/index.tsx": 1
+  }
+}

@@ -1,6 +1,6 @@
 import { Square } from 'lucide-react';
 import { StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
-import { formatScriptDuration } from '../../formatScriptDuration';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import type { RunningScript } from '../../hooks/useRunningScripts';
 
 type Props = {
@@ -25,7 +25,7 @@ export const RunningScriptRow = ({ run, now, onOpen, onStop }: Props) => (
       <span className="block truncate text-secondary text-muted-foreground">{run.sessionGoal}</span>
     </button>
     <span className="shrink-0 text-secondary tabular-nums text-muted-foreground">
-      {formatScriptDuration({ durationMs: now - run.startedAt })}
+      {formatDuration({ durationMs: now - run.startedAt })}
     </span>
     <Tooltip content={`Stop ${run.scriptName}`}>
       <button

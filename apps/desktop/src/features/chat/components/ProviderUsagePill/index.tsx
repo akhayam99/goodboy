@@ -3,7 +3,7 @@ import { Gauge } from 'lucide-react';
 import { cn, formatUsd } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
+import { formatDayMonth } from '../../../../shared/utils/time/formatDayMonth';
 import { budgetPctUsed } from '../../../budget/providerBudgetView';
 
 type Props = {
@@ -35,7 +35,7 @@ export const ProviderUsagePill = ({ provider }: Props) => {
     }
     return 'text-danger';
   })();
-  const reset = formatShortDayMonth({ iso: status.windowEndMs + 1 }).toLowerCase();
+  const reset = formatDayMonth({ at: status.windowEndMs + 1 }).toLowerCase();
   const tooltip = `${provider}: ${formatUsd(status.spentUsd)} / ${formatUsd(status.capUsd)} used across all workspaces (${pctUsed}%) · resets ${reset}`;
   return (
     <span

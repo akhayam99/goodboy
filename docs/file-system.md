@@ -104,3 +104,4 @@ Rules around slices:
 - Reusable utilities → `shared/utils/<name>.ts`
 - A file enters `shared/` only when 2+ different features import it. When in doubt, keep it in the feature. Do not share ahead of time.
 - Before you create a new shared util, grep `shared/utils/` for one you can reuse.
+- Dates, times, durations and ages live in `shared/utils/time/`, one file per formatter: `formatClock` (14:30, 24 hour), `formatDayMonth` (Sep 29), `formatDate` (Sep 29, 2026), `formatDateTime`, `formatWeekday`, `formatDuration` (1h 5m), `formatSpan` (5m), `formatAge` (5m ago) and `formatAdaptiveAge`. `formatIntl.ts` holds the only `Intl.DateTimeFormat` call: it pins `en-US` and a 24 hour clock, so the output never depends on the machine locale. A relative label takes `now` from `useNow` (`shared/hooks/useNow`) so it keeps counting; `RelativeTime` does that for a bare label. Never call `toLocaleTimeString`, `toLocaleDateString` or `Intl.DateTimeFormat` in a feature.

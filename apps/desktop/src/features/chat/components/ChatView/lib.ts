@@ -1,5 +1,5 @@
-import { formatShortDate } from '../../../../shared/utils/formatShortDate';
-import { formatWeekday } from '../../../../shared/utils/formatWeekday';
+import { formatDate } from '../../../../shared/utils/time/formatDate';
+import { formatWeekday } from '../../../../shared/utils/time/formatWeekday';
 
 export const dayKey = (iso: string): string => {
   const d = new Date(iso);
@@ -24,7 +24,7 @@ export const formatDayLabel = (iso: string): string => {
     return 'yesterday';
   }
   if (diffDays > 0 && diffDays < 7) {
-    return formatWeekday({ iso }).toLowerCase();
+    return formatWeekday({ at: iso }).toLowerCase();
   }
-  return formatShortDate({ iso }).toLowerCase();
+  return formatDate({ at: iso }).toLowerCase();
 };

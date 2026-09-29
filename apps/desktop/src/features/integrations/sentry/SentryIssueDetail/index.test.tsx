@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { SentryIssueDetail } from '.';
 
 afterEach(cleanup);
@@ -83,7 +83,7 @@ describe('SentryIssueDetail', () => {
 
     expect(screen.getByText('128 events · 9 users')).toBeDefined();
     expect(screen.getByRole('list', { name: 'Properties' }).textContent).not.toContain(
-      formatAbsoluteDateTime({ iso: LAST_SEEN }),
+      formatDateTime({ at: LAST_SEEN, hasYear: true }),
     );
   });
 

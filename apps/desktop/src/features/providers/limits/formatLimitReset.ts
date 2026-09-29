@@ -1,4 +1,5 @@
-import { APP_LOCALE } from '../../../shared/utils/appLocale';
+import { formatClock } from '../../../shared/utils/time/formatClock';
+import { formatWeekday } from '../../../shared/utils/time/formatWeekday';
 
 type Params = {
   readonly iso: string;
@@ -8,31 +9,23 @@ type Params = {
 const isSameDay = ({ iso, nowMs }: Params): boolean =>
   new Date(iso).toDateString() === new Date(nowMs).toDateString();
 
-const clock = ({ iso }: Pick<Params, 'iso'>): string =>
-  new Intl.DateTimeFormat(APP_LOCALE, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(new Date(iso));
-
-const weekday = ({ iso }: Pick<Params, 'iso'>): string =>
-  new Intl.DateTimeFormat(APP_LOCALE, { weekday: 'short' }).format(new Date(iso));
-
 export const formatLimitReset = ({ iso, nowMs }: Params): string => {
   if (Number.isNaN(Date.parse(iso))) {
     return '';
   }
   if (isSameDay({ iso, nowMs })) {
-    return clock({ iso });
+    return formatClock({ at: iso });
   }
-  return `${weekday({ iso })} ${clock({ iso })}`;
+  return `${formatWeekday({ at: iso, isShort: true })} ${formatClock({ at: iso })}`;
 };
 
 export const formatLimitResetShort = ({ iso, nowMs }: Params): string => {
   if (Number.isNaN(Date.parse(iso))) {
     return '';
   }
-  return isSameDay({ iso, nowMs }) ? clock({ iso }) : weekday({ iso });
+  return isSameDay({ iso, nowMs })
+    ? formatClock({ at: iso })
+    : formatWeekday({ at: iso, isShort: true });
 };
 
 const MS_PER_MINUTE = 60_000;

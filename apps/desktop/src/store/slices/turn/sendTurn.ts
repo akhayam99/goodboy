@@ -181,7 +181,7 @@ import { codexMeasuredUsage } from './codexMeasuredUsage';
 import { turnNodeRouting } from './turnNodeRouting';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import type { GetFn, SendTurnResult, SetFn } from './types';
-import { formatClockTime } from '../../../shared/utils/formatClockTime';
+import { formatClock } from '../../../shared/utils/time/formatClock';
 import {
   expectsArtifact,
   isAgentMissingArtifact,
@@ -216,7 +216,7 @@ const MIN_USAGE_LIMIT_RETRY_MS = 1_000;
 const MAX_TIMEOUT_MS = 2_147_483_647;
 
 const formatResetTime = ({ resetAtMs }: { readonly resetAtMs: number }): string =>
-  formatClockTime({ iso: resetAtMs });
+  formatClock({ at: resetAtMs });
 
 // Machine-derived context slot carrying `git diff --numstat` lines for the
 // session's changed files (vs the same merge-base as the desktop file-changes

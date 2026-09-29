@@ -1,7 +1,7 @@
 import { cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
-import { formatCardTime } from '../../../chat/utils/format-card-time';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { RetryButton } from './RetryButton';
 
@@ -17,7 +17,7 @@ const DECISION_TONE: Record<'allow' | 'deny', string> = {
 };
 
 export const PermissionDecisionCard = ({ item, sessionId, agentId }: Props) => {
-  const timestamp = formatCardTime(item.at);
+  const timestamp = formatClock({ at: item.at });
   const isRetryableScope = item.scope !== undefined && item.scope !== 'once';
   const canRetry =
     item.decision === 'allow' && isRetryableScope && sessionId !== null && agentId !== null;

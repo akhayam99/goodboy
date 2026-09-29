@@ -3,13 +3,12 @@ import { ClampedProse, MetaRow, formatUsdPrecise } from '@goodboy/ui';
 import { classifyWorkflowChain } from '@goodboy/core';
 import { workflowKindName } from '../../../../workspace/components/WorkspacesSidebar/lib';
 import { WorkflowRunStatus } from '../../AgentTree/WorkflowRunStatus';
-import {
-  formatAdaptiveAge,
-  formatRelativeDuration,
-} from '../../../../../shared/utils/relativeDate';
+import { formatAdaptiveAge } from '../../../../../shared/utils/time/formatAdaptiveAge';
+import { formatSpan } from '../../../../../shared/utils/time/formatSpan';
 import { CostBadge } from '../../../../providers/components/CostBadge';
 import { WorkflowOriginTag } from '../../../../workflows/components/WorkflowOriginTag';
 import { RailCard } from '@goodboy/ui';
+import { useNow } from '../../../../../shared/hooks/useNow';
 
 type Props = {
   readonly run: WorkflowRun;
@@ -32,6 +31,7 @@ export const WorkflowRailCard = ({
   onSelect,
   onRestore,
 }: Props) => {
+  const now = useNow(30_000);
   const chain = classifyWorkflowChain(workflow, agents);
   const stepLine =
     chain.kind === 'complete'
@@ -60,7 +60,7 @@ export const WorkflowRailCard = ({
       : chain.kind === 'complete';
   const duration =
     isCompleted && startedAt != null && completedAt != null
-      ? formatRelativeDuration(startedAt, completedAt)
+      ? formatSpan({ from: startedAt, to: completedAt })
       : null;
   const origin: WorkflowOrigin | null =
     run.executionMode === 'dynamic' ? 'orchestrated' : (workflow.origin ?? null);
@@ -68,7 +68,7 @@ export const WorkflowRailCard = ({
     run.executionMode === 'dynamic'
       ? `${ranAgents.length} ${ranAgents.length === 1 ? 'step' : 'steps'} run`
       : `${ranAgents.length} of ${workflow.steps.length} steps run`;
-  const attachedAge = run.createdAt != null ? formatAdaptiveAge({ iso: run.createdAt }) : '';
+  const attachedAge = run.createdAt != null ? formatAdaptiveAge({ at: run.createdAt, now }) : '';
 
   return (
     <div className="relative flex w-full flex-col">

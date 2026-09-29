@@ -5,9 +5,10 @@ import type { CommentThread } from '../../comment-threads';
 import { TranscriptDisclosure } from '../../../chat/components/TranscriptDisclosure';
 import { TranscriptRowHeader } from '../../../chat/components/TranscriptRowHeader';
 import { ReviewThreadContent } from '../../../review/components/ReviewThreadContent';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { threadPreview } from './threadPreview';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly thread: CommentThread;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
+  const now = useNow(30_000);
   const [open, setOpen] = useState(false);
   const { head } = thread;
 
@@ -46,7 +48,7 @@ export const ResolvedThread = ({ thread, onOpenUrl }: Props) => {
             </span>
           }
           preview={threadPreview({ body: head.body })}
-          meta={formatRelativeAge({ fromIso: head.createdAt })}
+          meta={formatAge({ from: head.createdAt, now })}
           aria-label={`Resolved thread by ${head.author}`}
         />
       }

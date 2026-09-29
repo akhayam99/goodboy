@@ -4,9 +4,10 @@ import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { STRIPED_LIST, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { sessionTitle } from '../../../session/sessionTitle';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { useRecentDecisions } from '../../hooks/useRecentDecisions';
 import type { RecentDecision } from '../../permissions';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
@@ -33,6 +34,7 @@ const whatOf = ({ decision }: WhatParams): string => {
 };
 
 export const RecentDecisions = ({ workspaceId }: Props) => {
+  const now = useNow(30_000);
   const sessionIds = useAppStore(
     useShallow((s): ReadonlyArray<SessionId> =>
       s.sessions
@@ -77,7 +79,7 @@ export const RecentDecisions = ({ workspaceId }: Props) => {
           </span>
           <span className="min-w-0 truncate font-mono text-foreground">{whatOf({ decision })}</span>
           <span className="min-w-0 truncate text-muted-foreground">
-            {`· session "${titleOf(decision.sessionId)}" · ${formatRelativeAge({ fromIso: decision.decidedAt })}`}
+            {`· session "${titleOf(decision.sessionId)}" · ${formatAge({ from: decision.decidedAt, now })}`}
           </span>
         </li>
       ))}

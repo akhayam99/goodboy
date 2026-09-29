@@ -1,9 +1,7 @@
 import type { Agent } from '@goodboy/types';
 import { useNow } from '../../../../shared/hooks/useNow';
-import {
-  formatAbsoluteDateTime,
-  formatRelativeDuration,
-} from '../../../../shared/utils/relativeDate';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 
 type Props = {
   readonly run: Agent;
@@ -11,7 +9,7 @@ type Props = {
 
 export const AgentDuration = ({ run }: Props) => {
   const isLive = run.startedAt != null && run.completedAt == null;
-  useNow(5_000, isLive);
+  const now = useNow(5_000, isLive);
 
   if (run.startedAt == null) {
     return (
@@ -21,11 +19,11 @@ export const AgentDuration = ({ run }: Props) => {
     );
   }
 
-  const worked = formatRelativeDuration(run.startedAt, run.completedAt);
-  const startedAt = formatAbsoluteDateTime({ iso: run.startedAt });
+  const worked = formatSpan({ from: run.startedAt, to: run.completedAt ?? now });
+  const startedAt = formatDateTime({ at: run.startedAt, hasYear: true });
   const tooltip =
     run.completedAt != null
-      ? `Started ${startedAt}\nCompleted ${formatAbsoluteDateTime({ iso: run.completedAt })}\nWorked ${worked}`
+      ? `Started ${startedAt}\nCompleted ${formatDateTime({ at: run.completedAt, hasYear: true })}\nWorked ${worked}`
       : `Started ${startedAt}\nWorking for ${worked}`;
 
   return (

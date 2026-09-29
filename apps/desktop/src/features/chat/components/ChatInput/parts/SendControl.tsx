@@ -1,6 +1,7 @@
 import { ArrowUp, Square } from 'lucide-react';
 import { Button, cn, KbdPill, Tooltip, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { formatCombo } from '../../../../../shared/keyboard/registry';
 
 type Props = {
   readonly isRunning: boolean;
@@ -47,13 +48,13 @@ export const SendControl = ({
         <Button variant="ghost" size="sm" onClick={onSend}>
           Queue{' '}
           <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
-            ↵
+            {formatCombo('Enter')}
           </KbdPill>
         </Button>
         <Button variant="primary" size="sm" onClick={onSendNow}>
           Send now{' '}
           <KbdPill aria-hidden className="h-4 min-w-4 text-secondary">
-            ⌘↵
+            {formatCombo('cmd+Enter')}
           </KbdPill>
         </Button>
       </>

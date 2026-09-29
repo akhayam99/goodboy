@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Button, Eyebrow, InlineConfirm } from '@goodboy/ui';
 import type { HistoryBackup } from '@goodboy/types';
 import { listHistoryBackups } from '../../historyEngine';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -67,9 +67,9 @@ export const HistoryBackups = ({
                 {backup.subject}
               </span>
               <span className="shrink-0 text-meta text-faint-foreground">
-                {formatRelativeAge({
-                  fromIso: new Date(backup.createdAt * 1000).toISOString(),
-                  nowMs: Date.now(),
+                {formatAge({
+                  from: new Date(backup.createdAt * 1000).toISOString(),
+                  now: Date.now(),
                 })}
               </span>
               {backup.isLegacy ? (

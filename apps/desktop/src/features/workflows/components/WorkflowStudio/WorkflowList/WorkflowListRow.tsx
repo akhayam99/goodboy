@@ -2,8 +2,9 @@ import type { Workflow } from '@goodboy/types';
 import { classifyStep } from '../../../../session/agent-kind';
 import { AgentKindChip } from '../../../../session/components/AgentKindChip';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { formatRelativeDuration } from '../../../../../shared/utils/relativeDate';
+import { formatSpan } from '../../../../../shared/utils/time/formatSpan';
 import type { BuiltinWorkflowState } from '../../../builtinWorkflowState';
+import { useNow } from '../../../../../shared/hooks/useNow';
 
 type Props = {
   readonly workflow: Workflow;
@@ -16,19 +17,21 @@ const MAX_ROLE_CHIPS = 6;
 type MetaParams = {
   readonly workflow: Workflow;
   readonly builtin: BuiltinWorkflowState;
+  readonly now: number;
 };
 
-const metaOf = ({ workflow, builtin }: MetaParams): string => {
+const metaOf = ({ workflow, builtin, now }: MetaParams): string => {
   const count = workflow.steps.length;
   const steps = `${count} ${count === 1 ? 'step' : 'steps'}`;
   if (builtin === 'builtin') {
     return `${steps} · built in`;
   }
-  const age = formatRelativeDuration(workflow.updatedAt);
+  const age = formatSpan({ from: workflow.updatedAt, to: now });
   return age === '' ? steps : `${steps} · edited ${age} ago`;
 };
 
 export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
+  const now = useNow(30_000);
   const steps = [...workflow.steps].sort((left, right) => left.ordinal - right.ordinal);
   const shown = steps.slice(0, MAX_ROLE_CHIPS);
   const hidden = steps.length - shown.length;
@@ -73,7 +76,7 @@ export const WorkflowListRow = ({ workflow, builtin, onOpen }: Props) => {
           ) : null}
         </span>
         <span className="w-36 shrink-0 truncate text-right text-secondary tabular-nums text-faint-foreground">
-          {metaOf({ workflow, builtin })}
+          {metaOf({ workflow, builtin, now })}
         </span>
       </button>
     </li>

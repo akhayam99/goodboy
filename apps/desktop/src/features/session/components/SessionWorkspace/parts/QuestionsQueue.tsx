@@ -2,10 +2,11 @@ import { ChevronRight } from 'lucide-react';
 import type { Agent, AgentId, OpenQuestionId } from '@goodboy/types';
 import { cn, Eyebrow, ScrollFade } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
-import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { classifyAgent, type AgentKind } from '../../../agent-kind';
 import { QuestionQueueRow } from './QuestionQueueRow';
 import type { QuestionRow, QuestionsLensModel } from './questionsLensModel';
+import { useNow } from '../../../../../shared/hooks/useNow';
 
 type Props = {
   readonly model: QuestionsLensModel;
@@ -28,6 +29,7 @@ export const QuestionsQueue = ({
   onSelect,
   onUndo,
 }: Props) => {
+  const now = useNow(30_000);
   const renderRow = (row: QuestionRow) => {
     const askerId = row.question.createdByAgentId ?? null;
     const asker = askerId === null ? null : (agents.find((agent) => agent.id === askerId) ?? null);
@@ -42,7 +44,7 @@ export const QuestionsQueue = ({
             ? null
             : classifyAgent({ agent: asker, override: kindOverrides[asker.id] ?? null })
         }
-        age={formatRelativeAge({ fromIso: row.question.createdAt }).replace(/ ago$/, '')}
+        age={formatAge({ from: row.question.createdAt, now }).replace(/ ago$/, '')}
         onSelect={() => onSelect(row.question.id)}
         onUndo={row.kind === 'staged' || row.kind === 'dismissed' ? () => onUndo(row) : null}
       />

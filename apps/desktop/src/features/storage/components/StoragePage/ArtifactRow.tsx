@@ -11,7 +11,8 @@ import {
 import type { StorageArtifact } from '../../../../store/slices/storage/types';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
-import { ARTIFACT_KIND_LABEL, formatAgo } from '../../storageCopy';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { ARTIFACT_KIND_LABEL } from '../../storageCopy';
 import { ARTIFACT_COLUMN } from './artifactColumnClasses';
 import { ArtifactRowActions } from './ArtifactRowActions';
 import type { ToggleArtifact } from './types';
@@ -109,10 +110,10 @@ export const ArtifactRow = ({
           {artifact.workspaceName}
         </span>
         <span className={cn(ARTIFACT_COLUMN.age, 'text-secondary text-muted-foreground')}>
-          {formatAgo({ from: artifact.deletedAt, now })}
+          {formatAge({ from: artifact.deletedAt, now })}
         </span>
         <span className={cn(ARTIFACT_COLUMN.age, 'text-secondary text-muted-foreground')}>
-          {formatAgo({ from: storageArtifactLastUsed({ artifact }), now })}
+          {formatAge({ from: storageArtifactLastUsed({ artifact }), now })}
         </span>
         <span className={cn(ARTIFACT_COLUMN.size, 'text-secondary text-foreground')}>
           {artifact.sizeBytes === null ? (

@@ -4,11 +4,13 @@ import type { Notification } from '@goodboy/db';
 import { FOCUS_RING, StatusDot, Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { mapNotificationAction, notificationContext } from '../NotificationToastBridge';
 import { NOTIFICATION_SEVERITY } from '../../severity';
 import { notificationActionIcon } from '../../actionIcon';
 import { NotificationRowDetail } from './NotificationRowDetail';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 export type NotificationRowDensity = 'compact' | 'cozy';
 
@@ -35,6 +37,7 @@ export const NotificationRow = ({
   onMarkRead,
   onActed,
 }: Props) => {
+  const now = useNow(30_000);
   const sessions = useAppStore((state) => state.sessions);
   const workspaces = useAppStore((state) => state.workspaces);
   const currentWorkspaceId = useAppStore((state) => state.currentWorkspaceId);
@@ -59,10 +62,10 @@ export const NotificationRow = ({
   const age = (
     <time
       dateTime={latest.ts}
-      title={formatAbsoluteDateTime({ iso: latest.ts })}
+      title={formatDateTime({ at: latest.ts, hasYear: true })}
       className="pointer-events-none relative text-right text-meta text-faint-foreground"
     >
-      {formatRelativeAge({ fromIso: latest.ts })}
+      {formatAge({ from: latest.ts, now })}
     </time>
   );
   const count =

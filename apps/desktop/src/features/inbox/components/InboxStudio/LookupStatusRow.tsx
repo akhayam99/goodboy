@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
 import { AlertTriangle, Info, SearchX } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useNow } from '../../../../shared/hooks/useNow';
 import type { LookupStatus } from '../../../integrations/issueCode/lookupCopy';
 
 type Props = {
@@ -13,14 +13,7 @@ type Props = {
 const ICON = { muted: SearchX, warning: AlertTriangle, info: Info } as const;
 
 const useCountdownSeconds = (target: number | null | undefined): number | null => {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (target == null) {
-      return;
-    }
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [target]);
+  const now = useNow(1_000, target != null);
   return target == null ? null : Math.max(0, Math.ceil((target - now) / 1000));
 };
 

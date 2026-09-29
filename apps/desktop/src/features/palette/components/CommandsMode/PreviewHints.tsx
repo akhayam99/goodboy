@@ -1,4 +1,5 @@
 import type { PaletteEntry } from '../../types';
+import { formatCombo } from '../../../../shared/keyboard/registry';
 
 type Props = {
   readonly entry: PaletteEntry;
@@ -19,8 +20,10 @@ const enterLabel = (entry: PaletteEntry): string => {
 
 export const PreviewHints = ({ entry, isActionsLevel, allLabel, hasOtherModes }: Props) => {
   const hints = [
-    `↵ ${enterLabel(entry)}`,
-    ...(allLabel !== null && allLabel !== entry.label ? [`⌘↵ ${allLabel}`] : []),
+    `${formatCombo('Enter')} ${enterLabel(entry)}`,
+    ...(allLabel !== null && allLabel !== entry.label
+      ? [`${formatCombo('cmd+Enter')} ${allLabel}`]
+      : []),
     ...(!isActionsLevel && entry.target !== undefined && entry.kind !== 'verb'
       ? ['→ All actions']
       : []),

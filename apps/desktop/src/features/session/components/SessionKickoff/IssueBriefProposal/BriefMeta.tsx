@@ -1,7 +1,7 @@
 import { formatUsd } from '@goodboy/ui';
 import { ProviderIcon } from '../../../../providers/components/ProviderIcon';
 import { modelLabel } from '../../../../chat/utils/chat-constants';
-import { formatDuration } from '../../../../chat/utils/format-duration';
+import { formatDuration } from '../../../../../shared/utils/time/formatDuration';
 import type { IssueBriefRoute } from '../../../../../store/slices/issue-briefs/types';
 
 type Props = {

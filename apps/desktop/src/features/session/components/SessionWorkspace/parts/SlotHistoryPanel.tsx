@@ -3,9 +3,10 @@ import { RotateCcw } from 'lucide-react';
 import { EmptyState, Markdown } from '@goodboy/ui';
 import type { ContextSlotHistoryEntry } from '@goodboy/types';
 import { AuthorshipChip } from './AuthorshipChip';
-import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../../shared/components/conceptIcons';
 import { CopyButton } from '@goodboy/ui';
+import { useNow } from '../../../../../shared/hooks/useNow';
 
 type HistoryEntryProps = {
   readonly entry: ContextSlotHistoryEntry;
@@ -22,12 +23,13 @@ const HistoryEntry = ({
   onToggle,
   onRestore,
 }: HistoryEntryProps) => {
+  const now = useNow(30_000);
   return (
     <li className="flex flex-col gap-1.5 rounded-md border border-border-soft bg-elevated p-3">
       <div className="flex items-center gap-2">
         <AuthorshipChip byUser={entry.author === 'user'} />
         <span className="text-secondary text-muted-foreground">
-          {formatRelativeAge({ fromIso: entry.createdAt })}
+          {formatAge({ from: entry.createdAt, now })}
         </span>
         <div className="ml-auto flex items-center gap-1">
           <CopyButton

@@ -7,10 +7,9 @@ import {
   ICON_SIZE,
 } from '../../../../../../shared/components/conceptIcons';
 import { AuthorshipChip } from '../AuthorshipChip';
-import {
-  formatAbsoluteDateTime,
-  formatRelativeAge,
-} from '../../../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../../../shared/utils/time/formatAge';
+import { formatDateTime } from '../../../../../../shared/utils/time/formatDateTime';
+import { useNow } from '../../../../../../shared/hooks/useNow';
 
 type Props = {
   versions: ReadonlyArray<FileVersion>;
@@ -27,6 +26,7 @@ export const VersionHistoryList = ({
   onRestoreVersion,
   onDeleteVersion,
 }: Props) => {
+  const now = useNow(30_000);
   if (versions.length === 0) {
     return (
       <EmptyState
@@ -51,10 +51,10 @@ export const VersionHistoryList = ({
               <AuthorshipChip byUser={version.snapshotSource === 'restore'} />
               <span className="text-secondary text-muted-foreground">{version.changeKind}</span>
               <span className="text-secondary text-muted-foreground">
-                {formatRelativeAge({ fromIso: version.capturedAt })}
+                {formatAge({ from: version.capturedAt, now })}
               </span>
               <span className="ml-auto text-secondary text-muted-foreground">
-                {formatAbsoluteDateTime({ iso: version.capturedAt })}
+                {formatDateTime({ at: version.capturedAt, hasYear: true })}
               </span>
             </div>
             <div className="flex items-center gap-2">

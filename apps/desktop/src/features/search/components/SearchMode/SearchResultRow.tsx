@@ -1,11 +1,12 @@
 import { memo } from 'react';
 import type { SearchHit } from '@goodboy/types';
 import { cn, tintClasses } from '@goodboy/ui';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SEARCH_KIND_META } from '../../searchKindMeta';
 import { hitCrumb, hitHeadline } from '../../hitLabels';
 import { MarkedText } from './MarkedText';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly hit: SearchHit;
@@ -18,6 +19,7 @@ type Props = {
 
 export const SearchResultRow = memo(
   ({ hit, optionId, isSelected, isBlocked, onHover, onOpen }: Props) => {
+    const now = useNow(30_000);
     const meta = SEARCH_KIND_META[hit.kind];
     const Icon = meta.icon;
     const crumb = hitCrumb({ hit });
@@ -64,7 +66,7 @@ export const SearchResultRow = memo(
         <div className="flex shrink-0 flex-col items-end">
           <span className="text-secondary text-faint-foreground">{meta.label}</span>
           <span className="text-meta text-faint-foreground">
-            {formatRelativeAge({ fromIso: hit.occurredAt })}
+            {formatAge({ from: hit.occurredAt, now })}
           </span>
         </div>
       </li>

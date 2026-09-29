@@ -1,6 +1,6 @@
 import type { Agent, ProviderId } from '@goodboy/types';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
-import { formatClockTime } from '../../../../shared/utils/formatClockTime';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 
 const SUMMARY_RESUME_PROVIDERS: ReadonlySet<ProviderId> = new Set(['codex', 'cursor', 'gemini']);
 
@@ -18,7 +18,7 @@ export type AgentStoppedCopy = {
 };
 
 const stoppedTitle = ({ agent }: { readonly agent: Agent }): string => {
-  const clock = agent.stoppedAt == null ? '' : formatClockTime({ iso: agent.stoppedAt });
+  const clock = agent.stoppedAt == null ? '' : formatClock({ at: agent.stoppedAt });
   const when = clock === '' ? '' : ` at ${clock}`;
   const lead =
     agent.stoppedBy === 'app' ? `Stopped by restart${when}.` : `You stopped this agent${when}.`;

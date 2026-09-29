@@ -6,8 +6,8 @@ import type {
   HistoryRunPhase,
   HistoryStop,
 } from '../../../../store/slices/history/types';
-import { formatClockTime } from '../../../../shared/utils/formatClockTime';
-import { formatShortDate } from '../../../../shared/utils/formatShortDate';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
+import { formatDate } from '../../../../shared/utils/time/formatDate';
 import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
 import { historyBackupTimeMs } from '../../historyBackupRef';
 
@@ -34,10 +34,10 @@ const backupWhen = ({ ref, nowMs }: { readonly ref: string; readonly nowMs: numb
   if (atMs === null) {
     return 'just now';
   }
-  const clock = formatClockTime({ iso: atMs });
+  const clock = formatClock({ at: atMs });
   return isSameDay({ left: atMs, right: nowMs })
     ? `today ${clock}`
-    : `${formatShortDate({ iso: atMs })} ${clock}`;
+    : `${formatDate({ at: atMs })} ${clock}`;
 };
 
 export const HistoryResult = ({

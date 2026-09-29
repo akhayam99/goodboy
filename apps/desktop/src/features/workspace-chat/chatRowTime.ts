@@ -1,7 +1,7 @@
 import type { ChatSummary } from '@goodboy/types';
 import { isChatIdle } from '../../store/slices/chats/isChatIdle';
-import { APP_LOCALE } from '../../shared/utils/appLocale';
-import { formatClockTime } from '../../shared/utils/formatClockTime';
+import { formatClock } from '../../shared/utils/time/formatClock';
+import { formatWeekday } from '../../shared/utils/time/formatWeekday';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -25,7 +25,7 @@ export const chatRowTime = ({ chat, now }: Params): string => {
     return `idle ${Math.floor((now - at) / DAY_MS)}d`;
   }
   if (at >= startOfDay({ now })) {
-    return formatClockTime({ iso: at });
+    return formatClock({ at });
   }
-  return new Intl.DateTimeFormat(APP_LOCALE, { weekday: 'short' }).format(new Date(at));
+  return formatWeekday({ at, isShort: true });
 };

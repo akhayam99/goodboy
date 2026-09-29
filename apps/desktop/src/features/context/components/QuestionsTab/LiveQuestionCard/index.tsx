@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
 import type { Agent, OpenQuestion, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { formatRelativeAge } from '../../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../../shared/utils/time/formatAge';
 import { classifyAgent } from '../../../../session/agent-kind';
 import { useAnswerQuestion } from '../../../hooks/useAnswerQuestion';
 import { useQuestionDelegateControls } from '../../../hooks/useQuestionDelegateControls';
 import { QuestionCard, type QuestionCardState } from '../QuestionCard';
 import type { QuestionPagerModel } from '../QuestionCard/QuestionPager';
 import { useOpenQuestions } from '../useOpenQuestions';
+import { useNow } from '../../../../../shared/hooks/useNow';
 
 type Props = {
   readonly question: OpenQuestion;
@@ -36,6 +37,7 @@ export const LiveQuestionCard = ({
   onDismiss = null,
   onUndoDismiss = null,
 }: Props) => {
+  const now = useNow(30_000);
   const agents = useAppStore((state) => state.sessionPhaseRuns?.[sessionId] ?? NO_AGENTS);
   const kindOverride = useAppStore((state) =>
     question.createdByAgentId == null
@@ -60,9 +62,9 @@ export const LiveQuestionCard = ({
       : (agents.find((agent) => agent.id === question.answeredByAgentId)?.name ?? null);
   const mode = question.selectMode ?? 'one';
   const state: QuestionCardState = settled ?? (isStaged ? 'staged' : 'open');
-  const age = formatRelativeAge({
-    fromIso:
-      state === 'answered' ? (question.answeredAt ?? question.createdAt) : question.createdAt,
+  const age = formatAge({
+    from: state === 'answered' ? (question.answeredAt ?? question.createdAt) : question.createdAt,
+    now,
   });
 
   const handleAnswer = useCallback(() => {

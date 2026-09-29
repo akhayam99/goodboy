@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useToast } from '../../../../app/components/Toast';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { LAST_CRASH_TITLE, claimLastCrash, deleteLastCrash, type LastCrash } from '../../lastCrash';
 import { openReportSheet } from '../../openReportSheet';
 
@@ -9,7 +9,7 @@ type MessageParams = {
 };
 
 const crashMessage = ({ crash }: MessageParams): string => {
-  const when = formatAbsoluteDateTime({ iso: new Date(crash.occurredAt).toISOString() });
+  const when = formatDateTime({ at: new Date(crash.occurredAt).toISOString(), hasYear: true });
   const where = crash.screen == null ? '' : `, on ${crash.screen}`;
   return `${when}${where}. The error is saved on this computer until you report or dismiss it.`;
 };

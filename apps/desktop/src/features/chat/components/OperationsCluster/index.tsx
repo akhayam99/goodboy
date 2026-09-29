@@ -4,7 +4,7 @@ import { cn, MetaRow, tintClasses, WorkNode, type Tone, type WorkNodeState } fro
 import type { AgentId, IsoDateTime, ProviderRunId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import { transcriptItemsEqual } from '../../utils/transcriptItemEqual';
-import { formatDuration } from '../../utils/format-duration';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { permissionFor, toolStatus } from '../../utils/toolStatus';
 import { TranscriptCard } from '../TranscriptCards';

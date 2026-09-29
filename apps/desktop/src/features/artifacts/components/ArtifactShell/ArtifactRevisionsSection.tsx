@@ -3,7 +3,7 @@ import { Button, formatError, SectionHeader } from '@goodboy/ui';
 import type { ArtifactRevision } from '@goodboy/db';
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { formatCompactDateTime } from '../../../../shared/utils/formatCompactDateTime';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { listArtifactRevisions } from '../../artifacts';
 
 type Props = {
@@ -90,7 +90,7 @@ export const ArtifactRevisionsSection = ({ sessionId, artifact, creatorName }: P
                   {revision.ask === null ? '' : ` · ${revision.ask}`}
                 </span>
                 <span className="truncate text-secondary text-muted-foreground">
-                  {formatCompactDateTime({ iso: revision.createdAt })}
+                  {formatDateTime({ at: revision.createdAt })}
                 </span>
               </span>
               {revision.revision === artifact.revision ? (

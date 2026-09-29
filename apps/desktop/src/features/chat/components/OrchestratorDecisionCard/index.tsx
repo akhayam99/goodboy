@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Route } from 'lucide-react';
 import { Markdown, cn, tintClasses } from '@goodboy/ui';
 import type { TranscriptItem } from '../../utils/transcript-items';
-import { formatCardTime } from '../../utils/format-card-time';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
 import { TranscriptShell } from '../TranscriptShell';
@@ -47,7 +47,7 @@ export const OrchestratorDecisionCard = ({ item }: Props) => {
             ) : null
           }
           preview={item.stepName ?? item.action}
-          meta={formatCardTime(item.at)}
+          meta={formatClock({ at: item.at })}
           open={open}
           onToggle={() => setOpen((value) => !value)}
         />

@@ -1,5 +1,6 @@
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import type { SentryBreadcrumb } from '../client';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly breadcrumbs: ReadonlyArray<SentryBreadcrumb>;
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export const SentryBreadcrumbs = ({ breadcrumbs, isLoading, error }: Props) => {
+  const now = useNow(30_000);
   if (isLoading || error != null || breadcrumbs.length === 0) {
     return null;
   }
@@ -16,7 +18,7 @@ export const SentryBreadcrumbs = ({ breadcrumbs, isLoading, error }: Props) => {
     <div className="flex flex-col gap-2">
       {breadcrumbs.map((breadcrumb, index) => {
         const relativeDate =
-          breadcrumb.timestamp == null ? '' : formatRelativeDuration(breadcrumb.timestamp);
+          breadcrumb.timestamp == null ? '' : formatSpan({ from: breadcrumb.timestamp, to: now });
         return (
           <div
             key={`${breadcrumb.timestamp ?? 'breadcrumb'}-${index}`}

@@ -69,35 +69,6 @@ export const localCommitsNote = ({ folder }: FolderParams): string | null => {
   return `${commits} only on this Mac, they stay on ${branch}`;
 };
 
-type SinceParams = {
-  readonly from: number | null;
-  readonly now: number;
-};
-
-const MINUTE = 60_000;
-const HOUR = 60 * MINUTE;
-const DAY = 24 * HOUR;
-
-export const formatSince = ({ from, now }: SinceParams): string => {
-  if (from === null) {
-    return '';
-  }
-  const elapsed = Math.max(0, now - from);
-  if (elapsed < HOUR) {
-    return `${Math.max(1, Math.round(elapsed / MINUTE))} min`;
-  }
-  if (elapsed < DAY) {
-    return `${Math.round(elapsed / HOUR)} h`;
-  }
-  const days = Math.floor(elapsed / DAY);
-  return days === 1 ? '1 day' : `${days} days`;
-};
-
-export const formatAgo = ({ from, now }: SinceParams): string => {
-  const since = formatSince({ from, now });
-  return since === '' ? '' : `${since} ago`;
-};
-
 export const ARTIFACT_KIND_LABEL = {
   plan: 'Plan',
   report: 'Report',

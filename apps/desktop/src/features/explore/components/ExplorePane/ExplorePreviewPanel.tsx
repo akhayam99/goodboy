@@ -4,9 +4,10 @@ import { ExternalLink } from 'lucide-react';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
 import { type ExploreEntry } from '../../explore';
 import type { ExplorePreviewState } from '../../hooks/useExplorePreview';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly entry: ExploreEntry;
@@ -67,10 +68,11 @@ export const ExplorePreviewPanel = ({
   openError,
   onOpenOutside,
 }: Props) => {
+  const now = useNow(30_000);
   const [pdfViewerOpen, setPdfViewerOpen] = useState(false);
   const previewKind = useMemo(() => previewKindOf({ entry, previewState }), [entry, previewState]);
   const modifiedLabel =
-    entry.modifiedAt == null ? 'unknown age' : formatRelativeAge({ fromIso: entry.modifiedAt });
+    entry.modifiedAt == null ? 'unknown age' : formatAge({ from: entry.modifiedAt, now });
   const sizeLabel = formatBytes({ bytes: entry.sizeBytes });
   const previewText =
     previewState.status === 'ready' && previewState.content.type === 'text'

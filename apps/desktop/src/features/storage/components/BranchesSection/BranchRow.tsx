@@ -3,10 +3,11 @@ import type { LucideIcon } from 'lucide-react';
 import { Button, Checkbox, Tooltip, cn } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { BranchOwnerCell } from './BranchOwnerCell';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import type { BranchLocation } from '../../../worktree/branchCleanup';
 import { LOCATION_LABEL, verdictCopy } from '../../branches/branchCopy';
 import type { ClassifiedBranch } from '../../branches/classifyBranch';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 const LOCATION_ICON: Readonly<Record<BranchLocation, LucideIcon>> = {
   'on-origin': Cloud,
@@ -27,13 +28,14 @@ type Props = {
 };
 
 export const BranchRow = ({ entry, base, isSelected, isBusy, onToggle, onDelete }: Props) => {
+  const now = useNow(30_000);
   const { branch } = entry;
   const verdict = verdictCopy({ branch, base });
   const LocationIcon = LOCATION_ICON[branch.location];
   const age =
     branch.lastCommitAt === null
       ? ''
-      : formatRelativeDuration(new Date(branch.lastCommitAt * 1000).toISOString());
+      : formatSpan({ from: new Date(branch.lastCommitAt * 1000).toISOString(), to: now });
   return (
     <li className={cn(BRANCH_ROW_GRID, 'h-[34px] rounded-md px-2 hover:bg-hover')}>
       <Checkbox

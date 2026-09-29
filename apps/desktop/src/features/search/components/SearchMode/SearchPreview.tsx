@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { SearchHit } from '@goodboy/types';
 import { Button, Eyebrow, tintClasses } from '@goodboy/ui';
-import { formatAbsoluteDateTime } from '../../../../shared/utils/relativeDate';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SEARCH_KIND_META } from '../../searchKindMeta';
 import { hitHeadline } from '../../hitLabels';
@@ -46,7 +46,7 @@ export const SearchPreview = ({ hit, target, onOpen, onDone }: Props) => {
     { label: 'Where', value: hit.container },
     { label: 'Status', value: statusOf({ hit }) },
     { label: 'From', value: providerLabel({ provider: hit.provider }) },
-    { label: 'When', value: formatAbsoluteDateTime({ iso: hit.occurredAt }) },
+    { label: 'When', value: formatDateTime({ at: hit.occurredAt, hasYear: true }) },
   ];
   const isBlocked = target.kind === 'blocked';
   return (

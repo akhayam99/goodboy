@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import {
   AnchoredPopover,
@@ -23,6 +23,7 @@ import {
   type RunningScript,
 } from '../../../../features/scripts/hooks/useRunningScripts';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useNow } from '../../../../shared/hooks/useNow';
 import { NeedsYouSessionRow } from './NeedsYouSessionRow';
 import { NowGroup } from './NowGroup';
 
@@ -61,7 +62,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
   const scripts = useRunningScripts();
   const navigate = useAppStore((state) => state.navigate);
   const cancelScript = useAppStore((state) => state.cancelScript);
-  const [now, setNow] = useState(() => Date.now());
   const dropdown = useDropdown({
     align: 'end',
     width: 'w-90',
@@ -69,6 +69,7 @@ export const NowChip = ({ onOpenScript }: Props) => {
     expectedHeight: PANEL_MAX_HEIGHT,
   });
   const { open: isOpen, close, toggle } = dropdown;
+  const now = useNow(1_000, isOpen && scripts.length > 0);
 
   const needsYou: ReadonlyArray<Session> =
     workspace == null
@@ -85,15 +86,6 @@ export const NowChip = ({ onOpenScript }: Props) => {
       close();
     }
   }, [close, total]);
-
-  useEffect(() => {
-    if (!isOpen || scripts.length === 0) {
-      return;
-    }
-    setNow(Date.now());
-    const id = window.setInterval(() => setNow(Date.now()), 1_000);
-    return () => window.clearInterval(id);
-  }, [isOpen, scripts.length]);
 
   if (total === 0) {
     return null;
