@@ -9,7 +9,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn() }));
 
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
@@ -28,23 +28,25 @@ import {
   settle,
   useAppStore,
 } from './harness';
-import { LENS_ENTRY_ROWS } from './lens-entries.rows';
-import { PALETTE_DESTINATION_ROWS } from './palette-destinations.rows';
-import { FOOTER_AND_VERB_ROWS } from './footer-and-verbs.rows';
-import { SETTINGS_AND_MOUNT_ROWS } from './settings-and-mounts.rows';
-import { PULL_REQUEST_LAYER_ROWS } from './pull-request-layers.rows';
-import { CREATE_AND_SEARCH_ROWS } from './create-and-search.rows';
-
 installNavigationHooks();
 
-const ALL_ROWS: ReadonlyArray<Row> = [
-  ...LENS_ENTRY_ROWS,
-  ...PALETTE_DESTINATION_ROWS,
-  ...FOOTER_AND_VERB_ROWS,
-  ...SETTINGS_AND_MOUNT_ROWS,
-  ...PULL_REQUEST_LAYER_ROWS,
-  ...CREATE_AND_SEARCH_ROWS,
-];
+const ROW_SUFFIX = '.rows.tsx';
+const ROW_FILES = readdirSync(__dirname)
+  .filter((file) => file.endsWith(ROW_SUFFIX))
+  .sort();
+
+const loadAllRows = async (): Promise<ReadonlyArray<Row>> => {
+  const modules = await Promise.all(
+    ROW_FILES.map(
+      async (file) =>
+        (await import(`./${file.slice(0, -ROW_SUFFIX.length)}.rows`)) as Record<string, unknown>,
+    ),
+  );
+  return modules.flatMap((mod) => Object.values(mod).flat() as ReadonlyArray<Row>);
+};
+
+const declaredTokens = async (): Promise<Set<string>> =>
+  new Set((await loadAllRows()).flatMap((row) => row.covers));
 
 const readSource = (path: string): string => readFileSync(join(SRC, path), 'utf8');
 
@@ -85,10 +87,23 @@ const EXEMPT: Readonly<Record<string, string>> = {
     'storage rows list artifacts read from disk, which the bridge mock has none of',
 };
 
-const declared = new Set(ALL_ROWS.flatMap((row) => row.covers));
-
 describe('navigation flow table ratchet', () => {
-  it('has a row for every navigation action of the store and the app overlays', () => {
+  it('runs every rows file from a test file of the same name', () => {
+    expect(ROW_FILES.length).toBeGreaterThan(0);
+    const unrun = ROW_FILES.filter((file) => {
+      const name = file.slice(0, -ROW_SUFFIX.length);
+      const testFile = join(__dirname, `${name}.test.tsx`);
+      if (!existsSync(testFile)) {
+        return true;
+      }
+      const source = readFileSync(testFile, 'utf8');
+      return !source.includes('runNavigationRows') || !source.includes(`./${name}.rows`);
+    });
+    expect(unrun).toEqual([]);
+  });
+
+  it('has a row for every navigation action of the store and the app overlays', async () => {
+    const declared = await declaredTokens();
     const missing = [...STORE_ACTIONS, ...OVERLAY_OPENERS].filter(
       (name) => !declared.has(name) && EXEMPT[name] === undefined,
     );
@@ -99,7 +114,8 @@ describe('navigation flow table ratchet', () => {
     expect(stale).toEqual([]);
   });
 
-  it('has a row for every studio, settings scope and app settings section', () => {
+  it('has a row for every studio, settings scope and app settings section', async () => {
+    const declared = await declaredTokens();
     expect(STUDIO_KINDS.length).toBeGreaterThan(0);
     expect(SETTINGS_SCOPES.length).toBeGreaterThan(0);
     const missing = [
@@ -111,6 +127,7 @@ describe('navigation flow table ratchet', () => {
   });
 
   it('has a row for every crumb menu entry and palette destination', async () => {
+    const declared = await declaredTokens();
     await boot({ seed: 'pr' });
     await clickButton(/^Overview/);
     const crumbs = screen.getAllByRole('menuitemradio').map((item) => {
