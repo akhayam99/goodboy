@@ -33,7 +33,7 @@ export const resolveMountPreflight = ({ plan, repoBranches }: Params): MountPref
   if (!taken.includes(plan.branch)) {
     return proposed;
   }
-  const slug = nextAvailableSlug({ base: plan.slug, prefix: plan.prefix, taken });
+  const slug = nextAvailableSlug({ base: plan.baseSlug, prefix: plan.prefix, taken });
   return {
     mountId: plan.mountId,
     slug,

@@ -117,17 +117,17 @@
       "expected": "812-fix-the-login-flow"
     },
     {
-      "name": "collision first",
+      "name": "mixed case words",
       "input": "Fix Login",
       "expected": "fix-login"
     },
     {
-      "name": "collision second lowercase",
+      "name": "lowercase words",
       "input": "fix login",
       "expected": "fix-login"
     },
     {
-      "name": "collision third with dashes",
+      "name": "surrounding double dashes",
       "input": "--Fix--Login--",
       "expected": "fix-login"
     },

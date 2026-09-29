@@ -21,6 +21,7 @@ export type MountPlan = {
   readonly project: Project;
   readonly mountId: MountId;
   readonly prefix: string;
+  readonly baseSlug: string;
   readonly slug: string;
   readonly branch: string | null;
   readonly adoptedBranch: string | null;
@@ -121,6 +122,7 @@ export const mountPlan = ({
     project,
     mountId,
     prefix,
+    baseSlug,
     slug,
     branch: project.kind === 'repo' ? `${prefix}/${slug}` : null,
     adoptedBranch: project.kind === 'repo' ? adoptedBranch : null,

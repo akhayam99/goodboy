@@ -156,6 +156,7 @@ describe('mountPlan', () => {
     const plan = mountPlan({ state, sessionId: SID, projectId: PID, mountId: MID });
 
     expect(plan?.slug).toBe('812-fix-the-login-flow-2');
+    expect(plan?.baseSlug).toBe('812-fix-the-login-flow');
     expect(plan?.branch).toBe(`${plan?.prefix}/812-fix-the-login-flow-2`);
     expect(plan?.targetPath).toBe(
       '/repos/goodboy/.goodboy/worktrees/812-fix-the-login-flow-2-mount-1',
