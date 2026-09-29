@@ -445,7 +445,7 @@ Click a resolve in Activity and its Brief holds the comment, the fix and the rep
 
 ### Fixes already on the branch
 
-Review looks at origin before it pushes. A comment whose fix you already pushed reads **Already on origin**, and one that someone else's commit seems to have fixed reads **Looks fixed** with the commit and its author. Both offer **Reply and resolve** and never push. If you already answered a thread yourself it reads **You replied** and offers **Resolve only**.
+Review looks at origin before it pushes. A comment whose fix you already pushed reads **Already on origin**, and one that someone else's commit seems to have fixed reads **Looks fixed** with the commit and its author. Both offer **Reply and resolve** and never push. If you already answered a thread yourself it reads **You replied** and offers **Resolve only**. On a Bitbucket pull request, where a thread cannot be resolved, the same moves read **Reply** and **Post this reply**, and there is no **Resolve only**.
 
 ### A fix that went missing
 

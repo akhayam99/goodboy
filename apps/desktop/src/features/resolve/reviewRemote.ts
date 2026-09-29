@@ -73,9 +73,23 @@ export const remoteViewOf = ({
   return verdict === null ? REMOTE_VIEW.missing : VERDICT_VIEW[verdict.kind];
 };
 
+export const remoteActionLabel = ({
+  action,
+  canResolve,
+}: {
+  readonly action: 'replyAndResolve' | 'closeWithReply';
+  readonly canResolve: boolean;
+}): string => {
+  if (action === 'replyAndResolve') {
+    return canResolve ? REMOTE_LABEL.replyAndResolve : REMOTE_LABEL.replyOnly;
+  }
+  return canResolve ? REMOTE_LABEL.closeWithReply : REMOTE_LABEL.postThisReply;
+};
+
 export const REMOTE_LABEL = {
   evidence: 'What git says',
   replyAndResolve: 'Reply and resolve',
+  replyOnly: 'Reply',
   resolveOnly: 'Resolve only',
   fixAnyway: 'Fix anyway',
   recheck: 'Re-check',
@@ -84,6 +98,7 @@ export const REMOTE_LABEL = {
   fixAgain: 'Fix again',
   addHint: 'Add a hint',
   closeWithReply: 'Close with this reply',
+  postThisReply: 'Post this reply',
   openCommit: 'Open commit',
   foldedNotPushed: 'It is on this branch and goes out with the next push.',
   nothingToPush: 'Nothing to push for this one.',

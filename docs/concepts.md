@@ -704,7 +704,8 @@ cheapest model of the provider. It ends with `<<comment-verdict threadId verdict
 sha evidence>>` (`fixed-here`, `not-relevant`, `still-needed`), parsed by
 `extractCommentVerdict` and stored in `resolve_threads.verdict_json`. The verdict
 offers one action (Reply and resolve, Close with this reply, Fix again) and never
-acts alone; `settleItemAnswered` takes `allowIntegrated` so a missing
+acts alone (where `canResolve` is false, as on Bitbucket, they read `Reply` and
+`Post this reply`, and `Resolve only` is not offered); `settleItemAnswered` takes `allowIntegrated` so a missing
 fix can be answered without undoing its accepted decision. The git facts live in `sessionThreadGit`, the per-thread computation in
 `store/slices/resolve/threadGitState.ts`, the git side in
 `src-tauri/src/thread_git.rs`.

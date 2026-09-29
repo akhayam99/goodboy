@@ -37,6 +37,12 @@ const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict
 const OPEN = ['reviewComment.openInDiff menu Open in diff'];
 const TRANSCRIPT = ['reviewComment.transcript menu Agent transcript'];
 const GITHUB = ['reviewComment.openOnGithub menu Open on GitHub'];
+const BITBUCKET: Partial<ReviewCommentFacts> = {
+  provider: 'Bitbucket',
+  canResolve: false,
+  url: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12/_/diff#comment-4',
+};
+const BITBUCKET_LINK = ['reviewComment.openOnGithub menu Open on Bitbucket'];
 const COPY = ['reviewComment.copyLink menu Copy link'];
 const DECIDE = [
   'reviewComment.reply secondary Reply',
@@ -324,9 +330,70 @@ const MATRIX: ReadonlyArray<Row> = [
     expected: [
       ...OPEN,
       'reviewComment.openOnGithub menu Open on Bitbucket',
-      'reviewComment.draft primary Draft a fix',
+      'reviewComment.draft primary Fix',
       'reviewComment.reply secondary Reply',
       'reviewComment.skip secondary Skip',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'Bitbucket, accepted, fix already on origin',
+    facts: { ...BITBUCKET, state: 'accepted', approval: 'accepted', remote: 'on_origin' },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...BITBUCKET_LINK,
+      'reviewComment.replyAndResolve primary Reply',
+      'reviewComment.undo secondary Undo',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'Bitbucket, the user already replied by hand',
+    facts: { ...BITBUCKET, state: 'new', agentId: null, remote: 'you_replied' },
+    expected: [...OPEN, ...BITBUCKET_LINK, 'reviewComment.skip secondary Skip', ...COPY],
+  },
+  {
+    name: 'Bitbucket, re-check says already fixed here',
+    facts: {
+      ...BITBUCKET,
+      state: 'accepted',
+      approval: 'accepted',
+      remote: 'missing',
+      verdict: verdictOf('fixed_elsewhere', 'e31b9f4'),
+      remoteReply: 'Handled in e31b9f4.',
+    },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...BITBUCKET_LINK,
+      'reviewComment.replyAndResolve primary Reply with e31b9f4',
+      'reviewComment.recheck secondary Look again',
+      'reviewComment.editReply hover Edit the reply',
+      'reviewComment.skip secondary Skip',
+      'reviewComment.undo secondary Undo',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'Bitbucket, re-check says no longer relevant',
+    facts: {
+      ...BITBUCKET,
+      state: 'accepted',
+      approval: 'accepted',
+      remote: 'missing',
+      verdict: verdictOf('obsolete', '6b0e9f1'),
+      remoteReply: 'This code was removed in 6b0e9f1.',
+    },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...BITBUCKET_LINK,
+      'reviewComment.closeWithReply primary Post this reply',
+      'reviewComment.fixAgain secondary Fix anyway',
+      'reviewComment.editReply hover Edit the reply',
+      'reviewComment.skip secondary Skip',
+      'reviewComment.undo secondary Undo',
       ...COPY,
     ],
   },

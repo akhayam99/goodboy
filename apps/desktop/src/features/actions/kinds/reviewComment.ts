@@ -22,7 +22,7 @@ import { activeReviewSourceOf } from '../../../store/slices/review-source/active
 import { verdictReply } from '../../resolve/commentVerdict';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
-import { REMOTE_LABEL, commitUrlOf, remoteOf } from '../../resolve/reviewRemote';
+import { REMOTE_LABEL, commitUrlOf, remoteActionLabel, remoteOf } from '../../resolve/reviewRemote';
 import type {
   ThreadGitFacts,
   ThreadRemoteKind,
@@ -245,10 +245,15 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.replyAndResolve',
-      label: ({ facts }) =>
-        facts.verdict?.kind === 'fixed_elsewhere' && facts.verdict.sha !== null
-          ? `${REMOTE_LABEL.replyAndResolve} with ${shortOf({ sha: facts.verdict.sha })}`
-          : REMOTE_LABEL.replyAndResolve,
+      label: ({ facts }) => {
+        const label = remoteActionLabel({
+          action: 'replyAndResolve',
+          canResolve: facts.canResolve,
+        });
+        return facts.verdict?.kind === 'fixed_elsewhere' && facts.verdict.sha !== null
+          ? `${label} with ${shortOf({ sha: facts.verdict.sha })}`
+          : label;
+      },
       icon: CircleCheck,
       group: 'act',
       shortcut: 'review.reply',
@@ -282,7 +287,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.closeWithReply',
-      label: REMOTE_LABEL.closeWithReply,
+      label: ({ facts }) =>
+        remoteActionLabel({ action: 'closeWithReply', canResolve: facts.canResolve }),
       icon: CircleCheck,
       group: 'act',
       shortcut: 'review.accept',
@@ -349,7 +355,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: CircleCheck,
       group: 'act',
       shortcut: 'review.accept',
-      when: ({ facts }) => facts.remote === 'you_replied',
+      when: ({ facts }) => facts.remote === 'you_replied' && facts.canResolve,
       slot: () => 'primary',
       run: ({ facts, env }) =>
         env.getState().resolveThreadOnly({
