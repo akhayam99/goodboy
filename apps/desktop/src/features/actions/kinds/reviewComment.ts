@@ -41,8 +41,6 @@ export type ReviewCommentFacts = {
   readonly prUrl: string | null;
 };
 
-export const OUTDATED_REASON = 'The comment changed since this draft. Redraft first.';
-
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
   'new',
   'needs',
@@ -59,6 +57,13 @@ const hasOverlay = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean 
 
 const isRedraft = ({ state }: { readonly state: ReviewCommentState }): boolean =>
   state === 'outdated' || state === 'failed';
+
+const editLabel = ({ state }: { readonly state: ReviewCommentState }): string => {
+  if (state === 'outdated') {
+    return 'Redraft with the new comment';
+  }
+  return isRedraft({ state }) ? 'Redraft' : 'Edit';
+};
 
 type RunParams = {
   readonly facts: ReviewCommentFacts;
@@ -279,10 +284,24 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: Check,
       group: 'act',
       shortcut: 'review.accept',
-      when: ({ facts }) => DRAFTED.has(facts.state) && !hasOverlay({ facts }),
-      blockedReason: ({ facts }) => (facts.state === 'outdated' ? OUTDATED_REASON : null),
-      slot: ({ facts }) => (facts.state === 'outdated' ? 'secondary' : 'primary'),
+      when: ({ facts }) =>
+        DRAFTED.has(facts.state) && facts.state !== 'outdated' && !hasOverlay({ facts }),
+      slot: () => 'primary',
       run: accept,
+    },
+    {
+      id: 'reviewComment.keepDraft',
+      label: 'Keep the draft',
+      icon: Check,
+      group: 'act',
+      when: ({ facts }) => facts.state === 'outdated' && !hasOverlay({ facts }),
+      slot: () => 'secondary',
+      run: ({ facts, env }) =>
+        env.getState().settleResolveSourceChange({
+          sessionId: facts.sessionId,
+          threadId: facts.threadId,
+          keepDraft: true,
+        }),
     },
     {
       id: 'reviewComment.edit',
@@ -290,7 +309,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
         if (facts.state === 'failed') {
           return 'Add a hint';
         }
-        return isRedraft(facts) ? 'Redraft' : 'Edit';
+        return editLabel(facts);
       },
       icon: RefreshCw,
       group: 'act',

@@ -7,6 +7,7 @@ import type {
   ResolvePublication,
   ResolvePublicationPreview,
   ResolveQueueItemWithThread,
+  ResolveSourceSnapshot,
   ResolveThread,
   ResolveUncapturedWork,
   SessionId,
@@ -34,6 +35,9 @@ export type ResolveState = {
     Record<SessionId, ReadonlyArray<ResolvePublication>>
   >;
   readonly sessionResolveUncapturedWork: Readonly<Record<SessionId, ResolveUncapturedWork | null>>;
+  readonly sessionResolveSourceSnapshots: Readonly<
+    Record<SessionId, Readonly<Record<string, ResolveSourceSnapshot>>>
+  >;
   readonly activePublicationPreview: Readonly<Record<SessionId, ResolvePublicationPreview | null>>;
   readonly sessionThreadGit: Readonly<Record<SessionId, Readonly<Record<string, ThreadGitFacts>>>>;
   readonly threadFixDismissals: Readonly<
@@ -51,6 +55,7 @@ export const resolveInitialState: ResolveState = {
   sessionResolveQueueItems: {},
   sessionResolvePublications: {},
   sessionResolveUncapturedWork: {},
+  sessionResolveSourceSnapshots: {},
   activePublicationPreview: {},
   sessionThreadGit: {},
   threadFixDismissals: {},

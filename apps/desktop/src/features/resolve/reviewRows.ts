@@ -55,4 +55,6 @@ export const rowStateOf = ({ state, sessionId, row }: RowStateParams): ReviewCom
       draft: state.resolveItemDrafts[sessionId]?.[row.thread.threadId],
       row,
     }),
+    isChanged:
+      state.sessionResolveSourceSnapshots[sessionId]?.[row.thread.threadId]?.changed != null,
   });

@@ -1,5 +1,5 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { AlertCircle, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -15,7 +15,6 @@ import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMe
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
-import { OUTDATED_REASON } from '../../../actions/kinds/reviewComment';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { attemptNumberOf, previousAttemptsOf } from '../../attemptHistory';
 import { conversationSha } from '../../conversationAgentResult';
@@ -42,6 +41,8 @@ import { FailedRun } from './FailedRun';
 import { PreviousAttempts } from './PreviousAttempts';
 import { ProposedChange } from './ProposedChange';
 import { ThreadGitEvidence } from './ThreadGitEvidence';
+import { NewReplyNote } from './NewReplyNote';
+import { SourceChangeCard } from './SourceChangeCard';
 import type { ReviewEntry } from './useReviewEntries';
 
 type Props = ReviewCommentBinding & {
@@ -208,6 +209,9 @@ export const ReviewComment = ({
         {note?.location != null && (
           <span className="min-w-0 truncate font-mono text-faint-foreground">{note.location}</span>
         )}
+        {row.commentThread?.head.outdated === true && (
+          <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.lineMoved} />
+        )}
         <span className="ml-auto flex shrink-0 items-center">
           <ObjectOverflowMenu target={target} label={REVIEW_FLOW_LABEL.commentActions} />
         </span>
@@ -221,6 +225,12 @@ export const ReviewComment = ({
       {!isBrief && <PreviousAttempts attempts={previous} />}
 
       {remote !== null && <ThreadGitEvidence sessionId={sessionId} entry={entry} />}
+
+      {entry.newReplies.length > 0 && <NewReplyNote replies={entry.newReplies} />}
+
+      {state === 'outdated' && remote === null && entry.change !== null && (
+        <SourceChangeCard change={entry.change} />
+      )}
 
       {!isBrief && row.attempt !== null && remote !== 'looks_fixed' && (
         <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
@@ -339,17 +349,6 @@ export const ReviewComment = ({
             state: state as 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved',
             sha: conversationSha({ row }),
           })}
-        </p>
-      )}
-
-      {state === 'outdated' && (
-        <p className="flex min-w-0 items-start gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-foreground">
-          <AlertCircle
-            size={ICON_SIZE.control}
-            aria-hidden
-            className="mt-0.5 shrink-0 text-warning"
-          />
-          {OUTDATED_REASON}
         </p>
       )}
 

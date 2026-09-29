@@ -29,6 +29,8 @@ import { createResolveBatch, setResolveParallelLimit } from './resolveBatches';
 import { settleItemAnswered } from './settleItemAnswered';
 import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState';
 import { resolveThreadOnRemote } from './resolveThreadOnRemote';
+import { settleResolveSourceChange } from './settleResolveSourceChange';
+import { syncSourceSnapshots } from './syncSourceSnapshots';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type {
   ResolveActions,
@@ -53,6 +55,8 @@ import type {
   MaterializeParams,
   CreateBatchParams,
   ParallelLimitParams,
+  SettleSourceChangeParams,
+  SourceSnapshotsParams,
 } from './types';
 
 export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions => {
@@ -177,6 +181,16 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       serialize({
         sessionId: params.sessionId,
         run: () => closeResolvedNote({ set, get, ...params }),
+      }),
+    syncSourceSnapshots: (params: SourceSnapshotsParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => syncSourceSnapshots({ set, ...params }),
+      }),
+    settleResolveSourceChange: (params: SettleSourceChangeParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => settleResolveSourceChange({ set, get, ...params }),
       }),
     materializeReviewThreads: (params: MaterializeParams) =>
       serialize({

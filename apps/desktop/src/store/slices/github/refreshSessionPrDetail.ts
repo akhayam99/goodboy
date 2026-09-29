@@ -118,6 +118,7 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
         const detail = await fetchPrDetail(tauriGhRunner, slug, pr.number, ghOptions);
         await get().updateResolveThreads({
           sessionId,
+          keepsDraft: true,
           updates: ({ rows }) => {
             const updates: Array<ResolveUpdates[number]> = [];
             for (const thread of detail.comments) {
@@ -165,6 +166,15 @@ export const refreshSessionPrDetail = (set: SetFn, get: GetFn) => {
           });
         } catch (error) {
           console.warn(`[review-threads] ${sessionId}: ${formatError(error)}`);
+        }
+        try {
+          await get().syncSourceSnapshots({
+            sessionId,
+            prNumber: pr.number,
+            comments: detail.comments,
+          });
+        } catch (error) {
+          console.warn(`[review-source] ${sessionId}: ${formatError(error)}`);
         }
         if (!isCurrent()) {
           return;

@@ -92,6 +92,7 @@ export type UpdateParams = SessionParams & {
 export type ResolveUpdates = ReadonlyArray<Pick<UpdateParams, 'threadId' | 'revision' | 'patch'>>;
 export type ResolveUpdatesParams = { readonly rows: ReadonlyArray<ResolveThread> };
 export type BatchUpdateParams = SessionParams & {
+  readonly keepsDraft?: boolean;
   readonly updates: ResolveUpdates | ((params: ResolveUpdatesParams) => ResolveUpdates);
 };
 
@@ -107,6 +108,11 @@ export type PublishParams = SessionParams & {
 };
 
 export type ThreadParams = SessionParams & { readonly threadId: string };
+export type SourceSnapshotsParams = SessionParams & {
+  readonly prNumber: number;
+  readonly comments: ReadonlyArray<PrComment>;
+};
+export type SettleSourceChangeParams = ThreadParams & { readonly keepDraft: boolean };
 
 export type EnsureReviewThreadParams = SessionParams & {
   readonly threadId: string;
@@ -163,6 +169,8 @@ export type ResolveActions = {
   readonly closeResolvedNote: (params: ThreadParams) => Promise<void>;
   readonly createResolveBatch: (params: CreateBatchParams) => Promise<ResolveBatch>;
   readonly setResolveParallelLimit: (params: ParallelLimitParams) => Promise<void>;
+  readonly syncSourceSnapshots: (params: SourceSnapshotsParams) => Promise<void>;
+  readonly settleResolveSourceChange: (params: SettleSourceChangeParams) => Promise<void>;
 };
 export type CreateBatchParams = SessionParams & {
   readonly threadIds: ReadonlyArray<string>;

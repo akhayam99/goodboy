@@ -17,6 +17,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionResolveCandidates', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveBatches', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveParallelLimit', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionResolveSourceSnapshots', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveCheckRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewTargets', keyedBy: 'session', evictOn: 'archive' },
   { key: 'pullRequestModes', keyedBy: 'session', evictOn: 'archive' },

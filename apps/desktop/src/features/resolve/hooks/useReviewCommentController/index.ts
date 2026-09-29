@@ -87,6 +87,7 @@ export const useReviewCommentController = ({
 }: Params): ReviewCommentController => {
   const env = useActionEnv({ origin: 'button' });
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
+  const settleResolveSourceChange = useAppStore((s) => s.settleResolveSourceChange);
   const requestAttempt = useResolveAgain({
     sessionId,
     rows: entries.map((entry) => entry.row),
@@ -212,6 +213,11 @@ export const useReviewCommentController = ({
       }
       if (outcome === 'started') {
         setCompose(null);
+        await settleResolveSourceChange({
+          sessionId,
+          threadId: entry.threadId,
+          keepDraft: false,
+        });
       }
     } catch (caught) {
       if (!isReportedError(caught)) {
@@ -229,6 +235,7 @@ export const useReviewCommentController = ({
     requestAttempt,
     sessionId,
     setError,
+    settleResolveSourceChange,
   ]);
 
   useEffect(() => {

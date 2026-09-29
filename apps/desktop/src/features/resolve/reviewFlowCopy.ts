@@ -14,6 +14,8 @@ export const REVIEW_FLOW_LABEL = {
   agentAsks: 'The agent asks',
   resolver: 'Resolver',
   edited: 'Edited',
+  commentEdited: 'Comment edited',
+  lineMoved: 'The line moved',
   resolveOnly: 'Resolve only',
   editReply: 'Edit the reply',
   saveReply: 'Save reply',
@@ -25,6 +27,28 @@ export const REVIEW_FLOW_LABEL = {
   waitingForSlot: 'Waiting for a free slot',
   tooLarge: 'The change is too large to show here.',
 } as const;
+
+export const sourceChangeLine = ({
+  author,
+  time,
+}: {
+  readonly author: string | null;
+  readonly time: string;
+}): string => {
+  const by = author === null ? 'Edited' : `Edited by ${author}`;
+  return time === '' ? `${by}, after the draft.` : `${by}, seen at ${time}, after the draft.`;
+};
+
+export const newReplyLine = ({ authors }: { readonly authors: ReadonlyArray<string> }): string => {
+  const [first, second] = authors;
+  if (first === undefined) {
+    return 'New reply';
+  }
+  if (second === undefined) {
+    return `New reply from ${first}`;
+  }
+  return `New replies from ${authors.join(', ')}`;
+};
 
 export const replyHeading = ({ author }: { readonly author: string | null }): string =>
   author === null ? 'Reply' : `Reply to ${author}`;

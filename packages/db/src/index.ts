@@ -534,6 +534,7 @@ export {
   setResolveThreadSourceSnapshot,
   setResolveThreadSource,
 } from './queries/resolve-thread-facts';
+export { keepResolveDraftCurrent } from './queries/resolve-draft-current';
 export { hasResolveImport, commitResolveImport } from './queries/resolve-import';
 export {
   insertResolveCandidate,

@@ -13,6 +13,7 @@ import type {
   ResolveQueueApprovalState,
   ResolveQueueItem,
   ResolveQueueItemWithThread,
+  ResolveSourceSnapshot,
   ResolveThread,
   ResolveThreadState,
   ResolveStage,
@@ -397,7 +398,7 @@ const ITEM_TYPO = buildItem({
   approvedRevision: null,
   deferredAt: null,
   deliveredAt: null,
-  candidateRevision: 1,
+  candidateRevision: 2,
   createdMinutesAgo: 500,
 });
 
@@ -489,6 +490,7 @@ type NoteSeed = {
   readonly path: string;
   readonly line: number;
   readonly createdMinutesAgo: number;
+  readonly isOutdated?: boolean;
 };
 
 const buildNote = (seed: NoteSeed): PrComment => ({
@@ -502,9 +504,12 @@ const buildNote = (seed: NoteSeed): PrComment => ({
   path: seed.path,
   line: seed.line,
   resolved: false,
-  outdated: false,
+  outdated: seed.isOutdated ?? false,
   threadId: seed.threadId,
 });
+
+const TYPO_BEFORE = "Typo: 'shoudl' should be 'should' in the comment above the retry constant.";
+const TYPO_ADDED = 'Also rename the flag to shouldRetry.';
 
 const COMMENTS: ReadonlyArray<PrComment> = [
   buildNote({
@@ -561,6 +566,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     path: 'src/webhooks/retryPolicy.test.ts',
     line: 31,
     createdMinutesAgo: 300,
+    isOutdated: true,
     body: 'This test sleeps for real between retries and flakes on a loaded runner. Can it use fake timers?',
   }),
   buildNote({
@@ -569,7 +575,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     path: 'src/webhooks/config.ts',
     line: 3,
     createdMinutesAgo: 500,
-    body: "Typo: 'shoudl' should be 'should' in the comment above the retry constant.",
+    body: `${TYPO_BEFORE} ${TYPO_ADDED}`,
   }),
   buildNote({
     threadId: T9,
@@ -591,6 +597,45 @@ const EXTRA_COMMENTS: ReadonlyArray<PrComment> = EXTRA_NEW.map((extra) =>
     body: extra.body,
   }),
 );
+
+const TYPO_SNAPSHOT: ResolveSourceSnapshot = {
+  body: TYPO_BEFORE,
+  author: 'kenji-w',
+  fingerprint: 'mock-typo-before',
+  seenAt: msAgo({ minutes: 480 }),
+  replyIds: [],
+  changed: {
+    body: `${TYPO_BEFORE} ${TYPO_ADDED}`,
+    author: 'kenji-w',
+    fingerprint: 'mock-typo-after',
+    seenAt: msAgo({ minutes: 30 }),
+  },
+};
+
+const METRICS_REPLY: PrComment = {
+  id: 'mock-resolve-comment-reply-metrics',
+  author: 'nadia-p',
+  authorAvatarUrl: null,
+  body: 'Agreed. A counter per give-up reason would help too.',
+  createdAt: isoAgo({ minutes: 20 }),
+  url: `${PR.url}#discussion_reply_metrics`,
+  source: 'review',
+  path: 'src/webhooks/metrics.ts',
+  line: 18,
+  resolved: false,
+  outdated: false,
+  threadId: T2,
+  inReplyToId: `mock-resolve-comment-${T2}`,
+};
+
+const METRICS_SNAPSHOT: ResolveSourceSnapshot = {
+  body: 'Same loop should emit a metric when it gives up, otherwise we will never see this happening in production.',
+  author: 'kenji-w',
+  fingerprint: 'mock-metrics-root',
+  seenAt: msAgo({ minutes: 85 }),
+  replyIds: [],
+  changed: null,
+};
 
 const MOUNT_TARGET: MountTargetSnapshot = {
   mountId: 'mock-resolve-mount-payments-api' as MountId,
@@ -996,6 +1041,9 @@ export const seedResolveScene = ({
     sessionResolveCheckRuns: { [SESSION_ID]: CHECK_RUNS },
     sessionResolvePublications: { [SESSION_ID]: [PUBLICATION] },
     sessionResolveUncapturedWork: { [SESSION_ID]: null },
+    sessionResolveSourceSnapshots: {
+      [SESSION_ID]: { [T8]: TYPO_SNAPSHOT, [T2]: METRICS_SNAPSHOT },
+    },
     resolveQueueView: {
       [SESSION_ID]: EMPTY_RESOLVE_QUEUE_VIEW,
     },
@@ -1013,7 +1061,9 @@ export const seedResolveScene = ({
         pr: PR,
         detail: {
           prNumber: PR.number,
-          comments: selectable ? [...COMMENTS, ...EXTRA_COMMENTS] : COMMENTS,
+          comments: selectable
+            ? [...COMMENTS, ...EXTRA_COMMENTS, METRICS_REPLY]
+            : [...COMMENTS, METRICS_REPLY],
           reviews: [],
           reviewRequests: [],
           checks: [],

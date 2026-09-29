@@ -422,7 +422,7 @@ Turn review comments into commits without writing the fix yourself. Review lists
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" alt="The Review list for PR #318 grouped as Open 6, Waiting for the push 2 and Done 1, with each row marked Outdated, Needs you, Drafting, Ready, Not started, Accepted, Skipped or Pushed, and a row of count chips above">
 </picture>
 
-Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Ready to push** and **Done**. A single summary line under the title counts them, and the list menu filters by state.
+Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Comment changed**, grouped as **Open**, **Ready to push** and **Done**. A single summary line under the title counts them, and the list menu filters by state. A comment is marked changed only when the reviewer really edited the original comment after the draft (a new reply shows as **New reply from** the author and never blocks Accept): the card shows the text before and after and who wrote it, and you choose **Redraft with the new comment** or **Keep the draft**. A comment whose line moved on GitHub says so, and stays as it is.
 
 ### Failed drafts
 
