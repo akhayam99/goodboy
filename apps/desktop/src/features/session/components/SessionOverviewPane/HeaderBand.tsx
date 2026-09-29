@@ -11,6 +11,7 @@ import { ContextChip } from './ContextChip';
 import { GoalTeaser } from './GoalTeaser';
 import { LinkedWorkChips } from './LinkedWorkChips';
 import { AttentionChips } from './AttentionChips';
+import { ChatOriginRow } from './ChatOriginRow';
 import { ProjectMountRows } from './ProjectMountRows';
 import { SessionCostChip } from './SessionCostChip';
 import { ArchivedRestore } from './ArchivedRestore';
@@ -83,6 +84,7 @@ export const HeaderBand = ({ session, onSelectLens }: Props) => {
             <SessionDestructiveActions session={session} />
           </div>
         </div>
+        <ChatOriginRow session={session} />
         <GoalTeaser session={session} />
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2">

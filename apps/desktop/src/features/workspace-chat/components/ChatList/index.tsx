@@ -1,13 +1,14 @@
-import { useMemo, useState } from 'react';
-import { Search, SquarePen } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronRight, Search, SquarePen } from 'lucide-react';
 import { Button, ScrollFade } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
 import { pluralize } from '../../../../shared/utils/pluralize';
 import { useAppStore } from '../../../../store';
 import { selectChatGroups } from '../../../../store/slices/chats/selectChatGroups';
 import { chatRowTime } from '../../chatRowTime';
+import { ChatArchivedView } from './ChatArchivedView';
 import { ChatListGroup, type ChatListGroupRow } from './ChatListGroup';
 import { ChatUndoRow } from './ChatUndoRow';
 
@@ -18,6 +19,7 @@ type Props = {
   readonly onSelect: (chatId: ChatId) => void;
   readonly onNew: () => void;
   readonly onArchived: (chatIds: ReadonlyArray<ChatId>) => void;
+  readonly onDeleted: (chatIds: ReadonlyArray<ChatId>) => void;
 };
 
 type Archived = {
@@ -39,6 +41,8 @@ type RowsParams = {
 
 const NO_ANSWER = 'No answer yet';
 
+const NO_CHATS: ReadonlyArray<ChatSummary> = [];
+
 const rowsOf = ({ chats, now, isIdle }: RowsParams): ReadonlyArray<ChatListGroupRow> =>
   chats.map((chat) => {
     const preview = markdownPreview({ text: chat.preview });
@@ -49,6 +53,7 @@ const rowsOf = ({ chats, now, isIdle }: RowsParams): ReadonlyArray<ChatListGroup
       time: chatRowTime({ chat, now }),
       isIdle,
       isPinned: chat.pinnedAt !== null,
+      models: chat.modelsUsed,
     };
   });
 
@@ -68,14 +73,25 @@ export const ChatList = ({
   onSelect,
   onNew,
   onArchived,
+  onDeleted,
 }: Props) => {
   const archiveChats = useAppStore((state) => state.archiveChats);
   const archiveIdleChats = useAppStore((state) => state.archiveIdleChats);
   const restoreChats = useAppStore((state) => state.restoreChats);
+  const deleteChats = useAppStore((state) => state.deleteChats);
+  const loadArchivedChats = useAppStore((state) => state.loadArchivedChats);
+  const archivedChats = useAppStore(
+    (state) => state.archivedChatsByWorkspace[workspaceId] ?? NO_CHATS,
+  );
   const pinChat = useAppStore((state) => state.pinChat);
   const [query, setQuery] = useState('');
   const [archived, setArchived] = useState<Archived | null>(null);
+  const [isArchivedView, setIsArchivedView] = useState(false);
   const needle = query.trim().toLowerCase();
+
+  useEffect(() => {
+    void loadArchivedChats({ workspaceId });
+  }, [workspaceId, loadArchivedChats]);
 
   const groups = useMemo(() => {
     const now = Date.now();
@@ -119,6 +135,13 @@ export const ChatList = ({
     setArchived(null);
   };
 
+  const deleteMany = async (chatIds: ReadonlyArray<ChatId>): Promise<void> => {
+    await deleteChats({ workspaceId, chatIds });
+    onDeleted(chatIds);
+  };
+
+  const deleteOne = (chatId: ChatId): Promise<void> => deleteMany([chatId]);
+
   const onPin = ({ chatId, isPinned }: PinParams): void => {
     void pinChat({ chatId, isPinned });
   };
@@ -126,6 +149,19 @@ export const ChatList = ({
   const undoRow = archived === null ? null : <ChatUndoRow label={archived.label} onUndo={undo} />;
   const isEmpty =
     groups.pinned.length + groups.today.length + groups.week.length + groups.idle.length === 0;
+
+  if (isArchivedView) {
+    return (
+      <ChatArchivedView
+        chats={archivedChats}
+        selectedId={selectedId}
+        onSelect={onSelect}
+        onBack={() => setIsArchivedView(false)}
+        onRestore={(chatId) => void restoreChats({ workspaceId, chatIds: [chatId] })}
+        onDelete={deleteMany}
+      />
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2 px-2 pt-2">
@@ -145,7 +181,7 @@ export const ChatList = ({
         />
       </label>
       <ScrollFade className="flex-1">
-        <nav aria-label="Chats" className="flex flex-col gap-3 pb-3">
+        <nav aria-label="Chats" className="flex flex-col gap-3 pb-3 pr-3.5">
           {archived !== null && !archived.isIdle ? undoRow : null}
           <ChatListGroup
             title="Pinned"
@@ -154,6 +190,7 @@ export const ChatList = ({
             onSelect={onSelect}
             onPin={onPin}
             onArchive={archiveOne}
+            onDelete={deleteOne}
           />
           <ChatListGroup
             title="Today"
@@ -162,6 +199,7 @@ export const ChatList = ({
             onSelect={onSelect}
             onPin={onPin}
             onArchive={archiveOne}
+            onDelete={deleteOne}
           />
           <ChatListGroup
             title="This week"
@@ -170,6 +208,7 @@ export const ChatList = ({
             onSelect={onSelect}
             onPin={onPin}
             onArchive={archiveOne}
+            onDelete={deleteOne}
           />
           <ChatListGroup
             title="Idle"
@@ -178,6 +217,7 @@ export const ChatList = ({
             onSelect={onSelect}
             onPin={onPin}
             onArchive={archiveOne}
+            onDelete={deleteOne}
             action={
               needle === '' && groups.idle.length > 0
                 ? { label: 'Archive idle', onClick: () => void archiveIdle() }
@@ -192,6 +232,21 @@ export const ChatList = ({
           ) : null}
         </nav>
       </ScrollFade>
+      {archivedChats.length === 0 ? null : (
+        <div className="shrink-0 pb-2">
+          <button
+            type="button"
+            onClick={() => setIsArchivedView(true)}
+            className="flex h-8 w-full items-center gap-2 rounded-md px-2 text-label text-muted-foreground motion-safe:transition-colors hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+          >
+            <CONCEPT_ICONS.archive size={ICON_SIZE.control} aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-left">
+              Archived · {archivedChats.length}
+            </span>
+            <ChevronRight size={ICON_SIZE.control} aria-hidden />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
