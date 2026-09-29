@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { clampTitle, MAX_SESSION_TITLE_LENGTH } from './titleLimit';
 

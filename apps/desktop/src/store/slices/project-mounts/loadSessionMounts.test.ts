@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, MountOperation, ProjectId, SessionId, SessionMount } from '@goodboy/types';
 

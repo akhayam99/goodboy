@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_CAPABILITIES, AUTO_DEFAULTS, PLAN_KIT_GUIDE, ROLE_REGISTRY } from '@goodboy/core';
 import type { Agent, AgentId, AgentRole, SessionId, StepId, WorkflowRunId } from '@goodboy/types';

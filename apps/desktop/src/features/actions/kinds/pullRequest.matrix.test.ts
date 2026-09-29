@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PullRequestState, SessionId } from '@goodboy/types';
 import { matrixOf, slotCount } from '../../../__tests__/helpers/actionMatrix';

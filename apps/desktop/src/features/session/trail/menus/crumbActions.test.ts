@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { Agent } from '@goodboy/types';
 import { newArtifactAction, retryStepActions, savedCopyActions } from './crumbActions';

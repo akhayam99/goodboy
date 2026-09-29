@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { GhRunner } from '@goodboy/core';
 import { addReportComment, fileReportIssue, findSimilarIssue } from './reportDestination';

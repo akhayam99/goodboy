@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Database, TransactionParams } from '@goodboy/db';
 import type { MountId } from '@goodboy/types';

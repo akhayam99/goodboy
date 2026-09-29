@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { groupByDay } from '../../shared/utils/groupByDay';
 import type { InboxRecord } from './types';

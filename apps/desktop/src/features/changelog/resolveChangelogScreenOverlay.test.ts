@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { CHANGELOG_SCREENS, isChangelogScreen } from './changelogScreens';
 import { resolveChangelogScreenOverlay } from './resolveChangelogScreenOverlay';

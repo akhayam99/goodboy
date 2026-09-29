@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrCheckRun } from '@goodboy/types';
 import { checksRollup } from './checksRollup';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, OpenQuestion } from '@goodboy/types';
 import type { TimelineStreamItem } from './buildTimelineStream';

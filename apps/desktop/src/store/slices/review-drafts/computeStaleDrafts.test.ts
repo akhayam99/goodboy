@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { parseUnifiedDiff } from '@goodboy/core';
 import type { IsoDateTime, PrReviewDraft, SessionId } from '@goodboy/types';

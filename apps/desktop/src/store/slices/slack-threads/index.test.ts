@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { OverrideSettings, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store';

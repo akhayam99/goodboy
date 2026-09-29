@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectId } from '@goodboy/types';
 import type { PrWriteAnnouncement } from '../../../features/review/prWriteBus';

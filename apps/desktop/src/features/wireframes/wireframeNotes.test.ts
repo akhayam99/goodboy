@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WireframeDocument } from '@goodboy/core';
 import { screenLinks, screenNodeNotes } from './wireframeNotes';

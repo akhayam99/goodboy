@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { AgentId, PrComment, PullRequestState, SessionId } from '@goodboy/types';
 import type { CommentThread } from '../github/comment-threads';

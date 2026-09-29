@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { RailGroupInput } from '../../workTreeModel/railGeometry';
 import type { TimelineStreamItem } from './buildTimelineStream';

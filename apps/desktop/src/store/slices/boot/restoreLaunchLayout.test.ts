@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, Workspace, WorkspaceId } from '@goodboy/types';
 import type { Location } from '../navigation/types';

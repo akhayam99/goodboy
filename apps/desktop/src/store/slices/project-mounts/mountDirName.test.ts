@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { MountId } from '@goodboy/types';
 import { mountDirName } from './mountDirName';

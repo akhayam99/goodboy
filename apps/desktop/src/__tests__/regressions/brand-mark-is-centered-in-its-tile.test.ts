@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { deflateSync, inflateSync } from 'zlib';

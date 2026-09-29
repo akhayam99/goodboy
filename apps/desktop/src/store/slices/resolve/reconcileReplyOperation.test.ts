@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrComment, ResolvePublicationThread } from '@goodboy/types';
 import { reconcileReplyOperation } from './reconcileReplyOperation';

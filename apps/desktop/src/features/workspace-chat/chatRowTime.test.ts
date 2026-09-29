@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime } from '@goodboy/types';
 import { chatRowTime } from './chatRowTime';

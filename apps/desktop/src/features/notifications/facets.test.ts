@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Notification, NotificationCountBucket } from '@goodboy/db';
 import type { IsoDateTime, SessionId } from '@goodboy/types';

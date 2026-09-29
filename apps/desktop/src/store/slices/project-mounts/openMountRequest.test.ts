@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 import { openMountRequest } from './openMountRequest';

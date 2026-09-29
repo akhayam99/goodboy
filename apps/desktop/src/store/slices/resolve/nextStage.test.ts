@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ResolveStage } from '@goodboy/types';
 import { nextStage, type ResolveStageEvent } from './nextStage';

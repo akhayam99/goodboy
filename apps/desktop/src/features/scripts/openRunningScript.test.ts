@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionPlace } from '../../store/slices/navigation/place';
 import type { MountId, SessionId } from '@goodboy/types';

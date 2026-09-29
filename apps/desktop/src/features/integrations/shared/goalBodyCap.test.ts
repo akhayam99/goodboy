@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { GithubIssue } from '@goodboy/types';
 import { goalFromIssue as goalFromGithubIssue } from '../../github/goal-from-issue';

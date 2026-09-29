@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionArtifact, SessionId } from '@goodboy/types';
 

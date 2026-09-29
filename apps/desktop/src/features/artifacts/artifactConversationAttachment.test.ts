@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SessionArtifact } from '@goodboy/types';
 import { appendArtifactAttachment } from './artifactConversationAttachment';

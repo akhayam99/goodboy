@@ -1,4 +1,4 @@
-// @vitest-environment happy-dom
+// @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { checkMock, relaunchMock, invokeMock } = vi.hoisted(() => ({

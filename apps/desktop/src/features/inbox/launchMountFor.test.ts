@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Project, ProjectId, ProjectSentryLink } from '@goodboy/types';
 import type { SentryCodeMapping } from '../integrations/sentry/client';

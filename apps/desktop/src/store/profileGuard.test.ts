@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceProfile } from '@goodboy/types';
 import { buildProfileGuard } from './profileGuard';

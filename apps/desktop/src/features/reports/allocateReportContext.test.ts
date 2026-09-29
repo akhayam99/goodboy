@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { allocateReportContext, REPORT_ALLOCATION_LIMITS } from './allocateReportContext';
 

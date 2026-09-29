@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, SessionId } from '@goodboy/types';
 import type { ScriptRunRecord } from '../../../features/scripts/scripts';

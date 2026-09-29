@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, MountId, PullRequestState } from '@goodboy/types';
 import { toMountPullRequestLink } from './mountPrLink';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { OverrideSettings } from '@goodboy/types';
 import { overridesWithAttribution } from '../../__tests__/helpers/attributionOverrides';

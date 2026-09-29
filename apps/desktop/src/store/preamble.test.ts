@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type { ContextSlot, IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { describe, expect, it, vi } from 'vitest';
 import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';

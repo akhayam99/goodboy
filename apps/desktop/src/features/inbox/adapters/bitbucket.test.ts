@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WorkspaceId } from '@goodboy/types';
 import type { BitbucketPullRequest, BitbucketRepo } from '../../integrations/bitbucket/client';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { combineInto, initialPlanItems, setVerb } from './historyPlan';
 import { historyGroupOf, historyRowMarks } from './historyRowMarks';

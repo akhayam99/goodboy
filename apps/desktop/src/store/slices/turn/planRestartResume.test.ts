@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, IsoDateTime, ProviderId, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { RESTART_RESUME_PROMPT, planRestartResume } from './planRestartResume';

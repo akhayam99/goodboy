@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TurnEvent } from '@goodboy/types';
 import { encodeAuthRequiredMessage } from '../chat/turn';

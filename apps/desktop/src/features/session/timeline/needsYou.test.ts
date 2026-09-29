@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { OpenQuestion } from '@goodboy/types';
 import { DONE_ROW_STATE, type RowState } from '../../workTreeModel/rowState';

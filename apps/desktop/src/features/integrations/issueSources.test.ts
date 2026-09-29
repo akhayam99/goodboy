@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IntegrationBinding, WorkspaceIntegrationProvider } from '@goodboy/types';
 import { issueSourcesOfKind, resolveIssueSources } from './issueSources';

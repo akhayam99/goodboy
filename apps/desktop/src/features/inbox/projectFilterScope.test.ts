@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { NO_INBOX_FILTERS, type InboxFilters } from './kindFilter';
 import { projectFilterNote, projectFilterScope } from './projectFilterScope';

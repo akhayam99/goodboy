@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ParseContext } from '@goodboy/core';
 import type { IsoDateTime, ProviderRunId } from '@goodboy/types';

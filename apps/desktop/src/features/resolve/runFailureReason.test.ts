@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
 import { runFailureReason } from './runFailureReason';

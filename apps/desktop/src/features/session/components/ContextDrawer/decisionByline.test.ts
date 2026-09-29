@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { AgentId, IsoDateTime, SessionDecision, SessionId } from '@goodboy/types';
 import { activeDecisionByline, closedDecisionByline, isAfterBaseline } from './decisionByline';

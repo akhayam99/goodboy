@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { LimitsChip } from '@goodboy/core';
 import type { IsoDateTime } from '@goodboy/types';

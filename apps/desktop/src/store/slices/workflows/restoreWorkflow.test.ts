@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { IsoDateTime, SessionId, WorkflowId, WorkflowRunId } from '@goodboy/types';
 

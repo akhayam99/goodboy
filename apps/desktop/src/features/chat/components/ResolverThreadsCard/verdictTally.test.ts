@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { verdictTally } from './verdictTally';
 import { RESOLVER_OUTCOME_LABEL, RESOLVER_OUTCOME_ORDER, resolverOutcome } from './resolverOutcome';

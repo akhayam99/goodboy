@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { CircleCheck } from 'lucide-react';
 import { stateDescription, type StatePresentation } from './statePresentation';

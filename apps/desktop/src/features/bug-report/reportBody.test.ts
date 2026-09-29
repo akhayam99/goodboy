@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { MAX_ISSUE_URL_BYTES } from '../settings/issueUrl';
 import {

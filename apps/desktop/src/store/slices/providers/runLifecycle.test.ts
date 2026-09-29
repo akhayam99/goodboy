@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDLE_CONNECT, INITIAL_CONNECT_MAP, INITIAL_LIFECYCLE_MAP } from './types';
 import { runLifecycle } from './runLifecycle';

@@ -1,4 +1,4 @@
-// @vitest-environment happy-dom
+// @vitest-environment node
 
 import { describe, expect, it } from 'vitest';
 import type { ReportArtifact } from '@goodboy/types';

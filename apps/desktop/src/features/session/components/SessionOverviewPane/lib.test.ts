@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, OpenQuestion, SessionStageInfo } from '@goodboy/types';
 import { attentionAgentId, resolveAttentionTarget, selectOpenQuestions } from './lib';

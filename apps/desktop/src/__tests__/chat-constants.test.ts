@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { suggestHeavierModel, suggestLighterModel } from '../features/chat/utils/chat-constants';
 
