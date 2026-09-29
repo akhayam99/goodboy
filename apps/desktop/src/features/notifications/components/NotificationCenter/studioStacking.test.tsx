@@ -39,10 +39,6 @@ vi.mock('../../../../store', () => {
 import { NotificationCenter } from './index';
 
 const stylesCssPath = resolve(__dirname, '../../../../styles.css');
-const appShellPath = resolve(
-  __dirname,
-  '../../../../../../../packages/ui/src/components/AppShell.tsx',
-);
 
 const readZIndexToken = (name: string): number => {
   const css = readFileSync(stylesCssPath, 'utf8');
@@ -84,11 +80,6 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('transient popover stacking above a full-page studio', () => {
-  it('keeps the app shell studio slot pinned on the studio layer', () => {
-    const source = readFileSync(appShellPath, 'utf8');
-    expect(source).toContain('relative z-studio flex min-h-0 min-w-0 flex-col overflow-hidden');
-  });
-
   it('orders the named z-scale above the studio floor', () => {
     const studio = readZIndexToken('studio');
     const popoverBackdrop = readZIndexToken('popover-backdrop');
@@ -135,7 +126,7 @@ describe('transient popover stacking above a full-page studio', () => {
 
     const shell = container.querySelector('[data-studio-overlay]') as HTMLElement;
     const slot = shell.parentElement as HTMLElement;
-    expect(slot.className).toContain('z-studio');
+    expect(slot.classList.contains('z-studio')).toBe(true);
     expect(shell.className).toContain('animate-studio-in');
 
     await act(async () => {

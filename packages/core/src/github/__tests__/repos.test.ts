@@ -1,10 +1,6 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import type { GhRunner } from '../gh';
 import { createGithubRepo, listOwnedRepos, validateGithubRepoName } from '../repos';
-
-const reposSource = readFileSync(fileURLToPath(new URL('../repos.ts', import.meta.url)), 'utf8');
 
 const makeRunner = (result: { stdout: string; stderr: string; exitCode: number }): GhRunner => ({
   run: vi.fn().mockResolvedValue(result),
@@ -18,21 +14,42 @@ const repo = (nameWithOwner: string, isPrivate = false) => ({
 });
 
 describe('the repos module surface', () => {
-  it('carries no gh subcommand beyond repo create, repo view and repo list', () => {
-    const subcommands = Array.from(reposSource.matchAll(/'repo',\s*'([a-z-]+)'/g)).map(
-      (match) => match[1],
-    );
+  it('only ever runs gh repo create, repo view and repo list, never a destructive call', async () => {
+    const calls: Array<ReadonlyArray<string>> = [];
+    const outcomes = [
+      { stdout: JSON.stringify([repo('acme/widgets')]), stderr: '', exitCode: 0 },
+      { stdout: '', stderr: '', exitCode: 0 },
+      { stdout: JSON.stringify(repo('acme/widgets', true)), stderr: '', exitCode: 0 },
+      { stdout: '', stderr: 'HTTP 502', exitCode: 1 },
+      { stdout: '', stderr: '', exitCode: 0 },
+      { stdout: '', stderr: 'HTTP 502', exitCode: 1 },
+    ];
+    const runner: GhRunner = {
+      run: async (args) => {
+        calls.push(args);
+        return outcomes[calls.length - 1] ?? { stdout: '', stderr: 'unexpected', exitCode: 1 };
+      },
+    };
 
-    expect(subcommands.length).toBeGreaterThan(0);
-    for (const subcommand of subcommands) {
-      expect(['create', 'view', 'list']).toContain(subcommand);
+    await listOwnedRepos(runner);
+    await createGithubRepo({ runner, name: 'widgets', owner: 'acme', visibility: 'private' });
+    await createGithubRepo({ runner, name: 'widgets', owner: 'acme', visibility: 'public' });
+    await createGithubRepo({ runner, name: 'widgets', owner: 'acme', visibility: 'public' });
+
+    expect(calls.map((args) => args[1])).toEqual([
+      'list',
+      'create',
+      'view',
+      'create',
+      'create',
+      'view',
+    ]);
+    for (const args of calls) {
+      expect(args[0]).toBe('repo');
+      expect(args).not.toContain('delete');
+      expect(args).not.toContain('api');
+      expect(args).not.toContain('-X');
     }
-  });
-
-  it('never reaches for a destructive gh call', () => {
-    expect(reposSource).not.toContain('delete');
-    expect(reposSource).not.toContain("'api'");
-    expect(reposSource).not.toContain('-X');
   });
 });
 

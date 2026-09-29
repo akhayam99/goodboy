@@ -121,6 +121,7 @@ describe('parsePlannerOutput', () => {
   });
 
   it('exposes the raw input on error', () => {
+    expect.assertions(2);
     try {
       parsePlannerOutput('not json');
     } catch (err) {
