@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { ModelPickerScene, ModelPickerTriggersScene } from './ModelPickerScenes';
+import { ModelPickerClaudeScene } from './ModelPickerClaudeScene';
 
 afterEach(() => {
   cleanup();
@@ -61,6 +62,29 @@ describe('ModelPickerScene', () => {
     ).toBe('true');
   });
 
+  it('opens the Claude popover on Sonnet 5.5 with its version ladder', () => {
+    vi.useFakeTimers();
+    render(<ModelPickerClaudeScene />);
+    openPickers();
+
+    const claude = within(screen.getByRole('dialog', { name: 'Claude routing' }));
+    expect(
+      within(claude.getByRole('group', { name: 'Model' }))
+        .getByRole('button', { name: 'Sonnet' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      within(claude.getByRole('group', { name: 'Version' }))
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual(['4.6', '5', '5.5']);
+    expect(
+      within(claude.getByRole('group', { name: 'Version' }))
+        .getByRole('button', { name: '5.5' })
+        .getAttribute('aria-pressed'),
+    ).toBe('true');
+  });
+
   it('lines up one closed trigger per grammar the picker can produce', () => {
     render(<ModelPickerTriggersScene />);
     expect(
@@ -73,6 +97,7 @@ describe('ModelPickerScene', () => {
       'codex astra routing: Codex · Astra · High',
       'cursor kimi routing: Cursor · Kimi K3 · High',
       'claude opus routing: Claude · Opus 5.5 · High',
+      'claude sonnet routing: Claude · Sonnet 5.5 · Medium',
       'cursor codex routing: Cursor · GPT-5.3 Codex',
       'cursor auto routing: Cursor · Auto',
     ]);

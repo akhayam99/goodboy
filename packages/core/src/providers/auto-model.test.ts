@@ -121,5 +121,15 @@ describe('autoModelForRole', () => {
       expect(opus?.thinkerOnly).toBe(false);
       expect(opus55?.thinkerOnly).toBe(false);
     });
+
+    it('ranks Sonnet 5.5 above Sonnet 5 and below every Opus', () => {
+      const anthropic = PROVIDER_CAPABILITIES.anthropic.models;
+      const sonnet = anthropic.find((model) => model.id === 'sonnet-5');
+      const sonnet55 = anthropic.find((model) => model.id === 'sonnet-5.5');
+      const opus46 = anthropic.find((model) => model.id === 'opus-4.6');
+      expect(sonnet55?.weight ?? 0).toBeGreaterThan(sonnet?.weight ?? 0);
+      expect(opus46?.weight ?? 0).toBeGreaterThan(sonnet55?.weight ?? 0);
+      expect(sonnet55?.thinkerOnly).toBe(false);
+    });
   });
 });

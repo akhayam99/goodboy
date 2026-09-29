@@ -54,6 +54,7 @@ import {
   ModelPickerScene,
   ModelPickerTriggersScene,
 } from './scenes/ModelPickerScenes';
+import { ModelPickerClaudeScene } from './scenes/ModelPickerClaudeScene';
 
 import { FrameScene } from './scenes/audit/FrameScene';
 import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
@@ -153,6 +154,7 @@ export const MOCK_SCENES = {
   'model-picker': ModelPickerScene,
   'model-picker-cursor': ModelPickerCursorScene,
   'model-picker-codex': ModelPickerCodexScene,
+  'model-picker-claude': ModelPickerClaudeScene,
   'model-picker-triggers': ModelPickerTriggersScene,
   frame: FrameScene,
   'board-states': BoardStatesScene,

@@ -128,6 +128,23 @@ export const ANTHROPIC_CATALOG = [
     defaultEffort: 'high',
   },
   {
+    key: 'sonnet-5.5',
+    label: 'Sonnet 5.5',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'claude',
+      group: 'Sonnet',
+      version: '5.5',
+      order: 23,
+      costTier: 'mid',
+    },
+    provider: 'anthropic',
+    cliId: 'claude-sonnet-5-5',
+    efforts: SONNET_EFFORTS,
+    defaultEffort: 'medium',
+  },
+  {
     key: 'sonnet-5',
     label: 'Sonnet 5',
     tier: 'turn',

@@ -17,6 +17,7 @@ describe('OPENROUTER_MODELS', () => {
       'opus-5',
       'fable-5.1',
       'fable-5',
+      'sonnet-5.5',
       'sonnet-5',
       'sonnet-4.6',
       'haiku-4.5',

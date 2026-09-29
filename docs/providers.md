@@ -349,6 +349,10 @@ command again, which is how the cursor and gemini installers update:
 
 - `minCliVersion` on a catalog model is the oldest CLI that runs it. Opus 5.5
   needs Claude CLI 2.1.280 and Fable 5.1 needs 2.1.251
+- Sonnet 5.5 has no `minCliVersion`. Claude CLI 2.1.282 runs it (it prints an
+  `unrecognized_model` note and serves the model anyway), and no older floor is
+  known, so a refusal on an older CLI is left to `learnCliRequirement`. Write a
+  floor only when a refusal or a release note names it
 - A `cli_too_old` refusal also teaches the gate. `learnCliRequirement` stores the
   required version per provider and model in the `provider.cliRequirements`
   setting, so the next time the gate warns before the send even for a model with
@@ -564,6 +568,10 @@ What the catalogs do not tell you:
   opencode, OpenRouter and Moonshot return `null` on purpose.
   `model-price.test.ts` checks that every anthropic, cursor, codex and gemini
   catalog model has a price
+- A rate the vendor has not published yet is copied from the model it follows and
+  carries `assumed: true` in `claude/cost.ts` (Opus 5.5 and Sonnet 5.5 today), so
+  `costCoverage` reports its spend as approximate. `pricing.json` keeps measured
+  rates only
 
 When a provider ships or retires a model, update three files under
 `packages/core/src/providers/<cli>/` together:
