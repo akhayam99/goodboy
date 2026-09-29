@@ -34,9 +34,10 @@ never a new file.
 - **Never recolour by exporting a new PNG.** Change the fill.
 - **Never rotate, skew, add a shadow, outline or gradient to it.** At 24 px,
   where it shows up most often, the mask has no room for any of that.
-- **Never place the glyph beside the wordmark when the mascot is already
-  present** in the same frame, as a watermark or as the avatar next to it.
-  Once is identity, twice is clip art.
+- **Never place the glyph beside the wordmark.** Where the dog is already in
+  the frame, the word `Goodboy` stands as plain text. The one repeat we allow
+  is the large faded dog at the right edge of a social banner, cropped by the
+  edge, so the banner still reads as ours when the avatar is small.
 
 ## The lockup
 
@@ -93,9 +94,12 @@ and do not give it a border, a lighter dark-theme variant or a glow. On the
 site, the favicon and the dock the tile stands alone and does its job.
 `brand-mark-is-centered-in-its-tile.test.ts` checks both halves.
 
-The background is white on the site and charcoal in the app, and both are
-correct. An asset made for one does not automatically work on the other. So a
-social image says which background it was built for.
+The site has a light and a dark theme, and the app opens in dark. Social
+images and the link preview are **built for the dark theme**: they read the
+site's dark tokens (`--bg`, `--t1` to `--t4`, `--accent`, `--tile-ring`) from
+`website/src/styles.css` and the dark provider colours from the `@theme`
+block of `apps/desktop/src/styles.css`. On that background the black tile
+carries its `--tile-ring`, as it does on the dark site, or it disappears.
 
 ## Type
 
@@ -116,8 +120,10 @@ in the system mono stack. The type roles and where each feature is on live in
 
 When an asset shows what Goodboy works with, the logos come from the code, not
 from a designer's memory. The agents come from `PROVIDER_IDS` in
-`packages/types/src/provider-registry.ts`. The rest come from the integration
-union in `packages/types/src/workspace.ts`. The glyphs themselves live in
+`packages/types/src/provider-registry.ts`. The rest come from
+`INTEGRATION_BINDING_PROVIDERS` in `packages/types/src/workspace.ts`, drawn in
+the generator's `INTEGRATION_ORDER`. The generator stops when the two lists
+differ. The glyphs themselves live in
 `packages/ui/src/components/brandIcons.tsx`, and the colours in the
 `--color-provider-*` tokens.
 
@@ -141,9 +147,25 @@ suggests. Every one of these is generated, never cropped by hand.
 | --------------------------- | ------------------------ | ----------------------------------------------------------------------------------- |
 | X avatar                    | 1024x1024                | The corners, because of the circle crop                                             |
 | X header                    | 1500x500                 | Bottom left, where the avatar overlaps, and the top and bottom edges, cut on mobile |
+| LinkedIn company logo       | 400x400, rendered at 2x  | The corners, because the logo sits on a rounded square                              |
 | LinkedIn company cover      | 1128x191, rendered at 2x | Bottom left, under the company logo                                                 |
 | LinkedIn profile background | 1584x396                 | The left third, under the profile photo                                             |
 | og-image                    | 1200x630                 | Nothing, but crawlers only take the PNG, so the PNG is the only source              |
+
+What each one shows:
+
+- **og-image**, the link preview: the tile and the word, the headline "Stop
+  re-explaining yourself." with everything after "Stop" in the accent, one
+  line under it, then the domain, the provider row with its date and "free
+  and source-available".
+- **Banners** (X header, both LinkedIn ones): the word `Goodboy` as text, the
+  same headline, and the large faded dog cropped by the right edge over a soft
+  accent wash on that side. The X header and the LinkedIn profile background
+  add the labelled `Agents` and `Your work` rows and their date. The company
+  cover is too thin for them.
+- **Avatars** (X avatar, LinkedIn company logo): the black tile edge to edge,
+  the white dog in the middle at 58% of the side, so a circle crop keeps it
+  whole.
 
 A banner shows up much smaller than it is made. 1500 px wide becomes about 600
 on desktop and 440 on mobile. Anything under about 40 px in the source can't be
@@ -169,7 +191,7 @@ those, render at `--force-device-scale-factor=2` and let the platform scale it
 down. So far every LinkedIn cover needs this.
 
 `website/scripts/build-brand-assets.mjs` owns every generated surface: the
-five social formats above, plus `favicon` and `app-icon`. To rebuild one
+six social formats above, plus `favicon` and `app-icon`. To rebuild one
 surface and leave the rest alone, pass its slug:
 
 ```

@@ -31,6 +31,7 @@ const DEV_ICON_CONTENT_RATIO = 0.8125;
 const DEV_ICON_CORNER_RADIUS_RATIO = 0.2237;
 const DEV_ICON_FILES = ['icon.png', '32x32.png', '128x128.png', '128x128@2x.png'];
 const PNG_WIDTH_OFFSET_BYTES = 16;
+const SOCIAL_FORMAT_COUNT = 6;
 
 const INTER_FONT_PATH = resolve(WEBSITE_DIRECTORY, 'public/fonts/InterVariable-latin-v19.woff2');
 const INTER_FONT_BASE64 = readFileSync(INTER_FONT_PATH).toString('base64');
@@ -113,10 +114,10 @@ const parseSocialFormats = (brandSource) => {
         keepClear,
       };
     });
-  if (rows.length === 5) {
+  if (rows.length === SOCIAL_FORMAT_COUNT) {
     return rows;
   }
-  throw new Error(`Expected five Social formats rows, found ${rows.length}`);
+  throw new Error(`Expected ${SOCIAL_FORMAT_COUNT} Social formats rows, found ${rows.length}`);
 };
 
 const parseProviderIds = (providerRegistrySource) => {
@@ -232,29 +233,46 @@ const toHexColor = (color) => {
   });
 };
 
-const resolveBrands = ({ brands, iconSource, lightThemeSource }) =>
+const resolveBrands = ({ brands, iconSource, themeSource }) =>
   brands.map(({ id, iconName, cssVar }) => ({
     id,
     path: extractIconPath({ iconSource, componentName: iconName }),
-    color: extractCssValue({ cssSource: lightThemeSource, variableName: cssVar }),
+    color: extractCssValue({ cssSource: themeSource, variableName: cssVar }),
   }));
+
+const INTEGRATION_ORDER = ['github', 'gitlab', 'bitbucket', 'linear', 'jira', 'sentry', 'slack'];
+
+const parseIntegrationIds = (workspaceTypesSource) => {
+  const arraySource = requireMatch({
+    source: workspaceTypesSource,
+    pattern: /export const INTEGRATION_BINDING_PROVIDERS\s*=\s*\[([\s\S]*?)\]/,
+    description: 'INTEGRATION_BINDING_PROVIDERS in workspace.ts',
+  })[1];
+  return extractQuotedValues({ source: arraySource, description: 'INTEGRATION_BINDING_PROVIDERS' });
+};
+
+const integrationBrandEntries = ({ integrationIds }) => {
+  const missing = integrationIds.filter((id) => !INTEGRATION_ORDER.includes(id));
+  if (missing.length > 0 || integrationIds.length !== INTEGRATION_ORDER.length) {
+    throw new Error(
+      `The Your work row must show every integration: add ${missing.join(', ')} to INTEGRATION_ORDER`,
+    );
+  }
+  return INTEGRATION_ORDER.map((id) => ({
+    id,
+    iconName: `${id[0].toUpperCase()}${id.slice(1)}Icon`,
+    cssVar: `--color-provider-${id}`,
+  }));
+};
 
 const createMascot = ({ className, mascotBase64 }) =>
   `<i class="${className}" style="-webkit-mask: url(data:image/png;base64,${mascotBase64}) no-repeat center / contain"></i>`;
-
-const createLockupHtml = ({ mascotBase64, tagline = '' }) => `
-  <div class="lockup">
-    ${createMascot({ className: 'mascot', mascotBase64 })}
-    <div class="lockup-copy">
-      <span>Goodboy</span>
-      ${tagline === '' ? '' : `<small>${tagline}</small>`}
-    </div>
-  </div>`;
 
 const createBaseHtml = ({
   width,
   height,
   accent,
+  palette,
   bodyClass,
   content,
   extraCss = '',
@@ -265,63 +283,69 @@ const createBaseHtml = ({
   @font-face { font-family: "Inter"; font-style: normal; font-weight: 100 900; src: url(data:font/woff2;base64,${INTER_FONT_BASE64}) format("woff2-variations") }
   * { margin: 0; padding: 0; box-sizing: border-box }
   html, body { width: ${width}px; height: ${height}px }
-  body { background: #fff; color: #101113; font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; font-optical-sizing: auto; font-feature-settings: "calt" 1; overflow: hidden }
+  body { background: ${palette.bg}; color: ${palette.t1}; font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; font-optical-sizing: auto; font-feature-settings: "calt" 1; overflow: hidden }
   .mascot { display: block; background: ${accent} }
   ${extraCss}
 </style>
 <body class="${bodyClass}">${content}</body>`;
 
-const createOgHtml = ({ format, accent, tileColor, mascotBase64, providerBrands, date }) => {
-  const marks = providerBrands
+const createMarks = ({ brands, size }) =>
+  brands
     .map(
       ({ id, path, color }) =>
-        `<svg aria-label="${id}" width="30" height="30" viewBox="0 0 24 24" fill="${color}"><path d="${path}"/></svg>`,
+        `<svg aria-label="${id}" width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}"><path d="${path}"/></svg>`,
     )
     .join('');
+
+const HEADLINE_HTML = 'Stop <em>re&#8209;explaining yourself.</em>';
+
+const createOgHtml = ({ format, accent, palette, tileColor, mascotBase64, providerBrands, date }) => {
   const content = `
     <div class="brand"><span class="tile">${createMascot({ className: 'mascot', mascotBase64 })}</span><span>Goodboy</span></div>
-    <h1>Run many coding<br>agents <em>at once</em></h1>
-    <p class="sub">A free desktop app that puts each one on its own task and branch, on the plans and keys you already pay for.</p>
+    <h1>${HEADLINE_HTML}</h1>
+    <p class="sub">Describe a task once. Goodboy decides which agent goes next, on the plans you already pay for.</p>
     <div class="foot">
       <span class="dom">goodboy-ai.dev</span>
-      <span class="marks-wrap"><span class="marks">${marks}</span><small>providers as of ${date}</small></span>
-      <span class="note">free, no account needed</span>
+      <span class="marks-wrap"><span class="marks">${createMarks({ brands: providerBrands, size: 30 })}</span><small>providers as of ${date}</small></span>
+      <span class="note">free and source-available</span>
     </div>`;
   return createBaseHtml({
     width: format.width,
     height: format.height,
     accent,
+    palette,
     bodyClass: 'og',
     content,
     extraCss: `
       body { padding: 68px 76px; display: flex; flex-direction: column; position: relative }
       .brand { display: flex; align-items: center; gap: 16px; position: relative }
-      .brand .tile { width: 60px; height: 60px; border-radius: ${60 * TILE_RADIUS_RATIO}px; background: ${tileColor}; display: grid; place-items: center }
+      .brand .tile { width: 60px; height: 60px; border-radius: ${60 * TILE_RADIUS_RATIO}px; background: ${tileColor}; box-shadow: inset 0 0 0 1.5px ${palette.tileRing}; display: grid; place-items: center }
       .brand .mascot { width: ${60 * MARK_SCALE}px; height: ${60 * MARK_SCALE}px; background: #fff }
       .brand > span:last-child { font-size: 38px; font-weight: 600; letter-spacing: -0.015em }
       h1 { margin-top: auto; font-size: 88px; font-weight: 500; line-height: 1.04; letter-spacing: -0.02em; position: relative }
       h1 em { font-style: normal; color: ${accent} }
-      .sub { margin-top: 26px; font-size: 30px; line-height: 1.35; color: #495057; max-width: 940px; position: relative }
+      .sub { margin-top: 26px; font-size: 30px; line-height: 1.35; color: ${palette.t2}; max-width: 940px; position: relative }
       .foot { margin-top: auto; padding-top: 40px; display: flex; align-items: center; gap: 22px; position: relative }
       .dom { font-size: 24px; font-weight: 600 }
       .marks-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px }
       .marks { display: flex; align-items: center; gap: 14px }
-      .marks-wrap small { color: #66707a; font-size: 12px; letter-spacing: 0.02em }
-      .note { font-size: 22px; color: #66707a; margin-left: auto }
+      .marks-wrap small { color: ${palette.t3}; font-size: 12px; letter-spacing: 0.02em }
+      .note { font-size: 22px; color: ${palette.t3}; margin-left: auto }
     `,
   });
 };
 
-const createAvatarHtml = ({ format, accent, mascotBase64 }) =>
+const createAvatarHtml = ({ format, accent, palette, tileColor, mascotBase64 }) =>
   createBaseHtml({
     width: format.width,
     height: format.height,
     accent,
+    palette,
     bodyClass: 'avatar',
     content: createMascot({ className: 'mascot', mascotBase64 }),
     extraCss: `
-    body { display: grid; place-items: center; padding: 18% }
-    .mascot { width: 60vh; height: 60vh }
+    body { display: grid; place-items: center; background: ${tileColor} }
+    .mascot { width: 58%; height: 58%; background: #fff }
   `,
   });
 
@@ -417,22 +441,79 @@ const carriesSameIcons = ({ name, current, next }) => {
   return icnsChunkDigests(current).join() === icnsChunkDigests(next).join();
 };
 
-const createBannerHtml = ({ format, accent, mascotBase64, variant }) => {
-  const isXHeader = variant === 'x-header';
-  const tagline = isXHeader ? 'Your agents, in the right order.' : '';
+const BANNER_LAYOUTS = {
+  'x-header': {
+    padding: '0 150px 0 420px',
+    word: 40,
+    headline: 60,
+    mark: 34,
+    label: 15,
+    dog: { size: 360, right: -90 },
+    hasRows: true,
+  },
+  'linkedin-profile-background': {
+    padding: '0 120px 0 560px',
+    word: 34,
+    headline: 56,
+    mark: 30,
+    label: 14,
+    dog: { size: 300, right: -30 },
+    hasRows: true,
+  },
+  'linkedin-company-cover': {
+    padding: '0 60px 0 370px',
+    word: 22,
+    headline: 44,
+    mark: 0,
+    label: 0,
+    dog: { size: 200, right: -20 },
+    hasRows: false,
+  },
+};
+
+const createBannerHtml = ({
+  format,
+  accent,
+  palette,
+  mascotBase64,
+  providerBrands,
+  integrationBrands,
+  date,
+  variant,
+}) => {
+  const layout = BANNER_LAYOUTS[variant];
+  const rows = layout.hasRows
+    ? `
+      <div class="rows">
+        <span class="label">Agents</span><span class="marks">${createMarks({ brands: providerBrands, size: layout.mark })}</span>
+        <span class="label">Your work</span><span class="marks">${createMarks({ brands: integrationBrands, size: layout.mark })}</span>
+      </div>
+      <small class="date">as of ${date}</small>`
+    : '';
   return createBaseHtml({
     width: format.width,
     height: format.height,
     accent,
+    palette,
     bodyClass: variant,
-    content: createLockupHtml({ mascotBase64, tagline }),
+    content: `
+      ${createMascot({ className: 'mascot watermark', mascotBase64 })}
+      <div class="copy">
+        <span class="word">Goodboy</span>
+        <h1>${HEADLINE_HTML}</h1>
+        ${rows}
+      </div>`,
     extraCss: `
-      body { display: flex; align-items: center; justify-content: flex-end; padding: ${isXHeader ? '9% 10% 9% 35%' : '8% 9% 8% 34%'} }
-      .lockup { display: flex; align-items: center; gap: ${isXHeader ? '34px' : '24px'} }
-      .mascot { width: ${isXHeader ? '138px' : '104px'}; height: ${isXHeader ? '138px' : '104px'}; flex: none }
-      .lockup-copy { display: flex; flex-direction: column; gap: 10px }
-      .lockup-copy span { font-size: ${isXHeader ? '86px' : '68px'}; font-weight: 600; letter-spacing: -0.025em; line-height: 1 }
-      .lockup-copy small { color: #495057; font-size: 30px; white-space: nowrap }
+      body { display: flex; align-items: center; padding: ${layout.padding}; position: relative; background: radial-gradient(ellipse 70% 120% at 88% 50%, color-mix(in oklch, ${accent} 16%, ${palette.bg}), ${palette.bg} 70%) }
+      .watermark { position: absolute; top: 50%; right: ${layout.dog.right}px; width: ${layout.dog.size}px; height: ${layout.dog.size}px; transform: translateY(-50%); background: color-mix(in oklch, ${accent} 30%, ${palette.bg}) }
+      .copy { position: relative; display: flex; flex-direction: column; align-items: flex-start }
+      .word { font-size: ${layout.word}px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.1 }
+      h1 { margin-top: ${layout.word * 0.3}px; font-size: ${layout.headline}px; font-weight: 600; line-height: 1.08; letter-spacing: -0.025em; white-space: nowrap }
+      h1 em { font-style: normal; color: ${accent} }
+      .rows { margin-top: ${layout.headline * 0.5}px; display: grid; grid-template-columns: auto auto; align-items: center; gap: ${layout.mark * 0.45}px ${layout.mark * 1.1}px }
+      .label { font-size: ${layout.label}px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: ${palette.t3} }
+      .marks { display: flex; align-items: center; gap: ${layout.mark * 0.55}px }
+      .date { margin-top: ${layout.mark * 0.5}px; font-size: ${layout.label - 2}px; color: ${palette.t4}; letter-spacing: 0.02em }
     `,
   });
 };
@@ -444,21 +525,42 @@ const outputPathFor = (surface) =>
     ? resolve(WEBSITE_DIRECTORY, 'public/og-image.png')
     : resolve(WEBSITE_DIRECTORY, `public/brand/${slugFor(surface)}.png`);
 
-const createHtmlFor = ({ format, accent, tileColor, mascotBase64, providerBrands, date }) => {
+const AVATAR_SURFACES = ['X avatar', 'LinkedIn company logo'];
+
+const BANNER_VARIANTS = {
+  'X header': 'x-header',
+  'LinkedIn company cover': 'linkedin-company-cover',
+  'LinkedIn profile background': 'linkedin-profile-background',
+};
+
+const createHtmlFor = ({
+  format,
+  accent,
+  palette,
+  tileColor,
+  mascotBase64,
+  providerBrands,
+  integrationBrands,
+  date,
+}) => {
   if (format.surface === 'og-image') {
-    return createOgHtml({ format, accent, tileColor, mascotBase64, providerBrands, date });
+    return createOgHtml({ format, accent, palette, tileColor, mascotBase64, providerBrands, date });
   }
-  if (format.surface === 'X avatar') {
-    return createAvatarHtml({ format, accent, mascotBase64 });
+  if (AVATAR_SURFACES.includes(format.surface)) {
+    return createAvatarHtml({ format, accent, palette, tileColor, mascotBase64 });
   }
-  const variants = {
-    'X header': 'x-header',
-    'LinkedIn company cover': 'linkedin-company-cover',
-    'LinkedIn profile background': 'linkedin-profile-background',
-  };
-  const variant = variants[format.surface];
+  const variant = BANNER_VARIANTS[format.surface];
   if (variant !== undefined) {
-    return createBannerHtml({ format, accent, mascotBase64, variant });
+    return createBannerHtml({
+      format,
+      accent,
+      palette,
+      mascotBase64,
+      providerBrands,
+      integrationBrands,
+      date,
+      variant,
+    });
   }
   throw new Error(`No brand asset layout exists for ${format.surface}`);
 };
@@ -588,6 +690,7 @@ const providerBrandSource = readSource(
   'apps/desktop/src/features/providers/components/provider-brand.ts',
 );
 const iconSource = readSource('packages/ui/src/components/brandIcons.tsx');
+const workspaceTypesSource = readSource('packages/types/src/workspace.ts');
 const desktopStylesSource = readSource('apps/desktop/src/styles.css');
 const websiteStylesSource = readSource('website/src/styles.css');
 const mascotBase64 = readFileSync(resolve(WEBSITE_DIRECTORY, 'src/assets/mascot.png')).toString(
@@ -597,16 +700,36 @@ const mascotBase64 = readFileSync(resolve(WEBSITE_DIRECTORY, 'src/assets/mascot.
 const formats = parseSocialFormats(brandSource);
 const providerIds = parseProviderIds(providerRegistrySource);
 const providerBrandEntries = parseProviderBrand({ providerBrandSource, providerIds });
-const lightThemeSource = extractCssBlock({
+const darkThemeSource = extractCssBlock({
   stylesSource: desktopStylesSource,
-  selector: "html[data-theme='light']",
+  selector: '@theme',
+});
+const websiteDarkSource = extractCssBlock({
+  stylesSource: websiteStylesSource,
+  selector: ":root[data-theme='dark']",
 });
 const providerBrands = resolveBrands({
   brands: providerBrandEntries,
   iconSource,
-  lightThemeSource,
+  themeSource: darkThemeSource,
 });
-const accent = extractCssValue({ cssSource: websiteStylesSource, variableName: '--accent' });
+const integrationIds = parseIntegrationIds(workspaceTypesSource);
+const integrationBrands = resolveBrands({
+  brands: integrationBrandEntries({ integrationIds }),
+  iconSource,
+  themeSource: darkThemeSource,
+});
+const readDarkToken = (variableName) =>
+  extractCssValue({ cssSource: websiteDarkSource, variableName });
+const accent = readDarkToken('--accent');
+const palette = {
+  bg: readDarkToken('--bg'),
+  t1: readDarkToken('--t1'),
+  t2: readDarkToken('--t2'),
+  t3: readDarkToken('--t3'),
+  t4: readDarkToken('--t4'),
+  tileRing: readDarkToken('--tile-ring'),
+};
 const tileColor = toHexColor(
   extractCssValue({ cssSource: websiteStylesSource, variableName: '--brand-tile' }),
 );
@@ -635,7 +758,16 @@ if (requestedSurface !== '' && !knownSurfaces.includes(requestedSurface)) {
 }
 
 selectedFormats.forEach((format) => {
-  const html = createHtmlFor({ format, accent, tileColor, mascotBase64, providerBrands, date });
+  const html = createHtmlFor({
+    format,
+    accent,
+    palette,
+    tileColor,
+    mascotBase64,
+    providerBrands,
+    integrationBrands,
+    date,
+  });
   renderFormat({ format, html });
 });
 
