@@ -571,6 +571,16 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
 - **Storage.** `chats` and `chat_messages` (m212). A chat stores its model as a
   catalog key. Idle is derived: a chat with no activity for seven days moves
   to the idle group, and only the user archives it.
+- **Activity in the top bar.** `chatStreams` says which chats are answering.
+  `useChatActivity` turns it into a running count and an unread flag for the
+  Chat button in the top bar: a pulsing dot and "1 chat running" while any
+  reply streams, otherwise a still dot and "New reply" while any chat is
+  unread. Every chat row mirrors it (pulse while answering, dot when unread).
+  A chat becomes unread when its reply ends, done or failed, while the chat
+  studio is not showing that chat; a reply the user stopped never does.
+  Opening the chat, or archiving it, clears the mark. `unreadChatIds` lives in
+  the chats slice and is saved in `localStorage` (`chat-unread:v1`), so it
+  survives a reload without a migration.
 - **Turn into work.** "Start work" drafts a brief (title, goal, what we know,
   files, project) with one `summarize_session` call through `runAuxOneShot`
   on the chat's own provider and model, with no tools and no working folder

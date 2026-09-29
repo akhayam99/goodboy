@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   changelogCache: `${PREFIX}changelog-cache:v1`,
   updateSweep: `${PREFIX}update-sweep:v1`,
   paletteFrecency: `${PREFIX}palette-frecency:v1`,
+  chatUnread: `${PREFIX}chat-unread:v1`,
 } as const;
 
 export const STORAGE_PREFIXES = {

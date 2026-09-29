@@ -21,6 +21,7 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   const chats = useAppStore((state) => state.chatsByWorkspace[workspaceId] ?? NO_CHATS);
   const loadChats = useAppStore((state) => state.loadChats);
   const amendStudio = useAppStore((state) => state.amendStudio);
+  const markChatRead = useAppStore((state) => state.markChatRead);
   const [handoffs, setHandoffs] = useState<Readonly<Record<string, ReadonlyArray<ChatHandoff>>>>(
     {},
   );
@@ -28,6 +29,12 @@ export const ChatStudio = ({ workspaceId, chatId, onClose }: Props) => {
   useEffect(() => {
     void loadChats({ workspaceId });
   }, [workspaceId, loadChats]);
+
+  useEffect(() => {
+    if (chatId !== null) {
+      markChatRead({ chatId });
+    }
+  }, [chatId, markChatRead]);
 
   const select = (next: ChatId | null): void =>
     amendStudio({ studio: { kind: 'chat', chatId: next } });

@@ -31,6 +31,7 @@ const ChatListRowView = ({
   onArchive,
 }: Props) => {
   const isStreaming = useAppStore((state) => state.chatStreams[chatId] !== undefined);
+  const isUnread = useAppStore((state) => state.unreadChatIds.includes(chatId));
   return (
     <li data-chat-row={chatId} data-idle={isIdle ? 'true' : undefined}>
       <InteractiveRow
@@ -52,6 +53,9 @@ const ChatListRowView = ({
           <span className="flex shrink-0 items-center gap-1 text-meta text-faint-foreground group-hover:invisible group-focus-within:invisible">
             {isStreaming ? (
               <StatusDot tone="primary" size="sm" pulsing ariaLabel="Answering" />
+            ) : null}
+            {!isStreaming && isUnread ? (
+              <StatusDot tone="primary" size="sm" ariaLabel="New reply" />
             ) : null}
             {time}
           </span>

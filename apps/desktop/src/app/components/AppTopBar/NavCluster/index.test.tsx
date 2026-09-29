@@ -13,6 +13,8 @@ const { store } = vi.hoisted(() => ({
     appStudio: null as { readonly kind: string } | null,
     sessions: [] as ReadonlyArray<Session>,
     navigation: {} as Record<string, unknown>,
+    chatStreams: {} as Record<string, unknown>,
+    unreadChatIds: [] as ReadonlyArray<string>,
     back: vi.fn(),
     forward: vi.fn(),
     goToHistory: vi.fn(),
@@ -63,6 +65,8 @@ beforeEach(() => {
   store.currentSessionId = null;
   store.appStudio = null;
   store.navigation = {};
+  store.chatStreams = {};
+  store.unreadChatIds = [];
   store.sessions = [{ id: SESSION_ID, goal: 'Retry failed webhook deliveries' } as Session];
 });
 
@@ -79,6 +83,44 @@ describe('NavCluster', () => {
     expect(buttons.indexOf('Chat')).toBe(buttons.indexOf('Board') + 1);
     fireEvent.click(screen.getByRole('button', { name: 'Chat' }));
     expect(store.openStudio).toHaveBeenCalledWith({ studio: { kind: 'chat', chatId: null } });
+  });
+
+  it('shows a pulsing dot and counts running chats on the Chat button', () => {
+    store.chatStreams = { 'chat-1': {}, 'chat-2': {} };
+    store.unreadChatIds = ['chat-3'];
+    render(<NavCluster />);
+
+    const chat = screen.getByRole('button', { name: 'Chat, 2 chats running' });
+    expect(chat.getAttribute('data-chat-activity')).toBe('running');
+    expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('2 chats running');
+    expect(chat.querySelector('[class*="animate-soft-pulse"]')).not.toBeNull();
+  });
+
+  it('names a single running chat', () => {
+    store.chatStreams = { 'chat-1': {} };
+    render(<NavCluster />);
+
+    const chat = screen.getByRole('button', { name: 'Chat, 1 chat running' });
+    expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('1 chat running');
+  });
+
+  it('shows a still dot for a new reply once nothing is running', () => {
+    store.unreadChatIds = ['chat-3'];
+    render(<NavCluster />);
+
+    const chat = screen.getByRole('button', { name: 'Chat, New reply' });
+    expect(chat.getAttribute('data-chat-activity')).toBe('unread');
+    expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('New reply');
+    expect(chat.querySelector('[class*="animate-soft-pulse"]')).toBeNull();
+    expect(chat.querySelector('.rounded-full')).not.toBeNull();
+  });
+
+  it('shows no dot when the chats are quiet', () => {
+    render(<NavCluster />);
+
+    const chat = screen.getByRole('button', { name: 'Chat' });
+    expect(chat.getAttribute('data-chat-activity')).toBeNull();
+    expect(chat.querySelector('.rounded-full')).toBeNull();
   });
 
   it('marks Chat current while the chat studio is open', () => {
