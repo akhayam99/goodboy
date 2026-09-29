@@ -17,6 +17,10 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 - For hooks: `renderHook` from `@testing-library/react`.
 - Some suites have a per-test hook that dynamically `import()`s a large module graph. Such a suite loads that import once in `beforeAll`, with a timeout that fits it. Never in `beforeEach`. There, the import cost lands on whichever test runs first, and on a busy machine it goes past the 15s hook timeout in `apps/desktop/vitest.config.ts`. Never raise the global timeouts to hide it.
 
+## Test environment
+
+`apps/desktop/vitest.config.ts` runs every file under happy-dom. A file that never reads a DOM global, directly or through the modules it imports (`window`, `document`, `localStorage`, `navigator`, `requestAnimationFrame` and the like), starts with `// @vitest-environment node`, which skips the DOM setup and cuts the file's cost by about a third. The docblock is the only comment a test file may carry. Node is never the default: product code that guards on `typeof window` would take its fallback path under node and stay green, so a forgotten docblock must cost time, never correctness. A new file starts on happy-dom, and gets the docblock only when it is pure logic. A file that fails under node with `document is not defined` or `window is not defined` stays on happy-dom.
+
 ## Console output fails the test
 
 An unexpected `console.error` or `console.warn` fails the test that produced it. `apps/desktop/src/test/failOnConsole.ts` is a vitest setup file. At import it replaces both channels with a recorder, and `afterEach` throws unless every recorded message is in `apps/desktop/src/test/console-baseline.json`. An `afterAll` does the same for output from `beforeAll`, `afterAll` or a timer that fires after the last test. A test that spies on the console itself (`vi.spyOn(console, 'error')`) handles its own output. A spy that only counts or collects must forward the lines it does not expect to the original it captured (`const logError = console.error`), or it silences the guard.
