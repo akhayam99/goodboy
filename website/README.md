@@ -119,9 +119,11 @@ its own CSS file:
   workflow step graph and marked `data-shadow-exception` for the check.
 - `Fragment`, a split of text beside one or two components on a smaller
   stage (radius 20), the component bleeding off its right and bottom edge
-  where the screen continues. It stacks below 900 px.
+  where the screen continues. It stacks below 900 px. On a phone the stage
+  runs edge to edge and the whole picture fits inside it, uncropped.
 - `Grid`, two or three cells, each a stage with a component bleeding off it,
-  then a title and one line. No box around the cells.
+  then a title and one line. No box around the cells. On a phone the stage runs
+  edge to edge and the whole picture fits inside it.
 
 Motion: the hero rises in on load. Below it, every frame, fragment, grid
 image and frame note fades and rises 14 px as it scrolls into view
@@ -144,7 +146,7 @@ downloads only what its screen needs.
 both themes, at twice the pixel density. It fails on horizontal overflow, an
 image drawn below 2x, a frame, fragment or grid with a shadow (outside
 `data-shadow-exception`), a page taller
-than 13,500 px at 1440 or 14,000 on a phone, an em dash or a middot triplet in
+than 13,500 px at 1440 or 15,100 on a phone, an em dash or a middot triplet in
 visible text, a heading that ends with a period, a section that runs into the
 next one or whose content spills below it, Inter not loaded, a hero frame that
 starts below the first screen at 1440, and a consent card over the h1, and an

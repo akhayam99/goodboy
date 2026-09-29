@@ -126,13 +126,24 @@
     padding: 0;
   }
   .frag,
-  .frag.closed {
-    max-height: 300px;
-    padding: 24px 0 0 24px;
-    border-radius: 16px;
+  .frag.closed,
+  .frag.capped {
+    width: auto;
+    max-width: none;
+    max-height: none;
+    justify-self: stretch;
+    margin: 0 -20px;
+    padding: 12px;
+    border-radius: 0;
+    border-inline: 0;
   }
+  .fragView,
   .frag.closed .fragView {
-    border-radius: 10px 0 0 0;
+    border-radius: 8px;
+  }
+  .frag img {
+    width: 100%;
+    max-width: 100%;
   }
   .sectionTitle {
     font-size: 24px;
