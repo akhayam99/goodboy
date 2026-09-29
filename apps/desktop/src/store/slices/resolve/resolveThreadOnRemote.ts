@@ -1,6 +1,5 @@
 import { listResolveQueueItems } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { foldedReply } from '../../../features/resolve/commentVerdict';
 import { handledByLine } from './threadGitState';
 import type { SliceParams, ThreadParams } from './types';
 
@@ -27,18 +26,11 @@ export const resolveThreadOnRemote = async ({
     throw new Error('This comment is no longer in Review');
   }
   const facts = get().sessionThreadGit[sessionId]?.[threadId] ?? null;
-  const isStale = facts?.gitState === 'missing' || facts?.gitState === 'folded';
+  const isStale = facts?.gitState === 'missing';
   if (override !== undefined || isStale || !SETTLED.has(entry.thread.state)) {
     const elsewhere = facts?.elsewhere ?? null;
-    const folded = facts?.folded ?? null;
     const fallback =
-      mode !== 'reply'
-        ? ''
-        : elsewhere !== null
-          ? handledByLine({ fix: elsewhere })
-          : folded !== null
-            ? foldedReply({ landedAs: folded.landedAs })
-            : '';
+      mode !== 'reply' ? '' : elsewhere !== null ? handledByLine({ fix: elsewhere }) : '';
     await get().answerItemWithoutFix({
       sessionId,
       itemId: entry.item.id,

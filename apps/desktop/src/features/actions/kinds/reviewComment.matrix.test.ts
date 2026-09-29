@@ -275,7 +275,7 @@ const MATRIX: ReadonlyArray<Row> = [
       ...OPEN,
       ...TRANSCRIPT,
       ...GITHUB,
-      'reviewComment.replyAndResolve primary Reply and resolve',
+      'reviewComment.pushToReply primary Push to reply',
       'reviewComment.undo secondary Undo',
       ...COPY,
     ],

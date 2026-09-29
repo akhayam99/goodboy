@@ -1,4 +1,5 @@
 import {
+  ArrowUp,
   Check,
   CircleCheck,
   CornerDownRight,
@@ -16,7 +17,7 @@ import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { resolverPagePlace, sessionPlace } from '../../../store/slices/navigation/place';
-import { verdictReply, foldedReply } from '../../resolve/commentVerdict';
+import { verdictReply } from '../../resolve/commentVerdict';
 import { draftFixes } from '../../resolve/draftFixes';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
@@ -84,9 +85,6 @@ const remoteReplyOf = ({
 }): string | null => {
   if (draftReply !== null && draftReply.trim() !== '') {
     return draftReply;
-  }
-  if (gitFacts?.folded != null) {
-    return foldedReply({ landedAs: gitFacts.folded.landedAs });
   }
   const verdict = gitFacts?.verdict ?? null;
   return verdict === null || verdict.kind === 'refix' ? null : verdictReply({ verdict });
@@ -246,7 +244,6 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       when: ({ facts }) =>
         facts.remote === 'on_origin' ||
         facts.remote === 'looks_fixed' ||
-        facts.remote === 'folded' ||
         (canRepostVerdict({ facts }) && facts.verdict?.kind === 'fixed_elsewhere'),
       slot: () => 'primary',
       run: ({ facts, env }) =>
@@ -256,6 +253,20 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
           ...(facts.remote !== 'on_origin' &&
             facts.remote !== 'looks_fixed' &&
             facts.remoteReply !== null && { reply: facts.remoteReply }),
+        }),
+    },
+    {
+      id: 'reviewComment.pushToReply',
+      label: REMOTE_LABEL.pushToReply,
+      icon: ArrowUp,
+      group: 'act',
+      when: ({ facts }) => facts.remote === 'folded',
+      slot: () => 'primary',
+      run: ({ facts, env }) =>
+        requestReview({
+          getState: env.getState,
+          sessionId: facts.sessionId,
+          request: { kind: 'push' },
         }),
     },
     {

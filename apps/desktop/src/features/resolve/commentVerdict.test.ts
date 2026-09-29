@@ -57,7 +57,9 @@ describe('verdictReply', () => {
     expect(
       verdictReply({ verdict: verdict({ kind: 'fixed_elsewhere', sha: 'e31b9f4abcdef' }) }),
     ).toBe('Handled in e31b9f4.');
-    expect(foldedReply({ landedAs: 'e31b9f4abcdef' })).toBe('Handled in e31b9f4.');
+    expect(foldedReply({ sha: '9f2c1abcdef', landedAs: 'e31b9f4abcdef' })).toBe(
+      'Fixed in `9f2c1ab`, squashed into `e31b9f4`.',
+    );
   });
 
   it('closes an obsolete comment with the removing commit when there is one', () => {

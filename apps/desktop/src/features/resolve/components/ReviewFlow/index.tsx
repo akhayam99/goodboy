@@ -149,8 +149,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   }, [gitKey, hasComments, refreshThreadGitState, sessionId]);
 
   const replyOnlyCount = entries.filter(
-    (entry) =>
-      (entry.remote === 'on_origin' || entry.remote === 'folded') && entry.group === 'open',
+    (entry) => entry.remote === 'on_origin' && entry.group === 'open',
   ).length;
 
   const focused =

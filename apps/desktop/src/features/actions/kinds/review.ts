@@ -81,9 +81,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
       ready: count((entry) => entry.state === 'ready' || entry.state === 'edited'),
       accepted: count(
         (entry) =>
-          (entry.state === 'accepted' || entry.state === 'replied') &&
-          entry.remote !== 'on_origin' &&
-          entry.remote !== 'folded',
+          (entry.state === 'accepted' || entry.state === 'replied') && entry.remote !== 'on_origin',
       ),
       failed: count((entry) => entry.state === 'failed' && isPushFailure({ row: entry.row })),
       pushed: count((entry) => entry.state === 'pushed'),

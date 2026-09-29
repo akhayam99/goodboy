@@ -72,14 +72,12 @@ describe('resolveThreadOnRemote', () => {
     });
   });
 
-  it('answers a folded fix with the sha it landed as', async () => {
+  it('leaves a folded fix to the normal push and answers nothing here', async () => {
     const answer = await run({
       git: facts({ gitState: 'folded', folded: { sha: '9f2c1ab', landedAs: 'e31b9f4abcd' } }),
       threadState: 'fixed',
     });
-    expect(answer).toHaveBeenCalledWith(
-      expect.objectContaining({ reply: 'Handled in e31b9f4.', allowIntegrated: true }),
-    );
+    expect(answer).not.toHaveBeenCalled();
   });
 
   it('leaves a settled fix that is on origin as it was', async () => {

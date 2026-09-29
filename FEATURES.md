@@ -279,7 +279,7 @@ Review looks at origin before it pushes. A comment whose fix you already pushed 
 
 ### A fix that went missing
 
-When the commit of a fix is no longer on the branch or on origin, the comment reads **Fix went missing** with its own detail, and the push blocker points to it. Goodboy first asks git without an agent: the same patch under another sha turns it into **Folded in** with **Reply and resolve**. If that is not enough, **Re-check** starts a read-only agent on the cheapest model of your provider. It answers **Already fixed here** (Reply and resolve with the sha), **No longer relevant** (Close with this reply, editable) or **Still needed** (Fix again, Add a hint). A verdict never closes or fixes anything by itself. A pushed fix that origin lost later, after a force push or a squash done elsewhere, gets the same check.
+When the commit of a fix is no longer on the branch or on origin, the comment reads **Fix went missing** with its own detail, and the push blocker points to it. Goodboy first asks git without an agent: the same patch under another sha turns it into **Folded in**: it stays in the push (**Push to reply**) and its reply, "Fixed in the old sha, squashed into the new one", goes out after the push lands. If that is not enough, **Re-check** starts a read-only agent on the cheapest model of your provider. It answers **Already fixed here** (Reply and resolve with the sha), **No longer relevant** (Close with this reply, editable) or **Still needed** (Fix again, Add a hint). A verdict never closes or fixes anything by itself. A pushed fix that origin lost later, after a force push or a squash done elsewhere, gets the same check.
 
 ### Close on GitHub
 

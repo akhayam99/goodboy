@@ -37,8 +37,13 @@ export const verdictReply = ({ verdict }: { readonly verdict: ResolveVerdict }):
   return '';
 };
 
-export const foldedReply = ({ landedAs }: { readonly landedAs: string }): string =>
-  `Handled in ${shortOf({ sha: landedAs })}.`;
+export const foldedReply = ({
+  sha,
+  landedAs,
+}: {
+  readonly sha: string;
+  readonly landedAs: string;
+}): string => `Fixed in \`${shortOf({ sha })}\`, squashed into \`${shortOf({ sha: landedAs })}\`.`;
 
 export const RECHECK_NO_ANSWER = 'The check ended without an answer. Check again.';
 export const RECHECK_NOT_STARTED = 'The check could not start. Check again.';

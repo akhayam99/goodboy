@@ -147,11 +147,11 @@ export const ReviewComment = ({
     !isPushedMissing &&
     (verdict?.kind === 'fixed_elsewhere' || verdict?.kind === 'obsolete');
   const remoteReply = (): string => {
+    if (folded !== null) {
+      return foldedReply({ sha: folded.sha, landedAs: folded.landedAs });
+    }
     if (editedReply !== null && editedReply.trim() !== '') {
       return editedReply;
-    }
-    if (folded !== null) {
-      return foldedReply({ landedAs: folded.landedAs });
     }
     return verdict === null ? '' : verdictReply({ verdict });
   };

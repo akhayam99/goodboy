@@ -209,6 +209,25 @@ vi.mock('../../../features/worktree/worktree', () => {
         }
       },
     ),
+    worktreeLocateFix: vi.fn(
+      async ({ worktreePath, sha }: { readonly worktreePath: string; readonly sha: string }) => {
+        try {
+          const parent = git(worktreePath, ['rev-parse', `${sha}^`]);
+          const pending = git(worktreePath, ['cherry', 'HEAD', sha, parent]);
+          if (!pending.split('\n').every((line) => line.startsWith('-'))) {
+            return { isKnown: true, landedAs: null, pathExists: null };
+          }
+          const landed = git(worktreePath, ['cherry', sha, 'HEAD', parent])
+            .split('\n')
+            .filter((line) => line.startsWith('- '))
+            .map((line) => line.slice(2).trim())
+            .at(-1);
+          return { isKnown: true, landedAs: landed ?? null, pathExists: null };
+        } catch {
+          return { isKnown: false, landedAs: null, pathExists: null };
+        }
+      },
+    ),
     worktreeOriginCommitsTouching: vi.fn(async () => []),
     worktreeWriterStatus: vi.fn(async ({ path }: { readonly path: string }) => ({
       ...freeLease({ path }),
@@ -985,21 +1004,6 @@ describe('publishConversations over a real git repository', () => {
     );
   });
 
-  it('blocks with missing_commit when the recorded sha was amended away', async () => {
-    const original = commit({
-      text: 'export const retry = () => 2;\n',
-      message: 'fix: early return',
-    });
-    git(worktreePath, ['commit', '--amend', '-m', 'fix: early return, reworded']);
-    const { actions } = makeStore();
-    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [original], reply: 'Fixed' });
-
-    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
-
-    expect(preview.blocker).toBe('missing_commit');
-    expect(preview.publicationId).toBeNull();
-  });
-
   it('blocks with missing_commit when the recorded sha is no longer an ancestor of HEAD', async () => {
     const dropped = commit({ text: 'export const retry = () => 2;\n', message: 'fix: dropped' });
     git(worktreePath, ['reset', '--hard', 'HEAD~1']);
@@ -1606,6 +1610,24 @@ describe('publishConversations with git state per thread', () => {
     expect(preview.requiresPush).toBe(true);
     expect(preview.commits.map((entry) => entry.sha)).toEqual([local]);
     expect(preview.replies.map((reply) => reply.threadId).sort()).toEqual(['PRRT_1', 'PRRT_2']);
+  });
+
+  it('keeps a folded fix in the push and replies with both shas after it lands', async () => {
+    const original = commit({ text: 'export const retry = () => 8;\n', message: 'fix: cap it' });
+    git(worktreePath, ['commit', '--amend', '-m', 'fix: cap it, reworded']);
+    const folded = git(worktreePath, ['rev-parse', 'HEAD']);
+    const { actions, store } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [original], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+
+    expect(store.getState().sessionThreadGit[SESSION_ID]?.PRRT_1?.gitState).toBe('folded');
+    expect(preview.blocker).toBeNull();
+    expect(preview.requiresPush).toBe(true);
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([folded]);
+    expect(preview.replies).toHaveLength(1);
+    expect(preview.replies[0]?.body).toContain(`Fixed in \`${original.slice(0, 7)}\``);
+    expect(preview.replies[0]?.body).toContain(`squashed into \`${folded.slice(0, 7)}\``);
   });
 
   it('posts no reply under a reply the user already wrote by hand, and only resolves', async () => {
