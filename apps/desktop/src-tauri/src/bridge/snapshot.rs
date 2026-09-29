@@ -192,7 +192,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
         &conn,
         "SELECT id, session_id, agent_id, role, content, created_at FROM messages ORDER BY created_at ASC",
     )?;
-    let cutoff_ms = chrono_now_ms() - TRANSCRIPT_MAX_AGE_HOURS * 3_600_000;
+    let cutoff_ms = crate::util::now_ms() - TRANSCRIPT_MAX_AGE_HOURS * 3_600_000;
     let turn_events_raw = rows(
         &conn,
         &format!(
@@ -273,7 +273,7 @@ pub fn build() -> Result<Snapshot, BridgeError> {
         "schemaVersion": 1,
         "snapshotId": snapshot_id.clone(),
         "headMigration": head.clone(),
-        "generatedAt": iso_now(),
+        "generatedAt": crate::util::iso_now_whole_seconds(),
         "transcriptWindow": {
             "perSessionMaxEvents": TRANSCRIPT_MAX_EVENTS,
             "maxAgeHours": TRANSCRIPT_MAX_AGE_HOURS,
@@ -310,39 +310,6 @@ pub fn build() -> Result<Snapshot, BridgeError> {
         body,
         sha256_hex,
     })
-}
-
-fn chrono_now_ms() -> i64 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
-}
-
-pub fn iso_now() -> String {
-    // Minimal RFC3339 UTC formatter (no chrono dep). Precision: seconds + .000Z.
-    let ms = chrono_now_ms();
-    let secs = ms / 1000;
-    let days = secs / 86400;
-    let tod = secs % 86400;
-    let (h, m, s) = (tod / 3600, (tod % 3600) / 60, tod % 60);
-    let (y, mo, d) = civil_from_days(days);
-    format!("{y:04}-{mo:02}-{d:02}T{h:02}:{m:02}:{s:02}.000Z")
-}
-
-/// Howard Hinnant's days->civil date algorithm.
-fn civil_from_days(z: i64) -> (i64, i64, i64) {
-    let z = z + 719468;
-    let era = if z >= 0 { z } else { z - 146096 } / 146097;
-    let doe = z - era * 146097;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    (if m <= 2 { y + 1 } else { y }, m, d)
 }
 
 fn random_id() -> String {
@@ -457,16 +424,8 @@ mod tests {
     }
 
     #[test]
-    fn civil_from_days_matches_known_dates() {
-        // Cross-checked against Unix epoch-day arithmetic (ts / 86400).
-        assert_eq!(civil_from_days(0), (1970, 1, 1));
-        assert_eq!(civil_from_days(10957), (2000, 1, 1));
-        assert_eq!(civil_from_days(18321), (2020, 2, 29)); // leap day
-    }
-
-    #[test]
     fn iso_now_is_well_formed_rfc3339() {
-        let s = iso_now();
+        let s = crate::util::iso_now_whole_seconds();
         assert_eq!(s.len(), 24, "unexpected format: {s}");
         assert!(s.ends_with(".000Z"), "missing millis/zulu: {s}");
         let year: i64 = s[0..4].parse().expect("year");

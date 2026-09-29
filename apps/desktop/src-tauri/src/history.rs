@@ -1738,13 +1738,6 @@ pub(crate) fn is_backup_of(branch: &str, ref_name: &str) -> bool {
         .is_some_and(is_stamp)
 }
 
-fn now_secs() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_secs())
-        .unwrap_or_default()
-}
-
 fn journal_of(cwd: &Path) -> Option<PathBuf> {
     git_dir_of(cwd).map(|dir| dir.join(JOURNAL_FILE))
 }
@@ -2164,7 +2157,10 @@ pub(crate) fn list_backups(cwd: &Path, branch: &str) -> Result<Vec<HistoryBackup
 }
 
 pub(crate) fn prune_backups(cwd: &Path) {
-    prune_backups_before(cwd, now_secs().saturating_sub(BACKUP_KEEP_SECS));
+    prune_backups_before(
+        cwd,
+        crate::util::now_secs().saturating_sub(BACKUP_KEEP_SECS),
+    );
 }
 
 fn stamp_of(ref_name: &str) -> Option<(bool, u128)> {

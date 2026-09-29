@@ -8,6 +8,7 @@ use thiserror::Error;
 use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
+use crate::util::percent_encode;
 
 const PROVIDER: &str = "bitbucket";
 
@@ -63,19 +64,6 @@ impl From<reqwest::Error> for BitbucketError {
             TransportFailure::Network(body) => BitbucketError::Http { status: 0, body },
         }
     }
-}
-
-fn percent_encode(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                out.push(byte as char)
-            }
-            _ => out.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    out
 }
 
 fn error_message(body: &str) -> Option<String> {

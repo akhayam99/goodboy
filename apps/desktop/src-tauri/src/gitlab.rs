@@ -5,6 +5,7 @@ use thiserror::Error;
 use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
+use crate::util::percent_encode;
 
 const PROVIDER: &str = "gitlab";
 
@@ -197,19 +198,6 @@ async fn send_json<T: serde::de::DeserializeOwned>(
         });
     }
     serde_json::from_str(&text).map_err(|e| GitlabError::InvalidShape(e.to_string()))
-}
-
-fn percent_encode(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                out.push(byte as char)
-            }
-            _ => out.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    out
 }
 
 fn encode_project_path(project_path: &str) -> String {
@@ -1136,13 +1124,6 @@ mod tests {
     fn encode_project_path_percent_encodes_namespace_slashes() {
         assert_eq!(encode_project_path("group/sub/repo"), "group%2Fsub%2Frepo");
         assert_eq!(encode_project_path("/acme/web/"), "acme%2Fweb");
-    }
-
-    #[test]
-    fn percent_encode_escapes_branch_slashes_and_reserved() {
-        assert_eq!(percent_encode("ak/feat-x"), "ak%2Ffeat-x");
-        assert_eq!(percent_encode("a b"), "a%20b");
-        assert_eq!(percent_encode("keep-._~"), "keep-._~");
     }
 
     #[test]

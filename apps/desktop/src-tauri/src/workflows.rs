@@ -23,109 +23,81 @@ type WorkflowTuple = (
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepRow {
     pub id: String,
-    #[serde(rename = "workflowId")]
     pub workflow_id: String,
-    #[serde(rename = "libraryStepId")]
     pub library_step_id: Option<String>,
     pub role: Option<String>,
     pub ordinal: i64,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "expectedOutput")]
     pub expected_output: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
     pub effort: Option<String>,
     pub verbosity: Option<String>,
-    #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: Option<String>,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
     pub size: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepDefRow {
     pub id: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
     pub role: String,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "providerDefault")]
     pub provider_default: Option<String>,
-    #[serde(rename = "modelDefault")]
     pub model_default: Option<String>,
-    #[serde(rename = "effortDefault")]
     pub effort_default: Option<String>,
-    #[serde(rename = "verbosityDefault")]
     pub verbosity_default: Option<String>,
-    #[serde(rename = "expectedOutput")]
     pub expected_output: Option<String>,
-    #[serde(rename = "baseStepId")]
     pub base_step_id: Option<String>,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepDefUpsertInput {
     pub id: Option<String>,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
     pub role: String,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "providerDefault")]
     pub provider_default: Option<String>,
-    #[serde(rename = "modelDefault")]
     pub model_default: Option<String>,
-    #[serde(rename = "effortDefault")]
     pub effort_default: Option<String>,
-    #[serde(rename = "verbosityDefault")]
     pub verbosity_default: Option<String>,
-    #[serde(rename = "expectedOutput", default)]
+    #[serde(default)]
     pub expected_output: Option<String>,
-    #[serde(rename = "baseStepId", default)]
+    #[serde(default)]
     pub base_step_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkflowRow {
     pub id: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
     pub goal: Option<String>,
-    #[serde(rename = "processText")]
     pub process_text: Option<String>,
     pub steps: Vec<StepRow>,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
     // Epoch seconds when soft-deleted; None for live workflows. workflow_list
     // only returns live ones, but workflows_for_session may return deleted ones
     // still attached to a session.
-    #[serde(rename = "deletedAt")]
     pub deleted_at: Option<i64>,
     // True for reusable presets; false for one-off custom workflows that a
     // session runs without being saved to the preset library.
-    #[serde(rename = "isPreset")]
     pub is_preset: bool,
     // How the workflow came to exist: 'library' (shipped), 'custom' (built by
     // hand) or 'orchestrated' (born from a dynamic run). None on rows written
@@ -134,47 +106,38 @@ pub struct WorkflowRow {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepInput {
     pub id: Option<String>,
-    #[serde(rename = "libraryStepId")]
     pub library_step_id: Option<String>,
     pub role: Option<String>,
     pub ordinal: i64,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "expectedOutput")]
     pub expected_output: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
     pub effort: Option<String>,
     pub verbosity: Option<String>,
-    #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: Option<String>,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
     pub size: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseTemplateUpsertInput {
     pub id: Option<String>,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
     pub goal: Option<String>,
-    #[serde(rename = "processText")]
     pub process_text: Option<String>,
     pub steps: Vec<StepInput>,
     // Defaults to true when omitted so existing callers keep producing presets.
-    #[serde(rename = "isPreset", default = "default_true")]
+    #[serde(default = "default_true")]
     pub is_preset: bool,
     pub origin: Option<String>,
 }
@@ -184,116 +147,75 @@ fn default_true() -> bool {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SessionRow {
     pub id: String,
-    #[serde(rename = "sessionId")]
     pub session_id: String,
-    #[serde(rename = "stepId")]
     pub step_id: Option<String>,
     pub ordinal: i64,
     pub name: String,
     pub status: String,
-    #[serde(rename = "providerRunId")]
     pub provider_run_id: Option<String>,
-    #[serde(rename = "outputSummary")]
     pub output_summary: Option<String>,
-    #[serde(rename = "startedAt")]
     pub started_at: Option<String>,
-    #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
-    #[serde(rename = "providerSessionId")]
     pub provider_session_id: Option<String>,
-    #[serde(rename = "providerSessionProviderId")]
     pub provider_session_provider_id: Option<String>,
-    #[serde(rename = "lastFinishedAt")]
     pub last_finished_at: Option<String>,
-    #[serde(rename = "lastViewedAt")]
     pub last_viewed_at: Option<String>,
-    #[serde(rename = "doneAt")]
     pub done_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
     pub effort: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "parentAgentId")]
     pub parent_agent_id: Option<String>,
-    #[serde(rename = "workflowRunId")]
     pub workflow_run_id: Option<String>,
-    #[serde(rename = "sourceThreadId")]
     pub source_thread_id: Option<String>,
-    #[serde(rename = "sourceThreadIds")]
     pub source_thread_ids: Option<String>,
-    #[serde(rename = "sourceCommentUrl")]
     pub source_comment_url: Option<String>,
-    #[serde(rename = "sourceKind")]
     pub source_kind: Option<String>,
-    #[serde(rename = "domainsJson")]
     pub domains_json: Option<String>,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: Option<String>,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
-    #[serde(rename = "stoppedAt")]
     pub stopped_at: Option<String>,
-    #[serde(rename = "stoppedBy")]
     pub stopped_by: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseRunInsertInput {
     pub id: Option<String>,
-    #[serde(rename = "sessionId")]
     pub session_id: String,
-    #[serde(rename = "stepId")]
     pub step_id: Option<String>,
     pub ordinal: i64,
     pub name: String,
     pub status: String,
-    #[serde(rename = "providerRunId")]
     pub provider_run_id: Option<String>,
-    #[serde(rename = "outputSummary")]
     pub output_summary: Option<String>,
-    #[serde(rename = "startedAt")]
     pub started_at: Option<String>,
-    #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
     pub effort: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "parentAgentId")]
     pub parent_agent_id: Option<String>,
-    #[serde(rename = "workflowRunId")]
     pub workflow_run_id: Option<String>,
-    #[serde(rename = "sourceThreadId")]
     pub source_thread_id: Option<String>,
-    #[serde(rename = "sourceThreadIds")]
     pub source_thread_ids: Option<String>,
-    #[serde(rename = "sourceCommentUrl")]
     pub source_comment_url: Option<String>,
-    #[serde(rename = "sourceKind")]
     pub source_kind: Option<String>,
-    #[serde(rename = "domainsJson")]
     pub domains_json: Option<String>,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: Option<String>,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentBatchInsertInput {
-    #[serde(rename = "parentAgentId")]
     pub parent_agent_id: String,
     pub children: Vec<PhaseRunInsertInput>,
 }
@@ -305,38 +227,30 @@ pub struct AgentBatchInsertOutcome {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkflowNodeRoutingUpdateInput {
-    #[serde(rename = "nodeKind")]
     pub node_kind: String,
     pub id: String,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: String,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
     pub effort: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseRunUpdateInput {
     pub id: String,
     pub status: String,
-    #[serde(rename = "providerRunId")]
     pub provider_run_id: Option<String>,
-    #[serde(rename = "outputSummary")]
     pub output_summary: Option<String>,
-    #[serde(rename = "startedAt")]
     pub started_at: Option<String>,
-    #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
-    #[serde(rename = "stoppedAt", default)]
+    #[serde(default)]
     pub stopped_at: Option<String>,
-    #[serde(rename = "stoppedBy", default)]
+    #[serde(default)]
     pub stopped_by: Option<String>,
 }
 
@@ -2264,5 +2178,283 @@ mod tests {
         assert_eq!(step_size(Some(&known)).as_deref(), Some("large"));
         assert_eq!(step_size(Some(&unknown)), None);
         assert_eq!(step_size(None), None);
+    }
+}
+
+#[cfg(test)]
+mod wire_shape_tests {
+    use super::*;
+
+    fn assert_roundtrip<T: serde::de::DeserializeOwned + Serialize>(json: &str) {
+        let value: T = serde_json::from_str(json).unwrap();
+        assert_eq!(serde_json::to_string(&value).unwrap(), json);
+    }
+
+    fn assert_debug_fields(debug: &str, pairs: &[(&str, &str)]) {
+        for (field, value) in pairs {
+            let needle = format!("{field}: {value}");
+            assert!(debug.contains(&needle), "missing {needle} in {debug}");
+        }
+    }
+
+    #[test]
+    fn step_row_wire_json_is_pinned() {
+        assert_roundtrip::<StepRow>(
+            r#"{"id":"v_id","workflowId":"v_workflowId","libraryStepId":"v_libraryStepId","role":"v_role","ordinal":7,"name":"v_name","promptPrefix":"v_promptPrefix","expectedOutput":"v_expectedOutput","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","effort":"v_effort","verbosity":"v_verbosity","orchestratorReason":"v_orchestratorReason","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","size":"v_size"}"#,
+        );
+    }
+
+    #[test]
+    fn step_def_row_wire_json_is_pinned() {
+        assert_roundtrip::<StepDefRow>(
+            r#"{"id":"v_id","workspaceId":"v_workspaceId","role":"v_role","name":"v_name","promptPrefix":"v_promptPrefix","providerDefault":"v_providerDefault","modelDefault":"v_modelDefault","effortDefault":"v_effortDefault","verbosityDefault":"v_verbosityDefault","expectedOutput":"v_expectedOutput","baseStepId":"v_baseStepId","createdAt":"v_createdAt","updatedAt":"v_updatedAt"}"#,
+        );
+    }
+
+    #[test]
+    fn step_def_upsert_input_reads_the_pinned_wire_keys() {
+        let value: StepDefUpsertInput = serde_json::from_str(r#"{"id":"v_id","workspaceId":"v_workspaceId","role":"v_role","name":"v_name","promptPrefix":"v_promptPrefix","providerDefault":"v_providerDefault","modelDefault":"v_modelDefault","effortDefault":"v_effortDefault","verbosityDefault":"v_verbosityDefault","expectedOutput":"v_expectedOutput","baseStepId":"v_baseStepId"}"#).unwrap();
+        assert_debug_fields(
+            &format!("{value:?}"),
+            &[
+                ("id", "Some(\"v_id\")"),
+                ("workspace_id", "Some(\"v_workspaceId\")"),
+                ("role", "\"v_role\""),
+                ("name", "\"v_name\""),
+                ("prompt_prefix", "\"v_promptPrefix\""),
+                ("provider_default", "Some(\"v_providerDefault\")"),
+                ("model_default", "Some(\"v_modelDefault\")"),
+                ("effort_default", "Some(\"v_effortDefault\")"),
+                ("verbosity_default", "Some(\"v_verbosityDefault\")"),
+                ("expected_output", "Some(\"v_expectedOutput\")"),
+                ("base_step_id", "Some(\"v_baseStepId\")"),
+            ],
+        );
+    }
+
+    #[test]
+    fn workflow_row_wire_json_is_pinned() {
+        assert_roundtrip::<WorkflowRow>(
+            r#"{"id":"v_id","workspaceId":"v_workspaceId","name":"v_name","description":"v_description","goal":"v_goal","processText":"v_processText","steps":[{"id":"v_id","workflowId":"v_workflowId","libraryStepId":"v_libraryStepId","role":"v_role","ordinal":7,"name":"v_name","promptPrefix":"v_promptPrefix","expectedOutput":"v_expectedOutput","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","effort":"v_effort","verbosity":"v_verbosity","orchestratorReason":"v_orchestratorReason","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","size":"v_size"}],"createdAt":"v_createdAt","updatedAt":"v_updatedAt","deletedAt":9,"isPreset":true,"origin":"v_origin"}"#,
+        );
+    }
+
+    #[test]
+    fn step_input_reads_the_pinned_wire_keys() {
+        let value: StepInput = serde_json::from_str(r#"{"id":"v_id","libraryStepId":"v_libraryStepId","role":"v_role","ordinal":7,"name":"v_name","promptPrefix":"v_promptPrefix","expectedOutput":"v_expectedOutput","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","effort":"v_effort","verbosity":"v_verbosity","orchestratorReason":"v_orchestratorReason","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","size":"v_size"}"#).unwrap();
+        assert_debug_fields(
+            &format!("{value:?}"),
+            &[
+                ("id", "Some(\"v_id\")"),
+                ("library_step_id", "Some(\"v_libraryStepId\")"),
+                ("role", "Some(\"v_role\")"),
+                ("ordinal", "7"),
+                ("name", "\"v_name\""),
+                ("prompt_prefix", "\"v_promptPrefix\""),
+                ("expected_output", "Some(\"v_expectedOutput\")"),
+                ("provider_override", "Some(\"v_providerOverride\")"),
+                ("model_override", "Some(\"v_modelOverride\")"),
+                ("effort", "Some(\"v_effort\")"),
+                ("verbosity", "Some(\"v_verbosity\")"),
+                ("orchestrator_reason", "Some(\"v_orchestratorReason\")"),
+                ("routing_lock", "Some(\"v_routingLock\")"),
+                ("routing_decision", "Some(\"v_routingDecision\")"),
+                ("task_profile", "Some(\"v_taskProfile\")"),
+                ("size", "Some(\"v_size\")"),
+            ],
+        );
+    }
+
+    #[test]
+    fn phase_template_upsert_input_reads_the_pinned_wire_keys() {
+        let value: PhaseTemplateUpsertInput = serde_json::from_str(r#"{"id":"v_id","workspaceId":"v_workspaceId","name":"v_name","description":"v_description","goal":"v_goal","processText":"v_processText","steps":[{"id":"v_id","libraryStepId":"v_libraryStepId","role":"v_role","ordinal":7,"name":"v_name","promptPrefix":"v_promptPrefix","expectedOutput":"v_expectedOutput","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","effort":"v_effort","verbosity":"v_verbosity","orchestratorReason":"v_orchestratorReason","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","size":"v_size"}],"isPreset":true,"origin":"v_origin"}"#).unwrap();
+        assert_debug_fields(
+            &format!("{value:?}"),
+            &[
+                ("id", "Some(\"v_id\")"),
+                ("workspace_id", "\"v_workspaceId\""),
+                ("name", "\"v_name\""),
+                ("description", "\"v_description\""),
+                ("goal", "Some(\"v_goal\")"),
+                ("process_text", "Some(\"v_processText\")"),
+                ("id", "Some(\"v_id\")"),
+                ("library_step_id", "Some(\"v_libraryStepId\")"),
+                ("role", "Some(\"v_role\")"),
+                ("ordinal", "7"),
+                ("name", "\"v_name\""),
+                ("prompt_prefix", "\"v_promptPrefix\""),
+                ("expected_output", "Some(\"v_expectedOutput\")"),
+                ("provider_override", "Some(\"v_providerOverride\")"),
+                ("model_override", "Some(\"v_modelOverride\")"),
+                ("effort", "Some(\"v_effort\")"),
+                ("verbosity", "Some(\"v_verbosity\")"),
+                ("orchestrator_reason", "Some(\"v_orchestratorReason\")"),
+                ("routing_lock", "Some(\"v_routingLock\")"),
+                ("routing_decision", "Some(\"v_routingDecision\")"),
+                ("task_profile", "Some(\"v_taskProfile\")"),
+                ("size", "Some(\"v_size\")"),
+                ("is_preset", "true"),
+                ("origin", "Some(\"v_origin\")"),
+            ],
+        );
+    }
+
+    #[test]
+    fn session_row_wire_json_is_pinned() {
+        assert_roundtrip::<SessionRow>(
+            r#"{"id":"v_id","sessionId":"v_sessionId","stepId":"v_stepId","ordinal":7,"name":"v_name","status":"v_status","providerRunId":"v_providerRunId","outputSummary":"v_outputSummary","startedAt":"v_startedAt","completedAt":"v_completedAt","providerSessionId":"v_providerSessionId","providerSessionProviderId":"v_providerSessionProviderId","lastFinishedAt":"v_lastFinishedAt","lastViewedAt":"v_lastViewedAt","doneAt":"v_doneAt","kind":"v_kind","verbosity":"v_verbosity","effort":"v_effort","modelOverride":"v_modelOverride","providerOverride":"v_providerOverride","parentAgentId":"v_parentAgentId","workflowRunId":"v_workflowRunId","sourceThreadId":"v_sourceThreadId","sourceThreadIds":"v_sourceThreadIds","sourceCommentUrl":"v_sourceCommentUrl","sourceKind":"v_sourceKind","domainsJson":"v_domainsJson","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","stoppedAt":"v_stoppedAt","stoppedBy":"v_stoppedBy"}"#,
+        );
+    }
+
+    #[test]
+    fn phase_run_insert_input_reads_the_pinned_wire_keys() {
+        let value: PhaseRunInsertInput = serde_json::from_str(r#"{"id":"v_id","sessionId":"v_sessionId","stepId":"v_stepId","ordinal":7,"name":"v_name","status":"v_status","providerRunId":"v_providerRunId","outputSummary":"v_outputSummary","startedAt":"v_startedAt","completedAt":"v_completedAt","kind":"v_kind","verbosity":"v_verbosity","effort":"v_effort","modelOverride":"v_modelOverride","providerOverride":"v_providerOverride","parentAgentId":"v_parentAgentId","workflowRunId":"v_workflowRunId","sourceThreadId":"v_sourceThreadId","sourceThreadIds":"v_sourceThreadIds","sourceCommentUrl":"v_sourceCommentUrl","sourceKind":"v_sourceKind","domainsJson":"v_domainsJson","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile"}"#).unwrap();
+        assert_debug_fields(
+            &format!("{value:?}"),
+            &[
+                ("id", "Some(\"v_id\")"),
+                ("session_id", "\"v_sessionId\""),
+                ("step_id", "Some(\"v_stepId\")"),
+                ("ordinal", "7"),
+                ("name", "\"v_name\""),
+                ("status", "\"v_status\""),
+                ("provider_run_id", "Some(\"v_providerRunId\")"),
+                ("output_summary", "Some(\"v_outputSummary\")"),
+                ("started_at", "Some(\"v_startedAt\")"),
+                ("completed_at", "Some(\"v_completedAt\")"),
+                ("kind", "Some(\"v_kind\")"),
+                ("verbosity", "Some(\"v_verbosity\")"),
+                ("effort", "Some(\"v_effort\")"),
+                ("model_override", "Some(\"v_modelOverride\")"),
+                ("provider_override", "Some(\"v_providerOverride\")"),
+                ("parent_agent_id", "Some(\"v_parentAgentId\")"),
+                ("workflow_run_id", "Some(\"v_workflowRunId\")"),
+                ("source_thread_id", "Some(\"v_sourceThreadId\")"),
+                ("source_thread_ids", "Some(\"v_sourceThreadIds\")"),
+                ("source_comment_url", "Some(\"v_sourceCommentUrl\")"),
+                ("source_kind", "Some(\"v_sourceKind\")"),
+                ("domains_json", "Some(\"v_domainsJson\")"),
+                ("routing_lock", "Some(\"v_routingLock\")"),
+                ("routing_decision", "Some(\"v_routingDecision\")"),
+                ("task_profile", "Some(\"v_taskProfile\")"),
+            ],
+        );
+    }
+
+    #[test]
+    fn agent_batch_insert_input_reads_the_pinned_wire_keys() {
+        let value: AgentBatchInsertInput = serde_json::from_str(r#"{"parentAgentId":"v_parentAgentId","children":[{"id":"v_id","sessionId":"v_sessionId","stepId":"v_stepId","ordinal":7,"name":"v_name","status":"v_status","providerRunId":"v_providerRunId","outputSummary":"v_outputSummary","startedAt":"v_startedAt","completedAt":"v_completedAt","kind":"v_kind","verbosity":"v_verbosity","effort":"v_effort","modelOverride":"v_modelOverride","providerOverride":"v_providerOverride","parentAgentId":"v_parentAgentId","workflowRunId":"v_workflowRunId","sourceThreadId":"v_sourceThreadId","sourceThreadIds":"v_sourceThreadIds","sourceCommentUrl":"v_sourceCommentUrl","sourceKind":"v_sourceKind","domainsJson":"v_domainsJson","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile"}]}"#).unwrap();
+        assert_debug_fields(
+            &format!("{value:?}"),
+            &[
+                ("parent_agent_id", "\"v_parentAgentId\""),
+                ("id", "Some(\"v_id\")"),
+                ("session_id", "\"v_sessionId\""),
+                ("step_id", "Some(\"v_stepId\")"),
+                ("ordinal", "7"),
+                ("name", "\"v_name\""),
+                ("status", "\"v_status\""),
+                ("provider_run_id", "Some(\"v_providerRunId\")"),
+                ("output_summary", "Some(\"v_outputSummary\")"),
+                ("started_at", "Some(\"v_startedAt\")"),
+                ("completed_at", "Some(\"v_completedAt\")"),
+                ("kind", "Some(\"v_kind\")"),
+                ("verbosity", "Some(\"v_verbosity\")"),
+                ("effort", "Some(\"v_effort\")"),
+                ("model_override", "Some(\"v_modelOverride\")"),
+                ("provider_override", "Some(\"v_providerOverride\")"),
+                ("parent_agent_id", "Some(\"v_parentAgentId\")"),
+                ("workflow_run_id", "Some(\"v_workflowRunId\")"),
+                ("source_thread_id", "Some(\"v_sourceThreadId\")"),
+                ("source_thread_ids", "Some(\"v_sourceThreadIds\")"),
+                ("source_comment_url", "Some(\"v_sourceCommentUrl\")"),
+                ("source_kind", "Some(\"v_sourceKind\")"),
+                ("domains_json", "Some(\"v_domainsJson\")"),
+                ("routing_lock", "Some(\"v_routingLock\")"),
+                ("routing_decision", "Some(\"v_routingDecision\")"),
+                ("task_profile", "Some(\"v_taskProfile\")"),
+            ],
+        );
+    }
+
+    #[test]
+    fn agent_batch_insert_outcome_wire_json_is_pinned() {
+        let value = AgentBatchInsertOutcome {
+            inserted: true,
+            agents: vec![SessionRow {
+                id: "v_id".to_string(),
+                session_id: "v_sessionId".to_string(),
+                step_id: Some("v_stepId".to_string()),
+                ordinal: 7,
+                name: "v_name".to_string(),
+                status: "v_status".to_string(),
+                provider_run_id: Some("v_providerRunId".to_string()),
+                output_summary: Some("v_outputSummary".to_string()),
+                started_at: Some("v_startedAt".to_string()),
+                completed_at: Some("v_completedAt".to_string()),
+                provider_session_id: Some("v_providerSessionId".to_string()),
+                provider_session_provider_id: Some("v_providerSessionProviderId".to_string()),
+                last_finished_at: Some("v_lastFinishedAt".to_string()),
+                last_viewed_at: Some("v_lastViewedAt".to_string()),
+                done_at: Some("v_doneAt".to_string()),
+                kind: Some("v_kind".to_string()),
+                verbosity: Some("v_verbosity".to_string()),
+                effort: Some("v_effort".to_string()),
+                model_override: Some("v_modelOverride".to_string()),
+                provider_override: Some("v_providerOverride".to_string()),
+                parent_agent_id: Some("v_parentAgentId".to_string()),
+                workflow_run_id: Some("v_workflowRunId".to_string()),
+                source_thread_id: Some("v_sourceThreadId".to_string()),
+                source_thread_ids: Some("v_sourceThreadIds".to_string()),
+                source_comment_url: Some("v_sourceCommentUrl".to_string()),
+                source_kind: Some("v_sourceKind".to_string()),
+                domains_json: Some("v_domainsJson".to_string()),
+                routing_lock: Some("v_routingLock".to_string()),
+                routing_decision: Some("v_routingDecision".to_string()),
+                task_profile: Some("v_taskProfile".to_string()),
+                stopped_at: Some("v_stoppedAt".to_string()),
+                stopped_by: Some("v_stoppedBy".to_string()),
+            }],
+        };
+        assert_eq!(
+            serde_json::to_string(&value).unwrap(),
+            r#"{"inserted":true,"agents":[{"id":"v_id","sessionId":"v_sessionId","stepId":"v_stepId","ordinal":7,"name":"v_name","status":"v_status","providerRunId":"v_providerRunId","outputSummary":"v_outputSummary","startedAt":"v_startedAt","completedAt":"v_completedAt","providerSessionId":"v_providerSessionId","providerSessionProviderId":"v_providerSessionProviderId","lastFinishedAt":"v_lastFinishedAt","lastViewedAt":"v_lastViewedAt","doneAt":"v_doneAt","kind":"v_kind","verbosity":"v_verbosity","effort":"v_effort","modelOverride":"v_modelOverride","providerOverride":"v_providerOverride","parentAgentId":"v_parentAgentId","workflowRunId":"v_workflowRunId","sourceThreadId":"v_sourceThreadId","sourceThreadIds":"v_sourceThreadIds","sourceCommentUrl":"v_sourceCommentUrl","sourceKind":"v_sourceKind","domainsJson":"v_domainsJson","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","stoppedAt":"v_stoppedAt","stoppedBy":"v_stoppedBy"}]}"#
+        );
+    }
+
+    #[test]
+    fn workflow_node_routing_update_input_reads_the_pinned_wire_keys() {
+        let value: WorkflowNodeRoutingUpdateInput = serde_json::from_str(r#"{"nodeKind":"v_nodeKind","id":"v_id","routingLock":"v_routingLock","routingDecision":"v_routingDecision","taskProfile":"v_taskProfile","providerOverride":"v_providerOverride","modelOverride":"v_modelOverride","effort":"v_effort"}"#).unwrap();
+        assert_debug_fields(
+            &format!("{value:?}"),
+            &[
+                ("node_kind", "\"v_nodeKind\""),
+                ("id", "\"v_id\""),
+                ("routing_lock", "Some(\"v_routingLock\")"),
+                ("routing_decision", "\"v_routingDecision\""),
+                ("task_profile", "Some(\"v_taskProfile\")"),
+                ("provider_override", "Some(\"v_providerOverride\")"),
+                ("model_override", "Some(\"v_modelOverride\")"),
+                ("effort", "Some(\"v_effort\")"),
+            ],
+        );
+    }
+
+    #[test]
+    fn phase_run_update_input_reads_the_pinned_wire_keys() {
+        let value: PhaseRunUpdateInput = serde_json::from_str(r#"{"id":"v_id","status":"v_status","providerRunId":"v_providerRunId","outputSummary":"v_outputSummary","startedAt":"v_startedAt","completedAt":"v_completedAt","stoppedAt":"v_stoppedAt","stoppedBy":"v_stoppedBy"}"#).unwrap();
+        assert_debug_fields(
+            &format!("{value:?}"),
+            &[
+                ("id", "\"v_id\""),
+                ("status", "\"v_status\""),
+                ("provider_run_id", "Some(\"v_providerRunId\")"),
+                ("output_summary", "Some(\"v_outputSummary\")"),
+                ("started_at", "Some(\"v_startedAt\")"),
+                ("completed_at", "Some(\"v_completedAt\")"),
+                ("stopped_at", "Some(\"v_stoppedAt\")"),
+                ("stopped_by", "Some(\"v_stoppedBy\")"),
+            ],
+        );
     }
 }

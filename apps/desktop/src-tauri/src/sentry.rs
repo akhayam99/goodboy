@@ -5,6 +5,7 @@ use thiserror::Error;
 use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
+use crate::util::now_ms;
 
 const PROVIDER: &str = "sentry";
 
@@ -240,13 +241,6 @@ fn retry_after_ms(value: &str, now_ms: i64) -> Option<u64> {
         return (seconds.is_finite() && seconds >= 0.0).then(|| (seconds * 1000.0).ceil() as u64);
     }
     parse_http_date_ms(value).map(|at| at.saturating_sub(now_ms).max(0) as u64)
-}
-
-fn now_ms() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or(0)
 }
 
 fn retry_wait(attempt: u32, retry_after: Option<&str>) -> std::time::Duration {

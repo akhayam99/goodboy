@@ -228,8 +228,11 @@ fn db_remove_migration_snapshot_blocking(db_path: PathBuf, path: String) -> Resu
     Ok(())
 }
 
+const STATEMENT_CACHE_CAPACITY: usize = 128;
+
 fn open_connection(path: &std::path::Path) -> Result<Connection, DbError> {
     let conn = Connection::open(path)?;
+    conn.set_prepared_statement_cache_capacity(STATEMENT_CACHE_CAPACITY);
     conn.execute_batch("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;")?;
     Ok(conn)
 }
@@ -366,9 +369,12 @@ pub fn db_execute(
     params: Option<Vec<SqlParam>>,
 ) -> Result<ExecResult, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let mut stmt = conn.prepare(&sql)?;
-    let bound = params.unwrap_or_default();
-    let values: Vec<Value> = bound.iter().map(SqlParam::to_value).collect();
+    execute_sql(&conn, &sql, &params.unwrap_or_default())
+}
+
+fn execute_sql(conn: &Connection, sql: &str, params: &[SqlParam]) -> Result<ExecResult, DbError> {
+    let mut stmt = conn.prepare_cached(sql)?;
+    let values: Vec<Value> = params.iter().map(SqlParam::to_value).collect();
     let rows_affected = stmt.execute(params_from_iter(values.iter()))? as i64;
     Ok(ExecResult { rows_affected })
 }
@@ -399,9 +405,16 @@ pub fn db_select(
     params: Option<Vec<SqlParam>>,
 ) -> Result<Vec<Map<String, serde_json::Value>>, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
-    let mut stmt = conn.prepare(&sql)?;
-    let bound = params.unwrap_or_default();
-    Ok(collect_rows(&mut stmt, &bound)?)
+    select_rows(&conn, &sql, &params.unwrap_or_default())
+}
+
+fn select_rows(
+    conn: &Connection,
+    sql: &str,
+    params: &[SqlParam],
+) -> Result<Vec<Map<String, serde_json::Value>>, DbError> {
+    let mut stmt = conn.prepare_cached(sql)?;
+    Ok(collect_rows(&mut stmt, params)?)
 }
 
 fn collect_rows(
@@ -409,12 +422,19 @@ fn collect_rows(
     params: &[SqlParam],
 ) -> Result<Vec<Map<String, serde_json::Value>>, rusqlite::Error> {
     let values: Vec<Value> = params.iter().map(SqlParam::to_value).collect();
-    let column_names: Vec<String> = stmt.column_names().into_iter().map(String::from).collect();
     let mut rows = stmt.query(params_from_iter(values.iter()))?;
+    let mut column_names: Option<Vec<String>> = None;
     let mut out = Vec::new();
     while let Some(row) = rows.next()? {
+        let names = column_names.get_or_insert_with(|| {
+            row.as_ref()
+                .column_names()
+                .into_iter()
+                .map(String::from)
+                .collect()
+        });
         let mut record = Map::new();
-        for (idx, name) in column_names.iter().enumerate() {
+        for (idx, name) in names.iter().enumerate() {
             record.insert(name.clone(), value_to_json(row.get_ref(idx)?));
         }
         out.push(record);
@@ -466,7 +486,7 @@ fn run_statement(
     conn: &Connection,
     statement: &TxStatement,
 ) -> Result<TxStatementResult, rusqlite::Error> {
-    let mut stmt = conn.prepare(&statement.sql)?;
+    let mut stmt = conn.prepare_cached(&statement.sql)?;
     let is_readonly = stmt.readonly();
     let rows = collect_rows(&mut stmt, &statement.params)?;
     let rows_affected = if is_readonly {
@@ -1030,5 +1050,114 @@ mod tests {
             .unwrap();
         assert_eq!(live, 1);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    fn times_run(conn: &Connection, sql: &str) -> i32 {
+        conn.prepare_cached(sql)
+            .unwrap()
+            .get_status(rusqlite::StatementStatus::Run)
+    }
+
+    const WORKSPACE_COUNT_SQL: &str = "SELECT COUNT(*) AS n FROM workspaces";
+
+    #[test]
+    fn db_select_reuses_one_compiled_statement_per_sql_text() {
+        let conn = memory_db();
+        select_rows(&conn, WORKSPACE_COUNT_SQL, &[]).unwrap();
+        select_rows(&conn, WORKSPACE_COUNT_SQL, &[]).unwrap();
+        select_rows(&conn, WORKSPACE_COUNT_SQL, &[]).unwrap();
+
+        assert_eq!(times_run(&conn, WORKSPACE_COUNT_SQL), 3);
+    }
+
+    #[test]
+    fn db_execute_reuses_one_compiled_statement_per_sql_text() {
+        let conn = memory_db();
+        let sql = "INSERT INTO workspaces (id, name) VALUES (?, ?)";
+        for id in ["a", "b", "c"] {
+            let params = [
+                SqlParam::Text(id.to_string()),
+                SqlParam::Text("x".to_string()),
+            ];
+            assert_eq!(execute_sql(&conn, sql, &params).unwrap().rows_affected, 1);
+        }
+
+        assert_eq!(times_run(&conn, sql), 3);
+        assert_eq!(count(&conn), 3);
+    }
+
+    #[test]
+    fn a_transaction_reuses_one_compiled_statement_per_sql_text() {
+        let mut conn = memory_db();
+        let batch: Vec<TxStatement> = ["a", "b", "c"].into_iter().map(insert).collect();
+        run_transaction(&mut conn, &batch).unwrap();
+        run_transaction(&mut conn, &[insert("d")]).unwrap();
+
+        assert_eq!(
+            times_run(&conn, "INSERT INTO workspaces (id, name) VALUES (?, ?)"),
+            4
+        );
+        assert_eq!(count(&conn), 4);
+    }
+
+    #[test]
+    fn a_reused_statement_binds_fresh_params_and_returns_fresh_rows() {
+        let conn = memory_db();
+        let sql = "SELECT name FROM workspaces WHERE id = ?";
+        for (id, name) in [("a", "one"), ("b", "two")] {
+            execute_sql(
+                &conn,
+                "INSERT INTO workspaces (id, name) VALUES (?, ?)",
+                &[
+                    SqlParam::Text(id.to_string()),
+                    SqlParam::Text(name.to_string()),
+                ],
+            )
+            .unwrap();
+        }
+        let read = |id: &str| select_rows(&conn, sql, &[SqlParam::Text(id.to_string())]).unwrap();
+
+        assert_eq!(read("a")[0]["name"], serde_json::json!("one"));
+        assert_eq!(read("b")[0]["name"], serde_json::json!("two"));
+        assert!(read("missing").is_empty());
+        assert_eq!(times_run(&conn, sql), 3);
+    }
+
+    #[test]
+    fn a_cached_select_star_sees_a_column_added_after_it_was_compiled() {
+        let conn = memory_db();
+        let sql = "SELECT * FROM workspaces";
+        select_rows(&conn, sql, &[]).unwrap();
+        conn.execute_batch(
+            "ALTER TABLE workspaces ADD COLUMN color TEXT DEFAULT 'blue';
+             INSERT INTO workspaces (id, name) VALUES ('a', 'one');",
+        )
+        .unwrap();
+
+        let rows = select_rows(&conn, sql, &[]).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0]["color"], serde_json::json!("blue"));
+        assert_eq!(rows[0].len(), 3);
+    }
+
+    #[test]
+    fn the_opened_connection_keeps_more_statements_than_the_default_cache() {
+        let dir = scratch_dir("statement-cache");
+        let conn = open_connection(&dir.join("data.db")).unwrap();
+        conn.execute_batch("CREATE TABLE workspaces (id TEXT PRIMARY KEY, name TEXT NOT NULL);")
+            .unwrap();
+        let sqls: Vec<String> = (0..100)
+            .map(|index| format!("SELECT {index} AS n FROM workspaces"))
+            .collect();
+        for sql in &sqls {
+            select_rows(&conn, sql, &[]).unwrap();
+        }
+        for sql in &sqls {
+            select_rows(&conn, sql, &[]).unwrap();
+        }
+
+        assert!(sqls.iter().all(|sql| times_run(&conn, sql) == 2));
+        assert!(STATEMENT_CACHE_CAPACITY >= sqls.len());
     }
 }
