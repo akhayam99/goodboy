@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { ArchiveRestore } from 'lucide-react';
 import { IconButton, InteractiveRow, cn } from '@goodboy/ui';
 import type { ChatId } from '@goodboy/types';
@@ -27,9 +27,17 @@ const ChatArchivedRowView = ({
   onDelete,
 }: Props) => {
   const [isConfirming, setIsConfirming] = useState(false);
+  const confirmRef = useRef<HTMLLIElement>(null);
+
+  useEffect(() => {
+    if (isConfirming) {
+      confirmRef.current?.scrollIntoView?.({ block: 'nearest' });
+    }
+  }, [isConfirming]);
+
   if (isConfirming) {
     return (
-      <li data-chat-row={chatId}>
+      <li ref={confirmRef} data-chat-row={chatId}>
         <ChatDeleteConfirm
           title={title}
           canArchive={false}

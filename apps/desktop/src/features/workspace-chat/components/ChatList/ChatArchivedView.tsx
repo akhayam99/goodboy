@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ArrowLeft, Search } from 'lucide-react';
-import { ScrollFade } from '@goodboy/ui';
+import { Button, ScrollFade } from '@goodboy/ui';
 import type { ChatId, ChatSummary } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { markdownPreview } from '../../../../shared/utils/markdownPreview';
@@ -46,7 +46,7 @@ export const ChatArchivedView = ({
           <ArrowLeft size={ICON_SIZE.control} aria-hidden />
           Chats
         </button>
-        <h2 className="text-label font-semibold text-foreground">Archived</h2>
+        <h2 className="text-heading text-foreground">Archived</h2>
       </div>
       <label className="flex h-7 items-center gap-2 rounded-md border border-border-soft px-2 text-faint-foreground focus-within:border-border">
         <Search size={ICON_SIZE.row} aria-hidden />
@@ -60,7 +60,7 @@ export const ChatArchivedView = ({
         />
       </label>
       <ScrollFade className="flex-1">
-        <nav aria-label="Archived chats" className="flex flex-col gap-0.5 pb-3">
+        <nav aria-label="Archived chats" className="flex flex-col gap-0.5 pb-3 pr-3.5">
           {shown.length === 0 ? (
             <p className="px-2 py-4 text-label text-faint-foreground">
               {chats.length === 0 ? 'No archived chats' : 'No archived chats match'}
@@ -96,13 +96,14 @@ export const ChatArchivedView = ({
               onCancel={() => setIsPurging(false)}
             />
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-danger"
               onClick={() => setIsPurging(true)}
-              className="h-7 w-full rounded-md px-2 text-left text-label text-danger motion-safe:transition-colors hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
             >
               Delete all archived
-            </button>
+            </Button>
           )}
         </div>
       )}

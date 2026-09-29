@@ -42,7 +42,7 @@ export const ChatDeleteConfirm = ({ title, canArchive, onDelete, onArchive, onCa
       <p className="truncate rounded-md border border-border-soft bg-subtle px-2 py-1 text-foreground">
         {title}
       </p>
-      {error === null ? null : <p className="font-medium text-danger">{error}</p>}
+      {error === null ? null : <p className="text-danger">{error}</p>}
     </InlineConfirm>
   );
 };

@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Ellipsis, Pin, PinOff } from 'lucide-react';
 import { ContextMenu, IconButton, InteractiveRow, StatusDot, cn } from '@goodboy/ui';
 import type { MenuPoint } from '@goodboy/ui';
@@ -49,9 +49,16 @@ const ChatListRowView = ({
   const markChatRead = useAppStore((state) => state.markChatRead);
   const marker = useChatSessionMarker({ chatId });
   const moreRef = useRef<HTMLSpanElement>(null);
+  const confirmRef = useRef<HTMLLIElement>(null);
   const [menuPoint, setMenuPoint] = useState<MenuPoint | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  useEffect(() => {
+    if (isConfirming) {
+      confirmRef.current?.scrollIntoView?.({ block: 'nearest' });
+    }
+  }, [isConfirming]);
 
   const entries = useMemo(
     () =>
@@ -85,7 +92,7 @@ const ChatListRowView = ({
 
   if (isConfirming) {
     return (
-      <li data-chat-row={chatId}>
+      <li ref={confirmRef} data-chat-row={chatId}>
         <ChatDeleteConfirm
           title={title}
           canArchive
@@ -150,7 +157,6 @@ const ChatListRowView = ({
               <span
                 className={cn(
                   'min-w-0 flex-1 truncate text-label group-hover:pr-12 group-focus-within:pr-12',
-                  isUnread ? 'font-medium' : '',
                   isIdle && !isSelected ? 'text-faint-foreground' : 'text-foreground',
                 )}
               >

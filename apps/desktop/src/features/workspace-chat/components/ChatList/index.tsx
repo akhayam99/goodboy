@@ -181,7 +181,7 @@ export const ChatList = ({
         />
       </label>
       <ScrollFade className="flex-1">
-        <nav aria-label="Chats" className="flex flex-col gap-3 pb-3">
+        <nav aria-label="Chats" className="flex flex-col gap-3 pb-3 pr-3.5">
           {archived !== null && !archived.isIdle ? undoRow : null}
           <ChatListGroup
             title="Pinned"

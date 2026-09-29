@@ -31,7 +31,7 @@ export const ChatPurgeConfirm = ({ count, onDelete, onCancel }: Props) => {
       onConfirm={confirm}
       onCancel={onCancel}
     >
-      {error === null ? null : <p className="font-medium text-danger">{error}</p>}
+      {error === null ? null : <p className="text-danger">{error}</p>}
     </InlineConfirm>
   );
 };

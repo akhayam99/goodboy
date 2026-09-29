@@ -8,6 +8,7 @@ import type {
   IsoDateTime,
 } from '@goodboy/types';
 import type { ChatSeed, ChatSeedParams } from './createMemoryChatBackend';
+import { MOCK_ARCHIVED_CHATS } from './mockArchivedChats';
 import { MOCK_CHAT_ANSWERS } from './mockChatAnswers';
 import { mockChatSessionId, type MockChatSessionKey } from './mockChatSessions';
 
@@ -182,6 +183,54 @@ export const mockChatSeed = ({ workspaceId, now = Date.now() }: Params): ChatSee
         createdAt: answeredAt,
       });
     }
+  }
+  for (const archived of MOCK_ARCHIVED_CHATS) {
+    const chatId = `mock-chat-${workspaceId}-${archived.key}` as ChatId;
+    const askedAt = isoAt({ ms: now - archived.ageMs - 60_000 });
+    const answeredAt = isoAt({ ms: now - archived.ageMs });
+    chats.push({
+      id: chatId,
+      workspaceId,
+      title: archived.title,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: null,
+      pinnedAt: null,
+      archivedAt: isoAt({ ms: now - archived.archivedAgoMs }),
+      lastActivityAt: answeredAt,
+      createdAt: askedAt,
+      updatedAt: isoAt({ ms: now - archived.archivedAgoMs }),
+    });
+    messages.push(
+      {
+        id: `${chatId}-question` as ChatMessageId,
+        chatId,
+        role: 'user',
+        content: archived.question,
+        status: 'done',
+        reads: [],
+        error: null,
+        provider: null,
+        model: null,
+        effort: null,
+        createdAt: askedAt,
+        updatedAt: askedAt,
+      },
+      {
+        id: `${chatId}-answer` as ChatMessageId,
+        chatId,
+        role: 'assistant',
+        content: archived.answer,
+        status: 'done',
+        reads: [],
+        error: null,
+        provider: 'anthropic',
+        model: 'sonnet-5',
+        effort: 'medium',
+        createdAt: answeredAt,
+        updatedAt: answeredAt,
+      },
+    );
   }
   return { chats, messages, links };
 };

@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import type {
+  ChatId,
+  ChatMessageId,
+  ChatSessionLinkId,
   IsoDateTime,
   OpenQuestionId,
   PullRequestState,
@@ -18,6 +21,7 @@ import { useAppStore } from '../../../../store';
 import { shellArrangement } from '../../../shellArrangement';
 import { NOW, SESSION, WORKSPACE_ID, seedWorkflowScene } from './workflowSeed';
 import { sceneClock } from '../sceneClock';
+import { sceneParam } from './audit/sceneParams';
 
 const clock = sceneClock({ anchor: '2026-08-25T18:00:00.000Z' });
 
@@ -225,12 +229,55 @@ const seedShellChrome = () => {
   });
 };
 
+const seedChatOrigin = (): void => {
+  if (sceneParam({ key: 'origin' }) !== 'chat') {
+    return;
+  }
+  const chatId = 'mock-shell-chat-consent' as ChatId;
+  const at = clock.iso({ at: '2026-08-25T17:20:00.000Z' });
+  useAppStore.setState({
+    chatsByWorkspace: {
+      [WORKSPACE_ID]: [
+        {
+          id: chatId,
+          workspaceId: WORKSPACE_ID,
+          title: 'Where is the consent step defined?',
+          provider: 'anthropic',
+          model: 'sonnet-5',
+          effort: null,
+          pinnedAt: null,
+          archivedAt: null,
+          lastActivityAt: at,
+          createdAt: at,
+          updatedAt: at,
+          preview: 'It lives in payments-api: the questionnaire declares consent as step 4.',
+          modelsUsed: [],
+        },
+      ],
+    },
+    archivedChatsByWorkspace: { [WORKSPACE_ID]: [] },
+    chatLinks: {
+      [chatId]: [
+        {
+          id: 'mock-shell-chat-link' as ChatSessionLinkId,
+          chatId,
+          sessionId: SESSION.id,
+          messageId: 'mock-shell-chat-answer' as ChatMessageId,
+          kind: 'new',
+          createdAt: at,
+        },
+      ],
+    },
+  });
+};
+
 export const ShellScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     seedWorkflowScene();
     seedShellChrome();
+    seedChatOrigin();
     setIsReady(true);
   }, []);
 
