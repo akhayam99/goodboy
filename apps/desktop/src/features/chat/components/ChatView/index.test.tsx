@@ -219,6 +219,23 @@ describe('ChatView', () => {
     expect(state.openDrawer).not.toHaveBeenCalled();
   });
 
+  it('tightens the top inset under a pane header', () => {
+    state.selectedAgentId = { 'sess-1': 'agent-1' };
+    transcriptItems.current = [{ kind: 'user_text', key: 'u0', at: '2026-06-13T00:00:00.000Z' }];
+    const viewportOf = (root: HTMLElement) => {
+      let node = root.querySelector('ul[data-find-root]')?.parentElement ?? null;
+      while (node !== null && !node.className.includes('px-6')) {
+        node = node.parentElement;
+      }
+      return node;
+    };
+    const tight = render(<ChatView session={session} topInset="tight" />);
+    expect(viewportOf(tight.container)?.className).toContain('pt-2');
+    cleanup();
+    const roomy = render(<ChatView session={session} />);
+    expect(viewportOf(roomy.container)?.className).toContain('pt-6');
+  });
+
   it('renders without throwing on an empty session', () => {
     const { container } = render(<ChatView session={session} />);
     expect(container.firstChild).not.toBeNull();
