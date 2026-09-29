@@ -8,6 +8,7 @@ export const OPENROUTER_AGENT_MODEL_IDS = [
   'openrouter/anthropic/claude-sonnet-4.5',
   'openrouter/anthropic/claude-sonnet-4.6',
   'openrouter/anthropic/claude-sonnet-5',
+  'openrouter/anthropic/claude-sonnet-5.5',
   'openrouter/deepseek/deepseek-v4-flash',
   'openrouter/deepseek/deepseek-v4-pro',
   'openrouter/deepseek/deepseek-v4.1-flash',
