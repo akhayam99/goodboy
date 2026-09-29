@@ -287,10 +287,17 @@ pub struct ToolBindingBundle {
 pub struct AppPreferencesBundle {
     #[serde(rename = "editorBinary")]
     pub editor_binary: Option<String>,
-    #[serde(rename = "editorDefault")]
+    #[serde(rename = "editorDefault", default, skip_serializing)]
     pub editor_default: Option<String>,
     #[serde(rename = "hiddenModelsJson")]
     pub hidden_models_json: Option<String>,
+}
+
+fn editor_binary_to_import(prefs: &AppPreferencesBundle) -> Option<&str> {
+    prefs
+        .editor_binary
+        .as_deref()
+        .or(prefs.editor_default.as_deref())
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -862,7 +869,7 @@ fn build_bundle(
         }
         AppPreferencesBundle {
             editor_binary: get_setting(conn, "editor.binary"),
-            editor_default: get_setting(conn, "editor.default"),
+            editor_default: None,
             hidden_models_json: get_setting(conn, "providers.hiddenModels"),
         }
     } else {
@@ -1383,11 +1390,7 @@ fn apply_bundle(
         let setting_pairs: &[(&str, Option<&str>)] = &[
             (
                 "editor.binary",
-                bundle.app_preferences.editor_binary.as_deref(),
-            ),
-            (
-                "editor.default",
-                bundle.app_preferences.editor_default.as_deref(),
+                editor_binary_to_import(&bundle.app_preferences),
             ),
             (
                 "providers.hiddenModels",
@@ -2065,6 +2068,41 @@ mod tests {
                 ["schemaVersion"],
             serde_json::Value::Number(serde_json::Number::from(SCHEMA_VERSION))
         );
+    }
+
+    #[test]
+    fn import_reads_a_legacy_editor_default_into_editor_binary() {
+        let prefs: AppPreferencesBundle =
+            serde_json::from_str(r#"{"editorDefault":"zed"}"#).expect("parse failed");
+        assert_eq!(editor_binary_to_import(&prefs), Some("zed"));
+    }
+
+    #[test]
+    fn import_keeps_editor_binary_over_a_legacy_editor_default() {
+        let prefs: AppPreferencesBundle =
+            serde_json::from_str(r#"{"editorBinary":"cursor","editorDefault":"zed"}"#)
+                .expect("parse failed");
+        assert_eq!(editor_binary_to_import(&prefs), Some("cursor"));
+    }
+
+    #[test]
+    fn import_skips_the_editor_when_the_bundle_names_none() {
+        assert_eq!(
+            editor_binary_to_import(&AppPreferencesBundle::default()),
+            None
+        );
+    }
+
+    #[test]
+    fn export_never_writes_editor_default() {
+        let prefs = AppPreferencesBundle {
+            editor_binary: Some("code".to_string()),
+            editor_default: Some("zed".to_string()),
+            hidden_models_json: None,
+        };
+        let json = serde_json::to_string(&prefs).expect("serialize failed");
+        assert!(!json.contains("editorDefault"), "json kept editorDefault");
+        assert!(json.contains("editorBinary"));
     }
 
     #[test]
