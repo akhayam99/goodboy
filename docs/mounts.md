@@ -150,8 +150,8 @@ own base, then its project's, then nothing. `resolveMountBaseBranch` and
 `selectMountBaseBranch` make that choice, and no caller writes `main` itself.
 With no name, Rust finds the repo default in one ordered list: `origin/HEAD`,
 then `main`, `master` and `develop` (the remote copy first), then the branch
-the main checkout sits on. A checkout on that branch never becomes its own
-base, so a repo with no default at all stays unknown and branch cleanup keeps
+the main checkout sits on. A checkout never becomes its own base, whatever
+the name, so a repo with no default at all stays unknown and branch cleanup keeps
 what it cannot place. Creating a mount may cut from the main checkout branch.
 The rebase plan and the history graph take the same optional name.
 

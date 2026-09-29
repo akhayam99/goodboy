@@ -769,6 +769,7 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
             .filter(|s| !s.is_empty());
         let detected_base = configured_base
             .map(str::to_string)
+            .or_else(|| resolve_origin_head(&repo_path))
             .or_else(|| default_base_name(&repo_path, true));
         let fetch_failure = detected_base
             .as_deref()
@@ -3291,19 +3292,13 @@ fn main_checkout_branch(cwd: &Path, allow_own: bool) -> Option<String> {
         .into_iter()
         .find(|entry| entry.is_main)?
         .branch?;
-    let own = git(cwd, &["symbolic-ref", "--quiet", "--short", "HEAD"])
-        .ok()
-        .map(|found| found.trim().to_string());
-    match !allow_own && own.as_deref() == Some(checkout.as_str()) {
+    match !allow_own && current_branch_name(cwd).as_deref() == Some(checkout.as_str()) {
         true => None,
         false => Some(checkout),
     }
 }
 
 pub(crate) fn default_base_name(cwd: &Path, allow_own_checkout: bool) -> Option<String> {
-    if let Some(head) = resolve_origin_head(cwd) {
-        return Some(head);
-    }
     base_candidates_with(cwd, None, allow_own_checkout)
         .into_iter()
         .find(|candidate| commit_ref_exists(cwd, candidate))
@@ -3337,11 +3332,19 @@ fn base_candidates_with(
         add(format!("origin/{base}"));
         add(base);
     }
-    for name in KNOWN_DEFAULT_BRANCHES {
+    let own = match allow_own_checkout {
+        true => None,
+        false => current_branch_name(cwd),
+    };
+    let known: Vec<&str> = KNOWN_DEFAULT_BRANCHES
+        .into_iter()
+        .filter(|name| own.as_deref() != Some(*name))
+        .collect();
+    for name in &known {
         add(format!("origin/{name}"));
     }
-    for name in KNOWN_DEFAULT_BRANCHES {
-        add(name.to_string());
+    for name in &known {
+        add((*name).to_string());
     }
     if let Some(base) = main_checkout_branch(cwd, allow_own_checkout) {
         add(format!("origin/{base}"));
@@ -5359,6 +5362,61 @@ mod default_base_tests {
         assert_eq!(
             super::resolve_base_ref(&path, None).as_deref(),
             Some("main")
+        );
+        cleanup(root);
+    }
+
+    #[test]
+    fn a_checkout_on_a_known_default_name_is_never_its_own_base() {
+        for name in ["main", "develop"] {
+            let root = repo_on(&format!("own-{name}"), name);
+
+            assert_eq!(super::resolve_base(&root, None), None, "{name}");
+            assert_eq!(super::resolve_base_ref(&root, None), None, "{name}");
+            assert_eq!(super::default_base_name(&root, false), None, "{name}");
+            assert!(
+                crate::history::rebase_plan(&root, None, false).is_err(),
+                "{name}"
+            );
+            cleanup(root);
+        }
+    }
+
+    #[test]
+    fn a_dangling_origin_head_falls_through_for_every_resolver() {
+        let root = repo_on("dangling-head", "main");
+        let remote = root.join("remote.git");
+        git_ok(&root, &["init", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        git_ok(&root, &["push", "-u", "origin", "main"]);
+        git_ok(
+            &root,
+            &[
+                "symbolic-ref",
+                "refs/remotes/origin/HEAD",
+                "refs/remotes/origin/master",
+            ],
+        );
+        let path = mount(&root, "dangling");
+        commit(&path, "feature.txt", "a\n", "feature");
+
+        let plan = crate::history::rebase_plan(&path, None, false).unwrap();
+
+        assert_eq!(plan.onto_ref, "origin/main");
+        assert_eq!(
+            super::default_base_name(&path, false).as_deref(),
+            Some("main")
+        );
+        assert_eq!(
+            super::resolve_base(&path, None).map(|(base_ref, _)| base_ref),
+            Some("origin/main".to_string())
+        );
+        assert_eq!(
+            super::resolve_base_ref(&path, None).as_deref(),
+            Some("origin/main")
         );
         cleanup(root);
     }
