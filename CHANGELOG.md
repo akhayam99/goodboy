@@ -12,6 +12,17 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.13.1
+
+A new Sonnet model joins the picker for Claude, Cursor and OpenRouter.
+
+### New
+
+#### Claude Sonnet 5.5
+<!-- gb area=providers screen=settings/providers -->
+
+Sonnet 5.5 is available for Claude, Cursor and OpenRouter. Pick it for an agent or a turn from the model picker, and on Cursor choose one of its five effort levels. Your default models stay as they are.
+
 ## Goodboy v0.13.0
 
 Ask the whole workspace a question in Chat, and answer every agent question from one card with a number key.
