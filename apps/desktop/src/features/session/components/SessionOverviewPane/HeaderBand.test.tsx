@@ -56,6 +56,7 @@ vi.mock('./SessionRefreshAction', () => ({
   SessionRefreshAction: () => <button aria-label="Refresh" />,
 }));
 vi.mock('./ArchivedRestore', () => ({ ArchivedRestore: () => <button>Restore</button> }));
+vi.mock('./ChatOriginRow', () => ({ ChatOriginRow: () => null }));
 vi.mock('./ContextChip', () => ({ ContextChip: () => <span>Context</span> }));
 vi.mock('./GoalTeaser', () => ({
   GoalTeaser: () => <button type="button">Goal: Keep the ledger balanced</button>,

@@ -1188,18 +1188,27 @@ conversation is the wrapped sheet, and "Turn into work" is the
 - **The conversation** is one `max-w-2xl` column. The question is a `bg-subtle`
   bubble on the right in `text-prose`; the answer is `Markdown` in
   `text-prose` with no bubble. Under it, in order: `Read N files` (a quiet
-  disclosure listing paths in `text-code`), then Copy (`CopyButton` with
-  `tone="faint"`) and "Start work from here", quiet `text-secondary` actions
-  in the same faint tone as the disclosure. A streaming answer with no text yet shows a pulsing `StatusDot` and
-  "Reading {workspace}", never a spinner.
-- **The header** holds the chat title as `text-heading`, three
-  `border-soft` chips (workspace and project count, Read-only, the model with
-  its provider glyph) that hide below `@3xl/chat`, and one secondary
-  `Start work` button.
+  disclosure listing paths in `text-code`), then one `h-7` row. Copy
+  (`CopyButton` with `tone="faint"`) and "Start work from here" sit on the
+  left, quiet `text-secondary` actions that show on hover or keyboard focus of
+  the answer (`group/answer`, `opacity-0` at rest so the row never shifts);
+  the model and effort that wrote the answer sit on the right as faint
+  `text-secondary` text, always visible. A saved session link is a
+  `bg-subtle` note in the thread under the answer it came from. A streaming
+  answer with no text yet shows a pulsing `StatusDot` and "Reading {workspace}",
+  never a spinner.
+- **The header** holds the chat title as `text-heading`, the linked-sessions
+  chip and one secondary `Start work` button. The chip is a `border-soft`
+  button with the sessions glyph, "N sessions" and a `StatusDot` in the tone
+  of the most urgent linked session (`STAGE_TONE`); it opens an anchored
+  popover listing each session with its stage dot, title, origin and an Open
+  button. It is absent while no live session is linked.
 - **The composer** is the only pinned row: a `bg-subtle` box with the
-  textarea, the model menu (provider glyph, never a sparkle), the Enter hint
-  from `@2xl/chat`, and a square send button that turns into Stop while an
-  answer streams.
+  textarea, the app `RoutingPicker` in its `pill` variant (chat providers
+  only, effort editable, a one-line footer for the providers that cannot
+  chat), the faint "Read-only · N projects" hint from `@2xl/chat`, and a
+  square send button that turns into Stop while an answer streams. The Enter
+  and Shift+Enter keys live in the send button's tooltip.
 
 ## Motion registry
 

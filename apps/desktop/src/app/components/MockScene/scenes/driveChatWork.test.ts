@@ -14,6 +14,8 @@ const mount = (html: string): void => {
 describe('driveChatWork', () => {
   it('knows the stages a scene URL may ask for', () => {
     expect(isChatWorkStage('project')).toBe(true);
+    expect(isChatWorkStage('started')).toBe(true);
+    expect(isChatWorkStage('back')).toBe(true);
     expect(isChatWorkStage('popover')).toBe(false);
     expect(isChatWorkStage(null)).toBe(false);
   });
@@ -85,5 +87,44 @@ describe('driveChatWork', () => {
 
     expect(onStart).toHaveBeenCalledTimes(1);
     second();
+  });
+
+  it('starts the session once the brief is ready for the started stage', async () => {
+    const clicked: string[] = [];
+    mount('<button id="start">Start work</button>');
+    document.getElementById('start')?.addEventListener('click', () => {
+      clicked.push('start work');
+      mount('<button id="go" disabled>Start session</button>');
+      document.getElementById('go')?.addEventListener('click', () => clicked.push('start session'));
+    });
+
+    const stop = driveChatWork({ stage: 'started' });
+    expect(clicked).toEqual(['start work']);
+
+    document.getElementById('go')?.removeAttribute('disabled');
+    await vi.waitFor(() => expect(clicked).toEqual(['start work', 'start session']));
+    stop();
+  });
+
+  it('goes back only after the new session is showing', async () => {
+    const clicked: string[] = [];
+    mount('<button id="start">Start work</button>');
+    document.getElementById('start')?.addEventListener('click', () => {
+      clicked.push('start work');
+      mount('<button id="go">Start session</button>');
+      document.getElementById('go')?.addEventListener('click', () => {
+        clicked.push('start session');
+        document.body.innerHTML = '<button aria-label="Back to Chat" id="back">Back</button>';
+        document.getElementById('back')?.addEventListener('click', () => clicked.push('back'));
+      });
+    });
+
+    const stop = driveChatWork({ stage: 'back' });
+    await vi.waitFor(() => expect(clicked).toEqual(['start work', 'start session']));
+    expect(clicked).not.toContain('back');
+
+    mount('<div data-scene-view="session"></div>');
+    await vi.waitFor(() => expect(clicked).toEqual(['start work', 'start session', 'back']));
+    stop();
   });
 });

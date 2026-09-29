@@ -43,8 +43,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
     'artifact files from deleted sessions: storage keep and delete',
-  'features/workspace-chat/components/ChatComposer/ChatModelMenu.tsx':
-    'property picker: sets the chat model from the composer chip that shows it',
 };
 
 const isSource = (path: string): boolean =>

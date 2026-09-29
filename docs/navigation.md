@@ -656,6 +656,14 @@ covered.
   a new chat with the query as its first message; a query that reads like a
   question (ends with `?` or has four words or more) has it picked, a shorter
   one keeps the best match picked so Enter still jumps.
+  Start session in a chat's Turn into work panel creates the session and
+  navigates to `sessionPlace({ sessionId })`, the overview, as a new history
+  entry after the chat's own; Back returns to the same chat because
+  `captureLocation` keeps `appStudio`. Add to session navigates to that
+  session and, once its agents load, replaces the entry with the latest
+  top-level agent (`landOnSession.ts`) so the brief waits in that agent's
+  composer draft (`agentDraft`); a session without an agent opens on its
+  overview with nothing drafted.
 - Right: the storage chip, the Now chip (needs you, running, scripts, each
   only when above zero), today's spend and the bell. The storage chip
   (`StorageChip`) reads `Free 7 GB` in muted text only while at least 1 GB of

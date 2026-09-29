@@ -38,6 +38,7 @@ export type Props = {
   readonly shortcut?: ShortcutId;
   readonly availability?: 'run' | 'setup';
   readonly presentation?: 'popover' | 'inline';
+  readonly isEffortHidden?: boolean;
   readonly budget?: ReactNode;
 };
 
@@ -66,6 +67,7 @@ export const RoutingPicker = ({
   shortcut,
   availability = 'run',
   presentation = 'popover',
+  isEffortHidden = false,
   budget,
 }: Props) => {
   const isInline = presentation === 'inline';
@@ -91,7 +93,7 @@ export const RoutingPicker = ({
     recommendation,
   });
   const isOverridden = overridden === true;
-  const showEffort = !routing.isEffortFixed;
+  const showEffort = !routing.isEffortFixed && !isEffortHidden;
   const routingModel = MODEL_CATALOGS[routing.provider].find(
     (candidate) => candidate.key === routing.model,
   );
@@ -129,6 +131,7 @@ export const RoutingPicker = ({
       summary={summary}
       availability={availability}
       isInline={isInline}
+      isEffortHidden={isEffortHidden}
       onConnectionInFlightChange={setIsProviderConnectionInFlight}
       {...(!isInline && { focusRoot: dropdown.popupRef })}
       {...(recommendation != null && { recommendation })}

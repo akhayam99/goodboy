@@ -2,6 +2,7 @@ export type {
   AgentId,
   ChatId,
   ChatMessageId,
+  ChatSessionLinkId,
   CredentialId,
   FileVersionId,
   IntegrationCredentialId,
@@ -79,6 +80,7 @@ export {
   CHAT_MESSAGE_STATUSES,
   CHAT_PROVIDER_IDS,
   CHAT_PROVIDER_REFUSAL,
+  CHAT_SESSION_LINK_KINDS,
   isChatProvider,
 } from './chat';
 export type {
@@ -86,7 +88,10 @@ export type {
   ChatMessage,
   ChatMessageRole,
   ChatMessageStatus,
+  ChatModelUsed,
   ChatProviderId,
+  ChatSessionLink,
+  ChatSessionLinkKind,
   ChatSummary,
 } from './chat';
 export { SESSION_DECISION_AUTHORS, SESSION_DECISION_STATUSES } from './session-decision';
@@ -227,7 +232,7 @@ export type {
   WorkflowTaskProfile,
   WorkflowTaskType,
 } from './workflow-routing';
-export { PROVIDER_IDS } from './provider-registry';
+export { EFFORT_LEVELS, isEffortLevel, PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
 export type { ProviderCredential } from './provider-credential';
 export type {
