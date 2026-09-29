@@ -20,40 +20,46 @@ const needs = ({
 
 describe('evaluateGate', () => {
   it('is green when every job succeeded', () => {
-    assert.equal(evaluateGate({ needs: needs({}) }).ok, true);
+    assert.equal(evaluateGate({ needs: needs({}) }).isGreen, true);
   });
 
   it('is red when changes failed, even if the rest look fine', () => {
     const result = evaluateGate({
       needs: needs({ changes: 'failure', desktop: 'skipped', packages: 'skipped', tests: '' }),
     });
-    assert.equal(result.ok, false);
+    assert.equal(result.isGreen, false);
   });
 
   it('is red when one shard failed', () => {
     const result = evaluateGate({ needs: needs({ desktop: 'failure' }) });
-    assert.equal(result.ok, false);
+    assert.equal(result.isGreen, false);
     assert.match(result.failures.join(' '), /test-desktop: failure/);
   });
 
   it('is red when the run was cancelled', () => {
     assert.equal(
-      evaluateGate({ needs: needs({ desktop: 'cancelled', packages: 'cancelled' }) }).ok,
+      evaluateGate({ needs: needs({ desktop: 'cancelled', packages: 'cancelled' }) }).isGreen,
       false,
     );
-    assert.equal(evaluateGate({ needs: needs({ changes: 'cancelled' }) }).ok, false);
+    assert.equal(evaluateGate({ needs: needs({ changes: 'cancelled' }) }).isGreen, false);
   });
 
   it('is green on a docs-only change, where the tests are skipped by changes', () => {
     const result = evaluateGate({
       needs: needs({ tests: 'false', desktop: 'skipped', packages: 'skipped' }),
     });
-    assert.equal(result.ok, true);
+    assert.equal(result.isGreen, true);
   });
 
   it('is red when a test job is skipped although changes wanted the tests', () => {
-    assert.equal(evaluateGate({ needs: needs({ tests: 'true', desktop: 'skipped' }) }).ok, false);
-    assert.equal(evaluateGate({ needs: needs({ tests: 'true', packages: 'skipped' }) }).ok, false);
+    assert.equal(
+      evaluateGate({ needs: needs({ tests: 'true', desktop: 'skipped' }) }).isGreen,
+      false,
+    );
+    assert.equal(
+      evaluateGate({ needs: needs({ tests: 'true', packages: 'skipped' }) }).isGreen,
+      false,
+    );
   });
 
   it('is red when checks is skipped, whatever changes decided', () => {
@@ -65,7 +71,7 @@ describe('evaluateGate', () => {
           desktop: 'skipped',
           packages: 'skipped',
         }),
-      }).ok,
+      }).isGreen,
       false,
     );
   });
@@ -79,7 +85,7 @@ describe('evaluateGate', () => {
           desktop: 'skipped',
           packages: 'skipped',
         }),
-      }).ok,
+      }).isGreen,
       false,
     );
   });
@@ -87,7 +93,7 @@ describe('evaluateGate', () => {
   it('is red when a required job is missing from needs', () => {
     const partial = needs({});
     delete partial['test-packages'];
-    assert.equal(evaluateGate({ needs: partial }).ok, false);
+    assert.equal(evaluateGate({ needs: partial }).isGreen, false);
   });
 });
 
@@ -95,9 +101,10 @@ describe('evaluateGate over every needs key', () => {
   it('is red when changes gave no tests output and the test jobs were skipped', () => {
     const missing = needs({ desktop: 'skipped', packages: 'skipped' });
     delete missing.changes.outputs.tests;
-    assert.equal(evaluateGate({ needs: missing }).ok, false);
+    assert.equal(evaluateGate({ needs: missing }).isGreen, false);
     assert.equal(
-      evaluateGate({ needs: needs({ tests: '', desktop: 'skipped', packages: 'skipped' }) }).ok,
+      evaluateGate({ needs: needs({ tests: '', desktop: 'skipped', packages: 'skipped' }) })
+        .isGreen,
       false,
     );
   });
@@ -105,7 +112,7 @@ describe('evaluateGate over every needs key', () => {
   it('judges a job that is not in the required list too', () => {
     const extra = { ...needs({}), lint: { result: 'failure', outputs: {} } };
     const result = evaluateGate({ needs: extra });
-    assert.equal(result.ok, false);
+    assert.equal(result.isGreen, false);
     assert.match(result.failures.join(' '), /lint: failure/);
   });
 
@@ -114,7 +121,7 @@ describe('evaluateGate over every needs key', () => {
       ...needs({ tests: 'false', desktop: 'skipped', packages: 'skipped' }),
       lint: { result: 'skipped', outputs: {} },
     };
-    assert.equal(evaluateGate({ needs: extra }).ok, false);
+    assert.equal(evaluateGate({ needs: extra }).isGreen, false);
   });
 });
 

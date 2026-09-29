@@ -20,9 +20,13 @@ export const isInertPath = ({ path }) =>
   !WEBSITE_PATHS_READ_BY_TESTS.includes(path) &&
   INERT_PATTERNS.some((pattern) => pattern.test(path));
 
-export const decideTests = ({ eventName, paths }) => {
-  if (eventName !== 'pull_request') return true;
-  if (paths === null || paths.length === 0) return true;
+export const shouldRunTests = ({ eventName, paths }) => {
+  if (eventName !== 'pull_request') {
+    return true;
+  }
+  if (paths === null || paths.length === 0) {
+    return true;
+  }
   return !paths.every((path) => isInertPath({ path }));
 };
 
@@ -40,9 +44,11 @@ const readChangedPaths = () => {
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const eventName = process.env.GITHUB_EVENT_NAME ?? '';
   const paths = eventName === 'pull_request' ? readChangedPaths() : [];
-  const tests = decideTests({ eventName, paths });
-  const summary = `event=${eventName} changed=${paths === null ? 'unknown' : paths.length} tests=${tests}`;
+  const shouldRun = shouldRunTests({ eventName, paths });
+  const summary = `event=${eventName} changed=${paths === null ? 'unknown' : paths.length} tests=${shouldRun}`;
   console.log(summary);
   const outputFile = process.env.GITHUB_OUTPUT;
-  if (outputFile) appendFileSync(outputFile, `tests=${tests}\n`);
+  if (outputFile) {
+    appendFileSync(outputFile, `tests=${shouldRun}\n`);
+  }
 }

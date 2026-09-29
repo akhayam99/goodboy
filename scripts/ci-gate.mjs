@@ -9,18 +9,26 @@ export const evaluateGate = ({ needs }) => {
   if (changesResult !== 'success') {
     failures.push(`changes: ${changesResult ?? 'missing'}, expected success`);
   }
-  const testsSkippedByChanges =
+  const hasChangesSkippedTests =
     changesResult === 'success' && needs.changes.outputs?.tests === 'false';
   for (const job of REQUIRED_JOBS) {
-    if (!(job in needs)) failures.push(`${job}: missing from needs`);
+    if (!(job in needs)) {
+      failures.push(`${job}: missing from needs`);
+    }
   }
   for (const [job, { result }] of Object.entries(needs)) {
-    if (job === 'changes') continue;
-    if (result === 'success') continue;
-    if (result === 'skipped' && SKIPPABLE_JOBS.includes(job) && testsSkippedByChanges) continue;
+    if (job === 'changes') {
+      continue;
+    }
+    if (result === 'success') {
+      continue;
+    }
+    if (result === 'skipped' && SKIPPABLE_JOBS.includes(job) && hasChangesSkippedTests) {
+      continue;
+    }
     failures.push(`${job}: ${result}`);
   }
-  return { ok: failures.length === 0, failures };
+  return { isGreen: failures.length === 0, failures };
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -31,10 +39,14 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     console.error('gate: NEEDS is not valid JSON');
     process.exit(1);
   }
-  const { ok, failures } = evaluateGate({ needs });
-  for (const [job, { result }] of Object.entries(needs)) console.log(`${job}: ${result}`);
-  if (!ok) {
-    for (const failure of failures) console.error(`gate red: ${failure}`);
+  const { isGreen, failures } = evaluateGate({ needs });
+  for (const [job, { result }] of Object.entries(needs)) {
+    console.log(`${job}: ${result}`);
+  }
+  if (!isGreen) {
+    for (const failure of failures) {
+      console.error(`gate red: ${failure}`);
+    }
     process.exit(1);
   }
   console.log('gate green');

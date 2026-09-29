@@ -9,7 +9,9 @@ export const verifyShards = ({ all, shards }) => {
   const problems = [];
   const owners = new Map();
   shards.forEach((files, index) => {
-    if (files.length === 0) problems.push(`shard ${index + 1} lists no test file`);
+    if (files.length === 0) {
+      problems.push(`shard ${index + 1} lists no test file`);
+    }
     for (const file of files) {
       owners.set(file, [...(owners.get(file) ?? []), index + 1]);
     }
@@ -17,11 +19,17 @@ export const verifyShards = ({ all, shards }) => {
   const known = new Set(all);
   for (const file of all) {
     const listedIn = owners.get(file) ?? [];
-    if (listedIn.length === 0) problems.push(`${file} is in no shard`);
-    if (listedIn.length > 1) problems.push(`${file} is in shards ${listedIn.join(', ')}`);
+    if (listedIn.length === 0) {
+      problems.push(`${file} is in no shard`);
+    }
+    if (listedIn.length > 1) {
+      problems.push(`${file} is in shards ${listedIn.join(', ')}`);
+    }
   }
   for (const file of owners.keys()) {
-    if (!known.has(file)) problems.push(`${file} is in a shard but not in the full list`);
+    if (!known.has(file)) {
+      problems.push(`${file} is in a shard but not in the full list`);
+    }
   }
   return problems;
 };
@@ -41,7 +49,9 @@ const listUnitFiles = async ({ directory, shard }) => {
   });
   try {
     const specifications = await vitest.globTestSpecifications();
-    if (!shard) return specifications.map((specification) => specification.moduleId);
+    if (!shard) {
+      return specifications.map((specification) => specification.moduleId);
+    }
     const Sequencer = vitest.config.sequence.sequencer;
     const selected = await new Sequencer(vitest).shard(specifications);
     return selected.map((specification) => specification.moduleId);
@@ -60,7 +70,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const problems = verifyShards({ all, shards });
   console.log(`unit files ${all.length}, shards ${shards.map((files) => files.length).join('/')}`);
   if (problems.length > 0) {
-    for (const problem of problems.slice(0, 20)) console.error(problem);
+    for (const problem of problems.slice(0, 20)) {
+      console.error(problem);
+    }
     process.exit(1);
   }
 }
