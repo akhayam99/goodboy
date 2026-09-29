@@ -23,6 +23,7 @@ type Params = {
   readonly getState: () => AppStore;
   readonly sessionId: SessionId;
   readonly threadIds: ReadonlyArray<string>;
+  readonly note?: string;
 };
 
 export const NOTHING_TO_DRAFT = 'These comments are no longer on the pull request';
@@ -31,6 +32,7 @@ export const draftFixes = async ({
   getState,
   sessionId,
   threadIds,
+  note = '',
 }: Params): Promise<ReadonlyArray<AgentId>> => {
   const state = getState();
   const wanted = new Set(threadIds);
@@ -46,6 +48,7 @@ export const draftFixes = async ({
     threads,
     pr: state.sessionGithub[sessionId]?.pr ?? null,
     routing,
+    note,
     style: sessionResolveStyle({ state, sessionId }),
     spawnAgent: state.spawnAgent,
     setAgentConfig: state.setAgentConfig,

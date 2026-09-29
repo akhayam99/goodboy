@@ -6,10 +6,12 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import type { CommentThread } from '../github/comment-threads';
+import type { PriorContext } from '../chat/spawn-from-comment';
 import type { AgentKindRouting } from '../session/agent-kind';
 import { contextWindowFor } from '../session/contextWindowFor';
 import {
   startFixAttempt,
+  type FixMode,
   type SetAgentConfigFn,
   type SpawnAgentFn,
 } from '../review/startFixAttempt';
@@ -28,6 +30,8 @@ type Params = {
   readonly pr: PullRequestState | null;
   readonly routing: AgentKindRouting;
   readonly note?: string;
+  readonly mode?: FixMode;
+  readonly priorContext?: ReadonlyArray<PriorContext>;
   readonly style?: ResolveStartStyle;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
@@ -39,6 +43,8 @@ export const startResolve = async ({
   pr,
   routing,
   note = '',
+  mode = 'shared',
+  priorContext,
   style,
   spawnAgent,
   setAgentConfig,
@@ -54,7 +60,8 @@ export const startResolve = async ({
     pr,
     choice: { provider: routing.provider, model: routing.model, effort: routing.effort },
     instructions: note,
-    mode: 'shared',
+    mode,
+    ...(priorContext !== undefined && { priorContext }),
     ...(style !== undefined && {
       style: {
         commitStyle: style.commitStyle,
