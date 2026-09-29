@@ -258,6 +258,7 @@ export const NON_SESSION_STATE_KEYS = [
   'changelogSeenHydrated',
   'changelogFocusVersion',
   'changelogUpcoming',
+  'reviewCommitPresets',
   'bugReportDraft',
   'sessionDrafts',
   'openSessionDraftWorkspaceId',

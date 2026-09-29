@@ -118,6 +118,7 @@ import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
+import type { ReviewCommitsState } from './slices/reviewCommits/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
@@ -266,6 +267,7 @@ type AppSliceState = ArtifactsState &
   SentryLinksState &
   UpdaterState &
   ChangelogState &
+  ReviewCommitsState &
   SlackThreadsSliceState &
   BugReportDraftState &
   SessionDraftState &

@@ -61,6 +61,7 @@ const cleanWorkingTree = {
 export const storySpies = {
   getSetting,
   setSetting: vi.fn(async () => undefined),
+  updateProjectResolveCommitStyle: vi.fn(async () => undefined),
   listWorkspaces: vi.fn(async () => [] as ReadonlyArray<Workspace>),
   listProviderCredentials: vi.fn(async () => []),
   updateSessionState: vi.fn(async () => undefined),
@@ -347,6 +348,7 @@ export const dbModuleMock = () => ({
   listActiveResolveAttempts: storySpies.listActiveResolveAttempts,
   getSetting: storySpies.getSetting,
   setSetting: storySpies.setSetting,
+  updateProjectResolveCommitStyle: storySpies.updateProjectResolveCommitStyle,
   getWorkspaceById: storySpies.getWorkspaceById,
   listWorkspaces: storySpies.listWorkspaces,
   listDisconnectedWorkspaces: vi.fn(async () => [] as ReadonlyArray<Workspace>),

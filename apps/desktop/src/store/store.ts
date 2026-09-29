@@ -318,6 +318,8 @@ import { initialUpdaterState } from './slices/updater/state';
 import type { SetUpdateQueuedUntilIdleParams } from './slices/updater/setUpdateQueuedUntilIdle';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
+import { createReviewCommitsSlice, initialReviewCommitsState } from './slices/reviewCommits';
+import type { ReviewCommitPreset } from '../features/resolve/reviewCommits';
 import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
 import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
 import type { LoadChangelogUpcomingParams } from './slices/changelog/loadChangelogUpcoming';
@@ -411,6 +413,11 @@ type AppActions = {
   hydrateChangelogSeen(): Promise<void>;
   markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
   focusChangelogRelease(params: FocusChangelogReleaseParams): void;
+  loadReviewCommitPreset(params: { readonly projectId: ProjectId }): Promise<void>;
+  chooseReviewCommitPreset(params: {
+    readonly projectId: ProjectId;
+    readonly preset: ReviewCommitPreset;
+  }): Promise<void>;
   loadChangelogUpcoming(params: LoadChangelogUpcomingParams): Promise<void>;
   setBugReportDraft(params: SetBugReportDraftParams): void;
   clearBugReportDraft(): void;
@@ -1206,6 +1213,7 @@ export type AppStore = AppState &
 export const initialState: AppState = {
   ...initialUpdaterState,
   ...initialChangelogState,
+  ...initialReviewCommitsState,
   ...initialBugReportDraftState,
   ...initialSessionDraftState,
   ...initialContextDrawerState,
@@ -1457,6 +1465,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createBootSlice(set, get),
   ...createUpdaterSlice(set, get),
   ...createChangelogSlice(set, get),
+  ...createReviewCommitsSlice(set, get),
   ...createBugReportDraftSlice(set, get),
   ...createSessionDraftSlice(set, get),
   ...createContextDrawerSlice(set, get),
