@@ -14,9 +14,11 @@ import {
   Undo2,
 } from 'lucide-react';
 import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { resolverPagePlace, sessionPlace } from '../../../store/slices/navigation/place';
+import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { verdictReply } from '../../resolve/commentVerdict';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
@@ -37,6 +39,7 @@ export type ReviewCommentFacts = {
   readonly state: ReviewCommentState;
   readonly isNote: boolean;
   readonly hasPr: boolean;
+  readonly provider: string;
   readonly agentId: AgentId | null;
   readonly path: string | null;
   readonly url: string | null;
@@ -171,7 +174,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       revision: row.thread.revision,
       state: rowState,
       isNote: row.thread.originKind === 'diff_comment',
-      hasPr: state.sessionGithub[target.sessionId]?.pr != null,
+      hasPr: activeReviewSourceOf({ state, sessionId: target.sessionId }) !== null,
+      provider: REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'],
       agentId: row.attempt?.agentId ?? null,
       path: row.reviewerNote?.path ?? null,
       url: row.commentThread?.head.url ?? null,
@@ -230,7 +234,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.openOnGithub',
-      label: 'Open on GitHub',
+      label: ({ facts }) => `Open on ${facts.provider}`,
       icon: ExternalLink,
       group: 'open',
       when: ({ facts }) => facts.url !== null,

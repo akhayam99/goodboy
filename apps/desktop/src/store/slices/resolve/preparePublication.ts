@@ -29,6 +29,8 @@ import { buildResolutionReplyBody, type ReplyContext } from '../github/buildReso
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { mountTargetOf } from './mountTarget';
 import { UNKNOWN_PUBLICATION_REPO, isPublicationTargetBusy } from './publicationLock';
+import { activeReviewSourceOf, selectedReviewEntryOf } from '../review-source/activeReviewSource';
+import { rowBelongsToSource } from '../review-source/rowBelongsToSource';
 import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import { approvedPublicationScope } from './approvedPublicationScope';
@@ -220,8 +222,16 @@ export const preparePublication = async ({
   await reconcileIntegratedCommits({ sessionId }).catch(() => undefined);
   await refreshThreadGitState({ set, get, sessionId }).catch(() => undefined);
   const threadGit = get().sessionThreadGit?.[sessionId] ?? {};
-  const rows = await listResolveThreads({ db: tauriDatabase, sessionId });
-  const scope = await approvedPublicationScope({ sessionId });
+  const entry = selectedReviewEntryOf({ state: get(), sessionId });
+  const include = ({ thread }: { readonly thread: ResolveThread }): boolean =>
+    rowBelongsToSource({ row: thread, entry });
+  const rows = (await listResolveThreads({ db: tauriDatabase, sessionId })).filter(
+    (row) => threadIds !== undefined || include({ thread: row }),
+  );
+  const scope = await approvedPublicationScope({
+    sessionId,
+    include: (thread) => threadIds !== undefined || include({ thread }),
+  });
   const selection = selectPublishableThreads({
     rows,
     ...(threadIds !== undefined && { threadIds }),
@@ -235,7 +245,8 @@ export const preparePublication = async ({
   }));
   const excluded = [...selection.excluded, ...invalidExclusions];
   const settings = sessionReplySettings({ state: get(), sessionId });
-  const comments: ReadonlyArray<PrComment> = get().sessionGithub[sessionId]?.detail?.comments ?? [];
+  const source = activeReviewSourceOf({ state: get(), sessionId });
+  const comments: ReadonlyArray<PrComment> = source?.comments ?? [];
   const contextOf = ({ row }: { readonly row: ResolveThread }): ReplyContext => {
     const head = comments.find((comment) => comment.threadId === row.threadId);
     return {
@@ -269,6 +280,7 @@ export const preparePublication = async ({
             : buildResolutionReplyBody({
                 closure,
                 prUrl: target.prUrl,
+                sourceKind: source?.kind ?? 'github',
                 settings,
                 context: { ...contextOf({ row }), commitStory },
               }),
@@ -331,7 +343,7 @@ export const preparePublication = async ({
             requiresPush,
             hasWorktree: repo !== null,
             isTargetBusy,
-            headBranch: get().sessionGithub[sessionId]?.pr?.headBranch ?? null,
+            headBranch: source?.headBranch ?? null,
             unapprovedCount: unapproved.length,
             git,
           });

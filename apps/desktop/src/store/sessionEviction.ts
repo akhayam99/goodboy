@@ -20,6 +20,8 @@ export const SESSION_EVICTION = [
   { key: 'sessionResolveSourceSnapshots', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveCheckRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewTargets', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'reviewSourceKeys', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'reviewSourceThreads', keyedBy: 'session', evictOn: 'archive' },
   { key: 'pullRequestModes', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewSelection', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveQueueView', keyedBy: 'session', evictOn: 'archive' },

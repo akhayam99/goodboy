@@ -9,6 +9,7 @@ export const REVIEW_FLOW_LABEL = {
   comment: 'Comment',
   commentActions: 'Comment actions',
   reviewActions: 'Review actions',
+  sourcePicker: 'Review source',
   proposedChange: 'Proposed change',
   fix: 'Fix',
   agentAsks: 'The agent asks',
@@ -79,12 +80,25 @@ export const COMPOSE_COPY: Record<
   },
 };
 
+export const composePlaceholder = ({
+  mode,
+  provider,
+}: {
+  readonly mode: ReviewComposeMode;
+  readonly provider: string;
+}): string =>
+  mode === 'reply'
+    ? `The reviewer reads this on ${provider} after the push`
+    : COMPOSE_COPY[mode].placeholder;
+
 export const decidedNote = ({
   state,
   sha,
+  provider = 'GitHub',
 }: {
   readonly state: 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved';
   readonly sha: string | null;
+  readonly provider?: string;
 }): string => {
   switch (state) {
     case 'accepted':
@@ -92,11 +106,11 @@ export const decidedNote = ({
     case 'replied':
       return 'Reply only. It goes out with the next push.';
     case 'skipped':
-      return 'Skipped. It stays open on GitHub and never blocks the push.';
+      return `Skipped. It stays open on ${provider} and never blocks the push.`;
     case 'pushed':
       return sha === null ? 'Pushed.' : `Pushed in ${sha.slice(0, 7)}.`;
     case 'resolved':
-      return 'Resolved on GitHub by someone else.';
+      return `Resolved on ${provider} by someone else.`;
     default: {
       const exhaustive: never = state;
       return exhaustive;

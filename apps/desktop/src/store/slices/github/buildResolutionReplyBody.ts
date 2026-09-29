@@ -1,3 +1,4 @@
+import { commitLinkOf, type ReviewSourceKind } from '@goodboy/core';
 import { renderReplyTemplate } from '../../../features/resolve/renderReplyTemplate';
 import {
   REPLY_SETTINGS_DEFAULT,
@@ -20,20 +21,15 @@ export type ReplyContext = {
   readonly commitStory?: ReplyCommitStory | null;
 };
 
-const commitUrlOf = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
-  const url = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null;
-  return url !== null && url !== prUrl ? url : null;
-};
-
-export const commitLink = ({
-  sha,
-  prUrl,
-}: {
+type LinkParams = {
   readonly sha: string;
   readonly prUrl: string | null;
-}) => {
+  readonly sourceKind?: ReviewSourceKind;
+};
+
+export const commitLink = ({ sha, prUrl, sourceKind = 'github' }: LinkParams) => {
   const short = `\`${sha.slice(0, 7)}\``;
-  const url = commitUrlOf({ sha, prUrl });
+  const url = commitLinkOf({ kind: sourceKind, url: prUrl, sha });
   return url === null ? short : `[${short}](${url})`;
 };
 
@@ -41,21 +37,24 @@ const commitStoryOf = ({
   sha,
   story,
   prUrl,
+  sourceKind,
 }: {
   readonly sha: string;
   readonly story: ReplyCommitStory | null | undefined;
   readonly prUrl: string | null;
+  readonly sourceKind: ReviewSourceKind;
 }): string => {
-  const final = commitLink({ sha, prUrl });
+  const final = commitLink({ sha, prUrl, sourceKind });
   if (!story?.isFolded || story.originalSha === sha) {
     return final;
   }
-  return `${commitLink({ sha: story.originalSha, prUrl })}, squashed into ${final}`;
+  return `${commitLink({ sha: story.originalSha, prUrl, sourceKind })}, squashed into ${final}`;
 };
 
 type Params = {
   readonly closure: Closure | undefined;
   readonly prUrl: string | null;
+  readonly sourceKind?: ReviewSourceKind;
   readonly settings?: ReplySettings;
   readonly context?: ReplyContext;
 };
@@ -63,6 +62,7 @@ type Params = {
 export const buildResolutionReplyBody = ({
   closure,
   prUrl,
+  sourceKind = 'github',
   settings = REPLY_SETTINGS_DEFAULT,
   context = {},
 }: Params): string | null => {
@@ -76,7 +76,7 @@ export const buildResolutionReplyBody = ({
     reviewer: context.reviewer ? `@${context.reviewer}` : '',
     file: context.file ?? '',
     line: context.line == null ? '' : String(context.line),
-    fixup_of: context.fixupOfSha ? commitLink({ sha: context.fixupOfSha, prUrl }) : '',
+    fixup_of: context.fixupOfSha ? commitLink({ sha: context.fixupOfSha, prUrl, sourceKind }) : '',
   };
   const body = (() => {
     if (sha.length > 0) {
@@ -85,8 +85,8 @@ export const buildResolutionReplyBody = ({
         vars: {
           ...vars,
           reason: reply,
-          commit: commitLink({ sha, prUrl }),
-          commit_story: commitStoryOf({ sha, story: context.commitStory, prUrl }),
+          commit: commitLink({ sha, prUrl, sourceKind }),
+          commit_story: commitStoryOf({ sha, story: context.commitStory, prUrl, sourceKind }),
         },
       });
     }

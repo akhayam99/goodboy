@@ -5,7 +5,8 @@ import type { ResolveItemDraft } from '../../../resolveItemDraft';
 import type { ResolveQueueRow } from '../../../buildResolveQueueRows';
 import { groupConversationsByFile } from '../../../groupConversationsByFile';
 import { useResolveQueueRows } from '../../../hooks/useResolveQueueRows';
-import { conversationSourceOf } from '../../../notes/conversationSource';
+import { useActiveReviewSource } from '../../../hooks/useActiveReviewSource';
+import { rowBelongsToSource } from '../../../../../store/slices/review-source/rowBelongsToSource';
 import { isReplyEdited } from '../../../reviewRows';
 import { remoteOf, remoteViewOf, type RemoteView } from '../../../reviewRemote';
 import type { ThreadRecheck } from '../../../../../store/slices/resolve/state';
@@ -59,12 +60,15 @@ export const useReviewEntries = ({
 } => {
   const rows = useResolveQueueRows({ sessionId });
   const changes = useAppStore((s) => s.sessionResolveSourceSnapshots[sessionId] ?? EMPTY_CHANGES);
-  const hasPr = useAppStore((s) => s.sessionGithub[sessionId]?.pr != null);
+  const { selected } = useActiveReviewSource({ sessionId });
+  const { kind, projectId, number } = selected;
   const drafts = useAppStore((s) => s.resolveItemDrafts[sessionId] ?? EMPTY_DRAFTS);
   const threadGit = useAppStore((s) => s.sessionThreadGit[sessionId] ?? EMPTY_GIT);
   const rechecks = useAppStore((s) => s.sessionThreadRechecks[sessionId] ?? EMPTY_RECHECKS);
   return useMemo(() => {
-    const shown = hasPr ? rows : rows.filter((row) => conversationSourceOf({ row }) === 'note');
+    const shown = rows.filter((row) =>
+      rowBelongsToSource({ row: row.thread, entry: { kind, projectId, number } }),
+    );
     const ordered = groupConversationsByFile({ rows: shown }).flatMap((group) => group.rows);
     const entries = ordered.map((row): ReviewEntry => {
       const state = reviewCommentStateOf({
@@ -107,5 +111,5 @@ export const useReviewEntries = ({
       entries: entries.filter((entry) => entry.group === group),
     })).filter((group) => group.entries.length > 0);
     return { entries: groups.flatMap((group) => group.entries), groups };
-  }, [changes, drafts, hasPr, rechecks, rows, threadGit]);
+  }, [changes, drafts, kind, number, projectId, rechecks, rows, threadGit]);
 };

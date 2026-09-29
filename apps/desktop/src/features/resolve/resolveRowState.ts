@@ -30,6 +30,7 @@ type Params = {
   readonly pushedSha: string | null;
   readonly pushError: string | null;
   readonly runFailure: string;
+  readonly provider?: string;
 };
 
 const uiStateOf = ({ stage }: { readonly stage: ResolveStage }): ResolveUiState => {
@@ -78,13 +79,20 @@ const readySentence = ({
 };
 
 type FailedParams = {
+  readonly provider: string;
   readonly step: ResolveFailedStep;
   readonly pushedSha: string | null;
   readonly pushError: string | null;
   readonly runFailure: string;
 };
 
-const failedSentence = ({ step, pushedSha, pushError, runFailure }: FailedParams): string => {
+const failedSentence = ({
+  provider,
+  step,
+  pushedSha,
+  pushError,
+  runFailure,
+}: FailedParams): string => {
   switch (step) {
     case 'run':
       return runFailure;
@@ -98,7 +106,7 @@ const failedSentence = ({ step, pushedSha, pushError, runFailure }: FailedParams
         ? 'The reply was not posted'
         : `${shortSha({ sha: pushedSha })} is on origin. The reply was not posted`;
     case 'resolve':
-      return 'Reply posted. GitHub did not resolve the thread';
+      return `Reply posted. ${provider} did not resolve the thread`;
     case 'uncertain':
       return "We couldn't confirm the reply landed";
     default: {
@@ -133,6 +141,7 @@ export const resolveRowState = ({
   pushedSha,
   pushError,
   runFailure,
+  provider = 'GitHub',
 }: Params): ResolveRowState => {
   const state = uiStateOf({ stage });
   switch (state) {
@@ -185,7 +194,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'done',
-        sentence: isLeftOpen ? 'Replied, left open' : 'Resolved on GitHub',
+        sentence: isLeftOpen ? 'Replied, left open' : `Resolved on ${provider}`,
         action: null,
         failedStep: null,
         isRemoteMoved: false,
@@ -195,7 +204,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'failed',
-        sentence: failedSentence({ step, pushedSha, pushError, runFailure }),
+        sentence: failedSentence({ provider, step, pushedSha, pushError, runFailure }),
         action: failedAction({ step }),
         failedStep: step,
         isRemoteMoved: step === 'push' && isRemoteMovedError({ error: pushError }),

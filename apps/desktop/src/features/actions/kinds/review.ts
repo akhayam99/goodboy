@@ -9,6 +9,7 @@ import {
   postNotesToPr,
 } from '../../resolve/notes/postNotesToPr';
 import { reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
+import { activeReviewSourceOf } from '../../../store/slices/review-source/activeReviewSource';
 import { isPushFailure } from '../../resolve/reviewCommentState';
 import { remoteOf } from '../../resolve/reviewRemote';
 import { requestReview } from '../../review/reviewRequest';
@@ -17,6 +18,7 @@ import type { ObjectKindDefinition, ReviewActionTarget } from '../types';
 export type ReviewFacts = {
   readonly sessionId: SessionId;
   readonly prNumber: number | null;
+  readonly sourceKind: 'github' | 'gitlab' | null;
   readonly open: number;
   readonly ready: number;
   readonly accepted: number;
@@ -47,7 +49,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
   noun: 'review',
   facts: ({ state, target }) => {
     const { sessionId } = target;
-    const github = state.sessionGithub[sessionId] ?? null;
+    const source = activeReviewSourceOf({ state, sessionId });
     const rows = reviewRowsOf({ state, sessionId }).map((row) => {
       const rowState = rowStateOf({ state, sessionId, row });
       return {
@@ -61,10 +63,11 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
     });
     const count = (predicate: (entry: (typeof rows)[number]) => boolean): number =>
       rows.filter(predicate).length;
-    const hasPr = github?.pr != null;
+    const hasPr = source !== null;
     return {
       sessionId,
-      prNumber: github?.pr?.number ?? null,
+      prNumber: source?.prNumber ?? null,
+      sourceKind: source?.kind ?? null,
       open: count(
         (entry) =>
           ['new', 'drafting', 'needs', 'ready', 'edited', 'outdated'].includes(entry.state) ||
@@ -83,14 +86,17 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
             .length
         : 0,
       isPushing: rows.some((entry) => entry.row.thread.stage === 'publishing'),
-      isLoading: hasPr && github?.detail === null && github.detailLoading === true,
-      isError: hasPr && github?.detail === null && (github.detailError ?? null) !== null,
+      isLoading: source !== null && !source.hasDetail && source.isLoading,
+      isError: source !== null && !source.hasDetail && source.error !== null,
     };
   },
   actions: [
     {
       id: 'review.openPullRequest',
-      label: ({ facts }) => `Open PR #${facts.prNumber ?? ''}`,
+      label: ({ facts }) =>
+        facts.sourceKind === 'gitlab'
+          ? `Open MR !${facts.prNumber ?? ''}`
+          : `Open PR #${facts.prNumber ?? ''}`,
       icon: CONCEPT_ICONS.pr,
       group: 'open',
       shortcut: 'lens.pr',
@@ -161,7 +167,7 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
       when: ({ facts }) => facts.isError,
       slot: () => 'empty',
       run: ({ facts, env }) =>
-        env.getState().refreshSessionPrDetail(facts.sessionId, { force: true }),
+        env.getState().refreshReviewSource({ sessionId: facts.sessionId, force: true }),
     },
   ],
 };

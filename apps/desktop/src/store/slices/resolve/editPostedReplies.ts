@@ -74,7 +74,11 @@ export const editPostedReplies = async ({ set, get, sessionId }: Params): Promis
   const options = sessionThreadGhOptions({ get, sessionId });
   let edited = 0;
   for (const row of get().sessionResolveThreads[sessionId] ?? []) {
-    if (row.replyId === null || row.replyPostedAt === null) {
+    if (
+      row.replyId === null ||
+      row.replyPostedAt === null ||
+      (row.sourceKind ?? 'github') !== 'github'
+    ) {
       continue;
     }
     const story = await readCommitStory({ sessionId, threadId: row.threadId });

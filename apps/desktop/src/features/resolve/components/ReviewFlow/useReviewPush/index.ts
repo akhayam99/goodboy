@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { formatError } from '@goodboy/ui';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type {
   MountId,
   ResolvePublication,
@@ -12,6 +13,7 @@ import { selectActiveMount } from '../../../../../store/slices/project-mounts/se
 import { isRemoteMovedError } from '../../../../../store/slices/resolve/remoteMovedError';
 import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
 import { SYNC_COPY } from '../../../failedRunCopy';
+import { useActiveReviewSource } from '../../../hooks/useActiveReviewSource';
 import type { BlockerCopy } from '../../../resolvePublishCopy';
 import {
   PUSH_BUSY,
@@ -75,6 +77,8 @@ export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush 
   const openDiffLens = useAppStore((s) => s.openDiffLens);
   const navigate = useAppStore((s) => s.navigate);
   const [phase, setPhase] = useState<ReviewPushPhase>(IDLE);
+  const { source } = useActiveReviewSource({ sessionId });
+  const provider = REVIEW_SOURCE_LABEL[source?.kind ?? 'github'];
 
   const arm = useCallback(
     async ({ isRetry }: { readonly isRetry: boolean }): Promise<void> => {
@@ -117,7 +121,7 @@ export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush 
       const result = await publishConversations({ sessionId, publicationId });
       switch (result.kind) {
         case 'done':
-          setPhase({ kind: 'result', result: pushResultOf({ outcome: result }) });
+          setPhase({ kind: 'result', result: pushResultOf({ outcome: result, provider }) });
           return;
         case 'push_failed':
           setPhase(
@@ -144,7 +148,7 @@ export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush 
     } catch (error) {
       setPhase(isReportedError(error) ? IDLE : failed(formatError(error)));
     }
-  }, [phase, publishConversations, sessionId]);
+  }, [phase, provider, publishConversations, sessionId]);
 
   const cancel = useCallback((): void => {
     const publicationId = phase.kind === 'confirm' ? phase.preview.publicationId : null;

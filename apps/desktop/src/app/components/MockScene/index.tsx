@@ -17,6 +17,7 @@ import { ResolveSelectScene } from './scenes/ResolveSelectScene';
 import { ResolveDriftScene } from './scenes/ResolveDriftScene';
 import { ResolveCommitStoryScene } from './scenes/ResolveCommitStoryScene';
 import { ResolveCommitsScene } from './scenes/ResolveCommitsScene';
+import { ResolveGitlabScene } from './scenes/ResolveGitlabScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
 import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
@@ -147,6 +148,7 @@ export const MOCK_SCENES = {
   'resolve-drift': ResolveDriftScene,
   'resolve-commit-story': ResolveCommitStoryScene,
   'resolve-commits': ResolveCommitsScene,
+  'resolve-gitlab': ResolveGitlabScene,
   board: BoardScene,
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,

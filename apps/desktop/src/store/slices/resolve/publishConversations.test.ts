@@ -385,6 +385,7 @@ const makeStore = ({ sessionId = SESSION_ID }: { readonly sessionId?: SessionId 
     agentRunHistory: {},
     emitNotification: vi.fn(async () => undefined),
     refreshSessionPrDetail: vi.fn(async () => undefined),
+    refreshReviewSource: vi.fn(async () => undefined),
     refreshSessionPr: vi.fn(async () => undefined),
   }));
   const set = store.setState as unknown as SetFn;
@@ -826,7 +827,7 @@ describe('publishConversations over a real git repository', () => {
     const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
     const { actions, get } = makeStore();
     await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
-    vi.mocked(get().refreshSessionPrDetail).mockRejectedValueOnce(new Error('gh is offline'));
+    vi.mocked(get().refreshReviewSource).mockRejectedValueOnce(new Error('gh is offline'));
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 
     const preview = await actions.preparePublication({ sessionId: SESSION_ID });

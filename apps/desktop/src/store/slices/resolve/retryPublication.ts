@@ -11,6 +11,8 @@ import type {
   ResolveThread,
 } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { activeReviewSourceOf, selectedReviewEntryOf } from '../review-source/activeReviewSource';
+import { rowBelongsToSource } from '../review-source/rowBelongsToSource';
 import { preparePublication } from './preparePublication';
 import { reconcileReplyOperation } from './reconcileReplyOperation';
 import { viewerLoginsOf } from './viewerLogins';
@@ -30,14 +32,17 @@ export const retryPublication = async ({
   sessionId,
 }: Params): Promise<ResolvePublicationPreview> => {
   await get()
-    .refreshSessionPrDetail(sessionId, { force: true })
+    .refreshReviewSource({ sessionId, force: true })
     .catch(() => undefined);
-  const github = get().sessionGithub[sessionId] ?? null;
-  const comments: ReadonlyArray<PrComment> = github?.detail?.comments ?? [];
-  const fetchedAt = github?.detailFetchedAt ?? null;
+  const source = activeReviewSourceOf({ state: get(), sessionId });
+  const comments: ReadonlyArray<PrComment> = source?.comments ?? [];
+  const fetchedAt = source?.fetchedAt ?? null;
   const observedAt = fetchedAt === null ? null : new Date(fetchedAt).getTime();
-  const isObservationTrusted = github?.detailError == null && github?.detail != null;
-  const rows = await listResolveThreads({ db: tauriDatabase, sessionId });
+  const isObservationTrusted = source?.error == null && source?.hasDetail === true;
+  const entry = selectedReviewEntryOf({ state: get(), sessionId });
+  const rows = (await listResolveThreads({ db: tauriDatabase, sessionId })).filter((row) =>
+    rowBelongsToSource({ row, entry }),
+  );
   const failedRows = rows.filter((row) => row.stateReason?.startsWith(PUBLICATION_FAILED) === true);
   const publications = await listResolvePublicationsForSession({ db: tauriDatabase, sessionId });
   const frozen = (

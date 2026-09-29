@@ -12,7 +12,10 @@ const h = vi.hoisted(() => ({
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
 vi.mock('../../../features/github/github', () => ({ tauriGhRunner: {} }));
-vi.mock('@goodboy/core', () => ({ addReviewThreadReply: h.addReviewThreadReply }));
+vi.mock('../review-source/reviewSourceFor', () => ({
+  reviewSourceFor: () => ({ reply: async () => h.addReviewThreadReply() }),
+}));
+vi.mock('../review-source/activeReviewSource', () => ({ activeReviewSourceOf: () => null }));
 vi.mock('@goodboy/db', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@goodboy/db')>()),
   upsertResolvePublicationThread: vi.fn(async () => undefined),

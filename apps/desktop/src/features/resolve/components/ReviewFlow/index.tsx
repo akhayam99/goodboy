@@ -18,6 +18,7 @@ import {
   Skeleton,
   formatError,
 } from '@goodboy/ui';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PaneShell } from '../../../../shared/components/PaneShell';
@@ -36,8 +37,9 @@ import {
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
 import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
+import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { useReviewCommentController } from '../../hooks/useReviewCommentController';
-import { RESOLVE_QUEUE_REFRESH_LABEL } from '../../resolveQueueCopy';
+import { resolveQueueRefreshLabel } from '../../resolveQueueCopy';
 import { REVIEW_FLOW_LABEL, REVIEW_TITLE, counterLabel } from '../../reviewFlowCopy';
 import { startedLine } from '../../reviewLaunchCopy';
 import {
@@ -131,7 +133,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     [fixableIds, selectedIds],
   );
   const checked = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
+  const { source } = useActiveReviewSource({ sessionId });
   const selectedThreadId = useAppStore((s) =>
     s.drawer?.kind === 'conversation' && s.drawer.sessionId === sessionId
       ? s.drawer.payload.threadId
@@ -139,8 +141,8 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   );
   const openDrawer = useAppStore((s) => s.openDrawer);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
+  const refreshReviewSource = useAppStore((s) => s.refreshReviewSource);
   const refreshThreadGitState = useAppStore((s) => s.refreshThreadGitState);
-  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
   const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
   const controller = useReviewCommentController({
@@ -162,7 +164,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     return mountId === null ? null : (s.historyDrafts[mountId]?.commits.length ?? null);
   });
   const listRef = useRef<HTMLDivElement | null>(null);
-  const hasPr = github?.pr != null;
+  const provider = source === null ? null : REVIEW_SOURCE_LABEL[source.kind];
   const push = useReviewPush({ sessionId });
   const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
   const isPushBusy =
@@ -174,7 +176,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     void loadResolveSession({ sessionId });
   }, [loadResolveSession, sessionId]);
 
-  const hasComments = hasPr && github.detail !== null;
+  useEffect(() => {
+    void refreshReviewSource({ sessionId, silent: true });
+  }, [refreshReviewSource, sessionId]);
+
+  const hasComments = source !== null && source.hasDetail;
   const gitKey = entries
     .map((entry) => `${entry.threadId}:${entry.row.thread.commitShas?.join(',') ?? ''}`)
     .join('|');
@@ -432,9 +438,9 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     }
   };
 
-  const refreshError = hasPr ? (github.detailError ?? null) : null;
-  const isLoading = hasPr && github.detail === null && github.detailLoading;
-  const isWholeError = hasPr && github.detail === null && refreshError !== null;
+  const refreshError = source?.error ?? null;
+  const isLoading = source !== null && !source.hasDetail && source.isLoading;
+  const isWholeError = source !== null && !source.hasDetail && refreshError !== null;
   const targetThreadId =
     reviewTarget === null ? null : reviewFocusThreadId({ destination: reviewTarget.destination });
   const targetError =
@@ -445,7 +451,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         : reviewTarget.status === 'failed'
           ? reviewTarget.error
           : null;
-  const retry = (): void => void refreshSessionPrDetail(sessionId, { force: true });
+  const retry = (): void => void refreshReviewSource({ sessionId, force: true });
   const index = entries.findIndex((entry) => entry.threadId === focusedThreadId);
 
   const body = (): ReactNode => {
@@ -454,7 +460,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         <EmptyState
           icon={AlertTriangle}
           tone="danger"
-          title="Couldn't read comments from GitHub"
+          title={`Couldn't read comments from ${provider ?? 'GitHub'}`}
           description={refreshError}
         />
       );
@@ -484,7 +490,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       );
     }
     if (focused === null) {
-      return <ReviewEmptyState hasPr={hasPr} />;
+      return <ReviewEmptyState provider={provider} />;
     }
     return (
       <div className="flex min-h-0 min-w-0 flex-1 gap-8">
@@ -617,7 +623,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
           )}
           {refreshError !== null && !isWholeError && (
             <ErrorStrip
-              label={RESOLVE_QUEUE_REFRESH_LABEL}
+              label={resolveQueueRefreshLabel({ provider: provider ?? 'GitHub' })}
               error={new Error(refreshError)}
               onRetry={retry}
             />

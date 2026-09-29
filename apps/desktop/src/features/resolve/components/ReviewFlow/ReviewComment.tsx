@@ -1,5 +1,6 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -27,6 +28,7 @@ import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import {
   COMPOSE_COPY,
   REVIEW_FLOW_LABEL,
+  composePlaceholder,
   decidedNote,
   replyHeading,
   sharedFixLine,
@@ -113,6 +115,7 @@ export const ReviewComment = ({
 }: Props) => {
   const isBrief = variant === 'brief';
   const { row, state, word, threadId } = entry;
+  const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
     [sessionId, threadId],
@@ -201,7 +204,10 @@ export const ReviewComment = ({
         }
       : compose === null
         ? null
-        : COMPOSE_COPY[compose.mode];
+        : {
+            ...COMPOSE_COPY[compose.mode],
+            placeholder: composePlaceholder({ mode: compose.mode, provider }),
+          };
 
   const startEdit = (): void => {
     setReplyText(reply);
@@ -389,6 +395,7 @@ export const ReviewComment = ({
           {decidedNote({
             state: state as 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved',
             sha: conversationSha({ row }),
+            provider,
           })}
         </p>
       )}

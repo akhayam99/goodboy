@@ -41,15 +41,19 @@ const fixesPart = ({
 export const pushConfirmBody = ({
   preview,
   commitStyle,
+  provider = 'GitHub',
+  canResolve = true,
 }: {
   readonly preview: ResolvePublicationPreview;
   readonly commitStyle: ResolveCommitStyle;
+  readonly provider?: string;
+  readonly canResolve?: boolean;
 }): string => {
-  const closing = closingThreadCount({ preview });
+  const closing = canResolve ? closingThreadCount({ preview }) : 0;
   const parts = [
     fixesPart({ preview, commitStyle }),
     preview.replies.length === 0 ? null : plural(preview.replies.length, 'reply', 'replies'),
-    closing === 0 ? null : `${plural(closing, 'thread', 'threads')} resolved on GitHub`,
+    closing === 0 ? null : `${plural(closing, 'thread', 'threads')} resolved on ${provider}`,
   ].flatMap((part) => (part === null ? [] : [part]));
   return `${parts.join(', ')}.`;
 };
@@ -76,7 +80,13 @@ export type PushResult = {
 
 const shortSha = (sha: string): string => sha.slice(0, 7);
 
-export const pushResultOf = ({ outcome }: { readonly outcome: PublicationOutcome }): PushResult => {
+export const pushResultOf = ({
+  outcome,
+  provider = 'GitHub',
+}: {
+  readonly outcome: PublicationOutcome;
+  readonly provider?: string;
+}): PushResult => {
   const landed = outcome.total - outcome.failed;
   const where = outcome.pushedHead === null ? '' : ` in ${shortSha(outcome.pushedHead)}`;
   if (outcome.failed > 0) {
@@ -90,7 +100,7 @@ export const pushResultOf = ({ outcome }: { readonly outcome: PublicationOutcome
     outcome.replied === 0 ? null : `${plural(outcome.replied, 'reply', 'replies')} posted`,
     outcome.resolved === 0
       ? null
-      : `${plural(outcome.resolved, 'thread', 'threads')} resolved on GitHub`,
+      : `${plural(outcome.resolved, 'thread', 'threads')} resolved on ${provider}`,
     outcome.leftOpen === 0 ? null : `${outcome.leftOpen} left open for the reviewer`,
   ].flatMap((part) => (part === null ? [] : [part]));
   return {

@@ -19,7 +19,10 @@ const h = vi.hoisted(() => ({
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
 vi.mock('../../../features/github/github', () => ({ tauriGhRunner: {} }));
-vi.mock('@goodboy/core', () => ({ updateReviewComment: h.updateReviewComment }));
+vi.mock('@goodboy/core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/core')>()),
+  updateReviewComment: h.updateReviewComment,
+}));
 
 import { editPostedReplyKey } from '../../../features/resolve/editPostedReplySetting';
 import { editPostedReplies } from './editPostedReplies';
@@ -75,7 +78,7 @@ const getWith = ({ thread }: { readonly thread: ResolveThread }) =>
   (() => ({
     sessions: [{ id: SESSION, workspaceId: WORKSPACE }],
     sessionResolveThreads: { [SESSION]: [thread] },
-    sessionGithub: { [SESSION]: { pr: { number: 318, url: PR_URL } } },
+    sessionGithub: { [SESSION]: { pr: { number: 318, url: PR_URL }, detail: null } },
     sessionProjectMounts: {},
     projects: [],
   })) as unknown as GetFn;

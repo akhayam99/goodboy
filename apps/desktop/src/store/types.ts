@@ -5,6 +5,7 @@ import type { ResolveState } from './slices/resolve/state';
 import type { ProjectCheckoutUpdate } from './slices/projects/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
 import type { ReviewSelectionState } from './slices/review-selection/state';
+import type { ReviewSourceState } from './slices/review-source/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
   StorageArtifact,
@@ -259,6 +260,7 @@ type AppSliceState = ArtifactsState &
   ResolveState &
   ReviewNavigationState &
   ReviewSelectionState &
+  ReviewSourceState &
   PrWritesState &
   SessionSyncState &
   IssueBriefsState &

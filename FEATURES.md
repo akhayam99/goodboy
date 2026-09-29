@@ -415,6 +415,10 @@ Turn review comments into commits, push them back to GitHub, and read your own p
 
 Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Fix** on a comment (or **F**), pick the model and commit style in the strip that opens under the header, and each comment gets its own agent (check several comments with the box that shows on hover, **X** or **Cmd+A**, then **Fix N separately** to start them together), working in its own copy of the branch, up to four at a time while the rest wait for a free slot. Each agent writes its fix as a commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment. Accepting puts the fix on your branch; if it collides with a fix you accepted before, the branch stays as it was and the comment says to redo it on top. A retry keeps the model, commit style and hint the comment started with.
 
+### Review sources
+
+Read the comments of every request in the session from one place. The picker under the Review title lists each pull request and merge request of the session with its provider icon and open count, and **Notes on this machine** last. A session with two projects on two providers shows two entries, and picking one makes its project the active one. Draft, reply, resolve and push work the same on GitHub and GitLab. Where a provider cannot resolve a thread, the confirm says so and leaves the thread open after the reply.
+
 ### Comment states
 
 <picture>
@@ -447,7 +451,7 @@ When the commit of a fix is no longer on the branch or on origin, the comment re
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The Review header of PR #318 with a confirm under it: Push 1 to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 2 comments need you first, with Cancel and Push buttons">
 </picture>
 
-Finish a review in one action. **Push 1** in the Review header opens a confirm right under it: **Push 1 to hl/fix-duplicate-credit?**, with the count of fixes, replies and threads it will resolve on GitHub, and a note when comments still need you. **Push** pushes the fixes, posts the replies and resolves the threads. **Cancel** leaves everything as it was. After an interruption Goodboy looks for your reply in the thread before posting it again.
+Finish a review in one action. **Push 1** in the Review header opens a confirm right under it: **Push 1 to hl/fix-duplicate-credit?**, with the count of fixes, replies and threads it will resolve on GitHub, and a note when comments still need you. **Push** pushes the fixes, posts the replies and resolves the threads (on a GitLab merge request too). **Cancel** leaves everything as it was. After an interruption Goodboy looks for your reply in the thread before posting it again.
 
 ### Review replies in your voice
 

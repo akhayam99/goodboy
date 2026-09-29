@@ -4,6 +4,7 @@ import { createReviewNavigationSlice } from './slices/review-navigation';
 import { createReviewSelectionSlice } from './slices/review-selection';
 import { reviewSelectionInitialState } from './slices/review-selection/state';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
+import { createReviewSourceSlice, reviewSourceInitialState } from './slices/review-source';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
 import { type AppliedDecisionOps, type SlotKey } from '@goodboy/core';
@@ -1207,6 +1208,7 @@ export type AppStore = AppState &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
   ReturnType<typeof createReviewSelectionSlice> &
+  ReturnType<typeof createReviewSourceSlice> &
   ReturnType<typeof createPrWritesSlice> &
   ReturnType<typeof createSessionSyncSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
@@ -1373,6 +1375,7 @@ export const initialState: AppState = {
   ...resolveInitialState,
   ...reviewNavigationInitialState,
   ...reviewSelectionInitialState,
+  ...reviewSourceInitialState,
   ...artifactsInitialState,
   agentDraft: {},
   workflowDrafts: {},
@@ -1441,6 +1444,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createResolveSlice({ set, get }),
   ...createReviewNavigationSlice({ set, get }),
   ...createReviewSelectionSlice({ set }),
+  ...createReviewSourceSlice({ set, get }),
   ...createWorkflowDraftsSlice(set, get),
   ...createArtifactDraftsSlice(set, get),
   ...createWorkflowStudioSlice(set, get),
