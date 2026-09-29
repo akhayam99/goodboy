@@ -2,8 +2,9 @@ import type { GhRunOptions, GhRunner } from '../github/gh';
 import { runJson } from '../github/gh';
 import { fetchPrDetail } from '../github/details';
 import { addReviewThreadReply, resolveReviewThread } from '../github/mutations';
+import { commitLinkOf } from './commitLink';
 import { groupReviewComments } from './groupReviewComments';
-import type { ReviewSource } from './types';
+import { REVIEW_SOURCE_CAPABILITIES, type ReviewSource } from './types';
 
 type Params = Readonly<{
   runner: GhRunner;
@@ -15,8 +16,6 @@ type Params = Readonly<{
 
 type RawHead = { readonly headRefOid?: string | null };
 
-const PULL_SUFFIX = /\/pull\/\d+(?:\/.*)?$/;
-
 export const githubReviewSource = ({
   runner,
   repo,
@@ -25,7 +24,7 @@ export const githubReviewSource = ({
   options = {},
 }: Params): ReviewSource => ({
   kind: 'github',
-  capabilities: { canReply: true, canResolve: true },
+  capabilities: REVIEW_SOURCE_CAPABILITIES.github,
   listThreads: async () => {
     const detail = await fetchPrDetail(runner, repo, prNumber, options);
     return groupReviewComments({
@@ -50,11 +49,5 @@ export const githubReviewSource = ({
     });
     return raw.headRefOid ?? null;
   },
-  commitLink: ({ sha }) => {
-    if (prUrl === null) {
-      return null;
-    }
-    const url = prUrl.replace(PULL_SUFFIX, `/commit/${sha}`);
-    return url === prUrl ? null : url;
-  },
+  commitLink: ({ sha }) => commitLinkOf({ kind: 'github', url: prUrl, sha }),
 });

@@ -5,7 +5,9 @@ import {
   gitlabThreadsOf,
   type GitlabReviewDiscussion,
 } from '../gitlabReviewSource';
+import { commitLinkOf } from '../commitLink';
 import { localReviewSource, LOCAL_NOTE_NO_REPLY } from '../localReviewSource';
+import { REVIEW_SOURCE_CAPABILITIES } from '../types';
 
 const note = (overrides: Partial<GitlabReviewDiscussion['notes'][number]> = {}) => ({
   id: 1,
@@ -84,5 +86,32 @@ describe('localReviewSource', () => {
     await expect(source.reply({ providerThreadId: 'note:1', body: 'x' })).rejects.toThrow(
       LOCAL_NOTE_NO_REPLY,
     );
+  });
+});
+
+describe('commitLinkOf', () => {
+  it('links a commit on each provider and nothing for the rest', () => {
+    expect(
+      commitLinkOf({
+        kind: 'github',
+        url: 'https://github.com/harborline/payments-api/pull/318',
+        sha: 'abc1234',
+      }),
+    ).toBe('https://github.com/harborline/payments-api/commit/abc1234');
+    expect(
+      commitLinkOf({
+        kind: 'gitlab',
+        url: 'https://gitlab.example.com/harborline/notify-relay/-/merge_requests/57',
+        sha: 'def5678',
+      }),
+    ).toBe('https://gitlab.example.com/harborline/notify-relay/-/commit/def5678');
+    expect(commitLinkOf({ kind: 'local', url: null, sha: 'abc1234' })).toBeNull();
+  });
+});
+
+describe('REVIEW_SOURCE_CAPABILITIES', () => {
+  it('lets bitbucket reply without resolving', () => {
+    expect(REVIEW_SOURCE_CAPABILITIES.bitbucket).toEqual({ canReply: true, canResolve: false });
+    expect(REVIEW_SOURCE_CAPABILITIES.local.canReply).toBe(false);
   });
 });

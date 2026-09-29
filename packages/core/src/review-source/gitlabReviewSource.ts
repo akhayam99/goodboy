@@ -1,5 +1,6 @@
 import type { PrComment } from '@goodboy/types';
-import type { ReviewSource, ReviewSourceThread } from './types';
+import { commitLinkOf } from './commitLink';
+import { REVIEW_SOURCE_CAPABILITIES, type ReviewSource, type ReviewSourceThread } from './types';
 
 export const GITLAB_THREAD_PREFIX = 'gitlab:';
 
@@ -42,8 +43,6 @@ type Params = Readonly<{
   transport: GitlabReviewTransport;
   mrUrl: string | null;
 }>;
-
-const MR_SUFFIX = /\/-\/merge_requests\/\d+(?:\/.*)?$/;
 
 export const gitlabThreadId = ({ discussionId }: { readonly discussionId: string }): string =>
   `${GITLAB_THREAD_PREFIX}${discussionId}`;
@@ -115,7 +114,7 @@ export const gitlabThreadsOf = ({
 
 export const gitlabReviewSource = ({ transport, mrUrl }: Params): ReviewSource => ({
   kind: 'gitlab',
-  capabilities: { canReply: true, canResolve: true },
+  capabilities: REVIEW_SOURCE_CAPABILITIES.gitlab,
   listThreads: async () =>
     gitlabThreadsOf({ discussions: await transport.listDiscussions(), mrUrl }),
   reply: async ({ providerThreadId, body }) => {
@@ -130,11 +129,5 @@ export const gitlabReviewSource = ({ transport, mrUrl }: Params): ReviewSource =
     return { isResolved: isDiscussionResolved({ discussion }) };
   },
   readRemoteHead: () => transport.readHeadSha(),
-  commitLink: ({ sha }) => {
-    if (mrUrl === null) {
-      return null;
-    }
-    const url = mrUrl.replace(MR_SUFFIX, `/-/commit/${sha}`);
-    return url === mrUrl ? null : url;
-  },
+  commitLink: ({ sha }) => commitLinkOf({ kind: 'gitlab', url: mrUrl, sha }),
 });

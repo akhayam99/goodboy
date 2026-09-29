@@ -589,7 +589,9 @@ export {
 export {
   GITLAB_THREAD_PREFIX,
   LOCAL_NOTE_NO_REPLY,
+  REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,
+  commitLinkOf,
   githubReviewSource,
   gitlabDiscussionId,
   gitlabReviewSource,

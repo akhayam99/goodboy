@@ -45,3 +45,10 @@ export const REVIEW_SOURCE_LABEL = {
   bitbucket: 'Bitbucket',
   local: 'this machine',
 } as const satisfies Readonly<Record<ReviewSourceKind, string>>;
+
+export const REVIEW_SOURCE_CAPABILITIES = {
+  github: { canReply: true, canResolve: true },
+  gitlab: { canReply: true, canResolve: true },
+  bitbucket: { canReply: true, canResolve: false },
+  local: { canReply: false, canResolve: true },
+} as const satisfies Readonly<Record<ReviewSourceKind, ReviewSourceCapabilities>>;
