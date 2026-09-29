@@ -3,99 +3,60 @@ import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   resetStoryStore,
+  storySpies,
   type StoryStore,
 } from '../../store/storyHarness';
-import type { AgentId, IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
+import type {
+  AgentId,
+  IsoDateTime,
+  PermissionRuleId,
+  ProviderRunId,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 
-const permissionRuleUpsertSpy = vi.fn();
+vi.mock('@tauri-apps/api/core', async () =>
+  (await import('../../store/storyHarness')).tauriCoreModuleMock(),
+);
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('../../store/storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../../shared/lib/db', async () =>
+  (await import('../../store/storyHarness')).dbLibModuleMock(),
+);
+vi.mock('@goodboy/db', async () => (await import('../../store/storyHarness')).dbModuleMock());
+vi.mock('../../features/chat/turn', async () =>
+  (await import('../../store/storyHarness')).turnModuleMock(),
+);
+vi.mock('../../features/permissions/permissions', async () =>
+  (await import('../../store/storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../../features/providers/providers', async () =>
+  (await import('../../store/storyHarness')).providersModuleMock(),
+);
+vi.mock('../../features/providers/routing', async () =>
+  (await import('../../store/storyHarness')).routingModuleMock(),
+);
+vi.mock('../../features/budget/budget', async () =>
+  (await import('../../store/storyHarness')).budgetModuleMock(),
+);
+vi.mock('../../features/skills/skills', async () =>
+  (await import('../../store/storyHarness')).skillsModuleMock(),
+);
+vi.mock('../../features/workflows/workflows', async () =>
+  (await import('../../store/storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../../features/worktree/worktree', async () =>
+  (await import('../../store/storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../../shared/lib/repo', async () =>
+  (await import('../../store/storyHarness')).repoModuleMock(),
+);
+vi.mock('../../features/plans/plans', async () =>
+  (await import('../../store/storyHarness')).plansModuleMock(),
+);
 
-vi.mock('../../features/permissions/permissions', () => ({
-  invokePermissionRuleList: vi.fn(async () => []),
-  invokePermissionRuleUpsert: (...args: unknown[]) => permissionRuleUpsertSpy(...args),
-  invokePermissionAuditInsert: vi.fn(async () => undefined),
-  invokeAuditRetryEnqueue: vi.fn(async () => undefined),
-  invokeAuditRetryDrain: vi.fn(async () => []),
-  invokeAuditRetryUpdate: vi.fn(async () => undefined),
-  invokeAuditRetryDelete: vi.fn(async () => undefined),
-  useEffectivePermissionRules: () => [],
-}));
-
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
-
-vi.mock('../../shared/lib/db', () => ({
-  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
-
-vi.mock('@goodboy/db', () => ({
-  getSetting: vi.fn(),
-  insertMessage: vi.fn(),
-  insertProviderRun: vi.fn(),
-  insertSession: vi.fn(),
-  insertSessionWorktree: vi.fn(),
-  insertTelemetry: vi.fn(),
-  insertWorkspace: vi.fn(),
-  listContextSlotsForSession: vi.fn(async () => []),
-  listMessagesForSession: vi.fn(async () => []),
-  listSessionsForWorkspace: vi.fn(async () => []),
-  listTelemetryForSession: vi.fn(async () => []),
-  listWorkspaces: vi.fn(async () => []),
-  listWorktreesForTask: vi.fn(async () => []),
-  deleteWorktreesForSession: vi.fn(),
-  setSetting: vi.fn(),
-  summarizeSessionTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-  updateProviderRunStatus: vi.fn(),
-  updateSessionState: vi.fn(),
-  upsertContextSlot: vi.fn(),
-  insertTurnEvent: vi.fn(async () => undefined),
-  insertTurnEventsBatch: vi.fn(async () => undefined),
-  listWorktreesForSessions: vi.fn(async () => new Map()),
-  listAgentsForSessions: vi.fn(async () => new Map()),
-  listTurnEventsForAgent: vi.fn(async () => []),
-  listTurnEventsForTask: vi.fn(async () => []),
-  listMessagesForAgent: vi.fn(async () => []),
-  updateSessionWorkflowStep: vi.fn(),
-  attachWorkflowToSession: vi.fn(),
-  detachWorkflowFromSession: vi.fn(),
-  updateWorkflowOrder: vi.fn(),
-}));
-
-vi.mock('../../features/budget/budget', () => ({
-  invokeBudgetRuleList: vi.fn(async () => []),
-  invokeBudgetRuleUpsert: vi.fn(),
-  invokeBudgetRuleDelete: vi.fn(),
-  invokeBudgetAlertsList: vi.fn(async () => []),
-  invokeBudgetAlertDismiss: vi.fn(),
-  invokeSessionBudgetGet: vi.fn(),
-  invokeSessionBudgetSet: vi.fn(),
-  invokeCheckProviderBudget: vi.fn(),
-}));
-
-vi.mock('../../features/skills/skills', () => ({
-  invokeSkillList: vi.fn(async () => []),
-  invokeSkillUpsert: vi.fn(),
-  invokeSkillDelete: vi.fn(),
-  invokeSkillRescan: vi.fn(),
-  resolveSkillInvocation: vi.fn(),
-}));
-
-vi.mock('../../features/workflows/workflows', () => ({
-  invokeWorkflowList: vi.fn(async () => []),
-  invokeWorkflowUpsert: vi.fn(),
-  invokeWorkflowDelete: vi.fn(),
-  invokeAgentList: vi.fn(async () => []),
-  invokeAgentInsert: vi.fn(),
-  invokeAgentUpdateStatus: vi.fn(),
-}));
-
-vi.mock('../../features/worktree/worktree', () => ({
-  createWorktree: vi.fn(),
-  removeWorktree: vi.fn(),
-}));
-
-vi.mock('../../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
+const permissionRuleUpsertSpy = storySpies.invokePermissionRuleUpsert;
 
 const SESSION_ID = 'sess-1' as SessionId;
 const WORKSPACE_ID = 'ws-1' as WorkspaceId;
@@ -131,9 +92,8 @@ describe('resolvePermissionRequest', () => {
 
   beforeEach(async () => {
     await resetStoryStore();
-    permissionRuleUpsertSpy.mockReset();
     permissionRuleUpsertSpy.mockResolvedValue({
-      id: 'rule-new',
+      id: 'rule-new' as PermissionRuleId,
       scope: 'session',
       pattern: { tool: TOOL_NAME },
       decision: 'allow',
@@ -223,9 +183,8 @@ describe('resolvePermissionRequest', () => {
   it('each scope appends a permission_decision TurnEvent', async () => {
     for (const scope of ['global', 'workspace', 'session', 'once', 'deny'] as const) {
       await resetStoryStore();
-      permissionRuleUpsertSpy.mockReset();
       permissionRuleUpsertSpy.mockResolvedValue({
-        id: 'rule-new',
+        id: 'rule-new' as PermissionRuleId,
         scope: 'session',
         pattern: { tool: TOOL_NAME },
         decision: 'allow',

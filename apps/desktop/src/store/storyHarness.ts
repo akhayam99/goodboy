@@ -257,7 +257,7 @@ export const storySpies = {
   ),
   invokeTerminalClose: vi.fn(async () => undefined),
   invokePermissionRuleList: vi.fn<PermissionsModule['invokePermissionRuleList']>(async () => []),
-  invokePermissionRuleUpsert: vi.fn(async () => undefined),
+  invokePermissionRuleUpsert: vi.fn<PermissionsModule['invokePermissionRuleUpsert']>(),
   invokePermissionRuleDelete: vi.fn(async () => undefined),
   invokePermissionAuditInsert: vi.fn<
     (input: Parameters<PermissionsModule['invokePermissionAuditInsert']>[0]) => Promise<unknown>
