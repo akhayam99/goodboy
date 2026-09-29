@@ -7,7 +7,7 @@ export { formatTokens } from '@goodboy/ui';
 export const formatCost = formatUsd;
 
 export const shortModel = (model: string): string => {
-  const descriptor = getModelDescriptor(model);
+  const descriptor = getModelDescriptor({ id: model });
   if (descriptor != null) {
     return descriptor.label;
   }

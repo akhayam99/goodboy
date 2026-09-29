@@ -134,7 +134,7 @@ export const WorkflowNextStepCta = ({
                     tintClasses('primary').hoverBg,
                   ),
             )}
-            aria-label={`Run next step: ${next.name} (${getModelDescriptor(routing.model)?.label ?? routing.model}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
+            aria-label={`Run next step: ${next.name} (${getModelDescriptor({ id: routing.model })?.label ?? routing.model}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
           >
             {blockReason != null ? (
               <AlertTriangle

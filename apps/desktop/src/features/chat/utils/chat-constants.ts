@@ -55,10 +55,10 @@ const unknownModelLabel = (id: string): string => {
 };
 
 export const modelLabel = (id: string): string =>
-  getModelDescriptor(id)?.label ?? unknownModelLabel(id);
+  getModelDescriptor({ id })?.label ?? unknownModelLabel(id);
 
 export const modelTier = (model: string): ModelCostTier => {
-  const descriptor = getModelDescriptor(model);
+  const descriptor = getModelDescriptor({ id: model });
   if (descriptor) {
     return descriptor.costTier;
   }
@@ -72,7 +72,7 @@ export const modelTier = (model: string): ModelCostTier => {
 };
 
 const modelWeight = (model: string): number => {
-  return getModelDescriptor(model)?.weight ?? FALLBACK_WEIGHT;
+  return getModelDescriptor({ id: model })?.weight ?? FALLBACK_WEIGHT;
 };
 
 const TIER_RANK: Record<ModelCostTier, number> = { cheap: 0, mid: 1, expensive: 2 };

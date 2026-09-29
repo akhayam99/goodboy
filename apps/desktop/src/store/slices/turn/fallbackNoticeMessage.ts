@@ -31,6 +31,7 @@ const reasonFor = ({ failure }: { readonly failure: TurnFailureKind }): string =
 };
 
 export const fallbackNoticeMessage = ({ provider, failure, plan }: Params): string => {
-  const label = getModelDescriptor(plan.model)?.label ?? plan.model;
+  const label =
+    getModelDescriptor({ id: plan.model, provider: plan.provider })?.label ?? plan.model;
   return `${provider} ${reasonFor({ failure })}. retrying on ${plan.provider} ${label}.`;
 };

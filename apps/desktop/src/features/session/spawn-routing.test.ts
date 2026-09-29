@@ -40,6 +40,16 @@ describe('resolveSpawnRouting', () => {
     });
   });
 
+  it('routes a chat on gemini-3.1-pro with no pinned provider to Gemini, not Cursor', () => {
+    const routing = resolveSpawnRouting({
+      kind: 'generic',
+      roleModels: null,
+      session: makeSession({ modelOverride: 'gemini-3.1-pro', effort: 'high' }),
+    });
+
+    expect(routing?.provider).toBe('gemini');
+  });
+
   it('keeps the role default for an explicit kind, whatever the chat is on', () => {
     const routing = resolveSpawnRouting({
       kind: 'scout',
