@@ -58,7 +58,7 @@ export const ReviewCommitsReplies = ({ model }: Props) => {
             {reply.text !== '' && !reply.isPosted && (
               <span className="min-w-0 text-foreground">{reply.text}</span>
             )}
-            <span className="min-w-0 text-row text-foreground">
+            <span className="min-w-0 text-secondary text-foreground">
               {lineOf({ reply, isEditing: model.isEditingPosted })}
             </span>
           </li>
