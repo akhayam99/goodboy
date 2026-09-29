@@ -302,4 +302,21 @@ describe('Review as one flow', () => {
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Review publication' })).toBeNull();
   });
+
+  it('focuses the first present thread of a selection target and keeps the set', async () => {
+    await mount({ threadId: null });
+    const selection = ['PRRT_thread_gone', 'PRRT_thread_error_shape', EXPANDED_THREAD_ID];
+
+    await act(async () => {
+      await useAppStore.getState().openReviewTarget({
+        sessionId: SESSION.id,
+        destination: { kind: 'threads', threadIds: selection },
+      });
+    });
+    await settle();
+
+    expect(focusedThread()).toBe('PRRT_thread_error_shape');
+    expect(useAppStore.getState().reviewTargets[SESSION.id]).toBeNull();
+    expect(useAppStore.getState().reviewSelections[SESSION.id]).toEqual(selection);
+  });
 });

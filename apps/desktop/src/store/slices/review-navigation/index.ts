@@ -2,6 +2,7 @@ import { consumeReviewTarget } from './consumeReviewTarget';
 import { openReviewTarget } from './openReviewTarget';
 import { reviewNavigationInitialState } from './state';
 import { setPullRequestMode } from './setPullRequestMode';
+import { setReviewSelection } from './setReviewSelection';
 import type {
   ConsumeReviewTargetParams,
   GetFn,
@@ -9,9 +10,10 @@ import type {
   ReviewNavigationSlice,
   SetFn,
   SetPullRequestModeParams,
+  SetReviewSelectionParams,
 } from './types';
 
-export { reviewThreadId } from './destination';
+export { reviewFocusThreadId, reviewThreadId, reviewThreadIds } from './destination';
 export type { ReviewDestination } from './destination';
 export type { ReviewTargetOutcome, ReviewTargetReason } from './types';
 
@@ -26,4 +28,5 @@ export const createReviewNavigationSlice = ({ set, get }: Params): ReviewNavigat
   consumeReviewTarget: (params: ConsumeReviewTargetParams) =>
     consumeReviewTarget({ set, ...params }),
   setPullRequestMode: (params: SetPullRequestModeParams) => setPullRequestMode({ set, ...params }),
+  setReviewSelection: (params: SetReviewSelectionParams) => setReviewSelection({ set, ...params }),
 });

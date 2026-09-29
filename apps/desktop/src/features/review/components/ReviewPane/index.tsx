@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
 import { useAppStore, sessionPlace } from '../../../../store';
-import { reviewThreadId } from '../../../../store/slices/review-navigation';
+import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { useSessionRepo } from '../../../../store/slices/worktrees/useSessionRepo';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
@@ -31,7 +31,7 @@ export const ReviewPane = ({ session }: Props) => {
     if (reviewTarget === null || reviewTarget.status !== 'ready') {
       return;
     }
-    if (reviewThreadId({ destination: reviewTarget.destination }) === null) {
+    if (reviewFocusThreadId({ destination: reviewTarget.destination }) === null) {
       consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
     }
   }, [consumeReviewTarget, reviewTarget, sessionId]);

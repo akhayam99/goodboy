@@ -38,8 +38,14 @@ export type SetPullRequestModeParams = {
   readonly mode: PullRequestMode;
 };
 
+export type SetReviewSelectionParams = {
+  readonly sessionId: SessionId;
+  readonly threadIds: ReadonlyArray<string>;
+};
+
 export type ReviewNavigationSlice = ReviewNavigationState & {
   openReviewTarget(params: OpenReviewTargetParams): Promise<ReviewTargetOutcome>;
   consumeReviewTarget(params: ConsumeReviewTargetParams): void;
   setPullRequestMode(params: SetPullRequestModeParams): void;
+  setReviewSelection(params: SetReviewSelectionParams): void;
 };

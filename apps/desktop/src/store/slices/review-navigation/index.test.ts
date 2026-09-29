@@ -4,7 +4,7 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { sessionPlace } from '../navigation/place';
 import { createReviewNavigationSlice } from './index';
 import { reviewNavigationInitialState } from './state';
-import type { ReviewDestination } from './destination';
+import { reviewFocusThreadId, type ReviewDestination } from './destination';
 import type { GetFn, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
@@ -405,5 +405,50 @@ describe('the review navigation target', () => {
 
     live.actions.consumeReviewTarget({ sessionId: SESSION_ID, requestId: owned });
     expect(live.get().reviewTargets[SESSION_ID]).toBeNull();
+  });
+});
+
+describe('a destination made of several threads', () => {
+  const threads: ReviewDestination = {
+    kind: 'threads',
+    threadIds: ['PRRT_1', 'PRRT_2', 'PRRT_1', 'PRRT_3'],
+  };
+
+  it('opens the lens without a mount or a pull request round trip and keeps the set', async () => {
+    const live = createHarness();
+
+    const outcome = await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: threads,
+    });
+
+    expect(outcome).toEqual({ kind: 'opened' });
+    expect(live.calls).toEqual(['lens']);
+    expect(live.state.setSessionActiveMount).not.toHaveBeenCalled();
+    expect(live.get().reviewTargets[SESSION_ID]).toMatchObject({
+      status: 'ready',
+      destination: threads,
+    });
+    expect(live.get().reviewSelections[SESSION_ID]).toEqual(['PRRT_1', 'PRRT_2', 'PRRT_3']);
+  });
+
+  it('answers with the first thread that is present and none when nothing matches', () => {
+    expect(reviewFocusThreadId({ destination: threads })).toBe('PRRT_1');
+    expect(reviewFocusThreadId({ destination: threads, isPresent: (id) => id === 'PRRT_3' })).toBe(
+      'PRRT_3',
+    );
+    expect(reviewFocusThreadId({ destination: threads, isPresent: () => false })).toBeNull();
+    expect(reviewFocusThreadId({ destination: onThread({ threadId: 'PRRT_9' }) })).toBe('PRRT_9');
+    expect(reviewFocusThreadId({ destination: { kind: 'home' } })).toBeNull();
+  });
+
+  it('keeps the selection of one session apart from another', async () => {
+    const live = createHarness();
+    await live.actions.openReviewTarget({ sessionId: SESSION_ID, destination: threads });
+
+    live.actions.setReviewSelection({ sessionId: OTHER_SESSION_ID, threadIds: ['PRRT_7'] });
+
+    expect(live.get().reviewSelections[SESSION_ID]).toEqual(['PRRT_1', 'PRRT_2', 'PRRT_3']);
+    expect(live.get().reviewSelections[OTHER_SESSION_ID]).toEqual(['PRRT_7']);
   });
 });

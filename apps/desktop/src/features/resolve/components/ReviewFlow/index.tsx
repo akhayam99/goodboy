@@ -24,7 +24,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS, type ShortcutId } from '../../../../shared/keyboard/registry';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
-import { reviewThreadId } from '../../../../store/slices/review-navigation';
+import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { openReview } from '../../../review/openReview';
@@ -171,8 +171,13 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     if (reviewTarget === null || reviewTarget.status !== 'ready') {
       return;
     }
-    const threadId = reviewThreadId({ destination: reviewTarget.destination });
-    if (threadId !== null && !entries.some((entry) => entry.threadId === threadId)) {
+    const { destination } = reviewTarget;
+    const wanted = reviewFocusThreadId({ destination });
+    const threadId = reviewFocusThreadId({
+      destination,
+      isPresent: (candidate) => entries.some((entry) => entry.threadId === candidate),
+    });
+    if (wanted !== null && threadId === null) {
       return;
     }
     if (threadId !== null) {
@@ -248,7 +253,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const isLoading = hasPr && github.detail === null && github.detailLoading;
   const isWholeError = hasPr && github.detail === null && refreshError !== null;
   const targetThreadId =
-    reviewTarget === null ? null : reviewThreadId({ destination: reviewTarget.destination });
+    reviewTarget === null ? null : reviewFocusThreadId({ destination: reviewTarget.destination });
   const targetError =
     reviewTarget === null
       ? null
