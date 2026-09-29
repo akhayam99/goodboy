@@ -243,7 +243,7 @@ fn skill_upsert_blocking(state: &Db, input: SkillUpsertInput) -> Result<SkillRow
 
     let raw_path = match &input.file_path {
         Some(fp) => PathBuf::from(fp),
-        None => default_skills_dir.join(format!("{}.md", &input.name)),
+        None => default_skills_dir.join(format!("{}.md", input.name)),
     };
 
     let skills_dir = skills_dirs

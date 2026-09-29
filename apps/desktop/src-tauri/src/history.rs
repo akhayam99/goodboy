@@ -2185,7 +2185,7 @@ pub(crate) fn list_backups(cwd: &Path, branch: &str) -> Result<Vec<HistoryBackup
             })
         })
         .collect();
-    backups.sort_by(|left, right| right.created_at.cmp(&left.created_at));
+    backups.sort_by_key(|backup| std::cmp::Reverse(backup.created_at));
     Ok(backups)
 }
 
@@ -2243,7 +2243,7 @@ fn backup_spaces(cwd: &Path) -> Option<BackupSpaces> {
             .push((is_kept, nanos, ref_name.clone(), sha));
     }
     for backups in spaces.values_mut() {
-        backups.sort_by(|left, right| right.1.cmp(&left.1));
+        backups.sort_by_key(|backup| std::cmp::Reverse(backup.1));
     }
     Some(spaces)
 }
@@ -2322,7 +2322,7 @@ pub struct HistoryRunArgs {
 #[serde(tag = "kind", rename_all = "kebab-case")]
 pub enum RunOutcome {
     Blocked { reason: String },
-    Tried { result: TrialResult },
+    Tried { result: Box<TrialResult> },
 }
 
 pub(crate) fn run_plan(
@@ -2341,7 +2341,9 @@ pub(crate) fn run_plan(
         return Ok(RunOutcome::Blocked { reason });
     }
     let result = trial_with(&args.plan, slug, false, progress)?;
-    Ok(RunOutcome::Tried { result })
+    Ok(RunOutcome::Tried {
+        result: Box::new(result),
+    })
 }
 
 #[tauri::command]
@@ -3909,7 +3911,7 @@ mod tests {
 
     fn tried(outcome: RunOutcome) -> TrialResult {
         match outcome {
-            RunOutcome::Tried { result } => result,
+            RunOutcome::Tried { result } => *result,
             RunOutcome::Blocked { reason } => panic!("the run was blocked: {reason}"),
         }
     }
@@ -4530,7 +4532,7 @@ mod tests {
         let mut guard = create_copy(&l.root, &copy, &l.base).unwrap();
         guard.is_kept = true;
         std::fs::write(root.join(RESERVATION_FILE), forged).unwrap();
-        assert!(copy_git_dirs(&copy).is_none_or(|dirs| PathBuf::from(dirs.git_dir) != review_admin));
+        assert!(copy_git_dirs(&copy).is_none_or(|dirs| dirs.git_dir != review_admin));
         drop(guard);
         discard_copy(&copy.to_string_lossy());
         assert!(review_admin.join("gitdir").exists());

@@ -2218,8 +2218,10 @@ mod tests {
             build_bundle(&conn, &ExportGroups::default(), &HashSet::new()).expect("export failed");
         assert_eq!(bundle.workspaces[0].projects[0].root_path, None);
 
-        let mut with_paths = ExportGroups::default();
-        with_paths.folder_paths = true;
+        let with_paths = ExportGroups {
+            folder_paths: true,
+            ..Default::default()
+        };
         let bundle = build_bundle(&conn, &with_paths, &HashSet::new()).expect("export failed");
         assert_eq!(
             bundle.workspaces[0].projects[0].root_path,
@@ -2249,8 +2251,10 @@ mod tests {
             vec!["yours"]
         );
 
-        let mut with_orchestrated = ExportGroups::default();
-        with_orchestrated.workflows_orchestrated = true;
+        let with_orchestrated = ExportGroups {
+            workflows_orchestrated: true,
+            ..Default::default()
+        };
         let bundle =
             build_bundle(&conn, &with_orchestrated, &HashSet::new()).expect("export failed");
         let mut ids = bundle

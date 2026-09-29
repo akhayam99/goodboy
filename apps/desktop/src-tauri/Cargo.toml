@@ -6,7 +6,7 @@ authors = ["Amin Khayam"]
 license = "FSL-1.1-MIT"
 repository = "https://github.com/akhayam99/goodboy"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.95"
 default-run = "goodboy-desktop"
 
 [lib]

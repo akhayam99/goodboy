@@ -302,8 +302,8 @@ pub fn db_restore_migration_snapshot(
 ///   1. `GOODBOY_DB_FILE` env (absolute path verbatim, relative under `~/.goodboy`).
 ///   2. Debug builds (`pnpm tauri dev`) -> `data.dev.db`, a private playground.
 ///   3. Release builds (the shipped app) -> `data.db`, the production file.
-/// Splitting on `debug_assertions` keeps local experiments off the prod DB
-/// automatically, with no env setup required.
+///      Splitting on `debug_assertions` keeps local experiments off the prod DB
+///      automatically, with no env setup required.
 pub fn resolve_db_path() -> Result<PathBuf, DbError> {
     let home = dirs::home_dir().ok_or(DbError::NoHomeDir)?;
     let dir = home.join(APP_DIR);

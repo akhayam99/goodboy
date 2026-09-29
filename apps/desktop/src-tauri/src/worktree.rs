@@ -6,6 +6,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
+pub(crate) type RunGit<'a> = &'a mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>;
+
 const MAX_SLUG_LEN: usize = 48;
 const NON_INTERACTIVE_EDITOR: &str = "true";
 
@@ -552,7 +554,7 @@ pub async fn worktree_create(args: CreateArgs) -> Result<CreatedWorktree, Worktr
 fn branch_checkout_path_with(
     repo_path: &Path,
     branch: &str,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
 ) -> Option<String> {
     let stdout = run_git(repo_path, &["worktree", "list", "--porcelain"]).ok()?;
     parse_porcelain(&stdout)
@@ -1011,7 +1013,7 @@ struct RegisteredWorktree {
 
 fn registered_worktrees_with(
     repo_path: &Path,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
 ) -> Result<Vec<RegisteredWorktree>, WorktreeError> {
     let output = run_git(repo_path, &["worktree", "list", "--porcelain"])?;
     Ok(parse_registered_worktrees(&output))
@@ -1021,10 +1023,7 @@ pub(crate) fn canonical_path(path: &Path) -> Option<PathBuf> {
     std::fs::canonicalize(path).ok()
 }
 
-fn common_git_dir_with(
-    path: &Path,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
-) -> Option<PathBuf> {
+fn common_git_dir_with(path: &Path, run_git: RunGit<'_>) -> Option<PathBuf> {
     let raw = run_git(path, &["rev-parse", "--git-common-dir"]).ok()?;
     let value = PathBuf::from(raw.trim());
     let resolved = match value.is_absolute() {
@@ -1034,10 +1033,7 @@ fn common_git_dir_with(
     canonical_path(&resolved)
 }
 
-fn repository_top_level_with(
-    path: &Path,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
-) -> Option<PathBuf> {
+fn repository_top_level_with(path: &Path, run_git: RunGit<'_>) -> Option<PathBuf> {
     let raw = run_git(path, &["rev-parse", "--show-toplevel"]).ok()?;
     canonical_path(Path::new(raw.trim()))
 }
@@ -1045,7 +1041,7 @@ fn repository_top_level_with(
 fn inspect_worktree_with(
     repo_path: &Path,
     worktree_path: &Path,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
 ) -> WorktreeInspection {
     let requested_path = worktree_path.to_string_lossy().into_owned();
     if !repo_path.is_dir() || canonical_path(repo_path).is_none() {
@@ -1103,7 +1099,7 @@ fn inspect_worktree_with(
 fn foreign_directory_reason_with(
     repo_path: &Path,
     target_path: &Path,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
 ) -> WorktreeRemovalReason {
     let repository_common = common_git_dir_with(repo_path, run_git);
     let target_common = common_git_dir_with(target_path, run_git);
@@ -1116,7 +1112,7 @@ fn foreign_directory_reason_with(
 
 fn status_removal_reasons_with(
     worktree_path: &Path,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
 ) -> Vec<WorktreeRemovalReason> {
     let raw = match run_git(worktree_path, &["status", "--porcelain=v1"]) {
         Ok(found) => found,
@@ -1154,7 +1150,7 @@ fn validate_removal_with(
     repo_path: &Path,
     worktree_path: &Path,
     mode: WorktreeRemovalMode,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
 ) -> Result<PathBuf, WorktreeRemovalResult> {
     match inspect_worktree_with(repo_path, worktree_path, run_git) {
         WorktreeInspection::RepositoryUnavailable { path } => Err(WorktreeRemovalResult::Kept {
@@ -1205,7 +1201,7 @@ pub(crate) fn remove_worktree_checked_with(
     repo_path: &Path,
     worktree_path: &Path,
     mode: WorktreeRemovalMode,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
     is_lease_live: &mut dyn FnMut(&Path) -> bool,
 ) -> Result<WorktreeRemovalResult, WorktreeError> {
     let target = match validate_removal_with(repo_path, worktree_path, mode, run_git) {
@@ -1978,7 +1974,7 @@ pub(crate) fn contained_worktrees_parent(repo_path: &Path) -> Option<PathBuf> {
 fn unpushed_commit_count_with(
     repo_path: &Path,
     worktree_path: &Path,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
 ) -> Option<u32> {
     let default_branch = run_git(repo_path, &["symbolic-ref", "--quiet", "HEAD"])
         .ok()
@@ -1996,7 +1992,7 @@ fn unpushed_commit_count_with(
 fn unpushed_folder_kept_with(
     repo_path: &Path,
     folder: &Path,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
     is_lease_live: &mut dyn FnMut(&Path) -> bool,
 ) -> Option<WorktreeRemovalResult> {
     let unpushed = match unpushed_commit_count_with(repo_path, folder, run_git) {
@@ -2021,7 +2017,7 @@ pub(crate) fn remove_worktree_folder_with(
     repo_path: &Path,
     target: &Path,
     mode: WorktreeRemovalMode,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
     is_lease_live: &mut dyn FnMut(&Path) -> bool,
 ) -> Result<WorktreeRemovalResult, WorktreeError> {
     remove_worktree_folder_allowing(repo_path, target, mode, false, run_git, is_lease_live)
@@ -2032,7 +2028,7 @@ pub(crate) fn remove_worktree_folder_allowing(
     target: &Path,
     mode: WorktreeRemovalMode,
     allow_local_commits: bool,
-    run_git: &mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>,
+    run_git: RunGit<'_>,
     is_lease_live: &mut dyn FnMut(&Path) -> bool,
 ) -> Result<WorktreeRemovalResult, WorktreeError> {
     let Some(parent) = contained_worktrees_parent(repo_path) else {
@@ -3748,13 +3744,6 @@ mod rewrite_tests {
         git_ok(root, &["init", "--bare", remote.to_str().unwrap()]);
         git_ok(root, &["remote", "add", "origin", remote.to_str().unwrap()]);
         git_ok(root, &["push", "-u", "origin", "main"]);
-    }
-
-    fn log_subjects(root: &Path) -> Vec<String> {
-        git_ok(root, &["log", "--format=%s"])
-            .lines()
-            .map(|l| l.trim().to_string())
-            .collect()
     }
 
     #[test]

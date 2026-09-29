@@ -462,6 +462,7 @@ pub async fn gitlab_mr_for_branch(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn gitlab_create_mr(
     workspace_id: String,
     project_id: Option<String>,
@@ -640,6 +641,7 @@ pub struct GitlabDiscussion {
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn gitlab_create_mr_discussion(
     workspace_id: String,
     project_id: Option<String>,
@@ -752,6 +754,7 @@ pub async fn gitlab_list_mr_discussions(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn gitlab_reply_to_mr_discussion(
     workspace_id: String,
     project_id: Option<String>,
@@ -790,6 +793,7 @@ fn mr_discussion_resolve_path(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn gitlab_resolve_mr_discussion(
     workspace_id: String,
     project_id: Option<String>,
@@ -898,6 +902,7 @@ pub async fn gitlab_list_issue_discussions(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn gitlab_reply_to_issue_discussion(
     workspace_id: String,
     project_id: Option<String>,
@@ -1023,6 +1028,7 @@ fn mr_update_payload(state_event: Option<&str>, title: Option<&str>) -> serde_js
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn gitlab_update_mr_state(
     workspace_id: String,
     project_id: Option<String>,

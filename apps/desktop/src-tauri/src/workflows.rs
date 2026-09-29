@@ -4,6 +4,20 @@ use tauri::State;
 
 use crate::db::{Db, DbError};
 
+type WorkflowTuple = (
+    String,
+    String,
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    i64,
+    i64,
+    Option<i64>,
+    i64,
+    Option<String>,
+);
+
 // ---------------------------------------------------------------------------
 // Structs
 // ---------------------------------------------------------------------------
@@ -645,19 +659,7 @@ pub async fn workflow_list(
          WHERE workspace_id = ?1 AND deleted_at IS NULL AND is_preset = 1
          ORDER BY created_at ASC",
     )?;
-    let template_ids: Vec<(
-        String,
-        String,
-        String,
-        String,
-        Option<String>,
-        Option<String>,
-        i64,
-        i64,
-        Option<i64>,
-        i64,
-        Option<String>,
-    )> = stmt
+    let template_ids: Vec<WorkflowTuple> = stmt
         .query_map(rusqlite::params![workspace_id], |row| {
             Ok((
                 row.get(0)?,
@@ -999,19 +1001,7 @@ pub async fn workflows_for_session(
          WHERE sw.session_id = ?1
          ORDER BY sw.ordinal ASC",
     )?;
-    let rows: Vec<(
-        String,
-        String,
-        String,
-        String,
-        Option<String>,
-        Option<String>,
-        i64,
-        i64,
-        Option<i64>,
-        i64,
-        Option<String>,
-    )> = stmt
+    let rows: Vec<WorkflowTuple> = stmt
         .query_map(rusqlite::params![session_id], |row| {
             Ok((
                 row.get(0)?,
