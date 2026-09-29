@@ -123,7 +123,7 @@ export const FailedRun = ({
                   aria-hidden
                   className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-meta text-on-tone"
                 >
-                  {shortcutGlyphs('review.draft')}
+                  {shortcutGlyphs('review.fix')}
                 </KbdPill>
               </Button>
             )}

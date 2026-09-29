@@ -38,6 +38,7 @@ import { useResolveAgain } from '../../hooks/useResolveAgain';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { RESOLVE_QUEUE_REFRESH_LABEL } from '../../resolveQueueCopy';
 import { REVIEW_FLOW_LABEL, REVIEW_TITLE, counterLabel } from '../../reviewFlowCopy';
+import { startedLine } from '../../reviewLaunchCopy';
 import {
   isPushFailure,
   matchesReviewStateFilter,
@@ -48,8 +49,10 @@ import { ReviewComment, type ReviewCompose } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
 import { ReviewHeaderMeta } from './ReviewHeaderMeta';
 import { PushBanner } from './PushBanner';
+import { ReviewLaunchStrip } from './ReviewLaunchStrip';
 import { ReviewList } from './ReviewList';
 import { ReviewListMenu } from './ReviewListMenu';
+import { modelLabel } from '../../../chat/utils/chat-constants';
 import { useReviewPush } from './useReviewPush';
 import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
 
@@ -70,8 +73,17 @@ const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> 
   ['review.reply', ['reviewComment.reply']],
   ['review.skip', ['reviewComment.skip']],
   ['review.undo', ['reviewComment.undo']],
-  ['review.draft', ['reviewComment.draft']],
+  ['review.fix', ['reviewComment.draft']],
 ];
+
+type ReviewLaunch = {
+  readonly threadIds: ReadonlyArray<string>;
+};
+
+type StartedNote = {
+  readonly count: number;
+  readonly model: string;
+};
 
 const COULD_NOT_SEND =
   'This comment is no longer on the pull request, so the agent cannot be asked about it';
@@ -137,6 +149,8 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
   const [modelPickerRequest, setModelPickerRequest] = useState(0);
+  const [launch, setLaunch] = useState<ReviewLaunch | null>(null);
+  const [started, setStarted] = useState<StartedNote | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const hasPr = github?.pr != null;
   const push = useReviewPush({ sessionId });
@@ -252,6 +266,33 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     [isSubmitting, requestAttempt, setError],
   );
 
+  const openLaunch = useCallback(
+    (threadIds: ReadonlyArray<string>): void => {
+      const [first] = threadIds;
+      if (threadIds.length === 1 && first !== undefined) {
+        select(first);
+      }
+      setStarted(null);
+      setLaunch({ threadIds });
+    },
+    [select],
+  );
+
+  const closeLaunch = useCallback((): void => {
+    setLaunch(null);
+    if (focusedThreadId !== null) {
+      focusRow(focusedThreadId);
+    }
+  }, [focusRow, focusedThreadId]);
+
+  const onLaunchStarted = useCallback(
+    ({ count, model }: StartedNote): void => {
+      setStarted({ count, model: modelLabel(model) });
+      closeLaunch();
+    },
+    [closeLaunch],
+  );
+
   const retryDelivery = useCallback((): void => {
     if (!isPushBusy) {
       void push.arm({ isRetry: true });
@@ -330,6 +371,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         setCompose({ threadId: request.threadId, mode: request.mode, text: '' });
         return;
       }
+      if (request.kind === 'fix') {
+        event.preventDefault();
+        openLaunch(request.threadIds);
+        return;
+      }
       if (request.kind === 'edit_reply') {
         event.preventDefault();
         select(request.threadId);
@@ -350,7 +396,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     };
     window.addEventListener(REVIEW_REQUEST_EVENT, onRequest);
     return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
-  }, [hasPushFailure, isPushBusy, push, select, sessionId]);
+  }, [hasPushFailure, isPushBusy, openLaunch, push, select, sessionId]);
 
   useEffect(() => {
     if (reviewTarget === null || reviewTarget.status !== 'ready') {
@@ -422,21 +468,13 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         return;
       }
       if (
-        shortcut === 'review.draft' &&
+        shortcut === 'review.fix' &&
         focused?.state === 'failed' &&
         !isPushFailure({ row: focused.row })
       ) {
         event.preventDefault();
         void retryRun(focusedThreadId);
         return;
-      }
-      if (shortcut === 'review.draft') {
-        event.preventDefault();
-        void runObjectAction({
-          target: { kind: 'review', sessionId },
-          actionId: 'review.draftFixes',
-          env,
-        }).catch((caught: unknown) => setError(focusedThreadId, formatError(caught)));
       }
       return;
     }
@@ -494,6 +532,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
                 groups={shownGroups}
                 focusedThreadId={focusedThreadId}
                 onSelect={select}
+                onFix={(threadId) => openLaunch([threadId])}
               />
               {shownGroups.length === 0 && (
                 <p className="px-2.5 py-2 text-secondary text-muted-foreground">
@@ -577,6 +616,20 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
         <PageColumn className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
           <PushBanner sessionId={sessionId} push={push} />
+          {launch !== null && (
+            <ReviewLaunchStrip
+              key={launch.threadIds.join(',')}
+              sessionId={sessionId}
+              threadIds={launch.threadIds}
+              onClose={closeLaunch}
+              onStarted={onLaunchStarted}
+            />
+          )}
+          {started !== null && launch === null && (
+            <p role="status" className="text-secondary text-muted-foreground">
+              {startedLine({ count: started.count, modelName: started.model })}
+            </p>
+          )}
           {refreshError !== null && !isWholeError && (
             <ErrorStrip
               label={RESOLVE_QUEUE_REFRESH_LABEL}

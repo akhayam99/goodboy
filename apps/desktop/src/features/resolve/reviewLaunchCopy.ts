@@ -1,4 +1,5 @@
 export const REVIEW_LAUNCH_LABEL = {
+  fix: 'Fix',
   strip: 'Fix launch',
   model: 'Model',
   commit: 'Commit',

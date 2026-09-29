@@ -16,7 +16,6 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { resolverPagePlace, sessionPlace } from '../../../store/slices/navigation/place';
-import { draftFixes } from '../../resolve/draftFixes';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { requestReview } from '../../review/reviewRequest';
@@ -172,19 +171,18 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.draft',
-      label: 'Draft a fix',
+      label: 'Fix',
       icon: CONCEPT_ICONS.agents,
       group: 'act',
-      shortcut: 'review.draft',
+      shortcut: 'review.fix',
       when: ({ facts }) => facts.state === 'new',
       slot: () => 'primary',
-      run: async ({ facts, env }) => {
-        await draftFixes({
+      run: ({ facts, env }) =>
+        requestReview({
           getState: env.getState,
           sessionId: facts.sessionId,
-          threadIds: [facts.threadId],
-        });
-      },
+          request: { kind: 'fix', threadIds: [facts.threadId] },
+        }),
     },
     {
       id: 'reviewComment.answer',

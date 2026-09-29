@@ -2,7 +2,6 @@ import { ArrowUp, Cpu, MessageSquarePlus, RotateCw } from 'lucide-react';
 import type { DiffComment, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { sessionPlace } from '../../../store/slices/navigation/place';
-import { draftFixes } from '../../resolve/draftFixes';
 import { isOpenNote } from '../../resolve/notes/noteThread';
 import {
   POST_NOTES_LABEL,
@@ -18,13 +17,11 @@ export type ReviewFacts = {
   readonly sessionId: SessionId;
   readonly prNumber: number | null;
   readonly open: number;
-  readonly fresh: number;
   readonly ready: number;
   readonly accepted: number;
   readonly failed: number;
   readonly pushed: number;
   readonly notes: number;
-  readonly freshThreadIds: ReadonlyArray<string>;
   readonly isPushing: boolean;
   readonly isLoading: boolean;
   readonly isError: boolean;
@@ -56,9 +53,6 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
     }));
     const count = (predicate: (entry: (typeof rows)[number]) => boolean): number =>
       rows.filter(predicate).length;
-    const freshThreadIds = rows
-      .filter((entry) => entry.state === 'new')
-      .map((entry) => entry.row.thread.threadId);
     const hasPr = github?.pr != null;
     return {
       sessionId,
@@ -68,7 +62,6 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
           ['new', 'drafting', 'needs', 'ready', 'edited', 'outdated'].includes(entry.state) ||
           (entry.state === 'failed' && !isPushFailure({ row: entry.row })),
       ),
-      fresh: freshThreadIds.length,
       ready: count((entry) => entry.state === 'ready' || entry.state === 'edited'),
       accepted: count((entry) => entry.state === 'accepted' || entry.state === 'replied'),
       failed: count((entry) => entry.state === 'failed' && isPushFailure({ row: entry.row })),
@@ -77,7 +70,6 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
         ? (state.diffComments[sessionId] ?? EMPTY_NOTES).filter((note) => isOpenNote({ note }))
             .length
         : 0,
-      freshThreadIds,
       isPushing: rows.some((entry) => entry.row.thread.stage === 'publishing'),
       isLoading: hasPr && github?.detail === null && github.detailLoading === true,
       isError: hasPr && github?.detail === null && (github.detailError ?? null) !== null,
@@ -96,23 +88,6 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
         const state = env.getState();
         state.setPullRequestMode({ sessionId: facts.sessionId, mode: 'overview' });
         state.navigate({ to: sessionPlace({ sessionId: facts.sessionId, lens: 'pr' }) });
-      },
-    },
-    {
-      id: 'review.draftFixes',
-      label: ({ facts }) => draftFixesLabel(facts),
-      icon: CONCEPT_ICONS.agents,
-      group: 'act',
-      shortcut: 'review.draft',
-      when: ({ facts }) => facts.fresh > 0 && !facts.isLoading && !facts.isError,
-      slot: ({ facts }) =>
-        facts.ready === 0 && facts.open === facts.fresh ? 'primary' : 'secondary',
-      run: async ({ facts, env }) => {
-        await draftFixes({
-          getState: env.getState,
-          sessionId: facts.sessionId,
-          threadIds: facts.freshThreadIds,
-        });
       },
     },
     {

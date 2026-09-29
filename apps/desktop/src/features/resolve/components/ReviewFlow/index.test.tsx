@@ -67,6 +67,7 @@ const mount = async ({ threadId }: { readonly threadId: string | null }): Promis
 };
 
 const FAILED_THREAD_ID = 'PRRT_thread_idempotency';
+const NOT_STARTED_THREAD_ID = 'PRRT_thread_retry_constant';
 
 const mountFailed = async ({
   failure,
@@ -153,18 +154,85 @@ describe('Review as one flow', () => {
     expect(labels.filter((label) => /^Resolve\b/.test(label))).toEqual([]);
   });
 
-  it('never starts an agent by opening Review, and drafts the new ones in one click', async () => {
-    const spawnAgent = vi.fn(async () => undefined);
+  it('never starts an agent by opening Review, and Fix opens the strip before anything runs', async () => {
+    const spawnAgent = vi.fn(async () => 'agent-1');
     const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
     stub({
       spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
       createResolveBatch: createResolveBatch as unknown as StoreState['createResolveBatch'],
     });
-    await mount({ threadId: null });
+    await mount({ threadId: NOT_STARTED_THREAD_ID });
 
     expect(spawnAgent).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: /^Draft a fix/ }));
+    expect(screen.queryByRole('region', { name: 'Fix launch' })).toBeNull();
+    fireEvent.click(within(comment()).getByRole('button', { name: /^Fix/ }));
+
+    const strip = await screen.findByRole('region', { name: 'Fix launch' });
+    expect(within(strip).getByText('Fix this comment')).toBeDefined();
+    expect(spawnAgent).not.toHaveBeenCalled();
+    fireEvent.click(within(strip).getByRole('button', { name: /^Start/ }));
     await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
+    expect(createResolveBatch).toHaveBeenCalledOnce();
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Fix launch' })).toBeNull());
+    expect(screen.getByRole('status').textContent).toMatch(/1 agent started on/);
+  });
+
+  it('opens the strip with F on the focused row, prefilled from settings, and Esc closes it', async () => {
+    await mount({ threadId: NOT_STARTED_THREAD_ID });
+
+    row(/config\.ts/).focus();
+    press('f', 'KeyF');
+
+    const strip = await screen.findByRole('region', { name: 'Fix launch' });
+    expect(
+      within(strip).getByRole('tab', { name: 'New commit' }).getAttribute('aria-selected'),
+    ).toBe('true');
+    expect(within(strip).getByRole('tab', { name: 'Fixup of the original' })).toBeDefined();
+    fireEvent.keyDown(within(strip).getByLabelText('Notes for the agents'), {
+      key: 'Escape',
+      code: 'Escape',
+    });
+    expect(screen.queryByRole('region', { name: 'Fix launch' })).toBeNull();
+  });
+
+  it('starts with the submit chord and sends the hint, model and commit style on the batch', async () => {
+    const spawnAgent = vi.fn(async () => 'agent-1');
+    const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
+    stub({
+      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
+      createResolveBatch: createResolveBatch as unknown as StoreState['createResolveBatch'],
+    });
+    await mount({ threadId: NOT_STARTED_THREAD_ID });
+
+    fireEvent.click(within(comment()).getByRole('button', { name: /^Fix/ }));
+    const strip = await screen.findByRole('region', { name: 'Fix launch' });
+    fireEvent.click(within(strip).getByRole('tab', { name: 'Fixup of the original' }));
+    const hint = within(strip).getByLabelText('Notes for the agents');
+    fireEvent.change(hint, { target: { value: 'Keep the public API unchanged' } });
+    fireEvent.keyDown(hint, { key: 'Enter', code: 'Enter', ctrlKey: true });
+
+    await waitFor(() => expect(createResolveBatch).toHaveBeenCalledOnce());
+    const [call] = createResolveBatch.mock.calls[0] as unknown as [
+      { threadIds: ReadonlyArray<string>; launchChoice: Record<string, unknown> },
+    ];
+    expect(call.threadIds).toEqual([NOT_STARTED_THREAD_ID]);
+    expect(call.launchChoice).toMatchObject({
+      commitStyle: 'fixup',
+      hint: 'Keep the public API unchanged',
+    });
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
+  });
+
+  it('puts Fix on the row of a comment nobody started, and nowhere else', async () => {
+    await mount({ threadId: null });
+
+    const fixRows = Array.from(list().querySelectorAll('[data-fix-row]')).map((node) =>
+      node.getAttribute('data-fix-row'),
+    );
+    expect(fixRows).toContain(NOT_STARTED_THREAD_ID);
+    expect(fixRows).not.toContain(EXPANDED_THREAD_ID);
+    expect(fixRows).not.toContain(FAILED_THREAD_ID);
+    expect(screen.queryByRole('button', { name: /^Draft (a fix|fixes)/ })).toBeNull();
   });
 
   it('accepts with A: marks it, publishes nothing, and moves to the next open comment', async () => {
@@ -265,7 +333,7 @@ describe('Review as one flow', () => {
     expect(screen.getByRole('menuitem', { name: /Agent transcript/ })).toBeDefined();
   });
 
-  it('opens the not started comment with Draft a fix as its one primary', async () => {
+  it('opens the not started comment with Fix as its one primary', async () => {
     await mount({ threadId: 'PRRT_thread_retry_constant' });
 
     const verbs = within(comment())

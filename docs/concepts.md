@@ -683,7 +683,8 @@ Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the
 draft is outdated, `Add a hint` when the run failed), `Reply` (R, a reply
 without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
-comment) until the push and `Draft a fix` (D) on a comment nobody drafted. J and K move. Edit, Answer and Reply share one text box: Enter sends,
+comment) until the push and `Fix` (F) on a comment nobody started, which opens
+the launch strip. J and K move. Edit, Answer and Reply share one text box: Enter sends,
 Shift+Enter adds a line, Esc cancels. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
@@ -714,26 +715,36 @@ with a local commit and never pushes.
   sha fails, preparing the publication (or **Recheck fix**) records it again
   before it checks the branch
 
-- Every start goes through one path (`startResolve`): `Draft fixes for N` in
-  the Review header, `Draft a fix` on one comment, or the Activity suggestion.
-  Opening Review never starts an agent. Each start carries the thread ids and
-  the marker contract. It uses the model chosen in `…` → `Model for drafts…`
-  (the shared picker with every connected provider and a **Suggested** row),
-  or the suggested resolver model
+- Every start goes through one path (`startBatch`): `Fix` on the row of a
+  comment nobody started (hover) or in its detail, `F` on the focused row, or
+  the Activity suggestion. The header has no "Draft fixes" button: a batch is
+  born from the comments you pick. Opening Review never starts an agent.
+  `Fix` opens the **launch strip**, inline under the header (never a dialog):
+  the model and effort pill (the shared picker with every connected provider
+  and a **Suggested** row), the commit style (`New commit` or `Fixup of the
+original`, prefilled from the settings or the last batch), an optional hint
+  that lands in Operator notes, a plain count line (`3 agents · up to 4 run at
+once · each works on its own copy of the branch`, no price: nothing
+  estimates the cost of a run), and `Start` on Cmd+Enter (Esc closes). The
+  choice is saved on the batch and on every attempt (`launch_choice_json`). Each start carries the thread ids and the
+  marker contract
 - A retry reads the same choices again. Redraft, Answer and Try again use the
-  model picked for the session (`Model for drafts…`) and the commit style set
-  in Review replies, so with fixup set the second round is a fixup too. The
+  launch choice of the comment's last batch attempt (model, effort, commit
+  style, hint), then the model picked for the session (`Model for drafts…`) and
+  the commit style set in Review replies, so with fixup set the second round is
+  a fixup too. The
   hint you type before a retry lands in the prompt's operator notes
 - A failed run offers **Try again** (`Try again on Opus 5` once you picked a
   model, `Try again with the hint` with a hint), **Try another model** (the
-  picker opens inline under the buttons) and **Add a hint** (D is Try again).
+  picker opens inline under the buttons) and **Add a hint** (F is Try again).
   `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
   the comment fold into one line above (`Attempt 1 · Sonnet 5 · Medium ·
 failed`) that opens to their reasons. A failed step after the run shows its
   own verb: `Push again`, `Post the reply again` or `Open on GitHub` when
   Goodboy could not confirm the reply landed
-- Fixes run one at a time in the session worktree, so two fixes never fight
-  over the same branch
+- A batch fix runs in its own copy of the branch, up to four at a time (the
+  session limit), so two fixes never fight over the same branch. The rest wait
+  with `Waiting for a free slot`
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 

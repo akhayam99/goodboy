@@ -38,7 +38,7 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'new',
     facts: { state: 'new', agentId: null },
-    expected: [...OPEN, ...GITHUB, 'reviewComment.draft primary Draft a fix', ...DECIDE, ...COPY],
+    expected: [...OPEN, ...GITHUB, 'reviewComment.draft primary Fix', ...DECIDE, ...COPY],
   },
   {
     name: 'agent drafting',
@@ -142,7 +142,7 @@ const MATRIX: ReadonlyArray<Row> = [
     facts: { state: 'new', agentId: null, isNote: true, hasPr: false, url: null },
     expected: [
       ...OPEN,
-      'reviewComment.draft primary Draft a fix',
+      'reviewComment.draft primary Fix',
       'reviewComment.skip secondary Skip',
       'reviewComment.resolveNoReply menu Close the note',
     ],
