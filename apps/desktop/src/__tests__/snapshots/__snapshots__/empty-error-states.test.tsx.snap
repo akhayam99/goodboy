@@ -713,13 +713,13 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
               <div
                 class="flex items-center justify-between gap-2"
               >
-                <div
+                <span
                   aria-hidden="true"
-                  class="motion-safe:animate-pulse rounded-sm bg-fill h-7 w-3/5"
+                  class="block motion-safe:animate-pulse rounded-sm bg-fill h-7 w-3/5"
                 />
-                <div
+                <span
                   aria-hidden="true"
-                  class="motion-safe:animate-pulse bg-fill h-6 w-16 rounded-md"
+                  class="block motion-safe:animate-pulse bg-fill h-6 w-16 rounded-md"
                 />
               </div>
               <div
@@ -728,25 +728,25 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
                 <div
                   class="flex items-center gap-2"
                 >
-                  <div
+                  <span
                     aria-hidden="true"
-                    class="motion-safe:animate-pulse bg-fill h-6 w-24 rounded-md"
+                    class="block motion-safe:animate-pulse bg-fill h-6 w-24 rounded-md"
                   />
-                  <div
+                  <span
                     aria-hidden="true"
-                    class="motion-safe:animate-pulse bg-fill h-6 w-20 rounded-md"
+                    class="block motion-safe:animate-pulse bg-fill h-6 w-20 rounded-md"
                   />
                 </div>
                 <div
                   class="flex items-center gap-2"
                 >
-                  <div
+                  <span
                     aria-hidden="true"
-                    class="motion-safe:animate-pulse bg-fill h-6 w-28 rounded-md"
+                    class="block motion-safe:animate-pulse bg-fill h-6 w-28 rounded-md"
                   />
-                  <div
+                  <span
                     aria-hidden="true"
-                    class="motion-safe:animate-pulse bg-fill h-6 w-14 rounded-md"
+                    class="block motion-safe:animate-pulse bg-fill h-6 w-14 rounded-md"
                   />
                 </div>
               </div>
@@ -756,25 +756,25 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
               class="flex flex-col gap-2"
               role="status"
             >
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill h-3 rounded-sm w-full"
+                class="block motion-safe:animate-pulse bg-fill h-3 rounded-sm w-full"
               />
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill h-3 rounded-sm w-2/3"
+                class="block motion-safe:animate-pulse bg-fill h-3 rounded-sm w-2/3"
               />
             </div>
             <div
               class="flex flex-col gap-1.5"
             >
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill h-9 w-full rounded-md"
+                class="block motion-safe:animate-pulse bg-fill h-9 w-full rounded-md"
               />
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill h-9 w-full rounded-md"
+                class="block motion-safe:animate-pulse bg-fill h-9 w-full rounded-md"
               />
             </div>
           </div>
@@ -784,72 +784,72 @@ exports[`snapshot, error states > SessionOverviewLoading: silent skeleton before
             <div
               class="flex items-center justify-between gap-2"
             >
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill h-3 w-16 rounded-full"
+                class="block motion-safe:animate-pulse bg-fill h-3 w-16 rounded-full"
               />
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill h-6 w-24 rounded-md"
+                class="block motion-safe:animate-pulse bg-fill h-6 w-24 rounded-md"
               />
             </div>
             <div
               class="flex items-start gap-3"
             >
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill mt-1 size-2.5 shrink-0 rounded-full"
+                class="block motion-safe:animate-pulse bg-fill mt-1 size-2.5 shrink-0 rounded-full"
               />
               <div
                 class="flex min-w-0 flex-1 flex-col gap-1.5"
               >
-                <div
+                <span
                   aria-hidden="true"
-                  class="motion-safe:animate-pulse rounded-sm bg-fill h-4 w-2/5"
+                  class="block motion-safe:animate-pulse rounded-sm bg-fill h-4 w-2/5"
                 />
-                <div
+                <span
                   aria-hidden="true"
-                  class="motion-safe:animate-pulse bg-fill h-3 w-3/4 rounded-sm"
+                  class="block motion-safe:animate-pulse bg-fill h-3 w-3/4 rounded-sm"
                 />
               </div>
             </div>
             <div
               class="flex items-start gap-3"
             >
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill mt-1 size-2.5 shrink-0 rounded-full"
+                class="block motion-safe:animate-pulse bg-fill mt-1 size-2.5 shrink-0 rounded-full"
               />
               <div
                 class="flex min-w-0 flex-1 flex-col gap-1.5"
               >
-                <div
+                <span
                   aria-hidden="true"
-                  class="motion-safe:animate-pulse rounded-sm bg-fill h-4 w-2/5"
+                  class="block motion-safe:animate-pulse rounded-sm bg-fill h-4 w-2/5"
                 />
-                <div
+                <span
                   aria-hidden="true"
-                  class="motion-safe:animate-pulse bg-fill h-3 w-3/4 rounded-sm"
+                  class="block motion-safe:animate-pulse bg-fill h-3 w-3/4 rounded-sm"
                 />
               </div>
             </div>
             <div
               class="flex items-start gap-3"
             >
-              <div
+              <span
                 aria-hidden="true"
-                class="motion-safe:animate-pulse bg-fill mt-1 size-2.5 shrink-0 rounded-full"
+                class="block motion-safe:animate-pulse bg-fill mt-1 size-2.5 shrink-0 rounded-full"
               />
               <div
                 class="flex min-w-0 flex-1 flex-col gap-1.5"
               >
-                <div
+                <span
                   aria-hidden="true"
-                  class="motion-safe:animate-pulse rounded-sm bg-fill h-4 w-2/5"
+                  class="block motion-safe:animate-pulse rounded-sm bg-fill h-4 w-2/5"
                 />
-                <div
+                <span
                   aria-hidden="true"
-                  class="motion-safe:animate-pulse bg-fill h-3 w-3/4 rounded-sm"
+                  class="block motion-safe:animate-pulse bg-fill h-3 w-3/4 rounded-sm"
                 />
               </div>
             </div>
