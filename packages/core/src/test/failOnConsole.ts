@@ -16,7 +16,9 @@ CHANNELS.forEach((channel) => {
   console[channel] = wrapper;
 });
 
-const flush = (where: string): void => {
+type FlushParams = { where: string };
+
+const flush = ({ where }: FlushParams): void => {
   const found = [...unexpected];
   unexpected.length = 0;
   if (found.length > 0) {
@@ -25,9 +27,9 @@ const flush = (where: string): void => {
 };
 
 afterEach(() => {
-  flush('in this test');
+  flush({ where: 'in this test' });
 });
 
 afterAll(() => {
-  flush('outside a test (beforeAll, afterAll or a timer that outlived its test)');
+  flush({ where: 'outside a test (beforeAll, afterAll or a timer that outlived its test)' });
 });

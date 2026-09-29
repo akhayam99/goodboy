@@ -9,7 +9,9 @@ const IS_SEEDING = process.env['GOODBOY_SEED_CONSOLE_BASELINE'] === '1';
 
 type ReportLine = { file: string; message?: string; ran?: boolean };
 
-const isReportLine = (value: unknown): value is ReportLine =>
+type IsReportLineParams = { value: unknown };
+
+const isReportLine = ({ value }: IsReportLineParams): boolean =>
   typeof value === 'object' &&
   value !== null &&
   typeof (value as { file?: unknown }).file === 'string';
@@ -22,14 +24,18 @@ const readBaseline = (): ReadonlyArray<ConsoleBaselineEntry> => {
   return parsed.entries;
 };
 
-const readReport = (path: string): ReadonlyArray<ReportLine> =>
+type ReadReportParams = { path: string };
+
+const readReport = ({ path }: ReadReportParams): ReadonlyArray<ReportLine> =>
   readFileSync(path, 'utf8')
     .split('\n')
     .filter((line) => line !== '')
     .map((line): unknown => JSON.parse(line))
-    .filter(isReportLine);
+    .filter((value): value is ReportLine => isReportLine({ value }));
 
-const sortEntries = (entries: ReadonlyArray<ConsoleBaselineEntry>): ConsoleBaselineEntry[] =>
+type SortEntriesParams = { entries: ReadonlyArray<ConsoleBaselineEntry> };
+
+const sortEntries = ({ entries }: SortEntriesParams): ConsoleBaselineEntry[] =>
   [...entries].sort((a, b) => toEntryId(a).localeCompare(toEntryId(b)));
 
 let createdDir: string | null = null;
@@ -50,7 +56,7 @@ export const teardown = (): void => {
     return;
   }
   try {
-    const lines = readReport(reportPath);
+    const lines = readReport({ path: reportPath });
     const ranFiles = new Set(lines.map((line) => line.file));
     const recorded = new Map<string, ConsoleBaselineEntry>();
     lines.forEach(({ file, message }) => {
@@ -73,7 +79,7 @@ export const teardown = (): void => {
     const merged = new Map(
       [...kept, ...recorded.values()].map((entry) => [toEntryId(entry), entry]),
     );
-    const next = sortEntries([...merged.values()]);
+    const next = sortEntries({ entries: [...merged.values()] });
     writeFileSync(BASELINE_PATH, `${JSON.stringify({ entries: next }, null, 2)}\n`);
   } finally {
     if (createdDir !== null) {

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const DESKTOP_ROOT = join(import.meta.dirname, '..', '..', '..');
 const RUN_TIMEOUT_MS = 120_000;
+const SPAWN_TIMEOUT_MS = 90_000;
 
 type AssertionResult = {
   readonly title: string;
@@ -31,13 +32,15 @@ const runFixtures = ({ extraEnv = {} }: RunParams = {}): ReadonlyArray<FileResul
   const run = spawnSync(
     'pnpm',
     ['exec', 'vitest', 'run', '--config', 'vitest.console-guard.config.ts', '--reporter=json'],
-    { cwd: DESKTOP_ROOT, env, encoding: 'utf8' },
+    { cwd: DESKTOP_ROOT, env, encoding: 'utf8', timeout: SPAWN_TIMEOUT_MS },
   );
   const report: JsonReport = JSON.parse(run.stdout.slice(run.stdout.indexOf('{')));
   return report.testResults;
 };
 
-const byTitle = (results: ReadonlyArray<AssertionResult>, title: string): AssertionResult => {
+type ByTitleParams = { results: ReadonlyArray<AssertionResult>; title: string };
+
+const byTitle = ({ results, title }: ByTitleParams): AssertionResult => {
   const found = results.find((result) => result.title === title);
   if (found === undefined) {
     throw new Error(`fixture test not found: ${title}`);
@@ -51,22 +54,22 @@ describe('failOnConsole', () => {
     () => {
       const results = runFixtures().flatMap((file) => file.assertionResults);
 
-      const error = byTitle(results, 'logs output that is not in the baseline');
+      const error = byTitle({ results, title: 'logs output that is not in the baseline' });
       expect(error.status).toBe('failed');
       expect(error.failureMessages.join('\n')).toContain(
         'console.error: unexpected fixture error #',
       );
 
-      const warning = byTitle(results, 'warns about output that is not in the baseline');
+      const warning = byTitle({ results, title: 'warns about output that is not in the baseline' });
       expect(warning.status).toBe('failed');
       expect(warning.failureMessages.join('\n')).toContain(
         'console.warn: unexpected fixture warning',
       );
 
-      expect(byTitle(results, 'stays quiet').status).toBe('passed');
-      expect(byTitle(results, 'may spy on the console itself and log through the spy').status).toBe(
-        'passed',
-      );
+      expect(byTitle({ results, title: 'stays quiet' }).status).toBe('passed');
+      expect(
+        byTitle({ results, title: 'may spy on the console itself and log through the spy' }).status,
+      ).toBe('passed');
     },
     RUN_TIMEOUT_MS,
   );
