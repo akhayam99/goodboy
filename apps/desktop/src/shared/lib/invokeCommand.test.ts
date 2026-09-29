@@ -14,16 +14,16 @@ describe('invokeCommand', () => {
   it('resolves with the command result', async () => {
     h.invoke.mockResolvedValueOnce(['ledger-core']);
 
-    await expect(invokeCommand<string[]>('project_list', { workspaceId: 'w-1' })).resolves.toEqual([
-      'ledger-core',
-    ]);
-    expect(h.invoke).toHaveBeenCalledWith('project_list', { workspaceId: 'w-1' });
+    await expect(
+      invokeCommand<string[]>('worktree_changed_files', { workspaceId: 'w-1' }),
+    ).resolves.toEqual(['ledger-core']);
+    expect(h.invoke).toHaveBeenCalledWith('worktree_changed_files', { workspaceId: 'w-1' });
   });
 
   it('turns a {kind, message} rejection into a CommandError', async () => {
     h.invoke.mockRejectedValueOnce({ kind: 'io', message: 'the folder is locked' });
 
-    const error = await invokeCommand('project_move').catch((caught: unknown) => caught);
+    const error = await invokeCommand('worktree_status').catch((caught: unknown) => caught);
 
     expect(error).toBeInstanceOf(CommandError);
     expect(error).toMatchObject({ kind: 'io', message: 'the folder is locked' });
