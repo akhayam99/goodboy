@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../shared/lib/invokeCommand';
 import { formatError } from '@goodboy/ui';
 import {
   assessPlanReadiness,
@@ -434,7 +434,7 @@ const runSummarizer = async ({ set, get, sessionId, entry }: Params): Promise<vo
       providerId: taskModel.providerId,
       model: taskModel.model,
       ...(taskModel.effort != null && { effort: taskModel.effort }),
-      invokeFn: invoke,
+      invokeFn: invokeCommand,
       ...(workingDir !== null && { workingDir }),
     });
     const prevSlots = get().sessionSlots[sessionId] ?? [];

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { ProviderId, TurnEvent } from '@goodboy/types';
 
 type UsageEvent = Extract<TurnEvent, { kind: 'usage' }>;
@@ -22,7 +22,7 @@ export const codexMeasuredUsage = async ({
   if (provider !== 'codex' || threadId == null || threadId === '') {
     return event;
   }
-  const measured = await invoke<RolloutContext | null>('codex_rollout_context', {
+  const measured = await invokeCommand<RolloutContext | null>('codex_rollout_context', {
     threadId,
   }).catch(() => null);
   if (measured == null) {

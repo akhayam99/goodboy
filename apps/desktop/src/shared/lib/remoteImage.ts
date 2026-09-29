@@ -1,11 +1,11 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from './invokeCommand';
 
 type Params = {
   readonly url: string;
 };
 
 export const loadRemoteImage = async ({ url }: Params): Promise<string> => {
-  return invoke<string>('fetch_remote_image', { url });
+  return invokeCommand<string>('fetch_remote_image', { url });
 };
 
 export type ToolImageProvider = 'linear' | 'jira' | 'github';
@@ -27,7 +27,7 @@ export const loadToolImage = async ({
   siteUrl,
   url,
 }: ToolImageParams): Promise<string> => {
-  return invoke<string>('load_tool_image', {
+  return invokeCommand<string>('load_tool_image', {
     args: {
       workspaceId,
       projectId: projectId ?? null,

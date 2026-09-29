@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { IntegrationCredentialId, IsoDateTime, WorkspaceId } from '@goodboy/types';
 
 export type SlackConnection = {
@@ -52,7 +52,7 @@ export const slackValidateConnection = async ({
   credentialId,
   userToken,
 }: ValidateParams): Promise<SlackConnection> =>
-  invoke<SlackConnection>('slack_validate_connection', { credentialId, userToken });
+  invokeCommand<SlackConnection>('slack_validate_connection', { credentialId, userToken });
 
 type ConnectParams = {
   readonly credentialId: IntegrationCredentialId;
@@ -60,7 +60,7 @@ type ConnectParams = {
 };
 
 export const slackConnect = async ({ credentialId, userToken }: ConnectParams): Promise<void> => {
-  await invoke('slack_connect', { credentialId, userToken });
+  await invokeCommand('slack_connect', { credentialId, userToken });
 };
 
 type WorkspaceParams = {
@@ -70,12 +70,12 @@ type WorkspaceParams = {
 export const slackListChannels = async ({
   workspaceId,
 }: WorkspaceParams): Promise<ReadonlyArray<SlackChannel>> =>
-  invoke<ReadonlyArray<SlackChannel>>('slack_list_channels', { workspaceId });
+  invokeCommand<ReadonlyArray<SlackChannel>>('slack_list_channels', { workspaceId });
 
 export const slackListUsers = async ({
   workspaceId,
 }: WorkspaceParams): Promise<ReadonlyArray<SlackUser>> =>
-  invoke<ReadonlyArray<SlackUser>>('slack_list_users', { workspaceId });
+  invokeCommand<ReadonlyArray<SlackUser>>('slack_list_users', { workspaceId });
 
 type ChannelParams = WorkspaceParams & {
   readonly channelId: string;
@@ -85,7 +85,7 @@ export const slackListThreadHeads = async ({
   workspaceId,
   channelId,
 }: ChannelParams): Promise<ReadonlyArray<SlackMessage>> =>
-  invoke<ReadonlyArray<SlackMessage>>('slack_list_thread_heads', { workspaceId, channelId });
+  invokeCommand<ReadonlyArray<SlackMessage>>('slack_list_thread_heads', { workspaceId, channelId });
 
 type ThreadParams = ChannelParams & {
   readonly threadTs: string;
@@ -96,7 +96,11 @@ export const slackGetThread = async ({
   channelId,
   threadTs,
 }: ThreadParams): Promise<ReadonlyArray<SlackMessage>> =>
-  invoke<ReadonlyArray<SlackMessage>>('slack_get_thread', { workspaceId, channelId, threadTs });
+  invokeCommand<ReadonlyArray<SlackMessage>>('slack_get_thread', {
+    workspaceId,
+    channelId,
+    threadTs,
+  });
 
 type MessageParams = ChannelParams & {
   readonly messageTs: string;
@@ -107,7 +111,7 @@ export const slackGetPermalink = async ({
   channelId,
   messageTs,
 }: MessageParams): Promise<string> =>
-  invoke<string>('slack_get_permalink', { workspaceId, channelId, messageTs });
+  invokeCommand<string>('slack_get_permalink', { workspaceId, channelId, messageTs });
 
 type ReplyParams = ThreadParams & {
   readonly text: string;
@@ -119,7 +123,7 @@ export const slackPostReply = async ({
   threadTs,
   text,
 }: ReplyParams): Promise<SlackMessage> =>
-  invoke<SlackMessage>('slack_post_reply', { workspaceId, channelId, threadTs, text });
+  invokeCommand<SlackMessage>('slack_post_reply', { workspaceId, channelId, threadTs, text });
 
 type ReactionParams = MessageParams & {
   readonly name: string;
@@ -131,5 +135,5 @@ export const slackAddReaction = async ({
   messageTs,
   name,
 }: ReactionParams): Promise<void> => {
-  await invoke('slack_add_reaction', { workspaceId, channelId, messageTs, name });
+  await invokeCommand('slack_add_reaction', { workspaceId, channelId, messageTs, name });
 };

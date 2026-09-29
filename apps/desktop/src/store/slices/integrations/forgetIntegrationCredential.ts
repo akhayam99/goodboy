@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { deleteIntegrationCredential } from '@goodboy/db';
 import type { IntegrationCredentialId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -16,7 +16,7 @@ export const forgetIntegrationCredential = (set: SetFn, get: GetFn) => {
       throw new Error(credentialInUseMessage({ usedBy }));
     }
     await deleteIntegrationCredential(tauriDatabase, credentialId);
-    await invoke('integration_credential_forget', { credentialId });
+    await invokeCommand('integration_credential_forget', { credentialId });
     set((state) => {
       const { [credentialId]: _removed, ...usage } = state.integrationCredentialUsage;
       return {

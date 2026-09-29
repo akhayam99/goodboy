@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from './invokeCommand';
 
 export type DroppedAttachment = {
   readonly fileName: string;
@@ -11,4 +11,4 @@ type Params = {
 };
 
 export const readDroppedAttachment = async ({ absolutePath }: Params): Promise<DroppedAttachment> =>
-  invoke<DroppedAttachment>('attachment_read_dropped', { absPath: absolutePath });
+  invokeCommand<DroppedAttachment>('attachment_read_dropped', { absPath: absolutePath });

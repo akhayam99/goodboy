@@ -3,7 +3,7 @@ import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskMod
 import type { ContextSlot, SessionId } from '@goodboy/types';
 import { rewriteWorkflowGoal } from '@goodboy/core';
 import { upsertContextSlot } from '@goodboy/db';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
@@ -63,7 +63,7 @@ export const reprocessGoalForWorkflow = (set: SetFn, get: GetFn) => {
       const rewritten = await rewriteWorkflowGoal(
         {
           ...taskModel,
-          invokeFn: invoke,
+          invokeFn: invokeCommand,
           ...(worktreePath != null && { workingDir: worktreePath }),
         },
         { goal, stepNames },

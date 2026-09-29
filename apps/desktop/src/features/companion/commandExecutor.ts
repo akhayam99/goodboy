@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   PROVIDER_CAPABILITIES,
@@ -786,7 +786,7 @@ export const listenBridgeCommands = async (): Promise<UnlistenFn> => {
     const cmd = event.payload;
     void executeBridgeCommand(cmd)
       .then((result) =>
-        invoke('bridge_command_result', {
+        invokeCommand('bridge_command_result', {
           id: cmd.id,
           ok: result.ok,
           error: result.error ?? null,

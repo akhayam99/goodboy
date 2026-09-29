@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { extractAuxOutput, getDefaultBinary, runAuxOneShot } from '@goodboy/core';
 import type { SummarizeForWorkParams } from './chatBackend';
 
@@ -14,7 +14,7 @@ export const summarizeForWorkViaAux = async ({
     binary: getDefaultBinary(provider),
     userMessage,
     systemPrompt,
-    invokeFn: invoke,
+    invokeFn: invokeCommand,
   });
   if ((result.exitCode ?? 0) !== 0) {
     throw new Error(result.stderr.trim() === '' ? 'The summary did not finish' : result.stderr);

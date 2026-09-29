@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { ProviderRunId } from '@goodboy/types';
 
 type Params = {
@@ -6,5 +6,5 @@ type Params = {
 };
 
 export const cancelChatTurn = async ({ runId }: Params): Promise<void> => {
-  await invoke('chat_cancel', { runId }).catch(() => undefined);
+  await invokeCommand('chat_cancel', { runId }).catch(() => undefined);
 };

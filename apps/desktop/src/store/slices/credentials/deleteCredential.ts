@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { deleteProviderCredential } from '@goodboy/db';
 import type { CredentialId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -20,7 +20,7 @@ export const deleteCredential = (set: SetFn, get: GetFn) => {
       throw new Error(credentialInUseMessage({ usedBy }));
     }
 
-    await invoke('secret_delete', { key: credentialSecretKey(id) });
+    await invokeCommand('secret_delete', { key: credentialSecretKey(id) });
     await deleteProviderCredential(tauriDatabase, id);
 
     set((state) => ({

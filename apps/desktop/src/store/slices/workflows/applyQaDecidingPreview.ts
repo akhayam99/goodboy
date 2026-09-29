@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { SetFn } from './types';
 
 type Params = {
@@ -6,7 +6,7 @@ type Params = {
 };
 
 export const applyQaDecidingPreview = async ({ set }: Params): Promise<void> => {
-  const runIds = await invoke<ReadonlyArray<string>>('qa_deciding_workflow_runs');
+  const runIds = await invokeCommand<ReadonlyArray<string>>('qa_deciding_workflow_runs');
   if (runIds.length === 0) {
     return;
   }

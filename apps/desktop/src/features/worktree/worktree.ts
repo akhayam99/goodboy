@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type {
   BranchCommit,
   SessionId,
@@ -32,7 +32,7 @@ export type CreateWorktreeArgs = {
 };
 
 export const createWorktree = async (args: CreateWorktreeArgs): Promise<CreatedWorktree> => {
-  return invoke<CreatedWorktree>('worktree_create', { args });
+  return invokeCommand<CreatedWorktree>('worktree_create', { args });
 };
 
 type IntegrateCandidateParams = {
@@ -56,14 +56,16 @@ export type QuarantinedCandidate = {
 export const integrateWorktreeCandidate = async (
   args: IntegrateCandidateParams,
 ): Promise<string> => {
-  const result = await invoke<{ readonly sha: string }>('worktree_integrate_candidate', { args });
+  const result = await invokeCommand<{ readonly sha: string }>('worktree_integrate_candidate', {
+    args,
+  });
   return result.sha;
 };
 
 export const quarantineWorktreeCandidate = async (
   args: QuarantineCandidateParams,
 ): Promise<QuarantinedCandidate> =>
-  invoke<QuarantinedCandidate>('worktree_quarantine_candidate', { args });
+  invokeCommand<QuarantinedCandidate>('worktree_quarantine_candidate', { args });
 
 export type WorktreeWriterLease = {
   readonly path: string;
@@ -112,7 +114,7 @@ export const acquireWorktreeWriter = async ({
   holder,
 }: WorktreeWriterParams): Promise<WorktreeWriterLease> => {
   const key = tokenKey({ path, holder });
-  const lease = await invoke<WorktreeWriterLease>('worktree_writer_acquire', {
+  const lease = await invokeCommand<WorktreeWriterLease>('worktree_writer_acquire', {
     path,
     holder,
     token: grantedTokens.get(key) ?? null,
@@ -135,9 +137,11 @@ export const releaseWorktreeWriter = async ({
     return freeLease({ path });
   }
   grantedTokens.delete(key);
-  return invoke<WorktreeWriterLease>('worktree_writer_release', { path, holder, token }).catch(() =>
-    freeLease({ path }),
-  );
+  return invokeCommand<WorktreeWriterLease>('worktree_writer_release', {
+    path,
+    holder,
+    token,
+  }).catch(() => freeLease({ path }));
 };
 
 export const cancelWorktreeWriter = async ({
@@ -145,7 +149,7 @@ export const cancelWorktreeWriter = async ({
   holder,
 }: WorktreeWriterParams): Promise<WorktreeWriterLease> => {
   grantedTokens.delete(tokenKey({ path, holder }));
-  return invoke<WorktreeWriterLease>('worktree_writer_cancel', { path, holder }).catch(() =>
+  return invokeCommand<WorktreeWriterLease>('worktree_writer_cancel', { path, holder }).catch(() =>
     freeLease({ path }),
   );
 };
@@ -155,7 +159,7 @@ export const abandonWorktreeWriter = async ({
   holder,
 }: WorktreeWriterParams): Promise<WorktreeWriterLease> => {
   grantedTokens.delete(tokenKey({ path, holder }));
-  return invoke<WorktreeWriterLease>('worktree_writer_abandon', { path, holder }).catch(() =>
+  return invokeCommand<WorktreeWriterLease>('worktree_writer_abandon', { path, holder }).catch(() =>
     freeLease({ path }),
   );
 };
@@ -165,7 +169,7 @@ export const worktreeWriterStatus = async ({
 }: {
   readonly path: string;
 }): Promise<WorktreeWriterLease> => {
-  return invoke<WorktreeWriterLease>('worktree_writer_status', { path }).catch(() =>
+  return invokeCommand<WorktreeWriterLease>('worktree_writer_status', { path }).catch(() =>
     freeLease({ path }),
   );
 };
@@ -185,7 +189,7 @@ export const createSessionDir = async ({
   sessionId,
   workspaceId,
 }: CreateSessionDirArgs): Promise<CreatedWorktree> => {
-  return invoke<CreatedWorktree>('session_dir_create', {
+  return invokeCommand<CreatedWorktree>('session_dir_create', {
     args: {
       basePath,
       slug,
@@ -205,7 +209,7 @@ export const removeSessionDirectory = async ({
   basePath,
   path,
 }: RemoveSessionDirectoryParams): Promise<void> => {
-  await invoke('session_dir_remove', { args: { basePath, path } });
+  await invokeCommand('session_dir_remove', { args: { basePath, path } });
 };
 
 type SessionDirExistsParams = {
@@ -213,7 +217,7 @@ type SessionDirExistsParams = {
 };
 
 export const sessionDirExists = async ({ path }: SessionDirExistsParams): Promise<boolean> => {
-  return invoke<boolean>('session_dir_exists', { path });
+  return invokeCommand<boolean>('session_dir_exists', { path });
 };
 
 type ScratchDirParams = {
@@ -221,11 +225,11 @@ type ScratchDirParams = {
 };
 
 export const scratchDirPrepare = async ({ sessionId }: ScratchDirParams): Promise<string> => {
-  return invoke<string>('scratch_dir_prepare', { sessionId });
+  return invokeCommand<string>('scratch_dir_prepare', { sessionId });
 };
 
 export const scratchDirRemove = async ({ sessionId }: ScratchDirParams): Promise<void> => {
-  await invoke('scratch_dir_remove', { sessionId });
+  await invokeCommand('scratch_dir_remove', { sessionId });
 };
 
 type WorktreePathParams = {
@@ -237,7 +241,7 @@ export const inspectWorktree = async ({
   repoPath,
   worktreePath,
 }: WorktreePathParams): Promise<WorktreeInspection> => {
-  return invoke<WorktreeInspection>('worktree_inspect', { repoPath, worktreePath });
+  return invokeCommand<WorktreeInspection>('worktree_inspect', { repoPath, worktreePath });
 };
 
 type RemoveWorktreeCheckedParams = WorktreePathParams & {
@@ -249,7 +253,7 @@ export const removeWorktreeChecked = async ({
   worktreePath,
   mode,
 }: RemoveWorktreeCheckedParams): Promise<WorktreeRemovalResult> => {
-  return invoke<WorktreeRemovalResult>('worktree_remove_checked', {
+  return invokeCommand<WorktreeRemovalResult>('worktree_remove_checked', {
     repoPath,
     worktreePath,
     mode,
@@ -265,7 +269,7 @@ export const worktreeDetachAssessment = async ({
   worktreePath,
   baseBranch,
 }: DetachAssessmentParams): Promise<WorktreeDetachAssessment> => {
-  return invoke<WorktreeDetachAssessment>('worktree_detach_assessment', {
+  return invokeCommand<WorktreeDetachAssessment>('worktree_detach_assessment', {
     worktreePath,
     baseBranch,
   });
@@ -276,7 +280,7 @@ export const gitCommonDirectory = async ({
 }: {
   readonly repoPath: string;
 }): Promise<string | null> => {
-  return invoke<string | null>('worktree_git_common_dir', { repoPath });
+  return invokeCommand<string | null>('worktree_git_common_dir', { repoPath });
 };
 
 type WorktreeDirectorySizeParams = {
@@ -286,7 +290,7 @@ type WorktreeDirectorySizeParams = {
 export const worktreeDirectorySize = async ({
   path,
 }: WorktreeDirectorySizeParams): Promise<WorktreeDirectorySize> => {
-  return invoke<WorktreeDirectorySize>('worktree_directory_size', { path });
+  return invokeCommand<WorktreeDirectorySize>('worktree_directory_size', { path });
 };
 
 type TidyRepoGoodboyDirParams = {
@@ -294,7 +298,7 @@ type TidyRepoGoodboyDirParams = {
 };
 
 export const tidyRepoGoodboyDir = async ({ repoPath }: TidyRepoGoodboyDirParams): Promise<void> => {
-  await invoke('worktree_tidy_goodboy', { repoPath });
+  await invokeCommand('worktree_tidy_goodboy', { repoPath });
 };
 
 export type OrphanWorktree = {
@@ -312,7 +316,7 @@ export const scanOrphanWorktrees = async ({
   repoPath,
   knownPaths,
 }: ScanOrphanWorktreesParams): Promise<ReadonlyArray<OrphanWorktree>> => {
-  return invoke<ReadonlyArray<OrphanWorktree>>('worktree_orphans', { repoPath, knownPaths });
+  return invokeCommand<ReadonlyArray<OrphanWorktree>>('worktree_orphans', { repoPath, knownPaths });
 };
 
 type RemoveWorktreeFolderParams = {
@@ -328,7 +332,7 @@ export const removeWorktreeFolder = async ({
   mode,
   allowLocalCommits = false,
 }: RemoveWorktreeFolderParams): Promise<WorktreeRemovalResult> => {
-  return invoke<WorktreeRemovalResult>('worktree_folder_remove', {
+  return invokeCommand<WorktreeRemovalResult>('worktree_folder_remove', {
     repoPath,
     path,
     mode,
@@ -363,7 +367,7 @@ export const worktreeFolderFacts = async ({
   if (requests.length === 0) {
     return [];
   }
-  return invoke<ReadonlyArray<WorktreeFolderFacts>>('worktree_folder_facts', { requests });
+  return invokeCommand<ReadonlyArray<WorktreeFolderFacts>>('worktree_folder_facts', { requests });
 };
 
 export type DiskFree = {
@@ -376,7 +380,7 @@ type DiskFreeParams = {
 };
 
 export const diskFree = async ({ path }: DiskFreeParams): Promise<DiskFree> => {
-  return invoke<DiskFree>('disk_free', { path });
+  return invokeCommand<DiskFree>('disk_free', { path });
 };
 
 type WorktreeBaseParams = {
@@ -388,7 +392,7 @@ export const worktreeDiff = async ({
   worktreePath,
   baseBranch,
 }: WorktreeBaseParams): Promise<string> => {
-  return invoke<string>('worktree_diff', { worktreePath, baseBranch: baseBranch ?? null });
+  return invokeCommand<string>('worktree_diff', { worktreePath, baseBranch: baseBranch ?? null });
 };
 
 type WorktreeDiffFileParams = WorktreeBaseParams & {
@@ -400,7 +404,7 @@ export const worktreeDiffFile = async ({
   path,
   baseBranch,
 }: WorktreeDiffFileParams): Promise<string> => {
-  return invoke<string>('worktree_diff_file', {
+  return invokeCommand<string>('worktree_diff_file', {
     worktreePath,
     baseBranch: baseBranch ?? null,
     path,
@@ -408,7 +412,7 @@ export const worktreeDiffFile = async ({
 };
 
 export const worktreeRemoteUrl = async (repoPath: string): Promise<string | null> => {
-  return invoke<string | null>('worktree_remote_url', { repoPath });
+  return invokeCommand<string | null>('worktree_remote_url', { repoPath });
 };
 
 export type ChangedFilesSummary = {
@@ -425,7 +429,7 @@ export const worktreeChangedFiles = async ({
   worktreePath,
   baseBranch,
 }: WorktreeBaseParams): Promise<ChangedFilesSummary> => {
-  return invoke<ChangedFilesSummary>('worktree_changed_files', {
+  return invokeCommand<ChangedFilesSummary>('worktree_changed_files', {
     worktreePath,
     baseBranch: baseBranch ?? null,
   });
@@ -434,7 +438,7 @@ export const worktreeChangedFiles = async ({
 export const listBranchCommits = async (
   worktreePath: string,
 ): Promise<ReadonlyArray<BranchCommit>> => {
-  return invoke<ReadonlyArray<BranchCommit>>('worktree_commits', { worktreePath });
+  return invokeCommand<ReadonlyArray<BranchCommit>>('worktree_commits', { worktreePath });
 };
 
 export type IsAncestorParams = {
@@ -448,7 +452,7 @@ export const worktreeIsAncestor = async ({
   sha,
   head,
 }: IsAncestorParams): Promise<boolean> => {
-  return invoke<boolean>('worktree_is_ancestor', { worktreePath, sha, head });
+  return invokeCommand<boolean>('worktree_is_ancestor', { worktreePath, sha, head });
 };
 
 type AbortRebaseParams = {
@@ -456,7 +460,7 @@ type AbortRebaseParams = {
 };
 
 export const worktreeAbortRebase = async ({ worktreePath }: AbortRebaseParams): Promise<void> => {
-  await invoke<void>('worktree_abort_rebase', { worktreePath });
+  await invokeCommand<void>('worktree_abort_rebase', { worktreePath });
 };
 
 export type RangeCommit = { readonly sha: string; readonly subject: string };
@@ -472,7 +476,11 @@ export const worktreeCommitRange = async ({
   base,
   head,
 }: CommitRangeParams): Promise<ReadonlyArray<RangeCommit>> => {
-  return invoke<ReadonlyArray<RangeCommit>>('worktree_commit_range', { worktreePath, base, head });
+  return invokeCommand<ReadonlyArray<RangeCommit>>('worktree_commit_range', {
+    worktreePath,
+    base,
+    head,
+  });
 };
 
 export type BlameLineParams = {
@@ -486,7 +494,7 @@ export const worktreeBlameLine = async ({
   path,
   line,
 }: BlameLineParams): Promise<string | null> => {
-  return invoke<string | null>('worktree_blame_line', { worktreePath, path, line });
+  return invokeCommand<string | null>('worktree_blame_line', { worktreePath, path, line });
 };
 
 export type RemoteHeadParams = { readonly worktreePath: string; readonly branch: string };
@@ -495,11 +503,11 @@ export const worktreeRemoteHead = async ({
   worktreePath,
   branch,
 }: RemoteHeadParams): Promise<string | null> => {
-  return invoke<string | null>('worktree_remote_head', { worktreePath, branch });
+  return invokeCommand<string | null>('worktree_remote_head', { worktreePath, branch });
 };
 
 export const worktreeDiffCommit = async (worktreePath: string, sha: string): Promise<string> => {
-  return invoke<string>('worktree_diff_commit', { worktreePath, sha });
+  return invokeCommand<string>('worktree_diff_commit', { worktreePath, sha });
 };
 
 export type DiffRangeParams = {
@@ -513,7 +521,7 @@ export const worktreeDiffRange = async ({
   base,
   head,
 }: DiffRangeParams): Promise<string> => {
-  return invoke<string>('worktree_diff_range', { worktreePath, base, head });
+  return invokeCommand<string>('worktree_diff_range', { worktreePath, base, head });
 };
 
 export type ScratchAddParams = {
@@ -527,7 +535,7 @@ export const worktreeScratchAdd = async ({
   sha,
   slug,
 }: ScratchAddParams): Promise<string> => {
-  return invoke<string>('worktree_scratch_add', { worktreePath, sha, slug });
+  return invokeCommand<string>('worktree_scratch_add', { worktreePath, sha, slug });
 };
 
 export type ScratchRemoveParams = {
@@ -539,14 +547,14 @@ export const worktreeScratchRemove = async ({
   worktreePath,
   scratchPath,
 }: ScratchRemoveParams): Promise<void> => {
-  return invoke<void>('worktree_scratch_remove', { worktreePath, scratchPath });
+  return invokeCommand<void>('worktree_scratch_remove', { worktreePath, scratchPath });
 };
 
 export const worktreeDiffWorking = async (
   worktreePath: string,
   scope: WorktreeDiffScope,
 ): Promise<string> => {
-  return invoke<string>('worktree_diff_working', { worktreePath, scope });
+  return invokeCommand<string>('worktree_diff_working', { worktreePath, scope });
 };
 
 type SyncBranchRefParams = {
@@ -564,7 +572,7 @@ export const worktreeSyncBranchRef = async ({
   workspaceId,
   projectId,
 }: SyncBranchRefParams): Promise<boolean> =>
-  invoke<boolean>('worktree_sync_branch_ref', {
+  invokeCommand<boolean>('worktree_sync_branch_ref', {
     worktreePath,
     branch,
     expectedSha,
@@ -576,7 +584,7 @@ export const worktreeStatus = async ({
   worktreePath,
   baseBranch,
 }: WorktreeBaseParams): Promise<WorktreeStatus> => {
-  return invoke<WorktreeStatus>('worktree_status', {
+  return invokeCommand<WorktreeStatus>('worktree_status', {
     worktreePath,
     baseBranch: baseBranch ?? null,
   });
@@ -601,9 +609,12 @@ export const invalidateLocalBranchesCache = (repoPath: string): void => {
 export const listLocalBranches = async (
   repoPath: string,
 ): Promise<ReadonlyArray<LocalBranchInfo>> => {
-  const branches = await invoke<ReadonlyArray<LocalBranchInfo>>('worktree_list_local_branches', {
-    repoPath,
-  });
+  const branches = await invokeCommand<ReadonlyArray<LocalBranchInfo>>(
+    'worktree_list_local_branches',
+    {
+      repoPath,
+    },
+  );
   localBranchesCache.set(repoPath, branches);
   return branches;
 };
@@ -615,7 +626,7 @@ type ListBranchNamesParams = {
 export const listBranchNames = async ({
   repoPath,
 }: ListBranchNamesParams): Promise<ReadonlyArray<string>> => {
-  return invoke<ReadonlyArray<string>>('worktree_list_branch_names', { repoPath });
+  return invokeCommand<ReadonlyArray<string>>('worktree_list_branch_names', { repoPath });
 };
 
 type RepoDefaultBaseBranchParams = {
@@ -625,7 +636,7 @@ type RepoDefaultBaseBranchParams = {
 export const repoDefaultBaseBranch = async ({
   repoPath,
 }: RepoDefaultBaseBranchParams): Promise<string | null> => {
-  return invoke<string | null>('worktree_repo_default_base_branch', { repoPath });
+  return invokeCommand<string | null>('worktree_repo_default_base_branch', { repoPath });
 };
 
 export type BranchMergeState =
@@ -651,7 +662,7 @@ export const branchMergeState = async ({
   base = null,
   mergedHead = null,
 }: BranchMergeStateParams): Promise<BranchMergeState> => {
-  return invoke<BranchMergeState>('worktree_branch_merge_state', {
+  return invokeCommand<BranchMergeState>('worktree_branch_merge_state', {
     repoPath,
     branch,
     base,
@@ -666,7 +677,7 @@ export type ChangeBranchArgs = {
 };
 
 export const changeWorktreeBranch = async (args: ChangeBranchArgs): Promise<void> => {
-  await invoke('worktree_change_branch', { args });
+  await invokeCommand('worktree_change_branch', { args });
 };
 
 type BranchHolderParams = {
@@ -678,5 +689,5 @@ export const worktreeBranchHolder = async ({
   repoPath,
   branch,
 }: BranchHolderParams): Promise<string | null> => {
-  return invoke<string | null>('worktree_branch_holder', { repoPath, branch });
+  return invokeCommand<string | null>('worktree_branch_holder', { repoPath, branch });
 };

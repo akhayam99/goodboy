@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export type ExportArtifactParams = {
   readonly path: string;
@@ -9,7 +9,7 @@ export const exportArtifactToFile = async ({
   path,
   contents,
 }: ExportArtifactParams): Promise<string> =>
-  invoke<string>('export_artifact_to_file', { path, contents });
+  invokeCommand<string>('export_artifact_to_file', { path, contents });
 
 export type ArtifactFolderFile = Readonly<{
   path: string;
@@ -27,4 +27,4 @@ export const exportArtifactFolder = async ({
   folder,
   files,
 }: ExportArtifactFolderParams): Promise<string> =>
-  invoke<string>('export_artifact_folder', { parent, folder, files });
+  invokeCommand<string>('export_artifact_folder', { parent, folder, files });

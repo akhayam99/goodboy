@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
 export type LinearViewer = {
@@ -121,14 +121,14 @@ export const linearValidateConnection = async (
   credentialId: IntegrationCredentialId,
   token: string | null,
 ): Promise<LinearViewer> => {
-  return invoke<LinearViewer>('linear_validate_connection', { credentialId, token });
+  return invokeCommand<LinearViewer>('linear_validate_connection', { credentialId, token });
 };
 
 export const linearConnect = async (
   credentialId: IntegrationCredentialId,
   token: string | null,
 ): Promise<void> => {
-  await invoke('linear_connect', { credentialId, token });
+  await invokeCommand('linear_connect', { credentialId, token });
 };
 
 export const linearFetchAssignedIssues = async (
@@ -136,7 +136,7 @@ export const linearFetchAssignedIssues = async (
   teamId?: string,
   projectId?: ProjectId,
 ): Promise<LinearIssue[]> => {
-  return invoke<LinearIssue[]>('linear_fetch_assigned_issues', {
+  return invokeCommand<LinearIssue[]>('linear_fetch_assigned_issues', {
     workspaceId,
     teamId: teamId ?? null,
     ...(projectId != null ? { projectId } : {}),
@@ -148,7 +148,7 @@ export const linearFetchIssue = async ({
   issueId,
   projectId,
 }: Params): Promise<LinearIssue> => {
-  return invoke<LinearIssue>('linear_fetch_issue', {
+  return invokeCommand<LinearIssue>('linear_fetch_issue', {
     workspaceId,
     issueId,
     ...(projectId != null ? { projectId } : {}),
@@ -166,7 +166,7 @@ export const linearFetchIssuesByIds = async ({
   issueIds,
   projectId,
 }: FetchByIdsParams): Promise<LinearIssue[]> => {
-  return invoke<LinearIssue[]>('linear_fetch_issues_by_ids', {
+  return invokeCommand<LinearIssue[]>('linear_fetch_issues_by_ids', {
     workspaceId,
     issueIds,
     ...(projectId != null ? { projectId } : {}),
@@ -182,7 +182,7 @@ export const linearFetchTeamKeys = async ({
   workspaceId,
   projectId,
 }: FetchTeamKeysParams): Promise<ReadonlyArray<string>> => {
-  return invoke<ReadonlyArray<string>>('linear_fetch_team_keys', {
+  return invokeCommand<ReadonlyArray<string>>('linear_fetch_team_keys', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
   });
@@ -193,7 +193,7 @@ export const linearFetchIssueComments = async ({
   issueId,
   projectId,
 }: Params): Promise<LinearIssueComment[]> => {
-  return invoke<LinearIssueComment[]>('linear_fetch_issue_comments', {
+  return invokeCommand<LinearIssueComment[]>('linear_fetch_issue_comments', {
     workspaceId,
     issueId,
     ...(projectId != null ? { projectId } : {}),
@@ -212,7 +212,7 @@ export const linearCreateComment = async ({
   parentId,
   projectId,
 }: CreateCommentParams): Promise<LinearIssueComment> => {
-  return invoke<LinearIssueComment>('linear_create_comment', {
+  return invokeCommand<LinearIssueComment>('linear_create_comment', {
     workspaceId,
     issueId,
     body,
@@ -231,7 +231,7 @@ export const linearUpdateIssueDescription = async ({
   description,
   projectId,
 }: UpdateDescriptionParams): Promise<string> => {
-  return invoke<string>('linear_update_issue', {
+  return invokeCommand<string>('linear_update_issue', {
     workspaceId,
     issueId,
     description,
@@ -244,7 +244,7 @@ export const linearFetchTeamStates = async ({
   issueId,
   projectId,
 }: Params): Promise<ReadonlyArray<LinearWorkflowState>> => {
-  return invoke<ReadonlyArray<LinearWorkflowState>>('linear_fetch_team_states', {
+  return invokeCommand<ReadonlyArray<LinearWorkflowState>>('linear_fetch_team_states', {
     workspaceId,
     issueId,
     ...(projectId != null ? { projectId } : {}),
@@ -261,7 +261,7 @@ export const linearUpdateIssueState = async ({
   stateId,
   projectId,
 }: UpdateStateParams): Promise<LinearIssueState> => {
-  return invoke<LinearIssueState>('linear_update_issue_state', {
+  return invokeCommand<LinearIssueState>('linear_update_issue_state', {
     workspaceId,
     issueId,
     stateId,
@@ -274,7 +274,7 @@ export const linearFetchTeamMembers = async ({
   issueId,
   projectId,
 }: Params): Promise<ReadonlyArray<LinearTeamMember>> => {
-  return invoke<ReadonlyArray<LinearTeamMember>>('linear_fetch_team_members', {
+  return invokeCommand<ReadonlyArray<LinearTeamMember>>('linear_fetch_team_members', {
     workspaceId,
     issueId,
     ...(projectId != null ? { projectId } : {}),
@@ -291,7 +291,7 @@ export const linearUpdateIssueAssignee = async ({
   assigneeId,
   projectId,
 }: UpdateAssigneeParams): Promise<LinearIssuePerson | null> => {
-  return invoke<LinearIssuePerson | null>('linear_update_issue_assignee', {
+  return invokeCommand<LinearIssuePerson | null>('linear_update_issue_assignee', {
     workspaceId,
     issueId,
     assigneeId,

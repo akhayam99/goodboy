@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import type {
   ExportGroups,
@@ -34,7 +34,7 @@ type ExportPreviewParams = {
 export const configExportPreview = async ({
   groups,
 }: ExportPreviewParams): Promise<ExportPreview> => {
-  return invoke<ExportPreview>('config_export_preview', { groups });
+  return invokeCommand<ExportPreview>('config_export_preview', { groups });
 };
 
 type ExportWriteParams = {
@@ -48,7 +48,7 @@ export const configExportWrite = async ({
   groups,
   leaveOut,
 }: ExportWriteParams): Promise<void> => {
-  await invoke<void>('config_export_write', { path, groups, leaveOut });
+  await invokeCommand<void>('config_export_write', { path, groups, leaveOut });
 };
 
 type ImportPreviewParams = {
@@ -60,7 +60,7 @@ export const configImportPreview = async ({
   path,
   projectParent,
 }: ImportPreviewParams): Promise<ImportPreview> => {
-  return invoke<ImportPreview>('config_import_preview', { path, projectParent });
+  return invokeCommand<ImportPreview>('config_import_preview', { path, projectParent });
 };
 
 type ImportApplyParams = {
@@ -74,7 +74,7 @@ export const configImportApply = async ({
   workspaceTargets,
   resolvedProjectPaths,
 }: ImportApplyParams): Promise<ConfigBundleImportResult> => {
-  return invoke<ConfigBundleImportResult>('config_import_apply', {
+  return invokeCommand<ConfigBundleImportResult>('config_import_apply', {
     path,
     workspaceTargets,
     resolvedProjectPaths,

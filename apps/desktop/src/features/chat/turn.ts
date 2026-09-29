@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
 import {
@@ -404,10 +404,10 @@ async function* streamTurn({
     unlisten();
     clearTurnCursor({ runId });
     if (!ended) {
-      await invoke('turn_cancel', { runId }).catch(() => undefined);
+      await invokeCommand('turn_cancel', { runId }).catch(() => undefined);
     }
     if (ended) {
-      await invoke('turn_release', { runId }).catch(() => undefined);
+      await invokeCommand('turn_release', { runId }).catch(() => undefined);
     }
   }
 }
@@ -424,7 +424,7 @@ export const runTurn = (
     hooks,
     resumeFrom: null,
     begin: async () => {
-      await invoke<string>('turn_spawn', { args });
+      await invokeCommand<string>('turn_spawn', { args });
     },
   });
 
@@ -450,7 +450,7 @@ export const attachTurn = ({
     hooks: { ...hooks, ...(cursor.owner !== null && { owner: cursor.owner }) },
     resumeFrom: cursor,
     begin: async ({ deliver, note }) => {
-      const snapshot = await invoke<TurnAttachSnapshot | null>('turn_attach', {
+      const snapshot = await invokeCommand<TurnAttachSnapshot | null>('turn_attach', {
         runId,
         afterSeq: Math.max(cursor.seq - 1, 0),
       });
@@ -466,12 +466,12 @@ export const attachTurn = ({
   });
 
 export const cancelTurn = async (runId: ProviderRunId): Promise<void> => {
-  await invoke('turn_cancel', { runId });
+  await invokeCommand('turn_cancel', { runId });
 };
 
 export const listLiveRunIds = async (): Promise<ReadonlySet<string>> => {
   try {
-    const ids = await invoke<string[]>('turn_list_live');
+    const ids = await invokeCommand<string[]>('turn_list_live');
     return new Set(ids ?? []);
   } catch {
     return new Set();
@@ -484,13 +484,13 @@ export const writeAttachment = async (args: {
   readonly fileName: string;
   readonly dataBase64: string;
 }): Promise<string> => {
-  return invoke<string>('attachment_write', args);
+  return invokeCommand<string>('attachment_write', args);
 };
 
 export const readAttachment = async (worktreeDir: string, relPath: string): Promise<string> => {
-  return invoke<string>('attachment_read', { worktreeDir, relPath });
+  return invokeCommand<string>('attachment_read', { worktreeDir, relPath });
 };
 
 export const deleteAttachment = async (worktreeDir: string, relPath: string): Promise<void> => {
-  await invoke('attachment_delete', { worktreeDir, relPath });
+  await invokeCommand('attachment_delete', { worktreeDir, relPath });
 };

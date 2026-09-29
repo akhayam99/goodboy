@@ -1,5 +1,6 @@
 import { formatError } from '@goodboy/ui';
 import type { Project } from '@goodboy/types';
+import { CommandError } from '../../../../../shared/lib/invokeCommand';
 import { worktreeErrorKind } from '../../../../../store/slices/project-mounts/mountErrors';
 import type { MountPreflight } from './useMountPreflight/resolveMountPreflight';
 
@@ -15,7 +16,7 @@ type Params = {
 };
 
 const rawError = ({ error }: { readonly error: unknown }): string => {
-  if (error instanceof Error && error.stack != null) {
+  if (!(error instanceof CommandError) && error instanceof Error && error.stack != null) {
     return error.stack;
   }
   try {

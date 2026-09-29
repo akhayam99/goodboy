@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type {
   BudgetAlert,
   BudgetCheckResult,
@@ -16,15 +16,15 @@ type Params = {
 };
 
 export const invokeBudgetRuleUpsert = async (rule: BudgetRule): Promise<void> => {
-  return invoke<void>('budget_rule_upsert', { rule });
+  return invokeCommand<void>('budget_rule_upsert', { rule });
 };
 
 export const invokeBudgetRuleList = async (): Promise<BudgetRule[]> => {
-  return invoke<BudgetRule[]>('budget_rule_list');
+  return invokeCommand<BudgetRule[]>('budget_rule_list');
 };
 
 export const invokeBudgetRuleDelete = async (id: string): Promise<void> => {
-  return invoke<void>('budget_rule_delete', { id });
+  return invokeCommand<void>('budget_rule_delete', { id });
 };
 
 export const invokeSessionBudgetSet = async (
@@ -32,35 +32,35 @@ export const invokeSessionBudgetSet = async (
   softCapUsd: number,
   onExceed: SessionBudgetOnExceed,
 ): Promise<void> => {
-  return invoke<void>('session_budget_set', { sessionId, softCapUsd, onExceed });
+  return invokeCommand<void>('session_budget_set', { sessionId, softCapUsd, onExceed });
 };
 
 export const invokeSessionBudgetClear = async (sessionId: string): Promise<void> => {
-  return invoke<void>('session_budget_clear', { sessionId });
+  return invokeCommand<void>('session_budget_clear', { sessionId });
 };
 
 export const invokeSessionBudgetGet = async (sessionId: string): Promise<SessionBudget | null> => {
-  return invoke<SessionBudget | null>('session_budget_get', { sessionId });
+  return invokeCommand<SessionBudget | null>('session_budget_get', { sessionId });
 };
 
 export const invokeBudgetAlertsList = async (): Promise<BudgetAlert[]> => {
-  return invoke<BudgetAlert[]>('budget_alerts_list');
+  return invokeCommand<BudgetAlert[]>('budget_alerts_list');
 };
 
 export const invokeBudgetEmitAlerts = async ({
   provider,
   sessionId,
 }: Params): Promise<BudgetAlert[]> => {
-  return invoke<BudgetAlert[]>('budget_emit_alerts', { input: { provider, sessionId } });
+  return invokeCommand<BudgetAlert[]>('budget_emit_alerts', { input: { provider, sessionId } });
 };
 
 export const invokeBudgetAlertDismiss = async (id: string): Promise<void> => {
-  return invoke<void>('budget_alert_dismiss', { id });
+  return invokeCommand<void>('budget_alert_dismiss', { id });
 };
 
 export const invokeCheckProviderBudget = async (
   provider: ProviderName,
   period: BudgetPeriod,
 ): Promise<BudgetCheckResult> => {
-  return invoke<BudgetCheckResult>('check_provider_budget', { provider, period });
+  return invokeCommand<BudgetCheckResult>('check_provider_budget', { provider, period });
 };

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 
 export type AppPlatform = {
   readonly os: string;
@@ -20,7 +20,7 @@ const ARCH_LABELS: Readonly<Record<string, string>> = {
 
 export const readAppPlatform = async (): Promise<AppPlatform | null> => {
   try {
-    return await invoke<AppPlatform>('app_platform');
+    return await invokeCommand<AppPlatform>('app_platform');
   } catch {
     return null;
   }

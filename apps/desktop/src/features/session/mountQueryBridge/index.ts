@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { listMountPullRequestLinks } from '@goodboy/db';
 import { formatError } from '@goodboy/ui';
@@ -528,7 +528,7 @@ export const listenMountCommands = async (): Promise<UnlistenFn> => {
     const request = event.payload;
     void executeMountRequest(request)
       .then((result) =>
-        invoke('mount_command_result', {
+        invokeCommand('mount_command_result', {
           id: request.id,
           ok: result.ok,
           error: result.error ?? null,

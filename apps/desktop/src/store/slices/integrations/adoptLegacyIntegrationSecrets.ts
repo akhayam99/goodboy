@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 
 export type AdoptLegacyIntegrationSecretsResult =
   { readonly ok: true } | { readonly ok: false; readonly error: unknown };
@@ -6,7 +6,7 @@ export type AdoptLegacyIntegrationSecretsResult =
 export const adoptLegacyIntegrationSecrets =
   async (): Promise<AdoptLegacyIntegrationSecretsResult> => {
     try {
-      await invoke<number>('integration_credentials_adopt');
+      await invokeCommand<number>('integration_credentials_adopt');
       return { ok: true };
     } catch (error) {
       return { ok: false, error };

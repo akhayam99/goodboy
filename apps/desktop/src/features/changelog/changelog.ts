@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export type ReleaseNote = {
   readonly version: string;
@@ -8,5 +8,5 @@ export type ReleaseNote = {
 };
 
 export const fetchReleases = async (): Promise<ReadonlyArray<ReleaseNote>> => {
-  return invoke<ReleaseNote[]>('releases_list');
+  return invokeCommand<ReleaseNote[]>('releases_list');
 };

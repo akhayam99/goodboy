@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { MountId, ProjectScriptId, SessionId } from '@goodboy/types';
 
@@ -99,13 +99,20 @@ export const invokeScriptRun = ({
   cols,
   rows,
 }: InvokeScriptRunParams): Promise<void> => {
-  return invoke<void>('workspace_script_run', { scriptId, runId, sessionId, cwd, cols, rows });
+  return invokeCommand<void>('workspace_script_run', {
+    scriptId,
+    runId,
+    sessionId,
+    cwd,
+    cols,
+    rows,
+  });
 };
 
 export const scanProjectScripts = ({
   worktreePath,
 }: ScanProjectScriptsParams): Promise<ReadonlyArray<ScriptGroup>> => {
-  return invoke<ReadonlyArray<ScriptGroup>>('project_scripts_scan', { worktreePath });
+  return invokeCommand<ReadonlyArray<ScriptGroup>>('project_scripts_scan', { worktreePath });
 };
 
 export const runAdhocScript = ({
@@ -118,7 +125,7 @@ export const runAdhocScript = ({
   cols = 220,
   rows = 50,
 }: RunAdhocScriptParams): Promise<string> => {
-  return invoke<string>('workspace_script_run_adhoc', {
+  return invokeCommand<string>('workspace_script_run_adhoc', {
     scriptId,
     name,
     body,
@@ -150,11 +157,11 @@ export const discoveredScriptCwd = ({
 };
 
 export const invokeScriptListLive = (): Promise<ReadonlyArray<LiveScriptRun>> => {
-  return invoke<ReadonlyArray<LiveScriptRun>>('workspace_script_list_live');
+  return invokeCommand<ReadonlyArray<LiveScriptRun>>('workspace_script_list_live');
 };
 
 export const invokeScriptCancel = (runId: string): Promise<void> => {
-  return invoke<void>('workspace_script_cancel', { runId });
+  return invokeCommand<void>('workspace_script_cancel', { runId });
 };
 
 export const listenScriptOutput = (

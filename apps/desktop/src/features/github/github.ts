@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { formatError } from '@goodboy/ui';
 import {
   createIssueComment,
@@ -45,7 +45,7 @@ function toStatus(raw: RawGhStatus): GhTokenStatus {
 
 export const ghStatus = async (workspaceId?: string): Promise<GhTokenStatus> => {
   try {
-    return toStatus(await invoke<RawGhStatus>('gh_status', { workspaceId }));
+    return toStatus(await invokeCommand<RawGhStatus>('gh_status', { workspaceId }));
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`gh status check failed: ${msg}`, { cause: err });
@@ -54,7 +54,7 @@ export const ghStatus = async (workspaceId?: string): Promise<GhTokenStatus> => 
 
 export const ghSetToken = async (token: string, workspaceId?: string): Promise<GhTokenStatus> => {
   try {
-    return toStatus(await invoke<RawGhStatus>('gh_set_token', { token, workspaceId }));
+    return toStatus(await invokeCommand<RawGhStatus>('gh_set_token', { token, workspaceId }));
   } catch (err) {
     throw new Error(formatError(err), { cause: err });
   }
@@ -62,7 +62,7 @@ export const ghSetToken = async (token: string, workspaceId?: string): Promise<G
 
 export const ghClearToken = async (workspaceId?: string): Promise<void> => {
   try {
-    await invoke('gh_clear_token', { workspaceId });
+    await invokeCommand('gh_clear_token', { workspaceId });
   } catch (err) {
     const msg = formatError(err);
     throw new Error(`gh clear token failed: ${msg}`, { cause: err });
@@ -77,7 +77,7 @@ export const ghPrDiff = async (
   projectId?: string,
 ): Promise<string> => {
   try {
-    return await invoke<string>('gh_pr_diff', {
+    return await invokeCommand<string>('gh_pr_diff', {
       repo,
       pr,
       cwd,
@@ -97,7 +97,7 @@ export const gitPush = async (
   projectId?: string,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   try {
-    const raw = await invoke<RawGhRunResult>('git_push', {
+    const raw = await invokeCommand<RawGhRunResult>('git_push', {
       cwd,
       branch: branch ?? undefined,
       workspaceId,
@@ -320,7 +320,7 @@ export const ghCommitDiff = async (repo: string, sha: string): Promise<string> =
 export const tauriGhRunner: GhRunner = {
   async run(args: ReadonlyArray<string>, opts: GhRunOptions = {}): Promise<GhResult> {
     try {
-      const raw = await invoke<RawGhRunResult>('gh_run', {
+      const raw = await invokeCommand<RawGhRunResult>('gh_run', {
         args: [...args],
         cwd: opts.cwd,
         workspaceId: opts.workspaceId,

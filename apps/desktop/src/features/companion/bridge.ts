@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export type QrInfo = {
   payload: string;
@@ -14,10 +14,11 @@ export type BridgeStatus = {
   enrolledCount: number;
 };
 
-export const bridgeStart = (): Promise<QrInfo> => invoke<QrInfo>('bridge_start');
+export const bridgeStart = (): Promise<QrInfo> => invokeCommand<QrInfo>('bridge_start');
 
-export const bridgeRevoke = (): Promise<void> => invoke<void>('bridge_revoke');
+export const bridgeRevoke = (): Promise<void> => invokeCommand<void>('bridge_revoke');
 
-export const bridgeStop = (): Promise<void> => invoke<void>('bridge_stop');
+export const bridgeStop = (): Promise<void> => invokeCommand<void>('bridge_stop');
 
-export const bridgeStatus = (): Promise<BridgeStatus> => invoke<BridgeStatus>('bridge_status');
+export const bridgeStatus = (): Promise<BridgeStatus> =>
+  invokeCommand<BridgeStatus>('bridge_status');

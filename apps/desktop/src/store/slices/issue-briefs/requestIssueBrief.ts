@@ -1,7 +1,7 @@
 import { autoLimitContext } from '../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE, generateIssueBrief } from '@goodboy/core';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { routeTaskModel } from '../../../features/providers/taskModelRouting';
 import { cutAtBoundary } from '../../../shared/utils/cutAtBoundary';
 import {
@@ -101,7 +101,7 @@ export const requestIssueBrief = (set: SetFn, get: GetFn) => {
     }));
 
     const result = await generateIssueBrief({
-      deps: { ...taskModel, invokeFn: invoke },
+      deps: { ...taskModel, invokeFn: invokeCommand },
       input: {
         identifier: source.identifier,
         title: source.title,

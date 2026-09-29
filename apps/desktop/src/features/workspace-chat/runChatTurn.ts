@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen } from '@tauri-apps/api/event';
 import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
@@ -158,7 +158,7 @@ export const runChatTurn = async ({
           return;
         }
         stopListening = unlisten;
-        return invoke<string>('chat_turn', {
+        return invokeCommand<string>('chat_turn', {
           args: {
             runId: request.runId,
             chatId: request.chatId,

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../shared/lib/invokeCommand';
 import { formatError } from '@goodboy/ui';
 import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
 import type { AgentId, TaskModelPreference } from '@goodboy/types';
@@ -36,7 +36,7 @@ const runSummarization = async ({
   const timeout = new Promise<never>((_resolve, reject) => {
     timeoutId = setTimeout(() => {
       reject(new Error('step output summarization timed out'));
-      void Promise.resolve(invoke('summarize_cancel', { runId })).catch(() => undefined);
+      void Promise.resolve(invokeCommand('summarize_cancel', { runId })).catch(() => undefined);
     }, SUMMARY_TIMEOUT_MS);
   });
 
@@ -44,7 +44,7 @@ const runSummarization = async ({
     const summary = await Promise.race([
       summarizeStepOutput({
         ...taskModel,
-        invokeFn: invoke,
+        invokeFn: invokeCommand,
         output,
         runId,
         ...(workingDir != null && { workingDir }),

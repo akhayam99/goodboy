@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type {
   Agent,
   AgentId,
@@ -671,7 +671,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const modelMenu = orchestratorModelPool({ availability });
       const client = new OrchestratorClient({
         ...routing,
-        invokeFn: invoke,
+        invokeFn: invokeCommand,
         ...(worktreePath != null && { workingDir: worktreePath }),
       });
       let result: Awaited<ReturnType<typeof client.decide>> | null = null;
