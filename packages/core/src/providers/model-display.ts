@@ -16,21 +16,29 @@ const PROVIDER_PRIORITY: ReadonlyArray<ProviderId> = (
   Object.keys(PROVIDER_RANK) as ProviderId[]
 ).sort((a, b) => PROVIDER_RANK[a] - PROVIDER_RANK[b]);
 
-const descriptorsOf = ({ provider }: { readonly provider: ProviderId }) => {
-  const map = new Map<string, ModelDescriptor>();
+type Tiers = {
+  readonly real: ReadonlyMap<string, ModelDescriptor>;
+  readonly aliases: ReadonlyMap<string, ModelDescriptor>;
+};
+
+const tiersOf = ({ provider }: { readonly provider: ProviderId }): Tiers => {
+  const real = new Map<string, ModelDescriptor>();
+  const aliases = new Map<string, ModelDescriptor>();
   const set = ({
+    into,
     key,
     descriptor,
   }: {
+    readonly into: Map<string, ModelDescriptor>;
     readonly key: string;
     readonly descriptor: ModelDescriptor;
   }) => {
-    if (!map.has(key)) {
-      map.set(key, descriptor);
+    if (!into.has(key)) {
+      into.set(key, descriptor);
     }
   };
   for (const descriptor of PROVIDER_CAPABILITIES[provider].models) {
-    set({ key: descriptor.id, descriptor });
+    set({ into: aliases, key: descriptor.id, descriptor });
     const model = MODEL_CATALOGS[provider].find((candidate) => candidate.key === descriptor.id);
     if (model == null) {
       continue;
@@ -41,16 +49,16 @@ const descriptorsOf = ({ provider }: { readonly provider: ProviderId }) => {
       case 'opencode':
       case 'openrouter':
       case 'moonshot':
-        set({ key: model.cliId, descriptor });
+        set({ into: real, key: model.cliId, descriptor });
         break;
       case 'codex':
         for (const variant of model.variants) {
-          set({ key: variant.cliId, descriptor });
+          set({ into: real, key: variant.cliId, descriptor });
         }
         break;
       case 'cursor':
         for (const combo of model.combos) {
-          set({ key: combo.slug, descriptor });
+          set({ into: real, key: combo.slug, descriptor });
         }
         break;
       default: {
@@ -59,20 +67,31 @@ const descriptorsOf = ({ provider }: { readonly provider: ProviderId }) => {
       }
     }
   }
-  return map;
+  return { real, aliases };
 };
+
+const TIERS_BY_PROVIDER: ReadonlyMap<ProviderId, Tiers> = new Map(
+  PROVIDER_PRIORITY.map((provider) => [provider, tiersOf({ provider })]),
+);
 
 const DESCRIPTOR_BY_PROVIDER: ReadonlyMap<
   ProviderId,
   ReadonlyMap<string, ModelDescriptor>
-> = new Map(PROVIDER_PRIORITY.map((provider) => [provider, descriptorsOf({ provider })]));
+> = new Map(
+  PROVIDER_PRIORITY.map((provider) => {
+    const tiers = TIERS_BY_PROVIDER.get(provider);
+    return [provider, new Map([...(tiers?.aliases ?? []), ...(tiers?.real ?? [])])];
+  }),
+);
 
 const DESCRIPTOR_BY_ID: ReadonlyMap<string, ModelDescriptor> = (() => {
   const map = new Map<string, ModelDescriptor>();
-  for (const provider of PROVIDER_PRIORITY) {
-    for (const [id, descriptor] of DESCRIPTOR_BY_PROVIDER.get(provider) ?? []) {
-      if (!map.has(id)) {
-        map.set(id, descriptor);
+  for (const tier of ['real', 'aliases'] as const) {
+    for (const provider of PROVIDER_PRIORITY) {
+      for (const [id, descriptor] of TIERS_BY_PROVIDER.get(provider)?.[tier] ?? []) {
+        if (!map.has(id)) {
+          map.set(id, descriptor);
+        }
       }
     }
   }
@@ -81,10 +100,12 @@ const DESCRIPTOR_BY_ID: ReadonlyMap<string, ModelDescriptor> = (() => {
 
 const PROVIDER_BY_MODEL: ReadonlyMap<string, ProviderId> = (() => {
   const map = new Map<string, ProviderId>();
-  for (const provider of PROVIDER_PRIORITY) {
-    for (const id of DESCRIPTOR_BY_PROVIDER.get(provider)?.keys() ?? []) {
-      if (!map.has(id)) {
-        map.set(id, provider);
+  for (const tier of ['real', 'aliases'] as const) {
+    for (const provider of PROVIDER_PRIORITY) {
+      for (const id of TIERS_BY_PROVIDER.get(provider)?.[tier].keys() ?? []) {
+        if (!map.has(id)) {
+          map.set(id, provider);
+        }
       }
     }
   }

@@ -83,4 +83,11 @@ describe('provider model display', () => {
       getModelDescriptor({ id: 'gpt-6-astra' }),
     );
   });
+
+  it('never lets a catalog key beat the real cursor slug of another provider', () => {
+    expect(getModelProvider('kimi-k2.7-code')).toBe('cursor');
+    expect(getModelDescriptor({ id: 'kimi-k2.7-code' })).toBe(
+      getModelDescriptor({ id: 'kimi-k2.7-code', provider: 'cursor' }),
+    );
+  });
 });
