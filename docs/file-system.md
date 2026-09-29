@@ -76,7 +76,7 @@ Each slice is a **package folder**:
 
 - `index.ts`: puts the state, actions and selectors together.
 - `index.test.ts`: the test for the slice's public contract.
-- `state.ts`: the initial state and its type, when it is not trivial.
+- `state.ts`: the state keys the slice owns, their type and their initial value, both named after the slice.
 - One file per action.
 - One `select<Thing>.ts` per selector.
 - `types.ts`: types used only inside the slice. It re-exports `SetFn`/`GetFn` from `../../slice-types`.
@@ -86,6 +86,7 @@ Rules around slices:
 - `store/store.ts` only composes slices. No domain logic.
 - The shared `SetFn`/`GetFn` live in `store/slice-types.ts` (typed against `AppStore`).
 - A slice's actions are typed by its factory: `AppStore` intersects `ReturnType<typeof createXSlice>`, so the slice is the single source and `store.ts` holds no hand-written action signatures. Do not pass `AppState`-typed `set`/`get` params between slice files: they make the factory type circular. Take `SetFn`/`GetFn`.
+- A slice's state is owned the same way: `AppState` (`store/types.ts`) intersects each slice's state type and `store.ts` spreads each slice's initial state. A new state key goes into its slice's `state.ts`, never inline in `types.ts` or `store.ts`.
 - A helper shared between files inside a slice is exported through the slice's `index.ts` only when code outside the slice needs it. Otherwise, import it straight from its source file.
 - Runtime memory keyed by session, agent or workflow run lives in `AppState` and is registered in `SESSION_EVICTION` (`store/sessionEviction.ts`). The type guard there fails until every state key says how it is torn down. Slices read these counters through `get()`, never through a component selector. A module-level collection is allowed only in three cases: in-flight promise dedup that deletes itself in `finally`, a tombstone that must outlive its agent (`purgedAgentIds`), or a per-key queue that drops its key once drained (`shared/utils/keyedQueue.ts`).
 

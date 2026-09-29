@@ -1,5 +1,7 @@
 import type { MountId, SessionId } from '@goodboy/types';
-import type { AppState, MountGitlabMrState, SessionGitlabMrState } from '../../types';
+import type { AppState } from '../../types';
+import type { MountGitlabMrState } from './state';
+import type { SessionGitlabMrState } from './state';
 import { selectActiveMountId } from '../project-mounts/selectors';
 
 export type GitlabProjection = Pick<AppState, 'sessionGitlabMr'>;

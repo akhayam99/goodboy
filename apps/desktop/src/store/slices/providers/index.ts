@@ -8,13 +8,7 @@ import { refreshProviders } from './refreshProviders';
 import { updateProviderCli } from './updateProviderCli';
 import type { GetFn, SetFn } from './types';
 
-export type {
-  ProviderConnectMap,
-  ProviderConnectPhase,
-  ProviderConnectStep,
-  ProviderLifecycleMap,
-} from './types';
-export { INITIAL_CONNECT_MAP, INITIAL_LIFECYCLE_MAP } from './types';
+export type { ProviderConnectPhase, ProviderConnectStep } from './types';
 
 export const createProvidersSlice = (set: SetFn, get: GetFn) => {
   return {

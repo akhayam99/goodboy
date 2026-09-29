@@ -8,7 +8,7 @@ export type WorkflowStudioDraft = {
   readonly form: WorkflowDraft;
 };
 
-export type WorkflowGeneration =
+type WorkflowGeneration =
   | { readonly status: 'idle' }
   | { readonly status: 'running'; readonly description: string }
   | { readonly status: 'failed'; readonly description: string; readonly error: string }

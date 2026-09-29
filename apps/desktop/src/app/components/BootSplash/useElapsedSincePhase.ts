@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { BootPhase } from '../../../store/types';
+import type { BootPhase } from '../../../store/slices/boot/state';
 
 type Params = {
   phase: BootPhase;

@@ -8,7 +8,7 @@ import {
 } from '../../../../shared/components/FacetRail/FacetKeyHints';
 import { FacetRow } from '../../../../shared/components/FacetRail/FacetRow';
 import { FacetSection } from '../../../../shared/components/FacetRail/FacetSection';
-import type { NotificationScope } from '../../../../store/types';
+import type { NotificationScope } from '../../../../store/slices/notifications/state';
 import {
   NOTIFICATION_SEVERITY_FACETS,
   NOTIFICATION_VIEWS,

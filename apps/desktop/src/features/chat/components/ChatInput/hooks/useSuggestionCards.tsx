@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Session, SessionId } from '@goodboy/types';
-import type { SessionNudge } from '../../../../../store/types';
+import type { SessionNudge } from '../../../../../store/slices/nudges/state';
 import { AGENT_KIND_META, type AgentKind } from '../../../../session/agent-kind';
 import { NudgeCard } from '../../NudgeCard';
 import { RightSizeCard } from '../../RightSizeCard';

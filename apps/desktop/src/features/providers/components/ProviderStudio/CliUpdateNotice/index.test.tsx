@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { AgentId, IsoDateTime, ProviderRunId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import { INITIAL_LIFECYCLE_MAP } from '../../../../../store/slices/providers';
+import { INITIAL_LIFECYCLE_MAP } from '../../../../../store/slices/providers/types';
 import { buildProviderList } from '../../../providers';
 import { CliUpdateNotice } from './index';
 
