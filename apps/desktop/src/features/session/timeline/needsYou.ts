@@ -24,6 +24,10 @@ export const needsYouRootIds = ({ items }: RootsParams): ReadonlySet<string> => 
     if (item.kind !== 'row' || !isRowNeedingYou({ state: item.rowState })) {
       continue;
     }
+    if (item.entry.kind === 'subagentGroup') {
+      roots.add(item.familyId ?? item.id);
+      continue;
+    }
     if (item.entry.kind === 'resolveBatch') {
       for (const childId of attentionChildIdsOf({ entry: item.entry })) {
         roots.add(childId);
@@ -39,6 +43,9 @@ const needKeysOf = ({ item }: { readonly item: TimelineRowItem }): ReadonlyArray
   const { entry, rowState } = item;
   if (entry.kind === 'resolveBatch') {
     return attentionChildIdsOf({ entry });
+  }
+  if (entry.kind === 'subagentGroup') {
+    return entry.attentionKeys;
   }
   if (entry.kind === 'question') {
     return entry.questions.map((question) => question.id);

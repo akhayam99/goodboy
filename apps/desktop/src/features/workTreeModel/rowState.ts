@@ -37,7 +37,8 @@ export type RowAsk =
   | { readonly kind: 'runStep'; readonly step: Step; readonly agent: Agent }
   | { readonly kind: 'restartStep' }
   | { readonly kind: 'continue'; readonly agent: Agent }
-  | { readonly kind: 'reviewComment' };
+  | { readonly kind: 'reviewComment' }
+  | { readonly kind: 'groupChild' };
 
 export type RowState = {
   readonly phase: RowPhase;

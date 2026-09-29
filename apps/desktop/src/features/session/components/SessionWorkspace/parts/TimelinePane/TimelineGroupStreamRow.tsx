@@ -3,14 +3,17 @@ import { cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
 import type { RailRow } from '../../../../../workTreeModel/railGeometry';
-import type { TimelineResolveBatchEntry } from '../../../../timeline/buildTimelineGroups';
+import type {
+  TimelineResolveBatchEntry,
+  TimelineSubagentGroupEntry,
+} from '../../../../timeline/buildTimelineGroups';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import type { TimelineLaneControl } from './TimelineRail';
 import { TimelineStreamRow } from './TimelineStreamRow';
 
 type Props = {
   readonly item: TimelineRowItem;
-  readonly entry: TimelineResolveBatchEntry;
+  readonly entry: TimelineResolveBatchEntry | TimelineSubagentGroupEntry;
   readonly rail: RailRow;
   readonly railWidth: number;
   readonly sessionId: SessionId;
@@ -23,7 +26,7 @@ type Props = {
   }) => void;
 };
 
-export const TimelineResolveBatchStreamRow = ({
+export const TimelineGroupStreamRow = ({
   item,
   entry,
   rail,

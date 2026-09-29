@@ -46,7 +46,6 @@ import {
   type TimelineRowItem,
 } from '../../../../timeline/buildTimelineStream';
 import { dayLabel } from '../../../../timeline/dayLabel';
-import { resolveBatchEntryId } from '../../../../timeline/resolveBatchGroups';
 import {
   firstNeedsYouRowId,
   hasWaitingRow,
@@ -71,7 +70,7 @@ import { TimelineNowRule } from './TimelineNowRule';
 import { TimelineSkeleton } from './TimelineSkeleton';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
-import { TimelineResolveBatchStreamRow } from './TimelineResolveBatchStreamRow';
+import { TimelineGroupStreamRow } from './TimelineGroupStreamRow';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
@@ -92,7 +91,7 @@ const openTargetOfBatchChild = ({
   readonly item: TimelineRowItem;
   readonly target: TimelineOpenTarget | null;
 }): TimelineOpenTarget | null =>
-  item.explode === undefined || target === null
+  item.explode?.kind !== 'batch' || target === null
     ? target
     : { ...target, label: BATCH_CHILD_OPEN_LABEL };
 
@@ -106,7 +105,7 @@ const explodePhaseOf = ({
   if (item.explode === undefined) {
     return null;
   }
-  return leavingIds.has(resolveBatchEntryId({ batchId: item.explode.batchId })) ? 'out' : 'in';
+  return leavingIds.has(item.explode.groupId) ? 'out' : 'in';
 };
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
@@ -324,7 +323,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         showQuestions: isNeedsYou || activity.filter.questions,
         resolveBatchByAgentId: resolveActivity.batchByAgentId,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
-        expandedBatchIds: explode.expandedIds,
+        expandedGroupIds: explode.expandedIds,
       }),
     [
       activity.filter,
@@ -348,7 +347,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         dayLabelFor: dayLabel,
         resolveBatchByAgentId: resolveActivity.batchByAgentId,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
-        expandedBatchIds: explode.expandedIds,
+        expandedGroupIds: explode.expandedIds,
       }),
     [
       advanceByRunId,
@@ -593,6 +592,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         };
       }
       case 'reviewComment':
+      case 'groupChild':
         return null;
       default: {
         const exhaustive: never = ask;
@@ -732,9 +732,9 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
                   );
                 }
                 const { entry } = item;
-                if (entry.kind === 'resolveBatch') {
+                if (entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup') {
                   return (
-                    <TimelineResolveBatchStreamRow
+                    <TimelineGroupStreamRow
                       key={item.id}
                       item={item}
                       entry={entry}

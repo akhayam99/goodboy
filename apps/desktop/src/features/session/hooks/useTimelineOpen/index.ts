@@ -169,7 +169,7 @@ export const useTimelineOpen = ({
           open: () => store.navigate({ to: sessionPlace({ sessionId, lens: target.lens }) }),
         };
       }
-      if (entry.kind === 'resolveBatch') {
+      if (entry.kind === 'resolveBatch' || entry.kind === 'subagentGroup') {
         return null;
       }
       return {

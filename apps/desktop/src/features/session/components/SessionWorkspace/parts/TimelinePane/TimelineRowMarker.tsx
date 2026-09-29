@@ -12,6 +12,7 @@ import { IntegrationGlyph } from '../../../../../integrations/components/Integra
 import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
+import { subagentGroupTitle } from '../../../../timeline/subagentGroups';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
 
 type Props = {
@@ -70,6 +71,18 @@ export const TimelineRowMarker = ({ item, progress = null }: Props) => {
       <WorkNode
         state="mixed"
         label={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
+        mark={{ kind: 'index', value: String(entry.summary.total) }}
+        parts={entry.summary.parts.map((part) => ({ tone: part.tone, count: part.count }))}
+        hasUnread={item.hasUnread}
+      />
+    );
+  }
+
+  if (entry.kind === 'subagentGroup') {
+    return (
+      <WorkNode
+        state="mixed"
+        label={subagentGroupTitle({ total: entry.summary.total })}
         mark={{ kind: 'index', value: String(entry.summary.total) }}
         parts={entry.summary.parts.map((part) => ({ tone: part.tone, count: part.count }))}
         hasUnread={item.hasUnread}

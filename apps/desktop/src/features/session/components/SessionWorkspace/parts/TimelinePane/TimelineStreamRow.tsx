@@ -104,6 +104,7 @@ export const TimelineStreamRow = ({
   const isWaiting =
     item.rowState.phase === 'waiting' &&
     item.rowState.ask?.kind !== 'reviewComment' &&
+    item.rowState.ask?.kind !== 'groupChild' &&
     rowStateTone({ state: item.rowState }) === 'warning';
   const isLaneLit = runLane !== null && lanes?.hoveredLaneId === runLane.laneId;
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {

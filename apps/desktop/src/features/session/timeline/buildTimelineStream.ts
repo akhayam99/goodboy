@@ -28,6 +28,7 @@ import type {
   TimelineQuestionEntry,
   TimelineResolveBatchEntry,
   TimelineRunEntry,
+  TimelineSubagentGroupEntry,
   TimelineTopLevelEntry,
 } from './buildTimelineGroups';
 import type { RailGroupInput, RailGroupShape } from '../../workTreeModel/railGeometry';
@@ -35,6 +36,14 @@ import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import { groupResolveBatches } from './resolveBatchGroups';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
+import {
+  SUBAGENT_GROUP_MIN_MEMBERS,
+  isSubagentAttention,
+  subagentGroupEntryId,
+  subagentGroupRowState,
+  subagentGroupSummary,
+  type SubagentFact,
+} from './subagentGroups';
 import {
   hasShownRunQuestion,
   oldestAgentOpenQuestion,
@@ -58,7 +67,8 @@ export type TimelineStreamEntry =
   | TimelineBranchEntry
   | TimelineEventEntry
   | TimelineQuestionEntry
-  | TimelineResolveBatchEntry;
+  | TimelineResolveBatchEntry
+  | TimelineSubagentGroupEntry;
 
 type StreamRail = {
   readonly id: string;
@@ -82,7 +92,8 @@ export type TimelineDayItem = StreamRail & {
 };
 
 export type TimelineExplodeSlot = {
-  readonly batchId: string;
+  readonly groupId: string;
+  readonly kind: 'batch' | 'subagents';
   readonly order: number;
   readonly total: number;
 };
@@ -122,7 +133,7 @@ type Params = {
   readonly showQuestions?: boolean;
   readonly resolveBatchByAgentId?: ReadonlyMap<string, ResolveBatchRef>;
   readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
-  readonly expandedBatchIds?: ReadonlySet<string>;
+  readonly expandedGroupIds?: ReadonlySet<string>;
 };
 
 type DraftRow = {
@@ -489,7 +500,7 @@ const NO_RESOLVE_FACTS: ReadonlyMap<string, ResolveActivityFacts> = new Map();
 
 const NO_RESOLVE_BATCHES: ReadonlyMap<string, ResolveBatchRef> = new Map();
 
-const NO_EXPANDED_BATCHES: ReadonlySet<string> = new Set();
+const NO_EXPANDED_GROUPS: ReadonlySet<string> = new Set();
 
 const agentRowStateOf = ({
   entry,
@@ -610,6 +621,7 @@ type EmitContext = {
   readonly showQuestions: boolean;
   readonly questionRowIds: ReadonlySet<string>;
   readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly expandedGroupIds: ReadonlySet<string> | null;
 };
 
 const hasUnreadDescendant = ({
@@ -656,6 +668,215 @@ const rowStateOfAgentRow = ({
   return isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
 };
 
+type EntryStateParams = {
+  readonly entry: TimelineAgentEntry;
+  readonly readyAgentId: string | null;
+  readonly failedAgentId?: string | null;
+  readonly isParentClosed: boolean;
+  readonly context: EmitContext;
+};
+
+const entryRowStateOf = ({
+  entry,
+  readyAgentId,
+  failedAgentId = null,
+  isParentClosed,
+  context,
+}: EntryStateParams): { readonly rowState: RowState; readonly isSkippedUnderClosed: boolean } => {
+  const resolved = agentRowStateOf({
+    entry,
+    readyAgentId,
+    failedAgentId,
+    questionRowIds: context.questionRowIds,
+  });
+  const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
+  const reviewFacts = context.resolveFactsByAgentId.get(entry.agent.id);
+  return {
+    rowState: rowStateOfAgentRow({ resolved, reviewFacts, isSkippedUnderClosed }),
+    isSkippedUnderClosed,
+  };
+};
+
+const earliestChildAt = ({
+  children,
+}: {
+  readonly children: ReadonlyArray<TimelineAgentEntry>;
+}): string | null => {
+  const times = children.flatMap((child) => (child.at === null ? [] : [child.at]));
+  return times.length === 0
+    ? null
+    : times.reduce((first, second) => (first <= second ? first : second));
+};
+
+type ExplodedRowsParams = {
+  readonly groupId: string;
+  readonly kind: TimelineExplodeSlot['kind'];
+  readonly laneId: string;
+  readonly children: ReadonlyArray<TimelineAgentEntry>;
+  readonly identity: RunIdentity | null;
+  readonly isMuted: boolean;
+  readonly familyId: string | null;
+  readonly showSubagents: boolean;
+  readonly isParentClosed: boolean;
+  readonly context: EmitContext;
+};
+
+const explodedRows = ({
+  groupId,
+  kind,
+  laneId,
+  children,
+  identity,
+  isMuted,
+  familyId,
+  showSubagents,
+  isParentClosed,
+  context,
+}: ExplodedRowsParams): ReadonlyArray<DraftRow> => {
+  const rows = children
+    .flatMap((child) =>
+      agentRows({
+        entry: child,
+        grade: 'step',
+        identity,
+        isMuted,
+        familyId,
+        groupId: laneId,
+        showSubagents,
+        readyAgentId: null,
+        isParentClosed,
+        context,
+      }),
+    )
+    .sort((first, second) => compareNewestFirst({ first, second }));
+  const direct = rows.filter((row) => row.groupId === laneId);
+  return rows.map((row) => {
+    const position = direct.indexOf(row);
+    if (position === -1) {
+      return row;
+    }
+    return {
+      ...row,
+      explode: { groupId, kind, order: direct.length - 1 - position, total: direct.length },
+    };
+  });
+};
+
+const hasSubagentGroup = ({
+  entry,
+  showSubagents,
+  context,
+}: {
+  readonly entry: TimelineAgentEntry;
+  readonly showSubagents: boolean;
+  readonly context: EmitContext;
+}): boolean =>
+  showSubagents &&
+  context.expandedGroupIds !== null &&
+  entry.children.length >= SUBAGENT_GROUP_MIN_MEMBERS;
+
+const subagentAttentionKeys = ({
+  child,
+}: {
+  readonly child: TimelineAgentEntry;
+}): ReadonlyArray<string> =>
+  child.openQuestions.length > 0 && !isQuestionDelegate({ agent: child.agent })
+    ? child.openQuestions.map((question) => question.id)
+    : [child.id];
+
+type SubagentGroupRowsParams = {
+  readonly entry: TimelineAgentEntry;
+  readonly identity: RunIdentity | null;
+  readonly isMuted: boolean;
+  readonly familyId: string | null;
+  readonly parentLaneId: string;
+  readonly isChildParentClosed: boolean;
+  readonly context: EmitContext;
+};
+
+const subagentGroupRows = ({
+  entry,
+  identity,
+  isMuted,
+  familyId,
+  parentLaneId,
+  isChildParentClosed,
+  context,
+}: SubagentGroupRowsParams): ReadonlyArray<DraftRow> => {
+  const facts: ReadonlyArray<SubagentFact> = entry.children.map((child) => ({
+    state: entryRowStateOf({
+      entry: child,
+      readyAgentId: null,
+      isParentClosed: isChildParentClosed,
+      context,
+    }).rowState,
+    isAsking: child.openQuestions.length > 0 && !isQuestionDelegate({ agent: child.agent }),
+  }));
+  const summary = subagentGroupSummary({ facts });
+  const id = subagentGroupEntryId({ parentId: entry.id });
+  const group: TimelineSubagentGroupEntry = {
+    kind: 'subagentGroup',
+    id,
+    at: earliestChildAt({ children: entry.children }) ?? entry.at,
+    parentId: entry.id,
+    children: entry.children,
+    summary,
+    attentionKeys: entry.children.flatMap((child, index) => {
+      const fact = facts[index];
+      return fact !== undefined && isSubagentAttention({ fact })
+        ? subagentAttentionKeys({ child })
+        : [];
+    }),
+    isExpanded: context.expandedGroupIds?.has(id) === true,
+  };
+  const header: DraftRow = {
+    kind: 'row',
+    id,
+    at: group.at,
+    grade: 'step',
+    entry: group,
+    identity,
+    familyId,
+    groupId: parentLaneId,
+    ordinal: null,
+    sortOrdinal: Math.min(...entry.children.map((child) => child.ordinal)) - 0.5,
+    rowState: subagentGroupRowState({ summary }),
+    hasUnread: entry.children.some(
+      (child) =>
+        context.unreadAgentIds.has(child.agent.id) ||
+        hasUnreadDescendant({ entry: child, unreadAgentIds: context.unreadAgentIds }),
+    ),
+    isPending: false,
+  };
+  if (!group.isExpanded) {
+    return [header];
+  }
+  const laneId = laneIdOf({ entryId: id });
+  context.groups.push({
+    id: laneId,
+    parentGroupId: parentLaneId,
+    identityIndex: identity?.index ?? null,
+    isMuted,
+    originRowId: id,
+    shape: 'merged',
+  });
+  return [
+    ...explodedRows({
+      groupId: id,
+      kind: 'subagents',
+      laneId,
+      children: entry.children,
+      identity,
+      isMuted,
+      familyId,
+      showSubagents: true,
+      isParentClosed: isChildParentClosed,
+      context,
+    }),
+    header,
+  ];
+};
+
 const agentRows = ({
   entry,
   grade,
@@ -669,16 +890,15 @@ const agentRows = ({
   isParentClosed,
   context,
 }: EmitAgentParams): ReadonlyArray<DraftRow> => {
-  const resolved = agentRowStateOf({
+  const { rowState, isSkippedUnderClosed } = entryRowStateOf({
     entry,
     readyAgentId,
     failedAgentId,
-    questionRowIds: context.questionRowIds,
+    isParentClosed,
+    context,
   });
-  const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
-  const reviewFacts = context.resolveFactsByAgentId.get(entry.agent.id);
-  const rowState = rowStateOfAgentRow({ resolved, reviewFacts, isSkippedUnderClosed });
   const childLaneId = laneIdOf({ entryId: entry.id });
+  const isChildParentClosed = rowState.phase === 'closed' || isSkippedUnderClosed;
   const nested: DraftRow[] = [];
   if (showSubagents && entry.children.length > 0) {
     context.groups.push({
@@ -689,21 +909,35 @@ const agentRows = ({
       originRowId: entry.id,
       shape: childLaneShape({ entry, parentState: rowState, groupId }),
     });
-    for (const child of entry.children) {
+    if (hasSubagentGroup({ entry, showSubagents, context })) {
       nested.push(
-        ...agentRows({
-          entry: child,
-          grade: 'step',
+        ...subagentGroupRows({
+          entry,
           identity,
           isMuted,
           familyId,
-          groupId: childLaneId,
-          showSubagents,
-          readyAgentId: null,
-          isParentClosed: rowState.phase === 'closed' || isSkippedUnderClosed,
+          parentLaneId: childLaneId,
+          isChildParentClosed,
           context,
         }),
       );
+    } else {
+      for (const child of entry.children) {
+        nested.push(
+          ...agentRows({
+            entry: child,
+            grade: 'step',
+            identity,
+            isMuted,
+            familyId,
+            groupId: childLaneId,
+            showSubagents,
+            readyAgentId: null,
+            isParentClosed: isChildParentClosed,
+            context,
+          }),
+        );
+      }
     }
   }
   const isPending = entry.agent.status === 'pending' && !isSkippedUnderClosed;
@@ -1129,38 +1363,19 @@ const batchRows = ({
     originRowId: batch.id,
     shape: 'merged',
   });
-  const children = batch.children
-    .flatMap((child) =>
-      agentRows({
-        entry: child,
-        grade: 'step',
-        identity,
-        isMuted: false,
-        familyId: batch.id,
-        groupId: laneId,
-        showSubagents: context.showAgentSubagents,
-        readyAgentId: null,
-        isParentClosed: false,
-        context,
-      }),
-    )
-    .sort((first, second) => compareNewestFirst({ first, second }));
-  const direct = children.filter((child) => child.groupId === laneId);
   return {
     header,
-    children: children.map((child) => {
-      const position = direct.indexOf(child);
-      if (position === -1) {
-        return child;
-      }
-      return {
-        ...child,
-        explode: {
-          batchId: batch.batchId,
-          order: direct.length - 1 - position,
-          total: direct.length,
-        },
-      };
+    children: explodedRows({
+      groupId: batch.id,
+      kind: 'batch',
+      laneId,
+      children: batch.children,
+      identity,
+      isMuted: false,
+      familyId: batch.id,
+      showSubagents: context.showAgentSubagents,
+      isParentClosed: false,
+      context,
     }),
   };
 };
@@ -1179,7 +1394,7 @@ export const buildTimelineStream = ({
   showQuestions = true,
   resolveBatchByAgentId = NO_RESOLVE_BATCHES,
   resolveFactsByAgentId = NO_RESOLVE_FACTS,
-  expandedBatchIds = NO_EXPANDED_BATCHES,
+  expandedGroupIds = NO_EXPANDED_GROUPS,
 }: Params): TimelineStream => {
   const chainedRunById = new Map<string, ChainedRun>();
   for (const entry of entries) {
@@ -1204,13 +1419,14 @@ export const buildTimelineStream = ({
     showQuestions,
     questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
     resolveFactsByAgentId,
+    expandedGroupIds,
   };
   const rows: DraftRow[] = [];
   const grouped = groupResolveBatches({
     entries,
     batchByAgentId: resolveBatchByAgentId,
     factsByAgentId: resolveFactsByAgentId,
-    expandedBatchIds,
+    expandedBatchIds: expandedGroupIds,
   });
   for (const batch of grouped.batches) {
     const { header, children } = batchRows({ batch, context, unreadAgentIds });
@@ -1337,6 +1553,7 @@ export const buildRunTreeStream = ({
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    expandedGroupIds: null,
   };
   const sorted = [...runRows({ entry, context })].sort((first, second) =>
     compareNewestFirst({ first, second }),
@@ -1377,6 +1594,7 @@ export const buildAgentTreeStream = ({
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
     resolveFactsByAgentId: NO_RESOLVE_FACTS,
+    expandedGroupIds: null,
   };
   const rootLaneId = `tree:${entry.id}`;
   context.groups.push({

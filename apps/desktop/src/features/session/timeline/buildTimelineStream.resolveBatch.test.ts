@@ -94,7 +94,7 @@ const streamOf = ({
       dayLabelFor: ({ at }) => dayLabel({ at, now: NOW }),
       resolveBatchByAgentId: setup.batchByAgentId,
       resolveFactsByAgentId: setup.factsByAgentId,
-      expandedBatchIds: new Set(expanded),
+      expandedGroupIds: new Set(expanded),
     }),
   };
 };

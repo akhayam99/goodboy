@@ -19,6 +19,7 @@ import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './ag
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
 import type { ResolveActivityFacts } from './resolveActivity';
 import type { ResolveBatchSummary } from './resolveBatchSummary';
+import type { SubagentGroupSummary } from './subagentGroups';
 
 type TimelineChain = {
   readonly identity: RunIdentity;
@@ -50,6 +51,17 @@ export type TimelineResolveBatchEntry = {
   readonly children: ReadonlyArray<TimelineAgentEntry>;
   readonly facts: ReadonlyArray<ResolveActivityFacts>;
   readonly summary: ResolveBatchSummary;
+  readonly isExpanded: boolean;
+};
+
+export type TimelineSubagentGroupEntry = {
+  readonly kind: 'subagentGroup';
+  readonly id: string;
+  readonly at: string | null;
+  readonly parentId: string;
+  readonly children: ReadonlyArray<TimelineAgentEntry>;
+  readonly summary: SubagentGroupSummary;
+  readonly attentionKeys: ReadonlyArray<string>;
   readonly isExpanded: boolean;
 };
 

@@ -58,6 +58,7 @@ export const answerOf = ({ ask }: AskParams): { readonly question: OpenQuestion 
     case 'runStep':
     case 'continue':
     case 'reviewComment':
+    case 'groupChild':
       return null;
     default: {
       const exhaustive: never = ask;
