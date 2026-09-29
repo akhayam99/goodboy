@@ -23,11 +23,16 @@ pub enum SecretError {
     Io(#[from] std::io::Error),
 }
 
-impl serde::Serialize for SecretError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.to_string())
+impl SecretError {
+    fn kind(&self) -> &'static str {
+        match self {
+            SecretError::Backend(_) => "backend",
+            SecretError::Io(_) => "io",
+        }
     }
 }
+
+crate::util::impl_error_serialize!(SecretError);
 
 fn entry(key: &str) -> Result<Entry, SecretError> {
     Ok(Entry::new(SERVICE, key)?)

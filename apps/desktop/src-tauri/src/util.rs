@@ -19,6 +19,31 @@ macro_rules! impl_error_serialize {
 
 pub(crate) use impl_error_serialize;
 
+#[derive(Debug, thiserror::Error)]
+pub(crate) enum MessageError {
+    #[error("{0}")]
+    Refused(String),
+    #[error("{0}")]
+    Failed(String),
+}
+
+impl MessageError {
+    fn kind(&self) -> &'static str {
+        match self {
+            MessageError::Refused(_) => "refused",
+            MessageError::Failed(_) => "failed",
+        }
+    }
+}
+
+impl From<String> for MessageError {
+    fn from(message: String) -> Self {
+        MessageError::Failed(message)
+    }
+}
+
+impl_error_serialize!(MessageError);
+
 pub(crate) fn uuid_v4() -> String {
     use sha2::{Digest, Sha256};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -185,4 +210,39 @@ pub(crate) fn ymd_to_epoch_ms(year: i64, month: u32, day: u32) -> i64 {
     }
     days += day as i64 - 1;
     days * 86400 * 1000
+}
+
+#[cfg(test)]
+mod error_shape_tests {
+    use super::MessageError;
+
+    #[test]
+    fn message_error_serializes_as_kind_and_message() {
+        let refused = MessageError::Refused("not a usable release version".to_string());
+        let failed: MessageError = "github responded 502".to_string().into();
+
+        assert_eq!(
+            serde_json::to_value(&refused).unwrap(),
+            serde_json::json!({ "kind": "refused", "message": "not a usable release version" })
+        );
+        assert_eq!(
+            serde_json::to_value(&failed).unwrap(),
+            serde_json::json!({ "kind": "failed", "message": "github responded 502" })
+        );
+    }
+
+    #[test]
+    fn former_string_errors_serialize_as_kind_and_message() {
+        let github = crate::github::GithubError::Timeout;
+        let secret = crate::secrets::SecretError::Io(std::io::Error::other("disk full"));
+
+        assert_eq!(
+            serde_json::to_value(&github).unwrap()["kind"],
+            serde_json::json!("timeout")
+        );
+        assert_eq!(
+            serde_json::to_value(&secret).unwrap(),
+            serde_json::json!({ "kind": "io", "message": "io error: disk full" })
+        );
+    }
 }

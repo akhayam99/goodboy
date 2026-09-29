@@ -1,3 +1,4 @@
+use crate::util::MessageError;
 use std::process::Command;
 use std::sync::OnceLock;
 use thiserror::Error;
@@ -67,11 +68,17 @@ pub enum EditorError {
     Io(#[from] std::io::Error),
 }
 
-impl serde::Serialize for EditorError {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.to_string())
+impl EditorError {
+    fn kind(&self) -> &'static str {
+        match self {
+            EditorError::NotFound(_) => "not_found",
+            EditorError::Spawn { .. } => "spawn",
+            EditorError::Io(_) => "io",
+        }
     }
 }
+
+crate::util::impl_error_serialize!(EditorError);
 
 #[tauri::command]
 pub async fn open_in_editor(path: String, editor: Option<String>) -> Result<(), EditorError> {
@@ -164,15 +171,17 @@ fn is_openable_url(url: &str) -> bool {
 }
 
 #[tauri::command]
-pub async fn open_url(url: String) -> Result<(), String> {
+pub async fn open_url(url: String) -> Result<(), MessageError> {
     tauri::async_runtime::spawn_blocking(move || open_url_blocking(url))
         .await
-        .map_err(|e| e.to_string())?
+        .map_err(|e| MessageError::Failed(e.to_string()))?
 }
 
-fn open_url_blocking(url: String) -> Result<(), String> {
+fn open_url_blocking(url: String) -> Result<(), MessageError> {
     if !is_openable_url(&url) {
-        return Err("refused to open a url that is not a plain http(s) address".to_string());
+        return Err(MessageError::Refused(
+            "refused to open a url that is not a plain http(s) address".to_string(),
+        ));
     }
 
     #[cfg(target_os = "macos")]
@@ -185,7 +194,9 @@ fn open_url_blocking(url: String) -> Result<(), String> {
         .arg(&url)
         .spawn();
 
-    result.map(|_| ()).map_err(|e| e.to_string())
+    result
+        .map(|_| ())
+        .map_err(|e| MessageError::Failed(e.to_string()))
 }
 
 #[cfg(test)]
