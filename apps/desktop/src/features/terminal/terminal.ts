@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
 export type TerminalOutputPayload = {
@@ -17,7 +17,7 @@ export type LiveTerminal = {
 };
 
 export const invokeTerminalListLive = (): Promise<ReadonlyArray<LiveTerminal>> => {
-  return invoke<ReadonlyArray<LiveTerminal>>('terminal_list_live');
+  return invokeCommand<ReadonlyArray<LiveTerminal>>('terminal_list_live');
 };
 
 export const invokeTerminalOpen = (
@@ -26,11 +26,11 @@ export const invokeTerminalOpen = (
   cols: number,
   rows: number,
 ): Promise<void> => {
-  return invoke<void>('terminal_open', { sessionId: terminalId, cwd, cols, rows });
+  return invokeCommand<void>('terminal_open', { sessionId: terminalId, cwd, cols, rows });
 };
 
 export const invokeTerminalWrite = (terminalId: string, data: string): Promise<void> => {
-  return invoke<void>('terminal_write', { sessionId: terminalId, data });
+  return invokeCommand<void>('terminal_write', { sessionId: terminalId, data });
 };
 
 export const invokeTerminalResize = (
@@ -38,11 +38,11 @@ export const invokeTerminalResize = (
   cols: number,
   rows: number,
 ): Promise<void> => {
-  return invoke<void>('terminal_resize', { sessionId: terminalId, cols, rows });
+  return invokeCommand<void>('terminal_resize', { sessionId: terminalId, cols, rows });
 };
 
 export const invokeTerminalClose = (terminalId: string): Promise<void> => {
-  return invoke<void>('terminal_close', { sessionId: terminalId });
+  return invokeCommand<void>('terminal_close', { sessionId: terminalId });
 };
 
 export const listenTerminalOutput = (

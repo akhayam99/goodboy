@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import {
   normalizeAgentRole,
   PlannerClient,
@@ -302,12 +302,12 @@ function rowToAgent(row: RawAgentRow): Agent {
 }
 
 export const invokeWorkflowList = async (workspaceId: WorkspaceId): Promise<Workflow[]> => {
-  const rows = await invoke<RawWorkflowRow[]>('workflow_list', { workspaceId });
+  const rows = await invokeCommand<RawWorkflowRow[]>('workflow_list', { workspaceId });
   return rows.map(rowToWorkflow);
 };
 
 export const invokeWorkflowsForSession = async (sessionId: SessionId): Promise<Workflow[]> => {
-  const rows = await invoke<RawWorkflowRow[]>('workflows_for_session', { sessionId });
+  const rows = await invokeCommand<RawWorkflowRow[]>('workflows_for_session', { sessionId });
   return rows.map(rowToWorkflow);
 };
 
@@ -343,7 +343,7 @@ export type WorkflowUpsertArgs = {
 };
 
 export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Workflow> => {
-  const row = await invoke<RawWorkflowRow>('workflow_upsert', {
+  const row = await invokeCommand<RawWorkflowRow>('workflow_upsert', {
     input: {
       id: args.id ?? null,
       workspaceId: args.workspaceId,
@@ -389,11 +389,11 @@ export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Wo
 };
 
 export const invokeWorkflowDelete = async (id: WorkflowId): Promise<void> => {
-  return invoke<void>('workflow_delete', { id });
+  return invokeCommand<void>('workflow_delete', { id });
 };
 
 export const invokeStepDefList = async (workspaceId: WorkspaceId): Promise<StepDef[]> => {
-  const rows = await invoke<RawStepDefRow[]>('step_def_list', { workspaceId });
+  const rows = await invokeCommand<RawStepDefRow[]>('step_def_list', { workspaceId });
   return rows.map(rowToStepDef);
 };
 
@@ -412,7 +412,7 @@ export type StepDefUpsertArgs = {
 };
 
 export const invokeStepDefUpsert = async (args: StepDefUpsertArgs): Promise<StepDef> => {
-  const row = await invoke<RawStepDefRow>('step_def_upsert', {
+  const row = await invokeCommand<RawStepDefRow>('step_def_upsert', {
     input: {
       id: args.id ?? null,
       workspaceId: args.workspaceId,
@@ -431,7 +431,7 @@ export const invokeStepDefUpsert = async (args: StepDefUpsertArgs): Promise<Step
 };
 
 export const invokeStepDefDelete = async (id: StepDefId): Promise<void> => {
-  return invoke<void>('step_def_delete', { id });
+  return invokeCommand<void>('step_def_delete', { id });
 };
 
 const agentListRequestTails = new Map<SessionId, Promise<void>>();
@@ -439,7 +439,7 @@ const agentListRequestTails = new Map<SessionId, Promise<void>>();
 export const invokeAgentList = async (sessionId: SessionId): Promise<Agent[]> => {
   const previous = agentListRequestTails.get(sessionId) ?? Promise.resolve();
   const request = previous.then(async () => {
-    const rows = await invoke<RawAgentRow[]>('agent_list_for_session', { sessionId });
+    const rows = await invokeCommand<RawAgentRow[]>('agent_list_for_session', { sessionId });
     return rows.map(rowToAgent);
   });
   const tail = request.then(
@@ -525,7 +525,7 @@ const toAgentInsertPayload = ({ run }: { readonly run: AgentInsertArgs }) => ({
 });
 
 export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {
-  const row = await invoke<RawAgentRow>('agent_insert', {
+  const row = await invokeCommand<RawAgentRow>('agent_insert', {
     input: toAgentInsertPayload({ run }),
   });
   return rowToAgent(row);
@@ -550,7 +550,7 @@ export const invokeAgentInsertBatch = async ({
   parentAgentId,
   children,
 }: AgentInsertBatchArgs): Promise<AgentInsertBatchResult> => {
-  const outcome = await invoke<RawAgentBatchOutcome>('agent_insert_batch', {
+  const outcome = await invokeCommand<RawAgentBatchOutcome>('agent_insert_batch', {
     input: {
       parentAgentId,
       children: children.map((run) => toAgentInsertPayload({ run })),
@@ -580,7 +580,7 @@ export const invokeWorkflowNodeRoutingUpdate = async ({
   modelOverride,
   effort,
 }: WorkflowNodeRoutingUpdateArgs): Promise<void> => {
-  await invoke<void>('workflow_node_routing_update', {
+  await invokeCommand<void>('workflow_node_routing_update', {
     input: {
       nodeKind,
       id,
@@ -610,7 +610,7 @@ export const invokeAgentSetVerbosity = async (
   id: AgentId,
   verbosity: VerbosityLevel | null,
 ): Promise<void> => {
-  return invoke<void>('agent_set_verbosity', { id, verbosity });
+  return invokeCommand<void>('agent_set_verbosity', { id, verbosity });
 };
 
 export type AgentUpdateFields = {
@@ -627,7 +627,7 @@ export const invokeAgentUpdateStatus = async (
   id: AgentId,
   fields: AgentUpdateFields,
 ): Promise<Agent> => {
-  const row = await invoke<RawAgentRow>('agent_update_status', {
+  const row = await invokeCommand<RawAgentRow>('agent_update_status', {
     input: {
       id,
       status: fields.status,
@@ -653,7 +653,7 @@ export const invokeAgentSetProviderSessionId = async ({
   providerSessionId,
   providerSessionProviderId,
 }: Params): Promise<void> => {
-  await invoke<void>('agent_set_provider_session_id', {
+  await invokeCommand<void>('agent_set_provider_session_id', {
     id,
     providerSessionId,
     providerSessionProviderId,
@@ -661,7 +661,7 @@ export const invokeAgentSetProviderSessionId = async ({
 };
 
 export const invokeAgentMarkViewed = async (id: AgentId, at: IsoDateTime): Promise<void> => {
-  await invoke<void>('agent_mark_viewed', { id, at });
+  await invokeCommand<void>('agent_mark_viewed', { id, at });
 };
 
 export const invokeAgentSetDone = async (
@@ -669,11 +669,11 @@ export const invokeAgentSetDone = async (
   done: boolean,
   at: IsoDateTime | null,
 ): Promise<void> => {
-  await invoke<void>('agent_set_done', { id, done, at });
+  await invokeCommand<void>('agent_set_done', { id, done, at });
 };
 
 export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {
-  const ids = await invoke<string[]>('workspaces_with_unread');
+  const ids = await invokeCommand<string[]>('workspaces_with_unread');
   return ids as ReadonlyArray<string> as ReadonlyArray<WorkspaceId>;
 };
 
@@ -683,7 +683,7 @@ type PolishStepParams = {
 };
 
 export const polishWorkflowStep = ({ deps, input }: PolishStepParams): Promise<string | null> =>
-  polishStepInstruction({ ...deps, invokeFn: invoke }, input);
+  polishStepInstruction({ ...deps, invokeFn: invokeCommand }, input);
 
 type PolishGoalParams = {
   readonly deps: Omit<GoalPolishDeps, 'invokeFn'>;
@@ -691,11 +691,11 @@ type PolishGoalParams = {
 };
 
 export const polishWorkflowGoalText = ({ deps, goal }: PolishGoalParams): Promise<string | null> =>
-  polishWorkflowGoal({ ...deps, invokeFn: invoke }, goal);
+  polishWorkflowGoal({ ...deps, invokeFn: invokeCommand }, goal);
 
 type PlannerParams = {
   readonly deps: Omit<PlannerClientDeps, 'invokeFn'>;
 };
 
 export const createWorkflowPlanner = ({ deps }: PlannerParams): PlannerClient =>
-  new PlannerClient({ ...deps, invokeFn: invoke });
+  new PlannerClient({ ...deps, invokeFn: invokeCommand });

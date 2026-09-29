@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import { emptyOverrides } from '../../../../../store/storyHarness';
+import { CommandError } from '../../../../../shared/lib/invokeCommand';
 import { mountFailure } from './mountFailure';
 import type { MountPreflight } from './useMountPreflight/resolveMountPreflight';
 
@@ -38,6 +39,17 @@ describe('mountFailure', () => {
     expect(failure.detail).toContain('branch: ak/ship-it');
     expect(failure.detail).toContain('base: main');
     expect(failure.detail).toContain('path: /repos/goodboy/.goodboy/worktrees/ship-it-mount-1');
+  });
+
+  it('leaves the kind out when the wrapper could not tell what it was', () => {
+    const failure = mountFailure({
+      error: new CommandError({ kind: 'unknown', message: 'spawn failed' }),
+      project,
+      preflight,
+    });
+
+    expect(failure.cause).toBe('spawn failed');
+    expect(failure.detail).not.toContain('kind:');
   });
 
   it('records the tauri error kind when the backend sends one', () => {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, FormActions, GhostActionButton } from '@goodboy/ui';
+import { Button, FormActions, formatError, GhostActionButton } from '@goodboy/ui';
 import { recommendedModelForRole, resolveRoleRouting } from '@goodboy/core';
 import type { ProviderId, SessionId, WorkflowRunId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -89,7 +89,7 @@ export const WorkflowAddStep = ({ sessionId, workspaceId, workflowRunId, stepCou
       verbosity: draft.verbosity,
     }).catch((reason: unknown) => ({
       kind: 'refused' as const,
-      reason: reason instanceof Error ? reason.message : String(reason),
+      reason: formatError(reason),
     }));
     setIsBusy(false);
     if (outcome.kind === 'refused') {

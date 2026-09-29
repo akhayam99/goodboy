@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { formatError } from '@goodboy/ui';
 import type { MountId, ProjectId, SessionId } from '@goodboy/types';
@@ -122,7 +122,7 @@ export const listenProjectMaterializeRequests = async (): Promise<UnlistenFn> =>
     const request = event.payload;
     void executeMaterializeRequest(request)
       .then((result) =>
-        invoke('project_materialize_result', {
+        invokeCommand('project_materialize_result', {
           id: request.id,
           ok: result.ok,
           error: result.error ?? null,

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
 type JiraAvatarUrls = {
@@ -77,7 +77,7 @@ export const jiraValidateConnection = async ({
   email,
   apiToken,
 }: ValidateParams): Promise<JiraUser> =>
-  invoke<JiraUser>('jira_validate_connection', { credentialId, siteUrl, email, apiToken });
+  invokeCommand<JiraUser>('jira_validate_connection', { credentialId, siteUrl, email, apiToken });
 
 export type JiraProject = {
   readonly id: string;
@@ -91,7 +91,7 @@ export const jiraListProjects = async ({
   email,
   apiToken,
 }: ValidateParams): Promise<ReadonlyArray<JiraProject>> =>
-  invoke<ReadonlyArray<JiraProject>>('jira_list_projects', {
+  invokeCommand<ReadonlyArray<JiraProject>>('jira_list_projects', {
     credentialId,
     siteUrl,
     email,
@@ -104,7 +104,7 @@ type ConnectParams = {
 };
 
 export const jiraConnect = async ({ credentialId, apiToken }: ConnectParams): Promise<void> => {
-  await invoke('jira_connect', { credentialId, apiToken });
+  await invokeCommand('jira_connect', { credentialId, apiToken });
 };
 
 type ListIssuesParams = JiraSite & {
@@ -120,7 +120,7 @@ export const jiraListIssues = async ({
   projectKey,
   assignedOnly,
 }: ListIssuesParams): Promise<ReadonlyArray<JiraIssue>> =>
-  invoke<ReadonlyArray<JiraIssue>>('jira_list_issues', {
+  invokeCommand<ReadonlyArray<JiraIssue>>('jira_list_issues', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -136,7 +136,7 @@ export const jiraGetIssue = async ({
   email,
   issueKey,
 }: JiraIssueTarget): Promise<JiraIssue> =>
-  invoke<JiraIssue>('jira_get_issue', {
+  invokeCommand<JiraIssue>('jira_get_issue', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -155,7 +155,7 @@ export const jiraGetIssues = async ({
   email,
   issueKeys,
 }: GetIssuesParams): Promise<ReadonlyArray<JiraIssue>> =>
-  invoke<ReadonlyArray<JiraIssue>>('jira_get_issues', {
+  invokeCommand<ReadonlyArray<JiraIssue>>('jira_get_issues', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -170,7 +170,7 @@ export const jiraListComments = async ({
   email,
   issueKey,
 }: JiraIssueTarget): Promise<ReadonlyArray<JiraComment>> =>
-  invoke<ReadonlyArray<JiraComment>>('jira_list_comments', {
+  invokeCommand<ReadonlyArray<JiraComment>>('jira_list_comments', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -190,7 +190,7 @@ export const jiraCreateComment = async ({
   issueKey,
   body,
 }: CreateCommentParams): Promise<JiraComment> =>
-  invoke<JiraComment>('jira_create_comment', {
+  invokeCommand<JiraComment>('jira_create_comment', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -211,7 +211,7 @@ export const jiraUpdateIssueDescription = async ({
   issueKey,
   description,
 }: UpdateDescriptionParams): Promise<void> => {
-  await invoke('jira_update_issue', {
+  await invokeCommand('jira_update_issue', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -233,7 +233,7 @@ export const jiraSetAssignee = async ({
   issueKey,
   accountId,
 }: SetAssigneeParams): Promise<void> => {
-  await invoke('jira_set_assignee', {
+  await invokeCommand('jira_set_assignee', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -255,7 +255,7 @@ export const jiraListAssignableUsers = async ({
   issueKey,
   query,
 }: AssignableParams): Promise<ReadonlyArray<JiraUser>> =>
-  invoke<ReadonlyArray<JiraUser>>('jira_list_assignable_users', {
+  invokeCommand<ReadonlyArray<JiraUser>>('jira_list_assignable_users', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -271,7 +271,7 @@ export const jiraListTransitions = async ({
   email,
   issueKey,
 }: JiraIssueTarget): Promise<ReadonlyArray<JiraTransition>> =>
-  invoke<ReadonlyArray<JiraTransition>>('jira_list_transitions', {
+  invokeCommand<ReadonlyArray<JiraTransition>>('jira_list_transitions', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,
@@ -291,7 +291,7 @@ export const jiraTransitionIssue = async ({
   issueKey,
   transitionId,
 }: TransitionParams): Promise<void> => {
-  await invoke('jira_transition_issue', {
+  await invokeCommand('jira_transition_issue', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     siteUrl,

@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export const openCommandInExternalTerminal = async (command: string): Promise<void> => {
-  await invoke('open_command_in_external_terminal', { command });
+  await invokeCommand('open_command_in_external_terminal', { command });
 };

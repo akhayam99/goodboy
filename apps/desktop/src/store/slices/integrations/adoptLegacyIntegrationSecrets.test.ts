@@ -23,6 +23,9 @@ describe('adoptLegacyIntegrationSecrets', () => {
     const failure = new Error('keychain is locked');
     invokeMock.mockRejectedValueOnce(failure);
 
-    await expect(adoptLegacyIntegrationSecrets()).resolves.toEqual({ ok: false, error: failure });
+    await expect(adoptLegacyIntegrationSecrets()).resolves.toEqual({
+      ok: false,
+      error: expect.objectContaining({ message: 'keychain is locked' }),
+    });
   });
 });

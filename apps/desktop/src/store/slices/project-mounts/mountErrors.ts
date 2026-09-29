@@ -25,7 +25,7 @@ export const worktreeErrorKind = ({ error }: { readonly error: unknown }): strin
     return null;
   }
   const kind = (error as { readonly kind?: unknown }).kind;
-  return typeof kind === 'string' ? kind : null;
+  return typeof kind === 'string' && kind !== 'unknown' ? kind : null;
 };
 
 type BranchInUseParams = {

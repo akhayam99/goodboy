@@ -1,6 +1,6 @@
 import { autoLimitContext } from '../../providerLimits/autoLimitContext';
 import { resolveLimitedTaskModel } from '../../providerLimits/resolveLimitedTaskModel';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../../shared/lib/invokeCommand';
 import { getDefaultBinary, runAuxOneShot } from '@goodboy/core';
 import { renameSession as renameSessionInDb } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId, TaskModelPreference } from '@goodboy/types';
@@ -83,7 +83,7 @@ const generateAgentTitle = async ({
         userMessage: prompt,
         systemPrompt: TITLE_SYSTEM_PROMPT,
         ...(workingDir != null && { workingDir }),
-        invokeFn: invoke,
+        invokeFn: invokeCommand,
       }),
       timeout,
     ]);

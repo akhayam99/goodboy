@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export type AppDataUsage = {
   readonly folder: string;
@@ -8,4 +8,4 @@ export type AppDataUsage = {
 };
 
 export const appDataUsage = async (): Promise<AppDataUsage> =>
-  invoke<AppDataUsage>('app_data_usage');
+  invokeCommand<AppDataUsage>('app_data_usage');

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { CommandError, invokeCommand } from '../../shared/lib/invokeCommand';
 import type { BranchMergeState } from './worktree';
 
 export type BranchCleanupError =
@@ -29,7 +29,7 @@ type BranchDeleteArgs = {
 };
 
 export const deleteBranchChecked = async (args: BranchDeleteArgs): Promise<BranchDeleteOutcome> =>
-  invoke<BranchDeleteOutcome>('branch_delete_checked', { args });
+  invokeCommand<BranchDeleteOutcome>('branch_delete_checked', { args });
 
 type BranchRestoreArgs = {
   readonly repoRoot: string;
@@ -41,7 +41,7 @@ type BranchRestoreArgs = {
 
 export const restoreDeletedBranch = async (
   args: BranchRestoreArgs,
-): Promise<BranchRestoreOutcome> => invoke<BranchRestoreOutcome>('branch_restore', { args });
+): Promise<BranchRestoreOutcome> => invokeCommand<BranchRestoreOutcome>('branch_restore', { args });
 
 type BranchForgetArgs = {
   readonly repoRoot: string;
@@ -50,7 +50,7 @@ type BranchForgetArgs = {
 };
 
 export const forgetDeletedBranchRef = async (args: BranchForgetArgs): Promise<void> =>
-  invoke<void>('branch_forget_deleted', { args });
+  invokeCommand<void>('branch_forget_deleted', { args });
 
 type BranchHeadShaArgs = {
   readonly repoRoot: string;
@@ -61,7 +61,7 @@ export const branchHeadSha = async ({
   repoRoot,
   branch,
 }: BranchHeadShaArgs): Promise<string | null> =>
-  invoke<string | null>('branch_head_sha', { repoRoot, branch });
+  invokeCommand<string | null>('branch_head_sha', { repoRoot, branch });
 
 const BRANCH_CLEANUP_ERROR_KINDS: ReadonlySet<string> = new Set([
   'repo-not-found',
@@ -72,13 +72,17 @@ const BRANCH_CLEANUP_ERROR_KINDS: ReadonlySet<string> = new Set([
   'git',
 ]);
 
+const wireShapeOf = (error: unknown): unknown =>
+  error instanceof CommandError && error.cause !== undefined ? error.cause : error;
+
 export const asBranchCleanupError = (error: unknown): BranchCleanupError | null => {
-  if (typeof error !== 'object' || error === null || !('kind' in error)) {
+  const wire = wireShapeOf(error);
+  if (typeof wire !== 'object' || wire === null || !('kind' in wire)) {
     return null;
   }
-  const kind = (error as { readonly kind: unknown }).kind;
+  const kind = (wire as { readonly kind: unknown }).kind;
   return typeof kind === 'string' && BRANCH_CLEANUP_ERROR_KINDS.has(kind)
-    ? (error as BranchCleanupError)
+    ? (wire as BranchCleanupError)
     : null;
 };
 
@@ -115,4 +119,4 @@ export const listProjectBranches = async ({
   base,
   mergedHeads = {},
 }: ProjectBranchesArgs): Promise<ProjectBranchScan> =>
-  invoke<ProjectBranchScan>('project_branches', { repoRoot, base, mergedHeads });
+  invokeCommand<ProjectBranchScan>('project_branches', { repoRoot, base, mergedHeads });

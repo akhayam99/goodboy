@@ -5,6 +5,7 @@ import {
   Checkbox,
   FieldRow,
   FormActions,
+  formatError,
   FormPage,
   Input,
   SectionHeader,
@@ -176,7 +177,7 @@ export const CreatePrPanel = ({
       });
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(null);
     }
@@ -206,7 +207,7 @@ export const CreatePrPanel = ({
         },
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatError(err));
     } finally {
       setBusy(null);
     }

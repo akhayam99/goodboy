@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export type FetchChangelogImageParams = {
   readonly version: string;
@@ -9,4 +9,4 @@ export const fetchChangelogImage = ({
   version,
   file,
 }: FetchChangelogImageParams): Promise<string> =>
-  invoke<string>('changelog_image', { version, file });
+  invokeCommand<string>('changelog_image', { version, file });

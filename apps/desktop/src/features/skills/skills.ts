@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type { IsoDateTime, Skill, SkillFrontmatter, SkillId, WorkspaceId } from '@goodboy/types';
 import { serializeSkillMarkdown, SkillExecutor } from '@goodboy/core';
 import type { SkillScriptRunner } from '@goodboy/core';
@@ -55,7 +55,7 @@ function rowToSkill(row: RawSkillRow): Skill {
 }
 
 export const invokeSkillList = async (workspaceId: WorkspaceId): Promise<Skill[]> => {
-  const rows = await invoke<RawSkillRow[]>('skill_list', { workspaceId });
+  const rows = await invokeCommand<RawSkillRow[]>('skill_list', { workspaceId });
   return rows.map(rowToSkill);
 };
 
@@ -70,7 +70,7 @@ export type SkillUpsertArgs = {
 
 export const invokeSkillUpsert = async (args: SkillUpsertArgs): Promise<Skill> => {
   const markdown = serializeSkillMarkdown(args.frontmatter, args.body);
-  const row = await invoke<RawSkillRow>('skill_upsert', {
+  const row = await invokeCommand<RawSkillRow>('skill_upsert', {
     input: {
       workspaceId: args.workspaceId,
       name: args.name,
@@ -85,11 +85,11 @@ export const invokeSkillUpsert = async (args: SkillUpsertArgs): Promise<Skill> =
 };
 
 export const invokeSkillDelete = async (skillId: SkillId): Promise<void> => {
-  return invoke<void>('skill_delete', { skillId });
+  return invokeCommand<void>('skill_delete', { skillId });
 };
 
 export const invokeSkillRescan = async (workspaceId: WorkspaceId): Promise<Skill[]> => {
-  const rows = await invoke<RawSkillRow[]>('skill_rescan', { workspaceId });
+  const rows = await invokeCommand<RawSkillRow[]>('skill_rescan', { workspaceId });
   return rows.map(rowToSkill);
 };
 
@@ -105,7 +105,7 @@ type SkillInvokeResult = {
 };
 
 async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResult> {
-  const rawRow = await invoke<RawSkillRow | null>('skill_get', { skillId: args.skillId });
+  const rawRow = await invokeCommand<RawSkillRow | null>('skill_get', { skillId: args.skillId });
   if (!rawRow) {
     throw new Error(`skill not found: ${args.skillId}`);
   }
@@ -131,7 +131,7 @@ async function invokeSkillInvoke(args: SkillInvokeArgs): Promise<SkillInvokeResu
       runArgs: ReadonlyArray<string>,
       cwd: string,
     ): Promise<string> {
-      const result = await invoke<{ stdout: string }>('skill_run_script', {
+      const result = await invokeCommand<{ stdout: string }>('skill_run_script', {
         input: {
           scriptPath,
           args: [...runArgs],

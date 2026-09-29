@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export type LastCrashSource = 'window' | 'promise' | 'rust';
 
@@ -30,7 +30,7 @@ export const LAST_CRASH_TITLE: Readonly<Record<LastCrashKind, string>> = {
 
 export const writeLastCrash = async (crash: LastCrashInput): Promise<void> => {
   try {
-    await invoke('last_crash_write', { crash });
+    await invokeCommand('last_crash_write', { crash });
   } catch {
     return;
   }
@@ -38,7 +38,7 @@ export const writeLastCrash = async (crash: LastCrashInput): Promise<void> => {
 
 export const claimLastCrash = async (): Promise<LastCrash | null> => {
   try {
-    return (await invoke<LastCrash | null>('last_crash_claim')) ?? null;
+    return (await invokeCommand<LastCrash | null>('last_crash_claim')) ?? null;
   } catch {
     return null;
   }
@@ -46,7 +46,7 @@ export const claimLastCrash = async (): Promise<LastCrash | null> => {
 
 export const deleteLastCrash = async (): Promise<void> => {
   try {
-    await invoke('last_crash_delete');
+    await invokeCommand('last_crash_delete');
   } catch {
     return;
   }

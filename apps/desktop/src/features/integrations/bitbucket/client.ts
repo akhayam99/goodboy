@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
 type BitbucketUser = {
@@ -95,7 +95,7 @@ export const bitbucketValidateConnection = async ({
   email,
   apiToken,
 }: ValidateParams): Promise<BitbucketConnection> =>
-  invoke<BitbucketConnection>('bitbucket_validate_connection', {
+  invokeCommand<BitbucketConnection>('bitbucket_validate_connection', {
     credentialId,
     workspaceSlug,
     email,
@@ -111,7 +111,7 @@ export const bitbucketConnect = async ({
   credentialId,
   apiToken,
 }: ConnectParams): Promise<void> => {
-  await invoke('bitbucket_connect', { credentialId, apiToken });
+  await invokeCommand('bitbucket_connect', { credentialId, apiToken });
 };
 
 export type BitbucketRepo = {
@@ -138,7 +138,7 @@ export const bitbucketListPullRequests = async ({
   email,
   state,
 }: ListPullRequestsParams): Promise<ReadonlyArray<BitbucketPullRequest>> =>
-  invoke<ReadonlyArray<BitbucketPullRequest>>('bitbucket_list_pull_requests', {
+  invokeCommand<ReadonlyArray<BitbucketPullRequest>>('bitbucket_list_pull_requests', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -155,7 +155,7 @@ export const bitbucketGetPullRequest = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<BitbucketPullRequest> =>
-  invoke<BitbucketPullRequest>('bitbucket_get_pull_request', {
+  invokeCommand<BitbucketPullRequest>('bitbucket_get_pull_request', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -172,7 +172,7 @@ export const bitbucketPullRequestDiff = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<string> =>
-  invoke<string>('bitbucket_pull_request_diff', {
+  invokeCommand<string>('bitbucket_pull_request_diff', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -189,7 +189,7 @@ export const bitbucketListPullRequestComments = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<ReadonlyArray<BitbucketComment>> =>
-  invoke<ReadonlyArray<BitbucketComment>>('bitbucket_list_pull_request_comments', {
+  invokeCommand<ReadonlyArray<BitbucketComment>>('bitbucket_list_pull_request_comments', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -206,7 +206,7 @@ export const bitbucketListPullRequestStatuses = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<ReadonlyArray<BitbucketStatus>> =>
-  invoke<ReadonlyArray<BitbucketStatus>>('bitbucket_list_pull_request_statuses', {
+  invokeCommand<ReadonlyArray<BitbucketStatus>>('bitbucket_list_pull_request_statuses', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -227,7 +227,7 @@ export const bitbucketPullRequestForBranch = async ({
   email,
   sourceBranch,
 }: BranchParams): Promise<BitbucketPullRequest | null> =>
-  invoke<BitbucketPullRequest | null>('bitbucket_pull_request_for_branch', {
+  invokeCommand<BitbucketPullRequest | null>('bitbucket_pull_request_for_branch', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -244,7 +244,7 @@ export const bitbucketApprovePullRequest = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<BitbucketParticipant> =>
-  invoke<BitbucketParticipant>('bitbucket_approve_pull_request', {
+  invokeCommand<BitbucketParticipant>('bitbucket_approve_pull_request', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -261,7 +261,7 @@ export const bitbucketUnapprovePullRequest = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<void> => {
-  await invoke('bitbucket_unapprove_pull_request', {
+  await invokeCommand('bitbucket_unapprove_pull_request', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -279,7 +279,7 @@ export const bitbucketRequestChanges = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<BitbucketParticipant> =>
-  invoke<BitbucketParticipant>('bitbucket_request_changes', {
+  invokeCommand<BitbucketParticipant>('bitbucket_request_changes', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -296,7 +296,7 @@ export const bitbucketUnrequestChanges = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<void> => {
-  await invoke('bitbucket_unrequest_changes', {
+  await invokeCommand('bitbucket_unrequest_changes', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -321,7 +321,7 @@ export const bitbucketMergePullRequest = async ({
   closeSourceBranch,
   message,
 }: MergeParams): Promise<BitbucketPullRequest> =>
-  invoke<BitbucketPullRequest>('bitbucket_merge_pull_request', {
+  invokeCommand<BitbucketPullRequest>('bitbucket_merge_pull_request', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -340,7 +340,7 @@ export const bitbucketDeclinePullRequest = async ({
   email,
   pullRequestId,
 }: BitbucketPullRequestTarget): Promise<BitbucketPullRequest> =>
-  invoke<BitbucketPullRequest>('bitbucket_decline_pull_request', {
+  invokeCommand<BitbucketPullRequest>('bitbucket_decline_pull_request', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -362,7 +362,7 @@ export const bitbucketCreatePullRequestComment = async ({
   pullRequestId,
   body,
 }: CreateCommentParams): Promise<BitbucketComment> =>
-  invoke<BitbucketComment>('bitbucket_create_pull_request_comment', {
+  invokeCommand<BitbucketComment>('bitbucket_create_pull_request_comment', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,
@@ -386,7 +386,7 @@ export const bitbucketReplyToPullRequestComment = async ({
   parentCommentId,
   body,
 }: ReplyParams): Promise<BitbucketComment> =>
-  invoke<BitbucketComment>('bitbucket_reply_to_pull_request_comment', {
+  invokeCommand<BitbucketComment>('bitbucket_reply_to_pull_request_comment', {
     workspaceId,
     ...(projectId != null ? { projectId } : {}),
     workspaceSlug,

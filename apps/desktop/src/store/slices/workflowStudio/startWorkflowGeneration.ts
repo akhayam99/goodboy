@@ -8,7 +8,7 @@ import {
   type WorkflowRoutingAvailabilitySnapshot,
   DEFAULT_SESSION_PROVIDER_PREFERENCE,
 } from '@goodboy/core';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type {
   WorkflowStepUpsertArgs,
   WorkflowUpsertArgs,
@@ -123,7 +123,7 @@ export const startWorkflowGeneration = (set: SetFn, get: GetFn) => {
       const formatted = await formatWorkflowFromNL({
         deps: {
           ...taskModel,
-          invokeFn: invoke,
+          invokeFn: invokeCommand,
           ...(workingDir !== undefined && { workingDir }),
         },
         input: {

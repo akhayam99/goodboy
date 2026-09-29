@@ -292,6 +292,16 @@
   "export-default": {},
   "any": {},
   "invoke-in-component-or-hook": {},
+  "raw-tauri-invoke": {
+    "apps/desktop/src/features/resolve/learnWorkspaceReplyStyle.ts": 1,
+    "apps/desktop/src/shared/lib/db.ts": 1
+  },
+  "stringified-error": {
+    "packages/core/src/github/gh.ts": 1,
+    "packages/core/src/planner/parser.ts": 1,
+    "packages/core/src/summarizer/client.ts": 1,
+    "packages/core/src/summarizer/issue-brief.ts": 1
+  },
   "raw-type-size": {
     "apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/CommandCenter/index.tsx": 1,

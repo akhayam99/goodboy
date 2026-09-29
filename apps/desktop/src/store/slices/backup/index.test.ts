@@ -218,3 +218,51 @@ describe('backup import', () => {
     expect(h.listWorkspaces).toHaveBeenCalled();
   });
 });
+
+describe('backup error text', () => {
+  const rejection = { kind: 'io', message: 'the backup folder is read only' };
+
+  it('shows the message of a structured export preview rejection', async () => {
+    const store = harness();
+    h.configExportPreview.mockRejectedValueOnce(rejection);
+
+    await loadBackupExportPreview(store.set, store.get)();
+
+    expect(store.state.backupExportPhase).toBe('error');
+    expect(store.state.backupExportError).toBe('the backup folder is read only');
+  });
+
+  it('shows the message of a structured export write rejection', async () => {
+    const store = harness();
+    await loadBackupExportPreview(store.set, store.get)();
+    h.configExportWrite.mockRejectedValueOnce(rejection);
+
+    const path = await writeBackupExport(store.set, store.get)();
+
+    expect(path).toBeNull();
+    expect(store.state.backupExportError).toBe('the backup folder is read only');
+  });
+
+  it('shows the message of a structured import preview rejection', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    h.dialogOpen.mockResolvedValueOnce('/new/parent');
+    h.configImportPreview.mockRejectedValueOnce(rejection);
+
+    await chooseBackupImportProjectParent(store.set, store.get)();
+
+    expect(store.state.backupImportPhase).toBe('error');
+    expect(store.state.backupImportError).toBe('the backup folder is read only');
+  });
+
+  it('shows the message of a structured import apply rejection', async () => {
+    const store = harness();
+    await chooseBackupImportFile(store.set, store.get)();
+    h.configImportApply.mockRejectedValueOnce(rejection);
+
+    await applyBackupImport(store.set, store.get)();
+
+    expect(store.state.backupImportPhase).toBe('error');
+    expect(store.state.backupImportError).toBe('the backup folder is read only');
+  });
+});

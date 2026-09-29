@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type {
   IsoDateTime,
   PermissionAuditEntry,
@@ -108,7 +108,7 @@ export const invokePermissionRuleList = async (args: {
   workspaceId?: WorkspaceId;
   sessionId?: SessionId;
 }): Promise<ReadonlyArray<PermissionRule>> => {
-  const rows = await invoke<RawPermissionRuleRow[]>('permission_rule_list', {
+  const rows = await invokeCommand<RawPermissionRuleRow[]>('permission_rule_list', {
     scope: args.scope,
     workspaceId: args.workspaceId ?? null,
     sessionId: args.sessionId ?? null,
@@ -119,7 +119,7 @@ export const invokePermissionRuleList = async (args: {
 export const invokePermissionRuleUpsert = async (
   input: PermissionRuleUpsertPayload,
 ): Promise<PermissionRule> => {
-  const row = await invoke<RawPermissionRuleRow>('permission_rule_upsert', {
+  const row = await invokeCommand<RawPermissionRuleRow>('permission_rule_upsert', {
     input: {
       id: input.id ?? null,
       scope: input.scope,
@@ -138,7 +138,7 @@ export const invokePermissionRuleDelete = async ({
   id,
 }: {
   readonly id: PermissionRuleId;
-}): Promise<void> => invoke<void>('permission_rule_delete', { id });
+}): Promise<void> => invokeCommand<void>('permission_rule_delete', { id });
 
 export type RecentDecision = {
   readonly id: string;
@@ -162,7 +162,9 @@ export const invokePermissionAuditList = async ({
 }: {
   readonly sessionIds: ReadonlyArray<SessionId>;
 }): Promise<ReadonlyArray<RecentDecision>> => {
-  const rows = await invoke<RawPermissionAuditRow[]>('permission_audit_list', { sessionIds });
+  const rows = await invokeCommand<RawPermissionAuditRow[]>('permission_audit_list', {
+    sessionIds,
+  });
   return rows.map((row) => ({
     id: row.id,
     sessionId: row.sessionId as SessionId,
@@ -176,7 +178,7 @@ export const invokePermissionAuditList = async ({
 export const invokePermissionAuditInsert = async (
   input: PermissionAuditInsertPayload,
 ): Promise<PermissionAuditEntry> => {
-  const row = await invoke<RawPermissionAuditRow>('permission_audit_insert', {
+  const row = await invokeCommand<RawPermissionAuditRow>('permission_audit_insert', {
     input: {
       id: input.id ?? null,
       runId: input.runId,
@@ -224,13 +226,13 @@ function rowToAuditRetryEntry(row: RawAuditRetryRow): AuditRetryEntry {
 }
 
 export const invokeAuditRetryEnqueue = async (id: string, payloadJson: string): Promise<void> => {
-  return invoke<void>('permission_audit_retry_enqueue', { input: { id, payloadJson } });
+  return invokeCommand<void>('permission_audit_retry_enqueue', { input: { id, payloadJson } });
 };
 
 export const invokeAuditRetryDrain = async (
   limit: number,
 ): Promise<ReadonlyArray<AuditRetryEntry>> => {
-  const rows = await invoke<RawAuditRetryRow[]>('permission_audit_retry_drain', { limit });
+  const rows = await invokeCommand<RawAuditRetryRow[]>('permission_audit_retry_drain', { limit });
   return rows.map(rowToAuditRetryEntry);
 };
 
@@ -239,9 +241,9 @@ export const invokeAuditRetryUpdate = async (
   attempts: number,
   lastError: string,
 ): Promise<void> => {
-  return invoke<void>('permission_audit_retry_update', { id, attempts, lastError });
+  return invokeCommand<void>('permission_audit_retry_update', { id, attempts, lastError });
 };
 
 export const invokeAuditRetryDelete = async (id: string): Promise<void> => {
-  return invoke<void>('permission_audit_retry_delete', { id });
+  return invokeCommand<void>('permission_audit_retry_delete', { id });
 };

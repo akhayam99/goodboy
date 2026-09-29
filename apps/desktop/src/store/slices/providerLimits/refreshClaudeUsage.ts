@@ -1,6 +1,6 @@
 import { parseClaudeUsageProbeOutput } from '@goodboy/core';
 import type { IsoDateTime } from '@goodboy/types';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { markProbe } from './markProbe';
 import type { GetFn, SetFn } from './types';
 
@@ -15,7 +15,7 @@ export const refreshClaudeUsage = (set: SetFn, get: GetFn) => async (): Promise<
     return;
   }
   markProbe({ set, providerId: 'anthropic', outcome: 'checking' });
-  const output = await invoke<UsageProbeOutput>('claude_usage_probe').catch(() => null);
+  const output = await invokeCommand<UsageProbeOutput>('claude_usage_probe').catch(() => null);
   const observedAt = new Date().toISOString() as IsoDateTime;
   const limits =
     output == null

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 
 export type ExploreEntry = {
   readonly name: string;
@@ -28,7 +28,7 @@ export const exploreList = async ({
   sessionDir,
   relPath,
 }: ExploreListParams): Promise<ReadonlyArray<ExploreEntry>> => {
-  return invoke<ReadonlyArray<ExploreEntry>>('explore_list', { sessionDir, relPath });
+  return invokeCommand<ReadonlyArray<ExploreEntry>>('explore_list', { sessionDir, relPath });
 };
 
 type ExploreReadParams = {
@@ -40,7 +40,7 @@ export const exploreRead = async ({
   sessionDir,
   relPath,
 }: ExploreReadParams): Promise<ExploreContent> => {
-  return invoke<ExploreContent>('explore_read', { sessionDir, relPath });
+  return invokeCommand<ExploreContent>('explore_read', { sessionDir, relPath });
 };
 
 type ExploreOpenParams = {
@@ -54,5 +54,5 @@ export const exploreOpen = async ({
   relPath,
   reveal,
 }: ExploreOpenParams): Promise<void> => {
-  await invoke('explore_open', { sessionDir, relPath, reveal });
+  await invokeCommand('explore_open', { sessionDir, relPath, reveal });
 };

@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { detectRepoSlug } from '@goodboy/core';
 import type {
@@ -94,7 +95,7 @@ export const useGithubPrs = ({ workspaceId, rootPath, isEnabled = true }: HookPa
       }
       setPullRequests(await ghInboxPullRequests(slug, { cwd: rootPath, workspaceId }));
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : String(fetchError));
+      setError(formatError(fetchError));
     } finally {
       setLoading(false);
     }

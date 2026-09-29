@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type { IntegrationCredentialId, ProjectId, WorkspaceId } from '@goodboy/types';
 
 type SentryOrganization = {
@@ -76,7 +76,7 @@ export const sentryValidateConnection = async (
   org: string,
   project: string,
 ): Promise<SentryProject> => {
-  return invoke<SentryProject>('sentry_validate_connection', {
+  return invokeCommand<SentryProject>('sentry_validate_connection', {
     credentialId,
     token,
     org,
@@ -105,7 +105,7 @@ export const sentryListOrganizations = async ({
   credentialId,
   token,
 }: SentryListParams): Promise<ReadonlyArray<SentryOrganizationSummary>> =>
-  invoke<ReadonlyArray<SentryOrganizationSummary>>('sentry_list_organizations', {
+  invokeCommand<ReadonlyArray<SentryOrganizationSummary>>('sentry_list_organizations', {
     credentialId,
     token,
   });
@@ -115,7 +115,7 @@ export const sentryListProjects = async ({
   token,
   org,
 }: SentryListParams & { readonly org: string }): Promise<ReadonlyArray<SentryProjectSummary>> =>
-  invoke<ReadonlyArray<SentryProjectSummary>>('sentry_list_projects', {
+  invokeCommand<ReadonlyArray<SentryProjectSummary>>('sentry_list_projects', {
     credentialId,
     token,
     org,
@@ -125,7 +125,7 @@ export const sentryConnect = async (
   credentialId: IntegrationCredentialId,
   token: string | null,
 ): Promise<void> => {
-  await invoke('sentry_connect', { credentialId, token });
+  await invokeCommand('sentry_connect', { credentialId, token });
 };
 
 export const sentryFetchIssues = async (
@@ -135,7 +135,7 @@ export const sentryFetchIssues = async (
   projectId?: ProjectId,
   sentryProject?: string,
 ): Promise<SentryIssuesPage> => {
-  return invoke<SentryIssuesPage>('sentry_fetch_issues', {
+  return invokeCommand<SentryIssuesPage>('sentry_fetch_issues', {
     workspaceId,
     query: query ?? null,
     cursor: cursor ?? null,
@@ -156,14 +156,14 @@ export const sentryListCodeMappings = async ({
 }: {
   readonly workspaceId: WorkspaceId;
 }): Promise<ReadonlyArray<SentryCodeMapping>> =>
-  invoke<ReadonlyArray<SentryCodeMapping>>('sentry_list_code_mappings', { workspaceId });
+  invokeCommand<ReadonlyArray<SentryCodeMapping>>('sentry_list_code_mappings', { workspaceId });
 
 export const sentryFetchIssueDetail = async (
   workspaceId: WorkspaceId,
   issueId: string,
   projectId?: ProjectId,
 ): Promise<SentryIssueDetail> => {
-  return invoke<SentryIssueDetail>('sentry_fetch_issue_detail', {
+  return invokeCommand<SentryIssueDetail>('sentry_fetch_issue_detail', {
     workspaceId,
     issueId,
     ...(projectId != null ? { projectId } : {}),
@@ -177,7 +177,7 @@ export const sentryResolveShortId = async ({
   readonly workspaceId: WorkspaceId;
   readonly shortId: string;
 }): Promise<SentryIssue> =>
-  invoke<SentryIssue>('sentry_resolve_short_id', { workspaceId, shortId });
+  invokeCommand<SentryIssue>('sentry_resolve_short_id', { workspaceId, shortId });
 
 export const sentryFetchIssue = async ({
   workspaceId,
@@ -185,4 +185,5 @@ export const sentryFetchIssue = async ({
 }: {
   readonly workspaceId: WorkspaceId;
   readonly issueId: string;
-}): Promise<SentryIssue> => invoke<SentryIssue>('sentry_fetch_issue', { workspaceId, issueId });
+}): Promise<SentryIssue> =>
+  invokeCommand<SentryIssue>('sentry_fetch_issue', { workspaceId, issueId });

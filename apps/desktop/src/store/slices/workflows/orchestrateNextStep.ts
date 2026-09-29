@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import type {
   Agent,
   AgentId,
@@ -373,7 +373,7 @@ const failureLabel = (error: unknown): string => {
   if (error instanceof Error && error.message.includes('timed out')) {
     return 'the orchestrator timed out after 120s';
   }
-  return error instanceof Error ? error.message : String(error);
+  return formatError(error);
 };
 
 type AppendParams = {
@@ -671,7 +671,7 @@ export const orchestrateNextStep = (set: SetFn, get: GetFn) => {
       const modelMenu = orchestratorModelPool({ availability });
       const client = new OrchestratorClient({
         ...routing,
-        invokeFn: invoke,
+        invokeFn: invokeCommand,
         ...(worktreePath != null && { workingDir: worktreePath }),
       });
       let result: Awaited<ReturnType<typeof client.decide>> | null = null;

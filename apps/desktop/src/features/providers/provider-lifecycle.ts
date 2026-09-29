@@ -1,5 +1,5 @@
 import { PROVIDER_LIFECYCLE_COMMANDS } from '@goodboy/core';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   type ProviderId,
@@ -56,11 +56,11 @@ export const invokeProviderLifecycleRun = (args: {
   rows: number;
   env?: Readonly<Record<string, string>>;
 }): Promise<void> => {
-  return invoke<void>('provider_lifecycle_run', args);
+  return invokeCommand<void>('provider_lifecycle_run', args);
 };
 
 export const invokeProviderLifecycleWrite = (runId: string, data: string): Promise<void> => {
-  return invoke<void>('provider_lifecycle_write', { runId, data });
+  return invokeCommand<void>('provider_lifecycle_write', { runId, data });
 };
 
 export const invokeProviderLifecycleResize = (
@@ -68,11 +68,11 @@ export const invokeProviderLifecycleResize = (
   cols: number,
   rows: number,
 ): Promise<void> => {
-  return invoke<void>('provider_lifecycle_resize', { runId, cols, rows });
+  return invokeCommand<void>('provider_lifecycle_resize', { runId, cols, rows });
 };
 
 export const invokeProviderLifecycleCancel = (runId: string): Promise<void> => {
-  return invoke<void>('provider_lifecycle_cancel', { runId });
+  return invokeCommand<void>('provider_lifecycle_cancel', { runId });
 };
 
 export const listenLifecycleOutput = (

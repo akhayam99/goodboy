@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { listProjectsForWorkspace, listWorkspaces } from '@goodboy/db';
 import {
@@ -25,7 +26,7 @@ export const loadBackupImportPreview = (set: SetFn, get: GetFn) => {
     } catch (error: unknown) {
       set({
         backupImportPhase: 'error',
-        backupImportError: error instanceof Error ? error.message : String(error),
+        backupImportError: formatError(error),
       });
     }
   };
@@ -132,7 +133,7 @@ export const applyBackupImport = (set: SetFn, get: GetFn) => {
     } catch (error: unknown) {
       set({
         backupImportPhase: 'error',
-        backupImportError: error instanceof Error ? error.message : String(error),
+        backupImportError: formatError(error),
       });
     }
   };

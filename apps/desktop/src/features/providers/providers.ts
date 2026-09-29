@@ -1,5 +1,5 @@
 import { isApiProvider } from '@goodboy/core';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import { PROVIDER_LABEL } from './providerLabel';
 import type {
   ProviderConnectionState,
@@ -73,11 +73,11 @@ type RefreshParams = {
 };
 
 export const refreshProviderDetection = async ({ id }: RefreshParams): Promise<ProviderStatus> => {
-  return invoke<ProviderStatus>(TAURI_REFRESH_CMD[id]);
+  return invokeCommand<ProviderStatus>(TAURI_REFRESH_CMD[id]);
 };
 
 export const checkProviderAuth = async (providerId: ProviderId): Promise<AuthState> => {
-  return invoke<AuthState>('check_provider_auth', { providerId });
+  return invokeCommand<AuthState>('check_provider_auth', { providerId });
 };
 
 export type ProviderAuthResults = Partial<Readonly<Record<ProviderId, AuthState | null>>>;

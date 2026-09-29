@@ -15,7 +15,10 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 ## Tauri command patterns
 
 - Each command gets one thin wrapper, in the feature's `features/<domain>/<domain>.ts` (or `shared/lib/` when no feature owns it). Store actions and feature wrapper modules may call `invoke`. Components and hooks never import it. They pass a wrapper instead, including where a `@goodboy/core` helper takes an `invokeFn`.
-- A command returns a Rust `Result<T, E>`. Tauri resolves with `T` on `Ok(T)` and **rejects** on `Err(E)`, with `E` serialized as the rejection value. No tagged `{ ok, value }` envelope travels over the wire. So the wrapper catches the rejection, maps it to a typed domain error, and throws that again.
+- A command returns a Rust `Result<T, E>`. Tauri resolves with `T` on `Ok(T)` and **rejects** on `Err(E)`. No tagged `{ ok, value }` envelope travels over the wire.
+- Every `E` serializes to an object with `kind` and `message`: an error enum calls `impl_error_serialize!` from `util.rs` and gives each variant a `kind()`; a command with no enum of its own returns `util::MessageError` (`refused` or `failed`). An enum whose variants carry data the UI reads (`BranchCleanupError`) serializes the same two fields by hand and adds that data as extra fields. Never a bare string, and every message reads as a sentence to a user.
+- On the TS side, wrappers call `invokeCommand` from `shared/lib/invokeCommand.ts`, never `invoke`. It turns any rejection into a `CommandError` with `kind` and `message`, and keeps the raw rejection as `cause` so extra fields stay reachable (`asBranchCleanupError` reads them from there). Callers branch on `kind` and never on message text; `unknown` means the wrapper could not tell.
+- Show an error with `formatError` from `@goodboy/ui`. Never `String(error)` and never `error instanceof Error ? error.message : String(error)`: on a rejection that is not an `Error` those print `[object Object]`.
 - Errors are domain types from `@goodboy/types`. Never show raw Tauri error strings in the UI.
 - Validate what a command returns at the boundary if the Rust side is not the single source of truth.
 

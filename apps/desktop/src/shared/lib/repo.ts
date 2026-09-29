@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from './invokeCommand';
 import type { FastForwardResult, WorkspaceGitStatus } from '@goodboy/types';
 
 export type GitRepoCheck = {
@@ -9,7 +9,7 @@ export type GitRepoCheck = {
 };
 
 export const validateGitRepo = async (path: string): Promise<GitRepoCheck> => {
-  return invoke<GitRepoCheck>('validate_git_repo', { path });
+  return invokeCommand<GitRepoCheck>('validate_git_repo', { path });
 };
 
 type ProjectGitStatusParams = {
@@ -19,7 +19,7 @@ type ProjectGitStatusParams = {
 export const projectGitStatus = async ({
   projectPath,
 }: ProjectGitStatusParams): Promise<WorkspaceGitStatus> => {
-  return invoke<WorkspaceGitStatus>('project_git_status', { projectPath });
+  return invokeCommand<WorkspaceGitStatus>('project_git_status', { projectPath });
 };
 
 type ProjectFetchParams = {
@@ -33,7 +33,7 @@ export const projectFetch = async ({
   workspaceId,
   projectId,
 }: ProjectFetchParams): Promise<void> => {
-  return invoke<void>('project_fetch', { projectPath, workspaceId, projectId });
+  return invokeCommand<void>('project_fetch', { projectPath, workspaceId, projectId });
 };
 
 type CheckoutFastForwardParams = {
@@ -47,7 +47,7 @@ export const checkoutFastForward = async ({
   workspaceId,
   projectId,
 }: CheckoutFastForwardParams): Promise<FastForwardResult> => {
-  return invoke<FastForwardResult>('checkout_fast_forward', {
+  return invokeCommand<FastForwardResult>('checkout_fast_forward', {
     checkoutPath,
     workspaceId,
     projectId,
@@ -66,7 +66,7 @@ type ScanChildReposParams = {
 export const scanChildRepos = async ({
   path,
 }: ScanChildReposParams): Promise<ReadonlyArray<ChildRepo>> => {
-  return invoke<ReadonlyArray<ChildRepo>>('scan_child_repos', { path });
+  return invokeCommand<ReadonlyArray<ChildRepo>>('scan_child_repos', { path });
 };
 
 export type RepoIdentity = {
@@ -79,7 +79,7 @@ type RepoIdentityParams = {
 };
 
 export const repoIdentity = async ({ path }: RepoIdentityParams): Promise<RepoIdentity> => {
-  return invoke<RepoIdentity>('repo_identity', { path });
+  return invokeCommand<RepoIdentity>('repo_identity', { path });
 };
 
 export type MovedProjectVerdict =
@@ -108,7 +108,7 @@ export const findMovedProjects = async ({
   parent,
   projects,
 }: FindMovedProjectsParams): Promise<ReadonlyArray<MovedProjectMatch>> => {
-  return invoke<ReadonlyArray<MovedProjectMatch>>('find_moved_projects', {
+  return invokeCommand<ReadonlyArray<MovedProjectMatch>>('find_moved_projects', {
     args: { parent, projects },
   });
 };
@@ -128,7 +128,7 @@ export const initRepoWithRemote = async ({
   path,
   remoteUrl,
 }: InitRepoParams): Promise<InitializedRepo> => {
-  return invoke<InitializedRepo>('repo_init_with_remote', { args: { path, remoteUrl } });
+  return invokeCommand<InitializedRepo>('repo_init_with_remote', { args: { path, remoteUrl } });
 };
 
 type InitPlainRepoParams = {
@@ -136,5 +136,5 @@ type InitPlainRepoParams = {
 };
 
 export const initRepo = async ({ path }: InitPlainRepoParams): Promise<InitializedRepo> => {
-  return invoke<InitializedRepo>('repo_init', { path });
+  return invokeCommand<InitializedRepo>('repo_init', { path });
 };

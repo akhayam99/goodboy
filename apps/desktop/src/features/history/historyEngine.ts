@@ -1,4 +1,5 @@
-import { Channel, invoke } from '@tauri-apps/api/core';
+import { Channel } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../shared/lib/invokeCommand';
 import type {
   HistoryBackup,
   HistoryGraph,
@@ -56,10 +57,10 @@ const toArgs = (plan: HistoryPlanArgs) => ({
 });
 
 export const predictHistoryPlan = async (plan: HistoryPlanArgs): Promise<HistoryPlanPrediction> =>
-  invoke<HistoryPlanPrediction>('history_plan_predict', { args: toArgs(plan) });
+  invokeCommand<HistoryPlanPrediction>('history_plan_predict', { args: toArgs(plan) });
 
 export const tryHistoryPlan = async (plan: HistoryPlanArgs): Promise<HistoryTrialResult> =>
-  invoke<HistoryTrialResult>('history_plan_try', { args: toArgs(plan) });
+  invokeCommand<HistoryTrialResult>('history_plan_try', { args: toArgs(plan) });
 
 type RunPlanParams = {
   readonly plan: HistoryPlanArgs;
@@ -74,7 +75,7 @@ export const runHistoryPlan = async ({
 }: RunPlanParams): Promise<HistoryRunOutcome> => {
   const channel = new Channel<HistoryTrialProgress>();
   channel.onmessage = onProgress;
-  return invoke<HistoryRunOutcome>('history_plan_run', {
+  return invokeCommand<HistoryRunOutcome>('history_plan_run', {
     args: { plan: toArgs(plan), branch },
     onProgress: channel,
   });
@@ -91,22 +92,22 @@ export const readHistoryGraph = async ({
   baseBranch,
   branch,
 }: GraphParams): Promise<HistoryGraph> =>
-  invoke<HistoryGraph>('history_graph', { worktreePath, baseBranch, branch });
+  invokeCommand<HistoryGraph>('history_graph', { worktreePath, baseBranch, branch });
 
 export const applyHistoryPlan = async (params: MoveBranchParams): Promise<HistoryMoveOutcome> =>
-  invoke<HistoryMoveOutcome>('history_plan_apply', { args: params });
+  invokeCommand<HistoryMoveOutcome>('history_plan_apply', { args: params });
 
 export const restoreHistoryBackup = async (params: RestoreParams): Promise<HistoryMoveOutcome> =>
-  invoke<HistoryMoveOutcome>('history_restore', { args: params });
+  invokeCommand<HistoryMoveOutcome>('history_restore', { args: params });
 
 export const listHistoryBackups = async ({
   worktreePath,
   branch,
 }: BackupsParams): Promise<ReadonlyArray<HistoryBackup>> =>
-  invoke<ReadonlyArray<HistoryBackup>>('history_backups_list', { worktreePath, branch });
+  invokeCommand<ReadonlyArray<HistoryBackup>>('history_backups_list', { worktreePath, branch });
 
 export const isHistoryPredictionSupported = async (): Promise<boolean> =>
-  invoke<boolean>('history_git_supported').catch(() => false);
+  invokeCommand<boolean>('history_git_supported').catch(() => false);
 
 export const pushWithLease = async ({
   worktreePath,
@@ -115,7 +116,7 @@ export const pushWithLease = async ({
   workspaceId,
   projectId,
 }: LeasePushParams): Promise<LeasePushOutcome> =>
-  invoke<LeasePushOutcome>('git_push_with_lease', {
+  invokeCommand<LeasePushOutcome>('git_push_with_lease', {
     cwd: worktreePath,
     branch,
     expectedRemoteSha,
@@ -142,7 +143,7 @@ export const readRemoteLease = async ({
   workspaceId,
   projectId,
 }: RemoteLeaseParams): Promise<HistoryRemoteLease> =>
-  invoke<HistoryRemoteLease>('history_remote_lease', {
+  invokeCommand<HistoryRemoteLease>('history_remote_lease', {
     worktreePath,
     branch,
     expectedHead,
@@ -163,7 +164,7 @@ export const readRebasePlan = async ({
   baseBranch,
   fetches,
 }: RebasePlanParams): Promise<HistoryRebasePlan> =>
-  invoke<HistoryRebasePlan>('history_rebase_plan', { worktreePath, baseBranch, fetches });
+  invokeCommand<HistoryRebasePlan>('history_rebase_plan', { worktreePath, baseBranch, fetches });
 
 type PrepareRewriteParams = {
   readonly plan: HistoryPlanArgs;
@@ -174,7 +175,9 @@ export const prepareHistoryRewrite = async ({
   plan,
   slug,
 }: PrepareRewriteParams): Promise<HistoryTrialResult> =>
-  invoke<HistoryTrialResult>('history_rewriter_prepare', { args: { plan: toArgs(plan), slug } });
+  invokeCommand<HistoryTrialResult>('history_rewriter_prepare', {
+    args: { plan: toArgs(plan), slug },
+  });
 
 type CollectRewriteParams = {
   readonly plan: HistoryPlanArgs;
@@ -189,7 +192,7 @@ export const collectHistoryRewrite = async ({
   skipped,
   keepsCopy,
 }: CollectRewriteParams): Promise<HistoryRewriterCheck> =>
-  invoke<HistoryRewriterCheck>('history_rewriter_collect', {
+  invokeCommand<HistoryRewriterCheck>('history_rewriter_collect', {
     args: { plan: toArgs(plan), copyPath, skipped, keepsCopy },
   });
 
@@ -204,7 +207,7 @@ export const readHistoryCopyGitDirs = async ({
 }: {
   readonly copyPath: string;
 }): Promise<HistoryCopyGitDirs | null> =>
-  invoke<HistoryCopyGitDirs | null>('history_copy_git_dirs', { copyPath });
+  invokeCommand<HistoryCopyGitDirs | null>('history_copy_git_dirs', { copyPath });
 
 type DiscardCopyParams = {
   readonly worktreePath: string;
@@ -215,7 +218,7 @@ export const discardHistoryCopy = async ({
   worktreePath,
   copyPath,
 }: DiscardCopyParams): Promise<void> =>
-  invoke<void>('history_copy_discard', { worktreePath, copyPath });
+  invokeCommand<void>('history_copy_discard', { worktreePath, copyPath });
 
 type OriginAheadParams = {
   readonly worktreePath: string;
@@ -232,7 +235,7 @@ export const readOriginAhead = async ({
   workspaceId,
   projectId,
 }: OriginAheadParams): Promise<HistoryOriginAhead> =>
-  invoke<HistoryOriginAhead>('history_origin_ahead', {
+  invokeCommand<HistoryOriginAhead>('history_origin_ahead', {
     worktreePath,
     branch,
     since,

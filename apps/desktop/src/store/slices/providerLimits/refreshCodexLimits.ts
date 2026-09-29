@@ -4,7 +4,7 @@ import {
   parseCodexResetCredits,
 } from '@goodboy/core';
 import type { CodexResetCredits, IsoDateTime } from '@goodboy/types';
-import { invoke } from '@tauri-apps/api/core';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { markProbe } from './markProbe';
 import type { GetFn, RefreshCodexLimitsParams, SetFn } from './types';
 
@@ -25,9 +25,9 @@ const observedAtOf = ({ value }: ObservedAtParams): IsoDateTime | null => {
 };
 
 const readRollout = async (get: GetFn): Promise<void> => {
-  const reading = await invoke<CodexRateLimitsReading | null>('codex_rate_limits_latest').catch(
-    () => null,
-  );
+  const reading = await invokeCommand<CodexRateLimitsReading | null>(
+    'codex_rate_limits_latest',
+  ).catch(() => null);
   if (reading == null) {
     return;
   }
@@ -65,7 +65,7 @@ export const refreshCodexLimits =
       return;
     }
     markProbe({ set, providerId: 'codex', outcome: 'checking' });
-    const response = await invoke<unknown>('codex_rate_limits_probe', {
+    const response = await invokeCommand<unknown>('codex_rate_limits_probe', {
       includeResetCreditDetails: withResetDetails,
     }).catch(() => null);
     const observedAt = new Date().toISOString() as IsoDateTime;

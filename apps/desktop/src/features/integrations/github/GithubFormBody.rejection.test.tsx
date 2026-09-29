@@ -24,7 +24,7 @@ const DISCONNECTED_STATUS = {
 const rejectSetTokenWith = (message: string): void => {
   invokeMock.mockImplementation(async (command: string) => {
     if (command === 'gh_set_token') {
-      return Promise.reject(message);
+      return Promise.reject({ kind: 'token_rejected', message });
     }
     return DISCONNECTED_STATUS;
   });

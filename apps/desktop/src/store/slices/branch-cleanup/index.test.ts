@@ -357,6 +357,21 @@ describe('loadProjectBranches', () => {
       message: 'not a repository',
     });
   });
+
+  it('shows the written message when the repository folder is gone', async () => {
+    const context = makeStore();
+    h.listProjectBranches.mockRejectedValueOnce({
+      kind: 'repo-not-found',
+      message: 'the repository folder was not found',
+    });
+
+    await loadProjectBranches(context.set, context.get)({ projectIds: [PROJECT_ID] });
+
+    expect(context.store.state.branchScans[PROJECT_ID]).toEqual({
+      status: 'failed',
+      message: 'the repository folder was not found',
+    });
+  });
 });
 
 describe('deleteBranches', () => {
