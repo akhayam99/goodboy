@@ -170,7 +170,6 @@ fn build_cli_args(args: &SummarizeArgs) -> Result<Vec<String>, SummarizeError> {
             args.model.clone(),
             "--output-format".to_string(),
             "stream-json".to_string(),
-            "--force".to_string(),
         ]),
         "codex" => {
             let mut cli_args = vec![
@@ -313,6 +312,14 @@ mod tests {
                 "you summarize\n\nsummarize this",
             ]
         );
+    }
+
+    #[test]
+    fn cursor_args_never_carry_force() {
+        let cli = build_cli_args(&make_args("cursor")).expect("cursor args");
+        assert!(!cli.iter().any(|a| a == "--force"), "{cli:?}");
+        let idx = cli.iter().position(|a| a == "--model").expect("--model");
+        assert_eq!(cli[idx + 1], "cheap-model");
     }
 
     #[test]

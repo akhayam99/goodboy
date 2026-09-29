@@ -514,6 +514,9 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   Goodboy passes it without `--force`. Whether read-only shell commands still
   run in that mode has not been checked on a real turn, so the table keeps
   Cursor's Read only at Partly
+- The planner (`planner.rs`) and the summarizer (`summarize.rs`) are read-only jobs, so
+  their headless Cursor runs never pass `--force`. Only a Full access turn does. Each
+  job has a test that pins this, so do not add the flag back
 
 ### API keys
 
