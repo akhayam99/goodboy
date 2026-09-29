@@ -34,6 +34,8 @@ export const GhostActionButton = ({
 }: GhostActionButtonProps) => {
   const tint = tintClasses(tone);
   const text = isBusy ? (busyLabel ?? label) : label;
+  const labelContent =
+    labelClassName == null ? text : <span className={labelClassName}>{text}</span>;
 
   return (
     <button
@@ -57,7 +59,7 @@ export const GhostActionButton = ({
       ) : (
         <Icon size={14} aria-hidden />
       )}
-      {labelClassName == null ? text : <span className={labelClassName}>{text}</span>}
+      {labelContent}
     </button>
   );
 };
