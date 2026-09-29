@@ -7,7 +7,6 @@ import { Teams } from './sections/Teams';
 import { Workflows } from './sections/Workflows';
 import { Routing } from './sections/Routing';
 import { WorkspaceChat } from './sections/WorkspaceChat';
-import { Faq } from './sections/Faq';
 import { Closer } from './sections/Closer';
 import { Install } from './sections/Install';
 import { Footer } from './sections/Footer';
@@ -27,7 +26,6 @@ export const App = () => {
         <Workflows />
         <Routing />
         <WorkspaceChat />
-        <Faq />
         <Closer />
         <Install />
       </main>

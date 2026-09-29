@@ -1,9 +1,9 @@
 .closer {
-  padding: 96px 0 88px;
+  padding: 160px 0;
 }
 
 @media (max-width: 600px) {
   .closer {
-    padding: 56px 0 48px;
+    padding: 96px 0;
   }
 }

@@ -24,13 +24,6 @@ deployed by Vercel from `website/vercel.json`.
   builds both as inputs, `vercel.json` serves them without `.html`, and the
   dev and preview servers rewrite `/features` the same way.
 
-## FAQ and structured data
-
-The questions in `website/src/data/faqs.ts` are mirrored by hand into the
-`FAQPage` JSON-LD block in `website/index.html`. Change both in the same
-commit: nothing checks that they agree, and search engines read the JSON-LD,
-not the section.
-
 ## Figures
 
 Product figures are real app screenshots from the mock scenes (see
