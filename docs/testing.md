@@ -54,6 +54,15 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 - The store loads once: `useAppStore = await importStore()` in `beforeAll` with `STORE_IMPORT_TIMEOUT_MS`. Then `await resetStoryStore()` runs in `beforeEach` (spies reset, `initialState` applied, local storage cleared) before the test seeds its own state.
 - `__tests__/regressions/store-import-pattern.test.ts` fails on any test that `import()`s the store module itself. A test that needs another export of the store module (`summarizerQueues`) takes it from `importStoreModule()`.
 
+## Test data comes from the builders
+
+A test that needs a `Session`, `Agent`, `Project`, `Workspace` or `WorkflowRun` calls `aSession`, `anAgent`, `aProject`, `aWorkspace` or `aWorkflowRun` from `@goodboy/types/testing` (`packages/types/src/testing/`) and overrides only the fields it asserts on: `aSession({ goal: 'Reconcile the Harborline ledger export', autoRun: true })`. Every builder returns the whole type, so no field is `undefined` for a guard to skip, and each call gets its own id. Ids are branded strings: pass `'session-1' as SessionId` when a test needs a known one. `buildStorySession`, `buildStoryAgent`, `buildStoryProject` and `buildStoryWorkspace` in `store/storyHarness.ts` delegate to them and only set their own defaults. Never write a local `makeSession` that returns a partial object, and never cast one (`{ id } as Session`, `as unknown as Session`): the compiler stops checking the fixture and the code under test reads a field that was never there.
+
+- `__tests__/regressions/test-casts.test.ts` counts `as unknown as`, `as never`, `as any` and `as Session|Agent|Project|Workspace|WorkflowRun` in test files, `storyHarness.ts`, `src/test/` and the `testing` and `test-helpers` folders, per file, against `test-casts.baseline.json`. A count may fall and never grow, and a new file starts at zero. When a change removes casts, regenerate the baseline in the same commit: `GOODBOY_UPDATE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run src/__tests__/regressions/test-casts.test.ts`. Never regenerate it to absorb a new cast. Convert a file's casts to builders when you touch the file.
+- The same test fails when product code imports `@goodboy/types/testing`.
+- A fake of the store or a hook result that stays partial is typed with `satisfies Pick<AppStore, 'sessions'>`, never `as unknown as AppStore`.
+- A builder for `Notification` belongs with the `@goodboy/db` test helpers, because its type lives in `@goodboy/db` and `@goodboy/types` cannot depend on it. None exists yet.
+
 ## Unstubbed calls fail the test
 
 `createDbMock(stubs)` in `apps/desktop/src/test/dbMock.ts` builds the mock of `@goodboy/db` from the real module: every export of the package is on it. A function you did not stub records its call (name and arguments) and returns an inert value (`[]` for `list*`, `null` for `get*` and `find*`, `0` for `count*`, `false` for `has*`). Constants and classes of the real module stay real. A stub whose name the package no longer exports throws when the mock is built, so a rename shows up at once.
