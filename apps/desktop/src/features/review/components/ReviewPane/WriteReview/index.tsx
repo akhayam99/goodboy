@@ -14,7 +14,7 @@ type Props = {
   readonly session: Session;
 };
 
-export const WRITE_REVIEW_ACTIONS_LABEL = 'Review actions';
+const WRITE_REVIEW_ACTIONS_LABEL = 'Review actions';
 
 export const WriteReview = ({ session }: Props) => {
   const sessionId = session.id as SessionId;

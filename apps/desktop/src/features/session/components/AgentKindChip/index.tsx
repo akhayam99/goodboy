@@ -2,7 +2,7 @@ import { Tooltip, cn } from '@goodboy/ui';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import { agentKindPalette, type AgentKind } from '../../agent-kind';
 
-export type AgentKindChipDensity = 'label' | 'glyph';
+type AgentKindChipDensity = 'label' | 'glyph';
 
 type Props = {
   readonly kind: AgentKind;

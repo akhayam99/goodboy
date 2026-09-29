@@ -19,7 +19,7 @@ const lineRef = (target: DiffLineTarget): string => {
   return `${target.filePath}:${range}`;
 };
 
-export const askAgentPrompt = (target: DiffLineTarget): string => {
+const askAgentPrompt = (target: DiffLineTarget): string => {
   const quoted = target.text
     .split('\n')
     .map((line) => `> ${line}`)

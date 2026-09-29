@@ -8,7 +8,7 @@ import { PrintLetterhead } from './PrintLetterhead';
 import { splitLead } from './splitLead';
 import './artifactDocument.css';
 
-export type ArtifactDocumentMedium = 'screen' | 'file';
+type ArtifactDocumentMedium = 'screen' | 'file';
 
 type Props = {
   readonly artifact: SessionArtifact;

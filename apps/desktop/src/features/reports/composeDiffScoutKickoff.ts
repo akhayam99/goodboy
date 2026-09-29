@@ -6,7 +6,7 @@ export const DIFF_SCOUT_LIMITS = {
   paths: 30,
 } as const;
 
-export type DiffScout = Readonly<{
+type DiffScout = Readonly<{
   name: string;
   scope: string;
 }>;

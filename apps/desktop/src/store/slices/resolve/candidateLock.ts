@@ -9,7 +9,7 @@ type RunParams<T> = {
 
 const queue = createKeyedQueue();
 
-export const CANDIDATE_WRITER_BUSY = 'Another writer holds this worktree';
+const CANDIDATE_WRITER_BUSY = 'Another writer holds this worktree';
 
 const runExclusively = async <T>({ worktreePath, holder, run }: RunParams<T>): Promise<T> => {
   const lease = await acquireWorktreeWriter({ path: worktreePath, holder });

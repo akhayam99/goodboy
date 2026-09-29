@@ -1,7 +1,7 @@
 import { ARTIFACT_SCOUT_ROLES } from '../artifacts/artifactScoutRoles';
 import { redactSecrets } from '../../shared/utils/redactSecrets';
 
-export const WIREFRAME_SCOUT_IDS = ['screens', 'data'] as const;
+const WIREFRAME_SCOUT_IDS = ['screens', 'data'] as const;
 
 export type WireframeScout = Readonly<{
   id: string;
@@ -15,8 +15,8 @@ export const WIREFRAME_SCOUTS: ReadonlyArray<WireframeScout> = WIREFRAME_SCOUT_I
   scope: ARTIFACT_SCOUT_ROLES[id].scope,
 }));
 
-export const WIREFRAME_SCOUT_GOAL_LIMIT = 600;
-export const WIREFRAME_SCOUT_BRIEF_LIMIT = 900;
+const WIREFRAME_SCOUT_GOAL_LIMIT = 600;
+const WIREFRAME_SCOUT_BRIEF_LIMIT = 900;
 
 const clip = ({ text, limit }: Readonly<{ text: string; limit: number }>): string => {
   const collapsed = text.trim();

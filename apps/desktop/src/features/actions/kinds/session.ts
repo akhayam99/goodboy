@@ -40,7 +40,7 @@ type SessionWorktree = {
   readonly path: string;
 };
 
-export const LINK_ISSUE_EVENT = 'goodboy:link-issue';
+const LINK_ISSUE_EVENT = 'goodboy:link-issue';
 
 export const linkIssueEventName = ({ sessionId }: { readonly sessionId: SessionId }): string =>
   `${LINK_ISSUE_EVENT}:${sessionId}`;

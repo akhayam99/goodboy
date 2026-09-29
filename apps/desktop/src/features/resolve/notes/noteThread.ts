@@ -4,8 +4,8 @@ import type { CommentThread } from '../../github/comment-threads';
 const NOTE_PREFIX = 'note:';
 const GENERATION_SUFFIX = /:g(\d+)$/;
 
-export const NOTE_AUTHOR_YOU = 'You';
-export const NOTE_AUTHOR_AGENT = 'Reviewer agent';
+const NOTE_AUTHOR_YOU = 'You';
+const NOTE_AUTHOR_AGENT = 'Reviewer agent';
 
 export const noteThreadId = ({
   noteId,
@@ -16,7 +16,7 @@ export const noteThreadId = ({
 }): string =>
   generation === 0 ? `${NOTE_PREFIX}${noteId}` : `${NOTE_PREFIX}${noteId}:g${generation}`;
 
-export const isNoteThreadId = ({ threadId }: { readonly threadId: string }): boolean =>
+const isNoteThreadId = ({ threadId }: { readonly threadId: string }): boolean =>
   threadId.startsWith(NOTE_PREFIX);
 
 export const noteIdOfThread = ({ threadId }: { readonly threadId: string }): string | null =>

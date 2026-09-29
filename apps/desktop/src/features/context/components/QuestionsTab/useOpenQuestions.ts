@@ -28,7 +28,7 @@ export type QuestionDraft = {
   answerIntent: AnswerIntent;
 };
 
-export const isDelegatedDraft = (draft: QuestionDraft | undefined): boolean =>
+const isDelegatedDraft = (draft: QuestionDraft | undefined): boolean =>
   draft?.answerIntent.kind === 'agent';
 
 type PendingUndo = {

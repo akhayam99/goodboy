@@ -14,10 +14,10 @@ export type WriteReviewFacts = {
   readonly isSubmitting: boolean;
 };
 
-export const SUBMITTING_REASON = 'Submitting now.';
-export const EMPTY_REVIEW_REASON = 'Add a line comment or a summary first.';
+const SUBMITTING_REASON = 'Submitting now.';
+const EMPTY_REVIEW_REASON = 'Add a line comment or a summary first.';
 
-export const SUBMIT_LABEL: Record<PublishPrReviewVerdict, string> = {
+const SUBMIT_LABEL: Record<PublishPrReviewVerdict, string> = {
   comment: 'Submit comments',
   approve: 'Approve',
   request_changes: 'Request changes',

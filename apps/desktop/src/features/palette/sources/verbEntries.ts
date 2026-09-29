@@ -13,9 +13,9 @@ type Params = {
   readonly select: (params: VerbSelectParams) => void;
 };
 
-export const verbKey = (actionId: string): string => `verb:${actionId}`;
+const verbKey = (actionId: string): string => `verb:${actionId}`;
 
-export const verbLabel = ({ action }: VerbSelectParams): string =>
+const verbLabel = ({ action }: VerbSelectParams): string =>
   action.group === 'open' && !action.label.includes(' ') && action.label !== 'Open'
     ? `Open ${action.label}`
     : action.label;

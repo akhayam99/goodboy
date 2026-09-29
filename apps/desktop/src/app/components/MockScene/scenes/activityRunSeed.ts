@@ -90,7 +90,7 @@ const QUESTION_BANNER_ID = 'mock-run-question-banner-threshold' as OpenQuestionI
 
 const DAY_ONE = '2026-09-17';
 const DAY_TWO = '2026-09-18';
-export const NOW = clock.iso({ at: `${DAY_TWO}T10:05:00.000Z` });
+const NOW = clock.iso({ at: `${DAY_TWO}T10:05:00.000Z` });
 const EARLIER = clock.iso({ at: `${DAY_ONE}T09:12:00.000Z` });
 
 const OVERRIDES = {

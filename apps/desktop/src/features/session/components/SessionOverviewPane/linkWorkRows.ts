@@ -31,7 +31,7 @@ export const LINK_WORK_PROVIDER_LABEL: Readonly<Record<SessionExternalTaskProvid
   bitbucket: 'Bitbucket',
 };
 
-export const INBOX_LIMIT = 3;
+const INBOX_LIMIT = 3;
 
 const RESULT_LIMIT_EMPTY = 5;
 
@@ -51,7 +51,7 @@ type LinkParams = {
   readonly value: string;
 };
 
-export const isLinkLike = ({ value }: LinkParams): boolean => {
+const isLinkLike = ({ value }: LinkParams): boolean => {
   const trimmed = value.trim();
   if (trimmed.includes('://')) {
     return true;
@@ -69,7 +69,7 @@ const hostOf = ({ value }: LinkParams): string | null => {
   }
 };
 
-export const pastedTaskOf = ({ value }: LinkParams): LaunchExternalTask | null => {
+const pastedTaskOf = ({ value }: LinkParams): LaunchExternalTask | null => {
   const host = hostOf({ value });
   if (host === null) {
     return null;

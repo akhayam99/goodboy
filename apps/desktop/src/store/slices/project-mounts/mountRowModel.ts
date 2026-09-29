@@ -42,7 +42,7 @@ export type MountRequestView = Readonly<{
   mergedHeadSha?: string | null;
 }>;
 
-export type MountSeriesPosition = Readonly<{
+type MountSeriesPosition = Readonly<{
   seriesId: string;
   name: string;
   position: number;

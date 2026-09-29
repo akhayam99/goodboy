@@ -2,7 +2,7 @@ import type { ProjectId, SessionId, WorkspaceId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { workPromptOf, type WorkBrief } from './workBrief';
 
-export type WorkTarget =
+type WorkTarget =
   | { readonly kind: 'new'; readonly projectIds: ReadonlyArray<ProjectId> }
   | { readonly kind: 'add'; readonly sessionId: SessionId };
 

@@ -24,8 +24,7 @@ import { workflowAvailabilitySnapshot } from '../../../features/workflows/workfl
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { GetFn } from './types';
 
-export const WIREFRAME_SCOUT_PENDING_NOTE =
-  'the scouts had not reported yet when this row was written';
+const WIREFRAME_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';
 
 export type WireframeRouting = {
   readonly provider: ProviderId;

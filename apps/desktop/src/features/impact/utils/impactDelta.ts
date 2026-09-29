@@ -1,6 +1,6 @@
 import { formatHours } from './formatHours';
 
-export type DeltaDirection = 'up' | 'down' | 'flat';
+type DeltaDirection = 'up' | 'down' | 'flat';
 
 export type ImpactDelta = {
   readonly direction: DeltaDirection;

@@ -9,7 +9,7 @@ import {
   type CombineMode,
 } from './historyPlan';
 
-export type MoveRelation =
+type MoveRelation =
   { readonly where: 'below' | 'above'; readonly sha: string } | { readonly where: 'bottom' };
 
 export type MoveFact = {
@@ -44,7 +44,7 @@ export type HistoryEdit =
       readonly count: number;
     };
 
-export type HistoryEditKind = HistoryEdit['kind'];
+type HistoryEditKind = HistoryEdit['kind'];
 
 type PlanParams = {
   readonly items: ReadonlyArray<HistoryStep>;
@@ -92,7 +92,7 @@ const stableSet = ({
 const rankOf = ({ original }: { readonly original: ReadonlyArray<string> }) =>
   new Map(original.map((sha, index) => [sha, index]));
 
-export const movedShas = ({ items, original }: PlanParams): ReadonlySet<string> => {
+const movedShas = ({ items, original }: PlanParams): ReadonlySet<string> => {
   const order = keptOrder({ items });
   const stable = stableSet({ order, rank: rankOf({ original }) });
   return new Set(order.filter((sha) => !stable.has(sha)));

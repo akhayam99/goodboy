@@ -11,7 +11,7 @@ export type BranchScanEntry =
     }
   | { readonly status: 'failed'; readonly message: string };
 
-export type MergedThenEntry = {
+type MergedThenEntry = {
   readonly head: string;
   readonly mergedHead: string;
   readonly newCommits: number;

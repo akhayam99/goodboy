@@ -22,7 +22,7 @@ import { CLOSE_WORKFLOW_COPY } from '../../workflows/closeWorkflowCopy';
 import { useOpenQuestions } from '../../context/components/QuestionsTab/useOpenQuestions';
 import type { ActionEnv, ObjectKindDefinition, WorkflowRunActionTarget } from '../types';
 
-export type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
+type WorkflowRunState = 'queued' | 'running' | 'paused' | 'failed' | 'done' | 'discarded';
 
 export type WorkflowRunFacts = {
   readonly run: WorkflowRun;

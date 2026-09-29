@@ -5,7 +5,7 @@ import { useAppStore } from '../../../store';
 import type { WireframeChangeScope, WireframePickedNode } from '../buildWireframeChangeRequest';
 import type { WireframeDraft } from '../wireframeDraft';
 
-export const READY_OFFER_MS = 10_000;
+const READY_OFFER_MS = 10_000;
 
 type Params = {
   readonly sessionId: SessionId;

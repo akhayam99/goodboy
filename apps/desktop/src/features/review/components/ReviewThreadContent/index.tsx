@@ -13,7 +13,7 @@ type Props = {
   readonly onOpenUrl: (url: string) => void;
 };
 
-export const NOTE_LABEL = 'Note';
+const NOTE_LABEL = 'Note';
 
 const OUTDATED_HINT = 'This comment is anchored to code that later commits changed';
 

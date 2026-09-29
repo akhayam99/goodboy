@@ -5,7 +5,7 @@ import { resolveMountBaseBranch } from '../../store/slices/project-mounts/select
 import { listBranchCommits, worktreeChangedFiles } from '../worktree/worktree';
 import type { ReportDiffEvidence, ReportDiffUnavailableReason } from './buildReportContext';
 
-export type ReportDiffMount = Readonly<{
+type ReportDiffMount = Readonly<{
   mountId: MountId;
   evidence: ReportDiffEvidence | null;
   reason: ReportDiffUnavailableReason | null;

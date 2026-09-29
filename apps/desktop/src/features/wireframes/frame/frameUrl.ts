@@ -1,7 +1,7 @@
 import type { ProviderPlatform } from '@goodboy/types';
 import { currentPlatform } from '../../../shared/platform';
 
-export const frameOrigin = ({ platform }: { readonly platform: ProviderPlatform }): string =>
+const frameOrigin = ({ platform }: { readonly platform: ProviderPlatform }): string =>
   platform === 'win32' ? 'http://gbframe.localhost' : 'gbframe://localhost';
 
 type Params = {

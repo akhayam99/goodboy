@@ -15,7 +15,7 @@ export const FACT_SLOTS: ReadonlyArray<FactSlot> = [
   'time',
 ];
 
-export type FactEditorParams = {
+type FactEditorParams = {
   readonly close: () => void;
 };
 

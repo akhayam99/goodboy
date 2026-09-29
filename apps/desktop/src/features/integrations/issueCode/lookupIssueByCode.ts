@@ -31,7 +31,7 @@ export type LookupHit = {
   readonly record: InboxRecord;
 };
 
-export type LookupMiss = {
+type LookupMiss = {
   readonly target: LookupTarget;
   readonly failure: LookupFailure;
 };

@@ -17,7 +17,7 @@ import type { HistoryDraft, HistoryRun } from '../../../../../store/slices/histo
 import type { MountGithubState } from '../../../../../store/types';
 import { CTX_MOUNTS, CTX_PAYMENTS_ID, CTX_PAYMENTS_MOUNT_ID, CTX_SESSION_ID } from './contextBase';
 
-export const LEDGER_BRANCH = 'hl/ledger-export';
+const LEDGER_BRANCH = 'hl/ledger-export';
 
 const hoursAgo = (hours: number): number =>
   Math.floor(Date.now() / 1000) - Math.round(hours * 3600);
@@ -52,7 +52,7 @@ const commit = (
   parentSha,
 });
 
-export const LEDGER_SCENE_COMMITS: ReadonlyArray<BranchCommit> = [
+const LEDGER_SCENE_COMMITS: ReadonlyArray<BranchCommit> = [
   commit(SHA.f, 'Fix typo in CSV header', 'Tomas Vey', 1, false, SHA.e),
   commit(SHA.e, 'wip export tests', 'Tomas Vey', 3, false, SHA.x),
   commit(SHA.x, 'Add debug logging to the export', 'Tomas Vey', 4, false, SHA.d),
@@ -62,7 +62,7 @@ export const LEDGER_SCENE_COMMITS: ReadonlyArray<BranchCommit> = [
   commit(SHA.a, 'Add ledger export endpoint', 'Lena Arkwright', 52, true, BASE),
 ];
 
-export const LEDGER_SCENE_GRAPH: HistoryGraph = {
+const LEDGER_SCENE_GRAPH: HistoryGraph = {
   baseRef: 'origin/main',
   mergeBase: {
     sha: BASE,
@@ -104,7 +104,7 @@ export const LEDGER_SCENE_GRAPH: HistoryGraph = {
   ],
 };
 
-export const LEDGER_SCENE_PLAN: ReadonlyArray<HistoryStep> = [
+const LEDGER_SCENE_PLAN: ReadonlyArray<HistoryStep> = [
   (items: ReadonlyArray<HistoryStep>) =>
     combineInto({ items, sha: SHA.f, target: SHA.a, mode: 'fixup' }),
   (items: ReadonlyArray<HistoryStep>) => moveAbove({ items, sha: SHA.d, anchor: SHA.b }),

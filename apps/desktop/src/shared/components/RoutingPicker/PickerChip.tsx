@@ -2,7 +2,7 @@ import { EyeOff } from 'lucide-react';
 import { cn } from '@goodboy/ui';
 import { CHIP_TONE_ACTIVE, type ChipTone } from './chipTone';
 
-export const HIDDEN_IN_PICKER = 'Hidden in the picker';
+const HIDDEN_IN_PICKER = 'Hidden in the picker';
 
 type Props = {
   readonly label: string;

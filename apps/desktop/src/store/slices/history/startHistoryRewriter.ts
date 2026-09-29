@@ -16,7 +16,7 @@ import type {
   StartHistoryRewriterInput,
 } from './types';
 
-export const HISTORY_REWRITER_NAME = 'History rewriter';
+const HISTORY_REWRITER_NAME = 'History rewriter';
 
 const REWRITER_TASK: AuxTaskId = 'rebase';
 

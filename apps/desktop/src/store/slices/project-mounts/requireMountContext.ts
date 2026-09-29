@@ -16,7 +16,7 @@ export type MountContext = {
   readonly project: Project;
 };
 
-export const requireSession = ({ get, sessionId }: SessionParams): Session => {
+const requireSession = ({ get, sessionId }: SessionParams): Session => {
   const session =
     get().sessions.find((candidate) => candidate.id === sessionId) ??
     Object.values(get().archivedSessions)

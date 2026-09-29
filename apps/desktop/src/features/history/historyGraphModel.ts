@@ -18,7 +18,7 @@ type ReplayParams = {
   readonly items: ReadonlyArray<HistoryStep>;
 };
 
-export const replayOrder = ({ items }: ReplayParams): ReadonlyArray<HistoryStep> => {
+const replayOrder = ({ items }: ReplayParams): ReadonlyArray<HistoryStep> => {
   const ordered = planOrder({ items }).flatMap((sha) => {
     const step = items.find((candidate) => candidate.sha === sha);
     return step === undefined ? [] : [step];

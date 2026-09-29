@@ -1,6 +1,6 @@
 export const WIREFRAME_SCOUT_REPOSITORY_ROOT = '.';
 
-export const WIREFRAME_SCOUT_ROOT_CANDIDATE_CAP = 40;
+const WIREFRAME_SCOUT_ROOT_CANDIDATE_CAP = 40;
 
 const STRUCTURAL_SEGMENTS: ReadonlySet<string> = new Set([
   'app',

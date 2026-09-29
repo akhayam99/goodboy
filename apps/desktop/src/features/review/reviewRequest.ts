@@ -7,7 +7,7 @@ export const REVIEW_REQUEST_EVENT = 'goodboy:review-request';
 
 export type ReviewComposeMode = 'edit' | 'redraft' | 'answer' | 'reply';
 
-export type ReviewRequest =
+type ReviewRequest =
   | { readonly kind: 'compose'; readonly threadId: string; readonly mode: ReviewComposeMode }
   | { readonly kind: 'edit_reply'; readonly threadId: string }
   | { readonly kind: 'push' }

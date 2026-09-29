@@ -3,7 +3,7 @@ import { deleteSetting, listSettingsWithPrefix, setSetting } from '@goodboy/db';
 import { tauriDatabase } from '../../shared/lib/db';
 import { EMPTY_FOCUS, type Focus, type Location } from '../../store/slices/navigation/types';
 
-export const WINDOW_LAYOUT_PREFIX = 'window.layout.';
+const WINDOW_LAYOUT_PREFIX = 'window.layout.';
 
 const MAX_LAYOUT_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -104,7 +104,7 @@ const parseLayout = ({
   }
 };
 
-export const serializeWindowLayout = ({
+const serializeWindowLayout = ({
   workspaceId,
   location,
   at,

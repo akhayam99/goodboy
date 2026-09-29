@@ -54,7 +54,7 @@ export const modeCell = ({ provider, mode }: ModeCellParams): SupportCell => {
   };
 };
 
-export const followsRules = ({ provider }: ProviderParams): boolean =>
+const followsRules = ({ provider }: ProviderParams): boolean =>
   RULE_PROVIDERS.some((candidate) => candidate === provider);
 
 export const ruleCell = ({ provider }: ProviderParams): SupportCell =>

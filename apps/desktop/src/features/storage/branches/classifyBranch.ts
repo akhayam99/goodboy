@@ -7,7 +7,7 @@ const STALE_DAYS = 90;
 
 export type BranchVerdict = 'safe-merged' | 'safe-no-commits' | 'needs-look' | 'kept' | 'protected';
 
-export type BranchOwner =
+type BranchOwner =
   | { readonly kind: 'session'; readonly sessionId: SessionId }
   | { readonly kind: 'no-session' }
   | { readonly kind: 'by-you' }

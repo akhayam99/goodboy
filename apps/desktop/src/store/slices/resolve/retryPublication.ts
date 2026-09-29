@@ -18,7 +18,7 @@ import type { SessionParams, SliceParams } from './types';
 type Params = SliceParams & SessionParams;
 
 const PUBLICATION_FAILED = 'publication_failed:';
-export const AMBIGUOUS_REPLY = 'a reply may already be on this conversation';
+const AMBIGUOUS_REPLY = 'a reply may already be on this conversation';
 
 const isUncertain = ({ row }: { readonly row: ResolveThread }): boolean =>
   row.stateReason?.includes('uncertain') === true;

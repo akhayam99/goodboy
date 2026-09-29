@@ -1,4 +1,4 @@
-export type IssueCodeUrl =
+type IssueCodeUrl =
   | { readonly provider: 'linear'; readonly identifier: string }
   | { readonly provider: 'jira'; readonly key: string; readonly host: string }
   | { readonly provider: 'github'; readonly repo: string; readonly number: number }

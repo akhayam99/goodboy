@@ -1,4 +1,4 @@
-export const ARTIFACT_SCOUT_ROLE_IDS = ['screens', 'data', 'design', 'diff-context'] as const;
+const ARTIFACT_SCOUT_ROLE_IDS = ['screens', 'data', 'design', 'diff-context'] as const;
 
 export type ArtifactScoutRoleId = (typeof ARTIFACT_SCOUT_ROLE_IDS)[number];
 

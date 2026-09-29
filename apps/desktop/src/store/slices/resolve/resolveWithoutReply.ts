@@ -15,7 +15,7 @@ import type { ItemParams, SliceParams } from './types';
 
 type Params = SliceParams & ItemParams;
 
-export const RESOLVE_ONLY_REASON = 'resolve_only';
+const RESOLVE_ONLY_REASON = 'resolve_only';
 export const RESOLVE_ONLY_AFTER_INTEGRATION =
   'This fix is already on the branch. Undo the decision before resolving without a reply';
 

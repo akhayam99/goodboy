@@ -10,7 +10,7 @@ type Params = {
   readonly planId: string | null;
 };
 
-export const historyStopTitle = ({
+const historyStopTitle = ({
   origin,
   branch,
 }: {

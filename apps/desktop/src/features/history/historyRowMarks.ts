@@ -6,7 +6,7 @@ export type HistoryRowAction = 'pick' | 'fixup' | 'squash' | 'move' | 'reword' |
 
 export type HistoryAction = HistoryRowAction | 'rebase';
 
-export type HistoryTakenIn = {
+type HistoryTakenIn = {
   readonly sha: string;
   readonly mode: CombineMode;
 };

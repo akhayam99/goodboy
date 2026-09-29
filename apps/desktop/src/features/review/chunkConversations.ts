@@ -1,6 +1,6 @@
 import type { CommentThread } from '../github/comment-threads';
 
-export const MAX_THREADS_PER_ATTEMPT = 12;
+const MAX_THREADS_PER_ATTEMPT = 12;
 
 const CHARS_PER_TOKEN = 4;
 const THREAD_OVERHEAD_CHARS = 320;

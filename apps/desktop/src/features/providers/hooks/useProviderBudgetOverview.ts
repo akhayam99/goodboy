@@ -14,7 +14,7 @@ type PeriodStarts = {
   readonly weekStartMs: number;
 };
 
-export const periodStarts = ({ nowMs }: StartsParams): PeriodStarts => {
+const periodStarts = ({ nowMs }: StartsParams): PeriodStarts => {
   const now = new Date(nowMs);
   return {
     todayStartMs: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),

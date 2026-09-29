@@ -2,7 +2,7 @@ import type { ProjectId, SearchKind, SearchQuery } from '@goodboy/types';
 import type { SearchChip } from './searchChips';
 import type { SearchScope } from './searchScope';
 
-export const SEARCH_RESULT_LIMIT = 40;
+const SEARCH_RESULT_LIMIT = 40;
 
 type Params = {
   readonly text: string;

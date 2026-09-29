@@ -22,7 +22,7 @@ import { resolveSessionPrFetch } from './resolveSessionPrFetch';
 import type { GetFn, SetFn } from './types';
 import { ReportedError } from '../notifications/reportedError';
 
-export type CreatePrReferenceMode = 'closing' | 'part-of' | 'none';
+type CreatePrReferenceMode = 'closing' | 'part-of' | 'none';
 
 export type CreatePrInput = {
   readonly sessionId: SessionId;

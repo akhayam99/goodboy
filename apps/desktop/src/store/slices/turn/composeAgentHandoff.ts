@@ -34,7 +34,7 @@ import { deriveHandoffSender } from './deriveHandoffSender';
 import { isTurnWritableMount } from './turnWritableRoots';
 import type { GetFn } from './types';
 
-export type HandoffRuleTexts = Readonly<{
+type HandoffRuleTexts = Readonly<{
   scope: string;
   language: string;
   integrations: string;

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 
-export type RecordVerbConfirm = {
+type RecordVerbConfirm = {
   readonly title: string;
   readonly description: string;
   readonly confirmLabel: string;

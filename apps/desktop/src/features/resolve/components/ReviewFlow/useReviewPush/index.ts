@@ -12,7 +12,7 @@ import {
   type PushResult,
 } from '../../../reviewPushCopy';
 
-export type ReviewPushPhase =
+type ReviewPushPhase =
   | { readonly kind: 'idle' }
   | { readonly kind: 'preparing' }
   | { readonly kind: 'confirm'; readonly preview: ResolvePublicationPreview }

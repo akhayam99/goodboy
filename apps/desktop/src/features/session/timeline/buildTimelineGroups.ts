@@ -47,7 +47,7 @@ export type TimelinePlanEntry = {
   readonly lane?: TimelineArtifactLane;
 };
 
-export type TimelineArtifactLane = {
+type TimelineArtifactLane = {
   readonly identity: RunIdentity;
   readonly rootEntryId: string;
 };
@@ -74,7 +74,7 @@ export type TimelineBranchEntry = {
   readonly worktree: SessionWorktree;
 };
 
-export type TimelineProjectRun = {
+type TimelineProjectRun = {
   readonly mounted: ReadonlyArray<string>;
   readonly detached: ReadonlyArray<string>;
 };
@@ -87,14 +87,14 @@ export type TimelineEventEntry = {
   readonly projectRun?: TimelineProjectRun;
 };
 
-export type TimelineAnswerEntry = {
+type TimelineAnswerEntry = {
   readonly kind: 'answer';
   readonly id: string;
   readonly at: string;
   readonly question: OpenQuestion;
 };
 
-export type TimelineQuestionLane = {
+type TimelineQuestionLane = {
   readonly identity: RunIdentity;
   readonly rootEntryId: string;
 };

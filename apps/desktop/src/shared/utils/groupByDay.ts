@@ -1,6 +1,6 @@
-export type DayBucket = 'today' | 'yesterday' | 'this-week' | 'older';
+type DayBucket = 'today' | 'yesterday' | 'this-week' | 'older';
 
-export const DAY_BUCKET_LABEL = {
+const DAY_BUCKET_LABEL = {
   today: 'Today',
   yesterday: 'Yesterday',
   'this-week': 'This week',

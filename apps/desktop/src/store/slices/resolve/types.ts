@@ -82,7 +82,7 @@ export type UpdateParams = SessionParams & {
 };
 
 export type ResolveUpdates = ReadonlyArray<Pick<UpdateParams, 'threadId' | 'revision' | 'patch'>>;
-export type ResolveUpdatesParams = { readonly rows: ReadonlyArray<ResolveThread> };
+type ResolveUpdatesParams = { readonly rows: ReadonlyArray<ResolveThread> };
 export type BatchUpdateParams = SessionParams & {
   readonly updates: ResolveUpdates | ((params: ResolveUpdatesParams) => ResolveUpdates);
 };

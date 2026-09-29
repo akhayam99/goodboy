@@ -26,10 +26,7 @@ export const plural = ({
   readonly many: string;
 }): string => `${count} ${count === 1 ? one : many}`;
 
-export const refreshWorktreeStatus = async ({
-  worktreePath,
-  baseBranch,
-}: StatusParams): Promise<void> => {
+const refreshWorktreeStatus = async ({ worktreePath, baseBranch }: StatusParams): Promise<void> => {
   await ensure({
     key: worktreeStatusKey({ worktreePath, baseBranch: baseBranch ?? undefined }),
     worktreePath,

@@ -32,7 +32,7 @@ const titleOf = ({ fileName }: { readonly fileName: string }): string => {
   return `${base.charAt(0).toUpperCase()}${base.slice(1)}`;
 };
 
-export const describeAdjustment = ({
+const describeAdjustment = ({
   adjustment,
 }: {
   readonly adjustment: WireframeAdjustment;

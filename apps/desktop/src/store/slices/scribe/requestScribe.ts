@@ -7,7 +7,7 @@ import { scribeKeyOf } from './scribeKeyOf';
 import { scribeKickoff } from './scribeKickoff';
 import type { GetFn, RequestScribeInput, ScribeWork, SetFn } from './types';
 
-export const SCRIBE_NAME = 'Scribe';
+const SCRIBE_NAME = 'Scribe';
 
 type PatchParams = {
   readonly set: SetFn;

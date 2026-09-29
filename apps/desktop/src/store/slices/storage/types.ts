@@ -11,7 +11,7 @@ import type { WorktreeFolderFacts } from '../../../features/worktree/worktree';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
-export type StorageFolderOrigin = 'in-use' | 'archived' | 'ledger';
+type StorageFolderOrigin = 'in-use' | 'archived' | 'ledger';
 
 export type StorageFolderWhy =
   'active-session' | 'archived-session' | 'deleted-session' | 'no-session' | 'kept-by-goodboy';

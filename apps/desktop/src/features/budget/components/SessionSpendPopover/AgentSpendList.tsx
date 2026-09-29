@@ -3,7 +3,7 @@ import { Button, formatUsd } from '@goodboy/ui';
 import { AgentAvatar } from '../../../../shared/components/AgentAvatar';
 import type { AgentSpend } from '../../sessionSpendByAgent';
 
-export const AGENT_SPEND_VISIBLE = 6;
+const AGENT_SPEND_VISIBLE = 6;
 
 type Props = {
   readonly agents: ReadonlyArray<AgentSpend>;

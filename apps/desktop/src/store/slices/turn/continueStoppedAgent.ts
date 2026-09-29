@@ -2,7 +2,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { resumeAfterRestart } from './resumeAfterRestart';
 import type { GetFn } from './types';
 
-export const CONTINUE_STOPPED_MESSAGE = 'Continue from where you stopped.';
+const CONTINUE_STOPPED_MESSAGE = 'Continue from where you stopped.';
 
 type Params = Readonly<{
   sessionId: SessionId;

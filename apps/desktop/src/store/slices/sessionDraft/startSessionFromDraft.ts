@@ -9,9 +9,9 @@ import { discardUncreatedSession } from '../sessions/discardUncreatedSession';
 import { draftGoalText } from './draftGoalText';
 import type { GetFn, SetFn } from './types';
 
-export const SCOUT_DRAFT_TITLE = 'Scout the project';
+const SCOUT_DRAFT_TITLE = 'Scout the project';
 
-export type SessionDraftRun = (session: Session) => Promise<void>;
+type SessionDraftRun = (session: Session) => Promise<void>;
 
 export type SessionDraftMount = {
   readonly projectId: ProjectId | null;

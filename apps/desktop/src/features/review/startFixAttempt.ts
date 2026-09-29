@@ -9,7 +9,7 @@ import {
 import type { CommentThread } from '../github/comment-threads';
 import { chunkConversations } from './chunkConversations';
 
-export type FixMode = 'shared' | 'separate' | 'retry' | 'recheck' | 'proceed';
+type FixMode = 'shared' | 'separate' | 'retry' | 'recheck' | 'proceed';
 
 type SpawnAgentArgs = {
   readonly name: string;
@@ -50,7 +50,7 @@ type Params = {
   readonly setAgentConfig: SetAgentConfigFn;
 };
 
-export const fixAttemptChunks = ({
+const fixAttemptChunks = ({
   threads,
   mode,
   pr,

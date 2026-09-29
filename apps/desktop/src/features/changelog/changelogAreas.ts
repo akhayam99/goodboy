@@ -2,7 +2,7 @@ import { AppWindow } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { CONCEPT_ICONS } from '../../shared/components/conceptIcons';
 
-export const CHANGELOG_AREAS = {
+const CHANGELOG_AREAS = {
   sessions: { label: 'Sessions', icon: CONCEPT_ICONS.sessions },
   agents: { label: 'Agents', icon: CONCEPT_ICONS.agents },
   workflows: { label: 'Workflows', icon: CONCEPT_ICONS.workflows },

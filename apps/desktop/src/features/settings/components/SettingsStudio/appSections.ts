@@ -19,7 +19,7 @@ export const APP_SECTIONS = [
 
 const DEFAULT_APP_SECTION: AppSection = 'general';
 
-export const isAppSection = (value: string | undefined): value is AppSection =>
+const isAppSection = (value: string | undefined): value is AppSection =>
   APP_SECTIONS.some((section) => section.id === value);
 
 export const appSectionOf = ({ section }: { readonly section?: string }): AppSection =>

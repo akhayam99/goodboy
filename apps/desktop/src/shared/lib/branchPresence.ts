@@ -3,7 +3,7 @@ import { distanceBehind } from './gitStatus';
 import { branchPushStateOf } from './branchPushState';
 import { mergedThenLabel } from './mergedThen';
 
-export type BranchPresenceKind =
+type BranchPresenceKind =
   'on-origin' | 'diverged' | 'local-only' | 'gone-on-origin' | 'merged' | 'merged-then';
 
 export type BranchPresence = {
@@ -90,7 +90,7 @@ export const isBranchMergedOf = ({
   return tracksOwnBranch({ status });
 };
 
-export type MainPresenceKind = 'behind-main' | 'up-to-date' | 'rebasing-on-main' | 'rebase-stopped';
+type MainPresenceKind = 'behind-main' | 'up-to-date' | 'rebasing-on-main' | 'rebase-stopped';
 
 export type MainPresence = {
   readonly kind: MainPresenceKind;

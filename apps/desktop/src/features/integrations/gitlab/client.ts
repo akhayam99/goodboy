@@ -118,7 +118,7 @@ export const gitlabUpdateIssueDescription = async ({
 export const issueIdentifier = (issue: GitlabIssue): string =>
   issue.references.full ?? `#${issue.iid}`;
 
-export type GitlabMergeStatus =
+type GitlabMergeStatus =
   | 'unchecked'
   | 'checking'
   | 'can_be_merged'

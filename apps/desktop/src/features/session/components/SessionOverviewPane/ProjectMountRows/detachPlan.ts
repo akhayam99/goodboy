@@ -168,7 +168,7 @@ export const ignoredFilesLine = ({ measured }: MeasuredListParams): string | nul
   return `${noun} at risk, not tracked by git: ${samples.join(', ')}.`;
 };
 
-export const isIntegrationUnknown = ({ measured }: MountRiskParams): boolean =>
+const isIntegrationUnknown = ({ measured }: MountRiskParams): boolean =>
   !measured.isAbsent && measured.integration.kind === 'unknown';
 
 const presentOf = ({ measured }: MeasuredListParams): ReadonlyArray<Measured> =>
@@ -216,7 +216,7 @@ export const integrationLine = ({ measured }: MeasuredListParams): string | null
   return `${countLabel({ count: unmerged.length, singular: 'branch' })} ${unmergedVerb({ count: unmerged.length })} not merged into the base branch yet.`;
 };
 
-export const integrationDetails = ({ measured }: MeasuredListParams): DetachDetails => {
+const integrationDetails = ({ measured }: MeasuredListParams): DetachDetails => {
   const present = presentOf({ measured });
   const unmerged = unmergedOf({ measured: present });
   if (unmerged.length === 0) {

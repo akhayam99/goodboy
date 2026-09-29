@@ -3,7 +3,7 @@ import { Lock } from 'lucide-react';
 import { Eyebrow } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
-export type WhatGoodboyCanDoLine = {
+type WhatGoodboyCanDoLine = {
   readonly icon: ReactNode;
   readonly text: string;
 };

@@ -1,9 +1,9 @@
 import { CHANGELOG_RELEASES } from '../../../features/changelog/changelogSource';
 import type { ReleaseEntry } from '../../../features/changelog/parseChangelog';
 
-export type ChangelogDatesStatus = 'idle' | 'loading' | 'ready' | 'error';
+type ChangelogDatesStatus = 'idle' | 'loading' | 'ready' | 'error';
 
-export type ChangelogUpcoming = {
+type ChangelogUpcoming = {
   readonly target: string;
   readonly releases: ReadonlyArray<ReleaseEntry>;
 };

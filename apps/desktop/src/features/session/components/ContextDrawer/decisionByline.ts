@@ -9,7 +9,7 @@ type WhoParams = {
   readonly agentNames: AgentNames;
 };
 
-export const decisionAuthorLabel = ({ author, agentId, agentNames }: WhoParams): string => {
+const decisionAuthorLabel = ({ author, agentId, agentNames }: WhoParams): string => {
   switch (author) {
     case 'user':
       return 'You';

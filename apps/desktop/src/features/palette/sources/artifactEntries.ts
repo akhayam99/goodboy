@@ -8,7 +8,7 @@ import type {
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { PaletteEntry } from '../types';
 
-export type ArtifactOpenParams = {
+type ArtifactOpenParams = {
   readonly sessionId: SessionId;
   readonly artifactId: ArtifactId;
 };
@@ -40,7 +40,7 @@ const ARTIFACT_STATUS = {
   discarded: 'Discarded',
 } as const satisfies Record<ArtifactStatus, string>;
 
-export const artifactKey = (artifactId: string): string => `artifact:${artifactId}`;
+const artifactKey = (artifactId: string): string => `artifact:${artifactId}`;
 
 export const artifactEntries = ({
   sessionId,

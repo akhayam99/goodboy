@@ -5,7 +5,7 @@ import type { GetFn, SetFn } from './types';
 
 const MAX_CONTINUE = 1;
 
-export type ContinueUnit = 'step' | 'cluster';
+type ContinueUnit = 'step' | 'cluster';
 
 export type ContinueOutcome = 'continued' | 'blocked' | 'failed';
 

@@ -2,7 +2,7 @@ import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWork
 import { listSessionPrFetches } from '../github/resolveSessionPrFetch';
 import type { GetFn, RecheckReason, RecheckSessionMountsParams } from './types';
 
-export const RECHECK_MIN_AGE_MS: Readonly<Record<RecheckReason, number>> = {
+const RECHECK_MIN_AGE_MS: Readonly<Record<RecheckReason, number>> = {
   'turn-end': 5_000,
   focus: 60_000,
 };

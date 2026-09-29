@@ -1,6 +1,6 @@
 import { currentPlatform } from '../platform';
 
-export type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
+type ShortcutPlane = 'app' | 'session' | 'lens' | 'pane';
 
 export type ShortcutGroup =
   'general' | 'workspaces' | 'navigate' | 'session' | 'views' | 'review' | 'diff' | 'window';

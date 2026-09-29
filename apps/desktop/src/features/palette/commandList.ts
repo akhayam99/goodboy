@@ -34,9 +34,9 @@ type ActionsParams = {
   readonly now: number;
 };
 
-export const RECENT_LIMIT = 5;
+const RECENT_LIMIT = 5;
 
-export const JUMP_TO_TITLE = 'Jump to';
+const JUMP_TO_TITLE = 'Jump to';
 
 const QUESTION_WORDS = 4;
 

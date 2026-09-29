@@ -11,7 +11,7 @@ export type ImportWireframeParams = {
   readonly fidelity: WireframeFidelity;
 };
 
-export const IMPORTED_AGENT_NAME = 'Wireframe';
+const IMPORTED_AGENT_NAME = 'Wireframe';
 
 export const importWireframe = (set: SetFn, get: GetFn) => {
   return async ({

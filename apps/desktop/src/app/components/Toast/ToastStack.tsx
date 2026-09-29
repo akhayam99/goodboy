@@ -2,7 +2,7 @@ import { ToastCard } from './ToastCard';
 import { ToastOverflowChip } from './ToastOverflowChip';
 import type { ToastItem } from './types';
 
-export const MAX_PERSISTED_TOASTS = 3;
+const MAX_PERSISTED_TOASTS = 3;
 
 type ToastStackProps = {
   readonly toasts: ReadonlyArray<ToastItem>;

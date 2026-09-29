@@ -23,7 +23,7 @@ export type ScriptRunRecord = {
 
 export type ScriptSource = 'package-json' | 'composer';
 
-export type DiscoveredScript = {
+type DiscoveredScript = {
   readonly name: string;
   readonly command: string;
   readonly body: string;

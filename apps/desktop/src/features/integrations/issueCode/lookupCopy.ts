@@ -3,7 +3,7 @@ import type { InboxRecord } from '../../inbox/types';
 import type { LookupFailure } from './classifyLookupError';
 import type { LookupProvider, LookupTarget } from './routeIssueCode';
 
-export const PROVIDER_LABEL: Readonly<Record<LookupProvider, string>> = {
+const PROVIDER_LABEL: Readonly<Record<LookupProvider, string>> = {
   linear: 'Linear',
   jira: 'Jira',
   github: 'GitHub',
@@ -14,7 +14,7 @@ export const PROVIDER_LABEL: Readonly<Record<LookupProvider, string>> = {
 export const targetProvider = (target: LookupTarget): LookupProvider =>
   target.provider === 'sentry-id' ? 'sentry' : target.provider;
 
-export type LookupStatusAction =
+type LookupStatusAction =
   | {
       readonly kind: 'open-integrations';
       readonly label: string;

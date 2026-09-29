@@ -22,13 +22,13 @@ import {
   type PlanPartsProgress,
 } from '../plans/components/PlanParts/planPartRows';
 
-export type ArtifactRowTone = 'warning' | 'info' | 'danger' | 'neutral';
+type ArtifactRowTone = 'warning' | 'info' | 'danger' | 'neutral';
 
-export type ArtifactRowTarget =
+type ArtifactRowTarget =
   | Readonly<{ kind: 'artifact'; artifactId: ArtifactId }>
   | Readonly<{ kind: 'generation'; generation: ArtifactGeneration }>;
 
-export type ArtifactRowAction = 'stop' | 'retry';
+type ArtifactRowAction = 'stop' | 'retry';
 
 export type ArtifactListRow = Readonly<{
   key: string;

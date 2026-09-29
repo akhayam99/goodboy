@@ -13,7 +13,7 @@ type ReleaseHeaderMetaParams = {
   readonly dateLabel: string | null;
 };
 
-export const releaseHeaderMeta = ({ release, dateLabel }: ReleaseHeaderMetaParams): string => {
+const releaseHeaderMeta = ({ release, dateLabel }: ReleaseHeaderMetaParams): string => {
   if (release.shape !== 'v2') {
     return dateLabel ?? '';
   }
@@ -29,7 +29,7 @@ export const releaseHeaderMeta = ({ release, dateLabel }: ReleaseHeaderMetaParam
 
 export type ReleaseEyebrowLabel = 'Installed' | 'In the update' | null;
 
-export const releaseEyebrowLabel = ({
+const releaseEyebrowLabel = ({
   release,
   installedVersion,
 }: {

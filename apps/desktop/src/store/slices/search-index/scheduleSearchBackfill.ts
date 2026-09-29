@@ -1,6 +1,6 @@
 import type { GetFn } from './types';
 
-export const SEARCH_BACKFILL_DELAY_MS = 5_000;
+const SEARCH_BACKFILL_DELAY_MS = 5_000;
 
 type Params = {
   readonly get: GetFn;

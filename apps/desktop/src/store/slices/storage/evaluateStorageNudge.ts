@@ -3,10 +3,10 @@ import { STORAGE_DAY_MS } from './classifyStorageFolder';
 const GB = 1024 ** 3;
 
 export const NUDGE_MIN_BYTES = 10 * GB;
-export const NUDGE_GROWTH_BYTES = 10 * GB;
-export const NUDGE_LOW_DISK_BYTES = 10 * GB;
-export const NUDGE_LOW_DISK_MIN_BYTES = GB;
-export const NUDGE_QUIET_DAYS = 14;
+const NUDGE_GROWTH_BYTES = 10 * GB;
+const NUDGE_LOW_DISK_BYTES = 10 * GB;
+const NUDGE_LOW_DISK_MIN_BYTES = GB;
+const NUDGE_QUIET_DAYS = 14;
 
 export type StorageNudgeInput = {
   readonly canGoBytes: number;

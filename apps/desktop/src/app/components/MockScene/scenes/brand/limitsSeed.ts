@@ -13,7 +13,7 @@ const CAPABILITIES = {
   supportsCheapModel: true,
 };
 
-export const BRAND_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
+const BRAND_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = [
   {
     id: 'anthropic',
     binary: 'claude',

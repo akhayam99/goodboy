@@ -8,7 +8,7 @@ export type ResolveUiState =
 
 export type ResolveFailedStep = 'run' | 'push' | 'reply' | 'resolve' | 'uncertain';
 
-export type ResolveRowAction =
+type ResolveRowAction =
   'resolve' | 'answer' | 'review' | 'retry' | 'retry_reply' | 'open_github' | 'resume';
 
 export type ResolveRowState = {

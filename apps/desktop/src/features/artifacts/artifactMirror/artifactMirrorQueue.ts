@@ -24,14 +24,10 @@ const appVersion = (): Promise<string | null> => {
   return version;
 };
 
-export const artifactMirrorKey = ({ artifact }: { readonly artifact: SessionArtifact }): string =>
+const artifactMirrorKey = ({ artifact }: { readonly artifact: SessionArtifact }): string =>
   `${artifact.revision}|${artifact.updatedAt}|${artifact.status}|${artifact.title}|${ARTIFACT_RENDERER_VERSION}`;
 
-export const markArtifactMirrored = ({
-  artifact,
-}: {
-  readonly artifact: SessionArtifact;
-}): void => {
+const markArtifactMirrored = ({ artifact }: { readonly artifact: SessionArtifact }): void => {
   written.set(artifact.id, artifactMirrorKey({ artifact }));
 };
 

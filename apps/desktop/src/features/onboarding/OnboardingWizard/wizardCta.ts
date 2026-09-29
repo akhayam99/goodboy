@@ -2,7 +2,7 @@ import type { WizardStepId } from './wizardSteps';
 
 export type WizardCtaAction = 'next' | 'commit-project' | 'finish';
 
-export type WizardCta = {
+type WizardCta = {
   readonly label: string;
   readonly action: WizardCtaAction;
   readonly disabled: boolean;

@@ -1,4 +1,4 @@
-export type WireframeVersionAuthor = 'agent' | 'user' | 'import' | 'restore';
+type WireframeVersionAuthor = 'agent' | 'user' | 'import' | 'restore';
 
 export type WireframeVersion = Readonly<{
   revision: number;

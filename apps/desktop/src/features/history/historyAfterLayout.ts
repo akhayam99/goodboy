@@ -1,4 +1,4 @@
-export const AFTER_NODE_GAP = 44;
+const AFTER_NODE_GAP = 44;
 
 type Params = {
   readonly keep: ReadonlyArray<string>;

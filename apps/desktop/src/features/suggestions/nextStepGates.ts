@@ -60,7 +60,7 @@ type ApplyLearnedDemotionParams = {
   readonly demotedKinds?: ReadonlySet<SuggestionKind>;
 };
 
-export const sortPriority = ({
+const sortPriority = ({
   suggestion,
   demotedKinds,
 }: {
