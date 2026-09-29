@@ -18,7 +18,7 @@ import { compareIsoDesc } from '../../../../../shared/utils/compareIsoDesc';
 
 const GITHUB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['github'];
 
-export type GithubPrRow = Readonly<{
+type GithubPrRow = Readonly<{
   pr: PullRequestState;
   role: GithubInboxPrRole;
   sessionId: SessionId | null;

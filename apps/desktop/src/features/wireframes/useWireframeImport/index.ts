@@ -3,7 +3,7 @@ import { formatError } from '@goodboy/ui';
 import type { WireframeImport } from '../importWireframeJson';
 import { pickWireframeFile, readWireframeFile } from '../readWireframeFile';
 
-export type ReadyWireframeImport = Extract<WireframeImport, Readonly<{ status: 'ready' }>>;
+type ReadyWireframeImport = Extract<WireframeImport, Readonly<{ status: 'ready' }>>;
 
 type Params = {
   readonly commit: (ready: ReadyWireframeImport) => Promise<void>;

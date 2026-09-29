@@ -29,9 +29,9 @@ const VERDICTS = [
   { value: 'request_changes', label: 'Request changes' },
 ] as const;
 
-export const WRITE_REVIEW_FORM_LABEL = 'Your review';
-export const NO_LINE_COMMENTS = 'No line comments yet. Click a line number in the diff above.';
-export const ONE_REVIEW_HINT = 'GitHub shows it as one review.';
+const WRITE_REVIEW_FORM_LABEL = 'Your review';
+const NO_LINE_COMMENTS = 'No line comments yet. Click a line number in the diff above.';
+const ONE_REVIEW_HINT = 'GitHub shows it as one review.';
 
 export const WriteReviewForm = ({ sessionId }: Props) => {
   const drafts = useAppStore(

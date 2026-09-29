@@ -37,7 +37,7 @@ const matchesEntry = ({ workflow, entry }: MatchParams): boolean => {
   });
 };
 
-export type BuiltinDrift = 'edited' | 'deleted';
+type BuiltinDrift = 'edited' | 'deleted';
 
 export type RestorableBuiltin = {
   readonly entry: WorkflowLibraryEntry;

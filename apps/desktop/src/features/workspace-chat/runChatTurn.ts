@@ -6,7 +6,7 @@ import type { ChatId, IsoDateTime, ProviderId, ProviderRunId } from '@goodboy/ty
 import { parseProviderLine } from '../chat/parseProviderLine';
 import { chatReadPaths } from './chatReadPath';
 
-export const CHAT_EVENT_NAME = 'chat_event';
+const CHAT_EVENT_NAME = 'chat_event';
 
 const NO_ANSWER_MESSAGE = 'The provider ended without an answer.';
 

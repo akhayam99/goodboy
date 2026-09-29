@@ -1,7 +1,7 @@
 import type { IsoDateTime } from '@goodboy/types';
 import type { ReleaseEntry } from '../../../features/changelog/parseChangelog';
 
-export type UpdaterStatus =
+type UpdaterStatus =
   | 'idle'
   | 'checking'
   | 'available'
@@ -16,7 +16,7 @@ export type UpdateFailure = {
   readonly message: string;
 };
 
-export type UpdateProgress = {
+type UpdateProgress = {
   readonly downloaded: number;
   readonly total: number | null;
 };

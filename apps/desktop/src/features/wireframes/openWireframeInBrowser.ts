@@ -10,7 +10,7 @@ type Params = {
   readonly screenId: string | null;
 };
 
-export const wireframeBrowserFile = ({ screenId }: { readonly screenId: string | null }): string =>
+const wireframeBrowserFile = ({ screenId }: { readonly screenId: string | null }): string =>
   screenId === null ? WIREFRAME_INDEX_PAGE : screenPagePath({ screenId, state: null });
 
 export const openWireframeInBrowser = async ({

@@ -34,7 +34,7 @@ export type WorkspaceIssueLookup = {
   readonly settled: LookupResult | null;
 };
 
-export const RATE_LIMIT_RETRY_MS = 20_000;
+const RATE_LIMIT_RETRY_MS = 20_000;
 
 const EMPTY_RESULT: LookupResult = { hits: [], misses: [] };
 const EMPTY_PROVIDERS: ReadonlyArray<LookupProvider> = [];

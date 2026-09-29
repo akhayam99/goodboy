@@ -13,7 +13,7 @@ export type StageRequest = Readonly<{
   requestLabel: string;
 }>;
 
-export type SessionStageRequestState = MountRequestState & Pick<AppState, 'sessionMounts'>;
+type SessionStageRequestState = MountRequestState & Pick<AppState, 'sessionMounts'>;
 
 type Params = {
   readonly state: SessionStageRequestState;
@@ -40,7 +40,7 @@ const rankOf = ({ request }: RankParams): number => {
   return 1;
 };
 
-export const worstMountRequestOf = ({
+const worstMountRequestOf = ({
   requests,
 }: {
   readonly requests: ReadonlyArray<MountRequestView>;

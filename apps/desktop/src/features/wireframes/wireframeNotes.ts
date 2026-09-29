@@ -22,7 +22,7 @@ export type WireframeScreenLink = Readonly<{
   toNumber: number;
 }>;
 
-export const screenNodes = ({
+const screenNodes = ({
   screen,
 }: {
   readonly screen: WireframeScreen;

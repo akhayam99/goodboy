@@ -25,7 +25,7 @@ type Params = SliceParams &
     readonly attempts: ReadonlyArray<ResolveAttempt>;
   };
 
-export const TARGET_UNRESOLVED = 'target_unresolved';
+const TARGET_UNRESOLVED = 'target_unresolved';
 
 const isActive = ({ attempt }: { readonly attempt: ResolveAttempt }): boolean =>
   attempt.phase === 'queued' || attempt.phase === 'running';

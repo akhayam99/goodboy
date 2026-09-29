@@ -32,7 +32,7 @@ type Params = {
   readonly onSelectQuestions: () => void;
 };
 
-export type SuggestionAction = {
+type SuggestionAction = {
   readonly label: string;
   readonly isDisabled: boolean;
   readonly failureTitle: string;

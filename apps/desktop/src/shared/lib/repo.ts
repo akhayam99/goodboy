@@ -85,7 +85,7 @@ export const repoIdentity = async ({ path }: RepoIdentityParams): Promise<RepoId
 export type MovedProjectVerdict =
   'same_repository' | 'same_name_unconfirmed' | 'different_repository' | 'not_found';
 
-export type MovedProjectInput = {
+type MovedProjectInput = {
   readonly id: string;
   readonly name: string;
   readonly rootCommit?: string;

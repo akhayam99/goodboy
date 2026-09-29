@@ -1,7 +1,7 @@
 import { formatUsd, type Tone } from '@goodboy/ui';
 import type { SessionBudget } from '@goodboy/types';
 
-export type SessionSpendLevel = 'free' | 'clear' | 'near' | 'over';
+type SessionSpendLevel = 'free' | 'clear' | 'near' | 'over';
 
 export type SessionSpendPresentation = {
   readonly level: SessionSpendLevel;
@@ -11,7 +11,7 @@ export type SessionSpendPresentation = {
   readonly isPaused: boolean;
 };
 
-export const SPEND_NEAR_RATIO = 0.8;
+const SPEND_NEAR_RATIO = 0.8;
 
 type Params = {
   readonly totalUsd: number;

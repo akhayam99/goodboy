@@ -5,7 +5,7 @@ import { formatLimitReset, formatTimeUntil } from '../../../../../limits/formatL
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-export const formatResetDate = (iso: string): string => formatDateTime({ at: iso });
+const formatResetDate = (iso: string): string => formatDateTime({ at: iso });
 
 export const nextWeeklyRefillAfterReset = ({ nowMs }: { readonly nowMs: number }): string =>
   formatResetDate(new Date(nowMs + WEEK_MS).toISOString());

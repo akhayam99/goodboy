@@ -25,7 +25,7 @@ type Params = {
   readonly threadIds: ReadonlyArray<string>;
 };
 
-export const NOTHING_TO_DRAFT = 'These comments are no longer on the pull request';
+const NOTHING_TO_DRAFT = 'These comments are no longer on the pull request';
 
 export const draftFixes = async ({
   getState,

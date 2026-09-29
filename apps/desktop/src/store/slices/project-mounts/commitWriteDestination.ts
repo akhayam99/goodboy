@@ -4,7 +4,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { writeDestinationPatch } from './writeDestinationPatch';
 import type { SetFn } from './types';
 
-export type PreviousWriteDestination = 'held' | 'released';
+type PreviousWriteDestination = 'held' | 'released';
 
 type Params = {
   readonly set: SetFn;

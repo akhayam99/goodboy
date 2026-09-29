@@ -7,7 +7,7 @@ const GENERIC_KIND = 'artifact';
 
 const MAX_TITLE_LENGTH = 300;
 
-export type ArtifactTextSegment =
+type ArtifactTextSegment =
   | { readonly kind: 'prose'; readonly text: string }
   | {
       readonly kind: 'artifact';

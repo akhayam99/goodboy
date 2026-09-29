@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { SearchHit, SearchQuery } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 
-export const SEARCH_DEBOUNCE_MS = 120;
+const SEARCH_DEBOUNCE_MS = 120;
 
 export type SearchResults = {
   readonly hits: ReadonlyArray<SearchHit>;

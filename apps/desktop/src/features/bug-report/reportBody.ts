@@ -138,7 +138,7 @@ type CountParams = {
   readonly excluded: ReadonlySet<ReportPartId>;
 };
 
-export const countRedactions = ({ parts, excluded }: CountParams): number =>
+const countRedactions = ({ parts, excluded }: CountParams): number =>
   parts
     .filter((part) => !excluded.has(part.id))
     .reduce((total, part) => total + (part.text.match(REDACTION_MARK)?.length ?? 0), 0);

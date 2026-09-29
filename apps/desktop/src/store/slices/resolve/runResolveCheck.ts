@@ -20,11 +20,11 @@ import type { CheckRunParams, GetFn, SliceParams } from './types';
 
 type Params = SliceParams & CheckRunParams;
 
-export const NO_CANDIDATE = 'That proposal is gone, so there is nothing to check';
-export const UNATTRIBUTABLE_TREE =
+const NO_CANDIDATE = 'That proposal is gone, so there is nothing to check';
+const UNATTRIBUTABLE_TREE =
   'The tree under this run is neither the current code nor the proposal, so a run here would prove nothing';
-export const TREE_MOVED = 'The tree moved while the check ran, so nothing was recorded';
-export const DEPENDENCIES_ABSENT =
+const TREE_MOVED = 'The tree moved while the check ran, so nothing was recorded';
+const DEPENDENCIES_ABSENT =
   'The proposal cannot be checked outside the worktree until its dependencies are installed there';
 
 const DEPENDENCY_DIRS = ['node_modules', 'vendor', '.venv'] as const;

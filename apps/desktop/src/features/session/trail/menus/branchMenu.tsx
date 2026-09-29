@@ -26,7 +26,7 @@ import {
 } from '../../../../shared/lib/branchPresence';
 import { DiffStat } from '../../components/DiffStat';
 
-export type BranchStat = {
+type BranchStat = {
   readonly additions: number;
   readonly deletions: number;
 };
@@ -55,7 +55,7 @@ const PRIORITY_LOOK = {
   'on-origin': { tone: 'neutral', glyph: Cloud },
 } satisfies Record<BranchPriorityKind, BranchLook>;
 
-export type BranchPlace = Pick<SessionProjectMount, 'baseBranch' | 'worktreePath' | 'repoRoot'>;
+type BranchPlace = Pick<SessionProjectMount, 'baseBranch' | 'worktreePath' | 'repoRoot'>;
 
 type BranchStateParams = {
   readonly status: WorktreeStatus | null;

@@ -2,7 +2,7 @@ import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveA
 import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import type { ScriptRunRecord } from '../../scripts';
 
-export type LastRunGlyph = 'running' | 'passed' | 'failed' | 'stopped';
+type LastRunGlyph = 'running' | 'passed' | 'failed' | 'stopped';
 
 export type LastRun = {
   readonly glyph: LastRunGlyph;

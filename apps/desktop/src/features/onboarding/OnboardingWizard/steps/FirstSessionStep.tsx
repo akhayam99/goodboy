@@ -35,7 +35,7 @@ type Starter = {
   readonly prompt: (project: string) => string;
 };
 
-export const FIRST_SESSION_STARTERS: ReadonlyArray<Starter> = [
+const FIRST_SESSION_STARTERS: ReadonlyArray<Starter> = [
   {
     label: 'Explain how this project is organized',
     prompt: (project) =>

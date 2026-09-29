@@ -31,7 +31,7 @@ const fileText = ({ path, index, hunks }: FilePatch): string =>
 
 export const APPLY_WEBHOOK_PATH = 'src/webhooks/applyWebhook.ts';
 export const POST_CREDIT_PATH = 'src/ledger/postCredit.ts';
-export const WEBHOOK_TEST_PATH = 'test/applyWebhook.test.ts';
+const WEBHOOK_TEST_PATH = 'test/applyWebhook.test.ts';
 
 const APPLY_WEBHOOK: FilePatch = {
   path: APPLY_WEBHOOK_PATH,

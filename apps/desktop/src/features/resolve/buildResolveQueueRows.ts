@@ -28,7 +28,7 @@ import {
 
 export type ResolveConversationSource = 'github' | 'note';
 
-export type ResolveQueueReviewerNote = {
+type ResolveQueueReviewerNote = {
   readonly source: ResolveConversationSource;
   readonly body: string;
   readonly author: string;
@@ -38,7 +38,7 @@ export type ResolveQueueReviewerNote = {
   readonly line: number | null;
 };
 
-export type ResolveQueueDelivery = {
+type ResolveQueueDelivery = {
   readonly isReplyPosted: boolean;
   readonly replyPostedAt: number | null;
   readonly isThreadResolved: boolean;

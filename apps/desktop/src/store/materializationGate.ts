@@ -9,8 +9,8 @@ import type {
 import { pendingMountProposals } from './materializationProposals';
 import type { GetFn } from './slice-types';
 
-export const IMMEDIATE_MATERIALIZE_CAP = 2;
-export const UNNAMED_FOOTPRINT_CAP = 2;
+const IMMEDIATE_MATERIALIZE_CAP = 2;
+const UNNAMED_FOOTPRINT_CAP = 2;
 
 export type MaterializationDecision =
   | { readonly kind: 'mounted' }
@@ -47,7 +47,7 @@ const explicitlyAuthorizedProjectIds = ({
   return ids;
 };
 
-export const isAuthorizedProject = ({ get, sessionId, project }: AuthorizationParams): boolean => {
+const isAuthorizedProject = ({ get, sessionId, project }: AuthorizationParams): boolean => {
   if (explicitlyAuthorizedProjectIds({ get, sessionId }).has(project.id)) {
     return true;
   }

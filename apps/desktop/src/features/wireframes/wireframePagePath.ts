@@ -2,7 +2,7 @@ import { WIREFRAME_SCREENS_DIR, wireframeScreenFile } from './wireframePages/wir
 
 export const WIREFRAME_INDEX_PAGE = 'index.html';
 
-export const WIREFRAME_STATE_SEPARATOR = '--';
+const WIREFRAME_STATE_SEPARATOR = '--';
 
 export type WireframePage = Readonly<{
   screenId: string;

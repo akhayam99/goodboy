@@ -248,7 +248,7 @@ export type SummarizerSessionStatus = {
   } | null;
 };
 
-export type PendingOrchestration = {
+type PendingOrchestration = {
   readonly sessionId: SessionId;
   readonly bypassGate: boolean;
   readonly routing?: OrchestratorRouting;

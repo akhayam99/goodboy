@@ -17,7 +17,7 @@ type Props = {
   readonly question?: WorkflowRunStatusQuestion | null;
 };
 
-export type WorkflowRunStatusQuestion = {
+type WorkflowRunStatusQuestion = {
   readonly count: number;
   readonly isInView: boolean;
   readonly onReveal: () => void;

@@ -13,7 +13,7 @@ import {
 } from '../../../shared/lib/branchPushState';
 import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
 
-export type MountRequestPhase = 'open' | 'draft' | 'merged' | 'closed';
+type MountRequestPhase = 'open' | 'draft' | 'merged' | 'closed';
 
 export type MountFacts = {
   readonly sessionId: SessionId;
@@ -45,7 +45,7 @@ export type MountFacts = {
   readonly editors: ReadonlyArray<MountEditor>;
 };
 
-export type MountEditor = {
+type MountEditor = {
   readonly binary: string;
   readonly label: string;
 };

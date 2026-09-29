@@ -19,7 +19,7 @@ export type ObjectMenuTrigger = {
 
 const KEYBOARD_INSET = 8;
 
-export const isMenuKey = (event: { readonly key: string; readonly shiftKey: boolean }): boolean =>
+const isMenuKey = (event: { readonly key: string; readonly shiftKey: boolean }): boolean =>
   (event.key === 'F10' && event.shiftKey) || event.key === 'ContextMenu';
 
 export const useObjectMenuTrigger = ({

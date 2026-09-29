@@ -23,7 +23,7 @@ type Props = {
   readonly onPick: (choice: ChatModelChoice) => void;
 };
 
-export const CHAT_MODEL_MENU_LABEL = 'Model for this chat';
+const CHAT_MODEL_MENU_LABEL = 'Model for this chat';
 
 export const ChatModelMenu = ({ provider, model, onPick }: Props) => {
   const dropdown = useDropdown({

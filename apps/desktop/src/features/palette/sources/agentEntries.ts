@@ -3,12 +3,12 @@ import { AGENT_KIND_META, agentKindPalette, type AgentKind } from '../../session
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import type { PaletteEntry } from '../types';
 
-export type AgentOpenParams = {
+type AgentOpenParams = {
   readonly sessionId: SessionId;
   readonly agentId: AgentId;
 };
 
-export type AgentKindParams = {
+type AgentKindParams = {
   readonly agent: Agent;
 };
 

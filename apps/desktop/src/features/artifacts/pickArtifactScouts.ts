@@ -20,7 +20,7 @@ export const NO_MOUNT_NO_SCOUT_REASON =
 export const NO_DIFF_NO_SCOUT_REASON =
   'the diff touches none of the chosen repositories, so no scout walks one';
 
-export const DESIGN_DIRECTORY_NAMES: ReadonlyArray<string> = [
+const DESIGN_DIRECTORY_NAMES: ReadonlyArray<string> = [
   'tokens',
   'design-tokens',
   'theme',
@@ -28,7 +28,7 @@ export const DESIGN_DIRECTORY_NAMES: ReadonlyArray<string> = [
   'design-system',
 ];
 
-export const PROBE_REL_PATHS: ReadonlyArray<string> = ['', 'src'];
+const PROBE_REL_PATHS: ReadonlyArray<string> = ['', 'src'];
 
 export type ArtifactScoutMount = Readonly<{
   mountId: MountId;

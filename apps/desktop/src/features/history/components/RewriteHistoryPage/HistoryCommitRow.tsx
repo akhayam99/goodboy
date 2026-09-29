@@ -21,7 +21,7 @@ import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 import type { CommitActionTarget } from '../../../actions/types';
 import { useHeldPaletteScope } from '../../../palette/useHeldPaletteScope';
 
-export type HistoryTakenInRow = {
+type HistoryTakenInRow = {
   readonly commit: BranchCommit;
   readonly mode: CombineMode;
 };

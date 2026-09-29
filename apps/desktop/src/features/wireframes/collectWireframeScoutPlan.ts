@@ -24,7 +24,7 @@ import {
 import { WIREFRAME_SCOUTS } from './wireframeScoutRoles';
 import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 
-export type WireframeScoutGate =
+type WireframeScoutGate =
   | Readonly<{ kind: 'skipped'; reason: string }>
   | Readonly<{
       kind: 'ready';

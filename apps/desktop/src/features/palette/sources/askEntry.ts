@@ -3,7 +3,7 @@ import type { PaletteEntry } from '../types';
 
 export const ASK_IN_CHAT_KEY = 'ask:chat';
 
-export const ASK_IN_CHAT_LABEL = 'Ask in Chat';
+const ASK_IN_CHAT_LABEL = 'Ask in Chat';
 
 type Params = {
   readonly query: string;

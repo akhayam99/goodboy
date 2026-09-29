@@ -48,7 +48,7 @@ export const storageFolderStatus = ({ folder }: FolderParams): StorageFolderStat
   return 'safe';
 };
 
-export const isStorageFolderKept = ({ folder, now }: FolderAtParams): boolean => {
+const isStorageFolderKept = ({ folder, now }: FolderAtParams): boolean => {
   if (folder.keptAt === null) {
     return false;
   }

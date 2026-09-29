@@ -80,7 +80,7 @@ type NoteParams = {
 
 const firstLine = (text: string): string => text.trim().split('\n')[0]?.trim() ?? '';
 
-export const baseStepName = ({ step, groups }: NoteParams): string | null => {
+const baseStepName = ({ step, groups }: NoteParams): string | null => {
   if (step.baseStepId === null) {
     return null;
   }

@@ -43,7 +43,7 @@ const isStatementResult = (value: unknown): value is StatementResult =>
   Array.isArray(value.rows) &&
   value.rows.every(isRecord);
 
-export const isTransactionOutcome = (value: unknown): value is TransactionOutcome => {
+const isTransactionOutcome = (value: unknown): value is TransactionOutcome => {
   if (!isRecord(value)) {
     return false;
   }

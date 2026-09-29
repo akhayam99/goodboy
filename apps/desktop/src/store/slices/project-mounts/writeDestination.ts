@@ -1,7 +1,7 @@
 import type { MountId, Project, ProjectId, SessionProjectMount } from '@goodboy/types';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 
-export type WriteDestinationMount = Readonly<{
+type WriteDestinationMount = Readonly<{
   kind: 'mount';
   mountId: MountId;
   projectId: ProjectId;
@@ -14,7 +14,7 @@ export type WriteDestinationMount = Readonly<{
 
 export type WriteDestinationCandidate = WriteDestinationMount;
 
-export type WriteDestinationScratch = Readonly<{ kind: 'scratch'; path: string | null }>;
+type WriteDestinationScratch = Readonly<{ kind: 'scratch'; path: string | null }>;
 
 export type WriteDestination = WriteDestinationMount | WriteDestinationScratch;
 

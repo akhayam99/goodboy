@@ -6,7 +6,7 @@ import { exportArtifactToFile } from '../../artifactFile';
 import { artifactFileSlug } from './artifactFileSlug';
 import { artifactExportContents, artifactSourceExport } from './artifactSourceExport';
 
-export type ArtifactExportAction = 'copy' | 'source';
+type ArtifactExportAction = 'copy' | 'source';
 
 export type ArtifactExportStatus =
   | Readonly<{ kind: 'idle' }>

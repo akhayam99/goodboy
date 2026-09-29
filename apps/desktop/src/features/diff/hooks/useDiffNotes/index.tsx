@@ -21,7 +21,7 @@ type ThreadParams = {
   readonly onViewAgent: (agentId: AgentId) => void;
 };
 
-export const noteThread = ({ note, agentName, onViewAgent }: ThreadParams): DiffThread => {
+const noteThread = ({ note, agentName, onViewAgent }: ThreadParams): DiffThread => {
   const consumedBy = note.consumedByAgentId ?? null;
   return {
     id: note.id,

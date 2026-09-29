@@ -1,6 +1,6 @@
 import { invokeCommand } from '../../shared/lib/invokeCommand';
 
-export type LastCrashSource = 'window' | 'promise' | 'rust';
+type LastCrashSource = 'window' | 'promise' | 'rust';
 
 export type LastCrashKind = 'panic' | 'error';
 

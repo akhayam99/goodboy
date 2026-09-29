@@ -1,7 +1,7 @@
 import type { Agent, OpenQuestion, OpenQuestionId } from '@goodboy/types';
 import { partitionDelegatedQuestions } from '../../../../context/questionDelegate';
 
-export type QuestionRowKind = 'waiting' | 'delegated' | 'staged' | 'dismissed' | 'answered';
+type QuestionRowKind = 'waiting' | 'delegated' | 'staged' | 'dismissed' | 'answered';
 
 export type QuestionRow = {
   readonly question: OpenQuestion;

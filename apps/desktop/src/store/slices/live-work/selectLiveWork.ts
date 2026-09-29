@@ -13,7 +13,7 @@ export type SessionLiveWork = Readonly<{
   isDeciding: boolean;
 }>;
 
-export type DecidingRun = Readonly<{
+type DecidingRun = Readonly<{
   sessionId: SessionId;
   workflowRunId: WorkflowRunId;
 }>;
@@ -38,7 +38,7 @@ type LiveWorkParams = {
   readonly state: LiveWorkState;
 };
 
-export const decidingRunIdsOf = ({ state, session }: SessionParams): ReadonlyArray<WorkflowRunId> =>
+const decidingRunIdsOf = ({ state, session }: SessionParams): ReadonlyArray<WorkflowRunId> =>
   session.workflowRuns
     .filter((run) => state.orchestratingWorkflowRuns?.[run.id] === true && run.discardedAt == null)
     .map((run) => run.id);

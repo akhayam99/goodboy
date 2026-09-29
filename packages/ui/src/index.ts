@@ -27,7 +27,6 @@ export {
   DrawerColumn,
   RIGHT_DRAWER_DEFAULT,
   RIGHT_DRAWER_MAX,
-  RIGHT_DRAWER_MIN,
   RIGHT_DRAWER_STORAGE_KEY,
   canDrawerPush,
 } from './components/DrawerColumn';
@@ -81,8 +80,6 @@ export type {
   MenuPoint,
 } from './components/ContextMenu/menuTypes';
 export type { OverflowMenuItem } from './components/MenuItems';
-export { SplitButton } from './components/SplitButton';
-export type { SplitButtonPrimaryParams } from './components/SplitButton';
 export { PanelLoading } from './components/PanelLoading';
 export { RailBlock } from './components/RailBlock';
 export { RailCard } from './components/RailCard';
@@ -135,8 +132,6 @@ export { Eyebrow } from './components/Eyebrow';
 export type { EyebrowProps } from './components/Eyebrow';
 export { FieldRow } from './components/FieldRow';
 export type { FieldRowProps } from './components/FieldRow';
-export { FileDropZone } from './components/FileDropZone';
-export type { FileDropZoneProps } from './components/FileDropZone';
 export type { GhostActionButtonProps } from './components/GhostActionButton';
 export { IconButton } from './components/IconButton';
 export type { IconButtonProps } from './components/IconButton';
@@ -173,7 +168,6 @@ export type { PopoverBodyProps, PopoverProps } from './components/Popover';
 export { RemoteImage } from './components/RemoteImage';
 export { LocalImageLoaderProvider } from './components/LocalImage/LocalImageLoaderProvider';
 export { LocalImage } from './components/LocalImage';
-export { LocalImageLoaderContext } from './components/LocalImage/loaderContext';
 export type { LocalImageLoader } from './components/LocalImage/loaderContext';
 export { RemoteImageLoaderProvider } from './components/RemoteImage/RemoteImageLoaderProvider';
 export type {
@@ -185,7 +179,7 @@ export { ResizeHandle } from './components/ResizeHandle';
 export { Reveal } from './components/Reveal';
 export type { RevealProps } from './components/Reveal';
 export type { ResizeHandleProps } from './components/ResizeHandle';
-export { PageColumn, PAGE_COLUMN_CLASS } from './components/PageColumn';
+export { PageColumn } from './components/PageColumn';
 export { FormActions } from './components/FormActions';
 export { FormPage } from './components/FormPage';
 export { ScrollFade } from './components/ScrollFade';
@@ -246,10 +240,5 @@ export type { TintClasses, Tone } from './tint';
 export { WorkMeta } from './components/WorkTree/WorkMeta';
 export { WORK_META_COLUMN, WORK_ROW } from './components/WorkTree/workMetaSpec';
 export { WorkNode } from './components/WorkTree/WorkNode';
-export {
-  WORK_NODE_GLYPH_SIZE,
-  WORK_NODE_GLYPH_SIZE_SM,
-  WORK_NODE_SIZE,
-  WORK_NODE_SIZE_SM,
-} from './components/WorkTree/workNodeSpec';
+export { WORK_NODE_GLYPH_SIZE, WORK_NODE_SIZE } from './components/WorkTree/workNodeSpec';
 export type { WorkNodeMark, WorkNodeSize, WorkNodeState } from './components/WorkTree/workNodeSpec';

@@ -15,7 +15,7 @@ import type { SliceParams, ThreadParams } from './types';
 
 type Params = SliceParams & ThreadParams;
 
-export const NOTE_NOT_FOUND = 'This note is no longer open';
+const NOTE_NOT_FOUND = 'This note is no longer open';
 
 export const closeResolvedNote = async ({
   set,

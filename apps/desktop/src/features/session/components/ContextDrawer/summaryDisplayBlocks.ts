@@ -6,7 +6,7 @@ import {
 
 const SUMMARY_NOTES_TITLE = 'Notes';
 
-export const SUMMARY_DISPLAY_KEYS = [
+const SUMMARY_DISPLAY_KEYS = [
   'state',
   'next',
   'learned',

@@ -9,7 +9,7 @@ import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExtern
 const CHANNEL_FETCH_CAP = 12;
 const SLACK_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['slack'];
 
-export type SlackThreadRow = {
+type SlackThreadRow = {
   readonly channel: SlackChannel;
   readonly head: SlackMessage;
   readonly sessionId: SessionId | null;

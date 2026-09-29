@@ -17,7 +17,7 @@ type MarkerParams = {
   readonly role: AgentRole;
 };
 
-export const childRoutingMarkerForRole = ({ role }: MarkerParams): string | null =>
+const childRoutingMarkerForRole = ({ role }: MarkerParams): string | null =>
   CHILD_MARKER_FOR_ROLE[role] ?? null;
 
 const INSTRUCTION = [

@@ -12,7 +12,7 @@ export type ImpactScope =
 
 const DAY_MS = 86_400_000;
 
-export const IMPACT_WINDOW_DAYS = {
+const IMPACT_WINDOW_DAYS = {
   last7: 7,
   last30: 30,
 } satisfies Record<Exclude<ImpactWindowId, 'all'>, number>;

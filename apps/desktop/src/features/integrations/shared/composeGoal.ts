@@ -1,7 +1,7 @@
 import { cutAtBoundary } from '../../../shared/utils/cutAtBoundary';
 import { GOAL_BODY_CHAR_CAP } from './goalBodyCap';
 
-export type GoalSource = {
+type GoalSource = {
   readonly noun: string;
   readonly reference: string;
   readonly url: string | null;

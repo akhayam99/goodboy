@@ -3,7 +3,7 @@ export const STORAGE_KEPT_ARCHIVED_KEY = 'storage.keptArchived';
 export const STORAGE_LAST_NUDGE_AT_KEY = 'storage.lastNudgeAt';
 export const STORAGE_LAST_NUDGE_BYTES_KEY = 'storage.lastNudgeBytes';
 
-export const DEFAULT_SUGGEST_AFTER_DAYS = 30;
+const DEFAULT_SUGGEST_AFTER_DAYS = 30;
 
 export const SUGGEST_AFTER_OPTIONS = [7, 14, 30, 60, 90] as const satisfies ReadonlyArray<number>;
 
@@ -11,7 +11,7 @@ type SettingsParams = {
   readonly settings: Readonly<Record<string, string>>;
 };
 
-export type KeptArchivedEntry = {
+type KeptArchivedEntry = {
   readonly keptAt: number;
   readonly keptUntil: number | null;
 };

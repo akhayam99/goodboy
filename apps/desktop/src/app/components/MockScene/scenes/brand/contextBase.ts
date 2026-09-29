@@ -17,15 +17,15 @@ const MINUTE = 60_000;
 export const minutesAgo = (minutes: number): IsoDateTime =>
   new Date(Date.now() - minutes * MINUTE).toISOString() as IsoDateTime;
 
-export const CTX_WORKSPACE_ID = 'mock-brand-ctx-workspace-harborline' as WorkspaceId;
+const CTX_WORKSPACE_ID = 'mock-brand-ctx-workspace-harborline' as WorkspaceId;
 export const CTX_SESSION_ID = 'mock-brand-ctx-session-duplicate-credit' as SessionId;
 export const CTX_PAYMENTS_ID = 'mock-brand-ctx-project-payments-api' as ProjectId;
-export const CTX_LEDGER_ID = 'mock-brand-ctx-project-ledger-core' as ProjectId;
-export const CTX_RELAY_ID = 'mock-brand-ctx-project-notify-relay' as ProjectId;
+const CTX_LEDGER_ID = 'mock-brand-ctx-project-ledger-core' as ProjectId;
+const CTX_RELAY_ID = 'mock-brand-ctx-project-notify-relay' as ProjectId;
 export const CTX_PAYMENTS_MOUNT_ID = 'mock-brand-ctx-mount-payments-api' as MountId;
-export const CTX_LEDGER_MOUNT_ID = 'mock-brand-ctx-mount-ledger-core' as MountId;
+const CTX_LEDGER_MOUNT_ID = 'mock-brand-ctx-mount-ledger-core' as MountId;
 export const CTX_PAYMENTS_WORKTREE = '~/code/harborline/payments-api-fix-duplicate-credit';
-export const CTX_LEDGER_WORKTREE = '~/code/harborline/ledger-core-fix-duplicate-credit';
+const CTX_LEDGER_WORKTREE = '~/code/harborline/ledger-core-fix-duplicate-credit';
 
 const WORKSPACE = mockWorkspace({ id: CTX_WORKSPACE_ID, name: BRAND_WORKSPACE_NAME });
 
@@ -44,7 +44,7 @@ const projectOf = (
   updatedAt: WORKSPACE.updatedAt,
 });
 
-export const CTX_PROJECTS: ReadonlyArray<Project> = [
+const CTX_PROJECTS: ReadonlyArray<Project> = [
   projectOf(CTX_PAYMENTS_ID, BRAND_PROJECTS.payments),
   projectOf(CTX_LEDGER_ID, BRAND_PROJECTS.ledger),
   projectOf(CTX_RELAY_ID, BRAND_PROJECTS.relay),

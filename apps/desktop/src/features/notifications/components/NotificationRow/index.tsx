@@ -12,7 +12,7 @@ import { notificationActionIcon } from '../../actionIcon';
 import { NotificationRowDetail } from './NotificationRowDetail';
 import { useNow } from '../../../../shared/hooks/useNow';
 
-export type NotificationRowDensity = 'compact' | 'cozy';
+type NotificationRowDensity = 'compact' | 'cozy';
 
 type Props = {
   readonly notifications: ReadonlyArray<Notification>;

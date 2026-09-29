@@ -28,7 +28,7 @@ type StatusParams = {
   readonly status: WorkspaceGitStatus;
 };
 
-export const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
+const isReadFailureReason = ({ reason }: ReasonParams): boolean => {
   switch (reason) {
     case 'no-upstream':
     case 'detached-head':
@@ -76,7 +76,7 @@ export const projectUpdateBlockReasonOf = ({ status }: StatusParams): string | n
   return null;
 };
 
-export type ProjectGitRowStatusKind =
+type ProjectGitRowStatusKind =
   | 'behind'
   | 'up-to-date'
   | 'uncommitted'

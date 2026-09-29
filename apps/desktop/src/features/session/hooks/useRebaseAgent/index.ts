@@ -124,11 +124,7 @@ export const rebasePromptFor = ({
     '- If a conflict cannot be resolved confidently, stop and report the conflicting files.',
   ].join('\n');
 
-export const resumeRebasePromptFor = ({
-  baseBranch,
-  mountId,
-  worktreePath,
-}: PromptParams): string =>
+const resumeRebasePromptFor = ({ baseBranch, mountId, worktreePath }: PromptParams): string =>
   [
     `A rebase of this session branch onto origin/${baseBranch} stopped halfway. Finish it.`,
     mountLineFor({ mountId, worktreePath }),

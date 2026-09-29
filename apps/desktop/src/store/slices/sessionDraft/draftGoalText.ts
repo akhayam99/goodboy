@@ -1,4 +1,4 @@
-export const DRAFT_GOAL_LIMIT = 280;
+const DRAFT_GOAL_LIMIT = 280;
 
 type Params = {
   readonly text: string;

@@ -7,8 +7,8 @@ import {
 import { selectLiveWork } from '../live-work/selectLiveWork';
 import type { GetFn } from './types';
 
-export type OpenWorkspaceTarget = 'auto' | 'new-window';
-export type OpenWorkspaceOnRunning = 'ask' | 'new-window';
+type OpenWorkspaceTarget = 'auto' | 'new-window';
+type OpenWorkspaceOnRunning = 'ask' | 'new-window';
 
 export type OpenWorkspaceParams = {
   readonly id: WorkspaceId;
@@ -20,7 +20,7 @@ export type OpenWorkspaceParams = {
 export type OpenWorkspaceResult =
   { readonly kind: 'opened' } | { readonly kind: 'needs-confirm'; readonly running: number };
 
-export const selectRunningHere = (get: GetFn): number =>
+const selectRunningHere = (get: GetFn): number =>
   selectLiveWork({ state: get() }).liveSessionIds.length;
 
 export const openWorkspace = (get: GetFn) => {

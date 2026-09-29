@@ -137,12 +137,12 @@ export type ReportAgentCandidate = Readonly<{
   textLength: number;
 }>;
 
-export type ReportAgentAllocation = Readonly<{
+type ReportAgentAllocation = Readonly<{
   id: string;
   budget: number;
 }>;
 
-export type ReportContextUsage = Readonly<{
+type ReportContextUsage = Readonly<{
   framingUsed: number;
   truncationNotesUsed: number;
   evidenceUsed: number;

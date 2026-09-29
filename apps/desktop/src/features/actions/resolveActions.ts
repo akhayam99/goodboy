@@ -14,7 +14,7 @@ type Params<F> = {
 const groupRank = ({ group }: { readonly group: ResolvedAction['group'] }): number =>
   ACTION_GROUPS.indexOf(group);
 
-export const resolveOne = <F>({
+const resolveOne = <F>({
   definition,
   facts,
 }: {

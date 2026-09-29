@@ -18,7 +18,7 @@ export type ChangelogFix = {
   readonly prs: ReadonlyArray<number>;
 };
 
-export type ReleaseSections = {
+type ReleaseSections = {
   readonly new: ReadonlyArray<ChangelogFeature>;
   readonly improved: ReadonlyArray<ChangelogFeature>;
   readonly fixed: ReadonlyArray<ChangelogFix>;

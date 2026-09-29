@@ -29,7 +29,7 @@ import type {
   ResolvedAction,
 } from './types';
 
-export type RunActionParams = {
+type RunActionParams = {
   readonly actionId: string;
   readonly env: ActionEnv;
   readonly choice?: string | null;
@@ -50,7 +50,7 @@ type BindParams<T, F> = {
   readonly target: T;
 };
 
-export const definitionsFor = <T, F>({
+const definitionsFor = <T, F>({
   definition,
   facts,
 }: {

@@ -7,7 +7,7 @@ type Params = {
   readonly holder: MountBranchHolder | 'checking' | null;
 };
 
-export type BranchDecisionAction = Readonly<{
+type BranchDecisionAction = Readonly<{
   label: string;
   resolution: MountBranchResolution;
   isDisabled: boolean;

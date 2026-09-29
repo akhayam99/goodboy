@@ -6,7 +6,7 @@ export type ReportOutlineEntry = Readonly<{
   title: string;
 }>;
 
-export const REPORT_OUTLINE_MAX_LEVEL = 3;
+const REPORT_OUTLINE_MAX_LEVEL = 3;
 
 const slugify = ({ title, index }: { readonly title: string; readonly index: number }): string => {
   const slug = title

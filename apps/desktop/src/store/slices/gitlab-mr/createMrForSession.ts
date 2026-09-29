@@ -11,7 +11,7 @@ import { gitlabRequestIdentity, toMountMrLink } from './mrLink';
 import { resolveMrContext, resolveSessionMrTarget } from './resolveMrContext';
 import type { GetFn, SetFn } from './types';
 
-export type CreateMrReferenceMode = 'closing' | 'part-of' | 'none';
+type CreateMrReferenceMode = 'closing' | 'part-of' | 'none';
 
 export type CreateMrInput = {
   readonly sessionId: SessionId;

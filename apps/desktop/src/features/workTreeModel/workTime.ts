@@ -61,7 +61,7 @@ const minutesLabel = ({ minutes }: { readonly minutes: number }): string => {
   return `${Math.round(minutes / 30) / 2}h`;
 };
 
-export const formatEstimateTime = ({ ms }: MsParams): string =>
+const formatEstimateTime = ({ ms }: MsParams): string =>
   minutesLabel({ minutes: estimateMinutes({ ms }) });
 
 type RangeParams = {

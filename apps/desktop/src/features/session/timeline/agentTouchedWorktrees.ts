@@ -1,6 +1,6 @@
 import type { MeasuredTurnSpan, MountId } from '@goodboy/types';
 
-export type WorktreeLabel = {
+type WorktreeLabel = {
   readonly mountId: MountId;
   readonly label: string;
 };

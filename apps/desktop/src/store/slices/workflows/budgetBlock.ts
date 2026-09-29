@@ -18,7 +18,7 @@ type MessageParams = {
 export const budgetBlockMessage = ({ limitUsd }: MessageParams): string =>
   `Paused at the ${formatUsd(limitUsd)} spend limit for this session.`;
 
-export const sessionBudgetBlock = ({ alerts, budgets, sessionId }: Params): BudgetAlert | null => {
+const sessionBudgetBlock = ({ alerts, budgets, sessionId }: Params): BudgetAlert | null => {
   if (budgets[sessionId]?.onExceed === 'warn') {
     return null;
   }

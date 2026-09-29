@@ -18,7 +18,7 @@ type Props = {
   readonly onOpenShortcuts: () => void;
 };
 
-export const OPEN_GOODBOY_MENU_EVENT = 'goodboy:open-goodboy-menu';
+const OPEN_GOODBOY_MENU_EVENT = 'goodboy:open-goodboy-menu';
 export const SPONSOR_URL = 'https://github.com/sponsors/akhayam99';
 
 const PANEL_WIDTH = 300;

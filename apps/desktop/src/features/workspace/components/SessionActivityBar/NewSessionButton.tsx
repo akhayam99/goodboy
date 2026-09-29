@@ -13,7 +13,7 @@ type Props = {
   readonly workspaceId: WorkspaceId;
 };
 
-export const DRAFT_IN_PROGRESS = 'Draft in progress';
+const DRAFT_IN_PROGRESS = 'Draft in progress';
 
 export const NewSessionButton = ({ workspaceId }: Props) => {
   const isDraftShown = useAppStore((state) => selectIsSessionDraftShown({ state }));

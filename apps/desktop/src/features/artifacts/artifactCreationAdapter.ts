@@ -14,7 +14,7 @@ export type ArtifactChoiceOption = Readonly<{
   hint: string;
 }>;
 
-export type ArtifactRepoTarget = Readonly<{
+type ArtifactRepoTarget = Readonly<{
   mountName: string;
   branch: string | null;
   baseBranch: string;
@@ -25,7 +25,7 @@ export type ArtifactSpawnActions = Readonly<{
   spawnWireframeAgent: (params: SpawnWireframeAgentParams) => Promise<AgentId>;
 }>;
 
-export type ArtifactSecondChoice = Readonly<{
+type ArtifactSecondChoice = Readonly<{
   label: string;
   ariaLabel: string;
   options: ReadonlyArray<ArtifactChoiceOption>;

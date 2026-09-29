@@ -1,9 +1,9 @@
 import type { PrCheckRun, PrComment, PrReview, PullRequestState, SessionId } from '@goodboy/types';
 import { openReviewThreadIds } from '../../../store/slices/resolve/openReviewThreadIds';
 
-export type PullRequestPhase = 'none' | 'draft' | 'open' | 'queued' | 'merged' | 'closed';
+type PullRequestPhase = 'none' | 'draft' | 'open' | 'queued' | 'merged' | 'closed';
 
-export type PullRequestChecksPhase = 'none' | 'pending' | 'failing' | 'green';
+type PullRequestChecksPhase = 'none' | 'pending' | 'failing' | 'green';
 
 export type PullRequestFacts = {
   readonly sessionId: SessionId;

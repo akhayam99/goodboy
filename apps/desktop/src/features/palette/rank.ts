@@ -29,12 +29,12 @@ type BoostParams = {
   readonly now: number;
 };
 
-export const FRECENCY_WEIGHT = 12;
-export const FRECENCY_CAP = 30;
-export const SCOPE_BOOST = 25;
+const FRECENCY_WEIGHT = 12;
+const FRECENCY_CAP = 30;
+const SCOPE_BOOST = 25;
 const DEFAULT_LIMIT = 60;
 
-export const frecencyBoost = ({ frecency, key, now }: BoostParams): number =>
+const frecencyBoost = ({ frecency, key, now }: BoostParams): number =>
   Math.min(
     FRECENCY_CAP,
     FRECENCY_WEIGHT * Math.log1p(frecencyScore({ state: frecency, key, now })),

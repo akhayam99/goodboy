@@ -1,17 +1,17 @@
 import { GENERIC_THEME_NAME } from '@goodboy/core';
 
-export type DesignProfileFileRef = Readonly<{
+type DesignProfileFileRef = Readonly<{
   path: string;
   excerpt: string;
 }>;
 
-export type DesignProfileToken = Readonly<{
+type DesignProfileToken = Readonly<{
   name: string;
   value: string;
   path: string;
 }>;
 
-export type DesignProfileVariantGroup = Readonly<{
+type DesignProfileVariantGroup = Readonly<{
   path: string;
   component: string;
   variants: ReadonlyArray<string>;

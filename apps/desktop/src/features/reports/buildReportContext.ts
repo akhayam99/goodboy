@@ -67,9 +67,9 @@ export const REPORT_DEFAULT_REQUEST = ({
 }): string =>
   `write a ${REPORT_TYPE_LABEL[reportType].toLowerCase()}: ${REPORT_TYPE_HINT[reportType]}.`;
 
-export const REPORT_NO_SCOUT_COPY = 'no scout read a repository for this report';
+const REPORT_NO_SCOUT_COPY = 'no scout read a repository for this report';
 
-export const REPORT_EXCLUDED_COPY =
+const REPORT_EXCLUDED_COPY =
   'never sent: tool calls, tool output, transcripts beyond the last message, open questions, decisions, review threads, the session summary, other mounts';
 
 export type ReportDiffEvidence = Readonly<{

@@ -178,7 +178,7 @@ type SessionViewSliceState = {
   readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
 };
 
-export type DiffPage = 'history';
+type DiffPage = 'history';
 
 type SessionViewSliceActions = {
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;

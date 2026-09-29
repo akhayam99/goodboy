@@ -89,7 +89,7 @@ const toOverride = (
   return value as TurnProviderOverride;
 };
 
-export const fromQueuedRecord = (record: AgentQueuedMessageRecord): AgentQueuedTurn => ({
+const fromQueuedRecord = (record: AgentQueuedMessageRecord): AgentQueuedTurn => ({
   id: record.id,
   agentId: record.agentId,
   content: record.content,

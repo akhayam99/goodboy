@@ -1,6 +1,6 @@
-export type ShellLeftSlot = 'none' | 'rail' | 'sessions';
+type ShellLeftSlot = 'none' | 'rail' | 'sessions';
 
-export type ShellLeftOverlaySlot = 'none' | 'peek';
+type ShellLeftOverlaySlot = 'none' | 'peek';
 
 export type ShellFooterScope = 'workspace' | 'app';
 

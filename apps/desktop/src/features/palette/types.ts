@@ -10,7 +10,7 @@ import type {
 } from '../actions/types';
 import type { RankCandidate } from './rank';
 
-export type WorkspaceScope = {
+type WorkspaceScope = {
   readonly kind: 'workspace';
   readonly workspaceId: WorkspaceId;
 };
@@ -21,7 +21,7 @@ export type CommitScope = CommitActionTarget & {
 
 export type PaletteScope = WorkspaceScope | SessionActionTarget | AgentActionTarget | CommitScope;
 
-export type PaletteGroup = 'agent' | 'session' | 'workspace' | 'script' | 'action' | 'help';
+type PaletteGroup = 'agent' | 'session' | 'workspace' | 'script' | 'action' | 'help';
 
 export type PaletteKind =
   | 'verb'

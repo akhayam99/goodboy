@@ -36,9 +36,9 @@ type Props = {
 
 const EMPTY_CHECKS: ReadonlyArray<PrCheckRun> = [];
 const EMPTY_PRS: ReadonlyArray<PullRequestState> = [];
-export const PULL_REQUEST_TITLE = 'Pull request';
-export const NEW_PULL_REQUEST_TITLE = 'New pull request';
-export const WRITE_REVIEW_LABEL = 'Write review';
+const PULL_REQUEST_TITLE = 'Pull request';
+const NEW_PULL_REQUEST_TITLE = 'New pull request';
+const WRITE_REVIEW_LABEL = 'Write review';
 
 export const PullRequestPage = ({ session }: Props) => {
   const sessionId = session.id as SessionId;

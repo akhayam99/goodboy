@@ -7,7 +7,7 @@ import type { LoadDeletedBranchesParams, SetFn } from './types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export const pruneExpiredDeletedBranches = async ({
+const pruneExpiredDeletedBranches = async ({
   now = Date.now(),
 }: {
   readonly now?: number;

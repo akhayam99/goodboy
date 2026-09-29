@@ -2,7 +2,7 @@ import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../../shared/li
 
 export type CodeHost = 'github' | 'gitlab' | 'bitbucket';
 
-export const CODE_HOSTS: ReadonlyArray<CodeHost> = ['github', 'gitlab', 'bitbucket'];
+const CODE_HOSTS: ReadonlyArray<CodeHost> = ['github', 'gitlab', 'bitbucket'];
 
 const hostName = (url: string): string | null => {
   const trimmed = url.trim();

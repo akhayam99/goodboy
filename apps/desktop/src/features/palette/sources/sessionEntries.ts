@@ -20,7 +20,7 @@ type Params = {
   readonly open: (params: SessionOpenParams) => void;
 };
 
-export const sessionKey = (sessionId: string): string => `session:${sessionId}`;
+const sessionKey = (sessionId: string): string => `session:${sessionId}`;
 
 export const sessionEntries = ({
   sessions,

@@ -14,7 +14,7 @@ export const WIREFRAME_SCOUT_LIMITS = {
 
 export const WIREFRAME_SCOUT_DEADLINE_MS = 360_000;
 
-export const WIREFRAME_SCOUT_CLAMP_NOTE = '\n...\nthis report was clamped to fit the pack.\n';
+const WIREFRAME_SCOUT_CLAMP_NOTE = '\n...\nthis report was clamped to fit the pack.\n';
 
 export const WIREFRAME_SCOUT_DEADLINE_REASON = 'the six minute bound ran out before it reported';
 
@@ -41,7 +41,7 @@ export const clampWireframeScoutReport = ({ text }: ClampParams): string => {
   return `${collapsed.slice(0, WIREFRAME_SCOUT_LIMITS.reportText)}${WIREFRAME_SCOUT_CLAMP_NOTE}`;
 };
 
-export type WireframeScoutReportState = 'reported' | 'empty' | 'failed' | 'timed-out';
+type WireframeScoutReportState = 'reported' | 'empty' | 'failed' | 'timed-out';
 
 export type WireframeScoutReport = Readonly<{
   scout: WireframeScout;

@@ -66,14 +66,14 @@ export type CitedPathVerification = Readonly<{
   unverified: ReadonlyArray<string>;
 }>;
 
-export const EMPTY_CITED_PATH_VERIFICATION: CitedPathVerification = {
+const EMPTY_CITED_PATH_VERIFICATION: CitedPathVerification = {
   cited: 0,
   verified: [],
   missing: [],
   unverified: [],
 };
 
-export type CitedPathListing = ReadonlyArray<Readonly<{ name: string }>>;
+type CitedPathListing = ReadonlyArray<Readonly<{ name: string }>>;
 
 type VerifyParams = Readonly<{
   paths: ReadonlyArray<string>;

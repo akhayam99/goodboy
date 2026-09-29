@@ -352,7 +352,7 @@ export type WorktreeFolderFacts = {
   readonly reasons: ReadonlyArray<WorktreeRemovalReason>;
 };
 
-export type WorktreeFolderFactsRequest = {
+type WorktreeFolderFactsRequest = {
   readonly repoRoot: string;
   readonly path: string;
 };

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 
-export const FLIP_DURATION_MS = 360;
+const FLIP_DURATION_MS = 360;
 const FLIP_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
 
 type Params = {

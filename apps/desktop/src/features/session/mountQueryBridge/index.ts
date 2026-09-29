@@ -35,7 +35,7 @@ const MOUNT_EVENT = 'query-bridge://mount-command';
 
 type BridgeArgs = Readonly<Record<string, unknown>>;
 
-export type MountBridgeRequest = {
+type MountBridgeRequest = {
   readonly id: string;
   readonly provider: 'mount' | 'github' | 'gitlab';
   readonly verb: string;
@@ -47,9 +47,9 @@ export type MountBridgeRequest = {
   readonly args: BridgeArgs;
 };
 
-export type BridgeRequest = MountBridgeRequest | SeriesBridgeRequest;
+type BridgeRequest = MountBridgeRequest | SeriesBridgeRequest;
 
-export type MountBridgeOutcome = {
+type MountBridgeOutcome = {
   readonly ok: boolean;
   readonly error?: string;
   readonly code?: string;

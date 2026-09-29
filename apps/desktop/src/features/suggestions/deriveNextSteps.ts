@@ -27,7 +27,7 @@ import type {
   SuggestionQuestion,
 } from './types';
 
-export type SuggestionWorkflowRun = {
+type SuggestionWorkflowRun = {
   readonly id: WorkflowRunId;
   readonly title: string;
   readonly advanceState: { readonly kind: string; readonly stepId?: StepId };
@@ -57,7 +57,7 @@ export type SuggestionMount = {
   readonly fetchedAt: string | null;
 };
 
-export type SuggestionRecommendedWorkflow = {
+type SuggestionRecommendedWorkflow = {
   readonly id: WorkflowId;
   readonly name: string;
 };
@@ -70,7 +70,7 @@ export type SuggestionCleanupProposal = {
   readonly prNumber: number | null;
 };
 
-export type SuggestionPlan = {
+type SuggestionPlan = {
   readonly id: PlanId;
   readonly title: string;
   readonly status: string;
@@ -83,7 +83,7 @@ export type SuggestionRebaseRequest = {
   readonly agentStatus: string | null;
 };
 
-export type SuggestionProject = {
+type SuggestionProject = {
   readonly id: string;
   readonly mountId: MountId;
   readonly projectId: ProjectId;

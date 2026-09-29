@@ -20,7 +20,7 @@ const archivedTitle = ({ count }: CountParams): string =>
 const restoredTitle = ({ count }: CountParams): string =>
   count === 1 ? SESSION_RESTORED_TITLE : `${count} sessions restored`;
 
-export type SessionArchivePorts = {
+type SessionArchivePorts = {
   readonly bulkArchiveTask: AppStore['bulkArchiveTask'];
   readonly bulkUnarchiveTask: AppStore['bulkUnarchiveTask'];
   readonly showToast: ShowToast;

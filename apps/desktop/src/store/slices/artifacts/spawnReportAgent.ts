@@ -25,13 +25,11 @@ import type { SpawnFocus } from '../session-view/spawnFocus';
 import type { ArtifactRunMount } from './artifactScoutRun';
 import type { GetFn } from './types';
 
-export const REPORT_SCOUT_PENDING_NOTE =
-  'the scouts had not reported yet when this row was written';
+const REPORT_SCOUT_PENDING_NOTE = 'the scouts had not reported yet when this row was written';
 
 const REPORT_SCOUT_ROOT = '.';
 
-export const REPORT_SCOUT_SKIP_BUDGET =
-  'this session is budget blocked, so no scout read a repository';
+const REPORT_SCOUT_SKIP_BUDGET = 'this session is budget blocked, so no scout read a repository';
 
 export type ReportRouting = {
   readonly provider: ProviderId;

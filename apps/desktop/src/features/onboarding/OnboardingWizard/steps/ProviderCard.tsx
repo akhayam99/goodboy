@@ -15,11 +15,7 @@ type Props = {
   readonly onExpandedChange: (params: { readonly providerId: ProviderId | null }) => void;
 };
 
-export const providerCardAction = ({
-  info,
-}: {
-  readonly info: ProviderDisplayInfo;
-}): string | null => {
+const providerCardAction = ({ info }: { readonly info: ProviderDisplayInfo }): string | null => {
   if (info.connection === 'connected') {
     return null;
   }
