@@ -1,4 +1,5 @@
 import type { WorkNodeState } from '@goodboy/ui';
+import type { ResolveVerdict, ResolveVerdictKind } from '@goodboy/types';
 import {
   remoteKindOf,
   type ThreadGitFacts,
@@ -19,20 +20,57 @@ export const remoteOf = ({
 }: {
   readonly state: ReviewCommentState;
   readonly facts: ThreadGitFacts | null | undefined;
-}): ThreadRemoteKind | null => (IGNORED_STATES.has(state) ? null : remoteKindOf({ facts }));
-
-export const REMOTE_WORD: Record<ThreadRemoteKind, string> = {
-  on_origin: 'Already on origin',
-  looks_fixed: 'Looks fixed',
-  you_replied: 'You replied',
-  missing: 'Fix went missing',
+}): ThreadRemoteKind | null => {
+  const remote = remoteKindOf({ facts });
+  if (remote === null) {
+    return null;
+  }
+  if (state === 'pushed') {
+    return remote === 'missing' && facts?.missing?.wasPushed === true ? remote : null;
+  }
+  return IGNORED_STATES.has(state) ? null : remote;
 };
 
-export const REMOTE_NODE: Record<ThreadRemoteKind, WorkNodeState> = {
-  on_origin: 'done',
-  looks_fixed: 'done',
-  you_replied: 'done',
-  missing: 'stopped',
+export type RemoteTone = 'success' | 'warning' | 'info' | 'muted';
+
+export type RemoteView = {
+  readonly word: string;
+  readonly node: WorkNodeState;
+  readonly tone: RemoteTone;
+};
+
+const REMOTE_VIEW: Record<ThreadRemoteKind, RemoteView> = {
+  on_origin: { word: 'Already on origin', node: 'done', tone: 'success' },
+  looks_fixed: { word: 'Looks fixed', node: 'done', tone: 'success' },
+  you_replied: { word: 'You replied', node: 'done', tone: 'success' },
+  folded: { word: 'Folded in', node: 'done', tone: 'success' },
+  missing: { word: 'Fix went missing', node: 'stopped', tone: 'warning' },
+};
+
+export const VERDICT_VIEW: Record<ResolveVerdictKind, RemoteView> = {
+  fixed_elsewhere: { word: 'Already fixed here', node: 'done', tone: 'success' },
+  obsolete: { word: 'No longer relevant', node: 'closed', tone: 'muted' },
+  refix: { word: 'Still needed', node: 'stopped', tone: 'warning' },
+};
+
+const CHECKING_VIEW: RemoteView = { word: 'Checking', node: 'running', tone: 'info' };
+
+export const remoteViewOf = ({
+  remote,
+  verdict,
+  isChecking,
+}: {
+  readonly remote: ThreadRemoteKind;
+  readonly verdict: ResolveVerdict | null;
+  readonly isChecking: boolean;
+}): RemoteView => {
+  if (remote !== 'missing') {
+    return REMOTE_VIEW[remote];
+  }
+  if (isChecking) {
+    return CHECKING_VIEW;
+  }
+  return verdict === null ? REMOTE_VIEW.missing : VERDICT_VIEW[verdict.kind];
 };
 
 export const REMOTE_LABEL = {
@@ -40,7 +78,13 @@ export const REMOTE_LABEL = {
   replyAndResolve: 'Reply and resolve',
   resolveOnly: 'Resolve only',
   fixAnyway: 'Fix anyway',
+  recheck: 'Re-check',
+  lookAgain: 'Look again',
+  fixAgain: 'Fix again',
+  addHint: 'Add a hint',
+  closeWithReply: 'Close with this reply',
   openCommit: 'Open commit',
+  foldedNotPushed: 'It is on this branch and goes out with the next push.',
   nothingToPush: 'Nothing to push for this one.',
   nothingToPost: 'Goodboy posts nothing here.',
 } as const;

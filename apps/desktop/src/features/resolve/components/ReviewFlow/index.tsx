@@ -60,15 +60,19 @@ const ADVANCING = new Set([
   'reviewComment.resolveNoReply',
   'reviewComment.replyAndResolve',
   'reviewComment.resolveOnly',
+  'reviewComment.closeWithReply',
 ]);
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
-  ['review.accept', ['reviewComment.accept', 'reviewComment.resolveOnly']],
+  [
+    'review.accept',
+    ['reviewComment.accept', 'reviewComment.resolveOnly', 'reviewComment.closeWithReply'],
+  ],
   ['review.edit', ['reviewComment.answer', 'reviewComment.edit']],
   ['review.reply', ['reviewComment.reply', 'reviewComment.replyAndResolve']],
   ['review.skip', ['reviewComment.skip']],
   ['review.undo', ['reviewComment.undo']],
-  ['review.draft', ['reviewComment.draft', 'reviewComment.fixAnyway']],
+  ['review.draft', ['reviewComment.draft', 'reviewComment.fixAnyway', 'reviewComment.fixAgain']],
 ];
 
 const COULD_NOT_SEND =
@@ -145,7 +149,8 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   }, [gitKey, hasComments, refreshThreadGitState, sessionId]);
 
   const replyOnlyCount = entries.filter(
-    (entry) => entry.remote === 'on_origin' && entry.group === 'open',
+    (entry) =>
+      (entry.remote === 'on_origin' || entry.remote === 'folded') && entry.group === 'open',
   ).length;
 
   const focused =

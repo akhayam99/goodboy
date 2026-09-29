@@ -88,3 +88,12 @@ export const sharedFixLine = ({ count }: { readonly count: number }): string =>
   count === 1
     ? 'The same fix answers one more comment, accepted with this one:'
     : `The same fix answers ${count} more comments, accepted with this one:`;
+
+export const RECHECK_LABEL = {
+  running: 'Re-checking',
+  looking: 'Looking for the change on the branch…',
+  result: 'Re-check result',
+  checked: 'Checked',
+  alreadyPosted: 'The reply is already on the pull request, so there is nothing to post.',
+  runsOn: ({ model }: { readonly model: string }): string => `Fix again runs on ${model}.`,
+} as const;

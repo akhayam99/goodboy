@@ -67,11 +67,39 @@ const facts = ({ entry }: { readonly entry: ReviewEntry }): ReactNode => {
       </Fact>
     );
   }
-  if (entry.remote === 'missing' && git.missing !== null) {
+  if (entry.remote === 'folded' && git.folded !== null) {
     return (
-      <Fact icon={<AlertCircle size={ICON_SIZE.control} />} tone="text-warning">
-        <Sha sha={git.missing.sha} /> is no longer on the branch or on origin.
-      </Fact>
+      <>
+        <Fact icon={icon}>
+          <Sha sha={git.folded.sha} /> was folded into <Sha sha={git.folded.landedAs} /> on this
+          branch.
+        </Fact>
+        <Fact icon={<ArrowUp size={ICON_SIZE.control} />}>{REMOTE_LABEL.foldedNotPushed}</Fact>
+      </>
+    );
+  }
+  if (entry.remote === 'missing' && git.missing !== null) {
+    const warning = <AlertCircle size={ICON_SIZE.control} />;
+    return (
+      <>
+        <Fact icon={warning} tone="text-warning">
+          {git.missing.wasPushed ? (
+            <>
+              Pushed in <Sha sha={git.missing.sha} /> is no longer true: the commit is not on origin
+              anymore.
+            </>
+          ) : (
+            <>
+              <Sha sha={git.missing.sha} /> is no longer on the branch or on origin.
+            </>
+          )}
+        </Fact>
+        {git.missing.isPathGone && (
+          <Fact icon={warning} tone="text-warning">
+            The file no longer exists on the branch.
+          </Fact>
+        )}
+      </>
     );
   }
   return null;

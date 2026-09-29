@@ -32,11 +32,14 @@ import {
 import { REMOTE_LABEL } from '../../reviewRemote';
 import { selectResolveCandidate } from '../../selectResolveCandidate';
 import { handledByLine } from '../../../../store/slices/resolve/threadGitState';
+import { foldedReply, verdictReply } from '../../commentVerdict';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { AgentLine } from './AgentLine';
 import { ProposedChange } from './ProposedChange';
 import { ThreadGitEvidence } from './ThreadGitEvidence';
+import { ThreadRecheckLine } from './ThreadRecheckLine';
+import { ThreadVerdictCard } from './ThreadVerdictCard';
 import type { ReviewEntry } from './useReviewEntries';
 
 export type ReviewCompose = {
@@ -135,17 +138,41 @@ export const ReviewComment = ({
   });
   const remote = entry.remote;
   const elsewhere = entry.facts?.elsewhere ?? null;
+  const verdict = entry.facts?.verdict ?? null;
+  const folded = entry.facts?.folded ?? null;
+  const editedReply = useAppStore((s) => s.resolveItemDrafts[sessionId]?.[threadId]?.reply ?? null);
+  const isPushedMissing = entry.facts?.missing?.wasPushed === true;
+  const isVerdictReply =
+    remote === 'missing' &&
+    !isPushedMissing &&
+    (verdict?.kind === 'fixed_elsewhere' || verdict?.kind === 'obsolete');
+  const remoteReply = (): string => {
+    if (editedReply !== null && editedReply.trim() !== '') {
+      return editedReply;
+    }
+    if (folded !== null) {
+      return foldedReply({ landedAs: folded.landedAs });
+    }
+    return verdict === null ? '' : verdictReply({ verdict });
+  };
   const reply =
-    remote === 'looks_fixed' && elsewhere !== null ? handledByLine({ fix: elsewhere }) : draftReply;
+    remote === 'looks_fixed' && elsewhere !== null
+      ? handledByLine({ fix: elsewhere })
+      : remote === 'folded' || remote === 'missing'
+        ? remoteReply()
+        : draftReply;
   const [replyText, setReplyText] = useState(reply);
   const note = row.reviewerNote;
   const author = note?.author ?? null;
   const verbs = verbsOf(actions);
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
-  const hasChange = candidate !== null && remote !== 'looks_fixed';
+  const isOwnFixGone = remote === 'looks_fixed' || remote === 'missing' || remote === 'folded';
+  const hasChange = candidate !== null && !isOwnFixGone;
   const replyShown =
     remote !== 'you_replied' &&
-    (reply.trim() !== '' || (state !== 'new' && state !== 'drafting' && state !== 'needs'));
+    (remote === 'missing'
+      ? isVerdictReply
+      : reply.trim() !== '' || (state !== 'new' && state !== 'drafting' && state !== 'needs'));
   const blocker = sharedCandidateBlocker({ members });
 
   const startEdit = (): void => {
@@ -192,7 +219,21 @@ export const ReviewComment = ({
 
       {remote !== null && <ThreadGitEvidence sessionId={sessionId} entry={entry} />}
 
-      {row.attempt !== null && remote !== 'looks_fixed' && (
+      {remote === 'missing' && entry.isChecking && (
+        <ThreadRecheckLine sessionId={sessionId} agentId={entry.checkAgentId} />
+      )}
+
+      {remote === 'missing' && !entry.isChecking && verdict !== null && (
+        <ThreadVerdictCard sessionId={sessionId} verdict={verdict} isPushed={isPushedMissing} />
+      )}
+
+      {remote === 'missing' && !entry.isChecking && entry.checkError !== null && (
+        <p role="status" className="text-secondary text-warning">
+          {entry.checkError}
+        </p>
+      )}
+
+      {row.attempt !== null && !isOwnFixGone && (
         <AgentLine attempt={row.attempt} state={state} word={word} />
       )}
 

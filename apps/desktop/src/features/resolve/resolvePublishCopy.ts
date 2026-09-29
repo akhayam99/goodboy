@@ -51,7 +51,7 @@ export const driftSentence = ({
 
 export type BlockerCopy = {
   readonly sentence: string;
-  readonly action: 'open_diff' | 'view_work' | 'recheck_fix' | 'refresh' | null;
+  readonly action: 'open_diff' | 'view_work' | 'see_missing' | 'refresh' | null;
 };
 
 export const blockerCopy = ({
@@ -73,7 +73,7 @@ export const blockerCopy = ({
     case 'publication_in_progress':
       return { sentence: `Another push is already running for #${prNumber}`, action: null };
     case 'missing_commit':
-      return { sentence: 'Fix changed since review', action: 'recheck_fix' };
+      return { sentence: 'A fix is no longer on the branch', action: 'see_missing' };
     case 'remote_moved':
       return { sentence: 'The remote moved', action: 'refresh' };
     case 'no_branch':

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, ResolveVerdict, ResolveVerdictKind, SessionId } from '@goodboy/types';
 import { resolveActions } from '../resolveActions';
 import { REVIEW_COMMENT_KIND, type ReviewCommentFacts } from './reviewComment';
 
@@ -19,7 +19,18 @@ const BASE: ReviewCommentFacts = {
   remote: null,
   elsewhereSha: null,
   prUrl: 'https://github.com/harborline/payments-api/pull/318',
+  verdict: null,
+  isChecking: false,
+  isPushedMissing: false,
+  remoteReply: null,
 };
+
+const verdictOf = (kind: ResolveVerdictKind, sha: string | null): ResolveVerdict => ({
+  kind,
+  evidence: 'evidence',
+  sha,
+  checkedAt: 1,
+});
 
 const OPEN = ['reviewComment.openInDiff menu Open in diff'];
 const TRANSCRIPT = ['reviewComment.transcript menu Agent transcript'];
@@ -180,7 +191,122 @@ const MATRIX: ReadonlyArray<Row> = [
   {
     name: 'accepted, the fix went missing',
     facts: { state: 'accepted', approval: 'accepted', remote: 'missing' },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.recheck primary Re-check',
+      'reviewComment.fixAgain secondary Fix again',
+      'reviewComment.skip secondary Skip',
+      'reviewComment.undo secondary Undo',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'the fix went missing, a re-check is running',
+    facts: { state: 'accepted', approval: 'accepted', remote: 'missing', isChecking: true },
     expected: [...OPEN, ...TRANSCRIPT, ...GITHUB, 'reviewComment.undo secondary Undo', ...COPY],
+  },
+  {
+    name: 're-check says already fixed here',
+    facts: {
+      state: 'accepted',
+      approval: 'accepted',
+      remote: 'missing',
+      verdict: verdictOf('fixed_elsewhere', 'e31b9f4'),
+      remoteReply: 'Handled in e31b9f4.',
+    },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.replyAndResolve primary Reply and resolve with e31b9f4',
+      'reviewComment.recheck secondary Look again',
+      'reviewComment.editReply hover Edit the reply',
+      'reviewComment.skip secondary Skip',
+      'reviewComment.undo secondary Undo',
+      ...COPY,
+    ],
+  },
+  {
+    name: 're-check says no longer relevant',
+    facts: {
+      state: 'accepted',
+      approval: 'accepted',
+      remote: 'missing',
+      verdict: verdictOf('obsolete', '6b0e9f1'),
+      remoteReply: 'This code was removed in 6b0e9f1.',
+    },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.closeWithReply primary Close with this reply',
+      'reviewComment.fixAgain secondary Fix anyway',
+      'reviewComment.editReply hover Edit the reply',
+      'reviewComment.skip secondary Skip',
+      'reviewComment.undo secondary Undo',
+      ...COPY,
+    ],
+  },
+  {
+    name: 're-check says still needed',
+    facts: {
+      state: 'accepted',
+      approval: 'accepted',
+      remote: 'missing',
+      verdict: verdictOf('refix', null),
+    },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.fixAgain primary Fix again',
+      'reviewComment.addHint secondary Add a hint',
+      'reviewComment.skip secondary Skip',
+      'reviewComment.undo secondary Undo',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'fix folded into another commit',
+    facts: { state: 'accepted', approval: 'accepted', remote: 'folded' },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.replyAndResolve primary Reply and resolve',
+      'reviewComment.undo secondary Undo',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'pushed fix is gone from origin',
+    facts: { state: 'pushed', remote: 'missing', isPushedMissing: true },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.recheck primary Re-check',
+      'reviewComment.fixAgain secondary Fix again',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'pushed fix is gone, re-check says already fixed',
+    facts: {
+      state: 'pushed',
+      remote: 'missing',
+      isPushedMissing: true,
+      verdict: verdictOf('fixed_elsewhere', 'e31b9f4'),
+    },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.recheck secondary Look again',
+      ...COPY,
+    ],
   },
   {
     name: 'a local note, not started',

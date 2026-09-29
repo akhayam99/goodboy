@@ -1,9 +1,8 @@
 import { WorkNode, cn, inlineMarkdownText } from '@goodboy/ui';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
-import { REMOTE_NODE } from '../../reviewRemote';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import { firstSentence } from './firstSentence';
-import { REMOTE_WORD_TONE, STATE_WORD_TONE } from './stateTone';
+import { REMOTE_TONE_CLASS, STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
 type Props = {
@@ -35,9 +34,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect }: Props) => {
     >
       <span className="flex h-5 shrink-0 items-center">
         <WorkNode
-          state={
-            entry.remote === null ? REVIEW_COMMENT_NODE[entry.state] : REMOTE_NODE[entry.remote]
-          }
+          state={entry.view === null ? REVIEW_COMMENT_NODE[entry.state] : entry.view.node}
           label={entry.word}
           mark={{ kind: 'dot' }}
         />
@@ -54,7 +51,9 @@ export const ReviewListRow = ({ entry, isSelected, onSelect }: Props) => {
           <span
             className={cn(
               'ml-auto shrink-0',
-              entry.remote === null ? STATE_WORD_TONE[entry.state] : REMOTE_WORD_TONE[entry.remote],
+              entry.view === null
+                ? STATE_WORD_TONE[entry.state]
+                : REMOTE_TONE_CLASS[entry.view.tone],
             )}
           >
             {entry.word}
