@@ -3,10 +3,7 @@ import { deleteBudgetRule } from './deleteBudgetRule';
 import { dismissBudgetAlert } from './dismissBudgetAlert';
 import { loadBudgetAlerts } from './loadBudgetAlerts';
 import { loadBudgetRules } from './loadBudgetRules';
-import {
-  loadCurrentProviderBudgetStatuses,
-  loadProviderBudgetStatuses,
-} from './loadProviderBudgetStatuses';
+import { loadCurrentProviderBudgetStatuses } from './loadProviderBudgetStatuses';
 import { loadSessionBudget } from './loadSessionBudget';
 import { refreshProviderSpendBreakdown } from './refreshProviderSpendBreakdown';
 import { saveBudgetRule } from './saveBudgetRule';
@@ -14,11 +11,7 @@ import { setSessionBudget } from './setSessionBudget';
 import { clearSessionBudget } from './clearSessionBudget';
 import type { GetFn, SetFn } from './types';
 
-export {
-  buildProviderSpendBreakdown,
-  loadCurrentProviderBudgetStatuses,
-  loadProviderBudgetStatuses,
-};
+export { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses };
 export type { ProviderBudgetStatuses, ProviderSpendEntry } from './types';
 
 export const createBudgetSlice = (set: SetFn, _get: GetFn) => {

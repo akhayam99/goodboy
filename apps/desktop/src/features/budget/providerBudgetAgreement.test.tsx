@@ -85,7 +85,7 @@ import { ProviderUsagePill } from '../chat/components/ProviderUsagePill';
 import { ImpactStudio } from '../impact/components/ImpactStudio';
 import { invokeCheckProviderBudget } from './budget';
 import { SpendInGoodboy } from '../providers/components/ProviderStudio/ProviderPage/UsageGroup/SpendInGoodboy';
-import { loadProviderBudgetStatuses } from '../../store/slices/budget';
+import { loadProviderBudgetStatuses } from '../../store/slices/budget/loadProviderBudgetStatuses';
 
 const RULE: BudgetRule = {
   id: 'rule-1',
