@@ -204,6 +204,11 @@ describe('recordSessionEventOnce', () => {
     });
 
     expect(record).toHaveBeenCalledTimes(1);
+    expect(record).toHaveBeenCalledWith({
+      sessionId,
+      kind: 'pr_merged',
+      payload: { number: 13 },
+    });
   });
 
   it('records the same request number again when it belongs to another repository', async () => {
@@ -236,6 +241,9 @@ describe('recordSessionEventOnce', () => {
     });
 
     expect(record).toHaveBeenCalledTimes(1);
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ payload: expect.objectContaining({ mountId: 'mount-2' }) }),
+    );
   });
 
   it('skips a repeat of the same request on the same mount', async () => {

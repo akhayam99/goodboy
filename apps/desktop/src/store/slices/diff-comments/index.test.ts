@@ -218,14 +218,14 @@ describe('store contract', () => {
       const store = useAppStore;
       storySpies.listDiffCommentsForSession.mockResolvedValueOnce([]);
       await store.getState().resolveDiffComment(SESSION_ID, 'd1');
-      expect(storySpies.resolveDiffComment).toHaveBeenCalled();
+      expect(storySpies.resolveDiffComment).toHaveBeenCalledWith(expect.anything(), 'd1');
     });
 
     it('deleteDiffComment writes through then refreshes', async () => {
       const store = useAppStore;
       storySpies.listDiffCommentsForSession.mockResolvedValueOnce([]);
       await store.getState().deleteDiffComment(SESSION_ID, 'd1');
-      expect(storySpies.deleteDiffComment).toHaveBeenCalled();
+      expect(storySpies.deleteDiffComment).toHaveBeenCalledWith(expect.anything(), 'd1');
     });
   });
 });
