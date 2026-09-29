@@ -1,20 +1,16 @@
 import { useEffect, useState } from 'react';
 import { ReviewPane } from '../../../../features/review/components/ReviewPane';
-import { SESSION, seedResolveScene, type ResolveFailure } from './resolveSeed';
+import { SESSION, seedResolveScene } from './resolveSeed';
 
 const FAILED_THREAD_ID = 'PRRT_thread_idempotency';
 
-type Props = {
-  readonly failure: ResolveFailure;
-};
-
-export const ResolveFailedScene = ({ failure }: Props) => {
+export const ResolveFailedRunScene = () => {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    seedResolveScene({ expandedThreadId: FAILED_THREAD_ID, failure });
+    seedResolveScene({ expandedThreadId: FAILED_THREAD_ID, failure: 'run' });
     setIsReady(true);
-  }, [failure]);
+  }, []);
 
   if (!isReady) {
     return null;
@@ -26,7 +22,3 @@ export const ResolveFailedScene = ({ failure }: Props) => {
     </main>
   );
 };
-
-export const ResolveFailedRunScene = () => <ResolveFailedScene failure="run" />;
-
-export const ResolveFailedHistoryScene = () => <ResolveFailedScene failure="history" />;

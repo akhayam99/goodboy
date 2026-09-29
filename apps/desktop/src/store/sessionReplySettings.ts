@@ -22,14 +22,6 @@ export const sessionReplySettings = ({ state, sessionId }: Params): ReplySetting
   };
 };
 
-export const replyVoiceOf = ({
-  state,
-  sessionId,
-}: Params): Pick<ResolveStartStyle, 'voice' | 'styleNote'> => {
-  const { voice, styleNote } = sessionReplySettings({ state, sessionId });
-  return { voice, styleNote };
-};
-
 export const sessionResolveStyle = ({ state, sessionId }: Params): ResolveStartStyle => {
   const settings = sessionReplySettings({ state, sessionId });
   return {
