@@ -30,6 +30,7 @@ mod goodboy_ignore;
 mod history;
 mod history_graph;
 mod integration_credentials;
+mod integrations;
 mod jira;
 mod last_crash;
 mod linear;

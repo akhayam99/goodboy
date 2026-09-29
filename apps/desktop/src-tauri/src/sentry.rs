@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, http_client, IntegrationCredentialError};
+use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
 
 const PROVIDER: &str = "sentry";
@@ -30,6 +31,8 @@ integration_credentials::token_cache!(SentryTokenCache);
 pub enum SentryError {
     #[error("http error: {0}")]
     Http(String),
+    #[error("request timed out: {0}")]
+    Timeout(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
     #[error("no personal API key stored for workspace {0}")]
@@ -44,6 +47,7 @@ impl SentryError {
     fn kind(&self) -> &'static str {
         match self {
             SentryError::Http(_) => "http",
+            SentryError::Timeout(_) => "timeout",
             SentryError::InvalidShape(_) => "shape",
             SentryError::NoToken(_) => "no_token",
             SentryError::Credential(_) => "credential",
@@ -56,7 +60,10 @@ crate::util::impl_error_serialize!(SentryError);
 
 impl From<reqwest::Error> for SentryError {
     fn from(e: reqwest::Error) -> Self {
-        SentryError::Http(e.to_string())
+        match TransportFailure::from(&e) {
+            TransportFailure::Timeout(message) => SentryError::Timeout(message),
+            TransportFailure::Network(message) => SentryError::Http(message),
+        }
     }
 }
 
@@ -398,7 +405,7 @@ pub async fn sentry_validate_connection(
         integration_credentials::secret_to_verify(PROVIDER, &credential_id, token, &cache.0)
             .map(|raw| token_from_secret(&raw))?;
     let url = format!("{}/projects/{}/{}/", BASE_URL, org, project);
-    let res = http_client().get(&url).bearer_auth(&secret).send().await?;
+    let res = http::client().get(&url).bearer_auth(&secret).send().await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
@@ -442,7 +449,7 @@ async fn get_all_pages<T: serde::de::DeserializeOwned>(
     let mut cursor: Option<String> = None;
     for _ in 0..MAX_LIST_PAGES {
         let res = send_retrying(|| {
-            let request = http_client().get(url).bearer_auth(secret);
+            let request = http::client().get(url).bearer_auth(secret);
             match cursor.as_deref() {
                 Some(value) => request.query(&[("cursor", value)]),
                 None => request,
@@ -564,7 +571,7 @@ pub async fn sentry_fetch_issues(
         params.push(("cursor", cursor));
     }
     let res = send_retrying(|| {
-        http_client()
+        http::client()
             .get(&url)
             .bearer_auth(&cfg.token)
             .query(&params)
@@ -610,7 +617,7 @@ pub async fn sentry_resolve_short_id(
 ) -> Result<SentryIssue, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
     let url = short_id_url(&cfg.org, &short_id);
-    let res = send_retrying(|| http_client().get(&url).bearer_auth(&cfg.token)).await?;
+    let res = send_retrying(|| http::client().get(&url).bearer_auth(&cfg.token)).await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
@@ -630,7 +637,7 @@ pub async fn sentry_fetch_issue(
 ) -> Result<SentryIssue, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
     let url = format!("{}/issues/{}/", BASE_URL, issue_id);
-    let res = send_retrying(|| http_client().get(&url).bearer_auth(&cfg.token)).await?;
+    let res = send_retrying(|| http::client().get(&url).bearer_auth(&cfg.token)).await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();
@@ -650,7 +657,7 @@ pub async fn sentry_fetch_issue_detail(
 ) -> Result<SentryIssueDetail, SentryError> {
     let cfg = read_config(&workspace_id, project_id.as_deref(), &cache)?;
     let url = format!("{}/issues/{}/events/latest/", BASE_URL, issue_id);
-    let res = send_retrying(|| http_client().get(&url).bearer_auth(&cfg.token)).await?;
+    let res = send_retrying(|| http::client().get(&url).bearer_auth(&cfg.token)).await?;
     let status = res.status();
     if !status.is_success() {
         let body = res.text().await.unwrap_or_default();

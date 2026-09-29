@@ -1,4 +1,4 @@
-use crate::integration_credentials::http_client;
+use crate::integrations::http;
 use crate::util::MessageError;
 
 use serde::{Deserialize, Serialize};
@@ -69,7 +69,7 @@ fn published_only(raw: Vec<GithubRelease>) -> Vec<ReleaseNote> {
 
 #[tauri::command]
 pub async fn releases_list() -> Result<Vec<ReleaseNote>, MessageError> {
-    let response = http_client()
+    let response = http::client()
         .get(releases_url())
         .header(reqwest::header::USER_AGENT, CLIENT_USER_AGENT)
         .header(reqwest::header::ACCEPT, "application/vnd.github+json")
@@ -96,7 +96,7 @@ pub async fn release_changelog(version: String) -> Result<String, MessageError> 
             "\"{version}\" is not a usable release version"
         )));
     }
-    let response = http_client()
+    let response = http::client()
         .get(changelog_url(&version))
         .header(reqwest::header::USER_AGENT, CLIENT_USER_AGENT)
         .send()

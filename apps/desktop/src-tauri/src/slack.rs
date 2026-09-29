@@ -5,7 +5,8 @@ use serde_json::Value;
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, http_client, IntegrationCredentialError};
+use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
 
 const PROVIDER: &str = "slack";
@@ -23,6 +24,8 @@ const AUTH_HINT: &str = "slack rejected the token. goodboy signs every call with
 pub enum SlackError {
     #[error("http error {status}: {body}")]
     Http { status: u16, body: String },
+    #[error("request timed out: {0}")]
+    Timeout(String),
     #[error("authentication failed: {0}")]
     Auth(String),
     #[error("rate limited: {0}")]
@@ -47,6 +50,7 @@ impl SlackError {
     fn kind(&self) -> &'static str {
         match self {
             SlackError::Http { .. } => "http",
+            SlackError::Timeout(_) => "timeout",
             SlackError::Auth(_) => "auth",
             SlackError::RateLimited(_) => "rate_limited",
             SlackError::NotFound(_) => "not_found",
@@ -61,9 +65,9 @@ impl SlackError {
 
 impl From<reqwest::Error> for SlackError {
     fn from(e: reqwest::Error) -> Self {
-        SlackError::Http {
-            status: 0,
-            body: e.to_string(),
+        match TransportFailure::from(&e) {
+            TransportFailure::Timeout(message) => SlackError::Timeout(message),
+            TransportFailure::Network(body) => SlackError::Http { status: 0, body },
         }
     }
 }
@@ -349,7 +353,7 @@ fn decode_slack_envelope(envelope: &Value) -> Result<(), SlackError> {
 }
 
 async fn send_call(token: &str, call: SlackCall) -> Result<Value, SlackError> {
-    let mut request = http_client()
+    let mut request = http::client()
         .request(call.method, &call.url)
         .bearer_auth(token)
         .header("Accept", "application/json");
@@ -1801,5 +1805,55 @@ mod tests {
     fn a_permalink_answer_without_the_field_is_a_shape_error() {
         let error = permalink_of(&serde_json::json!({ "ok": true })).unwrap_err();
         assert!(matches!(error, SlackError::InvalidShape(_)));
+    }
+
+    #[tokio::test]
+    async fn a_silent_server_times_out_on_every_request_path() {
+        use crate::integrations::http::test_support::{
+            assert_error_shape, silent_server, within_bound,
+        };
+        let server = silent_server();
+        let (read, write) = within_bound(async {
+            tokio::join!(
+                send_call(
+                    "token",
+                    SlackCall {
+                        method: reqwest::Method::GET,
+                        url: format!("{}/auth.test", server.base),
+                        body: None,
+                    },
+                ),
+                send_call(
+                    "token",
+                    SlackCall {
+                        method: reqwest::Method::POST,
+                        url: format!("{}/chat.postMessage", server.base),
+                        body: Some(serde_json::json!({})),
+                    },
+                ),
+            )
+        })
+        .await;
+        assert_error_shape(&read.unwrap_err(), "timeout");
+        assert_error_shape(&write.unwrap_err(), "timeout");
+    }
+
+    #[tokio::test]
+    async fn a_refused_connection_keeps_the_http_kind() {
+        use crate::integrations::http::test_support::{
+            assert_error_shape, closed_base, within_bound,
+        };
+        let base = closed_base();
+        let error = within_bound(send_call(
+            "token",
+            SlackCall {
+                method: reqwest::Method::GET,
+                url: format!("{base}/auth.test"),
+                body: None,
+            },
+        ))
+        .await
+        .unwrap_err();
+        assert_error_shape(&error, "http");
     }
 }

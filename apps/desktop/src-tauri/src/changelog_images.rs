@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 
-use crate::integration_credentials::http_client;
+use crate::integrations::http;
 use crate::util::MessageError;
 
 const REPO_SLUG: &str = "akhayam99/goodboy";
@@ -76,7 +76,7 @@ fn candidate_urls(version: &str, file: &str) -> Vec<String> {
 }
 
 async fn fetch_image(url: &str) -> Result<Vec<u8>, FetchFailure> {
-    let response = http_client()
+    let response = http::client()
         .get(url)
         .header(reqwest::header::USER_AGENT, CLIENT_USER_AGENT)
         .send()

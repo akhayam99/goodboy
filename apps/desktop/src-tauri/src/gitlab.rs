@@ -2,7 +2,8 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use thiserror::Error;
 
-use crate::integration_credentials::{self, http_client, IntegrationCredentialError};
+use crate::integration_credentials::{self, IntegrationCredentialError};
+use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
 
 const PROVIDER: &str = "gitlab";
@@ -13,6 +14,8 @@ integration_credentials::token_cache!(GitlabTokenCache);
 pub enum GitlabError {
     #[error("http error {status}: {body}")]
     Http { status: u16, body: String },
+    #[error("request timed out: {0}")]
+    Timeout(String),
     #[error("invalid response shape: {0}")]
     InvalidShape(String),
     #[error("no personal API key stored for workspace {0}")]
@@ -29,6 +32,7 @@ impl GitlabError {
     fn kind(&self) -> &'static str {
         match self {
             GitlabError::Http { .. } => "http",
+            GitlabError::Timeout(_) => "timeout",
             GitlabError::InvalidShape(_) => "shape",
             GitlabError::NoToken(_) => "no_token",
             GitlabError::Credential(_) => "credential",
@@ -39,9 +43,9 @@ impl GitlabError {
 
 impl From<reqwest::Error> for GitlabError {
     fn from(e: reqwest::Error) -> Self {
-        GitlabError::Http {
-            status: 0,
-            body: e.to_string(),
+        match TransportFailure::from(&e) {
+            TransportFailure::Timeout(message) => GitlabError::Timeout(message),
+            TransportFailure::Network(body) => GitlabError::Http { status: 0, body },
         }
     }
 }
@@ -60,7 +64,7 @@ async fn get_json<T: serde::de::DeserializeOwned>(
     path: &str,
 ) -> Result<T, GitlabError> {
     let url = format!("{}{}", api_base(host)?, path);
-    let res = http_client()
+    let res = http::client()
         .get(&url)
         .header("PRIVATE-TOKEN", token)
         .send()
@@ -84,7 +88,7 @@ async fn get_json_optional<T: serde::de::DeserializeOwned>(
     path: &str,
 ) -> Result<Option<T>, GitlabError> {
     let url = format!("{}{}", api_base(host)?, path);
-    let res = http_client()
+    let res = http::client()
         .get(&url)
         .header("PRIVATE-TOKEN", token)
         .send()
@@ -116,7 +120,7 @@ async fn get_json_paged<T: serde::de::DeserializeOwned>(
     let mut page: u32 = 1;
     loop {
         let url = format!("{base}{path}{separator}per_page=100&page={page}");
-        let res = http_client()
+        let res = http::client()
             .get(&url)
             .header("PRIVATE-TOKEN", token)
             .send()
@@ -153,7 +157,7 @@ async fn send_no_content(
     body: &serde_json::Value,
 ) -> Result<(), GitlabError> {
     let url = format!("{}{}", api_base(host)?, path);
-    let res = http_client()
+    let res = http::client()
         .request(method, &url)
         .header("PRIVATE-TOKEN", token)
         .json(body)
@@ -178,7 +182,7 @@ async fn send_json<T: serde::de::DeserializeOwned>(
     body: &serde_json::Value,
 ) -> Result<T, GitlabError> {
     let url = format!("{}{}", api_base(host)?, path);
-    let res = http_client()
+    let res = http::client()
         .request(method, &url)
         .header("PRIVATE-TOKEN", token)
         .json(body)
@@ -1605,5 +1609,48 @@ mod tests {
         assert_eq!(issue.project_id, 9);
         assert_eq!(issue.milestone.unwrap().title, "v1");
         assert_eq!(issue.labels, vec!["bug".to_string()]);
+    }
+
+    #[tokio::test]
+    async fn a_silent_server_times_out_on_every_request_path() {
+        use crate::integrations::http::test_support::{
+            assert_error_shape, silent_server, within_bound,
+        };
+        let server = silent_server();
+        let body = serde_json::json!({});
+        let host = server.base.as_str();
+        let (read, optional, paged, no_content, write) = within_bound(async {
+            tokio::join!(
+                get_json::<serde_json::Value>(host, "token", "/user"),
+                get_json_optional::<serde_json::Value>(host, "token", "/user"),
+                get_json_paged::<serde_json::Value>(host, "token", "/projects"),
+                send_no_content(reqwest::Method::PUT, host, "token", "/user", &body),
+                send_json::<serde_json::Value>(
+                    reqwest::Method::POST,
+                    host,
+                    "token",
+                    "/user",
+                    &body
+                ),
+            )
+        })
+        .await;
+        assert_error_shape(&read.unwrap_err(), "timeout");
+        assert_error_shape(&optional.unwrap_err(), "timeout");
+        assert_error_shape(&paged.unwrap_err(), "timeout");
+        assert_error_shape(&no_content.unwrap_err(), "timeout");
+        assert_error_shape(&write.unwrap_err(), "timeout");
+    }
+
+    #[tokio::test]
+    async fn a_refused_connection_keeps_the_http_kind() {
+        use crate::integrations::http::test_support::{
+            assert_error_shape, closed_base, within_bound,
+        };
+        let base = closed_base();
+        let error = within_bound(get_json::<serde_json::Value>(&base, "token", "/user"))
+            .await
+            .unwrap_err();
+        assert_error_shape(&error, "http");
     }
 }
