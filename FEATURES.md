@@ -438,58 +438,71 @@ Review someone else's pull request in a form under the diff: your line comments,
 
 ## The board
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s01-board-dark.webp">
-  <img src="./docs/readme/s01-board-light.webp" alt="The Harborline board: eleven sessions across building, running, needs you and in review, with the webhook fix in review on pull request 318">
-</picture>
+The board shows every session of a workspace by stage. Workflows chain agents into one run you can steer.
 
 ### Stage board
 
-See where each task stands without moving cards around. Each session sits in **building**, **running**, **needs you**, **in review** or **done**, based on what is happening in it.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/board-stage-dark.webp">
+  <img src="./docs/readme/board-stage-light.webp" alt="The Harborline board with 11 sessions in four columns: building 3, running 2, needs you 2 and in review 2, with the New session button and the Done and Archived icons at the right">
+</picture>
+
+See where each task stands without moving cards around. Each session sits in **building**, **running**, **needs you** or **in review** based on what is happening in it. Finished sessions fold into the icons at the right edge.
 
 ### Session card
 
-Read a task at a glance: pull request, issue and project chips, step progress, agent count, age and cost, plus one suggested action.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/board-card-dark.webp">
+  <img src="./docs/readme/board-card-light.webp" alt="Two session cards: Fix the rounding drift in the settlement export with 1 open question, and Stop retried webhooks posting a second credit with PR #318 awaiting review, each with project and issue chips, cost and age" width="692">
+</picture>
+
+Read a task at a glance: the pull request or status line, the agent count, project and issue chips, cost and age. A colored bar on the left shows the stage. When one action is waiting, a round button opens it, like **1 open question** on the first card.
 
 ### Done and Archived dock
 
-Keep finished work out of the way but close by. Done and archived sessions fold into two icons at the side of the board, and hovering previews them.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/board-dock-dark.webp">
+  <img src="./docs/readme/board-dock-light.webp" alt="The needs you and in review columns with the dock widened on hover, showing Done 2 and Archived 2" width="732">
+</picture>
+
+Keep finished work out of the way but close by. Done and archived sessions fold into two icons at the side of the board. Hover them to read **Done** and **Archived** with their counts, and click one to open its column.
 
 ### Bulk select
 
-Tidy many sessions at once. Lasso or modifier-click cards across columns, then archive, restore or delete them together.
+Tidy many sessions at once. Lasso or modifier-click cards across columns, then use **Archive**, **Restore** or **Delete** on the selection together.
 
 ## Workflows
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s05-workflow-builder-dark.webp">
-  <img src="./docs/readme/s05-workflow-builder-light.webp" alt="The workflow builder for the Duplicate credit fix in Orchestrated mode, with its guidance and autorun">
-</picture>
+A workflow runs several agents in one session, each step with its own role, model and effort.
 
 ### Workflow builder
 
-Shape a run before it starts: a name, a goal and a mode, with the plan previewed as the tree the run will show.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-builder-dark.webp">
+  <img src="./docs/readme/workflow-builder-light.webp" alt="The workflow builder for Duplicate credit fix: a goal, the Orchestrated, Custom and Preset modes, the plan preview with the Orchestrator row on GPT-5.6 Sol, guidance, Starts Now, Autorun, Spend cap and Start workflow">
+</picture>
+
+Shape a run before it starts: a name, a goal and a mode, with the plan previewed as the tree the run will show. **Starts**, **Autorun** and **Spend cap** sit under the plan.
 
 ### Orchestrated
 
-Give a goal and let a model pick each next step, with its role, provider, model, effort and a reason, until it says done or blocked.
-
-### Hints to the orchestrator
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s04-workflow-run-dark.webp">
-  <img src="./docs/readme/s04-workflow-run-light.webp" alt="The Duplicate credit fix run on HBL-412: scouts, a planner at $1.28, two implementers and a tester, each on its own model, with the hint box">
-</picture>
-
-Steer a run while it goes. **Queue** waits for the next decision, and **Read now** stops the step in flight, keeps what it wrote and decides again.
-
-### Why each step, and the run recap
-
-See why each step was picked, and a short recap of what is done and what is left, rewritten after each decision.
+Give a goal and let a model pick each next step, with its role, provider, model, effort and a reason, until it says done or blocked. The **Orchestrator** row holds its own model and an optional **Guidance** box.
 
 ### Preset and Custom
 
-Write the steps yourself, press **Draft with planner**, or start from a saved workflow. **Save as preset** keeps what you changed.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-builder-custom-dark.webp">
+  <img src="./docs/readme/workflow-builder-custom-light.webp" alt="The workflow builder in Custom mode: Describe the steps, Auto and Generate plan, the Draft with planner button, an Add step row and the Save as preset switch next to Start workflow">
+</picture>
+
+Write the steps yourself with **Add step**, describe them and press **Generate plan**, or press **Draft with planner**. **Save as preset** keeps what you changed.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-builder-preset-dark.webp">
+  <img src="./docs/readme/workflow-builder-preset-light.webp" alt="The workflow builder in Preset mode with the Pick a preset list open: Trace and fix, Harden an endpoint and Migrate a contract, each with a description and its step dots">
+</picture>
+
+In **Preset** mode, pick a saved sequence from the list and edit any step before starting.
 
 ### Built-in workflows
 
@@ -497,11 +510,21 @@ Start from **Refactor**, **Plan and ship** or **Fix a bug**. A built-in you dele
 
 ### Saved steps
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-studio-steps-dark.webp">
+  <img src="./docs/readme/workflow-studio-steps-light.webp" alt="The Workflows studio on the Saved steps tab: the 8 built-in steps Scout, Investigate, Plan, Implement, Test, Review, Resolve comments and Update docs, and an empty This workspace list with a New step button">
+</picture>
+
 Reuse steps across workflows. The 8 built-in steps are read-only, and **Save a copy** makes your own.
 
 ### Model per step
 
-Put a light model on a scout and a strong one on the planner. Each step has its own provider, model and effort, and Goodboy records what actually ran.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-model-dark.webp">
+  <img src="./docs/readme/workflow-model-light.webp" alt="The model picker open on the Orchestrator row of the workflow builder, with the provider icons and the Model, Version, Variant and Effort rows set to GPT, 5.6, Sol and High">
+</picture>
+
+Put a light model on a scout and a strong one on the planner. Each step has its own provider, then **Model**, **Version**, **Variant** and **Effort**, and Goodboy records what actually ran.
 
 ### Autorun
 
@@ -509,15 +532,48 @@ Let a run move to its next step without you, per run or for the whole session. A
 
 ### Spend limit
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-spend-dark.webp">
+  <img src="./docs/readme/workflow-spend-light.webp" alt="The Spend cap popover in the workflow builder, switched on at $12, with Pause workflows and Only warn me, and the Spend cap chip reading $12.00 · Pause">
+</picture>
+
 Cap what a run or a session can spend, and choose **Pause workflows** or **Only warn me**. A paused run offers **Raise limit**.
 
 ### Chained starts
 
-Line work up behind work: start a run now, by hand, or after another run finishes.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-starts-dark.webp">
+  <img src="./docs/readme/workflow-starts-light.webp" alt="The Starts menu of the workflow builder open with Now, Manually and After Harden an endpoint">
+</picture>
+
+Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run queued until you start it, or **After** followed by a workflow name, which starts once that workflow completes.
 
 ### Workflow run
 
-Follow a run as a tree with one pinned next action, and add steps to a live or finished run. Deleting a run deletes its agents and their open questions with it.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-run-dark.webp">
+  <img src="./docs/readme/workflow-run-light.webp" alt="The Duplicate credit fix run on HBL-412: three scouts working in parallel under step 1, then a planner, two implementers and a tester, each on its own model, with Waiting on step 1 above the tree and $0.13 spent of the $12.00 spend limit">
+</picture>
+
+Follow a run as a tree with one pinned next action, and add steps to a live or finished run. Parallel scouts appear as branches under their step. Deleting a run deletes its agents and their open questions with it.
+
+### Hints to the orchestrator
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-hints-dark.webp">
+  <img src="./docs/readme/workflow-hints-light.webp" alt="The orchestrator strip on step 4 with the Tell the orchestrator something box, Queue and Read now, a queued hint reading Replay the event from the Sentry trace before the tester signs off, and Show read (2)">
+</picture>
+
+Steer a run while it goes. **Queue** waits for the next decision, and **Read now** stops the step in flight, keeps what it wrote and decides again. A queued hint shows **Waits for the next decision**, and read ones show the step they were read at.
+
+### Why each step, and the run recap
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-recap-dark.webp">
+  <img src="./docs/readme/workflow-recap-light.webp" alt="The Recap of the Duplicate credit fix run, its Goal, and the Why each step list with 5 decisions, from Replay one event three times back to Trace where a retried webhook posts">
+</picture>
+
+See why each step was picked, with a short **Recap** of what is done and what is left, rewritten after each decision.
 
 ### Step handoff summary
 
@@ -526,19 +582,24 @@ Start each step from a short brief instead of the whole previous chat. If the su
 ### Open questions
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s07-questions-dark.webp">
-  <img src="./docs/readme/s07-questions-light.webp" alt="The Questions lens: three questions waiting on you next to the blocking one from the stuck-delivery banner agent, with its context, a file, three numbered answers with Dedicated retry queue recommended, Something else, Let an agent decide, Skip and Answer">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-questions-dark.webp">
+  <img src="./docs/readme/workflow-questions-light.webp" alt="The Questions lens: 3 waiting and 1 blocking in a Waiting on you list, and the question Which queue should the delivery retries run on? from the Add the stuck-delivery banner agent, with the file src/deliveries/retry.ts and the answers Dedicated retry queue (Recommended), Shared jobs queue, Retry in process and Something else, plus Let an agent decide, Skip and Answer">
 </picture>
 
-Get each question as one card: who asks, whether it blocks, the question, and its answers as numbered tiles with the recommended one tagged. Pick with a number key, answer with Enter, or write something else in line. The Questions lens lists what waits on you next to the question you are answering, and j and k move through the list. The same card sits at the end of the transcript and at the top of the agent's Brief. The answers to one agent go out together once you answered its last question, and until then each one keeps an Undo. An agent can mark a question as blocking, which holds its step until you answer. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
+Get each question as one card: who asks, whether it is **Blocking**, the question, and its answers as numbered tiles with the recommended one tagged. Pick with a number key, answer with **Enter**, or write something else in line. The Questions lens lists what waits on you next to the question you are answering, and **j** and **k** move through the list. The same card sits at the end of the transcript and at the top of the agent's Brief. The answers to one agent go out together once you answered its last question, and until then each one keeps an Undo. A blocking question holds its step until you answer. Each question shows once in the session activity, on the row of the agent that asked, and **Answer** on a workflow row opens that agent right at its question.
 
 ### Let an agent decide
 
-Hand a question to another agent with a hint and a model from **Let an agent decide**, and its answer counts as yours. **Answer it yourself** takes it back.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workflow-question-agent-dark.webp">
+  <img src="./docs/readme/workflow-question-agent-light.webp" alt="The Brief of the agent Reuse the token footer in the brief with its blocking question open on Let an agent decide: An agent decides with Sonnet 5 · Medium, a hints box, Cancel and Hand off">
+</picture>
+
+Hand a question to another agent with a hint and a model from **Let an agent decide**, then press **Hand off**. Its answer counts as yours, and **Answer it yourself** takes it back.
 
 ### Import workflows
 
-Bring custom workflows over from your other workspaces.
+Bring custom workflows over from your other workspaces with **Import** in the Workflows studio.
 
 ## Inbox and your tools
 
@@ -764,23 +825,25 @@ Hand a plan straight to the implementer. The plan goes from **Ready to run** to 
 
 ## Providers, limits and cost
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s15-limits-dark.webp">
-  <img src="./docs/readme/s15-limits-light.webp" width="480" alt="The limits bars in the top bar and the Claude card under them: about to run out, with 84% of the week used">
-</picture>
+Watch how much of each plan is left, keep work moving when a provider runs out, and see what it all costs.
 
 ### Usage limits chip
 
-See how much of your Claude and Codex plans is left before a run stops. A top-bar chip draws the 5-hour window and the week as two bars: amber from 80%, red and full at 100%, faded when the figures are old. Hover it for the percentages and when each window comes back. Checking Claude spends no model tokens: Goodboy runs Claude's own `/usage` in an empty folder.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/providers-limits-chip-dark.webp">
+  <img src="./docs/readme/providers-limits-chip-light.webp" width="480" alt="The top bar with the Claude limits chip hovered: a card reading Claude max, Claude is about to run out, Weekly 84% used with its reset time, and Updated 2m ago. Next to the chip are the Codex chip, +1 for more providers and $9.62 today">
+</picture>
+
+See how much of your Claude and Codex plans is left before a run stops. Each provider gets a chip in the top bar that draws the 5-hour window and the week as two bars: amber from 80%, red and full at 100%, faded when the figures are old. Hover a chip, as in the picture, to read the plan, how much of each window is used and when it comes back. Checking Claude spends no model tokens: Goodboy runs Claude's own `/usage` in an empty folder.
 
 ### Use reset
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s16-codex-reset-dark.webp">
-  <img src="./docs/readme/s16-codex-reset-light.webp" alt="The Codex provider page: 41% of the 5-hour window and 58% of the week used, one free reset, and $1.94 spent through Goodboy today">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/providers-codex-reset-dark.webp">
+  <img src="./docs/readme/providers-codex-reset-light.webp" alt="The Codex provider page, Usage group: 5-hour window 41% used, Weekly 58% used, a row reading 1 free reset with the Use reset button, and Spent in Goodboy with Today $1.94, 7 days $18.40 and This month $61.20">
 </picture>
 
-Spend a free Codex reset at the right moment. When Codex offers one, the usage page shows it with its expiry and **Use reset**, and Goodboy warns you when spending it now would waste it.
+Spend a free Codex reset at the right moment. When Codex offers one, the Usage group of its page shows it with its expiry and **Use reset**, above what you spent in Goodboy today, over 7 days and this month. Goodboy asks you to confirm in place, and when spending it now would waste most of the week it stops you first, with **Keep my reset** as the default.
 
 ### Fallback when a limit is hit
 
@@ -788,44 +851,61 @@ Keep a task moving when a provider runs out. With another eligible provider conn
 
 ### Fallback order and Auto
 
-Choose where **Auto** starts and the order it falls back through, with an Auto model for each role.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/providers-fallback-auto-dark.webp">
+  <img src="./docs/readme/providers-fallback-auto-light.webp" alt="Settings, Providers and models, Defaults: Default provider set to Claude with the note Auto starts here, Fallback order with Claude first, and the Explore and plan roles Scout, Debugger and Planner, each with an Auto picker">
+</picture>
+
+Choose where **Auto** starts and how it falls back. **Default provider** says where Auto starts, and **Fallback order** lists the providers it moves through when one is not connected or is out of quota. Each role below, from Scout to Planner, has its own picker, set to **Auto** or pinned to a model.
 
 ### Model picker
 
-Pick a model with the reason next to it: **Auto**, a suggested model with its price ratio, the last one used, and family and effort chips. You choose which models appear.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/providers-model-picker-dark.webp">
+  <img src="./docs/readme/providers-model-picker-light.webp" alt="The model picker opened on the Implementer role in Defaults: Auto with what it resolves to now, Claude Sonnet 5 Medium, then Provider icons, Model chips Haiku, Sonnet, Opus and Fable, Version 4.6 and 5, and Effort from Low to Max">
+</picture>
+
+Pick a model with the reason next to it. The picker leads with **Auto** and what it resolves to right now, then the provider, the model family, the version and the effort. The settings icon beside **Provider** opens **Models in the picker**, where you choose which models appear. When you create an agent, the picker also offers a **Suggested** model with the reason and **Last used here**.
 
 ### Impact
 
-See what Goodboy got done and what it cost over 7 days, 30 days or all time, opening on one sentence built from your numbers.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/providers-impact-overview-dark.webp">
+  <img src="./docs/readme/providers-impact-overview-light.webp" alt="Impact, Overview, over 30 days: In the last 30 days Goodboy ran 24 sessions in Harborline, merged 17 pull requests and spent $250.77, then the tiles Pull requests merged 17, Reviews resolved 46, Run by workflows 63% and Median session 1.4h, and the sessions that shipped the most">
+</picture>
+
+See what Goodboy got done and what it cost over **7 days**, **30 days** or **All time**. **Overview** opens on one sentence built from your numbers, then tiles for **Pull requests merged**, **Reviews resolved**, **Run by workflows** and **Median session**, each against the period before, and the sessions that shipped the most. **Shipped**, **Flow** and **Spend** go deeper.
 
 ### Monthly cap and budget alert
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s24-impact-dark.webp">
-  <img src="./docs/readme/s24-impact-light.webp" alt="Claude spend in Impact against a $170 monthly cap at 80%, split by model">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/providers-monthly-cap-dark.webp">
+  <img src="./docs/readme/providers-monthly-cap-light.webp" alt="Impact, Spend, Claude: 89% of cap with Spent $151.72, Cap $170.00 and Remaining $18.28, and the Monthly cap form with a $170 cap, an alert at 80% of the cap, and the note that Goodboy warns you and routes the next turn to another provider">
 </picture>
 
-Set a monthly cap per provider and hear about it before you reach it. Past the threshold Goodboy routes the next turn to another provider with room, and if none has room, work continues where it is.
+Set a monthly cap per provider and hear about it before you reach it. In **Spend**, open a provider, enter the cap and the share of it where Goodboy warns you. Claude here has used $151.72 of a $170.00 cap, past its 80% alert. Past the threshold Goodboy routes the next turn to another provider with room, and if none has room, work continues where it is.
 
 ## Storage
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s25-storage-dark.webp">
-  <img src="./docs/readme/s25-storage-light.webp" alt="Storage settings: working copies of old sessions with what each weighs, and local branches sorted into safe to delete and needs a look">
-</picture>
+Free disk space and clean up branches, with what is safe to remove spelled out.
 
 ### Worktree folders
 
-Free disk space without guessing: worktree folders by repo, with their size, why each exists and whether it is safe to remove. Folders with changes, running agents or a git operation in progress are skipped, with the reason.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/storage-worktrees-dark.webp">
+  <img src="./docs/readme/storage-worktrees-light.webp" alt="Storage, Worktrees 5.0 GB, with the tabs To review 3, In use 0 and Kept 0: hl/flaky-retry-test 2.5 GB and hl/retire-export-cron 1.8 GB in ledger-core, hl/receipt-email-retry 700 MB in notify-relay, each marked Safe to remove, and the button Remove 3 safe folders in Harborline, 5.0 GB">
+</picture>
+
+Free disk space without guessing. **Worktrees** lists the checkout folders of archived, deleted or gone sessions by repo, with their size, when each last changed, why it exists and whether it is safe to remove. **Remove 3 safe folders in Harborline** clears them together, and it takes only clean folders idle for over 30 days. Folders with changes, running agents or a git operation in progress are skipped, with the reason.
 
 ### Branches
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s33-branches-dark.webp">
-  <img src="./docs/readme/s33-branches-light.webp" alt="Clean up branches: nine local branches Goodboy made, seven safe to delete after their merge, grouped by repo">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/storage-branches-dark.webp">
+  <img src="./docs/readme/storage-branches-light.webp" alt="Clean up branches: 9 local branches with the tabs Safe to delete 7, Needs a look 2 and All 9, grouped by repo under ledger-core, notify-relay and payments-api, each with its session, On origin or Gone on origin, and Safe to delete merged by merge commit, rebase or pull request, plus the button Select 7 safe to delete">
 </picture>
 
-Delete old branches with confidence. They are sorted into **Safe to delete** and **Needs a look**, each with its session and whether it still exists on origin, and squash-merged branches are spotted too.
+Delete old branches with confidence. Local branches are sorted into **Safe to delete** and **Needs a look**, each with its session, whether it still exists on origin and how it was merged: merge commit, rebase or pull request. **Select 7 safe to delete** picks them together, and every deletion can be restored for 14 days.
 
 ### Storage scope
 
@@ -833,7 +913,12 @@ Clean up this workspace, other workspaces, removed ones or all of them, each wit
 
 ### Free space chip
 
-See reclaimable space at a glance. While at least 1 GB of worktree folders can go, the top bar shows **Free N GB**, and a click opens Storage at the folders.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/storage-free-space-chip-dark.webp">
+  <img src="./docs/readme/storage-free-space-chip-light.webp" width="680" alt="The top bar with the Free 4 GB chip hovered: Goodboy can free 4.1 GB of worktree folders nobody uses. Open storage. Beside it are 2 need you, 2 running and $9.62 today">
+</picture>
+
+See reclaimable space at a glance. While at least 1 GB of worktree folders can go, the top bar shows **Free 4 GB**. Hover it for the exact size, 4.1 GB here, and click to open Storage across all workspaces.
 
 ### Artifacts from deleted sessions
 
@@ -845,14 +930,16 @@ Hear about reclaimable space once, when idle safe folders pass 10 GB or the disk
 
 ## Security, backup and updates
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s26-security-dark.webp">
-  <img src="./docs/readme/s26-security-light.webp" alt="Security findings with one saved script that looks like it contains a token">
-</picture>
+Keep tokens out of what you save, move your setup between machines, and update without losing data.
 
 ### Security findings
 
-Catch a token pasted into a saved script before it travels. Saving a script checks it for keys and tokens, and findings show in **Settings**, **App**, **Security findings**, where **Not a secret** dismisses one and **Flag again** brings it back.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/security-findings-dark.webp">
+  <img src="./docs/readme/security-findings-light.webp" alt="Security findings: 1 saved script looks like it contains a token, seed-sandbox in payments-api, Token ending 9f2c, with Details and the Not a secret button">
+</picture>
+
+Catch a token pasted into a saved script before it travels. Each time you save a project script, Goodboy checks it for keys and tokens on your Mac, and findings show in **Settings**, **App**, **Security findings**, as in the picture. **Not a secret** dismisses one and **Flag again** brings it back. The page suggests keeping the value in your shell or a `.env` file that git ignores, and using its name instead, like `$DEPLOY_TOKEN`.
 
 ### Findings kept out of the export
 
@@ -860,23 +947,48 @@ Move your setup to a new machine without carrying a flagged token: an export lea
 
 ### Export and import your setup
 
-Move workspaces, projects, workflows, scripts, rules and preferences to another machine, in groups. Import shows what it adds before writing, keys and sign-ins stay out of the export, and imported integrations ask you to sign in again.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/security-export-import-dark.webp">
+  <img src="./docs/readme/security-export-import-light.webp" alt="Settings, App, Backup, Export: checkboxes for Workspaces, Projects, Folder paths (off), Your profile, Workflows you made, Workflows the orchestrator wrote (off), Saved scripts, Permission rules, Budget rules, Linked integrations and App preferences, and a Never included box listing API keys and tokens, sign-ins, sessions, artifacts, worktree folders, usage history and notifications">
+</picture>
+
+Move your setup to another Mac, or keep a copy. **Backup** exports in groups: workspaces, projects, your profile, workflows you made, saved scripts, permission rules, budget rules, linked integrations and app preferences. **Folder paths** start off because they contain your username, and **Never included** lists what always stays behind, keys and sign-ins first. **Import** shows what it adds before writing, adds and updates but never deletes, and imported integrations ask you to sign in again.
 
 ### Backup before a data update
 
-Update without worrying about your data. Before an update changes it, Goodboy makes a full copy and keeps the last two, and if the copy fails, the update does not start.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/security-backup-notice-dark.webp">
+  <img src="./docs/readme/security-backup-notice-light.webp" alt="The changelog entry for Goodboy 0.13.0, In the update, 3 features and 1 fix, with the notice: This version updates your data in one direction. To go back to 0.12, restore the backup Goodboy made before updating">
+</picture>
+
+Update without worrying about your data. Before an update changes it, Goodboy makes a full copy and keeps the last two, and if the copy fails, the update does not start. A release that changes your data in one direction says so in its changelog entry, as in the picture, and points you to that backup to go back.
 
 ### Newer data guard
 
-Open an older Goodboy on newer data without damage: it stops and offers **Restore backup** or **Quit**.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/security-newer-data-dark.webp">
+  <img src="./docs/readme/security-newer-data-light.webp" width="680" alt="The screen an older Goodboy shows on newer data: This database was upgraded by a newer Goodboy, with the buttons Restore backup and Quit">
+</picture>
+
+Open an older Goodboy on newer data without damage. It stops before touching anything and offers **Restore backup** or **Quit**, and your current data stays in a copy next to the database.
 
 ### Updates
 
-Get updates in the background, then see what is new. With agents running, **Restart when they finish** waits for them.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/security-updates-dark.webp">
+  <img src="./docs/readme/security-updates-light.webp" width="500" alt="The 0.13.1 available pill in the top bar with its confirm open: Goodboy 0.13.1 is available, Nothing is running, and the buttons What's new, Not now and Download and restart">
+</picture>
+
+Get updates in the background, then see what is new. A pill in the top bar, **0.13.1 available** here, opens a confirm with **Download and restart**, **Not now** and **What's new**, and it says whether agents are running. With agents running, **Restart when they finish** waits for them.
 
 ### Changelog in the app
 
-Read release notes inside the app, searchable, with links into the screen each change touched. Before an update, "What's new" shows every release it brings, marked **In the update**. After an update, "What's new since" covers the releases you skipped. In the list, only releases that update your data in one direction carry a mark.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/security-changelog-update-dark.webp">
+  <img src="./docs/readme/security-changelog-update-light.webp" alt="The Changelog opened from the update, Installed 0.12.3: a search box, releases 0.13.1 and 0.13.0 marked in the update, 0.12.3 marked installed, and Goodboy 0.13.1 with two fixes linked to Sessions and App">
+</picture>
+
+Read release notes inside the app, searchable, with links into the screen each change touched, like **Sessions** and **App** beside each fix. Before an update, "What's new" shows every release it brings, marked **in the update**, and the installed one is marked **installed**. After an update, "What's new since" covers the releases you skipped. In the list, only releases that update your data in one direction carry a mark.
 
 ### Before and after pictures
 
