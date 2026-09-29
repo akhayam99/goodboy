@@ -108,7 +108,7 @@ its own CSS file:
 
 - `Chapter`, a section with a `Statement` head, then its blocks 96 px apart
   (64 on a phone). `isBand` puts it on `--band` with a hairline above and
-  below; How it works, Workflows, Questions and the closer are banded, the
+  below; How it works, Workflows, Questions and Install are banded, the
   chapters between them are not.
 - `Statement`, an eyebrow, a heading and a lead of 20 words or fewer. The
   hero and the closer use it too. No h1, h2 or h3 ends with a period.
@@ -171,7 +171,7 @@ Phones: a touch device is told by pointer, `(hover: none) and (pointer: coarse)`
 never by width. `.onlyFine` hides an element on touch and `.onlyCoarse` hides it
 with a mouse, both in `src/styles.css`. On touch the nav Download, the hero
 download buttons, the install block (Homebrew command, Download for macOS, Linux
-builds and the five-minutes note) and the closer buttons give way to
+builds and the five-minutes note) give way to
 `StarButton`, a Star on GitHub link to `SITE.repo`. The phone run of
 `check:page` emulates touch and fails on a visible `[data-download]` element or
 a missing `[data-star]` one, and on a Star button with a mouse.

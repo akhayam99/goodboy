@@ -1,16 +1,9 @@
 .closer {
-  padding: 152px 0 136px;
-  background: var(--band);
-  border-top: 1px solid var(--line-soft);
-}
-
-.closer .ctaRow {
-  justify-content: center;
-  margin-top: 32px;
+  padding: 96px 0 88px;
 }
 
 @media (max-width: 600px) {
   .closer {
-    padding: 80px 0 72px;
+    padding: 56px 0 48px;
   }
 }

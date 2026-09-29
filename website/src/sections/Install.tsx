@@ -67,6 +67,10 @@ export const Install = () => {
         <StarButton />
         <p className="installNote onlyCoarse">Save the repo for later.</p>
         <p className="installNote onlyFine">Most people are working in five minutes.</p>
+        <p className="installNote installSupport">
+          Found a bug? Report it from the app, or{' '}
+          <a href={SITE.newIssue}>open an issue on GitHub</a>.
+        </p>
       </div>
     </Chapter>
   );

@@ -8,9 +8,8 @@ import { Workflows } from './sections/Workflows';
 import { Routing } from './sections/Routing';
 import { WorkspaceChat } from './sections/WorkspaceChat';
 import { Faq } from './sections/Faq';
-import { Install } from './sections/Install';
-import { Support } from './sections/Support';
 import { Closer } from './sections/Closer';
+import { Install } from './sections/Install';
 import { Footer } from './sections/Footer';
 import { useReveal } from './hooks/useReveal';
 
@@ -29,9 +28,8 @@ export const App = () => {
         <Routing />
         <WorkspaceChat />
         <Faq />
-        <Install />
-        <Support />
         <Closer />
+        <Install />
       </main>
       <Footer />
       <Analytics />

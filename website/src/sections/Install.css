@@ -49,6 +49,16 @@
   color: var(--t4);
 }
 
+.installSupport {
+  font: var(--t-body);
+  letter-spacing: var(--tr-body);
+  color: var(--t3);
+}
+
+.installSupport a {
+  color: var(--accent);
+}
+
 @media (max-width: 600px) {
   .install {
     padding: 0;
