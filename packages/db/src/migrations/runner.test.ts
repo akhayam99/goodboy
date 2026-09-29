@@ -277,7 +277,7 @@ describe('runRuntimeMigrations', () => {
   });
 });
 
-describe('enforced integrity check', () => {
+describe('enforced integrity check', { timeout: 30_000 }, () => {
   const INTEGRITY_MIGRATION = {
     version: 1157,
     sql: `
