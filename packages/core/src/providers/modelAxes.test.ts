@@ -207,7 +207,7 @@ describe('modelAxes', () => {
     expect(options).toEqual([
       { id: 'Auto', label: 'Auto', modelKey: 'auto' },
       { id: 'Composer', label: 'Composer', modelKey: 'composer-2.5' },
-      { id: 'Sonnet', label: 'Sonnet', modelKey: 'sonnet-5' },
+      { id: 'Sonnet', label: 'Sonnet', modelKey: 'sonnet-5.5' },
       { id: 'Opus', label: 'Opus', modelKey: 'opus-5.5' },
       { id: 'Fable', label: 'Fable', modelKey: 'fable-5.1' },
       { id: 'GPT', label: 'GPT', modelKey: 'gpt-5.6' },
