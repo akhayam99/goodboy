@@ -35,7 +35,12 @@ const { store } = vi.hoisted(() => ({
     createSession: vi.fn(async (_input: Record<string, unknown>) => ({
       session: { id: 'session-new' },
     })),
-    sendTurn: vi.fn(async () => undefined),
+    setSessionConfig: vi.fn(async () => undefined),
+    recordChatLink: vi.fn(async () => ({})),
+    loadPhaseRunsForSession: vi.fn(async () => undefined),
+    setAgentDraft: vi.fn(),
+    sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
+    agentDraft: {} as Record<string, string>,
     navigate: vi.fn(),
   },
 }));
@@ -129,6 +134,8 @@ beforeEach(() => {
   store.sessions = [];
   store.stages = {};
   store.mounts = {};
+  store.sessionPhaseRuns = {};
+  store.agentDraft = {};
 });
 
 afterEach(() => {
@@ -142,7 +149,7 @@ const ANSWERED: ReadonlyArray<ChatMessage> = [
 ];
 
 describe('ChatRoom', () => {
-  it('turns the chat into a session born with the summarized goal and prompt', async () => {
+  it('creates a session with the summarized goal, records the link and opens it', async () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });
 
@@ -159,10 +166,37 @@ describe('ChatRoom', () => {
       workspaceId: WORKSPACE_ID,
       projectId: 'project-payments',
       title: 'Ask for consent again when the policy changes',
-      goal: 'Ask for consent again when the policy version changes.',
-      firstAgentKind: 'generic',
-      kickoffPrompt: expect.stringContaining('What we know:\n- Consent is step 4, in steps.ts:88.'),
+      goal: expect.stringContaining(
+        'Ask for consent again when the policy version changes.\n\nWhat we know:\n- Consent is step 4, in steps.ts:88.',
+      ),
     });
+    expect(store.createSession.mock.calls[0]?.[0]).not.toHaveProperty('firstAgentKind');
+    expect(store.createSession.mock.calls[0]?.[0]).not.toHaveProperty('kickoffPrompt');
+    expect(store.recordChatLink).toHaveBeenCalledWith({
+      chatId: CHAT_ID,
+      sessionId: 'session-new',
+      messageId: null,
+      kind: 'new',
+    });
+    expect(store.navigate).toHaveBeenCalledWith({
+      to: expect.objectContaining({ at: 'session', sessionId: 'session-new' }),
+    });
+  });
+
+  it('keeps the drawer open with the error when the session cannot be created', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.createSession.mockRejectedValueOnce(new Error('disk full'));
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
+    });
+
+    expect(screen.getByText('disk full')).toBeDefined();
+    expect(store.recordChatLink).not.toHaveBeenCalled();
+    expect(store.navigate).not.toHaveBeenCalled();
   });
 
   it('picks several projects in the popover and starts the session in all of them', async () => {
@@ -276,6 +310,38 @@ describe('ChatRoom', () => {
     );
     expect(screen.getByRole('button', { name: 'Add to session' }).hasAttribute('disabled')).toBe(
       false,
+    );
+  });
+
+  it('adds to a session by opening it with the brief as an unsent draft', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.sessions = [
+      {
+        id: 'session-refunds',
+        workspaceId: WORKSPACE_ID,
+        goal: 'Refund flow for storefront-web',
+        updatedAt: AT,
+      },
+    ];
+    store.sessionPhaseRuns = { 'session-refunds': [{ id: 'agent-refunds', ordinal: 1 }] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    fireEvent.click(screen.getByRole('tab', { name: 'Add to a session' }));
+    fireEvent.click(screen.getByRole('combobox', { name: 'Session' }));
+    fireEvent.click(screen.getByRole('option', { name: /Refund flow/ }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Add to session' }));
+    });
+
+    expect(store.createSession).not.toHaveBeenCalled();
+    expect(store.recordChatLink).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: 'session-refunds', kind: 'add' }),
+    );
+    expect(store.setAgentDraft).toHaveBeenCalledWith(
+      'agent-refunds',
+      expect.stringMatching(/^Ask for consent again when the policy changes\n\nAsk for consent/),
     );
   });
 

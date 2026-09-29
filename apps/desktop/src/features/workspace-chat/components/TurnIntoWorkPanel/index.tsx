@@ -15,6 +15,7 @@ import { sessionTitle } from '../../../session/sessionTitle';
 import { useAppStore } from '../../../../store';
 import { activeChatBackend } from '../../activeChatBackend';
 import type { ChatHandoff } from '../../chatHandoff';
+import { landOnSession } from '../../landOnSession';
 import { startWorkFromChat } from '../../startWorkFromChat';
 import { summarizeChatForWork } from '../../summarizeChatForWork';
 import type { WorkBrief } from '../../workBrief';
@@ -38,8 +39,14 @@ const MODE_OPTIONS = [
 ] as const satisfies ReadonlyArray<{ readonly value: Mode; readonly label: string }>;
 
 const MODE_COPY = {
-  new: { action: 'Start session', hint: 'Opens a new session with this brief as its goal.' },
-  add: { action: 'Add to session', hint: 'Sends this brief as the next message of a session.' },
+  new: {
+    action: 'Start session',
+    hint: 'Creates a session with this brief as its goal. Nothing runs yet.',
+  },
+  add: {
+    action: 'Add to session',
+    hint: 'Puts this brief in that session as a message you send yourself.',
+  },
 } satisfies Record<Mode, { readonly action: string; readonly hint: string }>;
 
 type UpToParams = {
@@ -58,7 +65,11 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   const allProjects = useAppStore((state) => state.projects);
   const allSessions = useAppStore((state) => state.sessions);
   const createSession = useAppStore((state) => state.createSession);
-  const sendTurn = useAppStore((state) => state.sendTurn);
+  const setSessionConfig = useAppStore((state) => state.setSessionConfig);
+  const recordChatLink = useAppStore((state) => state.recordChatLink);
+  const navigate = useAppStore((state) => state.navigate);
+  const loadPhaseRunsForSession = useAppStore((state) => state.loadPhaseRunsForSession);
+  const setAgentDraft = useAppStore((state) => state.setAgentDraft);
   const projects = useMemo(
     () =>
       allProjects.filter(
@@ -138,9 +149,16 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
           mode === 'add' && target !== null
             ? { kind: 'add', sessionId: target.id }
             : { kind: 'new', projectIds: pickedProjects.map((project) => project.id) },
+        routing: null,
         createSession,
-        sendTurn,
+        setSessionConfig,
       });
+      await recordChatLink({
+        chatId: chat.id,
+        sessionId: started.sessionId,
+        messageId: anchorMessageId,
+        kind: mode,
+      }).catch(() => undefined);
       onDone({
         id: crypto.randomUUID(),
         label:
@@ -148,7 +166,16 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
             ? `Added to ${sessionTitle({ session: target })}`
             : 'Started a session',
         title,
-        sessionId: started,
+        sessionId: started.sessionId,
+      });
+      void landOnSession({
+        sessionId: started.sessionId,
+        draft: started.draft,
+        navigate,
+        loadPhaseRunsForSession,
+        readAgents: ({ sessionId }) => useAppStore.getState().sessionPhaseRuns[sessionId] ?? [],
+        readDraft: ({ agentId }) => useAppStore.getState().agentDraft[agentId] ?? '',
+        setAgentDraft,
       });
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
