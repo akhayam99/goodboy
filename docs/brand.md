@@ -145,6 +145,10 @@ suggests. Every one of these is generated, never cropped by hand.
 | LinkedIn profile background | 1584x396                 | The left third, under the profile photo                                             |
 | og-image                    | 1200x630                 | Nothing, but crawlers only take the PNG, so the PNG is the only source              |
 
+The og-image is the one card drawn on the website's dark theme tokens, so a link
+preview reads as dark on X, LinkedIn and Slack. Its URL in the page heads carries
+a `?v=` suffix. Bump it whenever the PNG changes, because scrapers cache by URL.
+
 A banner shows up much smaller than it is made. 1500 px wide becomes about 600
 on desktop and 440 on mobile. Anything under about 40 px in the source can't be
 read where people actually see it. That is why the thin LinkedIn cover has no
