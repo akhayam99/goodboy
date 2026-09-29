@@ -4,6 +4,14 @@ import { createDbMock } from '../test/dbMock';
 import { createInvokeMock, createInvokeRouter, type InvokeHandlers } from '../test/invokeMock';
 import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from './slices/turn/workflowTurnBreaker';
+import {
+  aProject,
+  aSession,
+  aWorkspace,
+  anAgent,
+  EMPTY_OVERRIDES,
+  TEST_NOW,
+} from '@goodboy/types/testing';
 import type { Notification } from '@goodboy/db';
 import type {
   Agent,
@@ -33,7 +41,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-export const STORY_NOW = '2026-08-22T00:00:00.000Z' as IsoDateTime;
+export const STORY_NOW: IsoDateTime = TEST_NOW;
 
 export const STORE_IMPORT_TIMEOUT_MS = 60_000;
 
@@ -877,81 +885,35 @@ export const configExportModuleMock = () => ({
   })),
 });
 
-export const emptyOverrides: OverrideSettings = {
-  defaultProviderId: null,
-  defaultBranchPrefix: null,
-  defaultVerbosity: null,
-  providerBindings: null,
-  taskModels: null,
-  roleModels: null,
-  parallelAgents: null,
-  providerPool: null,
-  attributionFooter: null,
-  replyVoice: null,
-  replyStyleNote: null,
-  replyTemplateFixed: null,
-  replyTemplateNoChange: null,
-  resolveOnGithub: null,
-  resolveCommitStyle: null,
-  afterMerge: null,
-};
+export const emptyOverrides: OverrideSettings = EMPTY_OVERRIDES;
 
 type WorkspaceOverridesInput = Partial<Workspace> & { readonly id: WorkspaceId };
 
-export const buildStoryWorkspace = (overrides: WorkspaceOverridesInput): Workspace => ({
-  name: 'Acme',
-  slug: 'acme',
-  overrides: emptyOverrides,
-  createdAt: STORY_NOW,
-  updatedAt: STORY_NOW,
-  ...overrides,
-});
+export const buildStoryWorkspace = (overrides: WorkspaceOverridesInput): Workspace =>
+  aWorkspace({ name: 'Acme', slug: 'acme', ...overrides });
 
 type ProjectOverridesInput = Partial<Project> & {
   readonly id: ProjectId;
   readonly workspaceId: WorkspaceId;
 };
 
-export const buildStoryProject = (overrides: ProjectOverridesInput): Project => ({
-  name: 'app',
-  rootPath: '/tmp/app',
-  kind: 'repo',
-  overrides: emptyOverrides,
-  createdAt: STORY_NOW,
-  updatedAt: STORY_NOW,
-  ...overrides,
-});
+export const buildStoryProject = (overrides: ProjectOverridesInput): Project =>
+  aProject({ name: 'app', rootPath: '/tmp/app', ...overrides });
 
 type SessionOverridesInput = Partial<Session> & {
   readonly id: SessionId;
   readonly workspaceId: WorkspaceId;
 };
 
-export const buildStorySession = (overrides: SessionOverridesInput): Session => ({
-  goal: 'ship the thing',
-  state: { kind: 'draft' },
-  contextSlots: [],
-  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
-  permissionMode: 'bypassPermissions',
-  autoRun: false,
-  titleUserEdited: false,
-  workflowRuns: [],
-  createdAt: STORY_NOW,
-  updatedAt: STORY_NOW,
-  ...overrides,
-});
+export const buildStorySession = (overrides: SessionOverridesInput): Session =>
+  aSession({ goal: 'ship the thing', ...overrides });
 
 type AgentOverridesInput = Partial<Agent> & {
   readonly id: AgentId;
   readonly sessionId: SessionId;
 };
 
-export const buildStoryAgent = (overrides: AgentOverridesInput): Agent => ({
-  ordinal: 0,
-  name: 'agent 1',
-  status: 'pending',
-  ...overrides,
-});
+export const buildStoryAgent = (overrides: AgentOverridesInput): Agent => anAgent(overrides);
 
 export const connectedAnthropicState = () => ({
   providers: [
