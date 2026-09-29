@@ -10,7 +10,7 @@ import { effectiveAgentStatus } from './agentNowState';
 import { agentOpenTab, isOpenAgentReveal, type AgentTab } from './agentOpenTab';
 import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
-import { AgentStatusBadge } from '../AgentTree/AgentStatusBadge';
+import { AgentHeaderStatus } from './AgentHeaderStatus';
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';
 import { AgentBrief } from './AgentBrief';
@@ -120,7 +120,12 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
           meta={
             <>
               <AgentKindChip kind={kind} />
-              <AgentStatusBadge status={status} />
+              <AgentHeaderStatus
+                session={session}
+                agent={agent}
+                isResolver={kind === 'resolver'}
+                status={status}
+              />
               {time == null ? null : <AgentHeaderTime time={time} />}
             </>
           }

@@ -44,6 +44,11 @@ vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div>Transcript body</div>,
 }));
 vi.mock('./AgentBrief', () => ({ AgentBrief: () => <div>Brief body</div> }));
+vi.mock('./AgentHeaderStatus', () => ({
+  AgentHeaderStatus: ({ status }: { readonly status: string }) => (
+    <span>{status === 'running' ? 'Running' : status}</span>
+  ),
+}));
 vi.mock('../AgentHeaderActions', () => ({ AgentHeaderActions: () => null }));
 vi.mock('./AgentNextAction', () => ({
   AgentNextAction: () => <div>Next action strip</div>,
