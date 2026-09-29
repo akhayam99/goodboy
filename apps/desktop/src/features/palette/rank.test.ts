@@ -40,6 +40,34 @@ describe('rankCandidates', () => {
     ]);
   });
 
+  const manyItems: ReadonlyArray<RankCandidate> = Array.from({ length: 100 }, (_, index) => ({
+    key: `session:${index}`,
+    label: `Payout ${index}`,
+  }));
+
+  it('caps the ranked list at 60 rows by default', () => {
+    const ranked = rankCandidates({
+      items: manyItems,
+      query: 'p',
+      frecency: EMPTY_FRECENCY,
+      now: NOW,
+    });
+
+    expect(ranked).toHaveLength(60);
+  });
+
+  it('honours an explicit limit', () => {
+    const ranked = rankCandidates({
+      items: manyItems,
+      query: 'p',
+      frecency: EMPTY_FRECENCY,
+      now: NOW,
+      limit: 7,
+    });
+
+    expect(ranked).toHaveLength(7);
+  });
+
   it('keeps one flat ranked list: a strong session beats a weak agent', () => {
     const ranked = rankCandidates({
       items: ITEMS,
