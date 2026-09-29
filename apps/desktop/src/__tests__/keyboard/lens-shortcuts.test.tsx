@@ -134,6 +134,7 @@ vi.mock('../../store', async () => {
     useSessionById: (sessionId: string | null) =>
       sessionList.current.find((s) => s.id === sessionId) ?? null,
     useSessions: () => sessionList.current,
+    useSessionViewPrefs: () => ({ group: 'none' }),
     useSortedGroupedSessions: () => {
       const order = sidebarOrder.current;
       const sessions =

@@ -10,7 +10,8 @@ import {
   tintClasses,
 } from '@goodboy/ui';
 import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
-import { useSessionViewPrefs, useSortedGroupedSessions } from '../../../../store';
+import { useAppStore, useSessionViewPrefs, useSortedGroupedSessions } from '../../../../store';
+import { isSessionGroupCollapsed } from '../../../../store/slices/session-view/isSessionGroupCollapsed';
 import { sessionGroupPresentation } from './groupPresentation';
 import { stateDescription } from '../../../../shared/utils/statePresentation';
 import { useMultiSelect } from '../../../../shared/hooks/useMultiSelect';
@@ -24,8 +25,6 @@ import { SessionActivityItem } from './SessionActivityItem';
 import { NewSessionButton } from './NewSessionButton';
 
 type ActivityTab = 'active' | 'archived';
-
-const COLLAPSED_BY_DEFAULT: ReadonlyArray<string> = ['done', 'merged', 'closed'];
 
 type GroupKeyParams = {
   readonly key: string;
@@ -57,9 +56,8 @@ export const SessionActivityBar = ({
     window.addEventListener('goodboy:new-session', onNewSessionRequest);
     return () => window.removeEventListener('goodboy:new-session', onNewSessionRequest);
   }, []);
-  const [expandedOverrides, setExpandedOverrides] = useState<ReadonlyMap<string, boolean>>(
-    new Map(),
-  );
+  const groupExpanded = useAppStore((s) => s.sessionGroupExpanded);
+  const toggleSessionGroup = useAppStore((s) => s.toggleSessionGroup);
 
   const prefs = useSessionViewPrefs(workspaceId);
   const filterSessions = useMemo(
@@ -120,15 +118,7 @@ export const SessionActivityBar = ({
   }, [hasSelection, hold, release]);
 
   const isCollapsed = ({ key }: GroupKeyParams): boolean =>
-    expandedOverrides.get(key) ?? COLLAPSED_BY_DEFAULT.includes(key);
-
-  const toggleGroup = ({ key }: GroupKeyParams): void => {
-    setExpandedOverrides((prev) => {
-      const next = new Map(prev);
-      next.set(key, !isCollapsed({ key }));
-      return next;
-    });
-  };
+    isSessionGroupCollapsed({ key, overrides: groupExpanded });
 
   return (
     <div className="flex h-full min-h-0 w-full shrink-0 flex-col gap-2">
@@ -170,7 +160,7 @@ export const SessionActivityBar = ({
                 {isGrouped ? (
                   <button
                     type="button"
-                    onClick={() => toggleGroup({ key: group.key })}
+                    onClick={() => toggleSessionGroup({ key: group.key })}
                     aria-expanded={!isGroupCollapsed}
                     title={
                       groupPresentation == null

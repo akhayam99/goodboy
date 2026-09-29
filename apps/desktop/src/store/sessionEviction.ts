@@ -273,6 +273,7 @@ export const NON_SESSION_STATE_KEYS = [
   'workspaceDurationHistory',
   'scribeWork',
   'wireframeDrafts',
+  'sessionGroupExpanded',
 ] as const satisfies ReadonlyArray<keyof AppState>;
 
 type RegisteredKey =
