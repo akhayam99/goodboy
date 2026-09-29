@@ -11,6 +11,7 @@ import {
   recordedEventKinds,
   resetStorySpies,
   storySpies,
+  stubStoryInvoke,
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
   type StoryStore,
@@ -70,8 +71,11 @@ beforeAll(async () => {
   useAppStore = await importStore();
 }, STORE_IMPORT_TIMEOUT_MS);
 
+const NO_GITHUB_REMOTE = { stdout: '', stderr: 'no git remotes found', exitCode: 1 };
+
 beforeEach(() => {
   resetStorySpies();
+  stubStoryInvoke({ gh_run: NO_GITHUB_REMOTE });
   storySpies.runTurn.mockImplementation(() => emptyTurnStream());
   storySpies.getWorkspaceById.mockResolvedValue(workspace as never);
   storySpies.listProjectsForWorkspace.mockResolvedValue([project] as never);

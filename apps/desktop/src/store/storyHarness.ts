@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { createDbMock } from '../test/dbMock';
-import { createInvokeMock } from '../test/invokeMock';
+import { createInvokeMock, createInvokeRouter, type InvokeHandlers } from '../test/invokeMock';
 import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from './slices/turn/workflowTurnBreaker';
 import type { Notification } from '@goodboy/db';
@@ -60,7 +60,44 @@ const cleanWorkingTree = {
   workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0 },
 } as never;
 
+const SLOT_SUMMARY_PREFIX = 'Current slot values:';
+
+const TITLE_PROMPT_PREFIX = 'Write one imperative title';
+
+type AuxArgs = {
+  readonly args: {
+    readonly providerId: string;
+    readonly systemPrompt: string;
+    readonly userMessage: string;
+  };
+};
+
+export const storySummarizeSession =
+  (stepSummary: string) =>
+  ({ args }: AuxArgs) => {
+    if (args.systemPrompt.startsWith(TITLE_PROMPT_PREFIX)) {
+      return { stdout: '', stderr: 'no aux provider in tests', exitCode: 1 };
+    }
+    const text = args.userMessage.startsWith(SLOT_SUMMARY_PREFIX) ? '{"upserts":[]}' : stepSummary;
+    return {
+      stdout:
+        args.providerId === 'anthropic'
+          ? JSON.stringify({ result: text, subtype: 'success' })
+          : text,
+      stderr: '',
+      exitCode: 0,
+    };
+  };
+
 const storyInvokeHandlers = {
+  gh_status: {
+    available: false,
+    mode: 'absent',
+    version: null,
+    user: null,
+    scopes: [],
+    scoped: false,
+  },
   query_bridge_serving: false,
   get_workspace_overrides: null,
   get_session_overrides: null,
@@ -76,11 +113,7 @@ const storyInvokeHandlers = {
   qa_deciding_workflow_runs: [],
   workspace_script_list_live: [],
   terminal_list_live: [],
-  summarize_session: {
-    stdout: JSON.stringify({ result: '{"upserts":[]}', subtype: 'success' }),
-    stderr: '',
-    exitCode: 0,
-  },
+  summarize_session: storySummarizeSession('The step finished.'),
 };
 
 export const storySpies = {
@@ -299,6 +332,12 @@ const freeWriterLease = ({ path }: { readonly path: string }) => ({
   waiting: [],
 });
 
+export const stubStoryInvoke = (overrides: InvokeHandlers) => {
+  storySpies.tauriInvoke.mockImplementation(
+    createInvokeRouter({ handlers: { ...storyInvokeHandlers, ...overrides }, unknownResult: null }),
+  );
+};
+
 export const resetStorySpies = () => {
   resetWorkflowTurnBreaker();
   for (const spy of Object.values(storySpies)) {
@@ -370,7 +409,7 @@ export const resetStoryStore = async () => {
 const { resetResolveQueryMocks: _resetResolveQueryMocks, ...storyResolveDbQueries } =
   storyResolveQueries;
 
-const dbStubs = () => ({
+export const storyDbStubs = () => ({
   ...storyResolveDbQueries,
   hasOtherSessionTurnSince: vi.fn(async () => false),
   insertAgentTurnSpan: vi.fn(async () => undefined),
@@ -532,7 +571,7 @@ const dbStubs = () => ({
   updateWorkflowOrder: vi.fn(async () => undefined),
 });
 
-export const dbModuleMock = () => createDbMock(dbStubs());
+export const dbModuleMock = () => createDbMock(storyDbStubs());
 
 export const tauriCoreModuleMock = () => ({
   invoke: storySpies.tauriInvoke,
