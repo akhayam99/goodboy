@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
+use crate::proc::git::{Git, GitError};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -9,7 +10,6 @@ use thiserror::Error;
 pub(crate) type RunGit<'a> = &'a mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>;
 
 const MAX_SLUG_LEN: usize = 48;
-const NON_INTERACTIVE_EDITOR: &str = "true";
 
 #[derive(Debug, Error)]
 pub enum WorktreeError {
@@ -38,6 +38,18 @@ pub enum WorktreeError {
 }
 
 crate::util::impl_error_serialize!(WorktreeError);
+
+impl From<GitError> for WorktreeError {
+    fn from(error: GitError) -> Self {
+        match error {
+            GitError::Spawn(inner) => WorktreeError::Io(inner),
+            GitError::InvalidUtf8 => WorktreeError::InvalidUtf8,
+            other => WorktreeError::Git {
+                message: other.to_string(),
+            },
+        }
+    }
+}
 
 impl WorktreeError {
     fn kind(&self) -> &'static str {
@@ -2632,12 +2644,11 @@ fn worktree_is_ancestor_blocking(
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(worktree_path));
     }
-    let output = crate::path_env::command("git")
+    let output = Git::new()
         .args(["merge-base", "--is-ancestor", &sha, &head])
-        .current_dir(p)
-        .env("GIT_TERMINAL_PROMPT", "0")
+        .cwd(p)
         .output()?;
-    Ok(output.status.success())
+    Ok(output.success())
 }
 
 #[tauri::command]
@@ -3682,26 +3693,7 @@ pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
     #[cfg(test)]
     git_argv_log::record(args);
 
-    let output = crate::path_env::command("git")
-        .args(args)
-        .current_dir(cwd)
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .env("GIT_ASKPASS", "")
-        .env("SSH_ASKPASS", "")
-        .env("GIT_SSH_COMMAND", "ssh -oBatchMode=yes")
-        .env("GIT_EDITOR", NON_INTERACTIVE_EDITOR)
-        .env("GIT_SEQUENCE_EDITOR", NON_INTERACTIVE_EDITOR)
-        .output()?;
-    if !output.status.success() {
-        let stderr = String::from_utf8(output.stderr).unwrap_or_default();
-        let redacted = redact_credentials(&stderr);
-        return Err(WorktreeError::Git {
-            message: format!("git {} failed: {redacted}", args.join(" "))
-                .trim()
-                .to_string(),
-        });
-    }
-    String::from_utf8(output.stdout).map_err(|_| WorktreeError::InvalidUtf8)
+    Ok(Git::new().cwd(cwd).args(args).batch_auth().stdout()?)
 }
 
 pub(crate) fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {

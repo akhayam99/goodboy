@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::proc::git::Git;
 use crate::worktree::{ensure_goodboy_excluded, exclude_file_path, remove_goodboy_exclude_entry};
 
 const PROBE_PATH: &str = ".goodboy/worktrees/probe";
@@ -93,14 +94,14 @@ fn expand_home(raw: &str, home: &Path) -> PathBuf {
 }
 
 fn global_excludes_path(home: &Path) -> PathBuf {
-    let configured = crate::path_env::command("git")
+    let configured = Git::new()
         .args(["config", "--global", "--get", "core.excludesFile"])
         .env("HOME", home)
         .env_remove("XDG_CONFIG_HOME")
         .output()
         .ok()
-        .filter(|output| output.status.success())
-        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
+        .filter(|output| output.success())
+        .map(|output| output.stdout_lossy().trim().to_string())
         .filter(|value| !value.is_empty());
     if let Some(raw) = configured {
         return expand_home(&raw, home);
@@ -174,18 +175,15 @@ pub(crate) fn check_status(
     repo_root: &Path,
     home: &Path,
 ) -> Result<GoodboyIgnoreStatus, GoodboyIgnoreError> {
-    let output = crate::path_env::command("git")
+    let output = Git::new()
         .args(["check-ignore", "-v", "--no-index", PROBE_PATH])
-        .current_dir(repo_root)
+        .cwd(repo_root)
         .env("HOME", home)
         .env_remove("XDG_CONFIG_HOME")
-        .output()?;
+        .output()
+        .map_err(std::io::Error::from)?;
     match output.status.code() {
-        Some(0) => Ok(parse_hit(
-            &String::from_utf8_lossy(&output.stdout),
-            repo_root,
-            home,
-        )),
+        Some(0) => Ok(parse_hit(&output.stdout_lossy(), repo_root, home)),
         Some(1) => Ok(GoodboyIgnoreStatus {
             source: GoodboyIgnoreSource::NotIgnored,
             path: None,

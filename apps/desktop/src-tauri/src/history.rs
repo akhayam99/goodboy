@@ -1,12 +1,13 @@
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, ChildStdout, Stdio};
+use std::process::{Child, ChildStdin, ChildStdout};
 use std::sync::OnceLock;
 
 use serde::{Deserialize, Serialize};
 use tauri::State;
 
+use crate::proc::git::Git;
 use crate::worktree::{
     git, git_dir_of, in_progress_operation, read_working_tree, resolve_commit, sanitize_slug,
     GitWorkingTree, WorktreeError,
@@ -247,37 +248,24 @@ fn git_run(
     author: Option<&Author>,
     input: Option<&str>,
 ) -> Result<GitRun, WorktreeError> {
-    let mut command = crate::path_env::command("git");
-    command
-        .args(args)
-        .current_dir(cwd)
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .env("GIT_EDITOR", "true")
-        .env("GIT_SEQUENCE_EDITOR", "true")
-        .stdin(if input.is_some() {
-            Stdio::piped()
-        } else {
-            Stdio::null()
-        })
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+    let mut git = Git::new().args(args).cwd(cwd);
     if let Some(author) = author {
-        command
+        git = git
             .env("GIT_AUTHOR_NAME", &author.name)
             .env("GIT_AUTHOR_EMAIL", &author.email)
             .env("GIT_AUTHOR_DATE", &author.date);
     }
-    let mut child = command.spawn()?;
     if let Some(text) = input {
-        if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(text.as_bytes())?;
-        }
+        git = git.input(text);
     }
-    let output = child.wait_with_output()?;
+    let output = git.output()?;
+    if let Some(error) = output.input_error {
+        return Err(error.into());
+    }
     Ok(GitRun {
         status: output.status.code().unwrap_or(-1),
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-        stderr: crate::worktree::redact_credentials(&String::from_utf8_lossy(&output.stderr)),
+        stdout: output.stdout_lossy(),
+        stderr: output.stderr_redacted(),
     })
 }
 
@@ -292,11 +280,8 @@ fn parse_git_version(raw: &str) -> Option<(u32, u32)> {
 fn git_version() -> Option<(u32, u32)> {
     static VERSION: OnceLock<Option<(u32, u32)>> = OnceLock::new();
     *VERSION.get_or_init(|| {
-        let output = crate::path_env::command("git")
-            .arg("--version")
-            .output()
-            .ok()?;
-        parse_git_version(&String::from_utf8_lossy(&output.stdout))
+        let output = Git::new().arg("--version").output().ok()?;
+        parse_git_version(&output.stdout_lossy())
     })
 }
 
@@ -669,7 +654,7 @@ struct MergeStream {
 
 impl MergeStream {
     fn start(cwd: &Path) -> Result<Self, WorktreeError> {
-        let mut child = crate::path_env::command("git")
+        let mut child = Git::new()
             .args([
                 "merge-tree",
                 "--stdin",
@@ -677,12 +662,8 @@ impl MergeStream {
                 "--no-messages",
                 "-z",
             ])
-            .current_dir(cwd)
-            .env("GIT_TERMINAL_PROMPT", "0")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()?;
+            .cwd(cwd)
+            .spawn_streaming()?;
         let input = child.stdin.take();
         let output = child.stdout.take();
         let (Some(input), Some(output)) = (input, output) else {
@@ -845,27 +826,20 @@ fn write_commits(
         .trim()
         .to_string();
     let script = import_script(commits, &committer);
-    let mut child = crate::path_env::command("git")
+    let output = Git::new()
         .args(["fast-import", "--quiet", "--done", "--cat-blob-fd=1"])
-        .current_dir(cwd)
-        .env("GIT_TERMINAL_PROMPT", "0")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-    let input = child.stdin.take();
-    let writer = std::thread::spawn(move || {
-        input.map_or(Ok(()), |mut input| input.write_all(script.as_bytes()))
-    });
-    let output = child.wait_with_output()?;
-    let written = writer.join().unwrap_or(Ok(()));
-    if !output.status.success() {
+        .cwd(cwd)
+        .input(script)
+        .output()?;
+    if !output.success() {
         return Err(plan_error(&format!(
             "git fast-import failed: {}",
-            crate::worktree::redact_credentials(&String::from_utf8_lossy(&output.stderr)).trim()
+            output.stderr_redacted().trim()
         )));
     }
-    written?;
+    if let Some(error) = output.input_error {
+        return Err(error.into());
+    }
     let shas: Vec<String> = String::from_utf8_lossy(&output.stdout)
         .lines()
         .map(str::trim)
@@ -3758,20 +3732,20 @@ mod tests {
         let b = branch("push-block");
         let remote = with_remote(&b);
         commit(&b.root, "extra.txt", "extra\n", "extra");
-        let mut command = crate::path_env::command("git");
-        command
+        let output = Git::new()
             .args(["push", "origin", "feature"])
-            .current_dir(&b.root)
-            .env("GIT_TERMINAL_PROMPT", "0");
-        crate::turn::apply_push_block(&mut command);
-        let output = command.output().unwrap();
-        assert!(!output.status.success());
-        let mut bare = crate::path_env::command("git");
-        bare.args(["push"])
-            .current_dir(&b.root)
-            .env("GIT_TERMINAL_PROMPT", "0");
-        crate::turn::apply_push_block(&mut bare);
-        assert!(!bare.output().unwrap().status.success());
+            .cwd(&b.root)
+            .push_block()
+            .output()
+            .unwrap();
+        assert!(!output.success());
+        let bare = Git::new()
+            .args(["push"])
+            .cwd(&b.root)
+            .push_block()
+            .output()
+            .unwrap();
+        assert!(!bare.success());
         assert_eq!(git_ok(&remote, &["rev-parse", "refs/heads/feature"]), b.c);
     }
 
