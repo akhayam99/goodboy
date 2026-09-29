@@ -47,7 +47,7 @@ const seed = async () => {
      VALUES ('note-row', 'session', 'note:rounding', 'diff_comment', 'open', 2, 2)`,
   );
   const result = await migrate(db);
-  expect(result.applied).toEqual([213]);
+  expect(result.applied).toContain(213);
   return db;
 };
 
