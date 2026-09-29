@@ -111,6 +111,7 @@ import type { TerminalTab, TerminalTabId } from '../shared/types/terminal';
 import type { DraftAttachment } from './slices/agents/setAgentAttachments';
 import type { AgentQueuedTurn } from './slices/agentQueue/types';
 import type { ProviderSpendEntry } from './slices/budget';
+import type { BudgetSliceState } from './slices/budget/state';
 import type { BugReportDraftState } from './slices/bugReportDraft/state';
 import type { SessionDraftState } from './slices/sessionDraft/state';
 import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
@@ -254,6 +255,7 @@ export type PendingOrchestration = {
 };
 
 type AppSliceState = ArtifactsState &
+  BudgetSliceState &
   ResolveState &
   ReviewNavigationState &
   PrWritesState &

@@ -213,6 +213,7 @@ export const NON_SESSION_STATE_KEYS = [
   'storageDeletingArtifacts',
   'budgetRules',
   'providerSpendBreakdown',
+  'providerBudgetStatus',
   'budgetAlerts',
   'skills',
   'projectScripts',

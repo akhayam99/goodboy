@@ -49,6 +49,7 @@ const {
     discoveredScriptScans: Record<string, never>;
     sessionWorktrees: Record<string, ReadonlyArray<string>>;
     providerSpendBreakdown: ReadonlyArray<never>;
+    providerBudgetStatus: Record<string, never>;
     selectedAgentId: Record<string, string>;
     agentTurnState: Record<string, never>;
     agentModelOverride: Record<string, string>;
@@ -104,6 +105,7 @@ const {
     discoveredScriptScans: {},
     sessionWorktrees: {},
     providerSpendBreakdown: [],
+    providerBudgetStatus: {},
     workspaces: [],
     selectedAgentId: { 'session-1': 'agent-1' },
     agentTurnState: {},

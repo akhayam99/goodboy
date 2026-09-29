@@ -1,8 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
   BudgetAlert,
-  BudgetCheckResult,
   BudgetPeriod,
+  ProviderBudgetOverview,
+  ProviderBudgetStatus,
   BudgetRule,
   ProviderName,
   SessionId,
@@ -61,6 +62,24 @@ export const invokeBudgetAlertDismiss = async (id: string): Promise<void> => {
 export const invokeCheckProviderBudget = async (
   provider: ProviderName,
   period: BudgetPeriod,
-): Promise<BudgetCheckResult> => {
-  return invoke<BudgetCheckResult>('check_provider_budget', { provider, period });
+): Promise<ProviderBudgetStatus> => {
+  return invoke<ProviderBudgetStatus>('check_provider_budget', { provider, period });
+};
+
+type OverviewParams = {
+  readonly provider: ProviderName;
+  readonly todayStartMs: number;
+  readonly weekStartMs: number;
+};
+
+export const invokeProviderBudgetOverview = async ({
+  provider,
+  todayStartMs,
+  weekStartMs,
+}: OverviewParams): Promise<ProviderBudgetOverview> => {
+  return invoke<ProviderBudgetOverview>('provider_budget_overview', {
+    provider,
+    todayStartMs,
+    weekStartMs,
+  });
 };

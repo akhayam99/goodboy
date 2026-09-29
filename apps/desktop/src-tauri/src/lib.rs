@@ -401,6 +401,7 @@ pub fn run() {
             budget::budget_alert_dismiss,
             budget::budget_emit_alerts,
             budget::check_provider_budget,
+            budget::provider_budget_overview,
             skills::skill_list,
             skills::skill_get,
             skills::skill_upsert,

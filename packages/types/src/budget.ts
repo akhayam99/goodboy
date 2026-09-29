@@ -23,10 +23,30 @@ export type SessionBudget = Readonly<{
 }>;
 
 export type BudgetCheckResult = Readonly<{
-  remainingUsd: number;
+  remainingUsd: number | null;
   pct: number;
   exceeded: boolean;
   overThreshold: boolean;
+}>;
+
+export type ProviderBudgetStatus = BudgetCheckResult &
+  Readonly<{
+    spentUsd: number;
+    capUsd: number | null;
+    thresholdPct: number | null;
+    windowStartMs: number;
+    windowEndMs: number;
+  }>;
+
+export type ProviderSpendPeriods = Readonly<{
+  todayUsd: number;
+  last7DaysUsd: number;
+  thisMonthUsd: number;
+}>;
+
+export type ProviderBudgetOverview = Readonly<{
+  status: ProviderBudgetStatus;
+  periods: ProviderSpendPeriods;
 }>;
 
 export type RoutingReason =

@@ -76,7 +76,7 @@ export const emitBudgetAlerts = async (
     const existing = await listBudgetAlerts(db, { provider, undismissedOnly: true });
     const alreadyExists = existing.some((a) => a.kind === kind);
     if (!alreadyExists) {
-      const spentUsd = providerRule.capUsd - providerResult.remainingUsd;
+      const spentUsd = providerRule.capUsd - (providerResult.remainingUsd ?? providerRule.capUsd);
       const alert: BudgetAlert = {
         id: crypto.randomUUID(),
         kind,
@@ -96,7 +96,8 @@ export const emitBudgetAlerts = async (
       const existing = await listBudgetAlerts(db, { sessionId, undismissedOnly: true });
       const alreadyExists = existing.some((a) => a.kind === sKind);
       if (!alreadyExists) {
-        const spentUsd = sessionBudget.softCapUsd - sessionResult.remainingUsd;
+        const spentUsd =
+          sessionBudget.softCapUsd - (sessionResult.remainingUsd ?? sessionBudget.softCapUsd);
         const alert: BudgetAlert = {
           id: crypto.randomUUID(),
           kind: sKind,

@@ -1,7 +1,6 @@
 import { useMemo, type ReactElement } from 'react';
 import { StatCard, formatUsd, formatUsdPrecise } from '@goodboy/ui';
 import type { BudgetRule, ProviderName, SessionId } from '@goodboy/types';
-import type { ProviderSpendEntry } from '../../../../store';
 import { ErrorStrip } from '@goodboy/ui';
 import { PanelLoading } from '@goodboy/ui';
 import type { QueryResult } from '../../../../shared/types/queryResult';
@@ -16,12 +15,19 @@ import { TurnsTable } from './TurnsTable';
 import { StudioWidget } from '@goodboy/ui';
 import { buildModelBreakdown, coverageTurnCounts, providerLabel, type WorkspaceTurn } from './lib';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import type { ProviderBudgetEntry } from '../../hooks/useWorkspaceSpend';
+import {
+  budgetPctUsed,
+  budgetRingFraction,
+  budgetScopeNote,
+  budgetWarnFraction,
+} from '../../providerBudgetView';
 
 type Props = {
   readonly header: ReactElement;
   readonly onBack: () => void;
   readonly provider: ProviderName;
-  readonly entry: ProviderSpendEntry | null;
+  readonly entry: ProviderBudgetEntry | null;
   readonly turns: ReadonlyArray<WorkspaceTurn>;
   readonly rule: BudgetRule | null;
   readonly rulesResult: QueryResult<void>;
@@ -53,9 +59,8 @@ export const ProviderPanel = ({
   onOpenSession,
 }: Props) => {
   const spent = entry?.spentUsd ?? 0;
-  const capUsd = entry?.capUsd ?? null;
-  const pct = entry?.pct ?? 0;
-  const remaining = capUsd !== null ? Math.max(capUsd - spent, 0) : null;
+  const budget = entry?.budget ?? null;
+  const capUsd = budget?.capUsd ?? null;
 
   const filtered = useMemo(
     () => turns.filter((t) => t.record.provider === provider),
@@ -79,16 +84,29 @@ export const ProviderPanel = ({
         onRetry={onRetryTelemetry}
       />
       {isLoading && <PanelLoading label="Loading budget data" />}
-      {capUsd !== null ? (
-        <section className="flex items-center gap-6 rounded-lg border border-border-soft bg-subtle p-5">
-          <CostRing pct={pct} centerLabel={`${Math.round(pct * 100)}%`} subLabel="of cap" />
-          <div className="grid flex-1 grid-cols-3 gap-3">
-            <div title={formatUsdPrecise(spent)}>
-              <StatCard label="spent" value={formatUsd(spent)} />
+      {budget !== null && capUsd !== null ? (
+        <section className="flex flex-col gap-3 rounded-lg border border-border-soft bg-subtle p-5">
+          <div className="flex items-center gap-6">
+            <CostRing
+              pct={budgetRingFraction({ status: budget })}
+              centerLabel={`${budgetPctUsed({ status: budget })}%`}
+              subLabel="of cap"
+              warnAt={budgetWarnFraction({ status: budget })}
+            />
+            <div className="grid flex-1 grid-cols-3 gap-3">
+              <div title={formatUsdPrecise(budget.spentUsd)}>
+                <StatCard label="spent this month" value={formatUsd(budget.spentUsd)} />
+              </div>
+              <StatCard label="cap" value={formatUsd(capUsd)} />
+              <StatCard
+                label="remaining"
+                value={formatUsd(Math.max(capUsd - budget.spentUsd, 0))}
+              />
             </div>
-            <StatCard label="cap" value={formatUsd(capUsd)} />
-            <StatCard label="remaining" value={formatUsd(remaining ?? 0)} />
           </div>
+          <p className="text-secondary text-muted-foreground">
+            {budgetScopeNote({ status: budget })}
+          </p>
         </section>
       ) : (
         <section className="grid grid-cols-3 gap-3">

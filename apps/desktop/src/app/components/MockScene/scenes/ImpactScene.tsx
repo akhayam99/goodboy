@@ -3,6 +3,7 @@ import type {
   BudgetAlert,
   BudgetRule,
   IsoDateTime,
+  ProviderBudgetStatus,
   ProviderId,
   ProviderName,
   ProviderRunId,
@@ -16,6 +17,7 @@ import { ImpactStudio } from '../../../../features/impact/components/ImpactStudi
 import { StudioFrame } from './StudioFrame';
 import { mockWorkspace, seedStudioChrome } from './shellChrome';
 import { useAppStore, type ProviderSpendEntry } from '../../../../store';
+import type { ProviderBudgetStatuses } from '../../../../store/slices/budget';
 
 const WORKSPACE_ID = 'mock-impact-workspace-harborline' as WorkspaceId;
 const WORKSPACE_NAME = 'Harborline';
@@ -250,10 +252,41 @@ const buildTelemetry = (): Record<string, ReadonlyArray<TelemetryRecord>> => {
 };
 
 const PROVIDER_SPEND: ReadonlyArray<ProviderSpendEntry> = [
-  { provider: 'anthropic', spentUsd: 152.37, capUsd: 170, pct: 0.896 },
-  { provider: 'codex', spentUsd: 61.8, capUsd: 150, pct: 0.412 },
-  { provider: 'cursor', spentUsd: 36.6, capUsd: 100, pct: 0.366 },
+  { provider: 'anthropic', spentUsd: 152.37 },
+  { provider: 'codex', spentUsd: 61.8 },
+  { provider: 'cursor', spentUsd: 36.6 },
 ];
+
+const MONTH_START_MS = Date.UTC(new Date(NOW).getUTCFullYear(), new Date(NOW).getUTCMonth(), 1);
+const MONTH_END_MS =
+  Date.UTC(new Date(NOW).getUTCFullYear(), new Date(NOW).getUTCMonth() + 1, 1) - 1;
+
+type StatusParams = {
+  readonly spentUsd: number;
+  readonly capUsd: number;
+  readonly thresholdPct: number;
+};
+
+const monthStatus = ({ spentUsd, capUsd, thresholdPct }: StatusParams): ProviderBudgetStatus => {
+  const pct = (spentUsd / capUsd) * 100;
+  return {
+    remainingUsd: capUsd - spentUsd,
+    pct,
+    exceeded: spentUsd > capUsd,
+    overThreshold: spentUsd <= capUsd && pct >= thresholdPct,
+    spentUsd,
+    capUsd,
+    thresholdPct,
+    windowStartMs: MONTH_START_MS,
+    windowEndMs: MONTH_END_MS,
+  };
+};
+
+const PROVIDER_BUDGET_STATUS: ProviderBudgetStatuses = {
+  anthropic: monthStatus({ spentUsd: 152.37, capUsd: 170, thresholdPct: 80 }),
+  codex: monthStatus({ spentUsd: 61.8, capUsd: 150, thresholdPct: 85 }),
+  cursor: monthStatus({ spentUsd: 36.6, capUsd: 100, thresholdPct: 80 }),
+};
 
 const BUDGET_RULES: ReadonlyArray<BudgetRule> = [
   {
@@ -307,6 +340,7 @@ const seedImpactScene = (): void => {
     currentWorkspaceId: WORKSPACE_ID,
     sessionTelemetry: buildTelemetry(),
     providerSpendBreakdown: PROVIDER_SPEND,
+    providerBudgetStatus: PROVIDER_BUDGET_STATUS,
     budgetRules: BUDGET_RULES,
     budgetAlerts: BUDGET_ALERTS,
     sessionBudgets: {
@@ -321,6 +355,7 @@ const seedImpactScene = (): void => {
     setSessionBudget: noop,
     dismissBudgetAlert: noop,
     refreshProviderSpendBreakdown: noop,
+    refreshProviderBudgetStatus: noop,
     navigate: () => undefined,
   });
 };

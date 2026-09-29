@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { BudgetAlert, IsoDateTime } from '@goodboy/types';
 import type { QueryResult } from '../../../../shared/types/queryResult';
+import { providerBudgetStatusFor } from '../../testing/providerBudgetFixture';
 import { SpendSection } from './SpendSection';
 
 const OK: QueryResult<void> = { data: null, error: null };
@@ -52,13 +53,17 @@ describe('SpendSection', () => {
       <SpendSection
         {...baseProps}
         providers={[
-          { provider: 'anthropic', spentUsd: 3, capUsd: 10, pct: 0.3 },
-          { provider: 'codex', spentUsd: 1, capUsd: null, pct: 0 },
+          {
+            provider: 'anthropic',
+            spentUsd: 3,
+            budget: providerBudgetStatusFor({ spentUsd: 3, capUsd: 10 }),
+          },
+          { provider: 'codex', spentUsd: 1, budget: null },
         ]}
       />,
     );
 
-    expect(screen.getByText('$10.00 cap · 30% used')).toBeDefined();
+    expect(screen.getByText('$10.00 cap · 30% used this month')).toBeDefined();
     expect(screen.getByText('no cap')).toBeDefined();
   });
 
@@ -68,7 +73,7 @@ describe('SpendSection', () => {
       <SpendSection
         {...baseProps}
         onSelectProvider={onSelectProvider}
-        providers={[{ provider: 'anthropic', spentUsd: 3, capUsd: 10, pct: 0.3 }]}
+        providers={[{ provider: 'anthropic', spentUsd: 3, budget: null }]}
       />,
     );
 

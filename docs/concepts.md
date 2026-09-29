@@ -1013,8 +1013,9 @@ Goodboy measures every turn on your machine and sends nothing anywhere.
   total per session
 - **Session events**: when a session starts, resets, hits a limit, changes
   provider or ends
-- **Budgets**: a monthly budget per provider and a spend limit per session that
-  pauses workflows or only warns, with an alert before you reach them
+- **Budgets**: a monthly budget per provider, counted across all workspaces on a
+  UTC calendar month, and a spend limit per session that pauses workflows or
+  only warns, with an alert before you reach them
 
 Caps steer where work goes. They never lock you out. When every provider is
 over its cap, the message box tells you. You can still send the turn on the

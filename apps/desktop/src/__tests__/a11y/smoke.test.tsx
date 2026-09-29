@@ -28,6 +28,7 @@ vi.mock('../../store', () => {
     sessionPlans: {},
     workspaceSummary: null,
     providerSpendBreakdown: [],
+    providerBudgetStatus: {},
     updaterStatus: 'idle',
     updateVersion: null,
     updateFailure: null,

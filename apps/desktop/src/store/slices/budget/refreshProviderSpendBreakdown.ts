@@ -1,16 +1,19 @@
 import { summarizeWorkspaceProviderTelemetry } from '@goodboy/db';
 import type { WorkspaceId } from '@goodboy/types';
-import { invokeBudgetRuleList } from '../../../features/budget/budget';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { buildProviderSpendBreakdown } from './buildProviderSpendBreakdown';
+import { loadCurrentProviderBudgetStatuses } from './loadProviderBudgetStatuses';
 import type { SetFn } from './types';
 
 export const refreshProviderSpendBreakdown = (set: SetFn) => {
   return async (workspaceId: WorkspaceId) => {
-    const [providerSummaries, budgetRules] = await Promise.all([
+    const [providerSummaries, providerBudgetStatus] = await Promise.all([
       summarizeWorkspaceProviderTelemetry(tauriDatabase, workspaceId),
-      invokeBudgetRuleList(),
+      loadCurrentProviderBudgetStatuses(),
     ]);
-    set({ providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules) });
+    set({
+      providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries),
+      providerBudgetStatus,
+    });
   };
 };

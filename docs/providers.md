@@ -215,8 +215,13 @@ path**. A provider that is not connected shows only its connect card.
   Claude's free resets only work on claude.ai or in Claude Desktop, so a full
   Claude window shows **Open Claude usage** instead. Goodboy never buys a reset
 - **Spent in Goodboy**, the last row of Usage: today, the last 7 days and this
-  month for the current workspace, counted by Goodboy at API prices, and the
-  provider's budget when you set one. **Open in Impact** edits the budget. On a
+  month across all workspaces, counted by Goodboy at API prices, and the
+  provider's budget when you set one. `provider_budget_overview` in
+  `src-tauri/src/budget.rs` answers all of it in one call. The budget month
+  runs on UTC and resets at 00:00 UTC, shown in your local time. Routing, the
+  provider page, Impact and the chat pill read the same `check_provider_budget`
+  status, so the percentage is the same everywhere. **Open in Impact** edits the
+  budget. On a
   plan this is what the same tokens would cost on the API, not what you pay
 - **Permissions**: what this CLI does with each mode (`Works`, `Partly` with the
   reason, or `Not available` with the mode it runs as instead), whether it

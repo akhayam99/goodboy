@@ -1,30 +1,31 @@
+import { useEffect } from 'react';
 import { Gauge } from 'lucide-react';
 import { cn, formatUsd } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { formatShortDayMonth } from '../../../../shared/utils/formatShortDayMonth';
-
-type ResetLabelParams = {
-  readonly now?: Date;
-};
-
-const nextMonthlyResetLabel = ({ now = new Date() }: ResetLabelParams): string => {
-  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return formatShortDayMonth({ iso: next.getTime() }).toLowerCase();
-};
+import { budgetPctUsed } from '../../../budget/providerBudgetView';
 
 type Props = {
   readonly provider: ProviderId;
 };
 
 export const ProviderUsagePill = ({ provider }: Props) => {
-  const breakdown = useAppStore((s) => s.providerSpendBreakdown);
-  const entry = breakdown.find((e) => e.provider === provider);
-  if (entry == null || entry.capUsd === null || entry.capUsd <= 0) {
+  const status = useAppStore((s) => s.providerBudgetStatus[provider]);
+  const refreshStatus = useAppStore((s) => s.refreshProviderBudgetStatus);
+  const isStale = status !== undefined && Date.now() > status.windowEndMs;
+
+  useEffect(() => {
+    if (isStale) {
+      void refreshStatus().catch(() => undefined);
+    }
+  }, [isStale, refreshStatus]);
+
+  if (status === undefined || isStale || status.capUsd === null || status.capUsd <= 0) {
     return null;
   }
-  const pctUsed = Math.max(0, Math.min(1, entry.pct));
-  const pctRemaining = Math.round((1 - pctUsed) * 100);
+  const pctUsed = Math.max(0, Math.min(100, budgetPctUsed({ status })));
+  const pctRemaining = 100 - pctUsed;
   if (pctRemaining > 50) {
     return null;
   }
@@ -34,8 +35,8 @@ export const ProviderUsagePill = ({ provider }: Props) => {
     }
     return 'text-danger';
   })();
-  const reset = nextMonthlyResetLabel({});
-  const tooltip = `${provider}: ${formatUsd(entry.spentUsd)} / ${formatUsd(entry.capUsd)} used (${Math.round(pctUsed * 100)}%) · resets ${reset}`;
+  const reset = formatShortDayMonth({ iso: status.windowEndMs + 1 }).toLowerCase();
+  const tooltip = `${provider}: ${formatUsd(status.spentUsd)} / ${formatUsd(status.capUsd)} used across all workspaces (${pctUsed}%) · resets ${reset}`;
   return (
     <span
       title={tooltip}

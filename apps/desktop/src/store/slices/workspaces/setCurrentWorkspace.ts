@@ -25,7 +25,7 @@ import type { SessionWorktree } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { isMainWindow } from '../../../features/workspace/window';
-import { invokeBudgetAlertsList, invokeBudgetRuleList } from '../../../features/budget/budget';
+import { invokeBudgetAlertsList } from '../../../features/budget/budget';
 import { invokeSkillList } from '../../../features/skills/skills';
 import {
   invokeWorkflowList,
@@ -37,7 +37,7 @@ import {
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
-import { buildProviderSpendBreakdown } from '../budget';
+import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from '../budget';
 import {
   reattachableTurn,
   reconcileLoadedAgent,
@@ -260,7 +260,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         const [
           workspaceSummary,
           providerSummaries,
-          budgetRules,
+          providerBudgetStatus,
           budgetAlerts,
           skills,
           phaseTemplates,
@@ -268,7 +268,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         ] = await Promise.all([
           summarizeWorkspaceTelemetry(tauriDatabase, id).catch(() => null),
           summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
-          invokeBudgetRuleList().catch(() => []),
+          loadCurrentProviderBudgetStatuses(),
           invokeBudgetAlertsList().catch(() => []),
           invokeSkillList(id).catch(() => []),
           invokeWorkflowList(id).catch(() => []),
@@ -303,7 +303,8 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
         set((state) => ({
           sessionWorkflows,
           workspaceSummary,
-          providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries, budgetRules),
+          providerSpendBreakdown: buildProviderSpendBreakdown(providerSummaries),
+          providerBudgetStatus,
           budgetAlerts,
           skills: { ...state.skills, [id]: skills },
           phaseTemplates: { ...state.phaseTemplates, [id]: mergedTemplates },
@@ -330,7 +331,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
       })();
       void get().loadWorkspaceOverrides(id);
     } else {
-      set({ providerSpendBreakdown: [] });
+      set({ providerSpendBreakdown: [], providerBudgetStatus: {} });
     }
     if (isMainWindow()) {
       void dbSetSetting(tauriDatabase, SETTING_LAST_WORKSPACE_ID, id ?? '');
