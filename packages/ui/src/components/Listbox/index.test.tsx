@@ -211,6 +211,55 @@ describe('Listbox', () => {
     expect(onCreate).toHaveBeenCalledWith('topic/new');
   });
 
+  it('says its own sentence when nothing matches or nothing exists', () => {
+    const { rerender } = render(
+      <Listbox
+        ariaLabel="Session"
+        searchable
+        options={THEMES}
+        value={null}
+        onChange={vi.fn()}
+        noMatchLabel="No sessions match"
+      />,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Session' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search' }), {
+      target: { value: 'zzz' },
+    });
+    expect(screen.getByText('No sessions match')).toBeDefined();
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search' }), { key: 'Escape' });
+
+    rerender(
+      <Listbox
+        ariaLabel="Session"
+        searchable
+        options={[]}
+        value={null}
+        onChange={vi.fn()}
+        emptyLabel="No sessions yet in this workspace"
+      />,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Session' }));
+    expect(screen.getByText('No sessions yet in this workspace')).toBeDefined();
+  });
+
+  it('shows the row icon beside the checkbox when several values can be picked', () => {
+    render(
+      <Listbox
+        multiple
+        ariaLabel="Projects"
+        options={[
+          { value: 'ledger-core', label: 'ledger-core', leading: <i data-testid="icon" /> },
+        ]}
+        value={[]}
+        onChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Projects' }));
+    expect(within(screen.getByRole('option')).getByTestId('icon')).toBeDefined();
+  });
+
   it('toggles several values and stays open', () => {
     render(<MultipleHarness />);
 

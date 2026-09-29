@@ -30,6 +30,8 @@ type CommonProps<T extends ListboxValue> = {
   readonly searchLabel?: string;
   readonly searchPlaceholder?: string;
   readonly noun?: string;
+  readonly emptyLabel?: string;
+  readonly noMatchLabel?: string;
   readonly ariaLabel?: string;
   readonly id?: string;
   readonly testId?: string;
@@ -82,6 +84,8 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     searchLabel = 'Search',
     searchPlaceholder = 'Search',
     noun = 'option',
+    emptyLabel,
+    noMatchLabel,
     ariaLabel,
     id,
     testId,
@@ -309,7 +313,9 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
         ) : null}
         {status === undefined && isEmpty ? (
           <div className="px-3 py-2 text-label text-faint-foreground">
-            {hasQuery ? `No ${noun} matches "${trimmedQuery}"` : `No ${noun}s yet`}
+            {hasQuery
+              ? (noMatchLabel ?? `No ${noun} matches "${trimmedQuery}"`)
+              : (emptyLabel ?? `No ${noun}s yet`)}
           </div>
         ) : null}
         {hasList ? (

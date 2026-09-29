@@ -968,6 +968,47 @@ describe('store contract', () => {
       ).toEqual([webProject.id]);
     });
 
+    it('mounts every extra project beside the primary one before the session returns', async () => {
+      const store = useAppStore;
+      const apiProject = buildProject({
+        id: 'project-api' as ProjectId,
+        name: 'api',
+        rootPath: '/tmp/api',
+      });
+      const webProject = buildProject({
+        id: 'project-web' as ProjectId,
+        name: 'web',
+        rootPath: '/tmp/web',
+      });
+      storySpies.listProjectsForWorkspace.mockResolvedValueOnce([apiProject, webProject]);
+      store.setState({ currentWorkspaceId: WS_ID, projects: [apiProject, webProject] });
+      storySpies.createWorktree
+        .mockResolvedValueOnce({
+          worktreePath: '/tmp/api/.goodboy/worktrees/ship-scope',
+          branchName: 'goodboy/ship-scope',
+          slug: 'ship-scope',
+          reused: false,
+        })
+        .mockResolvedValueOnce({
+          worktreePath: '/tmp/web/.goodboy/worktrees/ship-scope',
+          branchName: 'goodboy/ship-scope',
+          slug: 'ship-scope',
+          reused: false,
+        });
+
+      const { session } = await store.getState().createSession({
+        workspaceId: WS_ID,
+        projectId: apiProject.id,
+        additionalProjectIds: [webProject.id, apiProject.id, webProject.id],
+        goal: 'Ship scope',
+      });
+
+      expect(storySpies.createWorktree).toHaveBeenCalledTimes(2);
+      expect(
+        store.getState().sessionProjectMounts[session.id]?.map((mount) => mount.projectId),
+      ).toEqual([apiProject.id, webProject.id]);
+    });
+
     it('creates a bare session when the workspace holds several projects and none was picked', async () => {
       const store = useAppStore;
       const db = await import('@goodboy/db');
