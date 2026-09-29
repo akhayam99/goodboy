@@ -249,6 +249,7 @@ pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector '
   (about 40 KB). Pass `--wait 30000`, capture one theme per run with
   `--themes dark`, and look at every file before keeping it.
 - Put `%20` for spaces inside `--scene`, or Chrome never loads the page.
+- `--click "Commits,Sort"` clicks, in order, the buttons, tabs or links whose text starts with each name, after the scene loads and before the capture. It shoots a state a scene does not open by itself, such as a second tab or an open picker. A name that matches nothing stops the run.
 
 `FEATURES.md` points at each file with its raw URL,
 `https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/<name>-dark.webp`.
