@@ -8,12 +8,7 @@ import type {
   TelemetryRecordId,
   TelemetryRecord,
 } from '@goodboy/types';
-import {
-  computeLatestTelemetryByAgentId,
-  formatCost,
-  formatTokens,
-  shortModel,
-} from './agent-row-format';
+import { computeLatestTelemetryByAgentId, formatCost, formatTokens } from './agent-row-format';
 
 describe('formatTokens', () => {
   it('renders raw count under 1k', () => {
@@ -52,25 +47,6 @@ describe('formatCost', () => {
   it('shows 2 decimals at or above 1 dollar', () => {
     expect(formatCost(1)).toBe('$1.00');
     expect(formatCost(12.345)).toBe('$12.35');
-  });
-});
-
-describe('shortModel', () => {
-  it('uses catalog labels for known claude models', () => {
-    expect(shortModel('claude-haiku-4-5')).toBe('Haiku 4.5');
-    expect(shortModel('claude-sonnet-4-6')).toBe('Sonnet 4.6');
-    expect(shortModel('claude-opus-4-7')).toBe('Opus 4.7');
-    expect(shortModel('claude-fable-5')).toBe('Fable 5');
-    expect(shortModel('claude-opus-5')).toBe('Opus 5');
-  });
-
-  it('passes non-claude models through', () => {
-    expect(shortModel('gpt-5.1')).toBe('gpt-5.1');
-    expect(shortModel('cursor-fast')).toBe('cursor-fast');
-  });
-
-  it('passes an unknown uppercase model through', () => {
-    expect(shortModel('CLAUDE-HAIKU-4-5')).toBe('CLAUDE-HAIKU-4-5');
   });
 });
 

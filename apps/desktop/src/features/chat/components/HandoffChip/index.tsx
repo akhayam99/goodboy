@@ -2,10 +2,11 @@ import { useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { AgentId, AgentStatus, PlanId, SessionId, TurnState } from '@goodboy/types';
+import type { AgentId, PlanId, SessionId, TurnState } from '@goodboy/types';
 import { extractHandoff } from '@goodboy/core';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
 import { AGENT_KIND_META, KIND_TO_ROLE, ROLE_LABEL } from '../../../session/agent-kind';
+import { agentStatusWord } from '../../../session/agentStatusWord';
 import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStatusIcon';
 import { TranscriptShell } from '../TranscriptShell';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -16,12 +17,6 @@ type Props = {
   readonly assistantText: string;
   readonly sessionId: SessionId;
   readonly sourceAgentId: AgentId | null;
-};
-
-const TERMINAL_LABELS: Partial<Record<AgentStatus, string>> = {
-  completed: 'done',
-  failed: 'failed',
-  skipped: 'skipped',
 };
 
 export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) => {
@@ -109,7 +104,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
   };
 
   const statusLabel =
-    spawnedChild == null ? null : (TERMINAL_LABELS[spawnedChild.status] ?? spawnedChild.status);
+    spawnedChild == null ? null : agentStatusWord({ status: spawnedChild.status });
 
   return (
     <TranscriptShell

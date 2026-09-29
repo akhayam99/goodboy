@@ -1,3 +1,4 @@
+import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 import { formatTokens, formatUsd } from '@goodboy/ui';
 import type { IsoDateTime } from '@goodboy/types';
 import { formatClockTime } from '../../../../shared/utils/formatClockTime';
@@ -51,7 +52,9 @@ export const TurnFooterDetail = ({
 }: Props) => {
   const providerLabel = providerLabelFor(data.provider);
   const heading = [
-    data.model != null ? modelLabel(data.model) : 'Unknown model',
+    data.model != null
+      ? modelLabel(data.model, providerIdOf({ value: data.provider }))
+      : 'Unknown model',
     data.effort,
     providerLabel,
   ]

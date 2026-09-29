@@ -136,6 +136,24 @@ describe('useTurnRouting', () => {
   });
 });
 
+describe('useTurnRouting, shared model ids', () => {
+  it('keeps the medium effort when a Cursor turn picks gemini-3.1-pro', () => {
+    const { result } = renderHook(() => useTurnRouting({ session: makeSession() }));
+
+    act(() => {
+      result.current.onSelectProvider('cursor');
+    });
+    act(() => {
+      result.current.onSelectModel('gemini-3.1-pro');
+    });
+
+    expect(result.current.effectiveProvider).toBe('cursor');
+    expect(result.current.effectiveModel).toBe('gemini-3.1-pro');
+    expect(result.current.effectiveEffort).toBe('medium');
+    expect(setSessionConfig).not.toHaveBeenCalledWith(SESSION_ID, { effort: 'low' });
+  });
+});
+
 describe('useTurnRouting, agent reference', () => {
   it('reads a scout pinned to haiku as its own reference, not an override', () => {
     selectScout();

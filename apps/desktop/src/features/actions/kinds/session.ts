@@ -2,7 +2,7 @@ import { Copy, GitBranch, Link, Link2, Pencil } from 'lucide-react';
 import type { Session, SessionId, SessionProjectMount } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { openInEditor } from '../../../shared/lib/editor';
+import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { sessionTitle } from '../../session/sessionTitle';
 import { archiveSessions, restoreSessions } from '../../session/sessionArchive';
@@ -212,9 +212,9 @@ const SESSION_ACTIONS: ReadonlyArray<ActionDefinition<SessionFacts>> = [
     group: 'open',
     when: isLive,
     blockedReason: ({ facts }) => (facts.worktreePath === null ? NO_WORKTREE_REASON : null),
-    run: ({ facts }) => {
+    run: ({ facts, env }) => {
       if (facts.worktreePath !== null) {
-        void openInEditor({ path: facts.worktreePath });
+        void openInConfiguredEditor({ path: facts.worktreePath, state: env.getState() });
       }
     },
   },

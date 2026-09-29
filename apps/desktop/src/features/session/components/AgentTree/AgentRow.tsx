@@ -21,6 +21,7 @@ import { useHoverMarkViewed } from '../../hooks/useHoverMarkViewed';
 import type { ProviderContextUsage } from './ContextWindowBar';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { providerIdOf } from '../../../../shared/utils/providerIdOf';
 
 type Props = {
   readonly run: Agent;
@@ -91,7 +92,9 @@ export const AgentRow = ({
     `Status: ${run.status}`,
     isSelected ? 'Selected: chat shows this agent' : 'Click to switch chat to this agent',
     telemetry != null ? `Provider: ${telemetry.provider}` : null,
-    telemetry != null ? `Model: ${modelLabel(telemetry.model)}` : null,
+    telemetry != null
+      ? `Model: ${modelLabel(telemetry.model, providerIdOf({ value: telemetry.provider }))}`
+      : null,
     lastTurn,
   ].filter((part): part is string => part !== null);
   const modeLine =

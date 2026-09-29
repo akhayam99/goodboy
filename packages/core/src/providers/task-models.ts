@@ -16,17 +16,18 @@ import { resolveAuto, type AutoContext } from './autoRouting/resolveAuto';
 type EffortParams = {
   readonly task: AuxTaskId;
   readonly model: string;
+  readonly provider: ProviderId;
 };
 
 const AUTOMATIC_EFFORT: EffortLevel = 'medium';
 
 const AGENT_PRESELECT_TASKS: ReadonlySet<AuxTaskId> = new Set(['pr_draft', 'rebase']);
 
-const automaticEffort = ({ task, model }: EffortParams): EffortLevel | null => {
+const automaticEffort = ({ task, model, provider }: EffortParams): EffortLevel | null => {
   if (AGENT_PRESELECT_TASKS.has(task)) {
     return null;
   }
-  return clampEffortForModel({ model, effort: AUTOMATIC_EFFORT });
+  return clampEffortForModel({ model, effort: AUTOMATIC_EFFORT, provider });
 };
 
 type PreferredParams = {
@@ -89,7 +90,8 @@ const preferredTaskModel = ({
     provider: preference.providerId,
     selection: stored.selection,
   });
-  const effort = preference.effort ?? automaticEffort({ task, model });
+  const effort =
+    preference.effort ?? automaticEffort({ task, model, provider: preference.providerId });
   return {
     providerId: preference.providerId,
     model,

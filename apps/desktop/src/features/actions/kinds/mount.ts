@@ -13,7 +13,7 @@ import type { MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import type { AppStore } from '../../../store/store';
 import type { RemoteHostKind } from '../../../shared/lib/remoteHost';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { openInEditor } from '../../../shared/lib/editor';
+import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { sessionPlace } from '../../../store/slices/navigation/place';
 import { mountCleanupBlockers } from '../../../store/slices/mount-cleanup/cleanupPolicy';
 import {
@@ -178,12 +178,13 @@ const MOUNT_ACTIONS: ReadonlyArray<ActionDefinition<MountFacts>> = [
     when: isOpen,
     choices: ({ facts }) =>
       facts.editors.map((editor) => ({ id: editor.binary, label: editor.label, isCurrent: false })),
-    run: async ({ facts, choice }) => {
+    run: async ({ facts, env, choice }) => {
       if (facts.worktreePath === null) {
         return;
       }
-      await openInEditor({
+      await openInConfiguredEditor({
         path: facts.worktreePath,
+        state: env.getState(),
         ...(choice !== null && { editor: choice }),
       });
     },

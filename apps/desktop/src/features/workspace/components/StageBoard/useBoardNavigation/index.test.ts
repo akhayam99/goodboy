@@ -8,6 +8,8 @@ type StoreState = {
   openReviewTarget: ReturnType<typeof vi.fn>;
   sessionPhaseRuns: Record<string, ReadonlyArray<{ id: string }>>;
   sessionWorktrees: Record<string, ReadonlyArray<string>>;
+  settings: Record<string, string>;
+  reportError: ReturnType<typeof vi.fn>;
 };
 
 const { navigateMock, openReviewTargetMock, openInEditorMock, store } = vi.hoisted(() => {
@@ -19,6 +21,8 @@ const { navigateMock, openReviewTargetMock, openInEditorMock, store } = vi.hoist
       openReviewTarget: openReviewTargetMock,
       sessionPhaseRuns: {},
       sessionWorktrees: {},
+      settings: {},
+      reportError: vi.fn(),
     },
   };
   return {
@@ -51,6 +55,8 @@ const reset = () => {
     openReviewTarget: openReviewTargetMock,
     sessionPhaseRuns: {},
     sessionWorktrees: {},
+    settings: {},
+    reportError: vi.fn(),
   };
   navigateMock.mockClear();
   openReviewTargetMock.mockClear();
@@ -103,11 +109,27 @@ describe('useBoardNavigation', () => {
     });
   });
 
-  it('openIDE calls openInEditor with the first worktree path', () => {
+  it('openIDE calls openInEditor with the first worktree path and the default editor', () => {
     store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/wt'] };
     const { result } = renderHook(() => useBoardNavigation());
     result.current.openIDE(session);
-    expect(openInEditorMock).toHaveBeenCalledWith({ path: '/tmp/wt' });
+    expect(openInEditorMock).toHaveBeenCalledWith({ path: '/tmp/wt', editor: 'code' });
+  });
+
+  it('openIDE opens the editor chosen in settings', () => {
+    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/wt'] };
+    store.state.settings = { 'editor.binary': 'zed' };
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openIDE(session);
+    expect(openInEditorMock).toHaveBeenCalledWith({ path: '/tmp/wt', editor: 'zed' });
+  });
+
+  it('openIDE reports a failure to open the editor', async () => {
+    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/wt'] };
+    openInEditorMock.mockRejectedValueOnce(new Error("editor binary 'code' not found in PATH"));
+    const { result } = renderHook(() => useBoardNavigation());
+    result.current.openIDE(session);
+    await vi.waitFor(() => expect(store.state.reportError).toHaveBeenCalledTimes(1));
   });
 
   it('openIDE does nothing when no worktree exists', () => {

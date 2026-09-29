@@ -2,6 +2,7 @@ import { useAppStore } from '../../../../store';
 import { storageFolderBucket } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
 import { openInEditor } from '../../../../shared/lib/editor';
+import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { revealInFileManager } from '../../../../shared/lib/reveal';
 import type { WorktreeActionTarget } from '../../../actions/types';
 import type { WorktreeRemoveIntent } from '../../../actions/kinds/worktree';
@@ -32,6 +33,7 @@ const removeIntentOf = ({
 export const useWorktreeActionTarget = ({ folder, status, onRemove }: Params) => {
   const keepStorageFolder = useAppStore((state) => state.keepStorageFolder);
   const reportError = useAppStore((state) => state.reportError);
+  const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
 
   const attempt = ({ title, action }: AttemptParams) =>
     void action().catch((error: unknown) => reportError({ title, error }));
@@ -39,7 +41,7 @@ export const useWorktreeActionTarget = ({ folder, status, onRemove }: Params) =>
   const onEditor = () =>
     attempt({
       title: "Couldn't open the editor",
-      action: () => openInEditor({ path: folder.path }),
+      action: () => openInEditor({ path: folder.path, editor }),
     });
 
   const target: WorktreeActionTarget = {

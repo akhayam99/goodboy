@@ -48,7 +48,7 @@ export const DelegateAnswerRow = ({
       onRouting({
         provider,
         model,
-        effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+        effort: clampEffortForModel({ model, effort: routing.effort, provider }) ?? routing.effort,
       });
     };
 
@@ -74,7 +74,12 @@ export const DelegateAnswerRow = ({
               onRouting({
                 ...routing,
                 model,
-                effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+                effort:
+                  clampEffortForModel({
+                    model,
+                    effort: routing.effort,
+                    provider: routing.provider === '' ? null : routing.provider,
+                  }) ?? routing.effort,
               })
             }
           />

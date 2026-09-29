@@ -399,6 +399,10 @@ export const WorkflowBuilderView = (props: Props) => {
     clampEffortForModel({
       model: orchestratorEffectiveModel,
       effort: requestedOrchestratorEffort,
+      provider:
+        orchestratorProviderOverride !== ''
+          ? orchestratorProviderOverride
+          : resolvedOrchestratorTaskModel.providerId,
     }) ?? requestedOrchestratorEffort;
   const isOrchestratorOverridden =
     orchestratorProviderOverride !== '' ||

@@ -11,6 +11,7 @@ import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mo
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
 import { openFileInWorkspace } from '../../../../shared/lib/editor';
+import { resolveEditorBinary } from '../../../../shared/lib/editorSettings';
 import { distanceAhead, distanceBehind } from '../../../../shared/lib/gitStatus';
 import { branchStateOf } from '../../../session/trail/menus/branchMenu';
 import { ActionButtons } from '../../../actions/components/ActionControls/ActionButtons';
@@ -21,11 +22,6 @@ import type { DiffActionTarget } from '../../../actions/types';
 import { useActionControls } from '../../../actions/useActionControls';
 import { useMountRemoteHostKind } from '../../../worktree/useMountRemoteHostKind';
 import { DiffBaseBranchRow } from './DiffBaseBranchRow';
-import {
-  DEFAULT_EDITOR_BINARY,
-  SETTING_DEFAULT_EDITOR,
-  SETTING_EDITOR_BINARY,
-} from '../../../settings/settings';
 import { useRebaseBranch } from '../../../session/hooks/useRebaseBranch';
 import { useRebasePrediction } from '../../../history/useRebasePrediction';
 import { DiffViewSelector } from '../../../permissions/components/DiffViewSelector';
@@ -101,12 +97,7 @@ export const SessionDiffPane = ({
     mountId === null ? false : isMountRequestMerged({ state: s, mountId }),
   );
   const rebase = useRebaseBranch({ sessionId, mountId, status: diff.status });
-  const editorBinary = useAppStore(
-    (s) =>
-      s.settings[SETTING_DEFAULT_EDITOR] ??
-      s.settings[SETTING_EDITOR_BINARY] ??
-      DEFAULT_EDITOR_BINARY,
-  );
+  const editorBinary = useAppStore((s) => resolveEditorBinary({ settings: s.settings }));
   const emitNotification = useAppStore((s) => s.emitNotification);
 
   const isEmpty = !diff.loading && diff.error === null && diff.files.length === 0;

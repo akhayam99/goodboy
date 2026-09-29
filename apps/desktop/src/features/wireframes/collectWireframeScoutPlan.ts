@@ -88,7 +88,7 @@ export const wireframeScoutGate = ({
   return {
     kind: 'ready',
     mounts,
-    modelLabel: `${PROVIDER_LABEL[provider]} ${modelLabel(model)}`,
+    modelLabel: `${PROVIDER_LABEL[provider]} ${modelLabel(model, provider)}`,
     routing,
   };
 };

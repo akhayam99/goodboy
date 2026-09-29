@@ -47,8 +47,11 @@ export const ExploreSpawnPopover = ({ sessionId, entry }: Props) => {
       provider: spawnRouting.provider,
       model: spawnRouting.model,
       effort:
-        clampEffortForModel({ model: spawnRouting.model, effort: spawnRouting.effort }) ??
-        spawnRouting.effort,
+        clampEffortForModel({
+          model: spawnRouting.model,
+          effort: spawnRouting.effort,
+          provider: spawnRouting.provider,
+        }) ?? spawnRouting.effort,
     }),
     [spawnRouting.provider, spawnRouting.model, spawnRouting.effort],
   );

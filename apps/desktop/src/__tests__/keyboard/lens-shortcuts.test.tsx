@@ -9,13 +9,14 @@ const { platform } = vi.hoisted(() => ({ platform: { current: 'darwin' as 'darwi
 
 vi.mock('../../shared/platform', () => ({ currentPlatform: () => platform.current }));
 
-const { sessionList, state } = vi.hoisted(() => {
+const { sessionList, sidebarOrder, state } = vi.hoisted(() => {
   const sessions = [
     { id: 'session-0', workspaceId: 'workspace-1' },
     { id: 'session-1', workspaceId: 'workspace-1' },
   ];
   return {
     sessionList: { current: sessions },
+    sidebarOrder: { current: null as ReadonlyArray<string> | null },
     state: {
       hydrate: vi.fn(async () => undefined),
       checkForUpdates: vi.fn(async () => undefined),
@@ -133,6 +134,15 @@ vi.mock('../../store', async () => {
     useSessionById: (sessionId: string | null) =>
       sessionList.current.find((s) => s.id === sessionId) ?? null,
     useSessions: () => sessionList.current,
+    useSessionViewPrefs: () => ({ group: 'none' }),
+    useSortedGroupedSessions: () => {
+      const order = sidebarOrder.current;
+      const sessions =
+        order === null
+          ? sessionList.current
+          : order.flatMap((id) => sessionList.current.filter((s) => s.id === id));
+      return [{ key: 'none', sessions }];
+    },
     useWorkspaces: () => state.workspaces,
   };
 });
@@ -174,6 +184,7 @@ beforeEach(() => {
     { id: 'session-1', workspaceId: 'workspace-1' },
   ];
   sessionList.current = state.sessions;
+  sidebarOrder.current = null;
   state.sessionBranches = { 'session-1': 'feature/branch' };
   state.currentWorkspaceId = 'workspace-1';
   state.currentSessionId = 'session-1';
@@ -303,6 +314,17 @@ describe('App lens shortcuts on darwin', () => {
     render(<App />);
 
     press({ code: 'BracketLeft', key: '{', metaKey: true, shiftKey: true });
+
+    expect(state.navigate).toHaveBeenCalledWith({
+      to: sessionPlace({ sessionId: 'session-0' as SessionId }),
+    });
+  });
+
+  it('walks to the next session in the order the sidebar shows', () => {
+    sidebarOrder.current = ['session-1', 'session-0'];
+    render(<App />);
+
+    press({ code: 'BracketRight', key: '}', metaKey: true, shiftKey: true });
 
     expect(state.navigate).toHaveBeenCalledWith({
       to: sessionPlace({ sessionId: 'session-0' as SessionId }),

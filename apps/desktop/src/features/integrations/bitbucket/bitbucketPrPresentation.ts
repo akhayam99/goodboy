@@ -3,6 +3,7 @@ import {
   type PullRequestPresentation,
 } from '../../../shared/pullRequestPresentation';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { bitbucketPrStateKind } from './bitbucketPrStateKind';
 import type { BitbucketPullRequestState } from './client';
 
 const SUPERSEDED: PullRequestPresentation = {
@@ -14,9 +15,9 @@ const SUPERSEDED: PullRequestPresentation = {
 };
 
 export const BITBUCKET_PR_PRESENTATION = {
-  OPEN: PULL_REQUEST_PRESENTATION.open,
-  MERGED: PULL_REQUEST_PRESENTATION.merged,
-  DECLINED: PULL_REQUEST_PRESENTATION.closed,
+  OPEN: PULL_REQUEST_PRESENTATION[bitbucketPrStateKind({ state: 'OPEN' })],
+  MERGED: PULL_REQUEST_PRESENTATION[bitbucketPrStateKind({ state: 'MERGED' })],
+  DECLINED: PULL_REQUEST_PRESENTATION[bitbucketPrStateKind({ state: 'DECLINED' })],
   SUPERSEDED,
 } satisfies Record<BitbucketPullRequestState, PullRequestPresentation>;
 

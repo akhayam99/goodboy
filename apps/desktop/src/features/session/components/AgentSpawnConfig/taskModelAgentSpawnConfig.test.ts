@@ -41,4 +41,18 @@ describe('taskModelAgentSpawnConfig', () => {
       }).provider,
     ).toBe('codex');
   });
+
+  it('keeps the effort of a Cursor task on gemini-3.1-pro', () => {
+    const config = taskModelAgentSpawnConfig({
+      task: 'pr_draft',
+      preferences: {
+        pr_draft: { providerId: 'cursor', model: 'gemini-3.1-pro', effort: 'medium' },
+      },
+      workspaceDefaultProviderId: 'cursor',
+      sessionDefaultProviderId: 'cursor',
+      limitContext: null,
+    });
+
+    expect(config).toMatchObject({ provider: 'cursor', effort: 'medium' });
+  });
 });

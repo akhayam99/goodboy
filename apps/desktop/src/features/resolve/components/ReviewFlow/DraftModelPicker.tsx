@@ -86,7 +86,12 @@ export const DraftModelPicker = ({ sessionId, request, children }: Props) => {
             save({
               ...routing,
               model,
-              effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+              effort:
+                clampEffortForModel({
+                  model,
+                  effort: routing.effort,
+                  provider: routing.provider,
+                }) ?? routing.effort,
             })
           }
         />

@@ -59,6 +59,16 @@ const PROVIDER_ALIASES: Readonly<
   sentry: { provider: 'sentry', label: 'Sentry' },
 };
 
+export const PROVIDER_FILTERS: ReadonlyArray<{ readonly value: string; readonly label: string }> =
+  Array.from(
+    new Map(
+      Object.values(PROVIDER_ALIASES).map(({ provider, label }) => [
+        provider,
+        { value: provider, label },
+      ]),
+    ).values(),
+  );
+
 const STATUS_LABELS: Readonly<Record<string, string>> = {
   open: 'Open',
   draft: 'Draft',

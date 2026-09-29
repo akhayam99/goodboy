@@ -474,6 +474,7 @@ export type AppState = AppSliceState & {
   >;
   readonly sessionCreations: Readonly<Record<SessionId, ReadonlyArray<SessionCreation>>>;
   readonly revealedActivityRows: Readonly<Record<SessionId, ReadonlySet<string>>>;
+  readonly sessionGroupExpanded: Readonly<Record<string, boolean>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly focusedArtifactId: Readonly<Record<SessionId, ArtifactId | null>>;
   readonly artifactFilter: Readonly<Record<SessionId, ArtifactFilter>>;

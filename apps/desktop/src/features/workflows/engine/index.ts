@@ -107,8 +107,11 @@ export const stepDraftWithModel = ({
   provider,
   model,
   effort:
-    clampEffortForModel({ model: model !== '' ? model : recommendedModel, effort: step.effort }) ??
-    step.effort,
+    clampEffortForModel({
+      model: model !== '' ? model : recommendedModel,
+      effort: step.effort,
+      provider: provider === '' ? null : provider,
+    }) ?? step.effort,
 });
 
 type ValidateDraftParams = { readonly draft: WorkflowDraft };

@@ -4,9 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Session, SessionId, SessionStageInfo, WorkspaceId } from '@goodboy/types';
 
-const { state, viewPrefs, stageInfo, cost } = vi.hoisted(() => ({
+const { state, viewPrefs, stageInfo, cost, store } = vi.hoisted(() => ({
   cost: { current: 0 },
+  store: {
+    version: 0,
+    listeners: new Set<() => void>(),
+  },
   state: {
+    sessionGroupExpanded: {} as Record<string, boolean>,
+    toggleSessionGroup: undefined as unknown as (params: { readonly key: string }) => void,
     sessionGithub: {} as Record<string, unknown>,
     sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
     sessionExternalTasks: {} as Record<string, unknown>,
@@ -47,17 +53,39 @@ vi.mock('../../../session/hooks/useSessionArchive', () => ({
   }),
 }));
 
-vi.mock('../../../../store', () => ({
-  EMPTY_ARRAY: [] as readonly never[],
-  useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
-  useSessionCost: () => cost.current,
-  useNonResolverStandaloneAgents: () => [],
-  useSessionHasUnread: () => false,
-  useSessionStageInfo: () => stageInfo.current,
-  useSessionViewPrefs: () => viewPrefs.current,
-  useSortedGroupedSessions: (_workspaceId: unknown, sessions: ReadonlyArray<unknown>) =>
-    viewPrefs.current.group === 'stage' ? [{ key: 'done', sessions }] : [{ key: 'all', sessions }],
-}));
+vi.mock('../../../../store', async () => {
+  const { useSyncExternalStore } = await import('react');
+  const { toggleSessionGroup } =
+    await import('../../../../store/slices/session-view/toggleSessionGroup');
+  state.toggleSessionGroup = toggleSessionGroup((update) => {
+    const partial = typeof update === 'function' ? update(state as never) : update;
+    Object.assign(state, partial);
+    store.version += 1;
+    store.listeners.forEach((listener) => listener());
+  });
+  return {
+    EMPTY_ARRAY: [] as readonly never[],
+    useAppStore: <T,>(selector: (s: typeof state) => T) => {
+      useSyncExternalStore(
+        (listener) => {
+          store.listeners.add(listener);
+          return () => store.listeners.delete(listener);
+        },
+        () => store.version,
+      );
+      return selector(state);
+    },
+    useSessionCost: () => cost.current,
+    useNonResolverStandaloneAgents: () => [],
+    useSessionHasUnread: () => false,
+    useSessionStageInfo: () => stageInfo.current,
+    useSessionViewPrefs: () => viewPrefs.current,
+    useSortedGroupedSessions: (_workspaceId: unknown, sessions: ReadonlyArray<unknown>) =>
+      viewPrefs.current.group === 'stage'
+        ? [{ key: 'done', sessions }]
+        : [{ key: 'all', sessions }],
+  };
+});
 
 vi.mock('./SessionViewMenu', () => ({
   SessionViewMenu: () => null,
@@ -130,6 +158,7 @@ function selectRow(
 }
 
 beforeEach(() => {
+  state.sessionGroupExpanded = {};
   state.bulkUnarchiveTask.mockClear();
   state.bulkArchiveTask.mockClear();
   state.bulkDeleteTask.mockClear();

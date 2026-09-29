@@ -31,6 +31,8 @@ const { store, remoteKind } = vi.hoisted(() => ({
     emitNotification: vi.fn(),
     sessionWorktrees: {} as Record<string, ReadonlyArray<string>>,
     detectedEditors: [] as ReadonlyArray<{ binary: string; label: string }>,
+    settings: {} as Record<string, string>,
+    reportError: vi.fn(),
     loadDetectedEditors: vi.fn(async () => undefined),
     terminalTabs: {} as Record<
       string,
@@ -659,7 +661,9 @@ describe('ProjectMountRow lens opening, write destination isolation', () => {
 
     fireEvent.click(screen.getByRole('menuitem', { name: /Open in editor/ }));
 
-    await waitFor(() => expect(openInEditor).toHaveBeenCalledWith({ path: '/api' }));
+    await waitFor(() =>
+      expect(openInEditor).toHaveBeenCalledWith({ path: '/api', editor: 'code' }),
+    );
   });
 });
 

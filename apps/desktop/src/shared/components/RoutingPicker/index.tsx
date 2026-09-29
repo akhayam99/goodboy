@@ -98,6 +98,7 @@ export const RoutingPicker = ({
   const triggerLabel = routingTriggerLabel({
     model: routingModel ?? null,
     modelId: routing.model,
+    provider: routing.provider,
     selection: routing.selection,
     effort: routing.effort,
     showEffort,

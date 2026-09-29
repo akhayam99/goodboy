@@ -6,6 +6,7 @@ import type { WorkspaceId } from '@goodboy/types';
 
 const { state, repoMocks } = vi.hoisted(() => ({
   state: {
+    settings: {} as Record<string, string>,
     projects: [] as ReadonlyArray<Record<string, unknown>>,
     projectGitStatus: {} as Readonly<Record<string, Record<string, unknown>>>,
     projectRelocationWorkspaceId: null as string | null,

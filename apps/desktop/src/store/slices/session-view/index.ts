@@ -5,6 +5,7 @@ import { closeArtifactConversation, openArtifactConversation } from './artifactC
 import { closeArtifactCreation, openArtifactCreation } from './artifactCreation';
 import { setSessionGroup } from './setSessionGroup';
 import { setSessionSort } from './setSessionSort';
+import { toggleSessionGroup } from './toggleSessionGroup';
 import {
   openDiffLens,
   openMountDiff,
@@ -51,6 +52,7 @@ export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice
     getSessionViewPrefs: getSessionViewPrefs(set, get),
     setSessionSort: setSessionSort(set, get),
     setSessionGroup: setSessionGroup(set, get),
+    toggleSessionGroup: toggleSessionGroup(set),
     setActiveLens: setActiveLens(set),
     toggleWorkflowExpand: toggleWorkflowExpand(set),
     setFocusedWorkflowRun: setFocusedWorkflowRun(set),

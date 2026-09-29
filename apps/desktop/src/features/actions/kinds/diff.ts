@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
-import { openInEditor } from '../../../shared/lib/editor';
+import { openInConfiguredEditor } from '../../../shared/lib/editorSettings';
 import { selectMountForPath } from '../../../store/slices/project-mounts/selectors';
 import { dispatchAfterNavigation } from '../dispatchAfterNavigation';
 import type { ActionDefinition, DiffActionTarget, ObjectKindDefinition } from '../types';
@@ -106,9 +106,9 @@ const DIFF_ACTIONS: ReadonlyArray<ActionDefinition<DiffFacts>> = [
     icon: FileCode,
     group: 'open',
     when: () => true,
-    run: ({ facts }) => {
+    run: ({ facts, env }) => {
       if (facts.worktreePath !== null) {
-        void openInEditor({ path: facts.worktreePath });
+        void openInConfiguredEditor({ path: facts.worktreePath, state: env.getState() });
       }
     },
   },

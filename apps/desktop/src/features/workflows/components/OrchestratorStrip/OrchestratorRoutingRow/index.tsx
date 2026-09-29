@@ -133,10 +133,19 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
         model={model}
         effort={{
           editable: true,
-          value: clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
+          value:
+            clampEffortForModel({
+              model: effortModel,
+              effort: effortValue,
+              provider: providerId,
+            }) ?? effortValue,
           onChange: (effort) => {
             const nextModel = pendingModel.current;
-            const applied = clampEffortForModel({ model: nextModel, effort });
+            const applied = clampEffortForModel({
+              model: nextModel,
+              effort,
+              provider: pendingProvider.current,
+            });
             apply({
               providerId: pendingProvider.current,
               model: nextModel,
@@ -178,7 +187,11 @@ export const OrchestratorRoutingRow = ({ sessionId, run, disabled }: Props) => {
           const carried =
             pinned?.effort == null
               ? null
-              : clampEffortForModel({ model: nextModel, effort: pinned.effort });
+              : clampEffortForModel({
+                  model: nextModel,
+                  effort: pinned.effort,
+                  provider: pendingProvider.current,
+                });
           apply({
             providerId: pendingProvider.current,
             model: nextModel,

@@ -143,6 +143,8 @@ vi.mock('../store', () => {
     useSessionById: (sessionId: string | null) =>
       state.sessions.find((session) => session.id === sessionId) ?? null,
     useSessions: () => state.sessions,
+    useSessionViewPrefs: () => ({ group: 'none' }),
+    useSortedGroupedSessions: () => [{ key: 'none', sessions: state.sessions }],
     useWorkspaces: () => state.workspaces,
   };
 });

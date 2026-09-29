@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { getModelDescriptor } from '@goodboy/core';
+import { modelLabel } from '../../../chat/utils/chat-constants';
 import type {
   Agent,
   AgentId,
@@ -268,7 +268,7 @@ describe('WorkflowAdvance', () => {
     renderAdvance();
 
     const label = screen.getByTestId('workflow-next-step-cta').getAttribute('aria-label');
-    expect(label).toContain(getModelDescriptor(FROZEN_MODEL)?.label ?? FROZEN_MODEL);
+    expect(label).toContain(modelLabel(FROZEN_MODEL));
     expect(label).toContain('xhigh effort');
     expect(label).not.toBe(defaultLabel);
   });
