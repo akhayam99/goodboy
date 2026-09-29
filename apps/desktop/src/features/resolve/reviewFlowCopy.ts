@@ -127,3 +127,12 @@ export const batchChildNotice = ({ total }: { readonly total: number }): string 
   const others = total - 1;
   return `This comment was fixed with ${others} ${others === 1 ? 'other' : 'others'}. Accept and push them together in Review.`;
 };
+
+export const RECHECK_LABEL = {
+  running: 'Re-checking',
+  looking: 'Looking for the change on the branch…',
+  result: 'Re-check result',
+  checked: 'Checked',
+  alreadyPosted: 'The reply is already on the pull request, so there is nothing to post.',
+  runsOn: ({ model }: { readonly model: string }): string => `Fix again runs on ${model}.`,
+} as const;

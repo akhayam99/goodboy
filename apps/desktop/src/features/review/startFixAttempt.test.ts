@@ -114,7 +114,7 @@ describe('startFixAttempt', () => {
     expect(prompt).not.toContain('not mine');
   });
 
-  it('tells a recheck it must re-apply the change that left the branch', async () => {
+  it('spawns a recheck as a read-only scout that answers with a verdict marker', async () => {
     const { spawnAgent, setAgentConfig } = harness();
 
     await startFixAttempt({
@@ -127,7 +127,29 @@ describe('startFixAttempt', () => {
       setAgentConfig,
     });
 
-    expect(spawnAgent.mock.calls[0]?.[1].initialPrompt).toContain('no longer reachable');
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.kindOverride).toBe('scout');
+    expect(args?.sourceKind).toBe('comment_recheck');
+    expect(args?.initialPrompt).toContain('no longer reachable');
+    expect(args?.initialPrompt).toContain('read-only check');
+    expect(args?.initialPrompt).toContain('<<comment-verdict');
+    expect(args?.initialPrompt).not.toContain('git commit --amend');
+    expect(args?.initialPrompt).not.toContain('<<comment-resolved');
+  });
+
+  it('starts one recheck per thread', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+
+    await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads: [threadOn({ id: 't1', path: 'a.ts' }), threadOn({ id: 't2', path: 'b.ts' })],
+      pr,
+      mode: 'recheck',
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    expect(spawnAgent).toHaveBeenCalledTimes(2);
   });
 
   it('carries the model choice onto both the spawn and the agent config', async () => {

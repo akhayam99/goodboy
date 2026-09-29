@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowUp, Check, GitMerge, RefreshCw, X, type LucideIcon } from 'lucide-react';
+import { AlertCircle, ArrowUp, Check, GitMerge, X, type LucideIcon } from 'lucide-react';
 import {
   Button,
   GhostActionButton,
@@ -30,14 +30,14 @@ type Props = {
 const RECOVERY_LABEL = {
   open_diff: 'Open diff',
   view_work: 'View the agent',
-  recheck_fix: 'Check again',
+  see_missing: 'See the comment',
   sync: SYNC_COPY.action,
 } as const;
 
 const RECOVERY_ICON: Record<keyof typeof RECOVERY_LABEL, LucideIcon> = {
   open_diff: CONCEPT_ICONS.diff,
   view_work: CONCEPT_ICONS.agents,
-  recheck_fix: RefreshCw,
+  see_missing: CONCEPT_ICONS.review,
   sync: GitMerge,
 };
 

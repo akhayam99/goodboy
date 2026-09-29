@@ -199,7 +199,7 @@ const INTENT_SENTENCE: Record<PriorContextIntent, string> = {
   retry:
     'The reviewer asked for another pass on this thread. Read it again and decide from scratch.',
   recheck:
-    'The commit recorded for this thread is no longer reachable on the branch. Apply the change again and commit it.',
+    'The commit recorded for this thread is no longer reachable on the branch. Find out whether the change it made is on the branch under another commit, was removed on purpose, or still has to be made.',
   proceed: PROCEED_RESOLVER_PROMPT,
 };
 
@@ -224,7 +224,7 @@ const priorContextBlock = ({
     }
     lines.push(`- ${INTENT_SENTENCE[entry.intent]}`);
     const first = shas[0];
-    if (first !== undefined && entry.intent !== 'proceed') {
+    if (first !== undefined && entry.intent === 'retry') {
       lines.push(`- ${amendInstruction({ sha: first })}`);
     }
   }
@@ -322,6 +322,57 @@ export const buildResolverKickoff = ({
   return lines.join('\n');
 };
 
+const recheckInstructions = (): ReadonlyArray<string> => [
+  RESOLVER_KICKOFF_LABELS.instructions,
+  'This is a read-only check, not a fix. Never edit a file, never stage, never commit, and never run a command that changes the working tree, the index or a ref.',
+  'Read with `git log`, `git show`, `git cherry`, `git reflog` and by opening files. Decide whether the change the thread asks for is on the branch now, was removed on purpose, or still has to be made.',
+];
+
+const recheckReporting = ({ threadId }: { readonly threadId: string }): ReadonlyArray<string> => [
+  RESOLVER_KICKOFF_LABELS.reporting,
+  'Report exactly one verdict marker for the thread id above, on its own line, at the end of the same turn:',
+  '<<comment-verdict threadId="the id above" verdict="fixed-here" sha="the commit on the branch that carries the change" evidence="one plain-text line">> when the change is on the branch, possibly under another commit.',
+  '<<comment-verdict threadId="the id above" verdict="not-relevant" sha="the commit that removed it, or leave sha out" evidence="one plain-text line with the reason">> when the code it points at is gone or the goal no longer applies.',
+  '<<comment-verdict threadId="the id above" verdict="still-needed" evidence="one plain-text line">> when the branch still needs the change.',
+  'The evidence names the file, the line and the commit you looked at, and never holds a double quote.',
+  `A complete report reads exactly like this: <<comment-verdict threadId="${threadId}" verdict="fixed-here" sha="${EXAMPLE_SHA}" evidence="the guard now returns early at src/retry.ts:3">>`,
+];
+
+type RecheckKickoffParams = {
+  readonly thread: CommentThread;
+  readonly pr: PullRequestState | null;
+  readonly hint: string;
+  readonly priorContext?: ReadonlyArray<PriorContext>;
+};
+
+export const buildRecheckKickoff = ({
+  thread,
+  pr,
+  hint,
+  priorContext,
+}: RecheckKickoffParams): string => {
+  const lines: Array<string> = [
+    pr === null
+      ? 'Re-check 1 thread left as a note on this branch. There is no pull request: never push.'
+      : `Re-check 1 thread on PR #${pr.number}, branch \`${pr.headBranch}\`.`,
+    '',
+    ...threadBlock({ thread, position: 1, total: 1 }),
+  ];
+  if (priorContext !== undefined && priorContext.length > 0) {
+    lines.push('', ...priorContextBlock({ entries: priorContext }));
+  }
+  lines.push('', ...recheckInstructions());
+  const threadId = threadIdOf({ comment: thread.head });
+  if (threadId !== '') {
+    lines.push('', ...recheckReporting({ threadId }));
+  }
+  const operatorNotes = hint.trim();
+  if (operatorNotes.length > 0) {
+    lines.push('', RESOLVER_KICKOFF_LABELS.operatorNotes, operatorNotes);
+  }
+  return lines.join('\n');
+};
+
 export type CommentAgentArgs = {
   readonly name: string;
   readonly kind: AgentKind;
@@ -372,6 +423,25 @@ export const buildResolverAgentArgs = ({
     sourceKind: 'review_comment',
   };
 };
+
+export const buildRecheckAgentArgs = ({
+  thread,
+  pr,
+  hint = '',
+  priorContext,
+}: Omit<RecheckKickoffParams, 'hint'> & { readonly hint?: string }): CommentAgentArgs => ({
+  name: truncate(`re-check: ${thread.head.author.replace(/\[bot\]$/, '')} comment`, TITLE_MAX),
+  kind: 'scout',
+  initialPrompt: buildRecheckKickoff({
+    thread,
+    pr,
+    hint,
+    ...(priorContext !== undefined && { priorContext }),
+  }),
+  sourceThreadIds: thread.head.threadId == null ? [] : [thread.head.threadId],
+  sourceCommentUrl: thread.head.url,
+  sourceKind: 'comment_recheck',
+});
 
 export type ResolveModelChoice = {
   readonly provider?: ProviderId;

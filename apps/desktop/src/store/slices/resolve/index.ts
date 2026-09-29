@@ -1,3 +1,4 @@
+import type { AgentId } from '@goodboy/types';
 import { cancelPublication } from './cancelPublication';
 import { drainResolveQueue } from './drainResolveQueue';
 import { preparePublication } from './preparePublication';
@@ -28,6 +29,7 @@ import { resolveWithoutReply } from './resolveWithoutReply';
 import { createResolveBatch, setResolveParallelLimit } from './resolveBatches';
 import { settleItemAnswered } from './settleItemAnswered';
 import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState';
+import { recheckThread, settleThreadRecheck } from './recheckThread';
 import { resolveThreadOnRemote } from './resolveThreadOnRemote';
 import { settleResolveSourceChange } from './settleResolveSourceChange';
 import { syncSourceSnapshots } from './syncSourceSnapshots';
@@ -80,7 +82,9 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         sessionId: params.sessionId,
         run: () => resolveWithoutReply({ set, get, ...params }),
       }),
-    answerItemWithoutFix: (params: ItemParams & { readonly reply: string }) =>
+    answerItemWithoutFix: (
+      params: ItemParams & { readonly reply: string; readonly allowIntegrated?: boolean },
+    ) =>
       serialize({
         sessionId: params.sessionId,
         run: () => settleItemAnswered({ set, get, ...params }),
@@ -89,8 +93,16 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
       refreshThreadGitState({ set, get, ...params }),
     dismissThreadFix: (params: ThreadParams & { readonly sha: string }) =>
       dismissThreadFix({ set, get, ...params }),
-    replyAndResolveThread: (params: ThreadParams) =>
+    replyAndResolveThread: (params: ThreadParams & { readonly reply?: string }) =>
       resolveThreadOnRemote({ set, get, ...params, mode: 'reply' }),
+    recheckThread: (params: ThreadParams) => recheckThread({ set, get, ...params }),
+    settleThreadRecheck: (
+      params: SessionParams & {
+        readonly agentId: AgentId;
+        readonly assistantText: string;
+        readonly didAgentDie?: boolean;
+      },
+    ) => settleThreadRecheck({ set, get, ...params }),
     resolveThreadOnly: (params: ThreadParams) =>
       resolveThreadOnRemote({ set, get, ...params, mode: 'resolve_only' }),
     deferResolveQueueItem: (params: ItemParams) =>

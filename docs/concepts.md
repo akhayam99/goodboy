@@ -692,8 +692,20 @@ resolve` posts "Handled in <sha> by @<author>", `Fix anyway` puts the comment
 back in the normal flow. It is always a suggestion, never an automatic resolve.
 A reply the user wrote by hand after the draft, whatever its text, reads **You
 replied**: `Resolve only` posts nothing (`reconcileReplyOperation` recognises it
-too). **Fix went missing** is only detected here and shown as a fact line. The
-git facts live in `sessionThreadGit`, the per-thread computation in
+too). **Fix went missing** (a fix sha that is neither on the branch nor on
+origin, or a pushed sha origin lost) gets its own detail and the
+`missing_commit` push blocker points to it. `computeThreadGitFacts` first asks
+`worktree_locate_fix`: the same patch on HEAD under another sha makes the thread
+`folded` (**Folded in**: it stays in the push with the remapped sha, the action
+reads `Push to reply`, and the reply "Fixed in <old>, squashed into <new>" is posted
+by the normal push flow after the push lands; only `on_origin` skips the push). If git cannot answer, **Re-check** (`recheckThread`) spawns a
+read-only scout (`sourceKind` `comment_recheck`, FixMode `recheck`) on the
+cheapest model of the provider. It ends with `<<comment-verdict threadId verdict
+sha evidence>>` (`fixed-here`, `not-relevant`, `still-needed`), parsed by
+`extractCommentVerdict` and stored in `resolve_threads.verdict_json`. The verdict
+offers one action (Reply and resolve, Close with this reply, Fix again) and never
+acts alone; `settleItemAnswered` takes `allowIntegrated` so a missing
+fix can be answered without undoing its accepted decision. The git facts live in `sessionThreadGit`, the per-thread computation in
 `store/slices/resolve/threadGitState.ts`, the git side in
 `src-tauri/src/thread_git.rs`.
 

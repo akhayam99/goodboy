@@ -191,8 +191,17 @@ export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush 
 
   const recover = useCallback(
     (action: NonNullable<BlockerCopy['action']>): void => {
-      if (action === 'recheck_fix') {
-        void arm({ isRetry: false });
+      if (action === 'see_missing') {
+        const state = useAppStore.getState();
+        const facts = state.sessionThreadGit[sessionId] ?? {};
+        const threadId =
+          Object.entries(facts).find(
+            ([, item]) => item.gitState === 'missing' && item.missing?.wasPushed !== true,
+          )?.[0] ?? null;
+        setPhase(IDLE);
+        if (threadId !== null) {
+          state.openDrawer({ kind: 'conversation', sessionId, payload: { threadId } });
+        }
         return;
       }
       if (action === 'sync') {

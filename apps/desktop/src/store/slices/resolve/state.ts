@@ -1,4 +1,5 @@
 import type {
+  AgentId,
   ResolveAttempt,
   ResolveBatch,
   ResolveCandidate,
@@ -17,6 +18,11 @@ import type { ThreadGitFacts } from './threadGitState';
 export type ResolveCandidateWithItems = Readonly<{
   candidate: ResolveCandidate;
   items: ReadonlyArray<ResolveCandidateItem>;
+}>;
+
+export type ThreadRecheck = Readonly<{
+  agentId: AgentId | null;
+  error: string | null;
 }>;
 
 export type ResolveState = {
@@ -40,6 +46,9 @@ export type ResolveState = {
   >;
   readonly activePublicationPreview: Readonly<Record<SessionId, ResolvePublicationPreview | null>>;
   readonly sessionThreadGit: Readonly<Record<SessionId, Readonly<Record<string, ThreadGitFacts>>>>;
+  readonly sessionThreadRechecks: Readonly<
+    Record<SessionId, Readonly<Record<string, ThreadRecheck>>>
+  >;
   readonly threadFixDismissals: Readonly<
     Record<SessionId, Readonly<Record<string, ReadonlyArray<string>>>>
   >;
@@ -58,5 +67,6 @@ export const resolveInitialState: ResolveState = {
   sessionResolveSourceSnapshots: {},
   activePublicationPreview: {},
   sessionThreadGit: {},
+  sessionThreadRechecks: {},
   threadFixDismissals: {},
 };

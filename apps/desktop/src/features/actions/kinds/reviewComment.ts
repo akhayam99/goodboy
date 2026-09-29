@@ -1,4 +1,5 @@
 import {
+  ArrowUp,
   Check,
   CircleCheck,
   CornerDownRight,
@@ -12,15 +13,20 @@ import {
   TextCursorInput,
   Undo2,
 } from 'lucide-react';
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { AgentId, ResolveVerdict, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { resolverPagePlace, sessionPlace } from '../../../store/slices/navigation/place';
+import { verdictReply } from '../../resolve/commentVerdict';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { REMOTE_LABEL, commitUrlOf, remoteOf } from '../../resolve/reviewRemote';
-import type { ThreadRemoteKind } from '../../../store/slices/resolve/threadGitState';
+import type {
+  ThreadGitFacts,
+  ThreadRemoteKind,
+} from '../../../store/slices/resolve/threadGitState';
 import { requestReview } from '../../review/reviewRequest';
+import type { AppStore } from '../../../store/store';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
 
 export type ReviewCommentFacts = {
@@ -39,6 +45,10 @@ export type ReviewCommentFacts = {
   readonly remote: ThreadRemoteKind | null;
   readonly elsewhereSha: string | null;
   readonly prUrl: string | null;
+  readonly verdict: ResolveVerdict | null;
+  readonly isChecking: boolean;
+  readonly isPushedMissing: boolean;
+  readonly remoteReply: string | null;
 };
 
 const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
@@ -53,7 +63,29 @@ const DRAFTED: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited', 'ou
 const DECIDED: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied', 'skipped']);
 
 const hasOverlay = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
-  facts.remote !== null && facts.remote !== 'missing';
+  facts.remote !== null;
+
+const isMissing = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
+  facts.remote === 'missing';
+
+const canRepostVerdict = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
+  isMissing({ facts }) && !facts.isChecking && !facts.isPushedMissing;
+
+const shortOf = ({ sha }: { readonly sha: string | null }): string => (sha ?? '').slice(0, 7);
+
+const remoteReplyOf = ({
+  gitFacts,
+  draftReply,
+}: {
+  readonly gitFacts: ThreadGitFacts | null;
+  readonly draftReply: string | null;
+}): string | null => {
+  if (draftReply !== null && draftReply.trim() !== '') {
+    return draftReply;
+  }
+  const verdict = gitFacts?.verdict ?? null;
+  return verdict === null || verdict.kind === 'refix' ? null : verdictReply({ verdict });
+};
 
 const isRedraft = ({ state }: { readonly state: ReviewCommentState }): boolean =>
   state === 'outdated' || state === 'failed';
@@ -103,6 +135,19 @@ const undo = async ({ facts, env }: RunParams): Promise<void> => {
   await state.takeUpResolveQueueItem({ sessionId: facts.sessionId, itemId: facts.itemId });
 };
 
+const isRechecking = ({
+  state,
+  sessionId,
+  threadId,
+}: {
+  readonly state: AppStore;
+  readonly sessionId: SessionId;
+  readonly threadId: string;
+}): boolean => {
+  const recheck = state.sessionThreadRechecks?.[sessionId]?.[threadId] ?? null;
+  return recheck !== null && recheck.error === null;
+};
+
 export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
   ReviewCommentActionTarget,
   ReviewCommentFacts
@@ -135,6 +180,10 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       remote: remoteOf({ state: rowState, facts: gitFacts }),
       elsewhereSha: gitFacts?.elsewhere?.sha ?? null,
       prUrl: state.sessionGithub[target.sessionId]?.pr?.url ?? null,
+      verdict: gitFacts?.verdict ?? null,
+      isChecking: isRechecking({ state, sessionId: target.sessionId, threadId: target.threadId }),
+      isPushedMissing: gitFacts?.missing?.wasPushed === true,
+      remoteReply: remoteReplyOf({ gitFacts, draftReply: draft?.reply ?? null }),
     };
   },
   actions: [
@@ -190,17 +239,103 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.replyAndResolve',
-      label: REMOTE_LABEL.replyAndResolve,
+      label: ({ facts }) =>
+        facts.verdict?.kind === 'fixed_elsewhere' && facts.verdict.sha !== null
+          ? `${REMOTE_LABEL.replyAndResolve} with ${shortOf({ sha: facts.verdict.sha })}`
+          : REMOTE_LABEL.replyAndResolve,
       icon: CircleCheck,
       group: 'act',
       shortcut: 'review.reply',
-      when: ({ facts }) => facts.remote === 'on_origin' || facts.remote === 'looks_fixed',
+      when: ({ facts }) =>
+        facts.remote === 'on_origin' ||
+        facts.remote === 'looks_fixed' ||
+        (canRepostVerdict({ facts }) && facts.verdict?.kind === 'fixed_elsewhere'),
       slot: () => 'primary',
       run: ({ facts, env }) =>
         env.getState().replyAndResolveThread({
           sessionId: facts.sessionId,
           threadId: facts.threadId,
+          ...(facts.remote !== 'on_origin' &&
+            facts.remote !== 'looks_fixed' &&
+            facts.remoteReply !== null && { reply: facts.remoteReply }),
         }),
+    },
+    {
+      id: 'reviewComment.pushToReply',
+      label: REMOTE_LABEL.pushToReply,
+      icon: ArrowUp,
+      group: 'act',
+      when: ({ facts }) => facts.remote === 'folded',
+      slot: () => 'primary',
+      run: ({ facts, env }) =>
+        requestReview({
+          getState: env.getState,
+          sessionId: facts.sessionId,
+          request: { kind: 'push' },
+        }),
+    },
+    {
+      id: 'reviewComment.closeWithReply',
+      label: REMOTE_LABEL.closeWithReply,
+      icon: CircleCheck,
+      group: 'act',
+      shortcut: 'review.accept',
+      when: ({ facts }) => canRepostVerdict({ facts }) && facts.verdict?.kind === 'obsolete',
+      blockedReason: ({ facts }) =>
+        facts.remoteReply === null ? 'There is no reply to close with.' : null,
+      slot: () => 'primary',
+      run: ({ facts, env }) =>
+        facts.remoteReply === null
+          ? undefined
+          : env.getState().replyAndResolveThread({
+              sessionId: facts.sessionId,
+              threadId: facts.threadId,
+              reply: facts.remoteReply,
+            }),
+    },
+    {
+      id: 'reviewComment.recheck',
+      label: ({ facts }) =>
+        facts.verdict === null ? REMOTE_LABEL.recheck : REMOTE_LABEL.lookAgain,
+      icon: RefreshCw,
+      group: 'act',
+      when: ({ facts }) =>
+        isMissing({ facts }) &&
+        !facts.isChecking &&
+        (facts.verdict === null || facts.verdict.kind === 'fixed_elsewhere'),
+      slot: ({ facts }) => (facts.verdict === null ? 'primary' : 'secondary'),
+      run: async ({ facts, env }) => {
+        await env.getState().recheckThread({
+          sessionId: facts.sessionId,
+          threadId: facts.threadId,
+        });
+      },
+    },
+    {
+      id: 'reviewComment.fixAgain',
+      label: ({ facts }) =>
+        facts.verdict?.kind === 'obsolete' ? REMOTE_LABEL.fixAnyway : REMOTE_LABEL.fixAgain,
+      icon: CONCEPT_ICONS.agents,
+      group: 'act',
+      shortcut: 'review.fix',
+      when: ({ facts }) =>
+        isMissing({ facts }) && !facts.isChecking && facts.verdict?.kind !== 'fixed_elsewhere',
+      slot: ({ facts }) => (facts.verdict?.kind === 'refix' ? 'primary' : 'secondary'),
+      run: ({ facts, env }) =>
+        requestReview({
+          getState: env.getState,
+          sessionId: facts.sessionId,
+          request: { kind: 'fix', threadIds: [facts.threadId] },
+        }),
+    },
+    {
+      id: 'reviewComment.addHint',
+      label: REMOTE_LABEL.addHint,
+      icon: TextCursorInput,
+      group: 'act',
+      when: ({ facts }) => isMissing({ facts }) && facts.verdict?.kind === 'refix',
+      slot: () => 'secondary',
+      run: (params) => compose(params, 'redraft'),
     },
     {
       id: 'reviewComment.resolveOnly',
@@ -325,7 +460,9 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: TextCursorInput,
       group: 'act',
       when: ({ facts }) =>
-        (facts.state === 'ready' || facts.state === 'edited') && !hasOverlay({ facts }),
+        ((facts.state === 'ready' || facts.state === 'edited') && !hasOverlay({ facts })) ||
+        (canRepostVerdict({ facts }) &&
+          (facts.verdict?.kind === 'fixed_elsewhere' || facts.verdict?.kind === 'obsolete')),
       slot: () => 'hover',
       run: ({ facts, env }) =>
         requestReview({
@@ -350,7 +487,9 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: SkipForward,
       group: 'act',
       shortcut: 'review.skip',
-      when: ({ facts }) => UNDECIDED.has(facts.state),
+      when: ({ facts }) =>
+        UNDECIDED.has(facts.state) ||
+        (isMissing({ facts }) && !facts.isPushedMissing && !facts.isChecking),
       slot: () => 'secondary',
       run: ({ facts, env }) =>
         env.getState().deferResolveQueueItem({ sessionId: facts.sessionId, itemId: facts.itemId }),

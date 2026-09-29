@@ -58,6 +58,7 @@ const ADVANCING = new Set([
   'reviewComment.resolveNoReply',
   'reviewComment.replyAndResolve',
   'reviewComment.resolveOnly',
+  'reviewComment.closeWithReply',
 ]);
 
 export const COULD_NOT_SEND =

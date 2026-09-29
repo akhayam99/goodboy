@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { ThreadGitFacts } from '../../store/slices/resolve/threadGitState';
-import { commitUrlOf, remoteOf, replyOnlyLine } from './reviewRemote';
+import { commitUrlOf, remoteOf, remoteViewOf, replyOnlyLine } from './reviewRemote';
 
 const facts = (overrides: Partial<ThreadGitFacts>): ThreadGitFacts => ({
   gitState: 'local',
   onOrigin: null,
   elsewhere: null,
   missing: null,
+  folded: null,
   userReply: null,
+  verdict: null,
   ...overrides,
 });
 
@@ -54,5 +56,48 @@ describe('commitUrlOf', () => {
       commitUrlOf({ prUrl: 'https://github.com/harborline/payments-api/pull/318', sha: 'abc' }),
     ).toBe('https://github.com/harborline/payments-api/commit/abc');
     expect(commitUrlOf({ prUrl: null, sha: 'abc' })).toBeNull();
+  });
+});
+
+describe('a fix that went missing', () => {
+  it('shows a pushed row only when origin lost its commit', () => {
+    const lost = facts({
+      gitState: 'missing',
+      missing: { sha: 'abc', wasPushed: true, isPathGone: false },
+    });
+    const local = facts({
+      gitState: 'missing',
+      missing: { sha: 'abc', wasPushed: false, isPathGone: false },
+    });
+    expect(remoteOf({ state: 'pushed', facts: lost })).toBe('missing');
+    expect(remoteOf({ state: 'pushed', facts: local })).toBeNull();
+  });
+
+  it('words the row by its check, then by its verdict', () => {
+    const verdict = (kind: 'fixed_elsewhere' | 'obsolete' | 'refix') => ({
+      kind,
+      evidence: 'e',
+      sha: null,
+      checkedAt: 1,
+    });
+    expect(remoteViewOf({ remote: 'missing', verdict: null, isChecking: false }).word).toBe(
+      'Fix went missing',
+    );
+    expect(remoteViewOf({ remote: 'missing', verdict: null, isChecking: true }).word).toBe(
+      'Checking',
+    );
+    expect(
+      remoteViewOf({ remote: 'missing', verdict: verdict('fixed_elsewhere'), isChecking: false })
+        .word,
+    ).toBe('Already fixed here');
+    expect(
+      remoteViewOf({ remote: 'missing', verdict: verdict('obsolete'), isChecking: false }).word,
+    ).toBe('No longer relevant');
+    expect(
+      remoteViewOf({ remote: 'missing', verdict: verdict('refix'), isChecking: false }).word,
+    ).toBe('Still needed');
+    expect(remoteViewOf({ remote: 'folded', verdict: null, isChecking: false }).word).toBe(
+      'Folded in',
+    );
   });
 });

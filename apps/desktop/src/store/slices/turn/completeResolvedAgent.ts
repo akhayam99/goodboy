@@ -54,6 +54,15 @@ export const completeResolvedAgent = async ({
     }
     return null;
   }
+  if (ranAgent?.sourceKind === 'comment_recheck') {
+    await get().settleThreadRecheck({
+      sessionId,
+      agentId: resolvedAgentId,
+      assistantText,
+      didAgentDie,
+    });
+    return null;
+  }
   if (ranAgent !== undefined && isQuestionDelegate({ agent: ranAgent })) {
     await get().resolveQuestionDelegate({ sessionId, agentId: resolvedAgentId, assistantText });
     return null;

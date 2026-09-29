@@ -12,6 +12,7 @@ import type {
   ResolvePublicationPreview,
   ResolvePublicationThread,
   ResolveThread,
+  ResolveThreadGitState,
   WorktreeStatus,
 } from '@goodboy/types';
 import {
@@ -32,6 +33,7 @@ import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { readCommitStory } from './commitStory';
+import { foldedReply } from '../../../features/resolve/commentVerdict';
 import { isLocalNoteThread } from './isLocalNoteThread';
 import { isolatedPushOf } from './isolatedPushOf';
 import { reconcileIntegratedCommits } from './reconcileIntegratedCommits';
@@ -62,6 +64,8 @@ type GitFacts = {
   readonly hasMovedRemote: boolean;
   readonly isWriterBusy: boolean;
 };
+
+const LEAVES_PUSH: ReadonlySet<ResolveThreadGitState> = new Set(['on_origin']);
 
 const closureOf = ({ row }: { readonly row: ResolveThread }) => {
   const outcome = threadOutcome({ row });
@@ -244,7 +248,12 @@ export const preparePublication = async ({
   const frozen: ReadonlyArray<FrozenReply> = await Promise.all(
     publishable.map(async (row) => {
       const isRefused = scope.refusedThreadIds.has(row.threadId);
-      const closure = isRefused ? { reply: row.replyDraft ?? '' } : closureOf({ row });
+      const folded = threadGit[row.threadId]?.folded ?? null;
+      const closure = isRefused
+        ? { reply: row.replyDraft ?? '' }
+        : folded === null
+          ? closureOf({ row })
+          : { reply: foldedReply({ sha: folded.sha, landedAs: folded.landedAs }) };
       const isNote = isLocalNoteThread({ row });
       const hasHandReply = threadGit[row.threadId]?.userReply != null;
       const story = await readCommitStory({ sessionId, threadId: row.threadId }).catch(() => null);
@@ -268,9 +277,14 @@ export const preparePublication = async ({
       };
     }),
   );
-  const shippable = publishable.filter((row) => !scope.refusedThreadIds.has(row.threadId));
+  const shippable = publishable
+    .filter((row) => !scope.refusedThreadIds.has(row.threadId))
+    .map((row) => {
+      const folded = threadGit[row.threadId]?.folded ?? null;
+      return folded === null ? row : { ...row, commitShas: [folded.landedAs] };
+    });
   const shas = fixShas({
-    rows: shippable.filter((row) => threadGit[row.threadId]?.gitState !== 'on_origin'),
+    rows: shippable.filter((row) => !LEAVES_PUSH.has(threadGit[row.threadId]?.gitState ?? 'local')),
   });
   const requiresPush = shas.length > 0;
   const git =
@@ -290,7 +304,15 @@ export const preparePublication = async ({
       ? await unapprovedBranchCommits({
           worktreePath: repo.worktreePath,
           commits: outgoing,
-          scope,
+          scope: {
+            ...scope,
+            shas: new Set([
+              ...scope.shas,
+              ...shippable.flatMap((row) =>
+                threadGit[row.threadId]?.folded == null ? [] : (row.commitShas ?? []),
+              ),
+            ]),
+          },
         })
       : [];
   const isTargetBusy =

@@ -321,6 +321,7 @@ pub fn run() {
             branch_remote::worktree_sync_branch_ref,
             thread_git::worktree_fetch_origin_branch,
             thread_git::worktree_fix_on_origin,
+            thread_git::worktree_locate_fix,
             thread_git::worktree_origin_commits_touching,
             worktree::checkout_fast_forward,
             worktree::worktree_list_local_branches,

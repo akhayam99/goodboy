@@ -2,10 +2,9 @@ import { Check } from 'lucide-react';
 import { Tooltip, WorkNode, cn, inlineMarkdownText } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
-import { REMOTE_NODE } from '../../reviewRemote';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import { firstSentence } from './firstSentence';
-import { REMOTE_WORD_TONE, STATE_WORD_TONE } from './stateTone';
+import { REMOTE_TONE_CLASS, STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
 export type RowSelection = {
@@ -55,9 +54,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           )}
         >
           <WorkNode
-            state={
-              entry.remote === null ? REVIEW_COMMENT_NODE[entry.state] : REMOTE_NODE[entry.remote]
-            }
+            state={entry.view === null ? REVIEW_COMMENT_NODE[entry.state] : entry.view.node}
             label={entry.word}
             mark={{ kind: 'dot' }}
           />
@@ -74,9 +71,9 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
             <span
               className={cn(
                 'ml-auto shrink-0 motion-safe:transition-opacity',
-                entry.remote === null
+                entry.view === null
                   ? STATE_WORD_TONE[entry.state]
-                  : REMOTE_WORD_TONE[entry.remote],
+                  : REMOTE_TONE_CLASS[entry.view.tone],
                 onFix !== null &&
                   'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',
               )}

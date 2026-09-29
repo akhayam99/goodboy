@@ -63,12 +63,15 @@ type Props = {
 };
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
-  ['review.accept', ['reviewComment.accept', 'reviewComment.resolveOnly']],
+  [
+    'review.accept',
+    ['reviewComment.accept', 'reviewComment.resolveOnly', 'reviewComment.closeWithReply'],
+  ],
   ['review.edit', ['reviewComment.answer', 'reviewComment.edit']],
   ['review.reply', ['reviewComment.reply', 'reviewComment.replyAndResolve']],
   ['review.skip', ['reviewComment.skip']],
   ['review.undo', ['reviewComment.undo']],
-  ['review.fix', ['reviewComment.draft', 'reviewComment.fixAnyway']],
+  ['review.fix', ['reviewComment.draft', 'reviewComment.fixAnyway', 'reviewComment.fixAgain']],
 ];
 
 type ReviewLaunch = {
