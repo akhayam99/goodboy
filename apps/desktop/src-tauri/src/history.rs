@@ -2514,13 +2514,17 @@ pub struct RebasePlan {
 
 pub(crate) fn rebase_plan(
     cwd: &Path,
-    base_branch: &str,
+    base_branch: Option<&str>,
     fetches: bool,
 ) -> Result<RebasePlan, WorktreeError> {
-    let base = base_branch.trim();
-    if base.is_empty() {
-        return Err(plan_error("the base branch is empty"));
-    }
+    let named = base_branch
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(str::to_string);
+    let base = named
+        .or_else(|| crate::worktree::default_base_name(cwd, false))
+        .ok_or_else(|| plan_error("no base branch could be found for this repository"))?;
+    let base = base.as_str();
     let fetch_error = if fetches {
         git(cwd, &["fetch", "--quiet", "origin", base])
             .err()
@@ -2574,7 +2578,7 @@ pub(crate) fn rebase_plan(
 #[tauri::command]
 pub async fn history_rebase_plan(
     worktree_path: String,
-    base_branch: String,
+    base_branch: Option<String>,
     fetches: bool,
 ) -> Result<RebasePlan, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
@@ -2582,7 +2586,7 @@ pub async fn history_rebase_plan(
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(worktree_path));
         }
-        rebase_plan(&cwd, &base_branch, fetches)
+        rebase_plan(&cwd, base_branch.as_deref(), fetches)
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
@@ -3599,7 +3603,7 @@ mod tests {
         let upstream = commit(&b.root, "readme.txt", "hello\n", "main moves on");
         git_ok(&b.root, &["push", "origin", "main"]);
         git_ok(&b.root, &["checkout", "feature"]);
-        let plan = rebase_plan(&b.root, "main", true).unwrap();
+        let plan = rebase_plan(&b.root, Some("main"), true).unwrap();
         assert_eq!(plan.onto, upstream);
         assert_eq!(plan.onto_ref, "origin/main");
         assert_eq!(plan.merge_base, b.base);
@@ -3617,6 +3621,41 @@ mod tests {
             .steps
             .iter()
             .all(|step| step.outcome == StepOutcome::Clean));
+    }
+
+    #[test]
+    fn a_rebase_plan_without_a_named_base_rebases_onto_the_develop_branch() {
+        let root = init_repo("rebase-plan-develop");
+        git_ok(&root, &["branch", "-m", "main", "develop"]);
+        let base = commit(&root, "policy.txt", "one\n", "base");
+        let work = root.join("wt-feature");
+        git_ok(
+            &root,
+            &[
+                "worktree",
+                "add",
+                "-b",
+                "feature",
+                work.to_str().unwrap(),
+                "develop",
+            ],
+        );
+        let own = commit(&work, "notes.txt", "notes\n", "C adds notes");
+        let upstream = commit(&root, "readme.txt", "hello\n", "develop moves on");
+
+        let plan = rebase_plan(&work, None, false).unwrap();
+
+        assert_eq!(plan.onto_ref, "develop");
+        assert_eq!(plan.onto, upstream);
+        assert_eq!(plan.merge_base, base);
+        assert_eq!(plan.behind, 1);
+        assert_eq!(
+            plan.commits
+                .iter()
+                .map(|c| c.sha.clone())
+                .collect::<Vec<_>>(),
+            vec![own]
+        );
     }
 
     fn plan_args_for_rebase(root: &Path, plan: &RebasePlan) -> HistoryPlanArgs {

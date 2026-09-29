@@ -104,10 +104,10 @@ fn files_per_commit(cwd: &Path, range: &str) -> Vec<CommitFiles> {
 
 pub(crate) fn history_graph_of(
     cwd: &Path,
-    base_branch: &str,
+    base_branch: Option<&str>,
     branch: &str,
 ) -> Result<HistoryGraph, WorktreeError> {
-    let configured = Some(base_branch.trim()).filter(|name| !name.is_empty());
+    let configured = base_branch.map(str::trim).filter(|name| !name.is_empty());
     let (base_ref, merge_base) =
         resolve_base(cwd, configured).ok_or_else(|| WorktreeError::Git {
             message: format!(
@@ -150,7 +150,7 @@ pub(crate) fn history_graph_of(
 #[tauri::command]
 pub async fn history_graph(
     worktree_path: String,
-    base_branch: String,
+    base_branch: Option<String>,
     branch: String,
 ) -> Result<HistoryGraph, WorktreeError> {
     tauri::async_runtime::spawn_blocking(move || {
@@ -158,7 +158,7 @@ pub async fn history_graph(
         if !cwd.exists() {
             return Err(WorktreeError::RepoNotFound(worktree_path));
         }
-        history_graph_of(&cwd, &base_branch, &branch)
+        history_graph_of(&cwd, base_branch.as_deref(), &branch)
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
@@ -220,7 +220,7 @@ mod tests {
         commit(&work, "export.ts", "export\n", "Add ledger export endpoint");
         commit(&root, "keys.ts", "keys\n", "Rotate Acme sandbox keys");
 
-        let graph = history_graph_of(&work, "", "hl/ledger-export").unwrap();
+        let graph = history_graph_of(&work, None, "hl/ledger-export").unwrap();
 
         assert_eq!(graph.base_ref, "develop");
         assert_eq!(graph.merge_base.sha, fork);
@@ -245,7 +245,7 @@ mod tests {
         let newest = commit(&root, "rounding.ts", "round\n", "Cascadia rounding rules");
         git_ok(&root, &["checkout", "-q", "hl/ledger-export"]);
 
-        let graph = history_graph_of(&root, "main", "hl/ledger-export").unwrap();
+        let graph = history_graph_of(&root, Some("main"), "hl/ledger-export").unwrap();
 
         assert_eq!(graph.merge_base.sha, fork);
         assert_eq!(graph.merge_base.subject, "Release 2.14");
@@ -297,7 +297,7 @@ mod tests {
             "Stream rows in batches of 500",
         );
 
-        let graph = history_graph_of(&root, "main", "hl/ledger-export").unwrap();
+        let graph = history_graph_of(&root, Some("main"), "hl/ledger-export").unwrap();
 
         assert_eq!(graph.remote_sha, Some(pushed));
         assert_eq!(graph.base_ref, "origin/main");

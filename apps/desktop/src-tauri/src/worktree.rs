@@ -769,7 +769,7 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
             .filter(|s| !s.is_empty());
         let detected_base = configured_base
             .map(str::to_string)
-            .or_else(|| default_base_name(&repo_path));
+            .or_else(|| default_base_name(&repo_path, true));
         let fetch_failure = detected_base
             .as_deref()
             .and_then(|base| try_fetch_origin(&repo_path, base));
@@ -3300,11 +3300,11 @@ fn main_checkout_branch(cwd: &Path, allow_own: bool) -> Option<String> {
     }
 }
 
-fn default_base_name(cwd: &Path) -> Option<String> {
+pub(crate) fn default_base_name(cwd: &Path, allow_own_checkout: bool) -> Option<String> {
     if let Some(head) = resolve_origin_head(cwd) {
         return Some(head);
     }
-    base_candidates_with(cwd, None, true)
+    base_candidates_with(cwd, None, allow_own_checkout)
         .into_iter()
         .find(|candidate| commit_ref_exists(cwd, candidate))
         .map(|candidate| {
