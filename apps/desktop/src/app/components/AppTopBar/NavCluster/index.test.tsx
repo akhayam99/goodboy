@@ -93,7 +93,10 @@ describe('NavCluster', () => {
     const chat = screen.getByRole('button', { name: 'Chat, 2 chats running' });
     expect(chat.getAttribute('data-chat-activity')).toBe('running');
     expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('2 chats running');
-    expect(chat.querySelector('[class*="animate-soft-pulse"]')).not.toBeNull();
+    const dot = chat.querySelector('[class*="animate-soft-pulse"]');
+    expect(dot).not.toBeNull();
+    expect(dot?.className).toContain('bg-info');
+    expect(dot?.className).toContain('absolute');
   });
 
   it('names a single running chat', () => {
@@ -112,7 +115,10 @@ describe('NavCluster', () => {
     expect(chat.getAttribute('data-chat-activity')).toBe('unread');
     expect(chat.parentElement?.getAttribute('data-tooltip')).toBe('New reply');
     expect(chat.querySelector('[class*="animate-soft-pulse"]')).toBeNull();
-    expect(chat.querySelector('.rounded-full')).not.toBeNull();
+    const dot = chat.querySelector('.rounded-full');
+    expect(dot?.className).toContain('bg-warning');
+    expect(dot?.className).not.toContain('bg-info');
+    expect(dot?.className).toContain('absolute');
   });
 
   it('shows no dot when the chats are quiet', () => {

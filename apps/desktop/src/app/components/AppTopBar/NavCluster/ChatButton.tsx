@@ -10,6 +10,8 @@ type Props = {
 
 const ChatIcon = CONCEPT_ICONS.chat;
 
+const DOT_CORNER = 'absolute -right-1 -top-0.5';
+
 type TipParams = {
   readonly isOnChat: boolean;
   readonly runningCount: number;
@@ -51,10 +53,16 @@ export const ChatButton = ({ isOnChat, runningCount, hasUnread, onChat }: Props)
             : 'text-muted-foreground hover:bg-hover hover:text-foreground',
         )}
       >
-        <ChatIcon size={ICON_SIZE.control} aria-hidden />
+        <span className="relative flex shrink-0">
+          <ChatIcon size={ICON_SIZE.control} aria-hidden />
+          {runningCount > 0 ? (
+            <StatusDot tone="info" size="md" pulsing className={DOT_CORNER} />
+          ) : null}
+          {runningCount === 0 && hasUnread ? (
+            <StatusDot tone="warning" size="md" className={DOT_CORNER} />
+          ) : null}
+        </span>
         Chat
-        {runningCount > 0 ? <StatusDot tone="primary" size="sm" pulsing /> : null}
-        {runningCount === 0 && hasUnread ? <StatusDot tone="primary" size="sm" /> : null}
       </button>
     </Tooltip>
   );

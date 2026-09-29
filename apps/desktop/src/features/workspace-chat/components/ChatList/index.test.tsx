@@ -107,10 +107,16 @@ describe('ChatList', () => {
     renderList();
 
     const running = document.querySelector('[data-chat-row="chat-consent"]');
-    expect(within(running as HTMLElement).getByRole('img', { name: 'Answering' })).toBeDefined();
+    const answering = within(running as HTMLElement).getByRole('img', { name: 'Answering' });
+    expect(answering.className).toContain('bg-info');
+    expect(answering.className).toContain('animate-soft-pulse');
+    expect(answering.className).toContain('absolute');
     expect(within(running as HTMLElement).queryByRole('img', { name: 'New reply' })).toBeNull();
     const unread = document.querySelector('[data-chat-row="chat-changes"]');
-    expect(within(unread as HTMLElement).getByRole('img', { name: 'New reply' })).toBeDefined();
+    const newReply = within(unread as HTMLElement).getByRole('img', { name: 'New reply' });
+    expect(newReply.className).toContain('bg-warning');
+    expect(newReply.className).not.toContain('animate-soft-pulse');
+    expect(newReply.className).toContain('absolute');
     const quiet = document.querySelector('[data-chat-row="chat-lunch"]');
     expect(within(quiet as HTMLElement).queryByRole('img')).toBeNull();
   });

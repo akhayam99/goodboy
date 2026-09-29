@@ -41,7 +41,22 @@ const ChatListRowView = ({
         frameClassName="group"
         className="flex min-w-0 flex-col gap-0.5 px-2 py-1.5"
       >
-        <span className="flex min-w-0 items-baseline gap-2">
+        <span className="relative flex min-w-0 items-baseline gap-2">
+          {isStreaming ? (
+            <StatusDot
+              tone="info"
+              pulsing
+              ariaLabel="Answering"
+              className="absolute -left-1.5 top-1/2 -translate-y-1/2"
+            />
+          ) : null}
+          {!isStreaming && isUnread ? (
+            <StatusDot
+              tone="warning"
+              ariaLabel="New reply"
+              className="absolute -left-1.5 top-1/2 -translate-y-1/2"
+            />
+          ) : null}
           <span
             className={cn(
               'min-w-0 flex-1 truncate text-label group-hover:pr-12 group-focus-within:pr-12',
@@ -51,12 +66,6 @@ const ChatListRowView = ({
             {title}
           </span>
           <span className="flex shrink-0 items-center gap-1 text-meta text-faint-foreground group-hover:invisible group-focus-within:invisible">
-            {isStreaming ? (
-              <StatusDot tone="primary" size="sm" pulsing ariaLabel="Answering" />
-            ) : null}
-            {!isStreaming && isUnread ? (
-              <StatusDot tone="primary" size="sm" ariaLabel="New reply" />
-            ) : null}
             {time}
           </span>
         </span>
