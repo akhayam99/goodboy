@@ -88,7 +88,7 @@ pub async fn planner_run(
         .map_err(|e| PlannerError::Io(std::io::Error::other(e.to_string())))?
 }
 
-fn run_planner(
+pub(crate) fn run_planner(
     registry: &LiveChildRegistry,
     args: PlannerArgs,
 ) -> Result<PlannerResult, PlannerError> {

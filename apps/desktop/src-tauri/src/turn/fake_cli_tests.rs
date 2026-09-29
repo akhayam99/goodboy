@@ -83,6 +83,16 @@ impl Run {
         prompt: &str,
         writer_lease: Option<&WriterLeaseBinding>,
     ) -> Result<String, TurnError> {
+        self.spawn_full(binary, prompt, "default", writer_lease)
+    }
+
+    fn spawn_full(
+        &self,
+        binary: &str,
+        prompt: &str,
+        permission_mode: &str,
+        writer_lease: Option<&WriterLeaseBinding>,
+    ) -> Result<String, TurnError> {
         let empty: Vec<String> = Vec::new();
         let binary_path = self.fake.binary(binary);
         let work_dir = self.fake.work_dir();
@@ -94,7 +104,7 @@ impl Run {
             writable_roots: &empty,
             query_socket_directory: None,
             prompt,
-            permission_mode: "default",
+            permission_mode,
             allowed_tools: &empty,
             disallowed_tools: &empty,
             resume_session_id: None,
@@ -516,4 +526,36 @@ fn an_owned_writer_lease_is_released_and_announced_when_the_turn_ends() {
     assert_eq!(announced["reason"], "exited");
     assert_eq!(announced["holder"], "agent-1");
     assert!(crate::worktree_writer::lease_status(&run.leases.0, &path).has_exited);
+}
+
+#[test]
+fn a_read_only_turn_spawns_every_cli_with_its_read_only_posture() {
+    use crate::providers::cli_args::{read_only_violations, Cli, Job};
+
+    for binary in ["claude", "codex", "cursor-agent", "agy", "opencode"] {
+        let run = Run::new("ok");
+        run.spawn_full(binary, PROMPT, "plan", None).unwrap();
+        run.turn_events_until_end();
+
+        let argv = argv_of(&run);
+
+        let found = read_only_violations(Cli::of_binary(binary), Job::Turn, &argv);
+        assert!(found.is_empty(), "{binary}: {found:?} in {argv:?}");
+    }
+}
+
+#[test]
+fn cursor_spawns_with_force_only_for_a_full_access_turn() {
+    let full = Run::new("ok");
+    full.spawn_full("cursor-agent", PROMPT, "bypassPermissions", None)
+        .unwrap();
+    full.turn_events_until_end();
+    let read_only = Run::new("ok");
+    read_only
+        .spawn_full("cursor-agent", PROMPT, "plan", None)
+        .unwrap();
+    read_only.turn_events_until_end();
+
+    assert!(argv_of(&full).contains(&"--force".to_string()));
+    assert!(!argv_of(&read_only).contains(&"--force".to_string()));
 }

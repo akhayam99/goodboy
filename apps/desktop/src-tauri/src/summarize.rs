@@ -101,7 +101,7 @@ pub fn summarize_cancel(
     Ok(())
 }
 
-fn run_summarize(
+pub(crate) fn run_summarize(
     registry: &ChildRegistry,
     args: SummarizeArgs,
 ) -> Result<SummarizeResult, SummarizeError> {

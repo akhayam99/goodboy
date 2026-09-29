@@ -1,0 +1,13 @@
+#!/bin/sh
+. "$(dirname "$0")/common.sh"
+case "$1" in
+  --version)
+    fake_version "1.4.2"
+    ;;
+  run)
+    fake_turn opencode.jsonl "$@"
+    ;;
+  *)
+    fake_usage_error "$1"
+    ;;
+esac

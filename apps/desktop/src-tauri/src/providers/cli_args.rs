@@ -1,6 +1,9 @@
 use crate::aux_spawn::CLAUDE_SETTING_SOURCES;
 use crate::turn::SpawnOneArgs;
 
+#[cfg(all(test, unix))]
+mod fake_cli_tests;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Cli {
     Claude,
@@ -448,5 +451,138 @@ pub(crate) fn turn_args(binary: &str, args: &SpawnOneArgs<'_>) -> Vec<String> {
             v.push(disallowed_tools.join(","));
             v
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn strings(parts: &[&str]) -> Vec<String> {
+        parts.iter().map(|part| part.to_string()).collect()
+    }
+
+    #[test]
+    fn effort_maps_each_cli_including_gemini() {
+        assert_eq!(
+            effort_args(Cli::Claude, Some("high")),
+            strings(&["--effort", "high"])
+        );
+        assert_eq!(
+            effort_args(Cli::Agy, Some("high")),
+            strings(&["--effort", "high"])
+        );
+        assert_eq!(
+            effort_args(Cli::Codex, Some("low")),
+            strings(&["-c", "model_reasoning_effort=\"low\""])
+        );
+        assert_eq!(
+            effort_args(Cli::Opencode, Some("max")),
+            strings(&["--variant", "max"])
+        );
+        assert!(effort_args(Cli::Cursor, Some("high")).is_empty());
+    }
+
+    #[test]
+    fn effort_is_omitted_when_missing_or_empty() {
+        assert!(effort_args(Cli::Claude, None).is_empty());
+        assert!(effort_args(Cli::Agy, Some("")).is_empty());
+    }
+
+    #[test]
+    fn a_provider_id_and_a_binary_name_resolve_to_the_same_cli() {
+        let pairs = [
+            ("anthropic", "/usr/local/bin/claude", Cli::Claude),
+            ("cursor", "cursor-agent", Cli::Cursor),
+            ("gemini", "/x/agy", Cli::Agy),
+            ("codex", "codex", Cli::Codex),
+            ("moonshot", "moonshot", Cli::Opencode),
+        ];
+        for (provider_id, binary, cli) in pairs {
+            assert_eq!(Cli::of_provider(provider_id), Some(cli));
+            assert_eq!(Cli::of_binary(binary), cli);
+        }
+        assert_eq!(Cli::of_provider("nonexistent"), None);
+    }
+
+    fn side(provider_id: &'static str, job: Job) -> SideJob<'static> {
+        SideJob {
+            job,
+            provider_id,
+            model: "cheap-model",
+            system_prompt: "you plan",
+            user_message: "plan this",
+            working_dir: None,
+            tools_disabled: false,
+            effort: None,
+        }
+    }
+
+    #[test]
+    fn every_side_job_builds_an_argv_that_passes_its_own_policy() {
+        for provider_id in ["anthropic", "cursor", "gemini", "codex", "opencode"] {
+            let cli = Cli::of_provider(provider_id).unwrap();
+            for job in [Job::Planner, Job::Summarizer] {
+                let argv = side_job_args(&side(provider_id, job)).expect("argv");
+                assert_eq!(read_only_violations(cli, job, &argv), Vec::<String>::new());
+            }
+        }
+    }
+
+    #[test]
+    fn the_policy_rejects_a_cursor_argv_with_force() {
+        let argv = strings(&["-p", "x", "--mode", "plan", "--force"]);
+        assert_eq!(
+            read_only_violations(Cli::Cursor, Job::Planner, &argv),
+            strings(&["--force must not be set"])
+        );
+    }
+
+    #[test]
+    fn the_policy_rejects_a_missing_plan_posture() {
+        let argv = strings(&["-p", "x", "--model", "m", "--sandbox"]);
+        assert_eq!(
+            read_only_violations(Cli::Agy, Job::Summarizer, &argv),
+            strings(&["--mode must be \"plan\""])
+        );
+    }
+
+    #[test]
+    fn the_policy_rejects_a_codex_prompt_without_the_separator() {
+        let argv = strings(&[
+            "exec",
+            "--skip-git-repo-check",
+            "-s",
+            "read-only",
+            "a prompt",
+        ]);
+        assert_eq!(
+            read_only_violations(Cli::Codex, Job::Summarizer, &argv),
+            strings(&["the prompt must follow a single --"])
+        );
+    }
+
+    #[test]
+    fn a_prompt_that_looks_like_a_flag_is_not_a_violation() {
+        let argv = strings(&["-p", "--force", "--mode", "plan"]);
+        assert!(read_only_violations(Cli::Cursor, Job::Planner, &argv).is_empty());
+    }
+
+    #[test]
+    fn a_side_job_for_an_unknown_provider_is_rejected() {
+        let err = side_job_args(&side("nonexistent", Job::Planner)).expect_err("unknown");
+        assert_eq!(err, ArgsError::UnknownProvider("nonexistent".to_string()));
+    }
+
+    #[test]
+    fn the_planner_keeps_tools_unless_disabled_and_the_summarizer_never_has_them() {
+        let mut planner = side("anthropic", Job::Planner);
+        let with_tools = side_job_args(&planner).expect("argv");
+        planner.tools_disabled = true;
+        let without_tools = side_job_args(&planner).expect("argv");
+        let summarizer = side_job_args(&side("anthropic", Job::Summarizer)).expect("argv");
+        assert!(!with_tools.contains(&"--tools".to_string()));
+        assert!(without_tools.contains(&"--tools".to_string()));
+        assert!(summarizer.contains(&"--tools".to_string()));
     }
 }

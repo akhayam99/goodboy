@@ -388,8 +388,8 @@ Docs from each CLI: [Claude Code](https://docs.anthropic.com/en/docs/claude-code
   Goodboy reads `loggedIn` plus `email`/`username`
 
 Goodboy passes `--setting-sources project,local` every time it starts claude. That
-covers turns (`turn.rs`), the planner (`planner.rs`), the summarizer (`summarize.rs`)
-and side jobs (`aux_spawn.rs`). All four live under `apps/desktop/src-tauri/src/`.
+covers turns, the planner and the summarizer. All of them get their arguments from
+`providers/cli_args.rs` under `apps/desktop/src-tauri/src/`.
 
 - Your personal config does not load inside a Goodboy session. That means
   `~/.claude/CLAUDE.md` and your user `settings.json`, with its global MCP servers,
@@ -472,7 +472,7 @@ opencode looks up providers live on models.dev, so the model id names the provid
 
 Every turn sends the session's mode to its CLI, not only to Claude.
 `modeSupportFor` in `packages/core/src/permissions/modeSupport.ts` owns the
-table; `sendTurn` sends its `runsAs` value and `turn.rs` turns it into flags. A
+table; `sendTurn` sends its `runsAs` value and `providers/cli_args.rs` turns it into flags. A
 mode a CLI can't honor runs as the next stricter one it has, never a looser one.
 
 | Mode                              | Claude              | Codex                                                       | Antigravity                      | Cursor                      | opencode family                            |
@@ -516,9 +516,12 @@ mode a CLI can't honor runs as the next stricter one it has, never a looser one.
   Goodboy passes it without `--force`. Whether read-only shell commands still
   run in that mode has not been checked on a real turn, so the table keeps
   Cursor's Read only at Partly
-- The planner (`planner.rs`) and the summarizer (`summarize.rs`) are read-only jobs, so
-  their headless Cursor runs never pass `--force`. Only a Full access turn does. Each
-  job has a test that pins this, so do not add the flag back
+- The planner and the summarizer are read-only jobs, so their headless Cursor runs
+  never pass `--force` and ask for `--mode plan`. Only a Full access turn passes
+  `--force`. `providers/cli_args.rs` holds one read-only policy per provider and job,
+  every planner and summarizer argument list is checked against it before the CLI
+  starts, and the fake CLI tests check what really spawns. A new flag for a side job
+  goes through that policy, not into `planner.rs` or `summarize.rs`
 
 ### API keys
 
@@ -562,8 +565,10 @@ What the catalogs do not tell you:
   support (`clampEffort`). It does not fail
 - Only one level has a label that differs from the value Goodboy sends. `xhigh`
   reads **Very high** in the picker
-- claude takes `--effort <level>` and codex takes `-c model_reasoning_effort="<level>"`.
-  Both are built in `apps/desktop/src-tauri/src/turn.rs`
+- claude and Antigravity (`agy --effort`) take `--effort <level>`, codex takes
+  `-c model_reasoning_effort="<level>"` and the opencode family takes `--variant <level>`.
+  `effort_args` in `apps/desktop/src-tauri/src/providers/cli_args.rs` builds all of them,
+  for turns, the planner and the summarizer alike
 - There is no `ultracode` level. `claude --help` lists exactly
   `low, medium, high, xhigh, max`. Run that check before you add a level to the union
 - Prices are looked up only within the provider that runs the model.
