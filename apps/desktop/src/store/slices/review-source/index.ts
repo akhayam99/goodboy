@@ -9,7 +9,6 @@ import type {
 } from './types';
 
 export { reviewSourceInitialState } from './state';
-export type { ReviewSourceState } from './state';
 
 type Params = {
   readonly set: SetFn;
