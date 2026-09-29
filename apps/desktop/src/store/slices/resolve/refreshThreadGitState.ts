@@ -3,12 +3,14 @@ import {
   listResolveThreadFacts,
   listResolveThreads,
   setResolveThreadGitState,
+  setResolveThreadVerdict,
 } from '@goodboy/db';
 import type { PrComment, ResolveThread } from '@goodboy/types';
 import {
   worktreeFetchOriginBranch,
   worktreeFixOnOrigin,
   worktreeIsAncestor,
+  worktreeLocateFix,
   worktreeOriginCommitsTouching,
 } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
@@ -16,6 +18,7 @@ import { selectActiveMount } from '../project-mounts/selectors';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import {
   computeThreadGitFacts,
+  isPushedThread,
   isWatchedThread,
   type ThreadGitFacts,
   type ThreadGitPorts,
@@ -50,7 +53,7 @@ export const refreshThreadGitState = async ({ set, get, sessionId }: Params): Pr
     return;
   }
   const rows = await listResolveThreads({ db: tauriDatabase, sessionId });
-  const watched = rows.filter((row) => isWatchedThread({ row }));
+  const watched = rows.filter((row) => isWatchedThread({ row }) || isPushedThread({ row }));
   if (watched.length === 0) {
     return;
   }
@@ -68,6 +71,7 @@ export const refreshThreadGitState = async ({ set, get, sessionId }: Params): Pr
   const ports: ThreadGitPorts = {
     fixOnOrigin: ({ sha }) => worktreeFixOnOrigin({ worktreePath, branch, sha }),
     isOnLocalHead: ({ sha }) => worktreeIsAncestor({ worktreePath, sha, head: 'HEAD' }),
+    locateFix: ({ sha, path }) => worktreeLocateFix({ worktreePath, sha, path }),
     commitsTouching: ({ path, line, sinceSecs }) =>
       worktreeOriginCommitsTouching({
         worktreePath,
@@ -99,11 +103,13 @@ export const refreshThreadGitState = async ({ set, get, sessionId }: Params): Pr
   const persisted = new Map(
     (await listResolveThreadFacts({ db: tauriDatabase, sessionId })).map((facts) => [
       facts.threadId,
-      facts.gitState,
+      facts,
     ]),
   );
+  const merged: Array<readonly [string, ThreadGitFacts]> = [];
   for (const [threadId, facts] of computed) {
-    if ((persisted.get(threadId) ?? 'local') !== facts.gitState) {
+    const saved = persisted.get(threadId) ?? null;
+    if ((saved?.gitState ?? 'local') !== facts.gitState) {
       await setResolveThreadGitState({
         db: tauriDatabase,
         sessionId,
@@ -111,9 +117,14 @@ export const refreshThreadGitState = async ({ set, get, sessionId }: Params): Pr
         gitState: facts.gitState,
       });
     }
+    const verdict = facts.gitState === 'missing' ? (saved?.verdict ?? null) : null;
+    if (saved?.verdict != null && verdict === null) {
+      await setResolveThreadVerdict({ db: tauriDatabase, sessionId, threadId, verdict: null });
+    }
+    merged.push([threadId, { ...facts, verdict }]);
   }
   set((state) => ({
-    sessionThreadGit: { ...state.sessionThreadGit, [sessionId]: Object.fromEntries(computed) },
+    sessionThreadGit: { ...state.sessionThreadGit, [sessionId]: Object.fromEntries(merged) },
   }));
 };
 

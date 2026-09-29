@@ -13,7 +13,9 @@ const NO_FACTS: ThreadGitFacts = {
   onOrigin: null,
   elsewhere: null,
   missing: null,
+  folded: null,
   userReply: null,
+  verdict: null,
 };
 
 const withFix = ({
@@ -74,7 +76,7 @@ export const seedResolveDriftScene = (): void => {
     [THREAD_IDS.typo]: {
       ...NO_FACTS,
       gitState: 'missing',
-      missing: { sha: MISSING_SHA },
+      missing: { sha: MISSING_SHA, wasPushed: false, isPathGone: false },
     },
     [THREAD_IDS.retryConstant]: {
       ...NO_FACTS,

@@ -12,6 +12,7 @@ import type {
   ResolvePublicationPreview,
   ResolvePublicationThread,
   ResolveThread,
+  ResolveThreadGitState,
   WorktreeStatus,
 } from '@goodboy/types';
 import {
@@ -60,6 +61,8 @@ type GitFacts = {
   readonly hasMovedRemote: boolean;
   readonly isWriterBusy: boolean;
 };
+
+const LEAVES_PUSH: ReadonlySet<ResolveThreadGitState> = new Set(['on_origin', 'folded']);
 
 const closureOf = ({ row }: { readonly row: ResolveThread }) => {
   const outcome = threadOutcome({ row });
@@ -262,7 +265,7 @@ export const preparePublication = async ({
   );
   const shippable = publishable.filter((row) => !scope.refusedThreadIds.has(row.threadId));
   const shas = fixShas({
-    rows: shippable.filter((row) => threadGit[row.threadId]?.gitState !== 'on_origin'),
+    rows: shippable.filter((row) => !LEAVES_PUSH.has(threadGit[row.threadId]?.gitState ?? 'local')),
   });
   const requiresPush = shas.length > 0;
   const git =
