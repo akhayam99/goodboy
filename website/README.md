@@ -24,13 +24,6 @@ deployed by Vercel from `website/vercel.json`.
   builds both as inputs, `vercel.json` serves them without `.html`, and the
   dev and preview servers rewrite `/features` the same way.
 
-## FAQ and structured data
-
-The questions in `website/src/data/faqs.ts` are mirrored by hand into the
-`FAQPage` JSON-LD block in `website/index.html`. Change both in the same
-commit: nothing checks that they agree, and search engines read the JSON-LD,
-not the section.
-
 ## Figures
 
 Product figures are real app screenshots from the mock scenes (see
@@ -47,9 +40,11 @@ resamples it:
   files are 1144, 2288 and 3432 wide. A 1024 pixel app window lands at 1.12
   times its size; the board keeps a 1250 pixel window so its four columns fit,
   and draws at 0.92.
-- A frame has a `<id>-phone` twin, a 4:5 cut of 288 by 360 app pixels that a
-  390 phone draws 366 wide, at 1.27 times the app, instead of the whole
-  window shrunk. Its files are 732, 1098 and 1464 wide.
+- A frame has a `<id>-phone` twin, a 4:5 cut of the window between 288 and 375
+  app pixels wide that a 390 phone draws 366 wide, at 0.98 to 1.27 times the
+  app, instead of the whole window shrunk. Its right edge fades out on a
+  phone, so a row that runs on reads as the app continuing. Its files are
+  732, 1098 and 1464 wide.
 - A fragment is one component, drawn at its `displayWidth`, at least 1.18
   times its size in the app, with files at 1, 2 and 3 times that width. App
   text never draws below its size in the app.
@@ -106,7 +101,7 @@ its own CSS file:
 
 - `Chapter`, a section with a `Statement` head, then its blocks 96 px apart
   (64 on a phone). `isBand` puts it on `--band` with a hairline above and
-  below; How it works, Workflows, Questions and the closer are banded, the
+  below; How it works, Workflows, Questions and Install are banded, the
   chapters between them are not.
 - `Statement`, an eyebrow, a heading and a lead of 20 words or fewer. The
   hero and the closer use it too. No h1, h2 or h3 ends with a period.
@@ -119,9 +114,13 @@ its own CSS file:
   workflow step graph and marked `data-shadow-exception` for the check.
 - `Fragment`, a split of text beside one or two components on a smaller
   stage (radius 20), the component bleeding off its right and bottom edge
-  where the screen continues. It stacks below 900 px.
+  where the screen continues. It stacks below 900 px. On a phone the stage
+  runs edge to edge and the picture is drawn at 0.58 of its size, whole from
+  top to bottom, and fades out on the right where it is wider than the stage.
 - `Grid`, two or three cells, each a stage with a component bleeding off it,
-  then a title and one line. No box around the cells.
+  then a title and one line. No box around the cells. On a phone the stage runs
+  edge to edge and the picture is drawn at 0.58 of its size, fading out on the
+  right where it is wider than the stage.
 
 Motion: the hero rises in on load. Below it, every frame, fragment, grid
 image and frame note fades and rises 14 px as it scrolls into view
@@ -144,7 +143,7 @@ downloads only what its screen needs.
 both themes, at twice the pixel density. It fails on horizontal overflow, an
 image drawn below 2x, a frame, fragment or grid with a shadow (outside
 `data-shadow-exception`), a page taller
-than 13,500 px at 1440 or 14,000 on a phone, an em dash or a middot triplet in
+than 14,300 px at 1440 or 15,000 on a phone, an em dash or a middot triplet in
 visible text, a heading that ends with a period, a section that runs into the
 next one or whose content spills below it, Inter not loaded, a hero frame that
 starts below the first screen at 1440, and a consent card over the h1, and an
@@ -160,6 +159,15 @@ works" link), a nav link or a footer Docs-column link that points anywhere in
 the repo's docs other than `FEATURES.md`, or whose anchor is not a heading in
 the current `FEATURES.md`; the GitHub repo, releases, changelog, security and
 legal links are unaffected. Tag Manager is blocked during the run.
+
+Phones: a touch device is told by pointer, `(hover: none) and (pointer: coarse)`,
+never by width. `.onlyFine` hides an element on touch and `.onlyCoarse` hides it
+with a mouse, both in `src/styles.css`. On touch the nav Download, the hero
+download buttons, the install block (Homebrew command, Download for macOS, Linux
+builds and the five-minutes note) give way to
+`StarButton`, a Star on GitHub link to `SITE.repo`. The phone run of
+`check:page` emulates touch and fails on a visible `[data-download]` element or
+a missing `[data-star]` one, and on a Star button with a mouse.
 
 ## One invented world
 

@@ -1,6 +1,7 @@
 import './Nav.css';
 import { BrandMark } from '../components/BrandIcons';
 import { Logo } from '../components/Logo';
+import { StarButton } from '../components/StarButton';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useScrolled } from '../hooks/useScrolled';
 import { SITE } from '../site';
@@ -24,9 +25,10 @@ export const Nav = () => {
             <BrandMark brand="github" size={18} />
           </a>
           <ThemeToggle />
-          <a className="btn small" href={SITE.latest}>
+          <a className="btn small onlyFine" href={SITE.latest} data-download>
             Download
           </a>
+          <StarButton isSmall />
         </div>
       </div>
     </header>

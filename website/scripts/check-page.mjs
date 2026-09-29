@@ -32,11 +32,11 @@ const VIEWPORTS = [
   { name: 'laptop', width: 1024, height: 768, isMobile: false, maxHeight: Infinity },
   { name: 'tablet', width: 768, height: 1024, isMobile: false, maxHeight: Infinity },
   { name: 'narrow', width: 660, height: 900, isMobile: false, maxHeight: Infinity },
-  { name: 'phone', width: 390, height: 844, isMobile: true, maxHeight: 14800 },
+  { name: 'phone', width: 390, height: 844, isMobile: true, isTouch: true, maxHeight: 15000 },
 ];
 const OVERLAP_TOLERANCE_PX = 1;
 const THEMES = ['dark', 'light'];
-const PAGE_EYEBROWS = ['Desktop ADE for macOS and Linux', 'Questions', 'Install', 'All features'];
+const PAGE_EYEBROWS = ['Desktop ADE for macOS and Linux', 'Install', 'All features'];
 
 const parseArgs = ({ argv }) => {
   const shotsIndex = argv.indexOf('--shots');
@@ -226,8 +226,15 @@ const PAGE_PROBE = `(async () => {
       );
       return deepest > box.bottom + ${OVERLAP_TOLERANCE_PX} ? [name(node) + ' content spills ' + Math.round(deepest - box.bottom) + ' px below it'] : [];
     });
+  const isVisible = (node) => {
+    const box = node.getBoundingClientRect();
+    return box.width > 0 && box.height > 0 && getComputedStyle(node).visibility !== 'hidden';
+  };
   const overlaps = (a, b) => !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
   return {
+    isCoarse: matchMedia('(hover: none) and (pointer: coarse)').matches,
+    downloads: [...document.querySelectorAll('[data-download]')].filter(isVisible).length,
+    stars: [...document.querySelectorAll('[data-star]')].filter(isVisible).length,
     isInter: document.fonts.check(${JSON.stringify(INTER_PROBE)}),
     scrollWidth: root.scrollWidth,
     clientWidth: root.clientWidth,
@@ -309,6 +316,24 @@ const checkRun = ({ viewport, theme, probe, groups, audiences, brands, featureAn
     fail(`a middot triplet in visible text: "${probe.middot}"`);
   }
   probe.shadowed.forEach((name) => fail(`a shadow on ${name}`));
+  if (viewport.isTouch === true) {
+    if (!probe.isCoarse) {
+      fail('touch emulation did not give a coarse pointer');
+    }
+    if (probe.downloads > 0) {
+      fail(`${probe.downloads} download links or Homebrew blocks show on a touch device`);
+    }
+    if (probe.stars === 0) {
+      fail('no Star on GitHub button on a touch device');
+    }
+  } else {
+    if (probe.stars > 0) {
+      fail('a Star on GitHub button shows with a fine pointer');
+    }
+    if (probe.downloads === 0) {
+      fail('no download link shows with a fine pointer');
+    }
+  }
   probe.images
     .filter((image) => !image.isLoaded)
     .forEach((image) => fail(`${image.src} did not load`));
@@ -435,6 +460,10 @@ const run = async () => {
             height: viewport.height,
             deviceScaleFactor: 2,
             mobile: viewport.isMobile,
+          });
+          await cdp.send('Emulation.setTouchEmulationEnabled', {
+            enabled: viewport.isTouch === true,
+            maxTouchPoints: viewport.isTouch === true ? 5 : 1,
           });
           await cdp.send('Emulation.setEmulatedMedia', {
             features: [{ name: 'prefers-color-scheme', value: theme }],

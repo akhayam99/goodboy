@@ -2,6 +2,7 @@ import './Hero.css';
 import type { CSSProperties } from 'react';
 import { Eyebrow } from '../components/Eyebrow';
 import { Frame } from '../components/Frame';
+import { StarButton } from '../components/StarButton';
 import { HERO_SESSION } from '../figures';
 import { SITE } from '../site';
 
@@ -23,13 +24,17 @@ export const Hero = () => (
           Every task keeps its goal, decisions and summary, so each model that picks it up starts
           briefed.
         </p>
-        <div className="ctaRow rise" style={rise(3)}>
-          <a className="btn" href={SITE.latest}>
+        <div className="ctaRow onlyFine rise" style={rise(3)}>
+          <a className="btn" href={SITE.latest} data-download>
             Download for macOS
           </a>
           <a className="btn ghost" href={SITE.repo}>
             View on GitHub
           </a>
+          <span className="heroMeta">Free, no account needed.</span>
+        </div>
+        <div className="ctaRow onlyCoarse rise" style={rise(3)}>
+          <StarButton />
           <span className="heroMeta">Free, no account needed.</span>
         </div>
       </div>

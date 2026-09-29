@@ -117,6 +117,9 @@
 }
 
 @media (max-width: 600px) {
+  :root {
+    --phone-scale: 0.58;
+  }
   .split,
   .split.mirrored {
     gap: 28px;
@@ -126,13 +129,30 @@
     padding: 0;
   }
   .frag,
-  .frag.closed {
-    max-height: 300px;
-    padding: 24px 0 0 24px;
-    border-radius: 16px;
+  .frag.closed,
+  .frag.capped {
+    container-type: inline-size;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    justify-self: stretch;
+    margin: 0 -20px;
+    padding: 12px;
+    border-radius: 0;
+    border-inline: 0;
   }
+  .fragView,
   .frag.closed .fragView {
-    border-radius: 10px 0 0 0;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 8px;
+    --fade: clamp(0px, (var(--w) * var(--phone-scale) - 100cqw) * 3, 96px);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+  }
+  .frag img {
+    width: calc(var(--w) * var(--phone-scale));
+    max-width: none;
   }
   .sectionTitle {
     font-size: 24px;

@@ -83,9 +83,25 @@
   }
   .cellMedia,
   .cellMedia.closed {
-    height: 220px;
-    padding: 24px 0 0 24px;
-    border-radius: 16px;
-    justify-content: flex-start;
+    container-type: inline-size;
+    display: block;
+    height: auto;
+    margin: 0 -20px;
+    padding: 12px;
+    border-radius: 0;
+    border-inline: 0;
+  }
+  .cellView,
+  .cellMedia.closed .cellView {
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 8px;
+    --fade: clamp(0px, (var(--w) * var(--phone-scale) - 100cqw) * 3, 96px);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+  }
+  .cellView img {
+    width: calc(var(--w) * var(--phone-scale));
+    max-width: none;
   }
 }

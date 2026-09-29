@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { FragmentFigure } from '../figures';
 import { useTheme } from '../theme/theme';
-import { Picture } from './Picture';
+import { Picture, appSizes } from './Picture';
 
 export type Cell = {
   readonly figure: FragmentFigure;
@@ -32,7 +32,7 @@ export const GridCell = ({ cell }: Props) => {
           <Picture
             source={cell.figure.source}
             theme={theme}
-            sizes={`${cell.figure.displayWidth}px`}
+            sizes={appSizes(cell.figure.displayWidth)}
             alt={cell.figure.alt}
           />
         </div>

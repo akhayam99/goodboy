@@ -1,6 +1,7 @@
 import './Install.css';
 import { useEffect, useRef, useState } from 'react';
 import { Chapter } from '../components/Chapter';
+import { StarButton } from '../components/StarButton';
 import { SITE } from '../site';
 
 const COPIED_MS = 1500;
@@ -46,7 +47,7 @@ export const Install = () => {
       }}
     >
       <div className="install">
-        <div className="cmd">
+        <div className="cmd onlyFine">
           <span className="cmdPrompt" aria-hidden="true">
             $
           </span>
@@ -55,15 +56,21 @@ export const Install = () => {
             {isCopied ? 'Copied' : 'Copy'}
           </button>
         </div>
-        <div className="ctaRow">
-          <a className="btn" href={SITE.latest}>
+        <div className="ctaRow onlyFine">
+          <a className="btn" href={SITE.latest} data-download>
             Download for macOS
           </a>
-          <a className="btn ghost" href={SITE.linux}>
+          <a className="btn ghost" href={SITE.linux} data-download>
             Linux builds
           </a>
         </div>
-        <p className="installNote">Most people are working in five minutes.</p>
+        <StarButton />
+        <p className="installNote onlyCoarse">Save the repo for later.</p>
+        <p className="installNote onlyFine">Most people are working in five minutes.</p>
+        <p className="installNote installSupport">
+          Found a bug? Report it from the app, or{' '}
+          <a href={SITE.newIssue}>open an issue on GitHub</a>.
+        </p>
       </div>
     </Chapter>
   );

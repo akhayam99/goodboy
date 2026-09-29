@@ -20,6 +20,11 @@ type Props = {
 
 export const PHONE_QUERY = '(max-width: 600px)';
 
+export const PHONE_SCALE = 0.58;
+
+export const appSizes = (displayWidth: number): string =>
+  `${PHONE_QUERY} ${Math.round(displayWidth * PHONE_SCALE)}px, ${displayWidth}px`;
+
 type SrcSetParams = {
   readonly source: Source;
   readonly theme: Theme;

@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { FragmentFigure } from '../figures';
 import { useTheme } from '../theme/theme';
 import { Eyebrow, type EyebrowKind } from './Eyebrow';
-import { Picture } from './Picture';
+import { Picture, appSizes } from './Picture';
 
 type Link = {
   readonly href: string;
@@ -80,7 +80,7 @@ export const Fragment = ({
               <Picture
                 source={figure.source}
                 theme={theme}
-                sizes={`${figure.displayWidth}px`}
+                sizes={appSizes(figure.displayWidth)}
                 alt={figure.alt}
               />
             </div>
