@@ -42,7 +42,7 @@ describe('computeCostUsd', () => {
     expect(computeCostUsd({ usage, model: 'claude-sonnet-5' })).toBeCloseTo(2 + 10);
   });
 
-  it('sonnet-5-5 carries the assumed sonnet 5 rate, not the sonnet fallback', () => {
+  it('sonnet-5-5 carries the measured sonnet 5 rate, not the sonnet fallback', () => {
     expect(computeCostUsd({ usage, model: 'claude-sonnet-5-5' })).toBeCloseTo(2 + 10);
   });
 

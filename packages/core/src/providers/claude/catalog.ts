@@ -141,7 +141,7 @@ export const ANTHROPIC_CATALOG = [
     },
     provider: 'anthropic',
     cliId: 'claude-sonnet-5-5',
-    efforts: SONNET_EFFORTS,
+    efforts: OPUS_EFFORTS,
     defaultEffort: 'medium',
   },
   {

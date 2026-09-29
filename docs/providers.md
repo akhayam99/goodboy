@@ -569,7 +569,7 @@ What the catalogs do not tell you:
   `model-price.test.ts` checks that every anthropic, cursor, codex and gemini
   catalog model has a price
 - A rate the vendor has not published yet is copied from the model it follows and
-  carries `assumed: true` in `claude/cost.ts` (Opus 5.5 and Sonnet 5.5 today), so
+  carries `assumed: true` in `claude/cost.ts` (Opus 5.5 today), so
   `costCoverage` reports its spend as approximate. `pricing.json` keeps measured
   rates only
 

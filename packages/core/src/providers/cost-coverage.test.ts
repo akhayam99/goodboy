@@ -40,7 +40,7 @@ describe('costCoverage', () => {
   it('never reports an assumed rate as measured spend', () => {
     expect(costCoverage({ provider: 'anthropic', model: 'claude-opus-5-5' })).toBe('approximate');
     expect(costCoverage({ provider: 'anthropic', model: 'claude-opus-5' })).toBe('measured');
-    expect(costCoverage({ provider: 'anthropic', model: 'claude-sonnet-5-5' })).toBe('approximate');
+    expect(costCoverage({ provider: 'anthropic', model: 'claude-sonnet-5-5' })).toBe('measured');
     expect(costCoverage({ provider: 'anthropic', model: 'claude-sonnet-5' })).toBe('measured');
     expect(costCoverage({ provider: 'gemini', model: 'gemini-3.8-flash' })).toBe('approximate');
     expect(costCoverage({ provider: 'gemini', model: 'gemini-3.7-flash' })).toBe('approximate');
