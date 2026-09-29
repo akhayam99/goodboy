@@ -11,12 +11,7 @@ import { withdrawBitbucketPrChanges } from './withdrawBitbucketPrChanges';
 import type { GetFn, SetFn } from './types';
 
 export { initialBitbucketPrState } from './state';
-export type { RefreshSessionBitbucketPrOptions } from './refreshMountBitbucketPr';
-export type {
-  BitbucketPrCommentParams,
-  BitbucketPrReplyParams,
-  BitbucketPrWriteParams,
-} from './types';
+export type { BitbucketPrWriteParams } from './types';
 
 export const createBitbucketPrSlice = (set: SetFn, get: GetFn) => ({
   refreshSessionBitbucketPr: refreshSessionBitbucketPr(set, get),

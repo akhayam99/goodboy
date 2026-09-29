@@ -8,5 +8,3 @@ export const createSlackDraftsSlice = (set: SetFn) => {
     decideSessionSlackDraft: decideSessionSlackDraft(set),
   };
 };
-
-export type { DecideSessionSlackDraftParams } from './decideSessionSlackDraft';

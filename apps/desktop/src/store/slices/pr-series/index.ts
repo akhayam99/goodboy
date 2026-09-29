@@ -3,7 +3,6 @@ import { loadPrSeries } from './loadPrSeries';
 import { setPrSeriesMember } from './setPrSeriesMember';
 import type { GetFn, SetFn } from './types';
 
-export type { CreatePrSeriesInput, LoadPrSeriesInput, SetPrSeriesMemberInput } from './types';
 export { prSeriesInitialState } from './state';
 
 export const createPrSeriesSlice = (set: SetFn, get: GetFn) => {

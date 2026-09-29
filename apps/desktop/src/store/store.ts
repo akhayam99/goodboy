@@ -3,22 +3,7 @@ import { createReviewNavigationSlice } from './slices/review-navigation';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
-import type {
-  AgentId,
-  SessionId,
-  FileVersionId,
-  IntegrationCredentialId,
-  WorkspaceId,
-  WorkspaceIntegrationProvider,
-  MountId,
-  PrSeries,
-  PrSeriesMember,
-  PrSeriesView,
-  GhTokenStatus,
-  PrMergeMethod,
-  SlackIntegrationConfig,
-  PrReviewDraft,
-} from '@goodboy/types';
+import type { AgentId, SessionId, WorkspaceId, PrReviewDraft } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList } from '../features/providers/providers';
 import { createNotificationsSlice } from './slices/notifications';
@@ -27,7 +12,6 @@ import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts'
 import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createSlackDraftsSlice } from './slices/slack-drafts';
-import type { DecideSessionSlackDraftParams } from './slices/slack-drafts';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
@@ -36,29 +20,9 @@ import { createFileVersionsSlice } from './slices/file-versions';
 import { createSessionEventsSlice } from './slices/session-events';
 import { createAttachmentsSlice } from './slices/attachments';
 import { createGithubSlice } from './slices/github';
-import type { CreatePrInput } from './slices/github/createPrForSession';
-import type { RefreshPrOptions } from './slices/github/refreshMountPr';
-import type { PrWriteOptions } from './slices/github/prWriteOptions';
 import { createGitlabMrSlice, initialGitlabMrState } from './slices/gitlab-mr';
-import type { CreateMrInput, MergeMrInput, RefreshMrOptions } from './slices/gitlab-mr';
-import {
-  createBitbucketPrSlice,
-  initialBitbucketPrState,
-  type BitbucketPrCommentParams,
-  type BitbucketPrReplyParams,
-  type BitbucketPrWriteParams,
-  type RefreshSessionBitbucketPrOptions,
-} from './slices/bitbucket-pr';
-import {
-  createSlackThreadsSlice,
-  initialSlackThreadsState,
-  type RefreshSlackThreadOptions,
-  type SlackChannelParams,
-  type SlackReactionParams,
-  type SlackReplyParams,
-  type SlackThreadParams,
-  type SlackWorkspaceParams,
-} from './slices/slack-threads';
+import { createBitbucketPrSlice, initialBitbucketPrState } from './slices/bitbucket-pr';
+import { createSlackThreadsSlice, initialSlackThreadsState } from './slices/slack-threads';
 import { createReviewDraftsSlice } from './slices/review-drafts';
 import type {
   AddReviewDraftInput,
@@ -108,22 +72,6 @@ import { projectRelocationInitialState } from './slices/project-relocation/state
 import { createMountCleanupSlice, mountCleanupInitialState } from './slices/mount-cleanup';
 import { createHistorySlice, historyInitialState } from './slices/history';
 import { createScribeSlice, scribeInitialState } from './slices/scribe';
-import type { RequestScribeInput, SettleScribeInput } from './slices/scribe/types';
-import type {
-  ApplyHistoryDraftInput,
-  ApplyHistoryRewriteInput,
-  ApplyHistoryRewriteOutcome,
-  EditHistoryDraftInput,
-  HistoryMountInput,
-  HistoryIdentity,
-  HistoryRunOrigin,
-  RebaseBranchOutcome,
-  SettleHistoryRewriterInput,
-  StartHistoryRewriterInput,
-} from './slices/history/types';
-import type { StartHistoryRewriterOutcome } from './slices/history/startHistoryRewriter';
-import type { RestoreHistoryInput, RestoreHistoryOutcome } from './slices/history/restoreHistory';
-import type { BringOriginOutcome } from './slices/history/bringOriginIntoHistory';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
@@ -144,11 +92,6 @@ import { createStarredIssuesSlice } from './slices/starred-issues';
 import { createSearchIndexSlice } from './slices/search-index';
 import { createChatsSlice } from './slices/chats';
 import { handoffsInitialState } from './slices/handoffs/state';
-import type {
-  CreatePrSeriesInput,
-  LoadPrSeriesInput,
-  SetPrSeriesMemberInput,
-} from './slices/pr-series';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import { createWorktreesSlice } from './slices/worktrees';
@@ -169,123 +112,12 @@ import { createNavigationSlice } from './slices/navigation';
 import { initialNavigationState } from './slices/navigation/types';
 import { initialDrawerState } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
-import type { LinearViewer } from '../features/integrations/linear/client';
-import type { SentryProject } from '../features/integrations/sentry/client';
-import type { GitlabUser } from '../features/integrations/gitlab/client';
-import type { BitbucketConnection } from '../features/integrations/bitbucket/client';
-import type { SlackConnection } from '../features/integrations/slack/client';
-import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
 import type { AppState } from './types';
 export type { ProviderSpendEntry };
 export type { AppState } from './types';
 
 type AppActions = {
-  loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
-  loadIntegrationCredentials(): Promise<void>;
-  forgetIntegrationCredential(params: { credentialId: IntegrationCredentialId }): Promise<void>;
-  disconnectIntegration(params: {
-    workspaceId: WorkspaceId;
-    provider: WorkspaceIntegrationProvider;
-  }): Promise<void>;
-  connectLinear(params: {
-    workspaceId: WorkspaceId;
-    token: string | null;
-    credentialId: IntegrationCredentialId | null;
-  }): Promise<LinearViewer>;
-  connectSentry(params: {
-    workspaceId: WorkspaceId;
-    token: string | null;
-    org: string | null;
-    project: string | null;
-    credentialId: IntegrationCredentialId | null;
-  }): Promise<SentryProject>;
-  connectGitlab(params: {
-    workspaceId: WorkspaceId;
-    host: string;
-    token: string | null;
-    credentialId: IntegrationCredentialId | null;
-  }): Promise<GitlabUser>;
-  connectJira(params: {
-    workspaceId: WorkspaceId;
-    siteUrl: string;
-    email: string;
-    projectKey: string;
-    apiToken: string | null;
-    credentialId: IntegrationCredentialId | null;
-  }): Promise<JiraUser>;
-  connectBitbucket(params: {
-    workspaceId: WorkspaceId;
-    workspaceSlug: string;
-    email: string;
-    apiToken: string | null;
-    credentialId: IntegrationCredentialId | null;
-  }): Promise<BitbucketConnection>;
-  connectSlack(params: {
-    workspaceId: WorkspaceId;
-    userToken: string | null;
-    credentialId: IntegrationCredentialId | null;
-  }): Promise<SlackConnection>;
-  updateSlackConfig(params: {
-    workspaceId: WorkspaceId;
-    config: SlackIntegrationConfig;
-  }): Promise<void>;
-  rebaseBranch(input: HistoryMountInput): Promise<RebaseBranchOutcome>;
-  applyHistoryRewrite(input: ApplyHistoryRewriteInput): Promise<ApplyHistoryRewriteOutcome>;
-  pushHistoryRewrite(input: {
-    sessionId: SessionId;
-    mountId: MountId;
-    origin: HistoryRunOrigin;
-    planId: string | null;
-    expectedRemoteSha: string | null;
-    identity: HistoryIdentity | null;
-  }): Promise<ApplyHistoryRewriteOutcome>;
-  startHistoryRewriter(input: StartHistoryRewriterInput): Promise<StartHistoryRewriterOutcome>;
-  settleHistoryRewriter(input: SettleHistoryRewriterInput): Promise<void>;
-  loadHistoryDraft(input: HistoryMountInput): Promise<void>;
-  editHistoryDraft(input: EditHistoryDraftInput): Promise<void>;
-  undoHistoryDraft(input: HistoryMountInput): Promise<boolean>;
-  discardHistoryDraft(input: HistoryMountInput): Promise<void>;
-  dismissHistoryRun(input: HistoryMountInput): void;
-  applyHistoryDraft(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
-  applyRewrittenHistory(input: ApplyHistoryDraftInput): Promise<ApplyHistoryRewriteOutcome>;
-  rewriteDraftWithAgent(input: HistoryMountInput & { note?: string }): Promise<void>;
-  restoreHistory(input: RestoreHistoryInput): Promise<RestoreHistoryOutcome>;
-  bringOriginIntoHistory(input: HistoryMountInput): Promise<BringOriginOutcome>;
-  requestScribe(input: RequestScribeInput): Promise<string>;
-  settleScribe(input: SettleScribeInput): Promise<void>;
-  refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;
-  createPrSeries(input: CreatePrSeriesInput): Promise<PrSeries>;
-  setPrSeriesMember(input: SetPrSeriesMemberInput): Promise<PrSeriesMember>;
-  loadPrSeries(input: LoadPrSeriesInput): Promise<ReadonlyArray<PrSeriesView>>;
-  refreshGithubStatus(): Promise<void>;
-  refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
-  setGithubToken(params: {
-    readonly token: string;
-    readonly workspaceId: WorkspaceId | null;
-  }): Promise<GhTokenStatus>;
-  clearGithubToken(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
-  refreshSessionPr(sessionId: SessionId, opts?: RefreshPrOptions): Promise<void>;
-  refreshSessionPrDetail(
-    sessionId: SessionId,
-    opts?: { mountId?: MountId; force?: boolean; silent?: boolean; retries?: number },
-  ): Promise<void>;
-  selectSessionPr(sessionId: SessionId, prNumber: number, mountId?: MountId): Promise<void>;
-  sweepGithub(opts?: { skipUnknownPr?: boolean }): void;
-  pushSessionBranch(input: {
-    sessionId: SessionId;
-    mountId: MountId;
-  }): Promise<{ readonly ok: true } | { readonly ok: false; readonly error: string }>;
-  createPrForSession(input: CreatePrInput): Promise<void>;
-  markPrReady(sessionId: SessionId, prNumber?: number, opts?: PrWriteOptions): Promise<void>;
-  convertPrToDraft(sessionId: SessionId, prNumber?: number): Promise<void>;
-  mergePr(
-    sessionId: SessionId,
-    prNumber?: number,
-    method?: PrMergeMethod,
-    opts?: PrWriteOptions,
-  ): Promise<void>;
-  refreshSessionMr(sessionId: SessionId, opts?: RefreshMrOptions): Promise<void>;
   loadReviewDrafts(sessionId: SessionId): Promise<void>;
   addReviewDraft(input: AddReviewDraftInput): Promise<PrReviewDraft>;
   updateReviewDraft(id: string, body: string): Promise<void>;
@@ -302,68 +134,6 @@ type AppActions = {
   }): void;
   submitReview(params: { readonly sessionId: SessionId }): Promise<PublishPrReviewResult>;
   discardReview(params: { readonly sessionId: SessionId }): Promise<void>;
-  createMrForSession(input: CreateMrInput): Promise<void>;
-  mergeMrForSession(input: MergeMrInput): Promise<void>;
-  refreshSessionBitbucketPr(
-    sessionId: SessionId,
-    opts?: RefreshSessionBitbucketPrOptions,
-  ): Promise<void>;
-  selectSessionBitbucketPr(
-    sessionId: SessionId,
-    pullRequestId: number | null,
-    mountId?: MountId,
-  ): Promise<void>;
-  approveBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
-  unapproveBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
-  requestBitbucketPrChanges(params: BitbucketPrWriteParams): Promise<void>;
-  withdrawBitbucketPrChanges(params: BitbucketPrWriteParams): Promise<void>;
-  mergeBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
-  declineBitbucketPr(params: BitbucketPrWriteParams): Promise<void>;
-  commentOnBitbucketPr(params: BitbucketPrCommentParams): Promise<void>;
-  replyToBitbucketPrComment(params: BitbucketPrReplyParams): Promise<void>;
-  refreshSlackChannels(params: SlackWorkspaceParams): Promise<void>;
-  refreshSlackUsers(params: SlackWorkspaceParams): Promise<void>;
-  refreshSlackThreadHeads(params: SlackChannelParams): Promise<void>;
-  refreshSlackThread(params: SlackThreadParams, options?: RefreshSlackThreadOptions): Promise<void>;
-  replyToSlackThread(params: SlackReplyParams): Promise<void>;
-  addSlackReaction(params: SlackReactionParams): Promise<void>;
-  closePr(sessionId: SessionId, prNumber?: number): Promise<void>;
-  reopenPr(sessionId: SessionId, prNumber?: number): Promise<void>;
-  editPr(
-    sessionId: SessionId,
-    prNumber: number,
-    opts: { title?: string; body?: string },
-  ): Promise<void>;
-  requestReview(
-    sessionId: SessionId,
-    prNumber: number,
-    reviewers: ReadonlyArray<string>,
-  ): Promise<void>;
-  loadDiffComments(sessionId: SessionId): Promise<void>;
-  addDiffComment(
-    sessionId: SessionId,
-    filePath: string,
-    body: string,
-    anchor?: import('@goodboy/types').DiffCommentAnchor,
-    author?: import('@goodboy/db').DiffCommentAuthor,
-  ): Promise<void>;
-  resolveDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
-  reopenDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
-  deleteDiffComment(sessionId: SessionId, commentId: string): Promise<void>;
-  loadSessionFileVersions(params: { sessionId: SessionId; force?: boolean }): Promise<void>;
-  selectSessionFileVersionPath(params: { sessionId: SessionId; relativePath: string | null }): void;
-  restoreSessionFileVersion(params: {
-    sessionId: SessionId;
-    versionId: FileVersionId;
-    sessionDir: string;
-  }): Promise<void>;
-  deleteSessionFileVersion(params: {
-    sessionId: SessionId;
-    versionId: FileVersionId;
-  }): Promise<void>;
-  deleteAllSessionFileVersions(params: { sessionId: SessionId }): Promise<void>;
-  loadSessionSlackDrafts(sessionId: SessionId): Promise<void>;
-  decideSessionSlackDraft(params: DecideSessionSlackDraftParams): Promise<void>;
 };
 
 export type AppStore = AppState &
@@ -430,7 +200,18 @@ export type AppStore = AppState &
   ReturnType<typeof createOpenQuestionsSlice> &
   ReturnType<typeof createArtifactDraftsSlice> &
   ReturnType<typeof createSkillsSlice> &
-  ReturnType<typeof createBudgetSlice>;
+  ReturnType<typeof createBudgetSlice> &
+  ReturnType<typeof createGithubSlice> &
+  ReturnType<typeof createGitlabMrSlice> &
+  ReturnType<typeof createBitbucketPrSlice> &
+  ReturnType<typeof createSlackDraftsSlice> &
+  ReturnType<typeof createSlackThreadsSlice> &
+  ReturnType<typeof createIntegrationsSlice> &
+  ReturnType<typeof createPrSeriesSlice> &
+  ReturnType<typeof createDiffCommentsSlice> &
+  ReturnType<typeof createFileVersionsSlice> &
+  ReturnType<typeof createHistorySlice> &
+  ReturnType<typeof createScribeSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
