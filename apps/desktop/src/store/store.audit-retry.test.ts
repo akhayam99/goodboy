@@ -40,9 +40,7 @@ vi.mock('../features/permissions/permissions', () => ({
   useEffectivePermissionRules: () => [],
 }));
 
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
-}));
+vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(),
@@ -53,49 +51,52 @@ vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-vi.mock('@goodboy/db', () => ({
-  getSetting: vi.fn(),
-  insertMessage: vi.fn(),
-  insertProviderRun: vi.fn(),
-  insertSession: vi.fn(),
-  insertSessionWorktree: vi.fn(),
-  insertTelemetry: vi.fn(),
-  insertWorkspace: vi.fn(),
-  listContextSlotsForSession: vi.fn(async () => []),
-  listMessagesForSession: vi.fn(async () => []),
-  listSessionsForWorkspace: vi.fn(async () => []),
-  listTelemetryForSession: vi.fn(async () => []),
-  listWorkspaces: vi.fn(async () => []),
-  listWorktreesForTask: vi.fn(async () => []),
-  deleteWorktreesForSession: vi.fn(),
-  setSetting: vi.fn(),
-  summarizeSessionTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-  updateProviderRunStatus: vi.fn(),
-  updateSessionState: vi.fn(),
-  upsertContextSlot: vi.fn(),
-  insertOpenQuestion: vi.fn(async () => undefined),
-  markOpenQuestionsResolvedByText: vi.fn(async () => 0),
-  listResolvedQuestionTextsForSession: vi.fn(async () => []),
-  insertTurnEvent: vi.fn(async () => undefined),
-  insertTurnEventsBatch: vi.fn(async () => undefined),
-  listWorktreesForSessions: vi.fn(async () => new Map()),
-  listAgentsForSessions: vi.fn(async () => new Map()),
-  listTurnEventsForAgent: vi.fn(async () => []),
-  listTurnEventsForTask: vi.fn(async () => []),
-  listMessagesForAgent: vi.fn(async () => []),
-  insertNotification: vi.fn(async () => undefined),
-  listNotifications: vi.fn(async () => []),
-  countNotifications: vi.fn(async () => []),
-  NOTIFICATION_LIST_LIMIT: 200,
-  markAllNotificationsRead: vi.fn(async () => undefined),
-  clearAllNotifications: vi.fn(async () => undefined),
-  updateSessionWorkflowStep: vi.fn(),
-  attachWorkflowToSession: vi.fn(),
-  detachWorkflowFromSession: vi.fn(),
-  updateWorkflowOrder: vi.fn(),
-}));
+vi.mock('@goodboy/db', async () => {
+  const { createDbMock } = await import('../test/dbMock');
+  const { storyDbStubs } = await import('./storyHarness');
+  return createDbMock({
+    ...storyDbStubs(),
+    getSetting: vi.fn(async () => null),
+    insertMessage: vi.fn(async () => undefined),
+    insertProviderRun: vi.fn(async () => undefined),
+    insertSession: vi.fn(async () => undefined),
+    insertSessionWorktree: vi.fn(async () => undefined),
+    insertTelemetry: vi.fn(async () => undefined),
+    insertWorkspace: vi.fn(async () => undefined),
+    listContextSlotsForSession: vi.fn(async () => []),
+    listMessagesForSession: vi.fn(async () => []),
+    listSessionsForWorkspace: vi.fn(async () => []),
+    listTelemetryForSession: vi.fn(async () => []),
+    listWorkspaces: vi.fn(async () => []),
+    deleteWorktreesForSession: vi.fn(async () => undefined),
+    setSetting: vi.fn(async () => undefined),
+    summarizeSessionTelemetry: vi.fn(async () => null),
+    summarizeWorkspaceTelemetry: vi.fn(async () => null),
+    summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
+    updateProviderRunStatus: vi.fn(async () => undefined),
+    updateSessionState: vi.fn(async () => undefined),
+    upsertContextSlot: vi.fn(async () => undefined),
+    insertOpenQuestion: vi.fn(async () => undefined),
+    markOpenQuestionsResolvedByText: vi.fn(async () => 0),
+    listResolvedQuestionTextsForSession: vi.fn(async () => []),
+    insertTurnEvent: vi.fn(async () => undefined),
+    insertTurnEventsBatch: vi.fn(async () => undefined),
+    listWorktreesForSessions: vi.fn(async () => new Map()),
+    listAgentsForSessions: vi.fn(async () => new Map()),
+    listTurnEventsForAgent: vi.fn(async () => []),
+    listMessagesForAgent: vi.fn(async () => []),
+    insertNotification: vi.fn(async () => undefined),
+    listNotifications: vi.fn(async () => []),
+    countNotifications: vi.fn(async () => []),
+    NOTIFICATION_LIST_LIMIT: 200,
+    markAllNotificationsRead: vi.fn(async () => undefined),
+    clearAllNotifications: vi.fn(async () => undefined),
+    updateSessionWorkflowStep: vi.fn(async () => undefined),
+    attachWorkflowToSession: vi.fn(async () => undefined),
+    detachWorkflowFromSession: vi.fn(async () => undefined),
+    updateWorkflowOrder: vi.fn(async () => undefined),
+  });
+});
 
 vi.mock('../features/providers/providers', () => ({
   buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],

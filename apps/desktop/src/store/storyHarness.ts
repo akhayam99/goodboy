@@ -1,4 +1,6 @@
 import { vi } from 'vitest';
+import { createDbMock } from '../test/dbMock';
+import { createInvokeMock, createInvokeRouter, type InvokeHandlers } from '../test/invokeMock';
 import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
 import { resetWorkflowTurnBreaker } from './slices/turn/workflowTurnBreaker';
 import type { Notification } from '@goodboy/db';
@@ -57,6 +59,62 @@ const runAdhocScript: ReturnType<typeof vi.fn> = vi.fn(async () => 'run-adhoc');
 const cleanWorkingTree = {
   workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0 },
 } as never;
+
+const SLOT_SUMMARY_PREFIX = 'Current slot values:';
+
+const TITLE_PROMPT_PREFIX = 'Write one imperative title';
+
+type AuxArgs = {
+  readonly args: {
+    readonly providerId: string;
+    readonly systemPrompt: string;
+    readonly userMessage: string;
+  };
+};
+
+export const storySummarizeSession =
+  (stepSummary: string) =>
+  ({ args }: AuxArgs) => {
+    if (args.systemPrompt.startsWith(TITLE_PROMPT_PREFIX)) {
+      return { stdout: '', stderr: 'no aux provider in tests', exitCode: 1 };
+    }
+    const text = args.userMessage.startsWith(SLOT_SUMMARY_PREFIX) ? '{"upserts":[]}' : stepSummary;
+    return {
+      stdout:
+        args.providerId === 'anthropic'
+          ? JSON.stringify({ result: text, subtype: 'success' })
+          : text,
+      stderr: '',
+      exitCode: 0,
+    };
+  };
+
+const storyInvokeHandlers = {
+  gh_status: {
+    available: false,
+    mode: 'absent',
+    version: null,
+    user: null,
+    scopes: [],
+    scoped: false,
+  },
+  query_bridge_serving: false,
+  get_workspace_overrides: null,
+  get_session_overrides: null,
+  set_workspace_overrides: null,
+  boot_breadcrumb: null,
+  claude_usage_probe: null,
+  codex_rate_limits_probe: null,
+  codex_rate_limits_latest: null,
+  integration_credentials_adopt: 0,
+  integration_credential_forget: null,
+  file_versions_list_staged_snapshots: { runs: [], skipped: [] },
+  file_versions_purge_session: null,
+  qa_deciding_workflow_runs: [],
+  workspace_script_list_live: [],
+  terminal_list_live: [],
+  summarize_session: storySummarizeSession('The step finished.'),
+};
 
 export const storySpies = {
   getSetting,
@@ -194,7 +252,7 @@ export const storySpies = {
   runTurn: vi.fn(),
   cancelTurn: vi.fn(async (_runId: unknown) => undefined),
   writeAttachment: vi.fn(async () => '.goodboy/attachments/spec.pdf'),
-  tauriInvoke: vi.fn(async (_cmd?: unknown, _args?: unknown): Promise<unknown> => null),
+  tauriInvoke: createInvokeMock({ handlers: storyInvokeHandlers, unknownResult: null }),
   invokeAgentList: vi.fn(async (_sessionId?: unknown) => [] as ReadonlyArray<Agent>),
   invokeBudgetAlertsList: vi.fn(async () => [] as ReadonlyArray<BudgetAlert>),
   createWorktree: vi.fn(),
@@ -274,6 +332,12 @@ const freeWriterLease = ({ path }: { readonly path: string }) => ({
   waiting: [],
 });
 
+export const stubStoryInvoke = (overrides: InvokeHandlers) => {
+  storySpies.tauriInvoke.mockImplementation(
+    createInvokeRouter({ handlers: { ...storyInvokeHandlers, ...overrides }, unknownResult: null }),
+  );
+};
+
 export const resetStorySpies = () => {
   resetWorkflowTurnBreaker();
   for (const spy of Object.values(storySpies)) {
@@ -342,8 +406,24 @@ export const resetStoryStore = async () => {
   }
 };
 
-export const dbModuleMock = () => ({
-  ...storyResolveQueries,
+const { resetResolveQueryMocks: _resetResolveQueryMocks, ...storyResolveDbQueries } =
+  storyResolveQueries;
+
+export const storyDbStubs = () => ({
+  ...storyResolveDbQueries,
+  hasOtherSessionTurnSince: vi.fn(async () => false),
+  insertAgentTurnSpan: vi.fn(async () => undefined),
+  insertAgentHandoff: vi.fn(async () => undefined),
+  countUserTextEvents: vi.fn(async () => 0),
+  listSessionDecisions: vi.fn(async () => []),
+  listProviderLimits: vi.fn(async () => []),
+  listArtifactsForSession: vi.fn(async () => []),
+  listSessionEvents: vi.fn(async () => []),
+  listSettingsWithPrefix: vi.fn(async () => []),
+  listResolveCheckRuns: vi.fn(async () => []),
+  listPlansForSession: vi.fn(async () => []),
+  getArtifactProvenance: vi.fn(async () => null),
+  upsertWorkflow: vi.fn(async () => undefined),
   listActiveResolveAttempts: storySpies.listActiveResolveAttempts,
   getSetting: storySpies.getSetting,
   setSetting: storySpies.setSetting,
@@ -368,7 +448,6 @@ export const dbModuleMock = () => ({
   disconnectWorkspace: vi.fn(async () => undefined),
   reconnectWorkspace: vi.fn(async () => undefined),
   touchWorkspaceLastAccessed: vi.fn(async () => undefined),
-  findWorkspaceByRootPath: vi.fn(async () => null),
   insertMessage: vi.fn(async () => undefined),
   insertProviderRun: vi.fn(async () => undefined),
   updateProviderRunStatus: vi.fn(async () => undefined),
@@ -405,7 +484,6 @@ export const dbModuleMock = () => ({
   listMountPathOwnership: vi.fn(async () => []),
   listMountPullRequestLinks: vi.fn(async () => []),
   upsertMountPullRequestLink: vi.fn(async () => true),
-  listWorktreesForTask: vi.fn(async () => []),
   listWorktreesForSession: storySpies.listWorktreesForSession,
   listWorktreesForSessions: vi.fn(async () => new Map()),
   listAllSessionWorktrees: vi.fn(async () => []),
@@ -459,7 +537,6 @@ export const dbModuleMock = () => ({
   purgeAgentForDelete: vi.fn(async () => [] as ReadonlyArray<string>),
   listTurnEventsForAgent: vi.fn(async () => []),
   listTurnEventsForSession: vi.fn(async () => []),
-  listTurnEventsForTask: vi.fn(async () => []),
   insertNotification: storySpies.insertNotification,
   listNotifications: storySpies.listNotifications,
   countNotifications: storySpies.countNotifications,
@@ -493,6 +570,8 @@ export const dbModuleMock = () => ({
   detachWorkflowFromSession: vi.fn(async () => undefined),
   updateWorkflowOrder: vi.fn(async () => undefined),
 });
+
+export const dbModuleMock = () => createDbMock(storyDbStubs());
 
 export const tauriCoreModuleMock = () => ({
   invoke: storySpies.tauriInvoke,

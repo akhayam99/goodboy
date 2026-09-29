@@ -20,6 +20,8 @@ import {
   connectedAnthropicState,
   resetStoryStore,
   storySpies,
+  storySummarizeSession,
+  stubStoryInvoke,
   STORY_NOW,
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -217,15 +219,7 @@ const seed = () => {
       return agents.find((agent) => agent.id === agentId);
     },
   );
-  storySpies.tauriInvoke.mockImplementation(async (command: unknown) =>
-    command === 'summarize_session'
-      ? {
-          stdout: JSON.stringify({ result: STEP_SUMMARY, subtype: 'success' }),
-          stderr: '',
-          exitCode: 0,
-        }
-      : null,
-  );
+  stubStoryInvoke({ summarize_session: storySummarizeSession(STEP_SUMMARY) });
 };
 
 const statusWrites = ({ agentId }: { readonly agentId: AgentId }) =>
