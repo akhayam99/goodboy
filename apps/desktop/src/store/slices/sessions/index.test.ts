@@ -431,7 +431,7 @@ describe('store contract', () => {
       const archived: Session = {
         ...buildSession(),
         archivedAt: NOW,
-      } as Session;
+      };
       store.setState({
         workspaces: [buildWorkspace()],
         currentWorkspaceId: WS_ID,
@@ -448,7 +448,7 @@ describe('store contract', () => {
       const archived: Session = {
         ...buildSession(),
         archivedAt: NOW,
-      } as Session;
+      };
       const workflow = { id: 'wf-1', name: 'release' };
       storySpies.invokeWorkflowsForSession.mockResolvedValueOnce([workflow]);
       store.setState({
@@ -465,7 +465,7 @@ describe('store contract', () => {
     it('unarchiveTask hides a mount whose folder is gone and clears its path', async () => {
       const store = useAppStore;
       const db = await import('@goodboy/db');
-      const archived: Session = { ...buildSession(), archivedAt: NOW } as Session;
+      const archived: Session = { ...buildSession(), archivedAt: NOW };
       vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
         {
           id: 'mount-gone',
@@ -512,7 +512,7 @@ describe('store contract', () => {
         activeMountId: 'mount-live' as MountId,
         activeProjectId: otherProjectId,
         archivedAt: NOW,
-      } as Session;
+      };
       vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
         {
           id: 'mount-live',
@@ -549,7 +549,7 @@ describe('store contract', () => {
     it('unarchiveTask carries the stored revision into the seeded project mount', async () => {
       const store = useAppStore;
       const db = await import('@goodboy/db');
-      const archived: Session = { ...buildSession(), archivedAt: NOW } as Session;
+      const archived: Session = { ...buildSession(), archivedAt: NOW };
       vi.mocked(db.listWorktreesForSession).mockResolvedValueOnce([
         {
           id: 'mount-live',
@@ -577,7 +577,7 @@ describe('store contract', () => {
 
     it('unarchiveTask restores the session and reports when the secondary refresh fails', async () => {
       const store = useAppStore;
-      const archived: Session = { ...buildSession(), archivedAt: NOW } as Session;
+      const archived: Session = { ...buildSession(), archivedAt: NOW };
       storySpies.invokeAgentList.mockRejectedValueOnce(new Error('agent list unavailable'));
       store.setState({
         workspaces: [buildWorkspace()],
@@ -640,7 +640,7 @@ describe('store contract', () => {
       const archived: Session = {
         ...buildSession(),
         archivedAt: NOW,
-      } as Session;
+      };
       store.setState({
         workspaces: [buildWorkspace()],
         currentWorkspaceId: WS_ID,
@@ -681,7 +681,7 @@ describe('store contract', () => {
         return {
           ...buildSession({ id, goal }),
           archivedAt: NOW,
-        } as Session;
+        };
       }
 
       it('bulkArchiveTask archives every selected active session', async () => {

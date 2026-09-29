@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, AgentId, IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { aSession, anAgent } from '@goodboy/types/testing';
 import { useAppStore } from '../../../../../store';
 import { useTurnRouting } from './useTurnRouting';
 
@@ -8,34 +9,30 @@ const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
 const SESSION_ID = 'ses-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;
 
-const makeSession = (overrides: Partial<Session> = {}): Session => ({
-  id: SESSION_ID,
-  workspaceId: 'ws-1' as WorkspaceId,
-  goal: 'g',
-  state: { kind: 'idle', lastActivityAt: NOW },
-  contextSlots: [],
-  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
-  permissionMode: 'default',
-  workflowRuns: [],
-  autoRun: false,
-  titleUserEdited: false,
-  createdAt: NOW,
-  updatedAt: NOW,
-  ...overrides,
-});
+const makeSession = (overrides: Partial<Session> = {}): Session =>
+  aSession({
+    id: SESSION_ID,
+    workspaceId: 'ws-1' as WorkspaceId,
+    goal: 'g',
+    state: { kind: 'idle', lastActivityAt: NOW },
+    providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+    permissionMode: 'default',
+    createdAt: NOW,
+    updatedAt: NOW,
+    ...overrides,
+  });
 
-const makeScoutRow = (overrides: Partial<Agent> = {}): Agent => ({
-  id: AGENT_ID,
-  sessionId: SESSION_ID,
-  ordinal: 0,
-  name: 'Scout',
-  status: 'pending',
-  kind: 'scout',
-  providerOverride: 'anthropic',
-  modelOverride: 'claude-haiku-4-5',
-  effort: 'low',
-  ...overrides,
-});
+const makeScoutRow = (overrides: Partial<Agent> = {}): Agent =>
+  anAgent({
+    id: AGENT_ID,
+    sessionId: SESSION_ID,
+    name: 'Scout',
+    kind: 'scout',
+    providerOverride: 'anthropic',
+    modelOverride: 'claude-haiku-4-5',
+    effort: 'low',
+    ...overrides,
+  });
 
 const selectScout = (overrides: Partial<Agent> = {}) => {
   useAppStore.setState({

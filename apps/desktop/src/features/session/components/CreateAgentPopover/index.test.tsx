@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { IsoDateTime, ProviderId, Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 
 type Store = {
   readonly spawnAgent: ReturnType<typeof vi.fn>;
@@ -25,21 +26,18 @@ type Store = {
 const NOW = '2026-07-27T00:00:00.000Z' as IsoDateTime;
 const SID = 'sess-1' as SessionId;
 
-const makeSession = (overrides: Partial<Session> = {}): Session => ({
-  id: SID,
-  workspaceId: 'workspace-1' as WorkspaceId,
-  goal: 'g',
-  state: { kind: 'idle', lastActivityAt: NOW },
-  contextSlots: [],
-  providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
-  permissionMode: 'default',
-  workflowRuns: [],
-  autoRun: false,
-  titleUserEdited: false,
-  createdAt: NOW,
-  updatedAt: NOW,
-  ...overrides,
-});
+const makeSession = (overrides: Partial<Session> = {}): Session =>
+  aSession({
+    id: SID,
+    workspaceId: 'workspace-1' as WorkspaceId,
+    goal: 'g',
+    state: { kind: 'idle', lastActivityAt: NOW },
+    providerPreference: { defaultProvider: 'anthropic', allowTurnOverride: true },
+    permissionMode: 'default',
+    createdAt: NOW,
+    updatedAt: NOW,
+    ...overrides,
+  });
 
 const h = vi.hoisted(() => ({
   spawnAgent: vi.fn(async () => 'a1'),

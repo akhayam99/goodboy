@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Session, SessionExternalTask, SessionId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 import type { JiraIssue } from '../client';
 import { buildIssueGroups, jiraBranchSlug, resolveIssueSessions } from './useJiraIssues';
 import { collectLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
@@ -14,7 +15,7 @@ const issue = (overrides: Partial<JiraIssue>): JiraIssue =>
     ...overrides,
   }) as JiraIssue;
 
-const session = (id: string): Session => ({ id: id as SessionId }) as Session;
+const session = (id: string): Session => aSession({ id: id as SessionId });
 
 describe('jiraBranchSlug', () => {
   it('lowercases the key and kebabs the summary', () => {
