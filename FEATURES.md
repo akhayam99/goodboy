@@ -267,7 +267,7 @@ Decide what happens to a merged branch, **Ask me**, **Delete on this Mac** or **
 
 ### Resolve
 
-Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Fix** on a comment (or **F**), pick the model and commit style in the strip that opens under the header, and each comment gets its own agent, working in its own copy of the branch, up to four at a time while the rest wait for a free slot. Each agent writes its fix as a commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment. Accepting puts the fix on your branch; if it collides with a fix you accepted before, the branch stays as it was and the comment says to redo it on top. A retry keeps the model, commit style and hint the comment started with.
+Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Fix** on a comment (or **F**), pick the model and commit style in the strip that opens under the header, and each comment gets its own agent (check several comments with the box that shows on hover, **X** or **Cmd+A**, then **Fix N separately** to start them together), working in its own copy of the branch, up to four at a time while the rest wait for a free slot. Each agent writes its fix as a commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment. Accepting puts the fix on your branch; if it collides with a fix you accepted before, the branch stays as it was and the comment says to redo it on top. A retry keeps the model, commit style and hint the comment started with.
 
 ### Comment states
 

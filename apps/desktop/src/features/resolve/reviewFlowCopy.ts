@@ -21,6 +21,7 @@ export const REVIEW_FLOW_LABEL = {
   previous: 'Previous comment',
   next: 'Next comment',
   noChangeCaptured: 'The agent changed no code for this comment.',
+  waitingForSlot: 'Waiting for a free slot',
   tooLarge: 'The change is too large to show here.',
 } as const;
 

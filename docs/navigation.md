@@ -1153,7 +1153,11 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   title, one quiet link to the pull request (`PR #528 ›`), one summary line
   (`9 open · 3 drafting · 2 ready to push · 4 done`, only the non-zero parts),
   and `…`; nothing else of the pull request. A comment nobody started shows
-  `Fix` on hover (and `F`), which opens the launch strip under the header.
+  `Fix` on hover (and `F`), which opens the launch strip under the header; a
+  checkbox on hover picks comments (`X` on the focused row, Cmd+A for every
+  comment nobody started, Esc clears) and the bar `N selected · Fix N
+separately` opens the same strip. Cmd+A is not in the shortcut table: the
+  system reserves it.
   "Resolve" names the area, never a button. Review exists with or without a
   pull request: without one it lists the session's notes under a
   `No pull request yet` line with `Open a pull request` (see Pull request

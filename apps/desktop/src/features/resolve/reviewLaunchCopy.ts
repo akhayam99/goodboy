@@ -1,5 +1,8 @@
 export const REVIEW_LAUNCH_LABEL = {
   fix: 'Fix',
+  selectRow: 'Select the comment by',
+  clearSelection: 'Clear',
+  selectionBar: 'Selected comments',
   strip: 'Fix launch',
   model: 'Model',
   commit: 'Commit',
@@ -37,3 +40,8 @@ export const startedLine = ({
   readonly count: number;
   readonly modelName: string;
 }): string => `${count} ${count === 1 ? 'agent' : 'agents'} started on ${modelName}`;
+
+export const selectedLabel = ({ count }: { readonly count: number }): string => `${count} selected`;
+
+export const fixSelectedLabel = ({ count }: { readonly count: number }): string =>
+  count === 1 ? 'Fix' : `Fix ${count} separately`;

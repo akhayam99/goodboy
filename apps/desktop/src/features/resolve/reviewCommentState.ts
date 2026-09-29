@@ -92,6 +92,9 @@ export const reviewCommentStateOf = ({
 export const isPushFailure = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   row.thread.stage === 'failed' && row.rowState.failedStep !== 'run';
 
+export const isWaitingForSlot = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
+  row.thread.stage === 'working' && row.attempt?.phase === 'queued' && row.attempt.batchId !== null;
+
 export const isResolveOnly = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
   (row.thread.replyDraft ?? '').trim() === '' && row.proposalKind !== 'fix';
 
@@ -109,7 +112,7 @@ export const reviewCommentWord = ({
     case 'new':
       return 'Not started';
     case 'drafting':
-      return 'Drafting';
+      return isWaitingForSlot({ row }) ? 'Waiting' : 'Drafting';
     case 'needs':
       return 'Needs you';
     case 'ready':

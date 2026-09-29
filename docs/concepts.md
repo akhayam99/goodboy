@@ -684,7 +684,10 @@ Each comment has four verbs, with single keys while the list has focus:
 draft is outdated, `Add a hint` when the run failed), `Reply` (R, a reply
 without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
 comment) until the push and `Fix` (F) on a comment nobody started, which opens
-the launch strip. J and K move. Edit, Answer and Reply share one text box: Enter sends,
+the launch strip. J and K move. A checkbox appears on hover on comments nobody
+started (X toggles the focused row, Cmd+A picks every one of them, Esc clears):
+the bar `3 selected · Fix 3 separately` opens the strip for the pick, and a
+batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box: Enter sends,
 Shift+Enter adds a line, Esc cancels. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the

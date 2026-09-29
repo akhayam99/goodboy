@@ -404,6 +404,64 @@ const ITEM_RETRY_CONSTANT = buildItem({
   createdMinutesAgo: 12,
 });
 
+const EXTRA_NEW: ReadonlyArray<{
+  readonly threadId: string;
+  readonly author: string;
+  readonly path: string;
+  readonly line: number;
+  readonly minutesAgo: number;
+  readonly body: string;
+}> = [
+  {
+    threadId: 'PRRT_thread_jitter',
+    author: 'omar-t',
+    path: 'src/webhooks/retryPolicy.ts',
+    line: 31,
+    minutesAgo: 30,
+    body: 'Add jitter so retried deliveries from many tenants do not line up.',
+  },
+  {
+    threadId: 'PRRT_thread_log_delivery_id',
+    author: 'nadia-p',
+    path: 'src/webhooks/logging.ts',
+    line: 44,
+    minutesAgo: 45,
+    body: 'Log the delivery id, not the whole body.',
+  },
+  {
+    threadId: 'PRRT_thread_response_time',
+    author: 'kenji-w',
+    path: 'src/webhooks/metrics.ts',
+    line: 4,
+    minutesAgo: 60,
+    body: 'Should we also record the response time of each attempt?',
+  },
+];
+
+const EXTRA_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = EXTRA_NEW.map((extra) => ({
+  item: buildItem({
+    id: `mock-resolve-item-${extra.threadId}`,
+    threadId: extra.threadId,
+    approvalState: 'none',
+    approvedRevision: null,
+    deferredAt: null,
+    deliveredAt: null,
+    candidateRevision: 1,
+    createdMinutesAgo: extra.minutesAgo,
+  }),
+  thread: buildThread({
+    threadId: extra.threadId,
+    state: 'open',
+    stage: 'new',
+    revision: 1,
+    activeAttemptId: null,
+    disposition: null,
+    replyDraft: null,
+    question: null,
+    createdMinutesAgo: extra.minutesAgo,
+  }),
+}));
+
 const QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [
   { item: ITEM_RETRY_BACKOFF, thread: THREAD_RETRY_BACKOFF },
   { item: ITEM_RETRY_METRICS, thread: THREAD_RETRY_METRICS },
@@ -514,6 +572,17 @@ const COMMENTS: ReadonlyArray<PrComment> = [
     body: 'MAX_RETRY_ATTEMPTS now lives here and in config.ts. Can config own it so the two never drift?',
   }),
 ];
+
+const EXTRA_COMMENTS: ReadonlyArray<PrComment> = EXTRA_NEW.map((extra) =>
+  buildNote({
+    threadId: extra.threadId,
+    author: extra.author,
+    path: extra.path,
+    line: extra.line,
+    createdMinutesAgo: extra.minutesAgo,
+    body: extra.body,
+  }),
+);
 
 const MOUNT_TARGET: MountTargetSnapshot = {
   mountId: 'mock-resolve-mount-payments-api' as MountId,
@@ -729,6 +798,7 @@ export type ResolveFailure = 'run' | 'history';
 type SeedParams = {
   readonly expandedThreadId: string | null;
   readonly failure?: ResolveFailure;
+  readonly selectable?: boolean;
 };
 
 const CONNECTED_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
@@ -862,7 +932,11 @@ const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
   };
 };
 
-export const seedResolveScene = ({ expandedThreadId, failure }: SeedParams): void => {
+export const seedResolveScene = ({
+  expandedThreadId,
+  failure,
+  selectable = false,
+}: SeedParams): void => {
   installResolveMockIpc();
   const failed = failure === undefined ? null : failureSeed({ failure });
 
@@ -876,7 +950,10 @@ export const seedResolveScene = ({ expandedThreadId, failure }: SeedParams): voi
     projects: [],
     sessions: [SESSION],
     currentSessionId: SESSION_ID,
-    sessionResolveQueueItems: { [SESSION_ID]: failed?.queue ?? QUEUE_ITEMS },
+    sessionResolveQueueItems: {
+      [SESSION_ID]:
+        failed?.queue ?? (selectable ? [...QUEUE_ITEMS, ...EXTRA_QUEUE_ITEMS] : QUEUE_ITEMS),
+    },
     sessionResolveAttempts: {
       [SESSION_ID]: failed?.attempts ?? [ATTEMPT_RETRY, ATTEMPT_IDEMPOTENCY],
     },
@@ -903,7 +980,7 @@ export const seedResolveScene = ({ expandedThreadId, failure }: SeedParams): voi
         pr: PR,
         detail: {
           prNumber: PR.number,
-          comments: COMMENTS,
+          comments: selectable ? [...COMMENTS, ...EXTRA_COMMENTS] : COMMENTS,
           reviews: [],
           reviewRequests: [],
           checks: [],

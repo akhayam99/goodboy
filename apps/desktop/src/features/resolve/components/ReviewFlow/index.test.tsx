@@ -56,8 +56,14 @@ const settle = async (): Promise<void> => {
   });
 };
 
-const mount = async ({ threadId }: { readonly threadId: string | null }): Promise<void> => {
-  seedResolveScene({ expandedThreadId: threadId });
+const mount = async ({
+  threadId,
+  selectable = false,
+}: {
+  readonly threadId: string | null;
+  readonly selectable?: boolean;
+}): Promise<void> => {
+  seedResolveScene({ expandedThreadId: threadId, selectable });
   render(
     <ToastProvider>
       <ReviewFlow session={SESSION} />
@@ -233,6 +239,101 @@ describe('Review as one flow', () => {
     expect(fixRows).not.toContain(EXPANDED_THREAD_ID);
     expect(fixRows).not.toContain(FAILED_THREAD_ID);
     expect(screen.queryByRole('button', { name: /^Draft (a fix|fixes)/ })).toBeNull();
+  });
+
+  it('checks a not started row from its checkbox and shows the selection bar', async () => {
+    await mount({ threadId: null, selectable: true });
+
+    expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
+    const boxes = within(list()).getAllByRole('checkbox');
+    const fixable = Array.from(list().querySelectorAll('[data-fix-row]')).length;
+    expect(boxes.length).toBe(fixable);
+    fireEvent.click(boxes[0] as HTMLElement);
+
+    const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
+    expect(within(bar).getByText('1 selected')).toBeDefined();
+    expect(list().querySelectorAll('[data-fix-row]').length).toBe(0);
+    fireEvent.click(within(bar).getByRole('button', { name: 'Clear' }));
+    expect(screen.queryByRole('toolbar', { name: 'Selected comments' })).toBeNull();
+  });
+
+  it('toggles the focused row with X and selects every not started comment with Cmd+A', async () => {
+    await mount({ threadId: NOT_STARTED_THREAD_ID, selectable: true });
+
+    row(/config\.ts/).focus();
+    press('x', 'KeyX');
+    expect(useAppStore.getState().reviewSelection[SESSION.id]).toEqual([NOT_STARTED_THREAD_ID]);
+    press('x', 'KeyX');
+    expect(useAppStore.getState().reviewSelection[SESSION.id]).toEqual([]);
+
+    press('a', 'KeyA', { ctrlKey: true });
+    const all = useAppStore.getState().reviewSelection[SESSION.id] ?? [];
+    expect(all.length).toBeGreaterThan(1);
+    expect(all).toContain(NOT_STARTED_THREAD_ID);
+    expect(all).not.toContain(EXPANDED_THREAD_ID);
+    expect(
+      within(screen.getByRole('toolbar', { name: 'Selected comments' })).getByText(
+        `${all.length} selected`,
+      ),
+    ).toBeDefined();
+  });
+
+  it('starts one agent per selected comment in one batch from the strip', async () => {
+    const spawnAgent = vi.fn(async () => 'agent-1');
+    const createResolveBatch = vi.fn(async () => ({ id: 'batch-1' }));
+    stub({
+      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
+      createResolveBatch: createResolveBatch as unknown as StoreState['createResolveBatch'],
+    });
+    await mount({ threadId: null, selectable: true });
+
+    row(/config\.ts/).focus();
+    press('a', 'KeyA', { ctrlKey: true });
+    const selected = [...(useAppStore.getState().reviewSelection[SESSION.id] ?? [])];
+    const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
+    fireEvent.click(within(bar).getByRole('button', { name: /^Fix \d+ separately/ }));
+
+    const strip = await screen.findByRole('region', { name: 'Fix launch' });
+    expect(
+      within(strip).getByText(`Fix ${selected.length} comments, one agent each`),
+    ).toBeDefined();
+    expect(within(strip).getByText(/up to 4 run at once/)).toBeDefined();
+    fireEvent.click(within(strip).getByRole('button', { name: /^Start \d+ agents/ }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledTimes(selected.length));
+    expect(createResolveBatch).toHaveBeenCalledOnce();
+    const [call] = createResolveBatch.mock.calls[0] as unknown as [
+      { threadIds: ReadonlyArray<string> },
+    ];
+    expect([...call.threadIds].sort()).toEqual([...selected].sort());
+    await waitFor(() =>
+      expect(useAppStore.getState().reviewSelection[SESSION.id] ?? []).toEqual([]),
+    );
+  });
+
+  it('says a queued batch comment is waiting for a free slot', async () => {
+    seedResolveScene({ expandedThreadId: 'PRRT_thread_idempotency' });
+    const state = useAppStore.getState();
+    const attempts = state.sessionResolveAttempts[SESSION.id] ?? [];
+    stub({
+      sessionResolveAttempts: {
+        ...state.sessionResolveAttempts,
+        [SESSION.id]: attempts.map((attempt) =>
+          attempt.threadIds.includes('PRRT_thread_idempotency')
+            ? { ...attempt, phase: 'queued' as const, batchId: 'batch-1' }
+            : attempt,
+        ),
+      },
+    });
+    render(
+      <ToastProvider>
+        <ReviewFlow session={SESSION} />
+      </ToastProvider>,
+    );
+    await settle();
+
+    expect(row(/idempotency\.ts/).textContent).toContain('Waiting');
+    expect(within(comment()).getByText('Waiting for a free slot')).toBeDefined();
   });
 
   it('accepts with A: marks it, publishes nothing, and moves to the next open comment', async () => {

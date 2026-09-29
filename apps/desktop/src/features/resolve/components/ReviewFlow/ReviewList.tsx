@@ -9,9 +9,18 @@ type Props = {
   readonly focusedThreadId: string | null;
   readonly onSelect: (threadId: string) => void;
   readonly onFix: (threadId: string) => void;
+  readonly checked: ReadonlySet<string>;
+  readonly onToggle: (threadId: string) => void;
 };
 
-export const ReviewList = ({ groups, focusedThreadId, onSelect, onFix }: Props) => (
+export const ReviewList = ({
+  groups,
+  focusedThreadId,
+  onSelect,
+  onFix,
+  checked,
+  onToggle,
+}: Props) => (
   <nav aria-label={REVIEW_FLOW_LABEL.list} className="flex min-w-0 flex-col gap-5">
     {groups.map((group) => (
       <section
@@ -30,7 +39,18 @@ export const ReviewList = ({ groups, focusedThreadId, onSelect, onFix }: Props) 
                 entry={entry}
                 isSelected={entry.threadId === focusedThreadId}
                 onSelect={() => onSelect(entry.threadId)}
-                onFix={entry.state === 'new' ? () => onFix(entry.threadId) : null}
+                onFix={
+                  entry.state === 'new' && checked.size === 0 ? () => onFix(entry.threadId) : null
+                }
+                selection={
+                  entry.state === 'new'
+                    ? {
+                        isChecked: checked.has(entry.threadId),
+                        isSelecting: checked.size > 0,
+                        onToggle: () => onToggle(entry.threadId),
+                      }
+                    : null
+                }
               />
             </li>
           ))}

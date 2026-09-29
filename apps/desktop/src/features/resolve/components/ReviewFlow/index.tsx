@@ -52,6 +52,7 @@ import { PushBanner } from './PushBanner';
 import { ReviewLaunchStrip } from './ReviewLaunchStrip';
 import { ReviewList } from './ReviewList';
 import { ReviewListMenu } from './ReviewListMenu';
+import { ReviewSelectionBar } from './ReviewSelectionBar';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { useReviewPush } from './useReviewPush';
 import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
@@ -127,6 +128,19 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     [filter, groups],
   );
   const shownEntries = useMemo(() => shownGroups.flatMap((group) => group.entries), [shownGroups]);
+  const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
+  const setReviewSelection = useAppStore((s) => s.setReviewSelection);
+  const toggleReviewSelection = useAppStore((s) => s.toggleReviewSelection);
+  const clearReviewSelection = useAppStore((s) => s.clearReviewSelection);
+  const fixableIds = useMemo(
+    () => new Set(entries.filter((entry) => entry.state === 'new').map((entry) => entry.threadId)),
+    [entries],
+  );
+  const selectedIds = useMemo(
+    () => (storedSelection ?? []).filter((threadId) => fixableIds.has(threadId)),
+    [fixableIds, storedSelection],
+  );
+  const checked = useMemo(() => new Set(selectedIds), [selectedIds]);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const selectedThreadId = useAppStore((s) =>
     s.drawer?.kind === 'conversation' && s.drawer.sessionId === sessionId
@@ -288,9 +302,10 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const onLaunchStarted = useCallback(
     ({ count, model }: StartedNote): void => {
       setStarted({ count, model: modelLabel(model) });
+      clearReviewSelection({ sessionId });
       closeLaunch();
     },
-    [closeLaunch],
+    [clearReviewSelection, closeLaunch, sessionId],
   );
 
   const retryDelivery = useCallback((): void => {
@@ -447,7 +462,39 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       step(-1);
       return;
     }
+    if (
+      (native.metaKey || native.ctrlKey) &&
+      !native.altKey &&
+      !native.shiftKey &&
+      native.code === 'KeyA'
+    ) {
+      event.preventDefault();
+      setReviewSelection({
+        sessionId,
+        threadIds: shownEntries
+          .filter((entry) => fixableIds.has(entry.threadId))
+          .map((entry) => entry.threadId),
+      });
+      return;
+    }
+    if (native.key === 'Escape' && selectedIds.length > 0) {
+      event.preventDefault();
+      clearReviewSelection({ sessionId });
+      return;
+    }
     if (focusedThreadId === null) {
+      return;
+    }
+    if (eventMatches({ event: native, entry: SHORTCUTS['review.select'] })) {
+      event.preventDefault();
+      if (fixableIds.has(focusedThreadId)) {
+        toggleReviewSelection({ sessionId, threadId: focusedThreadId });
+      }
+      return;
+    }
+    if (eventMatches({ event: native, entry: SHORTCUTS['review.fix'] }) && selectedIds.length > 0) {
+      event.preventDefault();
+      openLaunch(selectedIds);
       return;
     }
     const available =
@@ -525,7 +572,15 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     return (
       <div className="flex min-h-0 min-w-0 flex-1 gap-8">
         <div className="hidden min-h-0 w-[300px] shrink-0 flex-col @4xl:flex">
-          <ReviewListMenu filter={filter} onFilter={setFilter} />
+          {selectedIds.length > 0 ? (
+            <ReviewSelectionBar
+              count={selectedIds.length}
+              onClear={() => clearReviewSelection({ sessionId })}
+              onFix={() => openLaunch(selectedIds)}
+            />
+          ) : (
+            <ReviewListMenu filter={filter} onFilter={setFilter} />
+          )}
           <ScrollFade className="min-h-0 flex-1" viewportClassName="pb-5 pr-2" fadeSize="h-6">
             <div ref={listRef}>
               <ReviewList
@@ -533,6 +588,8 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
                 focusedThreadId={focusedThreadId}
                 onSelect={select}
                 onFix={(threadId) => openLaunch([threadId])}
+                checked={checked}
+                onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
               />
               {shownGroups.length === 0 && (
                 <p className="px-2.5 py-2 text-secondary text-muted-foreground">

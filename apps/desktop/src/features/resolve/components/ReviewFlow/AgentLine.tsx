@@ -28,9 +28,13 @@ const lastLineOf = ({ text }: { readonly text: string }): string =>
 export const AgentLine = ({ attempt, state, word, attemptNumber = null }: Props) => {
   const transcript = useTranscript(attempt.agentId);
   const isDrafting = state === 'drafting';
+  const isWaiting = isDrafting && attempt.phase === 'queued' && attempt.batchId !== null;
   const live = useMemo(() => {
     if (!isDrafting) {
       return '';
+    }
+    if (isWaiting) {
+      return REVIEW_FLOW_LABEL.waitingForSlot;
     }
     const items = reduceTranscript(transcript);
     for (let index = items.length - 1; index >= 0; index -= 1) {
@@ -40,7 +44,7 @@ export const AgentLine = ({ attempt, state, word, attemptNumber = null }: Props)
       }
     }
     return '';
-  }, [isDrafting, transcript]);
+  }, [isDrafting, isWaiting, transcript]);
   const at = attempt.endedAt ?? attempt.startedAt ?? attempt.createdAt;
   const hasNumber = attemptNumber !== null;
   const duration =

@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { WorkNode, cn, inlineMarkdownText } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
@@ -6,17 +7,24 @@ import { firstSentence } from './firstSentence';
 import { STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
+export type RowSelection = {
+  readonly isChecked: boolean;
+  readonly isSelecting: boolean;
+  readonly onToggle: () => void;
+};
+
 type Props = {
   readonly entry: ReviewEntry;
   readonly isSelected: boolean;
   readonly onSelect: () => void;
   readonly onFix: (() => void) | null;
+  readonly selection: RowSelection | null;
 };
 
 const fileOf = ({ path }: { readonly path: string | null }): string | null =>
   path === null ? null : (path.split('/').at(-1) ?? path);
 
-export const ReviewListRow = ({ entry, isSelected, onSelect, onFix }: Props) => {
+export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }: Props) => {
   const note = entry.row.reviewerNote;
   const body = note === null ? null : inlineMarkdownText({ text: note.body });
   const title = body === null ? RESOLVE_COMMENT_UNAVAILABLE : firstSentence({ text: body });
@@ -35,7 +43,15 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix }: Props) => 
           isSelected ? 'bg-selected' : 'hover:bg-hover',
         )}
       >
-        <span className="flex h-5 shrink-0 items-center">
+        <span
+          className={cn(
+            'flex h-5 shrink-0 items-center motion-safe:transition-opacity',
+            selection !== null &&
+              (selection.isChecked || selection.isSelecting
+                ? 'opacity-0'
+                : 'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0'),
+          )}
+        >
           <WorkNode
             state={REVIEW_COMMENT_NODE[entry.state]}
             label={entry.word}
@@ -67,6 +83,34 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix }: Props) => 
           </span>
         </span>
       </button>
+      {selection !== null && (
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={selection.isChecked}
+          aria-label={`${REVIEW_LAUNCH_LABEL.selectRow} ${note?.author ?? ''}`.trim()}
+          data-select-row={entry.threadId}
+          onClick={selection.onToggle}
+          className={cn(
+            'absolute left-2.5 top-2 flex size-5 items-center justify-center rounded-md',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+            selection.isChecked || selection.isSelecting
+              ? 'opacity-100'
+              : 'opacity-0 group-focus-within/review-row:opacity-100 group-hover/review-row:opacity-100',
+          )}
+        >
+          <span
+            className={cn(
+              'flex size-4 items-center justify-center rounded-md border motion-safe:transition-colors',
+              selection.isChecked
+                ? 'border-primary bg-primary text-on-tone'
+                : 'border-border bg-background hover:border-foreground',
+            )}
+          >
+            {selection.isChecked && <Check size={11} strokeWidth={3} aria-hidden />}
+          </span>
+        </button>
+      )}
       {onFix !== null && (
         <button
           type="button"
