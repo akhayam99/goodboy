@@ -49,7 +49,9 @@ vi.mock('./AgentHeaderStatus', () => ({
     <span>{status === 'running' ? 'Running' : status}</span>
   ),
 }));
-vi.mock('../AgentHeaderActions', () => ({ AgentHeaderActions: () => null }));
+vi.mock('../AgentHeaderActions', () => ({
+  AgentHeaderActions: () => <button type="button">More agent actions</button>,
+}));
 vi.mock('./AgentNextAction', () => ({
   AgentNextAction: () => <div>Next action strip</div>,
 }));
@@ -130,7 +132,7 @@ describe('AgentDetailPane', () => {
     expect(title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('puts the role chip on the title line and the routing detail on its own line below', () => {
+  it('puts role, status, time and model on one meta line under the title', () => {
     render(
       <AgentDetailPane
         session={session}
@@ -140,16 +142,30 @@ describe('AgentDetailPane', () => {
       />,
     );
 
-    const role = screen.getByText('Implementer');
-    const status = screen.getByText('Running');
-    const header = screen.getByText('Model not chosen yet').closest('[data-slot="pane-header"]');
+    const meta = screen.getByTestId('agent-header-meta');
+    const title = screen.getByRole('heading', { level: 1 });
 
-    expect(role.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(
-      status.compareDocumentPosition(screen.getByText('Model not chosen yet')) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(header).not.toBeNull();
+    expect(within(meta).getByText('Implementer')).toBeDefined();
+    expect(within(meta).getByText('Running')).toBeDefined();
+    expect(within(meta).getByText('Model not chosen yet')).toBeDefined();
+    expect(title.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps Brief and Transcript on the title row, before the actions', () => {
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => undefined}
+      />,
+    );
+
+    const row = screen.getByTestId('agent-header-title-row');
+    const tabs = within(row).getByRole('tablist', { name: 'Agent sections' });
+    const more = within(row).getByRole('button', { name: 'More agent actions' });
+
+    expect(tabs.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('opens on the transcript while the agent is running', () => {

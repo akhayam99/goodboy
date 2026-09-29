@@ -19,6 +19,7 @@ import {
 } from '../../../store/storyHarness';
 import {
   AGENT,
+  FIXTURE_NOW,
   SESSION,
   agentFixture,
   mountFixture,
@@ -119,7 +120,7 @@ describe('AgentHeaderActions', () => {
           [agent.id]: {
             kind: 'running',
             runId: 'run-1' as never,
-            startedAt: '2026-05-01T10:00:00Z',
+            startedAt: FIXTURE_NOW,
           },
         },
       },
