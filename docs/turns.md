@@ -568,9 +568,18 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   trace. Codex reads through shell commands, so for Codex the trace takes the
   file arguments of `cat`, `nl`, `head`, `tail`, `sed -n`, `rg` or `grep` with
   a file, and `ls` of a file (`chatReadPath.ts`).
-- **Storage.** `chats` and `chat_messages` (m212). A chat stores its model as a
-  catalog key. Idle is derived: a chat with no activity for seven days moves
-  to the idle group, and only the user archives it.
+- **Storage.** `chats`, `chat_messages` (m212) and `chat_session_links` (m213). A
+  chat stores its model as a catalog key and, once the user sets one, an
+  `effort` that the next turn uses instead of the effort the key implies.
+  Every assistant message records the `provider`, `model` and `effort` that
+  produced it (m213 backfills older answers with the chat's model), and
+  `ChatSummary.modelsUsed` lists the distinct provider and model pairs of a
+  chat's answers, oldest first. `chat_session_links` saves each Start work or
+  Add to a session (`new` or `add`, the chat, the session and the message it
+  started from). Deleting a chat deletes its messages and links, never its
+  sessions; deleting a session deletes its links. Idle is derived: a chat with
+  no activity for seven days moves to the idle group, and only the user
+  archives it.
 - **Activity in the top bar.** `chatStreams` says which chats are answering.
   `useChatActivity` turns it into a running count and an unread flag for the
   Chat button in the top bar: a pulsing info dot (the tone of the running
