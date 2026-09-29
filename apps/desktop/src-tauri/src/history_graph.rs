@@ -112,7 +112,7 @@ pub(crate) fn history_graph_of(
         resolve_base(cwd, configured).ok_or_else(|| WorktreeError::Git {
             message: format!(
                 "Couldn't find where this branch left {}",
-                configured.unwrap_or("main")
+                configured.unwrap_or("its base")
             ),
         })?;
     let main_head = git(cwd, &["rev-parse", &base_ref])?.trim().to_string();
@@ -197,6 +197,35 @@ mod tests {
         git_ok(&root, &["config", "user.name", "Lena Arkwright"]);
         git_ok(&root, &["config", "commit.gpgsign", "false"]);
         root
+    }
+
+    #[test]
+    fn the_graph_of_a_develop_repo_finds_develop_without_a_configured_base() {
+        let root = repo("develop");
+        git_ok(&root, &["branch", "-m", "main", "develop"]);
+        let fork = commit(&root, "ledger.ts", "one\n", "Release 2.14");
+        let work = root.join("wt-export");
+        git_ok(
+            &root,
+            &[
+                "worktree",
+                "add",
+                "-q",
+                "-b",
+                "hl/ledger-export",
+                work.to_str().unwrap(),
+                "develop",
+            ],
+        );
+        commit(&work, "export.ts", "export\n", "Add ledger export endpoint");
+        commit(&root, "keys.ts", "keys\n", "Rotate Acme sandbox keys");
+
+        let graph = history_graph_of(&work, "", "hl/ledger-export").unwrap();
+
+        assert_eq!(graph.base_ref, "develop");
+        assert_eq!(graph.merge_base.sha, fork);
+        assert_eq!(graph.behind, 1);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

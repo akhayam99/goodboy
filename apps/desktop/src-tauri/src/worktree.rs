@@ -769,7 +769,7 @@ fn worktree_create_blocking(args: CreateArgs) -> Result<CreatedWorktree, Worktre
             .filter(|s| !s.is_empty());
         let detected_base = configured_base
             .map(str::to_string)
-            .or_else(|| resolve_origin_head(&repo_path));
+            .or_else(|| default_base_name(&repo_path));
         let fetch_failure = detected_base
             .as_deref()
             .and_then(|base| try_fetch_origin(&repo_path, base));
@@ -1418,16 +1418,9 @@ fn commit_ref_exists(cwd: &Path, reference: &str) -> bool {
 }
 
 fn default_base_ref(cwd: &Path) -> Option<String> {
-    let raw = git(
-        cwd,
-        &["symbolic-ref", "--quiet", "refs/remotes/origin/HEAD"],
-    )
-    .ok()?;
-    let trimmed = raw.trim();
-    match trimmed.is_empty() {
-        true => None,
-        false => Some(trimmed.to_string()),
-    }
+    base_candidates(cwd, None)
+        .into_iter()
+        .find(|candidate| commit_ref_exists(cwd, candidate))
 }
 
 pub(crate) fn resolve_base_ref(cwd: &Path, base_branch: Option<&str>) -> Option<String> {
@@ -3290,19 +3283,69 @@ fn resolve_origin_head(cwd: &Path) -> Option<String> {
         .filter(|branch| !branch.is_empty())
 }
 
+const KNOWN_DEFAULT_BRANCHES: [&str; 3] = ["main", "master", "develop"];
+
+fn main_checkout_branch(cwd: &Path, allow_own: bool) -> Option<String> {
+    let listing = git(cwd, &["worktree", "list", "--porcelain"]).ok()?;
+    let checkout = parse_porcelain(&listing)
+        .into_iter()
+        .find(|entry| entry.is_main)?
+        .branch?;
+    let own = git(cwd, &["symbolic-ref", "--quiet", "--short", "HEAD"])
+        .ok()
+        .map(|found| found.trim().to_string());
+    match !allow_own && own.as_deref() == Some(checkout.as_str()) {
+        true => None,
+        false => Some(checkout),
+    }
+}
+
+fn default_base_name(cwd: &Path) -> Option<String> {
+    if let Some(head) = resolve_origin_head(cwd) {
+        return Some(head);
+    }
+    base_candidates_with(cwd, None, true)
+        .into_iter()
+        .find(|candidate| commit_ref_exists(cwd, candidate))
+        .map(|candidate| {
+            candidate
+                .strip_prefix("origin/")
+                .map(str::to_string)
+                .unwrap_or(candidate)
+        })
+}
+
 fn base_candidates(cwd: &Path, configured_base: Option<&str>) -> Vec<String> {
+    base_candidates_with(cwd, configured_base, false)
+}
+
+fn base_candidates_with(
+    cwd: &Path,
+    configured_base: Option<&str>,
+    allow_own_checkout: bool,
+) -> Vec<String> {
     if let Some(base) = configured_base {
         return vec![format!("origin/{base}"), base.to_string()];
     }
     let mut candidates = Vec::new();
-    if let Some(base) = resolve_origin_head(cwd) {
-        candidates.push(format!("origin/{base}"));
-        candidates.push(base);
-    }
-    for fallback in ["origin/main", "origin/master", "main", "master"] {
-        if candidates.iter().all(|candidate| candidate != fallback) {
-            candidates.push(fallback.to_string());
+    let mut add = |candidate: String| {
+        if candidates.iter().all(|existing| existing != &candidate) {
+            candidates.push(candidate);
         }
+    };
+    if let Some(base) = resolve_origin_head(cwd) {
+        add(format!("origin/{base}"));
+        add(base);
+    }
+    for name in KNOWN_DEFAULT_BRANCHES {
+        add(format!("origin/{name}"));
+    }
+    for name in KNOWN_DEFAULT_BRANCHES {
+        add(name.to_string());
+    }
+    if let Some(base) = main_checkout_branch(cwd, allow_own_checkout) {
+        add(format!("origin/{base}"));
+        add(base);
     }
     candidates
 }
@@ -3517,7 +3560,7 @@ fn resolve_origin_base(
     repo_path: &Path,
     configured_base: Option<&str>,
 ) -> Result<String, WorktreeError> {
-    let candidates = base_candidates(repo_path, configured_base);
+    let candidates = base_candidates_with(repo_path, configured_base, true);
     for cand in &candidates {
         if git(repo_path, &["rev-parse", "--verify", "--quiet", cand]).is_ok() {
             return Ok(cand.clone());
@@ -5113,11 +5156,220 @@ mod rewrite_tests {
         let root = init_repo("merge-state-unknown-base");
         commit(&root, "a.txt", "hello", "init");
         git_ok(&root, &["branch", "goodboy/orphan"]);
+        git_ok(&root, &["branch", "-m", "main", "trunk"]);
 
         let state = super::branch_merge_state(&root, "goodboy/orphan", None, None);
 
         assert_eq!(state, super::BranchMergeState::Unknown);
         std::fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod default_base_tests {
+    use super::{
+        worktree_changed_files_blocking, worktree_create_blocking, worktree_diff_blocking,
+        worktree_status_blocking, BranchIntegration, CreateArgs, GitDistance,
+    };
+    use std::path::{Path, PathBuf};
+
+    fn git_ok(cwd: &Path, args: &[&str]) -> String {
+        super::git(cwd, args)
+            .unwrap_or_else(|err| panic!("git {} failed: {err}", args.join(" ")))
+            .trim()
+            .to_string()
+    }
+
+    fn repo_on(name: &str, branch: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "goodboy-default-base-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let root = std::fs::canonicalize(root).unwrap();
+        git_ok(&root, &["init", "-b", branch]);
+        git_ok(&root, &["config", "user.email", "test@example.com"]);
+        git_ok(&root, &["config", "user.name", "test"]);
+        git_ok(&root, &["config", "commit.gpgsign", "false"]);
+        commit(&root, "base.txt", "base\n", "base");
+        root
+    }
+
+    fn commit(root: &Path, file: &str, body: &str, message: &str) -> String {
+        std::fs::write(root.join(file), body).unwrap();
+        git_ok(root, &["add", file]);
+        git_ok(root, &["commit", "-m", message]);
+        git_ok(root, &["rev-parse", "HEAD"])
+    }
+
+    fn mount(root: &Path, slug: &str) -> PathBuf {
+        let parent = root.join(".goodboy").join("worktrees");
+        let created = worktree_create_blocking(CreateArgs {
+            repo_path: root.to_string_lossy().into_owned(),
+            branch_prefix: "goodboy".to_string(),
+            slug: slug.to_string(),
+            parent_dir: Some(parent.to_string_lossy().into_owned()),
+            existing_branch: None,
+            fallback_ref: None,
+            base_branch: None,
+            dir_name: Some(slug.to_string()),
+        })
+        .unwrap();
+        let path = PathBuf::from(created.worktree_path);
+        git_ok(&path, &["config", "user.email", "test@example.com"]);
+        git_ok(&path, &["config", "user.name", "test"]);
+        path
+    }
+
+    fn cleanup(root: PathBuf) {
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn a_new_mount_is_cut_from_the_develop_branch_of_a_develop_repo() {
+        let root = repo_on("create", "develop");
+        let tip = commit(&root, "tip.txt", "tip\n", "tip");
+
+        let path = mount(&root, "dev-create");
+
+        assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), tip);
+        cleanup(root);
+    }
+
+    #[test]
+    fn a_new_mount_is_cut_from_a_custom_default_branch_when_no_remote_names_one() {
+        let root = repo_on("create-release", "release");
+        let tip = commit(&root, "tip.txt", "tip\n", "tip");
+
+        let path = mount(&root, "rel-create");
+
+        assert_eq!(git_ok(&path, &["rev-parse", "HEAD"]), tip);
+        cleanup(root);
+    }
+
+    #[test]
+    fn the_base_of_a_develop_repo_resolves_to_develop_for_diff_and_status() {
+        let root = repo_on("resolve", "develop");
+        let fork = git_ok(&root, &["rev-parse", "HEAD"]);
+        let path = mount(&root, "dev-resolve");
+        commit(&path, "feature.txt", "a\nb\n", "feature");
+
+        let (base_ref, merge_base) = super::resolve_base(&path, None).expect("develop resolves");
+        let status = worktree_status_blocking(path.to_string_lossy().into_owned(), None).unwrap();
+        let diff = worktree_diff_blocking(path.to_string_lossy().into_owned(), None).unwrap();
+        let changed =
+            worktree_changed_files_blocking(path.to_string_lossy().into_owned(), None).unwrap();
+
+        assert_eq!((base_ref, merge_base), ("develop".to_string(), fork));
+        assert_eq!(
+            status.main_distance,
+            GitDistance::Known {
+                ahead: 1,
+                behind: 0
+            }
+        );
+        assert!(diff.contains("feature.txt"));
+        assert_eq!(changed.additions, 2);
+        cleanup(root);
+    }
+
+    #[test]
+    fn a_custom_default_branch_resolves_through_the_main_checkout_of_a_linked_mount() {
+        let root = repo_on("resolve-release", "release");
+        let path = mount(&root, "rel-resolve");
+        commit(&path, "feature.txt", "a\n", "feature");
+
+        let (base_ref, _) = super::resolve_base(&path, None).expect("release resolves");
+
+        assert_eq!(base_ref, "release");
+        cleanup(root);
+    }
+
+    #[test]
+    fn the_merge_check_of_a_develop_repo_uses_develop() {
+        let root = repo_on("integration", "develop");
+        let path = mount(&root, "dev-integration");
+        let branch = git_ok(&path, &["rev-parse", "--abbrev-ref", "HEAD"]);
+        commit(&path, "feature.txt", "a\n", "feature");
+
+        assert_eq!(
+            super::resolve_base_ref(&path, None).as_deref(),
+            Some("develop")
+        );
+        assert_eq!(
+            super::branch_integration(&path, None, true),
+            BranchIntegration::Unmerged {
+                base: "develop".to_string(),
+                ahead: 1
+            }
+        );
+
+        git_ok(&root, &["merge", "--ff-only", &branch]);
+
+        assert_eq!(
+            super::branch_integration(&path, None, true),
+            BranchIntegration::Merged {
+                base: "develop".to_string()
+            }
+        );
+        cleanup(root);
+    }
+
+    #[test]
+    fn a_develop_repo_without_origin_head_prefers_the_remote_develop() {
+        let root = repo_on("origin-develop", "develop");
+        let remote = root.join("remote.git");
+        git_ok(&root, &["init", "--bare", remote.to_str().unwrap()]);
+        git_ok(
+            &root,
+            &["remote", "add", "origin", remote.to_str().unwrap()],
+        );
+        git_ok(&root, &["push", "-u", "origin", "develop"]);
+        git_ok(&root, &["checkout", "-b", "scratch"]);
+        let path = mount(&root, "dev-origin");
+        commit(&path, "feature.txt", "a\n", "feature");
+
+        assert!(super::git(&root, &["symbolic-ref", "refs/remotes/origin/HEAD"]).is_err());
+        assert_eq!(
+            super::resolve_base_ref(&path, None).as_deref(),
+            Some("origin/develop")
+        );
+        assert_eq!(
+            super::resolve_base(&path, None).map(|(base_ref, _)| base_ref),
+            Some("origin/develop".to_string())
+        );
+        cleanup(root);
+    }
+
+    #[test]
+    fn main_still_wins_over_develop_when_both_exist_and_no_remote_names_a_default() {
+        let root = repo_on("both", "main");
+        git_ok(&root, &["checkout", "-b", "develop"]);
+        let path = mount(&root, "both-main");
+        commit(&path, "feature.txt", "a\n", "feature");
+
+        assert_eq!(
+            super::resolve_base(&path, None).map(|(base_ref, _)| base_ref),
+            Some("main".to_string())
+        );
+        assert_eq!(
+            super::resolve_base_ref(&path, None).as_deref(),
+            Some("main")
+        );
+        cleanup(root);
+    }
+
+    #[test]
+    fn a_checkout_on_its_own_branch_does_not_become_its_own_base() {
+        let root = repo_on("self-base", "trunk");
+
+        assert_eq!(super::resolve_base(&root, None), None);
+        assert_eq!(super::resolve_base_ref(&root, None), None);
+        cleanup(root);
     }
 }
 
@@ -6601,10 +6853,25 @@ mod teardown_tests {
     fn assessment_reports_unknown_integration_when_no_base_is_configured_and_none_is_published() {
         let root = init_repo("assess-base-absent");
         let target = add_worktree(&root, "base-absent");
+        git_ok(&root, &["branch", "-m", "main", "trunk"]);
+        git_ok(&root, &["checkout", "--detach"]);
 
         assert_eq!(
             integration_of(&assess(&target)),
             &BranchIntegration::Unknown
+        );
+    }
+
+    #[test]
+    fn assessment_finds_the_local_default_branch_when_no_base_is_configured_and_no_remote_exists() {
+        let root = init_repo("assess-local-default");
+        let target = add_worktree(&root, "local-default");
+
+        assert_eq!(
+            integration_of(&assess(&target)),
+            &BranchIntegration::Merged {
+                base: "main".to_string()
+            }
         );
     }
 

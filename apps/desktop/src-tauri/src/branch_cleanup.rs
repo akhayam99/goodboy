@@ -604,6 +604,32 @@ mod tests {
     }
 
     #[test]
+    fn scan_uses_the_develop_branch_as_base_when_no_base_is_configured() {
+        let root = init_repo("scan-develop");
+        git_ok(&root, &["branch", "-m", "main", "develop"]);
+        git_ok(&root, &["checkout", "-b", "goodboy/fx"]);
+        std::fs::write(root.join("b.txt"), "fx").unwrap();
+        git_ok(&root, &["add", "b.txt"]);
+        git_ok(&root, &["commit", "-m", "feature"]);
+        git_ok(&root, &["checkout", "-b", "scratch", "develop"]);
+
+        let scan = scan_project_branches(&root.to_string_lossy(), None, &HashMap::new()).unwrap();
+        let find = |name: &str| {
+            scan.branches
+                .iter()
+                .find(|branch| branch.name == name)
+                .unwrap_or_else(|| panic!("missing {name}"))
+        };
+
+        assert_eq!(
+            find("goodboy/fx").merge_state,
+            BranchMergeState::NotMerged { ahead: 1 }
+        );
+        assert_eq!(find("develop").merge_state, BranchMergeState::Protected);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn scan_says_where_each_branch_lives_and_whether_it_merged() {
         let root = init_repo("scan");
         let remote = root.join("remote.git");
