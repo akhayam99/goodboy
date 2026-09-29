@@ -34,15 +34,16 @@ export const PreviousAttempts = ({ attempts }: Props) => {
       open={isOpen}
       onOpenChange={setIsOpen}
       trigger={<span className="text-secondary text-muted-foreground">{summary}</span>}
-      className="-mx-2"
     >
       <ul aria-label={FAILED_RUN_COPY.attemptsRegion} className="flex min-w-0 flex-col gap-2">
         {attempts.map((attempt) => (
           <li key={attempt.id} className="flex min-w-0 list-none flex-col gap-0.5 text-secondary">
-            <span className="text-foreground">{attemptLine({ attempt })}</span>
-            {attempt.reason !== null && (
-              <span className="text-muted-foreground">{attempt.reason}</span>
+            {attempts.length > 1 && (
+              <span className="text-foreground">{attemptLine({ attempt })}</span>
             )}
+            <span className="text-muted-foreground">
+              {attempt.reason ?? `Attempt ${attempt.number} finished`}
+            </span>
           </li>
         ))}
       </ul>

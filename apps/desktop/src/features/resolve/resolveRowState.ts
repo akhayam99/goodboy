@@ -2,6 +2,7 @@ import type { ResolveStage } from '@goodboy/types';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProposalKind';
 import { isRemoteMovedError } from '../../store/slices/resolve/remoteMovedError';
+import { SYNC_COPY } from './failedRunCopy';
 import { shortSha } from './resolveItemCopy';
 
 export type ResolveUiState =
@@ -88,6 +89,9 @@ const failedSentence = ({ step, pushedSha, pushError, runFailure }: FailedParams
     case 'run':
       return runFailure;
     case 'push':
+      if (isRemoteMovedError({ error: pushError })) {
+        return SYNC_COPY.movedGeneric;
+      }
       return pushError === null ? 'Nothing was pushed' : `Nothing was pushed: ${pushError}`;
     case 'reply':
       return pushedSha === null

@@ -147,7 +147,8 @@ export const ReviewComment = ({
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
   const hasChange = candidate !== null;
   const replyShown =
-    reply.trim() !== '' || (state !== 'new' && state !== 'drafting' && state !== 'needs');
+    reply.trim() !== '' ||
+    (state !== 'new' && state !== 'drafting' && state !== 'needs' && state !== 'failed');
   const blocker = sharedCandidateBlocker({ members });
   const previous = useMemo(
     () => previousAttemptsOf({ attempts, threadId, activeAttemptId: row.thread.activeAttemptId }),
@@ -347,7 +348,6 @@ export const ReviewComment = ({
           rowState={row.rowState}
           actions={actions}
           isHintOpen={compose !== null && compose.mode === 'redraft'}
-          hasHint={compose !== null && compose.mode === 'redraft' && compose.text.trim() !== ''}
           isBusy={isSubmitting || pendingActionId !== null}
           onTryAgain={onTryAgain}
           onAddHint={() => onRun('reviewComment.edit')}

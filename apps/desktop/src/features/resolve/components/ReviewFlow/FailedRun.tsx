@@ -30,7 +30,6 @@ type Props = {
   readonly rowState: ResolveRowState;
   readonly actions: ReadonlyArray<ResolvedAction>;
   readonly isHintOpen: boolean;
-  readonly hasHint: boolean;
   readonly isBusy: boolean;
   readonly onTryAgain: () => void;
   readonly onAddHint: () => void;
@@ -52,7 +51,6 @@ export const FailedRun = ({
   rowState,
   actions,
   isHintOpen,
-  hasHint,
   isBusy,
   onTryAgain,
   onAddHint,
@@ -114,19 +112,21 @@ export const FailedRun = ({
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         {isRun ? (
           <>
-            <Button size="sm" variant="primary" isBusy={isBusy} onClick={onTryAgain}>
-              <RefreshCw size={ICON_SIZE.control} aria-hidden />
-              {tryAgainLabel({
-                modelName: pickedModel === null ? null : modelLabel(pickedModel),
-                hasHint,
-              })}
-              <KbdPill
-                aria-hidden
-                className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-meta text-on-tone"
-              >
-                {shortcutGlyphs('review.draft')}
-              </KbdPill>
-            </Button>
+            {!isHintOpen && (
+              <Button size="sm" variant="primary" isBusy={isBusy} onClick={onTryAgain}>
+                <RefreshCw size={ICON_SIZE.control} aria-hidden />
+                {tryAgainLabel({
+                  modelName: pickedModel === null ? null : modelLabel(pickedModel),
+                  hasHint: false,
+                })}
+                <KbdPill
+                  aria-hidden
+                  className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-meta text-on-tone"
+                >
+                  {shortcutGlyphs('review.draft')}
+                </KbdPill>
+              </Button>
+            )}
             <Button
               size="sm"
               variant="ghost"
