@@ -195,13 +195,15 @@ describe('AgentBrief summary', () => {
     expect(screen.getByText('from the last reply')).toBeDefined();
   });
 
-  it('labels the excerpt it renders as unsummarized rather than as a summary', () => {
+  it('keeps the raw unsummarized marker out of the Latest band', () => {
     const agent = makeAgent({ outputSummary: '' });
     transcriptItems.items = [{ kind: 'assistant_text', text: 'here is the last reply' }];
 
     const { container } = render(<AgentBrief session={session} agent={agent} />);
 
-    expect(container.textContent).toContain('[unsummarized step output, carried whole]');
+    expect(container.textContent).not.toContain('unsummarized step output');
+    expect(container.textContent).toContain('here is the last reply');
+    expect(screen.getByText('from the last reply')).toBeDefined();
   });
 
   it('starts no provider work while rendering the excerpt', () => {

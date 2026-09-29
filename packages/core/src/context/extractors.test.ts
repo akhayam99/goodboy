@@ -451,6 +451,17 @@ describe('extractCommentAnalysis', () => {
       'result\n<<comment-analysis threadId="PRRT_1" verdict="fix" summary="add the guard">>\ndone';
     expect(stripControlMarkers(text)).toBe('result\n\ndone');
   });
+
+  it('strips the unsummarized step output marker in every form', () => {
+    expect(
+      stripControlMarkers('[unsummarized step output, carried whole]\nfixed the retry loop'),
+    ).toBe('fixed the retry loop');
+    expect(stripControlMarkers('[unsummarized step output, excerpt] fixed it')).toBe('fixed it');
+    expect(stripControlMarkers('[unsummarized step output, no output captured]')).toBe('');
+    expect(stripControlMarkers('[unsummarized step output, legacy excerpt]\nfixed it')).toBe(
+      'fixed it',
+    );
+  });
 });
 
 describe('extractAllCommentAnalysis', () => {

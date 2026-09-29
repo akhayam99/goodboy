@@ -121,6 +121,7 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
     : lastAssistantText === ''
       ? ''
       : fallbackStepOutputSummary({ output: lastAssistantText });
+  const shownSummary = stripControlMarkers(summary);
   const isTerminal =
     isAgentStatusSettled({ status: agent.status }) || isAgentStatusHalted({ status: agent.status });
   const now = agentNowState({ agent, turnState, transcript });
@@ -150,10 +151,10 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
       ) : null}
       <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
       <AgentBriefQuestions session={session} agent={agent} />
-      {summary !== '' && !isSplitIntoSubagents ? (
+      {shownSummary !== '' && !isSplitIntoSubagents ? (
         <Band inset="content" label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
           <div className="text-body text-foreground">
-            <Markdown text={stripControlMarkers(summary)} />
+            <Markdown text={shownSummary} />
           </div>
           {!hasOutputSummary ? (
             <span className="text-secondary text-muted-foreground">from the last reply</span>
