@@ -3,33 +3,10 @@ import { createReviewNavigationSlice } from './slices/review-navigation';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
-import { type SlotKey } from '@goodboy/core';
 import type {
   AgentId,
-  BudgetRule,
-  ContextSlot,
-  AttachmentInput,
-  OverrideSettings,
-  OpenQuestion,
-  OpenQuestionId,
-  OrchestratorRouting,
-  PlanId,
-  PlanStatus,
   SessionId,
-  SessionBudgetOnExceed,
-  StepDef,
-  StepDefId,
-  Workflow,
-  WorkflowId,
-  WorkflowRunId,
-  WorkflowTriggerMode,
-  WorkflowExecutionMode,
-  WorkflowSpendLimitMode,
-  ProviderId,
-  ProviderCredential,
-  CredentialId,
   FileVersionId,
-  SkillId,
   IntegrationCredentialId,
   WorkspaceId,
   WorkspaceIntegrationProvider,
@@ -40,13 +17,10 @@ import type {
   GhTokenStatus,
   PrMergeMethod,
   SlackIntegrationConfig,
-  TaskModelPreference,
   PrReviewDraft,
 } from '@goodboy/types';
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList } from '../features/providers/providers';
-import { type SkillUpsertArgs } from '../features/skills/skills';
-import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
 import { createNotificationsSlice } from './slices/notifications';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
@@ -54,12 +28,6 @@ import { createPlansSlice } from './slices/plans';
 import { createOpenQuestionsSlice } from './slices/open-questions';
 import { createSlackDraftsSlice } from './slices/slack-drafts';
 import type { DecideSessionSlackDraftParams } from './slices/slack-drafts';
-import type {
-  QuestionDelegateOutcome,
-  SpawnQuestionDelegatesParams,
-} from './slices/open-questions/spawnQuestionDelegates';
-import type { ResolveQuestionDelegateParams } from './slices/open-questions/resolveQuestionDelegate';
-import type { TakeQuestionBackParams } from './slices/open-questions/takeQuestionBack';
 import { createBudgetSlice } from './slices/budget';
 import { createSkillsSlice } from './slices/skills';
 import { createStorageSlice } from './slices/storage';
@@ -111,44 +79,19 @@ import {
   createProvidersSlice,
   INITIAL_CONNECT_MAP,
   INITIAL_LIFECYCLE_MAP,
-  type LearnCliRequirementParams,
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
 import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
-import type { WorkflowBuilderDraft, WorkflowDraftKey } from './slices/workflowDrafts/types';
-import type {
-  ClearArtifactDraftParams,
-  HydrateArtifactDraftsParams,
-  SetArtifactDraftParams,
-} from './slices/artifactDrafts/types';
 import { createWorkflowStudioSlice } from './slices/workflowStudio';
 import { initialWorkflowStudioState } from './slices/workflowStudio/state';
-import type { SetWorkflowStudioFocusParams } from './slices/workflowStudio/setWorkflowStudioFocus';
-import type {
-  StartWorkflowGenerationParams,
-  WorkflowStudioDraft,
-} from './slices/workflowStudio/types';
 import { createWorkflowRoutingSlice } from './slices/workflowRouting';
 import { initialWorkflowRoutingState } from './slices/workflowRouting/state';
-import type {
-  ResetWorkflowNodeRoutingLockParams,
-  SetWorkflowNodeRoutingLockParams,
-} from './slices/workflowRouting/types';
 import { createSlotsSlice } from './slices/slots';
 import { createOverridesSlice } from './slices/overrides';
-import type { WorkspaceOverridesPatch } from './slices/overrides/patchWorkspaceOverrides';
 import { createCredentialsSlice } from './slices/credentials';
 import { createWorkflowsSlice } from './slices/workflows';
-import type { CopyWorkflowsFromWorkspacesParams } from './slices/workflows/copyWorkflowsFromWorkspaces';
-import type { OrchestrateOptions } from './slices/workflows/orchestrateNextStep';
-import type { OrchestratorHintDraft } from './slices/workflows/addWorkflowOrchestratorHint';
-import type {
-  AddStepToWorkflowRunParams,
-  AddStepToWorkflowRunResult,
-} from './slices/workflows/addStepToWorkflowRun';
-import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWorkflowAgent';
 import { createSettingsSlice } from './slices/settings';
 import { createBackupSlice } from './slices/backup';
 import { backupInitialState } from './slices/backup/state';
@@ -238,14 +181,6 @@ export type { ProviderSpendEntry };
 export type { AppState } from './types';
 
 type AppActions = {
-  refreshProviders(): Promise<void>;
-  logoutProvider(providerId: ProviderId): Promise<void>;
-  connectProvider(providerId: ProviderId): Promise<void>;
-  cancelProviderConnect(providerId: ProviderId): Promise<void>;
-  dismissProviderConnect(providerId: ProviderId): void;
-  updateProviderCli(providerId: ProviderId): Promise<void>;
-  hydrateCliRequirements(): Promise<void>;
-  learnCliRequirement(params: LearnCliRequirementParams): Promise<void>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   loadIntegrationCredentials(): Promise<void>;
   forgetIntegrationCredential(params: { credentialId: IntegrationCredentialId }): Promise<void>;
@@ -323,170 +258,6 @@ type AppActions = {
   createPrSeries(input: CreatePrSeriesInput): Promise<PrSeries>;
   setPrSeriesMember(input: SetPrSeriesMemberInput): Promise<PrSeriesMember>;
   loadPrSeries(input: LoadPrSeriesInput): Promise<ReadonlyArray<PrSeriesView>>;
-  renameWorkflowRun(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    name: string,
-  ): Promise<void>;
-  setWorkflowRunAutoRun(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    autoRun: boolean,
-  ): Promise<void>;
-  stopWorkflowRunNow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  closeWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  startWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  attachWorkflowToSession(
-    sessionId: SessionId,
-    workflowId: WorkflowId,
-    options?: {
-      autoRun?: boolean;
-      goal?: string;
-      triggerMode?: WorkflowTriggerMode;
-      chainAfterId?: WorkflowRunId;
-      attachmentInputs?: ReadonlyArray<AttachmentInput>;
-      executionMode?: WorkflowExecutionMode;
-      orchestratorRouting?: OrchestratorRouting;
-      spendLimitUsd?: number;
-      spendLimitMode?: WorkflowSpendLimitMode;
-      navigate?: boolean;
-    },
-  ): Promise<void>;
-  detachWorkflowFromSession(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  discardWorkflow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  restoreWorkflow(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  activateWorkflowAgent(params: ActivateWorkflowAgentParams): Promise<void>;
-  addStepToWorkflowRun(params: AddStepToWorkflowRunParams): Promise<AddStepToWorkflowRunResult>;
-  advanceClusterImplementation(
-    sessionId: SessionId,
-    childAgentId: AgentId,
-    assistantText: string,
-    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
-  ): Promise<void>;
-  finalizeWorkflowStep(
-    sessionId: SessionId,
-    agentId: AgentId,
-    assistantText: string,
-    planCapturedThisTurn: boolean,
-    opts?: { readonly force?: boolean; readonly didAgentDie?: boolean },
-  ): Promise<{ readonly shouldAutoAdvance: boolean }>;
-  advanceScoutTree(sessionId: SessionId, agentId: AgentId, assistantText: string): Promise<void>;
-  skipStuckStepAndAdvance(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    options?: { readonly onlyWhenBlocked?: boolean },
-  ): Promise<void>;
-  recoverStuckStep(params: {
-    readonly sessionId: SessionId;
-    readonly workflowRunId: WorkflowRunId;
-  }): Promise<void>;
-  maybeAutoAdvanceWorkflow(sessionId: SessionId): Promise<void>;
-  orchestrateNextStep(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    options?: OrchestrateOptions,
-  ): Promise<void>;
-  retryWorkflowOrchestration(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  continueWorkflowRun(sessionId: SessionId, workflowRunId: WorkflowRunId): Promise<void>;
-  addWorkflowOrchestratorHint(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    draft: OrchestratorHintDraft,
-  ): Promise<void>;
-  removeWorkflowOrchestratorHint(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    hintId: string,
-  ): Promise<void>;
-  setWorkflowOrchestratorRouting(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    routing: OrchestratorRouting | null,
-  ): Promise<void>;
-  setWorkflowRunSpendLimit(
-    sessionId: SessionId,
-    workflowRunId: WorkflowRunId,
-    limitUsd: number | null,
-    mode: WorkflowSpendLimitMode,
-  ): Promise<void>;
-  reprocessGoalForWorkflow(sessionId: SessionId): Promise<void>;
-  loadSessionTelemetry(sessionId: SessionId): Promise<void>;
-  loadSessionSlots(sessionId: SessionId): Promise<void>;
-  ensureSessionSlots(sessionId: SessionId): Promise<ReadonlyArray<ContextSlot>>;
-  upsertSessionSlot(sessionId: SessionId, key: SlotKey, value: string): Promise<void>;
-  loadSlotHistory(sessionId: SessionId, key: SlotKey): Promise<void>;
-  loadBudgetRules(): Promise<void>;
-  saveBudgetRule(rule: BudgetRule | Omit<BudgetRule, 'id' | 'createdAt'>): Promise<void>;
-  deleteBudgetRule(id: string): Promise<void>;
-  loadSessionBudget(sessionId: SessionId): Promise<void>;
-  setSessionBudget(
-    sessionId: SessionId,
-    softCapUsd: number,
-    onExceed?: SessionBudgetOnExceed,
-  ): Promise<void>;
-  clearSessionBudget(sessionId: SessionId): Promise<void>;
-  refreshProviderSpendBreakdown(workspaceId: WorkspaceId): Promise<void>;
-  refreshProviderBudgetStatus(): Promise<void>;
-  loadBudgetAlerts(): Promise<void>;
-  dismissBudgetAlert(id: string): Promise<void>;
-  loadSkills(workspaceId: WorkspaceId): Promise<void>;
-  saveSkill(input: SkillUpsertArgs): Promise<void>;
-  deleteSkill(skillId: SkillId, workspaceId: WorkspaceId): Promise<void>;
-  rescanSkills(workspaceId: WorkspaceId): Promise<void>;
-  loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
-  copyWorkflowsFromWorkspaces(
-    params: CopyWorkflowsFromWorkspacesParams,
-  ): Promise<ReadonlyArray<Workflow>>;
-  savePhaseTemplate(template: WorkflowUpsertArgs): Promise<Workflow>;
-  deleteWorkflow(id: WorkflowId, workspaceId: WorkspaceId): Promise<void>;
-  makeWorkflowPreset(workspaceId: WorkspaceId, workflowId: WorkflowId): Promise<void>;
-  generateWorkflowTitle(
-    workspaceId: WorkspaceId,
-    workflowId: WorkflowId,
-    sessionId: SessionId,
-    fallbackName: string,
-    goal: string,
-    process: string,
-  ): Promise<void>;
-  suggestWorkflowTitle(sessionId: SessionId, goal: string): Promise<string | null>;
-  loadStepLibrary(workspaceId: WorkspaceId): Promise<void>;
-  saveStepDef(args: StepDefUpsertArgs, listWorkspaceId: WorkspaceId): Promise<StepDef>;
-  deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;
-  resetWorkflows(workspaceId: WorkspaceId, slugs: ReadonlyArray<string>): Promise<void>;
-  loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
-  setArtifactDraft(params: SetArtifactDraftParams): void;
-  clearArtifactDraft(params: ClearArtifactDraftParams): void;
-  hydrateArtifactDrafts(params: HydrateArtifactDraftsParams): void;
-  setWorkflowDraft(draftKey: WorkflowDraftKey, draft: WorkflowBuilderDraft): void;
-  clearWorkflowDraft(draftKey: WorkflowDraftKey): void;
-  setWorkflowStudioDraft(params: { workspaceId: WorkspaceId; draft: WorkflowStudioDraft }): void;
-  clearWorkflowStudioDraft(params: { workspaceId: WorkspaceId }): void;
-  setWorkflowStudioVisible(params: { workspaceId: WorkspaceId | null }): void;
-  setWorkflowStudioFocus(params: SetWorkflowStudioFocusParams): void;
-  startWorkflowGeneration(params: StartWorkflowGenerationParams): Promise<boolean>;
-  consumeWorkflowGeneration(params: { workspaceId: WorkspaceId }): void;
-  undoWorkflowGeneration(params: { workspaceId: WorkspaceId }): Promise<void>;
-  setWorkflowNodeRoutingLock(params: SetWorkflowNodeRoutingLockParams): Promise<void>;
-  resetWorkflowNodeRoutingLock(params: ResetWorkflowNodeRoutingLockParams): Promise<void>;
-  loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
-  setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
-  patchWorkspaceOverrides(params: {
-    readonly workspaceId: WorkspaceId;
-    readonly patch: WorkspaceOverridesPatch;
-  }): Promise<void>;
-  setWorkspaceProviderBinding(
-    workspaceId: WorkspaceId,
-    providerId: ProviderId,
-    credentialId: string | null,
-  ): Promise<void>;
-  loadSessionOverrides(sessionId: SessionId): Promise<void>;
-  loadCredentials(): Promise<void>;
-  createCredential(
-    providerId: ProviderId,
-    label: string,
-    apiKey: string,
-  ): Promise<ProviderCredential>;
-  deleteCredential(id: CredentialId): Promise<void>;
   refreshGithubStatus(): Promise<void>;
   refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
   setGithubToken(params: {
@@ -591,42 +362,8 @@ type AppActions = {
     versionId: FileVersionId;
   }): Promise<void>;
   deleteAllSessionFileVersions(params: { sessionId: SessionId }): Promise<void>;
-  retryStepSummary(params: {
-    sessionId: SessionId;
-    agentId: AgentId;
-    taskModelOverride?: TaskModelPreference;
-  }): Promise<void>;
-  loadSessionOpenQuestions(sessionId: SessionId): Promise<void>;
-  loadSessionAnsweredQuestions(sessionId: SessionId): Promise<void>;
-  loadSessionDismissedQuestions(sessionId: SessionId): Promise<void>;
-  requestOpenQuestionScroll(target: { agentId: AgentId; questionId: OpenQuestionId }): void;
-  clearOpenQuestionScroll(): void;
-  answerOpenQuestions(
-    sessionId: SessionId,
-    pairs: ReadonlyArray<{ id: OpenQuestionId; text: string; answer: string }>,
-    targetAgentId: AgentId | null,
-  ): Promise<void>;
-  dismissOpenQuestion(sessionId: SessionId, question: OpenQuestion): Promise<void>;
-  restoreDismissedOpenQuestion(sessionId: SessionId, question: OpenQuestion): Promise<void>;
-  spawnQuestionDelegates(
-    params: SpawnQuestionDelegatesParams,
-  ): Promise<ReadonlyArray<QuestionDelegateOutcome>>;
-  resolveQuestionDelegate(params: ResolveQuestionDelegateParams): Promise<void>;
-  takeQuestionBack(params: TakeQuestionBackParams): Promise<void>;
   loadSessionSlackDrafts(sessionId: SessionId): Promise<void>;
   decideSessionSlackDraft(params: DecideSessionSlackDraftParams): Promise<void>;
-  loadSessionPlans(sessionId: SessionId): Promise<void>;
-  setPlanStatus(sessionId: SessionId, planId: PlanId, status: PlanStatus): Promise<void>;
-  updatePlanBody(
-    sessionId: SessionId,
-    planId: PlanId,
-    title: string,
-    bodyMd: string,
-  ): Promise<void>;
-  deletePlan(sessionId: SessionId, planId: PlanId): Promise<void>;
-  restorePlan(sessionId: SessionId, planId: PlanId): Promise<void>;
-  loadConsumptionsForPlan(planId: PlanId): Promise<void>;
-  runPlan(sessionId: SessionId, planId: PlanId): Promise<AgentId | null>;
 };
 
 export type AppStore = AppState &
@@ -680,7 +417,20 @@ export type AppStore = AppState &
   ReturnType<typeof createWorkspacesSlice> &
   ReturnType<typeof createProjectsSlice> &
   ReturnType<typeof createProjectMountsSlice> &
-  ReturnType<typeof createMountCleanupSlice>;
+  ReturnType<typeof createMountCleanupSlice> &
+  ReturnType<typeof createWorkflowsSlice> &
+  ReturnType<typeof createWorkflowDraftsSlice> &
+  ReturnType<typeof createWorkflowStudioSlice> &
+  ReturnType<typeof createWorkflowRoutingSlice> &
+  ReturnType<typeof createSlotsSlice> &
+  ReturnType<typeof createOverridesSlice> &
+  ReturnType<typeof createCredentialsSlice> &
+  ReturnType<typeof createProvidersSlice> &
+  ReturnType<typeof createPlansSlice> &
+  ReturnType<typeof createOpenQuestionsSlice> &
+  ReturnType<typeof createArtifactDraftsSlice> &
+  ReturnType<typeof createSkillsSlice> &
+  ReturnType<typeof createBudgetSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
