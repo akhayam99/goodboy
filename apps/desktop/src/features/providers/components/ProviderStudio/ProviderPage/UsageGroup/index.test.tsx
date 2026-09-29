@@ -194,6 +194,29 @@ describe('UsageGroup', () => {
     });
     window.removeEventListener('goodboy:open-impact-studio', listener);
   });
+  it('keeps the numbers and does not refetch when the same rule is reloaded', async () => {
+    const rule: BudgetRule = {
+      id: 'rule-1',
+      provider: 'anthropic',
+      period: 'monthly',
+      capUsd: 80,
+      alertThresholdPct: 80,
+      extraTokensBudget: null,
+      createdAt: localIso(9, 0, -20),
+    };
+    state.budgetRules = [rule];
+    const { rerender } = render(
+      <UsageGroup providerId="anthropic" billing="plan" planLabel={null} />,
+    );
+    await waitFor(() => expect(screen.getByText('$18.40')).toBeTruthy());
+
+    state.budgetRules = [{ ...rule }];
+    rerender(<UsageGroup providerId="anthropic" billing="plan" planLabel={null} />);
+
+    expect(screen.getByText('$18.40')).toBeTruthy();
+    expect(invokeSpy).toHaveBeenCalledTimes(1);
+  });
+
   it('asks codex again with the reset details from the refresh button', () => {
     render(<UsageGroup providerId="codex" billing="plan" planLabel="Plus" />);
 

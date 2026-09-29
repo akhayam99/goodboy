@@ -23,7 +23,7 @@ export type SessionBudget = Readonly<{
 }>;
 
 export type BudgetCheckResult = Readonly<{
-  remainingUsd: number;
+  remainingUsd: number | null;
   pct: number;
   exceeded: boolean;
   overThreshold: boolean;

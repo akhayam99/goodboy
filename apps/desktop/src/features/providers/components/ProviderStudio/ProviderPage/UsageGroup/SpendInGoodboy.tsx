@@ -17,6 +17,9 @@ type Props = {
   readonly providerId: ProviderId;
 };
 
+const PERIODS_NOTE =
+  'Today and 7 days start at midnight in your time. This month is a UTC calendar month.';
+
 type BudgetParams = {
   readonly status: ProviderBudgetStatus;
 };
@@ -45,7 +48,9 @@ export const SpendInGoodboy = ({ providerId }: Props) => {
       aria-label="Spend in Goodboy"
       className={cn(BAND_ROW_CLASS, 'flex-wrap gap-x-4 bg-muted text-label')}
     >
-      <span className="text-muted-foreground">Spent in Goodboy, all workspaces</span>
+      <span className="text-muted-foreground" title={PERIODS_NOTE}>
+        Spent in Goodboy, all workspaces
+      </span>
       <SpendStat label="Today" value={formatUsd(periods?.todayUsd ?? 0)} />
       <SpendStat label="7 days" value={formatUsd(periods?.last7DaysUsd ?? 0)} />
       <SpendStat label="This month" value={formatUsd(periods?.thisMonthUsd ?? 0)} />

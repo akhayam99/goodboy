@@ -17,7 +17,7 @@ const clock = ({ ms }: { readonly ms: number }): string =>
   new Intl.DateTimeFormat(APP_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
+    hourCycle: 'h23',
   }).format(new Date(ms));
 
 export const budgetResetLabel = ({ status }: StatusParams): string => {

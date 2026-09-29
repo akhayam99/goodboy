@@ -30,29 +30,37 @@ type Params = {
   readonly providerId: ProviderId;
 };
 
+type Loaded = {
+  readonly providerId: ProviderId;
+  readonly overview: ProviderBudgetOverview;
+};
+
 export const useProviderBudgetOverview = ({
   providerId,
 }: Params): ProviderBudgetOverview | null => {
-  const rules = useAppStore((state) => state.budgetRules);
-  const [overview, setOverview] = useState<ProviderBudgetOverview | null>(null);
+  const rule = useAppStore((state) =>
+    state.budgetRules.find((candidate) => candidate.provider === providerId),
+  );
+  const capUsd = rule?.capUsd ?? null;
+  const thresholdPct = rule?.alertThresholdPct ?? null;
+  const [loaded, setLoaded] = useState<Loaded | null>(null);
 
   useEffect(() => {
     let isCurrent = true;
-    setOverview(null);
     invokeProviderBudgetOverview({
       provider: providerId,
       ...periodStarts({ nowMs: Date.now() }),
     })
       .then((next) => {
         if (isCurrent && next !== undefined) {
-          setOverview(next);
+          setLoaded({ providerId, overview: next });
         }
       })
       .catch(() => undefined);
     return () => {
       isCurrent = false;
     };
-  }, [providerId, rules]);
+  }, [providerId, capUsd, thresholdPct]);
 
-  return overview;
+  return loaded !== null && loaded.providerId === providerId ? loaded.overview : null;
 };
