@@ -47,9 +47,11 @@ resamples it:
   files are 1144, 2288 and 3432 wide. A 1024 pixel app window lands at 1.12
   times its size; the board keeps a 1250 pixel window so its four columns fit,
   and draws at 0.92.
-- A frame has a `<id>-phone` twin, a 4:5 cut of 288 by 360 app pixels that a
-  390 phone draws 366 wide, at 1.27 times the app, instead of the whole
-  window shrunk. Its files are 732, 1098 and 1464 wide.
+- A frame has a `<id>-phone` twin, a 4:5 cut of the window between 288 and 375
+  app pixels wide that a 390 phone draws 366 wide, at 0.98 to 1.27 times the
+  app, instead of the whole window shrunk. Its right edge fades out on a
+  phone, so a row that runs on reads as the app continuing. Its files are
+  732, 1098 and 1464 wide.
 - A fragment is one component, drawn at its `displayWidth`, at least 1.18
   times its size in the app, with files at 1, 2 and 3 times that width. App
   text never draws below its size in the app.

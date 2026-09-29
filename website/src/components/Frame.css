@@ -87,4 +87,8 @@
   .frame.canvas {
     margin: 0 -20px;
   }
+  .view img {
+    -webkit-mask-image: linear-gradient(to right, #000 68%, transparent);
+    mask-image: linear-gradient(to right, #000 68%, transparent);
+  }
 }
