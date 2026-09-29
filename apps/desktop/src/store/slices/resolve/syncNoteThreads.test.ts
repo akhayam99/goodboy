@@ -6,12 +6,11 @@ import {
   listDiffCommentsForSession,
   listResolveQueueItems,
   listResolveThreads,
-  migrate,
   reopenDiffComment,
   resolveDiffComment,
   type Database,
 } from '@goodboy/db';
-import { makeTestDatabase } from '@goodboy/db/test-helpers';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { SessionId } from '@goodboy/types';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -40,12 +39,11 @@ const createHarness = () => {
 };
 
 beforeEach(async () => {
-  db = makeTestDatabase();
+  db = await makeMigratedTestDatabase();
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
   h.transaction.mockReset().mockImplementation(db.transaction);
-  await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Harborline', 'harborline', 1, 1)",
   );
