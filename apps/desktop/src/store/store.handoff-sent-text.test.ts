@@ -240,7 +240,13 @@ describe('text sent to the CLI at spawn', () => {
     await startSecondStep();
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    expect(lastSent()).toMatchSnapshot();
+    const sent = lastSent();
+    await expect(sent.prompt).toMatchFileSnapshot(
+      './__prompts__/handoff-claude-step-kickoff.prompt.txt',
+    );
+    await expect(sent.systemPrompt).toMatchFileSnapshot(
+      './__prompts__/handoff-claude-step-kickoff.system.txt',
+    );
   });
 
   it('keeps the workflow step kickoff on Codex byte for byte', async () => {
@@ -248,7 +254,13 @@ describe('text sent to the CLI at spawn', () => {
     await startSecondStep();
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    expect(lastSent()).toMatchSnapshot();
+    const sent = lastSent();
+    await expect(sent.prompt).toMatchFileSnapshot(
+      './__prompts__/handoff-codex-step-kickoff.prompt.txt',
+    );
+    await expect(sent.systemPrompt).toMatchFileSnapshot(
+      './__prompts__/handoff-codex-step-kickoff.system.txt',
+    );
   });
 
   it('stores one handoff per agent with the exact text sent', async () => {
@@ -300,6 +312,12 @@ describe('text sent to the CLI at spawn', () => {
     });
 
     expect(runTurnSpy).toHaveBeenCalledTimes(1);
-    expect(lastSent()).toMatchSnapshot();
+    const sent = lastSent();
+    await expect(sent.prompt).toMatchFileSnapshot(
+      './__prompts__/handoff-new-agent-message.prompt.txt',
+    );
+    await expect(sent.systemPrompt).toMatchFileSnapshot(
+      './__prompts__/handoff-new-agent-message.system.txt',
+    );
   });
 });
