@@ -564,6 +564,7 @@ export {
   parseUnifiedDiff,
   resolvePrForBranch,
   resolveReviewThread,
+  updateReviewComment,
   runJson as ghRunJson,
   toCachedPullRequest,
   updateIssueBody,

@@ -159,6 +159,7 @@ export const storySpies = {
   fetchLinkedIssues: vi.fn(async () => []),
   resolveReviewThread: vi.fn(async () => undefined),
   addReviewThreadReply: vi.fn(async () => ({ id: 'reply-id' })),
+  updateReviewComment: vi.fn(async () => ({ id: 'reply-id', url: 'url' })),
   invokeScriptRun,
   runAdhocScript,
   scanProjectScripts: vi.fn(
@@ -693,6 +694,7 @@ export const coreModuleMock = async (importOriginal: () => Promise<Record<string
   fetchLinkedIssues: storySpies.fetchLinkedIssues,
   resolveReviewThread: storySpies.resolveReviewThread,
   addReviewThreadReply: storySpies.addReviewThreadReply,
+  updateReviewComment: storySpies.updateReviewComment,
   seedWorkflowLibrary: vi.fn(async () => undefined),
 });
 
