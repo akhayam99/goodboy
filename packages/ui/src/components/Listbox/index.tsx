@@ -44,6 +44,7 @@ type CommonProps<T extends ListboxValue> = {
   readonly align?: 'start' | 'end';
   readonly openEvent?: string;
   readonly isBlock?: boolean;
+  readonly popupWidth?: 'content' | 'trigger';
   readonly className?: string;
   readonly anchorClassName?: string;
   readonly onOpenChange?: (isOpen: boolean) => void;
@@ -64,6 +65,8 @@ type MultipleProps<T extends ListboxValue> = CommonProps<T> & {
 export type ListboxProps<T extends ListboxValue> = SingleProps<T> | MultipleProps<T>;
 
 export const LISTBOX_SEARCH_THRESHOLD = 8;
+
+const LISTBOX_VIEWPORT_MARGIN = 12;
 
 const NO_VALUES: ReadonlyArray<never> = [];
 
@@ -98,6 +101,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     align = 'start',
     openEvent,
     isBlock = false,
+    popupWidth = 'content',
     className,
     anchorClassName,
     onOpenChange,
@@ -109,11 +113,12 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
   const dropdown = useDropdown({
     disabled,
     align,
-    width: 'w-max max-w-90',
+    width: popupWidth === 'trigger' ? undefined : 'w-max max-w-90',
     expectedHeight: 320,
     expectedWidth: 240,
     openEvent,
     isAtLeastTriggerWidth: true,
+    viewportMargin: LISTBOX_VIEWPORT_MARGIN,
   });
   const isOpen = dropdown.open;
   const isMultiple = props.multiple === true;
@@ -282,7 +287,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     >
       <div className="flex max-h-80 min-h-0 min-w-0 flex-col">
         {isSearchable ? (
-          <div className="flex h-9 shrink-0 items-center gap-2 px-3 text-muted-foreground">
+          <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-3 text-muted-foreground">
             <Search size={14} aria-hidden className="shrink-0" />
             <input
               ref={searchRef}
@@ -299,7 +304,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
               placeholder={searchPlaceholder}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={keyboard.onKeyDown}
-              className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
+              className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none focus-visible:outline-none! placeholder:text-faint-foreground"
             />
             {hasQuery ? (
               <span className="shrink-0 text-meta text-faint-foreground">

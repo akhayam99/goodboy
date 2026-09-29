@@ -672,15 +672,19 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 - **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
   padding 4, at least the trigger's width and at most 360 by 320, scrolling in
   a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
-  in 120ms (opacity and a 0.98 scale, `animate-popover-in`).
+  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). It keeps 12px from
+  the viewport edge. `popupWidth="trigger"` fixes the width to the trigger's
+  (160px at least) so a long title truncates instead of widening the popover;
+  use it with an `isBlock` trigger in a drawer or a form.
 - **Option**: 32px on one line, or two lines with an 11/16 faint description;
   a 16px leading slot, `text-body`, meta on the right. The cursor, mouse or
   keyboard, is `bg-selected`; the current value is a check on the right and
   `text-row`. No primary tint. A blocked option stays visible in
   `disabled-foreground` and says why on its second line. A group label is a
   muted `Eyebrow`.
-- **Search** appears on its own above 8 options (or with `searchable`): a fuzzy
-  filter, the match underlined, a count ("3 of 41"), and an empty state in one
+- **Search** appears on its own above 8 options (or with `searchable`): a flush
+  row (search icon, no box, a hairline divider below, no focus ring of its own),
+  a fuzzy filter, the match underlined, a count ("3 of 41"), and an empty state in one
   sentence plus the `create` row when the caller can make the value.
 - **Multiple**: a checkbox in the leading slot with the row icon beside it,
   Enter toggles and stays open, a footer with the count and Clear.

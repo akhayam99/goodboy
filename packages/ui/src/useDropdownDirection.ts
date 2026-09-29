@@ -14,6 +14,7 @@ type Params = {
   readonly align: Align;
   readonly shouldMatchTriggerWidth: boolean;
   readonly isAtLeastTriggerWidth?: boolean;
+  readonly viewportMargin?: number;
 };
 
 type ResolveDesiredLeftParams = {
@@ -22,7 +23,7 @@ type ResolveDesiredLeftParams = {
   readonly align: Align;
 };
 
-const VIEWPORT_MARGIN = 8;
+const DEFAULT_VIEWPORT_MARGIN = 8;
 const DROPDOWN_GAP = 4;
 const MIN_DROPDOWN_HEIGHT = 160;
 const MIN_TRIGGER_MATCH_WIDTH = 160;
@@ -46,6 +47,7 @@ export const useDropdownDirection = ({
   align,
   shouldMatchTriggerWidth,
   isAtLeastTriggerWidth = false,
+  viewportMargin = DEFAULT_VIEWPORT_MARGIN,
 }: Params): CSSProperties | undefined => {
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined);
 
@@ -60,7 +62,7 @@ export const useDropdownDirection = ({
         return;
       }
       const rect = trigger.getBoundingClientRect();
-      const viewportWidth = Math.max(window.innerWidth - VIEWPORT_MARGIN * 2, 0);
+      const viewportWidth = Math.max(window.innerWidth - viewportMargin * 2, 0);
       const matchedWidth = Math.max(rect.width, MIN_TRIGGER_MATCH_WIDTH);
       const measuredWidth = popupRef.current?.getBoundingClientRect().width ?? 0;
       const flowWidth = measuredWidth > 0 ? measuredWidth : expectedWidth;
@@ -69,13 +71,13 @@ export const useDropdownDirection = ({
         viewportWidth,
       );
       const desiredLeft = resolveDesiredLeft({ rect, popupWidth, align });
-      const maxLeft = Math.max(window.innerWidth - popupWidth - VIEWPORT_MARGIN, VIEWPORT_MARGIN);
-      const left = Math.min(Math.max(desiredLeft, VIEWPORT_MARGIN), maxLeft);
+      const maxLeft = Math.max(window.innerWidth - popupWidth - viewportMargin, viewportMargin);
+      const left = Math.min(Math.max(desiredLeft, viewportMargin), maxLeft);
       const spaceBelow = Math.max(
-        window.innerHeight - rect.bottom - DROPDOWN_GAP - VIEWPORT_MARGIN,
+        window.innerHeight - rect.bottom - DROPDOWN_GAP - viewportMargin,
         0,
       );
-      const spaceAbove = Math.max(rect.top - DROPDOWN_GAP - VIEWPORT_MARGIN, 0);
+      const spaceAbove = Math.max(rect.top - DROPDOWN_GAP - viewportMargin, 0);
       const measuredHeight = popupRef.current?.getBoundingClientRect().height ?? 0;
       const popupHeight = measuredHeight > 0 ? measuredHeight : expectedHeight;
       const direction: Direction =
@@ -120,6 +122,7 @@ export const useDropdownDirection = ({
     popupRef,
     shouldMatchTriggerWidth,
     triggerRef,
+    viewportMargin,
   ]);
 
   return style;

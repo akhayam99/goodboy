@@ -188,6 +188,32 @@ describe('Listbox', () => {
     expect(screen.getByText('No option matches "relx"')).toBeDefined();
   });
 
+  it('keeps the search field flush: a divider below and no focus outline of its own', () => {
+    render(<SingleHarness options={BRANCHES} initial="main" />);
+    fireEvent.click(trigger());
+    const search = screen.getByRole('combobox', { name: 'Search' });
+    expect(search.className).toContain('focus-visible:outline-none!');
+    expect(search.parentElement?.className).toContain('border-b');
+    expect(search.className).not.toContain('border');
+  });
+
+  it('ties the popup width to the trigger when asked, and keeps the viewport gap', () => {
+    render(
+      <Listbox
+        ariaLabel="Theme"
+        options={THEMES}
+        value="system"
+        popupWidth="trigger"
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(trigger());
+    const popup = screen.getByRole('listbox').closest('[data-dropdown-portal] > div');
+    expect(popup?.className).not.toContain('w-max');
+    expect(popup instanceof HTMLElement ? popup.style.width : '').not.toBe('');
+    expect(popup instanceof HTMLElement ? popup.style.left : '').toBe('12px');
+  });
+
   it('offers to create the typed value when nothing matches exactly', () => {
     const onCreate = vi.fn();
     render(
