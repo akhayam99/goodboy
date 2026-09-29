@@ -79,17 +79,20 @@ describe('failOnConsole', () => {
     () => {
       const results = runFixtures().flatMap((file) => file.assertionResults);
 
-      const db = byTitle(results, 'calls a db function nobody stubbed');
+      const db = byTitle({ results, title: 'calls a db function nobody stubbed' });
       expect(db.status).toBe('failed');
       expect(db.failureMessages.join('\n')).toContain('db: countUserTextEvents(');
 
-      const invoke = byTitle(results, 'calls an invoke command nobody stubbed');
+      const invoke = byTitle({ results, title: 'calls an invoke command nobody stubbed' });
       expect(invoke.status).toBe('failed');
       expect(invoke.failureMessages.join('\n')).toContain('invoke: workspace_script_list_live(');
 
-      expect(byTitle(results, 'stubs what it calls').status).toBe('passed');
+      expect(byTitle({ results, title: 'stubs what it calls' }).status).toBe('passed');
       expect(
-        byTitle(results, 'drains the record itself when the call is the point of the test').status,
+        byTitle({
+          results,
+          title: 'drains the record itself when the call is the point of the test',
+        }).status,
       ).toBe('passed');
     },
     RUN_TIMEOUT_MS,
