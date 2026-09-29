@@ -1,8 +1,9 @@
 import { WorkNode, cn, inlineMarkdownText } from '@goodboy/ui';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
+import { REMOTE_NODE } from '../../reviewRemote';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import { firstSentence } from './firstSentence';
-import { STATE_WORD_TONE } from './stateTone';
+import { REMOTE_WORD_TONE, STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
 type Props = {
@@ -34,7 +35,9 @@ export const ReviewListRow = ({ entry, isSelected, onSelect }: Props) => {
     >
       <span className="flex h-5 shrink-0 items-center">
         <WorkNode
-          state={REVIEW_COMMENT_NODE[entry.state]}
+          state={
+            entry.remote === null ? REVIEW_COMMENT_NODE[entry.state] : REMOTE_NODE[entry.remote]
+          }
           label={entry.word}
           mark={{ kind: 'dot' }}
         />
@@ -48,7 +51,14 @@ export const ReviewListRow = ({ entry, isSelected, onSelect }: Props) => {
               {note?.line == null ? '' : `:${note.line}`}
             </span>
           )}
-          <span className={cn('ml-auto shrink-0', STATE_WORD_TONE[entry.state])}>{entry.word}</span>
+          <span
+            className={cn(
+              'ml-auto shrink-0',
+              entry.remote === null ? STATE_WORD_TONE[entry.state] : REMOTE_WORD_TONE[entry.remote],
+            )}
+          >
+            {entry.word}
+          </span>
         </span>
         <span className="min-w-0 truncate text-body text-foreground" title={body ?? undefined}>
           {title}

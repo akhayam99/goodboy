@@ -39,6 +39,7 @@ import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { RESOLVE_QUEUE_REFRESH_LABEL } from '../../resolveQueueCopy';
 import { REVIEW_FLOW_LABEL, REVIEW_TITLE, counterLabel } from '../../reviewFlowCopy';
 import { isPushFailure } from '../../reviewCommentState';
+import { replyOnlyLine } from '../../reviewRemote';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewComment, type ReviewCompose } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
@@ -57,15 +58,17 @@ const ADVANCING = new Set([
   'reviewComment.accept',
   'reviewComment.skip',
   'reviewComment.resolveNoReply',
+  'reviewComment.replyAndResolve',
+  'reviewComment.resolveOnly',
 ]);
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
-  ['review.accept', ['reviewComment.accept']],
+  ['review.accept', ['reviewComment.accept', 'reviewComment.resolveOnly']],
   ['review.edit', ['reviewComment.answer', 'reviewComment.edit']],
-  ['review.reply', ['reviewComment.reply']],
+  ['review.reply', ['reviewComment.reply', 'reviewComment.replyAndResolve']],
   ['review.skip', ['reviewComment.skip']],
   ['review.undo', ['reviewComment.undo']],
-  ['review.draft', ['reviewComment.draft']],
+  ['review.draft', ['reviewComment.draft', 'reviewComment.fixAnyway']],
 ];
 
 const COULD_NOT_SEND =
@@ -104,6 +107,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   );
   const openDrawer = useAppStore((s) => s.openDrawer);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
+  const refreshThreadGitState = useAppStore((s) => s.refreshThreadGitState);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
   const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
@@ -127,6 +131,22 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   useEffect(() => {
     void loadResolveSession({ sessionId });
   }, [loadResolveSession, sessionId]);
+
+  const hasComments = hasPr && github.detail !== null;
+  const gitKey = entries
+    .map((entry) => `${entry.threadId}:${entry.row.thread.commitShas?.join(',') ?? ''}`)
+    .join('|');
+
+  useEffect(() => {
+    if (!hasComments) {
+      return;
+    }
+    void refreshThreadGitState({ sessionId }).catch(() => undefined);
+  }, [gitKey, hasComments, refreshThreadGitState, sessionId]);
+
+  const replyOnlyCount = entries.filter(
+    (entry) => entry.remote === 'on_origin' && entry.group === 'open',
+  ).length;
 
   const focused =
     entries.find((entry) => entry.threadId === selectedThreadId) ??
@@ -484,6 +504,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
           sessionId={sessionId}
           modelPickerRequest={modelPickerRequest}
           busyActionId={isPushBusy ? 'review.push' : null}
+          replyOnlyLine={replyOnlyCount === 0 ? null : replyOnlyLine({ count: replyOnlyCount })}
         />
       }
       subheader={

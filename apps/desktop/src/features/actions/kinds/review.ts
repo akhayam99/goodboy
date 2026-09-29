@@ -11,6 +11,7 @@ import {
 } from '../../resolve/notes/postNotesToPr';
 import { reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import { isPushFailure } from '../../resolve/reviewCommentState';
+import { remoteOf } from '../../resolve/reviewRemote';
 import { requestReview } from '../../review/reviewRequest';
 import type { ObjectKindDefinition, ReviewActionTarget } from '../types';
 
@@ -50,10 +51,17 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
   facts: ({ state, target }) => {
     const { sessionId } = target;
     const github = state.sessionGithub[sessionId] ?? null;
-    const rows = reviewRowsOf({ state, sessionId }).map((row) => ({
-      row,
-      state: rowStateOf({ state, sessionId, row }),
-    }));
+    const rows = reviewRowsOf({ state, sessionId }).map((row) => {
+      const rowState = rowStateOf({ state, sessionId, row });
+      return {
+        row,
+        state: rowState,
+        remote: remoteOf({
+          state: rowState,
+          facts: state.sessionThreadGit?.[sessionId]?.[row.thread.threadId] ?? null,
+        }),
+      };
+    });
     const count = (predicate: (entry: (typeof rows)[number]) => boolean): number =>
       rows.filter(predicate).length;
     const freshThreadIds = rows
@@ -66,11 +74,15 @@ export const REVIEW_KIND: ObjectKindDefinition<ReviewActionTarget, ReviewFacts> 
       open: count(
         (entry) =>
           ['new', 'drafting', 'needs', 'ready', 'edited', 'outdated'].includes(entry.state) ||
-          (entry.state === 'failed' && !isPushFailure({ row: entry.row })),
+          (entry.state === 'failed' && !isPushFailure({ row: entry.row })) ||
+          entry.remote !== null,
       ),
       fresh: freshThreadIds.length,
       ready: count((entry) => entry.state === 'ready' || entry.state === 'edited'),
-      accepted: count((entry) => entry.state === 'accepted' || entry.state === 'replied'),
+      accepted: count(
+        (entry) =>
+          (entry.state === 'accepted' || entry.state === 'replied') && entry.remote !== 'on_origin',
+      ),
       failed: count((entry) => entry.state === 'failed' && isPushFailure({ row: entry.row })),
       pushed: count((entry) => entry.state === 'pushed'),
       notes: hasPr

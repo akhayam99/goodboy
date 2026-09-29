@@ -273,6 +273,10 @@ Turn review comments into commits without writing the fix yourself. Review lists
 
 Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Waiting for the push** and **Done**.
 
+### Fixes already on the branch
+
+Review looks at origin before it pushes. A comment whose fix you already pushed reads **Already on origin**, and one that someone else's commit seems to have fixed reads **Looks fixed** with the commit and its author. Both offer **Reply and resolve** and never push. If you already answered a thread yourself it reads **You replied** and offers **Resolve only**.
+
 ### Close on GitHub
 
 Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.

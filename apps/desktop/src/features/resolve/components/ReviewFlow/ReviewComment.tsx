@@ -29,11 +29,14 @@ import {
   replyHeading,
   sharedFixLine,
 } from '../../reviewFlowCopy';
+import { REMOTE_LABEL } from '../../reviewRemote';
 import { selectResolveCandidate } from '../../selectResolveCandidate';
+import { handledByLine } from '../../../../store/slices/resolve/threadGitState';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { AgentLine } from './AgentLine';
 import { ProposedChange } from './ProposedChange';
+import { ThreadGitEvidence } from './ThreadGitEvidence';
 import type { ReviewEntry } from './useReviewEntries';
 
 export type ReviewCompose = {
@@ -125,15 +128,24 @@ export const ReviewComment = ({
       }),
     [candidates, entries, row.item.id],
   );
-  const { reply, setReply } = useResolveItemDraft({ sessionId, threadId, proposal: row.proposal });
+  const { reply: draftReply, setReply } = useResolveItemDraft({
+    sessionId,
+    threadId,
+    proposal: row.proposal,
+  });
+  const remote = entry.remote;
+  const elsewhere = entry.facts?.elsewhere ?? null;
+  const reply =
+    remote === 'looks_fixed' && elsewhere !== null ? handledByLine({ fix: elsewhere }) : draftReply;
   const [replyText, setReplyText] = useState(reply);
   const note = row.reviewerNote;
   const author = note?.author ?? null;
   const verbs = verbsOf(actions);
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
-  const hasChange = candidate !== null;
+  const hasChange = candidate !== null && remote !== 'looks_fixed';
   const replyShown =
-    reply.trim() !== '' || (state !== 'new' && state !== 'drafting' && state !== 'needs');
+    remote !== 'you_replied' &&
+    (reply.trim() !== '' || (state !== 'new' && state !== 'drafting' && state !== 'needs'));
   const blocker = sharedCandidateBlocker({ members });
 
   const startEdit = (): void => {
@@ -178,7 +190,11 @@ export const ReviewComment = ({
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
-      {row.attempt !== null && <AgentLine attempt={row.attempt} state={state} word={word} />}
+      {remote !== null && <ThreadGitEvidence sessionId={sessionId} entry={entry} />}
+
+      {row.attempt !== null && remote !== 'looks_fixed' && (
+        <AgentLine attempt={row.attempt} state={state} word={word} />
+      )}
 
       {state === 'needs' && row.thread.question != null && row.thread.question !== '' && (
         <div className="flex min-w-0 flex-col gap-2">
@@ -195,7 +211,7 @@ export const ReviewComment = ({
         <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
       )}
 
-      {members.length > 0 && (state === 'ready' || state === 'edited') && (
+      {members.length > 0 && remote === null && (state === 'ready' || state === 'edited') && (
         <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
           <p>{sharedFixLine({ count: members.length })}</p>
           <ul className="flex min-w-0 flex-col">
@@ -278,7 +294,7 @@ export const ReviewComment = ({
         </div>
       )}
 
-      {DECIDED_NOTE_STATES.has(state) && (
+      {DECIDED_NOTE_STATES.has(state) && remote === null && (
         <p className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-muted-foreground">
           <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
           {decidedNote({
@@ -395,6 +411,11 @@ export const ReviewComment = ({
                 </Tooltip>
               );
             })}
+            {remote === 'on_origin' && (
+              <span className="text-secondary text-faint-foreground">
+                {REMOTE_LABEL.nothingToPush}
+              </span>
+            )}
           </div>
         )
       )}

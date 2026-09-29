@@ -671,6 +671,24 @@ Every comment shows one state word, grouped in three:
   nothing is posted), Skipped
 - **Done**: Pushed, and Resolved on GitHub when someone else closed it
 
+Review reads git after a fetch when it opens and again before every push, and
+keeps one git state per thread in `resolve_threads.git_state` (`local`,
+`on_origin`, `fixed_elsewhere`, `folded`, `missing`). A comment whose fix sha is
+already on `origin/<branch>` reads **Already on origin**: it offers
+`Reply and resolve`, the header Push does not count it (the header says how many
+more need only a reply) and `preparePublication` pushes only the local threads.
+A comment with no fix of ours whose commented line was changed by a commit on
+origin that Goodboy did not make, or whose fix `git cherry` finds under another
+sha, reads **Looks fixed**: it shows the commit and its author, `Reply and
+resolve` posts "Handled in <sha> by @<author>", `Fix anyway` puts the comment
+back in the normal flow. It is always a suggestion, never an automatic resolve.
+A reply the user wrote by hand after the draft, whatever its text, reads **You
+replied**: `Resolve only` posts nothing (`reconcileReplyOperation` recognises it
+too). **Fix went missing** is only detected here and shown as a fact line. The
+git facts live in `sessionThreadGit`, the per-thread computation in
+`store/slices/resolve/threadGitState.ts`, the git side in
+`src-tauri/src/thread_git.rs`.
+
 Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the
 draft is outdated or failed), `Reply` (R, a reply without a change) and `Skip`
