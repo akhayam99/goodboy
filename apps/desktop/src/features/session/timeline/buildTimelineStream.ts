@@ -26,12 +26,15 @@ import type {
   TimelineIssueEntry,
   TimelinePlanEntry,
   TimelineQuestionEntry,
+  TimelineResolveBatchEntry,
   TimelineRunEntry,
   TimelineTopLevelEntry,
 } from './buildTimelineGroups';
 import type { RailGroupInput, RailGroupShape } from '../../workTreeModel/railGeometry';
-import type { RunIdentity } from './runIdentity';
+import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
+import { groupResolveBatches } from './resolveBatchGroups';
 import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
+import { resolveBatchRowState, type ResolveBatchRef } from './resolveBatchSummary';
 import {
   hasShownRunQuestion,
   oldestAgentOpenQuestion,
@@ -54,7 +57,8 @@ export type TimelineStreamEntry =
   | TimelineIssueEntry
   | TimelineBranchEntry
   | TimelineEventEntry
-  | TimelineQuestionEntry;
+  | TimelineQuestionEntry
+  | TimelineResolveBatchEntry;
 
 type StreamRail = {
   readonly id: string;
@@ -77,6 +81,12 @@ export type TimelineDayItem = StreamRail & {
   readonly ruleY: number;
 };
 
+export type TimelineExplodeSlot = {
+  readonly batchId: string;
+  readonly order: number;
+  readonly total: number;
+};
+
 export type TimelineRowItem = StreamRail & {
   readonly kind: 'row';
   readonly at: string | null;
@@ -88,6 +98,7 @@ export type TimelineRowItem = StreamRail & {
   readonly nodeIndex: string | null;
   readonly rowState: RowState;
   readonly hasUnread: boolean;
+  readonly explode?: TimelineExplodeSlot;
 };
 
 export type TimelineStreamItem = TimelineNowItem | TimelineDayItem | TimelineRowItem;
@@ -109,7 +120,9 @@ type Params = {
   readonly showReports?: boolean;
   readonly showWireframes?: boolean;
   readonly showQuestions?: boolean;
+  readonly resolveBatchByAgentId?: ReadonlyMap<string, ResolveBatchRef>;
   readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
+  readonly expandedBatchIds?: ReadonlySet<string>;
 };
 
 type DraftRow = {
@@ -126,6 +139,7 @@ type DraftRow = {
   readonly rowState: RowState;
   readonly hasUnread: boolean;
   readonly isPending: boolean;
+  readonly explode?: TimelineExplodeSlot;
 };
 
 type DraftDay = {
@@ -472,6 +486,10 @@ const SKIPPED_UNDER_CLOSED: RowState = { phase: 'skipped', reason: { kind: 'skip
 const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
 
 const NO_RESOLVE_FACTS: ReadonlyMap<string, ResolveActivityFacts> = new Map();
+
+const NO_RESOLVE_BATCHES: ReadonlyMap<string, ResolveBatchRef> = new Map();
+
+const NO_EXPANDED_BATCHES: ReadonlySet<string> = new Set();
 
 const agentRowStateOf = ({
   entry,
@@ -1043,6 +1061,7 @@ const streamItemsOf = ({ drafts }: StreamItemsParams): ReadonlyArray<TimelineStr
       groupId: draft.groupId,
       isPending: draft.isPending,
       gap,
+      ...(draft.explode === undefined ? {} : { explode: draft.explode }),
     });
     previous = draft;
   }
@@ -1065,6 +1084,101 @@ const openQuestionRowIds = ({
     ),
   );
 
+type BatchRowsParams = {
+  readonly batch: TimelineResolveBatchEntry;
+  readonly context: EmitContext;
+  readonly unreadAgentIds: ReadonlySet<string>;
+};
+
+const batchLaneIdOf = ({ batch }: { readonly batch: TimelineResolveBatchEntry }): string =>
+  laneIdOf({ entryId: batch.id });
+
+const batchRows = ({
+  batch,
+  context,
+  unreadAgentIds,
+}: BatchRowsParams): { readonly header: DraftRow; readonly children: ReadonlyArray<DraftRow> } => {
+  const identity = runIdentity({
+    laneIndex: 0,
+    seed: runIdentitySeed({ sessionId: batch.batchId }),
+  });
+  const laneId = batchLaneIdOf({ batch });
+  const header: DraftRow = {
+    kind: 'row',
+    id: batch.id,
+    at: batch.at,
+    grade: 'entry',
+    entry: batch,
+    identity,
+    familyId: batch.id,
+    groupId: null,
+    ordinal: null,
+    sortOrdinal: Math.max(...batch.children.map((child) => child.ordinal)),
+    rowState: resolveBatchRowState({ summary: batch.summary }),
+    hasUnread: batch.children.some((child) => unreadAgentIds.has(child.agent.id)),
+    isPending: false,
+  };
+  if (!batch.isExpanded) {
+    return { header, children: [] };
+  }
+  context.groups.push({
+    id: laneId,
+    parentGroupId: null,
+    identityIndex: identity.index,
+    isMuted: false,
+    originRowId: batch.id,
+    shape: 'merged',
+  });
+  const children = batch.children
+    .flatMap((child) =>
+      agentRows({
+        entry: child,
+        grade: 'step',
+        identity,
+        isMuted: false,
+        familyId: batch.id,
+        groupId: laneId,
+        showSubagents: context.showAgentSubagents,
+        readyAgentId: null,
+        isParentClosed: false,
+        context,
+      }),
+    )
+    .sort((first, second) => compareNewestFirst({ first, second }));
+  const direct = children.filter((child) => child.groupId === laneId);
+  return {
+    header,
+    children: children.map((child) => {
+      const position = direct.indexOf(child);
+      if (position === -1) {
+        return child;
+      }
+      return {
+        ...child,
+        explode: {
+          batchId: batch.batchId,
+          order: direct.length - 1 - position,
+          total: direct.length,
+        },
+      };
+    }),
+  };
+};
+
+const withBatchChildren = ({
+  drafts,
+  childRowsByBatchId,
+}: {
+  readonly drafts: ReadonlyArray<DraftRow>;
+  readonly childRowsByBatchId: ReadonlyMap<string, ReadonlyArray<DraftRow>>;
+}): ReadonlyArray<DraftRow> =>
+  drafts.flatMap((draft) => {
+    if (draft.entry.kind !== 'resolveBatch') {
+      return [draft];
+    }
+    return [...(childRowsByBatchId.get(draft.entry.id) ?? []), draft];
+  });
+
 export const buildTimelineStream = ({
   entries,
   unreadAgentIds,
@@ -1077,7 +1191,9 @@ export const buildTimelineStream = ({
   showReports = true,
   showWireframes = true,
   showQuestions = true,
+  resolveBatchByAgentId = NO_RESOLVE_BATCHES,
   resolveFactsByAgentId = NO_RESOLVE_FACTS,
+  expandedBatchIds = NO_EXPANDED_BATCHES,
 }: Params): TimelineStream => {
   const chainedRunById = new Map<string, ChainedRun>();
   for (const entry of entries) {
@@ -1104,8 +1220,20 @@ export const buildTimelineStream = ({
     resolveFactsByAgentId,
   };
   const rows: DraftRow[] = [];
+  const grouped = groupResolveBatches({
+    entries,
+    batchByAgentId: resolveBatchByAgentId,
+    factsByAgentId: resolveFactsByAgentId,
+    expandedBatchIds,
+  });
+  const childRowsByBatchId = new Map<string, ReadonlyArray<DraftRow>>();
+  for (const batch of grouped.batches) {
+    const { header, children } = batchRows({ batch, context, unreadAgentIds });
+    rows.push(header);
+    childRowsByBatchId.set(batch.id, children);
+  }
 
-  for (const entry of entries) {
+  for (const entry of grouped.remaining) {
     if (entry.kind === 'run') {
       rows.push(...runRows({ entry, context }));
       continue;
@@ -1191,7 +1319,9 @@ export const buildTimelineStream = ({
     }),
   });
   const withDays = withDayBreaks({
-    drafts: withPendingAtFamilyHead({ drafts: merged }),
+    drafts: withPendingAtFamilyHead({
+      drafts: withBatchChildren({ drafts: merged, childRowsByBatchId }),
+    }),
     dayLabelFor,
   });
 

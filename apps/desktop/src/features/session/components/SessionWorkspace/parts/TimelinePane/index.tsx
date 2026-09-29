@@ -46,6 +46,7 @@ import {
   type TimelineRowItem,
 } from '../../../../timeline/buildTimelineStream';
 import { dayLabel } from '../../../../timeline/dayLabel';
+import { resolveBatchEntryId } from '../../../../timeline/resolveBatchGroups';
 import {
   firstNeedsYouRowId,
   hasWaitingRow,
@@ -60,8 +61,9 @@ import { useOpenQuestions } from '../../../../../context/components/QuestionsTab
 import { useOpenAgentQuestion } from '../../../../../context/hooks/useOpenAgentQuestion';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useAgentTouchedWorktrees } from '../../../../hooks/useAgentTouchedWorktrees';
+import { useExplodeGroups } from '../../../../hooks/useExplodeGroups';
 import { useResolveActivity } from '../../../../hooks/useResolveActivity';
-import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
+import { useTimelineOpen, type TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { ActivityFilterPanel } from './ActivityFilterPanel';
 import { NeedsYouChip } from './NeedsYouChip';
 import { TimelineDayRule } from './TimelineDayRule';
@@ -69,6 +71,7 @@ import { TimelineNowRule } from './TimelineNowRule';
 import { TimelineSkeleton } from './TimelineSkeleton';
 import { TimelineStreamRow, type TimelineRowAction } from './TimelineStreamRow';
 import { TimelineAgentStreamRow } from './TimelineAgentStreamRow';
+import { TimelineResolveBatchStreamRow } from './TimelineResolveBatchStreamRow';
 import { TimelineRunStreamRow } from './TimelineRunStreamRow';
 import { WorkTimeProvider } from '../../../../../workTreeModel/components/WorkTimeProvider';
 import type { TimelineLaneControl, TimelineLaneTarget } from './TimelineRail';
@@ -79,6 +82,32 @@ import {
 } from '../../../../timeline/decisionChangeLines';
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
+
+const BATCH_CHILD_OPEN_LABEL = 'Open brief';
+
+const openTargetOfBatchChild = ({
+  item,
+  target,
+}: {
+  readonly item: TimelineRowItem;
+  readonly target: TimelineOpenTarget | null;
+}): TimelineOpenTarget | null =>
+  item.explode === undefined || target === null
+    ? target
+    : { ...target, label: BATCH_CHILD_OPEN_LABEL };
+
+const explodePhaseOf = ({
+  item,
+  leavingIds,
+}: {
+  readonly item: TimelineRowItem;
+  readonly leavingIds: ReadonlySet<string>;
+}): 'in' | 'out' | null => {
+  if (item.explode === undefined) {
+    return null;
+  }
+  return leavingIds.has(resolveBatchEntryId({ batchId: item.explode.batchId })) ? 'out' : 'in';
+};
 
 const NO_EXPANDED_ROWS: ReadonlySet<string> = new Set();
 
@@ -124,6 +153,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const pending = usePendingAction({ sessionId });
   const activity = useActivityFilter();
   const resolveActivity = useResolveActivity({ sessionId });
+  const explode = useExplodeGroups();
   const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
   const diffStats = useMountDiffStats(sessionId);
   const touchedWorktrees = useAgentTouchedWorktrees(sessionId);
@@ -249,6 +279,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
+        resolveBatchByAgentId: resolveActivity.batchByAgentId,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
       }).items,
     [advanceByRunId, decidingRunIds, model.entries, resolveActivity, unreadAgentIds],
@@ -291,12 +322,15 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         showWireframes:
           isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
         showQuestions: isNeedsYou || activity.filter.questions,
+        resolveBatchByAgentId: resolveActivity.batchByAgentId,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
+        expandedBatchIds: explode.expandedIds,
       }),
     [
       activity.filter,
       advanceByRunId,
       decidingRunIds,
+      explode.expandedIds,
       isNeedsYou,
       resolveActivity,
       unreadAgentIds,
@@ -312,9 +346,18 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
+        resolveBatchByAgentId: resolveActivity.batchByAgentId,
         resolveFactsByAgentId: resolveActivity.factsByAgentId,
+        expandedBatchIds: explode.expandedIds,
       }),
-    [advanceByRunId, decidingRunIds, resolveActivity, unreadAgentIds, visibleEntries],
+    [
+      advanceByRunId,
+      decidingRunIds,
+      explode.expandedIds,
+      resolveActivity,
+      unreadAgentIds,
+      visibleEntries,
+    ],
   );
 
   const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
@@ -689,6 +732,23 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
                   );
                 }
                 const { entry } = item;
+                if (entry.kind === 'resolveBatch') {
+                  return (
+                    <TimelineResolveBatchStreamRow
+                      key={item.id}
+                      item={item}
+                      entry={entry}
+                      rail={railRow}
+                      railWidth={rail.width}
+                      sessionId={sessionId}
+                      isExpanded={
+                        explode.expandedIds.has(entry.id) && !explode.leavingIds.has(entry.id)
+                      }
+                      lanes={lanes}
+                      onSetExpanded={explode.set}
+                    />
+                  );
+                }
                 const target = openTargetFor({ entry });
                 if (entry.kind === 'agent') {
                   return (
@@ -699,11 +759,12 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
                       rail={railRow}
                       railWidth={rail.width}
                       sessionId={sessionId}
-                      openTarget={target}
+                      openTarget={openTargetOfBatchChild({ item, target })}
                       action={actionFor({ item })}
                       diffStat={diffStatFor({ item })}
                       worktrees={touchedWorktrees.get(entry.agent.id) ?? NO_WORKTREES}
                       isRevealed={revealedRows.has(entry.id)}
+                      explodePhase={explodePhaseOf({ item, leavingIds: explode.leavingIds })}
                       lanes={lanes}
                       runLane={runLaneFor({ item })}
                       step={

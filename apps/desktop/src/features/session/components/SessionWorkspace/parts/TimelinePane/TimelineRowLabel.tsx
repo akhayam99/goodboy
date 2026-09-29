@@ -2,7 +2,10 @@ import { ValueToken, WORK_ROW, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS } from '../../../../../../shared/components/conceptIcons';
 import type { MountDiffStat } from '../../../../../../store';
 import { AgentKindChip } from '../../../AgentKindChip';
-import type { TimelineRunEntry } from '../../../../timeline/buildTimelineGroups';
+import type {
+  TimelineResolveBatchEntry,
+  TimelineRunEntry,
+} from '../../../../timeline/buildTimelineGroups';
 import {
   segmentsToText,
   sessionEventEmphasis,
@@ -19,6 +22,7 @@ import type { TimelineRowGrade } from '../../../../../workTreeModel/timelineRhyt
 import { RevealedRowTag } from './RevealedRowTag';
 import { TimelineRowStateLine } from './TimelineRowStateLine';
 import { TimelineRowWorktrees } from './TimelineRowWorktrees';
+import { TimelineResolveBatchLabel } from './TimelineResolveBatchLabel';
 import { TimelineRunLabel } from './TimelineRunLabel';
 import { DiffStat } from '../../../DiffStat';
 
@@ -33,15 +37,26 @@ type Props = {
 
 const NO_WORKTREES: ReadonlyArray<string> = [];
 
-type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry>;
+type LabelEntry = Exclude<TimelineStreamEntry, TimelineRunEntry | TimelineResolveBatchEntry>;
 
 type EntryParams = {
   readonly entry: LabelEntry;
+  readonly isBatchChild?: boolean;
 };
 
-const segmentsOf = ({ entry }: EntryParams): ReadonlyArray<TimelineLabelSegment> => {
+const RESOLVE_NAME_PREFIX = 'resolve: ';
+
+const segmentsOf = ({
+  entry,
+  isBatchChild = false,
+}: EntryParams): ReadonlyArray<TimelineLabelSegment> => {
   if (entry.kind === 'agent') {
-    return [{ kind: 'text', text: entry.agent.name }];
+    const { name } = entry.agent;
+    const text =
+      isBatchChild && name.startsWith(RESOLVE_NAME_PREFIX)
+        ? name.slice(RESOLVE_NAME_PREFIX.length)
+        : name;
+    return [{ kind: 'text', text }];
   }
   if (entry.kind === 'plan') {
     return [{ kind: 'text', text: entry.plan.title }];
@@ -158,6 +173,9 @@ export const TimelineRowLabel = ({
       />
     );
   }
+  if (entry.kind === 'resolveBatch') {
+    return <TimelineResolveBatchLabel entry={entry} />;
+  }
   const isStep = grade !== 'entry';
   const isQueued = item.rowState.phase === 'queued';
   const emphasis =
@@ -166,7 +184,7 @@ export const TimelineRowLabel = ({
     entry.kind === 'event' && entry.projectRun == null
       ? sessionEventSecondary({ event: entry.event })
       : null;
-  const segments = segmentsOf({ entry });
+  const segments = segmentsOf({ entry, isBatchChild: item.explode !== undefined });
   return (
     <>
       {item.ordinal != null ? (

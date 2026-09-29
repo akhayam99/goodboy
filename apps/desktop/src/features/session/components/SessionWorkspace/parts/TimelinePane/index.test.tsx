@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { agentPlace, sessionPlace } from '../../../../../../store/slices/navigation/place';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type { AgentId, ArtifactId, OpenQuestion, Session, SessionId } from '@goodboy/types';
 
 type Worktree = {
@@ -19,7 +19,10 @@ const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, re
   vi.hoisted(() => ({
     attachedRuns: { list: [] as ReadonlyArray<unknown> },
     resolveActivity: {
-      current: { factsByAgentId: new Map<string, unknown>() },
+      current: {
+        batchByAgentId: new Map<string, unknown>(),
+        factsByAgentId: new Map<string, unknown>(),
+      },
     },
     unread: { current: false },
     agentsLoaded: { current: true },
@@ -158,7 +161,7 @@ beforeEach(() => {
   questions.dismissed = [];
   agentsLoaded.current = true;
   attachedRuns.list = [];
-  resolveActivity.current = { factsByAgentId: new Map() };
+  resolveActivity.current = { batchByAgentId: new Map(), factsByAgentId: new Map() };
   useOpenQuestions.setState({ focusedQuestionId: null });
   localStorage.clear();
 });
@@ -1179,5 +1182,142 @@ describe('TimelinePane row meta', () => {
 
     expect(runCost?.className).toContain('@max-[560px]:hidden');
     expect(stepCost?.className).toContain('@max-[560px]:hidden');
+  });
+});
+
+describe('TimelinePane resolve batch', () => {
+  const STATES = ['ready', 'drafting', 'pushed', 'failed'] as const;
+  const WORD = {
+    ready: 'Ready for you',
+    drafting: 'Drafting',
+    pushed: 'Pushed',
+    failed: 'Draft failed',
+  } as const;
+
+  const seedBatch = () => {
+    const agents = STATES.map((state, index) => ({
+      id: `resolver-${state}`,
+      sessionId: 'session-1',
+      ordinal: index + 1,
+      name: `resolve: tvarga on file${index}.ts:${index + 1}`,
+      kind: 'resolver',
+      status: 'completed',
+      startedAt: `2026-08-20T10:0${index}:00.000Z`,
+      completedAt: `2026-08-20T10:0${index}:30.000Z`,
+    }));
+    storeState.sessionPhaseRuns = { 'session-1': agents };
+    resolveActivity.current = {
+      batchByAgentId: new Map(
+        agents.map((agent) => [agent.id, { batchId: 'batch-1', prNumber: 318 }] as const),
+      ),
+      factsByAgentId: new Map(
+        STATES.map((state) => [`resolver-${state}`, { state, word: WORD[state] }] as const),
+      ),
+    };
+  };
+
+  const toggle = () => screen.getByRole('button', { name: /4 resolves on PR #318/ });
+
+  it('draws one closed row with the state summary and no child rows', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByTestId('resolve-batch-summary').textContent).toBe(
+      '1 ready for you · 1 drafting · 1 pushed · 1 failed',
+    );
+    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+  });
+
+  it('draws a mixed node with one arc per state and the count in the middle', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    const node = within(toggle()).queryByRole('img');
+    const row = toggle().closest('[data-row-id]');
+    const mixed = row?.querySelector('[data-node-state="mixed"]');
+    expect(node).toBeNull();
+    expect(mixed?.textContent).toBe('4');
+    expect(mixed?.querySelectorAll('[data-arc-tone]')).toHaveLength(4);
+  });
+
+  it('explodes on click and folds back on the second click', () => {
+    vi.useFakeTimers();
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(toggle());
+
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getByText('tvarga on file0.ts:1')).toBeTruthy();
+    expect(screen.getAllByText('Ready for you').length).toBeGreaterThan(0);
+    expect(screen.getByText('Draft failed')).toBeTruthy();
+    const rowIds = Array.from(document.querySelectorAll('[data-row-id]')).map((element) =>
+      element.getAttribute('data-row-id'),
+    );
+    const batchRows = rowIds.filter(
+      (id) => id?.startsWith('agent:resolver') === true || id === 'batch:batch-1',
+    );
+    expect(batchRows.at(-1)).toBe('batch:batch-1');
+    expect(batchRows).toHaveLength(5);
+
+    fireEvent.click(toggle());
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(document.querySelectorAll('[data-explode="out"]')).toHaveLength(4);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('animates the children in and out with the stagger unless motion is reduced', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(toggle());
+
+    const children = Array.from(document.querySelectorAll<HTMLElement>('[data-explode="in"]'));
+    expect(children).toHaveLength(4);
+    expect(
+      children.every((child) => child.className.includes('motion-safe:animate-explode-in')),
+    ).toBe(true);
+    const delays = children.map((child) => child.style.animationDelay).sort();
+    expect(delays).toEqual(['0ms', '24ms', '48ms', '72ms']);
+  });
+
+  it('collapses at once when motion is reduced', () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('reduce'),
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    })) as unknown as typeof window.matchMedia;
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.click(toggle());
+    fireEvent.click(toggle());
+
+    expect(document.querySelectorAll('[data-explode]')).toHaveLength(0);
+    expect(screen.queryByText('tvarga on file0.ts:1')).toBeNull();
+    window.matchMedia = original;
+  });
+
+  it('opens and closes with the arrow keys', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    fireEvent.keyDown(toggle(), { key: 'ArrowRight' });
+    expect(toggle().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('keeps a failed child from opening the group and counts it as needing you', () => {
+    seedBatch();
+    render(<TimelinePane session={SESSION} actions={null} />);
+
+    expect(toggle().getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByTestId('resolve-batch-summary').textContent).toContain('1 failed');
   });
 });

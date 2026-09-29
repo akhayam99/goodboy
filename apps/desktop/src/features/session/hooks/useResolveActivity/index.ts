@@ -3,10 +3,12 @@ import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { useReviewEntries } from '../../../resolve/components/ReviewFlow/useReviewEntries';
 import { resolveFactsByAgentId, type ResolveActivityFacts } from '../../timeline/resolveActivity';
+import { resolveBatchByAgentId, type ResolveBatchRef } from '../../timeline/resolveBatchSummary';
 
 const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 
 export type ResolveActivity = {
+  readonly batchByAgentId: ReadonlyMap<string, ResolveBatchRef>;
   readonly factsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
 };
 
@@ -19,6 +21,7 @@ export const useResolveActivity = ({
   const { entries } = useReviewEntries({ sessionId });
   return useMemo(
     () => ({
+      batchByAgentId: resolveBatchByAgentId({ attempts }),
       factsByAgentId: resolveFactsByAgentId({
         attempts,
         reviews: entries.map((entry) => ({

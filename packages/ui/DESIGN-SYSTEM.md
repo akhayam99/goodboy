@@ -550,6 +550,16 @@ working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
 
+A group row (a batch of resolves) is closed by default and draws the `mixed`
+node. Activity is newest first, so its children come out above it, on the
+group's own lane with the existing upward elbows, and fold back down into it.
+Each child fades in over 180ms from 6px below, staggered 24ms from the nearest
+one; folding takes 130ms with a 10ms stagger from the farthest. The group opens
+with a click, Enter, Space or the right arrow and closes with a second click or
+the left arrow. Reduced motion skips the animation and swaps the rows at once.
+A failed child never opens the group: its arc is `danger`, the summary says
+"1 failed" in `danger` text and the need-you count includes it.
+
 A resolver takes its row state from the comment it fixes, not from the agent:
 the `review` reason carries the Review state and its word (Ready for you,
 Drafting, Pushed, Draft failed), with Review's tone and node. A comment that

@@ -169,6 +169,9 @@ export const useTimelineOpen = ({
           open: () => store.navigate({ to: sessionPlace({ sessionId, lens: target.lens }) }),
         };
       }
+      if (entry.kind === 'resolveBatch') {
+        return null;
+      }
       return {
         label: 'Open questions',
         open: () => store.navigate({ to: sessionPlace({ sessionId, lens: 'questions' }) }),

@@ -11,6 +11,7 @@ import {
 import { IntegrationGlyph } from '../../../../../integrations/components/IntegrationGlyph';
 import { rowStateNode, rowStateTone } from '../../../../../workTreeModel/rowStateCopy';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
+import { resolveBatchTitle } from '../../../../timeline/resolveBatchSummary';
 import { sessionEventGlyph } from '../../../../timeline/sessionEventPresentation';
 
 type Props = {
@@ -63,6 +64,18 @@ const questionResolvedLabel = ({
 
 export const TimelineRowMarker = ({ item, progress = null }: Props) => {
   const { entry } = item;
+
+  if (entry.kind === 'resolveBatch') {
+    return (
+      <WorkNode
+        state="mixed"
+        label={resolveBatchTitle({ total: entry.summary.total, prNumber: entry.prNumber })}
+        mark={{ kind: 'index', value: String(entry.summary.total) }}
+        parts={entry.summary.parts.map((part) => ({ tone: part.tone, count: part.count }))}
+        hasUnread={item.hasUnread}
+      />
+    );
+  }
 
   if (entry.kind === 'run' || entry.kind === 'agent') {
     const node = rowStateNode({ state: item.rowState });
