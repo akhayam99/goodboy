@@ -213,7 +213,18 @@ const composeFrame = async ({ send, capture, options, theme, workDirectory }) =>
   const pngPath = join(workDirectory, `${theme}.png`);
   writeFileSync(pngPath, Buffer.from(shot.result.data, 'base64'));
   const outPath = join(OUT_DIRECTORY, `${options.out}-${theme}.webp`);
-  execFileSync('cwebp', ['-quiet', '-q', '86', '-alpha_q', '100', '-m', '6', pngPath, '-o', outPath]);
+  execFileSync('cwebp', [
+    '-quiet',
+    '-q',
+    '86',
+    '-alpha_q',
+    '100',
+    '-m',
+    '6',
+    pngPath,
+    '-o',
+    outPath,
+  ]);
   return {
     outPath,
     pixels: `${frameWidth * options.scale}x${frameHeight * options.scale}`,

@@ -58,6 +58,9 @@ import {
 import { FrameScene } from './scenes/audit/FrameScene';
 import { BoardStatesScene } from './scenes/audit/BoardStatesScene';
 import { SessionStatesScene } from './scenes/audit/SessionStatesScene';
+import { FeaturesStartTabsScene } from './scenes/features/StartTabsScene';
+import { FeaturesReviewPushConfirmScene } from './scenes/features/ReviewPushConfirmScene';
+import { FeaturesWriteReviewScene } from './scenes/features/WriteReviewScene';
 import { SessionStartScene } from './scenes/audit/SessionStartScene';
 import { WorkspaceStatesScene } from './scenes/audit/WorkspaceStatesScene';
 import { SettingsAppScene } from './scenes/audit/SettingsAppScene';
@@ -83,6 +86,15 @@ import { ImpactScopesScene } from './scenes/audit/ImpactScopesScene';
 import { ExploreScene } from './scenes/audit/ExploreScene';
 import { DesignScaleScene } from './scenes/DesignScaleScene';
 import { ListboxScene } from './scenes/ListboxScene';
+import { FeaturesImpactOverviewScene } from './scenes/features/ImpactOverviewScene';
+import { FeaturesNewerDataScene } from './scenes/features/NewerDataScene';
+import { RepoStatusScene } from './scenes/features/RepoStatusScene';
+import { PaletteQueryScene } from './scenes/features/PaletteQueryScene';
+import { FeaturesReportSheetScene } from './scenes/features/ReportSheetScene';
+import { FeaturesScriptDrawerScene } from './scenes/features/ScriptDrawerScene';
+import { FeaturesComposerMenuScene } from './scenes/features/ComposerMenuScene';
+import { FeaturesSlackPermissionsScene } from './scenes/features/SlackPermissionsScene';
+import { WorkspaceProjectsScene } from './scenes/features/WorkspaceProjectsScene';
 import { BrandKickoffScene } from './scenes/brand/KickoffScene';
 import { BrandLookupScene } from './scenes/brand/LookupScene';
 import { BrandSlackScene } from './scenes/brand/SlackScene';
@@ -182,7 +194,19 @@ export const MOCK_SCENES = {
   explore: ExploreScene,
   'design-scale': DesignScaleScene,
   listbox: ListboxScene,
+  'features-impact-overview': FeaturesImpactOverviewScene,
+  'features-newer-data': FeaturesNewerDataScene,
+  'repo-status': RepoStatusScene,
+  'palette-query': PaletteQueryScene,
+  'features-report-sheet': FeaturesReportSheetScene,
+  'features-script-drawer': FeaturesScriptDrawerScene,
+  'features-composer-menu': FeaturesComposerMenuScene,
+  'slack-permissions': FeaturesSlackPermissionsScene,
+  'workspace-projects': WorkspaceProjectsScene,
   'brand-kickoff': BrandKickoffScene,
+  'features-start-tabs': FeaturesStartTabsScene,
+  'features-review-push-confirm': FeaturesReviewPushConfirmScene,
+  'features-write-review': FeaturesWriteReviewScene,
   'brand-lookup': BrandLookupScene,
   'brand-slack': BrandSlackScene,
   'brand-context': BrandContextScene,

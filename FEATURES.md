@@ -1048,19 +1048,16 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
 
 ## Agents
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s09-transcript-dark.webp">
-  <img src="./docs/readme/s09-transcript-light.webp" alt="The Test agent chat on Haiku 4.5: the ask, four operations, and the redelivery test posting one credit for three deliveries">
-</picture>
+Talk to agents, watch what they do and steer them while they work.
 
 ### Workspace chat
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s34-chat-dark.webp">
-  <img src="./docs/readme/s34-chat-light.webp" alt="Chat in Harborline: the list of chats by Pinned, Today, This week and Idle, and an answer on where the consent step lives in payments-api, with a table of three files, Read 4 files, Copy and Start work from here">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/agents-workspace-chat-dark.webp">
+  <img src="./docs/readme/agents-workspace-chat-light.webp" alt="Chat in Harborline: the chat list grouped by Pinned, Today, This week and Idle with Archive idle, and the answer to Where is the consent step defined? as a table of three payments-api files, with Read 4 files, Copy and Start work from here, under the chips Harborline · 3 projects, Read-only and Sonnet 5">
 </picture>
 
-Ask about the workspace without starting a session. **Chat**, right of **Board**, opens a list of your chats next to one conversation. Each chat reads every project of the workspace and never changes a file: the answer streams in, **Read N files** lists what it opened, and the model is picked per chat, from Claude or Codex, the two providers that can be held to reading. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you.
+Ask about the workspace without starting a session. **Chat**, next to **Board**, opens your chats on the left and one conversation on the right. Each chat reads every project of the workspace (**Harborline · 3 projects**) and never changes a file (**Read-only**): the answer streams in, **Read 4 files** lists what it opened, and the model, here **Sonnet 5**, is picked per chat from Claude or Codex, the two providers that can be held to reading. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you.
 
 **Start work** turns a chat into work in a panel beside it: the chat's model drafts a title, a goal, what the chat established and the files it named, you edit any of it, then start a new session with that goal or send it into a session that is already running.
 
@@ -1070,11 +1067,21 @@ Give each agent the job it is good at. Nine roles come with the app, **Scout**, 
 
 ### What the agent received
 
-Check exactly what an agent was told. The top of each chat shows who sent it and a chip for each part of its brief, and **View as sent** shows the exact text, with Copy.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/agents-what-received-dark.webp">
+  <img src="./docs/readme/agents-what-received-light.webp" alt="The top of the Credit once per event id chat: an Also received row with the chips Goal, Plan, 2 files and All, above the message sent by Codex about payments-api and notify-relay, then an Operations row with 1 Grep and 1 Read">
+</picture>
+
+Check exactly what an agent was told. The top of each chat shows the message it got and who sent it, here **Codex**, with an **Also received** row that has a chip for each part of its brief: **Goal**, **Plan**, **2 files**. **All** opens the whole brief, and **View as sent to** the provider shows the exact text, with a copy button.
 
 ### Agent transcript
 
-Follow one agent's work: grouped file edits, questions, permission cards and chips for the plans and reports it writes.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/agents-transcript-dark.webp">
+  <img src="./docs/readme/agents-transcript-light.webp" alt="An agent transcript: the ask about the retried webhooks and payments-api#318, the agent's answer, chips for the plan Dedupe on the event id, the report Where the second credit comes from and the wireframe Deliveries screen, retry state, and a Resolve findings group with thread 1 explained, thread 2 closed with commit 9f2c1ab and thread 3 no change">
+</picture>
+
+Follow one agent's work in order. The plan, report and wireframe it writes show as chips under its text, and a **Resolve findings** group lists each review thread as **explained**, **closed** or **no change**. File edits group into **Operations** rows, and questions and permission cards appear in the flow where you answer them.
 
 ### Queue or send now
 
@@ -1094,7 +1101,12 @@ Tell at a glance what a tool call did: **Running**, **Done**, **Failed**, **Need
 
 ### Composer plus menu
 
-Do more from the message box: attach files, run a script (`$`), start a workflow (`~`) or ask another agent (`@`). `$` lists your saved scripts and your `package.json` scripts, across pnpm and yarn workspaces.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/agents-composer-menu-dark.webp">
+  <img src="./docs/readme/agents-composer-menu-light.webp" alt="The message box of a chat with the plus menu open, listing Attach files, Run a script ($), Start a workflow (~) and Ask another agent (@), next to Ask first and the GPT-5.6 Sol model">
+</picture>
+
+Do more from the message box. The **+** opens **Attach files**, **Run a script** (`$`), **Start a workflow** (`~`) and **Ask another agent** (`@`). `$` lists your saved scripts and your `package.json` scripts, across pnpm and yarn workspaces.
 
 ### Attach files
 
@@ -1120,14 +1132,14 @@ Get agents and summaries in the language of your goal.
 
 The best support is running Goodboy on the work you already have. When something feels off, or you have an idea, report it from inside the app in one line.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s32-report-bug-dark.webp">
-  <img src="./docs/readme/s32-report-bug-light.webp" alt="Report a bug over the Harborline board: one line typed, the version, system, screen and CLI versions as chips, and Send">
-</picture>
-
 ### Report a bug
 
-Tell us what broke in one line. **⌘I** (**Ctrl+Shift+I** on Windows and Linux) opens a report sheet from any screen, and so do the footer chip, the palette, Settings, the macOS Help menu and **Report this** on a notification. Version, system, screen and CLI versions come along as chips you can remove, **What gets sent** shows exactly what leaves, and secrets, paths and emails are stripped. It files through gh, or opens the issue on GitHub. After a crash, the next launch offers to report it.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/support-report-bug-dark.webp">
+  <img src="./docs/readme/support-report-bug-light.webp" alt="The Report a bug sheet with the type Bug, an empty line reading What went wrong, in one line, the chips 0.13.0 · 3f9c2ab, macOS 15.5 arm64, Board and Claude CLI 2.1.260, Codex CLI 0.58.0, the What gets sent row, Public issue on GitHub, under your account, Add detail and Send" width="670">
+</picture>
+
+Tell us what broke in one line. **⌘I** (**Ctrl+Shift+I** on Windows and Linux) opens the **Report a bug** sheet from any screen, and so do the footer chip, the palette, Settings, the macOS Help menu and **Report this** on a notification. Version, system, screen and CLI versions come along as chips you can remove, **What gets sent** shows exactly what leaves, and secrets, paths and emails are stripped. It files through gh, or opens the issue on GitHub. After a crash, the next launch offers to report it.
 
 <a id="keyboard-and-terminal"></a>
 <details>
@@ -1135,15 +1147,25 @@ Tell us what broke in one line. **⌘I** (**Ctrl+Shift+I** on Windows and Linux)
 
 ### Terminal
 
-Open a real login shell in the session's worktree with **⌘T**, and find it still there after a reload. **⌘F** finds in its scrollback.
+Open a real login shell in the session's worktree. **⌘⌥T** opens the Terminal view, **⌘T** adds a tab, and the shell is still there after a reload. **⌘F** finds in its scrollback.
 
 ### Keyboard shortcuts, back and forward
 
-Drive Goodboy from the keyboard: about 40 shortcuts, a key for each view, workspaces 1 to 9, and **⌘[** and **⌘]** through history. One registry drives the keys, the help screen and the tooltips. **Esc** closes what is open inside the app and never takes the window out of macOS full screen.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/keyboard-shortcuts-dark.webp">
+  <img src="./docs/readme/keyboard-shortcuts-light.webp" alt="The Shortcuts page, 57 shortcuts, in the groups General, Workspaces, Navigate and Views, with Command palette on ⌘K, Report a bug on ⌘I, Back on ⌘[ and Forward on ⌘], and a ⌘⌥ key for each view from Overview to Slack threads">
+</picture>
+
+Drive Goodboy from the keyboard: 57 shortcuts, a **⌘⌥** key for each view, workspaces 1 to 9 on **⌘1** to **⌘9**, and **⌘[** and **⌘]** through history. **⌘/** opens the list. One registry drives the keys, this page and the tooltips. **Esc** closes what is open inside the app and never takes the window out of macOS full screen.
 
 ### Script drawer
 
-Watch a script's live output with **Stop**, **Run again** and the exit code, and pick it back up after a reload.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/keyboard-script-drawer-dark.webp">
+  <img src="./docs/readme/keyboard-script-drawer-light.webp" alt="The Scripts page with the Check posting drift drawer open on the right: Failed after 12s in ledger-core on nw/fix-settlement-replay, a Command line, the failing vitest output, Run again, Exit 1 and Copy output">
+</picture>
+
+Watch a script's live output in a drawer beside the list. **Stop** ends a running script, **Run again** starts it over, the footer shows the exit code and the time (**Exit 1 · 12s**) with **Copy output**, and the drawer comes back after a reload.
 
 ### Open in editor
 
@@ -1151,7 +1173,12 @@ Jump into VS Code, Cursor, Zed, the JetBrains IDEs, Sublime Text, Vim or Neovim,
 
 ### Explore
 
-Browse the session folder as a file tree with previews, and **Ask an agent about this file**.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/keyboard-explore-dark.webp">
+  <img src="./docs/readme/keyboard-explore-light.webp" alt="Explore in Harborline: the session folder as a file tree with the notes and exports folders and brief.md, settlement-batches.csv and drift-summary.xlsx, and the northwind-call.md preview on the right with its path, size, Open outside and Copy">
+</picture>
+
+Browse the session folder as a file tree, with a preview of the selected file beside it, **Open outside** and **Copy**. **Ask an agent about this file** starts an agent on it from the row.
 
 </details>
 
