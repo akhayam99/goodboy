@@ -3,6 +3,7 @@ import {
   CHAT_MESSAGE_STATUSES,
   CHAT_SESSION_LINK_KINDS,
   PROVIDER_IDS,
+  isEffortLevel,
   type Chat,
   type ChatId,
   type ChatMessage,
@@ -24,15 +25,6 @@ import type { Database } from '../client';
 import { isStringArray, parseJsonColumn } from '../shared/parseJsonColumn';
 
 const PREVIEW_LENGTH = 240;
-
-const EFFORT_LEVELS = [
-  'minimal',
-  'low',
-  'medium',
-  'high',
-  'xhigh',
-  'max',
-] as const satisfies ReadonlyArray<EffortLevel>;
 
 type ChatRow = {
   readonly id: string;
@@ -102,11 +94,8 @@ const isRole = (value: string): value is ChatMessageRole =>
 const isStatus = (value: string): value is ChatMessageStatus =>
   CHAT_MESSAGE_STATUSES.some((status) => status === value);
 
-const isEffort = (value: string): value is EffortLevel =>
-  EFFORT_LEVELS.some((effort) => effort === value);
-
 const toEffort = (value: string | null): EffortLevel | null =>
-  value !== null && isEffort(value) ? value : null;
+  value !== null && isEffortLevel(value) ? value : null;
 
 const isLinkKind = (value: string): value is ChatSessionLinkKind =>
   CHAT_SESSION_LINK_KINDS.some((kind) => kind === value);

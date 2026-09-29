@@ -232,7 +232,7 @@ export type {
   WorkflowTaskProfile,
   WorkflowTaskType,
 } from './workflow-routing';
-export { PROVIDER_IDS } from './provider-registry';
+export { EFFORT_LEVELS, isEffortLevel, PROVIDER_IDS } from './provider-registry';
 export type { OpenCodeRouting, ProviderKind } from './provider-catalog';
 export type { ProviderCredential } from './provider-credential';
 export type {
