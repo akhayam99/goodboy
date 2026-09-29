@@ -176,6 +176,7 @@ jobs:
           name: goodboy-linux-bundles
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
           path: |
             apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
             apps/desktop/src-tauri/target/release/bundle/deb/*.deb
