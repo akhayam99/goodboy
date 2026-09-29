@@ -524,6 +524,20 @@ describe('PaletteOverlay, Ask in Chat', () => {
     });
   });
 
+  it('stacks a filter popover opened inside the palette in the palette layer', () => {
+    render(
+      <ToastProvider>
+        <PaletteOverlay mode="search" onClose={vi.fn()} />
+      </ToastProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Filter by type' }));
+
+    const portal = document.querySelector('[data-dropdown-portal]');
+    expect(portal).not.toBeNull();
+    expect(portal?.parentElement?.className).toContain('z-command-palette');
+  });
+
   it('offers no Ask in Chat on an empty input or a prefixed search', () => {
     const { input } = openIn(null);
 

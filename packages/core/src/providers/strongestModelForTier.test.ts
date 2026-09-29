@@ -18,7 +18,7 @@ describe('strongestModelForTier', () => {
   it('answers with the top of the requested tier, not the top of the catalogue', () => {
     expect(
       strongestModelForTier({ provider: 'anthropic', tier: 'mid', wantsThinker: false })?.id,
-    ).toBe('sonnet-5');
+    ).toBe('sonnet-5.5');
     expect(
       strongestModelForTier({ provider: 'anthropic', tier: 'cheap', wantsThinker: false })?.id,
     ).toBe('haiku-4.5');

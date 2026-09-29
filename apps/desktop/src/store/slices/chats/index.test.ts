@@ -59,9 +59,10 @@ const WORKSPACE_ROW: Workspace = {
 
 type HarnessParams = {
   readonly projects?: ReadonlyArray<Project>;
+  readonly appStudio?: { readonly kind: 'chat'; readonly chatId: ChatId | null } | null;
 };
 
-const harness = ({ projects }: HarnessParams) => {
+const harness = ({ projects, appStudio = null }: HarnessParams) => {
   let state: Record<string, unknown> = {};
   const set = (
     patch: Record<string, unknown> | ((s: Record<string, unknown>) => Record<string, unknown>),
@@ -81,8 +82,15 @@ const harness = ({ projects }: HarnessParams) => {
       }),
     ],
     workspaces: [WORKSPACE_ROW],
+    appStudio,
   };
-  return { slice, read: () => state as unknown as ReturnType<typeof createChatsSlice> };
+  return {
+    slice,
+    read: () => state as unknown as ReturnType<typeof createChatsSlice>,
+    openStudio: (next: HarnessParams['appStudio']) => {
+      state = { ...state, appStudio: next };
+    },
+  };
 };
 
 type Gate = {
@@ -115,6 +123,9 @@ const gatedResponder = (): Gate => {
 };
 
 beforeEach(() => {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.clear();
+  }
   holder.respond = null;
   holder.backend = createMemoryChatBackend({
     respond: (params) => {
@@ -284,6 +295,90 @@ describe('chats slice', () => {
     expect(read().chatMessages[chatId]).toHaveLength(2);
     gate.release();
     await sending;
+  });
+
+  it('marks a chat unread when its reply lands while the user is elsewhere', async () => {
+    const gate = gatedResponder();
+    const { slice, read } = harness({});
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    const sending = slice.sendChatMessage({ chatId, content: 'Where is the consent step?' });
+    await gate.started;
+    expect(read().unreadChatIds).toEqual([]);
+
+    gate.release();
+    await sending;
+
+    expect(read().unreadChatIds).toEqual([chatId]);
+    slice.markChatRead({ chatId });
+    expect(read().unreadChatIds).toEqual([]);
+  });
+
+  it('marks a failed reply unread too', async () => {
+    const { slice, read } = harness({ projects: [] });
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+
+    await slice.sendChatMessage({ chatId, content: 'Where is the consent step?' });
+
+    expect(read().unreadChatIds).toEqual([chatId]);
+  });
+
+  it('keeps a chat read when the user is looking at it as the reply lands', async () => {
+    const gate = gatedResponder();
+    const { slice, read, openStudio } = harness({});
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    openStudio({ kind: 'chat', chatId });
+    const sending = slice.sendChatMessage({ chatId, content: 'Where is the consent step?' });
+    await gate.started;
+
+    gate.release();
+    await sending;
+
+    expect(read().unreadChatIds).toEqual([]);
+  });
+
+  it('does not mark a reply unread when the user stopped it', async () => {
+    const gate = gatedResponder();
+    const { slice, read, openStudio } = harness({});
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    openStudio({ kind: 'chat', chatId: 'other' as ChatId });
+    const sending = slice.sendChatMessage({ chatId, content: 'Where is the consent step?' });
+    await gate.started;
+    await slice.stopChatReply({ chatId });
+    gate.release();
+    await sending;
+
+    expect(read().unreadChatIds).toEqual([]);
+  });
+
+  it('drops the unread mark when the chat is archived', async () => {
+    const { slice, read } = harness({ projects: [] });
+    const chatId = await slice.createChat({
+      workspaceId: WORKSPACE,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+    });
+    await slice.sendChatMessage({ chatId, content: 'Where is the consent step?' });
+    expect(read().unreadChatIds).toEqual([chatId]);
+
+    await slice.archiveChats({ workspaceId: WORKSPACE, chatIds: [chatId] });
+
+    expect(read().unreadChatIds).toEqual([]);
   });
 
   it('archives chats out of the list and brings them back on undo', async () => {

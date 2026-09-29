@@ -56,4 +56,6 @@ export type ChatsSlice = ChatsState & {
   pinChat(params: PinChatParams): Promise<void>;
   renameChat(params: RenameChatParams): Promise<void>;
   setChatModel(params: SetChatModelParams): Promise<void>;
+  markChatRead(params: ChatParams): void;
+  markChatUnread(params: ChatParams): void;
 };

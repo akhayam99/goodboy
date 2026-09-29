@@ -130,6 +130,12 @@ const TriggersColumn = () => (
       <Trigger caption="codex astra" provider="codex" model="gpt-6-astra" effort="high" />
       <Trigger caption="cursor kimi" provider="cursor" model="kimi-k3-high" effort="high" />
       <Trigger caption="claude opus" provider="anthropic" model="claude-opus-5-5" effort="high" />
+      <Trigger
+        caption="claude sonnet"
+        provider="anthropic"
+        model="claude-sonnet-5-5"
+        effort="medium"
+      />
       <Trigger caption="cursor codex" provider="cursor" model="gpt-5.3-codex" effort="medium" />
       <Trigger caption="cursor auto" provider="cursor" model="auto" effort="medium" />
     </div>

@@ -35,6 +35,7 @@ import { startPrWriteBridge } from './features/review/prWriteBridge';
 import { useProviderRefreshOnFocus } from './shared/hooks/useProviderRefreshOnFocus';
 import { useProviderLimitsProbe } from './shared/hooks/useProviderLimitsProbe';
 import { useWindowShortcuts } from './shared/hooks/useWindowShortcuts';
+import { useKeepFullScreenOnEscape } from './shared/hooks/useKeepFullScreenOnEscape';
 import { useTitlebarInset } from './shared/hooks/useTitlebarInset';
 import { useUnhandledRejectionNotice } from './shared/hooks/useUnhandledRejectionNotice';
 import { useArtifactMirror } from './features/artifacts/hooks/useArtifactMirror';
@@ -137,6 +138,7 @@ export const App = () => {
   useWindowShortcuts();
   useArtifactMirror({ isReady: hydrated });
   useTitlebarInset();
+  useKeepFullScreenOnEscape();
   useUnhandledRejectionNotice();
   useAsyncSubscription({ start: listenBridgeCommands });
   useAsyncSubscription({ start: listenProjectMaterializeRequests });

@@ -1,36 +1,69 @@
-import { Tooltip, cn } from '@goodboy/ui';
+import { StatusDot, Tooltip, cn } from '@goodboy/ui';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
   readonly isOnChat: boolean;
+  readonly runningCount: number;
+  readonly hasUnread: boolean;
   readonly onChat: () => void;
 };
 
 const ChatIcon = CONCEPT_ICONS.chat;
 
-export const ChatButton = ({ isOnChat, onChat }: Props) => (
-  <Tooltip content={isOnChat ? "You're in Chat" : 'Ask about this workspace'} side="bottom">
-    <button
-      type="button"
-      aria-current={isOnChat ? 'page' : undefined}
-      aria-disabled={isOnChat ? true : undefined}
-      data-nav-chat=""
-      onClick={() => {
-        if (isOnChat) {
-          return;
-        }
-        onChat();
-      }}
-      className={cn(
-        'flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-label motion-safe:transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-        isOnChat
-          ? 'cursor-default bg-overlay-selected text-foreground'
-          : 'text-muted-foreground hover:bg-hover hover:text-foreground',
-      )}
-    >
-      <ChatIcon size={ICON_SIZE.control} aria-hidden />
-      Chat
-    </button>
-  </Tooltip>
-);
+const DOT_CORNER = 'absolute -right-1 -top-0.5';
+
+type TipParams = {
+  readonly isOnChat: boolean;
+  readonly runningCount: number;
+  readonly hasUnread: boolean;
+};
+
+const tipOf = ({ isOnChat, runningCount, hasUnread }: TipParams): string => {
+  if (runningCount > 0) {
+    return runningCount === 1 ? '1 chat running' : `${runningCount} chats running`;
+  }
+  if (hasUnread) {
+    return 'New reply';
+  }
+  return isOnChat ? "You're in Chat" : 'Ask about this workspace';
+};
+
+export const ChatButton = ({ isOnChat, runningCount, hasUnread, onChat }: Props) => {
+  const tip = tipOf({ isOnChat, runningCount, hasUnread });
+  return (
+    <Tooltip content={tip} side="bottom">
+      <button
+        type="button"
+        aria-current={isOnChat ? 'page' : undefined}
+        aria-disabled={isOnChat ? true : undefined}
+        aria-label={runningCount > 0 || hasUnread ? `Chat, ${tip}` : undefined}
+        data-nav-chat=""
+        data-chat-activity={runningCount > 0 ? 'running' : hasUnread ? 'unread' : undefined}
+        onClick={() => {
+          if (isOnChat) {
+            return;
+          }
+          onChat();
+        }}
+        className={cn(
+          'flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-label motion-safe:transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+          isOnChat
+            ? 'cursor-default bg-overlay-selected text-foreground'
+            : 'text-muted-foreground hover:bg-hover hover:text-foreground',
+        )}
+      >
+        <span className="relative flex shrink-0">
+          <ChatIcon size={ICON_SIZE.control} aria-hidden />
+          {runningCount > 0 ? (
+            <StatusDot tone="info" size="md" pulsing className={DOT_CORNER} />
+          ) : null}
+          {runningCount === 0 && hasUnread ? (
+            <StatusDot tone="warning" size="md" className={DOT_CORNER} />
+          ) : null}
+        </span>
+        Chat
+      </button>
+    </Tooltip>
+  );
+};

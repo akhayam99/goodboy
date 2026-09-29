@@ -62,6 +62,20 @@ describe('resolverTurnOutcomes', () => {
     expect(markerCount).toBe(0);
   });
 
+  it.each([
+    ['no reply block', ''],
+    ['a blank reply block', `\n<<comment-reply id="${THREAD_ID}">>   <</comment-reply>>`],
+    ['a reply cut off before its close', `\n<<comment-reply id="${THREAD_ID}">>half a sentence`],
+  ])('keeps the commit as a resolved outcome with %s', (_label, tail) => {
+    const { turnOutcomes, markerCount } = resolverTurnOutcomes({
+      assistantText: `Committed a8c81d9.\n<<comment-resolved threadId="${THREAD_ID}" commitSha="a8c81d9">>${tail}`,
+      previousOutcomes: {},
+    });
+
+    expect(turnOutcomes[THREAD_ID]).toMatchObject({ kind: 'resolved', commitSha: 'a8c81d9' });
+    expect(markerCount).toBeGreaterThan(0);
+  });
+
   it('leaves untouched threads alone on a reply-only turn', () => {
     const other = 'PRRT_kwDO456';
     const { outcomes } = resolverTurnOutcomes({

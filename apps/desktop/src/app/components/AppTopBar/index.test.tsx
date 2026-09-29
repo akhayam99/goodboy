@@ -53,6 +53,8 @@ const { currentWorkspace, hooks, store } = vi.hoisted(() => {
       navigation: {},
       currentSessionId: null,
       appStudio: null,
+      chatStreams: {},
+      unreadChatIds: [],
       back: vi.fn(),
       forward: vi.fn(),
       goToHistory: vi.fn(),

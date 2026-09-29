@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../../../../store';
+import { useChatActivity } from '../../../../features/workspace-chat/hooks/useChatActivity';
 import { useGoToBoard } from '../../../hooks/useGoToBoard';
 import { STUDIO_META } from '../../StudioFrame/studioMeta';
 import { BoardButton } from './BoardButton';
@@ -21,6 +22,7 @@ export const NavCluster = () => {
   const forward = useAppStore((s) => s.forward);
   const goToHistory = useAppStore((s) => s.goToHistory);
   const goToBoard = useGoToBoard();
+  const chatActivity = useChatActivity();
 
   const { backTarget, forwardTarget, items } = useMemo(() => {
     if (stack === null) {
@@ -64,6 +66,8 @@ export const NavCluster = () => {
       {hasWorkspace ? (
         <ChatButton
           isOnChat={studioKind === 'chat'}
+          runningCount={chatActivity.runningCount}
+          hasUnread={chatActivity.hasUnread}
           onChat={() => openStudio({ studio: { kind: 'chat', chatId: null } })}
         />
       ) : null}

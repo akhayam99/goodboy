@@ -55,7 +55,9 @@ vi.mock('./snapshotMountChanges', () => ({
 }));
 vi.mock('../project-mounts/selectors', () => ({ selectWritableMounts: vi.fn(() => []) }));
 
+import { selectWritableMounts } from '../project-mounts/selectors';
 import { reattachLiveTurn } from './reattachLiveTurn';
+import { isTurnSettling } from './turnSettled';
 
 const RUN_ID = 'run-1' as ProviderRunId;
 const AGENT_ID = 'agent-1' as AgentId;
@@ -181,5 +183,24 @@ describe('reattachLiveTurn', () => {
     });
     expect(h.completeResolvedAgent).not.toHaveBeenCalled();
     expect(store.maybeAutoAdvanceWorkflow).not.toHaveBeenCalled();
+  });
+
+  it('does not leave the turn marked active when setup throws before the stream starts', async () => {
+    vi.mocked(selectWritableMounts).mockImplementationOnce(() => {
+      throw new Error('mount selection failed');
+    });
+    const store = buildStore();
+
+    await expect(
+      reattachLiveTurn({
+        set: store.set,
+        get: store.get,
+        runId: RUN_ID,
+        cursor: { seq: 4, index: 0, owner: OWNER },
+      }),
+    ).rejects.toThrow('mount selection failed');
+
+    expect(isTurnSettling({ agentId: AGENT_ID, nowMs: Date.now() })).toBe(false);
+    expect(h.attachTurn).not.toHaveBeenCalled();
   });
 });

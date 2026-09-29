@@ -664,7 +664,9 @@ Every comment shows one state word, grouped in three:
 - **Open**: Not started, Drafting (one live line says what the agent does),
   Needs you (the agent asked), Ready (the fix and the reply under the comment,
   with an Edited tag once you changed the reply), Outdated (the comment changed
-  since the draft), Draft failed or Push failed
+  since the draft), Draft failed or Push failed (the line under the comment
+  names the reason, such as the run ended before a result or the provider
+  error, never a generic error)
 - **Waiting for the push**: Accepted, Reply only (with a Resolve only tag when
   nothing is posted), Skipped
 - **Done**: Pushed, and Resolved on GitHub when someone else closed it

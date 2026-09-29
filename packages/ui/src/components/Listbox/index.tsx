@@ -30,6 +30,8 @@ type CommonProps<T extends ListboxValue> = {
   readonly searchLabel?: string;
   readonly searchPlaceholder?: string;
   readonly noun?: string;
+  readonly emptyLabel?: string;
+  readonly noMatchLabel?: string;
   readonly ariaLabel?: string;
   readonly id?: string;
   readonly testId?: string;
@@ -42,6 +44,7 @@ type CommonProps<T extends ListboxValue> = {
   readonly align?: 'start' | 'end';
   readonly openEvent?: string;
   readonly isBlock?: boolean;
+  readonly popupWidth?: 'content' | 'trigger';
   readonly className?: string;
   readonly anchorClassName?: string;
   readonly onOpenChange?: (isOpen: boolean) => void;
@@ -63,6 +66,10 @@ export type ListboxProps<T extends ListboxValue> = SingleProps<T> | MultipleProp
 
 export const LISTBOX_SEARCH_THRESHOLD = 8;
 
+const LISTBOX_VIEWPORT_MARGIN = 12;
+
+const LISTBOX_MAX_WIDTH = 360;
+
 const NO_VALUES: ReadonlyArray<never> = [];
 
 const selectedValuesOf = <T extends ListboxValue>(props: ListboxProps<T>): ReadonlyArray<T> => {
@@ -82,6 +89,8 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     searchLabel = 'Search',
     searchPlaceholder = 'Search',
     noun = 'option',
+    emptyLabel,
+    noMatchLabel,
     ariaLabel,
     id,
     testId,
@@ -94,6 +103,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     align = 'start',
     openEvent,
     isBlock = false,
+    popupWidth = 'content',
     className,
     anchorClassName,
     onOpenChange,
@@ -105,11 +115,13 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
   const dropdown = useDropdown({
     disabled,
     align,
-    width: 'w-max max-w-90',
+    width: popupWidth === 'trigger' ? undefined : 'w-max',
+    maxWidth: LISTBOX_MAX_WIDTH,
     expectedHeight: 320,
     expectedWidth: 240,
     openEvent,
     isAtLeastTriggerWidth: true,
+    viewportMargin: LISTBOX_VIEWPORT_MARGIN,
   });
   const isOpen = dropdown.open;
   const isMultiple = props.multiple === true;
@@ -278,7 +290,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
     >
       <div className="flex max-h-80 min-h-0 min-w-0 flex-col">
         {isSearchable ? (
-          <div className="flex h-9 shrink-0 items-center gap-2 px-3 text-muted-foreground">
+          <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-3 text-muted-foreground">
             <Search size={14} aria-hidden className="shrink-0" />
             <input
               ref={searchRef}
@@ -295,7 +307,7 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
               placeholder={searchPlaceholder}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={keyboard.onKeyDown}
-              className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none placeholder:text-faint-foreground"
+              className="min-w-0 flex-1 bg-transparent text-body text-foreground outline-none focus-visible:outline-none! placeholder:text-faint-foreground"
             />
             {hasQuery ? (
               <span className="shrink-0 text-meta text-faint-foreground">
@@ -309,7 +321,9 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
         ) : null}
         {status === undefined && isEmpty ? (
           <div className="px-3 py-2 text-label text-faint-foreground">
-            {hasQuery ? `No ${noun} matches "${trimmedQuery}"` : `No ${noun}s yet`}
+            {hasQuery
+              ? (noMatchLabel ?? `No ${noun} matches "${trimmedQuery}"`)
+              : (emptyLabel ?? `No ${noun}s yet`)}
           </div>
         ) : null}
         {hasList ? (

@@ -1,4 +1,9 @@
-import { listMessagesForAgent, setResolveAttemptPhase } from '@goodboy/db';
+import {
+  listMessagesForAgent,
+  listResolveAttempts,
+  listResolveThreads,
+  setResolveAttemptPhase,
+} from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
 import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
 import { listLiveRunIds } from '../../../features/chat/turn';
@@ -8,7 +13,9 @@ import {
 } from '../../../features/worktree/worktree';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { resolverTurnOutcomes } from '../../../features/session/resolverTurnOutcomes';
+import { isTurnSettling } from '../turn/turnSettled';
 import { outcomePatch } from './outcomePatch';
+import { projectResolveRows } from './projectResolveRows';
 import { resolveWorktreePath } from './resolveWorktreePath';
 import type { SessionParams, SliceParams } from './types';
 
@@ -58,12 +65,7 @@ const downgradeTargetless = async ({ attempts, rows }: DowngradeParams): Promise
   }
 };
 
-export const reconcileResolveAttempts = async ({
-  get,
-  sessionId,
-  rows,
-  attempts,
-}: Params): Promise<void> => {
+const reconcileWrites = async ({ get, sessionId, rows, attempts }: Params): Promise<void> => {
   await downgradeTargetless({ attempts, rows });
   const targeted = attempts.filter((attempt) => !isTargetless({ attempt }));
   const hasPendingWork =
@@ -108,7 +110,9 @@ export const reconcileResolveAttempts = async ({
       lease.holder === attempt.agentId &&
       lease.runId !== null &&
       !lease.hasExited;
-    const isRunning = isLeased || (runId !== undefined && liveRunIds.has(runId));
+    const isProcessAlive = isLeased || (runId !== undefined && liveRunIds.has(runId));
+    const isRunning =
+      isProcessAlive || isTurnSettling({ agentId: attempt.agentId, nowMs: Date.now() });
     if (attempt.phase === 'queued' || (attempt.phase === 'running' && isRunning)) {
       continue;
     }
@@ -168,6 +172,21 @@ export const reconcileResolveAttempts = async ({
       id: attempt.id,
       phase: hasFailure ? 'failed' : hasQuestion ? 'waiting' : 'finished',
       error: hasFailure ? 'interrupted' : null,
+    });
+  }
+};
+
+export const reconcileResolveAttempts = async (params: Params): Promise<void> => {
+  const { set, get, sessionId } = params;
+  try {
+    await reconcileWrites(params);
+  } finally {
+    projectResolveRows({
+      set,
+      get,
+      sessionId,
+      rows: await listResolveThreads({ db: tauriDatabase, sessionId }),
+      attempts: await listResolveAttempts({ db: tauriDatabase, sessionId }),
     });
   }
 };

@@ -39,6 +39,16 @@ describe('resolveModelArgs', () => {
     expect(resolved).not.toHaveProperty('maxMode');
   });
 
+  it.each(['xhigh', 'max'] as const)('keeps %s unclamped for Sonnet 5.5', (effort) => {
+    const resolved = resolveModelArgs({
+      provider: 'anthropic',
+      selection: { key: 'sonnet-5.5', effort },
+    });
+
+    expect(resolved.args).toEqual(['--model', 'claude-sonnet-5-5', '--effort', effort]);
+    expect(resolved).not.toHaveProperty('clamped');
+  });
+
   it('gives Gemini the long model flag and an effort, both of which its cli demands', () => {
     expect(
       resolveModelArgs({

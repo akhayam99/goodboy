@@ -35,6 +35,10 @@ describe('computeCursorCostUsd', () => {
     expect(computeCursorCostUsd({ usage, model: 'claude-opus-5-5-max' })).toBeCloseTo(5 + 25);
   });
 
+  it('claude-sonnet-5-5-medium uses the sonnet 5 rate', () => {
+    expect(computeCursorCostUsd({ usage, model: 'claude-sonnet-5-5-medium' })).toBeCloseTo(2 + 10);
+  });
+
   it('claude-fable-5-1-thinking-high matches anthropic fable 5.1 list price', () => {
     const cursorCost = computeCursorCostUsd({
       usage,

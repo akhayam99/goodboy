@@ -66,6 +66,13 @@ file holds those explanations. Everything below has been "fixed" at least once a
   `user_unapproved`). `reviewComment.undo` in the action registry picks the
   verb from the approval (reopen for `accepted`, take up for `deferred` and
   `wont_fix`), and `reviewComment.matrix.test.ts` walks every state.
+  A resolver process can exit while its turn is still settling: the provider
+  `done` arrives, then `completeResolvedAgent` runs before the markers are
+  saved. `reconcileResolveAttempts` must not fail an attempt in that window, so
+  it skips an agent whose turn is still settling (`isTurnSettling` in
+  `turnSettled.ts`) besides checking the lease and the live run ids. Markers
+  that still arrive on an attempt failed as `interrupted` are recorded rather
+  than dropped.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider

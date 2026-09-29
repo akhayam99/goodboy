@@ -6,7 +6,7 @@ export type WorkBrief = {
   readonly goal: string;
   readonly know: ReadonlyArray<string>;
   readonly files: ReadonlyArray<string>;
-  readonly project: string | null;
+  readonly projects: ReadonlyArray<string>;
 };
 
 const KNOW_LIMIT = 3;
@@ -39,14 +39,14 @@ type ProjectParams = {
   readonly projectNames: ReadonlyArray<string>;
 };
 
-const projectOf = ({ files, projectNames }: ProjectParams): string | null => {
-  const named = files
-    .map((file) => file.split('/')[0] ?? '')
-    .find((segment) => projectNames.includes(segment));
-  return named ?? projectNames[0] ?? null;
-};
-
 const unique = (values: ReadonlyArray<string>): ReadonlyArray<string> => [...new Set(values)];
+
+const projectsOf = ({ files, projectNames }: ProjectParams): ReadonlyArray<string> =>
+  unique(
+    files
+      .map((file) => file.split('/')[0] ?? '')
+      .filter((segment) => projectNames.includes(segment)),
+  );
 
 export const draftWorkBrief = ({ title, messages, projectNames }: DraftParams): WorkBrief => {
   const question = messages.find((message) => message.role === 'user')?.content.trim() ?? title;
@@ -69,7 +69,7 @@ export const draftWorkBrief = ({ title, messages, projectNames }: DraftParams): 
     goal: lead === '' ? question : `Follow up on "${question}". ${lead}`,
     know: (items.length > 0 ? items : lead === '' ? [] : [lead]).slice(0, KNOW_LIMIT),
     files,
-    project: projectOf({ files, projectNames }),
+    projects: projectsOf({ files, projectNames }),
   };
 };
 
@@ -112,14 +112,16 @@ export const parseWorkBrief = ({ text, fallback, projectNames }: ParseParams): W
   if (title === '' || goal === '') {
     return fallback;
   }
-  const project = textOf(parsed.project);
+  const projects = unique(stringsOf(parsed.projects).map((entry) => entry.trim())).filter((entry) =>
+    projectNames.includes(entry),
+  );
   const files = stringsOf(parsed.files);
   return {
     title: title.slice(0, TITLE_LIMIT),
     goal,
     know: stringsOf(parsed.know).slice(0, KNOW_LIMIT),
     files: (files.length > 0 ? files : fallback.files).slice(0, FILE_LIMIT),
-    project: projectNames.includes(project) ? project : fallback.project,
+    projects: Array.isArray(parsed.projects) ? projects : fallback.projects,
   };
 };
 

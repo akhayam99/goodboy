@@ -43,7 +43,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'opus-5',
     attempt: 0,
     connectedProviders: CONNECTED,
-    expected: { provider: 'anthropic', model: 'sonnet-5' },
+    expected: { provider: 'anthropic', model: 'sonnet-5.5' },
   },
   {
     name: 'rate limit on the cheapest model crosses to another provider',
@@ -188,7 +188,7 @@ const ROWS: ReadonlyArray<Row> = [
     model: 'gemini-3.1-pro',
     attempt: 0,
     connectedProviders: ['gemini', 'anthropic'],
-    expected: { provider: 'anthropic', model: 'sonnet-5' },
+    expected: { provider: 'anthropic', model: 'sonnet-5.5' },
   },
   {
     name: 'a cooling provider is skipped for the next one in the pool',
@@ -315,7 +315,7 @@ describe('planTurnFallback', () => {
         connectedProviders: ['anthropic', 'codex'],
         preferred: { provider: 'gemini', model: 'gemini-3.1-pro' },
       }),
-    ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5.5' });
   });
 
   it('degrades to the heuristic when the role fallback model is not in the catalogue', () => {
@@ -329,7 +329,7 @@ describe('planTurnFallback', () => {
         connectedProviders: CONNECTED,
         preferred: { provider: 'codex', model: 'gpt-99' },
       }),
-    ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5.5' });
   });
 
   it('degrades to the heuristic when the role fallback is the pair that just failed', () => {
@@ -343,7 +343,7 @@ describe('planTurnFallback', () => {
         connectedProviders: CONNECTED,
         preferred: { provider: 'anthropic', model: 'opus-5' },
       }),
-    ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5.5' });
   });
 
   it('never drops an account usage limit onto a cheaper model of the same provider', () => {
@@ -443,7 +443,7 @@ describe('planTurnFallback', () => {
         enabledProviders: ['anthropic', 'codex'],
         preferred: { provider: 'gemini', model: 'gemini-3.1-pro' },
       }),
-    ).toEqual({ provider: 'anthropic', model: 'sonnet-5' });
+    ).toEqual({ provider: 'anthropic', model: 'sonnet-5.5' });
   });
 
   it('keeps a same-provider role fallback while another provider cools down', () => {

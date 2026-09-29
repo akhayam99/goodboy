@@ -217,6 +217,23 @@ export const OPENROUTER_CATALOG = [
     defaultEffort: 'high',
   },
   {
+    key: 'sonnet-5.5',
+    label: 'Claude Sonnet 5.5',
+    tier: 'turn',
+    contextWindow: 1_000_000,
+    presentation: {
+      family: 'claude',
+      group: 'Sonnet',
+      version: '5.5',
+      order: 75,
+      costTier: 'mid',
+    },
+    provider: 'openrouter',
+    cliId: 'openrouter/anthropic/claude-sonnet-5.5',
+    efforts: EFFORTS,
+    defaultEffort: 'medium',
+  },
+  {
     key: 'sonnet-5',
     label: 'Claude Sonnet 5',
     tier: 'turn',
