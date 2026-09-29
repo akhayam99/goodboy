@@ -1,5 +1,6 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { AlertCircle, Check } from 'lucide-react';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -25,6 +26,7 @@ import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import {
   COMPOSE_COPY,
   REVIEW_FLOW_LABEL,
+  composePlaceholder,
   decidedNote,
   replyHeading,
   sharedFixLine,
@@ -104,6 +106,7 @@ export const ReviewComment = ({
   onSelect,
 }: Props) => {
   const { row, state, word, threadId } = entry;
+  const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
     [sessionId, threadId],
@@ -284,6 +287,7 @@ export const ReviewComment = ({
           {decidedNote({
             state: state as 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved',
             sha: conversationSha({ row }),
+            provider,
           })}
         </p>
       )}
@@ -315,7 +319,7 @@ export const ReviewComment = ({
           <SectionHeader label={COMPOSE_COPY[compose.mode].label} headingLevel={2} />
           <Textarea
             aria-label={COMPOSE_COPY[compose.mode].label}
-            placeholder={COMPOSE_COPY[compose.mode].placeholder}
+            placeholder={composePlaceholder({ mode: compose.mode, provider })}
             value={compose.text}
             autoFocus
             autoGrow

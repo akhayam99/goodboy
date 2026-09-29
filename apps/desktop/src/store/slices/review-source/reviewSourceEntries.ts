@@ -53,7 +53,7 @@ export const gitlabSourceKey = ({
   readonly number: number;
 }): string => `gitlab:${mountId ?? 'session'}:${number}`;
 
-const REPO_NAME = /^https?:\/\/[^/]+\/(?:.+\/)?([^/]+)\/(?:-\/)?(?:pull|merge_requests)\/\d+/;
+const REPO_NAME = /^https?:\/\/[^/]+\/(?:.+\/)?([^/]+)\/(?:-\/merge_requests|pull)\/\d+/;
 
 const repoNameOf = ({ url }: { readonly url: string }): string =>
   REPO_NAME.exec(url)?.[1] ?? 'Request';

@@ -9,6 +9,7 @@ import type {
 } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { buildResolveQueueRows, type ResolveQueueRow } from '../../buildResolveQueueRows';
+import { useActiveReviewSource } from '../useActiveReviewSource';
 import { useResolveDeliveryReceipts } from '../useResolveDeliveryReceipts';
 
 const EMPTY_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [];
@@ -20,10 +21,8 @@ type Params = {
 };
 
 export const useResolveQueueRows = ({ sessionId }: Params): ReadonlyArray<ResolveQueueRow> => {
-  const comments = useAppStore(
-    (s) =>
-      s.sessionGithub[sessionId]?.detail?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>),
-  );
+  const { source } = useActiveReviewSource({ sessionId });
+  const comments = source?.comments ?? (EMPTY_ARRAY as ReadonlyArray<PrComment>);
   const notes = useAppStore(
     (s) => s.diffComments[sessionId] ?? (EMPTY_ARRAY as ReadonlyArray<DiffComment>),
   );

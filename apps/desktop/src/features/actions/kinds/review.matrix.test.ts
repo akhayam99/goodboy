@@ -6,6 +6,7 @@ import { REVIEW_KIND, type ReviewFacts } from './review';
 const BASE: ReviewFacts = {
   sessionId: 'session' as SessionId,
   prNumber: 318,
+  sourceKind: 'github',
   open: 0,
   fresh: 0,
   ready: 0,

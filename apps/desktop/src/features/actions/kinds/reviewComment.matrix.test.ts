@@ -11,6 +11,7 @@ const BASE: ReviewCommentFacts = {
   state: 'new',
   isNote: false,
   hasPr: true,
+  provider: 'GitHub',
   agentId: 'resolver' as AgentId,
   path: 'src/webhooks/retryPolicy.ts',
   url: 'https://github.com/harborline/payments-api/pull/318#discussion_r1',

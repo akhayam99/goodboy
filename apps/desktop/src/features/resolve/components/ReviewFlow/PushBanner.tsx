@@ -1,10 +1,12 @@
 import { AlertCircle, ArrowUp, Check, RefreshCw, RotateCw, X, type LucideIcon } from 'lucide-react';
 import { Button, GhostActionButton, IconButton, InlineConfirm, tintClasses, cn } from '@goodboy/ui';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionReplySettings } from '../../../../store/sessionReplySettings';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { blockerCopy, driftSentence, excludedLine } from '../../resolvePublishCopy';
+import { useActiveReviewSource } from '../../hooks/useActiveReviewSource';
 import { pushConfirmBody, pushConfirmTitle, pushStyleNote } from '../../reviewPushCopy';
 import type { ReviewPush } from './useReviewPush';
 
@@ -33,6 +35,8 @@ export const DISMISS_LABEL = 'Dismiss';
 export const PushBanner = ({ sessionId, push }: Props) => {
   const commitStyle = useAppStore((s) => sessionReplySettings({ state: s, sessionId }).commitStyle);
   const { phase } = push;
+  const { source } = useActiveReviewSource({ sessionId });
+  const provider = REVIEW_SOURCE_LABEL[source?.kind ?? 'github'];
 
   if (phase.kind === 'result') {
     const isDone = phase.result.tone === 'done';
@@ -106,7 +110,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
       role="primary"
       icon={<ArrowUp size={ICON_SIZE.control} aria-hidden />}
       title={pushConfirmTitle({ preview })}
-      description={pushConfirmBody({ preview, commitStyle })}
+      description={pushConfirmBody({ preview, commitStyle, provider })}
       confirmLabel={PUSH_LABEL}
       isBusy={phase.kind === 'pushing'}
       onConfirm={push.confirm}

@@ -9,6 +9,7 @@ import { GithubConnectionEmptyState } from '../../../github/components/GithubCon
 import { useGithubConnection } from '../../../integrations/github/useGithubConnection';
 import { usePrDraftAgentRunning } from '../../../github/usePrDraftAgentRunning';
 import { ReviewFlow } from '../../../resolve/components/ReviewFlow';
+import { useActiveReviewSource } from '../../../resolve/hooks/useActiveReviewSource';
 import { REVIEW_TITLE } from '../../../resolve/reviewFlowCopy';
 import { NoPullRequestLine } from './NoPullRequestLine';
 
@@ -18,7 +19,8 @@ type Props = {
 
 export const ReviewPane = ({ session }: Props) => {
   const sessionId = session.id as SessionId;
-  const pr = useAppStore((s) => s.sessionGithub[sessionId]?.pr ?? null);
+  const { entries } = useActiveReviewSource({ sessionId });
+  const hasRemote = entries.some((entry) => entry.kind !== 'local');
   const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
   const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
   const setPullRequestMode = useAppStore((s) => s.setPullRequestMode);
@@ -39,7 +41,7 @@ export const ReviewPane = ({ session }: Props) => {
   const isGithubConnected =
     githubConnection.isResolved === false || githubConnection.isAuthenticated;
 
-  if (pr === null && repo === null) {
+  if (!hasRemote && repo === null) {
     return (
       <PaneShell title={REVIEW_TITLE} icon={CONCEPT_ICONS.review}>
         <GithubConnectionEmptyState
@@ -51,7 +53,7 @@ export const ReviewPane = ({ session }: Props) => {
     );
   }
 
-  if (pr === null) {
+  if (!hasRemote) {
     return (
       <ReviewFlow
         session={session}

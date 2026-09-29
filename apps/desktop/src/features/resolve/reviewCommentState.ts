@@ -1,3 +1,4 @@
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { WorkNodeState } from '@goodboy/ui';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 
@@ -128,7 +129,7 @@ export const reviewCommentWord = ({
     case 'pushed':
       return 'Pushed';
     case 'resolved':
-      return 'Resolved on GitHub';
+      return `Resolved on ${REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github']}`;
     default: {
       const exhaustive: never = state;
       return exhaustive;

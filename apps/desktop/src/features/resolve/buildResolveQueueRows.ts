@@ -1,3 +1,4 @@
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type {
   DiffComment,
   PrComment,
@@ -10,6 +11,7 @@ import type {
 import { groupThreads, type CommentThread } from '../github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { noteCommentThread } from './notes/noteThread';
+import { conversationSourceOfThread } from './notes/conversationSource';
 import {
   isDeliveryComplete,
   resolveDeliveryReceiptsFor,
@@ -26,7 +28,7 @@ import {
   type ResolveUiState,
 } from './resolveRowState';
 
-export type ResolveConversationSource = 'github' | 'note';
+export type ResolveConversationSource = 'github' | 'gitlab' | 'bitbucket' | 'note';
 
 export type ResolveQueueReviewerNote = {
   readonly source: ResolveConversationSource;
@@ -231,6 +233,7 @@ export const buildResolveQueueRows = ({
       pushedSha: item.integratedSha ?? thread.commitShas?.at(-1) ?? null,
       pushError: publicationErrorOf({ thread }),
       runFailure: runFailureReason({ thread, attempt }),
+      provider: REVIEW_SOURCE_LABEL[thread.sourceKind ?? 'github'],
     });
     return {
       item,
@@ -241,7 +244,7 @@ export const buildResolveQueueRows = ({
       attempt,
       reviewerNote: reviewerNoteOf({
         thread: commentThread,
-        source: thread.originKind === 'diff_comment' ? 'note' : 'github',
+        source: conversationSourceOfThread({ thread }),
       }),
       proposal: thread.replyDraft,
       proposalKind,

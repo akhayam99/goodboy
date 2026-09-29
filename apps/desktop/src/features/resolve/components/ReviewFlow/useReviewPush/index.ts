@@ -1,9 +1,11 @@
 import { useCallback, useState } from 'react';
 import { formatError } from '@goodboy/ui';
+import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import type { ResolvePublicationPreview, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { agentPlace } from '../../../../../store/slices/navigation/place';
 import { isReportedError } from '../../../../../store/slices/notifications/reportedError';
+import { useActiveReviewSource } from '../../../hooks/useActiveReviewSource';
 import type { BlockerCopy } from '../../../resolvePublishCopy';
 import {
   PUSH_BUSY,
@@ -40,10 +42,12 @@ export const useReviewPush = ({ sessionId }: { readonly sessionId: SessionId }):
   const retryPublication = useAppStore((s) => s.retryPublication);
   const publishConversations = useAppStore((s) => s.publishConversations);
   const cancelPublication = useAppStore((s) => s.cancelPublication);
-  const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
+  const refreshReviewSource = useAppStore((s) => s.refreshReviewSource);
   const openDiffLens = useAppStore((s) => s.openDiffLens);
   const navigate = useAppStore((s) => s.navigate);
   const [phase, setPhase] = useState<ReviewPushPhase>(IDLE);
+  const { source } = useActiveReviewSource({ sessionId });
+  const provider = REVIEW_SOURCE_LABEL[source?.kind ?? 'github'];
 
   const arm = useCallback(
     async ({ isRetry }: { readonly isRetry: boolean }): Promise<void> => {
@@ -83,7 +87,7 @@ export const useReviewPush = ({ sessionId }: { readonly sessionId: SessionId }):
       const result = await publishConversations({ sessionId, publicationId });
       switch (result.kind) {
         case 'done':
-          setPhase({ kind: 'result', result: pushResultOf({ outcome: result }) });
+          setPhase({ kind: 'result', result: pushResultOf({ outcome: result, provider }) });
           return;
         case 'push_failed':
           setPhase(failed(pushFailedSentence({ error: result.error })));
@@ -105,7 +109,7 @@ export const useReviewPush = ({ sessionId }: { readonly sessionId: SessionId }):
     } catch (error) {
       setPhase(isReportedError(error) ? IDLE : failed(formatError(error)));
     }
-  }, [phase, publishConversations, sessionId]);
+  }, [phase, provider, publishConversations, sessionId]);
 
   const cancel = useCallback((): void => {
     const publicationId = phase.kind === 'confirm' ? phase.preview.publicationId : null;
@@ -122,7 +126,7 @@ export const useReviewPush = ({ sessionId }: { readonly sessionId: SessionId }):
         return;
       }
       if (action === 'refresh') {
-        void refreshSessionPrDetail(sessionId, { force: true }).then(() => arm({ isRetry: false }));
+        void refreshReviewSource({ sessionId, force: true }).then(() => arm({ isRetry: false }));
         return;
       }
       if (action === 'view_work') {
@@ -139,7 +143,7 @@ export const useReviewPush = ({ sessionId }: { readonly sessionId: SessionId }):
       }
       openDiffLens(sessionId, { kind: 'working', path: null });
     },
-    [arm, navigate, openDiffLens, refreshSessionPrDetail, sessionId],
+    [arm, navigate, openDiffLens, refreshReviewSource, sessionId],
   );
 
   return {
