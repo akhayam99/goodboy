@@ -5,6 +5,8 @@ import type {
   MountPullRequestProvider,
   PrSeriesView,
   ProjectId,
+  PullRequestChecks,
+  PullRequestState,
   PullRequestStateKind,
   SessionId,
   SessionMountView,
@@ -32,6 +34,8 @@ export type MountRequestView = Readonly<{
   number: number;
   state: PullRequestStateKind;
   isDraft: boolean;
+  checks: PullRequestChecks;
+  reviewDecision: PullRequestState['reviewDecision'];
   url: string;
   title: string;
   label: string;
@@ -136,6 +140,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       number: githubPr.number,
       state: githubPr.state,
       isDraft: githubPr.isDraft,
+      checks: githubPr.checks ?? null,
+      reviewDecision: githubPr.reviewDecision ?? null,
       url: githubPr.url,
       title: githubPr.title,
       label: `PR #${githubPr.number}`,
@@ -159,6 +165,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
       number: mapped.number,
       state: mapped.state,
       isDraft: mapped.isDraft,
+      checks: mapped.checks,
+      reviewDecision: mapped.reviewDecision,
       url: mapped.url,
       title: mapped.title,
       label: `MR !${mapped.number}`,
@@ -185,6 +193,8 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
     number: bitbucketPr.id,
     state: bitbucketState,
     isDraft: false,
+    checks: null,
+    reviewDecision: null,
     url: bitbucketPr.webUrl ?? '',
     title: bitbucketPr.title,
     label: `PR #${bitbucketPr.id}`,

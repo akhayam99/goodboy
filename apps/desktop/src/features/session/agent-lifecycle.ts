@@ -7,6 +7,7 @@ type AgentParams = {
 
 type TurnParams = {
   readonly turnState: TurnState | null | undefined;
+  readonly includeBlocked?: boolean;
 };
 
 type FinishedParams = AgentParams & {
@@ -21,8 +22,10 @@ type ClosableParams = AgentParams & {
   readonly isTurnLive: boolean;
 };
 
-export const isTurnStateLive = ({ turnState }: TurnParams): boolean =>
-  turnState?.kind === 'starting' || turnState?.kind === 'running';
+export const isTurnStateLive = ({ turnState, includeBlocked = false }: TurnParams): boolean =>
+  turnState?.kind === 'starting' ||
+  turnState?.kind === 'running' ||
+  (includeBlocked && turnState?.kind === 'blocked');
 
 export const isAgentClosedByUser = ({ agent }: AgentParams): boolean =>
   agent.doneAt != null && agent.status !== 'completed' && agent.status !== 'skipped';

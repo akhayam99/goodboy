@@ -119,4 +119,17 @@ describe('isTurnStateLive', () => {
     expect(isTurnStateLive({ turnState: { kind: 'idle', lastActivityAt: at } })).toBe(false);
     expect(isTurnStateLive({ turnState: null })).toBe(false);
   });
+
+  it('counts a turn waiting on approval only when the caller asks for blocked work', () => {
+    const at = DONE_AT;
+    const runId = 'run-1' as ProviderRunId;
+    const blocked = { kind: 'blocked', runId, blockedAt: at } as const;
+    expect(isTurnStateLive({ turnState: blocked, includeBlocked: true })).toBe(true);
+    expect(
+      isTurnStateLive({ turnState: { kind: 'starting', startedAt: at }, includeBlocked: true }),
+    ).toBe(true);
+    expect(
+      isTurnStateLive({ turnState: { kind: 'idle', lastActivityAt: at }, includeBlocked: true }),
+    ).toBe(false);
+  });
 });

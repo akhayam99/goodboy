@@ -1,9 +1,10 @@
-import type { Session, WorkspaceId } from '@goodboy/types';
+import type { WorkspaceId } from '@goodboy/types';
 import {
   currentWindowLabel,
   focusWindow,
   spawnWorkspaceWindow,
 } from '../../../features/workspace/window';
+import { selectLiveWork } from '../live-work/selectLiveWork';
 import type { GetFn } from './types';
 
 export type OpenWorkspaceTarget = 'auto' | 'new-window';
@@ -19,12 +20,8 @@ export type OpenWorkspaceParams = {
 export type OpenWorkspaceResult =
   { readonly kind: 'opened' } | { readonly kind: 'needs-confirm'; readonly running: number };
 
-const RUNNING_SESSION_KINDS: ReadonlySet<string> = new Set(['running', 'starting']);
-
-export const countRunningSessions = (sessions: ReadonlyArray<Session>): number =>
-  sessions.filter((session) => RUNNING_SESSION_KINDS.has(session.state.kind)).length;
-
-export const selectRunningHere = (get: GetFn): number => countRunningSessions(get().sessions);
+export const selectRunningHere = (get: GetFn): number =>
+  selectLiveWork({ state: get() }).liveSessionIds.length;
 
 export const openWorkspace = (get: GetFn) => {
   return async ({

@@ -1,6 +1,14 @@
 // @vitest-environment node
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import type { Session, WorkspaceId } from '@goodboy/types';
+import type {
+  Agent,
+  IsoDateTime,
+  ProviderRunId,
+  Session,
+  TurnState,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aSession, aWorkflowRun, anAgent, TEST_NOW } from '@goodboy/types/testing';
 import { createPresenceSlice } from './index';
 
 const { focusWindow, spawnWorkspaceWindow } = vi.hoisted(() => ({
@@ -19,6 +27,9 @@ type FakeState = {
   windowPresence: Record<string, WorkspaceId | null>;
   currentWorkspaceId: WorkspaceId | null;
   sessions: ReadonlyArray<Session>;
+  sessionPhaseRuns: Record<string, ReadonlyArray<Agent>>;
+  agentTurnState: Record<string, TurnState>;
+  orchestratingWorkflowRuns: Record<string, boolean>;
   setCurrentWorkspace: (id: WorkspaceId | null) => Promise<void>;
   switchWorkspaceHere: (params: { id: WorkspaceId; title: string }) => Promise<void>;
 };
@@ -28,6 +39,9 @@ function harness(initial: Partial<FakeState>) {
     windowPresence: {},
     currentWorkspaceId: null,
     sessions: [],
+    sessionPhaseRuns: {},
+    agentTurnState: {},
+    orchestratingWorkflowRuns: {},
     setCurrentWorkspace: vi.fn(async () => undefined),
     ...initial,
   } as FakeState;
@@ -44,8 +58,30 @@ function harness(initial: Partial<FakeState>) {
 const wsA = 'ws-a' as WorkspaceId;
 const wsB = 'ws-b' as WorkspaceId;
 
+const AGENT_ID = 'agent-1' as Agent['id'];
+const RUN_ID = 'run-1' as Agent['workflowRunId'];
+
 const runningSession = (): Session =>
-  ({ id: 'sess-1', state: { kind: 'running' } }) as unknown as Session;
+  aSession({
+    id: 'sess-1' as Session['id'],
+    state: {
+      kind: 'running',
+      runId: 'provider-run-1' as ProviderRunId,
+      startedAt: TEST_NOW as IsoDateTime,
+    },
+  });
+
+const idleSession = (): Session =>
+  aSession({
+    id: 'sess-1' as Session['id'],
+    workflowRuns: [aWorkflowRun({ id: 'run-1' as NonNullable<Agent['workflowRunId']> })],
+  });
+
+const blockedTurn: TurnState = {
+  kind: 'blocked',
+  runId: 'provider-run-1' as ProviderRunId,
+  blockedAt: TEST_NOW as IsoDateTime,
+};
 
 beforeEach(() => {
   focusWindow.mockClear();
@@ -106,6 +142,29 @@ describe('presence slice', () => {
     const result = await slice.openWorkspace({ id: wsB, title: 'B' });
     expect(setCurrentWorkspace).not.toHaveBeenCalled();
     expect(spawnWorkspaceWindow).not.toHaveBeenCalled();
+    expect(result).toEqual({ kind: 'needs-confirm', running: 1 });
+  });
+
+  it('asks for confirmation when the only agent here waits on an approval', async () => {
+    const { slice } = harness({
+      currentWorkspaceId: wsA,
+      sessions: [idleSession()],
+      sessionPhaseRuns: {
+        'sess-1': [anAgent({ id: AGENT_ID, sessionId: 'sess-1' as Session['id'] })],
+      },
+      agentTurnState: { [AGENT_ID]: blockedTurn },
+    });
+    const result = await slice.openWorkspace({ id: wsB, title: 'B' });
+    expect(result).toEqual({ kind: 'needs-confirm', running: 1 });
+  });
+
+  it('asks for confirmation while a workflow run is deciding its next step', async () => {
+    const { slice } = harness({
+      currentWorkspaceId: wsA,
+      sessions: [idleSession()],
+      orchestratingWorkflowRuns: { 'run-1': true },
+    });
+    const result = await slice.openWorkspace({ id: wsB, title: 'B' });
     expect(result).toEqual({ kind: 'needs-confirm', running: 1 });
   });
 

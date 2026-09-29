@@ -247,15 +247,13 @@ describe('deriveSessionStage', () => {
   });
 
   it('running state beats attention signals', () => {
-    const session: Session = {
-      ...base(1),
-      state: {
-        kind: 'running',
-        runId: 'run-1' as never,
-        startedAt: '2024-01-01T00:00:00.000Z' as never,
-      },
-    };
-    const info = deriveSessionStage({ session, pr: null, ...signals, openQuestionCount: 2 });
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: null,
+      ...signals,
+      openQuestionCount: 2,
+      hasRunningAgent: true,
+    });
     expect(info.stage).toBe('running');
   });
 
@@ -396,12 +394,13 @@ describe('deriveSessionStage', () => {
     expect(info.stage).toBe('running');
   });
 
-  it('starting state → running', () => {
-    const session: Session = {
-      ...base(1),
-      state: { kind: 'starting', startedAt: '2024-01-01T00:00:00.000Z' as never },
-    };
-    const info = deriveSessionStage({ session, pr: null, ...signals });
+  it('a live agent turn → running', () => {
+    const info = deriveSessionStage({
+      session: base(1),
+      pr: null,
+      ...signals,
+      hasRunningAgent: true,
+    });
     expect(info).toEqual({
       stage: 'running',
       reason: 'agent running',

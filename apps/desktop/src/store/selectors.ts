@@ -45,8 +45,10 @@ import {
   type GroupedSessions,
 } from './slices/session-view';
 import { summarizeMountWork } from './slices/project-mounts/mountCompletion';
+import { isTurnStateLive } from '../features/session/agent-lifecycle';
 import { agentHasUnread } from './slices/agents/agentHasUnread';
-import { countRunningSessions } from './slices/presence/openWorkspace';
+import { liveWorkOfSession, selectLiveWork } from './slices/live-work/selectLiveWork';
+import { sessionStageRequestOf } from './slices/session-view/sessionStageRequest';
 import { sessionPrFetchState } from './slices/github/sessionPrFetchState';
 import { isSessionPrFetchable } from './slices/github/resolveSessionPrFetch';
 import { runSpendUsd } from './slices/workflows/runSpendUsd';
@@ -212,7 +214,7 @@ const EMPTY_GITHUB_STATE: Readonly<Record<string, never>> = Object.freeze({});
 const EMPTY_WORKSPACES: ReadonlyArray<Workspace> = [];
 const EMPTY_PROJECTS: ReadonlyArray<Project> = [];
 
-function blockedAgentTurnStateOf(
+function liveAgentTurnStateOf(
   sessionPhaseRuns: Readonly<Record<SessionId, ReadonlyArray<Agent>>>,
   agentTurnState: Readonly<Record<AgentId, TurnState>>,
 ): Readonly<Record<AgentId, TurnState>> {
@@ -220,7 +222,7 @@ function blockedAgentTurnStateOf(
   for (const runs of Object.values(sessionPhaseRuns)) {
     for (const run of runs) {
       const turnState = agentTurnState[run.id];
-      if (turnState?.kind === 'blocked') {
+      if (turnState !== undefined && isTurnStateLive({ turnState, includeBlocked: true })) {
         entries[run.id] = turnState;
       }
     }
@@ -272,25 +274,9 @@ function sessionHasUnreadIn(state: StageInfoState, sessionId: SessionId): boolea
   return runs.some((r) => agentHasUnread(r, isCurrent && r.id === selected));
 }
 
-function sessionHasRunningAgentIn(state: StageInfoState, sessionId: SessionId): boolean {
-  const runs = state.sessionPhaseRuns[sessionId];
-  return runs ? runs.some((r) => r.status === 'running') : false;
-}
-
-function sessionHasBlockedAgentIn(state: StageInfoState, sessionId: SessionId): boolean {
-  const runs = state.sessionPhaseRuns[sessionId];
-  return runs ? runs.some((r) => state.agentTurnState[r.id]?.kind === 'blocked') : false;
-}
-
 function sessionHasRunIn(state: StageInfoState, sessionId: SessionId): boolean {
   const runs = state.sessionPhaseRuns[sessionId];
   return runs === undefined || runs.length > 0;
-}
-
-function sessionIsDecidingIn(state: StageInfoState, session: Session): boolean {
-  return session.workflowRuns.some(
-    (run) => state.orchestratingWorkflowRuns?.[run.id] === true && run.discardedAt == null,
-  );
 }
 
 function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo {
@@ -298,10 +284,13 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
   const isBranchless = isBranchlessSession({
     branch: state.sessionBranches[sessionId],
   });
-  const request = resolveSessionRequest({
-    pr: state.sessionGithub[sessionId]?.pr ?? null,
-    mr: state.sessionGitlabMr[sessionId]?.mr ?? null,
-  });
+  const request =
+    sessionStageRequestOf({ state, sessionId }) ??
+    resolveSessionRequest({
+      pr: state.sessionGithub[sessionId]?.pr ?? null,
+      mr: state.sessionGitlabMr[sessionId]?.mr ?? null,
+    });
+  const live = liveWorkOfSession({ state, session });
   const work = summarizeMountWork({ state, sessionId });
   return deriveSessionStage({
     session,
@@ -317,9 +306,9 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
     }),
     hasUnread: sessionHasUnreadIn(state, sessionId),
     openQuestionCount: countOpenQuestions(state, sessionId),
-    hasRunningAgent: sessionHasRunningAgentIn(state, sessionId),
-    hasBlockedAgent: sessionHasBlockedAgentIn(state, sessionId),
-    isDecidingWorkflow: sessionIsDecidingIn(state, session),
+    hasRunningAgent: live.isRunning,
+    hasBlockedAgent: live.isBlocked,
+    isDecidingWorkflow: live.isDeciding,
     isPrReview: isPrReviewSession({ agents: state.sessionPhaseRuns[sessionId] ?? [] }),
     isBranchless,
     hasRun: sessionHasRunIn(state, sessionId),
@@ -371,7 +360,7 @@ export const useSortedGroupedSessions = (
   const agentTurnState = useAppStore(
     useShallow((s) =>
       needsStage
-        ? blockedAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)
+        ? liveAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)
         : (EMPTY_GITHUB_STATE as Readonly<Record<AgentId, TurnState>>),
     ),
   );
@@ -512,7 +501,7 @@ export const useStageGroupedSessions = (
   const sessionOpenQuestions = useAppStore((s) => s.sessionOpenQuestions);
   const sessionPhaseRuns = useAppStore((s) => s.sessionPhaseRuns);
   const agentTurnState = useAppStore(
-    useShallow((s) => blockedAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)),
+    useShallow((s) => liveAgentTurnStateOf(sessionPhaseRuns, s.agentTurnState)),
   );
   const orchestratingWorkflowRuns = useAppStore((s) => s.orchestratingWorkflowRuns);
   const selectedAgentId = useAppStore((s) => s.selectedAgentId);
@@ -721,7 +710,8 @@ function findSessionInAnyPool(state: AppState, id: string | null): Session | nul
 
 const selectCurrentSession = (state: AppState): Session | null =>
   findSessionInAnyPool(state, state.currentSessionId);
-const selectRunningHere = (state: AppState): number => countRunningSessions(state.sessions);
+const selectRunningHere = (state: AppState): number =>
+  selectLiveWork({ state }).liveSessionIds.length;
 const selectDisconnectedWorkspaces = (state: AppState): ReadonlyArray<Workspace> =>
   state.disconnectedWorkspaces;
 export const useWorkspaces = (): ReadonlyArray<Workspace> => useAppStore(selectWorkspaces);

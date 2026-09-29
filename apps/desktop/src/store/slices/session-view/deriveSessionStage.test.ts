@@ -95,18 +95,11 @@ describe('deriveSessionStage pull request freshness', () => {
   });
 
   it('lets a running agent outrank an unchecked pull request', () => {
-    const running: Session = {
-      ...session,
-      state: {
-        kind: 'running',
-        runId: 'run-1' as never,
-        startedAt: DATE as Session['createdAt'],
-      },
-    };
     const info = deriveSessionStage({
-      session: running,
+      session,
       pr: null,
       ...signals,
+      hasRunningAgent: true,
       prFetchState: 'unknown',
     });
     expect(info.stage).toBe('running');
@@ -244,4 +237,48 @@ describe('deriveSessionStage sibling branch mounts', () => {
 
     expect(info.stage).toBe('running');
   });
+});
+
+describe('deriveSessionStage error against running', () => {
+  const errored: Session = {
+    ...session,
+    state: {
+      kind: 'error',
+      message: 'provider gave up',
+      failedAt: DATE as Session['createdAt'],
+    },
+  };
+
+  it.each([true, false])(
+    'puts an errored agent ahead of a running one when isBranchless is %s',
+    (isBranchless) => {
+      const info = deriveSessionStage({
+        session: errored,
+        pr: null,
+        ...signals,
+        isBranchless,
+        hasRunningAgent: true,
+      });
+      expect(info).toEqual({
+        stage: 'attention',
+        reason: 'agent errored',
+        attention: 'agent-error',
+        prState: null,
+      });
+    },
+  );
+
+  it.each([true, false])(
+    'puts an errored agent ahead of a deciding workflow when isBranchless is %s',
+    (isBranchless) => {
+      const info = deriveSessionStage({
+        session: errored,
+        pr: null,
+        ...signals,
+        isBranchless,
+        isDecidingWorkflow: true,
+      });
+      expect(info.attention).toBe('agent-error');
+    },
+  );
 });

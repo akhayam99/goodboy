@@ -39,6 +39,9 @@ vi.mock('../../../../store', () => ({
       updateFailure: null;
       updateProgress: null;
       agentTurnState: Record<string, never>;
+      sessions: ReadonlyArray<never>;
+      sessionPhaseRuns: Record<string, never>;
+      orchestratingWorkflowRuns: Record<string, never>;
       focusChangelogRelease: () => void;
     }) => unknown,
   ) =>
@@ -55,6 +58,9 @@ vi.mock('../../../../store', () => ({
       updateFailure: null,
       updateProgress: null,
       agentTurnState: {},
+      sessions: [],
+      sessionPhaseRuns: {},
+      orchestratingWorkflowRuns: {},
       focusChangelogRelease: () => undefined,
     }),
 }));

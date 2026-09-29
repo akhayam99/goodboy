@@ -239,6 +239,8 @@ const openRequest: NonNullable<MountRowView['request']> = {
   number: 12,
   state: 'open',
   isDraft: false,
+  checks: null,
+  reviewDecision: null,
   url: 'https://github.com/acme/api/pull/12',
   title: 'Split one',
   label: 'PR #12',
