@@ -11,14 +11,14 @@ type Props = {
   readonly align?: 'start' | 'end';
 };
 
-export const runningAgentsCopy = ({ count }: { count: number }): string => {
+export const activeWorkCopy = ({ count }: { count: number }): string => {
   if (count === 0) {
-    return 'Nothing is running.';
+    return 'Nothing is active.';
   }
   if (count === 1) {
-    return 'The running agent picks up where it stopped after the restart.';
+    return 'The active work picks up where it stopped after the restart.';
   }
-  return `The ${count} running agents pick up where they stopped after the restart.`;
+  return `The ${count} pieces of active work pick up where they stopped after the restart.`;
 };
 
 export const UpdateConfirm = ({ trigger, onOpenChangelog, align = 'end' }: Props) => {
@@ -44,7 +44,7 @@ export const UpdateConfirm = ({ trigger, onOpenChangelog, align = 'end' }: Props
           ? `Couldn't install ${target}`
           : `Goodboy ${target} is ${isReady ? 'ready' : 'available'}`
       }
-      description={installFailed ? failure.message : runningAgentsCopy({ count: runningCount })}
+      description={installFailed ? failure.message : activeWorkCopy({ count: runningCount })}
       confirmLabel={installFailed ? 'Retry' : isReady ? 'Restart now' : 'Download and restart'}
       cancelLabel="Not now"
       altAction={

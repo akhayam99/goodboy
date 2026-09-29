@@ -11,10 +11,10 @@ type Props = {
   readonly onCancel: () => void;
 };
 
-const runningLine = ({ running, currentName }: { running: number; currentName: string }): string =>
+const activeLine = ({ running, currentName }: { running: number; currentName: string }): string =>
   running === 1
-    ? `1 agent is running in ${currentName}.`
-    : `${running} agents are running in ${currentName}.`;
+    ? `1 session is active in ${currentName}.`
+    : `${running} sessions are active in ${currentName}.`;
 
 export const WorkspaceOpenConfirm = ({
   targetName,
@@ -29,7 +29,7 @@ export const WorkspaceOpenConfirm = ({
       role="alert"
       surface="plain"
       icon={<TriangleAlert size={ICON_SIZE.row} aria-hidden />}
-      title={runningLine({ running, currentName })}
+      title={activeLine({ running, currentName })}
       description={`Opening ${targetName} here stops them. A new window keeps them going.`}
       confirmLabel="Open in new window"
       altAction={{ label: 'Stop them and open here', onClick: onStopAndOpenHere }}

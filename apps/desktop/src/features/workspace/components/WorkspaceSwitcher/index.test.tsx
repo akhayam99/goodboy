@@ -91,7 +91,7 @@ describe('WorkspaceSwitcher', () => {
     render(<WorkspaceSwitcher onClose={onClose} />);
     fireEvent.click(screen.getByText('bravo'));
 
-    expect(await screen.findByText('2 agents are running in alpha.')).toBeDefined();
+    expect(await screen.findByText('2 sessions are active in alpha.')).toBeDefined();
     expect(onClose).not.toHaveBeenCalled();
 
     const openInNewWindowButtons = screen.getAllByRole('button', { name: 'Open in new window' });
@@ -104,7 +104,7 @@ describe('WorkspaceSwitcher', () => {
     });
   });
 
-  it('stops the running agents and switches here from the confirm', async () => {
+  it('stops the active sessions and switches here from the confirm', async () => {
     state.openWorkspace = vi.fn(async () => ({ kind: 'needs-confirm' as const, running: 1 }));
     const onClose = vi.fn();
     render(<WorkspaceSwitcher onClose={onClose} />);
