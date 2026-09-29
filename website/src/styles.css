@@ -241,7 +241,6 @@ svg[data-brand-color][data-brand='moonshot'] {
   flex-shrink: 0;
   width: var(--tile);
   height: var(--tile);
-  border-radius: calc(var(--tile) * 0.28);
   background: var(--brand-tile);
   box-shadow: inset 0 0 0 1px var(--tile-ring);
 }
