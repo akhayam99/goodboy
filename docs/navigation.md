@@ -883,7 +883,10 @@ terminal, never fires a shortcut.
 when Esc goes unhandled: the web layer still gets every Escape keydown first, so
 popovers, the palette, drawers, studios and inline edits close or cancel as
 usual, and only the leftover key stops at the window
-(`src-tauri/src/fullscreen_escape.rs`). Leave full screen with the green
+(`src-tauri/src/fullscreen_escape.rs`). The window class swallows the leftover
+Esc in `cancelOperation:` and `keyDown:`, and refuses a `toggleFullScreen:`
+whose current event is an Esc key down, so no AppKit route can exit full screen
+on Esc. Leave full screen with the green
 button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
