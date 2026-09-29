@@ -102,7 +102,7 @@ const collectTestFiles = ({ directory }) => {
   return files;
 };
 
-const collectReferencedPaths = ({ source }) => {
+const collectReferencedPaths = ({ source, file }) => {
   const referenced = [];
   for (const call of source.matchAll(/\b(?:join|resolve)\(([^()]*)\)/g)) {
     const literals = [...call[1].matchAll(/'([^'\n]*)'|"([^"\n]*)"/g)].map(
@@ -113,6 +113,14 @@ const collectReferencedPaths = ({ source }) => {
       continue;
     }
     referenced.push(literals.slice(start).join('/'));
+  }
+  for (const call of source.matchAll(
+    /new URL\(\s*(?:'([^'\n]*)'|"([^"\n]*)")\s*,\s*import\.meta\.url/g,
+  )) {
+    const target = relative(REPOSITORY_ROOT, resolve(dirname(file), call[1] ?? call[2]));
+    if (GUARDED_ROOTS.has(target.split('/')[0])) {
+      referenced.push(target);
+    }
   }
   return referenced;
 };
@@ -126,7 +134,7 @@ const collectPathsReadByTests = () => {
   ];
   const found = new Map();
   for (const file of roots.flatMap((directory) => collectTestFiles({ directory }))) {
-    for (const path of collectReferencedPaths({ source: readFileSync(file, 'utf8') })) {
+    for (const path of collectReferencedPaths({ source: readFileSync(file, 'utf8'), file })) {
       found.set(path, [...(found.get(path) ?? []), relative(REPOSITORY_ROOT, file)]);
     }
   }
@@ -138,6 +146,14 @@ describe('paths that tests read from website and docs', () => {
     const paths = [...collectPathsReadByTests().keys()];
     assert.ok(paths.includes('website/src/styles.css'), paths.join('\n'));
     assert.ok(paths.includes('docs/changelog'), paths.join('\n'));
+    assert.ok(paths.includes('docs/architecture.md'), paths.join('\n'));
+  });
+
+  it('reads a path given to new URL next to import.meta.url', () => {
+    const source =
+      "const DOC = fileURLToPath(new URL('../../../../docs/architecture.md', import.meta.url));";
+    const file = join(REPOSITORY_ROOT, 'packages', 'db', 'src', 'migrations', 'a.test.ts');
+    assert.deepEqual(collectReferencedPaths({ source, file }), ['docs/architecture.md']);
   });
 
   it('never classifies a path a test reads as inert', () => {
@@ -167,5 +183,6 @@ describe('paths that tests read from website and docs', () => {
       true,
     );
     assert.equal(shouldRunTestsForPullRequest({ paths: ['docs/changelog'] }), true);
+    assert.equal(shouldRunTestsForPullRequest({ paths: ['docs/architecture.md'] }), true);
   });
 });

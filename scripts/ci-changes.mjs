@@ -9,6 +9,8 @@ const WEBSITE_PATHS_READ_BY_TESTS = [
   'website/scripts/build-brand-assets.mjs',
 ];
 
+const DOC_PATHS_READ_BY_TESTS = ['docs/architecture.md'];
+
 const INERT_PATTERNS = [
   /^docs\/(?!changelog(?:\/|$))/,
   /^website\//,
@@ -18,6 +20,7 @@ const INERT_PATTERNS = [
 
 export const isInertPath = ({ path }) =>
   !WEBSITE_PATHS_READ_BY_TESTS.includes(path) &&
+  !DOC_PATHS_READ_BY_TESTS.includes(path) &&
   INERT_PATTERNS.some((pattern) => pattern.test(path));
 
 export const shouldRunTests = ({ eventName, paths }) => {
