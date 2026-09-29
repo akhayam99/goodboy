@@ -17,6 +17,7 @@ const {
   RUN_START_DONE,
   TASK_TITLE,
   RUN_TOTAL_LABEL,
+  RUN_NOW_LABEL,
 } = HARBORLINE;
 
 type Props = {
@@ -51,9 +52,16 @@ export const RunList = ({ className }: Props) => {
     >
       <div className="mk-win">
         <WindowHead title={TASK_TITLE} sub={TASK_REPO} side={<span>{RUN_SIDE}</span>} />
+        <div
+          className={done >= RUN_ROWS.length ? 'mk-now is-reached' : 'mk-now'}
+          aria-hidden="true"
+        >
+          <i />
+          <span>{RUN_NOW_LABEL}</span>
+        </div>
         <div className="mk-rows">
           {RUN_ROWS.map((row, index) => (
-            <RunRow key={row.role} row={row} state={stateOf({ index, done })} />
+            <RunRow key={row.role} row={row} state={stateOf({ index, done })} number={index + 1} />
           ))}
         </div>
         <div className="mk-foot">

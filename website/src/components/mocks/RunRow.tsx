@@ -1,6 +1,7 @@
 import { HARBORLINE, type ChipKind, type RunRowData } from '../../data/harborline';
 import { formatCents } from './formatCents';
 import { ProviderIcon } from './ProviderIcon';
+import { RunNode } from './RunNode';
 import { StateChip } from './StateChip';
 
 const { PROVIDER_NAME } = HARBORLINE;
@@ -8,12 +9,16 @@ const { PROVIDER_NAME } = HARBORLINE;
 type Props = {
   readonly row: RunRowData;
   readonly state: ChipKind;
+  readonly number: number;
 };
 
-export const RunRow = ({ row, state }: Props) => (
-  <div className={state === 'queued' ? 'mk-row is-queued' : 'mk-row'}>
+export const RunRow = ({ row, state, number }: Props) => (
+  <div className={`mk-row is-${state}`}>
+    <RunNode state={state} number={number} />
     <span className="mk-role mk-ell">{row.role}</span>
-    <span className="mk-step mk-ell">{row.step}</span>
+    <span className="mk-step mk-ell" data-wrap>
+      {row.step}
+    </span>
     <span className="mk-model">
       <ProviderIcon provider={row.provider} />
       <span className="mk-ell">
