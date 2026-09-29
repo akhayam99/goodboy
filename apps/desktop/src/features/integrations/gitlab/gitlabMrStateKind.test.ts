@@ -27,8 +27,8 @@ const TABLE: ReadonlyArray<readonly [string, boolean, PullRequestStateKind]> = [
   ['merged', true, 'merged'],
   ['closed', false, 'closed'],
   ['closed', true, 'closed'],
-  ['locked', false, 'closed'],
-  ['locked', true, 'closed'],
+  ['locked', false, 'queued'],
+  ['locked', true, 'queued'],
   ['something-new', false, 'open'],
   ['something-new', true, 'draft'],
 ];

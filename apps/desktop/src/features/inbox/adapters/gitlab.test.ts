@@ -109,7 +109,8 @@ describe('adaptGitlab', () => {
     ['merged', false, 'done'],
     ['closed', false, 'done'],
     ['closed', true, 'done'],
-    ['locked', false, 'done'],
+    ['locked', false, 'active'],
+    ['locked', true, 'active'],
   ] as const)('normalizes merge request state %s (draft %s) to %s', (state, draft, expected) => {
     const mrGroups: ReadonlyArray<GitlabMrGroup> = [
       { key: 'g', label: 'g', rows: [mr({ state, draft })] },

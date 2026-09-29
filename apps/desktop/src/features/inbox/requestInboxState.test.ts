@@ -7,7 +7,7 @@ const TABLE: ReadonlyArray<readonly [PullRequestStateKind, InboxState]> = [
   ['draft', 'open'],
   ['open', 'open'],
   ['approved', 'open'],
-  ['queued', 'open'],
+  ['queued', 'active'],
   ['merged', 'done'],
   ['closed', 'done'],
 ];

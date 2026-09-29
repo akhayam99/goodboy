@@ -5,5 +5,9 @@ type Params = {
   readonly kind: PullRequestStateKind;
 };
 
-export const requestInboxState = ({ kind }: Params): InboxState =>
-  kind === 'merged' || kind === 'closed' ? 'done' : 'open';
+export const requestInboxState = ({ kind }: Params): InboxState => {
+  if (kind === 'merged' || kind === 'closed') {
+    return 'done';
+  }
+  return kind === 'queued' ? 'active' : 'open';
+};

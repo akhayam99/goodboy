@@ -30,13 +30,13 @@ describe('getLinkedRequest', () => {
     expect(linked.title).toBe('Merge request !12 · closed');
   });
 
-  it('reads a locked merge request as closed rather than open', () => {
+  it('reads a locked merge request as in flight, not closed', () => {
     const linked = getLinkedRequest({
       pullRequest: null,
       mergeRequest: mergeRequest({ state: 'locked' }),
     });
 
-    expect(linked.state).toBe('closed');
+    expect(linked.state).toBe('queued');
   });
 
   it('keeps an open draft as draft and an open merge request as open', () => {
