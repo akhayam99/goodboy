@@ -27,38 +27,70 @@ Every picture follows one team and one task. Harborline keeps three repos, payme
 
 ## Set up
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s23-onboarding-dark.webp">
-  <img src="./docs/readme/s23-onboarding-light.webp" alt="Welcome to Goodboy: five short steps from install to a first agent">
-</picture>
+Get from install to a first agent: connect a provider, check what it can do, link your tools and tell agents who you are.
 
 ### Welcome to Goodboy
 
-Go from install to a first agent reading your repo in a few short steps. Steps that do not apply to you are skipped, and the last one hands you a session draft already filled in.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/setup-welcome-dark.webp">
+  <img src="./docs/readme/setup-welcome-light.webp" alt="The Welcome to Goodboy screen: a Setup stepper with Provider, Project, Code host, Tasks and First session, the line Five short steps, then an agent reads your project, four rows with their time, and a Get started button">
+</picture>
+
+Follow five short steps from install to a first agent reading your project: **Provider**, **Project**, **Code host**, **Tasks** and **First session**. Code host and tasks are optional, steps that do not apply to you are skipped, and **I've used Goodboy before: skip setup** takes you straight in. The last step hands you a session draft already filled in.
 
 ### Provider connection
 
-Connect each provider the way it supports, with a login you already have or an API key. A connect card walks you through it, and **Open the sign-in page again** helps when no browser tab opened.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/setup-provider-connection-dark.webp">
+  <img src="./docs/readme/setup-provider-connection-light.webp" alt="The Provider step of setup: Claude marked Connected, Cursor Not signed in with a Connect button, Codex with an Error status and a Connect button, and Gemini Not installed with a Set up manually button">
+</picture>
+
+Pick the provider you already pay for and connect it with a login or an API key. Each card says what the provider needs and where it stands: **Connected**, **Not signed in**, **Not installed**. **Connect** walks you through the sign-in, and **Open the sign-in page again** helps when no browser tab opened. You can add more providers later.
 
 ### One page per provider
 
-Find usage, the models in your picker, permissions and your account on one page per provider. Providers billed per token say so instead of showing usage windows.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/setup-provider-page-dark.webp">
+  <img src="./docs/readme/setup-provider-page-light.webp" alt="The Claude page in Settings under Providers and models: Usage with a Weekly bar at 84% used, Models in the picker showing Haiku, Sonnet, Opus and Fable, Permissions with Claude, and Account signed in as harborline-platform on the Max plan">
+</picture>
+
+Find everything about a provider on its own page in **Providers & models**: **Usage** with the weekly window, **Models in the picker** with a switch per model, **Permissions**, and **Account** with **Sign in again** and **Disconnect**. Providers billed per token say so instead of showing usage windows.
 
 ### Update the provider CLI
 
-Find out when a model needs a newer CLI, and update it from the provider page once running turns finish. A turn the CLI refuses retries on the closest model in the same family.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/setup-cli-update-dark.webp">
+  <img src="./docs/readme/setup-cli-update-light.webp" alt="The top of the Claude page with a banner reading Opus 5.5 needs a newer Claude CLI, You have Claude CLI 2.1.260, Update to 2.1.280 or newer, and an Update Claude CLI button">
+</picture>
+
+See when a model needs a newer CLI, right at the top of the provider page, and press **Update Claude CLI** to install it. The update waits for running turns to finish. A turn the CLI refuses retries on the closest model in the same family.
 
 ### Permissions for each provider
 
-See which permission modes a provider can honor before you pick one: **Read only**, **Ask first**, **Edits allowed** and **Full access**, each marked as working, partly working or not available, with the reason. A mode a provider cannot honor runs as a stricter one, so **Ask first** on Codex runs as **Read only**.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/setup-permissions-dark.webp">
+  <img src="./docs/readme/setup-permissions-light.webp" alt="Workspace Permissions in Settings: four default modes (Read only, Ask first, Edits allowed, Full access) and a table of what Claude, Codex, Cursor, Gemini and OpenCode family each do with them, marked Works, Partly, Runs Read only or Ignored, plus Rules and Role limits rows">
+</picture>
+
+Check which permission modes a provider can honor before you pick one: **Read only**, **Ask first**, **Edits allowed** and **Full access**. The table marks each cell as **Works**, **Partly** or **Runs Read only**, with the reason underneath, and adds a **Rules** row and a **Role limits** row. A mode a provider cannot honor never runs looser: **Ask first** on Codex runs as **Read only**. The default mode for new sessions sits above the table.
 
 ### Integrations
 
-Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one settings page, and give a project a different account than its workspace when you need to. Keys go in your system credential store.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/setup-integrations-dark.webp">
+  <img src="./docs/readme/setup-integrations-light.webp" alt="Settings under Integrations, 5 of 7 connected: GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack in the left list with a status dot each, and the Linear page open showing Connected as Dana R. on linear.app/harborline">
+</picture>
+
+Connect GitHub, GitLab, Bitbucket, Linear, Jira, Sentry and Slack from one page. The list shows the account behind each tool and how many are connected, and each tool opens to its own page. Give a project a different account than its workspace when you need to. Keys stay in your system credential store.
 
 ### About you
 
-Tell agents once who you are and how you like to work, in four short parts. **See who reads what** shows which role reads each part.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/setup-about-you-dark.webp">
+  <img src="./docs/readme/setup-about-you-light.webp" alt="The About you section of workspace settings with four fields: Your roles (Tech Lead, Backend Engineer), About your work, How agents should work with you, and Explain more when it touches (Rust), with a See who reads what link">
+</picture>
+
+Tell agents once who you are and how you like to work, in four short parts: **Your roles**, **About your work**, **How agents should work with you** and **Explain more when it touches**. **See who reads what** shows which role reads each part.
 
 ## Start a task
 
@@ -474,14 +506,11 @@ Bring custom workflows over from your other workspaces.
 
 ## Inbox and your tools
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s20-integrations-dark.webp">
-  <img src="./docs/readme/s20-integrations-light.webp" width="480" alt="The integrations list in settings, 5 of 7 connected: GitHub, Linear, Jira, Sentry and Slack, with GitLab and Bitbucket not connected">
-</picture>
+Connect your trackers, code hosts and Slack once. Their work lands in one Inbox, and agents can read and act on it.
 
 ### Supported tools
 
-Connect the ones you use. Each one feeds the Inbox and can start a session with its brief drafted.
+Connect the ones you use in **Settings**, **Integrations**. Each one feeds the Inbox and can start a session with its brief drafted.
 
 - **GitHub**: issues and pull requests, review comments you resolve with an agent, and the pull request page
 - **GitLab**: issues and merge requests, with threaded discussions, replies, approvals and merge
@@ -498,31 +527,41 @@ Let agents on any provider read and act on GitHub, GitLab, Bitbucket, Jira, Line
 ### Inbox
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s19-inbox-dark.webp">
-  <img src="./docs/readme/s19-inbox-light.webp" alt="The Inbox with HBL-412 pasted and found outside your inbox, a starred issue and a Slack thread">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/inbox-list-dark.webp">
+  <img src="./docs/readme/inbox-list-light.webp" alt="The Inbox listing 10 items from Linear, GitHub, Jira, Sentry and Slack in Today, Yesterday and Older groups, with the View, Type, Source and Project filters and the key hints on the left, and Linear issue CAS-231 open on the right with Launch session and Link to a session">
 </picture>
 
-Work from one list instead of seven tabs: issues, Slack threads and Sentry errors from your connected tools, plus pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket, grouped by day, with keyboard navigation. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list.
+Work from one list instead of seven tabs. Issues, Slack threads and Sentry errors from your connected tools sit together, grouped by day, next to pull requests from GitHub (review requests and your own recent ones) and merge requests from GitLab and Bitbucket. Narrow the list by **View**, **Type**, **Source** and **Project**, and move with **j** and **k**. Sentry errors filter by the project they belong to, and GitHub or GitLab items too when several projects live on that host. Linear and Jira stay one flat list.
 
 ### Find any issue by code or link
 
-Paste `HBL-412`, `#318` or a link and open the issue, even when it is not assigned to you. An unknown prefix is tried on Linear and Jira at once.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/inbox-lookup-dark.webp">
+  <img src="./docs/readme/inbox-lookup-light.webp" alt="The Inbox search box holding HBL-412, with the Linear issue Retried webhooks post a second credit listed under Not in your inbox, Assigned to Dana R., and its details open on the right">
+</picture>
+
+Paste `HBL-412`, `#318` or a link in the search box and open the issue, even when it is not assigned to you. It appears under **Not in your inbox** with its full details beside it. An unknown prefix is tried on Linear and Jira at once.
 
 ### Starred issues
 
-Keep the issues you follow on top of the Inbox and of **Pick up a task**.
+Star an issue to keep it on top of the Inbox and of **Pick up a task**. In the search result above, the **Starred** group holds the GitHub issue #211.
 
 ### Launch a session from any item
 
-Start a session from an issue, a Slack thread or an error, with the brief already drafted. A Sentry error or a GitHub or GitLab item opens in its project, and the popover says why.
+Press **Launch session** on an issue, a Slack thread or an error to start a session with the brief already drafted. A Sentry error or a GitHub or GitLab item opens in its project, and the popover says why.
 
 ### Link an item to a session
 
-Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or L, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link.
+Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or **L**, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link.
 
 ### Trackers
 
-Comment, assign, edit and move issues in Linear and Jira, and read Sentry errors with stack trace and breadcrumbs, inside Goodboy.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/inbox-sentry-dark.webp">
+  <img src="./docs/readme/inbox-sentry-light.webp" alt="The Inbox filtered to Sentry, 4 errors from payments-api and notify-relay, with DuplicateChargeError: charge already captured for order open on the right, showing status Unresolved, culprit settle_batch, 42 events, 9 users and a 2 frame stack trace">
+</picture>
+
+Read Sentry errors with stack trace, breadcrumbs and tags inside Goodboy, and filter them by project. Comment, assign, edit and move issues in Linear and Jira the same way.
 
 ### Code hosts
 
@@ -531,19 +570,24 @@ Work on GitHub pull requests and issues, GitLab merge requests, and Bitbucket co
 ### Slack: what agents can do
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s21-slack-dark.webp">
-  <img src="./docs/readme/s21-slack-light.webp" alt="A Slack reply for #payments-oncall waiting with Send, Edit and Discard">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/inbox-slack-permissions-dark.webp">
+  <img src="./docs/readme/inbox-slack-permissions-light.webp" alt="Settings, Integrations, Slack for Harborline: the channels #payments-oncall and #ledger-dev picked, and under What agents can do, Read threads in followed channels Allowed, Read other channels you are in Off, Reply in threads Ask me first, Add reactions Allowed">
 </picture>
 
-Decide how far agents go in Slack: pick the channels, then whether they read threads, reply and react. Replies default to **Ask me first**, and agents do not start new conversations or send direct messages.
+Decide how far agents go in Slack. Tick the channels they follow, then set each action: **Read threads in followed channels** and **Read other channels you're in** are **Allowed** or **Off**, **Reply in threads** and **Add reactions** are **Allowed**, **Ask me first** or **Never**. Replies default to **Ask me first**, and agents never start new conversations or send direct messages.
 
 ### Reply ready for #channel
 
-Approve what goes out in Slack from where you already are. Under **Ask me first**, a reply waits as a card with **Send**, **Edit** and **Discard**.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/inbox-slack-reply-dark.webp">
+  <img src="./docs/readme/inbox-slack-reply-light.webp" alt="A session transcript with a card titled Reply ready for #payments-oncall, waiting for you, quoting Omar T. and holding a drafted answer about payments-api #318 and notify-relay #57, with the buttons Send, Edit and Discard">
+</picture>
+
+Approve what goes out in Slack from where you already are. Under **Ask me first**, the agent's reply waits in the session as a card with the message it answers and the draft, and you choose **Send**, **Edit** or **Discard**.
 
 ### Slack signature
 
-Let people in a thread see when an agent wrote a reply. Replies agents post directly carry a short note, "Written with Goodboy" by default.
+Let people in a thread see when an agent wrote a reply. Under **Signature** in the Slack settings above, the note under agent messages is "Written with Goodboy" by default, and you can change the text or switch it off. A second switch adds it to messages you send from Goodboy.
 
 ### Images from your tools
 
@@ -555,18 +599,25 @@ Read items from any tool the same way: one list of labels and values, with who o
 
 ### Comment threads
 
-Follow replies under the comment they answer, in Linear and GitLab, and **Reply** into that thread.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/inbox-comment-threads-dark.webp">
+  <img src="./docs/readme/inbox-comment-threads-light.webp" alt="Three conversation panels: a GitLab merge request conversation with Robin V. and a threaded reply from Sam K., a Show 2 earlier replies fold and a Resolved thread row, a GitHub issue conversation quoting leo-t in the Write a comment box, and a read only conversation">
+</picture>
+
+Follow replies under the comment they answer, in Linear and GitLab, and fold long threads behind **Show earlier replies**. Press **Reply** on a comment to answer inside its thread, or start a new one in the box below. Where a tool has no threads, the box shows **Quoting** and the name of the comment you answer.
 
 ## Plans, reports and wireframes
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s11-plans-dark.webp">
-  <img src="./docs/readme/s11-plans-light.webp" alt="The artifacts of the webhook session: a wireframe with one of two scouts done, a plan ready to run, two reports and two plans that ran">
-</picture>
+Plans, reports and wireframes live next to the task, not inside a chat.
 
 ### Artifacts
 
-Keep plans, reports and wireframes next to the task instead of in a chat, with who made each one and what it was built from.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/artifact-list-dark.webp">
+  <img src="./docs/readme/artifact-list-light.webp" alt="The Artifacts list of the Harborline session, 8 items under the tabs All, Plans, Reports and Wireframes: a wireframe at 1 of 2 scouts done, Deliveries screen with 4 screens, a plan marked Ready to run, two reports and two plans marked Ran">
+</picture>
+
+Keep plans, reports and wireframes next to the task, each with its kind, the step that made it, its revision and its date. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter the list, and **New** starts another one. A row shows its state at a glance: **1 of 2 scouts done**, **Ready to run** or **Ran**.
 
 ### Plan parts and Run plan
 
@@ -575,32 +626,46 @@ Check a plan before it runs. A plan can give each part done-when checks and the 
 ### Report as a document
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s14-report-dark.webp">
-  <img src="./docs/readme/s14-report-light.webp" alt="The session report Retried webhooks no longer double credit, with its outline, what was wrong and what changed">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/artifact-report-dark.webp">
+  <img src="./docs/readme/artifact-report-light.webp" alt="The report Retried webhooks no longer double credit, rev 2, with an Outline (What was wrong, What changed, Evidence, Sources, Open questions, Next steps), the section What was wrong and the What changed table">
 </picture>
 
-Read a report as one document with an outline, and open the same file in a browser on another machine.
+Read a report as one document. The **Outline** on the left jumps to each section, and **Edit** changes the text in place. The same file opens in a browser on another machine.
 
 ### Files on disk
 
 Open any artifact as a folder, in your browser or your file manager. The folder is rewritten on each revision and follows renames.
 
-### Wireframes scouted first
-
-Get wireframes that start from your code. Before drawing, two scouts read the repo, one for screens and one for data, and each claim they make has to cite a file that exists.
-
-### Wireframe versions
+### Create a wireframe
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s13-compare-dark.webp">
-  <img src="./docs/readme/s13-compare-light.webp" alt="Two versions of the Deliveries screen wireframe side by side with two changes">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/artifact-create-dark.webp">
+  <img src="./docs/readme/artifact-create-light.webp" alt="The Create wireframe form with a Brief, Attachments, Fidelity set to Repository styled wireframe, Target set to Phone and desktop, Read from payments-api and notify-relay, Based on a run and the Included context list">
 </picture>
+
+Describe the screen in a **Brief**, add **Attachments**, and choose the **Fidelity** (**Plain wireframe** or **Repository styled wireframe**) and the **Target** (**Phone**, **Desktop** or **Phone and desktop**). **Read from** picks the project branches the agent looks at, and **Included context** lists exactly what goes in the pack.
+
+### Wireframes scouted first
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/artifact-scouts-dark.webp">
+  <img src="./docs/readme/artifact-scouts-light.webp" alt="The wireframe Deliveries screen, high fidelity in the Generating state, with Agents on this run: screens and routes done in 14s with 8 of 11 claims verified, and data and contracts still running">
+</picture>
+
+Get wireframes that start from your code. Before drawing, two scouts read the repo, one for **screens and routes** and one for **data and contracts**. Each claim they make has to cite a file that exists, and the run shows how many were verified. **Stop** ends the run.
+
+### Wireframe versions
 
 Go back to any wireframe version with **View**, **Compare** and **Restore**.
 
 ### Compare
 
-See what changed between two wireframe versions side by side, with a change list that lights up each element in both frames.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/artifact-compare-dark.webp">
+  <img src="./docs/readme/artifact-compare-light.webp" alt="Compare v2 to v3 of the Deliveries wireframe: the screens Deliveries (Changed), Delivery detail (Same) and Endpoints (Same), the two frames side by side, and Changes on this screen with Added Stuck delivery: evt_4Q2x for 14 min and Changed Deliveries table">
+</picture>
+
+See what changed between two wireframe versions side by side. Pick the versions at the top, pick a screen on the left, and read the change list underneath. The added banner and the changed table are outlined in the right frame.
 
 ### Ask for a change
 
@@ -620,14 +685,16 @@ Export a wireframe as a folder of pages, or redraw it at the other fidelity.
 
 ## Shared context
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s08-context-dark.webp">
-  <img src="./docs/readme/s08-context-light.webp" alt="The context drawer on Decisions, with D3 replacing D1, and the brief as sent to Codex">
-</picture>
+What one agent learns, the next one reads. The goal, decisions and a running summary travel with the session.
 
 ### Decisions
 
-Record a decision once and have the agents after it read it. Each one gets a number and a byline, and replacing or withdrawing it needs a reason that stays next to it. Click a decision in the context drawer to open it, with **Edit** and **Remove** inside. A removed decision is retired at once and stays in the list with **Undo** while the drawer is open, and closed decisions are split into **Removed by you** and **Replaced**.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/context-decisions-dark.webp">
+  <img src="./docs/readme/context-decisions-light.webp" alt="The Context drawer on Decisions with two Active decisions, 3 Dedupe on the event id inside the transaction (replaces 1) and 2 Keep the processor event id on every credit row, plus Replaced and removed 1 and Add a decision, next to the brief sent to Implement 3.1 that says Why: D3 moved the dedupe inside the transaction">
+</picture>
+
+Record a decision once and have the agents after it read it. Each one gets a number and a byline, and replacing or withdrawing it needs a reason that stays next to it. Here decision 3 replaces decision 1, so the brief the implementer received carries the new one and says why. Click a decision to open it, with **Edit** and **Remove** inside. A removed decision is retired at once and stays in the list with **Undo** while the drawer is open, and closed decisions are split into **Removed by you** and **Replaced**.
 
 ### See why each decision was made
 
@@ -635,11 +702,21 @@ Read the reason behind a decision without opening the run. When Goodboy records 
 
 ### Running summary
 
-Hand the next agent where things stand. After each turn a summary of **State**, **Next** and **Learned** is updated, and an edit you made in the meantime is kept.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/context-summary-dark.webp">
+  <img src="./docs/readme/context-summary-light.webp" alt="The Context drawer on Summary with the blocks State 4, Next 3, Open questions 1 and Learned 2, each with its key line first and Show more links for the rest">
+</picture>
+
+Hand the next agent where things stand. After each turn a summary is updated with **State**, **Next**, **Open questions** and **Learned**, and an edit you made in the meantime is kept. Each block shows its key line first and folds the rest behind **Show 3 more**.
 
 ### Context drawer
 
-Open goal, decisions and summary from any session page, with **Copy as brief**. A dot on **Context** says something changed since you last looked, and the drawer lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one. Each tab reads as labelled blocks, the key line first and the rest folded.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/context-drawer-dark.webp">
+  <img src="./docs/readme/context-drawer-light.webp" alt="The Context drawer of the session Stop retried webhooks posting a second credit on Decisions 5, with Changed since you last looked (4 rows: Added, Replaced by 7, Withdrawn, Reworded) above the Active list">
+</picture>
+
+Open goal, decisions and summary from any session page with the **Context** button, and use the copy icon at the top for **Copy as brief**. A dot on **Decisions** says something changed since you last looked, and **Changed since you last looked** lists added, removed and reworded decisions first. Active decisions show their reason under the text when they have one.
 
 ### Context budgets
 
