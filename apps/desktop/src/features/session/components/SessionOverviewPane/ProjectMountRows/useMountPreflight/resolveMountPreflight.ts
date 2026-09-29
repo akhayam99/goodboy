@@ -1,6 +1,6 @@
+import { nextAvailableSlug } from '@goodboy/core';
 import type { MountId } from '@goodboy/types';
 import { mountDirName } from '../../../../../../store/slices/project-mounts/mountDirName';
-import { nextAvailableSlug } from '../../../../../../store/slices/sessions/deriveBranchName';
 import type { MountPlan } from '../../../../../../store/slices/sessions/mountPlan';
 
 export type MountPreflight = {

@@ -483,7 +483,7 @@ fn worktree_quarantine_candidate_blocking(
     })
 }
 
-pub fn sanitize_slug(input: &str) -> String {
+pub fn slugify(input: &str, max_len: usize) -> String {
     let lowered = input.to_ascii_lowercase();
     let alnum_dash = Regex::new(r"[^a-z0-9-]+").unwrap();
     let collapsed_dashes = Regex::new(r"-+").unwrap();
@@ -492,7 +492,7 @@ pub fn sanitize_slug(input: &str) -> String {
     let stage1 = alnum_dash.replace_all(&lowered, "-");
     let stage2 = collapsed_dashes.replace_all(&stage1, "-");
     let stage3 = edge_dashes.replace_all(&stage2, "");
-    let truncated: String = stage3.chars().take(MAX_SLUG_LEN).collect();
+    let truncated: String = stage3.chars().take(max_len).collect();
     let trimmed = truncated.trim_end_matches('-').to_string();
 
     if trimmed.is_empty() {
@@ -504,9 +504,49 @@ pub fn sanitize_slug(input: &str) -> String {
     }
 }
 
+pub fn sanitize_slug(input: &str) -> String {
+    slugify(input, MAX_SLUG_LEN)
+}
+
 #[cfg(test)]
 mod sanitize_slug_tests {
-    use super::{sanitize_slug, MAX_SLUG_LEN};
+    use super::{sanitize_slug, slugify, MAX_SLUG_LEN};
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    struct SlugCase {
+        name: String,
+        input: String,
+        #[serde(rename = "maxLength")]
+        max_length: Option<usize>,
+        expected: String,
+    }
+
+    #[derive(Deserialize)]
+    struct SlugFixture {
+        #[serde(rename = "defaultMaxLength")]
+        default_max_length: usize,
+        cases: Vec<SlugCase>,
+    }
+
+    const SLUG_FIXTURE: &str = include_str!("../../../../packages/core/src/slug/slug.fixture.json");
+
+    #[test]
+    fn matches_the_shared_fixture_the_typescript_slugify_is_tested_against() {
+        let fixture: SlugFixture = serde_json::from_str(SLUG_FIXTURE).unwrap();
+
+        assert_eq!(fixture.default_max_length, MAX_SLUG_LEN);
+        assert!(!fixture.cases.is_empty());
+        for case in fixture.cases {
+            let max_len = case.max_length.unwrap_or(MAX_SLUG_LEN);
+            assert_eq!(
+                slugify(&case.input, max_len),
+                case.expected,
+                "case: {}",
+                case.name
+            );
+        }
+    }
 
     #[test]
     fn replaces_a_branch_separator_so_the_directory_never_nests() {

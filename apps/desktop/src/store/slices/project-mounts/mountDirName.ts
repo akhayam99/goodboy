@@ -1,17 +1,17 @@
+import { MAX_SLUG_LENGTH, slugify } from '@goodboy/core';
 import type { MountId } from '@goodboy/types';
-import { sanitizeSlug } from './sanitizeSlug';
-
-const MAX_DIR_NAME_LENGTH = 48;
 
 type Params = {
   readonly sessionSlug: string;
   readonly mountId: MountId;
 };
 
+const slugifyOrEmpty = (input: string): string => slugify({ input, fallback: '' });
+
 export const mountDirName = ({ sessionSlug, mountId }: Params): string => {
-  const id = sanitizeSlug(mountId);
-  const budget = MAX_DIR_NAME_LENGTH - id.length - 1;
-  const head = budget <= 0 ? '' : sanitizeSlug(sessionSlug).slice(0, budget).replace(/-+$/g, '');
+  const id = slugifyOrEmpty(mountId);
+  const budget = MAX_SLUG_LENGTH - id.length - 1;
+  const head = budget <= 0 ? '' : slugifyOrEmpty(sessionSlug).slice(0, budget).replace(/-+$/g, '');
   if (head === '') {
     return id;
   }

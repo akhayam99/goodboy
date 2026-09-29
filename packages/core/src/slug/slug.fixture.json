@@ -1,0 +1,215 @@
+{
+  "defaultMaxLength": 48,
+  "cases": [
+    {
+      "name": "plain words",
+      "input": "Refactor Auth Domain",
+      "expected": "refactor-auth-domain"
+    },
+    {
+      "name": "already a slug",
+      "input": "fix-parser",
+      "expected": "fix-parser"
+    },
+    {
+      "name": "branch separator",
+      "input": "alice/fix-parser",
+      "expected": "alice-fix-parser"
+    },
+    {
+      "name": "uppercase",
+      "input": "Fix-Parser",
+      "expected": "fix-parser"
+    },
+    {
+      "name": "runs of separators",
+      "input": "a---b__c  d",
+      "expected": "a-b-c-d"
+    },
+    {
+      "name": "leading and trailing separators",
+      "input": "---hi---",
+      "expected": "hi"
+    },
+    {
+      "name": "leading and trailing spaces",
+      "input": "  my   feature  ",
+      "expected": "my-feature"
+    },
+    {
+      "name": "dots become dashes",
+      "input": "v1.2.3 release",
+      "expected": "v1-2-3-release"
+    },
+    {
+      "name": "dot dot path",
+      "input": "Alice/Fix   Parser/../weird",
+      "expected": "alice-fix-parser-weird"
+    },
+    {
+      "name": "apostrophe",
+      "input": "don't stop",
+      "expected": "don-t-stop"
+    },
+    {
+      "name": "accented letter is dropped as a separator",
+      "input": "caff\u00c8",
+      "expected": "caff"
+    },
+    {
+      "name": "accented word",
+      "input": "citt\u00e0 di Milano",
+      "expected": "citt-di-milano"
+    },
+    {
+      "name": "cjk only",
+      "input": "\u65e5\u672c\u8a9e",
+      "expected": "77710aed"
+    },
+    {
+      "name": "emoji only",
+      "input": "\ud83d\ude80\ud83d\ude80",
+      "expected": "6708b29c"
+    },
+    {
+      "name": "emoji inside",
+      "input": "ship \ud83d\ude80 it",
+      "expected": "ship-it"
+    },
+    {
+      "name": "dotted capital i",
+      "input": "\u0130stanbul",
+      "expected": "stanbul"
+    },
+    {
+      "name": "kelvin sign",
+      "input": "\u212aelvin",
+      "expected": "elvin"
+    },
+    {
+      "name": "sharp s",
+      "input": "stra\u00dfe",
+      "expected": "stra-e"
+    },
+    {
+      "name": "empty",
+      "input": "",
+      "expected": "e3b0c442"
+    },
+    {
+      "name": "punctuation only",
+      "input": "!!!",
+      "expected": "e84c538e"
+    },
+    {
+      "name": "dashes only",
+      "input": "----",
+      "expected": "bd64bb8e"
+    },
+    {
+      "name": "digits",
+      "input": "812 42",
+      "expected": "812-42"
+    },
+    {
+      "name": "issue prefix",
+      "input": "812-Fix the login flow",
+      "expected": "812-fix-the-login-flow"
+    },
+    {
+      "name": "collision first",
+      "input": "Fix Login",
+      "expected": "fix-login"
+    },
+    {
+      "name": "collision second lowercase",
+      "input": "fix login",
+      "expected": "fix-login"
+    },
+    {
+      "name": "collision third with dashes",
+      "input": "--Fix--Login--",
+      "expected": "fix-login"
+    },
+    {
+      "name": "exactly 48",
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "one over 48 ends in dash after cut",
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-tail",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "long name is cut at 48",
+      "input": "word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-word-",
+      "expected": "word-word-word-word-word-word-word-word-word-wor"
+    },
+    {
+      "name": "very long name",
+      "input": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+    },
+    {
+      "name": "very long name with words",
+      "input": "harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline harborline",
+      "expected": "harborline-harborline-harborline-harborline-harb"
+    },
+    {
+      "name": "cut lands on a dash",
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa b",
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "mount directory name",
+      "input": "alice-fix-p-9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f",
+      "expected": "alice-fix-p-9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f"
+    },
+    {
+      "name": "cap 30",
+      "input": "Harborline checkout totals drift after a refund is applied",
+      "maxLength": 30,
+      "expected": "harborline-checkout-totals-dri"
+    },
+    {
+      "name": "cap 30 exact cut on dash",
+      "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa-b",
+      "maxLength": 30,
+      "expected": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "name": "cap 40",
+      "input": "Harborline checkout totals drift after a refund is applied",
+      "maxLength": 40,
+      "expected": "harborline-checkout-totals-drift-after-a"
+    },
+    {
+      "name": "cap 1",
+      "input": "Northwind",
+      "maxLength": 1,
+      "expected": "n"
+    },
+    {
+      "name": "cap 16 identifier",
+      "input": "GRW-1220 and more words",
+      "maxLength": 16,
+      "expected": "grw-1220-and-mor"
+    },
+    {
+      "name": "tab and newline",
+      "input": "one\ttwo\nthree",
+      "expected": "one-two-three"
+    },
+    {
+      "name": "multibyte hash",
+      "input": "\u00e9\u00e8\u00ea",
+      "expected": "33b8ed09"
+    },
+    {
+      "name": "long multibyte hash input",
+      "input": "\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e\u65e5\u672c\u8a9e",
+      "expected": "fbc6e0b2"
+    }
+  ]
+}

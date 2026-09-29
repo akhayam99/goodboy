@@ -1,8 +1,7 @@
-import { resolveSettings } from '@goodboy/core';
+import { nextAvailableSlug, resolveSettings, slugify } from '@goodboy/core';
 import type { MountId, Project, ProjectId, SessionId } from '@goodboy/types';
 import { DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings';
 import { mountDirName } from '../project-mounts/mountDirName';
-import { sanitizeSlug } from '../project-mounts/sanitizeSlug';
 import { deriveBranchName } from './deriveBranchName';
 import { materializationSeedFor } from './materializationSeeds';
 import type { AppStore } from '../../store';
@@ -111,9 +110,13 @@ export const mountPlan = ({
     taskIdentifiers: storedIdentifiers.length > 0 ? storedIdentifiers : taskIdentifiers,
     existingBranches: takenBranches,
   });
-  const sanitizedSlug = sanitizeSlug(derivedSlug);
-  const slug = sanitizedSlug === '' ? `session-${sessionId.slice(0, 8)}` : sanitizedSlug;
+  const sanitizedSlug = slugify({ input: derivedSlug, fallback: '' });
+  const baseSlug = sanitizedSlug === '' ? `session-${sessionId.slice(0, 8)}` : sanitizedSlug;
   const adoptedBranch = seed?.existingBranch ?? null;
+  const slug =
+    project.kind === 'repo' && adoptedBranch === null
+      ? nextAvailableSlug({ base: baseSlug, prefix, taken: takenBranches })
+      : baseSlug;
   return {
     project,
     mountId,

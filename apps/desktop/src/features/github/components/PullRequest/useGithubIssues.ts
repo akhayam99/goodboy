@@ -7,7 +7,7 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
+import { issueBranchSlug } from '../../../../shared/utils/issueBranchSlug';
 import { ghAssignedIssues, tauriGhRunner } from '../../github';
 import {
   linkedTaskKey,
@@ -51,7 +51,7 @@ type Result = Readonly<{
 }>;
 
 export const githubBranchSlug = ({ issue }: BranchParams): string =>
-  `${issue.number}-${slugifyBranch({ input: issue.title, maxLength: 48 })}`;
+  issueBranchSlug({ prefix: String(issue.number), title: issue.title });
 
 export const buildGithubIssueGroups = ({
   issues,
