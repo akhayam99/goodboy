@@ -80,6 +80,20 @@ describe('useWindowLayout', () => {
     expect(h.saved).toEqual([]);
   });
 
+  it('survives a store whose navigation is gone when the save timer fires', async () => {
+    renderHook(() => useWindowLayout());
+    act(() => {
+      useAppStore.setState({ navigation: undefined as never });
+    });
+
+    await expect(
+      act(async () => {
+        await vi.advanceTimersByTimeAsync(WINDOW_LAYOUT_SAVE_DELAY_MS);
+      }),
+    ).resolves.toBeUndefined();
+    expect(h.saved).toEqual([]);
+  });
+
   it('forgets the window the user closes', async () => {
     renderHook(() => useWindowLayout());
     await act(async () => {
