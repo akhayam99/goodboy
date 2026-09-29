@@ -351,10 +351,6 @@ export const resolveLiveWorkflowName = async ({
   return `${requested} ${suffix}`;
 };
 
-type CreatedAtRow = {
-  readonly created_at: number;
-};
-
 const findLiveTemplateId = async (
   db: Database,
   input: SaveWorkflowInput,
@@ -403,11 +399,6 @@ export const saveWorkflow = async (db: Database, input: SaveWorkflowInput): Prom
     requested: input.name,
     isPreset,
   });
-  const existing = await db.select<CreatedAtRow>(
-    'SELECT created_at FROM workflows WHERE id = ? LIMIT 1',
-    [id],
-  );
-  const createdAtMs = existing[0]?.created_at ?? nowMs;
   await writeWorkflow(db, {
     id,
     workspaceId: input.workspaceId,
@@ -418,7 +409,7 @@ export const saveWorkflow = async (db: Database, input: SaveWorkflowInput): Prom
     steps: input.steps.map((step) => stepFromInput(step, id)),
     isPreset,
     ...(input.origin !== undefined && { origin: input.origin }),
-    createdAt: isoOf(createdAtMs),
+    createdAt: isoOf(nowMs),
     updatedAt: isoOf(nowMs),
   });
   const saved = await getWorkflow(db, id);

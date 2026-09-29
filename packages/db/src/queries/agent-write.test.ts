@@ -244,6 +244,30 @@ describe('agent writes', () => {
       expect(await childIds(containerId)).toEqual(['c1', 'c2']);
     });
 
+    it('gives the batch up when another writer fanned out between the look and the write', async () => {
+      await insertAgentBatch(db, { parentAgentId: containerId, children: [child('c1', 0)] });
+      let firstLook = true;
+      const staleLook: Database = {
+        ...db,
+        select: async <T>(sql: string, params?: ReadonlyArray<unknown>) => {
+          if (firstLook && sql.includes('FROM live_agents WHERE parent_agent_id')) {
+            firstLook = false;
+            return [];
+          }
+          return db.select<T>(sql, params);
+        },
+      };
+
+      const outcome = await insertAgentBatch(staleLook, {
+        parentAgentId: containerId,
+        children: [child('c2', 1), child('c3', 2)],
+      });
+
+      expect(outcome.inserted).toBe(false);
+      expect(outcome.agents.map((agent) => agent.id)).toEqual(['c1']);
+      expect(await childIds(containerId)).toEqual(['c1']);
+    });
+
     it('answers an empty batch with the children already there', async () => {
       const outcome = await insertAgentBatch(db, { parentAgentId: containerId, children: [] });
 

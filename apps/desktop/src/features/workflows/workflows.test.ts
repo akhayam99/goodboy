@@ -191,6 +191,8 @@ describe('workflow writes through the shared database', () => {
       await vi.waitFor(() => expect(spy).toHaveBeenCalledTimes(1));
       await tauriDatabase.execute("UPDATE agents SET status = 'completed'");
       const second = invokeAgentList(sessionId);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(spy).toHaveBeenCalledTimes(1);
       releaseFirst();
 
       await expect(first).resolves.toMatchObject([{ status: 'pending' }]);
