@@ -244,8 +244,6 @@ const RUN_DELAYS: readonly number[] = [700, 1400, 2100, 2800];
 
 const RUN_TOTAL_LABEL = 'This run';
 
-const RUN_NOW_LABEL = 'Now';
-
 const RUN_HEAVY_LABEL = 'The same six steps on one heavy model:';
 
 const RUN_LABEL =
@@ -369,7 +367,6 @@ export const HARBORLINE = {
   RUN_START_DONE,
   RUN_DELAYS,
   RUN_TOTAL_LABEL,
-  RUN_NOW_LABEL,
   RUN_HEAVY_LABEL,
   RUN_LABEL,
   ACTIVITY_ROWS,

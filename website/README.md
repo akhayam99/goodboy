@@ -49,10 +49,9 @@ on a `Stage`. Their rules:
   so they hold inside any stage.
 - Text that says what an agent does, such as a run step, carries `data-wrap`.
   Below 520 px it wraps to two lines and is never cut.
-- Below 520 px the run becomes a timeline that grows upward, like the one in
-  the app: step 1 at the bottom, a status node per step on a rail, solid up
-  to the step that runs and dashed above it, and Now on top. Above 520 px it
-  stays a table.
+- The run is a timeline that reads top to bottom: a status node per step on
+  a rail, solid down to the step that runs and dashed after it. Above 520 px
+  each step is one row of columns, below it each step stacks on three lines.
 - On a phone every visible text is 13 px or larger; on a desktop 12 px is the
   floor, for chips and eyebrows only.
 - The window is a hairline box on the page background, with no shadow.

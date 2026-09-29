@@ -413,14 +413,16 @@
 }
 
 .mk-run .mk-row {
+  --mk-node-top: 12px;
+  position: relative;
   display: grid;
   grid-template-columns: 130px minmax(0, 1fr) 190px 96px 64px;
   grid-template-areas: 'role step model state cost';
   column-gap: 16px;
   align-items: center;
   min-height: 46px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--line-soft);
+  padding: 0 16px 0 48px;
+  transition: background-color 0.3s var(--mk-ease);
 }
 
 .mk-run .mk-role {
@@ -439,9 +441,69 @@
   color: var(--t3);
 }
 
-.mk-run .mk-node,
-.mk-run .mk-now {
+.mk-run .mk-row.is-run {
+  background: color-mix(in oklch, var(--st-run) 7%, transparent);
+}
+
+.mk-run .mk-row::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: calc(var(--mk-node-top) + 11px);
+  bottom: calc(-1 * (var(--mk-node-top) + 11px));
+  border-left: 2px dashed var(--line-strong);
+  transform: translateX(-1px);
+}
+
+.mk-run .mk-row:last-child::before {
   display: none;
+}
+
+.mk-run .mk-row:has(+ .mk-row:is(.is-done, .is-run))::before {
+  border-left-style: solid;
+  border-left-color: var(--st-done);
+}
+
+.mk-run .mk-node {
+  position: absolute;
+  z-index: 1;
+  left: 13px;
+  top: var(--mk-node-top);
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--t3);
+  background: var(--bg);
+  outline: 1.5px dashed var(--line-strong);
+  outline-offset: -1.5px;
+  transition:
+    color 0.3s var(--mk-ease),
+    background-color 0.3s var(--mk-ease),
+    box-shadow 0.3s var(--mk-ease);
+}
+
+.mk-run .mk-node svg {
+  width: 13px;
+  height: 13px;
+}
+
+.mk-run .mk-row.is-run .mk-node {
+  outline: 0;
+  color: var(--st-run);
+  box-shadow: inset 0 0 0 1.5px var(--st-run);
+}
+
+.mk-run .mk-row.is-done .mk-node {
+  outline: 0;
+  color: var(--st-done);
+  background: color-mix(in oklch, var(--st-done) 14%, var(--bg));
+  box-shadow: inset 0 0 0 1.5px var(--st-done);
 }
 
 .mk-run .mk-model {
@@ -544,13 +606,8 @@
 }
 
 @container mk (max-width: 519px) {
-  .mk-run .mk-rows {
-    display: flex;
-    flex-direction: column-reverse;
-  }
-
   .mk-run .mk-row {
-    position: relative;
+    --mk-node-top: 10px;
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       'role state'
@@ -559,73 +616,6 @@
     row-gap: 3px;
     column-gap: 10px;
     padding: 10px 14px 12px 48px;
-    border-bottom: 0;
-    transition: background-color 0.3s var(--mk-ease);
-  }
-
-  .mk-run .mk-row.is-run {
-    background: color-mix(in oklch, var(--st-run) 7%, transparent);
-  }
-
-  .mk-run .mk-row::before {
-    content: '';
-    position: absolute;
-    left: 24px;
-    top: 21px;
-    bottom: -21px;
-    border-left: 2px dashed var(--line-strong);
-    transform: translateX(-1px);
-  }
-
-  .mk-run .mk-row:first-child::before {
-    display: none;
-  }
-
-  .mk-run .mk-row:is(.is-done, .is-run)::before {
-    border-left-style: solid;
-    border-left-color: var(--st-done);
-  }
-
-  .mk-run .mk-node {
-    position: absolute;
-    z-index: 1;
-    left: 13px;
-    top: 10px;
-    display: grid;
-    place-items: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    font-size: 13px;
-    line-height: 1;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--t3);
-    background: var(--bg);
-    outline: 1.5px dashed var(--line-strong);
-    outline-offset: -1.5px;
-    transition:
-      color 0.3s var(--mk-ease),
-      background-color 0.3s var(--mk-ease),
-      box-shadow 0.3s var(--mk-ease);
-  }
-
-  .mk-run .mk-node svg {
-    width: 13px;
-    height: 13px;
-  }
-
-  .mk-run .mk-row.is-run .mk-node {
-    outline: 0;
-    color: var(--st-run);
-    box-shadow: inset 0 0 0 1.5px var(--st-run);
-  }
-
-  .mk-run .mk-row.is-done .mk-node {
-    outline: 0;
-    color: var(--st-done);
-    background: color-mix(in oklch, var(--st-done) 14%, var(--bg));
-    box-shadow: inset 0 0 0 1.5px var(--st-done);
   }
 
   .mk-run .mk-step {
@@ -639,45 +629,6 @@
 
   .mk-run .mk-row.is-queued :is(.mk-role, .mk-step) {
     color: var(--t3);
-  }
-
-  .mk-run .mk-now {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 14px 4px 18px;
-    font-size: 13px;
-    line-height: 18px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--t3);
-  }
-
-  .mk-run .mk-now i {
-    position: relative;
-    z-index: 1;
-    flex: none;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--t3);
-  }
-
-  .mk-run .mk-now::before {
-    content: '';
-    position: absolute;
-    left: 24px;
-    top: 23px;
-    bottom: -21px;
-    border-left: 2px dashed var(--line-strong);
-    transform: translateX(-1px);
-  }
-
-  .mk-run .mk-now.is-reached::before {
-    border-left-style: solid;
-    border-left-color: var(--st-done);
   }
 
   .mk-run .mk-role {
