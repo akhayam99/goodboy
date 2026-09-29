@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, ProjectId, SecurityFindingId, WorkspaceId } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, Statement } from '../client';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
   countOpenSecurityFindings,
@@ -23,6 +23,41 @@ const seed = async (): Promise<Database> => {
     [workspaceId, now, now],
   );
   return db;
+};
+
+const BROKEN_STATEMENT = 'INSERT INTO fault_no_such_table (id) VALUES (1)';
+
+type FaultOnWriteParams = {
+  readonly db: Database;
+  readonly match: RegExp;
+};
+
+const faultOnWrite = ({ db, match }: FaultOnWriteParams): Database => {
+  const failOn = (sql: string): void => {
+    if (match.test(sql)) {
+      throw new Error('injected db fault');
+    }
+  };
+  const breakMatching = (statements: ReadonlyArray<Statement>): ReadonlyArray<Statement> =>
+    statements.map((statement) =>
+      match.test(statement.sql) ? { sql: BROKEN_STATEMENT, params: [] } : statement,
+    );
+  return {
+    async exec(sql) {
+      failOn(sql);
+      await db.exec(sql);
+    },
+    async execute(sql, params) {
+      failOn(sql);
+      return db.execute(sql, params);
+    },
+    async select<T>(sql: string, params?: ReadonlyArray<unknown>) {
+      return db.select<T>(sql, params);
+    },
+    async transaction({ statements }) {
+      return db.transaction({ statements: breakMatching(statements) });
+    },
+  };
 };
 
 describe('security finding queries', () => {
@@ -223,5 +258,42 @@ describe('security finding queries', () => {
 
     await insert();
     await expect(insert()).rejects.toThrow(/UNIQUE/);
+  });
+
+  it('leaves the stored findings untouched when one write of a scan fails halfway', async () => {
+    const db = await seed();
+    const subject = {
+      workspaceId,
+      projectId: null,
+      subjectKind: 'script',
+      subjectId: 'script-7',
+    } as const;
+    await recordSecurityFindings({
+      db,
+      ...subject,
+      findings: [{ secretKind: 'github-token', fingerprint: 'fp-old', last4: '0001' }],
+      at: at({ value: '2026-09-25T09:00:00Z' }),
+    });
+
+    await expect(
+      recordSecurityFindings({
+        db: faultOnWrite({ db, match: /SET resolved_at = \?/ }),
+        ...subject,
+        findings: [{ secretKind: 'openai-key', fingerprint: 'fp-new', last4: '0002' }],
+        at: at({ value: '2026-09-25T09:05:00Z' }),
+      }),
+    ).rejects.toThrow();
+
+    const open = await listOpenSecurityFindings({ db, workspaceId });
+    expect(open.map((finding) => finding.fingerprint)).toEqual(['fp-old']);
+
+    await recordSecurityFindings({
+      db,
+      ...subject,
+      findings: [{ secretKind: 'openai-key', fingerprint: 'fp-new', last4: '0002' }],
+      at: at({ value: '2026-09-25T09:10:00Z' }),
+    });
+    const afterRetry = await listOpenSecurityFindings({ db, workspaceId });
+    expect(afterRetry.map((finding) => finding.fingerprint)).toEqual(['fp-new']);
   });
 });
