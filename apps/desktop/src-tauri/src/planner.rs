@@ -7,6 +7,7 @@ use tauri::State;
 use thiserror::Error;
 
 use crate::live_child::{drain_lossy, wait_and_remove, LiveChild, LiveChildRegistry};
+use crate::providers::cli_args::{side_job_args, ArgsError, Job, SideJob};
 
 #[derive(Debug, Error)]
 pub enum PlannerError {
@@ -14,6 +15,17 @@ pub enum PlannerError {
     Io(#[from] std::io::Error),
     #[error("unknown provider: {0}")]
     UnknownProvider(String),
+    #[error("argument policy violated: {0}")]
+    Policy(String),
+}
+
+impl From<ArgsError> for PlannerError {
+    fn from(error: ArgsError) -> Self {
+        match error {
+            ArgsError::UnknownProvider(provider) => PlannerError::UnknownProvider(provider),
+            ArgsError::Policy(message) => PlannerError::Policy(message),
+        }
+    }
 }
 
 crate::util::impl_error_serialize!(PlannerError);
@@ -23,6 +35,7 @@ impl PlannerError {
         match self {
             PlannerError::Io(_) => "io",
             PlannerError::UnknownProvider(_) => "unknown_provider",
+            PlannerError::Policy(_) => "policy",
         }
     }
 }
@@ -122,79 +135,17 @@ fn run_planner(
 }
 
 fn build_cli_args(args: &PlannerArgs) -> Result<Vec<String>, PlannerError> {
-    match args.provider_id.as_str() {
-        "anthropic" => {
-            let mut cli_args = vec![
-                "-p".to_string(),
-                args.user_message.clone(),
-                "--model".to_string(),
-                args.model.clone(),
-                "--system-prompt".to_string(),
-                args.system_prompt.clone(),
-                "--setting-sources".to_string(),
-                crate::aux_spawn::CLAUDE_SETTING_SOURCES.to_string(),
-                "--output-format".to_string(),
-                "json".to_string(),
-                "--no-session-persistence".to_string(),
-            ];
-            if args.tools_disabled {
-                cli_args.push("--tools".to_string());
-                cli_args.push(String::new());
-            }
-            crate::aux_spawn::push_claude_mcp_deny(&mut cli_args);
-            crate::aux_spawn::push_effort_args("anthropic", args.effort.as_deref(), &mut cli_args);
-            Ok(cli_args)
-        }
-        "cursor" => Ok(vec![
-            "-p".to_string(),
-            format!("{}\n\n{}", args.system_prompt, args.user_message),
-            "--model".to_string(),
-            args.model.clone(),
-            "--output-format".to_string(),
-            "stream-json".to_string(),
-        ]),
-        "codex" => {
-            let mut cli_args = vec![
-                "exec".to_string(),
-                "--json".to_string(),
-                "--model".to_string(),
-                args.model.clone(),
-                "--sandbox".to_string(),
-                "read-only".to_string(),
-                "--skip-git-repo-check".to_string(),
-            ];
-            crate::aux_spawn::push_effort_args("codex", args.effort.as_deref(), &mut cli_args);
-            cli_args.push("--".to_string());
-            cli_args.push(format!("{}\n\n{}", args.system_prompt, args.user_message));
-            Ok(cli_args)
-        }
-        "gemini" => Ok(vec![
-            "-p".to_string(),
-            format!("{}\n\n{}", args.system_prompt, args.user_message),
-            "--model".to_string(),
-            args.model.clone(),
-            "--sandbox".to_string(),
-        ]),
-        "opencode" | "openrouter" | "moonshot" => {
-            let mut cli_args = vec![
-                "run".to_string(),
-                "--format".to_string(),
-                "json".to_string(),
-                "-m".to_string(),
-                args.model.clone(),
-            ];
-            if let Some(working_dir) = args.working_dir.as_deref() {
-                cli_args.push("--dir".to_string());
-                cli_args.push(working_dir.to_string());
-            }
-            cli_args.push("--agent".to_string());
-            cli_args.push("plan".to_string());
-            cli_args.push("--".to_string());
-            cli_args.push(format!("{}\n\n{}", args.system_prompt, args.user_message));
-            Ok(cli_args)
-        }
-        other => Err(PlannerError::UnknownProvider(other.to_string())),
-    }
+    side_job_args(&SideJob {
+        job: Job::Planner,
+        provider_id: &args.provider_id,
+        model: &args.model,
+        system_prompt: &args.system_prompt,
+        user_message: &args.user_message,
+        working_dir: args.working_dir.as_deref(),
+        tools_disabled: args.tools_disabled,
+        effort: args.effort.as_deref(),
+    })
+    .map_err(PlannerError::from)
 }
 
 #[cfg(test)]
@@ -292,7 +243,7 @@ mod tests {
         assert!(skip_idx < sep_idx);
         assert!(cli
             .windows(2)
-            .any(|pair| pair[0] == "--sandbox" && pair[1] == "read-only"));
+            .any(|pair| pair[0] == "-s" && pair[1] == "read-only"));
     }
 
     #[test]
@@ -321,6 +272,7 @@ mod tests {
                 "cheap-model",
                 "--dir",
                 "/tmp/project",
+                "--dangerously-skip-permissions",
                 "--agent",
                 "plan",
                 "--",

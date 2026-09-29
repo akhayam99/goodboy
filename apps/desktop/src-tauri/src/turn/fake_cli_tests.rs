@@ -234,7 +234,7 @@ fn expected_argv(binary: &str, run: &Run) -> Vec<String> {
         blocks_push: true,
         excludes_tmp: false,
     };
-    build_provider_cli_args(binary, &args)
+    turn_args(binary, &args)
 }
 
 fn assert_recorded_stream_reaches_the_sink(binary: &str, stream: &str) -> Run {

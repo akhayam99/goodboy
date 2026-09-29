@@ -6,6 +6,8 @@ use thiserror::Error;
 
 use crate::path_env;
 
+pub(crate) mod cli_args;
+
 #[derive(Debug, Error)]
 pub enum ProviderStatusError {
     #[error("provider detection did not finish: {0}")]

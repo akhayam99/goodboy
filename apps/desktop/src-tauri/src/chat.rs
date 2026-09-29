@@ -14,9 +14,9 @@ use crate::db::Db;
 use crate::live_child::{
     drain_tail_lossy, wait_and_remove, LiveChild, LiveChildRegistry, MAX_STDERR_BYTES,
 };
+use crate::providers::cli_args::{read_only_violations, turn_args, Cli, Job};
 use crate::turn::{
-    build_provider_cli_args, read_capped_line, CappedLine, SpawnOneArgs, TurnEventPayload,
-    MAX_TURN_LINE_BYTES,
+    read_capped_line, CappedLine, SpawnOneArgs, TurnEventPayload, MAX_TURN_LINE_BYTES,
 };
 
 pub const EVENT_NAME: &str = "chat_event";
@@ -304,7 +304,7 @@ fn build_chat_cli_args(shape: &str, args: &ChatTurnArgs, roots: &ChatRoots) -> V
         blocks_push: true,
         excludes_tmp: true,
     };
-    let cli = build_provider_cli_args(shape, &spawn);
+    let cli = turn_args(shape, &spawn);
     if shape == "codex" {
         return harden_codex(cli);
     }
@@ -418,7 +418,18 @@ fn assert_read_only(shape: &str, cli: &[String]) -> Result<(), ChatError> {
             return Err(ChatError::WriteArgument(format!("{switch} is missing")));
         }
     }
-    Ok(())
+    let policy_cli = if shape == "claude" {
+        Cli::Claude
+    } else {
+        Cli::Codex
+    };
+    match read_only_violations(policy_cli, Job::Turn, cli)
+        .into_iter()
+        .next()
+    {
+        Some(violation) => Err(ChatError::WriteArgument(violation)),
+        None => Ok(()),
+    }
 }
 
 struct PreparedChatTurn {
