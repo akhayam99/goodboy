@@ -267,6 +267,7 @@ vi.mock('../store', async () => {
     useCurrentWorkspace: () => (state.currentWorkspaceId === null ? null : workspace),
     useSessionById: () => null,
     useSessions: () => state.sessions,
+    useSortedGroupedSessions: () => [{ key: 'none', sessions: state.sessions }],
     useWorkspaces: () => state.workspaces,
   };
 });
