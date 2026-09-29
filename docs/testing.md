@@ -103,6 +103,12 @@ For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the i
 - The fake replays a recorded output. It proves our spawn and our parser, not that the flags still exist in the vendor's CLI. Only the vendor's `--help` shows that.
 - Adding a provider or a stream shape: add a script and a `streams/` file, then a test that asserts the argv and the lines. Prove it can fail: break the code it covers, see the test go red, restore it.
 
+## A table rebuild proves that the rows survive
+
+A migration that rebuilds a table (`PRAGMA foreign_keys = OFF`, a new table, a copy, `DROP TABLE`, a rename) can lose or scramble rows and still converge to the right schema, which is all `registry.test.ts` checks. Such a migration gets `packages/db/src/migrations/mNNN-<slug>.test.ts` in the same commit. The test opens `makeMigratedTestDatabase({ throughVersion: N - 1 })`, seeds rows with `insertRow` from `test-helpers/migration-rows.ts`, reads them with `selectRows`, runs the migration with `migrateThrough`, and compares every column of every rebuilt table with what it read before. A column the migration renames or remaps is remapped in the expectation, so every other column must be equal. Also seed the child tables that point at the rebuilt one (with `foreign_keys` off in the rebuild they must survive), a row with a null or dangling reference, and check `PRAGMA foreign_key_check` and the new constraints.
+
+`registry.test.ts` enforces it: a migration with `foreign_keys = OFF` needs a `mNNN-*.test.ts` that seeds an older schema (`throughVersion` or `migrations.filter`). `REBUILDS_WITHOUT_DATA_TEST` lists the old rebuilds that have none. It only shrinks: adding a test for one of them fails until its version leaves the list.
+
 ## No stopwatch in the gate
 
 A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a budget in milliseconds fails when the runner is loaded, not when the code is slow. The required `unit` project has none. A real benchmark is named `*.perf.test.ts` and lives in the `perf` vitest project of `apps/desktop`, `packages/core` or `packages/db`. Run it with `pnpm test:perf` (or `pnpm --filter <pkg> test:perf`). It never blocks a merge: `.github/workflows/perf.yml` runs it on push to main, nightly and on demand, and a nightly failure opens or updates one issue labeled `perf`.
