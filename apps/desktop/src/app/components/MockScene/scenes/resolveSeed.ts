@@ -35,10 +35,11 @@ export const WORKSPACE_ID = 'mock-resolve-workspace-harborline' as WorkspaceId;
 export const SESSION_ID = 'mock-resolve-session-webhook-retry' as SessionId;
 const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
 
-const NOW_ISO = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
+export const NOW_ISO = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const NOW_MS = Date.parse(NOW_ISO);
-const msAgo = ({ minutes }: { readonly minutes: number }): number => NOW_MS - minutes * 60_000;
-const isoAgo = ({ minutes }: { readonly minutes: number }): string =>
+export const msAgo = ({ minutes }: { readonly minutes: number }): number =>
+  NOW_MS - minutes * 60_000;
+export const isoAgo = ({ minutes }: { readonly minutes: number }): string =>
   new Date(msAgo({ minutes })).toISOString();
 
 const OVERRIDES = {
@@ -132,7 +133,7 @@ const PUBLICATION_ID = 'mock-resolve-publication-timeout-config';
 const PROPOSAL_RETRY =
   'Added a capped exponential backoff (max 6 attempts) that reads the Retry-After header when the provider sends one, and emits a retry_backoff_exhausted metric once we give up.';
 
-type ThreadSeed = {
+export type ThreadSeed = {
   readonly threadId: string;
   readonly state: ResolveThreadState;
   readonly stage: ResolveStage;
@@ -144,7 +145,7 @@ type ThreadSeed = {
   readonly createdMinutesAgo: number;
 };
 
-const buildThread = (seed: ThreadSeed): ResolveThread => ({
+export const buildThread = (seed: ThreadSeed): ResolveThread => ({
   id: `mock-resolve-thread-${seed.threadId}`,
   sessionId: SESSION_ID,
   projectId: null,
@@ -174,7 +175,7 @@ const buildThread = (seed: ThreadSeed): ResolveThread => ({
   updatedAt: msAgo({ minutes: seed.createdMinutesAgo }),
 });
 
-type ItemSeed = {
+export type ItemSeed = {
   readonly id: string;
   readonly threadId: string;
   readonly approvalState: ResolveQueueApprovalState;
@@ -186,7 +187,7 @@ type ItemSeed = {
   readonly integratedSha?: string | null;
 };
 
-const buildItem = (seed: ItemSeed): ResolveQueueItem => ({
+export const buildItem = (seed: ItemSeed): ResolveQueueItem => ({
   id: seed.id,
   sessionId: SESSION_ID,
   threadId: seed.threadId,
@@ -399,7 +400,7 @@ const ITEM_RETRY_CONSTANT = buildItem({
   createdMinutesAgo: 12,
 });
 
-const QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [
+export const QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [
   { item: ITEM_RETRY_BACKOFF, thread: THREAD_RETRY_BACKOFF },
   { item: ITEM_RETRY_METRICS, thread: THREAD_RETRY_METRICS },
   { item: ITEM_ERROR_SHAPE, thread: THREAD_ERROR_SHAPE },
@@ -435,7 +436,7 @@ const buildNote = (seed: NoteSeed): PrComment => ({
   threadId: seed.threadId,
 });
 
-const COMMENTS: ReadonlyArray<PrComment> = [
+export const COMMENTS: ReadonlyArray<PrComment> = [
   buildNote({
     threadId: T1,
     author: 'kenji-w',
@@ -707,7 +708,7 @@ const installResolveMockIpc = (): void => {
   });
 };
 
-const EMPTY_GITHUB = {
+export const EMPTY_GITHUB = {
   linkedIssues: [],
   fetchedAt: NOW_ISO,
   failedAt: null,
