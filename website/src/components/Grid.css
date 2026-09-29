@@ -83,6 +83,7 @@
   }
   .cellMedia,
   .cellMedia.closed {
+    container-type: inline-size;
     display: block;
     height: auto;
     margin: 0 -20px;
@@ -92,11 +93,15 @@
   }
   .cellView,
   .cellMedia.closed .cellView {
-    width: auto;
+    width: fit-content;
+    max-width: 100%;
     border-radius: 8px;
+    --fade: clamp(0px, (var(--w) * var(--phone-scale) - 100cqw) * 3, 96px);
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
   }
   .cellView img {
-    width: 100%;
-    max-width: 100%;
+    width: calc(var(--w) * var(--phone-scale));
+    max-width: none;
   }
 }
