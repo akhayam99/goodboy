@@ -31,7 +31,10 @@ const worktree = vi.hoisted(() => ({
   worktreeRemoteHead: vi.fn(async () => 'remote-sha'),
 }));
 
+const replies = vi.hoisted(() => ({ editPostedReplies: vi.fn(async () => 0) }));
+
 vi.mock('../../../features/history/historyEngine', () => engine);
+vi.mock('../resolve/editPostedReplies', () => replies);
 vi.mock('../../../features/worktree/worktree', () => worktree);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('@goodboy/db', () => ({
@@ -188,6 +191,9 @@ describe('rebase on main', () => {
       expect.objectContaining({ branch: 'fix/ledger-postings', expectedRemoteSha: 'remote-sha' }),
     );
     expect(read().historyRuns[MOUNT_ID]?.phase).toBe('pushed');
+    expect(replies.editPostedReplies).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: SESSION_ID }),
+    );
     expect(read().refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
       mountId: MOUNT_ID,
       force: true,

@@ -25,7 +25,13 @@ const commitUrlOf = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: str
   return url !== null && url !== prUrl ? url : null;
 };
 
-const commitLink = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
+export const commitLink = ({
+  sha,
+  prUrl,
+}: {
+  readonly sha: string;
+  readonly prUrl: string | null;
+}) => {
   const short = `\`${sha.slice(0, 7)}\``;
   const url = commitUrlOf({ sha, prUrl });
   return url === null ? short : `[${short}](${url})`;
