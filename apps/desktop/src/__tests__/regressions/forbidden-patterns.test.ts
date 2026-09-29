@@ -129,6 +129,11 @@ const RAW_TRACKING = /(?<![\w-])(?:[\w-]+:)*tracking-(?:\[|[a-z])/;
 const RAW_SCROLLER = /(?<![\w-])(?:[\w-]+:)*overflow-(?:x-|y-)?(?:auto|scroll)(?![\w-])/;
 const TONE_BORDER_RAIL = /(?<![\w-])(?:[\w-]+:)*border-l-(?:2|4)(?![\w-])/;
 const ROUNDED = /(?<![\w-])(?:[\w-]+:)*rounded(?:-|\b)/;
+const FORMAT_ERROR_OWNER = 'packages/ui/src/formatError.ts';
+const INVOKE_OWNER = 'apps/desktop/src/shared/lib/invokeCommand.ts';
+const UI_SOURCE = /^(?:apps\/desktop\/src|packages\/ui\/src)\//;
+const CAUGHT_NAME = '(?:e|err|error|cause|rejection|caught|thrown|\\w+Err(?:or)?)';
+const STRINGIFIED_ERROR = new RegExp(`\\bString\\(${CAUGHT_NAME}\\)|\\$\\{${CAUGHT_NAME}\\}`);
 const SCROLL_OWNER = 'packages/ui/src/components/ScrollFade/index.tsx';
 const FOOTER_CTA_BAR =
   /<footer\b|\bPopoverFooter\b|\bPANE_RHYTHM\.dock\b|\bdock=\{(?![^}]*\bconversation\.composer\b)/;
@@ -225,6 +230,28 @@ const RULES: ReadonlyArray<Rule> = [
               /^import \{[^}]*\binvoke\b[^}]*\} from '@tauri-apps\/api\/core'/.test(line),
           })
         : 0,
+  },
+  {
+    id: 'raw-tauri-invoke',
+    kinds: ['ts'],
+    count: (file) =>
+      file.path === INVOKE_OWNER
+        ? 0
+        : countLines({
+            file,
+            matches: (line) =>
+              /^import \{[^}]*\binvoke\b[^}]*\} from '@tauri-apps\/api\/core'/.test(line),
+          }),
+    hint: 'call invokeCommand from shared/lib/invokeCommand.ts, never invoke: it gives every rejection a kind and a message',
+  },
+  {
+    id: 'stringified-error',
+    kinds: ['ts'],
+    count: (file) =>
+      UI_SOURCE.test(file.path) && file.path !== FORMAT_ERROR_OWNER
+        ? countLines({ file, matches: (line) => STRINGIFIED_ERROR.test(line) })
+        : 0,
+    hint: 'show a caught error with formatError from @goodboy/ui: String(error) prints [object Object] on a {kind, message} rejection',
   },
   {
     id: 'raw-type-size',

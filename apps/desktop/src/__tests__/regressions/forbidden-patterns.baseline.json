@@ -292,6 +292,25 @@
   "export-default": {},
   "any": {},
   "invoke-in-component-or-hook": {},
+  "raw-tauri-invoke": {
+    "apps/desktop/src/features/resolve/learnWorkspaceReplyStyle.ts": 1,
+    "apps/desktop/src/shared/lib/db.ts": 1
+  },
+  "stringified-error": {
+    "apps/desktop/src/app/components/BootSplash/BootErrorRecovery.tsx": 1,
+    "apps/desktop/src/features/chat/attachment-kinds.ts": 1,
+    "apps/desktop/src/features/integrations/jira/TransitionMenu.tsx": 1,
+    "apps/desktop/src/features/permissions/components/PermissionsSettings/RecentDecisions.tsx": 1,
+    "apps/desktop/src/features/resolve/resolveRowState.ts": 1,
+    "apps/desktop/src/features/resolve/reviewPushCopy.ts": 1,
+    "apps/desktop/src/features/resolve/runFailureReason.ts": 1,
+    "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/branchDecision.ts": 3,
+    "apps/desktop/src/features/session/components/SessionOverviewPane/ProjectMountRows/mountFailure.ts": 2,
+    "apps/desktop/src/store/slices/resolve/deliverPublicationThread.ts": 1,
+    "apps/desktop/src/store/slices/resolve/publishConversations.ts": 1,
+    "apps/desktop/src/store/slices/workflows/orchestrateNextStep.ts": 1,
+    "packages/ui/src/components/RefreshIconButton.tsx": 1
+  },
   "raw-type-size": {
     "apps/desktop/src/app/components/AppFooter/GoodboyChip/GoodboyMenu.tsx": 1,
     "apps/desktop/src/app/components/AppTopBar/CommandCenter/index.tsx": 1,
