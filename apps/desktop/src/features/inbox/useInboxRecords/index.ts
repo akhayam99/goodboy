@@ -19,6 +19,7 @@ import { adaptLinearIssues } from '../adapters/linear';
 import { adaptSentryIssues } from '../adapters/sentry';
 import { adaptSlackThreads } from '../adapters/slack';
 import { attachInboxProjects } from '../attachInboxProjects';
+import { orderInboxRecords } from '../orderInboxRecords';
 import { INBOX_PROVIDERS, type InboxProvider, type InboxRecord } from '../types';
 import { useInboxSentryIssues } from '../useInboxSentryIssues';
 
@@ -63,20 +64,22 @@ export const useInboxRecords = ({ workspaceId, rootPath }: Params): Result => {
   const bitbucket = useBitbucketPrs({ repo: bitbucketRepo });
   const adapted = useMemo(
     () =>
-      [
-        ...adaptGithubIssues({ groups: github.groups }),
-        ...adaptGithubPrs({ groups: githubPrs.groups }),
-        ...adaptGitlab({
-          issueGroups: gitlabIssues.groups,
-          mrGroups: gitlabMrs.groups,
-          host: gitlabMrs.host,
-        }),
-        ...adaptLinearIssues({ groups: linear.groups }),
-        ...adaptJiraIssues({ groups: jira.groups }),
-        ...adaptSentryIssues({ rows: sentry.rows }),
-        ...adaptSlackThreads({ groups: slack.groups, now: new Date() }),
-        ...adaptBitbucketPrs({ groups: bitbucket.groups, repo: bitbucketRepo }),
-      ].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+      orderInboxRecords({
+        records: [
+          ...adaptGithubIssues({ groups: github.groups }),
+          ...adaptGithubPrs({ groups: githubPrs.groups }),
+          ...adaptGitlab({
+            issueGroups: gitlabIssues.groups,
+            mrGroups: gitlabMrs.groups,
+            host: gitlabMrs.host,
+          }),
+          ...adaptLinearIssues({ groups: linear.groups }),
+          ...adaptJiraIssues({ groups: jira.groups }),
+          ...adaptSentryIssues({ rows: sentry.rows }),
+          ...adaptSlackThreads({ groups: slack.groups, now: new Date() }),
+          ...adaptBitbucketPrs({ groups: bitbucket.groups, repo: bitbucketRepo }),
+        ],
+      }),
     [
       github.groups,
       githubPrs.groups,

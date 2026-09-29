@@ -1,6 +1,8 @@
 import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
 import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
 import type { InboxRecord, InboxState } from '../types';
+import { gitlabMrStateKind } from '../../integrations/gitlab/gitlabMrStateKind';
+import { requestInboxState } from '../requestInboxState';
 import { stateWord } from '../stateWord';
 
 type Params = {
@@ -39,7 +41,7 @@ export const adaptGitlab = ({ issueGroups, mrGroups, host }: Params): InboxRecor
       kind: 'mr' as const,
       identifier: `!${mr.iid}`,
       title: mr.title,
-      state: normalize({ state: mr.state }),
+      state: requestInboxState({ kind: gitlabMrStateKind({ mr }) }),
       stateLabel: stateWord({ value: mr.state }),
       updatedAt: mr.updatedAt,
       url: mr.webUrl,

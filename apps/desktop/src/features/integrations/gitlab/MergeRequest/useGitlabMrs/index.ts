@@ -3,6 +3,7 @@ import type { GitlabIntegrationBinding, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
 import { gitlabFetchAssignedMrs, type GitlabMergeRequest } from '../../client';
+import { compareIsoDesc } from '../../../../../shared/utils/compareIsoDesc';
 
 export type GitlabMrGroup = Readonly<{
   key: string;
@@ -54,7 +55,7 @@ export const buildGitlabMrGroups = ({ mrs }: GroupsParams): ReadonlyArray<Gitlab
       key,
       label: key,
       rows: (buckets.get(key) ?? []).sort((left, right) =>
-        right.updatedAt.localeCompare(left.updatedAt),
+        compareIsoDesc({ left: left.updatedAt, right: right.updatedAt }),
       ),
     }));
 };

@@ -225,6 +225,24 @@ describe('useInboxRecords', () => {
     expect(result.current.records.map((record) => record.provider)).toEqual(['jira', 'github']);
   });
 
+  it('orders a Jira offset and a GitHub Z by the real instant', () => {
+    h.github = {
+      groups: githubGroups('2026-09-29T09:00:00.000Z'),
+      loading: false,
+      error: null,
+      hasRemote: true,
+    };
+    h.jira = {
+      groups: jiraGroups('2026-09-29T10:30:00.000+0200'),
+      isLoading: false,
+      error: null,
+    };
+
+    const { result } = renderHook(() => useInboxRecords({ workspaceId, rootPath: '/repo' }));
+
+    expect(result.current.records.map((record) => record.provider)).toEqual(['github', 'jira']);
+  });
+
   it('keeps github enabled without a workspace integration and gates the rest on it', () => {
     h.integrations = { 'workspace-1': [{ provider: 'linear' }] };
 

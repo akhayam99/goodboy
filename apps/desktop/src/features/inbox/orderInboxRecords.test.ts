@@ -73,4 +73,33 @@ describe('orderInboxRecords', () => {
       ['Older', ['old-open']],
     ]);
   });
+
+  it('orders a Jira offset and a GitHub Z by the real instant', () => {
+    const jira = '2026-09-29T10:30:00.000+0200';
+    const github = '2026-09-29T09:00:00.000Z';
+    expect(jira.localeCompare(github)).toBeGreaterThan(0);
+
+    const ordered = orderInboxRecords({
+      records: [
+        record({ key: 'jira', updatedAt: jira }),
+        record({ key: 'github', updatedAt: github }),
+      ],
+    });
+
+    expect(ordered.map((item) => item.key)).toEqual(['github', 'jira']);
+  });
+
+  it('breaks a same-instant tie by key, whatever the input order', () => {
+    const records = [
+      record({ key: 'b', updatedAt: '2026-09-29T08:00:00Z' }),
+      record({ key: 'c', updatedAt: '2026-09-29T10:00:00+0200' }),
+      record({ key: 'a', updatedAt: '2026-09-29T08:00:00.000Z' }),
+    ];
+
+    const forward = orderInboxRecords({ records }).map((item) => item.key);
+    const backward = orderInboxRecords({ records: [...records].reverse() }).map((item) => item.key);
+
+    expect(forward).toEqual(['a', 'b', 'c']);
+    expect(backward).toEqual(forward);
+  });
 });

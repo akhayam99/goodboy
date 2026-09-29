@@ -1,5 +1,6 @@
 import type { SessionExternalTaskProvider } from '@goodboy/types';
 import type { LaunchExternalTask } from '../../../inbox/launchSpecFor';
+import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
 import { resolvePastedIssueCandidate } from '../SessionWorkspace/parts/IntegrationPane/resolvePastedIssueCandidate';
 
 export type LinkWorkSource = SessionExternalTaskProvider | 'all';
@@ -145,7 +146,11 @@ export const linkWorkView = ({
     matchesQuery({ item, words });
   const recent = [...items]
     .filter(fits)
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    .sort(
+      (left, right) =>
+        compareIsoDesc({ left: left.updatedAt, right: right.updatedAt }) ||
+        left.key.localeCompare(right.key),
+    );
   const inbox = recent.slice(0, INBOX_LIMIT);
   const inboxKeys = new Set(inbox.map((item) => item.key));
   const extra = lookedUp.filter(

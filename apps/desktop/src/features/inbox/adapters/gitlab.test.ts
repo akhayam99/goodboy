@@ -105,13 +105,16 @@ describe('adaptGitlab', () => {
   });
 
   it.each([
-    ['opened', 'open'],
-    ['merged', 'done'],
-    ['closed', 'done'],
-    ['locked', 'active'],
-  ] as const)('normalizes merge request state %s to %s', (state, expected) => {
+    ['opened', false, 'open'],
+    ['opened', true, 'open'],
+    ['merged', false, 'done'],
+    ['closed', false, 'done'],
+    ['closed', true, 'done'],
+    ['locked', false, 'active'],
+    ['locked', true, 'active'],
+  ] as const)('normalizes merge request state %s (draft %s) to %s', (state, draft, expected) => {
     const mrGroups: ReadonlyArray<GitlabMrGroup> = [
-      { key: 'g', label: 'g', rows: [mr({ state })] },
+      { key: 'g', label: 'g', rows: [mr({ state, draft })] },
     ];
 
     const [record] = adaptGitlab({ issueGroups: [], mrGroups, host: null });

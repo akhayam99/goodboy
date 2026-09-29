@@ -14,6 +14,7 @@ import {
   linkedTaskKey,
   useLinkedExternalIds,
 } from '../../../../integrations/hooks/useLinkedExternalIds';
+import { compareIsoDesc } from '../../../../../shared/utils/compareIsoDesc';
 
 const GITHUB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['github'];
 
@@ -61,7 +62,7 @@ export const buildGithubPrGroups = ({
     label,
     rows: pullRequests
       .filter((entry) => entry.role === key)
-      .sort((left, right) => right.pr.updatedAt.localeCompare(left.pr.updatedAt))
+      .sort((left, right) => compareIsoDesc({ left: left.pr.updatedAt, right: right.pr.updatedAt }))
       .map(({ pr, role }) => ({
         pr,
         role,

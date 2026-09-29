@@ -13,6 +13,7 @@ import {
   linkedTaskKey,
   useLinkedExternalIds,
 } from '../../../integrations/hooks/useLinkedExternalIds';
+import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
 
 const GITHUB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['github'];
 
@@ -58,7 +59,7 @@ export const buildGithubIssueGroups = ({
   linkedSessions,
 }: GroupsParams): ReadonlyArray<GithubIssueGroup> => {
   const rows = [...issues]
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+    .sort((left, right) => compareIsoDesc({ left: left.updatedAt, right: right.updatedAt }))
     .map((issue) => ({
       issue,
       sessionId:

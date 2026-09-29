@@ -1,5 +1,6 @@
 import type { PullRequestState, PullRequestStateKind } from '@goodboy/types';
 import type { GitlabMergeRequest } from '../../../../integrations/gitlab/client';
+import { gitlabMrStateKind } from '../../../../integrations/gitlab/gitlabMrStateKind';
 
 type Params = {
   readonly pullRequest: PullRequestState | null;
@@ -12,26 +13,6 @@ export type LinkedRequest = {
   readonly title?: string;
 };
 
-type MergeRequestStateParams = Pick<GitlabMergeRequest, 'draft' | 'state'>;
-
-const getMergeRequestState = ({ draft, state }: MergeRequestStateParams): PullRequestStateKind => {
-  if (draft) {
-    return 'draft';
-  }
-
-  switch (state) {
-    case 'opened':
-    case 'open':
-      return 'open';
-    case 'merged':
-      return 'merged';
-    case 'closed':
-      return 'closed';
-    default:
-      return 'open';
-  }
-};
-
 export const getLinkedRequest = ({ pullRequest, mergeRequest }: Params): LinkedRequest => {
   if (pullRequest != null) {
     return {
@@ -41,7 +22,7 @@ export const getLinkedRequest = ({ pullRequest, mergeRequest }: Params): LinkedR
   }
 
   if (mergeRequest != null) {
-    const state = getMergeRequestState(mergeRequest);
+    const state = gitlabMrStateKind({ mr: mergeRequest });
     return {
       state,
       number: mergeRequest.iid,

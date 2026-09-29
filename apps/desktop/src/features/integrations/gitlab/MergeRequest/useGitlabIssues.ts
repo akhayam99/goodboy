@@ -11,6 +11,7 @@ import { slugifyBranch } from '../../../../shared/utils/slugifyBranch';
 import { useAppStore, useSessions } from '../../../../store';
 import { gitlabFetchAssignedIssues, type GitlabIssue } from '../client';
 import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
 
 const SLUG_MAX_LEN = 48;
 const GITLAB_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['gitlab'];
@@ -60,7 +61,7 @@ export const buildIssueGroups = (
     }
   }
   const sortRows = (rows: GitlabIssueRow[]): GitlabIssueRow[] =>
-    rows.sort((a, b) => b.issue.updatedAt.localeCompare(a.issue.updatedAt));
+    rows.sort((a, b) => compareIsoDesc({ left: a.issue.updatedAt, right: b.issue.updatedAt }));
   return [...buckets.keys()]
     .sort((a, b) => a.localeCompare(b))
     .map((key) => ({ key, label: key, rows: sortRows(buckets.get(key)!) }));

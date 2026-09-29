@@ -6,6 +6,7 @@ import { useAppStore, useSessions } from '../../../../store';
 import { jiraListIssues, type JiraIssue, type JiraStatusCategoryKey } from '../client';
 import { useJiraConfig } from '../useJiraConfig';
 import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
 
 const SLUG_MAX_LEN = 48;
 const JIRA_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['jira'];
@@ -65,7 +66,9 @@ export const buildIssueGroups = ({
     rows: buckets
       .get(key)!
       .slice()
-      .sort((left, right) => right.issue.updated.localeCompare(left.issue.updated)),
+      .sort((left, right) =>
+        compareIsoDesc({ left: left.issue.updated, right: right.issue.updated }),
+      ),
   }));
 };
 
