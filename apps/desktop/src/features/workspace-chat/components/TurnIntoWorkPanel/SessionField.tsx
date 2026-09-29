@@ -30,6 +30,7 @@ export const SessionField = ({ sessions, projects, value, onChange }: Props) => 
       ariaLabel="Session"
       size="sm"
       isBlock
+      popupWidth="trigger"
       searchable
       searchLabel="Search sessions"
       searchPlaceholder="Search sessions"

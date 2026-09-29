@@ -78,7 +78,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
     [allSessions, chat.workspaceId],
   );
   const [brief, setBrief] = useState<WorkBrief | null>(null);
-  const [projectIds, setProjectIds] = useState<ReadonlyArray<ProjectId>>([]);
+  const [pickedProjectIds, setProjectIds] = useState<ReadonlyArray<ProjectId> | null>(null);
   const [mode, setMode] = useState<Mode>('new');
   const [sessionId, setSessionId] = useState<SessionId | null>(null);
   const [isStarting, setIsStarting] = useState(false);
@@ -87,6 +87,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   useEffect(() => {
     let isCurrent = true;
     setBrief(null);
+    setProjectIds(null);
     void summarizeChatForWork({
       backend: activeChatBackend,
       chat,
@@ -97,11 +98,6 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         return;
       }
       setBrief(next);
-      setProjectIds(
-        projects
-          .filter((project) => next.projects.includes(project.name))
-          .map((project) => project.id),
-      );
     });
     return () => {
       isCurrent = false;
@@ -111,6 +107,14 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   const patch = (next: Partial<WorkBrief>): void =>
     setBrief((current) => (current === null ? current : { ...current, ...next }));
 
+  const projectIds = useMemo(
+    () =>
+      pickedProjectIds ??
+      projects
+        .filter((project) => brief?.projects.includes(project.name) === true)
+        .map((project) => project.id),
+    [pickedProjectIds, projects, brief],
+  );
   const target = sessions.find((session) => session.id === sessionId) ?? null;
   const canStart =
     brief !== null &&
@@ -206,7 +210,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               onRemove={(item) => patch({ files: brief.files.filter((entry) => entry !== item) })}
             />
             {mode === 'new' ? (
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-1.5">
                 <span className="text-label text-muted-foreground">Project</span>
                 <ProjectField projects={projects} value={projectIds} onChange={setProjectIds} />
               </div>

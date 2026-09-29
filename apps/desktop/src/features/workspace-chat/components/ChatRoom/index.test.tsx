@@ -190,6 +190,23 @@ describe('ChatRoom', () => {
     );
   });
 
+  it('lays the project control full width under its label with the chips below', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+
+    const trigger = screen.getByRole('combobox', { name: 'Project' });
+    expect(trigger.className).toContain('w-full');
+    const field = trigger.closest('div.flex-col');
+    expect(field?.parentElement?.className).toContain('flex-col');
+    expect(field?.previousElementSibling?.textContent).toBe('Project');
+    const chip = screen.getByRole('button', { name: 'Remove payments-api' });
+    expect(trigger.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(chip.parentElement?.className).toContain('flex-wrap');
+  });
+
   it('starts a session with no project once every chip is removed', async () => {
     store.chatMessages = { [CHAT_ID]: ANSWERED };
     renderRoom({ chat: CHAT });

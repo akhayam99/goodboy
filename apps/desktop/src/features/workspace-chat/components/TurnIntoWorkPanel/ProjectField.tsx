@@ -25,24 +25,13 @@ export const ProjectField = ({ projects, value, onChange }: Props) => {
   );
   const picked = projects.filter((project) => value.includes(project.id));
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {picked.map((project) => (
-        <Chip
-          key={project.id}
-          as="button"
-          tone="neutral"
-          shape="badge"
-          size="control"
-          label={project.name}
-          ariaLabel={`Remove ${project.name}`}
-          trailing={<X size={ICON_SIZE.row} aria-hidden />}
-          onClick={() => onChange(value.filter((id) => id !== project.id))}
-        />
-      ))}
+    <div className="flex min-w-0 flex-col gap-1.5">
       <Listbox
         multiple
         ariaLabel="Project"
         size="sm"
+        isBlock
+        popupWidth="trigger"
         searchable
         searchLabel="Search projects"
         searchPlaceholder="Search projects"
@@ -57,6 +46,23 @@ export const ProjectField = ({ projects, value, onChange }: Props) => {
           </span>
         }
       />
+      {picked.length > 0 ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {picked.map((project) => (
+            <Chip
+              key={project.id}
+              as="button"
+              tone="neutral"
+              shape="badge"
+              size="control"
+              label={project.name}
+              ariaLabel={`Remove ${project.name}`}
+              trailing={<X size={ICON_SIZE.row} aria-hidden />}
+              onClick={() => onChange(value.filter((id) => id !== project.id))}
+            />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 };
