@@ -20,6 +20,8 @@ import type {
   LinearIssueComment,
 } from '../../../../features/integrations/linear/client';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
+import { sceneParam } from './audit/sceneParams';
+import { driveInboxLink, isInboxLinkRequest } from './driveInboxLink';
 import { StudioFrame } from './StudioFrame';
 import { seedStudioChrome } from './shellChrome';
 
@@ -287,6 +289,13 @@ export const InboxScene = () => {
     seedStudioChrome();
     setIsReady(true);
   }, []);
+
+  useEffect(() => {
+    if (!isReady || !isInboxLinkRequest(sceneParam({ key: 'link' }))) {
+      return undefined;
+    }
+    return driveInboxLink();
+  }, [isReady]);
 
   if (!isReady) {
     return null;

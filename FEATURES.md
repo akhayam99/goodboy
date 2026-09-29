@@ -473,7 +473,7 @@ Start a session from an issue, a Slack thread or an error, with the brief alread
 
 ### Link an item to a session
 
-Attach an inbox item to work that already exists. **Link to a session** sits next to **Launch session** and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or L, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link.
+Attach an inbox item to work that already exists. **Link to a session** sits under **Launch session**, as wide as the panel, and links the task to the session you pick. From a session it works the other way round: **Link work** in the Overview header, or L, opens one search across every connected tracker, with your recent inbox items on top. Filter by source, type an issue code, or paste a link.
 
 ### Trackers
 
