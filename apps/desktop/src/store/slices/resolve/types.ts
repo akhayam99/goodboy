@@ -98,6 +98,7 @@ export type BatchUpdateParams = SessionParams & {
 export type PreparePublicationParams = SessionParams & {
   readonly threadIds?: ReadonlyArray<string>;
   readonly scopeId?: string;
+  readonly isolated?: boolean;
   readonly drift?: ReadonlyArray<ResolvePublicationDrift>;
 };
 export type PublishParams = SessionParams & {

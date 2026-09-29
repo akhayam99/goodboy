@@ -10,6 +10,7 @@ export const REVIEW_FLOW_LABEL = {
   commentActions: 'Comment actions',
   reviewActions: 'Review actions',
   proposedChange: 'Proposed change',
+  fix: 'Fix',
   agentAsks: 'The agent asks',
   resolver: 'Resolver',
   edited: 'Edited',
@@ -91,3 +92,14 @@ export const sharedFixLine = ({ count }: { readonly count: number }): string =>
   count === 1
     ? 'The same fix answers one more comment, accepted with this one:'
     : `The same fix answers ${count} more comments, accepted with this one:`;
+
+export const RESOLVER_BRIEF_COPY = {
+  pushNow: 'Push now',
+  openInReview: 'Open in Review',
+  openTranscript: 'Open transcript',
+} as const;
+
+export const batchChildNotice = ({ total }: { readonly total: number }): string => {
+  const others = total - 1;
+  return `This comment was fixed with ${others} ${others === 1 ? 'other' : 'others'}. Accept and push them together in Review.`;
+};

@@ -156,6 +156,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
             sessionId: facts.sessionId,
             agentId: facts.agentId,
             threadId: facts.threadId,
+            pane: 'transcript',
           }),
         });
       },

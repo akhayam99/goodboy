@@ -428,6 +428,10 @@ Know what each comment needs next. Each one shows a state like **Not started**, 
 
 Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Try again**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, **Sync and try again** asks first, brings the new commits under yours, and stops without touching anything if they conflict.
 
+### Manage a resolve from its Brief
+
+Click a resolve in Activity and its Brief holds the comment, the fix and the reply, with **Accept**, **Edit**, **Reply** and **Skip**. The header chip reads the comment state, such as **Ready** or **Accepted**, not **Done**. After you accept, **Push now** pushes exactly that fix, after a confirm right under the header. If earlier local commits would go with it, the confirm lists them first. A resolve that fixed several comments together shows **Open in Review (N)** instead, and Review opens on the first of them.
+
 ### Close on GitHub
 
 <picture>

@@ -22,7 +22,11 @@ const captureTarget = ({ state, sessionId, lens }: TargetParams): SessionTarget 
   const agentId = state.selectedAgentId[sessionId] ?? null;
   if (lens === 'review' && agentId !== null) {
     const threadId = resolverThread({ state, sessionId, agentId });
-    return threadId === null ? null : { kind: 'thread', threadId };
+    if (threadId === null) {
+      return null;
+    }
+    const pane = state.agentPane?.[sessionId] ?? null;
+    return pane === null ? { kind: 'thread', threadId } : { kind: 'thread', threadId, pane };
   }
   if (lens === 'plans') {
     const artifactId = state.focusedArtifactId[sessionId] ?? null;

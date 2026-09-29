@@ -95,11 +95,13 @@ export const gitPush = async (
   branch: string | null,
   workspaceId?: string,
   projectId?: string,
+  sha?: string,
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   try {
     const raw = await invoke<RawGhRunResult>('git_push', {
       cwd,
       branch: branch ?? undefined,
+      ...(sha !== undefined ? { sha } : {}),
       workspaceId,
       ...(projectId != null ? { projectId } : {}),
     });

@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { AlertCircle, Check } from 'lucide-react';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
@@ -17,10 +17,10 @@ import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
 import { OUTDATED_REASON } from '../../../actions/kinds/reviewComment';
 import { modelLabel } from '../../../chat/utils/chat-constants';
-import type { ReviewComposeMode } from '../../../review/reviewRequest';
 import { attemptNumberOf, previousAttemptsOf } from '../../attemptHistory';
 import { conversationSha } from '../../conversationAgentResult';
 import { FAILED_RUN_COPY, tryAgainLabel } from '../../failedRunCopy';
+import type { ReviewCommentBinding, ReviewCompose } from '../../hooks/useReviewCommentController';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
 import { useResolveItemDraft } from '../../hooks/useResolveItemDraft';
 import { isResolveOnly } from '../../reviewCommentState';
@@ -41,31 +41,17 @@ import { PreviousAttempts } from './PreviousAttempts';
 import { ProposedChange } from './ProposedChange';
 import type { ReviewEntry } from './useReviewEntries';
 
-export type ReviewCompose = {
-  readonly threadId: string;
-  readonly mode: ReviewComposeMode;
-  readonly text: string;
-};
-
-type Props = {
+type Props = ReviewCommentBinding & {
   readonly sessionId: SessionId;
   readonly entry: ReviewEntry;
   readonly entries: ReadonlyArray<ReviewEntry>;
-  readonly compose: ReviewCompose | null;
-  readonly isEditingReply: boolean;
-  readonly isSubmitting: boolean;
-  readonly pendingActionId: string | null;
-  readonly error: string | null;
-  readonly onRun: (actionId: string) => void;
-  readonly onComposeChange: (text: string) => void;
-  readonly onComposeSubmit: () => void;
-  readonly onComposeCancel: () => void;
-  readonly onEditReply: () => void;
-  readonly onReplyDone: () => void;
   readonly onSelect: (threadId: string) => void;
   readonly onTryAgain: () => void;
   readonly onRetryDelivery: () => void;
   readonly onSync: () => void;
+  readonly variant?: 'review' | 'brief';
+  readonly actionsPrefix?: ReactNode;
+  readonly actionsReplacement?: ReactNode;
 };
 
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
@@ -114,7 +100,11 @@ export const ReviewComment = ({
   onTryAgain,
   onRetryDelivery,
   onSync,
+  variant = 'review',
+  actionsPrefix = null,
+  actionsReplacement = null,
 }: Props) => {
+  const isBrief = variant === 'brief';
   const { row, state, word, threadId } = entry;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
@@ -211,13 +201,14 @@ export const ReviewComment = ({
         </span>
       </header>
 
+      {isBrief && <SectionHeader label={REVIEW_FLOW_LABEL.comment} headingLevel={2} />}
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
-      <PreviousAttempts attempts={previous} />
+      {!isBrief && <PreviousAttempts attempts={previous} />}
 
-      {row.attempt !== null && (
+      {!isBrief && row.attempt !== null && (
         <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
       )}
 
@@ -233,10 +224,15 @@ export const ReviewComment = ({
       )}
 
       {hasChange && state !== 'drafting' && (
-        <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
+        <ProposedChange
+          files={diff.files}
+          isLoading={diff.isLoading}
+          error={diff.error}
+          {...(isBrief && { heading: REVIEW_FLOW_LABEL.fix })}
+        />
       )}
 
-      {members.length > 0 && (state === 'ready' || state === 'edited') && (
+      {!isBrief && members.length > 0 && (state === 'ready' || state === 'edited') && (
         <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
           <p>{sharedFixLine({ count: members.length })}</p>
           <ul className="flex min-w-0 flex-col">
@@ -398,11 +394,14 @@ export const ReviewComment = ({
             </Button>
           </div>
         </div>
+      ) : actionsReplacement !== null ? (
+        actionsReplacement
       ) : (
         !isEditingReply &&
         !isFailed &&
-        verbs.length > 0 && (
+        (verbs.length > 0 || actionsPrefix !== null) && (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {actionsPrefix}
             {verbs.map((action) => {
               const button = (
                 <Button

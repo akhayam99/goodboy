@@ -448,21 +448,45 @@ pub async fn gh_run(
     .map_err(|e| GithubError::Spawn(std::io::Error::other(e.to_string())))?
 }
 
+pub(crate) fn push_args(branch: Option<&str>, sha: Option<&str>) -> Result<Vec<String>, String> {
+    let branch = branch.filter(|b| !b.is_empty());
+    let sha = sha.filter(|s| !s.is_empty());
+    match (branch, sha) {
+        (Some(b), Some(s)) => {
+            let is_sha = (7..=64).contains(&s.len()) && s.chars().all(|c| c.is_ascii_hexdigit());
+            if !is_sha {
+                return Err(format!("{s} is not a commit sha"));
+            }
+            Ok(vec![
+                "push".to_string(),
+                "origin".to_string(),
+                format!("{s}:refs/heads/{b}"),
+            ])
+        }
+        (None, Some(_)) => Err("pushing one commit needs a branch".to_string()),
+        (Some(b), None) => Ok(vec![
+            "push".to_string(),
+            "--set-upstream".to_string(),
+            "origin".to_string(),
+            b.to_string(),
+        ]),
+        (None, None) => Ok(vec!["push".to_string()]),
+    }
+}
+
 #[tauri::command]
 pub async fn git_push(
     cwd: String,
     branch: Option<String>,
+    sha: Option<String>,
     workspace_id: Option<String>,
     project_id: Option<String>,
 ) -> Result<GhRunResult, GithubError> {
     tauri::async_runtime::spawn_blocking(move || {
         let token = read_token(workspace_id.as_deref(), project_id.as_deref());
-        let mut args: Vec<&str> = vec!["push"];
-        if let Some(b) = branch.as_deref().filter(|b| !b.is_empty()) {
-            args.push("--set-upstream");
-            args.push("origin");
-            args.push(b);
-        }
+        let owned =
+            push_args(branch.as_deref(), sha.as_deref()).map_err(GithubError::Validation)?;
+        let args: Vec<&str> = owned.iter().map(String::as_str).collect();
         run_git_authenticated(&args, &cwd, token.as_deref())
     })
     .await
@@ -551,10 +575,11 @@ pub async fn gh_pr_diff(
 #[cfg(test)]
 mod tests {
     use super::{
-        command_succeeds, read_token_with, run_binary, run_with_timeout, token_failure_message,
-        validate_token_with, GhRunResult, GithubError, BAD_CREDENTIALS_MESSAGE,
-        CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE, EXPIRED_MESSAGE, GH_PROBE_TIMEOUT, GH_TIMEOUT,
-        MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE, UNVERIFIED_MESSAGE,
+        command_succeeds, push_args, read_token_with, run_binary, run_with_timeout,
+        token_failure_message, validate_token_with, GhRunResult, GithubError,
+        BAD_CREDENTIALS_MESSAGE, CERTIFICATE_MESSAGE, EMPTY_TOKEN_MESSAGE, EXPIRED_MESSAGE,
+        GH_PROBE_TIMEOUT, GH_TIMEOUT, MISSING_SCOPE_MESSAGE, NETWORK_MESSAGE, RATE_LIMIT_MESSAGE,
+        UNVERIFIED_MESSAGE,
     };
     use std::process::Command;
     use std::time::{Duration, Instant};
@@ -907,5 +932,33 @@ mod tests {
         );
 
         assert_eq!(token.as_deref(), Some("global-token"));
+    }
+
+    #[test]
+    fn push_args_keeps_the_branch_push_when_no_sha_is_given() {
+        assert_eq!(
+            push_args(Some("hl/fix"), None).unwrap(),
+            vec!["push", "--set-upstream", "origin", "hl/fix"]
+        );
+        assert_eq!(push_args(None, None).unwrap(), vec!["push"]);
+        assert_eq!(
+            push_args(Some("hl/fix"), Some("")).unwrap(),
+            vec!["push", "--set-upstream", "origin", "hl/fix"]
+        );
+    }
+
+    #[test]
+    fn push_args_pushes_exactly_the_sha_to_the_branch() {
+        assert_eq!(
+            push_args(Some("hl/fix"), Some("c81e5aa0f3")).unwrap(),
+            vec!["push", "origin", "c81e5aa0f3:refs/heads/hl/fix"]
+        );
+    }
+
+    #[test]
+    fn push_args_refuses_a_sha_without_a_branch_and_a_ref_posing_as_a_sha() {
+        assert!(push_args(None, Some("c81e5aa0f3")).is_err());
+        assert!(push_args(Some("hl/fix"), Some("HEAD")).is_err());
+        assert!(push_args(Some("hl/fix"), Some("c81e5aa --force")).is_err());
     }
 }

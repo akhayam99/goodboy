@@ -9,15 +9,21 @@ type Props = {
   readonly files: ReadonlyArray<FileDiff>;
   readonly isLoading: boolean;
   readonly error: string | null;
+  readonly heading?: string;
 };
 
 const SIGN = { add: '+', del: '-', context: ' ' } as const;
 
-export const ProposedChange = ({ files, isLoading, error }: Props) => {
+export const ProposedChange = ({
+  files,
+  isLoading,
+  error,
+  heading = REVIEW_FLOW_LABEL.proposedChange,
+}: Props) => {
   const plan = inlineChangePlan({ files });
   return (
-    <section aria-label={REVIEW_FLOW_LABEL.proposedChange} className="flex min-w-0 flex-col gap-2">
-      <SectionHeader label={REVIEW_FLOW_LABEL.proposedChange} headingLevel={2} />
+    <section aria-label={heading} className="flex min-w-0 flex-col gap-2">
+      <SectionHeader label={heading} headingLevel={2} />
       {isLoading && <Skeleton className="h-16 w-full rounded-md" />}
       {error !== null && <p className="text-secondary text-warning">{error}</p>}
       {!isLoading && error === null && files.length === 0 && (

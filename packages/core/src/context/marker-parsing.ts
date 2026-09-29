@@ -1127,13 +1127,16 @@ const CONTROL_BLOCK_STRIP_RE = new RegExp(
 const CONTROL_SELF_STRIP_RE = new RegExp(`<<(?:${SELF_MARKER_ALT})\\s[^>]*?>>`, 'g');
 const CONTROL_OPEN_TAIL_RE = new RegExp(`<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*$`);
 const CONTROL_PARTIAL_TAIL_RE = /<<?\/?[a-z-]*:?(?:\s[^>]*)?$/;
+const UNSUMMARIZED_STEP_OUTPUT_RE = /\[unsummarized step output(?:, [a-z ]+)?\][ \t]*\n?/g;
 
 export const stripControlMarkers = (text: string): string => {
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
   CONTROL_SELF_STRIP_RE.lastIndex = 0;
+  UNSUMMARIZED_STEP_OUTPUT_RE.lastIndex = 0;
   return text
     .replace(CONTROL_BLOCK_STRIP_RE, '')
     .replace(CONTROL_SELF_STRIP_RE, '')
+    .replace(UNSUMMARIZED_STEP_OUTPUT_RE, '')
     .replace(CONTROL_OPEN_TAIL_RE, '')
     .replace(CONTROL_PARTIAL_TAIL_RE, '')
     .replace(/\n{3,}/g, '\n\n')
