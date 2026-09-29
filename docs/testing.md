@@ -54,6 +54,16 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 - The store loads once: `useAppStore = await importStore()` in `beforeAll` with `STORE_IMPORT_TIMEOUT_MS`. Then `await resetStoryStore()` runs in `beforeEach` (spies reset, `initialState` applied, local storage cleared) before the test seeds its own state.
 - `__tests__/regressions/store-import-pattern.test.ts` fails on any test that `import()`s the store module itself. A test that needs another export of the store module (`summarizerQueues`) takes it from `importStoreModule()`.
 
+### Store on a real sqlite
+
+A test that must prove what the store writes runs on the real `@goodboy/db` over an in-memory migrated database. It is named `store.sqlite-<area>.test.ts` (or `<slice>.sqlite.test.ts`) and is for integration questions only: what rows an action leaves behind, and whether a write that fails halfway leaves the rows and the store consistent. Behavior that does not need rows stays on `dbModuleMock()`.
+
+- Do not mock `@goodboy/db`. Mock `../shared/lib/db` with `sqliteDbLibModuleMock()` instead, and take every other module mock from the harness as usual. `await resetStoryStore()` then `await openStorySqlite()` in `beforeEach` give each test a fresh database (a clone of the migrated template). Seed rows with the real `insertWorkspace`, `insertProject` and the like, or through the store action under test.
+- Read rows back with `rowsOf({ sql, params })`. `storySqlite()` is the database itself.
+- `injectDbFault({ match, message, skip })` arms a one-shot failure for the next statement whose SQL matches `match` (`skip` lets the first n matches through). On a plain `execute`, `select` or `exec` it throws before the statement runs. Inside `transaction` it swaps that statement for one the database rejects, so the statements before it run and the real rollback undoes them: a test that expects "no half rows" tests the transaction, not the mock.
+- Writes that go through Rust commands (agents, workflow definitions: `invokeAgentInsert`, `invokeWorkflowUpsert`) stay spies here. They need Rust integration tests.
+- After a fault, assert both sides: the rows through `rowsOf` and the store through `useAppStore.getState()`. Break the code once on purpose (drop the transaction, drop the store rollback) and see the test go red.
+
 ## Test data comes from the builders
 
 A test that needs a `Session`, `Agent`, `Project`, `Workspace` or `WorkflowRun` calls `aSession`, `anAgent`, `aProject`, `aWorkspace` or `aWorkflowRun` from `@goodboy/types/testing` (`packages/types/src/testing/`) and overrides only the fields it asserts on: `aSession({ goal: 'Reconcile the Harborline ledger export', autoRun: true })`. Every builder returns the whole type, so no field is `undefined` for a guard to skip, and each call gets its own id. Ids are branded strings: pass `'session-1' as SessionId` when a test needs a known one. `buildStorySession`, `buildStoryAgent`, `buildStoryProject` and `buildStoryWorkspace` in `store/storyHarness.ts` delegate to them and only set their own defaults. Never write a local `makeSession` that returns a partial object, and never cast one (`{ id } as Session`, `as unknown as Session`): the compiler stops checking the fixture and the code under test reads a field that was never there.

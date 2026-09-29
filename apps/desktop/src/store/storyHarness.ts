@@ -41,6 +41,15 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
+export {
+  armedDbFaults,
+  injectDbFault,
+  openStorySqlite,
+  rowsOf,
+  sqliteDbLibModuleMock,
+  storySqlite,
+} from '../test/sqliteDb';
+
 export const STORY_NOW: IsoDateTime = TEST_NOW;
 
 export const STORE_IMPORT_TIMEOUT_MS = 60_000;

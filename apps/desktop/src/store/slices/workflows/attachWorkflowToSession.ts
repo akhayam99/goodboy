@@ -12,7 +12,10 @@ import type {
   WorkflowSpendLimitMode,
   WorkflowTriggerMode,
 } from '@goodboy/types';
-import { attachWorkflowToSession as attachWorkflowToSessionInDb } from '@goodboy/db';
+import {
+  attachWorkflowToSession as attachWorkflowToSessionInDb,
+  detachWorkflowFromSession as detachWorkflowFromSessionInDb,
+} from '@goodboy/db';
 import { runsForWorkflowRun } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
@@ -111,17 +114,17 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
     const sessionDefaultProvider = (session.providerOverride ??
       session.providerPreference.defaultProvider) as ProviderId;
     const roleModels = selectResolvedSettings({ state: get(), sessionId })?.roleModels ?? null;
-    const spawned =
+    const spawned = await (
       executionMode === 'dynamic'
-        ? {
+        ? Promise.resolve({
             agents: [] as ReadonlyArray<Agent>,
             modelOverrides: {},
             kindOverrides: {},
             providerOverrides: {},
             effortOverrides: {},
             blocked: [],
-          }
-        : await preSpawnWorkflowAgents({
+          })
+        : preSpawnWorkflowAgents({
             sessionId,
             workflowRunId,
             steps: template.steps,
@@ -138,7 +141,13 @@ export const attachWorkflowToSession = (set: SetFn, get: GetFn) => {
               isRunBudgetBlocked: false,
               nowMs: Date.now(),
             }),
-          });
+          })
+    ).catch(async (error: unknown) => {
+      await detachWorkflowFromSessionInDb(tauriDatabase, sessionId, workflowRunId, now).catch(
+        () => undefined,
+      );
+      throw error;
+    });
     const newAgents = spawned.agents;
 
     const newRun: WorkflowRun = {
