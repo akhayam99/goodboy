@@ -77,7 +77,9 @@ export const TimelineStreamRow = ({
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
   const isWaiting =
-    item.rowState.phase === 'waiting' && rowStateTone({ state: item.rowState }) === 'warning';
+    item.rowState.phase === 'waiting' &&
+    item.rowState.ask?.kind !== 'reviewComment' &&
+    rowStateTone({ state: item.rowState }) === 'warning';
   const isLaneLit = runLane !== null && lanes?.hoveredLaneId === runLane.laneId;
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (runLane === null) {

@@ -31,6 +31,7 @@ import type {
 } from './buildTimelineGroups';
 import type { RailGroupInput, RailGroupShape } from '../../workTreeModel/railGeometry';
 import type { RunIdentity } from './runIdentity';
+import { resolverRowState, type ResolveActivityFacts } from './resolveActivity';
 import {
   hasShownRunQuestion,
   oldestAgentOpenQuestion,
@@ -108,6 +109,7 @@ type Params = {
   readonly showReports?: boolean;
   readonly showWireframes?: boolean;
   readonly showQuestions?: boolean;
+  readonly resolveFactsByAgentId?: ReadonlyMap<string, ResolveActivityFacts>;
 };
 
 type DraftRow = {
@@ -469,6 +471,8 @@ const SKIPPED_UNDER_CLOSED: RowState = { phase: 'skipped', reason: { kind: 'skip
 
 const NO_QUESTION_ROWS: ReadonlySet<string> = new Set();
 
+const NO_RESOLVE_FACTS: ReadonlyMap<string, ResolveActivityFacts> = new Map();
+
 const agentRowStateOf = ({
   entry,
   readyAgentId,
@@ -587,6 +591,7 @@ type EmitContext = {
   readonly showWireframes: boolean;
   readonly showQuestions: boolean;
   readonly questionRowIds: ReadonlySet<string>;
+  readonly resolveFactsByAgentId: ReadonlyMap<string, ResolveActivityFacts>;
 };
 
 const hasUnreadDescendant = ({
@@ -618,6 +623,21 @@ type EmitAgentParams = {
 const nodeIndexOf = ({ stepLabel }: { readonly stepLabel: string | null }): string | null =>
   stepLabel == null ? null : (stepLabel.split('.').at(-1) ?? null);
 
+const rowStateOfAgentRow = ({
+  resolved,
+  reviewFacts,
+  isSkippedUnderClosed,
+}: {
+  readonly resolved: RowState;
+  readonly reviewFacts: ResolveActivityFacts | undefined;
+  readonly isSkippedUnderClosed: boolean;
+}): RowState => {
+  if (reviewFacts !== undefined && resolved.phase !== 'closed') {
+    return resolverRowState({ facts: reviewFacts });
+  }
+  return isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
+};
+
 const agentRows = ({
   entry,
   grade,
@@ -638,7 +658,8 @@ const agentRows = ({
     questionRowIds: context.questionRowIds,
   });
   const isSkippedUnderClosed = isParentClosed && resolved.phase === 'queued';
-  const rowState = isSkippedUnderClosed ? SKIPPED_UNDER_CLOSED : resolved;
+  const reviewFacts = context.resolveFactsByAgentId.get(entry.agent.id);
+  const rowState = rowStateOfAgentRow({ resolved, reviewFacts, isSkippedUnderClosed });
   const childLaneId = laneIdOf({ entryId: entry.id });
   const nested: DraftRow[] = [];
   if (showSubagents && entry.children.length > 0) {
@@ -1056,6 +1077,7 @@ export const buildTimelineStream = ({
   showReports = true,
   showWireframes = true,
   showQuestions = true,
+  resolveFactsByAgentId = NO_RESOLVE_FACTS,
 }: Params): TimelineStream => {
   const chainedRunById = new Map<string, ChainedRun>();
   for (const entry of entries) {
@@ -1079,6 +1101,7 @@ export const buildTimelineStream = ({
     showWireframes,
     showQuestions,
     questionRowIds: showQuestions ? openQuestionRowIds({ entries }) : NO_QUESTION_ROWS,
+    resolveFactsByAgentId,
   };
   const rows: DraftRow[] = [];
 
@@ -1201,6 +1224,7 @@ export const buildRunTreeStream = ({
     showWireframes: false,
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
+    resolveFactsByAgentId: NO_RESOLVE_FACTS,
   };
   const sorted = [...runRows({ entry, context })].sort((first, second) =>
     compareNewestFirst({ first, second }),
@@ -1240,6 +1264,7 @@ export const buildAgentTreeStream = ({
     showWireframes: false,
     showQuestions: false,
     questionRowIds: NO_QUESTION_ROWS,
+    resolveFactsByAgentId: NO_RESOLVE_FACTS,
   };
   const rootLaneId = `tree:${entry.id}`;
   context.groups.push({

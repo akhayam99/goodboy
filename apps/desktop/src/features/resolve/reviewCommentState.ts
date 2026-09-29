@@ -1,4 +1,4 @@
-import type { WorkNodeState } from '@goodboy/ui';
+import type { Tone, WorkNodeState } from '@goodboy/ui';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
 
 export type ReviewCommentState =
@@ -136,7 +136,10 @@ export const reviewCommentWord = ({
   }
 };
 
-export const REVIEW_COMMENT_NODE: Record<ReviewCommentState, WorkNodeState> = {
+export const REVIEW_COMMENT_NODE: Record<
+  ReviewCommentState,
+  Exclude<WorkNodeState, 'marker' | 'mixed'>
+> = {
   new: 'queued',
   drafting: 'running',
   needs: 'question',
@@ -149,6 +152,21 @@ export const REVIEW_COMMENT_NODE: Record<ReviewCommentState, WorkNodeState> = {
   skipped: 'skipped',
   pushed: 'done',
   resolved: 'closed',
+};
+
+export const REVIEW_COMMENT_TONE: Record<ReviewCommentState, Tone> = {
+  new: 'neutral',
+  drafting: 'info',
+  needs: 'warning',
+  ready: 'warning',
+  edited: 'warning',
+  outdated: 'warning',
+  failed: 'danger',
+  accepted: 'success',
+  replied: 'success',
+  skipped: 'neutral',
+  pushed: 'success',
+  resolved: 'neutral',
 };
 
 export const REVIEW_COUNT_NOUN: Record<ReviewCommentState, string> = {

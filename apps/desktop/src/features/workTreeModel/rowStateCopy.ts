@@ -1,6 +1,7 @@
 import { formatUsd } from '@goodboy/ui';
 import type { Tone, WorkNodeState } from '@goodboy/ui';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../workflows/orchestratorCopy';
+import { REVIEW_COMMENT_NODE, REVIEW_COMMENT_TONE } from '../resolve/reviewCommentState';
 import type { RowPhase, RowState, RowStateReason } from './rowState';
 
 export type RowNodeState = Exclude<WorkNodeState, 'marker' | 'mixed'>;
@@ -78,6 +79,8 @@ const reasonSentence = ({ reason }: ReasonParams): string | null => {
       return 'Waiting for your first message';
     case 'discarded':
       return null;
+    case 'review':
+      return reason.word;
     default: {
       const exhaustive: never = reason;
       return exhaustive;
@@ -126,6 +129,7 @@ const reasonShortSentence = ({ reason }: ReasonParams): string | null => {
     case 'stepFailed':
     case 'skipped':
     case 'discarded':
+    case 'review':
       return reasonSentence({ reason });
     default: {
       const exhaustive: never = reason;
@@ -165,10 +169,14 @@ const NEUTRAL_REASONS: ReadonlySet<RowStateReason['kind']> = new Set([
 export const isRowStoppedByUser = ({ state }: StateParams): boolean =>
   state.reason?.kind === 'agentStopped' || state.reason?.kind === 'stepStopped';
 
-export const rowStateTone = ({ state }: StateParams): Tone =>
-  state.reason != null && NEUTRAL_REASONS.has(state.reason.kind)
+export const rowStateTone = ({ state }: StateParams): Tone => {
+  if (state.reason?.kind === 'review') {
+    return REVIEW_COMMENT_TONE[state.reason.state];
+  }
+  return state.reason != null && NEUTRAL_REASONS.has(state.reason.kind)
     ? 'neutral'
     : PHASE_TONE[state.phase];
+};
 
 export type RowNode = {
   readonly state: RowNodeState;
@@ -176,6 +184,9 @@ export type RowNode = {
 };
 
 const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
+  if (state.reason?.kind === 'review') {
+    return REVIEW_COMMENT_NODE[state.reason.state];
+  }
   switch (state.phase) {
     case 'queued':
       return 'queued';
@@ -219,6 +230,9 @@ const nodeStateOf = ({ state }: StateParams): RowNode['state'] => {
 
 export const rowStateNode = ({ state }: StateParams): RowNode => {
   const node = nodeStateOf({ state });
+  if (state.reason?.kind === 'review') {
+    return { state: node, label: state.reason.word };
+  }
   if (state.reason?.kind === 'deciding') {
     return { state: node, label: ORCHESTRATOR_DECIDING_SENTENCE };
   }

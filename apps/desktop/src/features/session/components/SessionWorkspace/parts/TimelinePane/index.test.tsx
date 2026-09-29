@@ -15,54 +15,58 @@ type Worktree = {
   readonly createdAt: number;
 };
 
-const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns } = vi.hoisted(() => ({
-  attachedRuns: { list: [] as ReadonlyArray<unknown> },
-  unread: { current: false },
-  agentsLoaded: { current: true },
-  diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
-  questions: {
-    open: [] as ReadonlyArray<unknown>,
-    answered: [] as ReadonlyArray<unknown>,
-    dismissed: [] as ReadonlyArray<unknown>,
-  },
-  storeState: {
-    sessionPhaseRuns: {},
-    sessionPlans: {},
-    sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionExternalTasks: {},
-    sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
-    sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
-    selectedAgentId: {} as Record<string, string | null>,
-    revealedActivityRows: {} as Record<string, ReadonlySet<string>>,
-    transcripts: {} as Record<string, ReadonlyArray<unknown>>,
-    projects: [] as ReadonlyArray<unknown>,
-    sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
-    agentKindOverride: {},
-    agentProviderOverride: {} as Record<string, string>,
-    agentModelOverride: {} as Record<string, string>,
-    agentEffortOverride: {} as Record<string, string>,
-    agentRunHistory: {},
-    sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
-    executed: new Map<string, { provider: string; model: string }>(),
-    sessionTurnSpans: {} as Record<string, ReadonlyArray<unknown>>,
-    workspaceDurationHistory: {} as Record<string, unknown>,
-    agentTurnState: {} as Record<string, unknown>,
-    loadSessionTurnSpans: vi.fn(async () => undefined),
-    loadWorkspaceDurationHistory: vi.fn(async () => undefined),
-    loadSessionEvents: vi.fn(async () => undefined),
-    loadSessionArtifacts: vi.fn(async () => undefined),
-    loadSessionAnsweredQuestions: vi.fn(async () => undefined),
-    loadSessionDismissedQuestions: vi.fn(async () => undefined),
-    markAllAgentsSeen: vi.fn(),
-    openArtifactCreation: vi.fn(),
-    setActiveLens: vi.fn(),
-    navigate: vi.fn(),
-    setFocusedArtifactId: vi.fn(),
-    openMountDiff: vi.fn(),
-    closeWorkflowRun: vi.fn(async () => undefined),
-    requestOpenQuestionScroll: vi.fn(),
-  },
-}));
+const { storeState, diffStats, unread, questions, agentsLoaded, attachedRuns, resolveActivity } =
+  vi.hoisted(() => ({
+    attachedRuns: { list: [] as ReadonlyArray<unknown> },
+    resolveActivity: {
+      current: { factsByAgentId: new Map<string, unknown>() },
+    },
+    unread: { current: false },
+    agentsLoaded: { current: true },
+    diffStats: { current: new Map<string, { additions: number; deletions: number }>() },
+    questions: {
+      open: [] as ReadonlyArray<unknown>,
+      answered: [] as ReadonlyArray<unknown>,
+      dismissed: [] as ReadonlyArray<unknown>,
+    },
+    storeState: {
+      sessionPhaseRuns: {},
+      sessionPlans: {},
+      sessionArtifacts: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionExternalTasks: {},
+      sessionWorktreeRecords: {} as Record<string, ReadonlyArray<unknown>>,
+      sessionEvents: {} as Record<string, ReadonlyArray<unknown>>,
+      selectedAgentId: {} as Record<string, string | null>,
+      revealedActivityRows: {} as Record<string, ReadonlySet<string>>,
+      transcripts: {} as Record<string, ReadonlyArray<unknown>>,
+      projects: [] as ReadonlyArray<unknown>,
+      sessionProjectMounts: {} as Record<string, ReadonlyArray<unknown>>,
+      agentKindOverride: {},
+      agentProviderOverride: {} as Record<string, string>,
+      agentModelOverride: {} as Record<string, string>,
+      agentEffortOverride: {} as Record<string, string>,
+      agentRunHistory: {},
+      sessionTelemetry: {} as Record<string, ReadonlyArray<unknown>>,
+      executed: new Map<string, { provider: string; model: string }>(),
+      sessionTurnSpans: {} as Record<string, ReadonlyArray<unknown>>,
+      workspaceDurationHistory: {} as Record<string, unknown>,
+      agentTurnState: {} as Record<string, unknown>,
+      loadSessionTurnSpans: vi.fn(async () => undefined),
+      loadWorkspaceDurationHistory: vi.fn(async () => undefined),
+      loadSessionEvents: vi.fn(async () => undefined),
+      loadSessionArtifacts: vi.fn(async () => undefined),
+      loadSessionAnsweredQuestions: vi.fn(async () => undefined),
+      loadSessionDismissedQuestions: vi.fn(async () => undefined),
+      markAllAgentsSeen: vi.fn(),
+      openArtifactCreation: vi.fn(),
+      setActiveLens: vi.fn(),
+      navigate: vi.fn(),
+      setFocusedArtifactId: vi.fn(),
+      openMountDiff: vi.fn(),
+      closeWorkflowRun: vi.fn(async () => undefined),
+      requestOpenQuestionScroll: vi.fn(),
+    },
+  }));
 
 vi.mock('../../../../../../store', async () => {
   const useAppStore = <T,>(selector: (state: typeof storeState) => T) => selector(storeState);
@@ -86,6 +90,9 @@ vi.mock('../../../../../../shared/hooks/useSessionRoleModels', () => ({
 }));
 vi.mock('../../../CreateAgentPopover', () => ({
   CreateAgentPopover: () => <button type="button">Start agent</button>,
+}));
+vi.mock('../../../../hooks/useResolveActivity', () => ({
+  useResolveActivity: () => resolveActivity.current,
 }));
 vi.mock('../../../../../workflows/useAttachedWorkflowRuns', () => ({
   useAttachedWorkflowRuns: () => attachedRuns.list,
@@ -151,6 +158,7 @@ beforeEach(() => {
   questions.dismissed = [];
   agentsLoaded.current = true;
   attachedRuns.list = [];
+  resolveActivity.current = { factsByAgentId: new Map() };
   useOpenQuestions.setState({ focusedQuestionId: null });
   localStorage.clear();
 });

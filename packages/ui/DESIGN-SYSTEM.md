@@ -550,6 +550,12 @@ working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
 
+A resolver takes its row state from the comment it fixes, not from the agent:
+the `review` reason carries the Review state and its word (Ready for you,
+Drafting, Pushed, Draft failed), with Review's tone and node. A comment that
+needs you, has a ready fix or a failed draft sets the `reviewComment` ask, so
+the need-you count includes it and the row itself is not tinted.
+
 ### Work meta
 
 The right end of a work row is `WorkMeta` in

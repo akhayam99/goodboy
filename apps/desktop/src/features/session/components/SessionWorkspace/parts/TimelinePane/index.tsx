@@ -60,6 +60,7 @@ import { useOpenQuestions } from '../../../../../context/components/QuestionsTab
 import { useOpenAgentQuestion } from '../../../../../context/hooks/useOpenAgentQuestion';
 import { useActivityFilter } from '../../../../hooks/useActivityFilter';
 import { useAgentTouchedWorktrees } from '../../../../hooks/useAgentTouchedWorktrees';
+import { useResolveActivity } from '../../../../hooks/useResolveActivity';
 import { useTimelineOpen } from '../../../../hooks/useTimelineOpen';
 import { ActivityFilterPanel } from './ActivityFilterPanel';
 import { NeedsYouChip } from './NeedsYouChip';
@@ -122,6 +123,7 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
   const advanceAgent = useAdvanceWorkflowAgent({ sessionId });
   const pending = usePendingAction({ sessionId });
   const activity = useActivityFilter();
+  const resolveActivity = useResolveActivity({ sessionId });
   const revealedRows = useAppStore((s) => s.revealedActivityRows[sessionId] ?? EMPTY_REVEALED_ROWS);
   const diffStats = useMountDiffStats(sessionId);
   const touchedWorktrees = useAgentTouchedWorktrees(sessionId);
@@ -247,8 +249,9 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
+        resolveFactsByAgentId: resolveActivity.factsByAgentId,
       }).items,
-    [advanceByRunId, decidingRunIds, model.entries, unreadAgentIds],
+    [advanceByRunId, decidingRunIds, model.entries, resolveActivity, unreadAgentIds],
   );
 
   const attentionRootIds = useMemo(
@@ -288,8 +291,17 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         showWireframes:
           isNeedsYou || isActivityChildShown({ filter: activity.filter, toggle: 'wireframes' }),
         showQuestions: isNeedsYou || activity.filter.questions,
+        resolveFactsByAgentId: resolveActivity.factsByAgentId,
       }),
-    [activity.filter, advanceByRunId, decidingRunIds, isNeedsYou, unreadAgentIds, visibleEntries],
+    [
+      activity.filter,
+      advanceByRunId,
+      decidingRunIds,
+      isNeedsYou,
+      resolveActivity,
+      unreadAgentIds,
+      visibleEntries,
+    ],
   );
 
   const unfilteredStream = useMemo(
@@ -300,8 +312,9 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
         advanceByRunId,
         decidingRunIds,
         dayLabelFor: dayLabel,
+        resolveFactsByAgentId: resolveActivity.factsByAgentId,
       }),
-    [advanceByRunId, decidingRunIds, unreadAgentIds, visibleEntries],
+    [advanceByRunId, decidingRunIds, resolveActivity, unreadAgentIds, visibleEntries],
   );
 
   const hiddenChildRows = Math.max(0, unfilteredStream.items.length - stream.items.length);
@@ -536,6 +549,8 @@ export const TimelinePane = ({ session, actions, onShownQuestionsChange }: Props
             }),
         };
       }
+      case 'reviewComment':
+        return null;
       default: {
         const exhaustive: never = ask;
         return exhaustive;

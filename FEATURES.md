@@ -106,7 +106,7 @@ See pull requests made outside Goodboy without reloading. One an agent opened or
 
 ### Activity
 
-Read the whole session as one timeline of agents, workflows, questions, fixes, artifacts, pull requests and decisions. Each step shows provider, model, time and cost in the same columns.
+Read the whole session as one timeline of agents, workflows, questions, fixes, artifacts, pull requests and decisions. Each step shows provider, model, time and cost in the same columns. A resolver row says the state of its comment, not of the agent: Ready for you, Drafting, Pushed or Draft failed, and a fix waiting on you counts in the need-you chip.
 
 ### Next
 
