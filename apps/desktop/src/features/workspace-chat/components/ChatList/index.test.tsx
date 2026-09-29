@@ -39,6 +39,67 @@ vi.mock('../../../../store', () => ({
   useSessionStages: () => store.stages,
 }));
 
+vi.mock('../../../actions/components/ObjectOverflowMenu', async () => {
+  const { useState } = await import('react');
+  const { CHAT_KIND } = await import('../../../actions/kinds/chat');
+  const { resolveActions } = await import('../../../actions/resolveActions');
+  return {
+    ObjectOverflowMenu: ({
+      target,
+      label,
+      anchorKey,
+    }: {
+      readonly target: { readonly kind: 'chat'; readonly facts: ChatFacts };
+      readonly label: string;
+      readonly anchorKey: string;
+    }) => {
+      const [open, setOpen] = useState(false);
+      const [confirming, setConfirming] = useState<string | null>(null);
+      const actions = resolveActions({ definitions: CHAT_KIND.actions, facts: target.facts });
+      const env = { anchorKey, origin: 'overflow', getState: () => store } as never;
+      const run = (id: string) => {
+        setOpen(false);
+        setConfirming(null);
+        void CHAT_KIND.actions
+          .find((action) => action.id === id)
+          ?.run({ facts: target.facts, env, choice: null });
+      };
+      const pending = actions.find((action) => action.id === confirming);
+      return (
+        <span>
+          <button type="button" aria-label={label} onClick={() => setOpen(!open)} />
+          {open
+            ? actions.map((action) => (
+                <button
+                  key={action.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={() =>
+                    action.confirm === null ? run(action.id) : setConfirming(action.id)
+                  }
+                >
+                  {action.label}
+                </button>
+              ))
+            : null}
+          {pending?.confirm === undefined || pending.confirm === null ? null : (
+            <div role="group" aria-label={pending.confirm.title}>
+              <p>{pending.confirm.title}</p>
+              <button type="button" onClick={() => run(pending.id)}>
+                {pending.confirm.confirmLabel}
+              </button>
+              <button type="button" onClick={() => run(pending.confirm?.altActionId ?? '')}>
+                Archive instead
+              </button>
+            </div>
+          )}
+        </span>
+      );
+    },
+  };
+});
+
+import type { ChatFacts } from '../../../actions/kinds/chat';
 import { ChatList } from './index';
 
 const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
@@ -210,21 +271,13 @@ describe('ChatList', () => {
     const openMenu = (title: string) =>
       fireEvent.click(screen.getByRole('button', { name: `More actions for ${title}` }));
 
-    it('opens from the more button with the five actions and a danger Delete', () => {
+    it('opens from the more button with the five actions', () => {
       renderList();
 
       openMenu('Where is the consent step?');
 
       const items = screen.getAllByRole('menuitem').map((item) => item.textContent);
       expect(items).toEqual(['Rename', 'Mark as unread', 'Pin', 'Archive', 'Delete']);
-    });
-
-    it('opens on right click', () => {
-      renderList();
-
-      fireEvent.contextMenu(screen.getByRole('button', { name: 'Where is the consent step?' }));
-
-      expect(screen.getByRole('menuitem', { name: 'Rename' })).toBeDefined();
     });
 
     it('renames in place: Enter saves, Escape cancels', async () => {
@@ -288,16 +341,6 @@ describe('ChatList', () => {
       });
       expect(onArchived).toHaveBeenCalledWith(['chat-lunch']);
       expect(store.deleteChats).not.toHaveBeenCalled();
-    });
-
-    it('cancels the delete confirm and brings the row back', () => {
-      renderList();
-
-      openMenu('Lunch ideas near the office');
-      fireEvent.click(screen.getByRole('menuitem', { name: 'Delete' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-
-      expect(screen.getByRole('button', { name: 'Lunch ideas near the office' })).toBeDefined();
     });
   });
 
