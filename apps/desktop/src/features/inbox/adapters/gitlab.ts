@@ -1,5 +1,7 @@
 import type { GitlabIssueGroup } from '../../integrations/gitlab/MergeRequest/useGitlabIssues';
 import type { GitlabMrGroup } from '../../integrations/gitlab/MergeRequest/useGitlabMrs';
+import type { GitlabMergeRequest } from '../../integrations/gitlab/client';
+import { gitlabMrStateKind } from '../../integrations/gitlab/gitlabMrStateKind';
 import type { InboxRecord, InboxState } from '../types';
 import { stateWord } from '../stateWord';
 
@@ -15,6 +17,12 @@ const normalize = ({ state }: StateParams): InboxState =>
     : state === 'merged' || state === 'closed'
       ? 'done'
       : 'active';
+
+type MrStateParams = { readonly mr: GitlabMergeRequest };
+const normalizeMr = ({ mr }: MrStateParams): InboxState => {
+  const kind = gitlabMrStateKind({ mr });
+  return kind === 'merged' || kind === 'closed' ? 'done' : 'open';
+};
 
 export const adaptGitlab = ({ issueGroups, mrGroups, host }: Params): InboxRecord[] => [
   ...issueGroups.flatMap((group) =>
@@ -39,7 +47,7 @@ export const adaptGitlab = ({ issueGroups, mrGroups, host }: Params): InboxRecor
       kind: 'mr' as const,
       identifier: `!${mr.iid}`,
       title: mr.title,
-      state: normalize({ state: mr.state }),
+      state: normalizeMr({ mr }),
       stateLabel: stateWord({ value: mr.state }),
       updatedAt: mr.updatedAt,
       url: mr.webUrl,

@@ -11,6 +11,7 @@ import type {
   SessionProjectMount,
   WorkspaceId,
 } from '@goodboy/types';
+import { bitbucketPrStateKind } from '../../../features/integrations/bitbucket/bitbucketPrStateKind';
 import { mapMrToPullRequestState } from '../../../features/integrations/gitlab/mapMrToPullRequestState';
 import type { AppState } from '../../types';
 
@@ -107,13 +108,6 @@ type SeriesParams = {
   readonly branch: string;
 };
 
-const BITBUCKET_STATE: Readonly<Record<string, PullRequestStateKind>> = {
-  OPEN: 'open',
-  MERGED: 'merged',
-  DECLINED: 'closed',
-  SUPERSEDED: 'closed',
-};
-
 const isTerminal = ({ state }: TerminalParams): boolean => state === 'merged' || state === 'closed';
 
 type MergedHeadParams = {
@@ -176,7 +170,7 @@ export const mountRequestOf = ({ state, mountId }: RequestParams): MountRequestV
   if (bitbucketPr === null || bitbucketPr === undefined) {
     return null;
   }
-  const bitbucketState = BITBUCKET_STATE[bitbucketPr.state] ?? 'open';
+  const bitbucketState = bitbucketPrStateKind({ state: bitbucketPr.state });
   return {
     provider: 'bitbucket',
     identity:
