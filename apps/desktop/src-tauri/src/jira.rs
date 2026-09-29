@@ -8,6 +8,7 @@ use thiserror::Error;
 use crate::integration_credentials::{self, IntegrationCredentialError};
 use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
+use crate::util::percent_encode;
 
 const PROVIDER: &str = "jira";
 
@@ -64,19 +65,6 @@ const SEARCH_PAGE_SIZE: u32 = 50;
 const COMMENT_PAGE_SIZE: i64 = 100;
 const ISSUE_FIELDS: &str =
     "summary,description,status,issuetype,priority,assignee,reporter,labels,created,updated";
-
-fn percent_encode(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                out.push(byte as char)
-            }
-            _ => out.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    out
-}
 
 fn site_root(site_url: &str) -> Result<String, JiraError> {
     let trimmed = site_url.trim().trim_end_matches('/');

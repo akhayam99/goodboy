@@ -10,7 +10,7 @@ use crate::integrations::http::{self, TransportFailure};
 use crate::secrets;
 
 const PROVIDER: &str = "slack";
-use crate::util::epoch_secs_to_datetime;
+use crate::util::{epoch_secs_to_datetime, percent_encode};
 
 integration_credentials::token_cache!(SlackTokenCache);
 
@@ -70,19 +70,6 @@ impl From<reqwest::Error> for SlackError {
             TransportFailure::Network(body) => SlackError::Http { status: 0, body },
         }
     }
-}
-
-fn percent_encode(value: &str) -> String {
-    let mut out = String::with_capacity(value.len());
-    for byte in value.bytes() {
-        match byte {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                out.push(byte as char)
-            }
-            _ => out.push_str(&format!("%{byte:02X}")),
-        }
-    }
-    out
 }
 
 struct SlackCall {

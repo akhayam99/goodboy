@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use rusqlite::{Connection, OptionalExtension};
 use thiserror::Error;
 
 use crate::db;
 use crate::secrets;
+use crate::util::now_ms;
 
 pub type SecretCache = Mutex<HashMap<String, String>>;
 
@@ -113,13 +113,6 @@ fn open_db() -> Result<Connection, IntegrationCredentialError> {
 
 fn store_err(e: rusqlite::Error) -> IntegrationCredentialError {
     IntegrationCredentialError::Store(e.to_string())
-}
-
-fn now_ms() -> i64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|elapsed| elapsed.as_millis() as i64)
-        .unwrap_or(0)
 }
 
 fn new_id(conn: &Connection) -> Result<String, IntegrationCredentialError> {

@@ -85,7 +85,7 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
             "protocol": 1,
             "deviceName": ctx.device_name,
             "headMigration": snap.head_migration,
-            "serverTime": now_iso(),
+            "serverTime": crate::util::iso_now_whole_seconds(),
         }),
     )
     .await?;
@@ -115,7 +115,7 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
                 return Ok(());
             }
             _ = ping.tick() => {
-                send_app(&mut stream, &mut transport, OP_PING, &json!({ "at": now_iso() })).await?;
+                send_app(&mut stream, &mut transport, OP_PING, &json!({ "at": crate::util::iso_now_whole_seconds() })).await?;
             }
             _ = sync.tick() => {
                 if probe.as_mut().is_some_and(snapshot::ChangeProbe::changed) {
@@ -332,10 +332,6 @@ async fn stream_snapshot(
     .await?;
 
     Ok(())
-}
-
-fn now_iso() -> String {
-    snapshot::iso_now()
 }
 
 #[cfg(test)]
