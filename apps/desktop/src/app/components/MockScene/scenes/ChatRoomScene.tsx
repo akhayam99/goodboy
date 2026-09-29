@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ChatId, ChatMessageId, ProviderRunId } from '@goodboy/types';
+import { mockChatSessions } from '../../../../features/workspace-chat/mockChatSessions';
 import { ChatStudio } from '../../../../features/workspace-chat/components/ChatStudio';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../../features/onboarding/openCommandPaletteEvent';
 import { PaletteOverlay } from '../../../../features/palette/components/PaletteOverlay';
@@ -76,6 +77,7 @@ export const ChatRoomScene = () => {
     seedStudioChrome();
     useAppStore.setState((state) => ({
       providers: [CLAUDE, OPENCODE],
+      sessions: [...state.sessions, ...mockChatSessions({ workspaceId: WORKSPACE_ID })],
       projects: state.projects.map((project) => ({
         ...project,
         rootPath: project.rootPath.replace(/^~/, '/mock'),

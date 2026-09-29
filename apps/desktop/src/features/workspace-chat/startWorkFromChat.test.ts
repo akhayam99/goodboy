@@ -37,6 +37,9 @@ const messageOf = ({ role, content }: MessageSeed): ChatMessage => ({
   status: 'done',
   reads: [],
   error: null,
+  provider: null,
+  model: null,
+  effort: null,
   createdAt: AT,
   updatedAt: AT,
 });

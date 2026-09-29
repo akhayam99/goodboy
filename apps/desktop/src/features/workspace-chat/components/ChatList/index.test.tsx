@@ -42,12 +42,14 @@ const chatOf = ({ key, title, ageMs, isPinned = false }: ChatSeed): ChatSummary 
     title,
     provider: 'anthropic',
     model: 'sonnet-5',
+    effort: null,
     pinnedAt: isPinned ? at : null,
     archivedAt: null,
     lastActivityAt: at,
     createdAt: at,
     updatedAt: at,
     preview: `**Answer for ${title}**`,
+    modelsUsed: [],
   };
 };
 

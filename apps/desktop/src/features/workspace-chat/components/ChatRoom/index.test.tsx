@@ -95,12 +95,14 @@ const CHAT: ChatSummary = {
   title: 'Where is the consent step defined?',
   provider: 'anthropic',
   model: 'sonnet-5',
+  effort: null,
   pinnedAt: null,
   archivedAt: null,
   lastActivityAt: AT,
   createdAt: AT,
   updatedAt: AT,
   preview: null,
+  modelsUsed: [],
 };
 
 type MessageSeed = Pick<ChatMessage, 'role' | 'content' | 'status'> &
@@ -114,6 +116,9 @@ const messageOf = ({ role, content, status, reads = [] }: MessageSeed): ChatMess
   status,
   reads,
   error: null,
+  provider: null,
+  model: null,
+  effort: null,
   createdAt: AT,
   updatedAt: AT,
 });
