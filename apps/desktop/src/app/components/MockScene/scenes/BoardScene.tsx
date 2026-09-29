@@ -145,7 +145,7 @@ const mount = (params: {
   worktreePath: params.repoRoot,
   repoRoot: params.repoRoot,
   branch: params.branch,
-  mountId: 'mount-fixture-1' as MountId,
+  mountId: `mount-fixture-${params.mountName}` as MountId,
   sessionId: 'session-fixture' as SessionId,
   lastWorktreePath: null,
   baseBranch: null,
