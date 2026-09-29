@@ -418,6 +418,74 @@ describe('completeResolvedAgent', () => {
     );
   });
 
+  it('persists the resolver outcome before the summary and the agent status update', async () => {
+    const { state, set, get } = createHarness({});
+    const order: Array<string> = [];
+    const persist = state.persistResolveTurn;
+    state.persistResolveTurn = async (params) => {
+      order.push('persist');
+      await persist(params);
+    };
+    h.summarizeStepOutput.mockImplementationOnce(async () => {
+      order.push('summary');
+      return 'the model summary';
+    });
+    h.invokeAgentUpdateStatus.mockImplementationOnce(async () => {
+      order.push('status');
+    });
+    h.invokeAgentList.mockImplementationOnce(async () => {
+      order.push('list');
+      return state.sessionPhaseRuns[SESSION_ID] ?? [];
+    });
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: '<<comment-resolved threadId="PRRT_1" commitSha="a8c81d935">>',
+      now: () => NOW,
+    });
+
+    expect(order).toEqual(['persist', 'summary', 'status', 'list']);
+  });
+
+  it('lands the resolver outcome while a hanging summary never returns', async () => {
+    const { state, set, get } = createHarness({});
+    h.summarizeStepOutput.mockClear();
+    let release: (summary: string) => void = () => undefined;
+    h.summarizeStepOutput.mockImplementationOnce(
+      () =>
+        new Promise<string>((done) => {
+          release = done;
+        }),
+    );
+
+    const completion = completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: '<<comment-resolved threadId="PRRT_1" commitSha="a8c81d935">>',
+      now: () => NOW,
+    });
+
+    try {
+      await vi.waitFor(() =>
+        expect(rowFor({ state, threadId: 'PRRT_1' })).toMatchObject({
+          state: 'fixed',
+          disposition: 'fix',
+          commitShas: ['a8c81d935'],
+        }),
+      );
+      expect(h.summarizeStepOutput).toHaveBeenCalledTimes(1);
+      expect(h.invokeAgentUpdateStatus).not.toHaveBeenCalled();
+    } finally {
+      release('late summary');
+      await completion;
+    }
+  });
+
   it('queues review comments read from the original assistant text', async () => {
     const { state, set, get } = createHarness({});
     const queueAgentReviewComments = vi.fn(async () => undefined);
