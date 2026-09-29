@@ -1,9 +1,11 @@
-// @vitest-environment node
+// @vitest-environment happy-dom
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, render } from '@testing-library/react';
 import { COLLAPSED_RAIL_WIDTH } from '@goodboy/ui';
 import { PLAIN_INSET } from '../../shared/hooks/useTitlebarInset';
+import { CollapsedRail } from '../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 
 const SOURCE_ROOT = join(__dirname, '..', '..');
 const SPACING_PX = 4;
@@ -17,18 +19,7 @@ const IDENTITY_ROW = readFileSync(
   'utf8',
 );
 const STYLES = readFileSync(join(SOURCE_ROOT, 'styles.css'), 'utf8');
-const COLLAPSED_RAIL = readFileSync(
-  join(
-    SOURCE_ROOT,
-    'features',
-    'session',
-    'components',
-    'SessionNavSidebar',
-    'parts',
-    'CollapsedRail.tsx',
-  ),
-  'utf8',
-);
+afterEach(cleanup);
 
 const classNameContaining = ({ source, marker }: { source: string; marker: string }): string => {
   const match = new RegExp(`className="([^"]*${marker}[^"]*)"`).exec(source);
@@ -71,11 +62,12 @@ describe('workspace tile and collapsed rail axis', () => {
   });
 
   it('sizes the rail from the shell constant and centers its buttons', () => {
+    const { container } = render(<CollapsedRail />);
+    const rail = container.firstElementChild as HTMLElement;
+
     expect(COLLAPSED_RAIL_WIDTH).toBe(44);
-    expect(COLLAPSED_RAIL).toContain('style={{ width: COLLAPSED_RAIL_WIDTH }}');
-    expect(COLLAPSED_RAIL).not.toMatch(/\bw-11\b/);
-    expect(
-      classNameContaining({ source: COLLAPSED_RAIL, marker: 'flex-col items-center' }),
-    ).not.toMatch(/\bp[xl]-/);
+    expect(rail.style.width).toBe(`${COLLAPSED_RAIL_WIDTH}px`);
+    expect(rail.className).not.toMatch(/\bw-11\b/);
+    expect(rail.className).not.toMatch(/\bp[xl]-/);
   });
 });
