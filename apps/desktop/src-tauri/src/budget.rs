@@ -335,6 +335,7 @@ pub async fn budget_emit_alerts(
         };
 
         if let Some(kind) = alert_kind {
+            dismiss_provider_alerts_before(&conn, provider, start_ms, now_ms)?;
             if !has_open_provider_alert(&conn, kind, provider, start_ms)? {
                 let id = crate::util::uuid_v4();
                 conn.execute(
@@ -431,6 +432,21 @@ fn has_open_provider_alert(
         |row| row.get(0),
     )?;
     Ok(open > 0)
+}
+
+fn dismiss_provider_alerts_before(
+    conn: &rusqlite::Connection,
+    provider: &str,
+    month_start_ms: i64,
+    now_ms: i64,
+) -> Result<usize, DbError> {
+    conn.execute(
+        "UPDATE budget_alerts SET dismissed_at = ?3
+          WHERE provider = ?1 AND kind LIKE 'provider-%'
+            AND dismissed_at IS NULL AND created_at < ?2",
+        rusqlite::params![provider, month_start_ms, now_ms],
+    )
+    .map_err(DbError::Sqlite)
 }
 
 fn provider_spend_between(
@@ -855,7 +871,47 @@ mod tests {
         )
         .unwrap();
 
-        assert!(!has_open_provider_alert(&conn, "provider-threshold", "anthropic", month_start).unwrap());
-        assert!(has_open_provider_alert(&conn, "provider-threshold", "anthropic", month_start - 5).unwrap());
+        assert!(
+            !has_open_provider_alert(&conn, "provider-threshold", "anthropic", month_start)
+                .unwrap()
+        );
+        assert!(
+            has_open_provider_alert(&conn, "provider-threshold", "anthropic", month_start - 5)
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn a_new_month_closes_last_months_open_provider_alerts_only() {
+        let conn = session_budget_conn();
+        let month_start = ms(2026, 10, 1);
+        conn.execute_batch(
+            "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at) VALUES
+             ('old-threshold', 'provider-threshold', 'anthropic', NULL, 85.0, 100.0, 1000, NULL),
+             ('old-exceeded', 'provider-exceeded', 'anthropic', NULL, 105.0, 100.0, 2000, NULL),
+             ('other-provider', 'provider-threshold', 'openai', NULL, 85.0, 100.0, 1000, NULL),
+             ('old-session', 'session-threshold', NULL, 's1', 8.0, 10.0, 1000, NULL);",
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
+             VALUES ('fresh', 'provider-threshold', 'anthropic', NULL, 85.0, 100.0, ?1, NULL)",
+            rusqlite::params![month_start + 5],
+        )
+        .unwrap();
+
+        let closed =
+            dismiss_provider_alerts_before(&conn, "anthropic", month_start, month_start + 10)
+                .unwrap();
+
+        let open: Vec<String> = conn
+            .prepare("SELECT id FROM budget_alerts WHERE dismissed_at IS NULL ORDER BY id")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        assert_eq!(closed, 2);
+        assert_eq!(open, vec!["fresh", "old-session", "other-provider"]);
     }
 }
