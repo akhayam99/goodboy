@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { listContextSlotsForSession, migrate, upsertContextSlot } from '@goodboy/db';
+import { listContextSlotsForSession, upsertContextSlot } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { AgentId, SessionId, WorkspaceId } from '@goodboy/types';
 import { applyDecisionOpsToSession, loadDecisionLedger } from './decisions-ledger-store';

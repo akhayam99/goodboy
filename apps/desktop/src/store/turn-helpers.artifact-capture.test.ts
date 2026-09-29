@@ -5,7 +5,6 @@ import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-  runDbMigrations: vi.fn(),
 }));
 
 const {

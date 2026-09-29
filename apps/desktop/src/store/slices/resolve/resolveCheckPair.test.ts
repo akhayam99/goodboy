@@ -10,10 +10,10 @@ import {
   listResolveCandidates,
   listResolveCheckRuns,
   listResolveQueueItems,
-  migrate,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { MountId, ProjectId, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
 import { createResolveSlice } from './index';

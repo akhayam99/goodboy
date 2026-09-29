@@ -4,10 +4,10 @@ import { createStore } from 'zustand/vanilla';
 import {
   listResolveQueueItems,
   listResolveThreads,
-  migrate,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { PrComment, ProjectId, ResolveThread, SessionId } from '@goodboy/types';
 import { createResolveThread } from './createResolveThread';

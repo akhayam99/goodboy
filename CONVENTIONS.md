@@ -76,7 +76,7 @@ Code rules and the forbidden-patterns checklist live in [AGENTS.md](./AGENTS.md)
 The steps are in `.github/workflows/ci.yml`, in this order. All of them block. A warning never counts as green.
 
 - `lint`: `turbo run lint --affected`. No package has a `lint` script and the repo has no eslint config, so this step checks nothing today. Root `pnpm lint` also runs `check:tauri-commands` and `check:doc-refs`.
-- `typecheck`: `turbo run typecheck --affected`, `tsc --noEmit` in each package.
+- `typecheck`: `turbo run typecheck --affected`, `tsc --noEmit` in each package. The typecheck tasks run in parallel; each depends on the package's `transit` task (`turbo.json`), which chains to the `transit` of every dependency and has no script. That keeps a changed exported type in `core` in the desktop typecheck hash, so turbo never replays an old green. Do not swap it for `^typecheck` (serial) or drop it (stale cache).
 - `tauri commands`: `check:tauri-commands`. Every frontend `invoke` name is registered in `generate_handler!`, and every registered command is invoked somewhere.
 - `doc refs`: `check:doc-refs`. Outside fenced code, every relative link in a tracked doc must resolve, every backticked repo path must exist, and every backticked PascalCase, camelCase or SCREAMING_SNAKE name must occur in tracked source. Each allowlist entry carries a reason: `vocabulary` for words that are not code, `stale` for a known dead reference that another change removes. An unused entry fails, so the list only shrinks.
 - `knip`: unused files, duplicate exports, unlisted dependencies and declared dependencies nothing imports, across the repo.
@@ -100,4 +100,4 @@ Each workspace MUST have:
 - `tsconfig.json` extending the root `tsconfig.base.json`.
 - `CONVENTIONS.md` with the rules for its stack.
 - `README.md` with its purpose and its public API.
-- `src/index.ts` as the only public entry point (re-exports only), for `packages/*`. Two subpaths are allowed: `@goodboy/core/node` (Node-only helpers) and `@goodboy/db/test-helpers` (test databases). `apps/desktop` is an app, not a library, and has no `src/index.ts`.
+- `src/index.ts` as the only public entry point (re-exports only), for `packages/*`. Three subpaths are allowed: `@goodboy/core/node` (Node-only helpers), `@goodboy/db/test-helpers` (test databases) and `@goodboy/db/migrations` (the migration runner and the registry of every migration; only the desktop boot path, `shared/lib/dbBoot.ts`, and tests import it, so the root barrel stays cheap to load). `apps/desktop` is an app, not a library, and has no `src/index.ts`.

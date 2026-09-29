@@ -52,7 +52,6 @@ vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tau
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 
 vi.mock('../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn(async () => []) },
 }));
 

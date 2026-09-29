@@ -5,10 +5,10 @@ import {
   insertResolveQueueItem,
   listResolveQueueItems,
   listResolveThreads,
-  migrate,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { saveResolveThread } from './saveResolveThread';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
