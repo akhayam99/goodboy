@@ -43,3 +43,13 @@ export const runFailureReason = ({ thread, attempt }: Params): string => {
   }
   return 'The run failed and no reason was recorded';
 };
+
+export const attemptFailureReason = ({ attempt }: { readonly attempt: ResolveAttempt }): string => {
+  const error = attempt.error?.trim() ?? '';
+  if (error !== '') {
+    return reasonForError({ error });
+  }
+  return attempt.phase === 'cancelled'
+    ? 'The run was stopped'
+    : 'The run failed and no reason was recorded';
+};

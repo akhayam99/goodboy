@@ -135,6 +135,42 @@ describe('startResolve', () => {
     expect(prompt).toContain('Voice: friendly.');
   });
 
+  it('keeps the fixup style and the prior work when a thread is retried', async () => {
+    const { spawnAgent, setAgentConfig } = spawnSpy();
+    listBranchCommits.mockResolvedValue([
+      { sha: '3a1f9c2full', subject: 'Add retry policy' } as BranchCommit,
+    ]);
+    worktreeBlameLine.mockResolvedValue('3a1f9c2full');
+
+    await startResolve({
+      sessionId: SESSION_ID,
+      threads: [threadOf('PRRT_1')],
+      pr: PR,
+      routing: { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+      note: 'The race is in the insert',
+      mode: 'retry',
+      priorContext: [
+        { threadId: 'PRRT_1', reply: 'Tried a lock', commitShas: ['aa11bb22'], intent: 'retry' },
+      ],
+      style: {
+        commitStyle: 'fixup',
+        voice: 'terse',
+        styleNote: null,
+        worktreePath: '/repos/notify-relay',
+      },
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.model).toBe('claude-opus-5');
+    expect(args?.effort).toBe('high');
+    expect(args?.initialPrompt).toContain('git commit --fixup=3a1f9c2full');
+    expect(args?.initialPrompt).toContain('another pass on this thread');
+    expect(args?.initialPrompt).toContain('Tried a lock');
+    expect(args?.initialPrompt).toContain('The race is in the insert');
+  });
+
   it('never reads git for the default new commit style', async () => {
     const { spawnAgent, setAgentConfig } = spawnSpy();
 

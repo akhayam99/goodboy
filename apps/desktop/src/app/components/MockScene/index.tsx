@@ -14,6 +14,8 @@ import { MountsScene } from './scenes/MountsScene';
 import { MountMismatchScene } from './scenes/MountMismatchScene';
 import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
+import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
+import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
 import { BoardScene } from './scenes/BoardScene';
 import { TranscriptMountScene } from './scenes/TranscriptMountScene';
 import { BoardShellScene } from './scenes/BoardShellScene';
@@ -121,6 +123,8 @@ export const MOCK_SCENES = {
   'mount-mismatch': MountMismatchScene,
   resolve: ResolveScene,
   'resolve-item': ResolveItemScene,
+  'resolve-failed': ResolveFailedRunScene,
+  'resolve-failed-history': ResolveFailedHistoryScene,
   board: BoardScene,
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,

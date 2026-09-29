@@ -1,9 +1,18 @@
-import { AlertCircle, ArrowUp, Check, RefreshCw, RotateCw, X, type LucideIcon } from 'lucide-react';
-import { Button, GhostActionButton, IconButton, InlineConfirm, tintClasses, cn } from '@goodboy/ui';
+import { AlertCircle, ArrowUp, Check, GitMerge, RefreshCw, X, type LucideIcon } from 'lucide-react';
+import {
+  Button,
+  GhostActionButton,
+  IconButton,
+  InlineConfirm,
+  WorkNode,
+  tintClasses,
+  cn,
+} from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { sessionReplySettings } from '../../../../store/sessionReplySettings';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { SYNC_COPY } from '../../failedRunCopy';
 import { blockerCopy, driftSentence, excludedLine } from '../../resolvePublishCopy';
 import { pushConfirmBody, pushConfirmTitle, pushStyleNote } from '../../reviewPushCopy';
 import type { ReviewPush } from './useReviewPush';
@@ -17,14 +26,14 @@ const RECOVERY_LABEL = {
   open_diff: 'Open diff',
   view_work: 'View the agent',
   recheck_fix: 'Check again',
-  refresh: 'Refresh',
+  sync: SYNC_COPY.action,
 } as const;
 
 const RECOVERY_ICON: Record<keyof typeof RECOVERY_LABEL, LucideIcon> = {
   open_diff: CONCEPT_ICONS.diff,
   view_work: CONCEPT_ICONS.agents,
   recheck_fix: RefreshCw,
-  refresh: RotateCw,
+  sync: GitMerge,
 };
 
 export const PUSH_LABEL = 'Push';
@@ -33,6 +42,32 @@ export const DISMISS_LABEL = 'Dismiss';
 export const PushBanner = ({ sessionId, push }: Props) => {
   const commitStyle = useAppStore((s) => sessionReplySettings({ state: s, sessionId }).commitStyle);
   const { phase } = push;
+
+  if (phase.kind === 'sync_confirm') {
+    return (
+      <InlineConfirm
+        role="primary"
+        icon={<GitMerge size={ICON_SIZE.control} aria-hidden />}
+        title={SYNC_COPY.confirmTitle}
+        description={SYNC_COPY.confirmDescription}
+        confirmLabel={SYNC_COPY.confirmLabel}
+        onConfirm={push.confirmSync}
+        onCancel={push.dismiss}
+      />
+    );
+  }
+
+  if (phase.kind === 'syncing') {
+    return (
+      <p
+        role="status"
+        className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-muted-foreground"
+      >
+        <WorkNode state="running" label={SYNC_COPY.working} mark={{ kind: 'dot' }} />
+        {SYNC_COPY.working}
+      </p>
+    );
+  }
 
   if (phase.kind === 'result') {
     const isDone = phase.result.tone === 'done';
@@ -55,6 +90,9 @@ export const PushBanner = ({ sessionId, push }: Props) => {
           />
         )}
         <span className="min-w-0 flex-1">{phase.result.sentence}</span>
+        {phase.result.canSync === true && (
+          <GhostActionButton icon={GitMerge} label={SYNC_COPY.action} onClick={push.askSync} />
+        )}
         <IconButton icon={X} label={DISMISS_LABEL} variant="ghost" onClick={push.dismiss} />
       </p>
     );
@@ -73,7 +111,9 @@ export const PushBanner = ({ sessionId, push }: Props) => {
   const excluded = excludedLine({ preview });
 
   if (blocker !== null || preview.publicationId === null) {
-    const recovery = blocker?.action ?? null;
+    const recovery =
+      blocker?.action ??
+      (preview.drift.some((entry) => entry.kind === 'remote_moved') ? ('sync' as const) : null);
     return (
       <div
         role="alert"

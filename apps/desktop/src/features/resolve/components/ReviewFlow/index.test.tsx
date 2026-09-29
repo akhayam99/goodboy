@@ -18,6 +18,7 @@ import {
   EXPANDED_THREAD_ID,
   SESSION,
   seedResolveScene,
+  type ResolveFailure,
 } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { ReviewFlow } from './index';
 
@@ -57,6 +58,24 @@ const settle = async (): Promise<void> => {
 
 const mount = async ({ threadId }: { readonly threadId: string | null }): Promise<void> => {
   seedResolveScene({ expandedThreadId: threadId });
+  render(
+    <ToastProvider>
+      <ReviewFlow session={SESSION} />
+    </ToastProvider>,
+  );
+  await settle();
+};
+
+const FAILED_THREAD_ID = 'PRRT_thread_idempotency';
+
+const mountFailed = async ({
+  failure,
+  threadId = FAILED_THREAD_ID,
+}: {
+  readonly failure: ResolveFailure;
+  readonly threadId?: string;
+}): Promise<void> => {
+  seedResolveScene({ expandedThreadId: threadId, failure });
   render(
     <ToastProvider>
       <ReviewFlow session={SESSION} />
@@ -213,7 +232,7 @@ describe('Review as one flow', () => {
 
     fireEvent.click(row(/Skipped/));
     await settle();
-    fireEvent.click(within(comment()).getByRole('button', { name: /^Undo/ }));
+    fireEvent.click(within(comment()).getByRole('button', { name: /^Resume/ }));
     await waitFor(() => expect(takeUp).toHaveBeenCalledOnce());
   });
 
@@ -327,5 +346,97 @@ describe('Review as one flow', () => {
       await screen.findByText('Pushed a41c9e2, 1 reply posted, 1 thread resolved on GitHub.'),
     ).toBeDefined();
     expect(screen.queryByRole('button', { name: 'Review publication' })).toBeNull();
+  });
+});
+
+describe('Review of a failed run', () => {
+  it('says why, shows the last command and offers the retry choices instead of Redraft', async () => {
+    await mountFailed({ failure: 'run' });
+
+    const failed = within(comment());
+    expect(failed.getByText('The run ended before the resolver reported a result')).toBeDefined();
+    expect(failed.getByText(/pnpm test src\/webhooks · 2 failing/)).toBeDefined();
+    expect(failed.getByRole('button', { name: /^Try again/ })).toBeDefined();
+    expect(failed.getByRole('button', { name: 'Try another model' })).toBeDefined();
+    expect(failed.getByRole('button', { name: 'Add a hint' })).toBeDefined();
+    expect(failed.queryByRole('button', { name: /Redraft/ })).toBeNull();
+    expect(failed.getByText(/^Attempt 1/)).toBeDefined();
+  });
+
+  it('retries on the model the reviewer picked and keeps the earlier attempt in one line', async () => {
+    const spawnAgent = vi.fn(async () => 'agent-retry');
+    const setAgentConfig = vi.fn(async () => undefined);
+    stub({
+      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
+      setAgentConfig: setAgentConfig as unknown as StoreState['setAgentConfig'],
+    });
+    await mountFailed({ failure: 'history' });
+    act(() => {
+      useAppStore.getState().setResolveQueueView({
+        sessionId: SESSION.id,
+        patch: {
+          lastRouting: { provider: 'anthropic', model: 'claude-opus-5', effort: 'high' },
+        },
+      });
+    });
+
+    const failed = within(comment());
+    expect(failed.getByRole('button', { name: /^Try again on Opus 5/ })).toBeDefined();
+    expect(failed.getByRole('button', { name: /Attempt 1 · Sonnet 5/ })).toBeDefined();
+    fireEvent.click(failed.getByRole('button', { name: /^Try again on Opus 5/ }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
+    const args = (spawnAgent.mock.calls[0] as unknown as [string, Record<string, unknown>])[1];
+    expect(args.model).toBe('claude-opus-5');
+    expect(args.effort).toBe('high');
+  });
+
+  it('opens the hint field and sends it with the retry', async () => {
+    const spawnAgent = vi.fn(async () => 'agent-retry');
+    stub({
+      spawnAgent: spawnAgent as unknown as StoreState['spawnAgent'],
+      setAgentConfig: vi.fn(async () => undefined) as unknown as StoreState['setAgentConfig'],
+    });
+    await mountFailed({ failure: 'run' });
+
+    fireEvent.click(within(comment()).getByRole('button', { name: 'Add a hint' }));
+    const field = await screen.findByRole('textbox', {
+      name: 'What should the agent do differently?',
+    });
+    fireEvent.change(field, { target: { value: 'Use ON CONFLICT' } });
+    fireEvent.click(within(comment()).getByRole('button', { name: 'Try again with the hint' }));
+
+    await waitFor(() => expect(spawnAgent).toHaveBeenCalledOnce());
+    const args = (spawnAgent.mock.calls[0] as unknown as [string, { initialPrompt: string }])[1];
+    expect(args.initialPrompt).toContain('Use ON CONFLICT');
+  });
+
+  it('puts Reply yourself, Skip and Open transcript in the menu', async () => {
+    await mountFailed({ failure: 'run' });
+
+    fireEvent.click(within(comment()).getByRole('button', { name: 'More actions' }));
+    expect(await screen.findByRole('menuitem', { name: /Reply yourself/ })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: /Skip/ })).toBeDefined();
+    expect(screen.getByRole('menuitem', { name: /Open transcript/ })).toBeDefined();
+  });
+
+  it('asks before syncing a push that failed on a moved remote and stops on a conflict', async () => {
+    const syncBranchWithRemote = vi.fn(async () => ({ kind: 'conflict' as const }));
+    stub({
+      syncBranchWithRemote: syncBranchWithRemote as unknown as StoreState['syncBranchWithRemote'],
+    });
+    await mountFailed({ failure: 'run', threadId: 'PRRT_thread_log_redact' });
+
+    const pushed = within(comment());
+    expect(pushed.getByText(/^Nothing was pushed\. The branch on origin moved/)).toBeDefined();
+    expect(pushed.getByRole('button', { name: 'Push again' })).toBeDefined();
+    fireEvent.click(pushed.getByRole('button', { name: 'Sync and try again' }));
+
+    expect(await screen.findByText('Bring the new commits in first?')).toBeDefined();
+    expect(syncBranchWithRemote).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Sync' }));
+
+    await waitFor(() => expect(syncBranchWithRemote).toHaveBeenCalledOnce());
+    expect(await screen.findByText(/conflict with the new ones on origin/)).toBeDefined();
   });
 });

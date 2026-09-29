@@ -1,7 +1,7 @@
 import { useMemo, useState, type KeyboardEvent } from 'react';
 import { AlertCircle, Check } from 'lucide-react';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
@@ -16,8 +16,11 @@ import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
 import { OUTDATED_REASON } from '../../../actions/kinds/reviewComment';
+import { modelLabel } from '../../../chat/utils/chat-constants';
 import type { ReviewComposeMode } from '../../../review/reviewRequest';
+import { attemptNumberOf, previousAttemptsOf } from '../../attemptHistory';
 import { conversationSha } from '../../conversationAgentResult';
+import { FAILED_RUN_COPY, tryAgainLabel } from '../../failedRunCopy';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
 import { useResolveItemDraft } from '../../hooks/useResolveItemDraft';
 import { isResolveOnly } from '../../reviewCommentState';
@@ -33,6 +36,8 @@ import { selectResolveCandidate } from '../../selectResolveCandidate';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { AgentLine } from './AgentLine';
+import { FailedRun } from './FailedRun';
+import { PreviousAttempts } from './PreviousAttempts';
 import { ProposedChange } from './ProposedChange';
 import type { ReviewEntry } from './useReviewEntries';
 
@@ -58,9 +63,13 @@ type Props = {
   readonly onEditReply: () => void;
   readonly onReplyDone: () => void;
   readonly onSelect: (threadId: string) => void;
+  readonly onTryAgain: () => void;
+  readonly onRetryDelivery: () => void;
+  readonly onSync: () => void;
 };
 
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
+const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const DECIDED_NOTE_STATES = new Set(['accepted', 'replied', 'skipped', 'pushed', 'resolved']);
 
 const verbsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<ResolvedAction> => [
@@ -102,6 +111,9 @@ export const ReviewComment = ({
   onEditReply,
   onReplyDone,
   onSelect,
+  onTryAgain,
+  onRetryDelivery,
+  onSync,
 }: Props) => {
   const { row, state, word, threadId } = entry;
   const target = useMemo(
@@ -111,6 +123,8 @@ export const ReviewComment = ({
   const env = useActionEnv({ origin: 'button' });
   const { actions } = useObjectActions({ target, env });
   const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? EMPTY_CANDIDATES);
+  const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
+  const pickedModel = useAppStore((s) => s.resolveQueueView[sessionId]?.lastRouting?.model ?? null);
   const candidate = useMemo(
     () => selectResolveCandidate({ candidates, itemId: row.item.id }),
     [candidates, row.item.id],
@@ -133,8 +147,31 @@ export const ReviewComment = ({
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
   const hasChange = candidate !== null;
   const replyShown =
-    reply.trim() !== '' || (state !== 'new' && state !== 'drafting' && state !== 'needs');
+    reply.trim() !== '' ||
+    (state !== 'new' && state !== 'drafting' && state !== 'needs' && state !== 'failed');
   const blocker = sharedCandidateBlocker({ members });
+  const previous = useMemo(
+    () => previousAttemptsOf({ attempts, threadId, activeAttemptId: row.thread.activeAttemptId }),
+    [attempts, row.thread.activeAttemptId, threadId],
+  );
+  const attemptNumber =
+    row.attempt !== null && (state === 'failed' || previous.length > 0)
+      ? attemptNumberOf({ attempts, threadId, attemptId: row.attempt.id })
+      : null;
+  const isFailed = state === 'failed';
+  const composeCopy =
+    compose !== null && isFailed && compose.mode === 'redraft'
+      ? {
+          label: FAILED_RUN_COPY.hintLabel,
+          placeholder: 'Say what to change, in your own words',
+          submit: tryAgainLabel({
+            modelName: pickedModel === null ? null : modelLabel(pickedModel),
+            hasHint: compose.text.trim() !== '',
+          }),
+        }
+      : compose === null
+        ? null
+        : COMPOSE_COPY[compose.mode];
 
   const startEdit = (): void => {
     setReplyText(reply);
@@ -178,7 +215,11 @@ export const ReviewComment = ({
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
-      {row.attempt !== null && <AgentLine attempt={row.attempt} state={state} word={word} />}
+      <PreviousAttempts attempts={previous} />
+
+      {row.attempt !== null && (
+        <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
+      )}
 
       {state === 'needs' && row.thread.question != null && row.thread.question !== '' && (
         <div className="flex min-w-0 flex-col gap-2">
@@ -299,23 +340,29 @@ export const ReviewComment = ({
         </p>
       )}
 
-      {state === 'failed' && row.rowState.sentence !== null && (
-        <p className="flex min-w-0 items-start gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-foreground">
-          <AlertCircle
-            size={ICON_SIZE.control}
-            aria-hidden
-            className="mt-0.5 shrink-0 text-danger"
-          />
-          {row.rowState.sentence}
-        </p>
+      {isFailed && (
+        <FailedRun
+          sessionId={sessionId}
+          target={target}
+          attempt={row.attempt}
+          rowState={row.rowState}
+          actions={actions}
+          isHintOpen={compose !== null && compose.mode === 'redraft'}
+          isBusy={isSubmitting || pendingActionId !== null}
+          onTryAgain={onTryAgain}
+          onAddHint={() => onRun('reviewComment.edit')}
+          onRetryDelivery={onRetryDelivery}
+          onSync={onSync}
+          onRun={onRun}
+        />
       )}
 
-      {compose !== null ? (
+      {compose !== null && composeCopy !== null ? (
         <div className="flex min-w-0 flex-col gap-2">
-          <SectionHeader label={COMPOSE_COPY[compose.mode].label} headingLevel={2} />
+          <SectionHeader label={composeCopy.label} headingLevel={2} />
           <Textarea
-            aria-label={COMPOSE_COPY[compose.mode].label}
-            placeholder={COMPOSE_COPY[compose.mode].placeholder}
+            aria-label={composeCopy.label}
+            placeholder={composeCopy.placeholder}
             value={compose.text}
             autoFocus
             autoGrow
@@ -347,12 +394,13 @@ export const ReviewComment = ({
               disabled={isComposeBlocked({ compose })}
               onClick={onComposeSubmit}
             >
-              {COMPOSE_COPY[compose.mode].submit}
+              {composeCopy.submit}
             </Button>
           </div>
         </div>
       ) : (
         !isEditingReply &&
+        !isFailed &&
         verbs.length > 0 && (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             {verbs.map((action) => {

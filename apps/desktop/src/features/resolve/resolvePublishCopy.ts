@@ -51,7 +51,7 @@ export const driftSentence = ({
 
 export type BlockerCopy = {
   readonly sentence: string;
-  readonly action: 'open_diff' | 'view_work' | 'recheck_fix' | 'refresh' | null;
+  readonly action: 'open_diff' | 'view_work' | 'recheck_fix' | 'sync' | null;
 };
 
 export const blockerCopy = ({
@@ -75,7 +75,7 @@ export const blockerCopy = ({
     case 'missing_commit':
       return { sentence: 'Fix changed since review', action: 'recheck_fix' };
     case 'remote_moved':
-      return { sentence: 'The remote moved', action: 'refresh' };
+      return { sentence: 'The remote moved', action: 'sync' };
     case 'no_branch':
       return { sentence: 'This session has no branch to push', action: null };
     case 'no_target':

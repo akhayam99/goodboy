@@ -68,6 +68,7 @@ export type PushResultTone = 'done' | 'partial' | 'failed';
 export type PushResult = {
   readonly tone: PushResultTone;
   readonly sentence: string;
+  readonly canSync?: boolean;
 };
 
 const shortSha = (sha: string): string => sha.slice(0, 7);

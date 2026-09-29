@@ -664,9 +664,11 @@ Every comment shows one state word, grouped in three:
 - **Open**: Not started, Drafting (one live line says what the agent does),
   Needs you (the agent asked), Ready (the fix and the reply under the comment,
   with an Edited tag once you changed the reply), Outdated (the comment changed
-  since the draft), Draft failed or Push failed (the line under the comment
+  since the draft), Draft failed or Push failed (the box under the comment
   names the reason, such as the run ended before a result or the provider
-  error, never a generic error)
+  error, never a generic error. A failed run also shows the last command it
+  ran with its result, such as `pnpm test src/webhooks · 2 failing`, and a
+  link to the transcript)
 - **Ready to push**: Accepted, Reply only (with a Resolve only tag when
   nothing is posted)
 - **Done**: Skipped (it never blocks the push), Pushed, and Resolved on GitHub
@@ -679,9 +681,9 @@ above the list filters the list by state.
 
 Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the
-draft is outdated or failed), `Reply` (R, a reply without a change) and `Skip`
-(S), plus `Undo` (U) until the push and `Draft a fix` (D) on a comment nobody
-drafted. J and K move. Edit, Answer and Reply share one text box: Enter sends,
+draft is outdated, `Add a hint` when the run failed), `Reply` (R, a reply
+without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
+comment) until the push and `Draft a fix` (D) on a comment nobody drafted. J and K move. Edit, Answer and Reply share one text box: Enter sends,
 Shift+Enter adds a line, Esc cancels. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
@@ -718,6 +720,18 @@ with a local commit and never pushes.
   the marker contract. It uses the model chosen in `…` → `Model for drafts…`
   (the shared picker with every connected provider and a **Suggested** row),
   or the suggested resolver model
+- A retry reads the same choices again. Redraft, Answer and Try again use the
+  model picked for the session (`Model for drafts…`) and the commit style set
+  in Review replies, so with fixup set the second round is a fixup too. The
+  hint you type before a retry lands in the prompt's operator notes
+- A failed run offers **Try again** (`Try again on Opus 5` once you picked a
+  model, `Try again with the hint` with a hint), **Try another model** (the
+  picker opens inline under the buttons) and **Add a hint** (D is Try again).
+  `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
+  the comment fold into one line above (`Attempt 1 · Sonnet 5 · Medium ·
+failed`) that opens to their reasons. A failed step after the run shows its
+  own verb: `Push again`, `Post the reply again` or `Open on GitHub` when
+  Goodboy could not confirm the reply landed
 - Fixes run one at a time in the session worktree, so two fixes never fight
   over the same branch
 - After a restart, Goodboy rebuilds everything from its database, not from a
@@ -732,7 +746,12 @@ blocker (uncommitted changes, a commit nobody approved, a fix still running)
 replaces the confirm with its reason and the one move that clears it. The
 result stays on the layer in one line with its commit; a partial push says how
 many landed and marks the comment that did not with its reason, and `Retry
-push for N` picks it up. ⌘↵ with the list focused pushes too. Behind it runs a
+push for N` picks it up. When the push failed because origin moved, `Sync and
+try again` (on the comment and in the result line) asks first under the header,
+then fetches origin and rebases the unpushed commits of the local branch on it
+in a copy, without pushing, and checks the push again. If those commits
+conflict with the new ones it stops and says so, and the branch stays as it
+was. ⌘↵ with the list focused pushes too. Behind it runs a
 **publication**, which:
 
 1. Locks the conversations it will publish

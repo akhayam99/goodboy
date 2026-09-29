@@ -1,14 +1,12 @@
 import { useCallback, useMemo } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import type { PrComment, ResolveAttempt, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
-import { replyVoiceOf } from '../../../../store/sessionReplySettings';
-import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
+import { sessionResolveStyle } from '../../../../store/sessionReplySettings';
 import { groupThreads } from '../../../github/comment-threads';
-import { kindRouting } from '../../../session/agent-kind';
-import { startFixAttempt } from '../../../review/startFixAttempt';
 import { conversationSourceOf } from '../../notes/conversationSource';
+import { draftRoutingOf } from '../../draftFixes';
 import { retryBatchOf } from '../../launchChoice';
+import { startResolve } from '../../startResolve';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';
 
 type Params = {
@@ -38,8 +36,6 @@ export const useResolveAgain = ({
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const setAgentConfig = useAppStore((s) => s.setAgentConfig);
   const reportError = useAppStore((s) => s.reportError);
-  const replyVoice = useAppStore(useShallow((s) => replyVoiceOf({ state: s, sessionId })));
-  const roleModels = useSessionRoleModels({ sessionId });
 
   const threadsByThreadId = useMemo(
     () =>
@@ -59,19 +55,14 @@ export const useResolveAgain = ({
       if ((pr === null && !isNote) || thread == null) {
         return 'missing';
       }
-      const routing = kindRouting({ kind: 'resolver', roleModels });
+      const state = useAppStore.getState();
       try {
-        await startFixAttempt({
+        await startResolve({
           sessionId,
           threads: [thread],
           pr,
-          choice: {
-            provider: routing.provider,
-            model: routing.model,
-            ...(routing.effort !== undefined &&
-              routing.effort !== null && { effort: routing.effort }),
-          },
-          instructions: instruction,
+          routing: draftRoutingOf({ state, sessionId }),
+          note: instruction,
           mode: 'retry',
           priorContext: [
             {
@@ -81,7 +72,7 @@ export const useResolveAgain = ({
               intent: 'retry',
             },
           ],
-          style: replyVoice,
+          style: sessionResolveStyle({ state, sessionId }),
           batch: retryBatchOf({ attempts, threadId }),
           spawnAgent,
           setAgentConfig,
@@ -92,17 +83,6 @@ export const useResolveAgain = ({
         return 'failed';
       }
     },
-    [
-      attempts,
-      pr,
-      replyVoice,
-      reportError,
-      roleModels,
-      rows,
-      sessionId,
-      setAgentConfig,
-      spawnAgent,
-      threadsByThreadId,
-    ],
+    [attempts, pr, reportError, rows, sessionId, setAgentConfig, spawnAgent, threadsByThreadId],
   );
 };
