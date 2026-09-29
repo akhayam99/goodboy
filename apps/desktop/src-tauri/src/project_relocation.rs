@@ -4,6 +4,7 @@ use tauri::State;
 use thiserror::Error;
 
 use crate::db::Db;
+use crate::proc::git::Git;
 use crate::worktree_writer::{acquire_lease, release_lease, WriterLeases};
 
 #[derive(Debug, Error)]
@@ -217,14 +218,12 @@ fn update_paths(
 }
 
 fn repair_git_links(to_root: &str, worktree_paths: &[String]) -> bool {
-    let mut command = crate::path_env::command("git");
-    command.current_dir(to_root).args(["worktree", "repair"]);
-    for path in worktree_paths {
-        command.arg(path);
-    }
-    command
+    Git::new()
+        .cwd(to_root)
+        .args(["worktree", "repair"])
+        .args(worktree_paths)
         .output()
-        .map(|output| output.status.success())
+        .map(|output| output.success())
         .unwrap_or(false)
 }
 

@@ -39,6 +39,7 @@ mod local_image;
 mod path_env;
 mod permissions;
 mod planner;
+mod proc;
 mod process_group;
 mod project_relocation;
 mod project_scripts;

@@ -6,6 +6,7 @@ use serde::Serialize;
 use thiserror::Error;
 
 use crate::integration_credentials;
+use crate::proc::git::{Git, GitError};
 use crate::secrets;
 
 const GITHUB_PROVIDER: &str = "github";
@@ -269,28 +270,30 @@ pub(crate) fn run_git_authenticated(
     cwd: &str,
     token: Option<&str>,
 ) -> Result<GhRunResult, GithubError> {
-    let mut cmd = crate::path_env::command_with_login_env("git");
+    let mut git = Git::new().login_env();
     if gh_available() {
-        cmd.args([
+        git = git.args([
             "-c",
             "credential.https://github.com.helper=",
             "-c",
             "credential.https://github.com.helper=!gh auth git-credential",
         ]);
     }
-    cmd.args(args);
+    git = git.args(args);
     if !cwd.is_empty() {
-        cmd.current_dir(cwd);
+        git = git.cwd(cwd);
     }
     if let Some(t) = token {
         if !t.is_empty() {
-            cmd.env("GH_TOKEN", t);
-            cmd.env("GITHUB_TOKEN", t);
+            git = git.env("GH_TOKEN", t).env("GITHUB_TOKEN", t);
         }
     }
-    let output = cmd.output()?;
+    let output = git.output().map_err(|error| match error {
+        GitError::Spawn(inner) => GithubError::Spawn(inner),
+        _ => GithubError::Timeout,
+    })?;
     Ok(GhRunResult {
-        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+        stdout: output.stdout_lossy(),
         stderr: String::from_utf8_lossy(&output.stderr).to_string(),
         exit_code: output.status.code().unwrap_or(-1),
     })

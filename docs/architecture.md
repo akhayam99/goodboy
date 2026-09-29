@@ -50,6 +50,32 @@ If a push fails because a variable is missing, do not skip hooks with
 `git push --no-verify`. Pass the environment through instead. This layer runs
 on macOS and Linux.
 
+### Launching git
+
+Every git process the Rust shell starts goes through one builder,
+`proc::git::Git` (`apps/desktop/src-tauri/src/proc/git.rs`). Nothing else in
+production code builds a `git` command by hand, and a Rust test fails if it
+finds one.
+
+- Every call turns terminal prompts off (`GIT_TERMINAL_PROMPT=0`), sets the
+  editors to `true`, and removes an inherited `GIT_DIR`, `GIT_WORK_TREE` and
+  `GIT_INDEX_FILE`, so git always reads the repository the call names.
+- `batch_auth()` also blanks the askpass helpers and puts ssh in batch mode.
+  `worktree::git` uses it; the other callers keep their own auth behavior.
+- `login_env()` starts git with the login environment, for the one caller whose
+  `pre-push` hook needs it (`run_git_authenticated`).
+- Every call has a timeout: 5 minutes for `fetch`, `push`, `pull`, `ls-remote`
+  and `clone`, 10 minutes for everything else. When it fires, git and its
+  children are killed and the caller gets a `timeout` error.
+- A failure comes back as `GitError`, which serializes as `{kind, message}`.
+  The message carries the arguments and the stderr with URL credentials
+  redacted. `WorktreeError`, `GithubError` and plain `io::Error` callers map it
+  without changing their own wire shape.
+
+`spawn_streaming` is the exception to the timeout: the history predictor keeps
+one `git merge-tree --stdin` process open for a whole plan, so its caller owns
+the lifetime.
+
 ### Provider routing
 
 - The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
