@@ -1,0 +1,13 @@
+#!/bin/sh
+. "$(dirname "$0")/common.sh"
+case "$1" in
+  --version)
+    fake_version "2026.09.17-fake"
+    ;;
+  status)
+    printf 'Logged in as avery@harborline.test\n' >&2
+    ;;
+  *)
+    fake_turn cursor-agent.jsonl "$@"
+    ;;
+esac

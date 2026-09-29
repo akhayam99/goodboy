@@ -1,0 +1,10 @@
+#!/bin/sh
+. "$(dirname "$0")/common.sh"
+case "$1" in
+  --version)
+    fake_version "agy 1.1.9"
+    ;;
+  *)
+    fake_turn agy.txt "$@"
+    ;;
+esac

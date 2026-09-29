@@ -422,11 +422,8 @@ codex exec --json --skip-git-repo-check --model <ID> --cd <DIR> -s <SANDBOX> -- 
   reads both streams through `AuthCommandOutput::primary_text()` in
   `apps/desktop/src-tauri/src/providers.rs`
 
-A test against the real codex binary. It is skipped by default:
-
-```bash
-GOODBOY_TEST_REAL_CODEX=1 cargo test --lib -- --ignored codex_real
-```
+The Rust tests run codex against a scripted fake binary, not the real one. See
+[Fake CLI binaries](testing.md#fake-cli-binaries-for-the-rust-spawn-tests).
 
 ### Antigravity CLI
 

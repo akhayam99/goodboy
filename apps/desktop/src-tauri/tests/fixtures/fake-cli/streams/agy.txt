@@ -1,0 +1,2 @@
+Reading notify-relay.
+notify-relay sends one message per event.
