@@ -121,7 +121,7 @@
     "apps/desktop/src-tauri/src/terminal.rs": 2,
     "apps/desktop/src-tauri/src/turn.rs": 11,
     "apps/desktop/src-tauri/src/workflows.rs": 58,
-    "apps/desktop/src-tauri/src/worktree.rs": 78,
+    "apps/desktop/src-tauri/src/worktree/mod.rs": 78,
     "apps/desktop/src/features/integrations/bitbucket/normalizeWorkspaceSlug.ts": 2,
     "apps/desktop/src/features/integrations/gitlab/MergeRequest/useGitlabMrs/index.ts": 1,
     "apps/desktop/src/features/integrations/shared/normalizeHostUrl.ts": 1,
@@ -277,7 +277,7 @@
     "apps/desktop/src-tauri/src/skills.rs": 2,
     "apps/desktop/src-tauri/src/turn.rs": 1,
     "apps/desktop/src-tauri/src/workflows.rs": 3,
-    "apps/desktop/src-tauri/src/worktree.rs": 4,
+    "apps/desktop/src-tauri/src/worktree/mod.rs": 4,
     "packages/db/src/migrations/m031-rename-soft-delete-persist.ts": 2,
     "packages/db/src/migrations/m042-open-questions-created-by.ts": 1
   },

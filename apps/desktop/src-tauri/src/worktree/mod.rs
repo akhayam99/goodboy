@@ -543,7 +543,7 @@ mod sanitize_slug_tests {
         cases: Vec<SlugCase>,
     }
 
-    const SLUG_FIXTURE: &str = include_str!("../../../../packages/core/src/slug/slug.fixture.json");
+    const SLUG_FIXTURE: &str = include_str!("../../../../../packages/core/src/slug/slug.fixture.json");
 
     #[test]
     fn matches_the_shared_fixture_the_typescript_slugify_is_tested_against() {
