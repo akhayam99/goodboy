@@ -104,6 +104,105 @@ const buildAgent = ({
   };
 };
 
+type SubagentSeed = {
+  readonly kind: 'scout' | 'implementer' | 'tester';
+  readonly name: string;
+  readonly status: Agent['status'];
+  readonly startedMinutesAgo: number;
+  readonly endedMinutesAgo: number | null;
+};
+
+const IMPLEMENTER_ID = 'mock-resolves-agent-implementer' as AgentId;
+
+const SUBAGENT_SEEDS: ReadonlyArray<SubagentSeed> = [
+  {
+    kind: 'scout',
+    name: 'Scout current retry paths',
+    status: 'completed',
+    startedMinutesAgo: 34,
+    endedMinutesAgo: 33,
+  },
+  {
+    kind: 'scout',
+    name: 'Scout banner placement in the console',
+    status: 'completed',
+    startedMinutesAgo: 33,
+    endedMinutesAgo: 32,
+  },
+  {
+    kind: 'scout',
+    name: 'Scout stuck-delivery thresholds',
+    status: 'completed',
+    startedMinutesAgo: 32,
+    endedMinutesAgo: 31,
+  },
+  {
+    kind: 'implementer',
+    name: 'Implement the banner component',
+    status: 'completed',
+    startedMinutesAgo: 30,
+    endedMinutesAgo: 27,
+  },
+  {
+    kind: 'implementer',
+    name: 'Implement the stuck threshold hook',
+    status: 'completed',
+    startedMinutesAgo: 29,
+    endedMinutesAgo: 27,
+  },
+  {
+    kind: 'tester',
+    name: 'Test stuck-delivery banner states',
+    status: 'running',
+    startedMinutesAgo: 26,
+    endedMinutesAgo: null,
+  },
+];
+
+const subagentIdOf = ({ index }: { readonly index: number }): AgentId =>
+  `mock-resolves-agent-subagent-${index}` as AgentId;
+
+const buildImplementer = (): Agent => ({
+  id: IMPLEMENTER_ID,
+  sessionId: SESSION.id,
+  ordinal: 10,
+  name: 'Implement the stuck-delivery banner',
+  kind: 'implementer',
+  status: 'running',
+  runId: 'mock-resolves-run-implementer' as ProviderRunId,
+  startedAt: isoOf({ minutesAgo: 36 }),
+  lastViewedAt: NOW,
+  providerOverride: 'cursor',
+  modelOverride: 'kimi-k3',
+});
+
+const buildSubagent = ({
+  seed,
+  index,
+}: {
+  readonly seed: SubagentSeed;
+  readonly index: number;
+}): Agent => ({
+  id: subagentIdOf({ index }),
+  sessionId: SESSION.id,
+  parentAgentId: IMPLEMENTER_ID,
+  ordinal: 11 + index,
+  name: seed.name,
+  kind: seed.kind,
+  status: seed.status,
+  runId: `mock-resolves-run-subagent-${index}` as ProviderRunId,
+  startedAt: isoOf({ minutesAgo: seed.startedMinutesAgo }),
+  ...(seed.endedMinutesAgo === null
+    ? {}
+    : {
+        completedAt: isoOf({ minutesAgo: seed.endedMinutesAgo }),
+        lastFinishedAt: isoOf({ minutesAgo: seed.endedMinutesAgo }),
+      }),
+  lastViewedAt: NOW,
+  providerOverride: 'anthropic',
+  modelOverride: 'claude-sonnet-5',
+});
+
 const buildThread = ({
   seed,
   index,
@@ -198,7 +297,11 @@ const buildAttempt = ({
 export const seedActivityResolvesScene = (): void => {
   seedActivityRunScene();
   const state = useAppStore.getState();
-  const agents = SEEDS.map((seed, index) => buildAgent({ seed, index }));
+  const agents = [
+    ...SEEDS.map((seed, index) => buildAgent({ seed, index })),
+    buildImplementer(),
+    ...SUBAGENT_SEEDS.map((seed, index) => buildSubagent({ seed, index })),
+  ];
   const threads = SEEDS.map((seed, index) => buildThread({ seed, index }));
   const items: ReadonlyArray<ResolveQueueItemWithThread> = SEEDS.map((seed, index) => {
     const thread = threads[index];
@@ -241,6 +344,16 @@ export const seedActivityResolvesScene = (): void => {
             : [],
         ),
       ),
+      [IMPLEMENTER_ID]: {
+        kind: 'running',
+        runId: 'mock-resolves-run-implementer' as ProviderRunId,
+        startedAt: isoOf({ minutesAgo: 36 }),
+      },
+      [subagentIdOf({ index: SUBAGENT_SEEDS.length - 1 })]: {
+        kind: 'running',
+        runId: `mock-resolves-run-subagent-${SUBAGENT_SEEDS.length - 1}` as ProviderRunId,
+        startedAt: isoOf({ minutesAgo: 26 }),
+      },
     },
     selectedAgentId: {},
   });

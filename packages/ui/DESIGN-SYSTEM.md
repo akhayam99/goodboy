@@ -504,7 +504,7 @@ icon column), and sits on the canvas so the lane never shows through it.
 | `marker`   | `ring-1` in the concept tone            | the concept glyph        |
 | `mixed`    | arcs per state, 2px, 1.5px gap          | how many children        |
 
-`mixed` is the node of a group row (a batch of resolves): the caller passes
+`mixed` is the node of a group row (a batch of resolves, or the subagents of an agent): the caller passes
 `parts` (a tone and a count each) and the ring is split into arcs whose length
 is proportional to the count, one tone per state, in the order given, with a
 1.5px gap between arcs (none for a single part). The centre carries the total
@@ -550,7 +550,7 @@ working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
 
-A group row (a batch of resolves) is closed by default and draws the `mixed`
+A group row (a batch of resolves, or three or more subagents of one agent) is closed by default and draws the `mixed`
 node. Activity is newest first, so its children come out above it, on the
 group's own lane with the existing upward elbows, and fold back down into it.
 Each child fades in over 180ms from 6px below, staggered 24ms from the nearest
@@ -558,7 +558,10 @@ one; folding takes 130ms with a 10ms stagger from the farthest. The group opens
 with a click, Enter, Space or the right arrow and closes with a second click or
 the left arrow. Reduced motion skips the animation and swaps the rows at once.
 A failed child never opens the group: its arc is `danger`, the summary says
-"1 failed" in `danger` text and the need-you count includes it.
+"1 failed" in `danger` text and the need-you count includes it. A subagent group
+sits on the lane of its parent agent, above the parent, at the start of its
+earliest subagent; its children explode upward on a lane nested in that one. A
+subagent that asks you a question counts the same way (`groupChild` ask).
 
 A resolver takes its row state from the comment it fixes, not from the agent:
 the `review` reason carries the Review state and its word (Ready for you,
