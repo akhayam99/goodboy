@@ -44,6 +44,7 @@ pub async fn write_frame(stream: &mut TcpStream, body: &[u8]) -> Result<(), Brid
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
     use tokio::net::TcpListener;
 
     async fn pair() -> (TcpStream, TcpStream) {
@@ -122,9 +123,9 @@ mod tests {
             .await
             .unwrap();
 
-        let result = read_frame(&mut reader).await;
+        let result = tokio::time::timeout(Duration::from_secs(2), read_frame(&mut reader)).await;
 
-        assert!(matches!(result, Err(BridgeError::Protocol(_))));
+        assert!(matches!(result, Ok(Err(BridgeError::Protocol(_)))));
     }
 
     #[tokio::test]

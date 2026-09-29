@@ -157,9 +157,6 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
     }
 }
 
-/// Runs the Noise_XK responder handshake and authorizes the phone: a valid
-/// single-use token enrolls it, an empty payload re-dials and requires the
-/// phone's static key to be on the allow-list.
 async fn authorize_handshake(
     stream: &mut TcpStream,
     identity: &Mutex<Identity>,
