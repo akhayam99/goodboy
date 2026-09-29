@@ -83,7 +83,7 @@ import {
   listArtifactsForSession as invokeListArtifactsForSession,
 } from '../features/artifacts/artifacts';
 import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from './slices/budget';
-import type { SessionNudge } from './types';
+import type { SessionNudge } from './slices/nudges/state';
 import type { SetFn, GetFn } from './slice-types';
 import {
   deferredMaterializeNote,
