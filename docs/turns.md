@@ -573,9 +573,12 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   to the idle group, and only the user archives it.
 - **Activity in the top bar.** `chatStreams` says which chats are answering.
   `useChatActivity` turns it into a running count and an unread flag for the
-  Chat button in the top bar: a pulsing dot and "1 chat running" while any
-  reply streams, otherwise a still dot and "New reply" while any chat is
-  unread. Every chat row mirrors it (pulse while answering, dot when unread).
+  Chat button in the top bar: a pulsing info dot (the tone of the running
+  pill) and "1 chat running" while any reply streams, otherwise a still
+  warning dot (the tone of the bell badge) and "New reply" while any chat is
+  unread. The dot is positioned absolutely on the icon corner, so it never
+  shifts the label. Every chat row mirrors it with the same tones, on the
+  row's left edge.
   A chat becomes unread when its reply ends, done or failed, while the chat
   studio is not showing that chat; a reply the user stopped never does.
   Opening the chat, or archiving it, clears the mark. `unreadChatIds` lives in

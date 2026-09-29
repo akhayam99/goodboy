@@ -746,7 +746,7 @@ Ask about the workspace without starting a session. **Chat**, right of **Board**
 
 **Start work** turns a chat into work in a panel beside it: the chat's model drafts a title, a goal, what the chat established and the files it named, you edit any of it, then start a new session with that goal or send it into a session that is already running. The **Project** field searches your projects and takes none, one or several; **Add to a session** lists sessions by Active and Recent, with their projects, stage and age.
 
-The top bar shows when a chat is working: a running dot and "1 chat running" on **Chat**, and a **New reply** dot on it, and on the chat in the list, until you open the chat.
+The top bar shows when a chat is working: a pulsing dot and "1 chat running" on **Chat**, and a still **New reply** dot in the notification color on it, and on the chat in the list, until you open the chat.
 
 ### Roles
 
