@@ -3,6 +3,7 @@ import type { StarredIssue, WorkspaceId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../store';
 import { starIdentityOf, starKey } from '../../integrations/starred/starredIssueOf';
 import type { InboxRecord } from '../types';
+import { compareIsoDesc } from '../../../shared/utils/compareIsoDesc';
 
 export type StarredRow = {
   readonly issue: StarredIssue;
@@ -66,7 +67,8 @@ export const useInboxStars = ({ workspaceId, records, refreshOnOpen = true }: Pa
         })
         .sort(
           (left, right) =>
-            rank(left) - rank(right) || updatedAtOf(right).localeCompare(updatedAtOf(left)),
+            rank(left) - rank(right) ||
+            compareIsoDesc({ left: updatedAtOf(left), right: updatedAtOf(right) }),
         ),
     [starred, loadedByKey, fresh],
   );

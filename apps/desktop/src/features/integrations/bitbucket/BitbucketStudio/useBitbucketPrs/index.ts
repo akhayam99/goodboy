@@ -5,6 +5,7 @@ import {
   type BitbucketPullRequest,
   type BitbucketRepo,
 } from '../../client';
+import { compareIsoDesc } from '../../../../../shared/utils/compareIsoDesc';
 
 export type BitbucketPrGroup = Readonly<{
   key: string;
@@ -55,7 +56,7 @@ const buildBitbucketPrGroups = ({
     key,
     label: key,
     rows: (buckets.get(key) ?? []).sort((left, right) =>
-      right.updatedOn.localeCompare(left.updatedOn),
+      compareIsoDesc({ left: left.updatedOn, right: right.updatedOn }),
     ),
   }));
 };

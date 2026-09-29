@@ -9,6 +9,7 @@ import {
   type LinearIssue,
 } from '../client';
 import { linkedTaskKey, useLinkedExternalIds } from '../../hooks/useLinkedExternalIds';
+import { compareIsoDesc } from '../../../../shared/utils/compareIsoDesc';
 
 const LINEAR_PROVIDERS: ReadonlyArray<SessionExternalTaskProvider> = ['linear'];
 
@@ -75,7 +76,7 @@ export const buildIssueGroups = (
     }
   }
   const sortRows = (rows: LinearIssueRow[]): LinearIssueRow[] =>
-    rows.sort((a, b) => b.issue.updatedAt.localeCompare(a.issue.updatedAt));
+    rows.sort((a, b) => compareIsoDesc({ left: a.issue.updatedAt, right: b.issue.updatedAt }));
   return GROUP_ORDER.filter((key) => buckets.has(key)).map((key) => ({
     key,
     label: GROUP_LABEL[key],
