@@ -28,7 +28,7 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 - API keys: **never** in `tauri.conf.json`, the SQL DB, env files, or `localStorage`. Use the OS keychain through the `keyring` crate behind `secrets.rs`. There is no store plugin.
 - No `dangerousDisableAssetCspModification`. Strict CSP.
 - **Starting processes happens in Rust, behind a `#[tauri::command]`.** There is no `plugin-shell` and no binary allowlist to rely on. So the safety line is what the caller is allowed to pass. Some commands do take a binary or a shell string (`turn_spawn`'s `binary`, `provider_lifecycle_run`'s `command`). That value comes from a constant table (the provider registry, `PROVIDER_LIFECYCLE_COMMANDS` in `@goodboy/core`), never built from user or model text. A new command that starts a process reads its binary and flags from a table, or builds argv in Rust.
-- **Agent turns never go through a shell.** `turn.rs` builds argv with `build_provider_cli_args` and calls the binary directly. The side calls (`summarize.rs`, `planner.rs`) do the same. So a shell never splits anything a model writes into words. Where a shell does run, its body is the user's own text or a table constant:
+- **Agent turns never go through a shell.** `turn.rs` builds argv with `cli_args::turn_args` and calls the binary directly. The side calls (`summarize.rs`, `planner.rs`) build theirs with `cli_args::side_job_args`, which rejects any write or permission-bypass flag. So a shell never splits anything a model writes into words. Where a shell does run, its body is the user's own text or a table constant:
   - `scripts.rs`: `bash -c` on a workspace script the user wrote.
   - `terminal.rs`: the user's login shell.
   - `provider_lifecycle.rs`: install, update and login.
