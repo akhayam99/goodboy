@@ -16,8 +16,8 @@ import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
 import { OUTDATED_REASON } from '../../../actions/kinds/reviewComment';
-import type { ReviewComposeMode } from '../../../review/reviewRequest';
 import { conversationSha } from '../../conversationAgentResult';
+import type { ReviewCommentBinding, ReviewCompose } from '../../hooks/useReviewCommentController';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
 import { useResolveItemDraft } from '../../hooks/useResolveItemDraft';
 import { isResolveOnly } from '../../reviewCommentState';
@@ -36,27 +36,10 @@ import { AgentLine } from './AgentLine';
 import { ProposedChange } from './ProposedChange';
 import type { ReviewEntry } from './useReviewEntries';
 
-export type ReviewCompose = {
-  readonly threadId: string;
-  readonly mode: ReviewComposeMode;
-  readonly text: string;
-};
-
-type Props = {
+type Props = ReviewCommentBinding & {
   readonly sessionId: SessionId;
   readonly entry: ReviewEntry;
   readonly entries: ReadonlyArray<ReviewEntry>;
-  readonly compose: ReviewCompose | null;
-  readonly isEditingReply: boolean;
-  readonly isSubmitting: boolean;
-  readonly pendingActionId: string | null;
-  readonly error: string | null;
-  readonly onRun: (actionId: string) => void;
-  readonly onComposeChange: (text: string) => void;
-  readonly onComposeSubmit: () => void;
-  readonly onComposeCancel: () => void;
-  readonly onEditReply: () => void;
-  readonly onReplyDone: () => void;
   readonly onSelect: (threadId: string) => void;
 };
 

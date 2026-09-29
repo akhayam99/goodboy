@@ -34,13 +34,12 @@ import {
   reviewTargetPending,
 } from '../../../review/reviewTargetCopy';
 import { REVIEW_REQUEST_EVENT, isReviewRequest } from '../../../review/reviewRequest';
-import { useResolveAgain } from '../../hooks/useResolveAgain';
-import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
+import { useReviewCommentController } from '../../hooks/useReviewCommentController';
 import { RESOLVE_QUEUE_REFRESH_LABEL } from '../../resolveQueueCopy';
 import { REVIEW_FLOW_LABEL, REVIEW_TITLE, counterLabel } from '../../reviewFlowCopy';
 import { isPushFailure } from '../../reviewCommentState';
 import { ReviewEmptyState } from './ReviewEmptyState';
-import { ReviewComment, type ReviewCompose } from './ReviewComment';
+import { ReviewComment } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
 import { ReviewHeaderMeta } from './ReviewHeaderMeta';
 import { PushBanner } from './PushBanner';
@@ -53,12 +52,6 @@ type Props = {
   readonly noPullRequestLine?: ReactNode;
 };
 
-const ADVANCING = new Set([
-  'reviewComment.accept',
-  'reviewComment.skip',
-  'reviewComment.resolveNoReply',
-]);
-
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
   ['review.accept', ['reviewComment.accept']],
   ['review.edit', ['reviewComment.answer', 'reviewComment.edit']],
@@ -68,29 +61,11 @@ const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> 
   ['review.draft', ['reviewComment.draft']],
 ];
 
-const COULD_NOT_SEND =
-  'This comment is no longer on the pull request, so the agent cannot be asked about it';
-
 const SKELETON_ROWS = [0, 1, 2];
 
 const isEditable = (target: EventTarget | null): boolean =>
   target instanceof HTMLElement &&
   (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
-
-const nextOpenAfter = ({
-  entries,
-  threadId,
-}: {
-  readonly entries: ReadonlyArray<ReviewEntry>;
-  readonly threadId: string;
-}): string | null => {
-  const open = entries.filter((entry) => entry.group === 'open');
-  const index = open.findIndex((entry) => entry.threadId === threadId);
-  if (index === -1) {
-    return open[0]?.threadId ?? null;
-  }
-  return open[index + 1]?.threadId ?? open[index - 1]?.threadId ?? null;
-};
 
 export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const sessionId = session.id as SessionId;
@@ -105,18 +80,18 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const openDrawer = useAppStore((s) => s.openDrawer);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
-  const refuseResolveQueueItem = useAppStore((s) => s.refuseResolveQueueItem);
   const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
   const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
-  const requestAttempt = useResolveAgain({
+  const controller = useReviewCommentController({
     sessionId,
-    rows: useMemo(() => entries.map((entry) => entry.row), [entries]),
+    entries,
+    onFocus: (threadId) => select(threadId),
+    onAdvance: (threadId) => {
+      select(threadId);
+      focusRow(threadId);
+    },
   });
-  const [compose, setCompose] = useState<ReviewCompose | null>(null);
-  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
-  const [pending, setPending] = useState<{ threadId: string; actionId: string } | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
+  const { compose, editingReplyId, runVerb, setError } = controller;
   const [modelPickerRequest, setModelPickerRequest] = useState(0);
   const listRef = useRef<HTMLDivElement | null>(null);
   const hasPr = github?.pr != null;
@@ -141,10 +116,9 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
       }
       openDrawer({ kind: 'conversation', sessionId, payload: { threadId } });
-      setCompose((current) => (current?.threadId === threadId ? current : null));
-      setEditingReplyId(null);
+      controller.resetFor(threadId);
     },
-    [consumeReviewTarget, openDrawer, reviewTarget, sessionId],
+    [consumeReviewTarget, controller.resetFor, openDrawer, reviewTarget, sessionId],
   );
 
   const focusRow = useCallback((threadId: string): void => {
@@ -168,99 +142,6 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     [entries, focusRow, focusedThreadId, select],
   );
 
-  const setError = useCallback((threadId: string, message: string | null): void => {
-    setErrors((current) => {
-      const { [threadId]: _dropped, ...rest } = current;
-      return message === null ? rest : { ...rest, [threadId]: message };
-    });
-  }, []);
-
-  const runVerb = useCallback(
-    async ({ threadId, actionId }: { readonly threadId: string; readonly actionId: string }) => {
-      if (pending !== null) {
-        return;
-      }
-      const advanceTo = ADVANCING.has(actionId) ? nextOpenAfter({ entries, threadId }) : null;
-      setPending({ threadId, actionId });
-      setError(threadId, null);
-      try {
-        await runObjectAction({
-          target: { kind: 'reviewComment', sessionId, threadId },
-          actionId,
-          env,
-        });
-        if (advanceTo !== null) {
-          select(advanceTo);
-          focusRow(advanceTo);
-        }
-      } catch (caught) {
-        if (!isReportedError(caught)) {
-          setError(threadId, formatError(caught));
-        }
-      } finally {
-        setPending(null);
-      }
-    },
-    [entries, env, focusRow, pending, select, sessionId, setError],
-  );
-
-  const submitCompose = useCallback(async (): Promise<void> => {
-    if (compose === null || isSubmitting) {
-      return;
-    }
-    const entry = entries.find((candidate) => candidate.threadId === compose.threadId);
-    if (entry === undefined) {
-      setCompose(null);
-      return;
-    }
-    const text = compose.text.trim();
-    setIsSubmitting(true);
-    setError(entry.threadId, null);
-    try {
-      if (compose.mode === 'reply') {
-        await refuseResolveQueueItem({
-          sessionId,
-          itemId: entry.row.item.id,
-          revision: entry.row.thread.revision,
-          reply: text,
-        });
-        const next = nextOpenAfter({ entries, threadId: entry.threadId });
-        setCompose(null);
-        if (next !== null) {
-          select(next);
-          focusRow(next);
-        }
-        return;
-      }
-      const outcome = await requestAttempt({
-        threadId: entry.threadId,
-        instruction: text === '' ? RESOLVE_ITEM_LABEL.rereadInstruction : text,
-      });
-      if (outcome === 'missing') {
-        throw new Error(COULD_NOT_SEND);
-      }
-      if (outcome === 'started') {
-        setCompose(null);
-      }
-    } catch (caught) {
-      if (!isReportedError(caught)) {
-        setError(entry.threadId, formatError(caught));
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [
-    compose,
-    entries,
-    focusRow,
-    isSubmitting,
-    refuseResolveQueueItem,
-    requestAttempt,
-    select,
-    sessionId,
-    setError,
-  ]);
-
   useEffect(() => {
     const onRequest = (event: Event): void => {
       if (!isReviewRequest(event) || event.defaultPrevented) {
@@ -270,18 +151,6 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         return;
       }
       const { request } = event.detail;
-      if (request.kind === 'compose') {
-        event.preventDefault();
-        select(request.threadId);
-        setCompose({ threadId: request.threadId, mode: request.mode, text: '' });
-        return;
-      }
-      if (request.kind === 'edit_reply') {
-        event.preventDefault();
-        select(request.threadId);
-        setEditingReplyId(request.threadId);
-        return;
-      }
       if (request.kind === 'push') {
         event.preventDefault();
         if (!isPushBusy) {
@@ -453,19 +322,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
             sessionId={sessionId}
             entry={focused}
             entries={entries}
-            compose={compose?.threadId === focused.threadId ? compose : null}
-            isEditingReply={editingReplyId === focused.threadId}
-            isSubmitting={isSubmitting}
-            pendingActionId={pending?.threadId === focused.threadId ? pending.actionId : null}
-            error={errors[focused.threadId] ?? null}
-            onRun={(actionId) => void runVerb({ threadId: focused.threadId, actionId })}
-            onComposeChange={(text) =>
-              setCompose((current) => (current === null ? current : { ...current, text }))
-            }
-            onComposeSubmit={() => void submitCompose()}
-            onComposeCancel={() => setCompose(null)}
-            onEditReply={() => setEditingReplyId(focused.threadId)}
-            onReplyDone={() => setEditingReplyId(null)}
+            {...controller.bind(focused.threadId)}
             onSelect={select}
           />
         </ScrollFade>
