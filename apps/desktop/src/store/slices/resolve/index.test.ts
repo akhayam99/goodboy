@@ -25,6 +25,7 @@ import type { GetFn, SetFn } from './types';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
 import { createResolveThread } from './createResolveThread';
+import { reconcileResolveAttempts } from './reconcileResolveAttempts';
 import { threadOutcome } from './threadOutcome';
 import { SETTLE_CEILING_MS, markTurnActive, markTurnSettled } from '../turn/turnSettled';
 
@@ -449,6 +450,54 @@ describe('durable resolve store', () => {
       clock.mockRestore();
       markTurnSettled({ agentId: AGENT_ID });
     }
+  });
+
+  it('projects the rows it marked interrupted so the store never keeps showing them as working', async () => {
+    const live = createHarness();
+    await live.actions.loadResolveSession({ sessionId: SESSION_ID });
+    const attemptId = await live.actions.recordResolveAttempt({
+      sessionId: SESSION_ID,
+      agent,
+      provider: 'anthropic',
+      model: 'recorded-model',
+      effort: null,
+      instructions: null,
+      phase: 'running',
+      mountTarget: MOUNT_TARGET,
+    });
+    await live.actions.persistResolveTurn({
+      sessionId: SESSION_ID,
+      agent,
+      assistantText: ASSISTANT_TEXT,
+      isCandidate: true,
+      attemptId,
+    });
+    await live.actions.recordResolvePhase({
+      sessionId: SESSION_ID,
+      agentId: AGENT_ID,
+      phase: 'running',
+    });
+    expect(live.get().sessionResolveThreads[SESSION_ID]?.map((row) => row.state)).toEqual([
+      'working',
+      'working',
+    ]);
+
+    await reconcileResolveAttempts({
+      set: live.store.setState as unknown as SetFn,
+      get: live.get,
+      sessionId: SESSION_ID,
+      rows: await listResolveThreads({ db, sessionId: SESSION_ID }),
+      attempts: await listResolveAttempts({ db, sessionId: SESSION_ID }),
+    });
+
+    expect(
+      (await listResolveThreads({ db, sessionId: SESSION_ID })).map((row) => row.state),
+    ).toEqual(['failed', 'failed']);
+    expect(live.get().sessionResolveThreads[SESSION_ID]?.map((row) => row.state)).toEqual([
+      'failed',
+      'failed',
+    ]);
+    expect(live.get().sessionResolveAttempts[SESSION_ID]?.[0]?.phase).toBe('failed');
   });
 
   it('records a committed outcome that arrives after reconcile already marked the attempt interrupted', async () => {
