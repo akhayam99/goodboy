@@ -1,9 +1,10 @@
 use super::base::{base_candidates_with, default_base_name, resolve_origin_head};
 use super::error::WorktreeError;
+use super::exclude::ensure_goodboy_excluded;
 use super::git::{git, RunGit};
+use super::inspect::parse_porcelain;
 use super::slug::sanitize_slug;
 use super::types::{CreateArgs, CreatedWorktree, WorktreeInfo};
-use super::{ensure_goodboy_excluded, parse_porcelain};
 use std::path::{Path, PathBuf};
 
 #[tauri::command]

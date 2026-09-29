@@ -1,6 +1,7 @@
+use super::current_branch_name;
 use super::git::{commit_ref_exists, git};
+use super::inspect::parse_porcelain;
 use super::types::BranchIntegration;
-use super::{current_branch_name, parse_porcelain};
 use std::path::Path;
 
 fn default_base_ref(cwd: &Path) -> Option<String> {

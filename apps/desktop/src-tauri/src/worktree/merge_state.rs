@@ -1,6 +1,6 @@
 use super::base::{base_label, resolve_base_ref};
 use super::git::{commit_exists, git, is_ancestor};
-use super::parse_porcelain;
+use super::inspect::parse_porcelain;
 use serde::Serialize;
 use std::path::Path;
 

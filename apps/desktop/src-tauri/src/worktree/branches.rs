@@ -2,9 +2,9 @@ use super::base::resolve_origin_head;
 use super::create::branch_checkout_path_with;
 use super::error::WorktreeError;
 use super::git::git;
+use super::inspect::{canonical_path, parse_porcelain};
 use super::merge_state::{branch_merge_state, BranchMergeState};
 use super::types::{BranchInfo, ChangeBranchArgs, WorktreeInfo};
-use super::{canonical_path, parse_porcelain};
 use std::path::{Path, PathBuf};
 
 #[tauri::command]
