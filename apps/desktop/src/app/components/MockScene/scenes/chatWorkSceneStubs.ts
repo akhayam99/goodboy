@@ -93,10 +93,6 @@ const setSessionConfig: AppStore['setSessionConfig'] = async (sessionId, fields)
   }));
 };
 
-const setCurrentSession: AppStore['setCurrentSession'] = async (id) => {
-  useAppStore.setState({ currentSessionId: id });
-};
-
 const doNothing = async (): Promise<void> => undefined;
 
 const ensureSessionSlots: AppStore['ensureSessionSlots'] = async (sessionId) =>
@@ -106,9 +102,7 @@ export const installChatWorkStubs = (): void => {
   useAppStore.setState({
     createSession,
     setSessionConfig,
-    setCurrentSession,
     loadPhaseRunsForSession: doNothing,
     ensureSessionSlots,
-    selectAgent: doNothing,
   });
 };

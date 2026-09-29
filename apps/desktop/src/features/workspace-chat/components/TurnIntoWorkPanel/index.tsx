@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
+import { DEFAULT_SESSION_PROVIDER_PREFERENCE } from '@goodboy/core';
 import {
   Button,
   FormActions,
@@ -121,7 +122,9 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
           workspaceId: chat.workspaceId,
           projectId: null,
           sessionId: null,
-          defaultProviderId: null,
+          defaultProviderId:
+            state.workspaceOverrides?.[chat.workspaceId]?.defaultProviderId ??
+            DEFAULT_SESSION_PROVIDER_PREFERENCE.defaultProvider,
         }).roleModels,
       }),
     ),
@@ -140,7 +143,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   const [error, setError] = useState<string | null>(null);
 
   const drafterProviders = useMemo<ReadonlyArray<ProviderId>>(() => {
-    const offered = connectedProviders.filter((provider) => isChatProvider(provider));
+    const offered: ReadonlyArray<ProviderId> = connectedProviders.filter(isChatProvider);
     const current = drafter?.provider ?? chat.provider;
     return offered.includes(current) ? offered : [...offered, current];
   }, [connectedProviders, drafter?.provider, chat.provider]);
