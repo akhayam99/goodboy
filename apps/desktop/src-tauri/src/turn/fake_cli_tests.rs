@@ -7,6 +7,40 @@ use serde_json::Value;
 use super::*;
 use crate::fake_cli::FakeCli;
 
+static PARENT_ENV: Mutex<()> = Mutex::new(());
+
+struct ParentEnv {
+    saved: Vec<(&'static str, Option<std::ffi::OsString>)>,
+    _lock: std::sync::MutexGuard<'static, ()>,
+}
+
+impl ParentEnv {
+    fn set(keys: &[&'static str]) -> Self {
+        let lock = PARENT_ENV
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let saved = keys
+            .iter()
+            .map(|key| (*key, std::env::var_os(key)))
+            .collect();
+        for key in keys {
+            std::env::set_var(key, "parent-value");
+        }
+        Self { saved, _lock: lock }
+    }
+}
+
+impl Drop for ParentEnv {
+    fn drop(&mut self) {
+        for (key, value) in &self.saved {
+            match value {
+                Some(value) => std::env::set_var(key, value),
+                None => std::env::remove_var(key),
+            }
+        }
+    }
+}
+
 const WAIT: Duration = Duration::from_secs(30);
 
 #[derive(Clone)]
@@ -408,6 +442,7 @@ fn process_is_gone(pid: &str) -> bool {
 
 #[test]
 fn a_turn_that_blocks_push_carries_the_push_block_and_no_git_tokens() {
+    let _env = ParentEnv::set(&["GH_TOKEN", "GITHUB_TOKEN"]);
     let run = Run::new("ok");
     run.spawn("claude", PROMPT).unwrap();
     run.turn_events_until_end();
@@ -423,6 +458,7 @@ fn a_turn_that_blocks_push_carries_the_push_block_and_no_git_tokens() {
 
 #[test]
 fn a_spawned_cli_never_sees_the_nested_session_marker() {
+    let _env = ParentEnv::set(&["CLAUDECODE"]);
     let run = Run::new("ok");
     run.spawn("claude", PROMPT).unwrap();
     run.turn_events_until_end();

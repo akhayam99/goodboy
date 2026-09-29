@@ -1,7 +1,19 @@
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::OnceLock;
 
 static STAGED: AtomicU64 = AtomicU64::new(0);
+static SHARED: OnceLock<PathBuf> = OnceLock::new();
+
+fn shared_copy() -> &'static Path {
+    SHARED.get_or_init(|| {
+        let root =
+            std::env::temp_dir().join(format!("goodboy-fake-cli-shared-{}", std::process::id()));
+        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/fake-cli");
+        copy_tree(&source, &root);
+        root
+    })
+}
 
 pub(crate) struct FakeCli {
     root: PathBuf,
@@ -14,8 +26,13 @@ impl FakeCli {
             std::process::id(),
             STAGED.fetch_add(1, Ordering::Relaxed)
         ));
-        let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/fake-cli");
-        copy_tree(&source, &root.join("bin"));
+        let bin = root.join("bin");
+        std::fs::create_dir_all(&bin).expect("create the bin dir");
+        for entry in std::fs::read_dir(shared_copy()).expect("read the shared copy") {
+            let entry = entry.expect("read a shared entry");
+            std::os::unix::fs::symlink(entry.path(), bin.join(entry.file_name()))
+                .expect("link a fixture");
+        }
         std::fs::create_dir_all(root.join("work")).expect("create the work dir");
         std::fs::write(root.join("bin/mode"), mode).expect("write the mode file");
         Self { root }
