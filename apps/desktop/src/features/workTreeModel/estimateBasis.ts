@@ -2,6 +2,7 @@ import type { DurationEstimate, DurationUnit, EstimateKey, EstimateProgress } fr
 import { PROVIDER_IDS, type StepSize } from '@goodboy/types';
 import { EFFORT_LABEL, modelLabel } from '../chat/utils/chat-constants';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
+import { providerIdOf } from '../../shared/utils/providerIdOf';
 import { ROLE_LABEL } from '../session/agent-kind';
 
 const WINDOW_NOTE = 'last 90 days. Machine time only.';
@@ -31,7 +32,8 @@ const routeName = ({ key }: KeyParams): string | null => {
     return providerName({ provider: key.provider });
   }
   const effort = effortName({ effort: key.effort });
-  return effort === null ? modelLabel(key.model) : `${modelLabel(key.model)} ${effort}`;
+  const model = modelLabel(key.model, providerIdOf({ value: key.provider }));
+  return effort === null ? model : `${model} ${effort}`;
 };
 
 const UNIT_NAME: Record<DurationUnit, { readonly one: string; readonly many: string }> = {
@@ -59,7 +61,10 @@ const basisScope = ({ estimate, key, unit }: Params): string => {
   const steps = stepsOf({ count: estimate.sampleCount, role, unit });
   const route = routeName({ key });
   const provider = providerName({ provider: key.provider }) ?? 'one provider';
-  const model = key.model === null ? 'this model' : modelLabel(key.model);
+  const model =
+    key.model === null
+      ? 'this model'
+      : modelLabel(key.model, providerIdOf({ value: key.provider }));
   switch (estimate.tier) {
     case 'exact':
       return route === null ? steps : `${steps} on ${route}`;
@@ -121,7 +126,10 @@ type ScopeParams = KeyParams & {
 
 const progressScope = ({ key, progress }: ScopeParams): string => {
   const route = routeName({ key });
-  const model = key.model === null ? 'this model' : modelLabel(key.model);
+  const model =
+    key.model === null
+      ? 'this model'
+      : modelLabel(key.model, providerIdOf({ value: key.provider }));
   const provider = providerName({ provider: key.provider }) ?? 'one provider';
   switch (progress.tier) {
     case 'exact':

@@ -58,7 +58,7 @@ export const ArtifactGenerationShell = ({ sessionId, generation }: Props) => {
               items={[
                 provider === null ? null : <span key="provider">{provider}</span>,
                 generation.model === null ? null : (
-                  <span key="model">{modelLabel(generation.model)}</span>
+                  <span key="model">{modelLabel(generation.model, generation.provider)}</span>
                 ),
                 generation.startedAt === null ? null : (
                   <span key="started" className="tabular-nums">

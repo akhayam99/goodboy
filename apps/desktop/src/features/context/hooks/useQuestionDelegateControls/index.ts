@@ -81,7 +81,11 @@ export const useQuestionDelegateControls = ({
       provider: resolved.providerId,
       model: resolved.model,
       effort:
-        clampEffortForModel({ model: resolved.model, effort: requestedEffort }) ?? requestedEffort,
+        clampEffortForModel({
+          model: resolved.model,
+          effort: requestedEffort,
+          provider: resolved.providerId,
+        }) ?? requestedEffort,
     };
   }, [limitContext, sessionProvider, taskModels]);
 

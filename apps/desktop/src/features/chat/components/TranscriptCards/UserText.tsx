@@ -132,7 +132,7 @@ const ProviderFootnote = ({ provider, model }: ProviderFootnoteProps) => {
   return (
     <span
       className="inline-flex items-center gap-1"
-      title={`Sent to ${label}${model ? ` · ${modelLabel(model)}` : ''}`}
+      title={`Sent to ${label}${model ? ` · ${modelLabel(model, provider)}` : ''}`}
     >
       <Icon size={11} className="text-muted-foreground" aria-hidden />
       <span>{label}</span>

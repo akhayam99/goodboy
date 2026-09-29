@@ -32,7 +32,7 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
       ...value,
       provider,
       model,
-      effort: clampEffortForModel({ model, effort: value.effort }) ?? value.effort,
+      effort: clampEffortForModel({ model, effort: value.effort, provider }) ?? value.effort,
     });
   };
 
@@ -60,7 +60,12 @@ export const AgentSpawnConfig = ({ value, onChange, disabled, className, role }:
           onChange({
             ...value,
             model,
-            effort: clampEffortForModel({ model, effort: value.effort }) ?? value.effort,
+            effort:
+              clampEffortForModel({
+                model,
+                effort: value.effort,
+                provider: value.provider === '' ? null : value.provider,
+              }) ?? value.effort,
           })
         }
       />

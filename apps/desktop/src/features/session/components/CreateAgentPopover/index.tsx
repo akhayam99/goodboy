@@ -253,7 +253,12 @@ export const CreateAgentPopover = ({ sessionId, className, onSpawned, openEvent 
                   return {
                     ...base,
                     model,
-                    effort: clampEffortForModel({ model, effort: base.effort }) ?? base.effort,
+                    effort:
+                      clampEffortForModel({
+                        model,
+                        effort: base.effort,
+                        provider: base.provider,
+                      }) ?? base.effort,
                   };
                 })
               }

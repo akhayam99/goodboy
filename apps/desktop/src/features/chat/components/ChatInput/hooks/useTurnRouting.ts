@@ -27,6 +27,11 @@ type Params = {
   readonly session: Session;
 };
 
+type RealignEffortParams = {
+  readonly model: string;
+  readonly provider: ProviderId;
+};
+
 export const useTurnRouting = ({ session }: Params) => {
   const storeSetSessionConfig = useAppStore((s) => s.setSessionConfig);
   const storeSetAgentConfig = useAppStore((s) => s.setAgentConfig);
@@ -153,7 +158,8 @@ export const useTurnRouting = ({ session }: Params) => {
     provider: effectiveProvider,
     modelId: effectiveStoredId,
   });
-  const effectiveEffort = clampEffortForModel({ model: effectiveModel, effort }) ?? effort;
+  const effectiveEffort =
+    clampEffortForModel({ model: effectiveModel, effort, provider: effectiveProvider }) ?? effort;
   const effectiveSelection = useMemo(() => {
     const stored = resolveStoredModelSelection({
       provider: effectiveProvider,
@@ -266,8 +272,8 @@ export const useTurnRouting = ({ session }: Params) => {
   );
 
   const realignEffort = useCallback(
-    (model: string) => {
-      const clamped = clampEffortForModel({ model, effort }) ?? effort;
+    ({ model, provider }: RealignEffortParams) => {
+      const clamped = clampEffortForModel({ model, effort, provider }) ?? effort;
       if (clamped === effort) {
         return;
       }
@@ -284,7 +290,10 @@ export const useTurnRouting = ({ session }: Params) => {
       setIsPicked(true);
       setSelectedProviderState(id);
       setSelectedModelState(null);
-      realignEffort(id === defaultProvider ? defaultModel : getDefaultTurnModel({ id }));
+      realignEffort({
+        model: id === defaultProvider ? defaultModel : getDefaultTurnModel({ id }),
+        provider: id,
+      });
       if (selectedAgentId) {
         void storeSetAgentConfig(session.id, selectedAgentId, {
           providerOverride: id,
@@ -312,9 +321,9 @@ export const useTurnRouting = ({ session }: Params) => {
         return;
       }
       setSelectedModel(id);
-      realignEffort(id);
+      realignEffort({ model: id, provider: effectiveProvider });
     },
-    [allowOverride, setSelectedModel, realignEffort],
+    [allowOverride, setSelectedModel, realignEffort, effectiveProvider],
   );
 
   const onResetTurnOverride = useCallback(() => {
@@ -330,7 +339,11 @@ export const useTurnRouting = ({ session }: Params) => {
     setSelectedProviderState(referenceProvider);
     setSelectedModelState(referenceModel);
     const alignedEffort =
-      clampEffortForModel({ model: referenceModel, effort: referenceEffort }) ?? referenceEffort;
+      clampEffortForModel({
+        model: referenceModel,
+        effort: referenceEffort,
+        provider: referenceProvider,
+      }) ?? referenceEffort;
     setEffortState(alignedEffort);
     void storeSetAgentConfig(session.id, selectedAgentId, {
       providerOverride: referenceProvider,

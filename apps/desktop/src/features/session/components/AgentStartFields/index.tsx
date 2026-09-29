@@ -136,7 +136,11 @@ export const AgentStartFields = ({
                 ...effective,
                 model,
                 effort:
-                  clampEffortForModel({ model, effort: effective.effort }) ?? effective.effort,
+                  clampEffortForModel({
+                    model,
+                    effort: effective.effort,
+                    provider: effective.provider,
+                  }) ?? effective.effort,
               })
             }
           />

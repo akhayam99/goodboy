@@ -100,9 +100,18 @@ export const TaskModelRow = ({
         model={model}
         effort={{
           editable: true,
-          value: clampEffortForModel({ model: effortModel, effort: effortValue }) ?? effortValue,
+          value:
+            clampEffortForModel({
+              model: effortModel,
+              effort: effortValue,
+              provider: providerId,
+            }) ?? effortValue,
           onChange: (effort) => {
-            const applied = clampEffortForModel({ model: pendingModel.current, effort });
+            const applied = clampEffortForModel({
+              model: pendingModel.current,
+              effort,
+              provider: pendingProvider.current,
+            });
             onChange(
               withFallback({
                 providerId: pendingProvider.current,
@@ -152,7 +161,11 @@ export const TaskModelRow = ({
           const carried =
             preference?.effort == null
               ? null
-              : clampEffortForModel({ model: nextModel, effort: preference.effort });
+              : clampEffortForModel({
+                  model: nextModel,
+                  effort: preference.effort,
+                  provider: pendingProvider.current,
+                });
           pendingModel.current = nextModel;
           onChange(
             withFallback({

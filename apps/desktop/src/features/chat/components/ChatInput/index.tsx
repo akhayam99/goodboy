@@ -612,6 +612,7 @@ export const ChatInput = ({ session, providerDisconnected = false }: Props) => {
                   overridden={routing.isOverridden}
                   defaultSummary={`${PROVIDER_LABEL[routing.referenceProvider]} · ${modelLabel(
                     routing.referenceModel,
+                    routing.referenceProvider,
                   )}`}
                   budget={<ProviderUsagePill provider={routing.effectiveProvider} />}
                   onProvider={(next) => {

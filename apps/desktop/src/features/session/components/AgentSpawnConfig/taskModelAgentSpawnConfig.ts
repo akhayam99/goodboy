@@ -33,6 +33,10 @@ export const taskModelAgentSpawnConfig = ({
     provider: taskModel.providerId,
     model: taskModel.model,
     effort:
-      clampEffortForModel({ model: taskModel.model, effort: requestedEffort }) ?? requestedEffort,
+      clampEffortForModel({
+        model: taskModel.model,
+        effort: requestedEffort,
+        provider: taskModel.providerId,
+      }) ?? requestedEffort,
   };
 };
