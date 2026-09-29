@@ -14,9 +14,7 @@ export const ReviewSelectionBar = ({ count, onClear, onFix }: Props) => (
     aria-label={REVIEW_LAUNCH_LABEL.selectionBar}
     className="mb-1 flex min-w-0 items-center gap-1.5 rounded-lg bg-elevated py-1 pl-2.5 pr-1 ring-1 ring-border-soft motion-safe:animate-studio-in"
   >
-    <span className="whitespace-nowrap text-label font-semibold text-foreground">
-      {selectedLabel({ count })}
-    </span>
+    <span className="whitespace-nowrap text-row text-foreground">{selectedLabel({ count })}</span>
     <Button size="sm" variant="ghost" onClick={onClear}>
       {REVIEW_LAUNCH_LABEL.clearSelection}
     </Button>

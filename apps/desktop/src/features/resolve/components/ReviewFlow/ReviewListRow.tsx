@@ -1,5 +1,5 @@
 import { Check } from 'lucide-react';
-import { WorkNode, cn, inlineMarkdownText } from '@goodboy/ui';
+import { Tooltip, WorkNode, cn, inlineMarkdownText } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
@@ -29,6 +29,7 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
   const body = note === null ? null : inlineMarkdownText({ text: note.body });
   const title = body === null ? RESOLVE_COMMENT_UNAVAILABLE : firstSentence({ text: body });
   const file = fileOf({ path: note?.path ?? null });
+  const selectLabel = `${REVIEW_LAUNCH_LABEL.selectRow} ${note?.author ?? ''}`.trim();
   return (
     <div className="group/review-row relative min-w-0">
       <button
@@ -84,32 +85,36 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
         </span>
       </button>
       {selection !== null && (
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={selection.isChecked}
-          aria-label={`${REVIEW_LAUNCH_LABEL.selectRow} ${note?.author ?? ''}`.trim()}
-          data-select-row={entry.threadId}
-          onClick={selection.onToggle}
-          className={cn(
-            'absolute left-2.5 top-2 flex size-5 items-center justify-center rounded-md',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+        <Tooltip
+          content={selectLabel}
+          anchorClassName={cn(
+            'absolute left-2.5 top-2 flex size-5',
             selection.isChecked || selection.isSelecting
               ? 'opacity-100'
               : 'opacity-0 group-focus-within/review-row:opacity-100 group-hover/review-row:opacity-100',
           )}
         >
-          <span
-            className={cn(
-              'flex size-4 items-center justify-center rounded-md border motion-safe:transition-colors',
-              selection.isChecked
-                ? 'border-primary bg-primary text-on-tone'
-                : 'border-border bg-background hover:border-foreground',
-            )}
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={selection.isChecked}
+            aria-label={selectLabel}
+            data-select-row={entry.threadId}
+            onClick={selection.onToggle}
+            className="flex size-5 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
           >
-            {selection.isChecked && <Check size={11} strokeWidth={3} aria-hidden />}
-          </span>
-        </button>
+            <span
+              className={cn(
+                'flex size-4 items-center justify-center rounded-md border motion-safe:transition-colors',
+                selection.isChecked
+                  ? 'border-primary bg-primary text-on-tone'
+                  : 'border-border bg-background hover:border-foreground',
+              )}
+            >
+              {selection.isChecked && <Check size={11} strokeWidth={3} aria-hidden />}
+            </span>
+          </button>
+        </Tooltip>
       )}
       {onFix !== null && (
         <button
