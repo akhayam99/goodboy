@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import type {
   Agent,
   AgentId,
@@ -41,7 +42,7 @@ const DETERMINISTIC_START_FAILURES: ReadonlyArray<RegExp> = [
 const nowIso = (): IsoDateTime => new Date().toISOString() as IsoDateTime;
 
 const isTransientStartFailure = (error: unknown): boolean => {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = formatError(error);
   return !DETERMINISTIC_START_FAILURES.some((pattern) => pattern.test(message));
 };
 
@@ -186,7 +187,7 @@ const handleChildStartFailure = async ({
   handoff,
   error,
 }: StartChildParams & { readonly error: unknown }): Promise<void> => {
-  const message = error instanceof Error ? error.message : String(error);
+  const message = formatError(error);
   const failures = get().clusterStartAttempts[childId] ?? 1;
   const stepFailures = (get().clusterStepStartAttempts[containerId] ?? 0) + 1;
   set((s) => ({

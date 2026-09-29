@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getAgentDurations,
@@ -76,7 +77,7 @@ const EMPTY_LOADING = {
 const EMPTY_RESULT = { data: null, error: null };
 
 const toError = ({ value }: ToErrorParams): Error =>
-  value instanceof Error ? value : new Error(String(value));
+  value instanceof Error ? value : new Error(formatError(value));
 
 export const useImpactMetrics = ({ workspaceId, windowId }: Params): ImpactMetrics => {
   const generation = useRef(0);

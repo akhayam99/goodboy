@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { useEffect, useState } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { invokePermissionAuditList, type RecentDecision } from '../../permissions';
@@ -37,7 +38,7 @@ export const useRecentDecisions = ({ sessionIds }: Params): RecentDecisions => {
       })
       .catch((cause: unknown) => {
         if (!isCancelled) {
-          setError(cause instanceof Error ? cause.message : String(cause));
+          setError(formatError(cause));
         }
       })
       .finally(() => {

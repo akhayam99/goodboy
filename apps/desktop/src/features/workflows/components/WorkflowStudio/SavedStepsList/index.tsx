@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, EmptyState } from '@goodboy/ui';
+import { Button, EmptyState, formatError } from '@goodboy/ui';
 import { DEFAULT_SESSION_PROVIDER_PREFERENCE, recommendedModelForRole } from '@goodboy/core';
 import type { ProviderId, WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
@@ -33,8 +33,7 @@ type Props = {
   readonly tabs: ReactNode;
 };
 
-const errorText = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
+const errorText = (error: unknown): string => formatError(error);
 
 export const SavedStepsList = ({ workspaceId, connectedProviders, tabs }: Props) => {
   const groups = useSavedSteps({ workspaceId });

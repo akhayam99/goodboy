@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import {
   Button,
   FormActions,
+  formatError,
   IconButton,
   Input,
   ScrollFade,
@@ -151,7 +152,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         sessionId: started,
       });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : String(failure));
+      setError(formatError(failure));
       setIsStarting(false);
     }
   };

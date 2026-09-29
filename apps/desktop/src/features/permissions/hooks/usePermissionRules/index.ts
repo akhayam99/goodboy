@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PermissionRule, WorkspaceId } from '@goodboy/types';
 import {
@@ -26,7 +27,7 @@ export type PermissionRules = {
 };
 
 const toError = (value: unknown): Error =>
-  value instanceof Error ? value : new Error(String(value));
+  value instanceof Error ? value : new Error(formatError(value));
 
 export const usePermissionRules = ({ workspaceId }: Params): PermissionRules => {
   const [rules, setRules] = useState<ReadonlyArray<PermissionRule>>([]);

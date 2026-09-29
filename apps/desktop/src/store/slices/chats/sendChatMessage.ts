@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import type {
   ChatId,
   ChatMessage,
@@ -155,7 +156,7 @@ export const sendChatMessage =
                 ),
             });
     } catch (error) {
-      outcome = { status: 'failed', error: error instanceof Error ? error.message : String(error) };
+      outcome = { status: 'failed', error: formatError(error) };
     }
     await finishReply({ set, get, chatId, messageId: reply.id, outcome });
   };

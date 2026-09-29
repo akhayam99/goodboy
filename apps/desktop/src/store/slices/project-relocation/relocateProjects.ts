@@ -1,3 +1,4 @@
+import { formatError } from '@goodboy/ui';
 import { updateProjectIdentity } from '@goodboy/db';
 import type { IsoDateTime } from '@goodboy/types';
 import { projectRelocate } from '../../../features/workspace/projectRelocation';
@@ -87,7 +88,7 @@ export const relocateProjects = (set: SetFn, get: GetFn) => {
       set({
         projectRelocationCompleted: completed,
         projectRelocationPhase: 'error',
-        projectRelocationError: error instanceof Error ? error.message : String(error),
+        projectRelocationError: formatError(error),
       });
     }
   };

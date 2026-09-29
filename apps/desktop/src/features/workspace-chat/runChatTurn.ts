@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { createJsonLineAssembler, type ParseContext } from '@goodboy/core';
+import { formatError } from '@goodboy/ui';
 import type { ChatId, IsoDateTime, ProviderId, ProviderRunId } from '@goodboy/types';
 import { parseProviderLine } from '../chat/parseProviderLine';
 import { chatReadPaths } from './chatReadPath';
@@ -41,23 +42,6 @@ type ChatEnvelope =
       readonly stderr: string;
     }
   | { readonly runId: string; readonly type: 'error'; readonly message: string };
-
-type ErrorParams = {
-  readonly error: unknown;
-};
-
-const messageOf = ({ error }: ErrorParams): string => {
-  if (error instanceof Error) {
-    return error.message;
-  }
-  if (typeof error === 'object' && error !== null) {
-    const message: unknown = Reflect.get(error, 'message');
-    if (typeof message === 'string') {
-      return message;
-    }
-  }
-  return String(error);
-};
 
 type LineParams = {
   readonly line: string;
@@ -187,7 +171,7 @@ export const runChatTurn = async ({
         });
       })
       .catch((error: unknown) =>
-        settle({ outcome: { status: 'failed', error: messageOf({ error }) } }),
+        settle({ outcome: { status: 'failed', error: formatError(error) } }),
       );
   });
 };

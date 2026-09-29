@@ -373,7 +373,7 @@ const failureLabel = (error: unknown): string => {
   if (error instanceof Error && error.message.includes('timed out')) {
     return 'the orchestrator timed out after 120s';
   }
-  return error instanceof Error ? error.message : String(error);
+  return formatError(error);
 };
 
 type AppendParams = {
