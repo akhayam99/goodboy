@@ -7,7 +7,8 @@ const FEATURES_PATH = resolve(ROOT_DIRECTORY, 'FEATURES.md');
 const CHANGELOG_PATH = resolve(ROOT_DIRECTORY, 'CHANGELOG.md');
 const RELEASES_DIRECTORY = resolve(ROOT_DIRECTORY, 'website/src/data/releases');
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
-const IMAGE_PATTERN = /srcset="\.\/docs\/readme\/([a-z0-9-]+)-dark\.webp"/;
+const IMAGE_PATTERN =
+  /srcset="(?:\.\/docs\/readme|https:\/\/raw\.githubusercontent\.com\/akhayam99\/goodboy-media\/main\/features)\/([a-z0-9-]+)-dark\.webp"/;
 const AREA_PATTERN = /<!-- gb area=([a-z-]+)/;
 const TABLE_ROW_PATTERN = /^\|(.+)\|(.+)\|$/;
 const TABLE_RULE_PATTERN = /^\|[\s|-]+\|$/;

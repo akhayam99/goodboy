@@ -213,10 +213,51 @@ The README, `FEATURES.md` and the website are captured from these scenes. The
 branch `hl/fix-duplicate-credit`, payments-api #318 and notify-relay #57, with
 ledger-core only read), and `scenes/brand/canon.ts` holds the names and numbers
 every picture shares. Add `&brand=1` to skip onboarding and hide the toasts a
-browser tab raises. The README and `FEATURES.md` images live in `docs/readme/`
-as dark and light `.webp` pairs, and the website's in `website/public/img/`. To
+browser tab raises. The README images live in `docs/readme/`, the
+`FEATURES.md` ones in the public
+[goodboy-media](https://github.com/akhayam99/goodboy-media) repo, both as dark
+and light `.webp` pairs, and the website's in `website/public/img/`. To
 crop a short surface, use a `--window-size` height shorter than 900. The layout
 keeps its own proportions and the footer stays pinned.
+
+## Pictures for FEATURES.md
+
+Every figure in `FEATURES.md` sits in the same stage frame as the website: the
+teal-to-dark gradient card in dark, the pale gray one in light, with the app
+clip inside it. `scripts/feature-shots.mjs` captures a scene in both themes,
+clips it, draws the frame around it and writes
+`<name>-{dark,light}.webp` into `features/` of a goodboy-media checkout,
+`../goodboy-media` next to this repo or the folder `GOODBOY_MEDIA_DIR` names:
+
+```bash
+pnpm features:shots --scene 'board-shell&brand=1' --probe '[role="region"]' --window 1280x720
+pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector 'main' --window 1280x600
+```
+
+- `--probe` prints the box, classes and text of the matching elements, so you
+  can pick a `--selector` or a `--clip x,y,w,h` without opening a browser.
+- The clip renders at `--scale 3` (default) and the frame is drawn at the same
+  device scale, so the app pixels are never resampled.
+- The frame's corners are transparent, so one file reads on both GitHub
+  themes. The dark and light files still follow the OS through `<picture>`.
+- The script prints the frame's css width. A frame narrower than 880 gets
+  `width="<that width>"` on its `<img>`, or GitHub enlarges it.
+- `GOODBOY_SHOT_URL` or `--base` points at the dev server
+  (default `http://localhost:5230`).
+- With several captures running against one dev server, a cold scene can take
+  more than the default 5 seconds and the file shows the "starting up" screen
+  (about 40 KB). Pass `--wait 30000`, capture one theme per run with
+  `--themes dark`, and look at every file before keeping it.
+- Put `%20` for spaces inside `--scene`, or Chrome never loads the page.
+
+`FEATURES.md` points at each file with its raw URL,
+`https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/<name>-dark.webp`.
+Pictures live outside this repo so each reshoot does not grow its history:
+push the new files to goodboy-media first, then the text here. Reusing a name
+replaces the picture in place, within the five minutes GitHub caches it.
+
+A figure shows exactly the feature named by the heading it sits under, and its
+alt text names what is visible.
 
 ## Landing crops
 
