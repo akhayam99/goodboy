@@ -2,25 +2,31 @@ import { useEffect, useMemo, useState } from 'react';
 import { Play } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, DrawerColumn } from '@goodboy/ui';
-import type { ChatId, ChatMessage, ChatMessageId, ChatSummary, WorkspaceId } from '@goodboy/types';
+import type {
+  ChatId,
+  ChatMessage,
+  ChatMessageId,
+  ChatSummary,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { sessionPlace, useAppStore } from '../../../../store';
-import type { ChatHandoff } from '../../chatHandoff';
-import { chatModelLabel } from '../../chatModelLabel';
+import { useChatSessions } from '../../hooks/useChatSessions';
 import { chatSuggestions } from '../../chatSuggestions';
-import { defaultChatModel, type ChatModelChoice } from '../../defaultChatModel';
+import type { ChatRouting } from '../../chatRouting';
+import { defaultChatModel } from '../../defaultChatModel';
 import { ChatComposer } from '../ChatComposer';
 import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
 import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
+import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly chat: ChatSummary | null;
   readonly onCreated: (chatId: ChatId) => void;
-  readonly handoffs: ReadonlyArray<ChatHandoff>;
-  readonly onHandoff: (handoff: ChatHandoff) => void;
 };
 
 type WorkRequest = {
@@ -32,7 +38,7 @@ const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
 export const NEW_CHAT_HEADING = 'New chat';
 
-export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: Props) => {
+export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   const chatId = chat?.id ?? null;
   const workspaceName = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
@@ -63,8 +69,9 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
   const stopChatReply = useAppStore((state) => state.stopChatReply);
   const setChatModel = useAppStore((state) => state.setChatModel);
   const navigate = useAppStore((state) => state.navigate);
-  const [draftModel, setDraftModel] = useState<ChatModelChoice | null>(null);
+  const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const [work, setWork] = useState<WorkRequest | null>(null);
+  const linked = useChatSessions({ chatId });
 
   useEffect(() => {
     if (chatId === null || messages !== undefined) {
@@ -73,12 +80,12 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
     void loadChatMessages({ chatId });
   }, [chatId, messages, loadChatMessages]);
 
-  const model = useMemo<ChatModelChoice>(() => {
+  const model = useMemo<ChatRouting>(() => {
     if (chat !== null) {
-      return { provider: chat.provider, model: chat.model };
+      return { provider: chat.provider, model: chat.model, effort: chat.effort };
     }
-    return draftModel ?? defaultChatModel({ connected });
-  }, [chat, draftModel, connected]);
+    return draftRouting ?? { ...defaultChatModel({ connected }), effort: null };
+  }, [chat, draftRouting, connected]);
 
   const send = async (text: string): Promise<void> => {
     if (chatId !== null) {
@@ -86,16 +93,29 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
       return;
     }
     const created = await createChat({ workspaceId, provider: model.provider, model: model.model });
+    if (model.effort !== null) {
+      await setChatModel({
+        chatId: created,
+        provider: model.provider,
+        model: model.model,
+        effort: model.effort,
+      });
+    }
     onCreated(created);
     await sendChatMessage({ chatId: created, content: text });
   };
 
-  const pickModel = (choice: ChatModelChoice): void => {
+  const pickRouting = (choice: ChatRouting): void => {
     if (chatId === null) {
-      setDraftModel(choice);
+      setDraftRouting(choice);
       return;
     }
-    void setChatModel({ chatId, provider: choice.provider, model: choice.model });
+    void setChatModel({
+      chatId,
+      provider: choice.provider,
+      model: choice.model,
+      effort: choice.effort,
+    });
   };
 
   const shown = messages ?? NO_MESSAGES;
@@ -104,9 +124,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
   );
   const openWork = (anchorMessageId: ChatMessageId | null): void =>
     setWork((current) => ({ anchorMessageId, key: (current?.key ?? 0) + 1 }));
-  const openSession = (handoff: ChatHandoff): void =>
-    navigate({ to: sessionPlace({ sessionId: handoff.sessionId }) });
-  const modelLabel = chatModelLabel({ provider: model.provider, model: model.model });
+  const openSession = (sessionId: SessionId): void => navigate({ to: sessionPlace({ sessionId }) });
 
   const main = (
     <section
@@ -115,10 +133,11 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
     >
       <ChatHeader
         title={chat?.title ?? NEW_CHAT_HEADING}
-        workspaceName={workspaceName}
-        projectCount={projectNames.length}
-        provider={model.provider}
-        modelLabel={modelLabel}
+        sessions={
+          linked.stage === null ? null : (
+            <ChatSessionsChip entries={linked.entries} stage={linked.stage} onOpen={openSession} />
+          )
+        }
         action={
           chat === null ? null : (
             <Button
@@ -148,15 +167,15 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
           messages={shown}
           workspaceName={workspaceName}
           onStartWork={openWork}
-          handoffs={handoffs}
-          onOpenHandoff={openSession}
+          sessions={linked.entries}
+          onOpenSession={openSession}
         />
       )}
       <div className="shrink-0 px-6 pb-3.5 pt-1.5">
         <ChatComposer
           placeholder={`Ask anything about ${workspaceName}`}
-          provider={model.provider}
-          model={model.model}
+          routing={model}
+          projectCount={projectNames.length}
           isStreaming={stream !== undefined}
           isStopping={stream?.isStopping === true}
           isAutoFocused={chatId === null}
@@ -166,7 +185,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
               void stopChatReply({ chatId });
             }
           }}
-          onModel={pickModel}
+          onRouting={pickRouting}
         />
       </div>
     </section>
@@ -186,10 +205,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
             messages={shown}
             anchorMessageId={work.anchorMessageId}
             onClose={() => setWork(null)}
-            onDone={(handoff) => {
-              setWork(null);
-              onHandoff(handoff);
-            }}
+            onDone={() => setWork(null)}
           />
         )
       }

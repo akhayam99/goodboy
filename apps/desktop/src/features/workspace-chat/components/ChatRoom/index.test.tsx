@@ -34,6 +34,9 @@ const { store, summarize } = vi.hoisted(() => ({
       { id: 'anthropic', connection: 'connected' },
       { id: 'opencode', connection: 'connected' },
     ],
+    cliRequirements: [] as ReadonlyArray<unknown>,
+    settings: {} as Record<string, string>,
+    chatLinks: {} as Record<string, ReadonlyArray<unknown>>,
     chatMessages: {} as Record<string, ReadonlyArray<unknown>>,
     chatStreams: {} as Record<string, unknown>,
     loadChatMessages: vi.fn(async () => undefined),
@@ -76,6 +79,7 @@ vi.mock('../../activeChatBackend', () => ({
   activeChatBackend: { summarizeForWork: summarize },
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { ChatRoom } from './index';
 
 type RoomParams = {
@@ -84,15 +88,7 @@ type RoomParams = {
 };
 
 const renderRoom = ({ chat, onCreated = vi.fn() }: RoomParams) =>
-  render(
-    <ChatRoom
-      workspaceId={WORKSPACE_ID}
-      chat={chat}
-      onCreated={onCreated}
-      handoffs={[]}
-      onHandoff={vi.fn()}
-    />,
-  );
+  render(<ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={onCreated} />);
 
 const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
 const CHAT_ID = 'chat-consent' as ChatId;
@@ -132,8 +128,41 @@ const messageOf = ({ role, content, status, reads = [] }: MessageSeed): ChatMess
   updatedAt: AT,
 });
 
+const SESSION_CONSENT = {
+  id: 'session-consent',
+  workspaceId: WORKSPACE_ID,
+  goal: 'Ask for consent again when the policy changes',
+  updatedAt: AT,
+};
+
+const SESSION_REFUNDS = {
+  id: 'session-refunds',
+  workspaceId: WORKSPACE_ID,
+  goal: 'Refund flow for storefront-web',
+  updatedAt: AT,
+};
+
+const LINK_NEW = {
+  id: 'link-new',
+  chatId: CHAT_ID,
+  sessionId: 'session-consent',
+  messageId: 'assistant-done',
+  kind: 'new',
+  createdAt: AT,
+};
+
+const LINK_ADD = {
+  id: 'link-add',
+  chatId: CHAT_ID,
+  sessionId: 'session-refunds',
+  messageId: null,
+  kind: 'add',
+  createdAt: AT,
+};
+
 beforeEach(() => {
   store.chatMessages = {};
+  store.chatLinks = {};
   store.chatStreams = {};
   store.sessions = [];
   store.stages = {};
@@ -471,6 +500,114 @@ describe('ChatRoom', () => {
     expect(copy.classList.contains('text-muted-foreground')).toBe(false);
   });
 
+  it('keeps the header to the title and Start work', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    const header = screen.getByRole('banner');
+    expect(within(header).getByRole('heading', { name: CHAT.title })).toBeDefined();
+    expect(within(header).getByRole('button', { name: 'Start work' })).toBeDefined();
+    expect(within(header).queryByText(/Read-only/)).toBeNull();
+    expect(within(header).queryByText(/Harborline/)).toBeNull();
+    expect(within(header).queryByText(/Sonnet/)).toBeNull();
+  });
+
+  it('puts the read-only hint in the composer and the keys in the Send tooltip', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    expect(screen.getByText('Read-only · 2 projects')).toBeDefined();
+    expect(screen.queryByText(/Shift\+Enter/)).toBeNull();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), { target: { value: 'Hi' } });
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Send' }) })).toBe(
+      'Enter to send · Shift+Enter for a new line',
+    );
+  });
+
+  it('names the model and effort under the answer that used them', () => {
+    store.chatMessages = {
+      [CHAT_ID]: [
+        ANSWERED[0]!,
+        {
+          ...ANSWERED[1]!,
+          provider: 'codex',
+          model: 'gpt-5.6-sol',
+          effort: 'high',
+        } as ChatMessage,
+      ],
+    };
+    renderRoom({ chat: CHAT });
+
+    expect(screen.getByText('GPT-5.6 Sol · High')).toBeDefined();
+  });
+
+  it('shows no sessions chip while the chat has no link', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    expect(screen.queryByRole('button', { name: /Linked sessions/ })).toBeNull();
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('lists the linked sessions from the chip and opens one', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.sessions = [SESSION_CONSENT];
+    store.stages = { 'session-consent': 'running' };
+    store.chatLinks = { [CHAT_ID]: [LINK_NEW] };
+    renderRoom({ chat: CHAT });
+
+    const chip = screen.getByRole('button', { name: '1 session: Linked sessions' });
+    expect(chip.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(chip);
+    const dialog = screen.getByRole('dialog', { name: 'Linked sessions' });
+    expect(within(dialog).getByText('Ask for consent again when the policy changes')).toBeDefined();
+    expect(within(dialog).getByText(/running · started from this chat/)).toBeDefined();
+    fireEvent.click(within(dialog).getByRole('button', { name: /^Open Ask for consent/ }));
+
+    expect(store.navigate).toHaveBeenCalledWith({
+      to: { at: 'session', sessionId: 'session-consent' },
+    });
+    expect(screen.queryByRole('dialog', { name: 'Linked sessions' })).toBeNull();
+  });
+
+  it('counts sessions and words an added one as added', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.sessions = [SESSION_CONSENT, SESSION_REFUNDS];
+    store.chatLinks = { [CHAT_ID]: [LINK_NEW, LINK_ADD] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: '2 sessions: Linked sessions' }));
+    const dialog = screen.getByRole('dialog', { name: 'Linked sessions' });
+    expect(within(dialog).getByText(/added from this chat/)).toBeDefined();
+  });
+
+  it('hides a deleted session and drops the chip when none is left', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.sessions = [{ ...SESSION_CONSENT, deletedAt: AT }];
+    store.chatLinks = { [CHAT_ID]: [LINK_NEW] };
+    renderRoom({ chat: CHAT });
+
+    expect(screen.queryByRole('button', { name: /Linked sessions/ })).toBeNull();
+    expect(screen.queryByText('Started a session ·')).toBeNull();
+  });
+
+  it('keeps the handoff note under the answer it came from, from the saved link', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.sessions = [SESSION_CONSENT];
+    store.chatLinks = { [CHAT_ID]: [LINK_NEW] };
+    renderRoom({ chat: CHAT });
+
+    const note = screen.getByRole('status');
+    expect(note.textContent).toContain('Started a session');
+    expect(note.textContent).toContain('Ask for consent again when the policy changes');
+    const answer = screen.getByText('It lives in payments-api').closest('li');
+    expect(answer?.nextElementSibling?.contains(note)).toBe(true);
+    fireEvent.click(within(note).getByRole('button', { name: 'Open session' }));
+    expect(store.navigate).toHaveBeenCalledWith({
+      to: { at: 'session', sessionId: 'session-consent' },
+    });
+  });
+
   it('keeps Start work off until an answer is done', () => {
     store.chatMessages = { [CHAT_ID]: [ANSWERED[0]!] };
     renderRoom({ chat: CHAT });
@@ -544,13 +681,34 @@ describe('ChatRoom', () => {
     expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
-  it('disables the providers a chat cannot use, with the reason', () => {
+  it('offers the full picker with only chat providers and says why the others are out', () => {
     store.chatMessages = { [CHAT_ID]: [] };
     renderRoom({ chat: CHAT });
 
-    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: Sonnet 5/ }));
-    const refused = screen.getByRole('menuitem', { name: /OpenCode/ });
-    expect(refused.hasAttribute('disabled')).toBe(true);
-    expect(refused.textContent).toContain('Chat needs a provider that can run read-only');
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    expect(within(dialog).getByText(/OpenCode can't chat/)).toBeDefined();
+    expect(within(dialog).getByText(/Chat needs a provider that can run read-only/)).toBeDefined();
+    expect(within(dialog).getByText('Effort')).toBeDefined();
+    expect(within(dialog).queryByRole('button', { name: /OpenCode/ })).toBeNull();
+  });
+
+  it('saves the picked model and effort on the chat in one write', async () => {
+    store.chatMessages = { [CHAT_ID]: [] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: /^Model for this chat: / }));
+    const dialog = screen.getByRole('dialog', { name: 'Model for this chat' });
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'High' }));
+    });
+
+    expect(store.setChatModel).toHaveBeenCalledTimes(1);
+    expect(store.setChatModel).toHaveBeenCalledWith({
+      chatId: CHAT_ID,
+      provider: 'anthropic',
+      model: 'sonnet-5',
+      effort: 'high',
+    });
   });
 });

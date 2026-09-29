@@ -1,22 +1,24 @@
 import { useState, type KeyboardEvent } from 'react';
 import { ArrowUp, Square } from 'lucide-react';
 import { Tooltip, cn, tintClasses } from '@goodboy/ui';
-import type { ModelKey, ProviderId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import type { ChatModelChoice } from '../../defaultChatModel';
-import { ChatModelMenu } from './ChatModelMenu';
+import { pluralize } from '../../../../shared/utils/pluralize';
+import type { ChatRouting } from '../../chatRouting';
+import { ChatRoutingPicker } from './ChatRoutingPicker';
 
 type Props = {
   readonly placeholder: string;
-  readonly provider: ProviderId;
-  readonly model: ModelKey;
+  readonly routing: ChatRouting;
+  readonly projectCount: number;
   readonly isStreaming: boolean;
   readonly isStopping: boolean;
   readonly isAutoFocused?: boolean;
   readonly onSend: (text: string) => void;
   readonly onStop: () => void;
-  readonly onModel: (choice: ChatModelChoice) => void;
+  readonly onRouting: (routing: ChatRouting) => void;
 };
+
+const SEND_HINT = 'Enter to send · Shift+Enter for a new line';
 
 const PRIMARY = tintClasses('primary').solid;
 
@@ -25,14 +27,14 @@ const ROUND_BUTTON =
 
 export const ChatComposer = ({
   placeholder,
-  provider,
-  model,
+  routing,
+  projectCount,
   isStreaming,
   isStopping,
   isAutoFocused = false,
   onSend,
   onStop,
-  onModel,
+  onRouting,
 }: Props) => {
   const [text, setText] = useState('');
   const canSend = text.trim() !== '' && !isStreaming;
@@ -66,10 +68,10 @@ export const ChatComposer = ({
         className="w-full resize-none bg-transparent px-3 pb-0.5 pt-2.5 text-prose text-foreground outline-none placeholder:text-faint-foreground focus-visible:shadow-none focus-visible:ring-0 focus-visible:outline-none"
       />
       <div className="flex items-center gap-2 px-1.5 pb-1.5 pt-1">
-        <ChatModelMenu provider={provider} model={model} onPick={onModel} />
+        <ChatRoutingPicker routing={routing} onChange={onRouting} />
         <span className="flex-1" />
         <span className="hidden text-secondary text-faint-foreground @2xl/chat:inline">
-          Enter to send · Shift+Enter for a new line
+          {`Read-only · ${pluralize(projectCount, 'project')}`}
         </span>
         {isStreaming ? (
           <Tooltip content="Stop the answer">
@@ -87,7 +89,7 @@ export const ChatComposer = ({
             </button>
           </Tooltip>
         ) : (
-          <Tooltip content="Send">
+          <Tooltip content={SEND_HINT}>
             <button
               type="button"
               aria-label="Send"
