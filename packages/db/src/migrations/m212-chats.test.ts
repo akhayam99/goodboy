@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
-import { migrate } from './runner';
+import { migrateThrough } from '../test-helpers/migration-rows';
 
 const seed = async () => {
   const db = await makeMigratedTestDatabase({ throughVersion: 211 });
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('harborline', 'Harborline', 'harborline', 1, 1)",
   );
-  const result = await migrate(db);
+  const result = await migrateThrough({ db, version: 212 });
   expect(result.applied).toEqual([212]);
   await db.execute(
     `INSERT INTO chats (id, workspace_id, title, provider, model, last_activity_at, created_at, updated_at)

@@ -7,7 +7,7 @@ import type {
   SecurityFindingSubjectKind,
   WorkspaceId,
 } from '@goodboy/types';
-import type { Database } from '../client';
+import type { Database, Statement } from '../client';
 
 type SecurityFindingRow = {
   readonly id: string;
@@ -75,14 +75,15 @@ export const recordSecurityFindings = async ({
   const currentFingerprints = new Set(findings.map((finding) => finding.fingerprint));
   const existingByFingerprint = new Map(existingRows.map((row) => [row.fingerprint, row]));
 
+  const statements: Statement[] = [];
   for (const finding of findings) {
     const existing = existingByFingerprint.get(finding.fingerprint);
     if (existing === undefined) {
-      await db.execute(
-        `INSERT INTO security_findings
+      statements.push({
+        sql: `INSERT INTO security_findings
           (id, workspace_id, project_id, subject_kind, subject_id, secret_kind, fingerprint, last4, first_seen_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
+        params: [
           crypto.randomUUID(),
           workspaceId,
           projectId,
@@ -93,24 +94,30 @@ export const recordSecurityFindings = async ({
           finding.last4,
           timestamp,
         ],
-      );
+      });
       continue;
     }
     if (existing.resolved_at !== null) {
-      await db.execute('UPDATE security_findings SET resolved_at = NULL WHERE id = ?', [
-        existing.id,
-      ]);
+      statements.push({
+        sql: 'UPDATE security_findings SET resolved_at = NULL WHERE id = ?',
+        params: [existing.id],
+      });
     }
   }
 
   for (const existing of existingRows) {
     if (existing.resolved_at === null && !currentFingerprints.has(existing.fingerprint)) {
-      await db.execute('UPDATE security_findings SET resolved_at = ? WHERE id = ?', [
-        timestamp,
-        existing.id,
-      ]);
+      statements.push({
+        sql: 'UPDATE security_findings SET resolved_at = ? WHERE id = ?',
+        params: [timestamp, existing.id],
+      });
     }
   }
+
+  if (statements.length === 0) {
+    return;
+  }
+  await db.transaction({ statements });
 };
 
 type ListSecurityFindingsParams = {
