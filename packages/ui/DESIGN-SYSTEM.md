@@ -682,8 +682,11 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 - **Search** appears on its own above 8 options (or with `searchable`): a fuzzy
   filter, the match underlined, a count ("3 of 41"), and an empty state in one
   sentence plus the `create` row when the caller can make the value.
-- **Multiple**: a checkbox in the leading slot, Enter toggles and stays open,
-  a footer with the count and Clear.
+- **Multiple**: a checkbox in the leading slot with the row icon beside it,
+  Enter toggles and stays open, a footer with the count and Clear.
+- **Empty copy**: `emptyLabel` and `noMatchLabel` replace the default "No
+  {noun}s yet" and "No {noun} matches" sentences when the list has its own
+  words ("No sessions match").
 - **Keyboard and ARIA**: the APG select-only combobox. Enter, Space and the
   arrows open on the current value; arrows, Home, End, PageUp and PageDown move;
   letters run typeahead; Enter chooses; Escape and a click outside close and

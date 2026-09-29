@@ -582,7 +582,7 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   the chats slice and is saved in `localStorage` (`chat-unread:v1`), so it
   survives a reload without a migration.
 - **Turn into work.** "Start work" drafts a brief (title, goal, what we know,
-  files, project) with one `summarize_session` call through `runAuxOneShot`
+  files, projects) with one `summarize_session` call through `runAuxOneShot`
   on the chat's own provider and model, with no tools and no working folder
   (`summarizeChatForWork.ts`). The model must answer one JSON object; anything
   else, a failure or 45 seconds without an answer falls back to a brief drafted
@@ -590,7 +590,17 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   (`createSession` with the goal and a `generic` first agent whose kickoff is
   the brief) or goes into an existing session as the next message
   (`sendTurn`). Nothing runs until the user presses the button.
+  The Project field is a searchable multiple `Listbox` (`ProjectField.tsx`)
+  with removable chips and a "No project" state; it starts with the projects the
+  answer named files in, or none, and hides in "Add to a session" mode. The first
+  picked project is `createSession`'s `projectId`; the others go in
+  `additionalProjectIds` and are mounted before the kickoff turn. The Session
+  field (`SessionField.tsx`) is a searchable `Listbox` too: Active sessions,
+  then Recent (done) ones, each row with the title, its projects, its stage and
+  its age.
 - **Mock mode.** With `VITE_GOODBOY_MOCK=1` the slice runs on an in-memory
   backend with Harborline chats, a fake streaming responder and a canned
   brief for the consent and retry chats, so scenes can send, stop and turn a
-  chat into work.
+  chat into work. `?scene=chat-room` takes `work=drawer|project|add|session`
+  (opens the panel, then the popover or mode), `chat=<key>` (`retry` drafts two
+  projects) and `activity=running|unread` for the top bar and the list.
