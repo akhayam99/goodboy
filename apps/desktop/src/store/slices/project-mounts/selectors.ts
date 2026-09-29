@@ -14,6 +14,8 @@ import { toProjectMounts } from './mountViews';
 
 type MountState = Pick<AppState, 'sessionMounts' | 'sessionProjectMounts'>;
 
+type BaseBranchState = MountState & Pick<AppState, 'projects'>;
+
 type ObservationState = Pick<AppState, 'mountBranchObservations'>;
 
 type ActiveState = MountState &
@@ -178,3 +180,38 @@ export const selectMountForPath = ({
     selectWritableMounts({ state, sessionId }).find((mount) => mount.worktreePath === path) ?? null
   );
 };
+
+type ResolveBaseBranchParams = {
+  readonly mount: SessionProjectMount | null;
+  readonly projects: AppState['projects'];
+};
+
+export const resolveMountBaseBranch = ({
+  mount,
+  projects,
+}: ResolveBaseBranchParams): string | null => {
+  if (mount === null) {
+    return null;
+  }
+  return (
+    mount.baseBranch ??
+    projects.find((project) => project.id === mount.projectId)?.baseBranch ??
+    null
+  );
+};
+
+type BaseBranchParams = {
+  readonly state: BaseBranchState;
+  readonly sessionId: SessionId;
+  readonly path: string | null;
+};
+
+export const selectMountBaseBranch = ({
+  state,
+  sessionId,
+  path,
+}: BaseBranchParams): string | null =>
+  resolveMountBaseBranch({
+    mount: selectMountForPath({ state, sessionId, path }),
+    projects: state.projects,
+  });

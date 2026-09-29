@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ErrorStrip, LensEmptyState, PageColumn, Skeleton, cn, formatError } from '@goodboy/ui';
 import type { DiffView as DiffViewKind, SessionId } from '@goodboy/types';
 import { useAppStore, type DiffFocus } from '../../../../store';
-import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
+import {
+  selectMountBaseBranch,
+  selectMountForPath,
+} from '../../../../store/slices/project-mounts/selectors';
+import { REBASE_FALLBACK_BASE } from '../../../../store/slices/history/historyTargetOf';
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -129,14 +133,9 @@ export const SessionDiffPane = ({
   const mountBranch = useAppStore(
     (s) => selectMountForPath({ state: s, sessionId, path: worktreePath })?.branch ?? null,
   );
-  const baseBranch = useAppStore((s) => {
-    const mount = selectMountForPath({ state: s, sessionId, path: worktreePath });
-    return (
-      mount?.baseBranch ??
-      s.projects.find((project) => project.id === mount?.projectId)?.baseBranch ??
-      'main'
-    );
-  });
+  const baseBranch = useAppStore((s) =>
+    selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
+  );
 
   const openInEditor = useCallback(
     async (filePath: string) => {
@@ -214,7 +213,7 @@ export const SessionDiffPane = ({
   const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
   const rebasePrediction = useRebasePrediction({
     worktreePath,
-    baseBranch,
+    baseBranch: baseBranch ?? REBASE_FALLBACK_BASE,
     head: diff.status?.head ?? null,
     isEnabled: canRebase && !rebase.isRunning,
   });

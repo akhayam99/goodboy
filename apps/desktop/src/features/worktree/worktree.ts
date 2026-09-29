@@ -381,7 +381,7 @@ export const diskFree = async ({ path }: DiskFreeParams): Promise<DiskFree> => {
 
 type WorktreeBaseParams = {
   readonly worktreePath: string;
-  readonly baseBranch?: string;
+  readonly baseBranch?: string | null;
 };
 
 export const worktreeDiff = async ({

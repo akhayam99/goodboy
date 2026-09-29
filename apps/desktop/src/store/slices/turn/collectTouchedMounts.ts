@@ -63,7 +63,9 @@ export const collectTouchedMounts = async ({
       before,
       isTurnShared({ get, sessionId, agentId, startedAt }),
     ]);
-    const after = isShared ? new Map() : await snapshotMountChanges({ mounts });
+    const after = isShared
+      ? new Map()
+      : await snapshotMountChanges({ mounts, projects: get().projects });
     return touchedMountIds({
       mounts,
       workingDir,
