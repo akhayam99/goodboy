@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
 import type { ReviewSelectionState } from './state';
 
-export type { GetFn, SetFn } from '../../slice-types';
+export type { SetFn } from '../../slice-types';
 
 export type SetReviewSelectionParams = {
   readonly sessionId: SessionId;

@@ -4,7 +4,7 @@ import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { sessionResolveStyle } from '../../../../store/sessionReplySettings';
 import { groupThreads } from '../../../github/comment-threads';
 import { conversationSourceOf } from '../../notes/conversationSource';
-import { draftRoutingOf } from '../../draftFixes';
+import { draftRoutingOf } from '../../draftRouting';
 import { retryBatchOf } from '../../launchChoice';
 import { startResolve } from '../../startResolve';
 import type { ResolveQueueRow } from '../../buildResolveQueueRows';

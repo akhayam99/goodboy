@@ -4,7 +4,7 @@ import type { ProviderId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import { selectResolvedSettings } from '../../../../../store/slices/overrides/selectResolvedSettings';
 import { kindRouting, type AgentKindRouting } from '../../../../session/agent-kind';
-import { draftRoutingOf } from '../../../draftFixes';
+import { draftRoutingOf } from '../../../draftRouting';
 
 export type DraftRouting = {
   readonly routing: AgentKindRouting;

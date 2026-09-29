@@ -1,10 +1,8 @@
-import type { AgentId, SessionId } from '@goodboy/types';
+import type { SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
-import { sessionResolveStyle } from '../../store/sessionReplySettings';
 import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 import { kindRouting, type AgentKindRouting } from '../session/agent-kind';
-import { launchChoiceOf, retryBatchOf, routingOfLaunch } from './launchChoice';
-import { startBatch } from './startBatch';
+import { retryBatchOf, routingOfLaunch } from './launchChoice';
 
 type RoutingParams = {
   readonly state: AppStore;
@@ -25,31 +23,4 @@ export const draftRoutingOf = ({ state, sessionId, threadId }: RoutingParams): A
       roleModels: selectResolvedSettings({ state, sessionId })?.roleModels ?? null,
     })
   );
-};
-
-type Params = {
-  readonly getState: () => AppStore;
-  readonly sessionId: SessionId;
-  readonly threadIds: ReadonlyArray<string>;
-  readonly note?: string;
-};
-
-export const draftFixes = async ({
-  getState,
-  sessionId,
-  threadIds,
-  note = '',
-}: Params): Promise<ReadonlyArray<AgentId>> => {
-  const state = getState();
-  const started = await startBatch({
-    getState,
-    sessionId,
-    threadIds,
-    launchChoice: launchChoiceOf({
-      routing: draftRoutingOf({ state, sessionId }),
-      commitStyle: sessionResolveStyle({ state, sessionId }).commitStyle,
-      hint: note,
-    }),
-  });
-  return started.agentIds;
 };
