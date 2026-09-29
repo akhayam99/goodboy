@@ -150,7 +150,7 @@ fails silently at runtime.
   `useShallow`, or read `useAppStore.getState()` inside the handler that needs
   it. `apps/desktop/src/__tests__/surfaces/primary-surfaces.test.tsx` mounts
   the main surfaces on the real store to catch this, and
-  `navigation-flows.test.tsx` next to it clicks into every page of the app.
+  the `navigation-flows/` folder next to it clicks into every page of the app.
 - Every path stored for a project or a session (`projects.root_path`,
   `session_worktrees.worktree_path`, `retained_worktree_paths`,
   `worktree_roots`, `resolve_*`, `skills.file_path`) is absolute. Never

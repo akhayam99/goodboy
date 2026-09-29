@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
-import { migrate, upsertResolveThread, type Database } from '@goodboy/db';
-import { makeTestDatabase } from '@goodboy/db/test-helpers';
+import { upsertResolveThread, type Database } from '@goodboy/db';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { Agent, AgentId, IsoDateTime, MountId, ProjectId, SessionId } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';
 import type { SendTurnResult } from '../turn/types';
@@ -426,12 +426,11 @@ beforeEach(async () => {
   h.status = { ...h.status, inProgress: null };
   h.listLiveRunIds.mockReset().mockResolvedValue(new Set());
   h.agentList.mockReset().mockResolvedValue([]);
-  db = makeTestDatabase();
+  db = await makeMigratedTestDatabase();
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
   h.transaction.mockReset().mockImplementation(db.transaction);
-  await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );

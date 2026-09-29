@@ -1,0 +1,64 @@
+name: perf
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  perf:
+    name: perf tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7.0.1
+
+      - name: setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: setup node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: install
+        run: pnpm install --frozen-lockfile
+
+      - name: perf tests
+        run: pnpm test:perf
+
+  report:
+    name: report nightly failure
+    needs: perf
+    if: ${{ failure() && github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: open or update the perf issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create perf --description "nightly perf tests failed" --color d93f0b 2>/dev/null || true
+          existing=$(gh issue list --label perf --state open --limit 1 --json number --jq '.[0].number // empty')
+          body="The nightly perf tests failed. Run: ${RUN_URL}"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --label perf --title "nightly perf tests are failing" --body "$body"
+          fi

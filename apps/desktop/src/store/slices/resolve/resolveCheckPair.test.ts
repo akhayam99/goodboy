@@ -9,11 +9,10 @@ import {
   listResolveCandidates,
   listResolveCheckRuns,
   listResolveQueueItems,
-  migrate,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
-import { makeTestDatabase } from '@goodboy/db/test-helpers';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { MountId, ProjectId, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
@@ -280,7 +279,7 @@ const seedItem = async ({ threadId }: { readonly threadId: string }): Promise<st
 };
 
 beforeEach(async () => {
-  db = makeTestDatabase();
+  db = await makeMigratedTestDatabase();
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
@@ -289,7 +288,6 @@ beforeEach(async () => {
   h.leases.clear();
   h.scratchRoots = [];
   h.runs = [];
-  await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('ws-1', 'Workspace', 'workspace', 1, 1)",
   );

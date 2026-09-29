@@ -13,9 +13,8 @@ describe('unwrapEdgeFence', () => {
     expect(unwrapEdgeFence({ text: '```' })).toBe('```');
   });
 
-  it('answers quickly on a long run of tabs after an opening fence', () => {
-    const started = performance.now();
-    unwrapEdgeFence({ text: `\`\`\`${'\t'.repeat(50_000)}x` });
-    expect(performance.now() - started).toBeLessThan(200);
+  it('leaves a long run of tabs after an opening fence alone', () => {
+    const text = `\`\`\`${'\t'.repeat(50_000)}x`;
+    expect(unwrapEdgeFence({ text })).toBe(text);
   });
 });
