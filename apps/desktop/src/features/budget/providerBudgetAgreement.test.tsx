@@ -2,7 +2,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { resolveProvider } from '@goodboy/core';
 import type { BudgetRule, ProviderBudgetStatus, WorkspaceId } from '@goodboy/types';
 import {
   providerBudgetStatusFor,
@@ -10,7 +9,7 @@ import {
 } from './testing/providerBudgetFixture';
 
 const { state, rust } = vi.hoisted(() => ({
-  rust: { status: null as ProviderBudgetStatus | null, idle: null as ProviderBudgetStatus | null },
+  rust: { status: null as ProviderBudgetStatus | null, rules: [] as ReadonlyArray<unknown> },
   state: {
     currentSessionId: 'session-1',
     sessions: [{ id: 'session-1', goal: 'build the feature' }] as ReadonlyArray<{
@@ -39,7 +38,7 @@ const { state, rust } = vi.hoisted(() => ({
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(async (command: string, args?: { provider?: string }) => {
+  invoke: vi.fn(async (command: string) => {
     if (command === 'provider_budget_overview') {
       return {
         status: rust.status,
@@ -47,7 +46,14 @@ vi.mock('@tauri-apps/api/core', () => ({
       };
     }
     if (command === 'check_provider_budget') {
-      return args?.provider === 'anthropic' ? rust.status : rust.idle;
+      return rust.status;
+    }
+    if (command === 'budget_rule_list') {
+      return rust.rules;
+    }
+    if (command === 'budget_rule_delete') {
+      rust.rules = [];
+      return undefined;
     }
     throw new Error(`unexpected command ${command}`);
   }),
@@ -83,9 +89,10 @@ vi.mock('../../store', async () => ({
 
 import { ProviderUsagePill } from '../chat/components/ProviderUsagePill';
 import { ImpactStudio } from '../impact/components/ImpactStudio';
-import { invokeCheckProviderBudget } from './budget';
 import { SpendInGoodboy } from '../providers/components/ProviderStudio/ProviderPage/UsageGroup/SpendInGoodboy';
+import { deleteBudgetRule } from '../../store/slices/budget/deleteBudgetRule';
 import { loadProviderBudgetStatuses } from '../../store/slices/budget/loadProviderBudgetStatuses';
+import type { SetFn } from '../../store/slice-types';
 
 const RULE: BudgetRule = {
   id: 'rule-1',
@@ -98,8 +105,8 @@ const RULE: BudgetRule = {
 };
 
 const SCENARIOS = [
-  { spentUsd: 24, pctUsed: 12, movesTurns: false },
-  { spentUsd: 170, pctUsed: 85, movesTurns: true },
+  { spentUsd: 24, pctUsed: 12 },
+  { spentUsd: 170, pctUsed: 85 },
 ] as const;
 
 beforeEach(() => {
@@ -121,6 +128,7 @@ beforeEach(() => {
   };
   state.providerSpendBreakdown = [{ provider: 'anthropic', spentUsd: WORKSPACE_WINDOW_SPEND_USD }];
   state.budgetRules = [RULE];
+  rust.rules = [RULE];
 });
 
 afterEach(() => {
@@ -129,10 +137,9 @@ afterEach(() => {
   state.providerBudgetStatus = {};
 });
 
-describe.each(SCENARIOS)('$pctUsed% of the cap spent', ({ spentUsd, pctUsed, movesTurns }) => {
+describe.each(SCENARIOS)('$pctUsed% of the cap spent', ({ spentUsd, pctUsed }) => {
   beforeEach(async () => {
     rust.status = providerBudgetStatusFor({ spentUsd, capUsd: 200 });
-    rust.idle = providerBudgetStatusFor({ spentUsd: 0, capUsd: 200 });
     state.providerBudgetStatus = await loadProviderBudgetStatuses({ rules: [RULE] });
   });
 
@@ -154,21 +161,6 @@ describe.each(SCENARIOS)('$pctUsed% of the cap spent', ({ spentUsd, pctUsed, mov
     expect(screen.getByText(`${pctUsed}%`)).toBeDefined();
     expect(screen.queryByText(/^95%$/)).toBeNull();
   });
-
-  it('moves turns off the provider exactly when that percentage crosses the threshold', async () => {
-    const decision = await resolveProvider({
-      sessionPreference: { defaultProvider: 'anthropic', allowTurnOverride: false },
-      turnOverride: undefined,
-      connectedProviders: ['anthropic', 'codex'],
-      budgetChecker: {
-        checkProviderBudget: (provider, period) => invokeCheckProviderBudget(provider, period),
-      },
-      cooldownChecker: { isProviderCoolingDown: () => false },
-      getDefaultModel: () => 'model',
-    });
-
-    expect(decision.fallbackUsed).toBe(movesTurns);
-  });
 });
 
 describe('the chat usage pill', () => {
@@ -179,5 +171,19 @@ describe('the chat usage pill', () => {
     render(<ProviderUsagePill provider="anthropic" />);
 
     expect(screen.getByText(/15% left/)).toBeDefined();
+  });
+
+  it('goes away when the cap is deleted', async () => {
+    rust.status = providerBudgetStatusFor({ spentUsd: 170, capUsd: 200 });
+    state.providerBudgetStatus = await loadProviderBudgetStatuses({ rules: [RULE] });
+    const { rerender } = render(<ProviderUsagePill provider="anthropic" />);
+    expect(screen.getByText(/15% left/)).toBeDefined();
+
+    const set: SetFn = (patch) =>
+      Object.assign(state, typeof patch === 'function' ? patch(state as never) : patch);
+    await deleteBudgetRule(set)('rule-1');
+    rerender(<ProviderUsagePill provider="anthropic" />);
+
+    expect(screen.queryByText(/left/)).toBeNull();
   });
 });

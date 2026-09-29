@@ -7,7 +7,10 @@ import type { ProviderBudgetStatus } from '@goodboy/types';
 import { providerBudgetStatusFor } from '../../../budget/testing/providerBudgetFixture';
 
 const { state } = vi.hoisted(() => ({
-  state: { providerBudgetStatus: {} as Record<string, ProviderBudgetStatus> },
+  state: {
+    providerBudgetStatus: {} as Record<string, ProviderBudgetStatus>,
+    refreshProviderBudgetStatus: vi.fn(async () => undefined),
+  },
 }));
 
 vi.mock('../../../../store', () => ({
@@ -18,6 +21,7 @@ import { ProviderUsagePill } from './index';
 
 beforeEach(() => {
   state.providerBudgetStatus = {};
+  state.refreshProviderBudgetStatus.mockClear();
 });
 afterEach(cleanup);
 
@@ -49,5 +53,18 @@ describe('ProviderUsagePill', () => {
     };
     render(<ProviderUsagePill provider="anthropic" />);
     expect(screen.getByText(/30% left/)).toBeDefined();
+  });
+
+  it('reloads and hides a status from a month that has ended', () => {
+    state.providerBudgetStatus = {
+      anthropic: {
+        ...providerBudgetStatusFor({ spentUsd: 70, capUsd: 100 }),
+        windowEndMs: Date.now() - 1,
+      },
+    };
+    const { container } = render(<ProviderUsagePill provider="anthropic" />);
+
+    expect(container.firstChild).toBeNull();
+    expect(state.refreshProviderBudgetStatus).toHaveBeenCalledOnce();
   });
 });

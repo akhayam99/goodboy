@@ -6,8 +6,13 @@ type StatusParams = {
   readonly thresholdPct?: number;
 };
 
-const SEPTEMBER_START_MS = Date.UTC(2026, 8, 1);
-const SEPTEMBER_END_MS = Date.UTC(2026, 9, 1) - 1;
+const monthWindow = (): { readonly startMs: number; readonly endMs: number } => {
+  const now = new Date();
+  return {
+    startMs: Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    endMs: Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) - 1,
+  };
+};
 
 export const providerBudgetStatusFor = ({
   spentUsd,
@@ -15,6 +20,7 @@ export const providerBudgetStatusFor = ({
   thresholdPct = 80,
 }: StatusParams): ProviderBudgetStatus => {
   const pct = (spentUsd / capUsd) * 100;
+  const { startMs, endMs } = monthWindow();
   const exceeded = spentUsd > capUsd;
   return {
     remainingUsd: capUsd - spentUsd,
@@ -24,13 +30,9 @@ export const providerBudgetStatusFor = ({
     spentUsd,
     capUsd,
     thresholdPct,
-    windowStartMs: SEPTEMBER_START_MS,
-    windowEndMs: SEPTEMBER_END_MS,
+    windowStartMs: startMs,
+    windowEndMs: endMs,
   };
 };
-
-export const SHARED_BUDGET = { spentUsd: 24, capUsd: 200, thresholdPct: 80 } as const;
-
-export const SHARED_BUDGET_PCT_USED = 12;
 
 export const WORKSPACE_WINDOW_SPEND_USD = 190;

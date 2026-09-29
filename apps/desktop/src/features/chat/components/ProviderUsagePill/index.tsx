@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Gauge } from 'lucide-react';
 import { cn, formatUsd } from '@goodboy/ui';
 import type { ProviderId } from '@goodboy/types';
@@ -11,7 +12,16 @@ type Props = {
 
 export const ProviderUsagePill = ({ provider }: Props) => {
   const status = useAppStore((s) => s.providerBudgetStatus[provider]);
-  if (status === undefined || status.capUsd === null || status.capUsd <= 0) {
+  const refreshStatus = useAppStore((s) => s.refreshProviderBudgetStatus);
+  const isStale = status !== undefined && Date.now() > status.windowEndMs;
+
+  useEffect(() => {
+    if (isStale) {
+      void refreshStatus().catch(() => undefined);
+    }
+  }, [isStale, refreshStatus]);
+
+  if (status === undefined || isStale || status.capUsd === null || status.capUsd <= 0) {
     return null;
   }
   const pctUsed = Math.max(0, Math.min(100, budgetPctUsed({ status })));

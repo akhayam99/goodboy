@@ -5,6 +5,7 @@ import { loadBudgetAlerts } from './loadBudgetAlerts';
 import { loadBudgetRules } from './loadBudgetRules';
 import { loadCurrentProviderBudgetStatuses } from './loadProviderBudgetStatuses';
 import { loadSessionBudget } from './loadSessionBudget';
+import { refreshProviderBudgetStatus } from './refreshProviderBudgetStatus';
 import { refreshProviderSpendBreakdown } from './refreshProviderSpendBreakdown';
 import { saveBudgetRule } from './saveBudgetRule';
 import { setSessionBudget } from './setSessionBudget';
@@ -23,6 +24,7 @@ export const createBudgetSlice = (set: SetFn, _get: GetFn) => {
     setSessionBudget: setSessionBudget(set),
     clearSessionBudget: clearSessionBudget(set),
     refreshProviderSpendBreakdown: refreshProviderSpendBreakdown(set),
+    refreshProviderBudgetStatus: refreshProviderBudgetStatus(set),
     loadBudgetAlerts: loadBudgetAlerts(set),
     dismissBudgetAlert: dismissBudgetAlert(set),
   };

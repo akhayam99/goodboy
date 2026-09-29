@@ -355,6 +355,7 @@ const seedImpactScene = (): void => {
     setSessionBudget: noop,
     dismissBudgetAlert: noop,
     refreshProviderSpendBreakdown: noop,
+    refreshProviderBudgetStatus: noop,
     navigate: () => undefined,
   });
 };

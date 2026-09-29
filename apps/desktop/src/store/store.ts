@@ -217,6 +217,7 @@ import type { ActivateWorkflowAgentParams } from './slices/workflows/activateWor
 import { createSettingsSlice } from './slices/settings';
 import { createBackupSlice } from './slices/backup';
 import { backupInitialState } from './slices/backup/state';
+import { budgetInitialState } from './slices/budget/state';
 import { createTranscriptsSlice } from './slices/transcripts';
 import { createSummariesSlice } from './slices/summaries';
 import type { BulkSessionResult } from './slices/sessions/types';
@@ -792,6 +793,7 @@ type AppActions = {
   ): Promise<void>;
   clearSessionBudget(sessionId: SessionId): Promise<void>;
   refreshProviderSpendBreakdown(workspaceId: WorkspaceId): Promise<void>;
+  refreshProviderBudgetStatus(): Promise<void>;
   loadBudgetAlerts(): Promise<void>;
   dismissBudgetAlert(id: string): Promise<void>;
   loadSkills(workspaceId: WorkspaceId): Promise<void>;
@@ -1215,6 +1217,7 @@ export const initialState: AppState = {
   ...initialScriptsState,
   ...projectRelocationInitialState,
   ...backupInitialState,
+  ...budgetInitialState,
   ...createInitialSessionViewState({}),
   selectedProjectIds: {},
   workspaces: [],
@@ -1303,7 +1306,6 @@ export const initialState: AppState = {
   budgetRules: [],
   sessionBudgets: {},
   providerSpendBreakdown: [],
-  providerBudgetStatus: {},
   budgetAlerts: [],
   skills: {},
   phaseTemplates: {},
