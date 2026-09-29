@@ -11,6 +11,7 @@ export const beginResolveCandidate = async ({
   sessionId,
   attemptId,
   mountTarget,
+  baseSha,
 }: Params): Promise<void> => {
   const db = tauriDatabase;
   const existing = await getResolveCandidate({ db, candidateId: attemptId });
@@ -21,8 +22,7 @@ export const beginResolveCandidate = async ({
   if (worktreePath === null) {
     return;
   }
-  const status = await worktreeStatus({ worktreePath }).catch(() => null);
-  const head = status?.head ?? '';
+  const head = baseSha ?? (await worktreeStatus({ worktreePath }).catch(() => null))?.head ?? '';
   if (head === '') {
     return;
   }

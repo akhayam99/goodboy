@@ -51,6 +51,7 @@ export type ResolveAttemptBatch = {
 export type CandidateBeginParams = SessionParams & {
   readonly attemptId: string;
   readonly mountTarget: MountTargetSnapshot | null;
+  readonly baseSha?: string;
 };
 export type CandidateCaptureParams = SessionParams & {
   readonly attemptId: string;
