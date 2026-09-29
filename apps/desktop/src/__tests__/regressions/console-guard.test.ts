@@ -72,6 +72,27 @@ describe('failOnConsole', () => {
   );
 
   it(
+    'fails a test that leaves a db call or an invoke command unstubbed, and names it',
+    () => {
+      const results = runFixtures().flatMap((file) => file.assertionResults);
+
+      const db = byTitle(results, 'calls a db function nobody stubbed');
+      expect(db.status).toBe('failed');
+      expect(db.failureMessages.join('\n')).toContain('db: countUserTextEvents(');
+
+      const invoke = byTitle(results, 'calls an invoke command nobody stubbed');
+      expect(invoke.status).toBe('failed');
+      expect(invoke.failureMessages.join('\n')).toContain('invoke: workspace_script_list_live(');
+
+      expect(byTitle(results, 'stubs what it calls').status).toBe('passed');
+      expect(
+        byTitle(results, 'drains the record itself when the call is the point of the test').status,
+      ).toBe('passed');
+    },
+    RUN_TIMEOUT_MS,
+  );
+
+  it(
     'fails the file when output arrives outside a test',
     () => {
       const late = runFixtures().find((file) => file.name.endsWith('late-output.fixture.ts'));

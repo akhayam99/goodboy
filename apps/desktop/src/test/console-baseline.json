@@ -6,7 +6,7 @@
     },
     {
       "file": "src/__tests__/surfaces/navigation-flows.test.tsx",
-      "message": "Encountered two children with the same key, `mount-fixture-#`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported"
+      "message": "Encountered two children with the same key, `mount-fixture-#`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted \u2014 the behavior is unsupported"
     },
     {
       "file": "src/features/chat/components/WriteDestinationControl/useWriteDestination/index.test.tsx",
