@@ -87,9 +87,15 @@ export const useTimelineOpen = ({
       if (entry.kind === 'agent') {
         const isResolver = entry.agentKind === 'resolver';
         return {
-          label: isResolver ? 'Open review' : 'Open chat',
+          label: isResolver ? 'Open brief' : 'Open chat',
           open: () => {
-            store.navigate({ to: agentPlace({ sessionId, agentId: entry.agent.id }) });
+            store.navigate({
+              to: agentPlace({
+                sessionId,
+                agentId: entry.agent.id,
+                pane: isResolver ? 'brief' : null,
+              }),
+            });
           },
         };
       }

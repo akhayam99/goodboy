@@ -116,7 +116,7 @@ import type { SessionDraftState } from './slices/sessionDraft/state';
 import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
-import type { NavigationSliceState } from './slices/navigation/types';
+import type { AgentPane, NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
@@ -479,6 +479,7 @@ export type AppState = AppSliceState & {
   readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
+  readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
   readonly terminalTabs: Readonly<Record<SessionId, readonly TerminalTab[]>>;
   readonly activeTerminalTab: Readonly<Record<SessionId, TerminalTabId | null>>;
