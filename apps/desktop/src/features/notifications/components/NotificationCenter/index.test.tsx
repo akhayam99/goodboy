@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { Notification } from '@goodboy/db';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { registerEscapeLayer } from '@goodboy/ui';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 
 const { state } = vi.hoisted(() => ({
@@ -104,6 +105,20 @@ describe('NotificationCenter', () => {
     expect(screen.getByText('No notifications')).toBeDefined();
     expect(screen.getByText('Run activity and alerts land here.')).toBeDefined();
     expect(state.markNotificationsRead).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes on escape, and only the bell when a layer sits below it', async () => {
+    const closeBelow = vi.fn();
+    const offBelow = registerEscapeLayer(closeBelow);
+    render(<NotificationCenter />);
+    await openCenter();
+    expect(screen.getByText('No notifications')).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(screen.queryByText('No notifications')).toBeNull();
+    expect(closeBelow).not.toHaveBeenCalled();
+    offBelow();
   });
 
   it('sends history management to the studio instead of deleting from the bell', async () => {

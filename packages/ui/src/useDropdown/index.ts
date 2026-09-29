@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, RefObject } from 'react';
 import { cn } from '../cn';
 import { usePopoverPortalTarget } from '../PopoverPortalContext';
+import { useEscapeLayer } from '../useEscapeLayer';
 import { useDropdownDirection } from '../useDropdownDirection';
+
+const FOCUSABLE_TRIGGER =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 type Align = 'start' | 'end' | 'center';
 
@@ -78,19 +82,19 @@ export const useDropdown = ({
     return () => document.removeEventListener('mousedown', onMouseDown);
   }, [close]);
 
-  useEffect(() => {
-    if (!open) {
+  const closeFromEscape = useCallback(() => {
+    const focused = document.activeElement;
+    const isFocusLost = focused == null || focused === document.body;
+    const isFocusInside = popupRef.current?.contains(focused) === true;
+    setOpen(false);
+    if (!isFocusLost && !isFocusInside) {
       return;
     }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isEscapeEnabled) {
-        event.preventDefault();
-        setOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isEscapeEnabled, open]);
+    const trigger = containerRef.current?.querySelector<HTMLElement>(FOCUSABLE_TRIGGER);
+    trigger?.focus();
+  }, []);
+
+  useEscapeLayer(closeFromEscape, open && isEscapeEnabled);
 
   useEffect(() => {
     if (openEvent == null) {

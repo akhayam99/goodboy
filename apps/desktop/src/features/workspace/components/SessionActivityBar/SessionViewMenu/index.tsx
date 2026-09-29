@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Check, SlidersHorizontal } from 'lucide-react';
 import { AnchoredPopover, cn, Divider, Eyebrow, Tooltip, useDropdown } from '@goodboy/ui';
 import type { SessionGroupKey, SessionSortKey, WorkspaceId } from '@goodboy/types';
@@ -41,30 +41,13 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
   const setSessionGroup = useAppStore((s) => s.setSessionGroup);
 
   const { hold, release } = useSidebarPeekHold();
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdown = useDropdown({
     align: 'start',
     width: 'w-[200px]',
     expectedWidth: MENU_WIDTH,
     expectedHeight: 220,
-    isEscapeEnabled: false,
   });
-  const { open, close, toggle } = dropdown;
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        close();
-        triggerRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [close, open]);
+  const { open, toggle } = dropdown;
 
   useEffect(() => {
     if (!open) {
@@ -84,7 +67,6 @@ export const SessionViewMenu = ({ workspaceId }: SessionViewMenuProps) => {
       trigger={
         <Tooltip content="Display options" side="bottom">
           <button
-            ref={triggerRef}
             type="button"
             onClick={toggle}
             aria-haspopup="menu"
