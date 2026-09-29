@@ -3,7 +3,7 @@ import { seedWorkflowLibrary } from '@goodboy/core';
 import { insertWorkspace } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeWorkflowList } from '../../../features/workflows/workflows';
-import { invokeSkillRescan } from '../../../features/skills/skills';
+import { rescanWorkspaceSkills } from './workspaceSkills';
 import { workspaceSlug } from './slug';
 import type { GetFn, SetFn } from './types';
 
@@ -53,7 +53,7 @@ export const createWorkspace = (set: SetFn, get: GetFn) => {
     await seedWorkflowLibrary({ db: tauriDatabase }, workspace.id).catch(() => undefined);
     const templates = await invokeWorkflowList(workspace.id).catch(() => []);
     set((state) => ({ phaseTemplates: { ...state.phaseTemplates, [workspace.id]: templates } }));
-    const skills = await invokeSkillRescan(workspace.id).catch(() => []);
+    const skills = await rescanWorkspaceSkills(workspace.id);
     set((state) => ({ skills: { ...state.skills, [workspace.id]: skills } }));
 
     return workspace;

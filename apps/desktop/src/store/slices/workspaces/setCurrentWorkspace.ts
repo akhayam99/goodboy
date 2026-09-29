@@ -25,7 +25,7 @@ import { tauriDatabase } from '../../../shared/lib/db';
 import { listLiveRunIds } from '../../../features/chat/turn';
 import { isMainWindow } from '../../../features/workspace/window';
 import { invokeBudgetAlertsList } from '../../../features/budget/budget';
-import { invokeSkillList } from '../../../features/skills/skills';
+import { listWorkspaceSkills } from './workspaceSkills';
 import {
   invokeWorkflowList,
   invokeWorkflowsForSession,
@@ -265,7 +265,7 @@ export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
           summarizeWorkspaceProviderTelemetry(tauriDatabase, id).catch(() => []),
           loadCurrentProviderBudgetStatuses(),
           invokeBudgetAlertsList().catch(() => []),
-          invokeSkillList(id).catch(() => []),
+          listWorkspaceSkills(id),
           invokeWorkflowList(id).catch(() => []),
           invokeStepDefList(id).catch(() => []),
         ]);

@@ -184,6 +184,15 @@ describe('workspace and project slices', () => {
     expect(store.state.projects).toEqual([insertedProject]);
   });
 
+  it('scans no skills from disk when a workspace is added while the skills feature is off', async () => {
+    h.invokeSkillRescan.mockClear();
+    const store = harness({});
+
+    await addWorkspace(store.set, store.get)({ rootPath: '/repos/api' });
+
+    expect(h.invokeSkillRescan).not.toHaveBeenCalled();
+  });
+
   it('reconnects a disconnected project into its existing container', async () => {
     const disconnected = project({ disconnectedAt: NOW });
     h.findProjectByRootPath.mockResolvedValueOnce(disconnected);
