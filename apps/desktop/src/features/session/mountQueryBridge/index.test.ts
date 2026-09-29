@@ -53,9 +53,11 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 vi.mock('../../workspace/window', () => ({ isMainWindow: () => false }));
 vi.mock('../../../store/store', () => ({ useAppStore: { getState: () => state } }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('@goodboy/db', () => ({
-  listMountPullRequestLinks: vi.fn(async () => links),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listMountPullRequestLinks: vi.fn(async () => links),
+  }),
+);
 vi.mock('../../worktree/worktree', () => ({
   worktreeStatus: vi.fn(async () => ({ branch: 'goodboy/one', head: 'abc123', inProgress: null })),
   worktreeWriterStatus: vi.fn(async () => ({ isGranted: false, hasExited: true })),

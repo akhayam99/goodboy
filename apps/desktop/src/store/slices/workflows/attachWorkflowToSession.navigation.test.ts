@@ -20,7 +20,9 @@ const { attachInDbSpy, invokeAgentInsertSpy } = vi.hoisted(() => ({
   invokeAgentInsertSpy: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({ attachWorkflowToSession: attachInDbSpy }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ attachWorkflowToSession: attachInDbSpy }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,

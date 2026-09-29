@@ -9,7 +9,11 @@ const h = vi.hoisted(() => ({
   invokeAgentUpdateStatus: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({ markOpenQuestionDismissed: h.markOpenQuestionDismissed }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    markOpenQuestionDismissed: h.markOpenQuestionDismissed,
+  }),
+);
 vi.mock('@goodboy/core', () => ({ removeQuestionsFromSlot: h.removeQuestionsFromSlot }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({

@@ -34,12 +34,14 @@ vi.mock('@goodboy/core', () => ({
   computeProviderCostUsd: vi.fn(() => 2.5),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  insertTelemetry,
-  summarizeSessionTelemetry,
-  summarizeWorkspaceProviderTelemetry,
-  summarizeWorkspaceTelemetry,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertTelemetry,
+    summarizeSessionTelemetry,
+    summarizeWorkspaceProviderTelemetry,
+    summarizeWorkspaceTelemetry,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

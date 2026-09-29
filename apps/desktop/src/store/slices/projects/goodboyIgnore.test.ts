@@ -10,9 +10,11 @@ const h = vi.hoisted(() => ({
   applyGoodboyIgnore: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  updateProjectGoodboyIgnore: h.updateProjectGoodboyIgnore,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateProjectGoodboyIgnore: h.updateProjectGoodboyIgnore,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/goodboyIgnore', () => ({
   checkGoodboyIgnoreStatus: h.checkGoodboyIgnoreStatus,

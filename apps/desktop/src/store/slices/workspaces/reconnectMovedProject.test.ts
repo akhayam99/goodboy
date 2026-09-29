@@ -20,12 +20,14 @@ const h = vi.hoisted(() => ({
   })),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listAllProjectsForWorkspace: h.listAllProjectsForWorkspace,
-  reconnectWorkspaceAndProjects: h.reconnectWorkspaceAndProjects,
-  updateProjectIdentity: h.updateProjectIdentity,
-  getWorkspaceById: h.getWorkspaceById,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listAllProjectsForWorkspace: h.listAllProjectsForWorkspace,
+    reconnectWorkspaceAndProjects: h.reconnectWorkspaceAndProjects,
+    updateProjectIdentity: h.updateProjectIdentity,
+    getWorkspaceById: h.getWorkspaceById,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workspace/projectRelocation', () => ({
   projectRelocate: h.projectRelocate,

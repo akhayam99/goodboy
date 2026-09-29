@@ -10,7 +10,9 @@ const { cancelTurn, isTurnStreamActive, updateAgentStatus, updateSessionState } 
   }),
 );
 
-vi.mock('@goodboy/db', () => ({ updateAgentStatus, updateSessionState }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ updateAgentStatus, updateSessionState }),
+);
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn, isTurnStreamActive }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

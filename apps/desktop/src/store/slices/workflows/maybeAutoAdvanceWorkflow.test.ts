@@ -33,10 +33,12 @@ vi.mock('./clusterImplementation', async (importOriginal) => {
   return { ...actual, resumeClusterChildren: resumeClusterChildrenSpy };
 });
 
-vi.mock('@goodboy/db', () => ({
-  listOpenQuestionsForSession: listOpenQuestionsSpy,
-  updateWorkflowRunOrchestrationStop: updateOrchestrationStopSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listOpenQuestionsForSession: listOpenQuestionsSpy,
+    updateWorkflowRunOrchestrationStop: updateOrchestrationStopSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

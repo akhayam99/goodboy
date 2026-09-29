@@ -45,10 +45,12 @@ const {
   listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listOpenQuestionsForSession: listOpenQuestionsSpy,
-  putArtifactProvenance: putArtifactProvenanceSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listOpenQuestionsForSession: listOpenQuestionsSpy,
+    putArtifactProvenance: putArtifactProvenanceSpy,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 vi.mock('../../../features/plans/plans', () => ({

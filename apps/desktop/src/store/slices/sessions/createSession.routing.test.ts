@@ -30,15 +30,17 @@ const workspace: Workspace = {
   updatedAt: NOW,
 } as unknown as Workspace;
 
-vi.mock('@goodboy/db', () => ({
-  getWorkspaceById: vi.fn(async () => workspace),
-  listProjectsForWorkspace: vi.fn(async () => []),
-  insertSession: vi.fn(async () => undefined),
-  deleteSession: vi.fn(async () => undefined),
-  upsertSessionExternalTask: vi.fn(async () => undefined),
-  setSetting: vi.fn(async () => undefined),
-  upsertContextSlot: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getWorkspaceById: vi.fn(async () => workspace),
+    listProjectsForWorkspace: vi.fn(async () => []),
+    insertSession: vi.fn(async () => undefined),
+    deleteSession: vi.fn(async () => undefined),
+    upsertSessionExternalTask: vi.fn(async () => undefined),
+    setSetting: vi.fn(async () => undefined),
+    upsertContextSlot: vi.fn(async () => undefined),
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,

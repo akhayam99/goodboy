@@ -25,10 +25,12 @@ vi.mock('../../../features/settings/config-export', () => ({
   configImportApply: h.configImportApply,
 }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: h.dialogOpen }));
-vi.mock('@goodboy/db', () => ({
-  listWorkspaces: h.listWorkspaces,
-  listProjectsForWorkspace: h.listProjectsForWorkspace,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listWorkspaces: h.listWorkspaces,
+    listProjectsForWorkspace: h.listProjectsForWorkspace,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import {

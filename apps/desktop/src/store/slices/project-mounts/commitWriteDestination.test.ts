@@ -6,7 +6,9 @@ const { updateSessionWriteDestination } = vi.hoisted(() => ({
   updateSessionWriteDestination: vi.fn(async () => true),
 }));
 
-vi.mock('@goodboy/db', () => ({ updateSessionWriteDestination }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ updateSessionWriteDestination }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { commitWriteDestination } from './commitWriteDestination';

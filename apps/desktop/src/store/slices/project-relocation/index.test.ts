@@ -21,7 +21,11 @@ vi.mock('../../../features/workspace/projectRelocation', () => ({
   projectRelocate: h.projectRelocate,
   projectRelocationUndo: h.projectRelocationUndo,
 }));
-vi.mock('@goodboy/db', () => ({ updateProjectIdentity: h.updateProjectIdentity }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateProjectIdentity: h.updateProjectIdentity,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { findMovedProjects } from './findMovedProjects';

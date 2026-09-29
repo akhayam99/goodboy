@@ -9,7 +9,6 @@ const {
   listMountOperations,
   getMountOperation,
   upsertMountOperation,
-  updateSessionActiveMount,
   updateSessionWriteDestination,
   updateSessionActiveProject,
 } = vi.hoisted(() => ({
@@ -35,21 +34,21 @@ const {
   listMountOperations: vi.fn(async () => [] as ReadonlyArray<Record<string, unknown>>),
   getMountOperation: vi.fn(async () => null as Record<string, unknown> | null),
   upsertMountOperation: vi.fn(async () => undefined),
-  updateSessionActiveMount: vi.fn(async () => undefined),
   updateSessionWriteDestination: vi.fn(async () => true),
   updateSessionActiveProject: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  deleteSessionMount,
-  listSessionMounts,
-  listMountOperations,
-  getMountOperation,
-  upsertMountOperation,
-  updateSessionActiveMount,
-  updateSessionWriteDestination,
-  updateSessionActiveProject,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    deleteSessionMount,
+    listSessionMounts,
+    listMountOperations,
+    getMountOperation,
+    upsertMountOperation,
+    updateSessionWriteDestination,
+    updateSessionActiveProject,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/worktree', () => ({
   removeWorktreeChecked,
@@ -239,7 +238,6 @@ beforeEach(() => {
   listSessionMounts.mockImplementation(async () => VIEWS);
   listMountOperations.mockImplementation(async () => []);
   getMountOperation.mockImplementation(async () => null);
-  updateSessionActiveMount.mockImplementation(async () => undefined);
   removeWorktreeChecked.mockImplementation(async ({ worktreePath }: { worktreePath: string }) => ({
     kind: 'removed',
     path: worktreePath,

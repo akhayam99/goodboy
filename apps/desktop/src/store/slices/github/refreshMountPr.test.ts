@@ -31,27 +31,29 @@ vi.mock('@goodboy/core', () => ({
   toCachedPullRequest: vi.fn(() => null),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listMountPullRequestLinks: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
-    h.links.filter((link) => link.mountId === mountId),
-  ),
-  upsertMountPullRequestLink: vi.fn(async ({ link }: { readonly link: MountPullRequestLink }) => {
-    const index = h.links.findIndex(
-      (candidate) =>
-        candidate.mountId === link.mountId &&
-        candidate.host === link.host &&
-        candidate.repoSlug === link.repoSlug &&
-        candidate.prNumber === link.prNumber,
-    );
-    if (index >= 0) {
-      h.links.splice(index, 1, link);
-    } else {
-      h.links.push(link);
-    }
-    return true;
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listMountPullRequestLinks: vi.fn(async ({ mountId }: { readonly mountId: MountId }) =>
+      h.links.filter((link) => link.mountId === mountId),
+    ),
+    upsertMountPullRequestLink: vi.fn(async ({ link }: { readonly link: MountPullRequestLink }) => {
+      const index = h.links.findIndex(
+        (candidate) =>
+          candidate.mountId === link.mountId &&
+          candidate.host === link.host &&
+          candidate.repoSlug === link.repoSlug &&
+          candidate.prNumber === link.prNumber,
+      );
+      if (index >= 0) {
+        h.links.splice(index, 1, link);
+      } else {
+        h.links.push(link);
+      }
+      return true;
+    }),
+    upsertGithubPrCache: vi.fn(async () => undefined),
   }),
-  upsertGithubPrCache: vi.fn(async () => undefined),
-}));
+);
 
 vi.mock('@goodboy/ui', () => ({
   formatError: (error: unknown) => (error instanceof Error ? error.message : String(error)),

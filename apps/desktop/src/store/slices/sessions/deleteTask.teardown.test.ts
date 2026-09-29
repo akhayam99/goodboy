@@ -60,11 +60,13 @@ const {
   listLiveRunIds: vi.fn(async () => new Set<string>()),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listSessionMounts,
-  purgeSessionForDelete,
-  detachSessionMounts,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listSessionMounts,
+    purgeSessionForDelete,
+    detachSessionMounts,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/worktree/worktree', () => ({
   removeWorktreeChecked,

@@ -10,20 +10,22 @@ const h = vi.hoisted(() => ({
   titles: [] as string[],
 }));
 
-vi.mock('@goodboy/db', () => ({
-  getSetting: vi.fn(async (_db: unknown, key: string) => h.settings.get(key) ?? null),
-  setSetting: vi.fn(async (_db: unknown, key: string, value: string) => {
-    h.settings.set(key, value);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getSetting: vi.fn(async (_db: unknown, key: string) => h.settings.get(key) ?? null),
+    setSetting: vi.fn(async (_db: unknown, key: string, value: string) => {
+      h.settings.set(key, value);
+    }),
+    deleteSetting: vi.fn(async (_db: unknown, key: string) => {
+      h.settings.delete(key);
+    }),
+    listSettingsWithPrefix: vi.fn(async (_db: unknown, prefix: string) =>
+      [...h.settings.entries()]
+        .filter(([key]) => key.startsWith(prefix))
+        .map(([key, value]) => ({ key, value })),
+    ),
   }),
-  deleteSetting: vi.fn(async (_db: unknown, key: string) => {
-    h.settings.delete(key);
-  }),
-  listSettingsWithPrefix: vi.fn(async (_db: unknown, prefix: string) =>
-    [...h.settings.entries()]
-      .filter(([key]) => key.startsWith(prefix))
-      .map(([key, value]) => ({ key, value })),
-  ),
-}));
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workspace/window', () => ({
   MAIN_WINDOW_LABEL: 'main',

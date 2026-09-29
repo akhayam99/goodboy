@@ -18,7 +18,9 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
-vi.mock('@goodboy/db', () => ({ upsertContextSlot: upsertContextSlotSpy }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ upsertContextSlot: upsertContextSlotSpy }),
+);
 
 vi.mock('@goodboy/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/core')>();

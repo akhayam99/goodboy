@@ -9,11 +9,13 @@ const { db } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@goodboy/db', () => ({
-  getSessionContextSeenAt: () => db.getSessionContextSeenAt(),
-  setSessionContextSeenAt: (_db: unknown, sessionId: unknown, seenAt: unknown) =>
-    db.setSessionContextSeenAt(sessionId, seenAt),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getSessionContextSeenAt: () => db.getSessionContextSeenAt(),
+    setSessionContextSeenAt: (_db: unknown, sessionId: unknown, seenAt: unknown) =>
+      db.setSessionContextSeenAt(sessionId, seenAt),
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { createContextDrawerSlice } from './index';

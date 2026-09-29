@@ -6,7 +6,9 @@ const { markArtifactOpened } = vi.hoisted(() => ({
   markArtifactOpened: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({ markArtifactOpened }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../test/dbMock')).createDbMock({ markArtifactOpened }),
+);
 vi.mock('../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { ARTIFACT_OPENED_DEBOUNCE_MS, recordArtifactOpened } from './recordArtifactOpened';

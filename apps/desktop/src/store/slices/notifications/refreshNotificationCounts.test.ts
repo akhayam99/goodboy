@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 const countNotifications = vi.fn();
 
-vi.mock('@goodboy/db', () => ({ countNotifications }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ countNotifications }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 const { refreshNotificationCounts } = await import('./refreshNotificationCounts');

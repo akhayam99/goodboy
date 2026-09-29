@@ -43,18 +43,20 @@ const {
   updateTriggerModeSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  updateSessionWorkflowAutoRun: updateAutoRunSpy,
-  updateWorkflowRunOrchestrationStop: updateStopSpy,
-  updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
-  listOpenQuestionsForSession: listOpenQuestionsSpy,
-  insertProviderRun: insertProviderRunSpy,
-  updateProviderRunStatus: updateProviderRunStatusSpy,
-  insertTelemetry: insertTelemetrySpy,
-  summarizeSessionTelemetry: summarizeSessionSpy,
-  summarizeWorkspaceTelemetry: summarizeWorkspaceSpy,
-  updateSessionWorkflowTriggerMode: updateTriggerModeSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionWorkflowAutoRun: updateAutoRunSpy,
+    updateWorkflowRunOrchestrationStop: updateStopSpy,
+    updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
+    listOpenQuestionsForSession: listOpenQuestionsSpy,
+    insertProviderRun: insertProviderRunSpy,
+    updateProviderRunStatus: updateProviderRunStatusSpy,
+    insertTelemetry: insertTelemetrySpy,
+    summarizeSessionTelemetry: summarizeSessionSpy,
+    summarizeWorkspaceTelemetry: summarizeWorkspaceSpy,
+    updateSessionWorkflowTriggerMode: updateTriggerModeSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

@@ -23,7 +23,12 @@ vi.mock('../../../features/changelog/fetchReleaseChangelog', () => ({
 
 vi.mock('@tauri-apps/api/app', () => ({ getVersion: getVersionMock }));
 
-vi.mock('@goodboy/db', () => ({ getSetting: getSettingMock, setSetting: setSettingMock }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getSetting: getSettingMock,
+    setSetting: setSettingMock,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: vi.fn(), select: vi.fn() } }));
 

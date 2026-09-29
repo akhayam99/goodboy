@@ -9,15 +9,17 @@ const { getArtifactBySourceTurn, insertArtifact } = vi.hoisted(() => ({
   insertArtifact: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  deleteArtifact: vi.fn(),
-  getArtifactBySourceTurn,
-  insertArtifact,
-  listArtifactsForSession: vi.fn(),
-  restoreArtifact: vi.fn(),
-  setArtifactStatus: vi.fn(),
-  updateArtifactSource: vi.fn(),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../test/dbMock')).createDbMock({
+    deleteArtifact: vi.fn(),
+    getArtifactBySourceTurn,
+    insertArtifact,
+    listArtifactsForSession: vi.fn(),
+    restoreArtifact: vi.fn(),
+    setArtifactStatus: vi.fn(),
+    updateArtifactSource: vi.fn(),
+  }),
+);
 
 import { createArtifact } from './artifacts';
 

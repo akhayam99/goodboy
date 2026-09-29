@@ -20,11 +20,13 @@ const { putArtifactProvenance, getArtifactProvenance, updateArtifactRun } = vi.h
   updateArtifactRun: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  putArtifactProvenance,
-  getArtifactProvenance,
-  updateArtifactRun,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../test/dbMock')).createDbMock({
+    putArtifactProvenance,
+    getArtifactProvenance,
+    updateArtifactRun,
+  }),
+);
 
 import {
   artifactEvidenceInventory,

@@ -12,7 +12,9 @@ const { invokeMock, renameSessionMock } = vi.hoisted(() => ({
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
 
-vi.mock('@goodboy/db', () => ({ renameSession: renameSessionMock }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../test/dbMock')).createDbMock({ renameSession: renameSessionMock }),
+);
 
 vi.mock('../../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

@@ -39,12 +39,14 @@ const {
   loadSessionOpenQuestionsSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  detachWorkflowFromSession: detachInDbSpy,
-  purgeAgentForDelete: purgeAgentSpy,
-  listResolveAttempts: listResolveAttemptsSpy,
-  updateSessionState: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    detachWorkflowFromSession: detachInDbSpy,
+    purgeAgentForDelete: purgeAgentSpy,
+    listResolveAttempts: listResolveAttemptsSpy,
+    updateSessionState: vi.fn(async () => undefined),
+  }),
+);
 
 vi.mock('../../../features/worktree/worktree', () => ({
   abandonWorktreeWriter: abandonWriterSpy,

@@ -15,10 +15,12 @@ const {
   restoreOpenQuestion: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  markOpenQuestionDismissed,
-  restoreOpenQuestion,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    markOpenQuestionDismissed,
+    restoreOpenQuestion,
+  }),
+);
 vi.mock('@goodboy/core', () => ({
   addQuestionsToSlot,
   removeQuestionsFromSlot,

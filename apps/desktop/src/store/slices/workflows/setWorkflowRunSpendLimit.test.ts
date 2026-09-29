@@ -15,7 +15,11 @@ const { updateSpendLimitSpy } = vi.hoisted(() => ({
   updateSpendLimitSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({ updateWorkflowRunSpendLimit: updateSpendLimitSpy }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateWorkflowRunSpendLimit: updateSpendLimitSpy,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { setWorkflowRunSpendLimit } from './setWorkflowRunSpendLimit';

@@ -13,7 +13,11 @@ const { listOpenQuestionsSpy } = vi.hoisted(() => ({
   listOpenQuestionsSpy: vi.fn(async () => [] as ReadonlyArray<OpenQuestion>),
 }));
 
-vi.mock('@goodboy/db', () => ({ listOpenQuestionsForSession: listOpenQuestionsSpy }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listOpenQuestionsForSession: listOpenQuestionsSpy,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { findWorkflowActivationBlock } from './workflowActivationGate';

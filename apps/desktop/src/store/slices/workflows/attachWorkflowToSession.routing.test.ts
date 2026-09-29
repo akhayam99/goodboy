@@ -20,7 +20,9 @@ const { attachInDbSpy, invokeAgentInsertSpy, persistStopSpy } = vi.hoisted(() =>
   persistStopSpy: vi.fn(async (..._args: ReadonlyArray<unknown>) => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({ attachWorkflowToSession: attachInDbSpy }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ attachWorkflowToSession: attachInDbSpy }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentInsert: invokeAgentInsertSpy,

@@ -38,13 +38,15 @@ const {
   cancelTurnSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  attachWorkflowToSession: attachInDbSpy,
-  updateSessionWorkflowTriggerMode: updateTriggerModeSpy,
-  listOpenQuestionsForSession: listOpenQuestionsSpy,
-  discardWorkflowInSession: discardInDbSpy,
-  updateSessionState: updateSessionStateSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    attachWorkflowToSession: attachInDbSpy,
+    updateSessionWorkflowTriggerMode: updateTriggerModeSpy,
+    listOpenQuestionsForSession: listOpenQuestionsSpy,
+    discardWorkflowInSession: discardInDbSpy,
+    updateSessionState: updateSessionStateSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({

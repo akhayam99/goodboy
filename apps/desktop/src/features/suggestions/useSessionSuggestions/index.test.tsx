@@ -59,7 +59,12 @@ vi.mock('../../workflows/useWorkflowAdvanceStates', () => ({
 
 vi.mock('../../worktree/worktree', () => ({ worktreeStatus }));
 
-vi.mock('@goodboy/db', () => ({ listNudgeEvents, insertNudgeEvent: vi.fn(async () => undefined) }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listNudgeEvents,
+    insertNudgeEvent: vi.fn(async () => undefined),
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { resetWorktreeStatusCache } from '../../session/hooks/useWorktreeStatuses/cache';

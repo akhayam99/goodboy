@@ -34,22 +34,24 @@ const h = vi.hoisted(() => ({
   updateProjectIdentity: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  findProjectByRootPath: h.findProjectByRootPath,
-  getWorkspaceById: h.getWorkspaceById,
-  insertProject: h.insertProject,
-  insertWorkspace: h.insertWorkspace,
-  listAllProjectsForWorkspace: h.listAllProjectsForWorkspace,
-  reconnectProject: h.reconnectProject,
-  reconnectWorkspace: h.reconnectWorkspace,
-  reconnectWorkspaceAndProjects: h.reconnectWorkspaceAndProjects,
-  disconnectProject: h.disconnectProject,
-  disconnectWorkspace: h.disconnectWorkspace,
-  disconnectWorkspaceAndProjects: h.disconnectWorkspaceAndProjects,
-  upsertWorkspaceProfile: h.upsertWorkspaceProfile,
-  describeProjectAdoption: h.describeProjectAdoption,
-  updateProjectIdentity: h.updateProjectIdentity,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    findProjectByRootPath: h.findProjectByRootPath,
+    getWorkspaceById: h.getWorkspaceById,
+    insertProject: h.insertProject,
+    insertWorkspace: h.insertWorkspace,
+    listAllProjectsForWorkspace: h.listAllProjectsForWorkspace,
+    reconnectProject: h.reconnectProject,
+    reconnectWorkspace: h.reconnectWorkspace,
+    reconnectWorkspaceAndProjects: h.reconnectWorkspaceAndProjects,
+    disconnectProject: h.disconnectProject,
+    disconnectWorkspace: h.disconnectWorkspace,
+    disconnectWorkspaceAndProjects: h.disconnectWorkspaceAndProjects,
+    upsertWorkspaceProfile: h.upsertWorkspaceProfile,
+    describeProjectAdoption: h.describeProjectAdoption,
+    updateProjectIdentity: h.updateProjectIdentity,
+  }),
+);
 
 vi.mock('@goodboy/core', () => ({ seedWorkflowLibrary: h.seedWorkflowLibrary }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));

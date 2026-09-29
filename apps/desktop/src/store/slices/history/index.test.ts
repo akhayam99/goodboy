@@ -35,13 +35,15 @@ const worktree = vi.hoisted(() => ({
 vi.mock('../../../features/history/historyEngine', () => engine);
 vi.mock('../../../features/worktree/worktree', () => worktree);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
-vi.mock('@goodboy/db', () => ({
-  listResolvePublicationsForSession: vi.fn(async () => []),
-  setResolvePublicationPhase: vi.fn(async () => undefined),
-  markHistoryPlan: vi.fn(async () => undefined),
-  saveDraftHistoryPlan: vi.fn(async () => ({ id: 'plan-1' })),
-  getDraftHistoryPlan: vi.fn(async () => null),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listResolvePublicationsForSession: vi.fn(async () => []),
+    setResolvePublicationPhase: vi.fn(async () => undefined),
+    markHistoryPlan: vi.fn(async () => undefined),
+    saveDraftHistoryPlan: vi.fn(async () => ({ id: 'plan-1' })),
+    getDraftHistoryPlan: vi.fn(async () => null),
+  }),
+);
 vi.mock('../../../features/session/components/AgentSpawnConfig/taskModelAgentSpawnConfig', () => ({
   taskModelAgentSpawnConfig: () => ({
     hint: '',

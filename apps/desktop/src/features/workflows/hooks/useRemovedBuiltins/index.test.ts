@@ -10,7 +10,11 @@ const h = vi.hoisted(() => ({
   ),
 }));
 
-vi.mock('@goodboy/db', () => ({ listRemovedSeededWorkflowIds: h.listRemovedSeededWorkflowIds }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../test/dbMock')).createDbMock({
+    listRemovedSeededWorkflowIds: h.listRemovedSeededWorkflowIds,
+  }),
+);
 vi.mock('../../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { useRemovedBuiltins } from './index';

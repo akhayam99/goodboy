@@ -32,10 +32,12 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   return { ...actual, summarizeStepOutput: summarizeStepOutputSpy };
 });
 
-vi.mock('@goodboy/db', () => ({
-  updateSessionWorkflowStep: vi.fn(),
-  insertOpenQuestion: insertOpenQuestionSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionWorkflowStep: vi.fn(),
+    insertOpenQuestion: insertOpenQuestionSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },

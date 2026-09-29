@@ -6,7 +6,11 @@ const { updateSessionAutoRunSpy } = vi.hoisted(() => ({
   updateSessionAutoRunSpy: vi.fn(async (..._args: ReadonlyArray<unknown>) => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({ updateSessionAutoRun: updateSessionAutoRunSpy }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionAutoRun: updateSessionAutoRunSpy,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { setSessionAutoRun } from './setSessionAutoRun';

@@ -8,7 +8,11 @@ const { invokeMock, updateGeneratedTitleSpy } = vi.hoisted(() => ({
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeMock }));
-vi.mock('@goodboy/db', () => ({ updateGeneratedWorkflowRunTitle: updateGeneratedTitleSpy }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateGeneratedWorkflowRunTitle: updateGeneratedTitleSpy,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { generateWorkflowRunTitle } from './generateWorkflowRunTitle';

@@ -97,85 +97,86 @@ vi.mock('../../../features/worktree/worktree', () => ({
   worktreeStatus: h.worktreeStatus,
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listSessionMounts: vi.fn(async ({ sessionId }: { sessionId: string }) =>
-    [...h.rows.values()].filter((row) => row.sessionId === sessionId),
-  ),
-  insertSessionMount: vi.fn(async ({ mount }: { mount: Row }) => {
-    const owned = [...h.rows.values()].some(
-      (row) => row.worktreePath !== null && row.worktreePath === mount.worktreePath,
-    );
-    if (owned) {
-      throw new Error('worktreePath already owned');
-    }
-    h.rows.set(mount.id, { ...mount });
-  }),
-  updateSessionMountBranch: vi.fn(
-    async ({
-      mountId,
-      branch,
-      expectedRevision,
-    }: {
-      mountId: string;
-      branch: string;
-      expectedRevision: number;
-    }) => {
-      const row = h.rows.get(mountId);
-      if (row === undefined || row.revision !== expectedRevision) {
-        return false;
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listSessionMounts: vi.fn(async ({ sessionId }: { sessionId: string }) =>
+      [...h.rows.values()].filter((row) => row.sessionId === sessionId),
+    ),
+    insertSessionMount: vi.fn(async ({ mount }: { mount: Row }) => {
+      const owned = [...h.rows.values()].some(
+        (row) => row.worktreePath !== null && row.worktreePath === mount.worktreePath,
+      );
+      if (owned) {
+        throw new Error('worktreePath already owned');
       }
-      h.rows.set(mountId, { ...row, branch, revision: row.revision + 1 });
-      return true;
-    },
-  ),
-  updateSessionMountLifecycle: vi.fn(
-    async ({
-      mountId,
-      worktreePath,
-      isAttached,
-      diskState,
-      expectedRevision,
-    }: {
-      mountId: string;
-      worktreePath: string | null;
-      isAttached: boolean;
-      diskState: string;
-      expectedRevision: number;
-    }) => {
-      const row = h.rows.get(mountId);
-      if (row === undefined || row.revision !== expectedRevision) {
-        return false;
-      }
-      h.rows.set(mountId, {
-        ...row,
+      h.rows.set(mount.id, { ...mount });
+    }),
+    updateSessionMountBranch: vi.fn(
+      async ({
+        mountId,
+        branch,
+        expectedRevision,
+      }: {
+        mountId: string;
+        branch: string;
+        expectedRevision: number;
+      }) => {
+        const row = h.rows.get(mountId);
+        if (row === undefined || row.revision !== expectedRevision) {
+          return false;
+        }
+        h.rows.set(mountId, { ...row, branch, revision: row.revision + 1 });
+        return true;
+      },
+    ),
+    updateSessionMountLifecycle: vi.fn(
+      async ({
+        mountId,
         worktreePath,
-        lastWorktreePath: worktreePath ?? row.worktreePath ?? row.lastWorktreePath,
         isAttached,
         diskState,
-        revision: row.revision + 1,
-      });
-      return true;
-    },
-  ),
-  getMountOperation: vi.fn(
-    async ({ sessionId, requestId }: { sessionId: string; requestId: string }) =>
-      h.operations.get(`${sessionId}:${requestId}`) ?? null,
-  ),
-  upsertMountOperation: vi.fn(async ({ operation }: { operation: Record<string, unknown> }) => {
-    const mountId = operation['mountId'];
-    if (typeof mountId === 'string' && !h.rows.has(mountId)) {
-      throw new Error('Sqlite error: FOREIGN KEY constraint failed');
-    }
-    h.operations.set(`${operation['sessionId']}:${operation['requestId']}`, { ...operation });
+        expectedRevision,
+      }: {
+        mountId: string;
+        worktreePath: string | null;
+        isAttached: boolean;
+        diskState: string;
+        expectedRevision: number;
+      }) => {
+        const row = h.rows.get(mountId);
+        if (row === undefined || row.revision !== expectedRevision) {
+          return false;
+        }
+        h.rows.set(mountId, {
+          ...row,
+          worktreePath,
+          lastWorktreePath: worktreePath ?? row.worktreePath ?? row.lastWorktreePath,
+          isAttached,
+          diskState,
+          revision: row.revision + 1,
+        });
+        return true;
+      },
+    ),
+    getMountOperation: vi.fn(
+      async ({ sessionId, requestId }: { sessionId: string; requestId: string }) =>
+        h.operations.get(`${sessionId}:${requestId}`) ?? null,
+    ),
+    upsertMountOperation: vi.fn(async ({ operation }: { operation: Record<string, unknown> }) => {
+      const mountId = operation['mountId'];
+      if (typeof mountId === 'string' && !h.rows.has(mountId)) {
+        throw new Error('Sqlite error: FOREIGN KEY constraint failed');
+      }
+      h.operations.set(`${operation['sessionId']}:${operation['requestId']}`, { ...operation });
+    }),
+    listMountOperations: vi.fn(async ({ sessionId }: { sessionId: string }) =>
+      [...h.operations.values()].filter((operation) => operation['sessionId'] === sessionId),
+    ),
+    updateSessionWriteDestination: h.updateSessionWriteDestination,
+    updateSessionActiveProject: vi.fn(async () => undefined),
+    registerWorktreeRoot: vi.fn(async () => undefined),
   }),
-  listMountOperations: vi.fn(async ({ sessionId }: { sessionId: string }) =>
-    [...h.operations.values()].filter((operation) => operation['sessionId'] === sessionId),
-  ),
-  updateSessionActiveMount: vi.fn(async () => true),
-  updateSessionWriteDestination: h.updateSessionWriteDestination,
-  updateSessionActiveProject: vi.fn(async () => undefined),
-  deleteSessionWorktreeForProject: vi.fn(async () => undefined),
-}));
+);
 
 import { createProjectMountsSlice } from './index';
 import { selectActiveMount, selectWritableMounts } from './selectors';

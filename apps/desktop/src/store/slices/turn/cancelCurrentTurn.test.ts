@@ -11,7 +11,9 @@ const { cancelTurn, invokeAgentUpdateStatus, applyAgentTurnState, updateSessionS
   }),
 );
 
-vi.mock('@goodboy/db', () => ({ updateSessionState }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({ updateSessionState }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn }));
 vi.mock('../../../features/workflows/workflows', () => ({ invokeAgentUpdateStatus }));

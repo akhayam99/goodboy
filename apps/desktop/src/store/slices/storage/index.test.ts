@@ -31,20 +31,22 @@ const {
   worktreeWriterStatus: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  listArchivedSessionRefs,
-  deleteTurnEventsForSessions,
-  vacuumDatabase,
-  updateSessionMountLifecycle,
-  deleteWorktreeLedgerEntries,
-  setWorktreeLedgerKeep,
-  getMountOperation: vi.fn(
-    async ({ requestId }: { readonly requestId: string }) => operations.get(requestId) ?? null,
-  ),
-  upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
-    operations.set(operation.requestId, operation);
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listArchivedSessionRefs,
+    deleteTurnEventsForSessions,
+    vacuumDatabase,
+    updateSessionMountLifecycle,
+    deleteWorktreeLedgerEntries,
+    setWorktreeLedgerKeep,
+    getMountOperation: vi.fn(
+      async ({ requestId }: { readonly requestId: string }) => operations.get(requestId) ?? null,
+    ),
+    upsertMountOperation: vi.fn(async ({ operation }: { readonly operation: MountOperation }) => {
+      operations.set(operation.requestId, operation);
+    }),
   }),
-}));
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

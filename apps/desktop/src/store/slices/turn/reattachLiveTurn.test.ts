@@ -32,11 +32,13 @@ vi.mock('../../../features/chat/turn', () => ({
     })();
   },
 }));
-vi.mock('@goodboy/db', () => ({
-  insertMessage: h.insertMessage,
-  updateProviderRunStatus: h.updateProviderRunStatus,
-  updateSessionState: h.updateSessionState,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertMessage: h.insertMessage,
+    updateProviderRunStatus: h.updateProviderRunStatus,
+    updateSessionState: h.updateSessionState,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: h.invokeAgentList,

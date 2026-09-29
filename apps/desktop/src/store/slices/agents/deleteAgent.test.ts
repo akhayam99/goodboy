@@ -43,11 +43,13 @@ vi.mock('../../../features/chat/turn', () => ({
 vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: hoisted.invokeAgentList,
 }));
-vi.mock('@goodboy/db', () => ({
-  updateSessionState: hoisted.updateSessionState,
-  listResolveAttempts: hoisted.listResolveAttempts,
-  purgeAgentForDelete: hoisted.purgeAgentForDelete,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionState: hoisted.updateSessionState,
+    listResolveAttempts: hoisted.listResolveAttempts,
+    purgeAgentForDelete: hoisted.purgeAgentForDelete,
+  }),
+);
 vi.mock('@goodboy/core', () => ({
   removeQuestionsFromSlot: hoisted.removeQuestionsFromSlot,
 }));

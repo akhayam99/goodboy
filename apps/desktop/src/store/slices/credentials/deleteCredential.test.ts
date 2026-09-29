@@ -18,10 +18,12 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: (...args: ReadonlyArray<unknown>) => invokeSpy(...(args as [])),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  deleteProviderCredential: (...args: ReadonlyArray<unknown>) =>
-    deleteProviderCredentialSpy(...(args as [])),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    deleteProviderCredential: (...args: ReadonlyArray<unknown>) =>
+      deleteProviderCredentialSpy(...(args as [])),
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: {},

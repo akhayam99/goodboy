@@ -9,10 +9,12 @@ const h = vi.hoisted(() => ({
   updateProjectDescription: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  updateProjectStar: h.updateProjectStar,
-  updateProjectDescription: h.updateProjectDescription,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateProjectStar: h.updateProjectStar,
+    updateProjectDescription: h.updateProjectDescription,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { describeProject } from './describeProject';

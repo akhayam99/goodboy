@@ -6,10 +6,12 @@ const { updateOutcomeSpy } = vi.hoisted(() => ({
   updateOutcomeSpy: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
-  updateWorkflowRunOrchestrationStop: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
+    updateWorkflowRunOrchestrationStop: vi.fn(async () => undefined),
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

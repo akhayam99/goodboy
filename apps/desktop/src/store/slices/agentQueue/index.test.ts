@@ -7,7 +7,12 @@ const { listAgentQueuedMessages, replaceAgentQueuedMessages } = vi.hoisted(() =>
   replaceAgentQueuedMessages: vi.fn(async () => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({ listAgentQueuedMessages, replaceAgentQueuedMessages }));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    listAgentQueuedMessages,
+    replaceAgentQueuedMessages,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import type { AgentQueuedTurn, AgentQueuedTurnInput, GetFn, SetFn } from './types';

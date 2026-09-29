@@ -41,17 +41,19 @@ const {
   invokeAgentListSpy: vi.fn(async () => []),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  updateSessionWorkflowAutoRun: updateAutoRunSpy,
-  updateWorkflowRunOrchestrationStop: updateStopSpy,
-  updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
-  listOpenQuestionsForSession: listOpenQuestionsSpy,
-  insertProviderRun: insertProviderRunSpy,
-  updateProviderRunStatus: updateProviderRunStatusSpy,
-  insertTelemetry: insertTelemetrySpy,
-  summarizeSessionTelemetry: summarizeSessionSpy,
-  summarizeWorkspaceTelemetry: summarizeWorkspaceSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    updateSessionWorkflowAutoRun: updateAutoRunSpy,
+    updateWorkflowRunOrchestrationStop: updateStopSpy,
+    updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
+    listOpenQuestionsForSession: listOpenQuestionsSpy,
+    insertProviderRun: insertProviderRunSpy,
+    updateProviderRunStatus: updateProviderRunStatusSpy,
+    insertTelemetry: insertTelemetrySpy,
+    summarizeSessionTelemetry: summarizeSessionSpy,
+    summarizeWorkspaceTelemetry: summarizeWorkspaceSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

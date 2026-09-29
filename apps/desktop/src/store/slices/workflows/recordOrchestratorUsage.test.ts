@@ -10,13 +10,15 @@ import type {
   WorkflowRunId,
 } from '@goodboy/types';
 
-vi.mock('@goodboy/db', () => ({
-  insertProviderRun: vi.fn(async () => undefined),
-  insertTelemetry: vi.fn(async () => undefined),
-  summarizeSessionTelemetry: vi.fn(async () => null),
-  summarizeWorkspaceTelemetry: vi.fn(async () => null),
-  updateProviderRunStatus: vi.fn(async () => undefined),
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertProviderRun: vi.fn(async () => undefined),
+    insertTelemetry: vi.fn(async () => undefined),
+    summarizeSessionTelemetry: vi.fn(async () => null),
+    summarizeWorkspaceTelemetry: vi.fn(async () => null),
+    updateProviderRunStatus: vi.fn(async () => undefined),
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import { recordOrchestratorUsage } from './recordOrchestratorUsage';

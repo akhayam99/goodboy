@@ -9,11 +9,13 @@ const { decideIntegrationDraft, listPendingSlackDrafts, listPendingSlackDraftsFo
     listPendingSlackDraftsForSession: vi.fn(),
   }));
 
-vi.mock('@goodboy/db', () => ({
-  decideIntegrationDraft,
-  listPendingSlackDrafts,
-  listPendingSlackDraftsForSession,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    decideIntegrationDraft,
+    listPendingSlackDrafts,
+    listPendingSlackDraftsForSession,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 import {

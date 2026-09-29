@@ -31,16 +31,18 @@ const h = vi.hoisted(() => ({
   ghRepoDeletesMergedBranches: vi.fn(async () => false as boolean | null),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  insertDeletedBranch: h.insertDeletedBranch,
-  getDeletedBranch: h.getDeletedBranch,
-  markDeletedBranchRestored: h.markDeletedBranchRestored,
-  listDeletedBranches: h.listDeletedBranches,
-  listExpiredDeletedBranches: h.listExpiredDeletedBranches,
-  forgetDeletedBranch: h.forgetDeletedBranch,
-  listGoodboyBranches: h.listGoodboyBranches,
-  listMergedRequestHeads: h.listMergedRequestHeads,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    insertDeletedBranch: h.insertDeletedBranch,
+    getDeletedBranch: h.getDeletedBranch,
+    markDeletedBranchRestored: h.markDeletedBranchRestored,
+    listDeletedBranches: h.listDeletedBranches,
+    listExpiredDeletedBranches: h.listExpiredDeletedBranches,
+    forgetDeletedBranch: h.forgetDeletedBranch,
+    listGoodboyBranches: h.listGoodboyBranches,
+    listMergedRequestHeads: h.listMergedRequestHeads,
+  }),
+);
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../shared/lib/repo', () => ({ projectFetch: h.projectFetch }));
 vi.mock('../project-mounts/mountViews', () => ({ loadMountViews: h.loadMountViews }));

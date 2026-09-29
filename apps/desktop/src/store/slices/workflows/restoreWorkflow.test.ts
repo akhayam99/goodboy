@@ -7,9 +7,11 @@ const { restoreWorkflowInSessionSpy, recordSessionEventSpy } = vi.hoisted(() => 
   recordSessionEventSpy: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  restoreWorkflowInSession: restoreWorkflowInSessionSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    restoreWorkflowInSession: restoreWorkflowInSessionSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: {},

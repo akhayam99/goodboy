@@ -29,10 +29,12 @@ vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: {},
 }));
 
-vi.mock('@goodboy/db', () => ({
-  upsertMountPullRequestLink: h.upsertMountPullRequestLink,
-  findPrSeriesMembership: h.findPrSeriesMembership,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    upsertMountPullRequestLink: h.upsertMountPullRequestLink,
+    findPrSeriesMembership: h.findPrSeriesMembership,
+  }),
+);
 
 import { createPrForSession } from './createPrForSession';
 import type { GetFn, SetFn } from './types';

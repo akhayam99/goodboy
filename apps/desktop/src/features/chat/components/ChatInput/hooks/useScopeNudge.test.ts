@@ -8,10 +8,12 @@ const insertNudgeEventSpy = vi.hoisted(() => vi.fn(async () => undefined));
 const updateNudgeEventOutcomeSpy = vi.hoisted(() => vi.fn(async () => undefined));
 const detectScopeMismatchSpy = vi.hoisted(() => vi.fn<() => ScopeMismatch | null>(() => null));
 
-vi.mock('@goodboy/db', () => ({
-  insertNudgeEvent: insertNudgeEventSpy,
-  updateNudgeEventOutcome: updateNudgeEventOutcomeSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../../../test/dbMock')).createDbMock({
+    insertNudgeEvent: insertNudgeEventSpy,
+    updateNudgeEventOutcome: updateNudgeEventOutcomeSpy,
+  }),
+);
 
 vi.mock('../../../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

@@ -7,15 +7,17 @@ const db = vi.hoisted(() => ({
   setSetting: vi.fn(),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  getSetting: (_db: unknown, key: string) =>
-    Promise.resolve(db.settings.has(key) ? db.settings.get(key)! : null),
-  setSetting: (_db: unknown, key: string, value: string) => {
-    db.setSetting(key, value);
-    db.settings.set(key, value);
-    return Promise.resolve();
-  },
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../test/dbMock')).createDbMock({
+    getSetting: (_db: unknown, key: string) =>
+      Promise.resolve(db.settings.has(key) ? db.settings.get(key)! : null),
+    setSetting: (_db: unknown, key: string, value: string) => {
+      db.setSetting(key, value);
+      db.settings.set(key, value);
+      return Promise.resolve();
+    },
+  }),
+);
 
 vi.mock('../../shared/lib/db', () => ({ tauriDatabase: {} }));
 

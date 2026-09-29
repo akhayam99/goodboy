@@ -81,19 +81,21 @@ vi.mock('@goodboy/core', async (importOriginal) => {
   };
 });
 
-vi.mock('@goodboy/db', () => ({
-  repointWorkflowRunTemplate: repointWorkflowRunTemplateSpy,
-  listOpenQuestionsForSession: listOpenQuestionsSpy,
-  updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
-  updateWorkflowRunOrchestrationStop: updateStopSpy,
-  updateWorkflowRunOrchestratorSummary: updateSummarySpy,
-  updateWorkflowRunOrchestratorHints: updateHintsSpy,
-  insertProviderRun: insertProviderRunSpy,
-  updateProviderRunStatus: updateProviderRunStatusSpy,
-  insertTelemetry: insertTelemetrySpy,
-  summarizeSessionTelemetry: summarizeSessionSpy,
-  summarizeWorkspaceTelemetry: summarizeWorkspaceSpy,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    repointWorkflowRunTemplate: repointWorkflowRunTemplateSpy,
+    listOpenQuestionsForSession: listOpenQuestionsSpy,
+    updateWorkflowRunOrchestrationOutcome: updateOutcomeSpy,
+    updateWorkflowRunOrchestrationStop: updateStopSpy,
+    updateWorkflowRunOrchestratorSummary: updateSummarySpy,
+    updateWorkflowRunOrchestratorHints: updateHintsSpy,
+    insertProviderRun: insertProviderRunSpy,
+    updateProviderRunStatus: updateProviderRunStatusSpy,
+    insertTelemetry: insertTelemetrySpy,
+    summarizeSessionTelemetry: summarizeSessionSpy,
+    summarizeWorkspaceTelemetry: summarizeWorkspaceSpy,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
