@@ -218,6 +218,33 @@ as dark and light `.webp` pairs, and the website's in `website/public/img/`. To
 crop a short surface, use a `--window-size` height shorter than 900. The layout
 keeps its own proportions and the footer stays pinned.
 
+## Pictures for FEATURES.md
+
+Every figure in `FEATURES.md` sits in the same stage frame as the website: the
+teal-to-dark gradient card in dark, the pale gray one in light, with the app
+clip inside it. `scripts/feature-shots.mjs` captures a scene in both themes,
+clips it, draws the frame around it and writes
+`docs/readme/<name>-{dark,light}.webp`:
+
+```bash
+node scripts/feature-shots.mjs --scene 'board-shell&brand=1' --probe '[role="region"]' --window 1280x720
+node scripts/feature-shots.mjs --scene 'board-shell&brand=1' --out board-stage --selector 'main' --window 1280x600
+```
+
+- `--probe` prints the box, classes and text of the matching elements, so you
+  can pick a `--selector` or a `--clip x,y,w,h` without opening a browser.
+- The clip renders at `--scale 3` (default) and the frame is drawn at the same
+  device scale, so the app pixels are never resampled.
+- The frame's corners are transparent, so one file reads on both GitHub
+  themes. The dark and light files still follow the OS through `<picture>`.
+- The script prints the frame's css width. A frame narrower than 880 gets
+  `width="<that width>"` on its `<img>`, or GitHub enlarges it.
+- `GOODBOY_SHOT_URL` or `--base` points at the dev server
+  (default `http://localhost:5230`).
+
+A figure shows exactly the feature named by the heading it sits under, and its
+alt text names what is visible.
+
 ## Landing crops
 
 The website shows three kinds of picture, and each one is cut a different

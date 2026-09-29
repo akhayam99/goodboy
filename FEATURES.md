@@ -1,6 +1,8 @@
 # Goodboy features
 
-The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai.dev): set up, start a task, move between tasks, ship the code, then keep an eye on cost and disk. Each entry says what it does for you, and sometimes how.
+The full feature guide, in the same order as [goodboy-ai.dev](https://goodboy-ai.dev): set up, start a task, move between tasks, ship the code, then keep an eye on cost and disk. Each entry says what the feature does for you and how you use it.
+
+Every picture follows one team and one task. Harborline keeps three repos, payments-api, ledger-core and notify-relay, and issue HBL-412 says retried webhooks post a second credit. The pictures show that fix from the first brief to pull request #318.
 
 - [Set up](#set-up)
 - [Start a task](#start-a-task)
@@ -60,34 +62,46 @@ Tell agents once who you are and how you like to work, in four short parts. **Se
 
 ## Start a task
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s02-kickoff-dark.webp">
-  <img src="./docs/readme/s02-kickoff-light.webp" alt="The kickoff with Pick up a task, Run a workflow and Ask an agent, Start blank in the header, and HBL-412 picked with a drafted brief">
-</picture>
+Begin from an issue, a workflow or a question, in one draft that turns into a session when you press Start.
 
 ### How do you want to start?
 
-Start from an issue, a workflow or a question, in one draft with three tabs: **Pick up a task**, **Run a workflow** and **Ask an agent**. The draft becomes a session only when you press Start, so empty sessions do not pile up.
-
-### Start blank
-
-Start from the goal instead: **Start blank** in the kickoff header opens the session straight on its Overview, and you add the goal, projects and work from there.
+The **New session** draft has three tabs: **Pick up a task**, **Run a workflow** and **Ask an agent**. **Discard draft** throws it away. The draft becomes a session only when you press Start, so empty sessions do not pile up.
 
 ### Pick up a task, with a drafted brief
 
-Turn an issue into a briefed session in one pick. Goodboy drafts a short title and goal linked back to the issue, and you keep it, edit it, or use the issue text. Then run it through the same workflow builder as **Run a workflow**, or ask an agent. A Sentry error or a GitHub issue opens in the project it belongs to, and one Start links the issue, creates the session and starts the work.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/start-pick-task-dark.webp">
+  <img src="./docs/readme/start-pick-task-light.webp" alt="New session with the Pick up a task tab selected, a Starred list of issues with HBL-412 Retried webhooks post a second credit highlighted, and below it Brief from HBL-412 titled Stop retried webhooks posting a second credit, with Done when criteria and the buttons Dismiss, Use issue text, Edit and Use brief">
+</picture>
 
-### Ask an agent
-
-Map an unfamiliar repo before you plan: **Scout** is the default and can start with an empty prompt. On a broad question the scout can split the search by area, and one report merges what the child scouts found.
+Turn an issue into a briefed session in one pick. Pick HBL-412 and Goodboy drafts a short title, a goal and the **Done when** criteria under **Brief from HBL-412**, and the full issue stays linked to the session. Press **Use brief** to keep it, **Edit** to change it, or **Use issue text** to skip the draft. A Sentry error or a GitHub issue opens in the project it belongs to, and one Start links the issue, creates the session and starts the work.
 
 ### Run a workflow
 
-The full workflow builder, right in the kickoff: pick **Orchestrated**, **Custom** or **Preset**, see the plan you will run, edit the steps, choose which providers it can use, and set Starts, Autorun and a spend cap. **Start workflow** creates the session and starts the run in one step.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/start-run-workflow-dark.webp">
+  <img src="./docs/readme/start-run-workflow-light.webp" alt="New session with the Run a workflow tab selected: an Orchestrated workflow with the goal Stop retried webhooks posting a second credit, the Orchestrated, Custom and Preset switch, the Plan with an Orchestrator row and example steps Scout, Planner and Implementer, and the Starts Now, Autorun and Spend cap None controls next to Start workflow">
+</picture>
+
+The full workflow builder, right in the kickoff. Write the goal, pick **Orchestrated**, **Custom** or **Preset**, and read the **Plan** you will run. Under the plan, set **Starts**, **Autorun** and a **Spend cap**. **Start workflow** creates the session and starts the run in one step.
+
+### Ask an agent
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/start-ask-agent-dark.webp">
+  <img src="./docs/readme/start-ask-agent-light.webp" alt="New session with the Ask an agent tab selected: a question field reading How does a retried webhook reach the ledger?, the Scout, Auto and payments-api choosers, the note Scout only reads. It changes nothing., and the Start Scout button">
+</picture>
+
+Map an unfamiliar repo before you plan. **Scout** is the default and only reads, so it changes nothing. Type an area, a file or a question, choose the model and the project, and press **Start Scout**. With an empty field it runs on the whole project. On a broad question the scout can split the search by area, and one report merges what the child scouts found.
+
+### Start blank
+
+Start from the goal instead. **Start blank** sits in the header of every tab and opens the session straight on its Overview, where you add the goal, projects and work.
 
 ### Named by Goodboy
 
-Get a short title without writing one. A new session is named for you and marked "Named by Goodboy" until you rename it.
+Get a short title without writing one. A new session is named for you and marked **Named by Goodboy** until you rename it.
 
 ## Overview and activity
 
@@ -217,30 +231,61 @@ Keep Goodboy's own folder out of your commits with one click. The card shows up 
 
 ## Branch history
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s22-history-dark.webp">
-  <img src="./docs/readme/s22-history-light.webp" alt="Rewrite history for hl/ledger-export: the branch Now with three commits folded into one, a combine, a move and a rename, next to the four commits it becomes After Apply">
-</picture>
+Reshape a branch before it goes to review: fold, move, rename and remove commits, see what would conflict, and apply with a backup one click away.
 
 ### Rewrite history
 
-Clean up a branch by hand: drag a commit between two others to move it, drop it onto another to fold it in, rename, squash or remove it, or start the branch from today's main. A folded commit chooses **Keep title**, **Keep both** or **Separate** in one control, and hovering any commit of a fold highlights the whole group. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change, and every planned change can be undone on its own. Each row's buttons, its `⋯` menu, a right click and `Cmd+K` on the focused row offer the same actions.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/history-rewrite-dark.webp">
+  <img src="./docs/readme/history-rewrite-light.webp" alt="Rewrite history for payments-api hl/ledger-export: seven commits of your own listed Now, with fold and combine controls (Keep title, Keep both, Separate) and a Start from today's main button, next to the four commits the branch becomes After Apply, with a color legend underneath">
+</picture>
+
+Clean up a branch by hand. Drag a commit between two others to move it, drop it onto another to fold it in, or rename or remove it. **Start from today's main** moves the branch start onto the latest main. A folded commit chooses **Keep title**, **Keep both** or **Separate** in one control, and hovering any commit of a fold highlights the whole group. The branch is drawn as it is **Now**, next to what it becomes **After Apply**, with a color for each kind of change. Each row's buttons, its `⋯` menu, a right click and **⌘K** on the focused row offer the same actions.
 
 ### Safe apply
 
-Apply tries the whole plan on a temporary copy first and checks the result before your branch moves. If a step stops, it says which one and why, and your branch stays exactly as it was. A backup is saved before anything changes.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/history-trial-dark.webp">
+  <img src="./docs/readme/history-trial-light.webp" alt="Planned changes, 5 changes turning 7 commits into 4, with the notice Trying your changes on a temporary copy, Your branch is untouched until this finishes, and a progress bar at Step 3 of 7, Add retries to the export job, above the Apply here only and Apply and update online buttons">
+</picture>
+
+**Apply here only** and **Apply and update online** try the whole plan on a temporary copy first and check the result before your branch moves. A progress line names the step it is on, and a backup is saved before anything changes. If a step stops, it says which one and why, and your branch stays exactly as it was.
 
 ### Conflict prediction
 
-See which files would conflict while you edit the plan, or read "No conflicts expected". The plan is merged in memory, so your checkout stays as it is.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/history-conflicts-dark.webp">
+  <img src="./docs/readme/history-conflicts-light.webp" alt="Planned changes with four changes marked may conflict, and the warning 4 changes do not replay cleanly: webhook.ts is changed by more than one commit, with a Rewrite with an agent button">
+</picture>
+
+While you edit the plan, Goodboy tries it in memory and marks each change that may conflict. A warning names the file, here `webhook.ts`, and how many changes would not replay cleanly. Your checkout stays as it is.
 
 ### Conflicts merged in a copy
 
-Let the History rewriter merge a conflicting rewrite in a copy, and have Goodboy check the result before anything moves.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/history-stopped-dark.webp">
+  <img src="./docs/readme/history-stopped-light.webp" alt="The notice Nothing was changed: a step does not replay cleanly, Step 3 of 7, Add retries to the export job, conflicts in webhook.ts, Your branch is exactly as it was, with Rewrite with an agent and Dismiss buttons above the list of five planned changes">
+</picture>
+
+When a step stops on a conflict, the notice says which step and file, and your branch is untouched. Click **Rewrite with an agent** to let the History rewriter merge the conflict in a copy. Goodboy checks the result before anything moves.
 
 ### Push with lease and restore
 
-**Apply and update online** replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten. Every rewrite saves a backup first: **Restore it** on the result takes it back, and **Backups** lists the older ones for 30 days.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/history-result-dark.webp">
+  <img src="./docs/readme/history-result-light.webp" alt="History rewritten, 7 commits became 4, listing the five changes made, Online copy updated with a safe force push and PR #214 shows the new version, a backup of hl/ledger-export with Copy ref, and the Restore it and Done buttons">
+</picture>
+
+**Apply and update online** replaces the online branch only when nothing newer is there, so a teammate's push is never overwritten. The result lists what changed and confirms the online copy. **Restore it** takes the old history back, and the backup stays for 30 days.
+
+### Backups
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/history-backups-dark.webp">
+  <img src="./docs/readme/history-backups-light.webp" alt="Rewrite history for payments-api hl/fix-duplicate-credit with the Backups panel open, one backup, Dedupe webhook retries in the handler from 1d ago, and a Restore previous history button">
+</picture>
+
+Open the `⋯` menu and choose **Backups** to see the older histories of this branch. **Restore previous history** puts one back, and **Hide** closes the list.
 
 ### Suggest a message
 
