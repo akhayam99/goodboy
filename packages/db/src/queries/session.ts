@@ -200,48 +200,50 @@ const lastActivityAtFor = (state: TurnState, updatedAt: IsoDateTime): number =>
   Date.parse(state.kind === 'idle' ? state.lastActivityAt : updatedAt);
 
 export const insertSession = async (db: Database, session: Session): Promise<void> => {
-  await db.execute(
-    `INSERT INTO sessions
+  await db.transaction({
+    statements: [
+      {
+        sql: `INSERT INTO sessions
       (id, workspace_id, goal, state_kind, last_activity_at, provider_default, provider_allow_override, provider_enabled, permission_mode, auto_run, title_user_edited, active_project_id, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      session.id,
-      session.workspaceId,
-      session.goal,
-      session.state.kind,
-      lastActivityAtFor(session.state, session.updatedAt),
-      session.providerPreference.defaultProvider,
-      session.providerPreference.allowTurnOverride ? 1 : 0,
-      serializeEnabledProviders(session.providerPreference.enabledProviders),
-      session.permissionMode,
-      session.autoRun ? 1 : 0,
-      session.titleUserEdited ? 1 : 0,
-      session.activeProjectId ?? null,
-      Date.parse(session.createdAt),
-      Date.parse(session.updatedAt),
+        params: [
+          session.id,
+          session.workspaceId,
+          session.goal,
+          session.state.kind,
+          lastActivityAtFor(session.state, session.updatedAt),
+          session.providerPreference.defaultProvider,
+          session.providerPreference.allowTurnOverride ? 1 : 0,
+          serializeEnabledProviders(session.providerPreference.enabledProviders),
+          session.permissionMode,
+          session.autoRun ? 1 : 0,
+          session.titleUserEdited ? 1 : 0,
+          session.activeProjectId ?? null,
+          Date.parse(session.createdAt),
+          Date.parse(session.updatedAt),
+        ],
+      },
+      ...session.workflowRuns.map((run) => ({
+        sql: 'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, title, title_user_edited, provider_pool, discarded_at, execution_mode, orchestration_outcome, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        params: [
+          run.id,
+          session.id,
+          run.workflowId,
+          run.ordinal,
+          run.currentStep,
+          run.autoRun ? 1 : 0,
+          run.goal ?? null,
+          run.title ?? null,
+          run.titleUserEdited === true ? 1 : 0,
+          serializeProviderPool({ pool: run.providerPool }),
+          run.discardedAt != null ? Date.parse(run.discardedAt) : null,
+          run.executionMode,
+          run.orchestrationOutcome ?? null,
+          run.createdAt != null ? Date.parse(run.createdAt) : Date.parse(session.createdAt),
+        ],
+      })),
     ],
-  );
-  for (const run of session.workflowRuns) {
-    await db.execute(
-      'INSERT INTO session_workflows (workflow_run_id, session_id, workflow_id, ordinal, current_step_ordinal, auto_run, goal, title, title_user_edited, provider_pool, discarded_at, execution_mode, orchestration_outcome, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        run.id,
-        session.id,
-        run.workflowId,
-        run.ordinal,
-        run.currentStep,
-        run.autoRun ? 1 : 0,
-        run.goal ?? null,
-        run.title ?? null,
-        run.titleUserEdited === true ? 1 : 0,
-        serializeProviderPool({ pool: run.providerPool }),
-        run.discardedAt != null ? Date.parse(run.discardedAt) : null,
-        run.executionMode,
-        run.orchestrationOutcome ?? null,
-        run.createdAt != null ? Date.parse(run.createdAt) : Date.parse(session.createdAt),
-      ],
-    );
-  }
+  });
 };
 
 export const updateSessionAutoRun = async (
