@@ -54,6 +54,9 @@ export const pushConfirmBody = ({
   return `${parts.join(', ')}.`;
 };
 
+export const earlierCommitsLine = ({ count }: { readonly count: number }): string =>
+  `This also pushes ${count} earlier ${count === 1 ? 'commit' : 'commits'}`;
+
 export const pushStyleNote = ({
   commitStyle,
 }: {

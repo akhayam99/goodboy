@@ -32,6 +32,7 @@ import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import { approvedPublicationScope } from './approvedPublicationScope';
 import { isLocalNoteThread } from './isLocalNoteThread';
+import { isolatedPushOf } from './isolatedPushOf';
 import { reconcileIntegratedCommits } from './reconcileIntegratedCommits';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
 import { selectPublishableThreads } from './selectPublishableThreads';
@@ -203,6 +204,7 @@ export const preparePublication = async ({
   sessionId,
   threadIds,
   scopeId,
+  isolated = false,
   drift = [],
 }: Params): Promise<ResolvePublicationPreview> => {
   const target = publicationTarget({ get, sessionId });
@@ -267,7 +269,10 @@ export const preparePublication = async ({
           shas,
         })
       : IDLE_GIT;
-  const outgoing = git.commits.filter((commit) => !commit.pushed);
+  const isolation =
+    isolated && requiresPush ? isolatedPushOf({ commits: git.commits, fixShas: shas }) : null;
+  const outgoing = isolation?.pushed ?? git.commits.filter((commit) => !commit.pushed);
+  const pushHead = isolation?.tip ?? git.localHead;
   const unapproved =
     requiresPush && repo !== null
       ? await unapprovedBranchCommits({
@@ -296,7 +301,7 @@ export const preparePublication = async ({
             unapprovedCount: unapproved.length,
             git,
           });
-  const commits = outgoing.map((commit) => ({
+  const commits = (isolation?.fixes ?? outgoing).map((commit) => ({
     ...commit,
     threadIds: shippable
       .filter((row) => row.commitShas?.includes(commit.sha) === true)
@@ -324,12 +329,13 @@ export const preparePublication = async ({
     repo: target.repo,
     prNumber: target.prNumber,
     branch: git.branch,
-    localHead: git.localHead,
+    localHead: pushHead,
     remoteHead: git.remoteHead,
     requiresPush,
     frozenAt,
     commits,
     unapproved,
+    ...(isolation !== null && { earlierCommits: isolation.earlier }),
     replies,
     notes,
     excluded,
@@ -349,7 +355,7 @@ export const preparePublication = async ({
     prNumber: target.prNumber,
     branch: git.branch,
     targetRef: git.branch === '' ? '' : `refs/heads/${git.branch}`,
-    localHead: git.localHead,
+    localHead: pushHead,
     remoteHead: git.remoteHead,
     commitShas: shas,
     candidateIds: scope.candidateIds,

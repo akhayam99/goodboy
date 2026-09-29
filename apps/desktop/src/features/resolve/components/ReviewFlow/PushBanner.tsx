@@ -5,7 +5,12 @@ import { useAppStore } from '../../../../store';
 import { sessionReplySettings } from '../../../../store/sessionReplySettings';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { blockerCopy, driftSentence, excludedLine } from '../../resolvePublishCopy';
-import { pushConfirmBody, pushConfirmTitle, pushStyleNote } from '../../reviewPushCopy';
+import {
+  earlierCommitsLine,
+  pushConfirmBody,
+  pushConfirmTitle,
+  pushStyleNote,
+} from '../../reviewPushCopy';
 import type { ReviewPush } from './useReviewPush';
 
 type Props = {
@@ -71,6 +76,7 @@ export const PushBanner = ({ sessionId, push }: Props) => {
       : blockerCopy({ blocker: preview.blocker, prNumber: preview.prNumber });
   const drift = driftSentence({ drift: preview.drift });
   const excluded = excludedLine({ preview });
+  const earlier = preview.earlierCommits ?? [];
 
   if (blocker !== null || preview.publicationId === null) {
     const recovery = blocker?.action ?? null;
@@ -112,11 +118,26 @@ export const PushBanner = ({ sessionId, push }: Props) => {
       onConfirm={push.confirm}
       onCancel={push.cancel}
       note={
-        <p className="text-muted-foreground">
-          {[drift, excluded, pushStyleNote({ commitStyle })]
-            .flatMap((line) => (line === null ? [] : [line.endsWith('.') ? line : `${line}.`]))
-            .join(' ')}
-        </p>
+        <div className="flex min-w-0 flex-col gap-2">
+          {earlier.length > 0 && (
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="text-foreground">{earlierCommitsLine({ count: earlier.length })}</p>
+              <ul className="flex min-w-0 flex-col">
+                {earlier.map((commit) => (
+                  <li key={commit.sha} className="flex min-w-0 gap-2 text-muted-foreground">
+                    <span className="shrink-0 font-mono">{commit.shortSha}</span>
+                    <span className="min-w-0 truncate">{commit.subject}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="text-muted-foreground">
+            {[drift, excluded, pushStyleNote({ commitStyle })]
+              .flatMap((line) => (line === null ? [] : [line.endsWith('.') ? line : `${line}.`]))
+              .join(' ')}
+          </p>
+        </div>
       }
     />
   );

@@ -1,5 +1,9 @@
 import type { ResolvePublication, SessionId } from '@goodboy/types';
-import { worktreeIsAncestor, worktreeRemoteHead } from '../../../features/worktree/worktree';
+import {
+  worktreeIsAncestor,
+  worktreeRemoteHead,
+  worktreeStatus,
+} from '../../../features/worktree/worktree';
 import { pushSessionBranch } from '../github/pushSessionBranch';
 import type { GetFn } from './types';
 
@@ -39,11 +43,14 @@ export const verifiedPush = async ({
   if (!isFastForward) {
     return `${branch} on the remote carries work that ${shortOf({ sha: publication.localHead })} does not contain, so nothing was pushed`;
   }
+  const status = await worktreeStatus({ worktreePath }).catch(() => null);
+  const isExact = status?.head != null && status.head !== publication.localHead;
   const push = await pushSessionBranch({
     get,
     sessionId,
     mountId: target.mountId,
     expectedWorktreePath: target.worktreePath,
+    ...(isExact && { sha: publication.localHead }),
   });
   if (!push.ok) {
     return push.error;

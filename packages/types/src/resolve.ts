@@ -289,6 +289,7 @@ export type ResolvePublicationPreview = Readonly<{
   frozenAt: number;
   commits: ReadonlyArray<BranchCommit & { readonly threadIds: ReadonlyArray<string> }>;
   unapproved: ReadonlyArray<BranchCommit>;
+  earlierCommits?: ReadonlyArray<BranchCommit>;
   replies: ReadonlyArray<{
     readonly threadId: string;
     readonly body: string;

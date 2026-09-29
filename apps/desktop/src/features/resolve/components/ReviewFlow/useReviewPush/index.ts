@@ -56,7 +56,7 @@ export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush 
       try {
         const preview =
           threadIds !== undefined
-            ? await preparePublication({ sessionId, threadIds })
+            ? await preparePublication({ sessionId, threadIds, isolated: true })
             : isRetry
               ? await retryPublication({ sessionId })
               : await preparePublication({ sessionId });

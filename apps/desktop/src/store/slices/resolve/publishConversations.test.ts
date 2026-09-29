@@ -39,6 +39,7 @@ const h = vi.hoisted(() => ({
   run: vi.fn<GhRun>(),
   leases: new Map<string, string>(),
   pushedFrom: [] as Array<string>,
+  pushedShas: [] as Array<string | null>,
   failOnPhase: null as string | null,
   isRemoteHeadUnreadable: false,
   hidesRemoteHeadAfterPush: false,
@@ -67,23 +68,37 @@ vi.mock('../../../features/workflows/workflows', () => ({
 
 vi.mock('../../../features/github/github', () => ({
   tauriGhRunner: { run: h.run },
-  gitPush: vi.fn(async (cwd: string, branch: string | null) => {
-    h.pushedFrom.push(cwd);
-    try {
-      const stdout = git(cwd, ['push', 'origin', branch ?? 'HEAD']);
-      if (h.hidesRemoteHeadAfterPush) {
-        h.isRemoteHeadUnreadable = true;
+  gitPush: vi.fn(
+    async (
+      cwd: string,
+      branch: string | null,
+      _workspaceId?: string,
+      _projectId?: string,
+      sha?: string,
+    ) => {
+      h.pushedFrom.push(cwd);
+      h.pushedShas.push(sha ?? null);
+      try {
+        const stdout = git(
+          cwd,
+          sha === undefined
+            ? ['push', 'origin', branch ?? 'HEAD']
+            : ['push', 'origin', `${sha}:refs/heads/${branch ?? ''}`],
+        );
+        if (h.hidesRemoteHeadAfterPush) {
+          h.isRemoteHeadUnreadable = true;
+        }
+        return { stdout, stderr: '', exitCode: 0 };
+      } catch (error) {
+        const failure = error as { stderr?: Buffer | string };
+        return {
+          stdout: '',
+          stderr: String(failure.stderr ?? 'push failed'),
+          exitCode: 1,
+        };
       }
-      return { stdout, stderr: '', exitCode: 0 };
-    } catch (error) {
-      const failure = error as { stderr?: Buffer | string };
-      return {
-        stdout: '',
-        stderr: String(failure.stderr ?? 'push failed'),
-        exitCode: 1,
-      };
-    }
-  }),
+    },
+  ),
 }));
 
 vi.mock('../../../features/worktree/worktree', () => {
@@ -465,6 +480,7 @@ beforeEach(async () => {
   vi.clearAllMocks();
   h.leases.clear();
   h.pushedFrom.length = 0;
+  h.pushedShas.length = 0;
   h.failOnPhase = null;
   h.isRemoteHeadUnreadable = false;
   h.hidesRemoteHeadAfterPush = false;
@@ -1526,5 +1542,98 @@ describe('publishConversations over a real git repository', () => {
     expect(secondPreview.repo).toBeNull();
     expect(refused).toEqual({ kind: 'busy' });
     expect(await running).toMatchObject({ kind: 'done', closed: 1 });
+  });
+
+  it('pushes exactly the fix when its parent is on origin, even with a newer commit above', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const newer = commit({ text: 'export const retry = () => 3;\n', message: 'fix: cap retries' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+    await seedFixRow({ actions, threadId: 'PRRT_2', shas: [newer], reply: 'Capped' });
+
+    const preview = await actions.preparePublication({
+      sessionId: SESSION_ID,
+      threadIds: ['PRRT_1'],
+      isolated: true,
+    });
+
+    expect(preview.blocker).toBeNull();
+    expect(preview.localHead).toBe(fix);
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([fix]);
+    expect(preview.earlierCommits).toEqual([]);
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'done', pushed: true, pushedHead: fix, failed: 0 });
+    expect(h.pushedShas).toEqual([fix]);
+    expect(git(worktreePath, ['rev-parse', 'origin/feature/retry'])).toBe(fix);
+    expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(newer);
+  });
+
+  it('names the earlier commits a fix would carry along, then pushes up to the fix', async () => {
+    const earlier = commit({
+      text: 'export const retry = () => 2;\n',
+      message: 'fix: early return',
+    });
+    const fix = commit({ text: 'export const retry = () => 3;\n', message: 'fix: cap retries' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [earlier], reply: 'Fixed' });
+    await seedFixRow({ actions, threadId: 'PRRT_2', shas: [fix], reply: 'Capped' });
+
+    const preview = await actions.preparePublication({
+      sessionId: SESSION_ID,
+      threadIds: ['PRRT_2'],
+      isolated: true,
+    });
+
+    expect(preview.blocker).toBeNull();
+    expect(preview.localHead).toBe(fix);
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([fix]);
+    expect(preview.earlierCommits?.map((entry) => [entry.sha, entry.subject])).toEqual([
+      [earlier, 'fix: early return'],
+    ]);
+
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'done', pushed: true, pushedHead: fix });
+    expect(git(worktreePath, ['rev-parse', 'origin/feature/retry'])).toBe(fix);
+  });
+
+  it('blocks a scoped push that would carry an unapproved earlier commit', async () => {
+    commit({ text: 'export const retry = () => 2;\n', message: 'wip: try something' });
+    const fix = commit({ text: 'export const retry = () => 3;\n', message: 'fix: cap retries' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_2', shas: [fix], reply: 'Capped' });
+
+    const preview = await actions.preparePublication({
+      sessionId: SESSION_ID,
+      threadIds: ['PRRT_2'],
+      isolated: true,
+    });
+
+    expect(preview.blocker).toBe('unapproved_commit');
+    expect(preview.unapproved.map((entry) => entry.subject)).toEqual(['wip: try something']);
+    expect(h.pushedShas).toEqual([]);
+  });
+
+  it('keeps the branch push of a normal publication', async () => {
+    const fix = commit({ text: 'export const retry = () => 2;\n', message: 'fix: early return' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+    await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(preview.earlierCommits).toBeUndefined();
+    expect(h.pushedShas).toEqual([null]);
   });
 });

@@ -257,6 +257,7 @@ describe('the resolver Brief', () => {
     expect(prepare).toHaveBeenCalledWith({
       sessionId: SESSION.id,
       threadIds: [EXPANDED_THREAD_ID],
+      isolated: true,
     });
     expect(publish).not.toHaveBeenCalled();
     fireEvent.click(within(confirm).getByRole('button', { name: 'Push' }));
@@ -265,6 +266,73 @@ describe('the resolver Brief', () => {
       expect(publish).toHaveBeenCalledWith({ sessionId: SESSION.id, publicationId: 'pub-brief' }),
     );
     expect(await screen.findByText(/Pushed c81e5aa, 1 reply posted/)).toBeDefined();
+  });
+
+  it('says plainly which earlier commits the push also carries', async () => {
+    const preview = {
+      publicationId: 'pub-earlier',
+      repo: 'harborline/payments-api',
+      prNumber: 318,
+      branch: 'hl/fix-duplicate-credit',
+      localHead: 'c81e5aaaaaa',
+      remoteHead: '7d02b11bbbb',
+      requiresPush: true,
+      frozenAt: 1,
+      commits: [],
+      unapproved: [],
+      earlierCommits: [
+        {
+          sha: '3b7d10eaaaa',
+          shortSha: '3b7d10e',
+          subject: 'Rename the delivery row helper',
+          author: 'resolver',
+          timestamp: 1,
+          pushed: false,
+          parentSha: null,
+        },
+        {
+          sha: '91fa2c4aaaa',
+          shortSha: '91fa2c4',
+          subject: 'Log the redelivery count',
+          author: 'resolver',
+          timestamp: 1,
+          pushed: false,
+          parentSha: null,
+        },
+      ],
+      replies: [{ threadId: EXPANDED_THREAD_ID, body: 'Fixed.', revision: 1, closes: true }],
+      notes: [],
+      excluded: [],
+      drift: [],
+      blocker: null,
+    };
+    stub({
+      preparePublication: (async () => preview) as unknown as StoreState['preparePublication'],
+    });
+    await mount({ agentId: SINGLE });
+    const items = useAppStore.getState().sessionResolveQueueItems[SESSION.id] ?? [];
+    useAppStore.setState({
+      sessionResolveQueueItems: {
+        [SESSION.id]: items.map((entry) =>
+          entry.thread.threadId === EXPANDED_THREAD_ID
+            ? {
+                item: { ...entry.item, approvalState: 'accepted', approvedRevision: 1 },
+                thread: { ...entry.thread, stage: 'approved', commitShas: ['c81e5aaaaaa'] },
+              }
+            : entry,
+        ),
+      },
+    });
+    await settle();
+
+    fireEvent.click(await screen.findByRole('button', { name: /Push now/ }));
+    const confirm = await screen.findByRole('group', {
+      name: 'Push 1 to hl/fix-duplicate-credit?',
+    });
+
+    expect(within(confirm).getByText('This also pushes 2 earlier commits')).toBeDefined();
+    expect(within(confirm).getByText('3b7d10e')).toBeDefined();
+    expect(within(confirm).getByText('Log the redelivery count')).toBeDefined();
   });
 
   it('gives a batch child the same sections and only Open in Review', async () => {
