@@ -73,65 +73,7 @@ pub async fn serve(listener: TcpListener, ctx: Arc<ServerCtx>) {
 }
 
 async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), BridgeError> {
-    // ---- Noise_XK responder handshake ----
-    let static_priv = { ctx.identity.lock().await.static_priv()? };
-    let mut hs = snow::Builder::new(noise_params())
-        .local_private_key(&static_priv)
-        .build_responder()
-        .map_err(|e| BridgeError::Noise(e.to_string()))?;
-
-    let mut scratch = vec![0u8; NOISE_MAX];
-
-    // msg1: -> e, es  (payload = enrollment token, or empty for re-dial)
-    let msg1 = read_frame(&mut stream).await?;
-    let n = hs
-        .read_message(&msg1, &mut scratch)
-        .map_err(|e| BridgeError::Noise(e.to_string()))?;
-    let msg1_payload = scratch[..n].to_vec();
-
-    let enrolling = match msg1_payload.len() {
-        0 => false,
-        32 => {
-            if !ctx.tokens.consume(&msg1_payload) {
-                return Err(BridgeError::Unauthorized("invalid or expired token".into()));
-            }
-            true
-        }
-        other => {
-            return Err(BridgeError::Protocol(format!(
-                "msg1 payload must be 0 or 32 bytes, got {other}"
-            )))
-        }
-    };
-
-    // msg2: <- e, ee
-    let len = hs
-        .write_message(&[], &mut scratch)
-        .map_err(|e| BridgeError::Noise(e.to_string()))?;
-    write_frame(&mut stream, &scratch[..len]).await?;
-
-    // msg3: -> s, se  (phone reveals its static)
-    let msg3 = read_frame(&mut stream).await?;
-    hs.read_message(&msg3, &mut scratch)
-        .map_err(|e| BridgeError::Noise(e.to_string()))?;
-    let phone_static = hs
-        .get_remote_static()
-        .ok_or_else(|| BridgeError::Protocol("missing phone static after msg3".into()))?
-        .to_vec();
-
-    // Authorize: enrollment adds to allow-list; re-dial requires membership.
-    {
-        let mut id = ctx.identity.lock().await;
-        if enrolling {
-            id.enroll(&phone_static)?;
-        } else if !id.is_enrolled(&phone_static) {
-            return Err(BridgeError::Unauthorized("phone not enrolled".into()));
-        }
-    }
-
-    let mut transport = hs
-        .into_transport_mode()
-        .map_err(|e| BridgeError::Noise(e.to_string()))?;
+    let mut transport = authorize_handshake(&mut stream, &ctx.identity, &ctx.tokens).await?;
 
     // ---- App layer: HELLO then the initial snapshot ----
     let snap = snapshot::build()?;
@@ -213,6 +155,74 @@ async fn handle_conn(mut stream: TcpStream, ctx: Arc<ServerCtx>) -> Result<(), B
             }
         }
     }
+}
+
+/// Runs the Noise_XK responder handshake and authorizes the phone: a valid
+/// single-use token enrolls it, an empty payload re-dials and requires the
+/// phone's static key to be on the allow-list.
+async fn authorize_handshake(
+    stream: &mut TcpStream,
+    identity: &Mutex<Identity>,
+    tokens: &TokenStore,
+) -> Result<snow::TransportState, BridgeError> {
+    // ---- Noise_XK responder handshake ----
+    let static_priv = { identity.lock().await.static_priv()? };
+    let mut hs = snow::Builder::new(noise_params())
+        .local_private_key(&static_priv)
+        .build_responder()
+        .map_err(|e| BridgeError::Noise(e.to_string()))?;
+
+    let mut scratch = vec![0u8; NOISE_MAX];
+
+    // msg1: -> e, es  (payload = enrollment token, or empty for re-dial)
+    let msg1 = read_frame(stream).await?;
+    let n = hs
+        .read_message(&msg1, &mut scratch)
+        .map_err(|e| BridgeError::Noise(e.to_string()))?;
+    let msg1_payload = scratch[..n].to_vec();
+
+    let enrolling = match msg1_payload.len() {
+        0 => false,
+        32 => {
+            if !tokens.consume(&msg1_payload) {
+                return Err(BridgeError::Unauthorized("invalid or expired token".into()));
+            }
+            true
+        }
+        other => {
+            return Err(BridgeError::Protocol(format!(
+                "msg1 payload must be 0 or 32 bytes, got {other}"
+            )))
+        }
+    };
+
+    // msg2: <- e, ee
+    let len = hs
+        .write_message(&[], &mut scratch)
+        .map_err(|e| BridgeError::Noise(e.to_string()))?;
+    write_frame(stream, &scratch[..len]).await?;
+
+    // msg3: -> s, se  (phone reveals its static)
+    let msg3 = read_frame(stream).await?;
+    hs.read_message(&msg3, &mut scratch)
+        .map_err(|e| BridgeError::Noise(e.to_string()))?;
+    let phone_static = hs
+        .get_remote_static()
+        .ok_or_else(|| BridgeError::Protocol("missing phone static after msg3".into()))?
+        .to_vec();
+
+    // Authorize: enrollment adds to allow-list; re-dial requires membership.
+    {
+        let mut id = identity.lock().await;
+        if enrolling {
+            id.enroll(&phone_static)?;
+        } else if !id.is_enrolled(&phone_static) {
+            return Err(BridgeError::Unauthorized("phone not enrolled".into()));
+        }
+    }
+
+    hs.into_transport_mode()
+        .map_err(|e| BridgeError::Noise(e.to_string()))
 }
 
 /// Forwards a mobile-originated command to the trusted frontend executor and
@@ -329,4 +339,271 @@ async fn stream_snapshot(
 
 fn now_iso() -> String {
     snapshot::iso_now()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base64::Engine as _;
+    use std::path::PathBuf;
+
+    struct Phone {
+        private: Vec<u8>,
+        public: Vec<u8>,
+    }
+
+    fn new_phone() -> Phone {
+        let pair = snow::Builder::new(noise_params())
+            .generate_keypair()
+            .unwrap();
+        Phone {
+            private: pair.private,
+            public: pair.public,
+        }
+    }
+
+    struct Desktop {
+        dir: PathBuf,
+        identity: Arc<Mutex<Identity>>,
+        tokens: Arc<TokenStore>,
+        static_pub: Vec<u8>,
+    }
+
+    impl Desktop {
+        fn new(name: &str, tokens: TokenStore) -> Self {
+            let dir = std::env::temp_dir().join(format!(
+                "goodboy-bridge-server-{name}-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            let identity = Identity::load_or_create_at(&dir.join("companion.json")).unwrap();
+            let static_pub = base64::engine::general_purpose::STANDARD
+                .decode(&identity.static_pub_b64)
+                .unwrap();
+            Self {
+                dir,
+                identity: Arc::new(Mutex::new(identity)),
+                tokens: Arc::new(tokens),
+                static_pub,
+            }
+        }
+
+        async fn is_enrolled(&self, phone: &Phone) -> bool {
+            self.identity.lock().await.is_enrolled(&phone.public)
+        }
+
+        async fn enroll(&self, phone: &Phone) {
+            self.identity.lock().await.enroll(&phone.public).unwrap();
+        }
+
+        async fn revoke_all(&self) {
+            self.identity.lock().await.revoke_all().unwrap();
+        }
+
+        async fn reload_from_disk(&self) -> Arc<Mutex<Identity>> {
+            let path = self.dir.join("companion.json");
+            Arc::new(Mutex::new(Identity::load_or_create_at(&path).unwrap()))
+        }
+    }
+
+    impl Drop for Desktop {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.dir);
+        }
+    }
+
+    struct Attempt {
+        server: Result<(), BridgeError>,
+        heard_by_phone: Option<Value>,
+    }
+
+    async fn dial(
+        desktop: &Desktop,
+        identity: Arc<Mutex<Identity>>,
+        phone: &Phone,
+        payload: &[u8],
+    ) -> Attempt {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let tokens = desktop.tokens.clone();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            let mut transport = authorize_handshake(&mut stream, &identity, &tokens).await?;
+            send_app(
+                &mut stream,
+                &mut transport,
+                OP_PING,
+                &json!({ "at": "now" }),
+            )
+            .await
+        });
+
+        let mut stream = TcpStream::connect(addr).await.unwrap();
+        let heard_by_phone = phone_side(&mut stream, desktop, phone, payload).await;
+        let server = tokio::time::timeout(Duration::from_secs(5), server)
+            .await
+            .expect("the server finished the attempt")
+            .unwrap();
+        Attempt {
+            server,
+            heard_by_phone,
+        }
+    }
+
+    async fn phone_side(
+        stream: &mut TcpStream,
+        desktop: &Desktop,
+        phone: &Phone,
+        payload: &[u8],
+    ) -> Option<Value> {
+        let mut hs = snow::Builder::new(noise_params())
+            .local_private_key(&phone.private)
+            .remote_public_key(&desktop.static_pub)
+            .build_initiator()
+            .unwrap();
+        let mut buf = vec![0u8; NOISE_MAX];
+        let len = hs.write_message(payload, &mut buf).unwrap();
+        write_frame(stream, &buf[..len]).await.unwrap();
+        let msg2 = read_frame(stream).await.ok()?;
+        hs.read_message(&msg2, &mut buf).ok()?;
+        let len = hs.write_message(&[], &mut buf).unwrap();
+        write_frame(stream, &buf[..len]).await.ok()?;
+        let mut transport = hs.into_transport_mode().unwrap();
+        let frame = read_frame(stream).await.ok()?;
+        let n = transport.read_message(&frame, &mut buf).ok()?;
+        assert_eq!(buf[0], OP_PING);
+        serde_json::from_slice(&buf[1..n]).ok()
+    }
+
+    fn unauthorized(attempt: &Attempt) -> Option<&str> {
+        match &attempt.server {
+            Err(BridgeError::Unauthorized(reason)) => Some(reason.as_str()),
+            _ => None,
+        }
+    }
+
+    #[tokio::test]
+    async fn a_fresh_token_enrolls_the_phone_and_opens_an_encrypted_channel() {
+        let desktop = Desktop::new("enroll", TokenStore::new());
+        let phone = new_phone();
+        let token = desktop.tokens.mint();
+
+        let attempt = dial(&desktop, desktop.identity.clone(), &phone, &token).await;
+
+        assert!(attempt.server.is_ok());
+        assert_eq!(attempt.heard_by_phone, Some(json!({ "at": "now" })));
+        assert!(desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn a_token_that_already_paired_one_phone_cannot_pair_another() {
+        let desktop = Desktop::new("token-twice", TokenStore::new());
+        let first = new_phone();
+        let second = new_phone();
+        let token = desktop.tokens.mint();
+        let paired = dial(&desktop, desktop.identity.clone(), &first, &token).await;
+        assert!(paired.server.is_ok());
+
+        let replay = dial(&desktop, desktop.identity.clone(), &second, &token).await;
+
+        assert_eq!(unauthorized(&replay), Some("invalid or expired token"));
+        assert_eq!(replay.heard_by_phone, None);
+        assert!(!desktop.is_enrolled(&second).await);
+        assert!(desktop.is_enrolled(&first).await);
+    }
+
+    #[tokio::test]
+    async fn an_expired_token_does_not_pair() {
+        let desktop = Desktop::new("token-expired", TokenStore::with_ttl(Duration::ZERO));
+        let phone = new_phone();
+        let token = desktop.tokens.mint();
+
+        let attempt = dial(&desktop, desktop.identity.clone(), &phone, &token).await;
+
+        assert_eq!(unauthorized(&attempt), Some("invalid or expired token"));
+        assert_eq!(attempt.heard_by_phone, None);
+        assert!(!desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn a_guessed_token_does_not_pair() {
+        let desktop = Desktop::new("token-guessed", TokenStore::new());
+        desktop.tokens.mint();
+        let phone = new_phone();
+
+        let attempt = dial(&desktop, desktop.identity.clone(), &phone, &[9u8; 32]).await;
+
+        assert_eq!(unauthorized(&attempt), Some("invalid or expired token"));
+        assert!(!desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn a_payload_that_is_neither_empty_nor_a_token_is_a_protocol_error() {
+        let desktop = Desktop::new("payload-size", TokenStore::new());
+        let phone = new_phone();
+
+        let attempt = dial(&desktop, desktop.identity.clone(), &phone, &[1u8; 5]).await;
+
+        assert!(matches!(attempt.server, Err(BridgeError::Protocol(_))));
+        assert_eq!(attempt.heard_by_phone, None);
+        assert!(!desktop.is_enrolled(&phone).await);
+    }
+
+    #[tokio::test]
+    async fn an_enrolled_phone_re_dials_without_a_token() {
+        let desktop = Desktop::new("redial", TokenStore::new());
+        let phone = new_phone();
+        desktop.enroll(&phone).await;
+
+        let attempt = dial(&desktop, desktop.identity.clone(), &phone, &[]).await;
+
+        assert!(attempt.server.is_ok());
+        assert_eq!(attempt.heard_by_phone, Some(json!({ "at": "now" })));
+    }
+
+    #[tokio::test]
+    async fn a_phone_that_never_paired_cannot_re_dial_even_when_others_are_enrolled() {
+        let desktop = Desktop::new("stranger", TokenStore::new());
+        desktop.enroll(&new_phone()).await;
+        let stranger = new_phone();
+
+        let attempt = dial(&desktop, desktop.identity.clone(), &stranger, &[]).await;
+
+        assert_eq!(unauthorized(&attempt), Some("phone not enrolled"));
+        assert_eq!(attempt.heard_by_phone, None);
+    }
+
+    #[tokio::test]
+    async fn a_revoked_phone_fails_the_handshake_and_stays_out_after_a_restart() {
+        let desktop = Desktop::new("revoked", TokenStore::new());
+        let phone = new_phone();
+        desktop.enroll(&phone).await;
+        let before = dial(&desktop, desktop.identity.clone(), &phone, &[]).await;
+        assert!(before.server.is_ok());
+
+        desktop.revoke_all().await;
+
+        let after = dial(&desktop, desktop.identity.clone(), &phone, &[]).await;
+        assert_eq!(unauthorized(&after), Some("phone not enrolled"));
+        assert_eq!(after.heard_by_phone, None);
+        let restarted = dial(&desktop, desktop.reload_from_disk().await, &phone, &[]).await;
+        assert_eq!(unauthorized(&restarted), Some("phone not enrolled"));
+    }
+
+    #[tokio::test]
+    async fn a_revoked_phone_gets_back_in_only_through_a_fresh_token() {
+        let desktop = Desktop::new("re-pair", TokenStore::new());
+        let phone = new_phone();
+        desktop.enroll(&phone).await;
+        desktop.revoke_all().await;
+        let token = desktop.tokens.mint();
+
+        let repaired = dial(&desktop, desktop.identity.clone(), &phone, &token).await;
+
+        assert!(repaired.server.is_ok());
+        assert!(desktop.is_enrolled(&phone).await);
+    }
 }
