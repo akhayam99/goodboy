@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { Tone } from '../../tint';
 
 export type WorkNodeState =
   | 'queued'
@@ -12,7 +13,8 @@ export type WorkNodeState =
   | 'closed'
   | 'stopped'
   | 'skipped'
-  | 'marker';
+  | 'marker'
+  | 'mixed';
 
 export type WorkNodeMark =
   | { readonly kind: 'index'; readonly value: string }
@@ -60,7 +62,7 @@ type RingSpec = {
 
 const QUEUED_DASH = '2.6 2.1';
 
-export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker'>, RingSpec> = {
+export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker' | 'mixed'>, RingSpec> = {
   queued: {
     radius: 9.25,
     strokeWidth: 1.5,
@@ -138,4 +140,60 @@ export const WORK_NODE_RING: Record<Exclude<WorkNodeState, 'marker'>, RingSpec> 
     fillClassName: 'fill-none',
     dashArray: null,
   },
+};
+
+export type WorkNodeMixedPart = {
+  readonly tone: Tone;
+  readonly count: number;
+};
+
+export const WORK_NODE_MIXED = {
+  radius: 8.75,
+  strokeWidth: 2,
+  gap: 1.5,
+} as const satisfies Record<string, number>;
+
+export const WORK_NODE_MIXED_STROKE: Record<Tone, string> = {
+  success: 'stroke-success',
+  info: 'stroke-info',
+  warning: 'stroke-warning',
+  danger: 'stroke-danger',
+  primary: 'stroke-primary',
+  merged: 'stroke-merged',
+  draft: 'stroke-faint-foreground',
+  neutral: 'stroke-faint-foreground',
+};
+
+export type WorkNodeMixedArc = {
+  readonly tone: Tone;
+  readonly count: number;
+  readonly length: number;
+  readonly offset: number;
+};
+
+export const workNodeMixedArcs = ({
+  parts,
+  radius,
+  gap,
+}: {
+  readonly parts: ReadonlyArray<WorkNodeMixedPart>;
+  readonly radius: number;
+  readonly gap: number;
+}): ReadonlyArray<WorkNodeMixedArc> => {
+  const counted = parts.filter((part) => part.count > 0);
+  const total = counted.reduce((sum, part) => sum + part.count, 0);
+  if (total === 0) {
+    return [];
+  }
+  const circumference = 2 * Math.PI * radius;
+  const gaps = counted.length > 1 ? gap * counted.length : 0;
+  const unit = (circumference - gaps) / total;
+  const arcs: WorkNodeMixedArc[] = [];
+  let position = gaps === 0 ? 0 : gap / 2;
+  for (const part of counted) {
+    const length = part.count * unit;
+    arcs.push({ tone: part.tone, count: part.count, length, offset: position });
+    position += length + (gaps === 0 ? 0 : gap);
+  }
+  return arcs;
 };

@@ -502,6 +502,14 @@ icon column), and sits on the canvas so the lane never shows through it.
 | `stopped`  | 1px `border`                            | small square, muted      |
 | `skipped`  | 1px `border-soft`                       | dash, faint              |
 | `marker`   | `ring-1` in the concept tone            | the concept glyph        |
+| `mixed`    | arcs per state, 2px, 1.5px gap          | how many children        |
+
+`mixed` is the node of a group row (a batch of resolves): the caller passes
+`parts` (a tone and a count each) and the ring is split into arcs whose length
+is proportional to the count, one tone per state, in the order given, with a
+1.5px gap between arcs (none for a single part). The centre carries the total
+as an index mark, so the node never speaks by colour alone. It keeps the same
+20px box as every other state.
 
 `approval` is a pending permission request without a decision yet: a tool
 call waiting on you, distinct from `question` (an open question waiting on

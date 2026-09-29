@@ -3,7 +3,9 @@ import type { Tone, WorkNodeState } from '@goodboy/ui';
 import { ORCHESTRATOR_DECIDING_SENTENCE } from '../workflows/orchestratorCopy';
 import type { RowPhase, RowState, RowStateReason } from './rowState';
 
-export const ROW_NODE_LABEL: Record<Exclude<WorkNodeState, 'marker'>, string> = {
+export type RowNodeState = Exclude<WorkNodeState, 'marker' | 'mixed'>;
+
+export const ROW_NODE_LABEL: Record<RowNodeState, string> = {
   queued: 'Not started',
   ready: 'Ready to run',
   running: 'Running',
@@ -169,7 +171,7 @@ export const rowStateTone = ({ state }: StateParams): Tone =>
     : PHASE_TONE[state.phase];
 
 export type RowNode = {
-  readonly state: Exclude<WorkNodeState, 'marker'>;
+  readonly state: RowNodeState;
   readonly label: string;
 };
 
