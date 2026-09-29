@@ -46,7 +46,3 @@ export type ResolveMountCleanupInput = {
   readonly requestId: string;
   readonly decision: 'remove' | 'keep';
 };
-
-export type SessionCleanupKeyInput = {
-  readonly sessionId: SessionId;
-};

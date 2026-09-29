@@ -14,7 +14,6 @@ export type {
   ProviderConnectStep,
   ProviderLifecycleMap,
 } from './types';
-export type { LearnCliRequirementParams } from './learnCliRequirement';
 export { INITIAL_CONNECT_MAP, INITIAL_LIFECYCLE_MAP } from './types';
 
 export const createProvidersSlice = (set: SetFn, get: GetFn) => {

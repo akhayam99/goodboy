@@ -5,7 +5,7 @@ import { CLI_LABEL } from '../../../features/providers/cliLabel';
 import { SETTING_CLI_REQUIREMENTS } from './cliRequirementsSetting';
 import type { GetFn, SetFn } from './types';
 
-export type LearnCliRequirementParams = CliRequirement & {
+type LearnCliRequirementParams = CliRequirement & {
   readonly installedVersion: string;
 };
 

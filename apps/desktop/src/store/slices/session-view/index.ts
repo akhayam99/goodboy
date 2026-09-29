@@ -42,7 +42,6 @@ export type {
   ResolveQueueView,
   SessionCreation,
   SessionCreationId,
-  SessionCreationKind,
 } from './types';
 
 export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice => {

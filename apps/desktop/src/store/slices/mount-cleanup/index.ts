@@ -3,13 +3,6 @@ import { proposeMountCleanup } from './proposeMountCleanup';
 import { loadMountCleanupProposals, resolveMountCleanup } from './resolveMountCleanup';
 import type { GetFn, SetFn } from './types';
 
-export type {
-  CleanupSessionMountsInput,
-  ProposeMountCleanupInput,
-  ResolveMountCleanupInput,
-  SessionCleanupKeyInput,
-  SessionCleanupOutcome,
-} from './types';
 export { cleanupMountDirectory } from './cleanupPolicy';
 export { reconcileWorktreeOwnership } from './retainedPaths';
 export { mountCleanupInitialState } from './state';

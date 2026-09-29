@@ -8,7 +8,7 @@ import type {
 } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 import { buildStoryAgent, buildStorySession } from './storyHarness';
-import { initialState } from './store';
+import { initialState, type AppStore } from './store';
 import {
   NON_SESSION_STATE_KEYS,
   SESSION_EVICTION,
@@ -16,6 +16,7 @@ import {
   type EvictionScope,
 } from './sessionEviction';
 import { evictSession } from './slices/sessions/evictSession';
+import type { SetFn } from './slice-types';
 import type { AppState } from './types';
 
 const SESSION_ID = 'session-1' as never as SessionId;
@@ -98,10 +99,11 @@ const buildPopulatedState = (): AppState => {
 
 const runEviction = ({ mode }: { readonly mode: EvictionMode }): AppState => {
   let state = buildPopulatedState();
-  const set = (changes: Partial<AppState>): void => {
+  const set: SetFn = (update) => {
+    const changes = typeof update === 'function' ? update(state as AppStore) : update;
     state = { ...state, ...changes };
   };
-  evictSession({ set, get: () => state })({ sessionId: SESSION_ID, mode });
+  evictSession({ set, get: () => state as AppStore })({ sessionId: SESSION_ID, mode });
   return state;
 };
 
