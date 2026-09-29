@@ -4,6 +4,7 @@ import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
 import type { ProjectCheckoutUpdate } from './slices/projects/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
+import type { ReviewSelectionState } from './slices/review-selection/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
   StorageArtifact,
@@ -256,6 +257,7 @@ export type PendingOrchestration = {
 type AppSliceState = ArtifactsState &
   ResolveState &
   ReviewNavigationState &
+  ReviewSelectionState &
   PrWritesState &
   SessionSyncState &
   IssueBriefsState &

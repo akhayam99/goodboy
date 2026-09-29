@@ -20,6 +20,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionResolveCheckRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewTargets', keyedBy: 'session', evictOn: 'archive' },
   { key: 'pullRequestModes', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'reviewSelection', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveQueueView', keyedBy: 'session', evictOn: 'archive' },
   { key: 'resolveItemDrafts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveUncapturedWork', keyedBy: 'session', evictOn: 'archive' },
