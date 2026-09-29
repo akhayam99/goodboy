@@ -45,7 +45,7 @@ describe('ChangelogRail', () => {
     expect(screen.getByText('0.7')).toBeDefined();
     expect(screen.getByText('0.6')).toBeDefined();
     expect(screen.getByText(/Older/)).toBeDefined();
-    expect(screen.queryByText('0.7.0')).toBeDefined();
+    expect(screen.queryByText('0.7.0')).not.toBeNull();
     expect(screen.queryByText('0.3.14')).toBeNull();
   });
 

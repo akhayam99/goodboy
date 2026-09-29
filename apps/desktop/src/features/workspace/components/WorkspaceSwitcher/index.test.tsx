@@ -115,12 +115,21 @@ describe('WorkspaceSwitcher', () => {
     expect(state.switchWorkspaceHere).toHaveBeenCalledWith({ id: 'ws-b', title: 'bravo' });
   });
 
-  it('filters by query', () => {
+  it('filters other workspaces by query', () => {
+    state.workspaces = [
+      ...state.workspaces,
+      { id: 'ws-c', name: 'charlie', slug: 'charlie' } as Workspace,
+    ];
     render(<WorkspaceSwitcher onClose={vi.fn()} />);
+    expect(screen.getByText('bravo')).not.toBeNull();
+    expect(screen.getByText('charlie')).not.toBeNull();
+
     fireEvent.change(screen.getByPlaceholderText('Find a workspace or project'), {
       target: { value: 'brav' },
     });
-    expect(screen.queryByText('bravo')).toBeDefined();
+
+    expect(screen.getByText('bravo')).not.toBeNull();
+    expect(screen.queryByText('charlie')).toBeNull();
   });
 
   it('requests a new workspace via the global event', () => {
