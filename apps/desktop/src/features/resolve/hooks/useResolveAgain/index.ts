@@ -61,7 +61,7 @@ export const useResolveAgain = ({
           sessionId,
           threads: [thread],
           pr,
-          routing: draftRoutingOf({ state, sessionId }),
+          routing: draftRoutingOf({ state, sessionId, threadId }),
           note: instruction,
           mode: 'retry',
           priorContext: [

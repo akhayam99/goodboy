@@ -3,20 +3,29 @@ import type { AppStore } from '../../store/store';
 import { sessionResolveStyle } from '../../store/sessionReplySettings';
 import { selectResolvedSettings } from '../../store/slices/overrides/selectResolvedSettings';
 import { kindRouting, type AgentKindRouting } from '../session/agent-kind';
-import { launchChoiceOf } from './launchChoice';
+import { launchChoiceOf, retryBatchOf, routingOfLaunch } from './launchChoice';
 import { startBatch } from './startBatch';
 
 type RoutingParams = {
   readonly state: AppStore;
   readonly sessionId: SessionId;
+  readonly threadId?: string;
 };
 
-export const draftRoutingOf = ({ state, sessionId }: RoutingParams): AgentKindRouting =>
-  state.resolveQueueView[sessionId]?.lastRouting ??
-  kindRouting({
-    kind: 'resolver',
-    roleModels: selectResolvedSettings({ state, sessionId })?.roleModels ?? null,
-  });
+export const draftRoutingOf = ({ state, sessionId, threadId }: RoutingParams): AgentKindRouting => {
+  const launched =
+    threadId === undefined
+      ? null
+      : retryBatchOf({ attempts: state.sessionResolveAttempts[sessionId] ?? [], threadId });
+  return (
+    (launched === null ? null : routingOfLaunch({ launchChoice: launched.launchChoice })) ??
+    state.resolveQueueView[sessionId]?.lastRouting ??
+    kindRouting({
+      kind: 'resolver',
+      roleModels: selectResolvedSettings({ state, sessionId })?.roleModels ?? null,
+    })
+  );
+};
 
 type Params = {
   readonly getState: () => AppStore;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ResolveAttempt, SessionId } from '@goodboy/types';
-import { launchChoiceOf, modelChoiceOfLaunch, retryBatchOf } from './launchChoice';
+import { launchChoiceOf, modelChoiceOfLaunch, retryBatchOf, routingOfLaunch } from './launchChoice';
 
 const CHOICE = launchChoiceOf({
   routing: { provider: 'anthropic', model: 'claude-sonnet-5', effort: 'medium' },
@@ -59,5 +59,14 @@ describe('launch choice', () => {
       launchChoice: CHOICE,
     });
     expect(retryBatchOf({ attempts, threadId: 'PRRT_2' })).toBeNull();
+  });
+
+  it('turns a full launch choice into a routing and refuses a partial one', () => {
+    expect(routingOfLaunch({ launchChoice: CHOICE })).toEqual({
+      provider: 'anthropic',
+      model: 'claude-sonnet-5',
+      effort: 'medium',
+    });
+    expect(routingOfLaunch({ launchChoice: { ...CHOICE, model: null } })).toBeNull();
   });
 });

@@ -45,6 +45,19 @@ export const modelChoiceOfLaunch = ({
   };
 };
 
+export const routingOfLaunch = ({
+  launchChoice,
+}: {
+  readonly launchChoice: ResolveLaunchChoice;
+}): AgentKindRouting | null => {
+  const provider = PROVIDER_IDS.find((id) => id === launchChoice.provider);
+  const effort = EFFORT_LEVELS.find((level) => level === launchChoice.effort);
+  if (provider === undefined || launchChoice.model === null || effort === undefined) {
+    return null;
+  }
+  return { provider, model: launchChoice.model, effort };
+};
+
 export const retryBatchOf = ({
   attempts,
   threadId,
