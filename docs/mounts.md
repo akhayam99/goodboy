@@ -21,7 +21,7 @@ and `apps/desktop/src/store/slices/mount-cleanup/`.
   length. The local branch outlives the worktree.
 - Branch and directory names come from one slug rule: ASCII letters and digits,
   everything else becomes a dash, at most 48 characters, and a short hash when
-  nothing is left. `slugify` in `@goodboy/core` and `slugify` in `worktree.rs`
+  nothing is left. `slugify` in `@goodboy/core` and `slugify` in `worktree/slug.rs`
   give the same result for the same input. When another live session already
   owns `<prefix>/<slug>`, the plan takes `-2`, `-3` and so on. An adopted
   branch is never renamed.
