@@ -23,7 +23,7 @@ export const FeaturesScriptDrawerScene = () => {
       <div className="min-w-0 flex-1">
         <ScriptsLensScene />
       </div>
-      <aside className="h-screen w-[580px] shrink-0 border-l border-border-subtle">
+      <aside className="h-screen w-[580px] shrink-0 border-l border-border-soft">
         {isSeeded ? (
           <ScriptRunDrawer
             sessionId={SESSION_ID}
