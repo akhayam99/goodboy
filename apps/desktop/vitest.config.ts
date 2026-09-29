@@ -10,6 +10,8 @@ export default defineConfig({
     passWithNoTests: true,
     testTimeout: 15000,
     hookTimeout: 15000,
+    setupFiles: ['src/test/failOnConsole.ts'],
+    globalSetup: ['src/test/consoleBaselineReport.ts'],
     css: { include: [/\.css\?raw$/] },
     projects: [
       {

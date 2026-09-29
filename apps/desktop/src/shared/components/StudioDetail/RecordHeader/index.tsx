@@ -118,7 +118,9 @@ export const RecordHeader = ({
       >
         {title}
       </h1>
-      {byline == null ? null : <p className="truncate text-meta text-faint-foreground">{byline}</p>}
+      {byline == null ? null : (
+        <div className="truncate text-meta text-faint-foreground">{byline}</div>
+      )}
       {facts}
       <RecordActions
         primary={frame?.primary ?? null}

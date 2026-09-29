@@ -14,6 +14,7 @@ import { expectBaseline } from './baseline';
 import { STORE_IMPORT_TIMEOUT_MS, importStore, resetStoryStore } from '../../store/storyHarness';
 
 const SCENE_SETTLE_MS = 10_000;
+const INTENTIONAL_CRASH = 'fetch failed: Authorization';
 
 beforeAll(async () => {
   await importStore();
@@ -29,6 +30,9 @@ beforeEach(async () => {
     const line = args.map(String).join(' ');
     if (line.includes('Maximum update depth')) {
       renderLoops.push(line);
+    }
+    if (line.includes(INTENTIONAL_CRASH)) {
+      return;
     }
     logError(...args);
   });

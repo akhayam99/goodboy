@@ -147,9 +147,11 @@ describe('ROLE_REGISTRY contract', () => {
   });
 
   it('normalizes every selectable role to itself and the rest to custom', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(normalizeSelectableAgentRole({ role: 'report' })).toBe('report');
     expect(normalizeSelectableAgentRole({ role: 'wireframe' })).toBe('wireframe');
     expect(normalizeSelectableAgentRole({ role: 'emperor' })).toBe('custom');
+    warn.mockRestore();
   });
 });
 
@@ -203,6 +205,9 @@ describe('fanOutCapabilityForRole', () => {
   });
 
   it('falls back to custom for unknown roles', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(fanOutCapabilityForRole('unknown')).toEqual(ROLE_REGISTRY.custom.fanOut);
+    expect(warn).toHaveBeenCalledWith('[roles] unknown role "unknown"; using custom');
+    warn.mockRestore();
   });
 });

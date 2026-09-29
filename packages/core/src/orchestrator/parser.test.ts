@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseOrchestratorDecision } from './parser';
 import { parseWorkflowRoutingProposal } from './parseWorkflowRoutingProposal';
 
@@ -63,12 +63,15 @@ describe('parseOrchestratorDecision', () => {
   });
 
   it('falls back to custom for an unknown role', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const parsed = parseOrchestratorDecision({
       provider: 'anthropic',
       raw: '<<orchestrator>>{"action":"next","reason":"x","step":{"name":"x","role":"oracle","promptPrefix":"x"}}<</orchestrator>>',
     });
 
     expect(parsed?.action === 'next' && parsed.step.role).toBe('custom');
+    expect(warn).toHaveBeenCalledWith('[roles] unknown role "oracle"; using custom');
+    warn.mockRestore();
   });
 
   it('keeps the shipped wireframe role', () => {

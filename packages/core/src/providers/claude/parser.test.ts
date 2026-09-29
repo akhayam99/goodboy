@@ -21,7 +21,12 @@ describe('parseStreamJsonLine', () => {
   });
 
   it('returns nothing for malformed json', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     expect(parse('{not json')).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(
+      '[claude-adapter] dropped a stream-json line that is not json',
+    );
+    warn.mockRestore();
   });
 
   it('ignores system events without session id', () => {
@@ -334,6 +339,7 @@ describe('parseStreamJsonLine', () => {
   });
 
   it('emits unknown_payload for unrecognised payload types', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const raw = { type: 'ping', extra: 42 };
     const events = parse(JSON.stringify(raw));
     expect(events).toHaveLength(1);
@@ -345,6 +351,8 @@ describe('parseStreamJsonLine', () => {
       raw,
       at,
     });
+    expect(warn).toHaveBeenCalledWith('[claude-adapter] unknown stream-json payload type: ping');
+    warn.mockRestore();
   });
 
   it('hands a rate limit event to onProviderLimits and keeps it out of the transcript', () => {
@@ -363,9 +371,14 @@ describe('parseStreamJsonLine', () => {
   });
 
   it('calls onUnknown hook for unrecognised payload types', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const onUnknown = vi.fn();
     const raw = { type: 'debug_trace', data: 'x' };
     parseStreamJsonLine(JSON.stringify(raw), { ...ctx, onUnknown });
     expect(onUnknown).toHaveBeenCalledWith('debug_trace', raw);
+    expect(warn).toHaveBeenCalledWith(
+      '[claude-adapter] unknown stream-json payload type: debug_trace',
+    );
+    warn.mockRestore();
   });
 });
