@@ -14,6 +14,7 @@ import {
   IconButton,
   PageColumn,
   ScrollFade,
+  SegmentedTabs,
   Skeleton,
   formatError,
 } from '@goodboy/ui';
@@ -24,6 +25,7 @@ import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conce
 import { eventMatches } from '../../../../shared/keyboard/dispatcher';
 import { SHORTCUTS, type ShortcutId } from '../../../../shared/keyboard/registry';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
+import { selectActiveMountId } from '../../../../store/slices/project-mounts/selectors';
 import { reviewFocusThreadId } from '../../../../store/slices/review-navigation';
 import { bindTarget, runObjectAction } from '../../../actions/registry';
 import { useActionEnv } from '../../../actions/useActionEnv';
@@ -44,6 +46,8 @@ import {
   type ReviewStateFilter,
 } from '../../reviewCommentState';
 import { replyOnlyLine } from '../../reviewRemote';
+import { REVIEW_VIEW_LABEL } from '../../reviewCommitsCopy';
+import { ReviewCommits } from '../ReviewCommits';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewComment } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
@@ -61,6 +65,8 @@ type Props = {
   readonly session: Session;
   readonly noPullRequestLine?: ReactNode;
 };
+
+type ReviewView = 'comments' | 'commits';
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
   [
@@ -150,6 +156,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const [modelPickerRequest, setModelPickerRequest] = useState(0);
   const [launch, setLaunch] = useState<ReviewLaunch | null>(null);
   const [started, setStarted] = useState<StartedNote | null>(null);
+  const [view, setView] = useState<ReviewView>('comments');
+  const commitCount = useAppStore((s) => {
+    const mountId = selectActiveMountId({ state: s, sessionId });
+    return mountId === null ? null : (s.historyDrafts[mountId]?.commits.length ?? null);
+  });
   const listRef = useRef<HTMLDivElement | null>(null);
   const hasPr = github?.pr != null;
   const push = useReviewPush({ sessionId });
@@ -301,8 +312,25 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     consumeReviewTarget({ sessionId, requestId: reviewTarget.requestId });
   }, [consumeReviewTarget, entries, reviewTarget, select, sessionId]);
 
+  const switchView = (event: KeyboardEvent<HTMLDivElement>): boolean => {
+    if (
+      isEditable(event.target) ||
+      compose !== null ||
+      editingReplyId !== null ||
+      !eventMatches({ event: event.nativeEvent, entry: SHORTCUTS['review.view'] })
+    ) {
+      return false;
+    }
+    event.preventDefault();
+    setView((current) => (current === 'comments' ? 'commits' : 'comments'));
+    return true;
+  };
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     const native = event.nativeEvent;
+    if (switchView(event) || view === 'commits') {
+      return;
+    }
     if (eventMatches({ event: native, entry: SHORTCUTS['composer.submit'] })) {
       if (compose !== null || editingReplyId !== null) {
         return;
@@ -443,6 +471,18 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         </div>
       );
     }
+    if (view === 'commits') {
+      return (
+        <ReviewCommits
+          sessionId={sessionId}
+          entries={entries}
+          onOpenThread={(threadId) => {
+            setView('comments');
+            select(threadId);
+          }}
+        />
+      );
+    }
     if (focused === null) {
       return <ReviewEmptyState hasPr={hasPr} />;
     }
@@ -528,11 +568,32 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         />
       }
       subheader={
-        <div className="pl-6">
+        <div className="flex flex-col gap-3 pl-6" onKeyDown={(event) => void switchView(event)}>
           <ReviewHeaderMeta
             sessionId={sessionId}
             entries={entries}
             noPullRequestLine={noPullRequestLine}
+          />
+          <SegmentedTabs<ReviewView>
+            ariaLabel={REVIEW_VIEW_LABEL.group}
+            size="sm"
+            className="w-fit"
+            value={view}
+            onChange={setView}
+            options={[
+              {
+                value: 'comments',
+                label: REVIEW_VIEW_LABEL.comments,
+                badge: <span className="tabular-nums text-faint-foreground">{entries.length}</span>,
+              },
+              {
+                value: 'commits',
+                label: REVIEW_VIEW_LABEL.commits,
+                ...(commitCount !== null && {
+                  badge: <span className="tabular-nums text-faint-foreground">{commitCount}</span>,
+                }),
+              },
+            ]}
           />
         </div>
       }

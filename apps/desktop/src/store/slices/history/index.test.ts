@@ -53,6 +53,11 @@ vi.mock('../../../features/session/components/AgentSpawnConfig/taskModelAgentSpa
   }),
 }));
 
+import {
+  presetChoices,
+  reviewCommitRows,
+  reviewPlanItems,
+} from '../../../features/resolve/reviewCommits';
 import { createHistorySlice } from './index';
 import { historyInitialState } from './state';
 import { rewriterCopyFor } from './rewriterCopyFor';
@@ -900,6 +905,7 @@ describe('restore previous history', () => {
         applied: null,
         identity: null,
         movedHead: 'rewrite-two',
+        threadShas: [],
         updatedAt: 1,
       },
     };
@@ -975,6 +981,110 @@ describe('restore previous history', () => {
       }),
     ).resolves.toBe('restored');
     expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+});
+
+describe('the review commits view on the engine', () => {
+  it('folds a resolve commit into its fixup_of_sha target and pushes it with the lease', async () => {
+    const harnessed = harness();
+    seedDraft({ harnessed });
+    const rows = reviewCommitRows({
+      commits: PLAN_COMMITS,
+      threads: [
+        {
+          threadId: 'thread-mara',
+          author: 'Mara',
+          location: null,
+          commitShas: ['b2'],
+          fixupOfSha: 'a1',
+        },
+      ],
+    });
+    const items = reviewPlanItems({
+      rows,
+      choices: presetChoices({ rows, preset: 'fold', prNumber: 318 }),
+    });
+    const state = harnessed.read() as unknown as Record<string, unknown>;
+    const drafts = state['historyDrafts'] as Record<string, Record<string, unknown>>;
+    drafts[MOUNT_ID] = { ...drafts[MOUNT_ID], items };
+    engine.runHistoryPlan.mockResolvedValue({ kind: 'tried', result: TRIED });
+
+    await expect(
+      harnessed.slice.applyHistoryDraft({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        shouldPush: true,
+      }),
+    ).resolves.toBe('pushed');
+
+    expect(engine.runHistoryPlan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        plan: expect.objectContaining({
+          steps: [
+            { sha: 'a1', verb: 'pick' },
+            { sha: 'b2', verb: 'fixup', target: 'a1' },
+          ],
+        }),
+      }),
+    );
+    expect(engine.pushWithLease).toHaveBeenCalledWith(
+      expect.objectContaining({ branch: 'fix/ledger-postings', expectedRemoteSha: 'remote-sha' }),
+    );
+    expect(harnessed.read().historyRuns[MOUNT_ID]?.phase).toBe('pushed');
+  });
+});
+
+describe('resolve shas across a rewrite and its undo', () => {
+  it('remaps the thread shas on apply and puts them back when the backup is restored', async () => {
+    const { slice, read } = harness();
+    const state = read() as unknown as Record<string, unknown>;
+    state['sessionResolveThreads'] = {
+      [SESSION_ID]: [
+        { threadId: 'thread-mara', commitShas: ['c81'], fixupOfSha: '7be', replacesSha: null },
+      ],
+    };
+    const update = read().updateResolveThread;
+
+    await expect(
+      slice.applyHistoryRewrite({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        origin: 'plan',
+        planId: null,
+        newHead: 'new-head',
+        expectedHead: 'head-sha',
+        map: [
+          { from: '7be', to: 'e31' },
+          { from: 'c81', to: 'e31' },
+        ],
+        shouldPush: false,
+        byAgent: false,
+        identity: IDENTITY,
+      }),
+    ).resolves.toBe('applied');
+    expect(update).toHaveBeenLastCalledWith({
+      sessionId: SESSION_ID,
+      threadId: 'thread-mara',
+      patch: { commitShas: ['e31'], fixupOfSha: 'e31', replacesSha: null },
+    });
+
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'head-sha',
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/2',
+    });
+    await slice.restoreHistory({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
+      shouldPush: false,
+    });
+    expect(update).toHaveBeenLastCalledWith({
+      sessionId: SESSION_ID,
+      threadId: 'thread-mara',
+      patch: { commitShas: ['c81'], fixupOfSha: '7be', replacesSha: null },
+    });
+    expect(read().historyRuns[MOUNT_ID]?.threadShas).toEqual([]);
   });
 });
 

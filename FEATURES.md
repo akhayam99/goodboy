@@ -457,6 +457,10 @@ Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like m
 
 Accept a fix even after the branch got new commits: it lands on top of the latest one, and on a conflict the branch goes back to its old head.
 
+### Squash and fold the resolve commits
+
+Choose how the fixes land before anyone sees them. Review has two views, **Comments** and **Commits** (press **V** to switch). **Commits** lists the branch commits since the base, yours and the resolve commits linked to their comment, with three presets: **Keep as they are**, **Fold each into its original** (into the commit the fix was a fixup of) and **One commit for the review**, plus a menu per commit to keep it, fold it into an earlier commit, squash it with the one above or reword it. The preview shows the resulting commits and the predicted outcome before anything runs. A plan you left in Rewrite history is never overwritten: Commits says so and waits for **Open it** or **Replace it**. **Rewrite** goes through Rewrite history: tried in a copy, a backup kept, and when commits are already on origin it says first that this is a force push with lease that reviewers will see as force-pushed. **Undo** restores the backup and puts every comment back on its commit. The preset you pick is remembered per project and sets whether later resolves commit as fixups or new commits.
+
 ### Notes before a pull request
 
 Review your own diff before anyone else does. Leave notes on lines, resolve them like review comments, and post the open ones to the pull request later.

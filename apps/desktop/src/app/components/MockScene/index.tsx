@@ -16,6 +16,7 @@ import { ResolveScene } from './scenes/ResolveScene';
 import { ResolveSelectScene } from './scenes/ResolveSelectScene';
 import { ResolveDriftScene } from './scenes/ResolveDriftScene';
 import { ResolveCommitStoryScene } from './scenes/ResolveCommitStoryScene';
+import { ResolveCommitsScene } from './scenes/ResolveCommitsScene';
 import { ResolveItemScene } from './scenes/ResolveItemScene';
 import { ResolveFailedHistoryScene } from './scenes/ResolveFailedHistoryScene';
 import { ResolveFailedRunScene } from './scenes/ResolveFailedRunScene';
@@ -145,6 +146,7 @@ export const MOCK_SCENES = {
   'resolve-failed-history': ResolveFailedHistoryScene,
   'resolve-drift': ResolveDriftScene,
   'resolve-commit-story': ResolveCommitStoryScene,
+  'resolve-commits': ResolveCommitsScene,
   board: BoardScene,
   'transcript-mount': TranscriptMountScene,
   'board-shell': BoardShellScene,

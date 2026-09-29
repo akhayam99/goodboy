@@ -1150,13 +1150,17 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
 - **Review is where the session's code is discussed; the pull request page is
   where it ships.** Review is one flow: the list of comments on the left in
   three groups (Open, Ready to push, Done) and the focused comment on
-  the right, in the layer itself, never in a drawer. The header carries the
-  title, one quiet link to the pull request (`PR #528 ›`), one summary line
-  (`9 open · 3 drafting · 2 ready to push · 4 done`, only the non-zero parts),
-  and `…`; nothing else of the pull request. A comment nobody started shows
-  `Fix` on hover (and `F`), which opens the launch strip under the header; a
-  checkbox on hover picks comments (`X` on the focused row, Cmd+A for every
-  comment nobody started, Esc clears) and the bar `N selected · Fix N
+  the right, in the layer itself, never in a drawer. A segmented control under
+  the header switches between two views, `Comments` and `Commits`, and `V`
+  toggles them from anywhere in the page outside a text field. `Commits` lists
+  the branch commits with their fold preview; a resolve commit's `for
+<reviewer> on <file:line>` line opens its comment back in `Comments`. The
+  header carries the title, one quiet link to the pull request (`PR #528 ›`),
+  one summary line (`9 open · 3 drafting · 2 ready to push · 4 done`, only the
+  non-zero parts), and `…`; nothing else of the pull request. A comment nobody
+  started shows `Fix` on hover (and `F`), which opens the launch strip under
+  the header; a checkbox on hover picks comments (`X` on the focused row, Cmd+A
+  for every comment nobody started, Esc clears) and the bar `N selected · Fix N
 separately` opens the same strip. Cmd+A is not in the shortcut table: the
   system reserves it.
   "Resolve" names the area, never a button. Review exists with or without a

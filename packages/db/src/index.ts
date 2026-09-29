@@ -67,6 +67,7 @@ export {
   reconnectProject,
   updateProjectKind,
   updateProjectAfterMerge,
+  updateProjectResolveCommitStyle,
   updateProjectBaseBranch,
   updateProjectStar,
   updateProjectDescription,
