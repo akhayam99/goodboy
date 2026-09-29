@@ -52,6 +52,9 @@ const ATTEMPT: ResolveAttempt = {
   endedAt: null,
   error: null,
   createdAt: Date.now() - 3 * MINUTE,
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 };
 
 const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
