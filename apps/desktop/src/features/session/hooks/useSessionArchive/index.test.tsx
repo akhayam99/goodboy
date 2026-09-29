@@ -2,7 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Session, SessionEvent, SessionEventKind } from '@goodboy/types';
+import type { Session, SessionEvent, SessionEventKind, SessionId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 
 const allDone = (ids: ReadonlyArray<string>) => ({ succeeded: ids, failed: [] });
 
@@ -31,7 +32,7 @@ vi.mock('../../../../app/components/Toast', () => ({
 import { segmentsToText, sessionEventLabel } from '../../timeline/sessionEventPresentation';
 import { useSessionArchive } from './index';
 
-const session = (id: string): Session => ({ id, goal: id }) as unknown as Session;
+const session = (id: string): Session => aSession({ id: id as SessionId, goal: id });
 
 type HarnessProps = {
   readonly sessions: ReadonlyArray<Session>;

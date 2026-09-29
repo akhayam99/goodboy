@@ -2,7 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session } from '@goodboy/types';
+import type { Session, SessionId, WorkspaceId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 
 const { setModeMock, state } = vi.hoisted(() => ({
   setModeMock: vi.fn(async () => undefined),
@@ -22,9 +23,12 @@ vi.mock('../../../../store', () => ({
 
 import { PermissionModePicker } from './index';
 
-const makeSession = (): Session => {
-  return { id: 'sess-1', workspaceId: 'ws-1', permissionMode: 'default' } as Session;
-};
+const makeSession = (): Session =>
+  aSession({
+    id: 'sess-1' as SessionId,
+    workspaceId: 'ws-1' as WorkspaceId,
+    permissionMode: 'default',
+  });
 
 const openPicker = () => fireEvent.click(screen.getByRole('button', { name: /ask first/i }));
 

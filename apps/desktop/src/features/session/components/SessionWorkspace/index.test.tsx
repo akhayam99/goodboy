@@ -2,7 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { useEffect } from 'react';
-import type { Agent, Session, SessionId } from '@goodboy/types';
+import type {
+  Agent,
+  AgentId,
+  Session,
+  SessionId,
+  StepId,
+  WorkflowId,
+  WorkflowRunId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import type { LensKind } from '../../../../store';
 
 type Store = {
@@ -263,21 +273,16 @@ vi.mock('../../hooks/useSelectedAgentHome', () => ({
 import { SessionWorkspace } from './index';
 import { useSessionCrumbs } from '../../hooks/useSessionCrumbs';
 
-const SESSION_ID = 'session-1';
-const selectedAgent = {
-  id: 'agent-1',
+const SESSION_ID = 'session-1' as SessionId;
+const selectedAgent = anAgent({
+  id: 'agent-1' as AgentId,
   sessionId: SESSION_ID,
-  ordinal: 0,
   name: 'Selected agent',
   status: 'running',
-  stepId: 'step-1',
-  workflowRunId: 'run-1',
-} as Agent;
-const session = {
-  id: SESSION_ID,
-  workspaceId: 'workspace-1',
-  workflowRuns: [],
-} as unknown as Session;
+  stepId: 'step-1' as StepId,
+  workflowRunId: 'run-1' as WorkflowRunId,
+});
+const session = aSession({ id: SESSION_ID, workspaceId: 'workspace-1' as WorkspaceId });
 
 beforeEach(() => {
   store.sessions = [session];
@@ -329,11 +334,11 @@ describe('SessionWorkspace agent overlay', () => {
   });
 
   it('keeps the workflow agent surface full-width when an ad-hoc agent is selected', () => {
-    const adHocAgent = {
+    const adHocAgent = anAgent({
       ...selectedAgent,
       stepId: undefined,
       workflowRunId: undefined,
-    } as Agent;
+    });
     store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = { [SESSION_ID]: adHocAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [adHocAgent] };
@@ -346,14 +351,14 @@ describe('SessionWorkspace agent overlay', () => {
   });
 
   it('keeps a standalone resolver on the review trail, with no run level', () => {
-    const standaloneResolver = {
+    const standaloneResolver = anAgent({
       ...selectedAgent,
-      id: 'resolver-1',
+      id: 'resolver-1' as AgentId,
       name: 'Standalone resolver',
       kind: 'resolver',
       stepId: undefined,
       workflowRunId: undefined,
-    } as Agent;
+    });
     store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
@@ -369,11 +374,11 @@ describe('SessionWorkspace agent overlay', () => {
   });
 
   it('does not show workflow linkage outside the workflows lens', () => {
-    const linkedAgent = {
+    const linkedAgent = anAgent({
       ...selectedAgent,
       stepId: undefined,
-      workflowRunId: 'run-1',
-    } as Agent;
+      workflowRunId: 'run-1' as WorkflowRunId,
+    });
     store.selectedAgentId = { [SESSION_ID]: linkedAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [linkedAgent] };
     store.phaseTemplates = {
@@ -386,19 +391,16 @@ describe('SessionWorkspace agent overlay', () => {
       ],
     };
     hooks.agentHome = 'agents';
-    const workflowSession = {
+    const workflowSession = aSession({
       ...session,
       workflowRuns: [
-        {
-          id: 'run-1',
-          workflowId: 'workflow-1',
-          ordinal: 0,
-          currentStep: 0,
+        aWorkflowRun({
+          id: 'run-1' as WorkflowRunId,
+          workflowId: 'workflow-1' as WorkflowId,
           autoRun: true,
-          triggerMode: 'immediate',
-        },
+        }),
       ],
-    } as unknown as Session;
+    });
 
     render(<SessionWorkspace session={workflowSession} isActive />);
 
@@ -414,16 +416,16 @@ describe('SessionWorkspace agent overlay', () => {
   });
 
   it('shows the selected resolver in the overlay without an inspector rail', () => {
-    const standaloneResolver = {
+    const standaloneResolver = anAgent({
       ...selectedAgent,
-      id: 'resolver-1',
+      id: 'resolver-1' as AgentId,
       name: 'Markerless resolver',
       kind: 'resolver',
       status: 'completed',
       stepId: undefined,
       workflowRunId: undefined,
       sourceThreadId: 'thread-1',
-    } as Agent;
+    });
     store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: standaloneResolver.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneResolver] };
@@ -436,11 +438,11 @@ describe('SessionWorkspace agent overlay', () => {
   });
 
   it('gives the agents-home overlay the detail pane instead of an inspector rail', () => {
-    const standaloneAgent = {
+    const standaloneAgent = anAgent({
       ...selectedAgent,
       stepId: undefined,
       workflowRunId: undefined,
-    } as Agent;
+    });
     store.sessionPhaseRuns = { [SESSION_ID]: [standaloneAgent] };
     hooks.agentHome = 'agents';
     render(<SessionWorkspace session={session} isActive />);
@@ -514,12 +516,12 @@ describe('SessionWorkspace code host routing', () => {
 
 describe('SessionWorkspace agents lens', () => {
   it('renders the agents lens without an inspector rail', () => {
-    const standalone = {
+    const standalone = anAgent({
       ...selectedAgent,
-      id: 'agent-standalone',
+      id: 'agent-standalone' as AgentId,
       stepId: undefined,
       workflowRunId: undefined,
-    } as Agent;
+    });
     store.selectedAgentId = {};
     store.sessionPhaseRuns = { [SESSION_ID]: [standalone] };
 
@@ -538,22 +540,22 @@ describe('SessionWorkspace pane metadata', () => {
     store.sessionPhaseRuns = {
       [SESSION_ID]: [
         { ...selectedAgent, stepId: undefined, workflowRunId: undefined },
-        {
+        anAgent({
           ...selectedAgent,
-          id: 'agent-2',
+          id: 'agent-2' as AgentId,
           name: 'Done agent',
           status: 'completed',
           stepId: undefined,
           workflowRunId: undefined,
-        } as Agent,
-        {
+        }),
+        anAgent({
           ...selectedAgent,
-          id: 'agent-3',
+          id: 'agent-3' as AgentId,
           name: 'Failed agent',
           status: 'failed',
           stepId: undefined,
           workflowRunId: undefined,
-        } as Agent,
+        }),
       ],
     };
 
@@ -666,11 +668,11 @@ describe('SessionWorkspace breadcrumb visibility', () => {
   });
 
   it('gives an open workflow step the run as its own crumb, one level above it', () => {
-    const workflowAgent = {
+    const workflowAgent = anAgent({
       ...selectedAgent,
-      stepId: 'step-1',
-      workflowRunId: 'run-1',
-    } as Agent;
+      stepId: 'step-1' as StepId,
+      workflowRunId: 'run-1' as WorkflowRunId,
+    });
     store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = { [SESSION_ID]: workflowAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [workflowAgent] };
@@ -683,19 +685,16 @@ describe('SessionWorkspace breadcrumb visibility', () => {
         },
       ],
     };
-    const workflowSession = {
+    const workflowSession = aSession({
       ...session,
       workflowRuns: [
-        {
-          id: 'run-1',
-          workflowId: 'workflow-1',
-          ordinal: 0,
-          currentStep: 0,
+        aWorkflowRun({
+          id: 'run-1' as WorkflowRunId,
+          workflowId: 'workflow-1' as WorkflowId,
           autoRun: true,
-          triggerMode: 'immediate',
-        },
+        }),
       ],
-    } as unknown as Session;
+    });
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
 
@@ -709,16 +708,16 @@ describe('SessionWorkspace breadcrumb visibility', () => {
     act(() => result.current[2]!.onClick!());
     expect(store.setFocusedWorkflowRun).toHaveBeenCalledWith(SESSION_ID, 'run-1');
     expect(store.navigate).toHaveBeenCalledWith({
-      to: sessionPlace({ sessionId: SESSION_ID as SessionId, lens: 'workflows' }),
+      to: sessionPlace({ sessionId: SESSION_ID, lens: 'workflows' }),
     });
   });
 
   it('keeps the run crumb out of a trail whose agent belongs to no run', () => {
-    const adHocAgent = {
+    const adHocAgent = anAgent({
       ...selectedAgent,
       stepId: undefined,
       workflowRunId: undefined,
-    } as Agent;
+    });
     store.activeLens = { [SESSION_ID]: 'workflows' };
     store.selectedAgentId = { [SESSION_ID]: adHocAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [adHocAgent] };
@@ -733,30 +732,27 @@ describe('SessionWorkspace breadcrumb visibility', () => {
   });
 
   it('goes up on Escape while the trail still names the run', () => {
-    const workflowAgent = {
+    const workflowAgent = anAgent({
       ...selectedAgent,
-      stepId: 'step-1',
-      workflowRunId: 'run-1',
-    } as Agent;
+      stepId: 'step-1' as StepId,
+      workflowRunId: 'run-1' as WorkflowRunId,
+    });
     store.activeLens = { [SESSION_ID]: 'review' };
     store.selectedAgentId = { [SESSION_ID]: workflowAgent.id };
     store.sessionPhaseRuns = { [SESSION_ID]: [workflowAgent] };
     store.phaseTemplates = {
       'workspace-1': [{ id: 'workflow-1', name: 'Release flow', steps: [] }],
     };
-    const workflowSession = {
+    const workflowSession = aSession({
       ...session,
       workflowRuns: [
-        {
-          id: 'run-1',
-          workflowId: 'workflow-1',
-          ordinal: 0,
-          currentStep: 0,
+        aWorkflowRun({
+          id: 'run-1' as WorkflowRunId,
+          workflowId: 'workflow-1' as WorkflowId,
           autoRun: true,
-          triggerMode: 'immediate',
-        },
+        }),
       ],
-    } as unknown as Session;
+    });
 
     render(<SessionWorkspace session={workflowSession} isActive />);
 
@@ -785,19 +781,16 @@ describe('SessionWorkspace breadcrumb visibility', () => {
         },
       ],
     };
-    const workflowSession = {
+    const workflowSession = aSession({
       ...session,
       workflowRuns: [
-        {
-          id: 'run-1',
-          workflowId: 'workflow-1',
-          ordinal: 0,
-          currentStep: 0,
+        aWorkflowRun({
+          id: 'run-1' as WorkflowRunId,
+          workflowId: 'workflow-1' as WorkflowId,
           autoRun: true,
-          triggerMode: 'immediate',
-        },
+        }),
       ],
-    } as unknown as Session;
+    });
 
     const { result } = renderHook(() => useSessionCrumbs({ session: workflowSession }));
 
