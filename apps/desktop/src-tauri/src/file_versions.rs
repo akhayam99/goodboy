@@ -1004,4 +1004,459 @@ mod tests {
         let _ = fs::remove_dir_all(store_root);
         let _ = fs::remove_dir_all(session_root);
     }
+
+    const RUN_ID_2: &str = "44444444-4444-4444-8444-444444444444";
+    const OTHER_SESSION_ID: &str = "55555555-5555-4555-8555-555555555555";
+
+    struct Fixture {
+        base: PathBuf,
+        store: PathBuf,
+        session: PathBuf,
+    }
+
+    impl Fixture {
+        fn new(name: &str) -> Self {
+            let base = temp_dir(name);
+            let store = base.join("store");
+            let session = base.join("session");
+            write_marker(&session, SESSION_ID);
+            Self {
+                base,
+                store,
+                session,
+            }
+        }
+
+        fn write(&self, relative: &str, bytes: &[u8]) {
+            let path = self.session.join(relative);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, bytes).unwrap();
+        }
+
+        fn read(&self, relative: &str) -> Vec<u8> {
+            fs::read(self.session.join(relative)).unwrap()
+        }
+
+        fn begin(&self, run_id: &str) -> BeginSnapshotResult {
+            begin_snapshot_with_root(
+                &self.store,
+                BeginSnapshotArgs {
+                    session_dir: self.session.to_string_lossy().to_string(),
+                    session_id: SESSION_ID.to_string(),
+                    run_id: run_id.to_string(),
+                    size_cap_bytes: Some(1024),
+                },
+            )
+            .unwrap()
+        }
+
+        fn finalize(
+            &self,
+            run_id: &str,
+            manifest: Vec<SnapshotManifestEntry>,
+        ) -> Vec<FinalizedVersion> {
+            finalize_snapshot_with_root(
+                &self.store,
+                FinalizeSnapshotArgs {
+                    session_dir: self.session.to_string_lossy().to_string(),
+                    session_id: SESSION_ID.to_string(),
+                    run_id: run_id.to_string(),
+                    manifest,
+                },
+            )
+            .unwrap()
+            .kept
+        }
+
+        fn restore(&self, relative_path: &str, stored_name: &str) -> Result<(), FileVersionsError> {
+            restore_version_with_root(
+                &self.store,
+                RestoreVersionArgs {
+                    session_dir: self.session.to_string_lossy().to_string(),
+                    session_id: SESSION_ID.to_string(),
+                    relative_path: relative_path.to_string(),
+                    stored_name: stored_name.to_string(),
+                },
+            )
+        }
+
+        fn stored_name(kept: &[FinalizedVersion], relative_path: &str) -> String {
+            kept.iter()
+                .find(|entry| entry.relative_path == relative_path)
+                .unwrap()
+                .stored_name
+                .clone()
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.base);
+        }
+    }
+
+    const BINARY: &[u8] = &[0x00, 0xff, 0x10, 0x80, 0x0a, 0x0d, 0xc3, 0x28, 0x00, 0x7f];
+
+    #[test]
+    fn restore_brings_back_the_exact_snapshot_bytes_after_edit_and_delete() {
+        let fx = Fixture::new("restore-roundtrip");
+        fx.write("notes.txt", b"snapshot text\nline two\n");
+        fx.write("assets/blob.bin", BINARY);
+        fx.write("kept.txt", b"never touched");
+
+        let begin = fx.begin(RUN_ID);
+        fs::write(fx.session.join("notes.txt"), b"agent rewrote everything").unwrap();
+        fs::remove_file(fx.session.join("assets/blob.bin")).unwrap();
+        let kept = fx.finalize(RUN_ID, begin.manifest);
+
+        assert_eq!(kept.len(), 2);
+        fx.restore("notes.txt", &Fixture::stored_name(&kept, "notes.txt"))
+            .unwrap();
+        fx.restore(
+            "assets/blob.bin",
+            &Fixture::stored_name(&kept, "assets/blob.bin"),
+        )
+        .unwrap();
+
+        assert_eq!(fx.read("notes.txt"), b"snapshot text\nline two\n");
+        assert_eq!(fx.read("assets/blob.bin"), BINARY);
+        assert_eq!(fx.read("kept.txt"), b"never touched");
+    }
+
+    #[test]
+    fn restore_recreates_a_directory_the_agent_removed() {
+        let fx = Fixture::new("restore-parent");
+        fx.write("deep/er/still/file.txt", b"buried");
+
+        let begin = fx.begin(RUN_ID);
+        fs::remove_dir_all(fx.session.join("deep")).unwrap();
+        let kept = fx.finalize(RUN_ID, begin.manifest);
+
+        fx.restore(
+            "deep/er/still/file.txt",
+            &Fixture::stored_name(&kept, "deep/er/still/file.txt"),
+        )
+        .unwrap();
+
+        assert_eq!(fx.read("deep/er/still/file.txt"), b"buried");
+    }
+
+    #[test]
+    fn restore_only_touches_the_requested_file() {
+        let fx = Fixture::new("restore-scope");
+        fx.write("a.txt", b"a before");
+        fx.write("b.txt", b"b before");
+
+        let begin = fx.begin(RUN_ID);
+        fs::write(fx.session.join("a.txt"), b"a after").unwrap();
+        fs::write(fx.session.join("b.txt"), b"b after").unwrap();
+        let kept = fx.finalize(RUN_ID, begin.manifest);
+
+        fx.restore("a.txt", &Fixture::stored_name(&kept, "a.txt"))
+            .unwrap();
+
+        assert_eq!(fx.read("a.txt"), b"a before");
+        assert_eq!(fx.read("b.txt"), b"b after");
+    }
+
+    #[test]
+    fn each_snapshot_run_keeps_its_own_restorable_copy() {
+        let fx = Fixture::new("restore-two-runs");
+        fx.write("f.txt", b"v1");
+
+        let first = fx.begin(RUN_ID);
+        fs::write(fx.session.join("f.txt"), b"v2").unwrap();
+        let first_kept = fx.finalize(RUN_ID, first.manifest);
+
+        let second = fx.begin(RUN_ID_2);
+        fs::write(fx.session.join("f.txt"), b"v3").unwrap();
+        let second_kept = fx.finalize(RUN_ID_2, second.manifest);
+
+        let first_name = Fixture::stored_name(&first_kept, "f.txt");
+        let second_name = Fixture::stored_name(&second_kept, "f.txt");
+        assert_ne!(first_name, second_name);
+
+        fx.restore("f.txt", &first_name).unwrap();
+        assert_eq!(fx.read("f.txt"), b"v1");
+        fx.restore("f.txt", &second_name).unwrap();
+        assert_eq!(fx.read("f.txt"), b"v2");
+    }
+
+    #[test]
+    fn restore_of_a_missing_copy_fails_and_leaves_the_file_alone() {
+        let fx = Fixture::new("restore-missing");
+        fx.write("f.txt", b"current");
+
+        let result = fx.restore("f.txt", "no-such-copy.bin");
+
+        assert!(matches!(result, Err(FileVersionsError::StoredCopyMissing)));
+        assert_eq!(fx.read("f.txt"), b"current");
+    }
+
+    #[test]
+    fn restore_refuses_a_stored_name_that_climbs_out_of_the_store() {
+        let fx = Fixture::new("restore-stored-name");
+        fx.write("f.txt", b"current");
+        fs::create_dir_all(&fx.store).unwrap();
+        fs::write(fx.store.join("outside.bin"), b"planted").unwrap();
+
+        for hostile in ["../outside.bin", "..", "a/b.bin", "", "   "] {
+            let result = fx.restore("f.txt", hostile);
+            assert!(
+                matches!(result, Err(FileVersionsError::InvalidStoredName)),
+                "{hostile:?} must be rejected"
+            );
+        }
+        assert_eq!(fx.read("f.txt"), b"current");
+    }
+
+    #[test]
+    fn restore_refuses_a_session_id_that_is_not_a_uuid() {
+        let fx = Fixture::new("restore-bad-session");
+        let result = restore_version_with_root(
+            &fx.store,
+            RestoreVersionArgs {
+                session_dir: fx.session.to_string_lossy().to_string(),
+                session_id: "../evil".to_string(),
+                relative_path: "f.txt".to_string(),
+                stored_name: "copy.bin".to_string(),
+            },
+        );
+        assert!(matches!(result, Err(FileVersionsError::InvalidSessionId)));
+    }
+
+    #[test]
+    fn delete_version_removes_only_that_copy_and_is_idempotent() {
+        let fx = Fixture::new("delete-version");
+        fx.write("a.txt", b"a before");
+        fx.write("b.txt", b"b before");
+        let begin = fx.begin(RUN_ID);
+        fs::write(fx.session.join("a.txt"), b"a after").unwrap();
+        fs::write(fx.session.join("b.txt"), b"b after").unwrap();
+        let kept = fx.finalize(RUN_ID, begin.manifest);
+        let a_name = Fixture::stored_name(&kept, "a.txt");
+        let b_name = Fixture::stored_name(&kept, "b.txt");
+        let delete = |name: &str| {
+            delete_version_with_root(
+                &fx.store,
+                DeleteVersionArgs {
+                    session_id: SESSION_ID.to_string(),
+                    stored_name: name.to_string(),
+                },
+            )
+        };
+
+        delete(&a_name).unwrap();
+        delete(&a_name).unwrap();
+
+        assert!(matches!(
+            fx.restore("a.txt", &a_name),
+            Err(FileVersionsError::StoredCopyMissing)
+        ));
+        fx.restore("b.txt", &b_name).unwrap();
+        assert_eq!(fx.read("b.txt"), b"b before");
+    }
+
+    #[test]
+    fn delete_version_refuses_a_stored_name_that_climbs_out_of_the_store() {
+        let fx = Fixture::new("delete-stored-name");
+        fs::create_dir_all(&fx.store).unwrap();
+        fs::write(fx.store.join("outside.bin"), b"planted").unwrap();
+
+        let result = delete_version_with_root(
+            &fx.store,
+            DeleteVersionArgs {
+                session_id: SESSION_ID.to_string(),
+                stored_name: "../outside.bin".to_string(),
+            },
+        );
+
+        assert!(matches!(result, Err(FileVersionsError::InvalidStoredName)));
+        assert!(fx.store.join("outside.bin").is_file());
+    }
+
+    #[test]
+    fn purge_session_removes_that_session_and_leaves_the_others() {
+        let fx = Fixture::new("purge-session");
+        fx.write("f.txt", b"before");
+        let begin = fx.begin(RUN_ID);
+        fs::write(fx.session.join("f.txt"), b"after").unwrap();
+        let kept = fx.finalize(RUN_ID, begin.manifest);
+        let other_dir = session_store_dir(&fx.store, OTHER_SESSION_ID);
+        fs::create_dir_all(&other_dir).unwrap();
+        fs::write(other_dir.join("other-copy.bin"), b"other session").unwrap();
+        let purge = |session_id: &str| {
+            purge_session_with_root(
+                &fx.store,
+                PurgeSessionArgs {
+                    session_id: session_id.to_string(),
+                },
+            )
+        };
+
+        purge(SESSION_ID).unwrap();
+        purge(SESSION_ID).unwrap();
+
+        assert!(!session_store_dir(&fx.store, SESSION_ID).exists());
+        assert!(matches!(
+            fx.restore("f.txt", &Fixture::stored_name(&kept, "f.txt")),
+            Err(FileVersionsError::StoredCopyMissing)
+        ));
+        assert_eq!(
+            fs::read(other_dir.join("other-copy.bin")).unwrap(),
+            b"other session"
+        );
+    }
+
+    #[test]
+    fn purge_session_refuses_ids_that_could_reach_outside_the_store() {
+        let fx = Fixture::new("purge-hostile");
+        fs::create_dir_all(&fx.store).unwrap();
+        fs::write(fx.base.join("sibling.txt"), b"must survive").unwrap();
+
+        for hostile in ["..", "../session", ".", ""] {
+            let result = purge_session_with_root(
+                &fx.store,
+                PurgeSessionArgs {
+                    session_id: hostile.to_string(),
+                },
+            );
+            assert!(
+                matches!(result, Err(FileVersionsError::InvalidSessionId)),
+                "{hostile:?} must be rejected"
+            );
+        }
+        assert!(fx.base.join("sibling.txt").is_file());
+        assert!(fx.session.join(".goodboy").is_file());
+        assert!(fx.store.is_dir());
+    }
+
+    #[test]
+    fn begin_skips_oversized_files_and_refuses_a_second_run_with_the_same_id() {
+        let fx = Fixture::new("begin-cap");
+        fx.write("small.txt", b"ok");
+        fx.write("huge.bin", &vec![7u8; 2048]);
+
+        let begin = fx.begin(RUN_ID);
+
+        assert_eq!(begin.manifest.len(), 1);
+        assert_eq!(begin.manifest[0].relative_path, "small.txt");
+        assert!(begin
+            .skipped
+            .iter()
+            .any(|entry| entry.relative_path == "huge.bin"
+                && entry.reason == "too_large"
+                && entry.size_bytes == Some(2048)));
+
+        let again = begin_snapshot_with_root(
+            &fx.store,
+            BeginSnapshotArgs {
+                session_dir: fx.session.to_string_lossy().to_string(),
+                session_id: SESSION_ID.to_string(),
+                run_id: RUN_ID.to_string(),
+                size_cap_bytes: Some(1024),
+            },
+        );
+        assert!(matches!(
+            again,
+            Err(FileVersionsError::StagingAlreadyExists)
+        ));
+    }
+
+    #[test]
+    fn finalize_refuses_a_run_that_was_never_staged_and_duplicate_manifest_paths() {
+        let fx = Fixture::new("finalize-guards");
+        fx.write("f.txt", b"before");
+
+        let never_staged = finalize_snapshot_with_root(
+            &fx.store,
+            FinalizeSnapshotArgs {
+                session_dir: fx.session.to_string_lossy().to_string(),
+                session_id: SESSION_ID.to_string(),
+                run_id: RUN_ID.to_string(),
+                manifest: Vec::new(),
+            },
+        );
+        assert!(matches!(
+            never_staged,
+            Err(FileVersionsError::StagingMissing)
+        ));
+
+        let begin = fx.begin(RUN_ID);
+        let mut doubled = begin.manifest.clone();
+        doubled.extend(begin.manifest);
+        let duplicate = finalize_snapshot_with_root(
+            &fx.store,
+            FinalizeSnapshotArgs {
+                session_dir: fx.session.to_string_lossy().to_string(),
+                session_id: SESSION_ID.to_string(),
+                run_id: RUN_ID.to_string(),
+                manifest: doubled,
+            },
+        );
+        assert!(matches!(
+            duplicate,
+            Err(FileVersionsError::DuplicateRelativePath)
+        ));
+    }
+
+    #[test]
+    fn list_staged_snapshots_reports_why_a_run_was_skipped() {
+        let fx = Fixture::new("list-skipped");
+        let staging = |session: &str, run: &str| {
+            let dir = run_staging_dir(&fx.store, session, run);
+            fs::create_dir_all(&dir).unwrap();
+            dir
+        };
+        staging(SESSION_ID, RUN_ID);
+        let broken = staging(SESSION_ID, RUN_ID_2);
+        fs::write(broken.join(MANIFEST_FILE), b"{not json").unwrap();
+        let mismatch = staging(OTHER_SESSION_ID, RUN_ID);
+        let document = serde_json::json!({
+            "sessionDir": "/nowhere",
+            "sessionId": SESSION_ID,
+            "runId": RUN_ID,
+            "manifest": []
+        });
+        fs::write(
+            mismatch.join(MANIFEST_FILE),
+            serde_json::to_vec(&document).unwrap(),
+        )
+        .unwrap();
+
+        let listed = list_staged_snapshots_with_root(&fx.store).unwrap();
+
+        assert!(listed.runs.is_empty());
+        let reasons: Vec<(String, String, String)> = listed
+            .skipped
+            .iter()
+            .map(|entry| {
+                (
+                    entry.session_id.clone(),
+                    entry.run_id.clone(),
+                    entry.reason.clone(),
+                )
+            })
+            .collect();
+        assert_eq!(
+            reasons,
+            vec![
+                (
+                    SESSION_ID.to_string(),
+                    RUN_ID.to_string(),
+                    "manifest_missing".to_string()
+                ),
+                (
+                    SESSION_ID.to_string(),
+                    RUN_ID_2.to_string(),
+                    "manifest_invalid".to_string()
+                ),
+                (
+                    OTHER_SESSION_ID.to_string(),
+                    RUN_ID.to_string(),
+                    "manifest_mismatch".to_string()
+                ),
+            ]
+        );
+    }
 }
