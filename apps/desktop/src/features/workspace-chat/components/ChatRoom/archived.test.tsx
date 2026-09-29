@@ -10,6 +10,9 @@ const { store } = vi.hoisted(() => ({
     projects: [{ id: 'project-payments', workspaceId: 'ws-harborline', name: 'payments-api' }],
     sessions: [] as ReadonlyArray<unknown>,
     providers: [{ id: 'anthropic', connection: 'connected' }],
+    cliRequirements: [] as ReadonlyArray<unknown>,
+    settings: {} as Record<string, string>,
+    chatLinks: {} as Record<string, ReadonlyArray<unknown>>,
     chatMessages: {} as Record<string, ReadonlyArray<unknown>>,
     chatStreams: {} as Record<string, unknown>,
     loadChatMessages: vi.fn(async () => undefined),
@@ -55,15 +58,7 @@ const chatOf = (archivedAt: IsoDateTime | null): ChatSummary => ({
 });
 
 const renderRoom = (chat: ChatSummary) =>
-  render(
-    <ChatRoom
-      workspaceId={WORKSPACE_ID}
-      chat={chat}
-      onCreated={vi.fn()}
-      handoffs={[]}
-      onHandoff={vi.fn()}
-    />,
-  );
+  render(<ChatRoom workspaceId={WORKSPACE_ID} chat={chat} onCreated={vi.fn()} />);
 
 afterEach(() => {
   cleanup();
