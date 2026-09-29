@@ -153,7 +153,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/review`,
-  `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`.
+  `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
+  `s/{session}/review/t/{thread}/agent/brief`.
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
   `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
@@ -1194,7 +1195,17 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   drafts the last thing it said). `…` → Agent transcript opens the resolver as
   a child page of Review (`s/{session}/review/t/{thread}/agent`), and so do a
   notification, the agent-started toast and the palette (`canonicalLocation`
-  maps the resolver to the first thread of its attempt). Back, or Up when
+  maps the resolver to the first thread of its attempt). A resolver opens on its
+  Brief, with Transcript one tab away; a click on a resolver row in Activity
+  says **Open brief**. The agent pane tab is part of the address: the thread
+  target carries `pane: 'brief' | 'transcript'`, `agentPlace({ sessionId,
+agentId, pane })` asks for either, and the address prints it as a last
+  segment (`.../agent/brief`). Without a `pane` the pane picks its own tab
+  (`agentOpenTab`: an open question or a resolver opens on Brief, any other
+  agent on Transcript). The key `agentPane` is written only by the navigation
+  slice, follows the page like the other targets, and comes back with Back and
+  a window restore. Tab clicks inside the pane stay local and do not rewrite
+  the address. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and the resolver page come back through Back.

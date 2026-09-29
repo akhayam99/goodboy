@@ -349,6 +349,18 @@ describe('AgentBrief type scale', () => {
     expect(line?.className).not.toContain('text-body');
   });
 
+  it('shows the live line at the top of a running resolver brief', () => {
+    render(
+      <AgentBrief
+        session={session}
+        agent={makeAgent({ status: 'running', kind: 'resolver', name: 'resolve: ana on a.ts:4' })}
+      />,
+    );
+
+    expect(screen.getByText('Now')).toBeDefined();
+    expect(screen.getByText('thinking')).toBeDefined();
+  });
+
   it('puts the time on the Now line and points at the transcript at twice the usual time', () => {
     const reveal = vi.fn();
     window.addEventListener('goodboy:reveal-chat', reveal);

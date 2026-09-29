@@ -3,6 +3,7 @@ import { parseHiddenModels, visibleCatalog } from '@goodboy/core';
 import type { Agent, AgentStatus, ProviderId, SessionId, TurnEvent } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { agentPlace, sessionPlace } from '../../../store/slices/navigation/place';
+import type { AgentPane } from '../../../store/slices/navigation/types';
 import { SETTING_HIDDEN_MODELS } from '../../settings/settings';
 import {
   isAgentClosable,
@@ -33,10 +34,16 @@ export type AgentFacts = {
 
 const NO_MOUNT_REASON = 'This session has no project yet';
 
-const openAgent = ({ env, facts }: { readonly env: ActionEnv; readonly facts: AgentFacts }) => {
+type OpenAgentParams = {
+  readonly env: ActionEnv;
+  readonly facts: AgentFacts;
+  readonly pane?: AgentPane | null;
+};
+
+const openAgent = ({ env, facts, pane = null }: OpenAgentParams) => {
   env
     .getState()
-    .navigate({ to: agentPlace({ sessionId: facts.sessionId, agentId: facts.agent.id }) });
+    .navigate({ to: agentPlace({ sessionId: facts.sessionId, agentId: facts.agent.id, pane }) });
 };
 
 const lastReplyOf = ({ events }: { readonly events: ReadonlyArray<TurnEvent> }): string | null => {
@@ -115,7 +122,7 @@ export const AGENT_KIND: ObjectKindDefinition<AgentActionTarget, AgentFacts> = {
       group: 'act',
       when: ({ facts }) => !facts.isClosedByUser,
       run: ({ facts, env }) => {
-        openAgent({ env, facts });
+        openAgent({ env, facts, pane: 'transcript' });
         dispatchAfterNavigation({
           name: 'goodboy:reveal-chat',
           detail: { intent: OPEN_AGENT_INTENT },

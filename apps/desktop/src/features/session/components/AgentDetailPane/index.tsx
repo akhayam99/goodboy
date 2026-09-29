@@ -43,11 +43,14 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     (state) => state.sessionOpenQuestions[session.id] !== undefined,
   );
   const status = effectiveAgentStatus({ agent, turnState });
-  const openTab = agentOpenTab({ hasOpenQuestions });
+  const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
+  const kind = classifyAgent({ agent, override: kindOverride });
+  const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
+  const openTab =
+    requestedPane ?? agentOpenTab({ hasOpenQuestions, isResolver: kind === 'resolver' });
   const openTabRef = useRef(openTab);
   openTabRef.current = openTab;
   const [tab, setTab] = useState<AgentTab>(openTab);
-  const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
   );
@@ -58,7 +61,6 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     (state) => state.agentEffortOverride[agent.id] ?? agent.effort ?? null,
   );
   const executed = useExecutedAgentRouting({ agent });
-  const kind = classifyAgent({ agent, override: kindOverride });
   const time = useAgentDetailWorkTime({
     session,
     agent,
@@ -69,7 +71,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
 
   useEffect(() => {
     setTab(openTabRef.current);
-  }, [agent.id, areQuestionsLoaded]);
+  }, [agent.id, areQuestionsLoaded, requestedPane]);
 
   useEffect(() => {
     const reveal = (event: Event) =>

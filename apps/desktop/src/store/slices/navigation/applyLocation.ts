@@ -86,6 +86,10 @@ const surfaceChanges = ({
       ...state.focusedExternalTask,
       [sessionId]: target?.kind === 'external-task' ? target.task : null,
     },
+    agentPane: {
+      ...state.agentPane,
+      [sessionId]: view.studio === null && target?.kind === 'thread' ? (target.pane ?? null) : null,
+    },
   };
 };
 

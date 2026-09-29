@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   agentModelOverride: {},
   agentEffortOverride: {},
   agentTurnState: {} as Record<string, { kind: string }>,
+  agentPane: {} as Record<string, 'brief' | 'transcript' | null>,
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
 }));
 
@@ -73,6 +74,7 @@ beforeEach(() => {
     agentModelOverride: {},
     agentEffortOverride: {},
     agentTurnState: {},
+    agentPane: {},
     sessionOpenQuestions: {},
   });
   executedRouting.value = null;
@@ -212,15 +214,49 @@ describe('AgentDetailPane', () => {
     expect(screen.getByText('Transcript body')).toBeDefined();
   });
 
-  it('gives a resolver the generic transcript pane so View work has a destination', () => {
+  it('opens a resolver on the brief and keeps the transcript one tab away', () => {
     const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
 
     render(
       <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
     );
 
+    expect(screen.getByText('Brief body')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
     expect(screen.getByText('Transcript body')).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Brief' }));
+  });
+
+  it('keeps a resolver on the brief when an agent open reveals the chat', () => {
+    const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
+
+    render(
+      <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
+    );
+    act(() => window.dispatchEvent(openAgentRevealEvent()));
+
+    expect(screen.getByText('Brief body')).toBeDefined();
+  });
+
+  it('opens the tab the address asks for over the default', () => {
+    const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
+    state.agentPane = { [session.id]: 'transcript' };
+
+    render(
+      <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByText('Transcript body')).toBeDefined();
+    act(() => window.dispatchEvent(openAgentRevealEvent()));
+    expect(screen.getByText('Transcript body')).toBeDefined();
+  });
+
+  it('opens a plain agent on the brief when the address asks for it', () => {
+    state.agentPane = { [session.id]: 'brief' };
+
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
     expect(screen.getByText('Brief body')).toBeDefined();
   });
 
