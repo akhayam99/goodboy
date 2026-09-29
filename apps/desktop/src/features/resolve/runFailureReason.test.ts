@@ -28,6 +28,28 @@ describe('runFailureReason', () => {
     ).toBe('The run failed: every provider is over its budget cap');
   });
 
+  it.each([
+    ['failed:interrupted', 'every provider is over its budget cap'],
+    ['failed:interrupted', 'provider exited with code 1'],
+    ['interrupted', 'rate limited'],
+  ])('lets the real attempt error win over the %s thread code', (reason, error) => {
+    expect(runFailureReason({ thread: thread(reason), attempt: attempt(error) })).toBe(
+      `The run failed: ${error}`,
+    );
+  });
+
+  it('keeps the interrupted wording when the attempt error is only interrupted', () => {
+    expect(
+      runFailureReason({ thread: thread('failed:interrupted'), attempt: attempt('interrupted') }),
+    ).toBe('The run ended before the resolver reported a result');
+  });
+
+  it('keeps a specific thread reason over an attempt error', () => {
+    expect(
+      runFailureReason({ thread: thread('missing_result'), attempt: attempt('something else') }),
+    ).toBe('The resolver finished without reporting a result for this thread');
+  });
+
   it('says no reason was recorded instead of a generic error', () => {
     expect(runFailureReason({ thread: thread(null), attempt: null })).toBe(
       'The run failed and no reason was recorded',

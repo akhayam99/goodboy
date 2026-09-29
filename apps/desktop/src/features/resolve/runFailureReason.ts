@@ -20,15 +20,22 @@ const reasonForCode = ({ code }: { readonly code: string }): string | null => {
   return null;
 };
 
+const reasonForError = ({ error }: { readonly error: string }): string =>
+  reasonForCode({ code: error }) ?? `The run failed: ${error}`;
+
 export const runFailureReason = ({ thread, attempt }: Params): string => {
   const stateCode = (thread.stateReason ?? '').replace(STATE_PREFIX, '');
+  const error = attempt?.error?.trim() ?? '';
+  const isSpecificError = error !== '' && error !== 'interrupted';
+  if (stateCode === 'interrupted' && isSpecificError) {
+    return reasonForError({ error });
+  }
   const fromState = reasonForCode({ code: stateCode });
   if (fromState !== null) {
     return fromState;
   }
-  const error = attempt?.error?.trim() ?? '';
   if (error !== '') {
-    return reasonForCode({ code: error }) ?? `The run failed: ${error}`;
+    return reasonForError({ error });
   }
   return 'The run failed and no reason was recorded';
 };
