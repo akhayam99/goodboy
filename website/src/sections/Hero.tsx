@@ -38,7 +38,10 @@ export const Hero = () => (
           <span className="heroMeta">No account needed.</span>
         </div>
         <div className="heroPhone rise" style={rise({ index: 3 })}>
-          <StarCta note="Goodboy runs on macOS and Linux. Open this page on your computer to install it." />
+          <StarCta
+            note="Goodboy runs on macOS and Linux. Open this page on your computer to install it."
+            hasFeatureLink={false}
+          />
         </div>
       </div>
       <div className="heroStage">
