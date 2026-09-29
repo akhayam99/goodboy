@@ -2,10 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { Play } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, DrawerColumn } from '@goodboy/ui';
-import type { ChatId, ChatMessage, ChatMessageId, ChatSummary, WorkspaceId } from '@goodboy/types';
+import type {
+  ChatId,
+  ChatMessage,
+  ChatMessageId,
+  ChatSummary,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { sessionPlace, useAppStore } from '../../../../store';
-import type { ChatHandoff } from '../../chatHandoff';
+import { useChatSessions } from '../../hooks/useChatSessions';
 import { chatSuggestions } from '../../chatSuggestions';
 import type { ChatRouting } from '../../chatRouting';
 import { defaultChatModel } from '../../defaultChatModel';
@@ -13,14 +20,13 @@ import { ChatComposer } from '../ChatComposer';
 import { TURN_INTO_WORK_LABEL, TurnIntoWorkPanel } from '../TurnIntoWorkPanel';
 import { ChatEmpty } from './ChatEmpty';
 import { ChatHeader } from './ChatHeader';
+import { ChatSessionsChip } from './ChatSessionsChip';
 import { ChatThread } from './ChatThread';
 
 type Props = {
   readonly workspaceId: WorkspaceId;
   readonly chat: ChatSummary | null;
   readonly onCreated: (chatId: ChatId) => void;
-  readonly handoffs: ReadonlyArray<ChatHandoff>;
-  readonly onHandoff: (handoff: ChatHandoff) => void;
 };
 
 type WorkRequest = {
@@ -32,7 +38,7 @@ const NO_MESSAGES: ReadonlyArray<ChatMessage> = [];
 
 export const NEW_CHAT_HEADING = 'New chat';
 
-export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: Props) => {
+export const ChatRoom = ({ workspaceId, chat, onCreated }: Props) => {
   const chatId = chat?.id ?? null;
   const workspaceName = useAppStore(
     (state) => state.workspaces.find((workspace) => workspace.id === workspaceId)?.name ?? '',
@@ -65,6 +71,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
   const navigate = useAppStore((state) => state.navigate);
   const [draftRouting, setDraftRouting] = useState<ChatRouting | null>(null);
   const [work, setWork] = useState<WorkRequest | null>(null);
+  const linked = useChatSessions({ chatId });
 
   useEffect(() => {
     if (chatId === null || messages !== undefined) {
@@ -117,8 +124,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
   );
   const openWork = (anchorMessageId: ChatMessageId | null): void =>
     setWork((current) => ({ anchorMessageId, key: (current?.key ?? 0) + 1 }));
-  const openSession = (handoff: ChatHandoff): void =>
-    navigate({ to: sessionPlace({ sessionId: handoff.sessionId }) });
+  const openSession = (sessionId: SessionId): void => navigate({ to: sessionPlace({ sessionId }) });
 
   const main = (
     <section
@@ -127,6 +133,11 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
     >
       <ChatHeader
         title={chat?.title ?? NEW_CHAT_HEADING}
+        sessions={
+          linked.stage === null ? null : (
+            <ChatSessionsChip entries={linked.entries} stage={linked.stage} onOpen={openSession} />
+          )
+        }
         action={
           chat === null ? null : (
             <Button
@@ -156,8 +167,8 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
           messages={shown}
           workspaceName={workspaceName}
           onStartWork={openWork}
-          handoffs={handoffs}
-          onOpenHandoff={openSession}
+          sessions={linked.entries}
+          onOpenSession={openSession}
         />
       )}
       <div className="shrink-0 px-6 pb-3.5 pt-1.5">
@@ -194,10 +205,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
             messages={shown}
             anchorMessageId={work.anchorMessageId}
             onClose={() => setWork(null)}
-            onDone={(handoff) => {
-              setWork(null);
-              onHandoff(handoff);
-            }}
+            onDone={() => setWork(null)}
           />
         )
       }
