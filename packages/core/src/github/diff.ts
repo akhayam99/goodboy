@@ -1,12 +1,4 @@
-import type {
-  DiffHunk,
-  DiffHunkLine,
-  FileDiff,
-  FileDiffStatus,
-  PullRequestDiff,
-} from '@goodboy/types';
-import type { GhRunner } from './gh';
-import { GhCliError } from './gh';
+import type { DiffHunk, DiffHunkLine, FileDiff, FileDiffStatus } from '@goodboy/types';
 
 type MutableFile = {
   path: string;
@@ -144,20 +136,4 @@ export const parseUnifiedDiff = (diff: string): ReadonlyArray<FileDiff> => {
     files.push(current);
   }
   return files;
-};
-
-export const fetchPrDiff = async (
-  runner: GhRunner,
-  repo: string,
-  prNumber: number,
-  opts: { cwd?: string; token?: string; workspaceId?: string } = {},
-): Promise<PullRequestDiff> => {
-  const res = await runner.run(['pr', 'diff', String(prNumber), '--repo', repo], opts);
-  if (res.exitCode !== 0) {
-    throw new GhCliError(`gh pr diff exited with ${res.exitCode}`, res.stderr, res.exitCode);
-  }
-  return {
-    prNumber,
-    files: parseUnifiedDiff(res.stdout),
-  };
 };

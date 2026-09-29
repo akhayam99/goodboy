@@ -1159,7 +1159,7 @@ An agent materializes a project through the query bridge like this:
 - `packages/types/src/artifact.ts`: artifact kinds, statuses and metadata
 - `packages/core/src/context/marker-parsing.ts`: reads plan markers
 - `packages/types/src/provider-registry.ts`: `ProviderId`
-- `packages/core/src/skills/registry.ts`: finds skills
+- `apps/desktop/src-tauri/src/skills.rs`: finds skills
 - `packages/core/src/profile/profileAccess.ts`: which profile fields each
   role reads
 - `apps/desktop/src-tauri/src/query_bridge/project.rs`: the `materialize` verb

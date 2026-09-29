@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
-import type { GhRunner } from '../gh';
+import { describe, expect, it } from 'vitest';
 import { parseUnifiedDiff } from '../diff';
 
 describe('parseUnifiedDiff', () => {

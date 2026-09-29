@@ -45,9 +45,7 @@
     "packages/core/src/planner/parser.ts": 1,
     "packages/core/src/providers/shared/anthropic-envelope-parser.ts": 3,
     "packages/core/src/skills/executor.ts": 1,
-    "packages/core/src/skills/parser.ts": 2,
     "packages/core/src/skills/slash.ts": 1,
-    "packages/core/src/worktree/manager.ts": 3,
     "packages/ui/src/components/Dialog.tsx": 2,
     "packages/ui/src/components/Markdown/parseInline.ts": 1,
     "packages/ui/src/components/Tooltip.tsx": 1
@@ -133,7 +131,6 @@
     "apps/desktop/src/store/slices/session-view/storage.ts": 1,
     "apps/desktop/src/store/slices/turn/sendTurn.ts": 13,
     "packages/core/src/artifacts/wireframe/validateWireframeDocument.ts": 1,
-    "packages/core/src/worktree/manager.ts": 1,
     "packages/db/src/migrations/m001-initial.ts": 1,
     "packages/db/src/migrations/m002-telemetry-kind.ts": 1,
     "packages/db/src/migrations/m003-session-provider.ts": 1,

@@ -456,7 +456,6 @@ export type {
   PrReviewRequest,
   PrReviewState,
   PullRequestChecks,
-  PullRequestDiff,
   PullRequestState,
   PullRequestStateKind,
 } from './github';

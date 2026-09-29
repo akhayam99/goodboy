@@ -96,11 +96,6 @@ export type FileDiff = {
   hunks: ReadonlyArray<DiffHunk>;
 };
 
-export type PullRequestDiff = {
-  prNumber: number;
-  files: ReadonlyArray<FileDiff>;
-};
-
 export type CachedPullRequest = Pick<
   PullRequestState,
   'number' | 'title' | 'url' | 'state' | 'updatedAt'

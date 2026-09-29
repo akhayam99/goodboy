@@ -1,5 +1,4 @@
 export {
-  DEFAULT_GH_TIMEOUT_MS,
   GhCliError,
   GhJsonParseError,
   GhJsonShapeError,
@@ -28,7 +27,7 @@ export {
   type RepoNameCheck,
 } from './repos';
 
-export { fetchPrDiff, parseUnifiedDiff } from './diff';
+export { parseUnifiedDiff } from './diff';
 
 export { fetchPrDetail } from './details';
 

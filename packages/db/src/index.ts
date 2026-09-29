@@ -216,15 +216,6 @@ export {
   setSetting,
 } from './queries/settings';
 export {
-  listBudgetRules,
-  getSessionBudget,
-  insertBudgetAlert,
-  listBudgetAlerts,
-  dismissBudgetAlert,
-  type ListBudgetAlertsOptions,
-} from './queries/budget';
-export { listSkillsForWorkspace, upsertSkill, deleteSkill } from './queries/skill';
-export {
   listWorkflows,
   getWorkflow,
   upsertWorkflow,
@@ -274,7 +265,6 @@ export {
   updateSessionWorktreeRepoSlug,
   listAllSessionWorktrees,
   detachSessionMounts,
-  listArchivedSessionMounts,
   listMountPathOwnership,
   type MountDetachment,
   type MountPathOwnership,

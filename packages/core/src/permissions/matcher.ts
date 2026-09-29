@@ -72,18 +72,6 @@ const stringifyInput = ({ toolName, input }: MatchParams): string => {
   return JSON.stringify(input);
 };
 
-type ArgsMatcherParams = {
-  readonly matcher: string;
-};
-
-export const parseArgsMatcher = ({ matcher }: ArgsMatcherParams): ((input: unknown) => boolean) => {
-  if (matcher === '') {
-    return () => true;
-  }
-  const re = globToRegex({ glob: matcher });
-  return (input: unknown) => re.test(stringifyInput({ toolName: '', input }));
-};
-
 type PatternTextParams = {
   readonly pattern: string;
 };

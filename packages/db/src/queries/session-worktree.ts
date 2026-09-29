@@ -455,19 +455,6 @@ type OwnershipRow = {
   readonly isSessionArchived: number;
 };
 
-export const listArchivedSessionMounts = async (
-  db: Database,
-): Promise<ReadonlyArray<SessionMount>> => {
-  const rows = await db.select<SessionWorktreeRow>(
-    `SELECT mount.* FROM session_worktrees mount
-     JOIN sessions s ON s.id = mount.session_id
-     WHERE s.archived_at IS NOT NULL AND s.deleted_at IS NULL AND mount.worktree_path IS NOT NULL
-     ORDER BY mount.session_id, mount.parallel_index, mount.created_at, mount.id`,
-    [],
-  );
-  return rows.map(toMount);
-};
-
 export const listMountPathOwnership = async (
   db: Database,
 ): Promise<ReadonlyArray<MountPathOwnership>> => {
