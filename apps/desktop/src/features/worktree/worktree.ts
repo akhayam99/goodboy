@@ -613,6 +613,22 @@ export const worktreeFixOnOrigin = async ({
 }: OriginBranchParams & { readonly sha: string }): Promise<FixOnOrigin> =>
   invoke<FixOnOrigin>('worktree_fix_on_origin', { worktreePath, branch, sha });
 
+export type FixLocation = {
+  readonly isKnown: boolean;
+  readonly landedAs: string | null;
+  readonly pathExists: boolean | null;
+};
+
+export const worktreeLocateFix = async ({
+  worktreePath,
+  sha,
+  path = null,
+}: {
+  readonly worktreePath: string;
+  readonly sha: string;
+  readonly path?: string | null;
+}): Promise<FixLocation> => invoke<FixLocation>('worktree_locate_fix', { worktreePath, sha, path });
+
 export type OriginCommit = {
   readonly sha: string;
   readonly author: string;

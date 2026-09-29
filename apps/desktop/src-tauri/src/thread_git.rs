@@ -34,6 +34,14 @@ pub struct OriginCommit {
     pub committed_at: i64,
 }
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct FixLocation {
+    pub is_known: bool,
+    pub landed_as: Option<String>,
+    pub path_exists: Option<bool>,
+}
+
 fn existing_worktree(worktree_path: &str) -> Result<PathBuf, WorktreeError> {
     let path = PathBuf::from(worktree_path);
     if !path.exists() {
@@ -104,6 +112,30 @@ pub(crate) fn fix_on_origin(
         on_origin: false,
         landed_as,
     })
+}
+
+pub(crate) fn locate_fix(cwd: &Path, sha: &str, path: Option<&str>) -> FixLocation {
+    let is_known = git(cwd, &["cat-file", "-e", &format!("{sha}^{{commit}}")]).is_ok();
+    let landed_as = if is_known {
+        git(
+            cwd,
+            &["rev-parse", "--verify", "--quiet", &format!("{sha}^")],
+        )
+        .ok()
+        .map(|raw| raw.trim().to_string())
+        .filter(|parent| !parent.is_empty())
+        .and_then(|parent| landed_equivalent(cwd, &parent, sha, "HEAD").unwrap_or(None))
+    } else {
+        None
+    };
+    let path_exists = path
+        .filter(|value| !value.is_empty())
+        .map(|value| git(cwd, &["cat-file", "-e", &format!("HEAD:{value}")]).is_ok());
+    FixLocation {
+        is_known,
+        landed_as,
+        path_exists,
+    }
 }
 
 fn parse_origin_commits(raw: &str) -> Vec<OriginCommit> {
@@ -209,6 +241,20 @@ pub async fn worktree_fix_on_origin(
 }
 
 #[tauri::command]
+pub async fn worktree_locate_fix(
+    worktree_path: String,
+    sha: String,
+    path: Option<String>,
+) -> Result<FixLocation, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = existing_worktree(&worktree_path)?;
+        Ok(locate_fix(&cwd, sha.trim(), path.as_deref().map(str::trim)))
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[tauri::command]
 pub async fn worktree_origin_commits_touching(
     worktree_path: String,
     branch: String,
@@ -234,7 +280,7 @@ pub async fn worktree_origin_commits_touching(
 
 #[cfg(test)]
 mod tests {
-    use super::{fix_on_origin, origin_commits_touching, parse_origin_commits};
+    use super::{fix_on_origin, locate_fix, origin_commits_touching, parse_origin_commits};
     use crate::worktree::git;
     use std::path::{Path, PathBuf};
 
@@ -310,6 +356,45 @@ mod tests {
         let seen = fix_on_origin(&root, "main", &fix).unwrap();
         assert!(!seen.on_origin);
         assert_eq!(seen.landed_as, Some(landed));
+    }
+
+    #[test]
+    fn a_fix_folded_into_head_is_located_under_its_new_sha() {
+        let root = init_repo("locate-folded");
+        commit(&root, "a.txt", "one\n", "base");
+        git_ok(&root, &["checkout", "-b", "fix"]);
+        let fix = commit(&root, "a.txt", "two\n", "fix");
+        git_ok(&root, &["checkout", "main"]);
+        commit(&root, "b.txt", "other\n", "unrelated");
+        git_ok(&root, &["cherry-pick", &fix]);
+        let folded = git_ok(&root, &["rev-parse", "HEAD"]);
+        let seen = locate_fix(&root, &fix, Some("a.txt"));
+        assert!(seen.is_known);
+        assert_eq!(seen.landed_as, Some(folded));
+        assert_eq!(seen.path_exists, Some(true));
+    }
+
+    #[test]
+    fn a_fix_that_never_landed_is_known_but_not_located() {
+        let root = init_repo("locate-lost");
+        commit(&root, "a.txt", "one\n", "base");
+        git_ok(&root, &["checkout", "-b", "fix"]);
+        let fix = commit(&root, "a.txt", "two\n", "fix");
+        git_ok(&root, &["checkout", "main"]);
+        let seen = locate_fix(&root, &fix, Some("gone.txt"));
+        assert!(seen.is_known);
+        assert_eq!(seen.landed_as, None);
+        assert_eq!(seen.path_exists, Some(false));
+    }
+
+    #[test]
+    fn an_unknown_sha_is_reported_as_unknown() {
+        let root = init_repo("locate-unknown");
+        commit(&root, "a.txt", "one\n", "base");
+        let seen = locate_fix(&root, &"f".repeat(40), None);
+        assert!(!seen.is_known);
+        assert_eq!(seen.landed_as, None);
+        assert_eq!(seen.path_exists, None);
     }
 
     #[test]
