@@ -15,15 +15,6 @@ export {
 } from './secret-scan';
 
 export {
-  checkProviderBudget,
-  checkSessionBudget,
-  emitBudgetAlerts,
-  getCurrentPeriodKey,
-  getPeriodWindow,
-  type AlertEmitterDeps,
-} from './budget';
-
-export {
   ContextEngine,
   InvalidSlotKeyError,
   PREAMBLE_SLOT_TOTAL_BUDGET,
@@ -416,10 +407,6 @@ export {
   parseSkillMarkdown,
   parseSlashCommand,
   serializeSkillMarkdown,
-  SkillRegistry,
-  SkillRegistryError,
-  type SkillFs,
-  type SkillRegistryDeps,
   SkillExecutor,
   SkillScriptError,
   type SkillScriptRunner,
@@ -525,9 +512,6 @@ export {
   resolveModeFor,
   type ModeSupport,
   type ModeSupportLevel,
-  PermissionAuditRecorder,
-  type AuditRecorderDeps,
-  type AuditQuery,
   commandPrefix,
   isFilePathTool,
   oncePatternText,
@@ -550,7 +534,6 @@ export {
   detectRepoSlug,
   fetchLinkedIssues,
   fetchPrDetail,
-  fetchPrDiff,
   getPrForBranch,
   invalidatePrCache,
   REVIEW_REPLY_SAMPLE_SIZE,

@@ -277,7 +277,6 @@
     "apps/desktop/src/store/summarizeAgentOutput.test.ts": 2,
     "apps/desktop/src/store/turn-helpers.test.ts": 1,
     "packages/core/src/artifacts/grammar.test.ts": 1,
-    "packages/core/src/budget/__tests__/checker.test.ts": 1,
     "packages/core/src/context/extractors.test.ts": 1,
     "packages/db/src/queries/workflow.test.ts": 2,
     "packages/db/src/test-helpers/test-db.ts": 1
@@ -512,7 +511,6 @@
     "apps/desktop/src/test/dbMock.test.ts": 3,
     "packages/core/src/artifacts/wireframe/validateWireframeDocument.test.ts": 32,
     "packages/core/src/orchestrator/client.provider-error.test.ts": 1,
-    "packages/core/src/permissions/audit.test.ts": 1,
     "packages/core/src/permissions/engine.test.ts": 1,
     "packages/db/src/migrations/m122-runtime-dead-weight.test.ts": 2,
     "packages/db/src/queries/artifact.test.ts": 1,

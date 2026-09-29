@@ -7,7 +7,6 @@ export {
   type ModeSupport,
   type ModeSupportLevel,
 } from './modeSupport';
-export { PermissionAuditRecorder, type AuditRecorderDeps, type AuditQuery } from './audit';
 export {
   commandPrefix,
   isFilePathTool,
