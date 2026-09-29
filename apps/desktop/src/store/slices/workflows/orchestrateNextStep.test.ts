@@ -777,7 +777,7 @@ describe('orchestrateNextStep', () => {
     const menuLines = prompt
       .split('\n')
       .filter((line) => line.startsWith('anthropic/') || line.startsWith('codex/'));
-    expect(menuLines).toHaveLength(16);
+    expect(menuLines).toHaveLength(17);
     for (const line of menuLines) {
       expect(line).toContain('unassessed');
       expect(line).toMatch(/ ctx \d+k \$[\d.]+\/\$[\d.]+$/);
