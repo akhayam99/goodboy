@@ -25,7 +25,8 @@ import {
   useStageGroupedSessions,
 } from '../../store/selectors';
 import type { BitbucketPullRequest } from '../../features/integrations/bitbucket/client';
-import type { MountBitbucketPrState, MountGithubState } from '../../store/types';
+import type { MountGithubState } from '../../store/types';
+import type { MountBitbucketPrState } from '../../store/slices/bitbucket-pr/state';
 
 vi.mock('@tauri-apps/api/core', async () =>
   (await import('../../store/storyHarness')).tauriCoreModuleMock(),

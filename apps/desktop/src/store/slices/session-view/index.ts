@@ -34,13 +34,10 @@ export { isPrReviewSession } from './isPrReviewSession';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
 export type { GroupedSessions, SessionViewSlice } from './types';
 export type {
-  ArtifactCreationTarget,
-  FocusedExternalTask,
   SessionStudio,
   LensKind,
   DiffFocus,
   ResolveQueueView,
-  SessionCreation,
   SessionCreationId,
 } from './types';
 

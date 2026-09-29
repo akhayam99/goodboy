@@ -140,6 +140,11 @@ import { permissionsInitialState } from './slices/permissions/state';
 import { attachmentsInitialState } from './slices/attachments/state';
 import { storageInitialState } from './slices/storage/state';
 import { skillsInitialState } from './slices/skills/state';
+import { githubInitialState } from './slices/github/state';
+import { notificationsInitialState } from './slices/notifications/state';
+import { diffCommentsInitialState } from './slices/diff-comments/state';
+import { fileVersionsInitialState } from './slices/file-versions/state';
+import { terminalInitialState } from './slices/terminal/state';
 export type { ProviderSpendEntry };
 export type { AppState } from './types';
 
@@ -284,17 +289,10 @@ export const initialState: AppState = {
   ...storageInitialState,
   ...skillsInitialState,
   ...workflowsInitialState,
-  selectedAgentId: {},
   ...agentsInitialState,
   ...overridesInitialState,
   ...sidebarInitialState,
-  githubStatus: null,
-  githubWorkspaceStatus: {},
-  mountGithub: {},
-  mountSelectedPr: {},
-  sessionGithub: {},
-  sessionProjectPrs: {},
-  sessionSelectedPrNumber: {},
+  ...githubInitialState,
   ...initialGitlabMrState,
   ...initialBitbucketPrState,
   ...initialSlackThreadsState,
@@ -309,23 +307,15 @@ export const initialState: AppState = {
   ...initialWorkflowStudioState,
   ...initialWorkflowRoutingState,
   ...agentQueueInitialState,
-  diffComments: {},
-  sessionFileVersions: {},
-  sessionFileVersionsLoading: {},
-  sessionFileVersionSelectedPath: {},
+  ...diffCommentsInitialState,
+  ...fileVersionsInitialState,
   ...attachmentsInitialState,
-  notifications: [],
-  notificationsLoading: false,
-  notificationCounts: [],
-  notificationScope: 'workspace',
-  hasOlderNotifications: false,
+  ...notificationsInitialState,
   ...plansInitialState,
   ...nudgesInitialState,
   ...openQuestionsInitialState,
   ...slackDraftsInitialState,
-  terminalSessions: {},
-  terminalTabs: {},
-  activeTerminalTab: {},
+  ...terminalInitialState,
 };
 
 export const useAppStore = create<AppStore>((set, get) => ({

@@ -1,4 +1,4 @@
-import type { NotificationScope } from '../../types';
+import type { NotificationScope } from './state';
 import type { GetFn, SetFn } from './types';
 
 export const setNotificationScope = (set: SetFn, get: GetFn) => {
