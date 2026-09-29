@@ -88,8 +88,8 @@ describe('AgentHeaderActions', () => {
 
   it('asks before delete, deletes through the registry and leaves the page', async () => {
     const { onDeleted } = renderFor(agentFixture({ status: 'completed' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    const confirm = screen.getByRole('group', { name: 'Delete agent?' });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete agent' }));
+    const confirm = screen.getByRole('dialog', { name: 'Delete agent?' });
     await act(async () => {
       fireEvent.click(within(confirm).getByRole('button', { name: 'Delete' }));
     });
@@ -99,6 +99,36 @@ describe('AgentHeaderActions', () => {
       ),
     ).toEqual([]);
     expect(onDeleted).toHaveBeenCalled();
+  });
+
+  it('keeps Delete one icon away with no labelled danger button', () => {
+    renderFor(agentFixture({ status: 'completed' }));
+    expect(screen.queryByRole('button', { name: 'Delete' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Delete agent?' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Delete agent' })).toBeDefined();
+  });
+
+  it('shows Interrupt only while a turn runs', () => {
+    const agent = agentFixture({ status: 'running' });
+    seedActionState({
+      useAppStore,
+      seed: {
+        agents: [agent],
+        mounts: [mountFixture()],
+        turnStates: {
+          [agent.id]: {
+            kind: 'running',
+            runId: 'run-1' as never,
+            startedAt: '2026-05-01T10:00:00Z',
+          },
+        },
+      },
+    });
+    render(<AgentHeaderActions agent={agent} sessionId={SESSION} allowInterrupt />);
+    expect(screen.getByRole('button', { name: 'Interrupt' })).toBeDefined();
+    cleanup();
+    renderFor(agentFixture({ status: 'completed' }));
+    expect(screen.queryByRole('button', { name: 'Interrupt' })).toBeNull();
   });
 
   it('lists every available verb in the overflow, the buttoned ones too, in the registry order', () => {
