@@ -69,7 +69,7 @@ file holds those explanations. Everything below has been "fixed" at least once a
   A resolver process can exit while its turn is still settling: the provider
   `done` arrives, then `completeResolvedAgent` runs before the markers are
   saved. `reconcileResolveAttempts` must not fail an attempt in that window, so
-  it skips an agent whose turn is still active (`isTurnActive` in
+  it skips an agent whose turn is still settling (`isTurnSettling` in
   `turnSettled.ts`) besides checking the lease and the live run ids. Markers
   that still arrive on an attempt failed as `interrupted` are recorded rather
   than dropped.
