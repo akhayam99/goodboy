@@ -6,7 +6,6 @@ import {
   cn,
   formatError,
   tintClasses,
-  useEscapeLayer,
 } from '@goodboy/ui';
 import type { Agent, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../shared/components/conceptIcons';
@@ -61,8 +60,6 @@ export const AgentHeaderActions = ({
     setError(null);
     setIsDeleteOpen(false);
   };
-
-  useEscapeLayer(closeDelete, isDeleteOpen);
 
   return (
     <div className="flex shrink-0 items-center gap-1">
