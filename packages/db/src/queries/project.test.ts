@@ -19,6 +19,7 @@ import {
   updateProjectKind,
   updateProjectBaseBranch,
   updateProjectDescription,
+  updateProjectResolveCommitStyle,
   updateProjectGoodboyIgnore,
   updateProjectStar,
   updateProjectIdentity,
@@ -154,6 +155,18 @@ describe('project queries', () => {
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBe('develop');
     await updateProjectBaseBranch({ db, projectId: project.id, baseBranch: null });
     expect((await getProjectById({ db, id: project.id }))?.baseBranch).toBeNull();
+  });
+
+  it('updates and clears the project resolve commit style', async () => {
+    const db = await makeDb();
+    const project = makeProject({});
+    await insertProject({ db, project });
+    await updateProjectResolveCommitStyle({ db, projectId: project.id, commitStyle: 'fixup' });
+    expect((await getProjectById({ db, id: project.id }))?.overrides.resolveCommitStyle).toBe(
+      'fixup',
+    );
+    await updateProjectResolveCommitStyle({ db, projectId: project.id, commitStyle: null });
+    expect((await getProjectById({ db, id: project.id }))?.overrides.resolveCommitStyle).toBeNull();
   });
 
   it('stars a project with a description and clears both', async () => {
