@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { Session, WorkspaceId } from '@goodboy/types';
 import { createPresenceSlice } from './index';

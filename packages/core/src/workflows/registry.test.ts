@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
-import { migrate, insertWorkspace, type Database as DbInterface } from '@goodboy/db';
+import { insertWorkspace, type Database as DbInterface } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { WorkflowRegistry, WorkflowRegistryError } from './registry';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 

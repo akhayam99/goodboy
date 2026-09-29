@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ChatId, ChatMessage, ChatMessageId, IsoDateTime } from '@goodboy/types';
 import { buildChatSystemPrompt } from './buildChatSystemPrompt';

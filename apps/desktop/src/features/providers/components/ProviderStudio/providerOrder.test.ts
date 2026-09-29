@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { PROVIDER_IDS } from '@goodboy/types';
 import { PROVIDER_ORDER } from './providerOrder';

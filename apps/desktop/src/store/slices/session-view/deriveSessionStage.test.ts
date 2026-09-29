@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PullRequestState, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { deriveSessionStage } from './deriveSessionStage';

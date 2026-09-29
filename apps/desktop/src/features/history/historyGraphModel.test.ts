@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { historyGraphModel, rewrittenFrom } from './historyGraphModel';
 import { initialPlanItems, setVerb } from './historyPlan';

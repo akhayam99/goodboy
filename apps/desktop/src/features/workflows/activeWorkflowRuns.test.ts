@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, WorkflowRun, WorkflowRunId } from '@goodboy/types';
 import { hasActiveWorkflowRun } from './activeWorkflowRuns';

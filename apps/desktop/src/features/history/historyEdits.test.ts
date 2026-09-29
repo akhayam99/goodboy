@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { deriveHistoryEdits, invertHistoryEdit, moveFacts, rowsOfEdit } from './historyEdits';
 import { initialPlanItems, keptOrder, moveAbove, planOrder } from './historyPlan';

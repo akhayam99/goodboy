@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { AgentId, ArtifactScoutPlanEntry, MountId } from '@goodboy/types';
 import { artifactScoutRoster } from './artifactScoutRoster';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrComment, ResolveThread, ResolveThreadState } from '@goodboy/types';
 import type { SessionGithubState } from '../../store/types';

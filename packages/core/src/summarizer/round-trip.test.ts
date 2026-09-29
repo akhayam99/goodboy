@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { migrate, type Database as DbInterface } from '@goodboy/db';
+import { type Database as DbInterface } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
 import { ContextEngine } from '../context/engine';
 import { applyDecisionOpsToSession, loadDecisionLedger } from '../context/decisions-ledger-store';

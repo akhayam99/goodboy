@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { SHORTCUTS } from '../../../../shared/keyboard/registry';
 import { SHORTCUT_COLUMNS, SHORTCUT_ROW_COUNT, shortcutRows } from './shortcutRows';

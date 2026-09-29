@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { REPLY_SETTINGS_DEFAULT } from '../../../features/resolve/replySettings';
 import { buildResolutionReplyBody } from './buildResolutionReplyBody';

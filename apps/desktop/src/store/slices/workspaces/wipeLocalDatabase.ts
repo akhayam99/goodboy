@@ -1,5 +1,6 @@
 import { setSetting as dbSetSetting } from '@goodboy/db';
-import { tauriDatabase, wipeDb } from '../../../shared/lib/db';
+import { tauriDatabase } from '../../../shared/lib/db';
+import { wipeDb } from '../../../shared/lib/dbBoot';
 import { wipeLocalStorage } from '../../../shared/lib/storage-keys';
 import { SETTING_LAST_SESSION_ID } from '../../../features/settings/settings';
 import { initialState } from '../../store';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, SessionExternalTask, SessionId } from '@goodboy/types';
 import { attachLinkedSession, indexLinkedSessions } from './attachLinkedSession';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, Session, SessionId, WorkspaceId } from '@goodboy/types';
 import { resolveSpawnRouting } from './spawn-routing';

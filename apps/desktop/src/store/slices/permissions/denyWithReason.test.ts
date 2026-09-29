@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { AgentId, ProviderRunId, SessionId, TurnState } from '@goodboy/types';
 import { denyWithReason } from './denyWithReason';

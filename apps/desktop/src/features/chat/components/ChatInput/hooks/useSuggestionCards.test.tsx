@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { Session, SessionId } from '@goodboy/types';
 import type { SessionNudge } from '../../../../../store/types';

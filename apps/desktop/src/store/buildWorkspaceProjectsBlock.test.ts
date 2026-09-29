@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, Project, ProjectId, WorkspaceId } from '@goodboy/types';
 import { buildWorkspaceProjectsBlock } from './buildWorkspaceProjectsBlock';

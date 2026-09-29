@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, WorkspaceId } from '@goodboy/types';
-import {
-  migrate,
-  insertWorkspace,
-  listSkillsForWorkspace,
-  type Database as DbInterface,
-} from '@goodboy/db';
+import { insertWorkspace, listSkillsForWorkspace, type Database as DbInterface } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import type { SkillFs } from './registry';
 import { SkillRegistry, SkillRegistryError } from './registry';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';

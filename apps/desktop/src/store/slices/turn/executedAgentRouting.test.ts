@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, ProviderRunId, TelemetryRecord } from '@goodboy/types';
 import { executedAgentRouting } from './executedAgentRouting';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrComment } from '@goodboy/types';
 import { resolveStepPlan } from './resolveStepPlan';

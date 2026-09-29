@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { SessionId } from '@goodboy/types';
 import type { SentryIssue } from '../../integrations/sentry/client';

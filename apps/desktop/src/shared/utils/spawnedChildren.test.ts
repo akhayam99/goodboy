@@ -1,3 +1,4 @@
+// @vitest-environment node
 import type { Agent, AgentId, IsoDateTime, ProviderRunId, TurnState } from '@goodboy/types';
 import { describe, expect, it } from 'vitest';
 import { selectSpawnedChildren } from './spawnedChildren';

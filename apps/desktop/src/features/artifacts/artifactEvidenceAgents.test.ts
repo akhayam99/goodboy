@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, IsoDateTime, SessionId, TurnEvent } from '@goodboy/types';
 import { artifactEvidenceAgents } from './artifactEvidenceAgents';

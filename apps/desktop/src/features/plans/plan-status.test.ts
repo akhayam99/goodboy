@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PlanStatus } from '@goodboy/types';
 import { PLAN_STATUS_PRESENTATION, describePlanStatus } from './plan-status';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PrReview } from '@goodboy/types';
 import { latestTerminalReviewsByAuthor } from './latest-terminal-reviews-by-author';

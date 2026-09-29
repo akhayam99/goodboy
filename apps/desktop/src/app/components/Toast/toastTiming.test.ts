@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { TOAST_ACTION_DURATION_MS, TOAST_DURATION_MS, toastDuration } from './toastTiming';
 

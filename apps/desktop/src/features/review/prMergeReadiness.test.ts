@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { PullRequestState } from '@goodboy/types';
 import { evaluatePrMergeReadiness } from './prMergeReadiness';

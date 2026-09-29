@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
 import {
@@ -6,11 +7,11 @@ import {
   listDiffCommentsForSession,
   listResolveQueueItems,
   listResolveThreads,
-  migrate,
   reopenDiffComment,
   resolveDiffComment,
   type Database,
 } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { SessionId } from '@goodboy/types';
 import { createResolveSlice } from './index';

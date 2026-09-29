@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { WireframeScreen, WireframeViewport } from '@goodboy/core';
 import { asWireframeTarget, deriveWireframeTarget, WIREFRAME_TARGETS } from './wireframeTarget';

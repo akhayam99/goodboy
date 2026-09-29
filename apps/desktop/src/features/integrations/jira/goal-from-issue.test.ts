@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { JiraIssue } from './client';
 import { goalFromIssue } from './goal-from-issue';

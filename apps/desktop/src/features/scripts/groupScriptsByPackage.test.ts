@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ProjectScriptId } from '@goodboy/types';
 import type { RunnableScript } from './buildSessionScripts';

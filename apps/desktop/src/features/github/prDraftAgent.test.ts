@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { Agent, AgentId, AgentStatus, IsoDateTime, SessionId } from '@goodboy/types';
 import { isPrDraftAgentRunning, PR_DRAFT_AGENT_NAME } from './prDraftAgent';

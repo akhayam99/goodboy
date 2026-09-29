@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { IsoDateTime, SessionId } from '@goodboy/types';
 import type { SlackChannel, SlackMessage } from '../../integrations/slack/client';

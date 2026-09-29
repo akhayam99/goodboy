@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -17,7 +18,6 @@ import type {
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
 vi.mock('../../../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(),
   tauriDatabase: { exec: vi.fn(), execute: vi.fn(), select: vi.fn() },
 }));
 

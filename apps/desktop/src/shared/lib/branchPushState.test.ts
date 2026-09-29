@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { GitDistance } from '@goodboy/types';
 import { branchPushStateOf, commitsToPush } from './branchPushState';

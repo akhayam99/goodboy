@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { composeDiffScoutKickoff, DIFF_SCOUT_LIMITS } from './composeDiffScoutKickoff';
 

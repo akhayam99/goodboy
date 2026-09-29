@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { LEFT_SIDEBAR_STORAGE_KEY } from '@goodboy/ui';
 import { STORAGE_KEYS } from './storage-keys';

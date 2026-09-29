@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { FileDiff } from '@goodboy/types';
 import { INLINE_CHANGE_LINE_LIMIT, inlineChangePlan } from './inlineChangePlan';

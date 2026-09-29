@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { PREFIXES, parseQuery } from './grammar';
 import { WORKSPACE_FEATURES } from '../../shared/lib/features';

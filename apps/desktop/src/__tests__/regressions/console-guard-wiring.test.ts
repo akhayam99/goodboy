@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, it } from 'vitest';
 import { CONSOLE_GUARD_MARKER } from '../../test/consoleKey';
 

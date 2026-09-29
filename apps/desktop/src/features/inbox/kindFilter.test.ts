@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { ProjectId, SessionId } from '@goodboy/types';
 import type { InboxRecord } from './types';

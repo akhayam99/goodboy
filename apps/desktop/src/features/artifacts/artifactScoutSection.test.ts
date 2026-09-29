@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
   WIREFRAME_SCOUT_DEMOTION_REASON,

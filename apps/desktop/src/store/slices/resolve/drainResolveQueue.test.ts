@@ -1,6 +1,8 @@
+// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore } from 'zustand/vanilla';
-import { migrate, upsertResolveThread, type Database } from '@goodboy/db';
+import { upsertResolveThread, type Database } from '@goodboy/db';
+import { migrate } from '@goodboy/db/migrations';
 import { makeTestDatabase } from '@goodboy/db/test-helpers';
 import type { Agent, AgentId, IsoDateTime, MountId, ProjectId, SessionId } from '@goodboy/types';
 import type { GetFn, SetFn } from './types';

@@ -47,7 +47,6 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 vi.mock('../shared/lib/db', () => ({
-  runDbMigrations: vi.fn(),
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
@@ -370,7 +369,7 @@ describe('audit retry queue, drain worker (happy path)', () => {
   });
 
   async function runHydrate() {
-    const { runDbMigrations } = await import('../shared/lib/db');
+    const { runDbMigrations } = await import('../shared/lib/dbBoot');
     (runDbMigrations as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     const { getSetting } = await import('@goodboy/db');

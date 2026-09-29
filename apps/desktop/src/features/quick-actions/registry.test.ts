@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import type { MountId, ProjectId } from '@goodboy/types';
 import type { RunnableScript, SessionScriptGroup } from '../scripts/buildSessionScripts';

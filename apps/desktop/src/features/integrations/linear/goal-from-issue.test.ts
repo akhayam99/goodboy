@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { goalFromIssue } from './goal-from-issue';
 import type { LinearIssue } from './client';

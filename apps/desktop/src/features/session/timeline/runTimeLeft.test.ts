@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { EMPTY_DURATION_HISTORY, type DurationHistory, type DurationSample } from '@goodboy/core';
 import type { Agent, AgentId, MeasuredTurnSpan, Step, WorkflowRun } from '@goodboy/types';
