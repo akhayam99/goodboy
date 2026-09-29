@@ -273,6 +273,10 @@ Turn review comments into commits without writing the fix yourself. Review lists
 
 Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Waiting for the push** and **Done**.
 
+### Manage a resolve from its Brief
+
+Click a resolve in Activity and its Brief holds the comment, the fix and the reply, with **Accept**, **Edit**, **Reply** and **Skip**. After you accept, **Push now** pushes only that fix, after a confirm right under the header. A resolve that fixed several comments together shows **Open in Review (N)** instead, and Review opens on the first of them.
+
 ### Close on GitHub
 
 Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.

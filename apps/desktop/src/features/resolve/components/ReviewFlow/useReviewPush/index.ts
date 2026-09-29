@@ -35,7 +35,12 @@ const failed = (sentence: string): ReviewPushPhase => ({
   result: { tone: 'failed', sentence },
 });
 
-export const useReviewPush = ({ sessionId }: { readonly sessionId: SessionId }): ReviewPush => {
+type PushParams = {
+  readonly sessionId: SessionId;
+  readonly threadIds?: ReadonlyArray<string>;
+};
+
+export const useReviewPush = ({ sessionId, threadIds }: PushParams): ReviewPush => {
   const preparePublication = useAppStore((s) => s.preparePublication);
   const retryPublication = useAppStore((s) => s.retryPublication);
   const publishConversations = useAppStore((s) => s.publishConversations);
@@ -49,9 +54,12 @@ export const useReviewPush = ({ sessionId }: { readonly sessionId: SessionId }):
     async ({ isRetry }: { readonly isRetry: boolean }): Promise<void> => {
       setPhase({ kind: 'preparing' });
       try {
-        const preview = isRetry
-          ? await retryPublication({ sessionId })
-          : await preparePublication({ sessionId });
+        const preview =
+          threadIds !== undefined
+            ? await preparePublication({ sessionId, threadIds })
+            : isRetry
+              ? await retryPublication({ sessionId })
+              : await preparePublication({ sessionId });
         const isEmpty =
           preview.publicationId === null && preview.blocker === null && preview.drift.length === 0;
         setPhase(
@@ -66,7 +74,7 @@ export const useReviewPush = ({ sessionId }: { readonly sessionId: SessionId }):
         setPhase(isReportedError(error) ? IDLE : failed(formatError(error)));
       }
     },
-    [preparePublication, retryPublication, sessionId],
+    [preparePublication, retryPublication, sessionId, threadIds],
   );
 
   const confirm = useCallback(async (): Promise<void> => {

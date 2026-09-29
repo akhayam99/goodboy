@@ -18,6 +18,7 @@ import { useTranscript } from '../../../../store/transcript';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { isQuestionDelegate } from '../../../context/questionDelegate';
+import { useResolverBrief } from '../../../resolve/hooks/useResolverBrief';
 import { useAgentMetrics } from '../../hooks/useAgentMetrics';
 import { classifyAgent } from '../../agent-kind';
 import { AgentUsageFooter } from './AgentUsageFooter';
@@ -27,6 +28,7 @@ import { AgentBriefChildren } from './AgentBriefChildren';
 import { AgentBriefPlans } from './AgentBriefPlans';
 import { AgentBriefQuestions } from './AgentBriefQuestions';
 import { AgentBriefHandoffLine } from './AgentBriefHandoffLine';
+import { AgentBriefResolver } from './AgentBriefResolver';
 import { AgentFollowUps } from './AgentFollowUps';
 import { agentFollowUpMoves } from './followUpMoves';
 import { selectFollowUpChildren } from './followUpChildren';
@@ -69,6 +71,8 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
     [agent.id, runs, turnStates],
   );
   const kind = classifyAgent({ agent, override: kindOverride });
+  const resolverBrief = useResolverBrief({ sessionId: session.id, agentId: agent.id });
+  const isResolverBrief = kind === 'resolver' && resolverBrief !== null;
   const followUps = useMemo(
     () =>
       selectFollowUpChildren({
@@ -149,9 +153,12 @@ export const AgentBrief = ({ session, agent, time = null }: Props) => {
           {time?.isMuchLonger === true ? <AgentMuchLonger /> : null}
         </Band>
       ) : null}
+      {isResolverBrief ? (
+        <AgentBriefResolver session={session} agent={agent} brief={resolverBrief} />
+      ) : null}
       <AgentAnsweringFor sessionId={session.id} question={answeredQuestion} asker={asker} />
       <AgentBriefQuestions session={session} agent={agent} />
-      {shownSummary !== '' && !isSplitIntoSubagents ? (
+      {shownSummary !== '' && !isSplitIntoSubagents && !isResolverBrief ? (
         <Band inset="content" label={hasOutputSummary ? 'Outcome' : 'Latest'} headingLevel={2}>
           <div className="text-body text-foreground">
             <Markdown text={shownSummary} />

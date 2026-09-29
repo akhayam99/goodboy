@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { AlertCircle, Check } from 'lucide-react';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
@@ -41,6 +41,9 @@ type Props = ReviewCommentBinding & {
   readonly entry: ReviewEntry;
   readonly entries: ReadonlyArray<ReviewEntry>;
   readonly onSelect: (threadId: string) => void;
+  readonly variant?: 'review' | 'brief';
+  readonly actionsPrefix?: ReactNode;
+  readonly actionsReplacement?: ReactNode;
 };
 
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
@@ -85,7 +88,11 @@ export const ReviewComment = ({
   onEditReply,
   onReplyDone,
   onSelect,
+  variant = 'review',
+  actionsPrefix = null,
+  actionsReplacement = null,
 }: Props) => {
+  const isBrief = variant === 'brief';
   const { row, state, word, threadId } = entry;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
@@ -157,11 +164,14 @@ export const ReviewComment = ({
         </span>
       </header>
 
+      {isBrief && <SectionHeader label={REVIEW_FLOW_LABEL.comment} headingLevel={2} />}
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
-      {row.attempt !== null && <AgentLine attempt={row.attempt} state={state} word={word} />}
+      {!isBrief && row.attempt !== null && (
+        <AgentLine attempt={row.attempt} state={state} word={word} />
+      )}
 
       {state === 'needs' && row.thread.question != null && row.thread.question !== '' && (
         <div className="flex min-w-0 flex-col gap-2">
@@ -175,10 +185,15 @@ export const ReviewComment = ({
       )}
 
       {hasChange && state !== 'drafting' && (
-        <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
+        <ProposedChange
+          files={diff.files}
+          isLoading={diff.isLoading}
+          error={diff.error}
+          {...(isBrief && { heading: REVIEW_FLOW_LABEL.fix })}
+        />
       )}
 
-      {members.length > 0 && (state === 'ready' || state === 'edited') && (
+      {!isBrief && members.length > 0 && (state === 'ready' || state === 'edited') && (
         <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
           <p>{sharedFixLine({ count: members.length })}</p>
           <ul className="flex min-w-0 flex-col">
@@ -334,10 +349,13 @@ export const ReviewComment = ({
             </Button>
           </div>
         </div>
+      ) : actionsReplacement !== null ? (
+        actionsReplacement
       ) : (
         !isEditingReply &&
-        verbs.length > 0 && (
+        (verbs.length > 0 || actionsPrefix !== null) && (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {actionsPrefix}
             {verbs.map((action) => {
               const button = (
                 <Button

@@ -1205,7 +1205,13 @@ agentId, pane })` asks for either, and the address prints it as a last
   agent on Transcript). The key `agentPane` is written only by the navigation
   slice, follows the page like the other targets, and comes back with Back and
   a window restore. Tab clicks inside the pane stay local and do not rewrite
-  the address. Back, or Up when
+  the address. The Brief of a resolver carries the comment, the fix and the
+  reply with the same verbs as Review (both use `useReviewCommentController`),
+  and **Push now** pushes only that fix. A resolver that belongs to a batch has
+  no verbs there, only **Open in Review (N)**, which calls `openReview` with
+  the destination `{ kind: 'threads', threadIds }`. That destination needs no
+  mount and no pull request: Review focuses the first thread of the set it
+  has, and the set stays in `reviewSelections[sessionId]`. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and the resolver page come back through Back.
