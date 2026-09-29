@@ -240,3 +240,6 @@ pub async fn worktree_remove_checked(
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
+
+#[cfg(test)]
+mod tests;

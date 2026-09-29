@@ -211,3 +211,6 @@ fn parse_registered_worktrees(stdout: &str) -> Vec<RegisteredWorktree> {
     }
     entries
 }
+
+#[cfg(test)]
+mod tests;

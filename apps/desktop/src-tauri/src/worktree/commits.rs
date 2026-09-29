@@ -152,7 +152,7 @@ pub async fn worktree_commit_range(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-pub(super) fn worktree_commit_range_blocking(
+fn worktree_commit_range_blocking(
     worktree_path: String,
     base: String,
     head: String,
@@ -188,7 +188,7 @@ pub async fn worktree_blame_line(
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-pub(super) fn worktree_blame_line_blocking(
+fn worktree_blame_line_blocking(
     worktree_path: String,
     path: String,
     line: u32,
@@ -242,3 +242,6 @@ fn worktree_remote_head_blocking(
         .find_map(|line| line.split_whitespace().next())
         .map(|sha| sha.to_string()))
 }
+
+#[cfg(test)]
+mod tests;

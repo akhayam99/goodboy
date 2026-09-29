@@ -52,7 +52,7 @@ pub async fn worktree_integrate_candidate(
         .map_err(|error| WorktreeError::Io(std::io::Error::other(error.to_string())))?
 }
 
-pub(super) fn worktree_integrate_candidate_blocking(
+fn worktree_integrate_candidate_blocking(
     args: IntegrateCandidateArgs,
 ) -> Result<IntegratedCandidate, WorktreeError> {
     let path = Path::new(&args.worktree_path);
@@ -167,7 +167,7 @@ pub async fn worktree_quarantine_candidate(
         .map_err(|error| WorktreeError::Io(std::io::Error::other(error.to_string())))?
 }
 
-pub(super) fn worktree_quarantine_candidate_blocking(
+fn worktree_quarantine_candidate_blocking(
     args: QuarantineCandidateArgs,
 ) -> Result<QuarantinedCandidate, WorktreeError> {
     let path = Path::new(&args.worktree_path);
@@ -220,3 +220,6 @@ pub(super) fn worktree_quarantine_candidate_blocking(
         base_sha: base,
     })
 }
+
+#[cfg(test)]
+mod tests;

@@ -1,7 +1,7 @@
 use regex::Regex;
 use sha2::{Digest, Sha256};
 
-pub(super) const MAX_SLUG_LEN: usize = 48;
+const MAX_SLUG_LEN: usize = 48;
 
 pub fn slugify(input: &str, max_len: usize) -> String {
     let lowered = input.to_ascii_lowercase();
@@ -27,3 +27,6 @@ pub fn slugify(input: &str, max_len: usize) -> String {
 pub fn sanitize_slug(input: &str) -> String {
     slugify(input, MAX_SLUG_LEN)
 }
+
+#[cfg(test)]
+mod tests;

@@ -246,7 +246,7 @@ fn remote_ref_is_absent(repo_path: &Path, fetch_failure: &str) -> bool {
         || git(repo_path, &["remote", "get-url", "origin"]).is_err()
 }
 
-pub(super) fn with_fetch_cause(error: WorktreeError, fetch_failure: Option<&str>) -> WorktreeError {
+fn with_fetch_cause(error: WorktreeError, fetch_failure: Option<&str>) -> WorktreeError {
     let Some(cause) = fetch_failure else {
         return error;
     };
@@ -277,3 +277,6 @@ fn resolve_origin_base(
         message: format!("cannot find base ref: tried {}", candidates.join(", ")),
     })
 }
+
+#[cfg(test)]
+mod tests;

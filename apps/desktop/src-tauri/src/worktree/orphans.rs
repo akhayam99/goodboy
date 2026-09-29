@@ -81,7 +81,7 @@ pub(crate) fn allocated_bytes(meta: &std::fs::Metadata) -> u64 {
     meta.len()
 }
 
-pub(super) fn worktree_directory_size_blocking(path: String) -> WorktreeDirectorySize {
+fn worktree_directory_size_blocking(path: String) -> WorktreeDirectorySize {
     let target = Path::new(&path);
     let metadata = match std::fs::symlink_metadata(target) {
         Ok(found) => found,
@@ -208,3 +208,6 @@ pub async fn worktree_orphans(
         message: e.to_string(),
     })?
 }
+
+#[cfg(test)]
+mod tests;

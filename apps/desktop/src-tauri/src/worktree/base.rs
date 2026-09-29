@@ -168,3 +168,6 @@ pub(crate) fn resolve_base(cwd: &Path, configured_base: Option<&str>) -> Option<
     }
     None
 }
+
+#[cfg(test)]
+mod tests;

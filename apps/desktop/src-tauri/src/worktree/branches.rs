@@ -32,9 +32,7 @@ pub async fn worktree_repo_default_base_branch(
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-pub(super) fn repo_default_base_branch_blocking(
-    repo_path: String,
-) -> Result<Option<String>, WorktreeError> {
+fn repo_default_base_branch_blocking(repo_path: String) -> Result<Option<String>, WorktreeError> {
     let p = Path::new(&repo_path);
     if !p.exists() {
         return Err(WorktreeError::RepoNotFound(repo_path));
@@ -91,7 +89,7 @@ fn list_branch_names_blocking(repo_path: String) -> Result<Vec<String>, Worktree
     Ok(normalize_branch_names(&raw))
 }
 
-pub(super) fn normalize_branch_names(raw: &str) -> Vec<String> {
+fn normalize_branch_names(raw: &str) -> Vec<String> {
     let mut seen = std::collections::HashSet::new();
     let mut names = Vec::new();
     for line in raw.lines() {
@@ -174,7 +172,7 @@ pub async fn worktree_change_branch(args: ChangeBranchArgs) -> Result<(), Worktr
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-pub(super) fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
+fn worktree_change_branch_blocking(args: ChangeBranchArgs) -> Result<(), WorktreeError> {
     let wt = Path::new(&args.worktree_path);
     if !wt.exists() {
         return Err(WorktreeError::RepoNotFound(args.worktree_path.clone()));
@@ -226,7 +224,7 @@ pub async fn worktree_branch_holder(
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
 
-pub(super) fn worktree_branch_holder_blocking(
+fn worktree_branch_holder_blocking(
     repo_path: String,
     branch: String,
 ) -> Result<Option<String>, WorktreeError> {
@@ -244,3 +242,6 @@ pub(super) fn worktree_branch_holder_blocking(
         &mut |cwd, args| git(cwd, args),
     ))
 }
+
+#[cfg(test)]
+mod tests;

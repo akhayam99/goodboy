@@ -154,3 +154,6 @@ pub(super) fn worktree_changed_files_blocking(
         numstat: numstat_lines.join("\n"),
     })
 }
+
+#[cfg(test)]
+mod tests;

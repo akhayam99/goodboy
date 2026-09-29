@@ -311,3 +311,6 @@ pub(crate) fn in_progress_operation(cwd: &Path) -> Option<GitOperation> {
     }
     None
 }
+
+#[cfg(test)]
+mod tests;

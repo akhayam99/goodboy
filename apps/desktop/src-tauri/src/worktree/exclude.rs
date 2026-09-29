@@ -83,3 +83,6 @@ pub(crate) fn ensure_goodboy_excluded(repo_path: &Path) {
     }
     let _ = std::fs::write(&file, next);
 }
+
+#[cfg(test)]
+mod tests;

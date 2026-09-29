@@ -130,3 +130,6 @@ pub(crate) fn branch_merge_state(
     };
     BranchMergeState::NotMerged { ahead }
 }
+
+#[cfg(test)]
+mod tests;

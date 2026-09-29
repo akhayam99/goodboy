@@ -25,7 +25,7 @@ const FF_SAFETY_FLAGS: [&str; 6] = [
     "merge.autoStash=false",
 ];
 
-pub(super) fn ff_merge_args(upstream: &str) -> Vec<&str> {
+fn ff_merge_args(upstream: &str) -> Vec<&str> {
     let mut args: Vec<&str> = FF_SAFETY_FLAGS.to_vec();
     args.extend_from_slice(&["merge", "--ff-only", upstream]);
     args
@@ -63,7 +63,7 @@ fn fetch_remote_authenticated(
     Ok(())
 }
 
-pub(super) fn checkout_fast_forward_blocking(
+fn checkout_fast_forward_blocking(
     checkout_path: String,
     token: Option<&str>,
 ) -> Result<FastForwardResult, WorktreeError> {
@@ -140,3 +140,6 @@ pub(super) fn checkout_fast_forward_blocking(
         commits_pulled: behind,
     })
 }
+
+#[cfg(test)]
+mod tests;

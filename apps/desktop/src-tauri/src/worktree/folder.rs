@@ -192,3 +192,6 @@ pub async fn worktree_folder_remove(
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
+
+#[cfg(test)]
+mod tests;

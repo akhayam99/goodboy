@@ -112,3 +112,6 @@ pub(crate) mod git_argv_log {
         RECORDED.with(|log| log.borrow().clone())
     }
 }
+
+#[cfg(test)]
+mod tests;

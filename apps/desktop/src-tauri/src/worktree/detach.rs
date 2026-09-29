@@ -23,7 +23,7 @@ pub(crate) fn local_only_commit_count(cwd: &Path) -> Option<u32> {
         .and_then(|raw| raw.trim().parse::<u32>().ok())
 }
 
-pub(super) const REPRODUCIBLE_IGNORED_DIRS: [&str; 11] = [
+const REPRODUCIBLE_IGNORED_DIRS: [&str; 11] = [
     "node_modules",
     "target",
     "dist",
@@ -72,7 +72,7 @@ fn ignored_files_at_risk(worktree_path: &Path) -> Option<IgnoredFilesAtRisk> {
     Some(IgnoredFilesAtRisk { count, samples })
 }
 
-pub(super) fn worktree_detach_assessment_blocking(
+fn worktree_detach_assessment_blocking(
     worktree_path: String,
     base_branch: Option<String>,
 ) -> Result<WorktreeDetachAssessment, WorktreeError> {
@@ -124,3 +124,6 @@ pub(super) fn worktree_detach_assessment_blocking(
         integration,
     })
 }
+
+#[cfg(test)]
+mod tests;
