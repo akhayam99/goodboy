@@ -842,7 +842,6 @@ export type MountDiffStat = {
   readonly deletions: number;
 };
 
-const EMPTY_MOUNT_PATHS: ReadonlyArray<string> = [];
 const EMPTY_MOUNT_DIFF_STATS: ReadonlyMap<string, MountDiffStat> = new Map();
 const MOUNT_DIFF_POLL_MS = 30_000;
 

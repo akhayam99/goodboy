@@ -182,7 +182,7 @@ export const selectMountForPath = ({
 };
 
 type ResolveBaseBranchParams = {
-  readonly mount: SessionProjectMount | null;
+  readonly mount: Pick<SessionProjectMount, 'projectId' | 'baseBranch'> | null;
   readonly projects: AppState['projects'];
 };
 

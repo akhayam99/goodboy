@@ -22,6 +22,7 @@ import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSe
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { useShallow } from 'zustand/react/shallow';
 import { useWorktreeStatuses } from '../useWorktreeStatuses';
+import { worktreeStatusTargetsOf } from '../useWorktreeStatuses/targets';
 import { branchMenu } from '../../trail/menus/branchMenu';
 import { conversationMenu } from '../../trail/menus/conversationMenu';
 import { attemptMenu } from '../../trail/menus/attemptMenu';
@@ -135,14 +136,10 @@ export const useTrailMenus = ({
   );
   const openMountDiff = useAppStore((s) => s.openMountDiff);
   const diffStats = useMountDiffStats(sessionId);
+  const projects = useAppStore((s) => s.projects);
   const branchTargets = useMemo(
-    () =>
-      mounts.flatMap((mount) =>
-        mount.worktreePath === '' || !mount.isAttached
-          ? []
-          : [{ worktreePath: mount.worktreePath, baseBranch: mount.baseBranch ?? undefined }],
-      ),
-    [mounts],
+    () => worktreeStatusTargetsOf({ mounts, projects }),
+    [mounts, projects],
   );
   const branchStatuses = useWorktreeStatuses({ targets: branchTargets });
   const queueRows = useResolveQueueRows({ sessionId });
