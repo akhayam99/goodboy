@@ -882,9 +882,13 @@ terminal, never fires a shortcut.
 **Esc never leaves full screen on macOS.** A full-screen window keeps its Space
 when Esc goes unhandled: the web layer still gets every Escape keydown first, so
 popovers, the palette, drawers, studios and inline edits close or cancel as
-usual, and only the leftover key stops at the window
-(`src-tauri/src/fullscreen_escape.rs`). Leave full screen with the green
-button, View > Exit Full Screen or Ctrl+⌘F.
+usual, and only the leftover key stops before AppKit. `useKeepFullScreenOnEscape`
+arms a last window listener on every Escape keydown, after every in-app handler,
+and prevents the default so WebKit never hands the key back to the window. As a
+second layer the window class (`src-tauri/src/fullscreen_escape.rs`) replaces
+`cancelOperation:`, `keyDown:` and `toggleFullScreen:`, keeping any original
+implementation for other keys, and drops an Esc in full screen. Leave full
+screen with the green button, View > Exit Full Screen or Ctrl+⌘F.
 
 ## Studios
 
