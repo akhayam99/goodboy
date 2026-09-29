@@ -6,13 +6,19 @@ import type {
   Step,
   StepDefId,
   StepId,
+  StepSize,
   VerbosityLevel,
   Workflow,
   WorkflowId,
+  WorkflowOrigin,
+  WorkflowRoutingDecision,
+  WorkflowRoutingLock,
+  WorkflowTaskProfile,
   WorkspaceId,
 } from '@goodboy/types';
 import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
-import type { Database, PlainStatement } from '../client';
+import type { Database, GuardedStatement, PlainStatement } from '../client';
+import { NotFoundError, UniqueViolationError } from '../shared/errors';
 import {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
@@ -248,12 +254,33 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
   await db.transaction({ statements: upsertStatements(workflow) });
 };
 
-export const restoreSeededWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
+const NAME_TAKEN = 'name_taken';
+
+const freeNameGuard = (workflow: Workflow): GuardedStatement => ({
+  sql: `SELECT 1 AS present FROM workflows
+    WHERE workspace_id = ? AND name = ? AND id <> ? AND deleted_at IS NULL AND is_preset = 1`,
+  params: [workflow.workspaceId, workflow.name, workflow.id],
+  abortWhen: 'rows',
+  abortCode: NAME_TAKEN,
+});
+
+type WriteWorkflowParams = {
+  readonly db: Database;
+  readonly workflow: Workflow;
+  readonly guardName: boolean;
+};
+
+const writeWorkflow = async ({
+  db,
+  workflow,
+  guardName,
+}: WriteWorkflowParams): Promise<boolean> => {
   const deletedAt = Date.now();
   const keptIds = workflow.steps.map((step) => step.id);
   const keptPlaceholders = keptIds.length === 0 ? "''" : keptIds.map(() => '?').join(', ');
-  await db.transaction({
+  const outcome = await db.transaction({
     statements: [
+      ...(guardName ? [freeNameGuard(workflow)] : []),
       ...upsertStatements(workflow),
       { sql: 'UPDATE workflows SET deleted_at = NULL WHERE id = ?', params: [workflow.id] },
       {
@@ -263,6 +290,170 @@ export const restoreSeededWorkflow = async (db: Database, workflow: Workflow): P
       },
     ],
   });
+  return outcome.status === 'committed';
+};
+
+export const restoreSeededWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
+  await writeWorkflow({ db, workflow, guardName: false });
+};
+
+export type WorkflowStepInput = {
+  readonly id?: StepId;
+  readonly libraryStepId?: StepDefId;
+  readonly role?: AgentRole;
+  readonly ordinal: number;
+  readonly name: string;
+  readonly promptPrefix: string;
+  readonly expectedOutput?: string;
+  readonly providerOverride?: ProviderId;
+  readonly modelOverride?: string;
+  readonly effort?: AgentEffort;
+  readonly verbosity?: VerbosityLevel;
+  readonly orchestratorReason?: string;
+  readonly routingLock?: WorkflowRoutingLock | null;
+  readonly routingDecision?: WorkflowRoutingDecision | null;
+  readonly taskProfile?: WorkflowTaskProfile | null;
+  readonly size?: StepSize;
+};
+
+export type SaveWorkflowInput = {
+  readonly id?: WorkflowId;
+  readonly workspaceId: WorkspaceId;
+  readonly name: string;
+  readonly description: string;
+  readonly goal?: string;
+  readonly processText?: string;
+  readonly steps: ReadonlyArray<WorkflowStepInput>;
+  readonly isPreset?: boolean;
+  readonly origin?: WorkflowOrigin;
+};
+
+type TemplateNameRow = {
+  readonly name: string;
+};
+
+type LiveNamesParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+  readonly excludeId: string;
+};
+
+const liveTemplateNames = async ({
+  db,
+  workspaceId,
+  excludeId,
+}: LiveNamesParams): Promise<ReadonlySet<string>> => {
+  const rows = await db.select<TemplateNameRow>(
+    `SELECT name FROM workflows
+     WHERE workspace_id = ? AND id <> ? AND deleted_at IS NULL AND is_preset = 1`,
+    [workspaceId, excludeId],
+  );
+  return new Set(rows.map((row) => row.name));
+};
+
+type ResolveNameParams = LiveNamesParams & {
+  readonly requested: string;
+  readonly isPreset: boolean;
+};
+
+export const resolveLiveWorkflowName = async ({
+  requested,
+  isPreset,
+  ...lookup
+}: ResolveNameParams): Promise<string> => {
+  if (!isPreset) {
+    return requested;
+  }
+  const taken = await liveTemplateNames(lookup);
+  if (!taken.has(requested)) {
+    return requested;
+  }
+  let suffix = 2;
+  while (taken.has(`${requested} ${suffix}`)) {
+    suffix += 1;
+  }
+  return `${requested} ${suffix}`;
+};
+
+const findLiveTemplateId = async (
+  db: Database,
+  input: SaveWorkflowInput,
+): Promise<WorkflowId | null> => {
+  const rows = await db.select<IdRow>(
+    `SELECT id FROM workflows
+     WHERE workspace_id = ? AND name = ? AND deleted_at IS NULL AND is_preset = 1
+     LIMIT 1`,
+    [input.workspaceId, input.name],
+  );
+  const row = rows[0];
+  return row === undefined ? null : (row.id as WorkflowId);
+};
+
+const isoOf = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
+
+const stepFromInput = (input: WorkflowStepInput, workflowId: WorkflowId): Step => ({
+  id: input.id ?? (crypto.randomUUID() as StepId),
+  workflowId,
+  ordinal: input.ordinal,
+  name: input.name,
+  promptPrefix: input.promptPrefix,
+  ...(input.libraryStepId !== undefined && { libraryStepId: input.libraryStepId }),
+  ...(input.role !== undefined && { role: input.role }),
+  ...(input.expectedOutput !== undefined && { expectedOutput: input.expectedOutput }),
+  ...(input.providerOverride !== undefined && { providerOverride: input.providerOverride }),
+  ...(input.modelOverride !== undefined && { modelOverride: input.modelOverride }),
+  ...(input.effort !== undefined && { effort: input.effort }),
+  ...(input.verbosity !== undefined && { verbosity: input.verbosity }),
+  ...(input.orchestratorReason !== undefined && { orchestratorReason: input.orchestratorReason }),
+  routingLock: input.routingLock ?? null,
+  routingDecision: input.routingDecision ?? null,
+  taskProfile: input.taskProfile ?? null,
+  ...(isStepSize(input.size) && { size: input.size }),
+});
+
+const MAX_NAME_ATTEMPTS = 5;
+
+const draftWorkflow = async (db: Database, input: SaveWorkflowInput): Promise<Workflow> => {
+  const nowMs = Date.now();
+  const isPreset = input.isPreset ?? true;
+  const id =
+    input.id ?? (await findLiveTemplateId(db, input)) ?? (crypto.randomUUID() as WorkflowId);
+  const name = await resolveLiveWorkflowName({
+    db,
+    workspaceId: input.workspaceId,
+    excludeId: id,
+    requested: input.name,
+    isPreset,
+  });
+  return {
+    id,
+    workspaceId: input.workspaceId,
+    name,
+    description: input.description,
+    ...(input.goal !== undefined && { goal: input.goal }),
+    ...(input.processText !== undefined && { processText: input.processText }),
+    steps: input.steps.map((step) => stepFromInput(step, id)),
+    isPreset,
+    ...(input.origin !== undefined && { origin: input.origin }),
+    createdAt: isoOf(nowMs),
+    updatedAt: isoOf(nowMs),
+  };
+};
+
+export const saveWorkflow = async (db: Database, input: SaveWorkflowInput): Promise<Workflow> => {
+  for (let attempt = 0; attempt < MAX_NAME_ATTEMPTS; attempt += 1) {
+    const workflow = await draftWorkflow(db, input);
+    const written = await writeWorkflow({ db, workflow, guardName: workflow.isPreset !== false });
+    if (!written) {
+      continue;
+    }
+    const saved = await getWorkflow(db, workflow.id);
+    if (saved === null) {
+      throw new NotFoundError('workflow', workflow.id);
+    }
+    return saved;
+  }
+  throw new UniqueViolationError('workflows', 'name');
 };
 
 const SEEDED_WORKFLOW_ID = `id LIKE 'wf\\_seed\\_%' ESCAPE '\\'`;
@@ -317,6 +508,34 @@ export const listRemovedSeededWorkflowIds = async (
   return rows.map((row) => row.id as WorkflowId);
 };
 
+const SEEDED_ID_PREFIX = 'wf_seed_';
+
 export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
   await db.execute('UPDATE workflows SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
+};
+
+export const removeWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
+  const rows = await db.select<IdRow>('SELECT id FROM workflows WHERE id = ? LIMIT 1', [id]);
+  if (rows.length === 0) {
+    throw new NotFoundError('workflow', id);
+  }
+  if (id.startsWith(SEEDED_ID_PREFIX)) {
+    await deleteWorkflow(db, id);
+    return;
+  }
+  const outcome = await db.transaction({
+    statements: [
+      {
+        sql: 'SELECT 1 AS present FROM session_workflows WHERE workflow_id = ? LIMIT 1',
+        params: [id],
+        abortWhen: 'rows',
+        abortCode: 'attached',
+      },
+      { sql: 'DELETE FROM steps WHERE workflow_id = ?', params: [id] },
+      { sql: 'DELETE FROM workflows WHERE id = ?', params: [id] },
+    ],
+  });
+  if (outcome.status === 'aborted') {
+    await deleteWorkflow(db, id);
+  }
 };

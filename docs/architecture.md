@@ -237,6 +237,109 @@ Then it runs the same reset before the migrations. A broken view on a
 complete schema, and any other migration failure, still show the error
 screen.
 
+### Who writes each table
+
+Each table has one writer, and the default writer is `packages/db`: the
+migrations, the schema tests and the query functions live there, and the
+frontend reaches SQLite through them. Rust writes a table only when the write
+has to happen without the webview or inside one Rust transaction: the backup
+export and import, a project move, the permission audit, integration
+credentials and the budget checks. The unit is the command or the transaction,
+not the table. The atomic agent operations moved with the agents: the routing
+gate, the fan-out of a delegated batch and the status stamps are guarded
+statements in `packages/db/src/queries/agent-write.ts`, and a workflow save is
+one transaction in `saveWorkflow`.
+
+The `ts` rows below have a ratchet:
+`packages/db/src/migrations/rust-writer-map.test.ts` reads this table, scans
+the production SQL in `apps/desktop/src-tauri/src/` and fails when Rust gains an
+`INSERT`, `UPDATE` or `DELETE` on a `ts` table beyond the writes it lists as
+its baseline. A new table has to appear here first: the same test fails on a
+table this map does not name. The rows marked `rust` are written by Rust
+commands; TypeScript still reaches some of them (`integration_credentials`,
+`integration_bindings`, `permission_rules`, the `permission_audit_log`
+cleanup) and moving those calls behind the commands is not done yet.
+
+| Table                         | Writer | Notes                                                                                                               |
+| ----------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------- |
+| `agent_handoffs`              | ts     |                                                                                                                     |
+| `agent_queued_messages`       | ts     |                                                                                                                     |
+| `agent_turn_spans`            | ts     |                                                                                                                     |
+| `agents`                      | ts     | Inserts, status, routing, viewed and done through `agent-write.ts`. Rust reads only.                                |
+| `artifact_provenance`         | ts     |                                                                                                                     |
+| `artifact_revisions`          | ts     |                                                                                                                     |
+| `budget_alerts`               | rust   | `budget.rs`                                                                                                         |
+| `budget_rules`                | rust   | `budget.rs`, and the backup import                                                                                  |
+| `chat_messages`               | ts     |                                                                                                                     |
+| `chats`                       | ts     |                                                                                                                     |
+| `context_slot_history`        | ts     |                                                                                                                     |
+| `context_slots`               | ts     |                                                                                                                     |
+| `deleted_branches`            | ts     |                                                                                                                     |
+| `diff_comments`               | ts     |                                                                                                                     |
+| `file_versions`               | ts     |                                                                                                                     |
+| `github_pr_cache`             | ts     |                                                                                                                     |
+| `goal_attachments`            | ts     |                                                                                                                     |
+| `history_plans`               | ts     |                                                                                                                     |
+| `integration_bindings`        | rust   | `integration_credentials.rs`, and the backup import                                                                 |
+| `integration_credentials`     | rust   | `integration_credentials.rs`, and the backup import                                                                 |
+| `integration_drafts`          | ts     | Exception: the query bridge saves a draft an agent proposes (`query_bridge/dispatch.rs`).                           |
+| `messages`                    | ts     |                                                                                                                     |
+| `mount_operations`            | ts     | Exceptions: a project move rewrites the paths in the log, and the query bridge writes it (`query_bridge/mount.rs`). |
+| `mount_pr_links`              | ts     |                                                                                                                     |
+| `notifications`               | ts     |                                                                                                                     |
+| `nudge_events`                | ts     |                                                                                                                     |
+| `open_questions`              | ts     |                                                                                                                     |
+| `permission_audit_log`        | rust   | `permissions.rs`, at hook time                                                                                      |
+| `permission_audit_retry`      | rust   | `permissions.rs`                                                                                                    |
+| `permission_rules`            | rust   | `permissions.rs`, and the backup import                                                                             |
+| `plan_consumptions`           | ts     |                                                                                                                     |
+| `pr_review_drafts`            | ts     |                                                                                                                     |
+| `pr_series`                   | ts     |                                                                                                                     |
+| `pr_series_members`           | ts     |                                                                                                                     |
+| `project_relocations`         | rust   | `project_relocation.rs`                                                                                             |
+| `project_scripts`             | ts     | Exception: the backup import.                                                                                       |
+| `project_sentry_links`        | ts     |                                                                                                                     |
+| `projects`                    | ts     | Exceptions: the backup import and a project move.                                                                   |
+| `provider_credentials`        | ts     |                                                                                                                     |
+| `provider_limits`             | ts     |                                                                                                                     |
+| `provider_runs`               | ts     |                                                                                                                     |
+| `resolve_attempts`            | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
+| `resolve_candidate_items`     | ts     |                                                                                                                     |
+| `resolve_candidates`          | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
+| `resolve_check_runs`          | ts     |                                                                                                                     |
+| `resolve_imports`             | ts     |                                                                                                                     |
+| `resolve_publication_threads` | ts     |                                                                                                                     |
+| `resolve_publications`        | ts     | Exception: a project move rewrites `worktree_path`.                                                                 |
+| `resolve_queue_items`         | ts     |                                                                                                                     |
+| `resolve_threads`             | ts     |                                                                                                                     |
+| `retained_worktree_paths`     | ts     | Exception: a project move rewrites the paths.                                                                       |
+| `schema_migration_segment`    | ts     |                                                                                                                     |
+| `schema_version`              | ts     |                                                                                                                     |
+| `search_docs`                 | ts     |                                                                                                                     |
+| `search_excluded_projects`    | ts     |                                                                                                                     |
+| `search_index`                | ts     |                                                                                                                     |
+| `search_index_state`          | ts     |                                                                                                                     |
+| `security_findings`           | ts     |                                                                                                                     |
+| `session_artifacts`           | ts     |                                                                                                                     |
+| `session_budgets`             | rust   | `budget.rs`                                                                                                         |
+| `session_decisions`           | ts     |                                                                                                                     |
+| `session_events`              | ts     |                                                                                                                     |
+| `session_external_tasks`      | ts     |                                                                                                                     |
+| `session_workflows`           | ts     |                                                                                                                     |
+| `session_worktrees`           | ts     | Exception: a project move rewrites the paths.                                                                       |
+| `sessions`                    | ts     |                                                                                                                     |
+| `settings`                    | ts     | Exceptions: the backup import and the restart marker (`restart_marker.rs`).                                         |
+| `skills`                      | rust   | `skills.rs`, next to the skill files on disk, and the backup import                                                 |
+| `step_library`                | rust   | `workflows.rs`. Only Rust writes it today; a candidate to move.                                                     |
+| `steps`                       | ts     | `saveWorkflow`. Exception: the backup import.                                                                       |
+| `telemetry_records`           | ts     |                                                                                                                     |
+| `turn_events`                 | ts     |                                                                                                                     |
+| `workflows`                   | ts     | `saveWorkflow` and `removeWorkflow`. Exception: the backup import.                                                  |
+| `workspace_profiles`          | ts     | Exception: the backup import.                                                                                       |
+| `workspace_starred_issues`    | ts     |                                                                                                                     |
+| `workspaces`                  | ts     | Exceptions: the backup import and the per-workspace settings override (`settings_overrides.rs`).                    |
+| `worktree_roots`              | ts     | Exception: a project move rewrites `repo_root`.                                                                     |
+
 ### On-disk data layout
 
 Everything the app saves for itself lives in `~/.goodboy`.

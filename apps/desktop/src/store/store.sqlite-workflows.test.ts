@@ -1,16 +1,8 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { insertWorkspace } from '@goodboy/db';
+import { insertAgent, insertWorkspace } from '@goodboy/db';
 import { purgedAgentIds } from './session-mutators';
-import { anAgent } from '@goodboy/types/testing';
-import type {
-  AgentId,
-  SessionId,
-  StepId,
-  Workflow,
-  WorkflowId,
-  WorkflowRunId,
-  WorkspaceId,
-} from '@goodboy/types';
+import type { AgentInsertArgs } from '../features/workflows/workflows';
+import type { AgentId, SessionId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import {
   buildStoryWorkspace,
   importStore,
@@ -141,34 +133,8 @@ const storedRunIds = (sessionId: SessionId) =>
     .sessions.find((session) => session.id === sessionId)
     ?.workflowRuns.map((run) => run.id) ?? [];
 
-type AgentInsertInput = {
-  readonly sessionId: SessionId;
-  readonly workflowRunId?: WorkflowRunId;
-  readonly ordinal: number;
-  readonly name: string;
-};
-
-const insertAgentLikeRust = async ({
-  sessionId,
-  workflowRunId,
-  ordinal,
-  name,
-}: AgentInsertInput) => {
-  const stepId = ordinal === 0 ? STEP_ID : REVIEW_STEP_ID;
-  const agent = anAgent({
-    id: `agent-${ordinal}` as AgentId,
-    sessionId,
-    stepId,
-    ordinal,
-    name,
-    ...(workflowRunId === undefined ? {} : { workflowRunId }),
-  });
-  await storySqlite().execute(
-    "INSERT INTO agents (id, session_id, step_id, ordinal, name, status, workflow_run_id) VALUES (?, ?, ?, ?, ?, 'pending', ?)",
-    [agent.id, sessionId, stepId, ordinal, name, workflowRunId ?? null],
-  );
-  return agent;
-};
+const insertAgentThroughDb = (run: AgentInsertArgs) =>
+  insertAgent(storySqlite(), { ...run, id: run.id ?? (`agent-${run.ordinal}` as AgentId) });
 
 const agentRows = (sessionId: SessionId) =>
   rowsOf<{ id: string; deleted_at: number | null }>({
@@ -179,7 +145,7 @@ const agentRows = (sessionId: SessionId) =>
 describe('store on sqlite: attaching a workflow to a session', () => {
   it('writes the run row and the store run together', async () => {
     const sessionId = await startSession();
-    storySpies.invokeAgentInsert.mockImplementation(insertAgentLikeRust);
+    storySpies.invokeAgentInsert.mockImplementation(insertAgentThroughDb);
 
     await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID);
 
@@ -208,7 +174,7 @@ describe('store on sqlite: attaching a workflow to a session', () => {
   it('purges the agents already created when a later one is refused', async () => {
     const sessionId = await startSession();
     storySpies.invokeAgentInsert
-      .mockImplementationOnce(insertAgentLikeRust)
+      .mockImplementationOnce(insertAgentThroughDb)
       .mockRejectedValueOnce(new Error('agent insert refused'));
 
     await expect(
@@ -225,7 +191,7 @@ describe('store on sqlite: attaching a workflow to a session', () => {
 describe('store on sqlite: removing a workflow run from a session', () => {
   const attachRun = async () => {
     const sessionId = await startSession();
-    storySpies.invokeAgentInsert.mockImplementation(insertAgentLikeRust);
+    storySpies.invokeAgentInsert.mockImplementation(insertAgentThroughDb);
     await useAppStore.getState().attachWorkflowToSession(sessionId, WORKFLOW_ID);
     const runId = storedRunIds(sessionId)[0];
     if (runId === undefined) {

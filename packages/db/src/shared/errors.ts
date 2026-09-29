@@ -17,3 +17,17 @@ export class UniqueViolationError extends Error {
     this.name = 'UniqueViolationError';
   }
 }
+
+export class NodeNotMutableError extends Error {
+  constructor(public readonly id: string) {
+    super(`workflow node cannot be changed: ${id}`);
+    this.name = 'NodeNotMutableError';
+  }
+}
+
+export class InvalidWorkflowNodeError extends Error {
+  constructor(public readonly nodeKind: string) {
+    super(`invalid workflow routing value: ${nodeKind}`);
+    this.name = 'InvalidWorkflowNodeError';
+  }
+}

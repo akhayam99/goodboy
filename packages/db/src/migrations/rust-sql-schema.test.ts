@@ -77,16 +77,10 @@ type TombstoneAllowance = {
 
 const TOMBSTONE_READ_ALLOWLIST: ReadonlyArray<TombstoneAllowance> = [
   {
-    file: 'workflows.rs',
-    contains: ['SELECT status FROM agents WHERE id = ?1'],
+    file: 'agent-write.ts',
+    contains: ['SELECT 1 AS present FROM agents WHERE id = ?'],
     reason:
-      'point lookup by id: the routing gate answers RunNotFound for an id it cannot resolve, so it has to see the tombstone',
-  },
-  {
-    file: 'workflows.rs',
-    contains: ['SELECT {cols} FROM agents WHERE id = ?1 LIMIT 1'],
-    reason:
-      'point lookup by id: reads back the row the same call just wrote, which must round-trip whatever state it is in',
+      'point lookup by id: the routing gate answers not found for an id it cannot resolve, and lets a tombstone through to the status check, so it has to see it',
   },
   {
     file: 'snapshot.rs',

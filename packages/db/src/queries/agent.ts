@@ -1,8 +1,8 @@
 import type {
   Agent,
   AgentId,
+  AgentSourceKind,
   AgentStatus,
-  AgentStoppedBy,
   IsoDateTime,
   EffortLevel,
   ProviderId,
@@ -45,13 +45,17 @@ type AgentRow = {
   model_override: string | null;
   provider_override: string | null;
   kind: string | null;
+  source_thread_id: string | null;
+  source_thread_ids: string | null;
+  source_comment_url: string | null;
+  source_kind: string | null;
   domains_json: string | null;
   routing_lock: string | null;
   routing_decision: string | null;
   task_profile: string | null;
 };
 
-type ParseDomainsParams = {
+type ParseStringListParams = {
   readonly value: string | null;
 };
 
@@ -65,13 +69,14 @@ type UpdateAgentDomainsParams = {
   readonly domains: ReadonlyArray<string> | null;
 };
 
-const parseDomains = ({ value }: ParseDomainsParams): ReadonlyArray<string> => {
+const parseStringList = ({ value }: ParseStringListParams): ReadonlyArray<string> => {
   const parsed = parseJsonColumn({ value, isValid: isJsonArray, fallback: [] });
   return parsed.filter((domain): domain is string => typeof domain === 'string');
 };
 
 const toAgent = ({ row }: ToAgentParams): Agent => {
-  const domains = parseDomains({ value: row.domains_json });
+  const domains = parseStringList({ value: row.domains_json });
+  const sourceThreadIds = parseStringList({ value: row.source_thread_ids });
   const routing = parseWorkflowRouting({
     routingLock: row.routing_lock,
     routingDecision: row.routing_decision,
@@ -128,6 +133,10 @@ const toAgent = ({ row }: ToAgentParams): Agent => {
     ...(row.model_override && { modelOverride: row.model_override }),
     ...(row.provider_override && { providerOverride: row.provider_override as ProviderId }),
     ...(row.kind && { kind: row.kind }),
+    ...(row.source_thread_id != null && { sourceThreadId: row.source_thread_id }),
+    ...(sourceThreadIds.length > 0 && { sourceThreadIds }),
+    ...(row.source_comment_url != null && { sourceCommentUrl: row.source_comment_url }),
+    ...(row.source_kind != null && { sourceKind: row.source_kind as AgentSourceKind }),
     ...(domains.length > 0 && { domains }),
     routingLock: routing.routingLock,
     routingDecision,
@@ -157,6 +166,17 @@ export const listAgentsForSessions = async (
   return out;
 };
 
+export const listLiveChildAgents = async (
+  db: Database,
+  parentAgentId: AgentId,
+): Promise<ReadonlyArray<Agent>> => {
+  const rows = await db.select<AgentRow>(
+    'SELECT * FROM live_agents WHERE parent_agent_id = ? ORDER BY ordinal ASC',
+    [parentAgentId],
+  );
+  return rows.map((row) => toAgent({ row }));
+};
+
 export const getAgentById = async (db: Database, id: AgentId): Promise<Agent | null> => {
   const rows = await db.select<AgentRow>('SELECT * FROM agents WHERE id = ?', [id]);
   const row = rows[0];
@@ -172,59 +192,6 @@ export const updateAgentDomains = async ({
     domains !== null ? JSON.stringify(domains) : null,
     id,
   ]);
-};
-
-export const updateAgentStatus = async (
-  db: Database,
-  id: AgentId,
-  fields: {
-    status?: AgentStatus;
-    runId?: ProviderRunId;
-    outputSummary?: string;
-    startedAt?: IsoDateTime;
-    completedAt?: IsoDateTime;
-    stoppedAt?: IsoDateTime | null;
-    stoppedBy?: AgentStoppedBy | null;
-  },
-): Promise<void> => {
-  const updates: string[] = [];
-  const values: unknown[] = [];
-
-  if (fields.status !== undefined) {
-    updates.push('status = ?');
-    values.push(fields.status);
-  }
-  if (fields.runId !== undefined) {
-    updates.push('provider_run_id = ?');
-    values.push(fields.runId);
-  }
-  if (fields.outputSummary !== undefined) {
-    updates.push('output_summary = ?');
-    values.push(fields.outputSummary);
-  }
-  if (fields.startedAt !== undefined) {
-    updates.push('started_at = ?');
-    values.push(Date.parse(fields.startedAt));
-  }
-  if (fields.completedAt !== undefined) {
-    updates.push('last_finished_at = ?');
-    values.push(Date.parse(fields.completedAt));
-  }
-  if (fields.stoppedAt !== undefined) {
-    updates.push('stopped_at = ?');
-    values.push(fields.stoppedAt === null ? null : Date.parse(fields.stoppedAt));
-  }
-  if (fields.stoppedBy !== undefined) {
-    updates.push('stopped_by = ?');
-    values.push(fields.stoppedBy);
-  }
-
-  if (updates.length === 0) {
-    return;
-  }
-
-  values.push(id);
-  await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
 };
 
 export const PURGED_QUESTION_TEXTS_INDEX = 0;
