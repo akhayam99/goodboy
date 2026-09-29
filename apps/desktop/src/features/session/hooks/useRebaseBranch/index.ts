@@ -4,6 +4,7 @@ import { useAppStore } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import { useToast } from '../../../../app/components/Toast';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
+import { resolveMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 
 type Params = {
   readonly sessionId: SessionId | null;
@@ -36,13 +37,12 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
   const { showToast } = useToast();
   const baseBranch = useAppStore((state) => {
     if (sessionId == null || mountId == null) {
-      return 'main';
+      return null;
     }
     const mount =
       state.sessionProjectMounts[sessionId]?.find((candidate) => candidate.mountId === mountId) ??
       null;
-    const project = state.projects.find((candidate) => candidate.id === mount?.projectId) ?? null;
-    return mount?.baseBranch ?? project?.baseBranch ?? 'main';
+    return resolveMountBaseBranch({ mount, projects: state.projects });
   });
   const isRebaseRun = run !== null && run.origin === 'rebase';
   const isRunning = isStarting || (isRebaseRun && isHistoryRunActive({ phase: run.phase }));
@@ -63,7 +63,7 @@ export const useRebaseBranch = ({ sessionId, mountId, status }: Params): Result 
         showToast({
           kind: 'success',
           title: 'Rebase done',
-          message: `This branch is rebased on ${baseBranch}. A backup of the old history stays here.`,
+          message: `This branch is rebased on ${baseBranch ?? 'its base branch'}. A backup of the old history stays here.`,
         });
         return;
       }

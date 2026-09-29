@@ -83,7 +83,7 @@ export const runHistoryPlan = async ({
 
 type GraphParams = {
   readonly worktreePath: string;
-  readonly baseBranch: string;
+  readonly baseBranch: string | null;
   readonly branch: string;
 };
 
@@ -155,7 +155,7 @@ export const readRemoteLease = async ({
 
 type RebasePlanParams = {
   readonly worktreePath: string;
-  readonly baseBranch: string;
+  readonly baseBranch: string | null;
   readonly fetches: boolean;
 };
 

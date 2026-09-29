@@ -29,7 +29,10 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
       await reportHistoryStop({ get, set, target, origin, stop, planId: null });
       return 'stopped';
     };
-    const status = await worktreeStatus({ worktreePath: target.worktreePath }).catch(() => null);
+    const status = await worktreeStatus({
+      worktreePath: target.worktreePath,
+      baseBranch: target.baseBranch,
+    }).catch(() => null);
     if (status === null || status.head === null) {
       return stopWith({
         reason: 'failed',

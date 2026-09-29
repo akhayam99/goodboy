@@ -201,6 +201,31 @@ afterEach(() => {
 
 h.store = baseStore();
 
+describe('SessionDiffPane empty state', () => {
+  const withProjectBase = (baseBranch: string | null) => {
+    h.store = {
+      ...h.store,
+      projects: [{ id: 'project-ledger', kind: 'repo', baseBranch, rootPath: '/repo/ledger' }],
+    };
+  };
+
+  it('names the base branch the branch matches', () => {
+    withProjectBase('develop');
+    renderPane();
+
+    expect(screen.getByText('Branch matches develop')).toBeDefined();
+    expect(screen.getByText(/already reachable from develop/)).toBeDefined();
+  });
+
+  it('never says main when no base branch is known', () => {
+    withProjectBase(null);
+    renderPane();
+
+    expect(screen.getByText('Branch matches its base branch')).toBeDefined();
+    expect(screen.getByText(/already reachable from its base branch/)).toBeDefined();
+  });
+});
+
 describe('SessionDiffPane header', () => {
   it('rebases on main as the one primary when the branch is behind', async () => {
     withPr();

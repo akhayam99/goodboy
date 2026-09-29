@@ -23,7 +23,10 @@ import {
   queueMountContinuation,
 } from '../../../store/slices/turn/mountContinuations';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { selectActiveMountId } from '../../../store/slices/project-mounts/selectors';
+import {
+  resolveMountBaseBranch,
+  selectActiveMountId,
+} from '../../../store/slices/project-mounts/selectors';
 import { useAppStore } from '../../../store/store';
 import { isMainWindow } from '../../workspace/window';
 import { executeSeriesRequest, type SeriesBridgeRequest } from './series';
@@ -144,7 +147,12 @@ const inspect = async ({ request }: InspectParams): Promise<MountBridgeOutcome> 
   });
   const path = mount.worktreePath;
   const status =
-    path === null ? null : await worktreeStatus({ worktreePath: path }).catch(() => null);
+    path === null
+      ? null
+      : await worktreeStatus({
+          worktreePath: path,
+          baseBranch: resolveMountBaseBranch({ mount, projects: get().projects }),
+        }).catch(() => null);
   const lease = path === null ? null : await worktreeWriterStatus({ path });
   const blockers =
     path === null

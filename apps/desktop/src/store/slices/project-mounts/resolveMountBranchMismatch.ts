@@ -7,12 +7,13 @@ import {
 } from './mountBranchObservations';
 import { mountError } from './mountErrors';
 import { loadMountViews, requireMountView } from './mountViews';
-import { selectMountBranchObservation } from './selectors';
+import { resolveMountBaseBranch, selectMountBranchObservation } from './selectors';
 import { switchMount } from './switchMount';
 import type { GetFn, ResolveMountBranchInput, SetFn } from './types';
 
 type GuardParams = {
   readonly worktreePath: string;
+  readonly baseBranch: string | null;
 };
 
 type HolderParams = {
@@ -24,10 +25,12 @@ type HolderParams = {
 type RecheckParams = {
   readonly set: SetFn;
   readonly view: SessionMountView;
+  readonly baseBranch: string | null;
 };
 
 type ReadMountBranchParams = {
   readonly view: SessionMountView;
+  readonly baseBranch: string | null;
 };
 
 type RecheckOutcome =
@@ -46,8 +49,8 @@ type RestoreParams = {
   readonly run: () => Promise<void>;
 };
 
-const refuseWhenBusy = async ({ worktreePath }: GuardParams): Promise<void> => {
-  const status = await worktreeStatus({ worktreePath }).catch(() => null);
+const refuseWhenBusy = async ({ worktreePath, baseBranch }: GuardParams): Promise<void> => {
+  const status = await worktreeStatus({ worktreePath, baseBranch }).catch(() => null);
   if (status === null || status.workingTree.kind !== 'known') {
     throw mountError({
       code: 'unknown-state',
@@ -86,12 +89,15 @@ const refuseWhenHeldByAnotherMount = async ({
   });
 };
 
-const readMountBranch = async ({ view }: ReadMountBranchParams): Promise<RecheckOutcome> => {
+const readMountBranch = async ({
+  view,
+  baseBranch,
+}: ReadMountBranchParams): Promise<RecheckOutcome> => {
   const worktreePath = view.worktreePath;
   if (worktreePath === null) {
     return { kind: 'unavailable' };
   }
-  const status = await worktreeStatus({ worktreePath }).catch(() => null);
+  const status = await worktreeStatus({ worktreePath, baseBranch }).catch(() => null);
   if (status === null) {
     return { kind: 'unavailable' };
   }
@@ -106,8 +112,12 @@ const readMountBranch = async ({ view }: ReadMountBranchParams): Promise<Recheck
   };
 };
 
-const recheckMountBranch = async ({ set, view }: RecheckParams): Promise<SessionMountView> => {
-  const outcome = await readMountBranch({ view });
+const recheckMountBranch = async ({
+  set,
+  view,
+  baseBranch,
+}: RecheckParams): Promise<SessionMountView> => {
+  const outcome = await readMountBranch({ view, baseBranch });
   switch (outcome.kind) {
     case 'matched':
       clearMountBranchObservation({ set, sessionId: view.sessionId, mountId: view.id });
@@ -183,8 +193,9 @@ export const resolveMountBranchMismatch = (set: SetFn, get: GetFn) => {
     }
     const views = await loadMountViews({ get, sessionId });
     const view = requireMountView({ views, mountId });
+    const baseBranch = resolveMountBaseBranch({ mount: view, projects: get().projects });
     if (resolution === 'recheck') {
-      return recheckMountBranch({ set, view });
+      return recheckMountBranch({ set, view, baseBranch });
     }
     if (view.revision !== observation.revision) {
       throw mountError({
@@ -202,7 +213,7 @@ export const resolveMountBranchMismatch = (set: SetFn, get: GetFn) => {
       });
     }
     const recordedBranch = view.branch;
-    await refuseWhenBusy({ worktreePath });
+    await refuseWhenBusy({ worktreePath, baseBranch });
     if (resolution === 'restore-recorded') {
       await refuseWhenHeldByAnotherMount({ views, view, branch: recordedBranch });
       await withRestoredObservation({

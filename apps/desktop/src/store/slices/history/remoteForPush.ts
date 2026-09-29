@@ -25,7 +25,10 @@ export const remoteForPush = async ({
   incorporatedSince,
   shouldPush,
 }: Params): Promise<RemoteForPush> => {
-  const status = await worktreeStatus({ worktreePath: target.worktreePath }).catch(() => null);
+  const status = await worktreeStatus({
+    worktreePath: target.worktreePath,
+    baseBranch: target.baseBranch,
+  }).catch(() => null);
   const lease = await readRemoteLease({
     worktreePath: target.worktreePath,
     branch: target.branch,

@@ -877,6 +877,36 @@ describe('branch mismatch recovery', () => {
     expect(h.changeWorktreeBranch).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { resolution: 'recheck' as const, base: 'develop', expected: 'develop' },
+    { resolution: 'adopt-observed' as const, base: 'develop', expected: 'develop' },
+    { resolution: 'recheck' as const, base: null, expected: 'main' },
+    { resolution: 'adopt-observed' as const, base: null, expected: 'main' },
+  ])(
+    'reads the status of a $resolution against the mount or project base ($base)',
+    async ({ resolution, base, expected }) => {
+      const { slice, state } = makeSlice();
+      seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });
+      const row = h.rows.get('mount-1');
+      if (row !== undefined) {
+        h.rows.set('mount-1', { ...row, baseBranch: base });
+      }
+      observedMismatch(state);
+      h.worktreeStatus.mockClear();
+
+      await slice.resolveMountBranchMismatch({
+        sessionId: SESSION_ID,
+        mountId: 'mount-1' as MountId,
+        resolution,
+      });
+
+      expect(h.worktreeStatus).toHaveBeenCalledWith({
+        worktreePath: `${REPO_ROOT}/wt/first`,
+        baseBranch: expected,
+      });
+    },
+  );
+
   it('keeps an unreadable note when a recheck cannot read status', async () => {
     const { slice, state } = makeSlice();
     seedMount({ id: 'mount-1', branch: 'ak/first', worktreePath: `${REPO_ROOT}/wt/first` });

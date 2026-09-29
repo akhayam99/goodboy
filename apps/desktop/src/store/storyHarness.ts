@@ -65,6 +65,11 @@ const ghStatus: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(a
 const invokeScriptRun: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
 const runAdhocScript: ReturnType<typeof vi.fn> = vi.fn(async () => 'run-adhoc');
 
+type WorktreeBaseArgs = {
+  readonly worktreePath: string;
+  readonly baseBranch?: string | null;
+};
+
 type PermissionsModule = typeof import('../features/permissions/permissions');
 
 type WorkflowsModule = typeof import('../features/workflows/workflows');
@@ -300,7 +305,10 @@ export const storySpies = {
   gitCommonDirectory: vi.fn(
     async (_args: { readonly repoPath: string }): Promise<string | null> => null,
   ),
-  worktreeChangedFiles: vi.fn(async (_path: string) => ({ files: [], numstat: '' })),
+  worktreeChangedFiles: vi.fn(async (_params: WorktreeBaseArgs) => ({
+    files: [],
+    numstat: '',
+  })),
   insertSession: vi.fn(async () => undefined),
   insertSessionEvent: vi.fn(
     async (_params: { readonly event: { readonly kind: string } }) => undefined,
@@ -731,7 +739,7 @@ export const worktreeModuleMock = () => ({
   sessionDirExists: (args: unknown) => storySpies.sessionDirExists(args),
   scratchDirPrepare: (args: unknown) => storySpies.scratchDirPrepare(args),
   scratchDirRemove: (args: unknown) => storySpies.scratchDirRemove(args),
-  worktreeChangedFiles: (path: string) => storySpies.worktreeChangedFiles(path),
+  worktreeChangedFiles: (params: WorktreeBaseArgs) => storySpies.worktreeChangedFiles(params),
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   gitCommonDirectory: (args: { readonly repoPath: string }) => storySpies.gitCommonDirectory(args),
   acquireWorktreeWriter: (args: { readonly path: string; readonly holder?: string }) =>

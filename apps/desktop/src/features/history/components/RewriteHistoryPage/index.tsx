@@ -20,7 +20,10 @@ import { HISTORY_SHOW_BACKUPS_EVENT, diffEventName } from '../../../actions/kind
 import type { CommitActionTarget } from '../../../actions/types';
 import { usePendingAction, type PendingActionRun } from '../../../../shared/hooks/usePendingAction';
 import { useWorktreeStatuses } from '../../../session/hooks/useWorktreeStatuses';
-import { selectMountForPath } from '../../../../store/slices/project-mounts/selectors';
+import {
+  selectMountBaseBranch,
+  selectMountForPath,
+} from '../../../../store/slices/project-mounts/selectors';
 import { scribeKeyOf } from '../../../../store/slices/scribe/scribeKeyOf';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
 import { PaneShell } from '../../../../shared/components/PaneShell';
@@ -181,9 +184,12 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     [graph?.behind, items, onto, original],
   );
   const model = historyGraphModel({ commits, items, original, onto, graph, prHeadSha });
+  const chosenBase = useAppStore((s) =>
+    selectMountBaseBranch({ state: s, sessionId, path: worktreePath }),
+  );
   const statusTargets = useMemo(
-    () => [{ worktreePath, baseBranch: mount?.baseBranch ?? undefined }],
-    [mount?.baseBranch, worktreePath],
+    () => [{ worktreePath, baseBranch: chosenBase ?? undefined }],
+    [chosenBase, worktreePath],
   );
   const status = useWorktreeStatuses({ targets: statusTargets }).get(worktreePath) ?? null;
   const hasUpstream =
@@ -335,7 +341,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     );
   }
 
-  const baseBranch = mount.baseBranch ?? 'main';
+  const baseBranch = chosenBase ?? graph?.baseRef.replace(/^origin\//, '') ?? 'its base branch';
   const rewriteWithAgent = () =>
     attempt({
       key: 'rewrite',

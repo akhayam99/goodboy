@@ -2,8 +2,6 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { resolveMountBaseBranch, selectMountById } from '../project-mounts/selectors';
 import type { GetFn, HistoryTarget } from './types';
 
-export const REBASE_FALLBACK_BASE = 'main';
-
 type Params = {
   readonly get: GetFn;
   readonly sessionId: SessionId;
@@ -28,7 +26,7 @@ export const historyTargetOf = ({ get, sessionId, mountId }: Params): HistoryTar
     workspaceId: project?.workspaceId ?? session?.workspaceId ?? null,
     worktreePath: mount.worktreePath,
     branch: mount.branch,
-    baseBranch: resolveMountBaseBranch({ mount, projects: state.projects }) ?? REBASE_FALLBACK_BASE,
+    baseBranch: resolveMountBaseBranch({ mount, projects: state.projects }),
     projectName: project?.name ?? mount.mountName,
   };
 };

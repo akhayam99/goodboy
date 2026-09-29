@@ -143,6 +143,18 @@ and repairs git's worktree links; see
 project's `root_path` is corrected, the next git status read clears the
 mount's `disk_state` on its own.
 
+## Base branch
+
+Every call that compares a mount with its base passes one name: the mount's
+own base, then its project's, then nothing. `resolveMountBaseBranch` and
+`selectMountBaseBranch` make that choice, and no caller writes `main` itself.
+With no name, Rust finds the repo default in one ordered list: `origin/HEAD`,
+then `main`, `master` and `develop` (the remote copy first), then the branch
+the main checkout sits on. A checkout on that branch never becomes its own
+base, so a repo with no default at all stays unknown and branch cleanup keeps
+what it cannot place. Creating a mount may cut from the main checkout branch.
+The rebase plan and the history graph take the same optional name.
+
 ## Cleanup proposals
 
 When a lifecycle step must continue but a directory cannot go (dirty, locked,

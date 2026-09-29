@@ -28,7 +28,10 @@ const engine = vi.hoisted(() => ({
 }));
 
 const worktree = vi.hoisted(() => ({
-  worktreeStatus: vi.fn(async () => ({ upstream: 'origin/fix/ledger-postings', head: 'head-sha' })),
+  worktreeStatus: vi.fn(async (params: { worktreePath: string; baseBranch?: string | null }) => {
+    void params;
+    return { upstream: 'origin/fix/ledger-postings', head: 'head-sha' };
+  }),
   worktreeRemoteHead: vi.fn(async () => 'remote-sha'),
 }));
 
@@ -81,7 +84,12 @@ const REBASE = {
   fetchError: null,
 };
 
-const harness = () => {
+type Bases = {
+  readonly mount: string | null;
+  readonly project: string | null;
+};
+
+const harness = ({ mount, project }: Bases = { mount: 'main', project: 'main' }) => {
   let state: Record<string, unknown> = {
     ...historyInitialState,
     sessions: [
@@ -96,7 +104,7 @@ const harness = () => {
         id: 'project-ledger',
         name: 'ledger-core',
         workspaceId: 'workspace-harborline',
-        baseBranch: 'main',
+        baseBranch: project,
       },
     ],
     sessionProjectMounts: {
@@ -108,7 +116,7 @@ const harness = () => {
           mountName: 'ledger-core',
           worktreePath: '/w/ledger',
           branch: 'fix/ledger-postings',
-          baseBranch: 'main',
+          baseBranch: mount,
           isAttached: true,
           diskState: 'present',
           revision: 1,
@@ -154,6 +162,112 @@ beforeEach(() => {
   engine.pushWithLease.mockResolvedValue({ kind: 'pushed' });
   engine.readRemoteLease.mockResolvedValue({ kind: 'included', sha: 'remote-sha' });
   engine.discardHistoryCopy.mockResolvedValue(undefined);
+});
+
+const statusBases = (): ReadonlyArray<string | null | undefined> =>
+  worktree.worktreeStatus.mock.calls.map(([params]) => params.baseBranch);
+
+describe('the base branch of a history run', () => {
+  const cleanReplay = () => {
+    engine.predictHistoryPlan.mockResolvedValue({
+      isSupported: true,
+      steps: [],
+      head: 'predicted',
+      isTreeEqual: false,
+      changedFiles: [],
+    });
+    engine.tryHistoryPlan.mockResolvedValue({
+      head: 'new-head',
+      map: [{ from: 'a1', to: 'x1' }],
+      isTreeEqual: false,
+      changedFiles: [],
+      stop: null,
+      copyPath: null,
+      order: [],
+    });
+  };
+
+  beforeEach(() => {
+    worktree.worktreeStatus.mockClear();
+  });
+
+  it('rebases onto the mount base and reads every status against it', async () => {
+    const { slice } = harness({ mount: 'develop', project: 'main' });
+    cleanReplay();
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(engine.readRebasePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ baseBranch: 'develop' }),
+    );
+    expect(statusBases().length).toBeGreaterThan(0);
+    expect(new Set(statusBases())).toEqual(new Set(['develop']));
+  });
+
+  it('falls back to the project base when the mount has none', async () => {
+    const { slice } = harness({ mount: null, project: 'develop' });
+    cleanReplay();
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(engine.readRebasePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ baseBranch: 'develop' }),
+    );
+    expect(new Set(statusBases())).toEqual(new Set(['develop']));
+  });
+
+  it('lets Rust choose the base when neither the mount nor the project names one', async () => {
+    const { slice, read } = harness({ mount: null, project: null });
+    cleanReplay();
+
+    await slice.rebaseBranch({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(engine.readRebasePlan).toHaveBeenCalledWith(
+      expect.objectContaining({ baseBranch: null }),
+    );
+    expect(new Set(statusBases())).toEqual(new Set([null]));
+    expect(read().recordSessionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'rebase_requested',
+        payload: expect.objectContaining({ branch: 'origin/main' }),
+      }),
+    );
+  });
+
+  it('reads the status of a restore against the mount base', async () => {
+    const { slice } = harness({ mount: 'develop', project: 'main' });
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'backup-sha',
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/keep-2',
+    });
+
+    await slice.restoreHistory({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
+      shouldPush: false,
+    });
+
+    expect(statusBases().length).toBeGreaterThan(0);
+    expect(new Set(statusBases())).toEqual(new Set(['develop']));
+  });
+
+  it('reads the status of bringing origin in against the mount base', async () => {
+    const { slice } = harness({ mount: 'develop', project: 'main' });
+    engine.readOriginAhead.mockResolvedValue({
+      remoteSha: 'remote-now',
+      commits: [],
+      fetchError: null,
+    });
+
+    await slice.bringOriginIntoHistory({ sessionId: SESSION_ID, mountId: MOUNT_ID });
+
+    expect(worktree.worktreeStatus).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      baseBranch: 'develop',
+    });
+  });
 });
 
 describe('rebase on main', () => {

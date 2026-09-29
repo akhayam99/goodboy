@@ -6,7 +6,6 @@ import {
   selectMountBaseBranch,
   selectMountForPath,
 } from '../../../../store/slices/project-mounts/selectors';
-import { REBASE_FALLBACK_BASE } from '../../../../store/slices/history/historyTargetOf';
 import { isMountRequestMerged } from '../../../../store/slices/project-mounts/mountRowModel';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -41,7 +40,9 @@ type Props = {
   readonly branchRevision: number;
 };
 
-const emptyTitle = (view: DiffViewKind): string => {
+const baseWord = (baseBranch: string | null): string => baseBranch ?? 'its base branch';
+
+const emptyTitle = (view: DiffViewKind, baseBranch: string | null): string => {
   if (view.kind === 'working') {
     if (view.scope === 'staged') {
       return 'No staged changes';
@@ -54,10 +55,10 @@ const emptyTitle = (view: DiffViewKind): string => {
   if (view.kind === 'commit') {
     return 'This commit is empty';
   }
-  return 'Branch matches main';
+  return `Branch matches ${baseWord(baseBranch)}`;
 };
 
-const emptyBlurb = (view: DiffViewKind): string => {
+const emptyBlurb = (view: DiffViewKind, baseBranch: string | null): string => {
   if (view.kind === 'working') {
     if (view.scope === 'staged') {
       return 'Nothing has been staged for the next commit yet.';
@@ -70,7 +71,7 @@ const emptyBlurb = (view: DiffViewKind): string => {
   if (view.kind === 'commit') {
     return 'No file changes were recorded for this commit.';
   }
-  return 'Every commit on this branch is already reachable from main, nothing extra to review.';
+  return `Every commit on this branch is already reachable from ${baseWord(baseBranch)}, nothing extra to review.`;
 };
 
 export const SessionDiffPane = ({
@@ -204,7 +205,7 @@ export const SessionDiffPane = ({
   const canRebase = rebase.canRebase && mountId !== null && behind !== null && behind > 0;
   const rebasePrediction = useRebasePrediction({
     worktreePath,
-    baseBranch: baseBranch ?? REBASE_FALLBACK_BASE,
+    baseBranch,
     head: diff.status?.head ?? null,
     isEnabled: canRebase && !rebase.isRunning,
   });
@@ -310,8 +311,8 @@ export const SessionDiffPane = ({
       <LensEmptyState
         tone={CONCEPT_TONE.diff}
         icon={CONCEPT_ICONS.diff}
-        title={emptyTitle(diff.view)}
-        description={emptyBlurb(diff.view)}
+        title={emptyTitle(diff.view, baseBranch)}
+        description={emptyBlurb(diff.view, baseBranch)}
       />
     </PageColumn>
   ) : (

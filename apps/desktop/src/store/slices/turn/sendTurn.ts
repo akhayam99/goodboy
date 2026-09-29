@@ -137,6 +137,7 @@ import { resolveWorktreePath } from '../resolve/resolveWorktreePath';
 import { resolveCandidateMode } from '../resolve/resolveCandidateMode';
 import { resumableResolveThreadIds } from '../resolve/resumableResolveThreadIds';
 import {
+  resolveMountBaseBranch,
   selectActiveMount,
   selectMountById,
   selectWritableMounts,
@@ -1519,7 +1520,13 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
         // must not fail the turn.
         if (activeMount !== undefined && !isSessionDirScope) {
           try {
-            const changed = await worktreeChangedFiles({ worktreePath: workingDir });
+            const changed = await worktreeChangedFiles({
+              worktreePath: workingDir,
+              baseBranch: resolveMountBaseBranch({
+                mount: activeMount,
+                projects: get().projects,
+              }),
+            });
             await upsertContextSlot(
               tauriDatabase,
               sessionId,

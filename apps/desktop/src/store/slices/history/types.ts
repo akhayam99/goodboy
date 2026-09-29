@@ -119,7 +119,7 @@ export type HistoryTarget = {
   readonly workspaceId: WorkspaceId | null;
   readonly worktreePath: string;
   readonly branch: string;
-  readonly baseBranch: string;
+  readonly baseBranch: string | null;
   readonly projectName: string;
 };
 

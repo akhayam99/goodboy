@@ -16,6 +16,7 @@ import {
 } from '../../../features/workflows/workflows';
 import { loadArtifactProvenance } from '../../../features/artifacts/artifactProvenance';
 import { worktreeChangedFiles } from '../../../features/worktree/worktree';
+import { selectMountBaseBranch } from '../project-mounts/selectors';
 import {
   KIND_TO_ROLE,
   classifyAgent,
@@ -290,7 +291,10 @@ const canFanOutByRole = async ({
       return false;
     }
     try {
-      const changed = await worktreeChangedFiles({ worktreePath });
+      const changed = await worktreeChangedFiles({
+        worktreePath,
+        baseBranch: selectMountBaseBranch({ state: get(), sessionId, path: worktreePath }),
+      });
       const diffLines = changed.additions + changed.deletions;
       return changed.paths.length > 15 || diffLines > 800;
     } catch {
