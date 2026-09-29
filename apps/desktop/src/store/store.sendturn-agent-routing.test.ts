@@ -1,5 +1,11 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStorySpies,
+  storySpies,
+  type StoryStore,
+} from './storyHarness';
 import type {
   Agent,
   AgentId,
@@ -33,23 +39,12 @@ vi.mock('@goodboy/core', async (importOriginal) => {
 });
 
 const {
-  runTurnSpy,
-  cancelTurnSpy,
-  invokeSpy,
   insertFileVersionSpy,
   pruneFileVersionsForPathSpy,
   fileVersionsBeginSnapshotSpy,
   fileVersionsFinalizeSnapshotSpy,
   fileVersionsDeleteSpy,
-  invokeAgentUpdateStatusSpy,
-  invokeAgentListSpy,
-  invokeAgentSetDoneSpy,
-  listWorktreesForSessionSpy,
-  getAgentByIdSpy,
 } = vi.hoisted(() => ({
-  runTurnSpy: vi.fn(),
-  cancelTurnSpy: vi.fn(),
-  invokeSpy: vi.fn(),
   insertFileVersionSpy: vi.fn(async () => undefined),
   pruneFileVersionsForPathSpy: vi.fn(
     async () => [] as ReadonlyArray<{ id: string; storedName: string }>,
@@ -87,108 +82,43 @@ const {
       >,
   ),
   fileVersionsDeleteSpy: vi.fn(async () => undefined),
-  invokeAgentUpdateStatusSpy: vi.fn(),
-  invokeAgentListSpy: vi.fn(async () => [] as ReadonlyArray<Agent>),
-  invokeAgentSetDoneSpy: vi.fn(async () => undefined),
-  listWorktreesForSessionSpy: vi.fn(
-    async () => [] as ReadonlyArray<{ readonly worktreePath: string }>,
-  ),
-  getAgentByIdSpy: vi.fn(async () => null as Agent | null),
 }));
 
-vi.mock('../features/chat/turn', () => ({
-  runTurn: (args: unknown) => runTurnSpy(args),
-  cancelTurn: cancelTurnSpy,
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
-}));
-
-vi.mock('../features/permissions/permissions', () => ({
-  invokePermissionRuleList: vi.fn(async () => []),
-  invokePermissionAuditInsert: vi.fn(),
-  invokeAuditRetryEnqueue: vi.fn(async () => undefined),
-  invokeAuditRetryDrain: vi.fn(async () => []),
-  invokeAuditRetryUpdate: vi.fn(async () => undefined),
-  invokeAuditRetryDelete: vi.fn(async () => undefined),
-  useEffectivePermissionRules: () => [],
-}));
-
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: invokeSpy,
-}));
-
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn(),
-}));
-
-vi.mock('../shared/lib/db', () => ({
-  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
-
-const resolveMockState = vi.hoisted(() => ({ reset: (): void => {} }));
-let useAppStore: StoryStore;
-
-beforeAll(async () => {
-  useAppStore = await importStore();
-}, STORE_IMPORT_TIMEOUT_MS);
-
-beforeEach(() => resolveMockState.reset());
-
-vi.mock('@goodboy/db', async () => {
-  const queries = (
-    await import('./slices/resolve/testing/createResolveQueryMocks')
-  ).createResolveQueryMocks();
-  resolveMockState.reset = queries.resetResolveQueryMocks;
-  return {
-    ...queries,
-    listOpenQuestionsForSession: vi.fn(async () => []),
-    getSetting: vi.fn(),
-    insertMessage: vi.fn(),
-    insertProviderRun: vi.fn(async () => undefined),
-    insertSession: vi.fn(),
-    insertSessionWorktree: vi.fn(),
-    insertTelemetry: vi.fn(),
-    insertWorkspace: vi.fn(),
-    listContextSlotsForSession: vi.fn(async () => []),
-    listMessagesForSession: vi.fn(async () => []),
-    listSessionsForWorkspace: vi.fn(async () => []),
-    listTelemetryForSession: vi.fn(async () => []),
-    listWorkspaces: vi.fn(async () => []),
-    listWorktreesForTask: vi.fn(async () => []),
-    deleteWorktreesForSession: vi.fn(),
-    setSetting: vi.fn(),
-    summarizeSessionTelemetry: vi.fn(async () => null),
-    summarizeWorkspaceTelemetry: vi.fn(async () => null),
-    summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-    updateProviderRunStatus: vi.fn(),
-    updateSessionState: vi.fn(),
-    upsertContextSlot: vi.fn(),
+vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('./storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibModuleMock());
+vi.mock('@goodboy/db', async () =>
+  (await import('./storyHarness')).dbModuleMock({
     insertFileVersion: insertFileVersionSpy,
     pruneFileVersionsForPath: pruneFileVersionsForPathSpy,
-    insertOpenQuestion: vi.fn(async () => undefined),
-    markOpenQuestionsResolvedByText: vi.fn(async () => 0),
-    listResolvedQuestionTextsForSession: vi.fn(async () => []),
-    insertTurnEvent: vi.fn(async () => undefined),
-    insertTurnEventsBatch: vi.fn(async () => undefined),
-    listWorktreesForSessions: vi.fn(async () => new Map()),
-    listWorktreesForSession: listWorktreesForSessionSpy,
-    getAgentById: getAgentByIdSpy,
-    listAgentsForSessions: vi.fn(async () => new Map()),
-    listTurnEventsForAgent: vi.fn(async () => []),
-    listTurnEventsForTask: vi.fn(async () => []),
-    listMessagesForAgent: vi.fn(async () => []),
-    insertNotification: vi.fn(async () => undefined),
-    listNotifications: vi.fn(async () => []),
-    countNotifications: vi.fn(async () => []),
-    NOTIFICATION_LIST_LIMIT: 200,
-    markAllNotificationsRead: vi.fn(async () => undefined),
-    clearAllNotifications: vi.fn(async () => undefined),
-    updateSessionWorkflowStep: vi.fn(),
-    attachWorkflowToSession: vi.fn(),
-    detachWorkflowFromSession: vi.fn(),
-    updateWorkflowOrder: vi.fn(),
-  };
-});
+  }),
+);
+vi.mock('../features/chat/turn', async () => (await import('./storyHarness')).turnModuleMock());
+vi.mock('../features/permissions/permissions', async () =>
+  (await import('./storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../features/providers/providers', async () =>
+  (await import('./storyHarness')).providersModuleMock(),
+);
+vi.mock('../features/providers/routing', async () =>
+  (await import('./storyHarness')).routingModuleMock(),
+);
+vi.mock('../features/budget/budget', async () =>
+  (await import('./storyHarness')).budgetModuleMock(),
+);
+vi.mock('../features/skills/skills', async () =>
+  (await import('./storyHarness')).skillsModuleMock(),
+);
+vi.mock('../features/workflows/workflows', async () =>
+  (await import('./storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../features/worktree/worktree', async () =>
+  (await import('./storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
+vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
 vi.mock('../features/file-versions/fileVersions', () => ({
   fileVersionsBeginSnapshot: fileVersionsBeginSnapshotSpy,
@@ -199,127 +129,66 @@ vi.mock('../features/file-versions/fileVersions', () => ({
   fileVersionsListStagedSnapshots: vi.fn(async () => ({ runs: [], skipped: [] })),
 }));
 
-vi.mock('../features/providers/providers', () => ({
-  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
-  checkProviderAuth: vi.fn(),
-}));
+const runTurnSpy = storySpies.runTurn;
+const invokeSpy = storySpies.tauriInvoke;
+const invokeAgentUpdateStatusSpy = storySpies.invokeAgentUpdateStatus;
+const invokeAgentListSpy = storySpies.invokeAgentList;
+const invokeAgentSetDoneSpy = storySpies.invokeAgentSetDone;
+const listWorktreesForSessionSpy = storySpies.listWorktreesForSession;
+const getAgentByIdSpy = storySpies.getAgentById;
 
-vi.mock('../features/providers/routing', () => ({
-  resolveProviderForTurn: vi.fn(async () => ({
+let useAppStore: StoryStore;
+
+beforeAll(async () => {
+  useAppStore = await importStore();
+}, STORE_IMPORT_TIMEOUT_MS);
+
+const wireStoryDefaults = () => {
+  storySpies.acquireWorktreeWriter.mockImplementation(
+    async ({ path, holder }: { readonly path: string; readonly holder?: string }) => ({
+      path,
+      holder: holder ?? null,
+      token: 'token-1',
+      runId: null,
+      isGranted: true,
+      hasExited: false,
+      waiting: [],
+    }),
+  );
+  storySpies.worktreeStatus.mockImplementation(
+    async () =>
+      ({
+        branch: 'goodboy/rt',
+        head: null,
+        headSubject: null,
+        upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
+        mainDistance: { kind: 'unknown', reason: 'no-upstream' },
+        workingTree: {
+          kind: 'known',
+          staged: 0,
+          unstaged: 0,
+          untracked: 0,
+          unmerged: 0,
+          changed: 0,
+        },
+        upstream: null,
+        inProgress: null,
+      }) as never,
+  );
+  storySpies.scratchDirPrepare.mockImplementation(async () => '/tmp/scratch');
+};
+
+beforeEach(async () => {
+  resetStorySpies();
+  wireStoryDefaults();
+  const routingMod = await import('../features/providers/routing');
+  (routingMod.resolveProviderForTurn as ReturnType<typeof vi.fn>).mockResolvedValue({
     selectedProvider: 'anthropic',
     selectedModel: 'claude-sonnet-4-5',
     reason: 'preference',
     fallbackUsed: false,
-  })),
-}));
-
-vi.mock('../features/budget/budget', () => ({
-  invokeBudgetRuleList: vi.fn(async () => []),
-  invokeBudgetRuleUpsert: vi.fn(),
-  invokeBudgetRuleDelete: vi.fn(),
-  invokeBudgetAlertsList: vi.fn(async () => []),
-  invokeBudgetAlertDismiss: vi.fn(),
-  invokeSessionBudgetGet: vi.fn(),
-  invokeSessionBudgetSet: vi.fn(),
-  invokeCheckProviderBudget: vi.fn(),
-}));
-
-vi.mock('../features/skills/skills', () => ({
-  invokeSkillList: vi.fn(async () => []),
-  invokeSkillUpsert: vi.fn(),
-  invokeSkillDelete: vi.fn(),
-  invokeSkillRescan: vi.fn(),
-  resolveSkillInvocation: vi.fn(),
-}));
-
-vi.mock('../features/workflows/workflows', () => ({
-  invokeWorkflowList: vi.fn(async () => []),
-  invokeWorkflowUpsert: vi.fn(),
-  invokeWorkflowDelete: vi.fn(),
-  invokeAgentList: invokeAgentListSpy,
-  invokeAgentInsert: vi.fn(),
-  invokeAgentUpdateStatus: invokeAgentUpdateStatusSpy,
-  invokeAgentMarkViewed: vi.fn(async () => undefined),
-  invokeAgentSetDone: invokeAgentSetDoneSpy,
-}));
-
-vi.mock('../features/worktree/worktree', () => ({
-  createWorktree: vi.fn(),
-  removeWorktree: vi.fn(),
-  worktreeChangedFiles: vi.fn(async () => ({ files: [], numstat: '' })),
-  sessionDirExists: vi.fn(async () => true),
-  scratchDirPrepare: vi.fn(async () => '/tmp/scratch'),
-  acquireWorktreeWriter: vi.fn(async ({ path, holder }: { path: string; holder: string }) => ({
-    path,
-    holder,
-    token: 'token-1',
-    runId: null,
-    isGranted: true,
-    hasExited: false,
-    waiting: [],
-  })),
-  releaseWorktreeWriter: vi.fn(async ({ path }: { path: string }) => ({
-    path,
-    holder: null,
-    token: null,
-    runId: null,
-    isGranted: false,
-    hasExited: false,
-    waiting: [],
-  })),
-  cancelWorktreeWriter: vi.fn(async ({ path }: { path: string }) => ({
-    path,
-    holder: null,
-    token: null,
-    runId: null,
-    isGranted: false,
-    hasExited: false,
-    waiting: [],
-  })),
-  abandonWorktreeWriter: vi.fn(async ({ path }: { path: string }) => ({
-    path,
-    holder: null,
-    token: null,
-    runId: null,
-    isGranted: false,
-    hasExited: false,
-    waiting: [],
-  })),
-  holdsWorktreeWriter: vi.fn(() => false),
-  worktreeWriterStatus: vi.fn(async ({ path }: { path: string }) => ({
-    path,
-    holder: null,
-    token: null,
-    runId: null,
-    isGranted: false,
-    hasExited: false,
-    waiting: [],
-  })),
-  worktreeStatus: vi.fn(async () => ({
-    branch: 'goodboy/rt',
-    head: null,
-    headSubject: null,
-    upstreamDistance: { kind: 'unknown', reason: 'no-upstream' },
-    mainDistance: { kind: 'unknown', reason: 'no-upstream' },
-    workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0, changed: 0 },
-    upstream: null,
-    inProgress: null,
-  })),
-}));
-
-vi.mock('../shared/lib/repo', () => ({
-  validateGitRepo: vi.fn(),
-}));
-
-vi.mock('../features/plans/plans', () => ({
-  listPlansForSession: vi.fn(async () => []),
-  upsertPlan: vi.fn(),
-  setPlanStatus: vi.fn(),
-  setPlanBody: vi.fn(),
-  deletePlan: vi.fn(),
-  addPlanConsumption: vi.fn(),
-  listConsumptionsForPlan: vi.fn(async () => []),
-}));
+  });
+});
 
 const SESSION_ID = 'session-rt-1' as SessionId;
 const AGENT_A = 'agent-a' as AgentId;
@@ -417,7 +286,6 @@ async function* emptyStream(): AsyncIterable<TurnEvent> {}
 describe('sendTurn, agent routing', () => {
   beforeEach(async () => {
     runTurnSpy.mockReset();
-    cancelTurnSpy.mockReset();
     invokeSpy.mockReset();
     insertFileVersionSpy.mockReset();
     pruneFileVersionsForPathSpy.mockReset();
@@ -2493,9 +2361,8 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('gives the writer lease back when the turn throws outside the stream', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
     const dbMod = await import('@goodboy/db');
-    const release = worktreeMod.releaseWorktreeWriter as ReturnType<typeof vi.fn>;
+    const release = storySpies.releaseWorktreeWriter;
     release.mockClear();
     (dbMod.insertMessage as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error('transcript write failed'),
@@ -2513,9 +2380,8 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('queues the request and drops its wait when the worktree is already taken', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
-    const evict = worktreeMod.cancelWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
+    const evict = storySpies.cancelWorktreeWriter;
     evict.mockClear();
     acquire.mockResolvedValueOnce({
       path: '/tmp/wt',
@@ -2545,8 +2411,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('refuses a resolver turn when the session has no worktree to lease', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
     acquire.mockClear();
     listWorktreesForSessionSpy.mockResolvedValue([]);
     useAppStore.setState({ sessionProjectMounts: { [SESSION_ID]: [] } });
@@ -2563,8 +2428,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('refuses a resolver turn instead of leasing a worktree the session never selected', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
     acquire.mockClear();
     listWorktreesForSessionSpy.mockResolvedValueOnce([{ worktreePath: '/tmp/db-wt' }]);
     useAppStore.setState({ sessionProjectMounts: { [SESSION_ID]: [] } });
@@ -2580,8 +2444,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('refuses a turn whose frozen mount moved on to another revision', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
     acquire.mockClear();
     runTurnSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
@@ -2605,8 +2468,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('runs a frozen turn in the worktree it named while another mount is selected', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
     acquire.mockClear();
     runTurnSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
@@ -2643,8 +2505,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('refuses a resolver turn whose agent is on neither the session nor the database', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
     acquire.mockClear();
     getAgentByIdSpy.mockResolvedValue(null);
     useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [] } });
@@ -2661,8 +2522,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('lets a database failure looking up the resolver agent propagate instead of reporting it missing', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
     acquire.mockClear();
     getAgentByIdSpy.mockRejectedValueOnce(new Error('db exploded'));
     useAppStore.setState({ sessionPhaseRuns: { [SESSION_ID]: [] } });
@@ -2679,8 +2539,7 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('acquires the writer lease for a resolver whose kind is only persisted, with no override in memory', async () => {
     const useAppStore = await seedResolverTurn();
-    const worktreeMod = await import('../features/worktree/worktree');
-    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    const acquire = storySpies.acquireWorktreeWriter;
     acquire.mockClear();
     useAppStore.setState({
       agentKindOverride: {},
@@ -2716,8 +2575,8 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
 
   it('leaves the release to the queue when the caller already holds the lease', async () => {
     const useAppStore = await seedResolverTurn();
+    const release = storySpies.releaseWorktreeWriter;
     const worktreeMod = await import('../features/worktree/worktree');
-    const release = worktreeMod.releaseWorktreeWriter as ReturnType<typeof vi.fn>;
     const holds = worktreeMod.holdsWorktreeWriter as ReturnType<typeof vi.fn>;
     release.mockClear();
     holds.mockReturnValueOnce(true);

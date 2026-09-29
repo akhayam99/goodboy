@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+import type { WorktreeWriterLease } from '../features/worktree/worktree';
 import { createDbMock } from '../test/dbMock';
 import { createInvokeMock, createInvokeRouter, type InvokeHandlers } from '../test/invokeMock';
 import { createResolveQueryMocks } from './slices/resolve/testing/createResolveQueryMocks';
@@ -283,15 +284,9 @@ export const storySpies = {
     kind: 'removed',
     path: _args.worktreePath,
   })),
-  worktreeWriterStatus: vi.fn(async (_args: { path: string }) => ({
-    path: _args.path,
-    holder: null,
-    token: null,
-    runId: null,
-    isGranted: false,
-    hasExited: false,
-    waiting: [],
-  })),
+  worktreeWriterStatus: vi.fn(async (_args: { path: string }) =>
+    freeWriterLease({ path: _args.path }),
+  ),
   removeSessionDirectory: vi.fn(async (_args: unknown) => undefined),
   worktreeStatus: vi.fn(async (_path: string) => cleanWorkingTree),
   gitCommonDirectory: vi.fn(
@@ -315,7 +310,10 @@ export const storySpies = {
   updateSessionWorktreeBranch: vi.fn(async () => undefined),
   updateSessionActiveProject: vi.fn(async () => undefined),
   updateSessionWriteDestination: vi.fn(async () => true),
-  listWorktreesForSession: vi.fn(async () => [] as ReadonlyArray<never>),
+  listWorktreesForSession: vi.fn(
+    async () => [] as ReadonlyArray<{ readonly worktreePath: string }>,
+  ),
+  getAgentById: vi.fn(async () => null as Agent | null),
   getWorkspaceById: vi.fn(
     async (_params: { readonly id: WorkspaceId }): Promise<Workspace | null> => null,
   ),
@@ -325,8 +323,9 @@ export const storySpies = {
   upsertSessionExternalTask: vi.fn(async () => undefined),
   upsertContextSlot: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),
-  acquireWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
-    freeWriterLease({ path }),
+  acquireWorktreeWriter: vi.fn(
+    async ({ path }: { readonly path: string; readonly holder?: string }) =>
+      freeWriterLease({ path }),
   ),
   releaseWorktreeWriter: vi.fn(async ({ path }: { readonly path: string }) =>
     freeWriterLease({ path }),
@@ -344,7 +343,7 @@ export const storyResolveQueries = createResolveQueryMocks();
 
 const storyInvoke = (command: string) => storySpies.tauriInvoke(command);
 
-const freeWriterLease = ({ path }: { readonly path: string }) => ({
+const freeWriterLease = ({ path }: { readonly path: string }): WorktreeWriterLease => ({
   path,
   holder: null,
   token: null,
@@ -507,6 +506,7 @@ export const storyDbStubs = () => ({
   listMountPullRequestLinks: vi.fn(async () => []),
   upsertMountPullRequestLink: vi.fn(async () => true),
   listWorktreesForSession: storySpies.listWorktreesForSession,
+  getAgentById: storySpies.getAgentById,
   listWorktreesForSessions: vi.fn(async () => new Map()),
   listAllSessionWorktrees: vi.fn(async () => []),
   deleteWorktreesForSession: vi.fn(async () => undefined),
@@ -593,7 +593,8 @@ export const storyDbStubs = () => ({
   updateWorkflowOrder: vi.fn(async () => undefined),
 });
 
-export const dbModuleMock = () => createDbMock(storyDbStubs());
+export const dbModuleMock = (stubs: Readonly<Record<string, unknown>> = {}) =>
+  createDbMock({ ...storyDbStubs(), ...stubs });
 
 export const tauriCoreModuleMock = () => ({
   invoke: storySpies.tauriInvoke,
@@ -722,7 +723,7 @@ export const worktreeModuleMock = () => ({
   worktreeChangedFiles: (path: string) => storySpies.worktreeChangedFiles(path),
   worktreeStatus: (path: string) => storySpies.worktreeStatus(path),
   gitCommonDirectory: (args: { readonly repoPath: string }) => storySpies.gitCommonDirectory(args),
-  acquireWorktreeWriter: (args: { readonly path: string }) =>
+  acquireWorktreeWriter: (args: { readonly path: string; readonly holder?: string }) =>
     storySpies.acquireWorktreeWriter(args),
   releaseWorktreeWriter: (args: { readonly path: string }) =>
     storySpies.releaseWorktreeWriter(args),
