@@ -404,22 +404,34 @@ Decide what happens to a merged branch, **Ask me**, **Delete on this Mac** or **
 
 ## Review, resolve and pull requests
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s12-resolve-dark.webp">
-  <img src="./docs/readme/s12-resolve-light.webp" alt="Review comments on payments-api #318 grouped as open, waiting for the push and done, with the picked one on the right">
-</picture>
+Turn review comments into commits, push them back to GitHub, and read your own pull requests and diffs before anyone else does.
 
 ### Resolve
 
-Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Draft fixes for N** and an agent writes each fix as a local commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/review-resolve-dark.webp">
+  <img src="./docs/readme/review-resolve-light.webp" alt="Review for PR #318 in Harborline with six open comments on the left and the one from kenji-w on retryPolicy.ts:42 on the right, marked Ready, with a Proposed change that caps the retries in retryPolicy.ts and metrics.ts">
+</picture>
+
+Turn review comments into commits without writing the fix yourself. **Review** lists the comments on the left and the one you picked on the right: here kenji-w asks for a retry cap on `retryPolicy.ts:42`, and the resolver's **Proposed change** sits under it. **Draft a fix** (**Draft fixes for N** when several are waiting) has an agent write each fix as a local commit and draft the reply, then you accept it, edit it, reply yourself or skip the comment.
 
 ### Comment states
 
-Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Waiting for the push** and **Done**.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/review-comment-states-dark.webp">
+  <img src="./docs/readme/review-comment-states-light.webp" alt="The Review list for PR #318 grouped as Open 6, Waiting for the push 2 and Done 1, with each row marked Outdated, Needs you, Drafting, Ready, Not started, Accepted, Skipped or Pushed, and a row of count chips above">
+</picture>
+
+Know what each comment needs next. Each row carries a state: **Outdated**, **Needs you**, **Drafting**, **Ready**, **Not started**, **Accepted**, **Skipped** or **Pushed**. Rows group as **Open**, **Waiting for the push** and **Done**, and the chips above the list count them, such as **2 ready** and **1 pushed**. An **Outdated** comment changed since its reply was drafted, so **Redraft** comes first.
 
 ### Close on GitHub
 
-Finish a review in one action: **Push N** in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm right under the header. After an interruption Goodboy looks for your reply in the thread before posting it again.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/review-push-confirm-dark.webp">
+  <img src="./docs/readme/review-push-confirm-light.webp" alt="The Review header of PR #318 with a confirm under it: Push 1 to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 2 comments need you first, with Cancel and Push buttons">
+</picture>
+
+Finish a review in one action. **Push 1** in the Review header opens a confirm right under it: **Push 1 to hl/fix-duplicate-credit?**, with the count of fixes, replies and threads it will resolve on GitHub, and a note when comments still need you. **Push** pushes the fixes, posts the replies and resolves the threads. **Cancel** leaves everything as it was. After an interruption Goodboy looks for your reply in the thread before posting it again.
 
 ### Review replies in your voice
 
@@ -431,20 +443,20 @@ Accept a fix even after the branch got new commits: it lands on top of the lates
 
 ### Notes before a pull request
 
-Review your own diff before anyone else does. Leave notes, resolve them like review comments, and post the open ones to the pull request later.
+Review your own diff before anyone else does. Leave notes on lines, resolve them like review comments, and post the open ones to the pull request later.
 
 ### GitHub pull request page
 
-Know whether a GitHub pull request can merge, in plain words, with details and checks, and merge, mark ready, draft or close it from there. The next step is the one main action, such as **Mark ready for review** on a draft or **Squash and merge** once it is approved and green. **Merge** and **Close** confirm right under the header, and **N comments to resolve** opens Review.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/review-pr-page-dark.webp">
+  <img src="./docs/readme/review-pr-page-light.webp" alt="The page of pull request #318, Stop retried webhooks posting a second credit, marked In review with a Squash and merge button, 9 comments to resolve with Open Review, Changes on this branch +47 -12 with Open diff, Review Approved, Checks 3 of 3 passing and the typecheck, unit tests and lint checks">
+</picture>
+
+Know whether a GitHub pull request can merge, in plain words, with details and checks, and merge, mark ready, draft or close it from there. The page shows **Status**, **Review**, **Branch** and **Checks** (**3 of 3 passing**), then the title, description, reviewers and each check. The next step is the one main action, such as **Mark ready for review** on a draft or **Squash and merge** once it is approved and green. **Merge** and **Close** confirm right under the header, and **9 comments to resolve** opens Review with **Open Review**.
 
 ### Pull request, Diff and Review as layers
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s31-pull-request-dark.webp">
-  <img src="./docs/readme/s31-pull-request-light.webp" alt="The page of payments-api 318: 9 comments to resolve with Open Review, the changes on the branch with Open diff, approved and 3 of 3 checks passing">
-</picture>
-
-Move between a pull request, its Diff and its Review without losing your place. They open as one path in the trail from the worktree row, and Back walks it. Every link to a pull request lands on its page.
+Move between a pull request, its Diff and its Review without losing your place. They open as one path in the trail from the worktree row, such as **Overview**, **Pull request**, **#318** at the top of the page above, and Back walks it. Every link to a pull request lands on its page.
 
 ### Write it for me
 
@@ -457,15 +469,20 @@ Keep a pull request description in step with its branch. After a history push, a
 ### Diff
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s17-diff-dark.webp">
-  <img src="./docs/readme/s17-diff-light.webp" alt="The session diff for payments-api with one file viewed, a note on a line, and 1 note and Resolve in Review in the toolbar">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/review-diff-dark.webp">
+  <img src="./docs/readme/review-diff-light.webp" alt="The Diff of payments-api on hl/fix-duplicate-credit, branch vs main with 3 files +47 -12, 1 of 3 viewed, Unified and Split, an open note under line 26 of applyWebhook.ts, 1 note, and Resolve in Review and Rewrite history buttons">
 </picture>
 
-Read changes with syntax colors, word-level highlights, split or unified view and a **Viewed** tick per file, and quote a line into a note or a question for an agent. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**.
+Read changes with syntax colors, word-level highlights, a **Unified** or **Split** view and a **Viewed** tick per file (**1 of 3 viewed** here), and quote a line into a note or a question for an agent. A note shows under its line with **Resolve** and **Delete**, and **Resolve in Review** in the toolbar carries the notes into Review. The header offers the next step for the branch, such as **Rebase on main**, **Push N commits** or **Create PR**, next to **Rewrite history**.
 
 ### Write review
 
-Review someone else's pull request in a form under the diff: your line comments, the verdict and a summary, sent with **Approve**, **Request changes** or **Submit comments**. Outdated drafts are marked **Stale**.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/review-write-dark.webp">
+  <img src="./docs/readme/review-write-light.webp" alt="The Write review form under a diff: Line comments 1 for src/webhooks/applyWebhook.ts:26, a Verdict of Comment, Approve or Request changes, an optional Summary, and a Submit comments button" width="800">
+</picture>
+
+Review someone else's pull request in a form under the diff, opened with **Write review** on its pull request page. It lists your **Line comments**, a **Verdict** (**Comment**, **Approve** or **Request changes**) and an optional **Summary**. The button under it reads **Submit comments**, **Approve** or **Request changes** to match the verdict, and GitHub shows it as one review. Outdated drafts are marked **Stale**.
 
 ## The board
 
