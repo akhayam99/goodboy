@@ -1,11 +1,11 @@
 use super::error::WorktreeError;
 use super::git::{git, RunGit};
 use super::inspect::{common_git_dir_with, inspect_worktree_with};
+use super::status::{in_progress_operation, parse_working_tree};
 use super::types::{
     GitWorkingTree, WorktreeInspection, WorktreeRemovalMode, WorktreeRemovalReason,
     WorktreeRemovalResult,
 };
-use super::{in_progress_operation, parse_working_tree};
 use std::path::{Path, PathBuf};
 
 const REMOVE_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(300);

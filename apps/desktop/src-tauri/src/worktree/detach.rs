@@ -1,7 +1,7 @@
 use super::base::branch_integration;
 use super::error::WorktreeError;
 use super::git::git;
-use super::parse_status_v2;
+use super::status::parse_status_v2;
 use super::types::{GitWorkingTree, WorktreeDetachAssessment};
 use std::path::Path;
 

@@ -1,6 +1,6 @@
-use super::current_branch_name;
 use super::git::{commit_ref_exists, git};
 use super::inspect::parse_porcelain;
+use super::status::current_branch_name;
 use super::types::BranchIntegration;
 use std::path::Path;
 
