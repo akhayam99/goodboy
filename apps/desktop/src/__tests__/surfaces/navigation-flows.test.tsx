@@ -220,8 +220,10 @@ beforeEach(async () => {
   await resetStoryStore();
   consoleErrors = [];
   calls = new Set();
+  const logError = console.error;
   vi.spyOn(console, 'error').mockImplementation((...args: ReadonlyArray<unknown>) => {
     consoleErrors.push(args.map(String).join(' '));
+    logError(...args);
   });
 });
 

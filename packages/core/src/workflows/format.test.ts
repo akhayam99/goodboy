@@ -44,11 +44,14 @@ describe('parseFormattedWorkflow', () => {
   });
 
   it('coerces an unknown role to custom', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const json = JSON.stringify({
       steps: [{ name: 'Do', role: 'wizard', promptPrefix: '', expectedOutput: '' }],
     });
     const result = parseFormattedWorkflow(json);
     expect(result?.steps[0]?.role).toBe('custom');
+    expect(warn).toHaveBeenCalledWith('[roles] unknown role "wizard"; using custom');
+    warn.mockRestore();
   });
 
   it('keeps the shipped wireframe role', () => {
