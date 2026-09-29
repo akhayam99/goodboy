@@ -1,6 +1,7 @@
 import { listResolvePublicationsForSession, setResolvePublicationPhase } from '@goodboy/db';
 import type { HistoryShaMove, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { recordCommitMove } from '../resolve/commitStory';
 import type { GetFn, SetFn } from './types';
 
 type Params = {
@@ -12,6 +13,26 @@ type Params = {
 
 const moved = ({ map }: { readonly map: ReadonlyArray<HistoryShaMove> }) =>
   new Map(map.filter((entry) => entry.to !== entry.from).map((entry) => [entry.from, entry.to]));
+
+const foldedShas = ({
+  map,
+}: {
+  readonly map: ReadonlyArray<HistoryShaMove>;
+}): ReadonlySet<string> => {
+  const survivors = new Map<string, string>();
+  const folded = new Set<string>();
+  for (const entry of map) {
+    if (entry.to === null) {
+      continue;
+    }
+    if (!survivors.has(entry.to)) {
+      survivors.set(entry.to, entry.from);
+      continue;
+    }
+    folded.add(entry.from);
+  }
+  return folded;
+};
 
 const remapSha = ({
   sha,
@@ -57,6 +78,7 @@ export const remapRewrittenCommits = async ({
       activePublicationPreview: { ...state.activePublicationPreview, [sessionId]: null },
     }));
   }
+  const folded = foldedShas({ map });
   for (const row of get().sessionResolveThreads[sessionId] ?? []) {
     const shas = row.commitShas ?? [];
     const isTouched =
@@ -71,6 +93,16 @@ export const remapRewrittenCommits = async ({
         shas.map((sha) => remapSha({ sha, moves })).filter((sha): sha is string => sha !== null),
       ),
     );
+    const before = shas.at(-1);
+    const after = nextShas.at(-1);
+    if (before !== undefined && after !== undefined && before !== after) {
+      await recordCommitMove({
+        sessionId,
+        threadId: row.threadId,
+        fromSha: before,
+        isFolded: folded.has(before),
+      }).catch(() => undefined);
+    }
     await get().updateResolveThread({
       sessionId,
       threadId: row.threadId,

@@ -5,7 +5,7 @@ import {
 } from '../../../features/resolve/replySettings';
 import { appendAttribution } from '../../../shared/utils/attribution';
 
-export type CommitStory = {
+export type ReplyCommitStory = {
   readonly originalSha: string;
   readonly isFolded: boolean;
 };
@@ -17,7 +17,7 @@ export type ReplyContext = {
   readonly file?: string | null;
   readonly line?: number | null;
   readonly fixupOfSha?: string | null;
-  readonly commitStory?: CommitStory | null;
+  readonly commitStory?: ReplyCommitStory | null;
 };
 
 const commitUrlOf = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
@@ -37,7 +37,7 @@ const commitStoryOf = ({
   prUrl,
 }: {
   readonly sha: string;
-  readonly story: CommitStory | null | undefined;
+  readonly story: ReplyCommitStory | null | undefined;
   readonly prUrl: string | null;
 }): string => {
   const final = commitLink({ sha, prUrl });

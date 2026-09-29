@@ -31,6 +31,7 @@ import { UNKNOWN_PUBLICATION_REPO, isPublicationTargetBusy } from './publication
 import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import { approvedPublicationScope } from './approvedPublicationScope';
+import { readCommitStory } from './commitStory';
 import { isLocalNoteThread } from './isLocalNoteThread';
 import { reconcileIntegratedCommits } from './reconcileIntegratedCommits';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
@@ -244,6 +245,11 @@ export const preparePublication = async ({
       const closure = isRefused ? { reply: row.replyDraft ?? '' } : closureOf({ row });
       const isNote = isLocalNoteThread({ row });
       const hasHandReply = threadGit[row.threadId]?.userReply != null;
+      const story = await readCommitStory({ sessionId, threadId: row.threadId }).catch(() => null);
+      const commitStory =
+        story?.originalSha == null
+          ? null
+          : { originalSha: story.originalSha, isFolded: story.isFolded };
       return {
         row,
         body:
@@ -253,7 +259,7 @@ export const preparePublication = async ({
                 closure,
                 prUrl: target.prUrl,
                 settings,
-                context: contextOf({ row }),
+                context: { ...contextOf({ row }), commitStory },
               }),
         closes: !isRefused && threadOutcome({ row }) !== null,
         fingerprint: isNote ? null : await sourceFingerprint({ comments, threadId: row.threadId }),
