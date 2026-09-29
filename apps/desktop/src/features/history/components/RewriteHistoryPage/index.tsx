@@ -341,7 +341,7 @@ export const RewriteHistoryPage = ({ sessionId, worktreePath }: Props) => {
     );
   }
 
-  const baseBranch = chosenBase ?? graph?.baseRef.replace(/^origin\//, '') ?? 'its base branch';
+  const baseBranch = chosenBase ?? graph?.baseRef.replace(/^origin[/]/, '') ?? 'its base branch';
   const rewriteWithAgent = () =>
     attempt({
       key: 'rewrite',

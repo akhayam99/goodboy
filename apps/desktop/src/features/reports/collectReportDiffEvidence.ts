@@ -21,7 +21,10 @@ export type ReportDiffCollection = Readonly<{
 }>;
 
 type Params = Readonly<{
-  state: AppState;
+  state: Pick<
+    AppState,
+    'sessions' | 'sessionMounts' | 'sessionProjectMounts' | 'sessionActiveMount' | 'projects'
+  >;
   sessionId: SessionId;
   mountIds: ReadonlyArray<MountId>;
 }>;

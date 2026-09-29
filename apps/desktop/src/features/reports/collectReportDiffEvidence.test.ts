@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { MountId, ProjectId, SessionId } from '@goodboy/types';
-import type { AppState } from '../../store/types';
+import type { MountId, SessionId, SessionProjectMount } from '@goodboy/types';
+import { aProject, aSession } from '@goodboy/types/testing';
 
 const worktree = vi.hoisted(() => ({
   worktreeChangedFiles: vi.fn(
@@ -23,34 +23,41 @@ import { collectReportDiffEvidence } from './collectReportDiffEvidence';
 const SESSION_ID = 'session-ledger' as SessionId;
 const MOUNT_ID = 'mount-ledger' as MountId;
 
+type CollectState = Parameters<typeof collectReportDiffEvidence>[0]['state'];
+
 const stateWith = ({
   mountBase,
   projectBase,
 }: {
   readonly mountBase: string | null;
   readonly projectBase: string | null;
-}): AppState =>
-  ({
-    sessions: [{ id: SESSION_ID }],
+}): CollectState => {
+  const project = aProject({ baseBranch: projectBase });
+  const mount: SessionProjectMount = {
+    mountId: MOUNT_ID,
+    sessionId: SESSION_ID,
+    projectId: project.id,
+    mountName: 'ledger-core',
+    worktreePath: '/w/ledger',
+    lastWorktreePath: '/w/ledger',
+    repoRoot: '/repo/ledger-core',
+    branch: 'ak/fix-rounding',
+    baseBranch: mountBase,
+    parallelIndex: 0,
+    isAttached: true,
+    diskState: 'present',
+    revision: 1,
+  };
+  return {
+    sessions: [aSession({ id: SESSION_ID })],
     sessionMounts: {},
     sessionActiveMount: {},
-    projects: [{ id: 'project-ledger', baseBranch: projectBase }],
-    sessionProjectMounts: {
-      [SESSION_ID]: [
-        {
-          mountId: MOUNT_ID,
-          projectId: 'project-ledger' as ProjectId,
-          mountName: 'ledger-core',
-          branch: 'ak/fix-rounding',
-          baseBranch: mountBase,
-          worktreePath: '/w/ledger',
-          revision: 1,
-        },
-      ],
-    },
-  }) as unknown as AppState;
+    projects: [project],
+    sessionProjectMounts: { [SESSION_ID]: [mount] },
+  };
+};
 
-const collect = (state: AppState) =>
+const collect = (state: CollectState) =>
   collectReportDiffEvidence({ state, sessionId: SESSION_ID, mountIds: [MOUNT_ID] });
 
 beforeEach(() => {
