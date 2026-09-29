@@ -15,6 +15,7 @@ type Params = {
   readonly shouldMatchTriggerWidth: boolean;
   readonly isAtLeastTriggerWidth?: boolean;
   readonly viewportMargin?: number;
+  readonly maxWidth?: number;
 };
 
 type ResolveDesiredLeftParams = {
@@ -27,6 +28,14 @@ const DEFAULT_VIEWPORT_MARGIN = 8;
 const DROPDOWN_GAP = 4;
 const MIN_DROPDOWN_HEIGHT = 160;
 const MIN_TRIGGER_MATCH_WIDTH = 160;
+const BOTTOM_INSET_PROPERTY = '--dropdown-bottom-inset';
+
+const readBottomInset = (): number => {
+  const parsed = Number.parseFloat(
+    getComputedStyle(document.documentElement).getPropertyValue(BOTTOM_INSET_PROPERTY),
+  );
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
 const resolveDesiredLeft = ({ rect, popupWidth, align }: ResolveDesiredLeftParams): number => {
   if (align === 'end') {
@@ -48,6 +57,7 @@ export const useDropdownDirection = ({
   shouldMatchTriggerWidth,
   isAtLeastTriggerWidth = false,
   viewportMargin = DEFAULT_VIEWPORT_MARGIN,
+  maxWidth,
 }: Params): CSSProperties | undefined => {
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined);
 
@@ -74,7 +84,7 @@ export const useDropdownDirection = ({
       const maxLeft = Math.max(window.innerWidth - popupWidth - viewportMargin, viewportMargin);
       const left = Math.min(Math.max(desiredLeft, viewportMargin), maxLeft);
       const spaceBelow = Math.max(
-        window.innerHeight - rect.bottom - DROPDOWN_GAP - viewportMargin,
+        window.innerHeight - rect.bottom - DROPDOWN_GAP - viewportMargin - readBottomInset(),
         0,
       );
       const spaceAbove = Math.max(rect.top - DROPDOWN_GAP - viewportMargin, 0);
@@ -93,7 +103,7 @@ export const useDropdownDirection = ({
         top: direction === 'down' ? rect.bottom + DROPDOWN_GAP : undefined,
         bottom: direction === 'up' ? window.innerHeight - rect.top + DROPDOWN_GAP : undefined,
         left,
-        maxWidth: viewportWidth,
+        maxWidth: maxWidth === undefined ? viewportWidth : Math.min(maxWidth, viewportWidth),
         maxHeight,
         ...(shouldMatchTriggerWidth ? { width: popupWidth } : {}),
         ...(isAtLeastTriggerWidth ? { minWidth: Math.min(rect.width, viewportWidth) } : {}),
@@ -118,6 +128,7 @@ export const useDropdownDirection = ({
     expectedHeight,
     expectedWidth,
     isAtLeastTriggerWidth,
+    maxWidth,
     open,
     popupRef,
     shouldMatchTriggerWidth,

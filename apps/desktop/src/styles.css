@@ -588,6 +588,7 @@ html[data-theme='light'] {
 
 :root {
   --titlebar-inset: 0px;
+  --dropdown-bottom-inset: 36px;
 }
 
 html {

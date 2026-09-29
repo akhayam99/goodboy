@@ -68,6 +68,8 @@ export const LISTBOX_SEARCH_THRESHOLD = 8;
 
 const LISTBOX_VIEWPORT_MARGIN = 12;
 
+const LISTBOX_MAX_WIDTH = 360;
+
 const NO_VALUES: ReadonlyArray<never> = [];
 
 const selectedValuesOf = <T extends ListboxValue>(props: ListboxProps<T>): ReadonlyArray<T> => {
@@ -113,7 +115,8 @@ export const Listbox = <T extends ListboxValue>(props: ListboxProps<T>) => {
   const dropdown = useDropdown({
     disabled,
     align,
-    width: popupWidth === 'trigger' ? undefined : 'w-max max-w-90',
+    width: popupWidth === 'trigger' ? undefined : 'w-max',
+    maxWidth: LISTBOX_MAX_WIDTH,
     expectedHeight: 320,
     expectedWidth: 240,
     openEvent,

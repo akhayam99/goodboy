@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, RefObject } from 'react';
 import { cn } from '../cn';
+import { usePopoverPortalTarget } from '../PopoverPortalContext';
 import { useDropdownDirection } from '../useDropdownDirection';
 
 type Align = 'start' | 'end' | 'center';
@@ -15,6 +16,7 @@ type Params = {
   readonly isEscapeEnabled?: boolean;
   readonly isAtLeastTriggerWidth?: boolean;
   readonly viewportMargin?: number;
+  readonly maxWidth?: number;
 };
 
 export type DropdownController = {
@@ -38,6 +40,7 @@ export const useDropdown = ({
   isEscapeEnabled = true,
   isAtLeastTriggerWidth = false,
   viewportMargin,
+  maxWidth,
 }: Params): DropdownController => {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,6 +56,7 @@ export const useDropdown = ({
     shouldMatchTriggerWidth: width == null,
     isAtLeastTriggerWidth,
     viewportMargin,
+    maxWidth,
   });
 
   useEffect(() => {
@@ -107,7 +111,9 @@ export const useDropdown = ({
     }
     setOpen((previous) => !previous);
   }, [disabled]);
-  const portalTarget = containerRef.current?.closest('dialog[open]') ?? document.body;
+  const layerTarget = usePopoverPortalTarget();
+  const portalTarget =
+    layerTarget ?? containerRef.current?.closest('dialog[open]') ?? document.body;
 
   return {
     open,

@@ -649,6 +649,11 @@ is a precedence chain (each layer must sit above the one below).
 | `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                                 |
 | (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                                         |
 
+A popover opened from inside the command palette does not need a higher token.
+`PopoverPortalProvider` gives `useDropdown` a portal target inside the
+palette's own layer, so the popover stacks at `z-popover` within the palette's
+`z-command-palette` context and renders above its panel.
+
 ## Primitives
 
 The register taxonomy, and the rule that all registers share one family, live
@@ -675,7 +680,11 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
   in 120ms (opacity and a 0.98 scale, `animate-popover-in`). It keeps 12px from
   the viewport edge. `popupWidth="trigger"` fixes the width to the trigger's
   (160px at least) so a long title truncates instead of widening the popover;
-  use it with an `isBlock` trigger in a drawer or a form.
+  use it with an `isBlock` trigger in a drawer or a form. The 360 cap is a
+  `maxWidth` passed to `useDropdown`, because the inline `max-width` the hook
+  writes would beat a `max-w-*` class. Popovers stop above the status bar: the
+  hook subtracts `--dropdown-bottom-inset` (36px, set in `styles.css`) from the
+  room below the trigger, so a popover shrinks or flips instead of covering it.
 - **Option**: 32px on one line, or two lines with an 11/16 faint description;
   a 16px leading slot, `text-body`, meta on the right. The cursor, mouse or
   keyboard, is `bg-selected`; the current value is a check on the right and

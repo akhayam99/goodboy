@@ -175,4 +175,44 @@ describe('useDropdown', () => {
     expect(result.current.popupStyle).toMatchObject({ width: 160 });
     trigger.remove();
   });
+
+  it('caps the popup at the requested max width, never past the viewport', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
+    const { result } = renderHook(() => useDropdown({ width: 'w-max', maxWidth: 360 }));
+
+    act(() => {
+      result.current.containerRef.current = trigger as HTMLDivElement;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ maxWidth: 360 });
+    trigger.remove();
+  });
+
+  it('stops the popup above the bottom inset instead of covering the status bar', () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
+    document.documentElement.style.setProperty('--dropdown-bottom-inset', '36px');
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+    trigger.getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 40, y: 100, width: 60, height: 28 });
+    const { result } = renderHook(() =>
+      useDropdown({ expectedHeight: 220, expectedWidth: 240, width: 'w-60' }),
+    );
+
+    act(() => {
+      result.current.containerRef.current = trigger as HTMLDivElement;
+      result.current.toggle();
+    });
+
+    expect(result.current.popupStyle).toMatchObject({ top: 132, maxHeight: 592 });
+    document.documentElement.style.removeProperty('--dropdown-bottom-inset');
+    trigger.remove();
+  });
 });

@@ -39,7 +39,7 @@ const ChatListRowView = ({
         isSelected={isSelected}
         onOpen={() => onSelect(chatId)}
         frameClassName="group"
-        className="flex min-w-0 flex-col gap-0.5 px-2 py-1.5"
+        className="flex min-w-0 flex-col gap-0.5 py-1.5 pl-4 pr-2"
       >
         <span className="relative flex min-w-0 items-baseline gap-2">
           {isStreaming ? (
@@ -47,14 +47,14 @@ const ChatListRowView = ({
               tone="info"
               pulsing
               ariaLabel="Answering"
-              className="absolute -left-1.5 top-1/2 -translate-y-1/2"
+              className="absolute -left-3 top-1/2 -translate-y-1/2"
             />
           ) : null}
           {!isStreaming && isUnread ? (
             <StatusDot
               tone="warning"
               ariaLabel="New reply"
-              className="absolute -left-1.5 top-1/2 -translate-y-1/2"
+              className="absolute -left-3 top-1/2 -translate-y-1/2"
             />
           ) : null}
           <span

@@ -121,6 +121,24 @@ describe('ChatList', () => {
     expect(within(quiet as HTMLElement).queryByRole('img')).toBeNull();
   });
 
+  it('keeps the dot in the row padding so the title never moves or sits under it', () => {
+    store.chatStreams = { 'chat-consent': {} };
+    store.unreadChatIds = ['chat-changes'];
+    renderList();
+
+    const dotOf = (chatId: string, name: string) =>
+      within(document.querySelector(`[data-chat-row="${chatId}"]`) as HTMLElement).getByRole(
+        'img',
+        { name },
+      );
+    expect(dotOf('chat-consent', 'Answering').className).toContain('-left-3');
+    expect(dotOf('chat-changes', 'New reply').className).toContain('-left-3');
+    const rowPadding = (chatId: string) =>
+      document.querySelector(`[data-chat-row="${chatId}"] .pl-4`)?.className ?? '';
+    expect(rowPadding('chat-consent')).toContain('pl-4');
+    expect(rowPadding('chat-lunch')).toContain('pl-4');
+  });
+
   it('dims idle chats and shows how long they have been quiet', () => {
     renderList();
 

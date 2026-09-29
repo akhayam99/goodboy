@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { cn } from '@goodboy/ui';
+import { PopoverPortalProvider, cn } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { PALETTE_MODES } from '../../paletteModes';
@@ -34,6 +34,7 @@ export const PaletteOverlay = ({ mode = 'commands', initialQuery = '', onClose }
   const [modeId, setModeId] = useState<PaletteModeId>(() => registered(mode));
   const [query, setQuery] = useState(initialQuery);
   const [scope, setScope] = useState<PaletteScope | null>(scopeNow);
+  const [layer, setLayer] = useState<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setModeId(registered(mode));
@@ -54,36 +55,41 @@ export const PaletteOverlay = ({ mode = 'commands', initialQuery = '', onClose }
   const Body = active.Body;
 
   return (
-    <div className="fixed inset-0 z-command-palette flex items-start justify-center px-4 pt-16">
+    <div
+      ref={setLayer}
+      className="fixed inset-0 z-command-palette flex items-start justify-center px-4 pt-16"
+    >
       <div
         aria-hidden
         data-testid="palette-scrim"
         className="absolute inset-0 bg-scrim motion-safe:animate-fade-in"
         onMouseDown={onClose}
       />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={active.label}
-        className={cn(
-          'relative flex max-h-[calc(100vh-8rem)] w-full flex-col overflow-hidden rounded-lg border border-border bg-floating shadow-lg motion-safe:animate-studio-in',
-          active.widthClass,
-        )}
-      >
-        <Body
-          query={query}
-          onQueryChange={setQuery}
-          scope={scope}
-          onClearScope={clearScope}
-          onSwitchMode={switchMode}
-          onClose={onClose}
-          modeSwitch={
-            PALETTE_MODES.length > 1 ? (
-              <ModeSwitch modes={PALETTE_MODES} value={modeId} onChange={setModeId} />
-            ) : null
-          }
-        />
-      </div>
+      <PopoverPortalProvider value={layer}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={active.label}
+          className={cn(
+            'relative flex max-h-[calc(100vh-8rem)] w-full flex-col overflow-hidden rounded-lg border border-border bg-floating shadow-lg motion-safe:animate-studio-in',
+            active.widthClass,
+          )}
+        >
+          <Body
+            query={query}
+            onQueryChange={setQuery}
+            scope={scope}
+            onClearScope={clearScope}
+            onSwitchMode={switchMode}
+            onClose={onClose}
+            modeSwitch={
+              PALETTE_MODES.length > 1 ? (
+                <ModeSwitch modes={PALETTE_MODES} value={modeId} onChange={setModeId} />
+              ) : null
+            }
+          />
+        </div>
+      </PopoverPortalProvider>
     </div>
   );
 };
