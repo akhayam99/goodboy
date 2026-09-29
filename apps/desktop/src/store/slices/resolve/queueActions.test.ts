@@ -16,7 +16,7 @@ import { createResolveSlice } from './index';
 import { EMPTY_REFUSAL_REPLY, REFUSAL_AFTER_INTEGRATION } from './refuseResolveQueueItem';
 import { resolveInitialState } from './state';
 import { threadOutcome } from './threadOutcome';
-import { RESOLVE_ONLY_AFTER_INTEGRATION } from './resolveWithoutReply';
+import { RESOLVE_ONLY_AFTER_INTEGRATION } from './settleItemAnswered';
 import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
