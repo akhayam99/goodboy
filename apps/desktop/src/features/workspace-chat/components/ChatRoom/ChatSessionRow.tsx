@@ -25,7 +25,7 @@ export const ChatSessionRow = ({ entry, onOpen }: Props) => {
         ariaLabel={SESSION_STAGE_META[entry.stage].label}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-label font-medium text-foreground">{title}</span>
+        <span className="truncate text-label text-foreground">{title}</span>
         <span className="truncate text-secondary text-faint-foreground">
           {[SESSION_STAGE_META[entry.stage].label, `${ORIGIN[entry.link.kind]} ${age}`.trim()].join(
             ' · ',
