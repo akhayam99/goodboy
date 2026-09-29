@@ -2,12 +2,14 @@ import { useState, type KeyboardEvent } from 'react';
 import { ArrowUp, Square } from 'lucide-react';
 import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { pluralize } from '../../../../shared/utils/pluralize';
 import type { ChatRouting } from '../../chatRouting';
 import { ChatRoutingPicker } from './ChatRoutingPicker';
 
 type Props = {
   readonly placeholder: string;
   readonly routing: ChatRouting;
+  readonly projectCount: number;
   readonly isStreaming: boolean;
   readonly isStopping: boolean;
   readonly isAutoFocused?: boolean;
@@ -15,6 +17,8 @@ type Props = {
   readonly onStop: () => void;
   readonly onRouting: (routing: ChatRouting) => void;
 };
+
+const SEND_HINT = 'Enter to send · Shift+Enter for a new line';
 
 const PRIMARY = tintClasses('primary').solid;
 
@@ -24,6 +28,7 @@ const ROUND_BUTTON =
 export const ChatComposer = ({
   placeholder,
   routing,
+  projectCount,
   isStreaming,
   isStopping,
   isAutoFocused = false,
@@ -66,7 +71,7 @@ export const ChatComposer = ({
         <ChatRoutingPicker routing={routing} onChange={onRouting} />
         <span className="flex-1" />
         <span className="hidden text-secondary text-faint-foreground @2xl/chat:inline">
-          Enter to send · Shift+Enter for a new line
+          {`Read-only · ${pluralize(projectCount, 'project')}`}
         </span>
         {isStreaming ? (
           <Tooltip content="Stop the answer">
@@ -84,7 +89,7 @@ export const ChatComposer = ({
             </button>
           </Tooltip>
         ) : (
-          <Tooltip content="Send">
+          <Tooltip content={SEND_HINT}>
             <button
               type="button"
               aria-label="Send"

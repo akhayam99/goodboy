@@ -6,7 +6,6 @@ import type { ChatId, ChatMessage, ChatMessageId, ChatSummary, WorkspaceId } fro
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { sessionPlace, useAppStore } from '../../../../store';
 import type { ChatHandoff } from '../../chatHandoff';
-import { chatModelLabel } from '../../chatModelLabel';
 import { chatSuggestions } from '../../chatSuggestions';
 import type { ChatRouting } from '../../chatRouting';
 import { defaultChatModel } from '../../defaultChatModel';
@@ -120,7 +119,6 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
     setWork((current) => ({ anchorMessageId, key: (current?.key ?? 0) + 1 }));
   const openSession = (handoff: ChatHandoff): void =>
     navigate({ to: sessionPlace({ sessionId: handoff.sessionId }) });
-  const modelLabel = chatModelLabel({ provider: model.provider, model: model.model });
 
   const main = (
     <section
@@ -129,10 +127,6 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
     >
       <ChatHeader
         title={chat?.title ?? NEW_CHAT_HEADING}
-        workspaceName={workspaceName}
-        projectCount={projectNames.length}
-        provider={model.provider}
-        modelLabel={modelLabel}
         action={
           chat === null ? null : (
             <Button
@@ -170,6 +164,7 @@ export const ChatRoom = ({ workspaceId, chat, onCreated, handoffs, onHandoff }: 
         <ChatComposer
           placeholder={`Ask anything about ${workspaceName}`}
           routing={model}
+          projectCount={projectNames.length}
           isStreaming={stream !== undefined}
           isStopping={stream?.isStopping === true}
           isAutoFocused={chatId === null}

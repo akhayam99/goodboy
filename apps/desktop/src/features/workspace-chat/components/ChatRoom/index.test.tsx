@@ -69,6 +69,7 @@ vi.mock('../../activeChatBackend', () => ({
   },
 }));
 
+import { tooltipTextOf } from '../../../../__tests__/helpers/tooltip';
 import { ChatRoom } from './index';
 
 type RoomParams = {
@@ -292,6 +293,47 @@ describe('ChatRoom', () => {
       expect(startHere.classList.contains(token)).toBe(true);
     }
     expect(copy.classList.contains('text-muted-foreground')).toBe(false);
+  });
+
+  it('keeps the header to the title and Start work', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    const header = screen.getByRole('banner');
+    expect(within(header).getByRole('heading', { name: CHAT.title })).toBeDefined();
+    expect(within(header).getByRole('button', { name: 'Start work' })).toBeDefined();
+    expect(within(header).queryByText(/Read-only/)).toBeNull();
+    expect(within(header).queryByText(/Harborline/)).toBeNull();
+    expect(within(header).queryByText(/Sonnet/)).toBeNull();
+  });
+
+  it('puts the read-only hint in the composer and the keys in the Send tooltip', () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    expect(screen.getByText('Read-only · 2 projects')).toBeDefined();
+    expect(screen.queryByText(/Shift\+Enter/)).toBeNull();
+    fireEvent.change(screen.getByRole('textbox', { name: 'Message' }), { target: { value: 'Hi' } });
+    expect(tooltipTextOf({ element: screen.getByRole('button', { name: 'Send' }) })).toBe(
+      'Enter to send · Shift+Enter for a new line',
+    );
+  });
+
+  it('names the model and effort under the answer that used them', () => {
+    store.chatMessages = {
+      [CHAT_ID]: [
+        ANSWERED[0]!,
+        {
+          ...ANSWERED[1]!,
+          provider: 'codex',
+          model: 'gpt-5.6-sol',
+          effort: 'high',
+        } as ChatMessage,
+      ],
+    };
+    renderRoom({ chat: CHAT });
+
+    expect(screen.getByText('GPT-5.6 Sol · High')).toBeDefined();
   });
 
   it('keeps Start work off until an answer is done', () => {
