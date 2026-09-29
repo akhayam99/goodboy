@@ -10,7 +10,7 @@ import {
   Skeleton,
   Textarea,
 } from '@goodboy/ui';
-import type { ChatMessage, ChatMessageId, ChatSummary } from '@goodboy/types';
+import type { ChatMessage, ChatMessageId, ChatSummary, ProjectId, SessionId } from '@goodboy/types';
 import { sessionTitle } from '../../../session/sessionTitle';
 import { useAppStore } from '../../../../store';
 import { activeChatBackend } from '../../activeChatBackend';
@@ -19,7 +19,8 @@ import { startWorkFromChat } from '../../startWorkFromChat';
 import { summarizeChatForWork } from '../../summarizeChatForWork';
 import type { WorkBrief } from '../../workBrief';
 import { BriefItems } from './BriefItems';
-import { BriefPicker } from './BriefPicker';
+import { ProjectField } from './ProjectField';
+import { SessionField } from './SessionField';
 
 type Mode = 'new' | 'add';
 
@@ -68,20 +69,18 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   );
   const sessions = useMemo(
     () =>
-      allSessions
-        .filter(
-          (session) =>
-            session.workspaceId === chat.workspaceId &&
-            session.archivedAt === undefined &&
-            session.deletedAt === undefined,
-        )
-        .map((session) => ({ value: session.id, label: sessionTitle({ session }) })),
+      allSessions.filter(
+        (session) =>
+          session.workspaceId === chat.workspaceId &&
+          session.archivedAt === undefined &&
+          session.deletedAt === undefined,
+      ),
     [allSessions, chat.workspaceId],
   );
   const [brief, setBrief] = useState<WorkBrief | null>(null);
-  const [projectName, setProjectName] = useState<string | null>(null);
+  const [projectIds, setProjectIds] = useState<ReadonlyArray<ProjectId>>([]);
   const [mode, setMode] = useState<Mode>('new');
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<SessionId | null>(null);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,7 +97,11 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
         return;
       }
       setBrief(next);
-      setProjectName(next.project);
+      setProjectIds(
+        projects
+          .filter((project) => next.projects.includes(project.name))
+          .map((project) => project.id),
+      );
     });
     return () => {
       isCurrent = false;
@@ -108,7 +111,7 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
   const patch = (next: Partial<WorkBrief>): void =>
     setBrief((current) => (current === null ? current : { ...current, ...next }));
 
-  const target = sessions.find((session) => session.value === sessionId) ?? null;
+  const target = sessions.find((session) => session.id === sessionId) ?? null;
   const canStart =
     brief !== null &&
     brief.goal.trim() !== '' &&
@@ -122,21 +125,24 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
     setIsStarting(true);
     setError(null);
     try {
-      const projectId = projects.find((project) => project.name === projectName)?.id ?? null;
       const title = brief.title.trim() === '' ? chat.title : brief.title.trim();
+      const pickedProjects = projects.filter((project) => projectIds.includes(project.id));
       const started = await startWorkFromChat({
         workspaceId: chat.workspaceId,
-        brief: { ...brief, title, project: projectName },
+        brief: { ...brief, title, projects: pickedProjects.map((project) => project.name) },
         target:
           mode === 'add' && target !== null
-            ? { kind: 'add', sessionId: target.value }
-            : { kind: 'new', projectId },
+            ? { kind: 'add', sessionId: target.id }
+            : { kind: 'new', projectIds: pickedProjects.map((project) => project.id) },
         createSession,
         sendTurn,
       });
       onDone({
         id: crypto.randomUUID(),
-        label: mode === 'add' && target !== null ? `Added to ${target.label}` : 'Started a session',
+        label:
+          mode === 'add' && target !== null
+            ? `Added to ${sessionTitle({ session: target })}`
+            : 'Started a session',
         title,
         sessionId: started,
       });
@@ -199,16 +205,12 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               removeLabel={(item) => `Remove ${item}`}
               onRemove={(item) => patch({ files: brief.files.filter((entry) => entry !== item) })}
             />
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-label text-muted-foreground">Project</span>
-              <BriefPicker
-                label="Project"
-                value={projectName}
-                options={projects.map((project) => ({ value: project.name, label: project.name }))}
-                placeholder="No project"
-                onChange={setProjectName}
-              />
-            </div>
+            {mode === 'new' ? (
+              <div className="flex items-start justify-between gap-4">
+                <span className="text-label text-muted-foreground">Project</span>
+                <ProjectField projects={projects} value={projectIds} onChange={setProjectIds} />
+              </div>
+            ) : null}
             <div className="flex flex-col gap-1.5">
               <span className="text-label text-muted-foreground">Start as</span>
               <SegmentedTabs
@@ -221,11 +223,10 @@ export const TurnIntoWorkPanel = ({ chat, messages, anchorMessageId, onClose, on
               />
               <p className="text-secondary text-faint-foreground">{MODE_COPY[mode].hint}</p>
               {mode === 'add' ? (
-                <BriefPicker
-                  label="Session"
+                <SessionField
+                  sessions={sessions}
+                  projects={projects}
                   value={sessionId}
-                  options={sessions}
-                  placeholder="Pick a session"
                   onChange={setSessionId}
                 />
               ) : null}

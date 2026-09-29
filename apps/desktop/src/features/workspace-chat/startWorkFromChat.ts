@@ -3,7 +3,7 @@ import type { AppStore } from '../../store/store';
 import { workPromptOf, type WorkBrief } from './workBrief';
 
 export type WorkTarget =
-  | { readonly kind: 'new'; readonly projectId: ProjectId | null }
+  | { readonly kind: 'new'; readonly projectIds: ReadonlyArray<ProjectId> }
   | { readonly kind: 'add'; readonly sessionId: SessionId };
 
 type Params = {
@@ -26,13 +26,15 @@ export const startWorkFromChat = async ({
     await sendTurn({ sessionId: target.sessionId, content: `${brief.title}\n\n${prompt}` });
     return target.sessionId;
   }
+  const [primaryProjectId, ...additionalProjectIds] = target.projectIds;
   const { session } = await createSession({
     workspaceId,
     goal: brief.goal,
     title: brief.title,
     firstAgentKind: 'generic',
     kickoffPrompt: prompt,
-    ...(target.projectId !== null && { projectId: target.projectId }),
+    ...(primaryProjectId !== undefined && { projectId: primaryProjectId }),
+    ...(additionalProjectIds.length > 0 && { additionalProjectIds }),
   });
   return session.id;
 };

@@ -23,7 +23,7 @@ export const workBriefSystemPrompt = ({ projectNames }: ProjectsParams): string 
     '"goal": two or three plain sentences: what to change and why.',
     '"know": up to three short facts the chat established.',
     '"files": up to four project-relative paths the chat named, with a line number when it gave one.',
-    `"project": the one project the work belongs to, one of: ${projectNames.join(', ')}.`,
+    `"projects": the projects the work touches, an array that may be empty, each one of: ${projectNames.join(', ')}.`,
   ].join('\n');
 
 type TranscriptParams = Pick<Params, 'messages'>;
