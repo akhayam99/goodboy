@@ -587,6 +587,28 @@ export {
 } from './github';
 
 export {
+  GITLAB_THREAD_PREFIX,
+  LOCAL_NOTE_NO_REPLY,
+  REVIEW_SOURCE_LABEL,
+  githubReviewSource,
+  gitlabDiscussionId,
+  gitlabReviewSource,
+  gitlabThreadId,
+  gitlabThreadsOf,
+  groupReviewComments,
+  localReviewSource,
+  type GitlabReviewDiscussion,
+  type GitlabReviewNote,
+  type GitlabReviewTransport,
+  type ReviewSource,
+  type ReviewSourceCapabilities,
+  type ReviewSourceKind,
+  type ReviewSourceReply,
+  type ReviewSourceResolution,
+  type ReviewSourceThread,
+} from './review-source';
+
+export {
   parsePlannerOutput,
   PlannerParseError,
   PLANNER_SYSTEM_PROMPT,
