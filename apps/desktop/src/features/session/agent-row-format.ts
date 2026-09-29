@@ -1,18 +1,9 @@
 import type { TelemetryRecord } from '@goodboy/types';
-import { getModelDescriptor } from '@goodboy/core';
 import { formatUsd } from '@goodboy/ui';
 
 export { formatTokens } from '@goodboy/ui';
 
 export const formatCost = formatUsd;
-
-export const shortModel = (model: string): string => {
-  const descriptor = getModelDescriptor({ id: model });
-  if (descriptor != null) {
-    return descriptor.label;
-  }
-  return model;
-};
 
 export const computeLatestTelemetryByAgentId = (
   agentIds: ReadonlyArray<{ id: string; runId?: string }>,

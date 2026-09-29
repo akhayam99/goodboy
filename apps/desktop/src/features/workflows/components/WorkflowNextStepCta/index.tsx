@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { AlertTriangle, Play } from 'lucide-react';
 import { ConfirmPopover, cn, tintClasses } from '@goodboy/ui';
-import { classifyWorkflowChain, getModelDescriptor } from '@goodboy/core';
+import { classifyWorkflowChain } from '@goodboy/core';
 import type {
   Agent,
   EffortLevel,
@@ -12,6 +12,7 @@ import type {
   Workflow,
 } from '@goodboy/types';
 import { classifyStep } from '../../../../features/session/agent-kind';
+import { modelLabel } from '../../../chat/utils/chat-constants';
 import { resolveStepRouting } from '../../resolveStepRouting';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
 import type { WorkflowBlockReason } from '../../advanceGate';
@@ -134,7 +135,7 @@ export const WorkflowNextStepCta = ({
                     tintClasses('primary').hoverBg,
                   ),
             )}
-            aria-label={`Run next step: ${next.name} (${getModelDescriptor({ id: routing.model })?.label ?? routing.model}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
+            aria-label={`Run next step: ${next.name} (${modelLabel(routing.model, routing.provider)}, ${effortText} effort${stepVerbosity ? `, ${stepVerbosity} verbosity` : ''})${blockReason != null ? `. Blocked: ${WORKFLOW_BLOCK_COPY[blockReason]}` : ''}`}
           >
             {blockReason != null ? (
               <AlertTriangle

@@ -54,8 +54,8 @@ const unknownModelLabel = (id: string): string => {
   return humanizeUnknownId(id);
 };
 
-export const modelLabel = (id: string): string =>
-  getModelDescriptor({ id })?.label ?? unknownModelLabel(id);
+export const modelLabel = (id: string, provider: ProviderId | null = null): string =>
+  getModelDescriptor({ id, provider })?.label ?? unknownModelLabel(id);
 
 export const modelTier = (model: string): ModelCostTier => {
   const descriptor = getModelDescriptor({ id: model });

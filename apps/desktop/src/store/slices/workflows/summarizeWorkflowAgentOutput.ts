@@ -8,7 +8,7 @@ import {
   routeTaskModel,
   withFailureCooldown,
 } from '../../../features/providers/taskModelRouting';
-import { shortModel } from '../../../features/session/agent-row-format';
+import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
 import { summarizeAgentOutput, type SummarizeAgentOutputResult } from '../../summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
@@ -40,7 +40,7 @@ type UnavailableParams = {
 };
 
 const modelLabelFor = (taskModel: TaskModelPreference): string =>
-  `${taskModel.providerId}/${shortModel(taskModel.model)}`;
+  `${taskModel.providerId}/${modelLabel(taskModel.model, taskModel.providerId)}`;
 
 const notifyModelUnavailable = ({
   get,

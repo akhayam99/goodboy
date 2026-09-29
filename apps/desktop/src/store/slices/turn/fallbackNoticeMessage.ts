@@ -1,4 +1,5 @@
-import { getModelDescriptor, type TurnFailureKind, type TurnFallbackPlan } from '@goodboy/core';
+import type { TurnFailureKind, TurnFallbackPlan } from '@goodboy/core';
+import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import type { ProviderId } from '@goodboy/types';
 
 type Params = {
@@ -31,7 +32,6 @@ const reasonFor = ({ failure }: { readonly failure: TurnFailureKind }): string =
 };
 
 export const fallbackNoticeMessage = ({ provider, failure, plan }: Params): string => {
-  const label =
-    getModelDescriptor({ id: plan.model, provider: plan.provider })?.label ?? plan.model;
+  const label = modelLabel(plan.model, plan.provider);
   return `${provider} ${reasonFor({ failure })}. retrying on ${plan.provider} ${label}.`;
 };
