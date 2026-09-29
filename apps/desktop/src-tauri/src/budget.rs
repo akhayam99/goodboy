@@ -224,6 +224,32 @@ pub struct BudgetCheckResult {
     pub exceeded: bool,
     #[serde(rename = "overThreshold")]
     pub over_threshold: bool,
+    #[serde(rename = "spentUsd")]
+    pub spent_usd: f64,
+    #[serde(rename = "capUsd")]
+    pub cap_usd: Option<f64>,
+    #[serde(rename = "thresholdPct")]
+    pub threshold_pct: Option<f64>,
+    #[serde(rename = "windowStartMs")]
+    pub window_start_ms: i64,
+    #[serde(rename = "windowEndMs")]
+    pub window_end_ms: i64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ProviderSpendPeriods {
+    #[serde(rename = "todayUsd")]
+    pub today_usd: f64,
+    #[serde(rename = "last7DaysUsd")]
+    pub last_7_days_usd: f64,
+    #[serde(rename = "thisMonthUsd")]
+    pub this_month_usd: f64,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ProviderBudgetOverview {
+    pub status: BudgetCheckResult,
+    pub periods: ProviderSpendPeriods,
 }
 
 fn current_month_window_ms() -> (i64, i64) {
@@ -232,7 +258,10 @@ fn current_month_window_ms() -> (i64, i64) {
         .duration_since(UNIX_EPOCH)
         .expect("system clock before epoch")
         .as_millis() as i64;
+    month_window_at_ms(now_ms)
+}
 
+fn month_window_at_ms(now_ms: i64) -> (i64, i64) {
     let now_s = now_ms / 1000;
     let (year, month) = crate::util::epoch_seconds_to_year_month(now_s);
 
@@ -289,12 +318,7 @@ pub async fn budget_emit_alerts(
     let mut created: Vec<BudgetAlert> = Vec::new();
 
     if let Some((_rule_id, cap_usd, threshold_pct)) = provider_rule {
-        let spent: f64 = conn.query_row(
-            "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records
-              WHERE provider = ?1 AND recorded_at >= ?2 AND recorded_at <= ?3",
-            rusqlite::params![provider, start_ms, end_ms],
-            |row| row.get(0),
-        )?;
+        let spent = provider_spend_between(&conn, provider, start_ms, end_ms)?;
 
         let pct = if cap_usd > 0.0 {
             (spent / cap_usd) * 100.0
@@ -311,12 +335,7 @@ pub async fn budget_emit_alerts(
         };
 
         if let Some(kind) = alert_kind {
-            let already: i64 = conn.query_row(
-                "SELECT COUNT(*) FROM budget_alerts WHERE kind = ?1 AND provider = ?2 AND dismissed_at IS NULL",
-                rusqlite::params![kind, provider],
-                |row| row.get(0),
-            )?;
-            if already == 0 {
+            if !has_open_provider_alert(&conn, kind, provider, start_ms)? {
                 let id = crate::util::uuid_v4();
                 conn.execute(
                     "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
@@ -399,6 +418,36 @@ pub async fn budget_emit_alerts(
     Ok(created)
 }
 
+fn has_open_provider_alert(
+    conn: &rusqlite::Connection,
+    kind: &str,
+    provider: &str,
+    month_start_ms: i64,
+) -> Result<bool, DbError> {
+    let open: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM budget_alerts
+          WHERE kind = ?1 AND provider = ?2 AND dismissed_at IS NULL AND created_at >= ?3",
+        rusqlite::params![kind, provider, month_start_ms],
+        |row| row.get(0),
+    )?;
+    Ok(open > 0)
+}
+
+fn provider_spend_between(
+    conn: &rusqlite::Connection,
+    provider: &str,
+    start_ms: i64,
+    end_ms: i64,
+) -> Result<f64, DbError> {
+    conn.query_row(
+        "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records
+          WHERE provider = ?1 AND recorded_at >= ?2 AND recorded_at <= ?3",
+        rusqlite::params![provider, start_ms, end_ms],
+        |row| row.get(0),
+    )
+    .map_err(DbError::Sqlite)
+}
+
 fn provider_budget_status(
     conn: &rusqlite::Connection,
     provider: &str,
@@ -417,23 +466,22 @@ fn provider_budget_status(
         }
     };
 
+    let (start_ms, end_ms) = current_month_window_ms();
+    let spent = provider_spend_between(conn, provider, start_ms, end_ms)?;
+
     let Some((cap_usd, threshold_pct)) = rule else {
         return Ok(BudgetCheckResult {
             remaining_usd: f64::INFINITY,
             pct: 0.0,
             exceeded: false,
             over_threshold: false,
+            spent_usd: spent,
+            cap_usd: None,
+            threshold_pct: None,
+            window_start_ms: start_ms,
+            window_end_ms: end_ms,
         });
     };
-
-    let (start_ms, end_ms) = current_month_window_ms();
-
-    let spent: f64 = conn.query_row(
-        "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM telemetry_records
-          WHERE provider = ?1 AND recorded_at >= ?2 AND recorded_at <= ?3",
-        rusqlite::params![provider, start_ms, end_ms],
-        |row| row.get(0),
-    )?;
 
     let remaining = cap_usd - spent;
     let pct = if cap_usd > 0.0 {
@@ -448,6 +496,43 @@ fn provider_budget_status(
         pct,
         exceeded,
         over_threshold: !exceeded && pct >= threshold_pct,
+        spent_usd: spent,
+        cap_usd: Some(cap_usd),
+        threshold_pct: Some(threshold_pct),
+        window_start_ms: start_ms,
+        window_end_ms: end_ms,
+    })
+}
+
+fn provider_budget_overview_at(
+    conn: &rusqlite::Connection,
+    provider: &str,
+    today_start_ms: i64,
+    week_start_ms: i64,
+) -> Result<ProviderBudgetOverview, DbError> {
+    let status = provider_budget_status(conn, provider, "monthly")?;
+    let (today_usd, last_7_days_usd) = conn.query_row(
+        "SELECT
+           COALESCE(SUM(CASE WHEN recorded_at >= ?2 THEN estimated_cost_usd END), 0),
+           COALESCE(SUM(CASE WHEN recorded_at >= ?3 THEN estimated_cost_usd END), 0)
+           FROM telemetry_records
+          WHERE provider = ?1 AND recorded_at >= ?4",
+        rusqlite::params![
+            provider,
+            today_start_ms,
+            week_start_ms,
+            today_start_ms.min(week_start_ms)
+        ],
+        |row| Ok((row.get::<_, f64>(0)?, row.get::<_, f64>(1)?)),
+    )?;
+    let this_month_usd = status.spent_usd;
+    Ok(ProviderBudgetOverview {
+        status,
+        periods: ProviderSpendPeriods {
+            today_usd,
+            last_7_days_usd,
+            this_month_usd,
+        },
     })
 }
 
@@ -459,6 +544,17 @@ pub async fn check_provider_budget(
 ) -> Result<BudgetCheckResult, DbError> {
     let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
     provider_budget_status(&conn, &provider, &period)
+}
+
+#[tauri::command]
+pub async fn provider_budget_overview(
+    state: State<'_, Db>,
+    provider: String,
+    today_start_ms: i64,
+    week_start_ms: i64,
+) -> Result<ProviderBudgetOverview, DbError> {
+    let conn = state.0.lock().map_err(|_| DbError::Poisoned)?;
+    provider_budget_overview_at(&conn, &provider, today_start_ms, week_start_ms)
 }
 
 #[cfg(test)]
@@ -634,5 +730,132 @@ mod tests {
 
         assert_eq!(result.pct, 0.0);
         assert!(!result.over_threshold);
+    }
+
+    fn ms(year: i64, month: u32, day: u32) -> i64 {
+        crate::util::ymd_to_epoch_ms(year, month, day)
+    }
+
+    #[test]
+    fn the_last_millisecond_of_a_month_still_belongs_to_it() {
+        let (start, end) = month_window_at_ms(ms(2026, 10, 1) - 1);
+
+        assert_eq!(start, ms(2026, 9, 1));
+        assert_eq!(end, ms(2026, 10, 1) - 1);
+    }
+
+    #[test]
+    fn the_first_millisecond_of_the_next_month_opens_a_new_window() {
+        let (start, end) = month_window_at_ms(ms(2026, 10, 1));
+
+        assert_eq!(start, ms(2026, 10, 1));
+        assert_eq!(end, ms(2026, 11, 1) - 1);
+    }
+
+    #[test]
+    fn december_rolls_into_january_of_the_next_year() {
+        let (start, end) = month_window_at_ms(ms(2026, 12, 31) + 86_399_999);
+
+        assert_eq!(start, ms(2026, 12, 1));
+        assert_eq!(end, ms(2027, 1, 1) - 1);
+    }
+
+    #[test]
+    fn february_of_a_leap_year_ends_on_the_twenty_ninth() {
+        let (start, end) = month_window_at_ms(ms(2028, 2, 10));
+
+        assert_eq!(start, ms(2028, 2, 1));
+        assert_eq!(end, ms(2028, 3, 1) - 1);
+    }
+
+    #[test]
+    fn spend_on_the_last_millisecond_of_last_month_is_not_this_months() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        let (start_ms, end_ms) = current_month_window_ms();
+        conn.execute(
+            "INSERT INTO telemetry_records (id, provider, estimated_cost_usd, recorded_at)
+             VALUES ('last', 'anthropic', 90.0, ?1), ('first', 'anthropic', 10.0, ?2)",
+            rusqlite::params![start_ms - 1, start_ms],
+        )
+        .unwrap();
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.spent_usd, 10.0);
+        assert_eq!(result.window_start_ms, start_ms);
+        assert_eq!(result.window_end_ms, end_ms);
+    }
+
+    #[test]
+    fn the_status_reports_the_rule_and_the_spend_behind_the_percentage() {
+        let conn = budget_conn();
+        insert_rule(&conn, 200.0, 70.0);
+        insert_spend(&conn, "t1", 50.0);
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.spent_usd, 50.0);
+        assert_eq!(result.cap_usd, Some(200.0));
+        assert_eq!(result.threshold_pct, Some(70.0));
+        assert_eq!(result.pct, 25.0);
+    }
+
+    #[test]
+    fn a_provider_without_a_rule_still_reports_its_spend() {
+        let conn = budget_conn();
+        insert_spend(&conn, "t1", 12.5);
+
+        let result = provider_budget_status(&conn, "anthropic", "monthly").unwrap();
+
+        assert_eq!(result.spent_usd, 12.5);
+        assert_eq!(result.cap_usd, None);
+    }
+
+    #[test]
+    fn the_overview_month_is_the_status_spend() {
+        let conn = budget_conn();
+        insert_rule(&conn, 100.0, 80.0);
+        insert_spend(&conn, "t1", 30.0);
+        let (start_ms, _) = current_month_window_ms();
+
+        let overview = provider_budget_overview_at(&conn, "anthropic", start_ms, start_ms).unwrap();
+
+        assert_eq!(overview.periods.this_month_usd, overview.status.spent_usd);
+        assert_eq!(overview.periods.this_month_usd, 30.0);
+    }
+
+    #[test]
+    fn the_overview_splits_today_and_the_last_seven_days() {
+        let conn = budget_conn();
+        conn.execute(
+            "INSERT INTO telemetry_records (id, provider, estimated_cost_usd, recorded_at) VALUES
+             ('old', 'anthropic', 1.0, 999),
+             ('week', 'anthropic', 2.0, 1500),
+             ('today', 'anthropic', 4.0, 2500),
+             ('other', 'openai', 8.0, 2500)",
+            [],
+        )
+        .unwrap();
+
+        let overview = provider_budget_overview_at(&conn, "anthropic", 2000, 1000).unwrap();
+
+        assert_eq!(overview.periods.today_usd, 4.0);
+        assert_eq!(overview.periods.last_7_days_usd, 6.0);
+    }
+
+    #[test]
+    fn an_alert_from_last_month_does_not_silence_this_months() {
+        let conn = session_budget_conn();
+        let month_start = ms(2026, 10, 1);
+        conn.execute(
+            "INSERT INTO budget_alerts (id, kind, provider, session_id, current_usd, cap_usd, created_at, dismissed_at)
+             VALUES ('a1', 'provider-threshold', 'anthropic', NULL, 85.0, 100.0, ?1, NULL)",
+            rusqlite::params![month_start - 1],
+        )
+        .unwrap();
+
+        assert!(!has_open_provider_alert(&conn, "provider-threshold", "anthropic", month_start).unwrap());
+        assert!(has_open_provider_alert(&conn, "provider-threshold", "anthropic", month_start - 5).unwrap());
     }
 }
