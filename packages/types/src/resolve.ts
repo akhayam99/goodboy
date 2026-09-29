@@ -46,6 +46,8 @@ export type ResolveThread = Readonly<{
   closedSource: 'goodboy' | 'github' | null;
   createdAt: number;
   updatedAt: number;
+  sourceKind?: ResolveSourceKind;
+  providerThreadId?: string | null;
 }>;
 
 export type ResolveAttempt = Readonly<{
