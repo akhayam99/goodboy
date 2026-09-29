@@ -47,6 +47,12 @@ on a `Stage`. Their rules:
   ends in an ellipsis. Below 520 px of container width each row turns into two
   clean lines, never a word per line. The breakpoints are container queries,
   so they hold inside any stage.
+- Text that says what an agent does, such as a run step, carries `data-wrap`.
+  Below 520 px it wraps to two lines and is never cut.
+- Below 520 px the run becomes a timeline that grows upward, like the one in
+  the app: step 1 at the bottom, a status node per step on a rail, solid up
+  to the step that runs and dashed above it, and Now on top. Above 520 px it
+  stays a table.
 - On a phone every visible text is 13 px or larger; on a desktop 12 px is the
   floor, for chips and eyebrows only.
 - The window is a hairline box on the page background, with no shadow.
@@ -124,7 +130,8 @@ the right buttons show on the first paint without JavaScript.
 - A touch device sees no download button, no Homebrew command and no Download
   in the nav. The hero and Install show a "Star on GitHub" button instead, a
   static link with no live count, next to a line that says to open the page on
-  a computer.
+  a computer. Only Install adds "See every feature", so the hero board starts
+  higher on the first screen.
 - Every download link and the Homebrew block carry `data-download`, and the
   star button `data-star`, so `check-page` can find them.
 - The footer stacks on a phone: the brand on its 40 px dark tile, then the link
@@ -155,13 +162,15 @@ the right buttons show on the first paint without JavaScript.
 ## Check the page
 
 `pnpm check:page [url...]` drives headless Chrome over a running page (default
-`http://localhost:1499/`) at 1440, 1024, 768, 660 and 390 pixels wide, in
-both themes, at twice the pixel density, with reduced motion on so every
-picture shows its final state. The 390 run emulates touch, so it gets a coarse
-pointer. It fails on:
+`http://localhost:1499/`) at 1440, 1024, 768, 660, 430, 390 and 360 pixels
+wide, in both themes, at twice the pixel density, with reduced motion on so
+every picture shows its final state. The three phone runs emulate touch, so
+they get a coarse pointer. It fails on:
 
 - horizontal overflow, an image drawn below 2x, or a shadow on a stage or
   anything inside it;
+- a product picture (a mock window or a picture) that shows less than 98% of
+  itself inside the boxes that clip it;
 - a home page taller than 5,500 px at 1440 or 7,500 on a phone;
 - an em dash or a middot triplet in visible text, or a heading that ends with
   a period;
@@ -169,7 +178,8 @@ pointer. It fails on:
 - Inter not loaded, a hero stage that starts below the first screen at 1440,
   or a consent card over the h1;
 - on the touch run, a visible download link or Homebrew block, no Star on
-  GitHub button, or any visible text under 13 px; on the other runs, a visible
+  GitHub button, any visible text under 13 px, or a `data-wrap` text that is
+  cut; on the other runs, a visible
   star button or no download link;
 - a lead-in that is not smaller than its heading;
 - an eyebrow outside the one register: a feature eyebrow (`kind="group"`, the

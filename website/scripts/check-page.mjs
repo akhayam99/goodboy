@@ -17,6 +17,7 @@ const TIMEOUT_MS = 240000;
 const MIN_DENSITY = 2;
 const MIN_PHONE_TEXT_PX = 13;
 const HERO_FRAME_VISIBLE_PX = 380;
+const MIN_FIGURE_VISIBLE_SHARE = 0.98;
 const INTER_PROBE = '500 64px Inter';
 const REPO_BLOB_PREFIX = 'https://github.com/akhayam99/goodboy/blob/main/';
 const FEATURE_GUIDE_URL = `${REPO_BLOB_PREFIX}FEATURES.md`;
@@ -34,6 +35,8 @@ const VIEWPORTS = [
   { name: 'tablet', width: 768, height: 1024, isMobile: false, maxHeight: Infinity },
   { name: 'narrow', width: 660, height: 900, isMobile: false, maxHeight: Infinity },
   { name: 'phone', width: 390, height: 844, isMobile: true, isTouch: true, maxHeight: 7500 },
+  { name: 'phone-small', width: 360, height: 780, isMobile: true, isTouch: true, maxHeight: Infinity },
+  { name: 'phone-large', width: 430, height: 932, isMobile: true, isTouch: true, maxHeight: Infinity },
 ];
 const OVERLAP_TOLERANCE_PX = 1;
 const THEMES = ['dark', 'light'];
@@ -260,6 +263,34 @@ const PAGE_PROBE = `(async () => {
         }
       });
     });
+  const figureName = ({ node }) =>
+    node.closest('[data-mock]')?.getAttribute('data-mock') ?? node.getAttribute('alt')?.slice(0, 40) ?? String(node.className);
+  const clippedFigures = [...document.querySelectorAll('main .mk-win, main picture img')]
+    .filter((node) => isVisible({ node }))
+    .map((node) => {
+      const box = node.getBoundingClientRect();
+      let visible = { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+      for (let parent = node.parentElement; parent !== null && parent !== document.body; parent = parent.parentElement) {
+        const style = getComputedStyle(parent);
+        if (style.overflowX === 'visible' && style.overflowY === 'visible') {
+          continue;
+        }
+        const clip = parent.getBoundingClientRect();
+        visible = {
+          left: Math.max(visible.left, clip.left),
+          right: Math.min(visible.right, clip.right),
+          top: Math.max(visible.top, clip.top),
+          bottom: Math.min(visible.bottom, clip.bottom),
+        };
+      }
+      const area = Math.max(0, visible.right - visible.left) * Math.max(0, visible.bottom - visible.top);
+      return { name: figureName({ node }), share: area / (box.width * box.height) };
+    })
+    .filter((figure) => figure.share < ${MIN_FIGURE_VISIBLE_SHARE});
+  const cutText = [...document.querySelectorAll('[data-wrap]')]
+    .filter((node) => isVisible({ node }))
+    .filter((node) => node.scrollWidth > node.clientWidth + 1 || node.scrollHeight > node.clientHeight + 1)
+    .map((node) => node.textContent.trim().slice(0, 40));
   const leadIns = [...document.querySelectorAll('.leadIn')].map((node) => {
     const heading = node.parentElement.querySelector('h2');
     return {
@@ -274,6 +305,8 @@ const PAGE_PROBE = `(async () => {
     downloads: [...document.querySelectorAll('[data-download]')].filter((node) => isVisible({ node })).length,
     stars: [...document.querySelectorAll('[data-star]')].filter((node) => isVisible({ node })).length,
     smallText,
+    clippedFigures,
+    cutText,
     leadIns,
     isInter: document.fonts.check(${JSON.stringify(INTER_PROBE)}),
     scrollWidth: root.scrollWidth,
@@ -378,6 +411,7 @@ const checkRun = ({
     probe.smallText.forEach((text) =>
       fail(`text under ${MIN_PHONE_TEXT_PX} px on a phone: ${text}`),
     );
+    probe.cutText.forEach((text) => fail(`text that must wrap is cut on a phone: "${text}"`));
   }
   if (viewport.isTouch !== true) {
     if (probe.stars > 0) {
@@ -396,6 +430,9 @@ const checkRun = ({
   probe.images
     .filter((image) => image.density !== null && image.density < MIN_DENSITY)
     .forEach((image) => fail(`${image.src} drawn at ${image.density.toFixed(2)}x`));
+  probe.clippedFigures.forEach((figure) =>
+    fail(`figure ${figure.name} shows ${Math.round(figure.share * 100)}% of itself`),
+  );
   probe.periods.forEach((text) => fail(`heading ends with a period: "${text}"`));
   probe.collisions.forEach((message) => fail(message));
   probe.spills.forEach((message) => fail(message));
