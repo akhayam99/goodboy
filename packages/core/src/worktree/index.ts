@@ -7,5 +7,4 @@ export {
   type CreateWorktreeOptions,
   type WorktreeInfo,
 } from './manager';
-export { sanitizeSlug } from './slug';
 export { GitError } from './git';

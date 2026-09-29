@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { git, GitError } from './git';
-import { sanitizeSlug } from './slug';
+import { slugify } from '../slug';
 
 export class WorktreeError extends Error {
   constructor(message: string) {
@@ -31,7 +31,7 @@ export type WorktreeInfo = {
 };
 
 export const createWorktree = async (opts: CreateWorktreeOptions): Promise<CreatedWorktree> => {
-  const slug = sanitizeSlug(opts.slug);
+  const slug = slugify({ input: opts.slug });
   const branchName = `${opts.branchPrefix}/${slug}`;
   const repoName = path.basename(opts.repoPath);
   const parent = opts.parentDir ?? path.dirname(opts.repoPath);

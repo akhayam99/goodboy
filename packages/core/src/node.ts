@@ -2,7 +2,6 @@ export {
   createWorktree,
   listWorktrees,
   removeWorktree,
-  sanitizeSlug,
   GitError,
   WorktreeError,
   type CreatedWorktree,

@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { slugify } from '@goodboy/core';
 import type { MountId } from '@goodboy/types';
 import { mountDirName } from './mountDirName';
-import { sanitizeSlug } from './sanitizeSlug';
 
 const MID = '9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f' as MountId;
 
@@ -16,7 +16,7 @@ describe('mountDirName', () => {
   it('returns a name the backend sanitizer leaves untouched', () => {
     const name = mountDirName({ sessionSlug: 'Alice/Fix   Parser', mountId: MID });
 
-    expect(sanitizeSlug(name)).toBe(name);
+    expect(slugify({ input: name })).toBe(name);
   });
 
   it('falls back to the mount id when the slug has nothing usable', () => {

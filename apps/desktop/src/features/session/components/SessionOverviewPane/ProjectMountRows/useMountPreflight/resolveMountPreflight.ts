@@ -1,6 +1,6 @@
+import { nextAvailableSlug } from '@goodboy/core';
 import type { MountId } from '@goodboy/types';
 import { mountDirName } from '../../../../../../store/slices/project-mounts/mountDirName';
-import { nextAvailableSlug } from '../../../../../../store/slices/sessions/deriveBranchName';
 import type { MountPlan } from '../../../../../../store/slices/sessions/mountPlan';
 
 export type MountPreflight = {
@@ -33,7 +33,7 @@ export const resolveMountPreflight = ({ plan, repoBranches }: Params): MountPref
   if (!taken.includes(plan.branch)) {
     return proposed;
   }
-  const slug = nextAvailableSlug({ base: plan.slug, prefix: plan.prefix, taken });
+  const slug = nextAvailableSlug({ base: plan.baseSlug, prefix: plan.prefix, taken });
   return {
     mountId: plan.mountId,
     slug,

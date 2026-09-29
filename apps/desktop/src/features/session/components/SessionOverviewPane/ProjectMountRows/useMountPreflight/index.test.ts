@@ -63,6 +63,7 @@ const planFor = (overrides: Partial<MountPlan> = {}): MountPlan => ({
   project: repoProject,
   mountId: MID,
   prefix: 'ak',
+  baseSlug: 'ship-it',
   slug: 'ship-it',
   branch: 'ak/ship-it',
   adoptedBranch: null,
@@ -106,6 +107,24 @@ describe('resolveMountPreflight', () => {
     expect(resolved.branch).toBe('ak/ship-it-2');
     expect(resolved.slug).toBe('ship-it-2');
     expect(resolved.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/ship-it-2-mount-1');
+  });
+
+  it('suffixes from the base slug once when the planned suffix is also taken in the repository', () => {
+    const resolved = resolveMountPreflight({
+      plan: planFor({
+        baseSlug: 'x',
+        slug: 'x-2',
+        branch: 'ak/x-2',
+        targetPath: '/repos/goodboy/.goodboy/worktrees/x-2-mount-1',
+        takenBranches: ['ak/x'],
+      }),
+      repoBranches: ['main', 'ak/x-2'],
+    });
+
+    expect(resolved.slug).toBe('x-3');
+    expect(resolved.branch).toBe('ak/x-3');
+    expect(resolved.renamedFrom).toBe('ak/x-2');
+    expect(resolved.targetPath).toBe('/repos/goodboy/.goodboy/worktrees/x-3-mount-1');
   });
 
   it('never renames a branch the session is adopting on purpose', () => {
