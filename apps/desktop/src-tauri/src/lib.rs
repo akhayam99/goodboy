@@ -313,6 +313,7 @@ pub fn run() {
             history::history_rewriter_prepare,
             history::history_rewriter_collect,
             history::history_copy_discard,
+            history::resolve_copy_prepare,
             history::history_copy_git_dirs,
             worktree::worktree_diff_working,
             worktree::worktree_status,

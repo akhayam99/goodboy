@@ -25,6 +25,7 @@ import { materializeReviewThreads } from './materializeReviewThreads';
 import { syncNoteThreads } from './syncNoteThreads';
 import { closeResolvedNote } from './closeResolvedNote';
 import { resolveWithoutReply } from './resolveWithoutReply';
+import { createResolveBatch, setResolveParallelLimit } from './resolveBatches';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type {
   ResolveActions,
@@ -47,6 +48,8 @@ import type {
   CheckRunParams,
   EnsureReviewThreadParams,
   MaterializeParams,
+  CreateBatchParams,
+  ParallelLimitParams,
 } from './types';
 
 export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions => {
@@ -169,5 +172,12 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
     publishConversations: (params: PublishParams) => publishConversations({ set, get, ...params }),
     retryPublication: (params: SessionParams) => retryPublication({ set, get, ...params }),
     cancelPublication: (params: PublishParams) => cancelPublication({ set, get, ...params }),
+    createResolveBatch: (params: CreateBatchParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => createResolveBatch({ set, get, ...params }),
+      }),
+    setResolveParallelLimit: (params: ParallelLimitParams) =>
+      setResolveParallelLimit({ set, get, ...params }),
   };
 };

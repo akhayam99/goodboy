@@ -16,7 +16,10 @@ import type {
   ResolveThread,
   ResolveThreadState,
   ResolveStage,
+  ProviderRunId,
+  TurnEvent,
   AgentId,
+  IsoDateTime,
   MountId,
   MountTargetSnapshot,
   Session,
@@ -25,8 +28,10 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
+import type { ProviderDisplayInfo } from '../../../../features/providers/providers';
 import type { ResolveCandidateWithItems } from '../../../../store/slices/resolve/state';
 import { EMPTY_RESOLVE_QUEUE_VIEW } from '../../../../store/slices/session-view';
+import { remoteMovedError } from '../../../../store/slices/resolve/remoteMovedError';
 import { sceneClock } from '../sceneClock';
 
 const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
@@ -399,6 +404,64 @@ const ITEM_RETRY_CONSTANT = buildItem({
   createdMinutesAgo: 12,
 });
 
+const EXTRA_NEW: ReadonlyArray<{
+  readonly threadId: string;
+  readonly author: string;
+  readonly path: string;
+  readonly line: number;
+  readonly minutesAgo: number;
+  readonly body: string;
+}> = [
+  {
+    threadId: 'PRRT_thread_jitter',
+    author: 'omar-t',
+    path: 'src/webhooks/retryPolicy.ts',
+    line: 31,
+    minutesAgo: 30,
+    body: 'Add jitter so retried deliveries from many tenants do not line up.',
+  },
+  {
+    threadId: 'PRRT_thread_log_delivery_id',
+    author: 'nadia-p',
+    path: 'src/webhooks/logging.ts',
+    line: 44,
+    minutesAgo: 45,
+    body: 'Log the delivery id, not the whole body.',
+  },
+  {
+    threadId: 'PRRT_thread_response_time',
+    author: 'kenji-w',
+    path: 'src/webhooks/metrics.ts',
+    line: 4,
+    minutesAgo: 60,
+    body: 'Should we also record the response time of each attempt?',
+  },
+];
+
+const EXTRA_QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = EXTRA_NEW.map((extra) => ({
+  item: buildItem({
+    id: `mock-resolve-item-${extra.threadId}`,
+    threadId: extra.threadId,
+    approvalState: 'none',
+    approvedRevision: null,
+    deferredAt: null,
+    deliveredAt: null,
+    candidateRevision: 1,
+    createdMinutesAgo: extra.minutesAgo,
+  }),
+  thread: buildThread({
+    threadId: extra.threadId,
+    state: 'open',
+    stage: 'new',
+    revision: 1,
+    activeAttemptId: null,
+    disposition: null,
+    replyDraft: null,
+    question: null,
+    createdMinutesAgo: extra.minutesAgo,
+  }),
+}));
+
 const QUEUE_ITEMS: ReadonlyArray<ResolveQueueItemWithThread> = [
   { item: ITEM_RETRY_BACKOFF, thread: THREAD_RETRY_BACKOFF },
   { item: ITEM_RETRY_METRICS, thread: THREAD_RETRY_METRICS },
@@ -510,6 +573,17 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
 ];
 
+const EXTRA_COMMENTS: ReadonlyArray<PrComment> = EXTRA_NEW.map((extra) =>
+  buildNote({
+    threadId: extra.threadId,
+    author: extra.author,
+    path: extra.path,
+    line: extra.line,
+    createdMinutesAgo: extra.minutesAgo,
+    body: extra.body,
+  }),
+);
+
 const MOUNT_TARGET: MountTargetSnapshot = {
   mountId: 'mock-resolve-mount-payments-api' as MountId,
   mountRevision: 3,
@@ -532,6 +606,9 @@ const ATTEMPT_RETRY: ResolveAttempt = {
   endedAt: msAgo({ minutes: 52 }),
   error: null,
   createdAt: msAgo({ minutes: 70 }),
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 };
 
 const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
@@ -550,6 +627,9 @@ const ATTEMPT_IDEMPOTENCY: ResolveAttempt = {
   endedAt: null,
   error: null,
   createdAt: msAgo({ minutes: 6 }),
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 };
 
 const CANDIDATE_RETRY: ResolveCandidate = {
@@ -713,12 +793,152 @@ const EMPTY_GITHUB = {
   detailError: null,
 };
 
+export type ResolveFailure = 'run' | 'history';
+
 type SeedParams = {
   readonly expandedThreadId: string | null;
+  readonly failure?: ResolveFailure;
+  readonly selectable?: boolean;
 };
 
-export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
+const CONNECTED_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
+  [
+    ['anthropic', 'claude', 'Claude'],
+    ['codex', 'codex', 'Codex'],
+  ] as const
+).map(([id, binary, label]) => ({
+  id,
+  binary,
+  capabilities: { models: [], supportsTools: true, supportsStream: true, supportsCheapModel: true },
+  connection: 'connected',
+  version: '1.0.0',
+  identity: 'harborline',
+  label,
+  error: null,
+  docsUrl: 'https://example.invalid/docs',
+}));
+
+const FAILED_ATTEMPT_ID = 'mock-resolve-attempt-idempotency-failed';
+const FIRST_ATTEMPT_ID = 'mock-resolve-attempt-idempotency-first';
+const FAILED_AGENT_ID = 'mock-resolve-agent-idempotency-failed' as AgentId;
+const FIRST_AGENT_ID = 'mock-resolve-agent-idempotency-first' as AgentId;
+
+const failedAttempt = ({
+  id,
+  agentId,
+  provider,
+  model,
+  effort,
+  startedMinutesAgo,
+  endedMinutesAgo,
+}: {
+  readonly id: string;
+  readonly agentId: AgentId;
+  readonly provider: string;
+  readonly model: string;
+  readonly effort: string;
+  readonly startedMinutesAgo: number;
+  readonly endedMinutesAgo: number;
+}): ResolveAttempt => ({
+  ...ATTEMPT_IDEMPOTENCY,
+  id,
+  agentId,
+  provider,
+  model,
+  effort,
+  phase: 'failed',
+  startedAt: msAgo({ minutes: startedMinutesAgo }),
+  endedAt: msAgo({ minutes: endedMinutesAgo }),
+  error: 'interrupted',
+  createdAt: msAgo({ minutes: startedMinutesAgo }),
+});
+
+const failedTranscript = ({
+  runId,
+}: {
+  readonly runId: ProviderRunId;
+}): ReadonlyArray<TurnEvent> => [
+  {
+    kind: 'tool_call_start',
+    runId,
+    toolUseId: 'mock-tool-tests',
+    toolName: 'Bash',
+    input: { command: 'pnpm test src/webhooks' },
+    at: NOW_ISO as IsoDateTime,
+  },
+  {
+    kind: 'tool_call_end',
+    runId,
+    toolUseId: 'mock-tool-tests',
+    output: 'Tests  2 failed | 8 passed',
+    isError: true,
+    at: NOW_ISO as IsoDateTime,
+  },
+];
+
+const PUSH_FAILURE_REASON = `publication_failed:${JSON.stringify({
+  error: remoteMovedError({
+    branch: PR.headBranch,
+    remote: '8c1d2e47b90a',
+    reviewed: '4f21c8b9a7d3',
+  }),
+})}`;
+
+const failureSeed = ({ failure }: { readonly failure: ResolveFailure }) => {
+  const isHistory = failure === 'history';
+  const active = failedAttempt({
+    id: FAILED_ATTEMPT_ID,
+    agentId: FAILED_AGENT_ID,
+    provider: isHistory ? 'codex' : 'anthropic',
+    model: isHistory ? 'gpt-5.6-sol' : 'claude-sonnet-5',
+    effort: isHistory ? 'high' : 'medium',
+    startedMinutesAgo: 26,
+    endedMinutesAgo: 22,
+  });
+  const first = failedAttempt({
+    id: FIRST_ATTEMPT_ID,
+    agentId: FIRST_AGENT_ID,
+    provider: 'anthropic',
+    model: 'claude-sonnet-5',
+    effort: 'medium',
+    startedMinutesAgo: 40,
+    endedMinutesAgo: 36,
+  });
+  const runThread: ResolveThread = {
+    ...THREAD_IDEMPOTENCY,
+    state: 'failed',
+    stage: 'failed',
+    stateReason: 'failed:interrupted',
+    activeAttemptId: FAILED_ATTEMPT_ID,
+  };
+  const pushThread: ResolveThread = {
+    ...THREAD_LOG_REDACT,
+    state: 'failed',
+    stage: 'failed',
+    stateReason: PUSH_FAILURE_REASON,
+  };
+  const queue = QUEUE_ITEMS.map((entry) => {
+    if (entry.thread.threadId === T4) {
+      return { item: entry.item, thread: runThread };
+    }
+    return entry.thread.threadId === T5 ? { item: entry.item, thread: pushThread } : entry;
+  });
+  return {
+    queue,
+    attempts: isHistory ? [ATTEMPT_RETRY, first, active] : [ATTEMPT_RETRY, active],
+    transcripts: {
+      [FAILED_AGENT_ID]: failedTranscript({ runId: 'mock-run-failed' as ProviderRunId }),
+    },
+  };
+};
+
+export const seedResolveScene = ({
+  expandedThreadId,
+  failure,
+  selectable = false,
+}: SeedParams): void => {
   installResolveMockIpc();
+  const failed = failure === undefined ? null : failureSeed({ failure });
 
   const candidatesWithItems: ReadonlyArray<ResolveCandidateWithItems> = [
     { candidate: CANDIDATE_RETRY, items: CANDIDATE_ITEMS },
@@ -730,8 +950,15 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
     projects: [],
     sessions: [SESSION],
     currentSessionId: SESSION_ID,
-    sessionResolveQueueItems: { [SESSION_ID]: QUEUE_ITEMS },
-    sessionResolveAttempts: { [SESSION_ID]: [ATTEMPT_RETRY, ATTEMPT_IDEMPOTENCY] },
+    sessionResolveQueueItems: {
+      [SESSION_ID]:
+        failed?.queue ?? (selectable ? [...QUEUE_ITEMS, ...EXTRA_QUEUE_ITEMS] : QUEUE_ITEMS),
+    },
+    sessionResolveAttempts: {
+      [SESSION_ID]: failed?.attempts ?? [ATTEMPT_RETRY, ATTEMPT_IDEMPOTENCY],
+    },
+    transcripts: failed?.transcripts ?? {},
+    ...(failed !== null && { providers: CONNECTED_PROVIDERS }),
     sessionResolveCandidates: { [SESSION_ID]: candidatesWithItems },
     sessionResolveCheckRuns: { [SESSION_ID]: CHECK_RUNS },
     sessionResolvePublications: { [SESSION_ID]: [PUBLICATION] },
@@ -753,7 +980,7 @@ export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
         pr: PR,
         detail: {
           prNumber: PR.number,
-          comments: COMMENTS,
+          comments: selectable ? [...COMMENTS, ...EXTRA_COMMENTS] : COMMENTS,
           reviews: [],
           reviewRequests: [],
           checks: [],

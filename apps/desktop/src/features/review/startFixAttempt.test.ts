@@ -171,4 +171,36 @@ describe('startFixAttempt', () => {
     expect(agentIds).toEqual([]);
     expect(spawnAgent).not.toHaveBeenCalled();
   });
+
+  it('rereads the saved launch choice of the batch on a retry', async () => {
+    const { spawnAgent, setAgentConfig } = harness();
+
+    await startFixAttempt({
+      sessionId: SESSION_ID,
+      threads: [threadOn({ id: 't1', path: 'a.ts' })],
+      pr,
+      choice: { provider: 'anthropic', model: 'claude-opus-5' },
+      instructions: 'Use the ledger helper',
+      mode: 'retry',
+      batch: {
+        batchId: 'batch-1',
+        launchChoice: {
+          provider: 'codex',
+          model: 'gpt-6-astra',
+          effort: 'high',
+          commitStyle: 'fixup',
+          hint: 'Keep rounding half even',
+        },
+      },
+      spawnAgent,
+      setAgentConfig,
+    });
+
+    const args = spawnAgent.mock.calls[0]?.[1];
+    expect(args?.provider).toBe('codex');
+    expect(args?.model).toBe('gpt-6-astra');
+    expect(args?.resolveBatch?.batchId).toBe('batch-1');
+    expect(args?.initialPrompt).toContain('Keep rounding half even');
+    expect(args?.initialPrompt).toContain('Use the ledger helper');
+  });
 });

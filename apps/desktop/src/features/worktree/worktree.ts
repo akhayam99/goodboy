@@ -65,6 +65,16 @@ export const quarantineWorktreeCandidate = async (
 ): Promise<QuarantinedCandidate> =>
   invoke<QuarantinedCandidate>('worktree_quarantine_candidate', { args });
 
+export type ResolveCopy = {
+  readonly copyPath: string;
+  readonly head: string;
+};
+
+export const prepareResolveCopy = async (args: {
+  readonly worktreePath: string;
+  readonly attemptId: string;
+}): Promise<ResolveCopy> => invoke<ResolveCopy>('resolve_copy_prepare', { args });
+
 export type WorktreeWriterLease = {
   readonly path: string;
   readonly holder: string | null;

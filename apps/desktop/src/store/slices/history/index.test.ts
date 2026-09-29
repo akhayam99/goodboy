@@ -1029,6 +1029,88 @@ describe('bring origin into the plan', () => {
   });
 });
 
+describe('sync the branch with its remote', () => {
+  const TRIED = {
+    head: 'new-head',
+    map: [{ from: 'a1', to: 'x1' }],
+    isTreeEqual: false,
+    changedFiles: [],
+    stop: null,
+    copyPath: null,
+    order: [],
+    check: null,
+  };
+
+  it('rebases the local commits on the remote branch and never pushes', async () => {
+    const { slice } = harness();
+    engine.predictHistoryPlan.mockResolvedValue({ isSupported: true, head: 'predicted' });
+    engine.tryHistoryPlan.mockResolvedValue(TRIED);
+
+    await expect(
+      slice.syncBranchWithRemote({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toEqual({ kind: 'synced', count: 18 });
+
+    expect(engine.readRebasePlan).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      baseBranch: 'fix/ledger-postings',
+      fetches: true,
+    });
+    expect(engine.applyHistoryPlan).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedHead: 'head-sha', newHead: 'new-head' }),
+    );
+    expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+
+  it('stops on a predicted conflict without trying, applying or starting an agent', async () => {
+    const { slice, read } = harness();
+    engine.predictHistoryPlan.mockResolvedValue({ isSupported: true, head: null });
+
+    await expect(
+      slice.syncBranchWithRemote({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toEqual({ kind: 'conflict' });
+
+    expect(engine.tryHistoryPlan).not.toHaveBeenCalled();
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(read().spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('removes the copy of a trial that conflicted and leaves the branch alone', async () => {
+    const { slice, read } = harness();
+    engine.predictHistoryPlan.mockResolvedValue({ isSupported: false, head: null });
+    engine.tryHistoryPlan.mockResolvedValue({
+      ...TRIED,
+      head: null,
+      copyPath: '/tmp/copy',
+      stop: { kind: 'conflict' },
+    });
+
+    await expect(
+      slice.syncBranchWithRemote({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toEqual({ kind: 'conflict' });
+
+    expect(engine.discardHistoryCopy).toHaveBeenCalledWith({
+      worktreePath: '/w/ledger',
+      copyPath: '/tmp/copy',
+    });
+    expect(engine.applyHistoryPlan).not.toHaveBeenCalled();
+    expect(read().spawnAgent).not.toHaveBeenCalled();
+  });
+
+  it('says when there is nothing to bring in and when origin cannot be reached', async () => {
+    const { slice } = harness();
+    engine.readRebasePlan.mockResolvedValueOnce({ ...REBASE, behind: 0 });
+    await expect(
+      slice.syncBranchWithRemote({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toEqual({ kind: 'nothing' });
+
+    engine.readRebasePlan.mockResolvedValueOnce({ ...REBASE, fetchError: 'network is down' });
+    await expect(
+      slice.syncBranchWithRemote({ sessionId: SESSION_ID, mountId: MOUNT_ID }),
+    ).resolves.toEqual({ kind: 'failed', message: "Couldn't reach origin: network is down" });
+    expect(engine.tryHistoryPlan).not.toHaveBeenCalled();
+  });
+});
+
 describe('rewriterKickoff', () => {
   it('numbers the plan, names the stopped step and asks to keep empty steps as commits', () => {
     const text = rewriterKickoff({

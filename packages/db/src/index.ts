@@ -519,7 +519,21 @@ export {
   listActiveResolveAttempts,
   insertResolveAttempt,
   setResolveAttemptPhase,
+  setResolveAttemptCopyPath,
 } from './queries/resolve-attempt';
+export {
+  insertResolveBatch,
+  listResolveBatches,
+  getResolveParallelLimit,
+  setResolveParallelLimit,
+} from './queries/resolve-batch';
+export {
+  listResolveThreadFacts,
+  setResolveThreadGitState,
+  setResolveThreadVerdict,
+  setResolveThreadSourceSnapshot,
+  setResolveThreadSource,
+} from './queries/resolve-thread-facts';
 export { hasResolveImport, commitResolveImport } from './queries/resolve-import';
 export {
   insertResolveCandidate,

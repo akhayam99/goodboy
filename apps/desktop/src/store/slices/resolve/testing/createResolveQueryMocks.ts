@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import type {
   ResolveAttempt,
+  ResolveBatch,
   ResolvePublication,
   ResolvePublicationPhase,
   ResolvePublicationThread,
@@ -45,6 +46,9 @@ type ApprovalParams = QueueItemIdParams & {
 };
 type DeliveredParams = QueueItemIdParams & { readonly deliveredAt: number };
 type RebaseParams = QueueItemIdParams & { readonly candidateRevision: number };
+type BatchParams = { readonly batch: ResolveBatch };
+type LimitParams = SessionParams & { readonly limit: number };
+type CopyPathParams = { readonly id: string; readonly copyPath: string | null };
 
 const ACTIVE_PHASES: ReadonlyArray<ResolvePublicationPhase> = [
   'confirmed',
@@ -59,6 +63,8 @@ export const createResolveQueryMocks = () => {
   const publications = new Map<string, ResolvePublication>();
   const publicationThreads = new Map<string, ResolvePublicationThread>();
   const queueItems = new Map<string, ResolveQueueItem>();
+  const batches = new Map<string, ResolveBatch>();
+  const limits = new Map<SessionId, number>();
   return {
     resetResolveQueryMocks: () => {
       threads.clear();
@@ -66,7 +72,28 @@ export const createResolveQueryMocks = () => {
       publications.clear();
       publicationThreads.clear();
       queueItems.clear();
+      batches.clear();
+      limits.clear();
     },
+    insertResolveBatch: vi.fn(async ({ batch }: BatchParams) => {
+      batches.set(batch.id, batch);
+    }),
+    listResolveBatches: vi.fn(async ({ sessionId }: SessionParams) =>
+      [...batches.values()].filter((batch) => batch.sessionId === sessionId),
+    ),
+    getResolveParallelLimit: vi.fn(
+      async ({ sessionId }: SessionParams) => limits.get(sessionId) ?? 4,
+    ),
+    setResolveParallelLimit: vi.fn(async ({ sessionId, limit }: LimitParams) => {
+      limits.set(sessionId, limit);
+      return limit;
+    }),
+    setResolveAttemptCopyPath: vi.fn(async ({ id, copyPath }: CopyPathParams) => {
+      const attempt = attempts.get(id);
+      if (attempt !== undefined) {
+        attempts.set(id, { ...attempt, copyPath });
+      }
+    }),
     listResolveThreads: vi.fn(async ({ sessionId }: SessionParams) =>
       [...threads.values()].filter((row) => row.sessionId === sessionId),
     ),
@@ -85,7 +112,13 @@ export const createResolveQueryMocks = () => {
       [...attempts.values()].filter((attempt) => attempt.sessionId === sessionId),
     ),
     insertResolveAttempt: vi.fn(async ({ attempt }: AttemptParams) => {
-      attempts.set(attempt.id, attempt);
+      const previous = attempts.get(attempt.id);
+      attempts.set(attempt.id, {
+        ...attempt,
+        batchId: attempt.batchId ?? previous?.batchId ?? null,
+        copyPath: attempt.copyPath ?? previous?.copyPath ?? null,
+        launchChoice: attempt.launchChoice ?? previous?.launchChoice ?? null,
+      });
     }),
     setResolveAttemptPhase: vi.fn(async ({ id, phase }: PhaseParams) => {
       const attempt = attempts.get(id);

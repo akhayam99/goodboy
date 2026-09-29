@@ -664,18 +664,30 @@ Every comment shows one state word, grouped in three:
 - **Open**: Not started, Drafting (one live line says what the agent does),
   Needs you (the agent asked), Ready (the fix and the reply under the comment,
   with an Edited tag once you changed the reply), Outdated (the comment changed
-  since the draft), Draft failed or Push failed (the line under the comment
+  since the draft), Draft failed or Push failed (the box under the comment
   names the reason, such as the run ended before a result or the provider
-  error, never a generic error)
-- **Waiting for the push**: Accepted, Reply only (with a Resolve only tag when
-  nothing is posted), Skipped
-- **Done**: Pushed, and Resolved on GitHub when someone else closed it
+  error, never a generic error. A failed run also shows the last command it
+  ran with its result, such as `pnpm test src/webhooks · 2 failing`, and a
+  link to the transcript)
+- **Ready to push**: Accepted, Reply only (with a Resolve only tag when
+  nothing is posted)
+- **Done**: Skipped (it never blocks the push), Pushed, and Resolved on GitHub
+  when someone else closed it
+
+The state word carries the tone: Needs you is the only warning, Ready is neutral
+(the Accept button is the signal), Edited and Outdated have their own tones,
+and the header shows one summary line instead of a chip per state. The `…`
+above the list filters the list by state.
 
 Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the
-draft is outdated or failed), `Reply` (R, a reply without a change) and `Skip`
-(S), plus `Undo` (U) until the push and `Draft a fix` (D) on a comment nobody
-drafted. J and K move. Edit, Answer and Reply share one text box: Enter sends,
+draft is outdated, `Add a hint` when the run failed), `Reply` (R, a reply
+without a change) and `Skip` (S), plus `Undo` (U, `Resume` on a skipped
+comment) until the push and `Fix` (F) on a comment nobody started, which opens
+the launch strip. J and K move. A checkbox appears on hover on comments nobody
+started (X toggles the focused row, Cmd+A picks every one of them, Esc clears):
+the bar `3 selected · Fix 3 separately` opens the strip for the pick, and a
+batch is born only from a selection or one `Fix`. Edit, Answer and Reply share one text box: Enter sends,
 Shift+Enter adds a line, Esc cancels. Clicking the reply edits it in place.
 `…` also offers Stop drafting, Resolve without a reply, Open in diff, Agent
 transcript, Open on GitHub and Copy link. Accept and Skip move focus to the
@@ -706,14 +718,36 @@ with a local commit and never pushes.
   sha fails, preparing the publication (or **Recheck fix**) records it again
   before it checks the branch
 
-- Every start goes through one path (`startResolve`): `Draft fixes for N` in
-  the Review header, `Draft a fix` on one comment, or the Activity suggestion.
-  Opening Review never starts an agent. Each start carries the thread ids and
-  the marker contract. It uses the model chosen in `…` → `Model for drafts…`
-  (the shared picker with every connected provider and a **Suggested** row),
-  or the suggested resolver model
-- Fixes run one at a time in the session worktree, so two fixes never fight
-  over the same branch
+- Every start goes through one path (`startBatch`): `Fix` on the row of a
+  comment nobody started (hover) or in its detail, `F` on the focused row, or
+  the Activity suggestion. The header has no "Draft fixes" button: a batch is
+  born from the comments you pick. Opening Review never starts an agent.
+  `Fix` opens the **launch strip**, inline under the header (never a dialog):
+  the model and effort pill (the shared picker with every connected provider
+  and a **Suggested** row), the commit style (`New commit` or `Fixup of the
+original`, prefilled from the settings or the last batch), an optional hint
+  that lands in Operator notes, a plain count line (`3 agents · up to 4 run at
+once · each works on its own copy of the branch`, no price: nothing
+  estimates the cost of a run), and `Start` on Cmd+Enter (Esc closes). The
+  choice is saved on the batch and on every attempt (`launch_choice_json`). Each start carries the thread ids and the
+  marker contract
+- A retry reads the same choices again. Redraft, Answer and Try again use the
+  launch choice of the comment's last batch attempt (model, effort, commit
+  style, hint), then the model picked for the session (`Model for drafts…`) and
+  the commit style set in Review replies, so with fixup set the second round is
+  a fixup too. The
+  hint you type before a retry lands in the prompt's operator notes
+- A failed run offers **Try again** (`Try again on Opus 5` once you picked a
+  model, `Try again with the hint` with a hint), **Try another model** (the
+  picker opens inline under the buttons) and **Add a hint** (F is Try again).
+  `…` holds Reply yourself, Skip and Open transcript. The earlier attempts of
+  the comment fold into one line above (`Attempt 1 · Sonnet 5 · Medium ·
+failed`) that opens to their reasons. A failed step after the run shows its
+  own verb: `Push again`, `Post the reply again` or `Open on GitHub` when
+  Goodboy could not confirm the reply landed
+- A batch fix runs in its own copy of the branch, up to four at a time (the
+  session limit), so two fixes never fight over the same branch. The rest wait
+  with `Waiting for a free slot`
 - After a restart, Goodboy rebuilds everything from its database, not from a
   chat log
 
@@ -726,7 +760,12 @@ blocker (uncommitted changes, a commit nobody approved, a fix still running)
 replaces the confirm with its reason and the one move that clears it. The
 result stays on the layer in one line with its commit; a partial push says how
 many landed and marks the comment that did not with its reason, and `Retry
-push for N` picks it up. ⌘↵ with the list focused pushes too. Behind it runs a
+push for N` picks it up. When the push failed because origin moved, `Sync and
+try again` (on the comment and in the result line) asks first under the header,
+then fetches origin and rebases the unpushed commits of the local branch on it
+in a copy, without pushing, and checks the push again. If those commits
+conflict with the new ones it stops and says so, and the branch stays as it
+was. ⌘↵ with the list focused pushes too. Behind it runs a
 **publication**, which:
 
 1. Locks the conversations it will publish

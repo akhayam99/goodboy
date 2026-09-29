@@ -16,7 +16,6 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { resolverPagePlace, sessionPlace } from '../../../store/slices/navigation/place';
-import { draftFixes } from '../../resolve/draftFixes';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
 import { requestReview } from '../../review/reviewRequest';
@@ -143,7 +142,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.transcript',
-      label: 'Agent transcript',
+      label: ({ facts }) => (facts.state === 'failed' ? 'Open transcript' : 'Agent transcript'),
       icon: CONCEPT_ICONS.agents,
       group: 'open',
       when: ({ facts }) => facts.agentId !== null,
@@ -172,19 +171,18 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.draft',
-      label: 'Draft a fix',
+      label: 'Fix',
       icon: CONCEPT_ICONS.agents,
       group: 'act',
-      shortcut: 'review.draft',
+      shortcut: 'review.fix',
       when: ({ facts }) => facts.state === 'new',
       slot: () => 'primary',
-      run: async ({ facts, env }) => {
-        await draftFixes({
+      run: ({ facts, env }) =>
+        requestReview({
           getState: env.getState,
           sessionId: facts.sessionId,
-          threadIds: [facts.threadId],
-        });
-      },
+          request: { kind: 'fix', threadIds: [facts.threadId] },
+        }),
     },
     {
       id: 'reviewComment.answer',
@@ -209,7 +207,12 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.edit',
-      label: ({ facts }) => (isRedraft(facts) ? 'Redraft' : 'Edit'),
+      label: ({ facts }) => {
+        if (facts.state === 'failed') {
+          return 'Add a hint';
+        }
+        return isRedraft(facts) ? 'Redraft' : 'Edit';
+      },
       icon: RefreshCw,
       group: 'act',
       shortcut: 'review.edit',
@@ -233,7 +236,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.reply',
-      label: 'Reply',
+      label: ({ facts }) => (facts.state === 'failed' ? 'Reply yourself' : 'Reply'),
       icon: CornerDownRight,
       group: 'act',
       shortcut: 'review.reply',
@@ -254,7 +257,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.undo',
-      label: 'Undo',
+      label: ({ facts }) => (facts.state === 'skipped' ? 'Resume' : 'Undo'),
       icon: Undo2,
       group: 'act',
       shortcut: 'review.undo',

@@ -294,7 +294,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Review',
-        desc: 'The comments on the left, grouped as Open, Waiting for the push and Done, and the one you picked on the right. Draft fixes for N writes each fix as a local commit and drafts the reply, and you accept, edit or skip it.',
+        desc: 'The comments on the left, grouped as Open, Ready to push and Done, and the one you picked on the right. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it.',
       },
       {
         term: 'Push',

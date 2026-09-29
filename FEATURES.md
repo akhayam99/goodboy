@@ -413,7 +413,7 @@ Turn review comments into commits, push them back to GitHub, and read your own p
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-resolve-light.webp" alt="Review for PR #318 in Harborline with six open comments on the left and the one from kenji-w on retryPolicy.ts:42 on the right, marked Ready, with a Proposed change that caps the retries in retryPolicy.ts and metrics.ts">
 </picture>
 
-Turn review comments into commits without writing the fix yourself. **Review** lists the comments on the left and the one you picked on the right: here kenji-w asks for a retry cap on `retryPolicy.ts:42`, and the resolver's **Proposed change** sits under it. **Draft a fix** (**Draft fixes for N** when several are waiting) has an agent write each fix as a local commit and draft the reply, then you accept it, edit it, reply yourself or skip the comment.
+Turn review comments into commits without writing the fix yourself. Review lists the comments on the left and the one you picked on the right. Press **Fix** on a comment (or **F**), pick the model and commit style in the strip that opens under the header, and each comment gets its own agent (check several comments with the box that shows on hover, **X** or **Cmd+A**, then **Fix N separately** to start them together), working in its own copy of the branch, up to four at a time while the rest wait for a free slot. Each agent writes its fix as a commit and drafts the reply, then you accept it, edit it, reply yourself or skip the comment. Accepting puts the fix on your branch; if it collides with a fix you accepted before, the branch stays as it was and the comment says to redo it on top. A retry keeps the model, commit style and hint the comment started with.
 
 ### Comment states
 
@@ -422,7 +422,11 @@ Turn review comments into commits without writing the fix yourself. **Review** l
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-comment-states-light.webp" alt="The Review list for PR #318 grouped as Open 6, Waiting for the push 2 and Done 1, with each row marked Outdated, Needs you, Drafting, Ready, Not started, Accepted, Skipped or Pushed, and a row of count chips above">
 </picture>
 
-Know what each comment needs next. Each row carries a state: **Outdated**, **Needs you**, **Drafting**, **Ready**, **Not started**, **Accepted**, **Skipped** or **Pushed**. Rows group as **Open**, **Waiting for the push** and **Done**, and the chips above the list count them, such as **2 ready** and **1 pushed**. An **Outdated** comment changed since its reply was drafted, so **Redraft** comes first.
+Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Ready to push** and **Done**. A single summary line under the title counts them, and the list menu filters by state.
+
+### Failed drafts
+
+Know why a draft failed and what to do next. The comment says why in plain words, shows the last command the agent ran and how it ended, and links to the transcript. Pick **Try again**, **Try another model** or **Add a hint**, and earlier attempts fold into one line above. When a push fails because the branch on origin moved, **Sync and try again** asks first, brings the new commits under yours, and stops without touching anything if they conflict.
 
 ### Close on GitHub
 

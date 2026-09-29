@@ -2,6 +2,7 @@ import type { ResolveAttempt, ResolveAttemptPhase, SessionId } from '@goodboy/ty
 import type { Database } from '../client';
 import { resolveStringArray } from './resolve-json';
 import { fromMountTarget, toMountTarget } from './resolve-mount-target';
+import { parseLaunchChoice, serializeLaunchChoice } from './resolve-launch-choice';
 
 type ListParams = { readonly db: Database; readonly sessionId: SessionId };
 type InsertParams = { readonly db: Database; readonly attempt: ResolveAttempt };
@@ -11,8 +12,9 @@ type PhaseParams = {
   readonly phase: ResolveAttemptPhase;
   readonly error?: string | null;
 };
-type Row = Omit<ResolveAttempt, 'threadIds' | 'mountTarget'> & {
+type Row = Omit<ResolveAttempt, 'threadIds' | 'mountTarget' | 'launchChoice'> & {
   readonly threadIds: string;
+  readonly launchChoice: string | null;
   readonly mountId: string | null;
   readonly mountRevision: number | null;
   readonly worktreePath: string | null;
@@ -21,13 +23,15 @@ type Row = Omit<ResolveAttempt, 'threadIds' | 'mountTarget'> & {
 const COLUMNS = `id, session_id AS sessionId, agent_id AS agentId, pr_number AS prNumber,
   thread_ids_json AS threadIds, provider, model, effort, instructions, phase,
   mount_id AS mountId, mount_revision AS mountRevision, worktree_path AS worktreePath,
-  started_at AS startedAt, ended_at AS endedAt, error, created_at AS createdAt`;
+  started_at AS startedAt, ended_at AS endedAt, error, created_at AS createdAt,
+  batch_id AS batchId, copy_path AS copyPath, launch_choice_json AS launchChoice`;
 
 const hydrate = ({ row }: { readonly row: Row }): ResolveAttempt => {
   const { mountId, mountRevision, worktreePath, ...attempt } = row;
   return {
     ...attempt,
     threadIds: resolveStringArray({ json: row.threadIds }),
+    launchChoice: parseLaunchChoice({ json: row.launchChoice }),
     mountTarget: toMountTarget({ mountId, mountRevision, worktreePath }),
   };
 };
@@ -57,12 +61,15 @@ export const listActiveResolveAttempts = async ({
 export const insertResolveAttempt = async ({ db, attempt }: InsertParams): Promise<void> => {
   const target = fromMountTarget({ target: attempt.mountTarget });
   await db.execute(
-    `INSERT INTO resolve_attempts (id, session_id, agent_id, pr_number, thread_ids_json, provider, model, effort, instructions, phase, mount_id, mount_revision, worktree_path, started_at, ended_at, error, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO resolve_attempts (id, session_id, agent_id, pr_number, thread_ids_json, provider, model, effort, instructions, phase, mount_id, mount_revision, worktree_path, started_at, ended_at, error, created_at, batch_id, copy_path, launch_choice_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT (id) DO UPDATE SET provider = excluded.provider, model = excluded.model,
       effort = excluded.effort, instructions = excluded.instructions, phase = excluded.phase,
       thread_ids_json = excluded.thread_ids_json,
       mount_id = excluded.mount_id, mount_revision = excluded.mount_revision,
       worktree_path = excluded.worktree_path,
+      batch_id = COALESCE(excluded.batch_id, resolve_attempts.batch_id),
+      copy_path = COALESCE(excluded.copy_path, resolve_attempts.copy_path),
+      launch_choice_json = COALESCE(excluded.launch_choice_json, resolve_attempts.launch_choice_json),
       started_at = COALESCE(resolve_attempts.started_at, excluded.started_at)
     WHERE resolve_attempts.phase IN ('queued', 'running')`,
     [
@@ -83,6 +90,9 @@ export const insertResolveAttempt = async ({ db, attempt }: InsertParams): Promi
       attempt.endedAt,
       attempt.error,
       attempt.createdAt,
+      attempt.batchId,
+      attempt.copyPath,
+      serializeLaunchChoice({ choice: attempt.launchChoice }),
     ],
   );
 };
@@ -99,4 +109,16 @@ export const setResolveAttemptPhase = async ({
     `UPDATE resolve_attempts SET phase = ?, error = ?, started_at = CASE WHEN ? = 'running' THEN COALESCE(started_at, ?) ELSE started_at END, ended_at = CASE WHEN ? THEN ? WHEN ? IN ('running', 'queued') THEN NULL ELSE ended_at END WHERE id = ?`,
     [phase, error, phase, now, Number(isTerminal), now, phase, id],
   );
+};
+
+export const setResolveAttemptCopyPath = async ({
+  db,
+  id,
+  copyPath,
+}: {
+  readonly db: Database;
+  readonly id: string;
+  readonly copyPath: string | null;
+}): Promise<void> => {
+  await db.execute('UPDATE resolve_attempts SET copy_path = ? WHERE id = ?', [copyPath, id]);
 };

@@ -1,5 +1,8 @@
+import type { ResolveAttemptBatch } from './slices/resolve/types';
 import { createResolveSlice } from './slices/resolve';
 import { createReviewNavigationSlice } from './slices/review-navigation';
+import { createReviewSelectionSlice } from './slices/review-selection';
+import { reviewSelectionInitialState } from './slices/review-selection/state';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
@@ -249,6 +252,7 @@ import type {
 import type { StartHistoryRewriterOutcome } from './slices/history/startHistoryRewriter';
 import type { RestoreHistoryInput, RestoreHistoryOutcome } from './slices/history/restoreHistory';
 import type { BringOriginOutcome } from './slices/history/bringOriginIntoHistory';
+import type { SyncBranchOutcome } from './slices/history/syncBranchWithRemote';
 import { createPrSeriesSlice, prSeriesInitialState } from './slices/pr-series';
 import { createPrWritesSlice } from './slices/pr-writes';
 import { prWritesInitialState } from './slices/pr-writes/state';
@@ -645,6 +649,7 @@ type AppActions = {
   rewriteDraftWithAgent(input: HistoryMountInput & { note?: string }): Promise<void>;
   restoreHistory(input: RestoreHistoryInput): Promise<RestoreHistoryOutcome>;
   bringOriginIntoHistory(input: HistoryMountInput): Promise<BringOriginOutcome>;
+  syncBranchWithRemote(input: HistoryMountInput): Promise<SyncBranchOutcome>;
   requestScribe(input: RequestScribeInput): Promise<string>;
   settleScribe(input: SettleScribeInput): Promise<void>;
   refreshPrDescription(input: { sessionId: SessionId; mountId: MountId }): Promise<boolean>;
@@ -760,6 +765,7 @@ type AppActions = {
     agentId?: AgentId;
     mountId?: MountId;
     mountTarget?: MountTargetSnapshot;
+    resolveCopyPath?: string;
     content: string;
     attachments?: ReadonlyArray<AttachmentInput>;
     override?: TurnProviderOverride;
@@ -854,6 +860,7 @@ type AppActions = {
       sourceKind?: AgentSourceKind;
       focus?: SpawnFocus;
       parentAgentId?: AgentId;
+      resolveBatch?: ResolveAttemptBatch;
     },
   ): Promise<AgentId>;
   forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;
@@ -1187,6 +1194,7 @@ export type AppStore = AppState &
   ReturnType<typeof createArtifactsSlice> &
   ReturnType<typeof createResolveSlice> &
   ReturnType<typeof createReviewNavigationSlice> &
+  ReturnType<typeof createReviewSelectionSlice> &
   ReturnType<typeof createPrWritesSlice> &
   ReturnType<typeof createSessionSyncSlice> &
   ReturnType<typeof createIssueBriefsSlice> &
@@ -1351,6 +1359,7 @@ export const initialState: AppState = {
   agentKindOverride: {},
   ...resolveInitialState,
   ...reviewNavigationInitialState,
+  ...reviewSelectionInitialState,
   ...artifactsInitialState,
   agentDraft: {},
   workflowDrafts: {},
@@ -1418,6 +1427,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   ...createAgentQueueSlice(set, get),
   ...createResolveSlice({ set, get }),
   ...createReviewNavigationSlice({ set, get }),
+  ...createReviewSelectionSlice({ set }),
   ...createWorkflowDraftsSlice(set, get),
   ...createArtifactDraftsSlice(set, get),
   ...createWorkflowStudioSlice(set, get),

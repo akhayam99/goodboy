@@ -25,6 +25,7 @@ const LEASE_HOLDER: &str = "history-rewrite";
 const JOURNAL_FILE: &str = "goodboy-history.journal";
 const COPY_PREFIX: &str = "goodboy-history-";
 const TRIAL_SLUG_PREFIX: &str = "try-";
+const RESOLVE_SLUG_PREFIX: &str = "resolve-";
 const COPY_DIR: &str = "copy";
 const RESERVATIONS_DIR: &str = "history-copies";
 const RESERVATION_FILE: &str = "goodboy-history-owner";
@@ -2404,7 +2405,9 @@ pub(crate) fn clean_stale_copies_in(
         if owner_repo(&root).is_none() || is_held(&root) {
             continue;
         }
-        let limit = if slug.starts_with(TRIAL_SLUG_PREFIX) {
+        let limit = if slug.starts_with(RESOLVE_SLUG_PREFIX) {
+            0
+        } else if slug.starts_with(TRIAL_SLUG_PREFIX) {
             trial_after_secs
         } else {
             other_after_secs
@@ -3009,6 +3012,65 @@ pub async fn history_copy_discard(
         }
         discard_copy(&copy_path);
         Ok(())
+    })
+    .await
+    .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolveCopyArgs {
+    pub worktree_path: String,
+    pub attempt_id: String,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolveCopy {
+    pub copy_path: String,
+    pub head: String,
+}
+
+pub(crate) fn resolve_copy_path_of(attempt_id: &str) -> PathBuf {
+    copy_path_of(&format!("{RESOLVE_SLUG_PREFIX}{attempt_id}"))
+}
+
+pub(crate) fn prepare_resolve_copy_at(
+    cwd: &Path,
+    copy: &Path,
+) -> Result<ResolveCopy, WorktreeError> {
+    if copy.exists() && is_owned_copy(copy) {
+        discard_copy(&copy.to_string_lossy());
+    }
+    let head = resolve_commit(cwd, "HEAD")?;
+    let mut guard = create_copy(cwd, copy, &head)?;
+    guard.is_kept = true;
+    drop(guard);
+    Ok(ResolveCopy {
+        copy_path: copy.to_string_lossy().to_string(),
+        head,
+    })
+}
+
+#[cfg(test)]
+pub(crate) fn release_held_copy_for_test(copy: &Path) {
+    if let Some(root) = reservation_root_of(copy) {
+        drop(take_held(&root));
+    }
+}
+
+#[tauri::command]
+pub async fn resolve_copy_prepare(args: ResolveCopyArgs) -> Result<ResolveCopy, WorktreeError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let cwd = PathBuf::from(&args.worktree_path);
+        if !cwd.exists() {
+            return Err(WorktreeError::RepoNotFound(args.worktree_path));
+        }
+        let copy = resolve_copy_path_of(&args.attempt_id);
+        if !copy.is_absolute() {
+            return Err(plan_error("there is no folder for the temporary copy"));
+        }
+        prepare_resolve_copy_at(&cwd, &copy)
     })
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?

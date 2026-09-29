@@ -35,6 +35,16 @@ file holds those explanations. Everything below has been "fixed" at least once a
   also not the union the pull-request screens switch on. That one is
   `PullRequestProvider`, which already has `'bitbucket'`. So Bitbucket pull
   requests do not need a `RemoteHostKind` member to work.
+- `syncBranchWithRemote` (the `Sync and try again` of a push that failed on a
+  moved remote) has no Rust command of its own. It calls `history_rebase_plan`
+  with the branch itself as the base, which fetches `origin/<branch>` and
+  plans the rebase of the unpushed commits on it, then replays that plan in a
+  copy. A conflict discards the copy and stops. It must never start the
+  history rewriter the way `rebaseBranch` does, because the promise on screen
+  is that nothing is touched. A failed push counts as "remote moved" only when
+  the error matches `isRemoteMovedError`; `verifiedPush` builds its two
+  messages through the same module, so changing their wording elsewhere turns
+  the button off.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every
   `pending_resolutions` row into it, and `m143` dropped that table. Nothing
   reads a separate queue any more. What the user sees comes from one column,
@@ -73,6 +83,26 @@ file holds those explanations. Everything below has been "fixed" at least once a
   `turnSettled.ts`) besides checking the lease and the live run ids. Markers
   that still arrive on an attempt failed as `interrupted` are recorded rather
   than dropped.
+- A resolver started through a batch (`startBatch`, `resolve_attempts.batch_id`
+  set) never writes the real branch. `drainResolveQueue` makes it a detached
+  copy at the branch head (`resolve_copy_prepare`, under the history copy
+  reservations with the slug `resolve-<attemptId>`) and hands `sendTurn` the
+  `resolveCopyPath`. That turn takes no worktree writer lease, gets the copy
+  and its git admin folder as writable roots, and cannot push. The writer
+  lease still guards the real branch for resolvers without a batch, and only
+  one of them runs at a time. Up to the session limit
+  (`resolve_session_settings.parallel_limit`, default 4) batch resolvers run
+  at once; the rest stay `queued`. When the turn ends, the work is captured
+  from the copy as a candidate (`refs/goodboy/candidates/<attemptId>`, shared
+  by every worktree of the repo) and the copy is deleted; the candidate row
+  keeps the real worktree path, so Accept cherry-picks onto the real branch.
+  A cherry-pick that no longer applies is aborted and the branch reset, the
+  candidate turns `stale` and the thread fails with
+  `failed:accept_conflict`, so a retry redoes it on top. Every drain releases
+  the copies of ended attempts, and app start removes every `resolve-` copy no
+  process holds. A copy is never reused across turns: a later turn of the same
+  agent without a copy (an operator message) runs on the real branch with the
+  lease.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider

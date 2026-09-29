@@ -1,3 +1,4 @@
+import type { ResolveAttemptBatch } from '../resolve/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
   Agent,
@@ -500,6 +501,28 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(request?.instructions).toContain('Operator notes\nAvoid schema changes.');
     expect(sendTurn).not.toHaveBeenCalled();
     expect(drainResolveQueue).toHaveBeenCalledWith({ sessionId: SESSION_ID });
+  });
+
+  it('records the batch and its launch choice on the queued attempt', async () => {
+    const { recordResolveAttempt, spawn } = buildHarness([]);
+    const batch = {
+      batchId: 'batch-1',
+      launchChoice: {
+        provider: 'anthropic',
+        model: 'claude-sonnet-5',
+        effort: null,
+        commitStyle: 'new',
+        hint: null,
+      },
+    } satisfies ResolveAttemptBatch;
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'resolver',
+      initialPrompt: 'fix the rounding',
+      resolveBatch: batch,
+    });
+
+    expect(recordResolveAttempt).toHaveBeenCalledWith(expect.objectContaining({ batch }));
   });
 
   it('persists every combined source thread and the first compatibility thread', async () => {

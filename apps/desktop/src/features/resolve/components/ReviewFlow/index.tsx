@@ -38,13 +38,22 @@ import { useResolveAgain } from '../../hooks/useResolveAgain';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { RESOLVE_QUEUE_REFRESH_LABEL } from '../../resolveQueueCopy';
 import { REVIEW_FLOW_LABEL, REVIEW_TITLE, counterLabel } from '../../reviewFlowCopy';
-import { isPushFailure } from '../../reviewCommentState';
+import { startedLine } from '../../reviewLaunchCopy';
+import {
+  isPushFailure,
+  matchesReviewStateFilter,
+  type ReviewStateFilter,
+} from '../../reviewCommentState';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewComment, type ReviewCompose } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
 import { ReviewHeaderMeta } from './ReviewHeaderMeta';
 import { PushBanner } from './PushBanner';
+import { ReviewLaunchStrip } from './ReviewLaunchStrip';
 import { ReviewList } from './ReviewList';
+import { ReviewListMenu } from './ReviewListMenu';
+import { ReviewSelectionBar } from './ReviewSelectionBar';
+import { modelLabel } from '../../../chat/utils/chat-constants';
 import { useReviewPush } from './useReviewPush';
 import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
 
@@ -65,8 +74,17 @@ const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> 
   ['review.reply', ['reviewComment.reply']],
   ['review.skip', ['reviewComment.skip']],
   ['review.undo', ['reviewComment.undo']],
-  ['review.draft', ['reviewComment.draft']],
+  ['review.fix', ['reviewComment.draft']],
 ];
+
+type ReviewLaunch = {
+  readonly threadIds: ReadonlyArray<string>;
+};
+
+type StartedNote = {
+  readonly count: number;
+  readonly model: string;
+};
 
 const COULD_NOT_SEND =
   'This comment is no longer on the pull request, so the agent cannot be asked about it';
@@ -96,6 +114,33 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
   const { entries, groups } = useReviewEntries({ sessionId });
+  const [filter, setFilter] = useState<ReviewStateFilter>('all');
+  const shownGroups = useMemo(
+    () =>
+      groups
+        .map((group) => ({
+          ...group,
+          entries: group.entries.filter((entry) =>
+            matchesReviewStateFilter({ state: entry.state, filter }),
+          ),
+        }))
+        .filter((group) => group.entries.length > 0),
+    [filter, groups],
+  );
+  const shownEntries = useMemo(() => shownGroups.flatMap((group) => group.entries), [shownGroups]);
+  const storedSelection = useAppStore((s) => s.reviewSelection[sessionId]);
+  const setReviewSelection = useAppStore((s) => s.setReviewSelection);
+  const toggleReviewSelection = useAppStore((s) => s.toggleReviewSelection);
+  const clearReviewSelection = useAppStore((s) => s.clearReviewSelection);
+  const fixableIds = useMemo(
+    () => new Set(entries.filter((entry) => entry.state === 'new').map((entry) => entry.threadId)),
+    [entries],
+  );
+  const selectedIds = useMemo(
+    () => (storedSelection ?? []).filter((threadId) => fixableIds.has(threadId)),
+    [fixableIds, storedSelection],
+  );
+  const checked = useMemo(() => new Set(selectedIds), [selectedIds]);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const selectedThreadId = useAppStore((s) =>
     s.drawer?.kind === 'conversation' && s.drawer.sessionId === sessionId
@@ -118,11 +163,16 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Readonly<Record<string, string>>>({});
   const [modelPickerRequest, setModelPickerRequest] = useState(0);
+  const [launch, setLaunch] = useState<ReviewLaunch | null>(null);
+  const [started, setStarted] = useState<StartedNote | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const hasPr = github?.pr != null;
   const push = useReviewPush({ sessionId });
   const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
-  const isPushBusy = push.phase.kind === 'preparing' || push.phase.kind === 'pushing';
+  const isPushBusy =
+    push.phase.kind === 'preparing' ||
+    push.phase.kind === 'pushing' ||
+    push.phase.kind === 'syncing';
 
   useEffect(() => {
     void loadResolveSession({ sessionId });
@@ -157,15 +207,15 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
 
   const step = useCallback(
     (delta: 1 | -1): void => {
-      const index = entries.findIndex((entry) => entry.threadId === focusedThreadId);
-      const next = entries[index + delta];
+      const index = shownEntries.findIndex((entry) => entry.threadId === focusedThreadId);
+      const next = shownEntries[index + delta];
       if (next === undefined) {
         return;
       }
       select(next.threadId);
       focusRow(next.threadId);
     },
-    [entries, focusRow, focusedThreadId, select],
+    [focusRow, focusedThreadId, select, shownEntries],
   );
 
   const setError = useCallback((threadId: string, message: string | null): void => {
@@ -203,6 +253,66 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     },
     [entries, env, focusRow, pending, select, sessionId, setError],
   );
+
+  const retryRun = useCallback(
+    async (threadId: string): Promise<void> => {
+      if (isSubmitting) {
+        return;
+      }
+      setIsSubmitting(true);
+      setError(threadId, null);
+      try {
+        const outcome = await requestAttempt({
+          threadId,
+          instruction: RESOLVE_ITEM_LABEL.rereadInstruction,
+        });
+        if (outcome === 'missing') {
+          throw new Error(COULD_NOT_SEND);
+        }
+      } catch (caught) {
+        if (!isReportedError(caught)) {
+          setError(threadId, formatError(caught));
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [isSubmitting, requestAttempt, setError],
+  );
+
+  const openLaunch = useCallback(
+    (threadIds: ReadonlyArray<string>): void => {
+      const [first] = threadIds;
+      if (threadIds.length === 1 && first !== undefined) {
+        select(first);
+      }
+      setStarted(null);
+      setLaunch({ threadIds });
+    },
+    [select],
+  );
+
+  const closeLaunch = useCallback((): void => {
+    setLaunch(null);
+    if (focusedThreadId !== null) {
+      focusRow(focusedThreadId);
+    }
+  }, [focusRow, focusedThreadId]);
+
+  const onLaunchStarted = useCallback(
+    ({ count, model }: StartedNote): void => {
+      setStarted({ count, model: modelLabel(model) });
+      clearReviewSelection({ sessionId });
+      closeLaunch();
+    },
+    [clearReviewSelection, closeLaunch, sessionId],
+  );
+
+  const retryDelivery = useCallback((): void => {
+    if (!isPushBusy) {
+      void push.arm({ isRetry: true });
+    }
+  }, [isPushBusy, push]);
 
   const submitCompose = useCallback(async (): Promise<void> => {
     if (compose === null || isSubmitting) {
@@ -276,6 +386,11 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         setCompose({ threadId: request.threadId, mode: request.mode, text: '' });
         return;
       }
+      if (request.kind === 'fix') {
+        event.preventDefault();
+        openLaunch(request.threadIds);
+        return;
+      }
       if (request.kind === 'edit_reply') {
         event.preventDefault();
         select(request.threadId);
@@ -296,7 +411,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     };
     window.addEventListener(REVIEW_REQUEST_EVENT, onRequest);
     return () => window.removeEventListener(REVIEW_REQUEST_EVENT, onRequest);
-  }, [hasPushFailure, isPushBusy, push, select, sessionId]);
+  }, [hasPushFailure, isPushBusy, openLaunch, push, select, sessionId]);
 
   useEffect(() => {
     if (reviewTarget === null || reviewTarget.status !== 'ready') {
@@ -323,6 +438,10 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         void push.confirm();
         return;
       }
+      if (push.phase.kind === 'sync_confirm') {
+        void push.confirmSync();
+        return;
+      }
       void runObjectAction({
         target: { kind: 'review', sessionId },
         actionId: 'review.push',
@@ -343,7 +462,39 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       step(-1);
       return;
     }
+    if (
+      (native.metaKey || native.ctrlKey) &&
+      !native.altKey &&
+      !native.shiftKey &&
+      native.code === 'KeyA'
+    ) {
+      event.preventDefault();
+      setReviewSelection({
+        sessionId,
+        threadIds: shownEntries
+          .filter((entry) => fixableIds.has(entry.threadId))
+          .map((entry) => entry.threadId),
+      });
+      return;
+    }
+    if (native.key === 'Escape' && selectedIds.length > 0) {
+      event.preventDefault();
+      clearReviewSelection({ sessionId });
+      return;
+    }
     if (focusedThreadId === null) {
+      return;
+    }
+    if (eventMatches({ event: native, entry: SHORTCUTS['review.select'] })) {
+      event.preventDefault();
+      if (fixableIds.has(focusedThreadId)) {
+        toggleReviewSelection({ sessionId, threadId: focusedThreadId });
+      }
+      return;
+    }
+    if (eventMatches({ event: native, entry: SHORTCUTS['review.fix'] }) && selectedIds.length > 0) {
+      event.preventDefault();
+      openLaunch(selectedIds);
       return;
     }
     const available =
@@ -363,13 +514,14 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         void runVerb({ threadId: focusedThreadId, actionId: action.id });
         return;
       }
-      if (shortcut === 'review.draft') {
+      if (
+        shortcut === 'review.fix' &&
+        focused?.state === 'failed' &&
+        !isPushFailure({ row: focused.row })
+      ) {
         event.preventDefault();
-        void runObjectAction({
-          target: { kind: 'review', sessionId },
-          actionId: 'review.draftFixes',
-          env,
-        }).catch((caught: unknown) => setError(focusedThreadId, formatError(caught)));
+        void retryRun(focusedThreadId);
+        return;
       }
       return;
     }
@@ -419,15 +571,34 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     }
     return (
       <div className="flex min-h-0 min-w-0 flex-1 gap-8">
-        <ScrollFade
-          className="hidden min-h-0 w-[300px] shrink-0 @4xl:block"
-          viewportClassName="pb-5 pr-2"
-          fadeSize="h-6"
-        >
-          <div ref={listRef}>
-            <ReviewList groups={groups} focusedThreadId={focusedThreadId} onSelect={select} />
-          </div>
-        </ScrollFade>
+        <div className="hidden min-h-0 w-[300px] shrink-0 flex-col @4xl:flex">
+          {selectedIds.length > 0 ? (
+            <ReviewSelectionBar
+              count={selectedIds.length}
+              onClear={() => clearReviewSelection({ sessionId })}
+              onFix={() => openLaunch(selectedIds)}
+            />
+          ) : (
+            <ReviewListMenu filter={filter} onFilter={setFilter} />
+          )}
+          <ScrollFade className="min-h-0 flex-1" viewportClassName="pb-5 pr-2" fadeSize="h-6">
+            <div ref={listRef}>
+              <ReviewList
+                groups={shownGroups}
+                focusedThreadId={focusedThreadId}
+                onSelect={select}
+                onFix={(threadId) => openLaunch([threadId])}
+                checked={checked}
+                onToggle={(threadId) => toggleReviewSelection({ sessionId, threadId })}
+              />
+              {shownGroups.length === 0 && (
+                <p className="px-2.5 py-2 text-secondary text-muted-foreground">
+                  {REVIEW_FLOW_LABEL.noMatch}
+                </p>
+              )}
+            </div>
+          </ScrollFade>
+        </div>
         <ScrollFade className="min-h-0 min-w-0 flex-1" viewportClassName="pb-8 pr-4" fadeSize="h-6">
           <div className="mb-4 flex items-center gap-1 @4xl:hidden">
             <span className="text-secondary tabular-nums text-muted-foreground">
@@ -467,6 +638,9 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
             onEditReply={() => setEditingReplyId(focused.threadId)}
             onReplyDone={() => setEditingReplyId(null)}
             onSelect={select}
+            onTryAgain={() => void retryRun(focused.threadId)}
+            onRetryDelivery={retryDelivery}
+            onSync={push.askSync}
           />
         </ScrollFade>
       </div>
@@ -499,6 +673,20 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col" onKeyDown={onKeyDown}>
         <PageColumn className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
           <PushBanner sessionId={sessionId} push={push} />
+          {launch !== null && (
+            <ReviewLaunchStrip
+              key={launch.threadIds.join(',')}
+              sessionId={sessionId}
+              threadIds={launch.threadIds}
+              onClose={closeLaunch}
+              onStarted={onLaunchStarted}
+            />
+          )}
+          {started !== null && launch === null && (
+            <p role="status" className="text-secondary text-muted-foreground">
+              {startedLine({ count: started.count, modelName: started.model })}
+            </p>
+          )}
           {refreshError !== null && !isWholeError && (
             <ErrorStrip
               label={RESOLVE_QUEUE_REFRESH_LABEL}

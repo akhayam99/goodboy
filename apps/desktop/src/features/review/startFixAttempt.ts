@@ -8,6 +8,8 @@ import {
 } from '../chat/spawn-from-comment';
 import type { CommentThread } from '../github/comment-threads';
 import { chunkConversations } from './chunkConversations';
+import { modelChoiceOfLaunch } from '../resolve/launchChoice';
+import type { ResolveAttemptBatch } from '../../store/slices/resolve/types';
 
 export type FixMode = 'shared' | 'separate' | 'retry' | 'recheck' | 'proceed';
 
@@ -22,6 +24,7 @@ type SpawnAgentArgs = {
   readonly sourceCommentUrl: string;
   readonly sourceKind: 'review_comment';
   readonly focus: 'none';
+  readonly resolveBatch?: ResolveAttemptBatch;
 };
 
 export type SpawnAgentFn = (sessionId: SessionId, args: SpawnAgentArgs) => Promise<AgentId>;
@@ -46,6 +49,7 @@ type Params = {
   readonly priorContext?: ReadonlyArray<PriorContext>;
   readonly style?: ResolverStyle;
   readonly contextWindow?: number | null;
+  readonly batch?: ResolveAttemptBatch | null;
   readonly spawnAgent: SpawnAgentFn;
   readonly setAgentConfig: SetAgentConfigFn;
 };
@@ -74,20 +78,35 @@ export const fixAttemptChunks = ({
   });
 };
 
+const joinHints = ({ hints }: { readonly hints: ReadonlyArray<string | null | undefined> }) =>
+  hints
+    .map((hint) => (hint ?? '').trim())
+    .filter((hint) => hint.length > 0)
+    .join('\n\n');
+
 export const startFixAttempt = async ({
   sessionId,
   threads,
   pr,
-  choice = {},
+  choice: requested = {},
   instructions,
   mode,
   priorContext,
-  style,
+  style: requestedStyle,
   contextWindow = null,
+  batch = null,
   spawnAgent,
   setAgentConfig,
 }: Params): Promise<ReadonlyArray<AgentId>> => {
-  const hint = (instructions ?? choice.hint ?? '').trim();
+  const launched =
+    batch === null ? null : modelChoiceOfLaunch({ launchChoice: batch.launchChoice });
+  const choice = launched ?? requested;
+  const commitStyle = batch?.launchChoice.commitStyle ?? null;
+  const style = commitStyle === null ? requestedStyle : { ...requestedStyle, commitStyle };
+  const hint =
+    launched === null
+      ? (instructions ?? choice.hint ?? '').trim()
+      : joinHints({ hints: [launched.hint, instructions] });
   const chunks = fixAttemptChunks({ threads, mode, pr, hint, contextWindow });
   const agentIds: Array<AgentId> = [];
   for (const chunk of chunks) {
@@ -113,6 +132,7 @@ export const startFixAttempt = async ({
       sourceCommentUrl: args.sourceCommentUrl,
       sourceKind: 'review_comment',
       focus: 'none',
+      ...(batch !== null && { resolveBatch: batch }),
     });
     await setAgentConfig(sessionId, agentId, {
       ...(choice.provider !== undefined && { providerOverride: choice.provider }),

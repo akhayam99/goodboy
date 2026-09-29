@@ -1,6 +1,7 @@
 import {
   getResolveCandidate,
   insertResolveCandidateItem,
+  listResolveAttempts,
   listResolveQueueItems,
   markOverlappingResolveCandidatesStale,
   markResolveCandidateReady,
@@ -40,12 +41,16 @@ export const captureResolveCandidate = async ({
   if (covered.length === 0) {
     return discard();
   }
+  const copyPath =
+    (await listResolveAttempts({ db, sessionId })).find((attempt) => attempt.id === attemptId)
+      ?.copyPath ?? null;
+  const capturePath = copyPath ?? candidate.worktreePath;
   const quarantined = await withCandidateLock({
-    worktreePath: candidate.worktreePath,
+    worktreePath: capturePath,
     holder: `candidate:${candidate.id}`,
     run: () =>
       quarantineWorktreeCandidate({
-        worktreePath: candidate.worktreePath,
+        worktreePath: capturePath,
         candidateId: candidate.id,
         baseSha: candidate.baseSha,
       }),

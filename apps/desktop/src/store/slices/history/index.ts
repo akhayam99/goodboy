@@ -16,6 +16,7 @@ import { bringOriginIntoHistory } from './bringOriginIntoHistory';
 import { restoreHistory } from './restoreHistory';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
+import { syncBranchWithRemote } from './syncBranchWithRemote';
 import type { GetFn, SetFn } from './types';
 
 export { historyInitialState } from './state';
@@ -37,5 +38,6 @@ export const createHistorySlice = (set: SetFn, get: GetFn) => {
     rewriteDraftWithAgent: rewriteDraftWithAgent(set, get),
     restoreHistory: restoreHistory(set, get),
     bringOriginIntoHistory: bringOriginIntoHistory(set, get),
+    syncBranchWithRemote: syncBranchWithRemote(set, get),
   };
 };
