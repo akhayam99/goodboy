@@ -111,11 +111,15 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     () => new Set(entries.filter((entry) => entry.state === 'new').map((entry) => entry.threadId)),
     [entries],
   );
+  const presentIds = useMemo(() => new Set(entries.map((entry) => entry.threadId)), [entries]);
   const selectedIds = useMemo(
-    () => (storedSelection ?? []).filter((threadId) => fixableIds.has(threadId)),
-    [fixableIds, storedSelection],
+    () => (storedSelection ?? []).filter((threadId) => presentIds.has(threadId)),
+    [presentIds, storedSelection],
   );
-  const fixSelectedIds = selectedIds;
+  const fixSelectedIds = useMemo(
+    () => selectedIds.filter((threadId) => fixableIds.has(threadId)),
+    [fixableIds, selectedIds],
+  );
   const checked = useMemo(() => new Set(selectedIds), [selectedIds]);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const selectedThreadId = useAppStore((s) =>
@@ -427,6 +431,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
           {selectedIds.length > 0 ? (
             <ReviewSelectionBar
               count={selectedIds.length}
+              fixCount={fixSelectedIds.length}
               onClear={() => clearReviewSelection({ sessionId })}
               onFix={() => openLaunch(fixSelectedIds)}
             />

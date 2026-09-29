@@ -4,11 +4,12 @@ import { REVIEW_LAUNCH_LABEL, fixSelectedLabel, selectedLabel } from '../../revi
 
 type Props = {
   readonly count: number;
+  readonly fixCount: number;
   readonly onClear: () => void;
   readonly onFix: () => void;
 };
 
-export const ReviewSelectionBar = ({ count, onClear, onFix }: Props) => (
+export const ReviewSelectionBar = ({ count, fixCount, onClear, onFix }: Props) => (
   <div
     role="toolbar"
     aria-label={REVIEW_LAUNCH_LABEL.selectionBar}
@@ -19,14 +20,16 @@ export const ReviewSelectionBar = ({ count, onClear, onFix }: Props) => (
       {REVIEW_LAUNCH_LABEL.clearSelection}
     </Button>
     <span className="flex-1" />
-    <Button size="sm" variant="primary" onClick={onFix}>
-      {fixSelectedLabel({ count })}
-      <KbdPill
-        aria-hidden
-        className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-meta text-on-tone"
-      >
-        {shortcutGlyphs('review.fix')}
-      </KbdPill>
-    </Button>
+    {fixCount > 0 && (
+      <Button size="sm" variant="primary" onClick={onFix}>
+        {fixSelectedLabel({ count: fixCount })}
+        <KbdPill
+          aria-hidden
+          className="ml-1 h-4 min-w-4 border-on-tone/30 bg-on-tone/15 text-meta text-on-tone"
+        >
+          {shortcutGlyphs('review.fix')}
+        </KbdPill>
+      </Button>
+    )}
   </div>
 );

@@ -533,6 +533,22 @@ describe('Review as one flow', () => {
     expect(useAppStore.getState().reviewTargets[SESSION.id]).toBeNull();
     expect(useAppStore.getState().reviewSelection[SESSION.id]).toEqual(selection);
   });
+
+  it('shows the selection bar for a batch opened from the Brief without offering to fix them again', async () => {
+    await mount({ threadId: null });
+
+    await act(async () => {
+      await useAppStore.getState().openReviewTarget({
+        sessionId: SESSION.id,
+        destination: { kind: 'threads', threadIds: [EXPANDED_THREAD_ID, FAILED_THREAD_ID] },
+      });
+    });
+    await settle();
+
+    const bar = screen.getByRole('toolbar', { name: 'Selected comments' });
+    expect(within(bar).getByText('2 selected')).toBeDefined();
+    expect(within(bar).queryByRole('button', { name: /^Fix / })).toBeNull();
+  });
 });
 
 describe('Review of a failed run', () => {
