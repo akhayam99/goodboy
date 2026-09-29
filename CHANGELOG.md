@@ -14,14 +14,32 @@ onto its own paragraph.
 
 ## Goodboy v0.13.1
 
-A new Sonnet model joins the picker for Claude, Cursor and OpenRouter.
+A new Sonnet joins the picker, Chat shows when it is working or has a new reply, and a resolver that committed no longer ends as a failed draft.
 
 ### New
 
 #### Claude Sonnet 5.5
 <!-- gb area=providers screen=settings/providers -->
 
-Sonnet 5.5 is available for Claude, Cursor and OpenRouter. Pick it for an agent or a turn from the model picker, and on Cursor choose one of its five effort levels. Your default models stay as they are.
+Sonnet 5.5 is available for Claude, Cursor and OpenRouter. Pick it for an agent or a turn from the model picker, with any of its five effort levels. Your default models stay as they are.
+
+### Improved
+
+#### Start work from a chat with any projects
+<!-- gb area=app image=chat -->
+
+Start work picks projects and sessions from a search, not a select. Leave the project empty, pick one, or pick several and the new session opens on all of them.
+
+#### See Chat working from any page
+<!-- gb area=app -->
+
+The Chat button in the top bar pulses while a chat is answering and shows a dot when a reply lands in a chat you are not looking at. The same marks sit on each chat in the list, and opening the chat clears them.
+
+### Fixed
+
+- A resolver that committed its fix no longer shows Draft failed. Its commit lands as a fix ready for review, and threads queued behind it stop sitting on Drafting. <!-- gb area=review -->
+- A resolve run that does fail now says why, such as the provider error or a budget cap, instead of The run stopped on an error. <!-- gb area=review -->
+- Esc no longer takes Goodboy out of full screen on macOS. It still closes popovers, drawers and the palette. <!-- gb area=app -->
 
 ## Goodboy v0.13.0
 
