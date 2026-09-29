@@ -778,14 +778,11 @@ describe('summarizer queue, coalescing and no-stack', () => {
     };
     sq.set(SESSION_ID, queue);
 
-    const before = Date.now();
     queue.queued = [
       ...queue.queued,
       { turnInput: 'next-input', turnOutput: '', workingDir: null, oversizeRetried: false },
     ];
-    const elapsed = Date.now() - before;
 
-    expect(elapsed).toBeLessThan(50);
     expect(queue.queued.at(-1)?.turnInput).toBe('next-input');
     expect(queue.inFlight).toBe(true);
 

@@ -37,10 +37,10 @@ Every desktop test that loads the real store goes through `apps/desktop/src/stor
 
 ## Every page has a navigation flow row
 
-`apps/desktop/src/__tests__/surfaces/navigation-flows.test.tsx` mounts the whole `App` on the real store, with only the Tauri bridge mocked. Each row of its `ROWS` table clicks a real control (crumb menu, palette, footer, settings rail, mount row, back arrow) and checks that a heading or landmark of the destination renders. A row fails on React #185, "Maximum update depth", "getSnapshot should be cached", the error boundary, or a store action it lists in `covers` that the click never called.
+The `apps/desktop/src/__tests__/surfaces/navigation-flows/` folder mounts the whole `App` on the real store, with only the Tauri bridge mocked. Each row of its tables clicks a real control (crumb menu, palette, footer, settings rail, mount row, back arrow) and checks that a heading or landmark of the destination renders. A row fails on React #185, "Maximum update depth", "getSnapshot should be cached", the error boundary, or a store action it lists in `covers` that the click never called.
 
-- A new page, studio, lens, settings section or navigation action adds one row in the same commit.
-- The ratchet at the bottom of the file greps the store navigation actions (`open*`, `navigate`, `back`, `forward`, `goToHistory`), the `useAppOverlays` openers, the studio kinds, the settings scopes and sections, and reads the live crumb menu and palette. Anything without a row fails the test. `EXEMPT` holds the few actions that open no page, each with its reason; an entry there that gains a row, or whose action is gone, fails too.
+- The rows live in the `*.rows.tsx` files of the folder, one per group of controls; each has a `*.test.tsx` twin that runs them, so the suite splits across workers. The ratchet finds every `*.rows.tsx` in the folder and fails when one has no twin that calls `runNavigationRows`. `harness.tsx` holds the bridge mock, `boot` and the click helpers. A new page, studio, lens, settings section or navigation action adds one row to the group it belongs to, in the same commit.
+- `ratchet.test.tsx` greps the store navigation actions (`open*`, `navigate`, `back`, `forward`, `goToHistory`), the `useAppOverlays` openers, the studio kinds, the settings scopes and sections, and reads the live crumb menu and palette. Anything without a row fails the test. `EXEMPT` holds the few actions that open no page, each with its reason; an entry there that gains a row, or whose action is gone, fails too.
 
 ## Database tests start from a migrated template
 
@@ -49,6 +49,14 @@ A `packages/db` test that needs a migrated schema calls `await makeMigratedTestD
 ## Migration convergence sampling
 
 For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the intermediate versions instead of all of them. That sample does not replace the per-version sql hash manifest checked into the same file. The manifest is what really stops anyone from editing a migration after release. The sample has its own minimum number of intermediate points it must reach. So if someone cuts the sample size, the test fails, instead of quietly shrinking to the first and last version. No test pins the sampled versions or the total number of migrations. Both change every release. A test that goes red for that reason teaches people to edit the expected values, and that is exactly how a hash manifest gets regenerated without anyone looking.
+
+## No stopwatch in the gate
+
+A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a budget in milliseconds fails when the runner is loaded, not when the code is slow. The required `unit` project has none. A real benchmark is named `*.perf.test.ts` and lives in the `perf` vitest project of `apps/desktop`, `packages/core` or `packages/db`. Run it with `pnpm test:perf` (or `pnpm --filter <pkg> test:perf`). It never blocks a merge: `.github/workflows/perf.yml` runs it on push to main, nightly and on demand, and a nightly failure opens or updates one issue labeled `perf`.
+
+- A guard against a slow regex or a quadratic loop asserts the result on the pathological input in the `unit` file, and keeps its time budget in the package's perf file (for example `packages/core/src/pathological-input.perf.test.ts`). Where the code reads its input by index, count the reads instead of timing them (`packages/core/src/artifacts/grammar.test.ts`).
+- The search query is guarded by `packages/db/src/queries/search.plan.test.ts`, which runs `EXPLAIN QUERY PLAN` on the query `searchIndex` really sends and checks that it walks the FTS index, reads documents by rowid or index, and never scans a table. `search.perf.test.ts` keeps the 100k message timing for the perf project.
+- Never assert a duration on an array copy or another operation with no I/O.
 
 ## The golden rule
 

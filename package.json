@@ -20,6 +20,7 @@
     "lint": "turbo run lint && pnpm run check:tauri-commands && pnpm run check:doc-refs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test --continue",
+    "test:perf": "turbo run test:perf --continue",
     "tauri:dev": "pnpm --filter @goodboy/desktop tauri:dev",
     "tauri:build": "pnpm --filter @goodboy/desktop tauri:build",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",

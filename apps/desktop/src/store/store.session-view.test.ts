@@ -859,43 +859,6 @@ describe('createSessionViewSlice, per-workspace isolation', () => {
   });
 });
 
-describe('sortAndGroupSessions, performance', () => {
-  it('handles 2000 sessions in under 500ms', () => {
-    const sessions = Array.from({ length: 2000 }, (_, i) => {
-      return makeSession(sid(i), {
-        goal: `Goal ${Math.random().toString(36).slice(2)}`,
-        createdAt: `2024-01-${String((i % 30) + 1).padStart(2, '0')}T00:00:00.000Z`,
-        updatedAt: `2024-01-${String((i % 30) + 1).padStart(2, '0')}T0${i % 10}:00:00.000Z`,
-      });
-    });
-
-    const stages: Record<SessionId, SessionStage> = {};
-    sessions.forEach((s, i) => {
-      stages[s.id] = (['attention', 'running', 'review', 'building', 'done'] as const)[i % 5]!;
-    });
-
-    const githubStates = githubWith(
-      sessions.map((s, i) => ({
-        id: s.id,
-        pr:
-          i % 5 === 0
-            ? null
-            : makePr({ isDraft: i % 3 === 0, reviewDecision: i % 7 === 0 ? 'approved' : null }),
-      })),
-    );
-
-    const start = performance.now();
-    for (const sort of ['updatedAt', 'goal', 'createdAt'] as const) {
-      for (const group of ['none', 'stage', 'pr'] as const) {
-        sortAndGroupSessions(sessions, { sort, group }, githubStates, stages);
-      }
-    }
-    const elapsed = performance.now() - start;
-
-    expect(elapsed).toBeLessThan(3000);
-  });
-});
-
 describe('STAGE_ORDER', () => {
   it('defines building(0) → running(1) → attention(2) → review(3) → done(4)', () => {
     expect(STAGE_ORDER).toEqual({

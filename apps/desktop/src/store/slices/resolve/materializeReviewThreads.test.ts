@@ -3,11 +3,10 @@ import { createStore } from 'zustand/vanilla';
 import {
   listResolveQueueItems,
   listResolveThreads,
-  migrate,
   upsertResolveThread,
   type Database,
 } from '@goodboy/db';
-import { makeTestDatabase } from '@goodboy/db/test-helpers';
+import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { PrComment, ProjectId, ResolveThread, SessionId } from '@goodboy/types';
 import { createResolveThread } from './createResolveThread';
 import { createResolveSlice } from './index';
@@ -58,12 +57,11 @@ const seedRow = async (patch: Partial<ResolveThread>): Promise<void> => {
 };
 
 beforeEach(async () => {
-  db = makeTestDatabase();
+  db = await makeMigratedTestDatabase();
   h.exec.mockReset().mockImplementation(db.exec);
   h.execute.mockReset().mockImplementation(db.execute);
   h.select.mockReset().mockImplementation(db.select);
   h.transaction.mockReset().mockImplementation(db.transaction);
-  await migrate(db);
   await db.execute(
     "INSERT INTO workspaces (id, name, slug, created_at, updated_at) VALUES ('workspace', 'Workspace', 'workspace', 1, 1)",
   );

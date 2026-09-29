@@ -149,9 +149,7 @@ describe('artifact capture on realistic model output', () => {
     const content = section.repeat(250).trim();
     const body = rawLegacyBody(content);
     expect(body.length).toBeGreaterThan(100_000);
-    const started = performance.now();
     const artifact = expectReport(legacyEnvelope(body));
-    expect(performance.now() - started).toBeLessThan(2_000);
     expect(artifact.sourceText).toBe(content);
   });
 
