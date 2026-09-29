@@ -26,6 +26,7 @@ type Params = {
   readonly isLeftOpen: boolean;
   readonly pushedSha: string | null;
   readonly pushError: string | null;
+  readonly runFailure: string;
 };
 
 const uiStateOf = ({ stage }: { readonly stage: ResolveStage }): ResolveUiState => {
@@ -77,12 +78,13 @@ type FailedParams = {
   readonly step: ResolveFailedStep;
   readonly pushedSha: string | null;
   readonly pushError: string | null;
+  readonly runFailure: string;
 };
 
-const failedSentence = ({ step, pushedSha, pushError }: FailedParams): string => {
+const failedSentence = ({ step, pushedSha, pushError, runFailure }: FailedParams): string => {
   switch (step) {
     case 'run':
-      return 'The run stopped on an error';
+      return runFailure;
     case 'push':
       return pushError === null ? 'Nothing was pushed' : `Nothing was pushed: ${pushError}`;
     case 'reply':
@@ -124,6 +126,7 @@ export const resolveRowState = ({
   isLeftOpen,
   pushedSha,
   pushError,
+  runFailure,
 }: Params): ResolveRowState => {
   const state = uiStateOf({ stage });
   switch (state) {
@@ -156,7 +159,7 @@ export const resolveRowState = ({
       return {
         state,
         node: 'failed',
-        sentence: failedSentence({ step, pushedSha, pushError }),
+        sentence: failedSentence({ step, pushedSha, pushError, runFailure }),
         action: failedAction({ step }),
         failedStep: step,
       };
