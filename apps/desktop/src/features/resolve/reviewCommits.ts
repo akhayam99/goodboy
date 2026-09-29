@@ -37,6 +37,7 @@ export type ReviewCommitRow = {
   readonly isPushed: boolean;
   readonly isResolve: boolean;
   readonly threads: ReadonlyArray<ReviewCommitThread>;
+  readonly folded: ReadonlyArray<ReviewCommitThread>;
   readonly fixupOf: string | null;
 };
 
@@ -81,9 +82,14 @@ export const reviewCommitRows = ({
   const oldest = [...commits].reverse();
   return oldest.map((commit, index) => {
     const earlier = oldest.slice(0, index);
-    const linked = threads.filter((thread) =>
+    const touching = threads.filter((thread) =>
       thread.commitShas.some((sha) => sameSha({ left: sha, right: commit.sha })),
     );
+    const isFoldedHere = (thread: ReviewThreadCommits): boolean =>
+      thread.fixupOfSha !== null && sameSha({ left: thread.fixupOfSha, right: commit.sha });
+    const hasFoldsHere = touching.some(isFoldedHere);
+    const linked = hasFoldsHere ? [] : touching;
+    const folded = hasFoldsHere ? touching : [];
     const byThread = linked
       .map((thread) => thread.fixupOfSha)
       .flatMap((sha) =>
@@ -99,6 +105,7 @@ export const reviewCommitRows = ({
       isPushed: commit.pushed,
       isResolve: linked.length > 0,
       threads: linked.map(({ threadId, author, location }) => ({ threadId, author, location })),
+      folded: folded.map(({ threadId, author, location }) => ({ threadId, author, location })),
       fixupOf: byThread?.sha ?? bySubject?.sha ?? null,
     };
   });

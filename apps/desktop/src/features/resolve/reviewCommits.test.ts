@@ -89,6 +89,25 @@ describe('reviewCommitRows', () => {
   });
 });
 
+describe('a commit that already holds folded fixes', () => {
+  it('stays your commit and lists the fixes folded into it', () => {
+    const rows = reviewCommitRows({
+      commits: [commit({ seed: 'e31b9f4', subject: 'Add the retry policy', pushed: true })],
+      threads: [
+        {
+          threadId: 'mara',
+          author: 'Mara Quint',
+          location: 'retryPolicy.ts:42',
+          commitShas: [sha('e31b9f4')],
+          fixupOfSha: sha('e31b9f4'),
+        },
+      ],
+    });
+    expect(rows[0]?.isResolve).toBe(false);
+    expect(rows[0]?.folded.map((thread) => thread.author)).toEqual(['Mara Quint']);
+  });
+});
+
 describe('presets', () => {
   it('keeps everything as it is', () => {
     const items = reviewPlanItems({

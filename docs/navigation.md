@@ -1149,7 +1149,12 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
 - **Review is where the session's code is discussed; the pull request page is
   where it ships.** Review is one flow: the list of comments on the left in
   three groups (Open, Waiting for the push, Done) and the focused comment on
-  the right, in the layer itself, never in a drawer. The header carries the
+  the right, in the layer itself, never in a drawer.
+  A segmented control under the header switches between two views,
+  `Comments` and `Commits`, and `V` toggles them from anywhere in the page
+  outside a text field. `Commits` lists the branch commits with their fold
+  preview; a resolve commit's `for <reviewer> on <file:line>` line opens its
+  comment back in `Comments`. The header carries the
   title, one quiet link to the pull request (`PR #528 ›`), the count of each
   state, `Draft fixes for N` and `…`; nothing else of the pull request.
   "Resolve" names the area, never a button. Review exists with or without a

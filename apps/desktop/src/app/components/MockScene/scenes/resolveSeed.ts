@@ -33,7 +33,7 @@ const clock = sceneClock({ anchor: '2026-09-04T14:20:00.000Z' });
 
 export const WORKSPACE_ID = 'mock-resolve-workspace-harborline' as WorkspaceId;
 export const SESSION_ID = 'mock-resolve-session-webhook-retry' as SessionId;
-const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
+export const PROJECT_ID = 'mock-resolve-project-payments-api' as ProjectId;
 
 const NOW_ISO = clock.iso({ at: '2026-09-04T14:20:00.000Z' });
 const NOW_MS = Date.parse(NOW_ISO);
@@ -512,7 +512,7 @@ const COMMENTS: ReadonlyArray<PrComment> = [
   }),
 ];
 
-const MOUNT_TARGET: MountTargetSnapshot = {
+export const MOUNT_TARGET: MountTargetSnapshot = {
   mountId: 'mock-resolve-mount-payments-api' as MountId,
   mountRevision: 3,
   worktreePath: '~/code/harborline/payments-api-webhook-retry',
