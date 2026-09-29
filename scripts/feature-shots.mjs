@@ -81,6 +81,22 @@ const openChrome = async ({ width, height }) => {
     ],
     { stdio: 'ignore' },
   );
+  const close = () => {
+    try {
+      chrome.kill('SIGKILL');
+    } catch {}
+    rmSync(profile, { recursive: true, force: true });
+  };
+  try {
+    const send = await connect({ port });
+    return { send, close };
+  } catch (error) {
+    close();
+    throw error;
+  }
+};
+
+const connect = async ({ port }) => {
   let targets = null;
   for (let attempt = 0; attempt < 60 && !targets; attempt += 1) {
     try {
@@ -94,7 +110,10 @@ const openChrome = async ({ width, height }) => {
     throw new Error('no page target');
   }
   const socket = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise((done) => socket.addEventListener('open', done));
+  await new Promise((done, fail) => {
+    socket.addEventListener('open', done);
+    socket.addEventListener('error', () => fail(new Error('devtools socket did not open')));
+  });
   let sequence = 0;
   const pending = new Map();
   socket.addEventListener('message', (event) => {
@@ -104,25 +123,46 @@ const openChrome = async ({ width, height }) => {
       pending.delete(message.id);
     }
   });
-  const send = (method, params = {}) =>
+  return (method, params = {}) =>
     new Promise((done) => {
       sequence += 1;
       pending.set(sequence, done);
       socket.send(JSON.stringify({ id: sequence, method, params }));
     });
-  const close = () => {
-    try {
-      chrome.kill('SIGKILL');
-    } catch {}
-    rmSync(profile, { recursive: true, force: true });
-  };
-  return { send, close };
 };
 
-const evaluate = async ({ send, expression }) => {
-  const response = await send('Runtime.evaluate', { expression, returnByValue: true });
+const callInPage = async ({ send, pageFunction, argument }) => {
+  const documentHandle = await send('Runtime.evaluate', { expression: 'document' });
+  const response = await send('Runtime.callFunctionOn', {
+    objectId: documentHandle.result?.result?.objectId,
+    functionDeclaration: pageFunction.toString(),
+    arguments: [{ value: argument }],
+    returnByValue: true,
+  });
   return response.result?.result?.value;
 };
+
+function boxOf(selector) {
+  const element = this.querySelector(selector);
+  if (!element) {
+    return null;
+  }
+  const rect = element.getBoundingClientRect();
+  return [rect.x, rect.y, rect.width, rect.height];
+}
+
+function describeMatches(selector) {
+  return [...this.querySelectorAll(selector)].slice(0, 40).map((element) => {
+    const rect = element.getBoundingClientRect();
+    const box = [rect.x, rect.y, rect.width, rect.height].map(Math.round).join(',');
+    const classes =
+      typeof element.className === 'string' && element.className.trim()
+        ? `.${element.className.trim().split(/\s+/).slice(0, 3).join('.')}`
+        : '';
+    const text = (element.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 70);
+    return `${box}  ${element.tagName.toLowerCase()}${classes}  ${text}`;
+  });
+}
 
 const captureScene = async ({ send, options, theme }) => {
   await send('Emulation.setDeviceMetricsOverride', {
@@ -137,10 +177,7 @@ const captureScene = async ({ send, options, theme }) => {
   await sleep(options.wait);
   let box;
   if (options.selector) {
-    box = await evaluate({
-      send,
-      expression: `(() => { const el = document.querySelector(${JSON.stringify(options.selector)}); if (!el) return null; const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; })()`,
-    });
+    box = await callInPage({ send, pageFunction: boxOf, argument: options.selector });
     if (!box) {
       throw new Error(`selector ${options.selector} not found in ${url}`);
     }
@@ -174,10 +211,7 @@ const probeScene = async ({ send, options }) => {
   await send('Page.enable');
   await send('Page.navigate', { url: `${options.base}/?scene=${options.scene}&theme=dark` });
   await sleep(options.wait);
-  const rows = await evaluate({
-    send,
-    expression: `[...document.querySelectorAll(${JSON.stringify(options.probe)})].slice(0, 40).map((el) => { const r = el.getBoundingClientRect(); return [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)].join(',') + '  ' + el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.trim().split(/\\s+/).slice(0, 3).join('.') : '') + '  ' + (el.textContent ?? '').trim().replace(/\\s+/g, ' ').slice(0, 70); })`,
-  });
+  const rows = await callInPage({ send, pageFunction: describeMatches, argument: options.probe });
   console.log((rows ?? []).join('\n') || 'no match');
 };
 

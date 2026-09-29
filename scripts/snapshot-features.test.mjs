@@ -25,8 +25,8 @@ See every task by stage. Cards move **on their own** as work changes.
 ### Session card
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s10-projects-dark.webp">
-  <img src="./docs/readme/s10-projects-light.webp" alt="">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/s10-projects-dark.webp">
+  <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/s10-projects-light.webp" alt="">
 </picture>
 
 Read a task at a glance.
