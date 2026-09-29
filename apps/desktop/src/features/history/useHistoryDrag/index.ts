@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import { registerEscapeLayer } from '@goodboy/ui';
 
 export type HistoryDropTarget =
   | { readonly mode: 'slot'; readonly anchor: string | null; readonly y: number }
@@ -178,6 +179,7 @@ export const useHistoryDrag = (params: Params) => {
         offsetY: event.clientY - rect.top,
         width: rect.width,
       };
+      let releaseEscape: (() => void) | null = null;
       const onMove = (move: PointerEvent) => {
         const start = pending.current;
         const list = latest.current.listRef.current;
@@ -194,6 +196,7 @@ export const useHistoryDrag = (params: Params) => {
         if (!isStarted) {
           window.getSelection()?.removeAllRanges();
           latest.current.onPickUp?.(start.sha);
+          releaseEscape = registerEscapeLayer(() => finish({ shouldCommit: false }));
         }
         move.preventDefault();
         const target = hitHistoryDrop({
@@ -223,24 +226,16 @@ export const useHistoryDrag = (params: Params) => {
         finish({ shouldCommit: true });
       };
       const onCancel = () => finish({ shouldCommit: false });
-      const onKey = (key: KeyboardEvent) => {
-        if (key.key !== 'Escape' || dragRef.current === null) {
-          return;
-        }
-        key.preventDefault();
-        key.stopPropagation();
-        finish({ shouldCommit: false });
-      };
       detach.current?.();
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointercancel', onCancel);
-      window.addEventListener('keydown', onKey, true);
       detach.current = () => {
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointercancel', onCancel);
-        window.removeEventListener('keydown', onKey, true);
+        releaseEscape?.();
+        releaseEscape = null;
       };
     },
     [finish, update],

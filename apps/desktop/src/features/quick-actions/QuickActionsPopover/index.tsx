@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { EmptyState, ScrollFade } from '@goodboy/ui';
+import { EmptyState, ScrollFade, useEscapeLayer } from '@goodboy/ui';
 import { AgentAvatar } from '../../../shared/components/AgentAvatar';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import type { QuickActionItem } from '../types';
@@ -33,14 +33,13 @@ export const QuickActionsPopover = ({ items, emptyHint, onSelect, onDismiss }: P
         if (item) {
           onSelect(item);
         }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onDismiss();
       }
     };
     window.addEventListener('keydown', handler, { capture: true });
     return () => window.removeEventListener('keydown', handler, { capture: true });
-  }, [items, activeIndex, onSelect, onDismiss]);
+  }, [items, activeIndex, onSelect]);
+
+  useEscapeLayer(onDismiss);
 
   useEffect(() => {
     const el = listRef.current?.children[activeIndex] as HTMLElement | undefined;

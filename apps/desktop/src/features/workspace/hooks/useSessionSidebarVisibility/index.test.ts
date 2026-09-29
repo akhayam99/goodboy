@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
+import { registerEscapeLayer } from '@goodboy/ui';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { useSessionSidebarVisibility } from './index';
 
@@ -206,6 +207,47 @@ describe('useSessionSidebarVisibility', () => {
     });
 
     expect(result.current.isPeeking).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('leaves escape to a menu opened above the peek, then closes the peek', () => {
+    vi.useFakeTimers();
+    const { result } = renderCollapsed();
+    act(() => {
+      result.current.requestPeek();
+      vi.advanceTimersByTime(150);
+    });
+    const closeMenu = vi.fn();
+    const offMenu = registerEscapeLayer(closeMenu);
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape' }));
+    });
+    expect(closeMenu).toHaveBeenCalledOnce();
+    expect(result.current.isPeeking).toBe(true);
+
+    offMenu();
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape' }));
+    });
+    expect(result.current.isPeeking).toBe(false);
+    vi.useRealTimers();
+  });
+
+  it('keeps the peek open on escape while something holds it', () => {
+    vi.useFakeTimers();
+    const { result } = renderCollapsed();
+    act(() => {
+      result.current.requestPeek();
+      vi.advanceTimersByTime(150);
+      result.current.holdPeek();
+    });
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape' }));
+    });
+
+    expect(result.current.isPeeking).toBe(true);
     vi.useRealTimers();
   });
 });
