@@ -42,6 +42,12 @@ impl From<String> for MessageError {
     }
 }
 
+impl From<&str> for MessageError {
+    fn from(message: &str) -> Self {
+        MessageError::Failed(message.to_string())
+    }
+}
+
 impl_error_serialize!(MessageError);
 
 pub(crate) fn uuid_v4() -> String {

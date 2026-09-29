@@ -370,7 +370,7 @@ pub async fn load_tool_image(
     args: LoadToolImageArgs,
     linear_cache: State<'_, crate::linear::LinearTokenCache>,
     jira_cache: State<'_, crate::jira::JiraTokenCache>,
-) -> Result<String, String> {
+) -> Result<String, MessageError> {
     let LoadToolImageArgs {
         workspace_id,
         project_id,
@@ -402,9 +402,13 @@ pub async fn load_tool_image(
                 .ok_or_else(|| "no github token stored for this workspace".to_string())?;
             ToolAuth::Bearer(token)
         }
-        other => return Err(format!("{other} does not host its own images")),
+        other => {
+            return Err(MessageError::Refused(format!(
+                "{other} does not host its own images"
+            )))
+        }
     };
-    fetch_authed_image(&provider, parsed, auth).await
+    Ok(fetch_authed_image(&provider, parsed, auth).await?)
 }
 
 #[cfg(test)]

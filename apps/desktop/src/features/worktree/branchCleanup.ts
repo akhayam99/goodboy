@@ -1,4 +1,4 @@
-import { invokeCommand } from '../../shared/lib/invokeCommand';
+import { CommandError, invokeCommand } from '../../shared/lib/invokeCommand';
 import type { BranchMergeState } from './worktree';
 
 export type BranchCleanupError =
@@ -72,13 +72,17 @@ const BRANCH_CLEANUP_ERROR_KINDS: ReadonlySet<string> = new Set([
   'git',
 ]);
 
+const wireShapeOf = (error: unknown): unknown =>
+  error instanceof CommandError && error.cause !== undefined ? error.cause : error;
+
 export const asBranchCleanupError = (error: unknown): BranchCleanupError | null => {
-  if (typeof error !== 'object' || error === null || !('kind' in error)) {
+  const wire = wireShapeOf(error);
+  if (typeof wire !== 'object' || wire === null || !('kind' in wire)) {
     return null;
   }
-  const kind = (error as { readonly kind: unknown }).kind;
+  const kind = (wire as { readonly kind: unknown }).kind;
   return typeof kind === 'string' && BRANCH_CLEANUP_ERROR_KINDS.has(kind)
-    ? (error as BranchCleanupError)
+    ? (wire as BranchCleanupError)
     : null;
 };
 

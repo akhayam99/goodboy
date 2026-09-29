@@ -71,7 +71,7 @@ pub enum EditorError {
 impl EditorError {
     fn kind(&self) -> &'static str {
         match self {
-            EditorError::NotFound(_) => "not_found",
+            EditorError::NotFound(_) => "editor_missing",
             EditorError::Spawn { .. } => "spawn",
             EditorError::Io(_) => "io",
         }

@@ -148,7 +148,7 @@ pub enum GithubError {
 impl GithubError {
     fn kind(&self) -> &'static str {
         match self {
-            GithubError::NotFound => "not_found",
+            GithubError::NotFound => "gh_missing",
             GithubError::Spawn(_) => "spawn",
             GithubError::Secret(_) => "secret",
             GithubError::Credential(_) => "credential",
@@ -838,7 +838,7 @@ mod tests {
         let payload = serde_json::to_value(GithubError::NotFound).expect("the error serialises");
         assert_eq!(
             payload,
-            serde_json::json!({ "kind": "not_found", "message": GithubError::NotFound.to_string() }),
+            serde_json::json!({ "kind": "gh_missing", "message": GithubError::NotFound.to_string() }),
             "the frontend reads every rejection as a kind and a message"
         );
     }

@@ -1,3 +1,4 @@
+use crate::util::MessageError;
 use serde::Serialize;
 use std::time::Duration;
 
@@ -77,7 +78,7 @@ mod tests {
 pub async fn provider_api_key_validate(
     provider_id: String,
     api_key: String,
-) -> Result<ApiKeyCheck, String> {
+) -> Result<ApiKeyCheck, MessageError> {
     let key = api_key.trim();
     if key.is_empty() {
         return Ok(ApiKeyCheck {
