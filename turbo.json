@@ -19,6 +19,9 @@
     },
     "test": {
       "dependsOn": ["^build"]
+    },
+    "test:perf": {
+      "dependsOn": ["^build"]
     }
   }
 }

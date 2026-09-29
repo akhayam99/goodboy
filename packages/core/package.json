@@ -15,7 +15,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --project unit --passWithNoTests",
+    "test:perf": "vitest run --project perf --passWithNoTests"
   },
   "dependencies": {
     "@goodboy/db": "workspace:*",

@@ -50,6 +50,14 @@ A `packages/db` test that needs a migrated schema calls `await makeMigratedTestD
 
 For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the intermediate versions instead of all of them. That sample does not replace the per-version sql hash manifest checked into the same file. The manifest is what really stops anyone from editing a migration after release. The sample has its own minimum number of intermediate points it must reach. So if someone cuts the sample size, the test fails, instead of quietly shrinking to the first and last version. No test pins the sampled versions or the total number of migrations. Both change every release. A test that goes red for that reason teaches people to edit the expected values, and that is exactly how a hash manifest gets regenerated without anyone looking.
 
+## No stopwatch in the gate
+
+A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a budget in milliseconds fails when the runner is loaded, not when the code is slow. The required `unit` project has none. A real benchmark is named `*.perf.test.ts` and lives in the `perf` vitest project of `apps/desktop`, `packages/core` or `packages/db`. Run it with `pnpm test:perf` (or `pnpm --filter <pkg> test:perf`). It never blocks a merge.
+
+- A guard against a slow regex or a quadratic loop asserts the result on the pathological input in the `unit` file, and keeps its time budget in the package's perf file (for example `packages/core/src/pathological-input.perf.test.ts`). Where the code reads its input by index, count the reads instead of timing them (`packages/core/src/artifacts/grammar.test.ts`).
+- The search query is guarded by `packages/db/src/queries/search.plan.test.ts`, which runs `EXPLAIN QUERY PLAN` on the query `searchIndex` really sends and checks that it walks the FTS index, reads documents by rowid or index, and never scans a table. `search.perf.test.ts` keeps the 100k message timing for the perf project.
+- Never assert a duration on an array copy or another operation with no I/O.
+
 ## The golden rule
 
 If a test fails because the component / store / hook does the wrong thing, **fix the code, not the test**. Never weaken a test to make it pass.

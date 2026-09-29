@@ -39,10 +39,11 @@ describe('parseIssueBrief', () => {
     expect(parseIssueBrief({ text: `\`\`\`\n${BRIEF_JSON}\n\`\`\`` }).kind).toBe('ready');
   });
 
-  it('answers quickly on a long run of whitespace inside a fence', () => {
-    const started = performance.now();
-    parseIssueBrief({ text: `\`\`\`${' '.repeat(50_000)}x` });
-    expect(performance.now() - started).toBeLessThan(200);
+  it('does not read a brief out of a long run of whitespace inside a fence', () => {
+    expect(parseIssueBrief({ text: `\`\`\`${' '.repeat(50_000)}x` })).toEqual({
+      kind: 'failed',
+      failure: 'not_json',
+    });
   });
 
   it('rejects an answer with a preamble', () => {
