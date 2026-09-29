@@ -667,9 +667,15 @@ Every comment shows one state word, grouped in three:
   since the draft), Draft failed or Push failed (the line under the comment
   names the reason, such as the run ended before a result or the provider
   error, never a generic error)
-- **Waiting for the push**: Accepted, Reply only (with a Resolve only tag when
-  nothing is posted), Skipped
-- **Done**: Pushed, and Resolved on GitHub when someone else closed it
+- **Ready to push**: Accepted, Reply only (with a Resolve only tag when
+  nothing is posted)
+- **Done**: Skipped (it never blocks the push), Pushed, and Resolved on GitHub
+  when someone else closed it
+
+The state word carries the tone: Needs you is the only warning, Ready is neutral
+(the Accept button is the signal), Edited and Outdated have their own tones,
+and the header shows one summary line instead of a chip per state. The `…`
+above the list filters the list by state.
 
 Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the

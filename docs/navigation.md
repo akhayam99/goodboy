@@ -1148,10 +1148,11 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   [The right drawer](#the-right-drawer).
 - **Review is where the session's code is discussed; the pull request page is
   where it ships.** Review is one flow: the list of comments on the left in
-  three groups (Open, Waiting for the push, Done) and the focused comment on
+  three groups (Open, Ready to push, Done) and the focused comment on
   the right, in the layer itself, never in a drawer. The header carries the
-  title, one quiet link to the pull request (`PR #528 ›`), the count of each
-  state, `Draft fixes for N` and `…`; nothing else of the pull request.
+  title, one quiet link to the pull request (`PR #528 ›`), one summary line
+  (`9 open · 3 drafting · 2 ready to push · 4 done`, only the non-zero parts),
+  `Draft fixes for N` and `…`; nothing else of the pull request.
   "Resolve" names the area, never a button. Review exists with or without a
   pull request: without one it lists the session's notes under a
   `No pull request yet` line with `Open a pull request` (see Pull request
