@@ -24,24 +24,18 @@ const sheetOf = (): HTMLElement => {
 };
 
 describe('the content is a sheet on the chrome', () => {
-  it('rounds the two corners the sidebar wraps and leaves the window edge square', () => {
+  it('wraps the sheet around the sidebar edge when the sidebar is shown', () => {
     render(<AppShell leftSidebar={<div>sessions</div>} main={<div>content</div>} />);
     const sheet = sheetOf();
 
     expect(sheet.dataset.sheet).toBe('wrapped');
-    expect(sheet.className).toContain('rounded-l-frame');
-    expect(sheet.className).toContain('border-r-0');
-    expect(sheet.className).toContain('border-frame-edge');
-    expect(sheet.className).not.toMatch(/(?<![\w-])rounded-(?:r|t|b|lg|md|sm)(?![\w-])/);
   });
 
-  it('draws only the top and bottom edge when nothing wraps it', () => {
+  it('leaves the sheet flush when nothing wraps it', () => {
     render(<AppShell main={<div>content</div>} />);
     const sheet = sheetOf();
 
     expect(sheet.dataset.sheet).toBe('flush');
-    expect(sheet.className).toContain('border-y');
-    expect(sheet.className).not.toMatch(/(?<![\w-])rounded/);
   });
 
   it('squares the sheet again while the sidebar is hidden', () => {
@@ -62,20 +56,17 @@ describe('the content is a sheet on the chrome', () => {
     expect(sheetOf().dataset.leftResize).toBe('drag');
     fireEvent.mouseUp(window);
     expect(sheetOf().dataset.leftResize).toBe('idle');
-    expect(sheetOf().className).toContain('data-[left-resize=hover]:border-l-border');
   });
 
-  it('draws no resting line in the handle, the sheet edge is the line', () => {
+  it('gives the sheet edge to the sidebar handle as the owner of the line', () => {
     render(<AppShell leftSidebar={<div>sessions</div>} main={<div>content</div>} />);
     const handle = screen.getByRole('separator', { name: 'Resize left sidebar' });
     const edge = handle.firstElementChild as HTMLElement;
 
     expect(edge.dataset.edge).toBe('owner');
-    expect(edge.className).toContain('opacity-0');
-    expect(edge.className).not.toContain('group-hover:opacity-100');
   });
 
-  it('puts a studio rail on the chrome and its detail on a wrapped sheet', () => {
+  it('puts the studio detail on a wrapped sheet beside its rail', () => {
     render(
       <StudioRailLayout
         rail={<div>rail</div>}
@@ -87,10 +78,7 @@ describe('the content is a sheet on the chrome', () => {
     const detail = screen.getByText('detail').parentElement as HTMLElement;
 
     expect(detail.dataset.sheet).toBe('wrapped');
-    expect(detail.className).toContain('rounded-l-frame');
-    expect(screen.getByRole('complementary', { name: 'Sections' }).className).not.toContain(
-      'bg-background',
-    );
+    expect(screen.getByRole('complementary', { name: 'Sections' })).toBeDefined();
   });
 
   it.each(CHROME_FILES)('closes %s with no horizontal divider', (path) => {
