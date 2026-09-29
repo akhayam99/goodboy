@@ -15,6 +15,7 @@ export const SESSION_EVICTION = [
   { key: 'sessionResolveQueueItems', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolvePublications', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveCandidates', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionResolveSourceChanges', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveCheckRuns', keyedBy: 'session', evictOn: 'archive' },
   { key: 'reviewTargets', keyedBy: 'session', evictOn: 'archive' },
   { key: 'pullRequestModes', keyedBy: 'session', evictOn: 'archive' },

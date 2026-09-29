@@ -1,5 +1,6 @@
 import {
   listActiveResolvePublicationsForSession,
+  keepResolveDraftCurrent,
   listResolveAttempts,
   listResolveQueueItems,
   listResolveThreads,
@@ -11,6 +12,7 @@ import { reconcileInterruptedPublications } from './reconcileInterruptedPublicat
 import { reconcileResolveAttempts } from './reconcileResolveAttempts';
 import { importLegacyResolve } from './importLegacyResolve';
 import { loadResolveCandidatesInto } from './loadResolveCandidatesInto';
+import { loadResolveSourceChangesInto } from './loadResolveSourceChangesInto';
 import { projectResolveRows } from './projectResolveRows';
 import { loadPublicationsInto } from './publicationState';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
@@ -56,6 +58,12 @@ export const loadResolveSession = async ({ set, get, sessionId }: Params): Promi
       },
       expectedRevision: row.revision,
     });
+    await keepResolveDraftCurrent({
+      db: tauriDatabase,
+      sessionId,
+      threadId: row.threadId,
+      fromRevision: row.revision,
+    });
   }
   const attempts = await listResolveAttempts({ db: tauriDatabase, sessionId });
   const queueItems = await listResolveQueueItems({ db: tauriDatabase, sessionId });
@@ -73,6 +81,7 @@ export const loadResolveSession = async ({ set, get, sessionId }: Params): Promi
     },
   }));
   await loadResolveCandidatesInto({ set, sessionId });
+  await loadResolveSourceChangesInto({ set, sessionId }).catch(() => undefined);
   await loadPublicationsInto({ set, sessionId });
   await drainResolveQueue({ set, get, sessionId });
 };
