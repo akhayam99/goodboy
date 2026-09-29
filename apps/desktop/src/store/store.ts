@@ -3,7 +3,7 @@ import { createReviewNavigationSlice } from './slices/review-navigation';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
 import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
-import { type AppliedDecisionOps, type SlotKey } from '@goodboy/core';
+import { type SlotKey } from '@goodboy/core';
 import { type SessionConfigUpdate, type AgentConfigUpdate } from '@goodboy/db';
 import type {
   AfterMergeRule,
@@ -19,8 +19,6 @@ import type {
   OpenQuestion,
   OpenQuestionId,
   OrchestratorRouting,
-  PermissionRulePattern,
-  PermissionScope,
   PlanId,
   PlanStatus,
   StepId,
@@ -43,7 +41,6 @@ import type {
   ProviderCredential,
   CredentialId,
   FileVersionId,
-  ProviderRunId,
   VerbosityLevel,
   SkillId,
   TurnEvent,
@@ -59,7 +56,6 @@ import type {
   Workspace,
   WorkspaceId,
   WorkspaceProfile,
-  WorktreeRemovalMode,
   WorkspaceIntegrationProvider,
   MountCleanupProposal,
   MountId,
@@ -67,7 +63,6 @@ import type {
   PrSeries,
   PrSeriesMember,
   PrSeriesView,
-  ProjectScriptId,
   GhTokenStatus,
   PrMergeMethod,
   SessionViewPrefs,
@@ -80,15 +75,11 @@ import type {
 import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList } from '../features/providers/providers';
 import { type SkillUpsertArgs } from '../features/skills/skills';
-import type { ScriptRunResult } from '../features/scripts/scripts';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
 import { type AgentKind } from '../features/session/agent-kind';
-import type { TerminalTabId, TerminalTabStatus } from '../shared/types/terminal';
 import { createNotificationsSlice } from './slices/notifications';
-import type { EmitNotificationParams } from './slices/notifications/emitNotification';
-import type { ReportErrorParams } from './slices/notifications/reportError';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
 import { createPlansSlice } from './slices/plans';
@@ -141,13 +132,8 @@ import type {
 } from './slices/review-drafts';
 import { createIntegrationsSlice } from './slices/integrations';
 import { createSidebarSlice } from './slices/sidebar';
-import type { PanelSection } from './slices/sidebar/types';
 import { createSessionViewSlice } from './slices/session-view';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
-import type {
-  GetSelectedProjectIdsParams,
-  SetSelectedProjectIdsParams,
-} from './slices/sessionFilters/types';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
 import type {
   DiffFocus,
@@ -307,7 +293,6 @@ import type {
 } from './slices/project-mounts/removeMountWorktree';
 import type { ForgetMountResult } from './slices/project-mounts/forgetMount';
 import { createPresenceSlice } from './slices/presence';
-import type { OpenWorkspaceParams, OpenWorkspaceResult } from './slices/presence/openWorkspace';
 import { createTurnSlice } from './slices/turn';
 import type { SendTurnResult } from './slices/turn/types';
 import type { CancelTurnReason } from './slices/turn/cancelCurrentTurn';
@@ -316,40 +301,20 @@ import type { ReconcileSessionBranchInput } from './slices/worktrees/reconcileSe
 import { createBootSlice } from './slices/boot';
 import { createUpdaterSlice } from './slices/updater';
 import { initialUpdaterState } from './slices/updater/state';
-import type { SetUpdateQueuedUntilIdleParams } from './slices/updater/setUpdateQueuedUntilIdle';
 import { createChangelogSlice } from './slices/changelog';
 import { initialChangelogState } from './slices/changelog/state';
-import type { Params as MarkChangelogSeenParams } from './slices/changelog/markChangelogSeen';
-import type { FocusChangelogReleaseParams } from './slices/changelog/focusChangelogRelease';
-import type { LoadChangelogUpcomingParams } from './slices/changelog/loadChangelogUpcoming';
 import { createBugReportDraftSlice } from './slices/bugReportDraft';
 import { createSessionDraftSlice } from './slices/sessionDraft';
 import { createContextDrawerSlice } from './slices/contextDrawer';
 import { initialContextDrawerState } from './slices/contextDrawer/state';
 import { createDecisionsSlice } from './slices/decisions';
 import { initialDecisionsState } from './slices/decisions/state';
-import type { ApplySessionDecisionOpsParams } from './slices/decisions/applySessionDecisionOps';
-import type { NoteDecisionChangesParams } from './slices/decisions/noteDecisionChanges';
-import type { ConsolidateSessionContextParams } from './slices/decisions/consolidateSessionContext';
-import type { OpenContextDrawerParams } from './slices/contextDrawer/openContextDrawer';
 import { initialSessionDraftState } from './slices/sessionDraft/state';
-import type { PatchSessionDraftParams } from './slices/sessionDraft/patchSessionDraft';
-import type { DiscardSessionDraftParams } from './slices/sessionDraft/discardSessionDraft';
-import type { StartSessionFromDraftParams } from './slices/sessionDraft/startSessionFromDraft';
-import type { StartBlankSessionParams } from './slices/sessionDraft/startBlankSession';
 import { createDrawerSlice } from './slices/drawer';
 import { createNavigationSlice } from './slices/navigation';
-import {
-  initialNavigationState,
-  type AmendFocusParams,
-  type Location as NavigationLocation,
-  type NavigateParams,
-  type StudioParams,
-} from './slices/navigation/types';
-import type { GoToHistoryParams } from './slices/navigation/goToHistory';
-import { initialDrawerState, type DrawerRequest } from './slices/drawer/state';
+import { initialNavigationState } from './slices/navigation/types';
+import { initialDrawerState } from './slices/drawer/state';
 import { initialBugReportDraftState } from './slices/bugReportDraft/state';
-import type { Params as SetBugReportDraftParams } from './slices/bugReportDraft/setBugReportDraft';
 import type { LinearViewer } from '../features/integrations/linear/client';
 import type { SentryProject } from '../features/integrations/sentry/client';
 import type { GitlabUser } from '../features/integrations/gitlab/client';
@@ -357,100 +322,16 @@ import type { BitbucketConnection } from '../features/integrations/bitbucket/cli
 import type { SlackConnection } from '../features/integrations/slack/client';
 import type { JiraUser } from '../features/integrations/jira/client';
 import type { ProviderSpendEntry } from './slices/budget';
-import type { AppState, NotificationScope } from './types';
+import type { AppState } from './types';
 import type { EvictionMode } from './sessionEviction';
 export type { ProviderSpendEntry };
 export type { AppState } from './types';
 
-type SaveScriptParams = {
-  readonly workspaceId: WorkspaceId;
-  readonly projectId: ProjectId;
-  readonly id?: ProjectScriptId;
-  readonly name: string;
-  readonly body: string;
-};
-
-type RunScriptParams = {
-  readonly sessionId: SessionId;
-  readonly scriptId: ProjectScriptId;
-  readonly mountId?: MountId;
-  readonly cols?: number;
-  readonly rows?: number;
-};
-
-type DiscoveredScriptsParams = {
-  readonly sessionId: SessionId;
-  readonly worktreePath: string;
-};
-
-type RunDiscoveredScriptParams = {
-  readonly sessionId: SessionId;
-  readonly scriptId: string;
-  readonly name: string;
-  readonly command: string;
-  readonly cwd: string;
-  readonly mountId?: MountId;
-  readonly cols?: number;
-  readonly rows?: number;
-};
-
 type AppActions = {
   evictSession(params: { readonly sessionId: SessionId; readonly mode: EvictionMode }): void;
-  getSelectedProjectIds(params: GetSelectedProjectIdsParams): ReadonlyArray<string>;
-  setSelectedProjectIds(params: SetSelectedProjectIdsParams): void;
-  hydrate(): Promise<void>;
-  retryHydrate(): Promise<void>;
-  restoreNewerDatabaseBackup(): Promise<void>;
-  quitApp(): Promise<void>;
-  checkForUpdates(): Promise<void>;
-  downloadUpdate(): Promise<void>;
-  applyUpdate(): Promise<void>;
-  setUpdateQueuedUntilIdle(params: SetUpdateQueuedUntilIdleParams): void;
-  relaunchApp(): Promise<void>;
-  loadChangelogDates(): Promise<void>;
-  reloadChangelogDates(): Promise<void>;
-  hydrateChangelogSeen(): Promise<void>;
-  markChangelogSeen(params: MarkChangelogSeenParams): Promise<void>;
-  focusChangelogRelease(params: FocusChangelogReleaseParams): void;
-  loadChangelogUpcoming(params: LoadChangelogUpcomingParams): Promise<void>;
-  setBugReportDraft(params: SetBugReportDraftParams): void;
-  clearBugReportDraft(): void;
-  openSessionDraft(): void;
-  openContextDrawer(params: OpenContextDrawerParams): void;
-  toggleContextDrawer(params: OpenContextDrawerParams): void;
-  loadSessionContextSeen(sessionId: SessionId): Promise<void>;
-  markSessionContextSeen(sessionId: SessionId): Promise<void>;
-  loadSessionDecisions(sessionId: SessionId): Promise<void>;
-  applySessionDecisionOps(params: ApplySessionDecisionOpsParams): Promise<AppliedDecisionOps>;
-  noteDecisionChanges(params: NoteDecisionChangesParams): Promise<void>;
-  consolidateSessionContext(params: ConsolidateSessionContextParams): void;
-  patchSessionDraft(params: PatchSessionDraftParams): void;
-  discardSessionDraft(params: DiscardSessionDraftParams): void;
-  startSessionFromDraft(params: StartSessionFromDraftParams): Promise<Session>;
-  startBlankSession(params: StartBlankSessionParams): Promise<Session>;
-  openDrawer(request: DrawerRequest): void;
-  closeDrawer(): void;
-  toggleDrawer(request: DrawerRequest): void;
-  navigate(params: NavigateParams): void;
-  back(): void;
-  forward(): void;
-  goToHistory(params: GoToHistoryParams): void;
-  up(): void;
-  amendFocus(params: AmendFocusParams): void;
-  restoreLocation(params: { readonly location: NavigationLocation }): void;
-  openStudio(params: StudioParams): void;
-  amendStudio(params: StudioParams): void;
-  closeStudio(): void;
-  loadDetectedEditors(): Promise<void>;
   setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
-  switchWorkspaceHere(params: { readonly id: WorkspaceId; readonly title: string }): Promise<void>;
-  openWorkspace(params: OpenWorkspaceParams): Promise<OpenWorkspaceResult>;
-  setWindowPresence(label: string, workspaceId: WorkspaceId | null): void;
-  removeWindowPresence(label: string): void;
   setCurrentSession(id: SessionId | null): Promise<void>;
   loadArchivedSessions(workspaceId: WorkspaceId): Promise<void>;
-  loadSetting(key: string): Promise<string | null>;
-  saveSetting(key: string, value: string): Promise<void>;
   refreshProviders(): Promise<void>;
   logoutProvider(providerId: ProviderId): Promise<void>;
   connectProvider(providerId: ProviderId): Promise<void>;
@@ -800,15 +681,6 @@ type AppActions = {
   saveSkill(input: SkillUpsertArgs): Promise<void>;
   deleteSkill(skillId: SkillId, workspaceId: WorkspaceId): Promise<void>;
   rescanSkills(workspaceId: WorkspaceId): Promise<void>;
-  loadScripts(workspaceId: WorkspaceId): Promise<void>;
-  saveScript(input: SaveScriptParams): Promise<void>;
-  deleteScript(scriptId: ProjectScriptId, workspaceId: WorkspaceId): Promise<void>;
-  loadDiscoveredScripts(input: DiscoveredScriptsParams): Promise<void>;
-  refreshDiscoveredScripts(input: DiscoveredScriptsParams): Promise<void>;
-  runScript(input: RunScriptParams): Promise<ScriptRunResult>;
-  runDiscoveredScript(input: RunDiscoveredScriptParams): Promise<ScriptRunResult>;
-  reattachScriptRuns(): Promise<void>;
-  cancelScript(sessionId: SessionId, scriptId: string): Promise<void>;
   loadPhaseTemplates(workspaceId: WorkspaceId): Promise<void>;
   copyWorkflowsFromWorkspaces(
     params: CopyWorkflowsFromWorkspacesParams,
@@ -920,8 +792,6 @@ type AppActions = {
   bulkUnarchiveTask(ids: ReadonlyArray<SessionId>): Promise<BulkSessionResult>;
   setSessionConfig(sessionId: SessionId, fields: SessionConfigUpdate): Promise<void>;
   setAgentConfig(sessionId: SessionId, agentId: AgentId, fields: AgentConfigUpdate): Promise<void>;
-  refreshUnreadWorkspaces(): Promise<void>;
-  setPanelSectionExpanded(sessionId: SessionId, section: PanelSection, expanded: boolean): void;
   refreshGithubStatus(): Promise<void>;
   refreshGithubConnection(params: { readonly workspaceId: WorkspaceId | null }): Promise<void>;
   setGithubToken(params: {
@@ -1003,36 +873,6 @@ type AppActions = {
     prNumber: number,
     reviewers: ReadonlyArray<string>,
   ): Promise<void>;
-  resolvePermissionRequest(input: {
-    sessionId: SessionId;
-    agentId: AgentId;
-    toolUseId: string;
-    toolName: string;
-    runId: ProviderRunId;
-    scope: PermissionScope;
-    pattern?: PermissionRulePattern;
-  }): Promise<void>;
-  retryBlockedTool(input: {
-    sessionId: SessionId;
-    agentId: AgentId;
-    toolName: string;
-  }): Promise<void>;
-  allowAndContinue(input: {
-    sessionId: SessionId;
-    agentId: AgentId;
-    toolUseId: string;
-    toolName: string;
-    input: unknown;
-    runId: ProviderRunId;
-  }): Promise<void>;
-  denyWithReason(input: {
-    sessionId: SessionId;
-    agentId: AgentId;
-    toolUseId: string;
-    toolName: string;
-    runId: ProviderRunId;
-    reason: string;
-  }): Promise<void>;
   setSessionPermissionMode(sessionId: SessionId, mode: ClaudePermissionMode): Promise<void>;
   loadDiffComments(sessionId: SessionId): Promise<void>;
   addDiffComment(
@@ -1074,20 +914,11 @@ type AppActions = {
     inputs: ReadonlyArray<AttachmentInput>,
   ): Promise<void>;
   removeGoalAttachment(owner: GoalAttachmentOwner, id: string): Promise<void>;
-  loadNotifications(): Promise<void>;
-  loadOlderNotifications(): Promise<void>;
-  setNotificationScope(scope: NotificationScope): Promise<void>;
-  emitNotification(params: EmitNotificationParams): Promise<void>;
-  reportError(params: ReportErrorParams): Promise<void>;
   retryStepSummary(params: {
     sessionId: SessionId;
     agentId: AgentId;
     taskModelOverride?: TaskModelPreference;
   }): Promise<void>;
-  markNotificationRead(id: string): Promise<void>;
-  markNotificationsRead(): Promise<void>;
-  dismissNotification(id: string): Promise<void>;
-  clearNotifications(): Promise<void>;
   loadSessionOpenQuestions(sessionId: SessionId): Promise<void>;
   loadSessionAnsweredQuestions(sessionId: SessionId): Promise<void>;
   loadSessionDismissedQuestions(sessionId: SessionId): Promise<void>;
@@ -1119,8 +950,6 @@ type AppActions = {
   restorePlan(sessionId: SessionId, planId: PlanId): Promise<void>;
   loadConsumptionsForPlan(planId: PlanId): Promise<void>;
   runPlan(sessionId: SessionId, planId: PlanId): Promise<AgentId | null>;
-  dismissSessionNudge(sessionId: SessionId, outcome?: 'accepted' | 'dismissed'): Promise<void>;
-  acceptSessionNudgeHandoff(sessionId: SessionId): Promise<AgentId | null>;
   setScriptsLensScope(params: { readonly scope: { readonly projectId: ProjectId } | null }): void;
   getSessionViewPrefs(workspaceId: WorkspaceId): SessionViewPrefs;
   setSessionSort(workspaceId: WorkspaceId, sort: SessionSortKey): void;
@@ -1175,13 +1004,6 @@ type AppActions = {
   ): SessionCreationId;
   endSessionCreation(sessionId: SessionId, creationId: SessionCreationId): void;
   revealActivityRow(sessionId: SessionId, rowId: string): void;
-  openTerminal(sessionId: SessionId, cwd: string | null, cols: number, rows: number): Promise<void>;
-  addTerminalTab(sessionId: SessionId, cwd: string | null): TerminalTabId;
-  reattachTerminalTabs(): Promise<void>;
-  closeTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
-  setActiveTerminalTab(sessionId: SessionId, tabId: TerminalTabId): void;
-  setTerminalTabStatus(sessionId: SessionId, tabId: TerminalTabId, status: TerminalTabStatus): void;
-  closeSessionTerminals(sessionId: SessionId): Promise<void>;
   reconcileOrphanWorktrees(): Promise<void>;
 };
 
@@ -1204,7 +1026,25 @@ export type AppStore = AppState &
   ReturnType<typeof createBranchCleanupSlice> &
   ReturnType<typeof createStarredIssuesSlice> &
   ReturnType<typeof createSearchIndexSlice> &
-  ReturnType<typeof createChatsSlice>;
+  ReturnType<typeof createChatsSlice> &
+  ReturnType<typeof createUpdaterSlice> &
+  ReturnType<typeof createChangelogSlice> &
+  ReturnType<typeof createBugReportDraftSlice> &
+  ReturnType<typeof createSessionDraftSlice> &
+  ReturnType<typeof createContextDrawerSlice> &
+  ReturnType<typeof createDecisionsSlice> &
+  ReturnType<typeof createDrawerSlice> &
+  ReturnType<typeof createNavigationSlice> &
+  ReturnType<typeof createSidebarSlice> &
+  ReturnType<typeof createSessionFiltersSlice> &
+  ReturnType<typeof createSettingsSlice> &
+  ReturnType<typeof createBootSlice> &
+  ReturnType<typeof createPresenceSlice> &
+  ReturnType<typeof createNotificationsSlice> &
+  ReturnType<typeof createNudgesSlice> &
+  ReturnType<typeof createTerminalSlice> &
+  ReturnType<typeof createScriptsSlice> &
+  ReturnType<typeof createPermissionsSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
