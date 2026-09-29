@@ -30,16 +30,15 @@ pub struct ProfileBundle {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceBundle {
     pub id: String,
     pub name: String,
-    #[serde(rename = "rootPath", default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub root_path: Option<String>,
     #[serde(default)]
     pub projects: Vec<ProjectBundle>,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
     pub overrides: WorkspaceOverridesBundle,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -47,33 +46,24 @@ pub struct WorkspaceBundle {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectBundle {
     pub id: String,
     pub name: String,
-    #[serde(rename = "rootPath", default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub root_path: Option<String>,
     pub kind: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "starredAt", default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub starred_at: Option<String>,
-    #[serde(
-        rename = "baseBranch",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base_branch: Option<String>,
-    #[serde(
-        rename = "rootCommit",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub root_commit: Option<String>,
-    #[serde(rename = "remoteUrl", default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remote_url: Option<String>,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
@@ -158,43 +148,36 @@ pub struct WorkspaceOverridesBundle {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SkillBundle {
     pub id: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
-    #[serde(rename = "filePath")]
     pub file_path: String,
     pub body: String,
-    #[serde(rename = "frontmatterJson")]
     pub frontmatter_json: String,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseDefinitionBundle {
     pub id: String,
-    #[serde(rename = "workflowId")]
     pub workflow_id: String,
     pub ordinal: i64,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
     #[serde(default)]
     pub role: Option<String>,
     #[serde(default)]
     pub effort: Option<String>,
-    #[serde(rename = "expectedOutput", default)]
+    #[serde(default)]
     pub expected_output: Option<String>,
-    #[serde(rename = "orchestratorReason", default)]
+    #[serde(default)]
     pub orchestrator_reason: Option<String>,
 }
 
@@ -203,93 +186,80 @@ fn default_is_preset() -> bool {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseTemplateBundle {
     pub id: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
     pub steps: Vec<PhaseDefinitionBundle>,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
-    #[serde(rename = "isPreset", default = "default_is_preset")]
+    #[serde(default = "default_is_preset")]
     pub is_preset: bool,
     #[serde(default)]
     pub origin: Option<String>,
     #[serde(default)]
     pub goal: Option<String>,
-    #[serde(rename = "processText", default)]
+    #[serde(default)]
     pub process_text: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PermissionRuleBundle {
     pub id: String,
     pub scope: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
-    #[serde(rename = "sessionId")]
     pub session_id: Option<String>,
-    #[serde(rename = "patternTool")]
     pub pattern_tool: String,
-    #[serde(rename = "patternArgsMatcher")]
     pub pattern_args_matcher: Option<String>,
     pub decision: String,
     pub priority: i64,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BudgetRuleBundle {
     pub id: String,
     pub provider: String,
     pub period: String,
-    #[serde(rename = "capUsd")]
     pub cap_usd: f64,
-    #[serde(rename = "alertThresholdPct")]
     pub alert_threshold_pct: f64,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ScriptBundle {
     pub id: String,
-    #[serde(rename = "projectId")]
     pub project_id: String,
     pub name: String,
     pub body: String,
-    #[serde(rename = "sortOrder", default)]
+    #[serde(default)]
     pub sort_order: i64,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ToolBindingBundle {
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
-    #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
     pub provider: String,
-    #[serde(rename = "configJson")]
     pub config_json: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct AppPreferencesBundle {
-    #[serde(rename = "editorBinary")]
     pub editor_binary: Option<String>,
-    #[serde(rename = "editorDefault", default, skip_serializing)]
+    #[serde(default, skip_serializing)]
     pub editor_default: Option<String>,
-    #[serde(rename = "hiddenModelsJson")]
     pub hidden_models_json: Option<String>,
 }
 
@@ -301,24 +271,20 @@ fn editor_binary_to_import(prefs: &AppPreferencesBundle) -> Option<&str> {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ConfigBundle {
-    #[serde(rename = "schemaVersion")]
     pub schema_version: u32,
-    #[serde(rename = "exportedAt")]
     pub exported_at: String,
     pub workspaces: Vec<WorkspaceBundle>,
     pub skills: Vec<SkillBundle>,
-    #[serde(rename = "phaseTemplates")]
     pub phase_templates: Vec<PhaseTemplateBundle>,
-    #[serde(rename = "permissionRules")]
     pub permission_rules: Vec<PermissionRuleBundle>,
-    #[serde(rename = "budgetRules")]
     pub budget_rules: Vec<BudgetRuleBundle>,
     #[serde(default)]
     pub scripts: Vec<ScriptBundle>,
-    #[serde(rename = "toolBindings", default)]
+    #[serde(default)]
     pub tool_bindings: Vec<ToolBindingBundle>,
-    #[serde(rename = "appPreferences", default)]
+    #[serde(default)]
     pub app_preferences: AppPreferencesBundle,
 }
 
@@ -920,19 +886,15 @@ pub struct ValidationError {
 }
 
 #[derive(Debug, Serialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct ImportStats {
     pub workspaces: usize,
     pub skills: usize,
-    #[serde(rename = "phaseTemplates")]
     pub phase_templates: usize,
-    #[serde(rename = "permissionRules")]
     pub permission_rules: usize,
-    #[serde(rename = "budgetRules")]
     pub budget_rules: usize,
     pub scripts: usize,
-    #[serde(rename = "toolBindings")]
     pub tool_bindings: usize,
-    #[serde(rename = "unresolvedProjects")]
     pub unresolved_projects: usize,
 }
 

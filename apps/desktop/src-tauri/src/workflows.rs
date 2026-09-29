@@ -23,109 +23,81 @@ type WorkflowTuple = (
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepRow {
     pub id: String,
-    #[serde(rename = "workflowId")]
     pub workflow_id: String,
-    #[serde(rename = "libraryStepId")]
     pub library_step_id: Option<String>,
     pub role: Option<String>,
     pub ordinal: i64,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "expectedOutput")]
     pub expected_output: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
     pub effort: Option<String>,
     pub verbosity: Option<String>,
-    #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: Option<String>,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
     pub size: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepDefRow {
     pub id: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
     pub role: String,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "providerDefault")]
     pub provider_default: Option<String>,
-    #[serde(rename = "modelDefault")]
     pub model_default: Option<String>,
-    #[serde(rename = "effortDefault")]
     pub effort_default: Option<String>,
-    #[serde(rename = "verbosityDefault")]
     pub verbosity_default: Option<String>,
-    #[serde(rename = "expectedOutput")]
     pub expected_output: Option<String>,
-    #[serde(rename = "baseStepId")]
     pub base_step_id: Option<String>,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepDefUpsertInput {
     pub id: Option<String>,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: Option<String>,
     pub role: String,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "providerDefault")]
     pub provider_default: Option<String>,
-    #[serde(rename = "modelDefault")]
     pub model_default: Option<String>,
-    #[serde(rename = "effortDefault")]
     pub effort_default: Option<String>,
-    #[serde(rename = "verbosityDefault")]
     pub verbosity_default: Option<String>,
-    #[serde(rename = "expectedOutput", default)]
+    #[serde(default)]
     pub expected_output: Option<String>,
-    #[serde(rename = "baseStepId", default)]
+    #[serde(default)]
     pub base_step_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkflowRow {
     pub id: String,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
     pub goal: Option<String>,
-    #[serde(rename = "processText")]
     pub process_text: Option<String>,
     pub steps: Vec<StepRow>,
-    #[serde(rename = "createdAt")]
     pub created_at: String,
-    #[serde(rename = "updatedAt")]
     pub updated_at: String,
     // Epoch seconds when soft-deleted; None for live workflows. workflow_list
     // only returns live ones, but workflows_for_session may return deleted ones
     // still attached to a session.
-    #[serde(rename = "deletedAt")]
     pub deleted_at: Option<i64>,
     // True for reusable presets; false for one-off custom workflows that a
     // session runs without being saved to the preset library.
-    #[serde(rename = "isPreset")]
     pub is_preset: bool,
     // How the workflow came to exist: 'library' (shipped), 'custom' (built by
     // hand) or 'orchestrated' (born from a dynamic run). None on rows written
@@ -134,47 +106,38 @@ pub struct WorkflowRow {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepInput {
     pub id: Option<String>,
-    #[serde(rename = "libraryStepId")]
     pub library_step_id: Option<String>,
     pub role: Option<String>,
     pub ordinal: i64,
     pub name: String,
-    #[serde(rename = "promptPrefix")]
     pub prompt_prefix: String,
-    #[serde(rename = "expectedOutput")]
     pub expected_output: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
     pub effort: Option<String>,
     pub verbosity: Option<String>,
-    #[serde(rename = "orchestratorReason")]
     pub orchestrator_reason: Option<String>,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: Option<String>,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
     pub size: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseTemplateUpsertInput {
     pub id: Option<String>,
-    #[serde(rename = "workspaceId")]
     pub workspace_id: String,
     pub name: String,
     pub description: String,
     pub goal: Option<String>,
-    #[serde(rename = "processText")]
     pub process_text: Option<String>,
     pub steps: Vec<StepInput>,
     // Defaults to true when omitted so existing callers keep producing presets.
-    #[serde(rename = "isPreset", default = "default_true")]
+    #[serde(default = "default_true")]
     pub is_preset: bool,
     pub origin: Option<String>,
 }
@@ -184,116 +147,75 @@ fn default_true() -> bool {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SessionRow {
     pub id: String,
-    #[serde(rename = "sessionId")]
     pub session_id: String,
-    #[serde(rename = "stepId")]
     pub step_id: Option<String>,
     pub ordinal: i64,
     pub name: String,
     pub status: String,
-    #[serde(rename = "providerRunId")]
     pub provider_run_id: Option<String>,
-    #[serde(rename = "outputSummary")]
     pub output_summary: Option<String>,
-    #[serde(rename = "startedAt")]
     pub started_at: Option<String>,
-    #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
-    #[serde(rename = "providerSessionId")]
     pub provider_session_id: Option<String>,
-    #[serde(rename = "providerSessionProviderId")]
     pub provider_session_provider_id: Option<String>,
-    #[serde(rename = "lastFinishedAt")]
     pub last_finished_at: Option<String>,
-    #[serde(rename = "lastViewedAt")]
     pub last_viewed_at: Option<String>,
-    #[serde(rename = "doneAt")]
     pub done_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
     pub effort: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "parentAgentId")]
     pub parent_agent_id: Option<String>,
-    #[serde(rename = "workflowRunId")]
     pub workflow_run_id: Option<String>,
-    #[serde(rename = "sourceThreadId")]
     pub source_thread_id: Option<String>,
-    #[serde(rename = "sourceThreadIds")]
     pub source_thread_ids: Option<String>,
-    #[serde(rename = "sourceCommentUrl")]
     pub source_comment_url: Option<String>,
-    #[serde(rename = "sourceKind")]
     pub source_kind: Option<String>,
-    #[serde(rename = "domainsJson")]
     pub domains_json: Option<String>,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: Option<String>,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
-    #[serde(rename = "stoppedAt")]
     pub stopped_at: Option<String>,
-    #[serde(rename = "stoppedBy")]
     pub stopped_by: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseRunInsertInput {
     pub id: Option<String>,
-    #[serde(rename = "sessionId")]
     pub session_id: String,
-    #[serde(rename = "stepId")]
     pub step_id: Option<String>,
     pub ordinal: i64,
     pub name: String,
     pub status: String,
-    #[serde(rename = "providerRunId")]
     pub provider_run_id: Option<String>,
-    #[serde(rename = "outputSummary")]
     pub output_summary: Option<String>,
-    #[serde(rename = "startedAt")]
     pub started_at: Option<String>,
-    #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
     pub kind: Option<String>,
     pub verbosity: Option<String>,
     pub effort: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "parentAgentId")]
     pub parent_agent_id: Option<String>,
-    #[serde(rename = "workflowRunId")]
     pub workflow_run_id: Option<String>,
-    #[serde(rename = "sourceThreadId")]
     pub source_thread_id: Option<String>,
-    #[serde(rename = "sourceThreadIds")]
     pub source_thread_ids: Option<String>,
-    #[serde(rename = "sourceCommentUrl")]
     pub source_comment_url: Option<String>,
-    #[serde(rename = "sourceKind")]
     pub source_kind: Option<String>,
-    #[serde(rename = "domainsJson")]
     pub domains_json: Option<String>,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: Option<String>,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AgentBatchInsertInput {
-    #[serde(rename = "parentAgentId")]
     pub parent_agent_id: String,
     pub children: Vec<PhaseRunInsertInput>,
 }
@@ -305,38 +227,30 @@ pub struct AgentBatchInsertOutcome {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkflowNodeRoutingUpdateInput {
-    #[serde(rename = "nodeKind")]
     pub node_kind: String,
     pub id: String,
-    #[serde(rename = "routingLock")]
     pub routing_lock: Option<String>,
-    #[serde(rename = "routingDecision")]
     pub routing_decision: String,
-    #[serde(rename = "taskProfile")]
     pub task_profile: Option<String>,
-    #[serde(rename = "providerOverride")]
     pub provider_override: Option<String>,
-    #[serde(rename = "modelOverride")]
     pub model_override: Option<String>,
     pub effort: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PhaseRunUpdateInput {
     pub id: String,
     pub status: String,
-    #[serde(rename = "providerRunId")]
     pub provider_run_id: Option<String>,
-    #[serde(rename = "outputSummary")]
     pub output_summary: Option<String>,
-    #[serde(rename = "startedAt")]
     pub started_at: Option<String>,
-    #[serde(rename = "completedAt")]
     pub completed_at: Option<String>,
-    #[serde(rename = "stoppedAt", default)]
+    #[serde(default)]
     pub stopped_at: Option<String>,
-    #[serde(rename = "stoppedBy", default)]
+    #[serde(default)]
     pub stopped_by: Option<String>,
 }
 
