@@ -102,11 +102,19 @@ export type ResolveVerdict = Readonly<{
   checkedAt: number;
 }>;
 
+export type ResolveSourceChange = Readonly<{
+  body: string;
+  author: string | null;
+  fingerprint: string;
+  seenAt: number;
+}>;
+
 export type ResolveSourceSnapshot = Readonly<{
   body: string;
   author: string | null;
   fingerprint: string;
   seenAt: number;
+  changed: ResolveSourceChange | null;
 }>;
 
 export type ResolveThreadFacts = Readonly<{

@@ -477,6 +477,7 @@ export type {
   ResolveSourceKind,
   ResolveVerdict,
   ResolveVerdictKind,
+  ResolveSourceChange,
   ResolveSourceSnapshot,
   ResolveThreadFacts,
   ResolveQueueApprovalState,

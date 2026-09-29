@@ -1,4 +1,5 @@
 import type {
+  ResolveSourceChange,
   ResolveSourceKind,
   ResolveSourceSnapshot,
   ResolveThreadFacts,
@@ -42,12 +43,20 @@ const isVerdict = (value: unknown): value is ResolveVerdict =>
   (value.sha === null || typeof value.sha === 'string') &&
   typeof value.checkedAt === 'number';
 
-const isSnapshot = (value: unknown): value is ResolveSourceSnapshot =>
+const isChange = (value: unknown): value is ResolveSourceChange =>
   isJsonRecord(value) &&
   typeof value.body === 'string' &&
   (value.author === null || typeof value.author === 'string') &&
   typeof value.fingerprint === 'string' &&
   typeof value.seenAt === 'number';
+
+const isSnapshot = (value: unknown): value is ResolveSourceSnapshot =>
+  isJsonRecord(value) &&
+  typeof value.body === 'string' &&
+  (value.author === null || typeof value.author === 'string') &&
+  typeof value.fingerprint === 'string' &&
+  typeof value.seenAt === 'number' &&
+  (value.changed === null || isChange(value.changed));
 
 const hydrate = ({ row }: { readonly row: Row }): ResolveThreadFacts => ({
   threadId: row.threadId,
