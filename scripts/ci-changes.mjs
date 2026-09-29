@@ -2,19 +2,28 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+const WEBSITE_PATHS_READ_BY_TESTS = [
+  'website/src/components/Logo.tsx',
+  'website/src/styles.css',
+  'website/public/favicon.svg',
+  'website/scripts/build-brand-assets.mjs',
+];
+
 const INERT_PATTERNS = [
-  /^docs\/(?!changelog\/)/,
+  /^docs\/(?!changelog(?:\/|$))/,
   /^website\//,
   /^\.github\/[^/]+\.png$/,
   /^\.github\/pull_request_template\.md$/,
 ];
 
-const isInert = ({ path }) => INERT_PATTERNS.some((pattern) => pattern.test(path));
+export const isInertPath = ({ path }) =>
+  !WEBSITE_PATHS_READ_BY_TESTS.includes(path) &&
+  INERT_PATTERNS.some((pattern) => pattern.test(path));
 
 export const decideTests = ({ eventName, paths }) => {
   if (eventName !== 'pull_request') return true;
   if (paths === null || paths.length === 0) return true;
-  return !paths.every((path) => isInert({ path }));
+  return !paths.every((path) => isInertPath({ path }));
 };
 
 const readChangedPaths = () => {

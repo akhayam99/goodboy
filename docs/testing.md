@@ -19,7 +19,7 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 
 ## Desktop unit tests run in four shards
 
-CI splits the desktop `unit` project with `vitest run --project unit --shard=i/4`. Vitest picks a shard by the hash of the file path, so a file changes shard only when it moves. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/4`. `node scripts/check-test-shards.mjs` fails when the four shards do not list every test file exactly once; it runs in the `checks` job.
+CI splits the desktop `unit` project with `vitest run --project unit --shard=i/4`. Vitest sorts the files by the hash of their path and cuts the list into four equal slices, so adding or removing a test file can move other files to a different shard. To reproduce one CI job locally: `pnpm --filter @goodboy/desktop exec vitest run --project unit --shard=2/4`. `node scripts/check-test-shards.mjs` runs in the `checks` job. Coverage holds by construction, so it guards an empty shard and a custom sequencer that drops or repeats a file.
 
 ## Store tests share one harness
 

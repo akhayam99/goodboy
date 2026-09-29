@@ -4,6 +4,10 @@ on:
   pull_request:
   push:
     branches: [main]
+  merge_group:
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -80,8 +84,14 @@ jobs:
         run: pnpm --filter @goodboy/desktop exec vite build
 
       - name: audit
+        id: audit
         continue-on-error: true
+        timeout-minutes: 2
         run: pnpm audit --prod
+
+      - name: audit warning
+        if: steps.audit.outcome == 'failure'
+        run: echo "::warning::pnpm audit --prod failed or timed out"
 
   test-desktop:
     name: desktop tests ${{ matrix.shard }}/4
@@ -121,7 +131,7 @@ jobs:
 
       - name: a11y
         if: ${{ !cancelled() }}
-        run: pnpm --filter @goodboy/desktop test:a11y
+        run: pnpm --filter @goodboy/desktop test:a11y --no-passWithNoTests
 
   gate:
     name: lint + typecheck + test + build
