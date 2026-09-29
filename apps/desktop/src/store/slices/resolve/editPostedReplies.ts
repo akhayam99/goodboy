@@ -1,4 +1,9 @@
-import { getSetting } from '@goodboy/db';
+import {
+  getSetting,
+  listResolvePublicationThreads,
+  listResolvePublicationsForSession,
+  upsertResolvePublicationThread,
+} from '@goodboy/db';
 import { updateReviewComment } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
@@ -14,14 +19,49 @@ import { commitLink } from '../github/buildResolutionReplyBody';
 import { sessionThreadGhOptions } from '../github/sessionThreadGhOptions';
 import { readCommitStory, recordReplyEdit } from './commitStory';
 import { publicationTarget } from './publicationTarget';
-import type { GetFn } from './types';
+import { loadPublicationsInto } from './publicationState';
+import type { GetFn, SetFn } from './types';
 
 type Params = {
+  readonly set: SetFn;
   readonly get: GetFn;
   readonly sessionId: SessionId;
 };
 
-export const editPostedReplies = async ({ get, sessionId }: Params): Promise<number> => {
+type ReceiptParams = {
+  readonly sessionId: SessionId;
+  readonly threadId: string;
+  readonly replyId: string;
+  readonly body: string;
+};
+
+const rewriteReceiptBodies = async ({
+  sessionId,
+  threadId,
+  replyId,
+  body,
+}: ReceiptParams): Promise<void> => {
+  const publications = await listResolvePublicationsForSession({
+    db: tauriDatabase,
+    sessionId,
+  });
+  for (const publication of publications) {
+    const receipts = await listResolvePublicationThreads({
+      db: tauriDatabase,
+      publicationId: publication.id,
+    });
+    for (const receipt of receipts) {
+      if (receipt.threadId === threadId && receipt.replyId === replyId) {
+        await upsertResolvePublicationThread({
+          db: tauriDatabase,
+          thread: { ...receipt, replyBody: body },
+        });
+      }
+    }
+  }
+};
+
+export const editPostedReplies = async ({ set, get, sessionId }: Params): Promise<number> => {
   const workspaceId = get().sessions.find((session) => session.id === sessionId)?.workspaceId;
   if (workspaceId === undefined) {
     return 0;
@@ -57,7 +97,16 @@ export const editPostedReplies = async ({ get, sessionId }: Params): Promise<num
       continue;
     }
     await recordReplyEdit({ sessionId, threadId: row.threadId, sha: finalSha, line });
+    await rewriteReceiptBodies({
+      sessionId,
+      threadId: row.threadId,
+      replyId: row.replyId,
+      body,
+    }).catch(() => undefined);
     edited += 1;
+  }
+  if (edited > 0) {
+    await loadPublicationsInto({ set, sessionId });
   }
   return edited;
 };

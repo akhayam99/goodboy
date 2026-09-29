@@ -198,7 +198,7 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
           at: Date.now(),
         }).catch(() => undefined);
       }
-      await editPostedReplies({ get, sessionId }).catch(() => 0);
+      await editPostedReplies({ set, get, sessionId }).catch(() => 0);
       const prNumber = get().mountGithub[mountId]?.pr?.number ?? null;
       await recordHistoryEvent({
         get,

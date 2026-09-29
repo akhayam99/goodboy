@@ -774,7 +774,8 @@ e31b9f4` when a history rewrite folded the fix. Reply and page always read
   After a history rewrite is pushed and a reply Goodboy posted names a sha that
   moved, Goodboy edits that reply in place with `updateReviewComment`: it adds
   `Update: c81e5aa was squashed into e31b9f4.` (or `is now`) above the
-  signature, once per sha change. Replies from people are never edited. The
+  signature, once per sha change, and rewrites the delivery receipt body so the
+  Review page shows the same text as GitHub. Replies from people are never edited. The
   per-thread history (first sha, folded or not, posted sha and body, update
   lines) lives in the `settings` table under
   `resolve.commit_story.<sessionId>.<threadId>`, so it needs no migration
