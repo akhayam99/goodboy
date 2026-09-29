@@ -1,5 +1,6 @@
 import type {
   ResolveAttempt,
+  ResolveBatch,
   ResolveCandidate,
   ResolveCandidateItem,
   ResolveCheckRun,
@@ -19,6 +20,8 @@ export type ResolveCandidateWithItems = Readonly<{
 export type ResolveState = {
   readonly sessionResolveThreads: Readonly<Record<SessionId, ReadonlyArray<ResolveThread>>>;
   readonly sessionResolveAttempts: Readonly<Record<SessionId, ReadonlyArray<ResolveAttempt>>>;
+  readonly sessionResolveBatches: Readonly<Record<SessionId, ReadonlyArray<ResolveBatch>>>;
+  readonly sessionResolveParallelLimit: Readonly<Record<SessionId, number>>;
   readonly sessionResolveCandidates: Readonly<
     Record<SessionId, ReadonlyArray<ResolveCandidateWithItems>>
   >;
@@ -36,6 +39,8 @@ export type ResolveState = {
 export const resolveInitialState: ResolveState = {
   sessionResolveThreads: {},
   sessionResolveAttempts: {},
+  sessionResolveBatches: {},
+  sessionResolveParallelLimit: {},
   sessionResolveCandidates: {},
   sessionResolveCheckRuns: {},
   sessionResolveQueueItems: {},

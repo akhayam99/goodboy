@@ -1,3 +1,4 @@
+import type { ResolveAttemptBatch } from './slices/resolve/types';
 import { createResolveSlice } from './slices/resolve';
 import { createReviewNavigationSlice } from './slices/review-navigation';
 import { reviewNavigationInitialState } from './slices/review-navigation/state';
@@ -854,6 +855,7 @@ type AppActions = {
       sourceKind?: AgentSourceKind;
       focus?: SpawnFocus;
       parentAgentId?: AgentId;
+      resolveBatch?: ResolveAttemptBatch;
     },
   ): Promise<AgentId>;
   forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;

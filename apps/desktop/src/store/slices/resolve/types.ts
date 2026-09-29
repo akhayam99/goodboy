@@ -5,6 +5,7 @@ import type {
   PrComment,
   ProjectId,
   ResolveAttemptPhase,
+  ResolveBatch,
   ResolveCheckBreadth,
   ResolveLaunchChoice,
   ResolvePublicationDrift,
@@ -154,4 +155,11 @@ export type ResolveActions = {
   readonly materializeReviewThreads: (params: MaterializeParams) => Promise<number>;
   readonly syncNoteThreads: (params: SessionParams) => Promise<number>;
   readonly closeResolvedNote: (params: ThreadParams) => Promise<void>;
+  readonly createResolveBatch: (params: CreateBatchParams) => Promise<ResolveBatch>;
+  readonly setResolveParallelLimit: (params: ParallelLimitParams) => Promise<void>;
 };
+export type CreateBatchParams = SessionParams & {
+  readonly threadIds: ReadonlyArray<string>;
+  readonly launchChoice: ResolveLaunchChoice;
+};
+export type ParallelLimitParams = SessionParams & { readonly limit: number };
