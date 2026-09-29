@@ -1,6 +1,11 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { resetWorkflowTurnBreaker } from './slices/turn/workflowTurnBreaker';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStorySpies,
+  storySpies,
+  type StoryStore,
+} from './storyHarness';
 import type {
   ProjectId,
   Agent,
@@ -30,130 +35,43 @@ type UpsertPlanArgs = {
   readonly clusters?: ReadonlyArray<ImplementationCluster>;
 };
 
-const runTurnSpy = vi.fn();
+vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('./storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibModuleMock());
+vi.mock('@goodboy/db', async () => (await import('./storyHarness')).dbModuleMock());
+vi.mock('../features/chat/turn', async () => (await import('./storyHarness')).turnModuleMock());
+vi.mock('../features/permissions/permissions', async () =>
+  (await import('./storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../features/providers/providers', async () =>
+  (await import('./storyHarness')).providersModuleMock(),
+);
+vi.mock('../features/providers/routing', async () =>
+  (await import('./storyHarness')).routingModuleMock(),
+);
+vi.mock('../features/budget/budget', async () =>
+  (await import('./storyHarness')).budgetModuleMock(),
+);
+vi.mock('../features/skills/skills', async () =>
+  (await import('./storyHarness')).skillsModuleMock(),
+);
+vi.mock('../features/workflows/workflows', async () =>
+  (await import('./storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../features/worktree/worktree', async () =>
+  (await import('./storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
+vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
-vi.mock('../features/chat/turn', () => ({
-  runTurn: (args: unknown) => runTurnSpy(args),
-  cancelTurn: vi.fn(),
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
-}));
+const runTurnSpy = storySpies.runTurn;
+const phaseRunInsertSpy = storySpies.invokeAgentInsert;
+const phaseRunListSpy = storySpies.invokeAgentList;
+const phaseRunUpdateStatusSpy = storySpies.invokeAgentUpdateStatus;
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
-
-vi.mock('../features/permissions/permissions', () => ({
-  invokePermissionRuleList: vi.fn(async () => []),
-  invokePermissionAuditInsert: vi.fn(),
-  invokeAuditRetryEnqueue: vi.fn(async () => undefined),
-  useEffectivePermissionRules: () => [],
-}));
-
-vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
-vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn() }));
-
-vi.mock('../shared/lib/db', () => ({
-  tauriDatabase: { execute: vi.fn(), select: vi.fn(async () => []) },
-}));
-
-vi.mock('@goodboy/db', async () => {
-  const { createDbMock } = await import('../test/dbMock');
-  const { storyDbStubs } = await import('./storyHarness');
-  return createDbMock({
-    ...storyDbStubs(),
-    getSetting: vi.fn(async () => null),
-    insertMessage: vi.fn(async () => undefined),
-    insertProviderRun: vi.fn(async () => undefined),
-    insertSession: vi.fn(async () => undefined),
-    insertSessionWorktree: vi.fn(async () => undefined),
-    insertTelemetry: vi.fn(async () => undefined),
-    insertWorkspace: vi.fn(async () => undefined),
-    listContextSlotsForSession: vi.fn(async () => []),
-    listMessagesForSession: vi.fn(async () => []),
-    listSessionsForWorkspace: vi.fn(async () => []),
-    listTelemetryForSession: vi.fn(async () => []),
-    listWorkspaces: vi.fn(async () => []),
-    listOpenQuestionsForSession: vi.fn(async () => []),
-    setSetting: vi.fn(async () => undefined),
-    summarizeSessionTelemetry: vi.fn(async () => null),
-    summarizeWorkspaceTelemetry: vi.fn(async () => null),
-    summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-    updateProviderRunStatus: vi.fn(async () => undefined),
-    updateSessionState: vi.fn(async () => undefined),
-    updateSessionWorkflowStep: vi.fn(async () => undefined),
-    upsertContextSlot: vi.fn(async () => undefined),
-    insertOpenQuestion: vi.fn(async () => undefined),
-    markOpenQuestionsResolvedByText: vi.fn(async () => 0),
-    listResolvedQuestionTextsForSession: vi.fn(async () => []),
-    insertTurnEvent: vi.fn(async () => undefined),
-    insertTurnEventsBatch: vi.fn(async () => undefined),
-    listWorktreesForSessions: vi.fn(async () => new Map()),
-    listAgentsForSessions: vi.fn(async () => new Map()),
-    listTurnEventsForAgent: vi.fn(async () => []),
-    listMessagesForAgent: vi.fn(async () => []),
-    insertNotification: vi.fn(async () => undefined),
-    listNotifications: vi.fn(async () => []),
-    countNotifications: vi.fn(async () => []),
-    NOTIFICATION_LIST_LIMIT: 200,
-    markAllNotificationsRead: vi.fn(async () => undefined),
-    clearAllNotifications: vi.fn(async () => undefined),
-    attachWorkflowToSession: vi.fn(async () => undefined),
-    detachWorkflowFromSession: vi.fn(async () => undefined),
-    updateWorkflowOrder: vi.fn(async () => undefined),
-  });
-});
-
-vi.mock('../features/providers/providers', () => ({
-  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
-  checkProviderAuth: vi.fn(),
-}));
-
-vi.mock('../features/providers/routing', () => ({
-  resolveProviderForTurn: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-opus-4-5',
-    reason: 'preference',
-  })),
-}));
-
-vi.mock('../features/budget/budget', () => ({
-  invokeBudgetRuleList: vi.fn(async () => []),
-  invokeBudgetRuleUpsert: vi.fn(),
-  invokeBudgetRuleDelete: vi.fn(),
-  invokeBudgetAlertsList: vi.fn(async () => []),
-  invokeBudgetAlertDismiss: vi.fn(),
-  invokeSessionBudgetGet: vi.fn(),
-  invokeSessionBudgetSet: vi.fn(),
-  invokeCheckProviderBudget: vi.fn(),
-}));
-
-vi.mock('../features/skills/skills', () => ({
-  invokeSkillList: vi.fn(async () => []),
-  invokeSkillUpsert: vi.fn(),
-  invokeSkillDelete: vi.fn(),
-  invokeSkillRescan: vi.fn(),
-  resolveSkillInvocation: vi.fn(),
-}));
-
-const phaseRunInsertSpy = vi.fn();
-const phaseRunListSpy = vi.fn();
-const phaseRunUpdateStatusSpy = vi.fn();
-
-vi.mock('../features/workflows/workflows', () => ({
-  invokeWorkflowList: vi.fn(async () => []),
-  invokeWorkflowUpsert: vi.fn(),
-  invokeWorkflowDelete: vi.fn(),
-  invokeAgentList: (sid: SessionId) => phaseRunListSpy(sid),
-  invokeAgentInsert: (args: unknown) => phaseRunInsertSpy(args),
-  invokeAgentUpdateStatus: (id: unknown, fields: unknown) => phaseRunUpdateStatusSpy(id, fields),
-  invokeAgentMarkViewed: vi.fn(async () => undefined),
-}));
-
-vi.mock('../features/worktree/worktree', () => ({
-  createWorktree: vi.fn(),
-  removeWorktree: vi.fn(),
-}));
-
-vi.mock('../shared/lib/repo', () => ({ validateGitRepo: vi.fn() }));
 
 const fanOutClustersSpy = vi.fn(async () => undefined);
 
@@ -174,61 +92,57 @@ type PlanBackingStore = {
 
 const planBacking: PlanBackingStore = { plans: [], consumptions: {}, seq: 0 };
 
-const upsertPlanSpy = vi.fn(async (args: UpsertPlanArgs): Promise<PlanWithCount> => {
-  planBacking.seq += 1;
-  const plan: PlanWithCount = {
-    id: `plan-${planBacking.seq}` as PlanId,
-    sessionId: args.sessionId,
-    agentId: args.agentId,
-    ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
-    title: args.title,
-    bodyMd: args.bodyMd,
-    ...(args.clusters && { clusters: args.clusters }),
-    status: 'active',
-    consumptionCount: 0,
-    createdAt: NOW,
-    updatedAt: NOW,
-  };
-  planBacking.plans.push(plan);
-  return plan;
-});
+const upsertPlanSpy = storySpies.upsertPlan;
+const listPlansForSessionSpy = storySpies.listPlansForSession;
+const addPlanConsumptionSpy = storySpies.addPlanConsumption;
+const listConsumptionsForPlanSpy = storySpies.listConsumptionsForPlan;
 
-const listPlansForSessionSpy = vi.fn(
-  async (sessionId: SessionId): Promise<ReadonlyArray<PlanWithCount>> =>
-    planBacking.plans.filter((p) => p.sessionId === sessionId),
-);
-
-const addPlanConsumptionSpy = vi.fn(
-  async (planId: PlanId, agentId: AgentId): Promise<PlanConsumption> => {
-    planBacking.plans = planBacking.plans.map((p) =>
-      p.id === planId ? { ...p, status: 'consumed', consumptionCount: p.consumptionCount + 1 } : p,
-    );
-    const consumption: PlanConsumption = {
-      id: `pc-${planBacking.seq}-${agentId}` as PlanConsumptionId,
-      planId,
-      agentId,
-      agentName: null,
-      consumedAt: NOW,
+const wirePlanBacking = () => {
+  upsertPlanSpy.mockImplementation(async (args: UpsertPlanArgs): Promise<PlanWithCount> => {
+    planBacking.seq += 1;
+    const plan: PlanWithCount = {
+      id: `plan-${planBacking.seq}` as PlanId,
+      sessionId: args.sessionId,
+      agentId: args.agentId,
+      ...(args.workflowRunId !== undefined && { workflowRunId: args.workflowRunId }),
+      title: args.title,
+      bodyMd: args.bodyMd,
+      ...(args.clusters && { clusters: args.clusters }),
+      status: 'active',
+      consumptionCount: 0,
+      createdAt: NOW,
+      updatedAt: NOW,
     };
-    planBacking.consumptions[planId] = [...(planBacking.consumptions[planId] ?? []), consumption];
-    return consumption;
-  },
-);
-
-const listConsumptionsForPlanSpy = vi.fn(
-  async (planId: PlanId): Promise<ReadonlyArray<PlanConsumption>> =>
-    planBacking.consumptions[planId] ?? [],
-);
-
-vi.mock('../features/plans/plans', () => ({
-  listPlansForSession: (sessionId: SessionId) => listPlansForSessionSpy(sessionId),
-  upsertPlan: (args: UpsertPlanArgs) => upsertPlanSpy(args),
-  addPlanConsumption: (planId: PlanId, agentId: AgentId) => addPlanConsumptionSpy(planId, agentId),
-  listConsumptionsForPlan: (planId: PlanId) => listConsumptionsForPlanSpy(planId),
-  setPlanStatus: vi.fn(async () => undefined),
-  setPlanBody: vi.fn(async () => undefined),
-  deletePlan: vi.fn(async () => undefined),
-}));
+    planBacking.plans.push(plan);
+    return plan;
+  });
+  listPlansForSessionSpy.mockImplementation(
+    async (sessionId?: unknown): Promise<ReadonlyArray<PlanWithCount>> =>
+      planBacking.plans.filter((p) => p.sessionId === sessionId),
+  );
+  addPlanConsumptionSpy.mockImplementation(
+    async (planId: PlanId, agentId: AgentId): Promise<PlanConsumption> => {
+      planBacking.plans = planBacking.plans.map((p) =>
+        p.id === planId
+          ? { ...p, status: 'consumed', consumptionCount: p.consumptionCount + 1 }
+          : p,
+      );
+      const consumption: PlanConsumption = {
+        id: `pc-${planBacking.seq}-${agentId}` as PlanConsumptionId,
+        planId,
+        agentId,
+        agentName: null,
+        consumedAt: NOW,
+      };
+      planBacking.consumptions[planId] = [...(planBacking.consumptions[planId] ?? []), consumption];
+      return consumption;
+    },
+  );
+  listConsumptionsForPlanSpy.mockImplementation(
+    async (planId: PlanId): Promise<ReadonlyArray<PlanConsumption>> =>
+      planBacking.consumptions[planId] ?? [],
+  );
+};
 
 const WS_ID = 'ws-1' as WorkspaceId;
 const WORKFLOW_ID = 'wf-plan-impl' as WorkflowId;
@@ -316,9 +230,7 @@ function wirePhaseSpies() {
       kind: 'implementer',
     },
   ];
-  phaseRunListSpy.mockReset();
   phaseRunListSpy.mockImplementation(async () => phaseRuns);
-  phaseRunInsertSpy.mockReset();
   phaseRunInsertSpy.mockImplementation(async (args: Record<string, unknown>) => {
     const row: Agent = {
       id: `inserted-${phaseRuns.length + 1}` as AgentId,
@@ -333,7 +245,6 @@ function wirePhaseSpies() {
     phaseRuns.push(row);
     return row;
   });
-  phaseRunUpdateStatusSpy.mockReset();
   phaseRunUpdateStatusSpy.mockImplementation(
     async (id: AgentId, fields: Record<string, unknown>) => {
       let updated: Agent | undefined;
@@ -403,17 +314,14 @@ describe('autorun plan consumption ordering', () => {
   let idleSpy: typeof globalThis.requestIdleCallback | undefined;
 
   beforeEach(async () => {
-    resetWorkflowTurnBreaker();
+    resetStorySpies();
     planBacking.plans = [];
     planBacking.consumptions = {};
     planBacking.seq = 0;
+    wirePlanBacking();
     wirePhaseSpies();
-    runTurnSpy.mockReset();
     runTurnSpy.mockImplementation(() => emptyStream());
     fanOutClustersSpy.mockClear();
-    addPlanConsumptionSpy.mockClear();
-    upsertPlanSpy.mockClear();
-    listPlansForSessionSpy.mockClear();
     idleSpy = globalThis.requestIdleCallback;
     (globalThis as { requestIdleCallback?: unknown }).requestIdleCallback = (cb: () => void) =>
       setTimeout(cb, 0) as unknown as number;

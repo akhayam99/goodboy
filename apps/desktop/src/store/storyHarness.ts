@@ -56,6 +56,10 @@ const ghStatus: ReturnType<typeof vi.fn> = vi.fn<() => Promise<GhTokenStatus>>(a
 const invokeScriptRun: ReturnType<typeof vi.fn> = vi.fn(async () => undefined);
 const runAdhocScript: ReturnType<typeof vi.fn> = vi.fn(async () => 'run-adhoc');
 
+type PermissionsModule = typeof import('../features/permissions/permissions');
+
+type PlansModule = typeof import('../features/plans/plans');
+
 const cleanWorkingTree = {
   workingTree: { kind: 'known', staged: 0, unstaged: 0, untracked: 0, unmerged: 0 },
 } as never;
@@ -191,12 +195,12 @@ export const storySpies = {
     kind: 'removed' as const,
     path,
   })),
-  listPlansForSession: vi.fn(async () => [] as ReadonlyArray<PlanWithCount>),
-  upsertPlan: vi.fn(),
+  listPlansForSession: vi.fn<PlansModule['listPlansForSession']>(async () => []),
+  upsertPlan: vi.fn<PlansModule['upsertPlan']>(),
   setPlanStatus: vi.fn(async () => undefined),
   setPlanBody: vi.fn(async () => undefined),
-  addPlanConsumption: vi.fn(async () => undefined),
-  listConsumptionsForPlan: vi.fn(async () => [] as ReadonlyArray<PlanConsumption>),
+  addPlanConsumption: vi.fn<PlansModule['addPlanConsumption']>(),
+  listConsumptionsForPlan: vi.fn<PlansModule['listConsumptionsForPlan']>(async () => []),
   linearConnect: vi.fn(),
   linearDisconnect: vi.fn(async () => undefined),
   linearValidateConnection: vi.fn(),
@@ -249,6 +253,18 @@ export const storySpies = {
     },
   ),
   invokeTerminalClose: vi.fn(async () => undefined),
+  invokePermissionRuleList: vi.fn<PermissionsModule['invokePermissionRuleList']>(async () => []),
+  invokePermissionRuleUpsert: vi.fn(async () => undefined),
+  invokePermissionRuleDelete: vi.fn(async () => undefined),
+  invokePermissionAuditInsert: vi.fn<
+    (input: Parameters<PermissionsModule['invokePermissionAuditInsert']>[0]) => Promise<unknown>
+  >(async () => undefined),
+  invokeAuditRetryEnqueue: vi.fn<PermissionsModule['invokeAuditRetryEnqueue']>(
+    async () => undefined,
+  ),
+  invokeAuditRetryDrain: vi.fn<PermissionsModule['invokeAuditRetryDrain']>(async () => []),
+  invokeAuditRetryUpdate: vi.fn<PermissionsModule['invokeAuditRetryUpdate']>(async () => undefined),
+  invokeAuditRetryDelete: vi.fn<PermissionsModule['invokeAuditRetryDelete']>(async () => undefined),
   runTurn: vi.fn(),
   cancelTurn: vi.fn(async (_runId: unknown) => undefined),
   writeAttachment: vi.fn(async () => '.goodboy/attachments/spec.pdf'),
@@ -603,14 +619,14 @@ export const turnModuleMock = () => ({
 });
 
 export const permissionsModuleMock = () => ({
-  invokePermissionRuleList: vi.fn(async () => []),
-  invokePermissionRuleUpsert: vi.fn(async () => undefined),
-  invokePermissionRuleDelete: vi.fn(async () => undefined),
-  invokePermissionAuditInsert: vi.fn(async () => undefined),
-  invokeAuditRetryEnqueue: vi.fn(async () => undefined),
-  invokeAuditRetryDrain: vi.fn(async () => []),
-  invokeAuditRetryUpdate: vi.fn(async () => undefined),
-  invokeAuditRetryDelete: vi.fn(async () => undefined),
+  invokePermissionRuleList: storySpies.invokePermissionRuleList,
+  invokePermissionRuleUpsert: storySpies.invokePermissionRuleUpsert,
+  invokePermissionRuleDelete: storySpies.invokePermissionRuleDelete,
+  invokePermissionAuditInsert: storySpies.invokePermissionAuditInsert,
+  invokeAuditRetryEnqueue: storySpies.invokeAuditRetryEnqueue,
+  invokeAuditRetryDrain: storySpies.invokeAuditRetryDrain,
+  invokeAuditRetryUpdate: storySpies.invokeAuditRetryUpdate,
+  invokeAuditRetryDelete: storySpies.invokeAuditRetryDelete,
   useEffectivePermissionRules: () => [],
 });
 

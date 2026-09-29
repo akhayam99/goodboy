@@ -1,5 +1,11 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { STORE_IMPORT_TIMEOUT_MS, importStore, type StoryStore } from './storyHarness';
+import {
+  STORE_IMPORT_TIMEOUT_MS,
+  importStore,
+  resetStorySpies,
+  storySpies,
+  type StoryStore,
+} from './storyHarness';
 import type {
   Agent,
   AgentId,
@@ -12,148 +18,43 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const runTurnSpy = vi.fn();
-const cancelTurnSpy = vi.fn();
-
-vi.mock('../features/chat/turn', () => ({
-  runTurn: (args: unknown) => runTurnSpy(args),
-  cancelTurn: cancelTurnSpy,
-  encodeAuthRequiredMessage: () => '',
-  isAuthErrorMessage: () => false,
-}));
-
-const permissionRuleListSpy = vi.fn();
-const permissionAuditInsertSpy = vi.fn();
-const auditRetryEnqueueSpy = vi.fn();
-const auditRetryDrainSpy = vi.fn();
-const auditRetryUpdateSpy = vi.fn();
-const auditRetryDeleteSpy = vi.fn();
-
-vi.mock('../features/permissions/permissions', () => ({
-  invokePermissionRuleList: (args: unknown) => permissionRuleListSpy(args),
-  invokePermissionAuditInsert: (args: unknown) => permissionAuditInsertSpy(args),
-  invokeAuditRetryEnqueue: (id: string, payload: string) => auditRetryEnqueueSpy(id, payload),
-  invokeAuditRetryDrain: (limit: number) => auditRetryDrainSpy(limit),
-  invokeAuditRetryUpdate: (id: string, attempts: number, err: string) =>
-    auditRetryUpdateSpy(id, attempts, err),
-  invokeAuditRetryDelete: (id: string) => auditRetryDeleteSpy(id),
-  useEffectivePermissionRules: () => [],
-}));
-
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
+vi.mock('@tauri-apps/api/event', async () =>
+  (await import('./storyHarness')).tauriEventModuleMock(),
+);
+vi.mock('../shared/lib/db', async () => (await import('./storyHarness')).dbLibModuleMock());
+vi.mock('@goodboy/db', async () => (await import('./storyHarness')).dbModuleMock());
+vi.mock('../features/chat/turn', async () => (await import('./storyHarness')).turnModuleMock());
+vi.mock('../features/permissions/permissions', async () =>
+  (await import('./storyHarness')).permissionsModuleMock(),
+);
+vi.mock('../features/providers/providers', async () =>
+  (await import('./storyHarness')).providersModuleMock(),
+);
+vi.mock('../features/providers/routing', async () =>
+  (await import('./storyHarness')).routingModuleMock(),
+);
+vi.mock('../features/budget/budget', async () =>
+  (await import('./storyHarness')).budgetModuleMock(),
+);
+vi.mock('../features/skills/skills', async () =>
+  (await import('./storyHarness')).skillsModuleMock(),
+);
+vi.mock('../features/workflows/workflows', async () =>
+  (await import('./storyHarness')).workflowsModuleMock(),
+);
+vi.mock('../features/worktree/worktree', async () =>
+  (await import('./storyHarness')).worktreeModuleMock(),
+);
+vi.mock('../shared/lib/repo', async () => (await import('./storyHarness')).repoModuleMock());
+vi.mock('../features/plans/plans', async () => (await import('./storyHarness')).plansModuleMock());
 
-vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn(),
-}));
-
-vi.mock('../shared/lib/db', () => ({
-  tauriDatabase: { execute: vi.fn(), select: vi.fn() },
-}));
-
-vi.mock('@goodboy/db', async () => {
-  const { createDbMock } = await import('../test/dbMock');
-  const { storyDbStubs } = await import('./storyHarness');
-  return createDbMock({
-    ...storyDbStubs(),
-    getSetting: vi.fn(async () => null),
-    insertMessage: vi.fn(async () => undefined),
-    insertProviderRun: vi.fn(async () => undefined),
-    insertSession: vi.fn(async () => undefined),
-    insertSessionWorktree: vi.fn(async () => undefined),
-    insertTelemetry: vi.fn(async () => undefined),
-    insertWorkspace: vi.fn(async () => undefined),
-    listContextSlotsForSession: vi.fn(async () => []),
-    listMessagesForSession: vi.fn(async () => []),
-    listSessionsForWorkspace: vi.fn(async () => []),
-    listTelemetryForSession: vi.fn(async () => []),
-    listWorkspaces: vi.fn(async () => []),
-    deleteWorktreesForSession: vi.fn(async () => undefined),
-    setSetting: vi.fn(async () => undefined),
-    summarizeSessionTelemetry: vi.fn(async () => null),
-    summarizeWorkspaceTelemetry: vi.fn(async () => null),
-    summarizeWorkspaceProviderTelemetry: vi.fn(async () => []),
-    updateProviderRunStatus: vi.fn(async () => undefined),
-    updateSessionState: vi.fn(async () => undefined),
-    upsertContextSlot: vi.fn(async () => undefined),
-    insertOpenQuestion: vi.fn(async () => undefined),
-    markOpenQuestionsResolvedByText: vi.fn(async () => 0),
-    listResolvedQuestionTextsForSession: vi.fn(async () => []),
-    insertTurnEvent: vi.fn(async () => undefined),
-    insertTurnEventsBatch: vi.fn(async () => undefined),
-    listWorktreesForSessions: vi.fn(async () => new Map()),
-    listAgentsForSessions: vi.fn(async () => new Map()),
-    listTurnEventsForAgent: vi.fn(async () => []),
-    listMessagesForAgent: vi.fn(async () => []),
-    insertNotification: vi.fn(async () => undefined),
-    listNotifications: vi.fn(async () => []),
-    countNotifications: vi.fn(async () => []),
-    NOTIFICATION_LIST_LIMIT: 200,
-    markAllNotificationsRead: vi.fn(async () => undefined),
-    clearAllNotifications: vi.fn(async () => undefined),
-    updateSessionWorkflowStep: vi.fn(async () => undefined),
-    attachWorkflowToSession: vi.fn(async () => undefined),
-    detachWorkflowFromSession: vi.fn(async () => undefined),
-    updateWorkflowOrder: vi.fn(async () => undefined),
-  });
-});
-
-vi.mock('../features/providers/providers', () => ({
-  buildProviderList: () => [{ id: 'anthropic', binary: 'claude', connection: 'connected' }],
-  checkProviderAuth: vi.fn(),
-  getGeminiStatus: vi.fn(),
-  getOpenCodeStatus: vi.fn(async () => ({ state: 'missing' })),
-  getOpenRouterStatus: vi.fn(async () => ({ state: 'missing' })),
-  getMoonshotStatus: vi.fn(async () => ({ state: 'missing' })),
-}));
-
-vi.mock('../features/providers/routing', () => ({
-  resolveProviderForTurn: vi.fn(async () => ({
-    selectedProvider: 'anthropic',
-    selectedModel: 'claude-3-5-sonnet-latest',
-    reason: 'preference',
-  })),
-}));
-
-vi.mock('../features/budget/budget', () => ({
-  invokeBudgetRuleList: vi.fn(async () => []),
-  invokeBudgetRuleUpsert: vi.fn(),
-  invokeBudgetRuleDelete: vi.fn(),
-  invokeBudgetAlertsList: vi.fn(async () => []),
-  invokeBudgetAlertDismiss: vi.fn(),
-  invokeSessionBudgetGet: vi.fn(),
-  invokeSessionBudgetSet: vi.fn(),
-  invokeCheckProviderBudget: vi.fn(),
-}));
-
-vi.mock('../features/skills/skills', () => ({
-  invokeSkillList: vi.fn(async () => []),
-  invokeSkillUpsert: vi.fn(),
-  invokeSkillDelete: vi.fn(),
-  invokeSkillRescan: vi.fn(),
-  resolveSkillInvocation: vi.fn(),
-}));
-
-vi.mock('../features/workflows/workflows', () => ({
-  invokeWorkflowList: vi.fn(async () => []),
-  invokeWorkflowUpsert: vi.fn(),
-  invokeWorkflowDelete: vi.fn(),
-  invokeAgentList: vi.fn(async () => []),
-  invokeAgentInsert: vi.fn(),
-  invokeAgentUpdateStatus: vi.fn(),
-}));
-
-vi.mock('../features/worktree/worktree', () => ({
-  createWorktree: vi.fn(),
-  removeWorktree: vi.fn(),
-}));
-
-vi.mock('../shared/lib/repo', () => ({
-  validateGitRepo: vi.fn(),
-}));
-
-vi.mock('../features/providers/provider-pricing', () => ({
-  getCodexPriceOverride: vi.fn(() => null),
-}));
+const runTurnSpy = storySpies.runTurn;
+const permissionAuditInsertSpy = storySpies.invokePermissionAuditInsert;
+const auditRetryEnqueueSpy = storySpies.invokeAuditRetryEnqueue;
+const auditRetryDrainSpy = storySpies.invokeAuditRetryDrain;
+const auditRetryUpdateSpy = storySpies.invokeAuditRetryUpdate;
+const auditRetryDeleteSpy = storySpies.invokeAuditRetryDelete;
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
@@ -210,18 +111,7 @@ beforeAll(async () => {
 
 describe('audit retry queue, sendTurn enqueue on failure', () => {
   beforeEach(() => {
-    runTurnSpy.mockReset();
-    cancelTurnSpy.mockReset();
-    permissionRuleListSpy.mockReset();
-    permissionAuditInsertSpy.mockReset();
-    auditRetryEnqueueSpy.mockReset();
-    auditRetryDrainSpy.mockReset();
-    auditRetryUpdateSpy.mockReset();
-    auditRetryDeleteSpy.mockReset();
-
-    permissionRuleListSpy.mockResolvedValue([]);
-    auditRetryEnqueueSpy.mockResolvedValue(undefined);
-    auditRetryDrainSpy.mockResolvedValue([]);
+    resetStorySpies();
   });
 
   afterEach(() => {
@@ -353,11 +243,8 @@ describe('audit retry queue, sendTurn enqueue on failure', () => {
 
 describe('audit retry queue, drain worker (happy path)', () => {
   beforeEach(() => {
+    resetStorySpies();
     runTurnSpy.mockImplementation(() => emptyStream());
-    permissionRuleListSpy.mockResolvedValue([]);
-    auditRetryEnqueueSpy.mockResolvedValue(undefined);
-    auditRetryUpdateSpy.mockResolvedValue(undefined);
-    auditRetryDeleteSpy.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
