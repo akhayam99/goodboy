@@ -5,7 +5,10 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT_DIRECTORY = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT_DIRECTORY = resolve(ROOT_DIRECTORY, 'docs/readme');
+const OUT_DIRECTORY = resolve(
+  process.env.GOODBOY_MEDIA_DIR ?? resolve(ROOT_DIRECTORY, '..', 'goodboy-media'),
+  'features',
+);
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const THEMES = ['dark', 'light'];
 
@@ -257,7 +260,7 @@ const main = async () => {
       });
       const kilobytes = Math.round(statSync(outPath).size / 1024);
       console.log(
-        `shot ok: ${outPath.replace(`${ROOT_DIRECTORY}/`, '')} ${pixels} ${kilobytes} KB (clip ${capture.width}x${capture.height} css, frame ${frameWidth} css wide)`,
+        `shot ok: ${outPath} ${pixels} ${kilobytes} KB (clip ${capture.width}x${capture.height} css, frame ${frameWidth} css wide)`,
       );
     }
   } finally {
