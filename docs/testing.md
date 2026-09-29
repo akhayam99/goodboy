@@ -17,6 +17,16 @@ This file says what to test and how. Where test files go: [file-system.md](file-
 - For hooks: `renderHook` from `@testing-library/react`.
 - Some suites have a per-test hook that dynamically `import()`s a large module graph. Such a suite loads that import once in `beforeAll`, with a timeout that fits it. Never in `beforeEach`. There, the import cost lands on whichever test runs first, and on a busy machine it goes past the 15s hook timeout in `apps/desktop/vitest.config.ts`. Never raise the global timeouts to hide it.
 
+## Console output fails the test
+
+An unexpected `console.error` or `console.warn` fails the test that produced it. `apps/desktop/src/test/failOnConsole.ts` is a vitest setup file. It records both channels per test and throws in `afterEach` unless the message is in `apps/desktop/src/test/console-baseline.json`. A test that spies on the console itself (`vi.spyOn(console, 'error')`) handles its own output and is not recorded.
+
+- The baseline lists what the suite already printed when the guard landed: one entry per test file and message, with digits collapsed to `#` and the message cut to its first line. It is a ratchet, like `forbidden-patterns.baseline.json`: `__tests__/regressions/console-baseline.test.ts` pins the entry count in `BASELINE_CEILING`. Never add an entry to silence output you introduced. Fix the cause: complete the mock, stabilize the hook input, fix the invalid DOM nesting.
+- A test that exercises an error path on purpose spies on the console and asserts the message. That is the alternative to a baseline entry.
+- To shrink it, fix the cause, then run the affected files with `GOODBOY_UPDATE_CONSOLE_BASELINE=1 pnpm --filter @goodboy/desktop exec vitest run <path> --maxWorkers=3`. The run rewrites the entries of the files it ran and refuses to add a new one. Lower `BASELINE_CEILING` to the new count in the same commit. Only a full run over the whole suite can regenerate everything, and `GOODBOY_SEED_CONSOLE_BASELINE=1` is the one switch that lets a run add entries: use it only to seed a package.
+- A mock that throws inside code that catches it prints through `console.error` and lands on this guard. The catch swallows the throw, the console line does not.
+- `__tests__/regressions/console-guard.test.ts` runs a fixture through the real setup file and checks that a test which logs an unexpected message fails and the others pass.
+
 ## Store tests share one harness
 
 Every desktop test that loads the real store goes through `apps/desktop/src/store/storyHarness.ts`. It is the only file allowed to `import()` the store module.
