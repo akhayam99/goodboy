@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Bot, CheckCircle2 } from 'lucide-react';
 import { Markdown } from '@goodboy/ui';
 import type { OpenQuestion } from '@goodboy/types';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly question: OpenQuestion;
@@ -18,6 +19,7 @@ const agentAnsweredLabel = ({ name }: { readonly name: string | null }): string 
   name === null || name.trim() === '' ? 'Agent answered:' : `${name} answered for you:`;
 
 export const AnsweredCard = ({ question, answeredByName = null }: Props) => {
+  const now = useNow(30_000);
   const [open, setOpen] = useState(false);
   const resolvedByAgent = question.userAnswer === RESOLVED_BY_AGENT;
   const answeredByAgent = resolvedByAgent || question.answerSource === 'agent';
@@ -42,7 +44,7 @@ export const AnsweredCard = ({ question, answeredByName = null }: Props) => {
           }
           eyebrow="answered"
           preview={question.text}
-          meta={formatRelativeAge({ fromIso: answeredAt })}
+          meta={formatAge({ from: answeredAt, now })}
           open={open}
           onToggle={() => setOpen((value) => !value)}
         />

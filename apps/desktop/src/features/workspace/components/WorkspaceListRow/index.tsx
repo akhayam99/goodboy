@@ -1,9 +1,10 @@
 import { Chip, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
 import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { workspaceAccent } from '../../color';
 import { linkedProjectsLabel } from '../../linkedProjectsLabel';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   workspace: Workspace;
@@ -12,12 +13,15 @@ type Props = {
 };
 
 export const WorkspaceListRow = ({ workspace, highlighted, onOpen }: Props) => {
+  const now = useNow(30_000);
   const hasUnread = useWorkspaceHasUnread(workspace.id);
   const projectsLabel = useAppStore((state) =>
     linkedProjectsLabel({ projects: state.projects, workspaceId: workspace.id }),
   );
   const accent = workspaceAccent(workspace.id);
-  const lastSeen = workspace.lastAccessedAt ? formatRelativeDuration(workspace.lastAccessedAt) : '';
+  const lastSeen = workspace.lastAccessedAt
+    ? formatSpan({ from: workspace.lastAccessedAt, to: now })
+    : '';
 
   return (
     <button

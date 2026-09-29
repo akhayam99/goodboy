@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { cn, tintClasses, WorkNode, type WorkNodeState } from '@goodboy/ui';
 import type { ProviderRunId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
-import { formatDuration } from '../../utils/format-duration';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
 import { toolStatus, type PermissionState, type ToolStatus } from '../../utils/toolStatus';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';

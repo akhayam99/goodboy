@@ -1,5 +1,5 @@
 import { Button, cn } from '@goodboy/ui';
-import { formatClockTime } from '../../../../shared/utils/formatClockTime';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { wireframeVersionAuthor, type WireframeVersion } from '../../wireframeVersion';
 import { versionSummaryText } from '../../versionSummaryText';
 
@@ -27,7 +27,7 @@ export const VersionRow = ({
   const summary = versionSummaryText({ summary: version.summary });
   const meta = [
     wireframeVersionAuthor({ version, agentName }),
-    formatClockTime({ iso: version.createdAt }),
+    formatClock({ at: version.createdAt }),
     ...(summary === null ? [] : [summary]),
   ].join(' · ');
   return (

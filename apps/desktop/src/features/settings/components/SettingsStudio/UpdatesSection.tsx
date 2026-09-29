@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useNow } from '../../../../shared/hooks/useNow';
 import { Band, Button, FieldRow, Switch } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { useInstalledVersion } from '../../../changelog/hooks/useInstalledVersion';
 import { UpdateConfirm } from '../../../updater/components/UpdateConfirm';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { SETTING_UPDATER_AUTO_DOWNLOAD } from '../../../settings/settings';
 import type { UpdateFailure } from '../../../../store/slices/updater/state';
-
-const TICK_MS = 30_000;
 
 type CheckedLineParams = {
   readonly installedVersion: string | null;
@@ -21,7 +20,7 @@ export const checkedLine = ({ installedVersion, checkedAt, now }: CheckedLinePar
   if (checkedAt === null) {
     return `${name}, not checked yet`;
   }
-  const ago = formatRelativeDuration(checkedAt, new Date(now).toISOString());
+  const ago = formatSpan({ from: checkedAt, to: now });
   return `${name}, checked ${ago} ago`;
 };
 
@@ -30,15 +29,6 @@ const failureLine = ({ failure, target }: { failure: UpdateFailure; target: stri
     return `Couldn't check for updates: ${failure.message}`;
   }
   return `Couldn't install ${target}: ${failure.message}`;
-};
-
-const useNow = (): number => {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), TICK_MS);
-    return () => window.clearInterval(timer);
-  }, []);
-  return now;
 };
 
 export const UpdatesSection = () => {
@@ -50,7 +40,7 @@ export const UpdatesSection = () => {
   const loadSetting = useAppStore((state) => state.loadSetting);
   const saveSetting = useAppStore((state) => state.saveSetting);
   const installedVersion = useInstalledVersion();
-  const now = useNow();
+  const now = useNow(30_000);
   const isChecking = status === 'checking';
   const isAvailable = status === 'available';
   const isDownloading = status === 'downloading';

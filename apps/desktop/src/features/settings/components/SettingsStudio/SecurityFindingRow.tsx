@@ -3,7 +3,8 @@ import { ShieldCheck } from 'lucide-react';
 import type { SecretKind, SecurityFinding, SecurityFindingSubjectKind } from '@goodboy/types';
 import { Button, InlineConfirm, Notice, formatError } from '@goodboy/ui';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 export const SECRET_KIND_LABEL: Readonly<Record<SecretKind, string>> = {
   'github-token': 'GitHub token',
@@ -67,6 +68,7 @@ export const SecurityFindingRow = ({
   projectNameById,
   onNotASecret,
 }: Props) => {
+  const now = useNow(30_000);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export const SecurityFindingRow = ({
           {SECRET_KIND_LABEL[finding.secretKind]} ending ••••{finding.last4}
         </span>
       }
-      detail={`${SECRET_KIND_LABEL[finding.secretKind]} · found ${formatRelativeDuration(finding.firstSeenAt)} ago`}
+      detail={`${SECRET_KIND_LABEL[finding.secretKind]} · found ${formatSpan({ from: finding.firstSeenAt, to: now })} ago`}
       actions={
         isConfirming ? (
           <InlineConfirm

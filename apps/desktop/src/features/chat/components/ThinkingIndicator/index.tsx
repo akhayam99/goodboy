@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { WorkNode } from '@goodboy/ui';
 import type { ThinkingContext } from '../../utils/thinking-context';
 import { useElapsedMs } from '../../hooks/useElapsedMs';
-import { formatDuration } from '../../utils/format-duration';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 
 type Props = {
   readonly context: ThinkingContext;

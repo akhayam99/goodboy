@@ -1,6 +1,6 @@
 import type { AgentHandoff, SessionId } from '@goodboy/types';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatCardTime } from '../../utils/format-card-time';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { handoffSenderLabel } from '../../utils/handoffLabels';
 import { TranscriptDisclosure } from '../TranscriptDisclosure';
 import { TranscriptRowHeader } from '../TranscriptRowHeader';
@@ -41,7 +41,7 @@ export const HandoffCard = ({ handoff, sessionId, at, initiallyOpen }: Props) =>
             icon={<Icon size={ICON_SIZE.row} aria-hidden />}
             eyebrow="sent by"
             preview={handoffSenderLabel({ sender: handoff.sender, names })}
-            meta={formatCardTime(at)}
+            meta={formatClock({ at })}
             open={disclosure.open}
             onToggle={disclosure.toggle}
             aria-label={

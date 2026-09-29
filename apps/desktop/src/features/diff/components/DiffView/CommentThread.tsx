@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Bot, Trash2 } from 'lucide-react';
 import { Avatar, Chip, InlineConfirm, Markdown, cn, tintClasses } from '@goodboy/ui';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import type { DiffComments, DiffThread } from './types';
 import { CommentComposer } from './CommentComposer';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly thread: DiffThread;
@@ -20,6 +21,7 @@ const excerpt = (body: string): string => {
 };
 
 export const CommentThread = ({ thread, comments }: Props) => {
+  const now = useNow(30_000);
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const tint = tintClasses(thread.tone);
@@ -86,7 +88,7 @@ export const CommentThread = ({ thread, comments }: Props) => {
           <Avatar url={null} alt={thread.author} size="xs" />
         )}
         <span className="font-medium text-foreground">{thread.author}</span>
-        <span>· {formatRelativeAge({ fromIso: thread.createdAt })}</span>
+        <span>· {formatAge({ from: thread.createdAt, now })}</span>
         <Chip tone={thread.tone} size="3xs" bordered={false} label={thread.statusLabel} />
         <span className="ml-auto flex shrink-0 items-center gap-1">
           {thread.canEdit && comments.onEdit ? (

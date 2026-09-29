@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { usePinnedTimeZone } from '../../../test/usePinnedTimeZone';
 import { formatIntl } from './formatIntl';
 
@@ -10,14 +10,20 @@ const AT = '2026-09-29T14:30:00Z';
 describe('formatIntl', () => {
   it('pins the locale to en-US whatever the machine locale is', () => {
     const original = Intl.DateTimeFormat;
-    const spy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(function (
-      ...args: ConstructorParameters<typeof Intl.DateTimeFormat>
-    ) {
-      return new original(...args);
-    } as never);
-    formatIntl({ at: AT, options: { month: 'short' } });
-    expect(spy.mock.calls[0]?.[0]).toBe('en-US');
-    spy.mockRestore();
+    const locales: Array<Intl.LocalesArgument> = [];
+    class Recording extends original {
+      constructor(requested?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions) {
+        locales.push(requested);
+        super(requested, options);
+      }
+    }
+    Object.defineProperty(Intl, 'DateTimeFormat', { value: Recording, configurable: true });
+    try {
+      formatIntl({ at: AT, options: { month: 'short' } });
+    } finally {
+      Object.defineProperty(Intl, 'DateTimeFormat', { value: original, configurable: true });
+    }
+    expect(locales).toEqual(['en-US']);
   });
 
   it('renders in the pinned time zone, not in UTC', () => {

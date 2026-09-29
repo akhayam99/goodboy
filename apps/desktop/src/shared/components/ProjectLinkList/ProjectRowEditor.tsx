@@ -6,12 +6,13 @@ import { useAppStore } from '../../../store';
 import { openInEditor } from '../../lib/editor';
 import { resolveEditorBinary } from '../../lib/editorSettings';
 import { revealInFileManager } from '../../lib/reveal';
-import { formatRelativeDuration } from '../../utils/relativeDate';
+import { formatSpan } from '../../utils/time/formatSpan';
 import { ICON_SIZE } from '../conceptIcons';
 import { BaseBranchSelect } from '../../../features/worktree/BaseBranchSelect';
 import { commitBaseBranch } from '../../../features/worktree/commitBaseBranch';
 import { ProjectAfterMergeField } from './ProjectAfterMergeField';
 import { ProjectDescriptionField } from './ProjectDescriptionField';
+import { useNow } from '../../hooks/useNow';
 
 type Props = {
   readonly project: Project;
@@ -21,11 +22,12 @@ type Props = {
 };
 
 export const ProjectRowEditor = ({ project, busy, onArmUnlink, ignoreField }: Props) => {
+  const now = useNow(30_000);
   const reportError = useAppStore((state) => state.reportError);
   const editor = useAppStore((state) => resolveEditorBinary({ settings: state.settings }));
   const updateProjectBaseBranch = useAppStore((state) => state.updateProjectBaseBranch);
   const isRepo = project.kind === 'repo';
-  const linkedLabel = project.createdAt ? formatRelativeDuration(project.createdAt) : '';
+  const linkedLabel = project.createdAt ? formatSpan({ from: project.createdAt, to: now }) : '';
 
   const openProject = async () => {
     try {

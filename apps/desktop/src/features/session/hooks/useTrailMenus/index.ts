@@ -54,7 +54,7 @@ import { useLensDestinations } from '../useLensDestinations';
 import { usePageSummaries } from '../usePageSummaries';
 import { useSelectedWorkflowRun } from '../useSelectedWorkflowRun';
 import { openLens } from '../../openLens';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { pageMenu } from '../../trail/menus/pageMenu';
 import { agentMenu } from '../../trail/menus/agentMenu';
 import { stepMenu } from '../../trail/menus/stepMenu';
@@ -453,7 +453,7 @@ export const useTrailMenus = ({
             threadLabel:
               row === null ? 'Comment' : (threadLocationOf({ row })?.shortLabel ?? 'Comment'),
             currentAgentId: selected.id,
-            ageOf: (ms) => formatRelativeAge({ fromIso: new Date(ms).toISOString(), nowMs }),
+            ageOf: (ms) => formatAge({ from: new Date(ms).toISOString(), now: nowMs }),
             actions: resolveAgainActions({
               attempts: threadAttempts,
               onRun: () =>
@@ -511,7 +511,7 @@ export const useTrailMenus = ({
                 }),
               ),
             currentId: focusedArtifactId,
-            ageOf: (iso) => formatRelativeAge({ fromIso: iso, nowMs }),
+            ageOf: (iso) => formatAge({ from: iso, now: nowMs }),
             actions:
               focused === undefined
                 ? []

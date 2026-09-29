@@ -1,7 +1,7 @@
 import type { Agent } from '@goodboy/types';
 import { useNow } from '../../hooks/useNow';
 import { agentLastUpdate } from '../../utils/agentLastUpdate';
-import { formatRelativeAge } from '../../utils/relativeDate';
+import { formatAge } from '../../utils/time/formatAge';
 
 type Props = {
   readonly agent: Agent;
@@ -30,7 +30,7 @@ export const AgentLastUpdate = ({
   }
   return (
     <span className="text-secondary tabular-nums text-faint-foreground">
-      {`updated ${formatRelativeAge({ fromIso: lastUpdate, nowMs })}`}
+      {`updated ${formatAge({ from: lastUpdate, now: nowMs })}`}
     </span>
   );
 };

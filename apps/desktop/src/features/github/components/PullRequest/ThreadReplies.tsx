@@ -3,9 +3,10 @@ import type { PrComment } from '@goodboy/types';
 import { Divider, cn } from '@goodboy/ui';
 import { ChevronRight } from 'lucide-react';
 import { isBot } from '../../comment-threads';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { Avatar } from '@goodboy/ui';
 import { ThreadBody } from './ThreadBody';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly replies: ReadonlyArray<PrComment>;
@@ -14,6 +15,7 @@ type Props = {
 const INLINE_REPLY_LIMIT = 2;
 
 export const ThreadReplies = ({ replies }: Props) => {
+  const now = useNow(30_000);
   const [expanded, setExpanded] = useState(false);
 
   if (replies.length === 0) {
@@ -50,7 +52,7 @@ export const ThreadReplies = ({ replies }: Props) => {
                   <Avatar url={r.authorAvatarUrl} alt={r.author} />
                   <span className="font-medium text-foreground">{r.author}</span>
                   <span className="opacity-50">·</span>
-                  <span>{formatRelativeAge({ fromIso: r.createdAt })}</span>
+                  <span>{formatAge({ from: r.createdAt, now })}</span>
                 </div>
                 <div className="[overflow-wrap:anywhere]">
                   <ThreadBody body={r.body} clamped={isBot(r.author)} />

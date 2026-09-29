@@ -9,15 +9,17 @@ import {
 } from '../../../../store';
 import { describeSessionStage } from '../../../session/session-stage';
 import { sessionTitle } from '../../../session/sessionTitle';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
 import { PreviewFacts } from './PreviewFacts';
 import { PreviewHeader } from './PreviewHeader';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly session: Session;
 };
 
 export const SessionPreview = ({ session }: Props) => {
+  const now = useNow(30_000);
   const sessionId = session.id as SessionId;
   const stage = describeSessionStage(useSessionStageInfo(session));
   const cost = useSessionCost(sessionId);
@@ -35,7 +37,7 @@ export const SessionPreview = ({ session }: Props) => {
     <div className="flex flex-col gap-4">
       <PreviewHeader
         title={sessionTitle({ session })}
-        subtitle={[workspace?.name, `updated ${formatRelativeAge({ fromIso: session.updatedAt })}`]
+        subtitle={[workspace?.name, `updated ${formatAge({ from: session.updatedAt, now })}`]
           .filter((part) => part !== undefined && part !== '')
           .join(' · ')}
       />

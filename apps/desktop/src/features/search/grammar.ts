@@ -1,4 +1,5 @@
 import type { ProjectId, SearchKind } from '@goodboy/types';
+import { formatDayMonth } from '../../shared/utils/time/formatDayMonth';
 import type { SearchChip } from './searchChips';
 
 export type SearchProjectOption = {
@@ -171,7 +172,7 @@ const qualifierChip = ({ key, value, projects, now }: ChipParams): SearchChip | 
   if (at === null) {
     return null;
   }
-  const label = new Date(at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  const label = formatDayMonth({ at });
   return name === 'after' ? { key: 'after', at, label } : { key: 'before', at, label };
 };
 

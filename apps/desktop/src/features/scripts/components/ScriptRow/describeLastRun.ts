@@ -1,5 +1,5 @@
-import { formatAdaptiveAge } from '../../../../shared/utils/relativeDate';
-import { formatScriptDuration } from '../../formatScriptDuration';
+import { formatAdaptiveAge } from '../../../../shared/utils/time/formatAdaptiveAge';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import type { ScriptRunRecord } from '../../scripts';
 
 export type LastRunGlyph = 'running' | 'passed' | 'failed' | 'stopped';
@@ -23,11 +23,11 @@ export const describeLastRun = ({ record, now }: Params): LastRun | null => {
     return {
       glyph: 'running',
       word: 'Running',
-      detail: formatScriptDuration({ durationMs: now - record.startedAt }),
+      detail: formatDuration({ durationMs: now - record.startedAt }),
     };
   }
   const finishedAt = record.completedAt ?? record.startedAt;
-  const age = formatAdaptiveAge({ iso: finishedAt, nowMs: now });
+  const age = formatAdaptiveAge({ at: finishedAt, now });
   if (record.status === 'cancelled') {
     return { glyph: 'stopped', word: 'Stopped', detail: age };
   }
@@ -42,7 +42,7 @@ export const describeLastRun = ({ record, now }: Params): LastRun | null => {
   const duration =
     record.completedAt === undefined
       ? null
-      : formatScriptDuration({
+      : formatDuration({
           durationMs: record.completedAt - record.startedAt,
           hasTenths: true,
         });

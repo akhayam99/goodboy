@@ -12,7 +12,7 @@ import {
 import { isFilePathTool, prefixRuleFor } from '@goodboy/core';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../../chat/utils/transcript-items';
-import { formatCardTime } from '../../../chat/utils/format-card-time';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { TranscriptShell } from '../../../chat/components/TranscriptShell';
 import { formatRequestInput } from './formatRequestInput';
 import { modeCopyOf } from '../../modeCopy';
@@ -55,7 +55,7 @@ export const PermissionRequestCard = ({ item, sessionId, agentId }: Props) => {
   const reportError = useAppStore((s) => s.reportError);
   const { showToast } = useToast();
 
-  const timestamp = formatCardTime(item.at);
+  const timestamp = formatClock({ at: item.at });
   const inputPreview = formatRequestInput({ input: item.input });
   const commandText =
     item.toolName === 'Bash' &&

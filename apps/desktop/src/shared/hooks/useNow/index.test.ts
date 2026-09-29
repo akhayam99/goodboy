@@ -53,4 +53,22 @@ describe('useNow', () => {
       vi.useRealTimers();
     }
   });
+
+  it('paints the first frame with the current time, not the time the clock stopped', () => {
+    vi.useFakeTimers();
+    try {
+      const first = renderHook(() => useNow(5_000));
+      first.unmount();
+      vi.setSystemTime(Date.now() + 60 * 60_000);
+      const seen: Array<number> = [];
+      renderHook(() => {
+        const value = useNow(5_000);
+        seen.push(value);
+        return value;
+      });
+      expect(seen[0]).toBe(Date.now());
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

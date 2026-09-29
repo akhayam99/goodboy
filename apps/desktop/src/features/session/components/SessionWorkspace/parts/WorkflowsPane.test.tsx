@@ -211,7 +211,7 @@ describe('WorkflowsPane', () => {
     const body = container.textContent ?? '';
 
     expect(body.indexOf('Second workflow')).toBeLessThan(body.indexOf('First workflow'));
-    expect(screen.getAllByText('12 dec 2025')).toHaveLength(1);
+    expect(screen.getAllByText('Dec 12, 2025')).toHaveLength(1);
   });
 
   it('shows static run progress, duration, last step, and tracked cost', () => {

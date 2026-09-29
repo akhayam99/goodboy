@@ -12,7 +12,7 @@ describe('relativeTimeNode', () => {
   });
 
   it('renders a time element with the relative age and the absolute date as a title', () => {
-    const iso = new Date(Date.now() - 60_000).toISOString();
+    const iso = new Date(Date.now() - 180_000).toISOString();
     const { container } = render(<>{relativeTimeNode({ iso })}</>);
     const time = container.querySelector('time');
 
@@ -24,7 +24,7 @@ describe('relativeTimeNode', () => {
 
 describe('recordByline', () => {
   it('joins a lead, a verb and the relative time', () => {
-    const iso = new Date(Date.now() - 60_000).toISOString();
+    const iso = new Date(Date.now() - 180_000).toISOString();
     const { container } = render(
       <>{recordByline({ lead: 'Opened by Mara Lin', verb: 'updated', iso })}</>,
     );
@@ -35,7 +35,7 @@ describe('recordByline', () => {
   });
 
   it('falls back to just the time when there is no lead', () => {
-    const iso = new Date(Date.now() - 60_000).toISOString();
+    const iso = new Date(Date.now() - 180_000).toISOString();
     const { container } = render(<>{recordByline({ iso })}</>);
 
     expect(container.textContent).not.toContain('·');

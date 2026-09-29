@@ -3,7 +3,7 @@ import type { ObjectMenuTrigger } from '../../../../../actions/useObjectMenuTrig
 import { Button, WORK_META_COLUMN, WORK_ROW, cn, tintClasses } from '@goodboy/ui';
 import type { AgentId, SessionId } from '@goodboy/types';
 import type { MountDiffStat } from '../../../../../../store';
-import { formatCardTime } from '../../../../../chat/utils/format-card-time';
+import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import { useHoverMarkViewed } from '../../../../hooks/useHoverMarkViewed';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
@@ -136,7 +136,7 @@ export const TimelineStreamRow = ({
           className="flex items-center justify-end pr-2 text-meta text-faint-foreground"
           style={{ height: boxHeight }}
         >
-          {item.at == null ? null : formatCardTime(item.at)}
+          {item.at == null ? null : formatClock({ at: item.at })}
         </span>
       </span>
       <span className="relative shrink-0" style={{ width: railWidth }}>

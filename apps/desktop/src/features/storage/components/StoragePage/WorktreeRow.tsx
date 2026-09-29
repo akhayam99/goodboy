@@ -9,7 +9,8 @@ import {
 } from '../../../../store/slices/storage/classifyStorageFolder';
 import type { StorageFolder, StorageFolderStatus } from '../../../../store/slices/storage/types';
 import { formatBytes } from '../../../../shared/utils/formatBytes';
-import { folderStatusLabel, folderWhyLine, formatSince, localCommitsNote } from '../../storageCopy';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
+import { folderStatusLabel, folderWhyLine, localCommitsNote } from '../../storageCopy';
 import { FolderNode } from './FolderNode';
 import { FolderRemoveConfirm, type RemoveIntent } from './FolderRemoveConfirm';
 import { STORAGE_COLUMN } from './storageColumns';
@@ -111,7 +112,7 @@ export const WorktreeRow = ({
           )}
         </span>
         <span className={cn(STORAGE_COLUMN.age, 'text-secondary text-muted-foreground')}>
-          {formatSince({ from: lastChange, now })}
+          {formatSpan({ from: lastChange, to: now })}
         </span>
         <span className={cn(STORAGE_COLUMN.status, 'text-secondary', STATUS_TONE[status])}>
           {statusLabel}

@@ -6,12 +6,14 @@ import {
 } from '../../../integrations/components/IntegrationGlyph';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { openUrl } from '../../../../shared/lib/editor';
-import { formatAbsoluteDateTime, formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { formatAge } from '../../../../shared/utils/time/formatAge';
+import { formatDateTime } from '../../../../shared/utils/time/formatDateTime';
 import { recordSessionId } from '../../recordSessionId';
 import type { InboxRecord } from '../../types';
 import { InboxStateLabel } from '../InboxStateLabel';
 import { StarToggle } from '../../../../shared/components/StarToggle';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 export type InboxRowStar = {
   readonly isStarred: boolean;
@@ -34,7 +36,8 @@ export const inboxOptionId = ({ key }: OptionIdParams): string =>
   `inbox-option-${key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 
 export const InboxRow = ({ record, selected, onSelect, star, onActivate }: Props) => {
-  const relativeTime = formatRelativeAge({ fromIso: record.updatedAt });
+  const now = useNow(30_000);
+  const relativeTime = formatAge({ from: record.updatedAt, now });
   const sessionId = recordSessionId({ record }) ?? null;
   const hasSession = sessionId != null;
   const toolLabel = integrationLabel({ provider: record.provider });
@@ -124,7 +127,7 @@ export const InboxRow = ({ record, selected, onSelect, star, onActivate }: Props
         )}
         <time
           dateTime={record.updatedAt}
-          title={formatAbsoluteDateTime({ iso: record.updatedAt })}
+          title={formatDateTime({ at: record.updatedAt, hasYear: true })}
           className={cn(
             'pointer-events-none text-meta text-faint-foreground',
             canOpen && 'group-hover:hidden',

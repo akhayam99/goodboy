@@ -9,7 +9,7 @@ import { contextTokensForUsage, inputTokensForUsage } from '@goodboy/core';
 import type { AgentId, IsoDateTime, SessionId } from '@goodboy/types';
 import type { TranscriptItem } from '../../utils/transcript-items';
 import type { TurnOutcome } from '../../utils/turnOutcome';
-import { formatDuration } from '../../utils/format-duration';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { contextWindowFor } from '../../../session/contextWindowFor';
 import { TranscriptShell } from '../TranscriptShell';
 import { useTurnFooter } from './useTurnFooter';

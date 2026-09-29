@@ -10,7 +10,7 @@ import {
   MinusCircle,
   XCircle,
 } from 'lucide-react';
-import { formatDuration } from '../../utils/format-duration';
+import { formatDuration } from '../../../../shared/utils/time/formatDuration';
 import { CONCEPT_ICONS, CONCEPT_TONE, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { checksRollup } from './checksRollup';
 
@@ -61,7 +61,7 @@ export const PrChecks = ({ checks, fallbackUrl, hostLabel, onOpenUrl }: Props) =
               <ConclusionIcon conclusion={c.conclusion} />
               <span className="min-w-0 flex-1 truncate text-foreground">{c.name}</span>
               <span className="shrink-0 text-label tabular-nums text-faint-foreground">
-                {formatDuration(c.durationMs)}
+                {c.durationMs === null ? '' : formatDuration({ durationMs: c.durationMs })}
               </span>
             </button>
           </li>

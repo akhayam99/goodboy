@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { Button } from '@goodboy/ui';
 import type { Workspace, WorkspaceId } from '@goodboy/types';
-import { formatRelativeDuration } from '../../../../shared/utils/relativeDate';
+import { formatSpan } from '../../../../shared/utils/time/formatSpan';
 import { workspaceAccent } from '../../color';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { useNow } from '../../../../shared/hooks/useNow';
 
 type Props = {
   readonly workspaces: ReadonlyArray<Workspace>;
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export const DisconnectedWorkspaces = ({ workspaces, onReconnect }: Props) => {
+  const now = useNow(30_000);
   const [open, setOpen] = useState(false);
 
   if (workspaces.length === 0) {
@@ -48,7 +50,9 @@ export const DisconnectedWorkspaces = ({ workspaces, onReconnect }: Props) => {
                 <span className="truncate text-row text-foreground">{workspace.name}</span>
                 <span className="block truncate text-label text-muted-foreground">
                   Disconnected{' '}
-                  {workspace.disconnectedAt ? formatRelativeDuration(workspace.disconnectedAt) : ''}
+                  {workspace.disconnectedAt
+                    ? formatSpan({ from: workspace.disconnectedAt, to: now })
+                    : ''}
                 </span>
               </span>
               <Button

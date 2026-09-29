@@ -14,7 +14,7 @@ import { AttachmentChip } from '../../../attachments/components/AttachmentChip';
 import { useAttachmentThumbnail } from '../../../attachments/hooks/useAttachmentThumbnail';
 import { TranscriptShell } from '../TranscriptShell';
 import { CopyButton } from '@goodboy/ui';
-import { formatClockTime } from '../../../../shared/utils/formatClockTime';
+import { formatClock } from '../../../../shared/utils/time/formatClock';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
 
 type MessageAttachmentChipProps = {
@@ -104,7 +104,7 @@ export const UserText = ({
             provider ? <ProviderFootnote key="provider" provider={provider} model={model} /> : null,
             sentVia ? <span key="sent-via">{SENT_VIA_LABEL[sentVia]}</span> : null,
             <span key="time" className="font-mono">
-              {formatClockTime({ iso: at })}
+              {formatClock({ at })}
             </span>,
           ]}
         />
