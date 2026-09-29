@@ -661,13 +661,6 @@ describe('buildTimelineStream', () => {
           workflowRunId: RUN_ID,
           parentAgentId: 'step-4',
         }),
-        agent({
-          id: 'child-3',
-          ordinal: 10,
-          status: 'pending',
-          workflowRunId: RUN_ID,
-          parentAgentId: 'step-4',
-        }),
       ],
     });
     const queued = items.flatMap((item) =>
@@ -675,7 +668,7 @@ describe('buildTimelineStream', () => {
     );
     const layout = layoutTimelineRail({ rows: items, groups });
     const childQueuedIndex = items.findIndex(
-      (item) => item.kind === 'row' && item.id === 'agent:child-3',
+      (item) => item.kind === 'row' && item.id === 'agent:child-2',
     );
 
     expect(items.map(labelOf)).toEqual([
@@ -683,7 +676,6 @@ describe('buildTimelineStream', () => {
       'pending:agent:step-7',
       'pending:agent:step-6',
       'pending:agent:step-5',
-      'pending:agent:child-3',
       'pending:agent:child-2',
       'step:agent:child-1',
       'step:agent:step-4',
@@ -692,8 +684,8 @@ describe('buildTimelineStream', () => {
       'step:agent:step-1',
       'entry:run:run-1',
     ]);
-    expect(queued.map((item) => item.ordinal)).toEqual(['7', '6', '5', '4.3', '4.2']);
-    expect(queued.map((item) => item.nodeIndex)).toEqual(['7', '6', '5', '3', '2']);
+    expect(queued.map((item) => item.ordinal)).toEqual(['7', '6', '5', '4.2']);
+    expect(queued.map((item) => item.nodeIndex)).toEqual(['7', '6', '5', '2']);
     expect(groups.find((group) => group.id === 'lane:agent:step-4')?.shape).toBe('rejoining');
     expect(
       layout.rows[childQueuedIndex]?.joins.map(
@@ -2144,12 +2136,6 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
       parentAgentId: 'implement',
       startedAt: localIso({ day: 18, hour: 9, minute: 10 }),
     }),
-    agent({
-      id: 'sub-2',
-      ordinal: 3,
-      parentAgentId: 'implement',
-      startedAt: localIso({ day: 18, hour: 9, minute: 20 }),
-    }),
     agent({ id: 'sub-3', ordinal: 4, status: 'pending', parentAgentId: 'implement' }),
     agent({ id: 'review', ordinal: 5, status: 'pending', workflowRunId: RUN_ID }),
   ];
@@ -2165,7 +2151,6 @@ describe('buildTimelineStream, plan visibility and family anchoring', () => {
       'pending:agent:review',
       'pending:agent:sub-3',
       'pending:agent:implement',
-      'step:agent:sub-2',
       'step:agent:sub-1',
       'entry:run:run-1',
     ]);

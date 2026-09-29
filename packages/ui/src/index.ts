@@ -252,4 +252,9 @@ export {
   WORK_NODE_SIZE,
   WORK_NODE_SIZE_SM,
 } from './components/WorkTree/workNodeSpec';
-export type { WorkNodeMark, WorkNodeSize, WorkNodeState } from './components/WorkTree/workNodeSpec';
+export type {
+  WorkNodeMark,
+  WorkNodeMixedPart,
+  WorkNodeSize,
+  WorkNodeState,
+} from './components/WorkTree/workNodeSpec';

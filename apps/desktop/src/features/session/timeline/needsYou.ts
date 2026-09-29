@@ -1,24 +1,52 @@
 import type { TimelineTopLevelEntry } from './buildTimelineGroups';
 import type { TimelineRowItem, TimelineStreamItem } from './buildTimelineStream';
 import { isRowNeedingYou } from '../../workTreeModel/rowState';
+import { isResolveAttention } from './resolveActivity';
 import { rowStateTone } from '../../workTreeModel/rowStateCopy';
 
 type RootsParams = {
   readonly items: ReadonlyArray<TimelineStreamItem>;
 };
 
+const attentionChildIdsOf = ({
+  entry,
+}: {
+  readonly entry: Extract<TimelineRowItem['entry'], { readonly kind: 'resolveBatch' }>;
+}): ReadonlyArray<string> =>
+  entry.children.flatMap((child, index) => {
+    const facts = entry.facts[index];
+    return facts !== undefined && isResolveAttention({ state: facts.state }) ? [child.id] : [];
+  });
+
 export const needsYouRootIds = ({ items }: RootsParams): ReadonlySet<string> => {
   const roots = new Set<string>();
   for (const item of items) {
-    if (item.kind === 'row' && isRowNeedingYou({ state: item.rowState })) {
-      roots.add(item.familyId ?? item.id);
+    if (item.kind !== 'row' || !isRowNeedingYou({ state: item.rowState })) {
+      continue;
     }
+    if (item.entry.kind === 'subagentGroup') {
+      roots.add(item.familyId ?? item.id);
+      continue;
+    }
+    if (item.entry.kind === 'resolveBatch') {
+      for (const childId of attentionChildIdsOf({ entry: item.entry })) {
+        roots.add(childId);
+      }
+      continue;
+    }
+    roots.add(item.familyId ?? item.id);
   }
   return roots;
 };
 
 const needKeysOf = ({ item }: { readonly item: TimelineRowItem }): ReadonlyArray<string> => {
   const { entry, rowState } = item;
+  if (entry.kind === 'resolveBatch') {
+    return attentionChildIdsOf({ entry });
+  }
+  if (entry.kind === 'subagentGroup') {
+    return entry.attentionKeys;
+  }
   if (entry.kind === 'question') {
     return entry.questions.map((question) => question.id);
   }
