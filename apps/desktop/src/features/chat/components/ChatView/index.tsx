@@ -61,6 +61,7 @@ type Props = {
   readonly session: Session;
   readonly isActive?: boolean;
   readonly agentId?: AgentId | null;
+  readonly topInset?: 'roomy' | 'tight';
 };
 
 type RetrySource = {
@@ -112,7 +113,7 @@ const buildRetryOverride = ({
   };
 };
 
-export const ChatView = ({ session, isActive = true, agentId }: Props) => {
+export const ChatView = ({ session, isActive = true, agentId, topInset = 'roomy' }: Props) => {
   const storedAgentId = useAppStore((s) => s.selectedAgentId[session.id] ?? null) as AgentId | null;
   const selectedAgentId = agentId === undefined ? storedAgentId : agentId;
   const sendTurn = useAppStore((s) => s.sendTurn);
@@ -478,7 +479,11 @@ export const ChatView = ({ session, isActive = true, agentId }: Props) => {
   return (
     <div className="flex h-full flex-col">
       <div ref={fadeHostRef} className="relative flex min-h-0 flex-1 flex-col">
-        <ScrollFade className="flex-1" fadeSize="h-12" viewportClassName="px-6 pb-4 pt-6">
+        <ScrollFade
+          className="flex-1"
+          fadeSize="h-12"
+          viewportClassName={cn('px-6 pb-4', topInset === 'tight' ? 'pt-2' : 'pt-6')}
+        >
           {transcriptStale || (loading.transcript && deferredItems.length === 0) ? (
             <TranscriptSkeleton />
           ) : deferredItems.length === 0 &&

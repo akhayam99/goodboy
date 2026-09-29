@@ -114,22 +114,20 @@ describe('HandoffBlock', () => {
     cleanup();
   });
 
-  it('shows who sent the agent, the ask, the why and one chip per section, closed', () => {
+  it('shows who sent the agent, the ask and the why, closed, without chips', () => {
     renderBlock();
 
     expect(screen.getByText('Orchestrator · step 4')).toBeTruthy();
     expect(screen.getByText('Backfill the settled batches behind a flag.')).toBeTruthy();
     expect(screen.getByText('Why: Rounding now lands once per batch.')).toBeTruthy();
-    expect(screen.getByTestId('handoff-chips').textContent).toBe(
-      'Ask1 earlier stepPlanImplementer instructionsAll',
-    );
+    expect(screen.queryByTestId('handoff-chips')).toBeNull();
     expect(screen.queryByTestId('handoff-section-ask')).toBeNull();
   });
 
-  it('keeps the chips visible once the block is open', () => {
+  it('shows one chip per section once the block opens', () => {
     renderBlock();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
 
     expect(screen.getByTestId('handoff-chips').textContent).toBe(
       'Ask1 earlier stepPlanImplementer instructionsAll',
@@ -138,6 +136,7 @@ describe('HandoffBlock', () => {
 
   it('a second click on the same chip closes its section', () => {
     renderBlock();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
     const planChip = screen.getByRole('button', { name: 'Plan' });
 
     fireEvent.click(planChip);
@@ -149,22 +148,19 @@ describe('HandoffBlock', () => {
     expect(planChip.getAttribute('aria-pressed')).toBe('false');
   });
 
-  it('reopens the section a collapsed chip names, instead of landing on nothing', () => {
+  it('hides the chips again when the block closes', () => {
     renderBlock();
-    const planChip = screen.getByRole('button', { name: 'Plan' });
-    fireEvent.click(planChip);
-    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
+    expect(screen.getByTestId('handoff-chips')).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Collapse what the agent received' }));
-    expect(screen.queryByTestId('handoff-section-plan')).toBeNull();
 
-    fireEvent.click(planChip);
-
-    expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
+    expect(screen.queryByTestId('handoff-chips')).toBeNull();
   });
 
   it('keeps only one section open: a second chip replaces the first', () => {
     renderBlock();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
     expect(screen.getByTestId('handoff-section-plan')).toBeTruthy();
@@ -176,6 +172,7 @@ describe('HandoffBlock', () => {
 
   it('Escape closes the open section and returns focus to its chip', () => {
     renderBlock();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
     const planChip = screen.getByRole('button', { name: 'Plan' });
     fireEvent.click(planChip);
 
@@ -199,10 +196,13 @@ describe('HandoffBlock', () => {
         />
       </>,
     );
+    screen
+      .getAllByRole('button', { name: 'Expand what the agent received' })
+      .forEach((button) => fireEvent.click(button));
     const planChips = screen.getAllByRole('button', { name: 'Plan' });
     fireEvent.click(planChips[1]!);
 
-    fireEvent.keyDown(screen.getByTestId('handoff-section-plan'), { key: 'Escape' });
+    fireEvent.keyDown(screen.getAllByTestId('handoff-section-plan')[1]!, { key: 'Escape' });
 
     expect(document.activeElement).toBe(planChips[1]);
     expect(document.activeElement).not.toBe(planChips[0]);
@@ -210,6 +210,9 @@ describe('HandoffBlock', () => {
 
   it('All shows every section together', () => {
     renderBlock();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
+    expect(screen.queryByTestId('handoff-section-role')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'All' }));
 
@@ -223,10 +226,12 @@ describe('HandoffBlock', () => {
     renderBlock();
 
     expect(screen.getByTestId('handoff-section-ask')).toBeTruthy();
+    expect(screen.getByTestId('handoff-chips')).toBeTruthy();
   });
 
   it('opens the block on the section a chip names, and an earlier step opens that agent', () => {
     renderBlock();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
 
     fireEvent.click(screen.getByRole('button', { name: '1 earlier step' }));
     fireEvent.click(screen.getByRole('button', { name: /Trace the rounding/ }));
@@ -240,6 +245,7 @@ describe('HandoffBlock', () => {
     const listener = vi.fn();
     window.addEventListener('goodboy:open-plan-studio', listener);
     renderBlock();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand what the agent received' }));
 
     fireEvent.click(screen.getByRole('button', { name: 'Plan' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open plan' }));

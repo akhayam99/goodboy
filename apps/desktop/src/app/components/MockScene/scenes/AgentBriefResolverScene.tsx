@@ -12,6 +12,7 @@ import { agentPlace, useAppStore } from '../../../../store';
 import { SESSION, SESSION_ID, seedResolveScene } from './resolveSeed';
 import { WorkspaceFrame } from './audit/WorkspaceFrame';
 import { sceneParam } from './audit/sceneParams';
+import { liveAgent, liveHandoff, liveTranscript, liveTurnState } from './agentBriefResolverLive';
 
 const SINGLE_ID = 'mock-brief-resolver-single' as AgentId;
 const BATCH_A_ID = 'mock-brief-resolver-batch-a' as AgentId;
@@ -223,6 +224,10 @@ export const AgentBriefResolverScene = () => {
   useEffect(() => {
     const { navigate } = useAppStore.getState();
     seedResolveScene({ expandedThreadId: null });
+    const isLive = sceneParam({ key: 'live' }) === '1';
+    const agents = isLive
+      ? AGENTS.map((agent) => (agent.id === SINGLE_ID ? liveAgent({ agent }) : agent))
+      : AGENTS;
     const state = useAppStore.getState();
     const candidates = (state.sessionResolveCandidates[SESSION_ID] ?? []).map((entry) => ({
       ...entry,
@@ -253,7 +258,7 @@ export const AgentBriefResolverScene = () => {
       currentSessionId: SESSION_ID,
       activeLens: { [SESSION_ID]: null },
       sessionResolveCandidates: { [SESSION_ID]: candidates },
-      sessionPhaseRuns: { [SESSION_ID]: AGENTS },
+      sessionPhaseRuns: { [SESSION_ID]: agents },
       sessionResolveAttempts: {
         [SESSION_ID]: [
           attemptOf({
@@ -282,19 +287,35 @@ export const AgentBriefResolverScene = () => {
       agentTurnState: Object.fromEntries(
         AGENTS.map((agent) => [
           agent.id,
-          { kind: 'ended', endedAt: isoAgo({ minutes: 8 }) } satisfies TurnState,
+          isLive && agent.id === SINGLE_ID
+            ? liveTurnState({ runId: runIdOf(agent.id) })
+            : ({ kind: 'ended', endedAt: isoAgo({ minutes: 8 }) } satisfies TurnState),
         ]),
       ),
-      transcripts: Object.fromEntries(AGENTS.map((agent) => [agent.id, transcriptOf(agent.id)])),
+      transcripts: Object.fromEntries(
+        AGENTS.map((agent) => [
+          agent.id,
+          isLive && agent.id === SINGLE_ID
+            ? liveTranscript({ agentId: agent.id, runId: runIdOf(agent.id) })
+            : transcriptOf(agent.id),
+        ]),
+      ),
       agentRunHistory: Object.fromEntries(AGENTS.map((agent) => [agent.id, [runIdOf(agent.id)]])),
     });
+    if (isLive) {
+      useAppStore.setState({
+        agentHandoffs: { [SINGLE_ID]: liveHandoff({ agentId: SINGLE_ID }) },
+        loadAgentHandoff: async () => undefined,
+      });
+    }
     if (sceneParam({ key: 'state' }) === 'accepted') {
       stagePush();
     }
     const open = sceneParam({ key: 'open' });
     const target = open === 'batch' ? BATCH_A_ID : open === 'single' ? SINGLE_ID : null;
+    const pane = sceneParam({ key: 'pane' }) === 'transcript' ? 'transcript' : 'brief';
     if (target !== null) {
-      navigate({ to: agentPlace({ sessionId: SESSION_ID, agentId: target, pane: 'brief' }) });
+      navigate({ to: agentPlace({ sessionId: SESSION_ID, agentId: target, pane }) });
     }
     setIsReady(true);
   }, []);

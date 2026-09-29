@@ -73,7 +73,9 @@ instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
-hairline track, `bg-selected` on the active segment, no raised pill. No ring and no primary tint mark a
+hairline track, `bg-selected` on the active segment, no raised pill. It has
+three sizes: `xs` (28px strip, for a header row that also holds the title and
+actions), `sm` (36px) and `md`. No ring and no primary tint mark a
 selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
@@ -860,7 +862,13 @@ There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 `icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
 its own header row passes `HeaderBand` (also an `h1`) through the custom
-`header` slot. The session overview's `HeaderBand` holds the title, then one
+`header` slot. The agent detail passes `AgentHeader` instead: a 32px title row
+with the one-line title (full name on hover), the Brief and Transcript tabs
+(`SegmentedTabs` `xs`, 28px) and the actions (lifecycle button, Delete as an
+icon with an anchored `ConfirmPopover`, the overflow menu), then one 18px meta
+line with role, status, time and model. That is 70px with the 16px below, no
+separate tabs row, and the transcript under it starts 8px down (`ChatView`
+`topInset="tight"`). The session overview's `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
 there is none, then the chips, `Context` first. Goal, decisions and summary

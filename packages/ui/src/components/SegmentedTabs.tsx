@@ -21,7 +21,7 @@ export type Props<T extends string = string> = {
   readonly options: ReadonlyArray<SegmentedTabOption<T>>;
   readonly value: T;
   readonly onChange: (value: T) => void;
-  readonly size?: 'sm' | 'md';
+  readonly size?: 'xs' | 'sm' | 'md';
   readonly variant?: 'pill' | 'card';
   readonly ariaLabel: string;
   readonly className?: string;
@@ -65,6 +65,7 @@ export const SegmentedTabs = <T extends string>({
 }: Props<T>) => {
   const tablistRef = useRef<HTMLDivElement>(null);
   const isMedium = size === 'md';
+  const isCompact = size === 'xs';
   const isCard = variant === 'card';
   const gridStyle: CSSProperties | undefined =
     fill && !isCard
@@ -95,7 +96,8 @@ export const SegmentedTabs = <T extends string>({
         isCard
           ? 'grid grid-cols-1 gap-2 sm:grid-cols-3'
           : cn(
-              'gap-1 rounded-lg border border-border-soft p-1',
+              'border border-border-soft',
+              isCompact ? 'gap-0.5 rounded-md p-0.5' : 'gap-1 rounded-lg p-1',
               fill ? 'grid w-full' : 'inline-flex items-center',
             ),
         className,
@@ -116,7 +118,7 @@ export const SegmentedTabs = <T extends string>({
             <span className="flex shrink-0 items-center">{glyph}</span>
           ) : Icon != null ? (
             <Icon
-              size={isCard ? 16 : isMedium ? 15 : 13}
+              size={isCard ? 16 : isMedium ? 15 : isCompact ? 12 : 13}
               aria-hidden
               className={cn(
                 'shrink-0',
@@ -189,8 +191,12 @@ export const SegmentedTabs = <T extends string>({
             onKeyDown={(event) => onKeyDown({ event, index })}
             style={activeStyle}
             className={cn(
-              'relative flex items-center justify-center gap-1.5 rounded-md border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
-              isMedium ? 'px-3 py-2 text-heading' : 'px-2.5 py-1 text-label',
+              'relative flex items-center justify-center gap-1.5 border border-transparent font-medium motion-safe:transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring',
+              isMedium
+                ? 'rounded-md px-3 py-2 text-heading'
+                : isCompact
+                  ? 'rounded-sm px-2 py-0.5 text-label'
+                  : 'rounded-md px-2.5 py-1 text-label',
               isActive
                 ? 'bg-selected font-semibold text-foreground'
                 : 'text-muted-foreground hover:bg-hover hover:text-foreground',

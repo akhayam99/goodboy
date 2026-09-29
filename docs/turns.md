@@ -106,10 +106,11 @@ record a live turn already wrote wins.
   the prior turns block replays it for Codex, Cursor and Antigravity.
 - The transcript draws that first message as one handoff block
   (`features/chat/components/HandoffBlock`), the same for every provider: who
-  sent it, the ask in one line, the why, and a chip per section, always
-  visible whether the block is open or closed. A chip opens its section in a
-  single panel below; the same chip closes it, and a second chip replaces the
-  first rather than stacking. **All** shows every section together, including
+  sent it, the ask in one line and the why. Closed, that is all it shows.
+  Opening it (the header) shows a chip per section and **All**. A chip opens
+  its section in a single panel below; the same chip closes it, and a second
+  chip replaces the first rather than stacking. Closing the block hides the
+  chips again. **All** shows every section together, including
   **View as sent**. It opens by itself only while the agent has not answered
   yet. Earlier steps open their agent, the plan is a title and Open plan
   (never its body), and **View as sent** shows the exact text in mono, in two
