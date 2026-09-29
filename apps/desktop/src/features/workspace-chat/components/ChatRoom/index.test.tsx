@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import type {
   ChatId,
   ChatMessage,
@@ -11,7 +11,16 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 
-const { store } = vi.hoisted(() => ({
+const { store, summarize } = vi.hoisted(() => ({
+  summarize: vi.fn(async (_params: Record<string, unknown>) =>
+    JSON.stringify({
+      title: 'Ask for consent again when the policy changes',
+      goal: 'Ask for consent again when the policy version changes.',
+      know: ['Consent is step 4, in steps.ts:88.'],
+      files: ['payments-api/src/questionnaire/steps.ts:88'],
+      projects: ['payments-api'],
+    }),
+  ),
   store: {
     workspaces: [{ id: 'ws-harborline', name: 'Harborline' }],
     projects: [
@@ -39,6 +48,10 @@ const { store } = vi.hoisted(() => ({
     recordChatLink: vi.fn(async () => ({})),
     loadPhaseRunsForSession: vi.fn(async () => undefined),
     setAgentDraft: vi.fn(),
+    settings: {} as Record<string, string>,
+    cliRequirements: [] as ReadonlyArray<unknown>,
+    loadSetting: vi.fn(async (_key: string) => null as string | null),
+    saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
     agentDraft: {} as Record<string, string>,
     navigate: vi.fn(),
@@ -60,16 +73,7 @@ vi.mock('../../../../store', () => ({
 vi.mock('../../../providers/hooks/useHiddenModels', () => ({ useHiddenModels: () => ({}) }));
 
 vi.mock('../../activeChatBackend', () => ({
-  activeChatBackend: {
-    summarizeForWork: async () =>
-      JSON.stringify({
-        title: 'Ask for consent again when the policy changes',
-        goal: 'Ask for consent again when the policy version changes.',
-        know: ['Consent is step 4, in steps.ts:88.'],
-        files: ['payments-api/src/questionnaire/steps.ts:88'],
-        projects: ['payments-api'],
-      }),
-  },
+  activeChatBackend: { summarizeForWork: summarize },
 }));
 
 import { ChatRoom } from './index';
@@ -136,6 +140,7 @@ beforeEach(() => {
   store.mounts = {};
   store.sessionPhaseRuns = {};
   store.agentDraft = {};
+  store.settings = {};
 });
 
 afterEach(() => {
@@ -343,6 +348,114 @@ describe('ChatRoom', () => {
       'agent-refunds',
       expect.stringMatching(/^Ask for consent again when the policy changes\n\nAsk for consent/),
     );
+  });
+
+  it('drafts the brief with the chat model and shows it under the title', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+
+    expect(summarize).toHaveBeenCalledTimes(1);
+    expect(summarize).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'anthropic', model: 'sonnet-5' }),
+    );
+    const drafter = screen.getByRole('button', { name: /^Drafted by: / });
+    expect(drafter.textContent).toContain('Sonnet 5');
+    expect(drafter.textContent).not.toMatch(/High|Medium|Low/);
+  });
+
+  it('drafts with the model remembered for the workspace', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.settings = {
+      'chat.workDrafter.ws-harborline': JSON.stringify({
+        provider: 'anthropic',
+        model: 'haiku-4.5',
+      }),
+    };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+
+    expect(summarize).toHaveBeenCalledTimes(1);
+    expect(summarize).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: 'anthropic', model: 'haiku-4.5' }),
+    );
+  });
+
+  it('drafts again and remembers the choice when Drafted by changes', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    fireEvent.click(screen.getByRole('button', { name: /^Drafted by: / }));
+    const models = screen.getByRole('group', { name: 'Model' });
+    await act(async () => {
+      fireEvent.click(within(models).getByRole('button', { name: /Haiku/ }));
+    });
+
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    expect(summarize).toHaveBeenCalledTimes(2);
+    expect(summarize).toHaveBeenLastCalledWith(
+      expect.objectContaining({ provider: 'anthropic', model: 'haiku-4.5' }),
+    );
+    expect(store.saveSetting).toHaveBeenCalledWith(
+      'chat.workDrafter.ws-harborline',
+      JSON.stringify({ provider: 'anthropic', model: 'haiku-4.5' }),
+    );
+  });
+
+  it('puts Start as first and hides Runs on when adding to a session', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+
+    const startAs = screen.getByRole('tablist', { name: 'Start as' });
+    const title = screen.getByDisplayValue('Ask for consent again when the policy changes');
+    expect(startAs.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('Runs on')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Add to a session' }));
+    expect(screen.queryByText('Runs on')).toBeNull();
+  });
+
+  it('sets the new session default model and effort when Runs on is changed', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    fireEvent.click(screen.getByRole('button', { name: /^Runs on: / }));
+    const effort = screen.getByRole('group', { name: 'Effort' });
+    fireEvent.click(within(effort).getByRole('button', { name: /Low/ }));
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
+    });
+
+    expect(store.setSessionConfig).toHaveBeenCalledWith(
+      'session-new',
+      expect.objectContaining({ effort: 'low', providerOverride: expect.any(String) }),
+    );
+  });
+
+  it('starts from the keyboard with command and enter', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    const goal = await screen.findByDisplayValue(
+      'Ask for consent again when the policy version changes.',
+    );
+    await act(async () => {
+      fireEvent.keyDown(goal, { key: 'Enter', metaKey: true });
+    });
+
+    expect(store.createSession).toHaveBeenCalledTimes(1);
   });
 
   it('sizes and tones Copy like the other quiet actions under an answer', () => {

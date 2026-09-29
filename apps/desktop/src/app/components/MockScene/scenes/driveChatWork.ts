@@ -11,10 +11,19 @@ const isExpanded = (element: HTMLElement): boolean =>
 const isSelected = (element: HTMLElement): boolean =>
   element.getAttribute('aria-selected') === 'true';
 
+const visibleText = (element: HTMLElement): string => {
+  const copy = element.cloneNode(true);
+  if (!(copy instanceof HTMLElement)) {
+    return '';
+  }
+  copy.querySelectorAll('[aria-hidden="true"]').forEach((hidden) => hidden.remove());
+  return copy.textContent?.trim() ?? '';
+};
+
 const buttonWithText = (text: string): Step => ({
   find: () =>
     Array.from(document.querySelectorAll('button')).find(
-      (button) => button.textContent?.trim() === text,
+      (button) => visibleText(button) === text,
     ) ?? null,
   isDone: isExpanded,
 });

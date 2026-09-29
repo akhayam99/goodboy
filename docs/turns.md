@@ -595,18 +595,28 @@ and `apps/desktop/src-tauri/src/chat.rs` spawns the CLI.
   survives a reload without a migration.
 - **Turn into work.** "Start work" drafts a brief (title, goal, what we know,
   files, projects) with one `summarize_session` call through `runAuxOneShot`
-  on the chat's own provider and model, with no tools and no working folder
-  (`summarizeChatForWork.ts`). The model must answer one JSON object; anything
-  else, a failure or 45 seconds without an answer falls back to a brief drafted
-  from the last answer (`draftWorkBrief`). The brief then starts a session
-  (`createSession` with the goal and a `generic` first agent whose kickoff is
-  the brief) or goes into an existing session as the next message
-  (`sendTurn`). Nothing runs until the user presses the button.
+  with no tools and no working folder (`summarizeChatForWork.ts`). **Drafted
+  by** picks the model that writes it: a `RoutingPicker` pill limited to chat
+  providers with no effort (`isEffortHidden`), defaulting to the chat's own
+  model and remembered per workspace in the `chat.workDrafter.<workspaceId>`
+  setting (`workDrafter.ts`); changing it drafts again and drops hand edits.
+  The model must answer one JSON object; anything else, a failure or 45
+  seconds without an answer falls back to a brief drafted from the last answer
+  (`draftWorkBrief`). **Start session** creates the session with the title,
+  the goal (the brief goal, then "What we know" and "Files" as short lists)
+  and the picked projects, with no first agent and no kickoff prompt, records
+  a `new` link and opens the session overview; the user decides there what to
+  run. **Runs on** (a `RoutingPicker` field with effort, new session only) is
+  set afterwards through `setSessionConfig` as the session's `providerOverride`,
+  `modelOverride` and `effort`, and only when the user changed it. **Add to a
+  session** sends no turn: it records an `add` link and puts the title and
+  brief into the latest agent's composer draft (`landOnSession.ts`). The
+  panel starts on the keyboard with cmd or ctrl plus Enter.
   The Project field is a searchable multiple `Listbox` (`ProjectField.tsx`)
   with removable chips and a "No project" state; it starts with the projects the
   answer named files in, or none, and hides in "Add to a session" mode. The first
   picked project is `createSession`'s `projectId`; the others go in
-  `additionalProjectIds` and are mounted before the kickoff turn. The Session
+  `additionalProjectIds`. The Session
   field (`SessionField.tsx`) is a searchable `Listbox` too: Active sessions,
   then Recent (done) ones, each row with the title, its projects, its stage and
   its age.
