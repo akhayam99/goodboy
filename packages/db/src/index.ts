@@ -261,7 +261,6 @@ export {
 } from './queries/agent-write';
 export {
   listAgentsForSessions,
-  updateAgentStatus,
   purgeAgentForDelete,
   updateAgentConfig,
   type AgentRoutingUpdate,

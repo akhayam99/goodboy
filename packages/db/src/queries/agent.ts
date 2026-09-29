@@ -3,7 +3,6 @@ import type {
   AgentId,
   AgentSourceKind,
   AgentStatus,
-  AgentStoppedBy,
   IsoDateTime,
   EffortLevel,
   ProviderId,
@@ -193,59 +192,6 @@ export const updateAgentDomains = async ({
     domains !== null ? JSON.stringify(domains) : null,
     id,
   ]);
-};
-
-export const updateAgentStatus = async (
-  db: Database,
-  id: AgentId,
-  fields: {
-    status?: AgentStatus;
-    runId?: ProviderRunId;
-    outputSummary?: string;
-    startedAt?: IsoDateTime;
-    completedAt?: IsoDateTime;
-    stoppedAt?: IsoDateTime | null;
-    stoppedBy?: AgentStoppedBy | null;
-  },
-): Promise<void> => {
-  const updates: string[] = [];
-  const values: unknown[] = [];
-
-  if (fields.status !== undefined) {
-    updates.push('status = ?');
-    values.push(fields.status);
-  }
-  if (fields.runId !== undefined) {
-    updates.push('provider_run_id = ?');
-    values.push(fields.runId);
-  }
-  if (fields.outputSummary !== undefined) {
-    updates.push('output_summary = ?');
-    values.push(fields.outputSummary);
-  }
-  if (fields.startedAt !== undefined) {
-    updates.push('started_at = ?');
-    values.push(Date.parse(fields.startedAt));
-  }
-  if (fields.completedAt !== undefined) {
-    updates.push('last_finished_at = ?');
-    values.push(Date.parse(fields.completedAt));
-  }
-  if (fields.stoppedAt !== undefined) {
-    updates.push('stopped_at = ?');
-    values.push(fields.stoppedAt === null ? null : Date.parse(fields.stoppedAt));
-  }
-  if (fields.stoppedBy !== undefined) {
-    updates.push('stopped_by = ?');
-    values.push(fields.stoppedBy);
-  }
-
-  if (updates.length === 0) {
-    return;
-  }
-
-  values.push(id);
-  await db.execute(`UPDATE agents SET ${updates.join(', ')} WHERE id = ?`, values);
 };
 
 export const PURGED_QUESTION_TEXTS_INDEX = 0;

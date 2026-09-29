@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Agent, IsoDateTime, ProviderRunId, Session } from '@goodboy/types';
 
-const { cancelTurn, isTurnStreamActive, updateAgentStatus, updateSessionState } = vi.hoisted(
+const { cancelTurn, isTurnStreamActive, recordAgentStatus, updateSessionState } = vi.hoisted(
   () => ({
     isTurnStreamActive: vi.fn((_params: { readonly runId: string }) => false),
     cancelTurn: vi.fn(async () => undefined),
-    updateAgentStatus: vi.fn(async () => undefined),
+    recordAgentStatus: vi.fn(async () => undefined),
     updateSessionState: vi.fn(async () => undefined),
   }),
 );
 
 vi.mock('@goodboy/db', async () =>
-  (await import('../../../test/dbMock')).createDbMock({ updateAgentStatus, updateSessionState }),
+  (await import('../../../test/dbMock')).createDbMock({ recordAgentStatus, updateSessionState }),
 );
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn, isTurnStreamActive }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
@@ -110,7 +110,7 @@ describe('loaded run reconciliation', () => {
     const reconciled = await reconcileLoadedAgent({ agent, liveRunIds: new Set([RUN_ID]) });
 
     expect(cancelTurn).toHaveBeenCalledWith(RUN_ID);
-    expect(updateAgentStatus).toHaveBeenCalledWith({}, agent.id, {
+    expect(recordAgentStatus).toHaveBeenCalledWith({}, agent.id, {
       status: 'stopped',
       stoppedAt: expect.any(String),
       stoppedBy: 'app',
@@ -133,7 +133,7 @@ describe('loaded run reconciliation', () => {
     expect(reconciled).toBe(agent);
     expect(session?.state.kind).toBe('running');
     expect(cancelTurn).not.toHaveBeenCalled();
-    expect(updateAgentStatus).not.toHaveBeenCalled();
+    expect(recordAgentStatus).not.toHaveBeenCalled();
     expect(reattachableTurn({ agent })).toEqual({
       runId: RUN_ID,
       cursor: { seq: 3, index: 0, owner: OWNER },
@@ -169,6 +169,6 @@ describe('loaded run reconciliation', () => {
     expect(reconciledSession).toBe(session);
     expect(reconciledAgent).toBe(agent);
     expect(updateSessionState).not.toHaveBeenCalled();
-    expect(updateAgentStatus).not.toHaveBeenCalled();
+    expect(recordAgentStatus).not.toHaveBeenCalled();
   });
 });

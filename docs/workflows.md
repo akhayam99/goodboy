@@ -421,8 +421,8 @@ Everything below is the code behind the sections above.
 ### Where it lives
 
 - `packages/db/src/migrations/`: the workflow schema
-- `packages/db/src/queries/workflow.ts`: `saveWorkflow` and `removeWorkflow`, the only code that writes `workflows` and `steps` from the app
-- `packages/db/src/queries/agent-write.ts`: `insertAgent`, `insertAgentBatch`, `recordAgentStatus` and the other writes of `agents`
+- `packages/db/src/queries/workflow.ts`: `saveWorkflow` and `removeWorkflow` write workflows and steps for edits, and the seeder (`packages/core/src/workflows/seeder.ts`) writes the shipped presets through `upsertWorkflow` and `restoreSeededWorkflow` in the same file. Rust does not write them, except the backup import
+- `packages/db/src/queries/agent-write.ts`: `insertAgent`, `insertAgentBatch`, `recordAgentStatus` (the one status writer) and the other writes of `agents`
 - `apps/desktop/src-tauri/src/workflows.rs`: the reads of workflows and the step library (`step_def_upsert` writes `step_library`)
 - `apps/desktop/src/features/workflows/advanceGate.ts`: `resolveWorkflowAdvance`, which decides if a run can move on
 - `apps/desktop/src/store/slices/workflows/maybeAutoAdvanceWorkflow.ts`: moves a hands-free run to its next step
