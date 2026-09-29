@@ -12,6 +12,7 @@ const BASE: ReviewCommentFacts = {
   isNote: false,
   hasPr: true,
   provider: 'GitHub',
+  canResolve: true,
   agentId: 'resolver' as AgentId,
   path: 'src/webhooks/retryPolicy.ts',
   url: 'https://github.com/harborline/payments-api/pull/318#discussion_r1',
@@ -135,6 +136,24 @@ const MATRIX: ReadonlyArray<Row> = [
     name: 'resolved on GitHub',
     facts: { state: 'resolved', agentId: null },
     expected: [...OPEN, ...GITHUB, ...COPY],
+  },
+  {
+    name: 'not started on Bitbucket, where a thread cannot be resolved',
+    facts: {
+      state: 'new',
+      agentId: null,
+      provider: 'Bitbucket',
+      canResolve: false,
+      url: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12/_/diff#comment-4',
+    },
+    expected: [
+      ...OPEN,
+      'reviewComment.openOnGithub menu Open on Bitbucket',
+      'reviewComment.draft primary Draft a fix',
+      'reviewComment.reply secondary Reply',
+      'reviewComment.skip secondary Skip',
+      ...COPY,
+    ],
   },
   {
     name: 'a local note, not started',

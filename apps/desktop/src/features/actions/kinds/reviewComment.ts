@@ -13,7 +13,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import type { AgentId, SessionId } from '@goodboy/types';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
 import { openUrl } from '../../../shared/lib/editor';
 import { resolverPagePlace, sessionPlace } from '../../../store/slices/navigation/place';
@@ -33,6 +33,7 @@ export type ReviewCommentFacts = {
   readonly isNote: boolean;
   readonly hasPr: boolean;
   readonly provider: string;
+  readonly canResolve: boolean;
   readonly agentId: AgentId | null;
   readonly path: string | null;
   readonly url: string | null;
@@ -117,6 +118,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       isNote: row.thread.originKind === 'diff_comment',
       hasPr: activeReviewSourceOf({ state, sessionId: target.sessionId }) !== null,
       provider: REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'],
+      canResolve: REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve,
       agentId: row.attempt?.agentId ?? null,
       path: row.reviewerNote?.path ?? null,
       url: row.commentThread?.head.url ?? null,
@@ -283,7 +285,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: ({ facts }) => (facts.isNote ? 'Close the note' : 'Resolve without a reply'),
       icon: CircleCheck,
       group: 'act',
-      when: ({ facts }) => UNDECIDED.has(facts.state),
+      when: ({ facts }) => UNDECIDED.has(facts.state) && facts.canResolve,
       slot: () => 'menu',
       run: ({ facts, env }) =>
         facts.isNote

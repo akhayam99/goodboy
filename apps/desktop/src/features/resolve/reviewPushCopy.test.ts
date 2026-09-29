@@ -108,6 +108,31 @@ describe('the push confirm on another provider', () => {
     expect(body).not.toContain('resolved');
     expect(body).toContain('replies');
   });
+
+  it('says the threads stay open when the provider cannot resolve', () => {
+    const body = pushConfirmBody({
+      preview: previewOf({}),
+      commitStyle: 'new',
+      provider: 'Bitbucket',
+      canResolve: false,
+    });
+    expect(body).toBe('1 fix in 1 new commit, 2 replies, 2 threads left open for the reviewer.');
+  });
+
+  it('does not promise a resolve for a comment with no reply on Bitbucket', () => {
+    const body = pushConfirmBody({
+      preview: previewOf({
+        requiresPush: false,
+        commits: [],
+        replies: [],
+        notes: [{ threadId: 't-nit', revision: 2, closes: true }],
+      }),
+      commitStyle: 'new',
+      provider: 'Bitbucket',
+      canResolve: false,
+    });
+    expect(body).toBe('No commit, 1 thread left open for the reviewer.');
+  });
 });
 
 describe('the push result line', () => {
@@ -132,6 +157,15 @@ describe('the push result line', () => {
       tone: 'done',
       sentence: '3 replies posted, 1 thread resolved on GitHub, 2 left open for the reviewer.',
     });
+  });
+
+  it('never says resolved for a provider that resolved nothing', () => {
+    const result = pushResultOf({
+      outcome: outcomeOf({ resolved: 0, leftOpen: 3 }),
+      provider: 'Bitbucket',
+    });
+    expect(result.sentence).toBe('Pushed a41c9e2, 3 replies posted, 3 left open for the reviewer.');
+    expect(result.sentence).not.toContain('resolved');
   });
 
   it('reads as a failure when nothing landed', () => {

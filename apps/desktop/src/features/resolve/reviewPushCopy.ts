@@ -38,6 +38,19 @@ const fixesPart = ({
   return `${plural(Math.max(fixes, 1), 'fix', 'fixes')} in ${commits} ${kind} ${commits === 1 ? 'commit' : 'commits'}`;
 };
 
+const closingPart = ({
+  closing,
+  provider,
+  canResolve,
+}: {
+  readonly closing: number;
+  readonly provider: string;
+  readonly canResolve: boolean;
+}): string =>
+  canResolve
+    ? `${plural(closing, 'thread', 'threads')} resolved on ${provider}`
+    : `${plural(closing, 'thread', 'threads')} left open for the reviewer`;
+
 export const pushConfirmBody = ({
   preview,
   commitStyle,
@@ -49,11 +62,11 @@ export const pushConfirmBody = ({
   readonly provider?: string;
   readonly canResolve?: boolean;
 }): string => {
-  const closing = canResolve ? closingThreadCount({ preview }) : 0;
+  const closing = closingThreadCount({ preview });
   const parts = [
     fixesPart({ preview, commitStyle }),
     preview.replies.length === 0 ? null : plural(preview.replies.length, 'reply', 'replies'),
-    closing === 0 ? null : `${plural(closing, 'thread', 'threads')} resolved on ${provider}`,
+    closing === 0 ? null : closingPart({ closing, provider, canResolve }),
   ].flatMap((part) => (part === null ? [] : [part]));
   return `${parts.join(', ')}.`;
 };
