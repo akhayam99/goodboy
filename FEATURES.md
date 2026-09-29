@@ -191,27 +191,41 @@ Give each workspace its own window, so switching does not interrupt running agen
 
 ## Search and navigation
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s28-search-dark.webp">
-  <img src="./docs/readme/s28-search-light.webp" alt="Search for credit across the webhook session: a message, a plan, the session, an issue and pull request 318, with the actions of the picked hit on the right">
-</picture>
+Find any session, message, plan or action, and reach it from the keyboard.
 
 ### Go anywhere
 
-Reach any screen without the mouse. **⌘K** opens on what you are looking at, and typing a few letters finds any session of any workspace, an agent, a plan or a page. **⌘F** switches the same window to search.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/search-go-anywhere-dark.webp">
+  <img src="./docs/readme/search-go-anywhere-light.webp" alt="The palette after typing webhook: Ask in Chat, then Jump to with two sessions named Stop retried webhooks posting a second credit (payments-api and notify-relay) and the Replay a webhook event script, with the details of the first session on the right">
+</picture>
+
+Reach any screen without the mouse. **⌘K** opens on what you are looking at, and a few letters find any session of any workspace, an agent, a plan, a page or a script. The row you highlight shows its stage, project, branch and pull request on the right, and **Enter** opens it. **⌘F** switches the same window to search.
 
 ### Command palette
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s29-palette-dark.webp">
-  <img src="./docs/readme/s29-palette-light.webp" alt="The command palette on the resolver agent of payments-api 318: its actions first, then Go to">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/search-command-palette-dark.webp">
+  <img src="./docs/readme/search-command-palette-light.webp" alt="The command palette on the agent Resolve review on payments-api#318: For this agent lists Show its changes, Message this agent, Change model, Copy name and Delete agent, and For this session lists Open Review, Open Diff and Open Terminal with their shortcuts">
 </picture>
 
-Press **⌘K** to act on what you are looking at: the verbs of the open session or agent come first, and **→** shows every action of any row. Type a few letters of any word to find sessions of every workspace, agents, plans, pages, scripts and actions, ranked by how well they match and how often you use them. The composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
+Press **⌘K** to act on what you are looking at. The verbs of the open agent come first under **For this agent**, then **For this session** with the shortcut of each action, and **→** shows every action of any row. Results are ranked by how well they match and how often you use them, and the composer's prefixes work here too. Any search with text starts with **Ask in Chat**, which opens a new chat with what you typed as its first message.
 
 ### Search
 
-Find a message, a plan, a decision, an issue or a branch with **⌘F**, across every session, filtered by type, project, provider, status or date. Pick a hit to land on it in context, then walk the other matches in that view with **⌘G**. The index stays on your computer.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/search-overlay-dark.webp">
+  <img src="./docs/readme/search-overlay-light.webp" alt="Search for credit in the session Stop retried webhooks posting a second credit: two messages, the session, the plan Dedupe on the event id, the issue HAR-231 and pull request 318 as results, the filters Type, Project, Provider, Status and Date above them, and the picked message with Open in transcript and its actions on the right">
+</picture>
+
+Find a message, a plan, a decision, an issue or a branch with **⌘F**. Search starts in the open session and **⌫** widens it to the workspace, then to everything. Narrow the results with **Type**, **Project**, **Provider**, **Status** and **Date**, and pick a hit to see its details and actions. **Open in transcript** lands on it in context. The index stays on your computer.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/search-jump-dark.webp">
+  <img src="./docs/readme/search-jump-light.webp" alt="The session transcript after opening a hit, with credit highlighted in the messages and a find bar reading credit, 2 of 3, with previous, next and close buttons">
+</picture>
+
+Once you land on a hit, walk the other matches in that view with **⌘G**.
 
 ### Right click menus
 
@@ -219,31 +233,43 @@ Right click a session, agent, run, artifact, pull request, worktree row, diff fi
 
 ## Workspace and projects
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s27-workspace-dark.webp">
-  <img src="./docs/readme/s27-workspace-light.webp" alt="The Harborline workspace settings: ledger-core, notify-relay and payments-api, and what agents know about you">
-</picture>
+Keep your repos together, and let sessions work across them.
 
 ### Workspace with several projects
 
-Keep your repos together as one workspace, and let one session work across several of them. A project gets a branch only when an agent needs to edit it, and the timeline records why.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workspace-several-projects-dark.webp">
+  <img src="./docs/readme/workspace-several-projects-light.webp" alt="The Northwind workspace with one session open: its Projects section lists api on the branch feat/create-orders-endpoint and storefront-web on feat/checkout-orders-api, each with New worktree and its changes, above the activity timeline">
+</picture>
+
+Keep your repos together as one workspace, and let one session work across several of them. The **Projects** section of the session lists each repo it touches, with its branch, the size of its changes and **New worktree**. A project gets a branch only when an agent needs to edit it.
 
 ### Starred projects, descriptions and base branch
 
-Point agents at the right repo without naming it. Starred projects and their one-line descriptions go into each agent's brief, and each project shows its base branch, read from origin.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workspace-starred-dark.webp">
+  <img src="./docs/readme/workspace-starred-light.webp" alt="The Harborline workspace settings, Projects 4: Starred ledger-core and payments-api with a one-line description each and the base branch main, then All projects with notify-relay and runbooks, and a note that starred projects come first for agents">
+</picture>
+
+Point agents at the right repo without naming it. Star a project and give it a one-line description: both go into each agent's brief, and starred projects come first in the project pickers. Each repo shows its base branch, **main** here, read from origin.
 
 ### Worktrees
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s10-projects-dark.webp">
-  <img src="./docs/readme/s10-projects-light.webp" alt="The projects of one session: payments-api with pull request 318 in review and 311 merged, notify-relay with pull request 57">
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workspace-worktrees-dark.webp">
+  <img src="./docs/readme/workspace-worktrees-light.webp" alt="The Projects of one session: ledger-core with three worktrees (idempotent-postings, part 3 of 6, pull request 418 in review; statement-backfill, part 5 of 6, Files kept with Reopen; rounding-drift, part 1 of 6, pull request 412 merged with Remove worktree) and notify-relay with pull request 96 in review">
 </picture>
 
-Let agents edit in parallel without touching your checkout. When an agent needs to edit a repo, that work gets its own worktree and branch. **Copy worktree path** in **⌘K** copies where a session works, or lets you pick one when it has several, with **⌘Enter** to copy them all.
+Let agents edit in parallel without touching your checkout. Each branch gets its own worktree, a separate folder next to your checkout with its own changes and pull request, and every row shows its part, its lines changed and its pull request. **New worktree** adds one, **Remove worktree** clears a merged one, and **Reopen** brings back one whose files were kept. **Copy worktree path** in **⌘K** copies where a session works, or lets you pick one when it has several, with **⌘Enter** to copy them all.
 
 ### Several branches per project
 
-Work on several branches of one repo in the same session. If a worktree drifts to another branch, Goodboy offers **Use this branch here** or **Keep both branches**.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workspace-branches-dark.webp">
+  <img src="./docs/readme/workspace-branches-light.webp" alt="The Projects of one session where two worktrees are on another branch than the one recorded: ledger-core has two branches and offers Check again, and notify-relay offers Keep both branches and Use this branch here">
+</picture>
+
+Work on several branches of one repo in the same session: ledger-core shows two, each in its own worktree. If a worktree drifts to another branch, a card says the project is not on the branch it was left on and offers **Use this branch here** or **Keep both branches**, which opens the original branch again in a worktree of its own. When git already has that branch checked out in another worktree, the card offers **Check again** instead.
 
 ### Workspace switcher and Reconnect
 
@@ -251,11 +277,21 @@ Jump between workspaces and projects from one search. Disconnecting a workspace 
 
 ### Repo status across projects
 
-See which repos are behind, uncommitted or diverged from the board's **N repos** popover, and update the safe ones together. Updates are fast-forward only and leave dirty or diverged repos to you.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workspace-repo-status-dark.webp">
+  <img src="./docs/readme/workspace-repo-status-light.webp" alt="The 3 repos popover of the board: 1 behind and 1 uncommitted, an Update 1 button, payments-api 2 behind, notify-relay 1 uncommitted and ledger-core up to date" width="746">
+</picture>
+
+See which repos are behind, uncommitted or diverged from the **N repos** popover in the board header, and update the safe ones together with **Update 1**. Updates are fast-forward only and leave dirty or diverged repos to you. **Check origin** refreshes the list.
 
 ### Locate moved projects
 
-Moved your repos to a new folder? Pick the parent folder and Goodboy finds them, fixes the stored paths and repairs the worktrees, with **Undo move**. Repos are matched by their first commit and remote, not by folder name.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/workspace-locate-dark.webp">
+  <img src="./docs/readme/workspace-locate-light.webp" alt="The Harborline workspace settings with a warning, 3 projects are not where Goodboy left them, and a Locate folders button, above the project list where each repo reads Folder not found">
+</picture>
+
+Moved your repos to a new folder? The warning in the workspace settings names the projects Goodboy cannot find, and their sessions wait. Choose **Locate folders**, pick the parent folder, and Goodboy finds them, fixes the stored paths and repairs the worktrees, with **Undo move**. Repos are matched by their first commit and remote, not by folder name.
 
 ### Keep .goodboy out of git
 
@@ -614,10 +650,10 @@ Plans, reports and wireframes live next to the task, not inside a chat.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/artifact-list-dark.webp">
-  <img src="./docs/readme/artifact-list-light.webp" alt="The Artifacts list of the Harborline session, 8 items under the tabs All, Plans, Reports and Wireframes: a wireframe at 1 of 2 scouts done, Deliveries screen with 4 screens, a plan marked Ready to run, two reports and two plans marked Ran">
+  <img src="./docs/readme/artifact-list-light.webp" width="694" alt="The Artifacts list of the Harborline session, 8 items under the tabs All, Plans, Reports and Wireframes: a wireframe at 1 of 2 scouts done, Deliveries screen with 4 screens, a plan marked Ready to run, two reports and two plans marked Ran, each with its kind on the right">
 </picture>
 
-Keep plans, reports and wireframes next to the task, each with its kind, the step that made it, its revision and its date. The tabs **All**, **Plans**, **Reports** and **Wireframes** filter the list, and **New** starts another one. A row shows its state at a glance: **1 of 2 scouts done**, **Ready to run** or **Ran**.
+Keep plans, reports and wireframes next to the task, each row with its kind on the right (**Wireframe**, **Plan** or **Report**). The tabs **All**, **Plans**, **Reports** and **Wireframes** filter the list. A row shows its state at a glance: **1 of 2 scouts done**, **Ready to run** or **Ran**.
 
 ### Plan parts and Run plan
 
