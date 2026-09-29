@@ -26,7 +26,12 @@ export {
   type SearchBackfillStep,
 } from './maintenance/searchBackfill';
 
-export { NotFoundError, UniqueViolationError } from './shared/errors';
+export {
+  InvalidWorkflowNodeError,
+  NodeNotMutableError,
+  NotFoundError,
+  UniqueViolationError,
+} from './shared/errors';
 export {
   excludeProjectFromSearch,
   includeProjectInSearch,
@@ -220,11 +225,15 @@ export {
   getWorkflow,
   upsertWorkflow,
   deleteWorkflow,
+  removeWorkflow,
+  saveWorkflow,
   restoreSeededWorkflow,
   readBuiltinSeedState,
   listRemovedSeededWorkflowIds,
   takenNameKey,
   type BuiltinSeedState,
+  type SaveWorkflowInput,
+  type WorkflowStepInput,
 } from './queries/workflow';
 export {
   isWorkflowRoutingDecision,
@@ -235,6 +244,21 @@ export {
   parseRoutingJson,
   stringifyRoutingJson,
 } from './queries/workflowRoutingCodec';
+export {
+  insertAgent,
+  insertAgentBatch,
+  markAgentViewed,
+  recordAgentStatus,
+  setAgentDone,
+  setAgentProviderSession,
+  setAgentVerbosity,
+  updateWorkflowNodeRouting,
+  type AgentBatchInput,
+  type AgentBatchOutcome,
+  type AgentInsertInput,
+  type AgentStatusFields,
+  type WorkflowNodeRouting,
+} from './queries/agent-write';
 export {
   listAgentsForSessions,
   updateAgentStatus,

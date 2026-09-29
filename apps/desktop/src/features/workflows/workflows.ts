@@ -1,4 +1,5 @@
-import { invokeCommand } from '../../shared/lib/invokeCommand';
+import { CommandError, invokeCommand, toCommandError } from '../../shared/lib/invokeCommand';
+import { tauriDatabase } from '../../shared/lib/db';
 import {
   normalizeAgentRole,
   PlannerClient,
@@ -10,42 +11,50 @@ import {
   type StepPolishInput,
 } from '@goodboy/core';
 import {
+  InvalidWorkflowNodeError,
+  NodeNotMutableError,
+  NotFoundError,
+  insertAgent,
+  insertAgentBatch,
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
   isWorkflowTaskProfile,
-  legacyAgentRoutingDecision,
   legacyStepRoutingLock,
+  listAgentsForSessions,
+  markAgentViewed,
   parseRoutingJson,
-  stringifyRoutingJson,
+  recordAgentStatus,
+  removeWorkflow,
+  saveWorkflow,
+  setAgentDone,
+  setAgentProviderSession,
+  setAgentVerbosity,
+  updateWorkflowNodeRouting,
+  type AgentBatchOutcome,
+  type AgentInsertInput,
+  type AgentStatusFields,
+  type SaveWorkflowInput,
+  type WorkflowNodeRouting,
+  type WorkflowStepInput,
 } from '@goodboy/db';
 import type {
   AgentEffort,
   AgentRole,
-  AgentSourceKind,
   IsoDateTime,
   Step,
   StepDef,
   StepDefId,
   StepId,
-  StepSize,
   Agent,
   AgentId,
-  AgentStatus,
-  AgentStoppedBy,
   VerbosityLevel,
   Workflow,
   WorkflowId,
-  WorkflowOrigin,
-  WorkflowRunId,
-  ProviderRunId,
   SessionId,
   WorkspaceId,
-  WorkflowRoutingDecision,
-  WorkflowRoutingLock,
-  WorkflowTaskProfile,
 } from '@goodboy/types';
 import type { ProviderId } from '@goodboy/types';
-import { isAgentStoppedBy, isStepSize, isWorkflowOrigin } from '@goodboy/types';
+import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
 
 type RawWorkflowStepRow = {
   readonly id: string;
@@ -96,45 +105,6 @@ type RawWorkflowRow = {
   readonly deletedAt: number | null;
   readonly isPreset: boolean;
   readonly origin: string | null;
-};
-
-type RawAgentRow = {
-  readonly id: string;
-  readonly sessionId: string;
-  readonly stepId: string | null;
-  readonly workflowRunId: string | null;
-  readonly parentAgentId: string | null;
-  readonly ordinal: number;
-  readonly name: string;
-  readonly status: string;
-  readonly providerRunId: string | null;
-  readonly outputSummary: string | null;
-  readonly startedAt: string | null;
-  readonly completedAt: string | null;
-  readonly providerSessionId: string | null;
-  readonly providerSessionProviderId: string | null;
-  readonly lastFinishedAt: string | null;
-  readonly lastViewedAt: string | null;
-  readonly doneAt: string | null;
-  readonly kind: string | null;
-  readonly verbosity: string | null;
-  readonly effort: string | null;
-  readonly modelOverride: string | null;
-  readonly providerOverride: string | null;
-  readonly sourceThreadId: string | null;
-  readonly sourceThreadIds: string | null;
-  readonly sourceCommentUrl: string | null;
-  readonly sourceKind: string | null;
-  readonly domainsJson: string | null;
-  readonly routingLock: string | null;
-  readonly routingDecision: string | null;
-  readonly taskProfile: string | null;
-  readonly stoppedAt?: string | null;
-  readonly stoppedBy?: string | null;
-};
-
-type ParseStringArrayParams = {
-  readonly value: string | null;
 };
 
 function rowToStep(row: RawWorkflowStepRow): Step {
@@ -222,84 +192,34 @@ function rowToWorkflow(row: RawWorkflowRow): Workflow {
   };
 }
 
-const parseStringArray = ({ value }: ParseStringArrayParams): ReadonlyArray<string> => {
-  if (value === null) {
-    return [];
+const failureKind = (error: unknown): string | null => {
+  if (error instanceof NodeNotMutableError) {
+    return 'node_not_mutable';
   }
-  try {
-    const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((threadId): threadId is string => typeof threadId === 'string');
-  } catch {
-    return [];
+  if (error instanceof InvalidWorkflowNodeError) {
+    return 'invalid_routing';
   }
+  if (error instanceof NotFoundError) {
+    return error.entity === 'agent' ? 'run_not_found' : 'template_not_found';
+  }
+  return null;
 };
 
-function rowToAgent(row: RawAgentRow): Agent {
-  const sourceThreadIds = parseStringArray({ value: row.sourceThreadIds });
-  const domains = parseStringArray({ value: row.domainsJson });
-  const routingLock = parseRoutingJson({
-    value: row.routingLock,
-    isValid: isWorkflowRoutingLock,
-    field: 'routing lock',
-  });
-  const storedRoutingDecision = parseRoutingJson({
-    value: row.routingDecision,
-    isValid: isWorkflowRoutingDecision,
-    field: 'routing decision',
-  });
-  const routingDecision =
-    storedRoutingDecision ??
-    (row.stepId === null && routingLock === null
-      ? legacyAgentRoutingDecision({
-          provider: row.providerOverride,
-          model: row.modelOverride,
-          effort: row.effort,
-        })
-      : null);
-  return {
-    id: row.id as AgentId,
-    sessionId: row.sessionId as SessionId,
-    ...(row.stepId != null && { stepId: row.stepId as StepId }),
-    ...(row.workflowRunId != null && { workflowRunId: row.workflowRunId as WorkflowRunId }),
-    ...(row.parentAgentId != null && { parentAgentId: row.parentAgentId as AgentId }),
-    ordinal: row.ordinal,
-    name: row.name,
-    status: row.status as AgentStatus,
-    ...(row.providerRunId != null && { runId: row.providerRunId as ProviderRunId }),
-    ...(row.outputSummary != null && { outputSummary: row.outputSummary }),
-    ...(row.startedAt != null && { startedAt: row.startedAt as IsoDateTime }),
-    ...(row.completedAt != null && { completedAt: row.completedAt as IsoDateTime }),
-    ...(row.providerSessionId != null && { providerSessionId: row.providerSessionId }),
-    ...(row.providerSessionProviderId != null && {
-      providerSessionProviderId: row.providerSessionProviderId as ProviderId,
-    }),
-    ...(row.lastFinishedAt != null && { lastFinishedAt: row.lastFinishedAt as IsoDateTime }),
-    ...(row.lastViewedAt != null && { lastViewedAt: row.lastViewedAt as IsoDateTime }),
-    ...(row.doneAt != null && { doneAt: row.doneAt as IsoDateTime }),
-    ...(row.stoppedAt != null && { stoppedAt: row.stoppedAt as IsoDateTime }),
-    ...(isAgentStoppedBy(row.stoppedBy) && { stoppedBy: row.stoppedBy }),
-    ...(row.kind != null && { kind: row.kind }),
-    ...(row.verbosity != null && { verbosity: row.verbosity as VerbosityLevel }),
-    ...(row.effort != null && { effort: row.effort as AgentEffort }),
-    ...(row.modelOverride != null && { modelOverride: row.modelOverride }),
-    ...(row.providerOverride != null && { providerOverride: row.providerOverride as ProviderId }),
-    ...(row.sourceThreadId != null && { sourceThreadId: row.sourceThreadId }),
-    ...(sourceThreadIds.length > 0 && { sourceThreadIds }),
-    ...(row.sourceCommentUrl != null && { sourceCommentUrl: row.sourceCommentUrl }),
-    ...(row.sourceKind != null && { sourceKind: row.sourceKind as AgentSourceKind }),
-    ...(domains.length > 0 && { domains }),
-    routingLock,
-    routingDecision,
-    taskProfile: parseRoutingJson({
-      value: row.taskProfile,
-      isValid: isWorkflowTaskProfile,
-      field: 'task profile',
-    }),
-  };
-}
+const toWriteError = (error: unknown): CommandError => {
+  const kind = failureKind(error);
+  if (kind === null || !(error instanceof Error)) {
+    return toCommandError(error);
+  }
+  return new CommandError({ kind, message: error.message, cause: error });
+};
+
+const persist = async <T>(write: () => Promise<T>): Promise<T> => {
+  try {
+    return await write();
+  } catch (error) {
+    throw toWriteError(error);
+  }
+};
 
 export const invokeWorkflowList = async (workspaceId: WorkspaceId): Promise<Workflow[]> => {
   const rows = await invokeCommand<RawWorkflowRow[]>('workflow_list', { workspaceId });
@@ -311,86 +231,15 @@ export const invokeWorkflowsForSession = async (sessionId: SessionId): Promise<W
   return rows.map(rowToWorkflow);
 };
 
-export type WorkflowStepUpsertArgs = {
-  readonly id?: StepId;
-  readonly libraryStepId?: StepDefId;
-  readonly role?: AgentRole;
-  readonly ordinal: number;
-  readonly name: string;
-  readonly promptPrefix: string;
-  readonly expectedOutput?: string;
-  readonly providerOverride?: ProviderId;
-  readonly modelOverride?: string;
-  readonly effort?: AgentEffort;
-  readonly verbosity?: VerbosityLevel;
-  readonly orchestratorReason?: string;
-  readonly routingLock?: WorkflowRoutingLock | null;
-  readonly routingDecision?: WorkflowRoutingDecision | null;
-  readonly taskProfile?: WorkflowTaskProfile | null;
-  readonly size?: StepSize;
-};
+export type WorkflowStepUpsertArgs = WorkflowStepInput;
 
-export type WorkflowUpsertArgs = {
-  readonly id?: WorkflowId;
-  readonly workspaceId: WorkspaceId;
-  readonly name: string;
-  readonly description: string;
-  readonly goal?: string;
-  readonly processText?: string;
-  readonly steps: ReadonlyArray<WorkflowStepUpsertArgs>;
-  readonly isPreset?: boolean;
-  readonly origin?: WorkflowOrigin;
-};
+export type WorkflowUpsertArgs = SaveWorkflowInput;
 
-export const invokeWorkflowUpsert = async (args: WorkflowUpsertArgs): Promise<Workflow> => {
-  const row = await invokeCommand<RawWorkflowRow>('workflow_upsert', {
-    input: {
-      id: args.id ?? null,
-      workspaceId: args.workspaceId,
-      name: args.name,
-      description: args.description,
-      goal: args.goal ?? null,
-      processText: args.processText ?? null,
-      isPreset: args.isPreset ?? true,
-      origin: args.origin ?? null,
-      steps: args.steps.map((d) => ({
-        id: d.id ?? null,
-        libraryStepId: d.libraryStepId ?? null,
-        role: d.role ?? null,
-        ordinal: d.ordinal,
-        name: d.name,
-        promptPrefix: d.promptPrefix,
-        expectedOutput: d.expectedOutput ?? null,
-        providerOverride: d.providerOverride ?? null,
-        modelOverride: d.modelOverride ?? null,
-        effort: d.effort ?? null,
-        verbosity: d.verbosity ?? null,
-        orchestratorReason: d.orchestratorReason ?? null,
-        routingLock: stringifyRoutingJson({
-          value: d.routingLock ?? null,
-          isValid: isWorkflowRoutingLock,
-          field: 'routing lock',
-        }),
-        routingDecision: stringifyRoutingJson({
-          value: d.routingDecision ?? null,
-          isValid: isWorkflowRoutingDecision,
-          field: 'routing decision',
-        }),
-        taskProfile: stringifyRoutingJson({
-          value: d.taskProfile ?? null,
-          isValid: isWorkflowTaskProfile,
-          field: 'task profile',
-        }),
-        size: d.size ?? null,
-      })),
-    },
-  });
-  return rowToWorkflow(row);
-};
+export const invokeWorkflowUpsert = (args: WorkflowUpsertArgs): Promise<Workflow> =>
+  persist(() => saveWorkflow(tauriDatabase, args));
 
-export const invokeWorkflowDelete = async (id: WorkflowId): Promise<void> => {
-  return invokeCommand<void>('workflow_delete', { id });
-};
+export const invokeWorkflowDelete = (id: WorkflowId): Promise<void> =>
+  persist(() => removeWorkflow(tauriDatabase, id));
 
 export const invokeStepDefList = async (workspaceId: WorkspaceId): Promise<StepDef[]> => {
   const rows = await invokeCommand<RawStepDefRow[]>('step_def_list', { workspaceId });
@@ -439,8 +288,8 @@ const agentListRequestTails = new Map<SessionId, Promise<void>>();
 export const invokeAgentList = async (sessionId: SessionId): Promise<Agent[]> => {
   const previous = agentListRequestTails.get(sessionId) ?? Promise.resolve();
   const request = previous.then(async () => {
-    const rows = await invokeCommand<RawAgentRow[]>('agent_list_for_session', { sessionId });
-    return rows.map(rowToAgent);
+    const bySession = await listAgentsForSessions(tauriDatabase, [sessionId]);
+    return [...(bySession.get(sessionId) ?? [])];
   });
   const tail = request.then(
     () => undefined,
@@ -456,191 +305,37 @@ export const invokeAgentList = async (sessionId: SessionId): Promise<Agent[]> =>
   }
 };
 
-export type AgentInsertArgs = {
-  readonly id?: AgentId;
-  readonly sessionId: SessionId;
-  readonly stepId?: StepId;
-  readonly workflowRunId?: WorkflowRunId;
-  readonly parentAgentId?: AgentId;
-  readonly ordinal: number;
-  readonly name: string;
-  readonly status: AgentStatus;
-  readonly providerRunId?: ProviderRunId;
-  readonly outputSummary?: string;
-  readonly startedAt?: IsoDateTime;
-  readonly completedAt?: IsoDateTime;
-  readonly kind?: string;
-  readonly verbosity?: VerbosityLevel;
-  readonly effort?: AgentEffort;
-  readonly modelOverride?: string;
-  readonly providerOverride?: ProviderId;
-  readonly sourceThreadId?: string;
-  readonly sourceThreadIds?: ReadonlyArray<string>;
-  readonly sourceCommentUrl?: string;
-  readonly sourceKind?: AgentSourceKind;
-  readonly domains?: ReadonlyArray<string>;
-  readonly routingLock?: WorkflowRoutingLock | null;
-  readonly routingDecision?: WorkflowRoutingDecision | null;
-  readonly taskProfile?: WorkflowTaskProfile | null;
-};
+export type AgentInsertArgs = AgentInsertInput;
 
-const toAgentInsertPayload = ({ run }: { readonly run: AgentInsertArgs }) => ({
-  id: run.id ?? null,
-  sessionId: run.sessionId,
-  stepId: run.stepId ?? null,
-  workflowRunId: run.workflowRunId ?? null,
-  parentAgentId: run.parentAgentId ?? null,
-  ordinal: run.ordinal,
-  name: run.name,
-  status: run.status,
-  providerRunId: run.providerRunId ?? null,
-  outputSummary: run.outputSummary ?? null,
-  startedAt: run.startedAt ?? null,
-  completedAt: run.completedAt ?? null,
-  kind: run.kind ?? null,
-  verbosity: run.verbosity ?? null,
-  effort: run.effort ?? null,
-  modelOverride: run.modelOverride ?? null,
-  providerOverride: run.providerOverride ?? null,
-  sourceThreadId: run.sourceThreadId ?? null,
-  sourceThreadIds: run.sourceThreadIds !== undefined ? JSON.stringify(run.sourceThreadIds) : null,
-  sourceCommentUrl: run.sourceCommentUrl ?? null,
-  sourceKind: run.sourceKind ?? null,
-  domainsJson: run.domains !== undefined ? JSON.stringify(run.domains) : null,
-  routingLock: stringifyRoutingJson({
-    value: run.routingLock ?? null,
-    isValid: isWorkflowRoutingLock,
-    field: 'routing lock',
-  }),
-  routingDecision: stringifyRoutingJson({
-    value: run.routingDecision ?? null,
-    isValid: isWorkflowRoutingDecision,
-    field: 'routing decision',
-  }),
-  taskProfile: stringifyRoutingJson({
-    value: run.taskProfile ?? null,
-    isValid: isWorkflowTaskProfile,
-    field: 'task profile',
-  }),
-});
-
-export const invokeAgentInsert = async (run: AgentInsertArgs): Promise<Agent> => {
-  const row = await invokeCommand<RawAgentRow>('agent_insert', {
-    input: toAgentInsertPayload({ run }),
-  });
-  return rowToAgent(row);
-};
+export const invokeAgentInsert = (run: AgentInsertArgs): Promise<Agent> =>
+  persist(() => insertAgent(tauriDatabase, run));
 
 export type AgentInsertBatchArgs = {
   readonly parentAgentId: AgentId;
   readonly children: ReadonlyArray<AgentInsertArgs>;
 };
 
-export type AgentInsertBatchResult = Readonly<{
-  inserted: boolean;
-  agents: ReadonlyArray<Agent>;
-}>;
+export type AgentInsertBatchResult = AgentBatchOutcome;
 
-type RawAgentBatchOutcome = {
-  inserted: boolean;
-  agents: ReadonlyArray<RawAgentRow>;
-};
+export const invokeAgentInsertBatch = (
+  args: AgentInsertBatchArgs,
+): Promise<AgentInsertBatchResult> => persist(() => insertAgentBatch(tauriDatabase, args));
 
-export const invokeAgentInsertBatch = async ({
-  parentAgentId,
-  children,
-}: AgentInsertBatchArgs): Promise<AgentInsertBatchResult> => {
-  const outcome = await invokeCommand<RawAgentBatchOutcome>('agent_insert_batch', {
-    input: {
-      parentAgentId,
-      children: children.map((run) => toAgentInsertPayload({ run })),
-    },
-  });
-  return { inserted: outcome.inserted, agents: outcome.agents.map(rowToAgent) };
-};
+export type WorkflowNodeRoutingUpdateArgs = WorkflowNodeRouting;
 
-export type WorkflowNodeRoutingUpdateArgs = {
-  readonly nodeKind: 'step' | 'agent';
-  readonly id: StepId | AgentId;
-  readonly routingLock: WorkflowRoutingLock | null;
-  readonly routingDecision: WorkflowRoutingDecision;
-  readonly taskProfile: WorkflowTaskProfile | null;
-  readonly providerOverride: ProviderId | null;
-  readonly modelOverride: string | null;
-  readonly effort: AgentEffort | null;
-};
+export const invokeWorkflowNodeRoutingUpdate = (
+  args: WorkflowNodeRoutingUpdateArgs,
+): Promise<void> => persist(() => updateWorkflowNodeRouting(tauriDatabase, args));
 
-export const invokeWorkflowNodeRoutingUpdate = async ({
-  nodeKind,
-  id,
-  routingLock,
-  routingDecision,
-  taskProfile,
-  providerOverride,
-  modelOverride,
-  effort,
-}: WorkflowNodeRoutingUpdateArgs): Promise<void> => {
-  await invokeCommand<void>('workflow_node_routing_update', {
-    input: {
-      nodeKind,
-      id,
-      routingLock: stringifyRoutingJson({
-        value: routingLock,
-        isValid: isWorkflowRoutingLock,
-        field: 'routing lock',
-      }),
-      routingDecision: stringifyRoutingJson({
-        value: routingDecision,
-        isValid: isWorkflowRoutingDecision,
-        field: 'routing decision',
-      }),
-      taskProfile: stringifyRoutingJson({
-        value: taskProfile,
-        isValid: isWorkflowTaskProfile,
-        field: 'task profile',
-      }),
-      providerOverride,
-      modelOverride,
-      effort,
-    },
-  });
-};
-
-export const invokeAgentSetVerbosity = async (
+export const invokeAgentSetVerbosity = (
   id: AgentId,
   verbosity: VerbosityLevel | null,
-): Promise<void> => {
-  return invokeCommand<void>('agent_set_verbosity', { id, verbosity });
-};
+): Promise<void> => persist(() => setAgentVerbosity(tauriDatabase, id, verbosity));
 
-export type AgentUpdateFields = {
-  readonly status: AgentStatus;
-  readonly providerRunId?: ProviderRunId;
-  readonly outputSummary?: string;
-  readonly startedAt?: IsoDateTime;
-  readonly completedAt?: IsoDateTime;
-  readonly stoppedAt?: IsoDateTime;
-  readonly stoppedBy?: AgentStoppedBy;
-};
+export type AgentUpdateFields = AgentStatusFields;
 
-export const invokeAgentUpdateStatus = async (
-  id: AgentId,
-  fields: AgentUpdateFields,
-): Promise<Agent> => {
-  const row = await invokeCommand<RawAgentRow>('agent_update_status', {
-    input: {
-      id,
-      status: fields.status,
-      providerRunId: fields.providerRunId ?? null,
-      outputSummary: fields.outputSummary ?? null,
-      startedAt: fields.startedAt ?? null,
-      completedAt: fields.completedAt ?? null,
-      stoppedAt: fields.stoppedAt ?? null,
-      stoppedBy: fields.stoppedBy ?? null,
-    },
-  });
-  return rowToAgent(row);
-};
+export const invokeAgentUpdateStatus = (id: AgentId, fields: AgentUpdateFields): Promise<Agent> =>
+  persist(() => recordAgentStatus(tauriDatabase, id, fields));
 
 type Params = {
   readonly id: AgentId;
@@ -648,29 +343,17 @@ type Params = {
   readonly providerSessionProviderId: ProviderId;
 };
 
-export const invokeAgentSetProviderSessionId = async ({
-  id,
-  providerSessionId,
-  providerSessionProviderId,
-}: Params): Promise<void> => {
-  await invokeCommand<void>('agent_set_provider_session_id', {
-    id,
-    providerSessionId,
-    providerSessionProviderId,
-  });
-};
+export const invokeAgentSetProviderSessionId = (params: Params): Promise<void> =>
+  persist(() => setAgentProviderSession(tauriDatabase, params));
 
-export const invokeAgentMarkViewed = async (id: AgentId, at: IsoDateTime): Promise<void> => {
-  await invokeCommand<void>('agent_mark_viewed', { id, at });
-};
+export const invokeAgentMarkViewed = (id: AgentId, at: IsoDateTime): Promise<void> =>
+  persist(() => markAgentViewed(tauriDatabase, id, at));
 
-export const invokeAgentSetDone = async (
+export const invokeAgentSetDone = (
   id: AgentId,
   done: boolean,
   at: IsoDateTime | null,
-): Promise<void> => {
-  await invokeCommand<void>('agent_set_done', { id, done, at });
-};
+): Promise<void> => persist(() => setAgentDone(tauriDatabase, id, done, at));
 
 export const invokeWorkspacesWithUnread = async (): Promise<ReadonlyArray<WorkspaceId>> => {
   const ids = await invokeCommand<string[]>('workspaces_with_unread');
