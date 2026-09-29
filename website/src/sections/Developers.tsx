@@ -15,7 +15,7 @@ const ITEMS: readonly Benefit[] = [
   },
   {
     lead: 'Review comments become commits.',
-    text: 'An agent writes each fix as a local commit and drafts the reply in your voice. Accept, edit or skip, then Push posts the replies and resolves the threads.',
+    text: 'From GitHub, GitLab or Bitbucket, an agent writes each fix as a local commit and drafts the reply in your voice, up to four at a time. Accept, edit or skip, then Push posts the replies and resolves the threads.',
   },
   {
     lead: 'A reviewer agent goes first.',
