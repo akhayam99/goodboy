@@ -21,7 +21,10 @@ const normalize = ({ state }: StateParams): InboxState =>
 type MrStateParams = { readonly mr: GitlabMergeRequest };
 const normalizeMr = ({ mr }: MrStateParams): InboxState => {
   const kind = gitlabMrStateKind({ mr });
-  return kind === 'merged' || kind === 'closed' ? 'done' : 'open';
+  if (kind === 'merged' || kind === 'closed') {
+    return 'done';
+  }
+  return kind === 'queued' ? 'active' : 'open';
 };
 
 export const adaptGitlab = ({ issueGroups, mrGroups, host }: Params): InboxRecord[] => [

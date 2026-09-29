@@ -32,8 +32,8 @@ describe('getLinkedRequest for a GitLab merge request', () => {
     expect(stateOf({ state: 'merged', draft: true })).toBe('merged');
   });
 
-  it('calls a locked merge request closed, not open', () => {
-    expect(stateOf({ state: 'locked' })).toBe('closed');
+  it('calls a locked merge request queued, since GitLab is merging it, not closed', () => {
+    expect(stateOf({ state: 'locked' })).toBe('queued');
   });
 
   it('keeps an open draft as draft', () => {
