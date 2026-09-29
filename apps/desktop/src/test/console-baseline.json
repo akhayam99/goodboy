@@ -318,7 +318,7 @@
     },
     {
       "file": "src/store/store.story-first-session.test.ts",
-      "message": "[summarizer] failed for session #-#-#e#-#-#f#e#b#d: [vitest] No \"listSessionDecisions\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it "
+      "message": "[summarizer] failed for session #: [vitest] No \"listSessionDecisions\" export is defined on the \"@goodboy/db\" mock. Did you forget to return it from \"vi.mock\"?"
     },
     {
       "file": "src/store/store.story-first-session.test.ts",

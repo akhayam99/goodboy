@@ -11,7 +11,11 @@ export const toConsoleKey = (args: ReadonlyArray<unknown>): string => {
     format(...args)
       .split('\n')
       .find((line) => line.trim() !== '') ?? '';
-  return firstLine.replace(/\d+/g, '#').trim().slice(0, MAX_KEY_LENGTH);
+  return firstLine
+    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '#')
+    .replace(/\d+/g, '#')
+    .trim()
+    .slice(0, MAX_KEY_LENGTH);
 };
 
 export const toEntryId = ({ file, message }: ConsoleBaselineEntry): string =>

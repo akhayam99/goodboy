@@ -67,8 +67,11 @@ export const teardown = (): void => {
           .join('\n')}`,
       );
     }
-    const kept = existing.filter((entry) => !ranFiles.has(entry.file));
-    const next = sortEntries([...kept, ...recorded.values()]);
+    const kept = IS_SEEDING ? existing : existing.filter((entry) => !ranFiles.has(entry.file));
+    const merged = new Map(
+      [...kept, ...recorded.values()].map((entry) => [toEntryId(entry), entry]),
+    );
+    const next = sortEntries([...merged.values()]);
     writeFileSync(BASELINE_PATH, `${JSON.stringify({ entries: next }, null, 2)}\n`);
   } finally {
     rmSync(dirname(reportPath), { recursive: true, force: true });
