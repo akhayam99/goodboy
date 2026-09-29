@@ -17,8 +17,8 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { isStepSize, isWorkflowOrigin } from '@goodboy/types';
-import type { Database, PlainStatement } from '../client';
-import { NotFoundError } from '../shared/errors';
+import type { Database, GuardedStatement, PlainStatement } from '../client';
+import { NotFoundError, UniqueViolationError } from '../shared/errors';
 import {
   isWorkflowRoutingDecision,
   isWorkflowRoutingLock,
@@ -254,12 +254,33 @@ export const upsertWorkflow = async (db: Database, workflow: Workflow): Promise<
   await db.transaction({ statements: upsertStatements(workflow) });
 };
 
-const writeWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
+const NAME_TAKEN = 'name_taken';
+
+const freeNameGuard = (workflow: Workflow): GuardedStatement => ({
+  sql: `SELECT 1 AS present FROM workflows
+    WHERE workspace_id = ? AND name = ? AND id <> ? AND deleted_at IS NULL AND is_preset = 1`,
+  params: [workflow.workspaceId, workflow.name, workflow.id],
+  abortWhen: 'rows',
+  abortCode: NAME_TAKEN,
+});
+
+type WriteWorkflowParams = {
+  readonly db: Database;
+  readonly workflow: Workflow;
+  readonly guardName: boolean;
+};
+
+const writeWorkflow = async ({
+  db,
+  workflow,
+  guardName,
+}: WriteWorkflowParams): Promise<boolean> => {
   const deletedAt = Date.now();
   const keptIds = workflow.steps.map((step) => step.id);
   const keptPlaceholders = keptIds.length === 0 ? "''" : keptIds.map(() => '?').join(', ');
-  await db.transaction({
+  const outcome = await db.transaction({
     statements: [
+      ...(guardName ? [freeNameGuard(workflow)] : []),
       ...upsertStatements(workflow),
       { sql: 'UPDATE workflows SET deleted_at = NULL WHERE id = ?', params: [workflow.id] },
       {
@@ -269,9 +290,12 @@ const writeWorkflow = async (db: Database, workflow: Workflow): Promise<void> =>
       },
     ],
   });
+  return outcome.status === 'committed';
 };
 
-export const restoreSeededWorkflow = writeWorkflow;
+export const restoreSeededWorkflow = async (db: Database, workflow: Workflow): Promise<void> => {
+  await writeWorkflow({ db, workflow, guardName: false });
+};
 
 export type WorkflowStepInput = {
   readonly id?: StepId;
@@ -387,7 +411,9 @@ const stepFromInput = (input: WorkflowStepInput, workflowId: WorkflowId): Step =
   ...(isStepSize(input.size) && { size: input.size }),
 });
 
-export const saveWorkflow = async (db: Database, input: SaveWorkflowInput): Promise<Workflow> => {
+const MAX_NAME_ATTEMPTS = 5;
+
+const draftWorkflow = async (db: Database, input: SaveWorkflowInput): Promise<Workflow> => {
   const nowMs = Date.now();
   const isPreset = input.isPreset ?? true;
   const id =
@@ -399,7 +425,7 @@ export const saveWorkflow = async (db: Database, input: SaveWorkflowInput): Prom
     requested: input.name,
     isPreset,
   });
-  await writeWorkflow(db, {
+  return {
     id,
     workspaceId: input.workspaceId,
     name,
@@ -411,12 +437,23 @@ export const saveWorkflow = async (db: Database, input: SaveWorkflowInput): Prom
     ...(input.origin !== undefined && { origin: input.origin }),
     createdAt: isoOf(nowMs),
     updatedAt: isoOf(nowMs),
-  });
-  const saved = await getWorkflow(db, id);
-  if (saved === null) {
-    throw new NotFoundError('workflow', id);
+  };
+};
+
+export const saveWorkflow = async (db: Database, input: SaveWorkflowInput): Promise<Workflow> => {
+  for (let attempt = 0; attempt < MAX_NAME_ATTEMPTS; attempt += 1) {
+    const workflow = await draftWorkflow(db, input);
+    const written = await writeWorkflow({ db, workflow, guardName: workflow.isPreset !== false });
+    if (!written) {
+      continue;
+    }
+    const saved = await getWorkflow(db, workflow.id);
+    if (saved === null) {
+      throw new NotFoundError('workflow', workflow.id);
+    }
+    return saved;
   }
-  return saved;
+  throw new UniqueViolationError('workflows', 'name');
 };
 
 const SEEDED_WORKFLOW_ID = `id LIKE 'wf\\_seed\\_%' ESCAPE '\\'`;
@@ -473,14 +510,6 @@ export const listRemovedSeededWorkflowIds = async (
 
 const SEEDED_ID_PREFIX = 'wf_seed_';
 
-const isAttachedToSession = async (db: Database, id: WorkflowId): Promise<boolean> => {
-  const rows = await db.select<IdRow>(
-    'SELECT workflow_id AS id FROM session_workflows WHERE workflow_id = ? LIMIT 1',
-    [id],
-  );
-  return rows.length > 0;
-};
-
 export const deleteWorkflow = async (db: Database, id: WorkflowId): Promise<void> => {
   await db.execute('UPDATE workflows SET deleted_at = ? WHERE id = ?', [Date.now(), id]);
 };
@@ -490,14 +519,23 @@ export const removeWorkflow = async (db: Database, id: WorkflowId): Promise<void
   if (rows.length === 0) {
     throw new NotFoundError('workflow', id);
   }
-  if (id.startsWith(SEEDED_ID_PREFIX) || (await isAttachedToSession(db, id))) {
+  if (id.startsWith(SEEDED_ID_PREFIX)) {
     await deleteWorkflow(db, id);
     return;
   }
-  await db.transaction({
+  const outcome = await db.transaction({
     statements: [
+      {
+        sql: 'SELECT 1 AS present FROM session_workflows WHERE workflow_id = ? LIMIT 1',
+        params: [id],
+        abortWhen: 'rows',
+        abortCode: 'attached',
+      },
       { sql: 'DELETE FROM steps WHERE workflow_id = ?', params: [id] },
       { sql: 'DELETE FROM workflows WHERE id = ?', params: [id] },
     ],
   });
+  if (outcome.status === 'aborted') {
+    await deleteWorkflow(db, id);
+  }
 };

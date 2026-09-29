@@ -176,6 +176,44 @@ describe('saveWorkflow', () => {
     });
   });
 
+  describe('overlapping saves', () => {
+    const blind = (target: Database, tables: RegExp): Database => {
+      let looks = 0;
+      return {
+        ...target,
+        select: async <T>(sql: string, params?: ReadonlyArray<unknown>) => {
+          if (looks < 2 && tables.test(sql)) {
+            looks += 1;
+            return [];
+          }
+          return target.select<T>(sql, params);
+        },
+      };
+    };
+
+    it('updates the preset another save just created instead of failing on the name', async () => {
+      const winner = await saveWorkflow(db, draft({ description: 'first' }));
+      const loser = blind(db, /FROM workflows\s+WHERE workspace_id = \? AND (name|id <>)/);
+
+      const saved = await saveWorkflow(loser, draft({ description: 'second' }));
+
+      expect(saved.id).toBe(winner.id);
+      expect(saved.description).toBe('second');
+      expect(await db.select('SELECT id FROM workflows')).toHaveLength(1);
+    });
+
+    it('takes the next suffix when a save by id loses the name to another save', async () => {
+      const winner = await saveWorkflow(db, draft());
+      const loser = blind(db, /SELECT name FROM workflows/);
+
+      const saved = await saveWorkflow(loser, draft({ id: 'w-late' as WorkflowId }));
+
+      expect(saved.name).toBe('Close the books 2');
+      expect(saved.id).toBe('w-late');
+      expect((await getWorkflow(db, winner.id))?.name).toBe('Close the books');
+    });
+  });
+
   describe('steps', () => {
     it('keeps the id of a step saved again so agents keep their link', async () => {
       const first = await saveWorkflow(db, draft());
@@ -366,6 +404,30 @@ describe('removeWorkflow', () => {
 
     expect(await counts(id)).toEqual({ workflows: 1, steps: 1 });
     expect((await getWorkflow(db, id))?.deletedAt).toBeDefined();
+  });
+
+  it('keeps a workflow a session attached after the look and before the delete', async () => {
+    const id = await seed('wf-late');
+    await db.execute(
+      "INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES ('s1', ?, 'g', 'idle', 1, 1)",
+      [workspaceId],
+    );
+    const attachLate: Database = {
+      ...db,
+      transaction: async (params) => {
+        await db.execute(
+          "INSERT INTO session_workflows (session_id, workflow_id, workflow_run_id, ordinal, created_at) VALUES ('s1', ?, 'run-1', 0, 1)",
+          [id],
+        );
+        return db.transaction(params);
+      },
+    };
+
+    await removeWorkflow(attachLate, id);
+
+    expect(await counts(id)).toEqual({ workflows: 1, steps: 1 });
+    expect((await getWorkflow(db, id))?.deletedAt).toBeDefined();
+    expect(await db.select('SELECT workflow_run_id FROM session_workflows')).toHaveLength(1);
   });
 
   it('leaves other workflows alone', async () => {
