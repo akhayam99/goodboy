@@ -1,6 +1,6 @@
 {
   "version": "0.13.1",
-  "summary": "A new Sonnet model joins the picker for Claude, Cursor and OpenRouter.",
+  "summary": "A new Sonnet joins the picker, Chat shows when it is working or has a new reply, and a resolver that committed no longer ends as a failed draft.",
   "new": [
     {
       "title": "Claude Sonnet 5.5",
