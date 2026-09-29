@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Eyebrow } from '@goodboy/ui';
-import type { ChatId } from '@goodboy/types';
+import type { ChatId, ChatModelUsed } from '@goodboy/types';
 import { ChatListRow } from './ChatListRow';
 
 export type ChatListGroupRow = {
@@ -10,6 +10,7 @@ export type ChatListGroupRow = {
   readonly time: string;
   readonly isIdle: boolean;
   readonly isPinned: boolean;
+  readonly models: ReadonlyArray<ChatModelUsed>;
 };
 
 type GroupAction = {
@@ -24,6 +25,7 @@ type Props = {
   readonly onSelect: (chatId: ChatId) => void;
   readonly onPin: (params: { readonly chatId: ChatId; readonly isPinned: boolean }) => void;
   readonly onArchive: (chatId: ChatId) => void;
+  readonly onDelete: (chatId: ChatId) => Promise<void>;
   readonly action?: GroupAction | null;
   readonly footer?: ReactNode;
 };
@@ -35,6 +37,7 @@ export const ChatListGroup = ({
   onSelect,
   onPin,
   onArchive,
+  onDelete,
   action = null,
   footer = null,
 }: Props) => {
@@ -66,10 +69,12 @@ export const ChatListGroup = ({
               time={row.time}
               isIdle={row.isIdle}
               isPinned={row.isPinned}
+              models={row.models}
               isSelected={row.chatId === selectedId}
               onSelect={onSelect}
               onPin={onPin}
               onArchive={onArchive}
+              onDelete={onDelete}
             />
           ))}
         </ul>
