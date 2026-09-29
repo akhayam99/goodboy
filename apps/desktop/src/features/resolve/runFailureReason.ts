@@ -1,4 +1,5 @@
 import type { ResolveAttempt, ResolveThread } from '@goodboy/types';
+import { ACCEPT_CONFLICT } from '../../store/slices/resolve/acceptResolveQueueItem';
 
 type Params = {
   readonly thread: ResolveThread;
@@ -13,6 +14,9 @@ const reasonForCode = ({ code }: { readonly code: string }): string | null => {
   }
   if (code.startsWith('missing_result')) {
     return 'The resolver finished without reporting a result for this thread';
+  }
+  if (code === 'accept_conflict') {
+    return ACCEPT_CONFLICT;
   }
   if (code === 'target_unresolved') {
     return 'The worktree for this thread is no longer available';
