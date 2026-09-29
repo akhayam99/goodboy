@@ -60,7 +60,7 @@ export const SYNC_COPY = {
   working: 'Syncing with origin',
   conflict:
     'Your unpushed commits conflict with the new ones on origin. Nothing was changed. Resolve it by hand or ask an agent.',
-  nothing: 'Already in sync with origin.',
+  noBranch: 'This session has no branch to sync.',
   movedLine: ({ count }: { readonly count: number }): string =>
     `Nothing was pushed. The branch on origin moved: ${count} new ${count === 1 ? 'commit' : 'commits'}.`,
   movedGeneric: 'Nothing was pushed. The branch on origin moved.',

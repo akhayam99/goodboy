@@ -187,7 +187,7 @@ describe('Review as one flow', () => {
 
     fireEvent.click(row(/Skipped/));
     await settle();
-    fireEvent.click(within(comment()).getByRole('button', { name: /^Undo/ }));
+    fireEvent.click(within(comment()).getByRole('button', { name: /^Resume/ }));
     await waitFor(() => expect(takeUp).toHaveBeenCalledOnce());
   });
 

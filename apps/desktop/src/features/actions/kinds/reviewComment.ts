@@ -143,7 +143,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.transcript',
-      label: 'Agent transcript',
+      label: ({ facts }) => (facts.state === 'failed' ? 'Open transcript' : 'Agent transcript'),
       icon: CONCEPT_ICONS.agents,
       group: 'open',
       when: ({ facts }) => facts.agentId !== null,
@@ -209,7 +209,12 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.edit',
-      label: ({ facts }) => (isRedraft(facts) ? 'Redraft' : 'Edit'),
+      label: ({ facts }) => {
+        if (facts.state === 'failed') {
+          return 'Add a hint';
+        }
+        return isRedraft(facts) ? 'Redraft' : 'Edit';
+      },
       icon: RefreshCw,
       group: 'act',
       shortcut: 'review.edit',
@@ -233,7 +238,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.reply',
-      label: 'Reply',
+      label: ({ facts }) => (facts.state === 'failed' ? 'Reply yourself' : 'Reply'),
       icon: CornerDownRight,
       group: 'act',
       shortcut: 'review.reply',
@@ -254,7 +259,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
     },
     {
       id: 'reviewComment.undo',
-      label: 'Undo',
+      label: ({ facts }) => (facts.state === 'skipped' ? 'Resume' : 'Undo'),
       icon: Undo2,
       group: 'act',
       shortcut: 'review.undo',

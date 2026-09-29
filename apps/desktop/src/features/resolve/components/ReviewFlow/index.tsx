@@ -122,7 +122,10 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const hasPr = github?.pr != null;
   const push = useReviewPush({ sessionId });
   const hasPushFailure = entries.some((entry) => isPushFailure({ row: entry.row }));
-  const isPushBusy = push.phase.kind === 'preparing' || push.phase.kind === 'pushing';
+  const isPushBusy =
+    push.phase.kind === 'preparing' ||
+    push.phase.kind === 'pushing' ||
+    push.phase.kind === 'syncing';
 
   useEffect(() => {
     void loadResolveSession({ sessionId });
@@ -203,6 +206,38 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     },
     [entries, env, focusRow, pending, select, sessionId, setError],
   );
+
+  const retryRun = useCallback(
+    async (threadId: string): Promise<void> => {
+      if (isSubmitting) {
+        return;
+      }
+      setIsSubmitting(true);
+      setError(threadId, null);
+      try {
+        const outcome = await requestAttempt({
+          threadId,
+          instruction: RESOLVE_ITEM_LABEL.rereadInstruction,
+        });
+        if (outcome === 'missing') {
+          throw new Error(COULD_NOT_SEND);
+        }
+      } catch (caught) {
+        if (!isReportedError(caught)) {
+          setError(threadId, formatError(caught));
+        }
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [isSubmitting, requestAttempt, setError],
+  );
+
+  const retryDelivery = useCallback((): void => {
+    if (!isPushBusy) {
+      void push.arm({ isRetry: true });
+    }
+  }, [isPushBusy, push]);
 
   const submitCompose = useCallback(async (): Promise<void> => {
     if (compose === null || isSubmitting) {
@@ -323,6 +358,10 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
         void push.confirm();
         return;
       }
+      if (push.phase.kind === 'sync_confirm') {
+        void push.confirmSync();
+        return;
+      }
       void runObjectAction({
         target: { kind: 'review', sessionId },
         actionId: 'review.push',
@@ -361,6 +400,15 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
       if (action !== undefined) {
         event.preventDefault();
         void runVerb({ threadId: focusedThreadId, actionId: action.id });
+        return;
+      }
+      if (
+        shortcut === 'review.draft' &&
+        focused?.state === 'failed' &&
+        !isPushFailure({ row: focused.row })
+      ) {
+        event.preventDefault();
+        void retryRun(focusedThreadId);
         return;
       }
       if (shortcut === 'review.draft') {
@@ -467,6 +515,9 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
             onEditReply={() => setEditingReplyId(focused.threadId)}
             onReplyDone={() => setEditingReplyId(null)}
             onSelect={select}
+            onTryAgain={() => void retryRun(focused.threadId)}
+            onRetryDelivery={retryDelivery}
+            onSync={push.askSync}
           />
         </ScrollFade>
       </div>
