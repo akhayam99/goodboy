@@ -639,7 +639,33 @@ describe('useMountDiffStats', () => {
 
     await waitFor(() => expect(result.current.size).toBe(1));
     expect(changedFiles).toHaveBeenCalledTimes(1);
-    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/b' });
+    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/b', baseBranch: null });
+  });
+
+  it('counts against the base branch the mount or its project picked', async () => {
+    store.state.projects = [{ id: 'project-1', baseBranch: 'develop' }];
+    store.state.sessionProjectMounts = {
+      [SESSION_ID]: [
+        { projectId: 'project-1', worktreePath: '/tmp/a', baseBranch: null },
+        { projectId: 'project-1', worktreePath: '/tmp/b', baseBranch: 'release/9' },
+        { projectId: 'project-2', worktreePath: '/tmp/c', baseBranch: null },
+      ],
+    };
+    store.state.sessionWorktreeRecords = {
+      [SESSION_ID]: [
+        worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' }),
+        worktreeRow({ id: 'wt-2', worktreePath: '/tmp/b' }),
+        worktreeRow({ id: 'wt-3', worktreePath: '/tmp/c' }),
+      ],
+    };
+    changedFiles.mockResolvedValue({ paths: [], additions: 1, deletions: 0, numstat: '' });
+
+    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
+
+    await waitFor(() => expect(result.current.size).toBe(3));
+    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/a', baseBranch: 'develop' });
+    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/b', baseBranch: 'release/9' });
+    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/c', baseBranch: null });
   });
 
   it('refetches when the last turn finishes', async () => {

@@ -4,6 +4,7 @@ import { Button, DrawerFrame, ErrorStrip, Skeleton } from '@goodboy/ui';
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import type { FileDiffSource } from '../../../../store/slices/drawer/state';
+import { selectMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { ghCommitDiff } from '../../../github/github';
@@ -26,12 +27,17 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
   const sessionWorktree = useAppStore(
     (state) => resolveSessionRepo({ state, sessionId })?.worktreePath ?? null,
   );
+  const worktreeBase = useAppStore((state) =>
+    source.kind === 'worktree'
+      ? selectMountBaseBranch({ state, sessionId, path: source.worktreePath })
+      : null,
+  );
   const openMountDiff = useAppStore((state) => state.openMountDiff);
   const setDiffFocus = useAppStore((state) => state.setDiffFocus);
 
   const loader = useCallback(async (): Promise<string> => {
     if (source.kind === 'worktree') {
-      return worktreeDiff({ worktreePath: source.worktreePath });
+      return worktreeDiff({ worktreePath: source.worktreePath, baseBranch: worktreeBase });
     }
     if (sessionWorktree !== null) {
       try {
@@ -43,7 +49,7 @@ export const FileDiffDrawer = ({ sessionId, source, path, onClose }: Props) => {
       }
     }
     return ghCommitDiff(source.repo, source.sha);
-  }, [sessionWorktree, source]);
+  }, [sessionWorktree, source, worktreeBase]);
 
   const diff = useSessionDiff({ sessionId: null, worktreePath: null, loader });
   const files = useMemo(

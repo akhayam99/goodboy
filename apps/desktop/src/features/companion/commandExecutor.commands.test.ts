@@ -900,6 +900,41 @@ describe('queryFileDiff (read-only single-file diff RPC)', () => {
     });
   });
 
+  it('diffs against the base branch the project picked', async () => {
+    h.state.value = makeStore({
+      projects: [
+        {
+          id: 'project-1',
+          workspaceId: 'w1',
+          rootPath: '/repo/w1',
+          kind: 'repo',
+          baseBranch: 'develop',
+        },
+      ],
+      sessionProjectMounts: {
+        s1: [
+          {
+            projectId: 'project-1',
+            mountName: 'repo',
+            repoRoot: '/repo/w1',
+            worktreePath: '/wt/s1',
+            branch: 'feature/test',
+            baseBranch: null,
+          },
+        ],
+      },
+    });
+    invokeMock.mockResolvedValueOnce('diff --git a/x.ts b/x.ts\n+added');
+
+    await executeBridgeCommand(cmd('queryFileDiff', { sessionId: 's1', path: 'x.ts' }));
+
+    expect(invokeMock).toHaveBeenCalledWith('worktree_diff_file', {
+      worktreePath: '/wt/s1',
+      baseBranch: 'develop',
+      path: 'x.ts',
+    });
+  });
+
   it('rejects an unknown session', async () => {
     const res = await executeBridgeCommand(
       cmd('queryFileDiff', { sessionId: 'nope', path: 'x.ts' }),

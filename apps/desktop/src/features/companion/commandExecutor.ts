@@ -20,6 +20,7 @@ import type {
 } from '@goodboy/types';
 import { useAppStore } from '../../store/store';
 import { resolveSessionRepo } from '../../store/slices/worktrees/resolveSessionRepo';
+import { selectMountBaseBranch } from '../../store/slices/project-mounts/selectors';
 import { WorkflowGateError } from '../../store/slices/workflows/workflowActivationGate';
 import { PROVIDER_LABEL } from '../providers/providerLabel';
 import { isMainWindow } from '../workspace/window';
@@ -552,7 +553,12 @@ async function dispatchMobile(cmd: BridgeCommand): Promise<unknown> {
       if (!worktreePath) {
         throw new BridgeSafeError('session worktree is not available');
       }
-      const diff = await worktreeDiffFile({ worktreePath, path });
+      const baseBranch = selectMountBaseBranch({
+        state: store,
+        sessionId,
+        path: worktreePath,
+      });
+      const diff = await worktreeDiffFile({ worktreePath, path, baseBranch });
       return { diff };
     }
 

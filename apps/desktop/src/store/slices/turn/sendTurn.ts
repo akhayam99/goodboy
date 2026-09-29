@@ -1197,7 +1197,10 @@ export const sendTurn = (set: SetFn, get: GetFn) => {
       startedAt: now(),
     };
     const turnMounts = scopeMounts.filter(isTurnWritableMount);
-    const mountChangesBefore = snapshotMountChanges({ mounts: turnMounts });
+    const mountChangesBefore = snapshotMountChanges({
+      mounts: turnMounts,
+      projects: get().projects,
+    });
     const touchedMountsForTurn = () =>
       collectTouchedMounts({
         get,

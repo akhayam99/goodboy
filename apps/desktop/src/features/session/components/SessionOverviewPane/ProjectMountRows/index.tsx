@@ -8,6 +8,7 @@ import { ArchivedGate } from '../ArchivedGate';
 import { ProjectMountGroup } from './ProjectMountGroup';
 import { useMountRows } from './useMountRows';
 import { useWorktreeStatusPending, useWorktreeStatuses } from '../../../hooks/useWorktreeStatuses';
+import { worktreeStatusTargetsOf } from '../../../hooks/useWorktreeStatuses/targets';
 import {
   PROJECTS_EXPLAINER,
   PROJECTS_HINT_DISMISSED_KEY,
@@ -33,16 +34,14 @@ export const ProjectMountRows = ({ session }: Props) => {
   const areMountsLoaded = useAppStore(
     (state) => state.sessionProjectMounts[session.id] !== undefined,
   );
+  const projects = useAppStore((state) => state.projects);
   const worktreeTargets = useMemo(
     () =>
-      groups.flatMap((group) =>
-        [...group.rows, ...group.completedRows].flatMap((row) =>
-          row.worktreePath === null || !row.isAttached
-            ? []
-            : [{ worktreePath: row.worktreePath, baseBranch: row.baseBranch ?? undefined }],
-        ),
-      ),
-    [groups],
+      worktreeStatusTargetsOf({
+        mounts: groups.flatMap((group) => [...group.rows, ...group.completedRows]),
+        projects,
+      }),
+    [groups, projects],
   );
   const worktreeStatuses = useWorktreeStatuses({ targets: worktreeTargets });
   const pendingWorktrees = useWorktreeStatusPending({ targets: worktreeTargets });

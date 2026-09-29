@@ -29,6 +29,7 @@ import type {
 import type { Workspace } from '@goodboy/types';
 import { isBranchlessSession } from '../shared/utils/isBranchlessSession';
 import { useAppStore } from './store';
+import { selectMountBaseBranch } from './slices/project-mounts/selectors';
 import { sessionMatchesProjectFilter } from './slices/sessionFilters';
 import type {
   AppState,
@@ -841,7 +842,6 @@ export type MountDiffStat = {
   readonly deletions: number;
 };
 
-const EMPTY_MOUNT_PATHS: ReadonlyArray<string> = [];
 const EMPTY_MOUNT_DIFF_STATS: ReadonlyMap<string, MountDiffStat> = new Map();
 const MOUNT_DIFF_POLL_MS = 30_000;
 
@@ -882,23 +882,25 @@ const inFlightMountDiffStats = new Map<string, Promise<MountDiffStat>>();
 
 type LoadMountDiffStatParams = {
   readonly worktreePath: string;
+  readonly baseBranch: string | null;
   readonly revision: string;
 };
 
 const loadMountDiffStat = ({
   worktreePath,
+  baseBranch,
   revision,
 }: LoadMountDiffStatParams): Promise<MountDiffStat> => {
   const mocked = readMockMountDiffStat(worktreePath);
   if (mocked !== null) {
     return Promise.resolve(mocked);
   }
-  const key = `${revision}@${worktreePath}`;
+  const key = `${revision}@${worktreePath}@${baseBranch ?? ''}`;
   const pending = inFlightMountDiffStats.get(key);
   if (pending !== undefined) {
     return pending;
   }
-  const request = worktreeChangedFiles({ worktreePath })
+  const request = worktreeChangedFiles({ worktreePath, baseBranch })
     .then((summary) => ({ additions: summary.additions, deletions: summary.deletions }))
     .catch(() => ({ additions: 0, deletions: 0 }));
   inFlightMountDiffStats.set(key, request);
@@ -908,21 +910,49 @@ const loadMountDiffStat = ({
   return request;
 };
 
+type MountStatTarget = {
+  readonly worktreePath: string;
+  readonly baseBranch: string | null;
+};
+
+const EMPTY_MOUNT_TARGET_CELLS: ReadonlyArray<string | null> = [];
+
+const decodeMountTargets = (
+  cells: ReadonlyArray<string | null>,
+): ReadonlyArray<MountStatTarget> => {
+  const targets: MountStatTarget[] = [];
+  for (let index = 0; index + 1 < cells.length; index += 2) {
+    const worktreePath = cells[index];
+    if (worktreePath != null) {
+      targets.push({ worktreePath, baseBranch: cells[index + 1] ?? null });
+    }
+  }
+  return targets;
+};
+
 export const useMountDiffStats = (
   sessionId: SessionId | null,
 ): ReadonlyMap<string, MountDiffStat> => {
-  const worktreePaths = useAppStore(
+  const targetCells = useAppStore(
     useShallow((s) => {
       if (sessionId == null) {
-        return EMPTY_MOUNT_PATHS;
+        return EMPTY_MOUNT_TARGET_CELLS;
       }
       const rows = s.sessionWorktreeRecords?.[sessionId];
       if (rows == null || rows.length === 0) {
-        return EMPTY_MOUNT_PATHS;
+        return EMPTY_MOUNT_TARGET_CELLS;
       }
-      return rows.flatMap((row) => (row.worktreePath === '' ? [] : [row.worktreePath]));
+      return rows.flatMap((row): ReadonlyArray<string | null> =>
+        row.worktreePath === ''
+          ? []
+          : [
+              row.worktreePath,
+              selectMountBaseBranch({ state: s, sessionId, path: row.worktreePath }),
+            ],
+      );
     }),
   );
+  const targets = useMemo(() => decodeMountTargets(targetCells), [targetCells]);
   const lastTurnFinishedAt = useSessionLastTurnFinishedAt(sessionId);
   const summarizerLastUpdate = useAppStore((s) =>
     sessionId == null ? null : (s.summarizerStatus[sessionId]?.lastUpdate ?? null),
@@ -933,15 +963,15 @@ export const useMountDiffStats = (
   const [stats, setStats] = useState<ReadonlyMap<string, MountDiffStat>>(EMPTY_MOUNT_DIFF_STATS);
 
   useEffect(() => {
-    if (worktreePaths.length === 0) {
+    if (targets.length === 0) {
       setStats(EMPTY_MOUNT_DIFF_STATS);
       return;
     }
     const revision = `${String(lastTurnFinishedAt)}|${String(summarizerLastUpdate)}|${tick}`;
     let cancelled = false;
     void Promise.all(
-      worktreePaths.map(async (worktreePath) => {
-        const stat = await loadMountDiffStat({ worktreePath, revision });
+      targets.map(async ({ worktreePath, baseBranch }) => {
+        const stat = await loadMountDiffStat({ worktreePath, baseBranch, revision });
         return [worktreePath, stat] satisfies readonly [string, MountDiffStat];
       }),
     ).then((entries) => {
@@ -953,7 +983,7 @@ export const useMountDiffStats = (
     return () => {
       cancelled = true;
     };
-  }, [worktreePaths, lastTurnFinishedAt, summarizerLastUpdate, tick]);
+  }, [targets, lastTurnFinishedAt, summarizerLastUpdate, tick]);
 
   return stats;
 };

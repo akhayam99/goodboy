@@ -92,7 +92,10 @@ export const reattachLiveTurn = async ({ set, get, runId, cursor }: Params): Pro
     const writableMounts = selectWritableMounts({ state: get(), sessionId }).filter(
       isTurnWritableMount,
     );
-    return { mounts: writableMounts, before: snapshotMountChanges({ mounts: writableMounts }) };
+    return {
+      mounts: writableMounts,
+      before: snapshotMountChanges({ mounts: writableMounts, projects: get().projects }),
+    };
   })().catch((error: unknown) => {
     markTurnSettled({ agentId });
     throw error;
