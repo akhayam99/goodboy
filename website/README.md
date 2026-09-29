@@ -143,7 +143,7 @@ downloads only what its screen needs.
 both themes, at twice the pixel density. It fails on horizontal overflow, an
 image drawn below 2x, a frame, fragment or grid with a shadow (outside
 `data-shadow-exception`), a page taller
-than 13,500 px at 1440 or 15,000 on a phone, an em dash or a middot triplet in
+than 14,300 px at 1440 or 15,000 on a phone, an em dash or a middot triplet in
 visible text, a heading that ends with a period, a section that runs into the
 next one or whose content spills below it, Inter not loaded, a hero frame that
 starts below the first screen at 1440, and a consent card over the h1, and an
