@@ -4,6 +4,18 @@ export const MAX_SLUG_LENGTH = 48;
 
 const HASH_FALLBACK_LENGTH = 8;
 
+const trimDashes = (value: string): string => {
+  let start = 0;
+  let end = value.length;
+  while (start < end && value[start] === '-') {
+    start += 1;
+  }
+  while (end > start && value[end - 1] === '-') {
+    end -= 1;
+  }
+  return value.slice(start, end);
+};
+
 type SlugifyParams = {
   readonly input: string;
   readonly maxLength?: number;
@@ -15,13 +27,11 @@ export const slugify = ({
   maxLength = MAX_SLUG_LENGTH,
   fallback,
 }: SlugifyParams): string => {
-  const cleaned = input
+  const collapsed = input
     .replace(/[A-Z]/g, (letter) => letter.toLowerCase())
     .replace(/[^a-z0-9-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, maxLength)
-    .replace(/-+$/, '');
+    .replace(/-+/g, '-');
+  const cleaned = trimDashes(trimDashes(collapsed).slice(0, maxLength));
   if (cleaned !== '') {
     return cleaned;
   }
@@ -49,7 +59,7 @@ export const trimSlugAtWord = ({
   if (boundary > 0) {
     return sliced.slice(0, boundary);
   }
-  return value.slice(0, maxLength).replace(/-+$/g, '');
+  return trimDashes(value.slice(0, maxLength));
 };
 
 export const withSlugSuffix = ({
