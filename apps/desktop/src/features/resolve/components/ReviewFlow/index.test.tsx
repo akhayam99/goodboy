@@ -88,12 +88,34 @@ describe('Review as one flow', () => {
     await mount({ threadId: EXPANDED_THREAD_ID });
 
     expect(within(list()).getByRole('region', { name: 'Open' })).toBeDefined();
-    expect(within(list()).getByRole('region', { name: 'Waiting for the push' })).toBeDefined();
+    expect(within(list()).getByRole('region', { name: 'Ready to push' })).toBeDefined();
     expect(within(list()).getByRole('region', { name: 'Done' })).toBeDefined();
     expect(focusedThread()).toBe(EXPANDED_THREAD_ID);
     expect(screen.queryByRole('complementary', { name: 'Conversation' })).toBeNull();
     expect(document.querySelector('[data-conversation-slot]')).toBeNull();
     expect(within(comment()).getByRole('button', { name: /^Accept/ })).toBeDefined();
+  });
+
+  it('shows one summary line instead of a chip per state', async () => {
+    await mount({ threadId: null });
+
+    const summary = screen.getByLabelText('Comment summary');
+    expect(summary.textContent).toMatch(/\d+ open/);
+    expect(summary.textContent).toMatch(/ready to push/);
+    expect(screen.queryByRole('list', { name: 'Comment states' })).toBeNull();
+  });
+
+  it('filters the list by state from the list menu', async () => {
+    await mount({ threadId: null });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter comments' }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Needs you' }));
+
+    const words = within(list())
+      .getAllByRole('button')
+      .map((button) => button.textContent ?? '');
+    expect(words.length).toBeGreaterThan(0);
+    expect(words.every((text) => text.includes('Needs you'))).toBe(true);
   });
 
   it('names every state with its own word and never says Resolve on a control', async () => {

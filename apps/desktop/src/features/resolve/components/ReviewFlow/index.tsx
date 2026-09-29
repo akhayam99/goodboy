@@ -38,13 +38,18 @@ import { useResolveAgain } from '../../hooks/useResolveAgain';
 import { RESOLVE_ITEM_LABEL } from '../../resolveItemCopy';
 import { RESOLVE_QUEUE_REFRESH_LABEL } from '../../resolveQueueCopy';
 import { REVIEW_FLOW_LABEL, REVIEW_TITLE, counterLabel } from '../../reviewFlowCopy';
-import { isPushFailure } from '../../reviewCommentState';
+import {
+  isPushFailure,
+  matchesReviewStateFilter,
+  type ReviewStateFilter,
+} from '../../reviewCommentState';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewComment, type ReviewCompose } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
 import { ReviewHeaderMeta } from './ReviewHeaderMeta';
 import { PushBanner } from './PushBanner';
 import { ReviewList } from './ReviewList';
+import { ReviewListMenu } from './ReviewListMenu';
 import { useReviewPush } from './useReviewPush';
 import { useReviewEntries, type ReviewEntry } from './useReviewEntries';
 
@@ -96,6 +101,20 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   const sessionId = session.id as SessionId;
   const env = useActionEnv({ origin: 'button' });
   const { entries, groups } = useReviewEntries({ sessionId });
+  const [filter, setFilter] = useState<ReviewStateFilter>('all');
+  const shownGroups = useMemo(
+    () =>
+      groups
+        .map((group) => ({
+          ...group,
+          entries: group.entries.filter((entry) =>
+            matchesReviewStateFilter({ state: entry.state, filter }),
+          ),
+        }))
+        .filter((group) => group.entries.length > 0),
+    [filter, groups],
+  );
+  const shownEntries = useMemo(() => shownGroups.flatMap((group) => group.entries), [shownGroups]);
   const github = useAppStore((s) => s.sessionGithub[sessionId] ?? null);
   const selectedThreadId = useAppStore((s) =>
     s.drawer?.kind === 'conversation' && s.drawer.sessionId === sessionId
@@ -157,15 +176,15 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
 
   const step = useCallback(
     (delta: 1 | -1): void => {
-      const index = entries.findIndex((entry) => entry.threadId === focusedThreadId);
-      const next = entries[index + delta];
+      const index = shownEntries.findIndex((entry) => entry.threadId === focusedThreadId);
+      const next = shownEntries[index + delta];
       if (next === undefined) {
         return;
       }
       select(next.threadId);
       focusRow(next.threadId);
     },
-    [entries, focusRow, focusedThreadId, select],
+    [focusRow, focusedThreadId, select, shownEntries],
   );
 
   const setError = useCallback((threadId: string, message: string | null): void => {
@@ -419,15 +438,23 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
     }
     return (
       <div className="flex min-h-0 min-w-0 flex-1 gap-8">
-        <ScrollFade
-          className="hidden min-h-0 w-[300px] shrink-0 @4xl:block"
-          viewportClassName="pb-5 pr-2"
-          fadeSize="h-6"
-        >
-          <div ref={listRef}>
-            <ReviewList groups={groups} focusedThreadId={focusedThreadId} onSelect={select} />
-          </div>
-        </ScrollFade>
+        <div className="hidden min-h-0 w-[300px] shrink-0 flex-col @4xl:flex">
+          <ReviewListMenu filter={filter} onFilter={setFilter} />
+          <ScrollFade className="min-h-0 flex-1" viewportClassName="pb-5 pr-2" fadeSize="h-6">
+            <div ref={listRef}>
+              <ReviewList
+                groups={shownGroups}
+                focusedThreadId={focusedThreadId}
+                onSelect={select}
+              />
+              {shownGroups.length === 0 && (
+                <p className="px-2.5 py-2 text-secondary text-muted-foreground">
+                  {REVIEW_FLOW_LABEL.noMatch}
+                </p>
+              )}
+            </div>
+          </ScrollFade>
+        </div>
         <ScrollFade className="min-h-0 min-w-0 flex-1" viewportClassName="pb-8 pr-4" fadeSize="h-6">
           <div className="mb-4 flex items-center gap-1 @4xl:hidden">
             <span className="text-secondary tabular-nums text-muted-foreground">

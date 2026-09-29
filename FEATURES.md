@@ -262,7 +262,7 @@ Decide what happens to a merged branch, **Ask me**, **Delete on this Mac** or **
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/readme/s12-resolve-dark.webp">
-  <img src="./docs/readme/s12-resolve-light.webp" alt="Review comments on payments-api #318 grouped as open, waiting for the push and done, with the picked one on the right">
+  <img src="./docs/readme/s12-resolve-light.webp" alt="Review comments on payments-api #318 grouped as open, ready to push and done, with the picked one on the right">
 </picture>
 
 ### Resolve
@@ -271,7 +271,7 @@ Turn review comments into commits without writing the fix yourself. Review lists
 
 ### Comment states
 
-Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Waiting for the push** and **Done**.
+Know what each comment needs next. Each one shows a state like **Not started**, **Drafting**, **Needs you**, **Ready** or **Outdated**, grouped as **Open**, **Ready to push** and **Done**. A single summary line under the title counts them, and the list menu filters by state.
 
 ### Close on GitHub
 

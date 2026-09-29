@@ -15,13 +15,13 @@ export type ReviewCommentState =
   | 'pushed'
   | 'resolved';
 
-export type ReviewCommentGroup = 'open' | 'waiting' | 'done';
+export type ReviewCommentGroup = 'open' | 'push' | 'done';
 
-export const REVIEW_COMMENT_GROUPS: ReadonlyArray<ReviewCommentGroup> = ['open', 'waiting', 'done'];
+export const REVIEW_COMMENT_GROUPS: ReadonlyArray<ReviewCommentGroup> = ['open', 'push', 'done'];
 
 export const REVIEW_COMMENT_GROUP_LABEL: Record<ReviewCommentGroup, string> = {
   open: 'Open',
-  waiting: 'Waiting for the push',
+  push: 'Ready to push',
   done: 'Done',
 };
 
@@ -35,7 +35,7 @@ const OPEN_STATES: ReadonlySet<ReviewCommentState> = new Set([
   'failed',
 ]);
 
-const DECIDED_STATES: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied', 'skipped']);
+const PUSH_STATES: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied']);
 
 export const reviewCommentGroup = ({
   state,
@@ -45,7 +45,7 @@ export const reviewCommentGroup = ({
   if (OPEN_STATES.has(state)) {
     return 'open';
   }
-  return DECIDED_STATES.has(state) ? 'waiting' : 'done';
+  return PUSH_STATES.has(state) ? 'push' : 'done';
 };
 
 const isOutdated = ({ row }: { readonly row: ResolveQueueRow }): boolean =>
@@ -140,8 +140,8 @@ export const REVIEW_COMMENT_NODE: Record<ReviewCommentState, WorkNodeState> = {
   new: 'queued',
   drafting: 'running',
   needs: 'question',
-  ready: 'ready',
-  edited: 'ready',
+  ready: 'closed',
+  edited: 'closed',
   outdated: 'stopped',
   failed: 'failed',
   accepted: 'done',
@@ -151,17 +151,56 @@ export const REVIEW_COMMENT_NODE: Record<ReviewCommentState, WorkNodeState> = {
   resolved: 'closed',
 };
 
-export const REVIEW_COUNT_NOUN: Record<ReviewCommentState, string> = {
-  new: 'not started',
-  drafting: 'drafting',
-  needs: 'need you',
-  ready: 'ready',
-  edited: 'ready',
-  outdated: 'outdated',
-  failed: 'failed',
-  accepted: 'accepted',
-  replied: 'reply only',
-  skipped: 'skipped',
-  pushed: 'pushed',
-  resolved: 'resolved',
+export type ReviewStateFilter =
+  'all' | 'new' | 'drafting' | 'needs' | 'ready' | 'outdated' | 'failed';
+
+export const REVIEW_STATE_FILTERS: ReadonlyArray<ReviewStateFilter> = [
+  'all',
+  'needs',
+  'ready',
+  'new',
+  'drafting',
+  'outdated',
+  'failed',
+];
+
+export const REVIEW_STATE_FILTER_LABEL: Record<ReviewStateFilter, string> = {
+  all: 'All comments',
+  new: 'Not started',
+  drafting: 'Drafting',
+  needs: 'Needs you',
+  ready: 'Ready',
+  outdated: 'Outdated',
+  failed: 'Failed',
+};
+
+export const matchesReviewStateFilter = ({
+  state,
+  filter,
+}: {
+  readonly state: ReviewCommentState;
+  readonly filter: ReviewStateFilter;
+}): boolean => {
+  if (filter === 'all') {
+    return true;
+  }
+  if (filter === 'ready') {
+    return state === 'ready' || state === 'edited';
+  }
+  return state === filter;
+};
+
+export const reviewSummaryLine = ({
+  states,
+}: {
+  readonly states: ReadonlyArray<ReviewCommentState>;
+}): ReadonlyArray<{ readonly count: number; readonly noun: string }> => {
+  const inGroup = (group: ReviewCommentGroup): number =>
+    states.filter((state) => reviewCommentGroup({ state }) === group).length;
+  return [
+    { count: inGroup('open'), noun: 'open' },
+    { count: states.filter((state) => state === 'drafting').length, noun: 'drafting' },
+    { count: inGroup('push'), noun: 'ready to push' },
+    { count: inGroup('done'), noun: 'done' },
+  ].filter((part) => part.count > 0);
 };

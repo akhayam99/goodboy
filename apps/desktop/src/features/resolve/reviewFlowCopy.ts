@@ -4,6 +4,8 @@ export const REVIEW_TITLE = 'Review';
 
 export const REVIEW_FLOW_LABEL = {
   list: 'Comments',
+  listMenu: 'Filter comments',
+  noMatch: 'No comment in this state',
   comment: 'Comment',
   commentActions: 'Comment actions',
   reviewActions: 'Review actions',
