@@ -113,7 +113,13 @@ const T8 = 'PRRT_thread_typo';
 const T9 = 'PRRT_thread_retry_constant';
 
 export const EXPANDED_THREAD_ID = T1;
-export const THREAD_IDS = { metrics: T2, logRedact: T5, typo: T8, retryConstant: T9 } as const;
+export const THREAD_IDS = {
+  metrics: T2,
+  logRedact: T5,
+  timeoutConfig: T6,
+  typo: T8,
+  retryConstant: T9,
+} as const;
 export const RESOLVE_SCENE_PR = PR;
 
 const ITEM1_ID = 'mock-resolve-item-retry-backoff';
@@ -711,7 +717,11 @@ const payloadSql = ({ payload }: { readonly payload: InvokeArgs | undefined }): 
   return typeof sql === 'string' ? sql : '';
 };
 
-const installResolveMockIpc = (): void => {
+const installResolveMockIpc = ({
+  deliveredReplyBody,
+}: {
+  readonly deliveredReplyBody: string | null;
+}): void => {
   mockIPC((cmd, payload) => {
     if (cmd === 'worktree_diff_range') {
       return FAKE_RETRY_DIFF;
@@ -720,7 +730,9 @@ const installResolveMockIpc = (): void => {
       return FAKE_COMMIT_DIFF;
     }
     if (cmd === 'db_select' && payloadSql({ payload }).includes('resolve_publication_threads')) {
-      return PUBLICATION_THREAD_ROWS;
+      return deliveredReplyBody === null
+        ? PUBLICATION_THREAD_ROWS
+        : PUBLICATION_THREAD_ROWS.map((row) => ({ ...row, replyBody: deliveredReplyBody }));
     }
     return null;
   });
@@ -740,10 +752,14 @@ const EMPTY_GITHUB = {
 
 type SeedParams = {
   readonly expandedThreadId: string | null;
+  readonly deliveredReplyBody?: string | null;
 };
 
-export const seedResolveScene = ({ expandedThreadId }: SeedParams): void => {
-  installResolveMockIpc();
+export const seedResolveScene = ({
+  expandedThreadId,
+  deliveredReplyBody = null,
+}: SeedParams): void => {
+  installResolveMockIpc({ deliveredReplyBody });
 
   const candidatesWithItems: ReadonlyArray<ResolveCandidateWithItems> = [
     { candidate: CANDIDATE_RETRY, items: CANDIDATE_ITEMS },
