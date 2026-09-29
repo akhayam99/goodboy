@@ -894,6 +894,7 @@ describe('restore previous history', () => {
         applied: null,
         identity: null,
         movedHead: 'rewrite-two',
+        threadShas: [],
         updatedAt: 1,
       },
     };
@@ -969,6 +970,60 @@ describe('restore previous history', () => {
       }),
     ).resolves.toBe('restored');
     expect(engine.pushWithLease).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolve shas across a rewrite and its undo', () => {
+  it('remaps the thread shas on apply and puts them back when the backup is restored', async () => {
+    const { slice, read } = harness();
+    const state = read() as unknown as Record<string, unknown>;
+    state['sessionResolveThreads'] = {
+      [SESSION_ID]: [
+        { threadId: 'thread-mara', commitShas: ['c81'], fixupOfSha: '7be', replacesSha: null },
+      ],
+    };
+    const update = read().updateResolveThread;
+
+    await expect(
+      slice.applyHistoryRewrite({
+        sessionId: SESSION_ID,
+        mountId: MOUNT_ID,
+        origin: 'plan',
+        planId: null,
+        newHead: 'new-head',
+        expectedHead: 'head-sha',
+        map: [
+          { from: '7be', to: 'e31' },
+          { from: 'c81', to: 'e31' },
+        ],
+        shouldPush: false,
+        byAgent: false,
+        identity: IDENTITY,
+      }),
+    ).resolves.toBe('applied');
+    expect(update).toHaveBeenLastCalledWith({
+      sessionId: SESSION_ID,
+      threadId: 'thread-mara',
+      patch: { commitShas: ['e31'], fixupOfSha: 'e31', replacesSha: null },
+    });
+
+    engine.restoreHistoryBackup.mockResolvedValue({
+      kind: 'moved',
+      head: 'head-sha',
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/2',
+    });
+    await slice.restoreHistory({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+      backupRef: 'refs/goodboy/backup/fix-ledger-postings/1',
+      shouldPush: false,
+    });
+    expect(update).toHaveBeenLastCalledWith({
+      sessionId: SESSION_ID,
+      threadId: 'thread-mara',
+      patch: { commitShas: ['c81'], fixupOfSha: '7be', replacesSha: null },
+    });
+    expect(read().historyRuns[MOUNT_ID]?.threadShas).toEqual([]);
   });
 });
 

@@ -92,7 +92,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       if (outcome.kind === 'blocked') {
         return stopWith({ reason: 'blocked', message: outcome.reason, files: [], sha: null });
       }
-      await remapRewrittenCommits({ set, get, sessionId, map: input.map });
+      const threadShas = await remapRewrittenCommits({ set, get, sessionId, map: input.map });
       await recordHistoryEvent({
         get,
         kind: 'history_rewritten',
@@ -130,6 +130,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
           copyPath: null,
           identity: input.identity,
           movedHead: outcome.head,
+          threadShas,
         },
       });
       break;

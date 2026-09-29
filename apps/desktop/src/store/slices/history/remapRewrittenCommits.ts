@@ -1,7 +1,7 @@
 import { listResolvePublicationsForSession, setResolvePublicationPhase } from '@goodboy/db';
 import type { HistoryShaMove, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
-import type { GetFn, SetFn } from './types';
+import type { GetFn, HistoryThreadShas, SetFn } from './types';
 
 type Params = {
   readonly set: SetFn;
@@ -31,10 +31,10 @@ export const remapRewrittenCommits = async ({
   get,
   sessionId,
   map,
-}: Params): Promise<void> => {
+}: Params): Promise<ReadonlyArray<HistoryThreadShas>> => {
   const moves = moved({ map });
   if (moves.size === 0) {
-    return;
+    return [];
   }
   const publications = await listResolvePublicationsForSession({
     db: tauriDatabase,
@@ -57,6 +57,7 @@ export const remapRewrittenCommits = async ({
       activePublicationPreview: { ...state.activePublicationPreview, [sessionId]: null },
     }));
   }
+  const before: HistoryThreadShas[] = [];
   for (const row of get().sessionResolveThreads[sessionId] ?? []) {
     const shas = row.commitShas ?? [];
     const isTouched =
@@ -66,6 +67,12 @@ export const remapRewrittenCommits = async ({
     if (!isTouched) {
       continue;
     }
+    before.push({
+      threadId: row.threadId,
+      commitShas: shas,
+      fixupOfSha: row.fixupOfSha,
+      replacesSha: row.replacesSha,
+    });
     const nextShas = Array.from(
       new Set(
         shas.map((sha) => remapSha({ sha, moves })).filter((sha): sha is string => sha !== null),
@@ -81,4 +88,5 @@ export const remapRewrittenCommits = async ({
       },
     });
   }
+  return before;
 };
