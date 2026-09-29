@@ -109,6 +109,18 @@ describe('AgentHeaderActions', () => {
     expect(screen.getByRole('button', { name: 'Delete agent' })).toBeDefined();
   });
 
+  it('closes the delete confirm on Escape and returns focus to the trash icon', () => {
+    renderFor(agentFixture({ status: 'completed' }));
+    const trash = screen.getByRole('button', { name: 'Delete agent' });
+    fireEvent.click(trash);
+    expect(screen.getByRole('dialog', { name: 'Delete agent?' })).toBeDefined();
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(screen.queryByRole('dialog', { name: 'Delete agent?' })).toBeNull();
+    expect(document.activeElement).toBe(trash);
+  });
+
   it('shows Interrupt only while a turn runs', () => {
     const agent = agentFixture({ status: 'running' });
     seedActionState({
