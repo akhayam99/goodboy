@@ -5,11 +5,8 @@ import { resolveInitialState } from './slices/resolve/state';
 import { create } from 'zustand';
 import { type SlotKey } from '@goodboy/core';
 import type {
-  AfterMergeRule,
   AgentId,
-  AgentSourceKind,
   BudgetRule,
-  ClaudePermissionMode,
   ContextSlot,
   AttachmentInput,
   OverrideSettings,
@@ -18,7 +15,6 @@ import type {
   OrchestratorRouting,
   PlanId,
   PlanStatus,
-  StepId,
   SessionId,
   SessionBudgetOnExceed,
   StepDef,
@@ -30,20 +26,13 @@ import type {
   WorkflowExecutionMode,
   WorkflowSpendLimitMode,
   ProviderId,
-  Project,
-  GoodboyIgnoreMode,
-  ProjectId,
   ProviderCredential,
   CredentialId,
   FileVersionId,
   SkillId,
-  SessionMountView,
   IntegrationCredentialId,
-  Workspace,
   WorkspaceId,
-  WorkspaceProfile,
   WorkspaceIntegrationProvider,
-  MountCleanupProposal,
   MountId,
   PrSeries,
   PrSeriesMember,
@@ -58,7 +47,6 @@ import type { ExtractedReviewComment } from '@goodboy/core';
 import { buildProviderList } from '../features/providers/providers';
 import { type SkillUpsertArgs } from '../features/skills/skills';
 import { type WorkflowUpsertArgs, type StepDefUpsertArgs } from '../features/workflows/workflows';
-import { type AgentKind } from '../features/session/agent-kind';
 import { createNotificationsSlice } from './slices/notifications';
 import { createNudgesSlice } from './slices/nudges';
 import { createArtifactsSlice, artifactsInitialState } from './slices/artifacts';
@@ -115,7 +103,6 @@ import { createSidebarSlice } from './slices/sidebar';
 import { createSessionViewSlice } from './slices/session-view';
 import { createSessionFiltersSlice } from './slices/sessionFilters';
 import { createInitialSessionViewState } from './slices/session-view/createInitialSessionViewState';
-import type { SpawnFocus } from './slices/session-view/spawnFocus';
 import { createTerminalSlice } from './slices/terminal';
 import { createScriptsSlice } from './slices/scripts';
 import { initialScriptsState } from './slices/scripts/state';
@@ -127,12 +114,6 @@ import {
   type LearnCliRequirementParams,
 } from './slices/providers';
 import { createAgentsSlice } from './slices/agents';
-import type { DraftAttachment } from './slices/agents/setAgentAttachments';
-import type {
-  AgentQueueItemParams,
-  AgentQueuedTurn,
-  AgentQueuedTurnInput,
-} from './slices/agentQueue/types';
 import { createAgentQueueSlice } from './slices/agentQueue';
 import { createArtifactDraftsSlice } from './slices/artifactDrafts';
 import { createWorkflowDraftsSlice } from './slices/workflowDrafts';
@@ -177,9 +158,6 @@ import { createSummariesSlice } from './slices/summaries';
 import { createSessionsSlice } from './slices/sessions';
 import { createWorkspacesSlice } from './slices/workspaces';
 import { createProjectsSlice } from './slices/projects';
-import type { AddProjectResult, ProjectAttachConflict } from './slices/projects/addProject';
-import type { AddProjectsResult } from './slices/projects/addProjects';
-import type { AdoptProjectResult } from './slices/projects/adoptProject';
 import { createProjectMountsSlice } from './slices/project-mounts';
 import { projectMountsInitialState } from './slices/project-mounts/state';
 import { createProjectRelocationSlice } from './slices/project-relocation';
@@ -228,37 +206,6 @@ import type {
   LoadPrSeriesInput,
   SetPrSeriesMemberInput,
 } from './slices/pr-series';
-import type {
-  CleanupSessionMountsInput,
-  ProposeMountCleanupInput,
-  ResolveMountCleanupInput,
-  SessionCleanupKeyInput,
-  SessionCleanupOutcome,
-} from './slices/mount-cleanup';
-import type {
-  AttachMountInput,
-  EnsureProjectMountedInput,
-  EnsureProjectMountedResult,
-  ForkMountInput,
-  InspectMountResult,
-  MountKeyInput,
-  ResolveMountBranchInput,
-  SessionKeyInput,
-  SwitchMountInput,
-  UnmountMountInput,
-  UnmountMountResult,
-} from './slices/project-mounts/types';
-import type { OpenMountRequestInput } from './slices/project-mounts/openMountRequest';
-import type { ReviewTargetOutcome } from './slices/review-navigation';
-import type {
-  DetachProjectInput,
-  DetachProjectOutcome,
-} from './slices/project-mounts/detachProject';
-import type {
-  RemoveMountWorktreeInput,
-  RemoveMountWorktreeResult,
-} from './slices/project-mounts/removeMountWorktree';
-import type { ForgetMountResult } from './slices/project-mounts/forgetMount';
 import { createPresenceSlice } from './slices/presence';
 import { createTurnSlice } from './slices/turn';
 import { createWorktreesSlice } from './slices/worktrees';
@@ -291,7 +238,6 @@ export type { ProviderSpendEntry };
 export type { AppState } from './types';
 
 type AppActions = {
-  setCurrentWorkspace(id: WorkspaceId | null): Promise<void>;
   refreshProviders(): Promise<void>;
   logoutProvider(providerId: ProviderId): Promise<void>;
   connectProvider(providerId: ProviderId): Promise<void>;
@@ -300,74 +246,6 @@ type AppActions = {
   updateProviderCli(providerId: ProviderId): Promise<void>;
   hydrateCliRequirements(): Promise<void>;
   learnCliRequirement(params: LearnCliRequirementParams): Promise<void>;
-  addWorkspace(input: { rootPath: string; name?: string }): Promise<Workspace>;
-  checkReconnectCandidate(input: {
-    rootPath: string;
-  }): Promise<import('./slices/workspaces/checkReconnectCandidate').ReconnectCandidate | null>;
-  createWorkspace(input: { name: string }): Promise<Workspace>;
-  addProject(input: {
-    workspaceId: WorkspaceId;
-    rootPath: string;
-    name?: string;
-    requireRepo?: boolean;
-  }): Promise<AddProjectResult>;
-  addProjects(input: {
-    workspaceId: WorkspaceId;
-    rootPaths: ReadonlyArray<string>;
-  }): Promise<AddProjectsResult>;
-  adoptProject(input: {
-    projectId: ProjectId;
-    targetWorkspaceId: WorkspaceId;
-  }): Promise<AdoptProjectResult>;
-  previewProjectAdoption(input: {
-    workspaceId: WorkspaceId | null;
-    rootPath: string;
-  }): Promise<ProjectAttachConflict | null>;
-  removeProject(input: { projectId: ProjectId }): Promise<void>;
-  convertProjectToRepo(input: { projectId: ProjectId; remoteUrl: string }): Promise<Project>;
-  updateProjectBaseBranch(input: {
-    projectId: ProjectId;
-    baseBranch: string | null;
-  }): Promise<void>;
-  updateProjectAfterMerge(input: {
-    projectId: ProjectId;
-    afterMerge: AfterMergeRule | null;
-  }): Promise<void>;
-  setProjectStarred(input: { projectId: ProjectId; isStarred: boolean }): Promise<void>;
-  describeProject(input: { projectId: ProjectId; description: string }): Promise<void>;
-  checkGoodboyIgnore(input: { projectId: ProjectId }): Promise<void>;
-  saveGoodboyIgnore(input: {
-    projectId: ProjectId;
-    mode: Exclude<GoodboyIgnoreMode, 'existing'>;
-  }): Promise<void>;
-  renameWorkspace(input: { workspaceId: WorkspaceId; name: string }): Promise<Workspace>;
-  setWorkspacePermissionDefault(input: {
-    workspaceId: WorkspaceId;
-    mode: ClaudePermissionMode;
-  }): Promise<Workspace>;
-  updateWorkspaceProfile(input: {
-    workspaceId: WorkspaceId;
-    profile: WorkspaceProfile;
-  }): Promise<Workspace>;
-  disconnectWorkspace(id: WorkspaceId): Promise<void>;
-  loadDisconnectedWorkspaces(): Promise<void>;
-  reconnectWorkspaceById(id: WorkspaceId): Promise<void>;
-  reconnectMovedProject(input: {
-    workspaceId: WorkspaceId;
-    projectId: ProjectId;
-    fromRoot: string;
-    toRoot: string;
-  }): Promise<Workspace>;
-  mergeWorkspaces(input: {
-    sourceWorkspaceIds: ReadonlyArray<WorkspaceId>;
-    targetWorkspaceId: WorkspaceId;
-  }): Promise<void>;
-  loadProjectGitStatus(input: { projectId: ProjectId }): Promise<void>;
-  fastForwardProjectCheckout(input: { projectId: ProjectId }): Promise<void>;
-  fetchProjectCheckouts(input: { workspaceId: WorkspaceId }): Promise<void>;
-  fastForwardProjectCheckouts(input: {
-    workspaceId: WorkspaceId;
-  }): Promise<{ readonly updated: number; readonly failed: number }>;
   loadIntegrations(workspaceId: WorkspaceId): Promise<void>;
   loadIntegrationCredentials(): Promise<void>;
   forgetIntegrationCredential(params: { credentialId: IntegrationCredentialId }): Promise<void>;
@@ -417,27 +295,6 @@ type AppActions = {
     workspaceId: WorkspaceId;
     config: SlackIntegrationConfig;
   }): Promise<void>;
-  ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
-  detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;
-  loadSessionMounts(input: SessionKeyInput): Promise<ReadonlyArray<SessionMountView>>;
-  forkMount(input: ForkMountInput): Promise<SessionMountView>;
-  forgetMount(input: MountKeyInput): Promise<ForgetMountResult>;
-  switchMount(input: SwitchMountInput): Promise<SessionMountView>;
-  attachMount(input: AttachMountInput): Promise<SessionMountView>;
-  unmountMount(input: UnmountMountInput): Promise<UnmountMountResult>;
-  removeMountWorktree(input: RemoveMountWorktreeInput): Promise<RemoveMountWorktreeResult>;
-  inspectMount(input: MountKeyInput): Promise<InspectMountResult>;
-  resolveMountBranchMismatch(input: ResolveMountBranchInput): Promise<SessionMountView>;
-  setSessionActiveMount(input: MountKeyInput): Promise<void>;
-  openMountRequest(input: OpenMountRequestInput): Promise<ReviewTargetOutcome>;
-  cleanupSessionMounts(
-    input: CleanupSessionMountsInput,
-  ): Promise<ReadonlyArray<SessionCleanupOutcome>>;
-  proposeMountCleanup(input: ProposeMountCleanupInput): Promise<MountCleanupProposal | null>;
-  loadMountCleanupProposals(
-    input: SessionCleanupKeyInput,
-  ): Promise<ReadonlyArray<MountCleanupProposal>>;
-  resolveMountCleanup(input: ResolveMountCleanupInput): Promise<void>;
   rebaseBranch(input: HistoryMountInput): Promise<RebaseBranchOutcome>;
   applyHistoryRewrite(input: ApplyHistoryRewriteInput): Promise<ApplyHistoryRewriteOutcome>;
   pushHistoryRewrite(input: {
@@ -597,39 +454,6 @@ type AppActions = {
   deleteStepDef(id: StepDefId, listWorkspaceId: WorkspaceId): Promise<void>;
   resetWorkflows(workspaceId: WorkspaceId, slugs: ReadonlyArray<string>): Promise<void>;
   loadPhaseRunsForSession(sessionId: SessionId): Promise<void>;
-  selectAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  loadAgentTranscript(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  markAgentViewed(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  markAgentSeen(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  markAllAgentsSeen(sessionId: SessionId): Promise<void>;
-  setAgentDone(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  clearAgentDone(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  spawnAgent(
-    sessionId: SessionId,
-    args: {
-      stepId?: StepId;
-      mountId?: MountId;
-      workflowRunId?: WorkflowRunId;
-      name?: string;
-      model?: string;
-      provider?: ProviderId;
-      effort?: string;
-      initialPrompt?: string;
-      triggeredPlanId?: PlanId;
-      kindOverride?: AgentKind;
-      sourceThreadId?: string;
-      sourceThreadIds?: ReadonlyArray<string>;
-      sourceCommentUrl?: string;
-      sourceKind?: AgentSourceKind;
-      focus?: SpawnFocus;
-      parentAgentId?: AgentId;
-    },
-  ): Promise<AgentId>;
-  forceCloseResolver(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  renameAgent(sessionId: SessionId, agentId: AgentId, name: string): Promise<void>;
-  setAgentEffortOverride(agentId: AgentId, effort: string): void;
-  setAgentDraft(agentId: AgentId, value: string): void;
-  clearAgentDraft(agentId: AgentId): void;
   setArtifactDraft(params: SetArtifactDraftParams): void;
   clearArtifactDraft(params: ClearArtifactDraftParams): void;
   hydrateArtifactDrafts(params: HydrateArtifactDraftsParams): void;
@@ -644,20 +468,6 @@ type AppActions = {
   undoWorkflowGeneration(params: { workspaceId: WorkspaceId }): Promise<void>;
   setWorkflowNodeRoutingLock(params: SetWorkflowNodeRoutingLockParams): Promise<void>;
   resetWorkflowNodeRoutingLock(params: ResetWorkflowNodeRoutingLockParams): Promise<void>;
-  setAgentAttachments(agentId: AgentId, attachments: ReadonlyArray<DraftAttachment>): void;
-  clearAgentAttachments(agentId: AgentId): void;
-  loadAgentQueues(sessionId: SessionId): Promise<void>;
-  enqueueAgentMessage(params: {
-    turn: AgentQueuedTurnInput;
-    placement?: 'last' | 'first';
-  }): Promise<void>;
-  removeQueuedMessage(params: AgentQueueItemParams): Promise<void>;
-  takeQueuedMessage(params: AgentQueueItemParams): AgentQueuedTurn | null;
-  drainAgentQueue(params: { sessionId: SessionId; agentId: AgentId }): Promise<void>;
-  sendQueuedNow(params: AgentQueueItemParams & { sessionId: SessionId }): Promise<void>;
-  sendAgentMessageNow(params: { sessionId: SessionId; turn: AgentQueuedTurnInput }): Promise<void>;
-  deleteAgent(sessionId: SessionId, agentId: AgentId): Promise<void>;
-  wipeLocalDatabase(): Promise<void>;
   loadWorkspaceOverrides(workspaceId: WorkspaceId): Promise<void>;
   setWorkspaceOverrides(workspaceId: WorkspaceId, overrides: OverrideSettings): Promise<void>;
   patchWorkspaceOverrides(params: {
@@ -864,7 +674,13 @@ export type AppStore = AppState &
   ReturnType<typeof createSessionEventsSlice> &
   ReturnType<typeof createAttachmentsSlice> &
   ReturnType<typeof createWorktreesSlice> &
-  ReturnType<typeof createTurnSlice>;
+  ReturnType<typeof createTurnSlice> &
+  ReturnType<typeof createAgentsSlice> &
+  ReturnType<typeof createAgentQueueSlice> &
+  ReturnType<typeof createWorkspacesSlice> &
+  ReturnType<typeof createProjectsSlice> &
+  ReturnType<typeof createProjectMountsSlice> &
+  ReturnType<typeof createMountCleanupSlice>;
 
 export const initialState: AppState = {
   ...initialUpdaterState,
