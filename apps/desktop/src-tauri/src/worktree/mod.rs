@@ -1,283 +1,15 @@
+mod error;
+mod git;
+mod slug;
+mod types;
+
+use crate::proc::git::Git;
+pub(crate) use error::*;
+pub(crate) use git::*;
+use serde::Serialize;
+pub(crate) use slug::*;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
-
-use crate::proc::git::{Git, GitError};
-use regex::Regex;
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-use thiserror::Error;
-
-pub(crate) type RunGit<'a> = &'a mut dyn FnMut(&Path, &[&str]) -> Result<String, WorktreeError>;
-
-const MAX_SLUG_LEN: usize = 48;
-
-#[derive(Debug, Error)]
-pub enum WorktreeError {
-    #[error("repository not found: {0}")]
-    RepoNotFound(String),
-    #[error("no git repository at {0}. run git init in that folder, then start a session")]
-    NoRepository(String),
-    #[error(
-        "the git repository at {0} has no commits yet. make the first commit, then start a session"
-    )]
-    NoCommit(String),
-    #[error("git failed: {message}")]
-    Git { message: String },
-    #[error(
-        "branch {branch} is already checked out at {path}. switch that worktree to another branch, or fork a new one instead"
-    )]
-    BranchInUse { branch: String, path: String },
-    #[error(
-        "branch {branch} exists neither in this repository nor on origin, so there is nothing to adopt. cut it as a new branch instead"
-    )]
-    BranchNotFound { branch: String },
-    #[error("io error: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("invalid utf-8 in git output")]
-    InvalidUtf8,
-}
-
-crate::util::impl_error_serialize!(WorktreeError);
-
-impl From<GitError> for WorktreeError {
-    fn from(error: GitError) -> Self {
-        match error {
-            GitError::Spawn(inner) => WorktreeError::Io(inner),
-            GitError::InvalidUtf8 => WorktreeError::InvalidUtf8,
-            other => WorktreeError::Git {
-                message: other.to_string(),
-            },
-        }
-    }
-}
-
-impl WorktreeError {
-    fn kind(&self) -> &'static str {
-        match self {
-            WorktreeError::RepoNotFound(_) => "repo_not_found",
-            WorktreeError::NoRepository(_) => "no_repository",
-            WorktreeError::NoCommit(_) => "no_commit",
-            WorktreeError::Git { .. } => "git",
-            WorktreeError::BranchInUse { .. } => "branch_in_use",
-            WorktreeError::BranchNotFound { .. } => "branch_not_found",
-            WorktreeError::Io(_) => "io",
-            WorktreeError::InvalidUtf8 => "invalid_utf8",
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct CreatedWorktree {
-    #[serde(rename = "worktreePath")]
-    pub worktree_path: String,
-    #[serde(rename = "branchName")]
-    pub branch_name: String,
-    pub slug: String,
-    pub reused: bool,
-}
-
-#[derive(Debug, Serialize)]
-pub struct WorktreeInfo {
-    pub path: String,
-    pub branch: Option<String>,
-    pub head: String,
-    #[serde(rename = "isMain")]
-    pub is_main: bool,
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
-pub enum WorktreeInspection {
-    Missing {
-        path: String,
-    },
-    Registered {
-        path: String,
-        #[serde(rename = "isMain")]
-        is_main: bool,
-        #[serde(rename = "isLocked")]
-        is_locked: bool,
-        #[serde(rename = "lockReason")]
-        lock_reason: Option<String>,
-    },
-    ForeignDirectory {
-        path: String,
-    },
-    RepositoryUnavailable {
-        path: String,
-    },
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
-pub enum WorktreeRemovalReason {
-    RepositoryUnavailable,
-    MainCheckout,
-    UnexpectedDirectory,
-    DifferentRepository,
-    Locked,
-    StatusUnavailable,
-    StagedChanges,
-    UnstagedChanges,
-    UntrackedFiles,
-    UnmergedConflicts,
-    OperationInProgress,
-    WriterLeaseHeld,
-    NotRegistered,
-    OutsideWorktreeFolder,
-    UnpushedCommits,
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
-pub enum WorktreeRemovalResult {
-    Removed {
-        path: String,
-    },
-    Missing {
-        path: String,
-    },
-    Kept {
-        path: String,
-        reasons: Vec<WorktreeRemovalReason>,
-    },
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum WorktreeRemovalMode {
-    Safe,
-    Confirmed,
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
-pub enum BranchIntegration {
-    Unknown,
-    Merged { base: String },
-    Unmerged { base: String, ahead: u32 },
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
-pub enum WorktreeDetachAssessment {
-    Missing {
-        path: String,
-    },
-    Unavailable {
-        path: String,
-        branch: Option<String>,
-    },
-    Assessed {
-        path: String,
-        branch: Option<String>,
-        #[serde(rename = "hasUpstream")]
-        has_upstream: bool,
-        #[serde(rename = "affectedFiles")]
-        affected_files: u32,
-        #[serde(rename = "localOnlyCommits")]
-        local_only_commits: u32,
-        #[serde(rename = "ignoredFiles")]
-        ignored_files: u32,
-        #[serde(rename = "ignoredFileSamples")]
-        ignored_file_samples: Vec<String>,
-        integration: BranchIntegration,
-    },
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-pub struct WorktreeDirectorySize {
-    pub path: String,
-    #[serde(rename = "sizeBytes")]
-    pub size_bytes: Option<u64>,
-    #[serde(rename = "isPartial")]
-    pub is_partial: bool,
-    pub exists: bool,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateArgs {
-    #[serde(rename = "repoPath")]
-    pub repo_path: String,
-    #[serde(rename = "branchPrefix")]
-    pub branch_prefix: String,
-    pub slug: String,
-    #[serde(rename = "parentDir")]
-    pub parent_dir: Option<String>,
-    /// When set, the worktree is created from this existing local branch
-    /// instead of cutting a new one. `branch_prefix` and `slug` are still used
-    /// to derive the worktree directory name.
-    #[serde(rename = "existingBranch", default)]
-    pub existing_branch: Option<String>,
-    #[serde(rename = "fallbackRef", default)]
-    pub fallback_ref: Option<String>,
-    /// Base branch to cut a new branch from. Defaults to `main`. The branch is
-    /// always cut from `origin/<base>` (not the local copy) so a stale local
-    /// `main` cannot leak unrelated commits into the new branch. Ignored when
-    /// `existing_branch` is set.
-    #[serde(rename = "baseBranch", default)]
-    pub base_branch: Option<String>,
-    #[serde(rename = "dirName", default)]
-    pub dir_name: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct BranchInfo {
-    pub name: String,
-    /// True when this branch is currently checked out in some worktree.
-    #[serde(rename = "inUse")]
-    pub in_use: bool,
-    /// True when the branch has uncommitted changes in its checkout.
-    #[serde(rename = "hasUncommitted")]
-    pub has_uncommitted: bool,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ChangeBranchArgs {
-    #[serde(rename = "repoPath")]
-    pub repo_path: String,
-    #[serde(rename = "worktreePath")]
-    pub worktree_path: String,
-    pub branch: String,
-    /// When true, create the branch with `git switch -c`. When false, switch to
-    /// an existing branch with `git switch`.
-    #[serde(rename = "createNew")]
-    pub create_new: bool,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct IntegrateCandidateArgs {
-    #[serde(rename = "worktreePath")]
-    pub worktree_path: String,
-    #[serde(rename = "candidateId")]
-    pub candidate_id: String,
-    #[serde(rename = "candidateSha")]
-    pub candidate_sha: String,
-    #[serde(rename = "expectedHead")]
-    pub expected_head: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct QuarantineCandidateArgs {
-    #[serde(rename = "worktreePath")]
-    pub worktree_path: String,
-    #[serde(rename = "candidateId")]
-    pub candidate_id: String,
-    #[serde(rename = "baseSha")]
-    pub base_sha: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct IntegratedCandidate {
-    pub sha: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct QuarantinedCandidate {
-    pub sha: Option<String>,
-    #[serde(rename = "baseSha")]
-    pub base_sha: String,
-}
+pub(crate) use types::*;
 
 fn candidate_ref(candidate_id: &str) -> String {
     format!("refs/goodboy/candidates/{}", sanitize_slug(candidate_id))
@@ -287,11 +19,6 @@ fn journal_path(cwd: &Path, candidate_id: &str) -> Result<PathBuf, WorktreeError
     let git_dir = git(cwd, &["rev-parse", "--absolute-git-dir"])?;
     let dir = Path::new(git_dir.trim()).join("goodboy-candidate-integrations");
     Ok(dir.join(format!("{}.journal", sanitize_slug(candidate_id))))
-}
-
-fn is_ancestor(cwd: &Path, ancestor: &str, descendant: &str) -> bool {
-    ancestor == descendant
-        || git(cwd, &["merge-base", "--is-ancestor", ancestor, descendant]).is_ok()
 }
 
 fn ensure_integrable_tree(cwd: &Path) -> Result<(), WorktreeError> {
@@ -495,105 +222,6 @@ fn worktree_quarantine_candidate_blocking(
         sha: Some(tip),
         base_sha: base,
     })
-}
-
-pub fn slugify(input: &str, max_len: usize) -> String {
-    let lowered = input.to_ascii_lowercase();
-    let alnum_dash = Regex::new(r"[^a-z0-9-]+").unwrap();
-    let collapsed_dashes = Regex::new(r"-+").unwrap();
-    let edge_dashes = Regex::new(r"^-+|-+$").unwrap();
-
-    let stage1 = alnum_dash.replace_all(&lowered, "-");
-    let stage2 = collapsed_dashes.replace_all(&stage1, "-");
-    let stage3 = edge_dashes.replace_all(&stage2, "");
-    let truncated: String = stage3.chars().take(max_len).collect();
-    let trimmed = truncated.trim_end_matches('-').to_string();
-
-    if trimmed.is_empty() {
-        let mut hasher = Sha256::new();
-        hasher.update(input.as_bytes());
-        format!("{:x}", hasher.finalize()).chars().take(8).collect()
-    } else {
-        trimmed
-    }
-}
-
-pub fn sanitize_slug(input: &str) -> String {
-    slugify(input, MAX_SLUG_LEN)
-}
-
-#[cfg(test)]
-mod sanitize_slug_tests {
-    use super::{sanitize_slug, slugify, MAX_SLUG_LEN};
-    use serde::Deserialize;
-
-    #[derive(Deserialize)]
-    struct SlugCase {
-        name: String,
-        input: String,
-        #[serde(rename = "maxLength")]
-        max_length: Option<usize>,
-        expected: String,
-    }
-
-    #[derive(Deserialize)]
-    struct SlugFixture {
-        #[serde(rename = "defaultMaxLength")]
-        default_max_length: usize,
-        cases: Vec<SlugCase>,
-    }
-
-    const SLUG_FIXTURE: &str = include_str!("../../../../../packages/core/src/slug/slug.fixture.json");
-
-    #[test]
-    fn matches_the_shared_fixture_the_typescript_slugify_is_tested_against() {
-        let fixture: SlugFixture = serde_json::from_str(SLUG_FIXTURE).unwrap();
-
-        assert_eq!(fixture.default_max_length, MAX_SLUG_LEN);
-        assert!(!fixture.cases.is_empty());
-        for case in fixture.cases {
-            let max_len = case.max_length.unwrap_or(MAX_SLUG_LEN);
-            assert_eq!(
-                slugify(&case.input, max_len),
-                case.expected,
-                "case: {}",
-                case.name
-            );
-        }
-    }
-
-    #[test]
-    fn replaces_a_branch_separator_so_the_directory_never_nests() {
-        assert_eq!(sanitize_slug("alice/fix-parser"), "alice-fix-parser");
-    }
-
-    #[test]
-    fn truncates_at_the_slug_budget_without_a_trailing_dash() {
-        let sanitized = sanitize_slug(&format!("{}-tail", "a".repeat(MAX_SLUG_LEN - 1)));
-
-        assert_eq!(sanitized, "a".repeat(MAX_SLUG_LEN - 1));
-    }
-
-    #[test]
-    fn lowercases_ascii_only() {
-        assert_eq!(sanitize_slug("Fix-Parser"), "fix-parser");
-        assert_eq!(sanitize_slug("caff\u{c8}"), "caff");
-    }
-
-    #[test]
-    fn leaves_an_already_sanitized_name_untouched() {
-        let once = sanitize_slug("Alice/Fix   Parser/../weird");
-
-        assert_eq!(sanitize_slug(&once), once);
-    }
-
-    #[test]
-    fn leaves_a_mount_directory_name_untouched() {
-        let name = "alice-fix-p-9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f";
-
-        assert_eq!(name.len(), MAX_SLUG_LEN);
-        assert_eq!(sanitize_slug(name), name);
-    }
 }
 
 #[tauri::command]
@@ -1417,19 +1045,6 @@ pub(crate) fn local_only_commit_count(cwd: &Path) -> Option<u32> {
         .and_then(|raw| raw.trim().parse::<u32>().ok())
 }
 
-fn commit_ref_exists(cwd: &Path, reference: &str) -> bool {
-    git(
-        cwd,
-        &[
-            "rev-parse",
-            "--verify",
-            "--quiet",
-            &format!("{reference}^{{commit}}"),
-        ],
-    )
-    .is_ok_and(|raw| !raw.trim().is_empty())
-}
-
 fn default_base_ref(cwd: &Path) -> Option<String> {
     base_candidates(cwd, None)
         .into_iter()
@@ -1531,10 +1146,6 @@ fn is_rebase_merged(cwd: &Path, base_ref: &str, branch_ref: &str) -> bool {
         return false;
     };
     raw.lines().all(|line| !line.trim_start().starts_with('+'))
-}
-
-fn commit_exists(cwd: &Path, sha: &str) -> bool {
-    git(cwd, &["cat-file", "-e", &format!("{sha}^{{commit}}")]).is_ok()
 }
 
 fn commits_after(cwd: &Path, merged_head: &str, tip: &str) -> u32 {
@@ -2475,80 +2086,8 @@ fn worktree_changed_files_blocking(
     })
 }
 
-#[derive(Debug, Serialize)]
-pub struct BranchCommit {
-    pub sha: String,
-    #[serde(rename = "shortSha")]
-    pub short_sha: String,
-    pub subject: String,
-    pub author: String,
-    pub timestamp: i64,
-    pub pushed: bool,
-    #[serde(rename = "parentSha")]
-    pub parent_sha: Option<String>,
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
-pub enum GitUnknownReason {
-    NoUpstream,
-    DetachedHead,
-    RevListFailed,
-    MainRefUnresolved,
-    StatusReadFailed,
-    UpstreamGone,
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
-pub enum GitDistance {
-    Known { ahead: u32, behind: u32 },
-    Unknown { reason: GitUnknownReason },
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(tag = "kind", rename_all = "kebab-case")]
-pub enum GitWorkingTree {
-    Known {
-        staged: u32,
-        unstaged: u32,
-        untracked: u32,
-        unmerged: u32,
-        changed: u32,
-    },
-    Unknown {
-        reason: GitUnknownReason,
-    },
-}
-
-#[derive(Debug, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "kebab-case")]
-pub enum GitOperation {
-    Merge,
-    Rebase,
-    CherryPick,
-    Bisect,
-}
-
-#[derive(Debug, Serialize)]
-pub struct WorktreeStatus {
-    pub branch: Option<String>,
-    pub head: Option<String>,
-    #[serde(rename = "headSubject")]
-    pub head_subject: Option<String>,
-    #[serde(rename = "upstreamDistance")]
-    pub upstream_distance: GitDistance,
-    #[serde(rename = "mainDistance")]
-    pub main_distance: GitDistance,
-    #[serde(rename = "workingTree")]
-    pub working_tree: GitWorkingTree,
-    #[serde(rename = "upstream")]
-    pub upstream: Option<String>,
-    #[serde(rename = "inProgress")]
-    pub in_progress: Option<GitOperation>,
-}
-
 const COMMIT_LIMIT: usize = 100;
+
 const COMMIT_FORMAT: &str = "%H%x1f%h%x1f%s%x1f%an%x1f%at%x1f%P";
 
 #[tauri::command]
@@ -2779,34 +2318,6 @@ fn worktree_remote_head_blocking(
         .lines()
         .find_map(|line| line.split_whitespace().next())
         .map(|sha| sha.to_string()))
-}
-
-pub(crate) fn resolve_commit(cwd: &Path, sha: &str) -> Result<String, WorktreeError> {
-    let trimmed = sha.trim();
-    if trimmed.is_empty() {
-        return Err(WorktreeError::Git {
-            message: "commit sha is empty".to_string(),
-        });
-    }
-    let resolved = git(
-        cwd,
-        &[
-            "rev-parse",
-            "--verify",
-            "--quiet",
-            &format!("{trimmed}^{{commit}}"),
-        ],
-    )
-    .map(|out| out.trim().to_string())
-    .ok()
-    .filter(|s| !s.is_empty());
-    resolved.ok_or_else(|| WorktreeError::Git {
-        message: format!("unknown commit: {trimmed}"),
-    })
-}
-
-fn short_of(sha: &str) -> String {
-    sha.chars().take(7).collect()
 }
 
 #[tauri::command]
@@ -3394,18 +2905,6 @@ pub(crate) fn resolve_upstream(cwd: &Path) -> Option<String> {
     .filter(|s| !s.is_empty())
 }
 
-fn rev_list_set(cwd: &Path, range: &str) -> std::collections::HashSet<String> {
-    git(cwd, &["rev-list", range])
-        .ok()
-        .map(|s| {
-            s.lines()
-                .map(|l| l.trim().to_string())
-                .filter(|l| !l.is_empty())
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
 pub(crate) fn rev_list_left_right(cwd: &Path, left: &str, right: &str) -> Option<(u32, u32)> {
     let out = git(
         cwd,
@@ -3521,11 +3020,6 @@ pub(crate) fn in_progress_operation(cwd: &Path) -> Option<GitOperation> {
         return Some(GitOperation::Bisect);
     }
     None
-}
-
-fn git_strs(cwd: &Path, args: &[String]) -> Result<String, WorktreeError> {
-    let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-    git(cwd, &refs)
 }
 
 fn find_existing(
@@ -3656,46 +3150,6 @@ fn untracked_new_file_diff_for(p: &Path, rel: &str) -> String {
     out
 }
 
-static CREDENTIAL_IN_URL: OnceLock<Regex> = OnceLock::new();
-
-pub(crate) fn redact_credentials(raw: &str) -> String {
-    let pattern = CREDENTIAL_IN_URL.get_or_init(|| {
-        Regex::new(r"([A-Za-z][A-Za-z0-9+.\-]*://)[^/@\s]+@").expect("credential pattern compiles")
-    });
-    pattern.replace_all(raw, "$1***@").into_owned()
-}
-
-#[cfg(test)]
-pub(crate) mod git_argv_log {
-    use std::cell::RefCell;
-
-    thread_local! {
-        static RECORDED: RefCell<Vec<Vec<String>>> = const { RefCell::new(Vec::new()) };
-    }
-
-    pub(crate) fn record(args: &[&str]) {
-        RECORDED.with(|log| {
-            log.borrow_mut()
-                .push(args.iter().map(|arg| (*arg).to_string()).collect())
-        });
-    }
-
-    pub(crate) fn reset() {
-        RECORDED.with(|log| log.borrow_mut().clear());
-    }
-
-    pub(crate) fn recorded() -> Vec<Vec<String>> {
-        RECORDED.with(|log| log.borrow().clone())
-    }
-}
-
-pub(crate) fn git(cwd: &Path, args: &[&str]) -> Result<String, WorktreeError> {
-    #[cfg(test)]
-    git_argv_log::record(args);
-
-    Ok(Git::new().cwd(cwd).args(args).batch_auth().stdout()?)
-}
-
 pub(crate) fn parse_porcelain(stdout: &str) -> Vec<WorktreeInfo> {
     let mut entries = Vec::new();
     let mut is_first = true;
@@ -3769,6 +3223,81 @@ fn parse_registered_worktrees(stdout: &str) -> Vec<RegisteredWorktree> {
         is_main = false;
     }
     entries
+}
+
+#[cfg(test)]
+mod sanitize_slug_tests {
+    use super::{sanitize_slug, slugify, MAX_SLUG_LEN};
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    struct SlugCase {
+        name: String,
+        input: String,
+        #[serde(rename = "maxLength")]
+        max_length: Option<usize>,
+        expected: String,
+    }
+
+    #[derive(Deserialize)]
+    struct SlugFixture {
+        #[serde(rename = "defaultMaxLength")]
+        default_max_length: usize,
+        cases: Vec<SlugCase>,
+    }
+
+    const SLUG_FIXTURE: &str =
+        include_str!("../../../../../packages/core/src/slug/slug.fixture.json");
+
+    #[test]
+    fn matches_the_shared_fixture_the_typescript_slugify_is_tested_against() {
+        let fixture: SlugFixture = serde_json::from_str(SLUG_FIXTURE).unwrap();
+
+        assert_eq!(fixture.default_max_length, MAX_SLUG_LEN);
+        assert!(!fixture.cases.is_empty());
+        for case in fixture.cases {
+            let max_len = case.max_length.unwrap_or(MAX_SLUG_LEN);
+            assert_eq!(
+                slugify(&case.input, max_len),
+                case.expected,
+                "case: {}",
+                case.name
+            );
+        }
+    }
+
+    #[test]
+    fn replaces_a_branch_separator_so_the_directory_never_nests() {
+        assert_eq!(sanitize_slug("alice/fix-parser"), "alice-fix-parser");
+    }
+
+    #[test]
+    fn truncates_at_the_slug_budget_without_a_trailing_dash() {
+        let sanitized = sanitize_slug(&format!("{}-tail", "a".repeat(MAX_SLUG_LEN - 1)));
+
+        assert_eq!(sanitized, "a".repeat(MAX_SLUG_LEN - 1));
+    }
+
+    #[test]
+    fn lowercases_ascii_only() {
+        assert_eq!(sanitize_slug("Fix-Parser"), "fix-parser");
+        assert_eq!(sanitize_slug("caff\u{c8}"), "caff");
+    }
+
+    #[test]
+    fn leaves_an_already_sanitized_name_untouched() {
+        let once = sanitize_slug("Alice/Fix   Parser/../weird");
+
+        assert_eq!(sanitize_slug(&once), once);
+    }
+
+    #[test]
+    fn leaves_a_mount_directory_name_untouched() {
+        let name = "alice-fix-p-9f1c2d3e-4a5b-6c7d-8e9f-0a1b2c3d4e5f";
+
+        assert_eq!(name.len(), MAX_SLUG_LEN);
+        assert_eq!(sanitize_slug(name), name);
+    }
 }
 
 #[cfg(test)]
