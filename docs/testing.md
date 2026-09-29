@@ -90,6 +90,17 @@ A `packages/db` test that needs a migrated schema calls `await makeMigratedTestD
 
 For speed, `packages/db/src/migrations/registry.test.ts` tests a sample of the intermediate versions instead of all of them. That sample does not replace the per-version sql hash manifest checked into the same file. The manifest is what really stops anyone from editing a migration after release. The sample has its own minimum number of intermediate points it must reach. So if someone cuts the sample size, the test fails, instead of quietly shrinking to the first and last version. No test pins the sampled versions or the total number of migrations. Both change every release. A test that goes red for that reason teaches people to edit the expected values, and that is exactly how a hash manifest gets regenerated without anyone looking.
 
+## Fake CLI binaries for the Rust spawn tests
+
+`apps/desktop/src-tauri/tests/fixtures/fake-cli/` holds POSIX `sh` scripts named `claude`, `codex`, `cursor-agent` and `agy`, plus `streams/` with one recorded output per provider. The Rust tests copy the folder to a temp dir with `FakeCli::stage(mode)` (`src/fake_cli.rs`) and start the copy through the real code: `spawn_one` in `turn.rs` for a turn, `detect_binary_within` and the `check_*_auth_with` functions in `providers.rs` for detection and sign-in. The tests live in `src/turn/fake_cli_tests.rs` and `src/providers/fake_cli_tests.rs`, and run under plain `cargo test --locked`.
+
+- The `mode` file next to the scripts picks the behavior: `ok` replays the recorded stream, `fail` exits 3 with stderr, `flood` writes 300 KiB to stderr first, `hang` sleeps until it is cancelled, `partial`, `binary` and `silent` cover the odd endings, and the version and sign-in modes cover detection.
+- A script writes its argv and a fixed list of env vars to `fake-cli-argv.txt` and `fake-cli-env.txt` in its working dir. A test asserts on those, so it sees what the child really got.
+- The scripts keep the executable bit in git and use only POSIX `sh`, `cat`, `head`, `dd`, `tr` and `sleep`, so they run the same on the Linux runner.
+- A test uses `blocks_push: true`. The other branch of `spawn_one` reads the GitHub token from the credential store.
+- The fake replays a recorded output. It proves our spawn and our parser, not that the flags still exist in the vendor's CLI. Only the vendor's `--help` shows that.
+- Adding a provider or a stream shape: add a script and a `streams/` file, then a test that asserts the argv and the lines. Prove it can fail: break the code it covers, see the test go red, restore it.
+
 ## No stopwatch in the gate
 
 A test that reads the clock (`performance.now()`, `Date.now()`) and asserts a budget in milliseconds fails when the runner is loaded, not when the code is slow. The required `unit` project has none. A real benchmark is named `*.perf.test.ts` and lives in the `perf` vitest project of `apps/desktop`, `packages/core` or `packages/db`. Run it with `pnpm test:perf` (or `pnpm --filter <pkg> test:perf`). It never blocks a merge: `.github/workflows/perf.yml` runs it on push to main, nightly and on demand, and a nightly failure opens or updates one issue labeled `perf`.
