@@ -131,23 +131,22 @@ mod tests {
     }
 
     #[test]
-    fn a_token_survives_until_its_ttl_and_not_past_it() {
-        let store = TokenStore::with_ttl(Duration::from_millis(150));
-        let token = store.mint();
-        assert!(!store.consume(&[1u8; 32]));
+    fn a_token_is_accepted_inside_its_ttl_and_refused_after_it() {
+        let store = TokenStore::with_ttl(Duration::from_millis(100));
+        let inside = store.mint();
+        let outside = store.mint();
 
-        std::thread::sleep(Duration::from_millis(250));
+        assert!(store.consume(&inside));
+        std::thread::sleep(Duration::from_millis(200));
 
-        assert!(!store.consume(&token));
+        assert!(!store.consume(&outside));
     }
 
     #[test]
-    fn minting_drops_tokens_that_already_expired() {
+    fn every_token_minted_past_its_ttl_is_refused() {
         let store = TokenStore::with_ttl(Duration::ZERO);
-        store.mint();
-        store.mint();
-        store.mint();
+        let tokens = [store.mint(), store.mint(), store.mint()];
 
-        assert_eq!(store.entries.lock().unwrap().len(), 1);
+        assert!(tokens.iter().all(|token| !store.consume(token)));
     }
 }

@@ -439,7 +439,12 @@ mod tests {
         });
 
         let mut stream = TcpStream::connect(addr).await.unwrap();
-        let heard_by_phone = phone_side(&mut stream, desktop, phone, payload).await;
+        let heard_by_phone = tokio::time::timeout(
+            Duration::from_secs(5),
+            phone_side(&mut stream, desktop, phone, payload),
+        )
+        .await
+        .expect("the phone side finished the attempt");
         let server = tokio::time::timeout(Duration::from_secs(5), server)
             .await
             .expect("the server finished the attempt")
