@@ -4,7 +4,14 @@ import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../store';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
 import { selectActiveMount } from '../../../../store/slices/project-mounts/selectors';
+import { activeReviewSourceOf } from '../../../../store/slices/review-source/activeReviewSource';
 import { selectReviewCommitPreset } from '../../../../store/slices/reviewCommits/selectReviewCommitPreset';
+import {
+  EDIT_POSTED_REPLY_OFF,
+  EDIT_POSTED_REPLY_ON,
+  editPostedReplyKey,
+  isEditPostedReplyOn,
+} from '../../editPostedReplySetting';
 import {
   hasReviewRewrite,
   isHistoryPlanDraft,
@@ -16,6 +23,7 @@ import {
   reviewCommitRows,
   reviewDraftSignature,
   reviewPlanItems,
+  reviewReplyPreviews,
   samePlanItems,
   type ReviewCommitChoice,
   type ReviewCommitChoices,
@@ -64,7 +72,16 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
   const branch = useAppStore((s) => selectActiveMount({ state: s, sessionId })?.branch ?? null);
   const draft = useAppStore((s) => (mountId === null ? null : (s.historyDrafts[mountId] ?? null)));
   const run = useAppStore((s) => (mountId === null ? null : (s.historyRuns[mountId] ?? null)));
-  const prNumber = useAppStore((s) => s.sessionGithub[sessionId]?.pr?.number ?? null);
+  const prNumber = useAppStore(
+    (s) => activeReviewSourceOf({ state: s, sessionId })?.prNumber ?? null,
+  );
+  const workspaceId = useAppStore(
+    (s) => s.sessions.find((session) => session.id === sessionId)?.workspaceId ?? null,
+  );
+  const editKey = workspaceId === null ? null : editPostedReplyKey({ workspaceId });
+  const rawEdit = useAppStore((s) => (editKey === null ? undefined : s.settings[editKey]));
+  const loadSetting = useAppStore((s) => s.loadSetting);
+  const saveSetting = useAppStore((s) => s.saveSetting);
   const remembered = useAppStore((s) => selectReviewCommitPreset({ state: s, projectId }));
   const loadHistoryDraft = useAppStore((s) => s.loadHistoryDraft);
   const editHistoryDraft = useAppStore((s) => s.editHistoryDraft);
@@ -108,6 +125,12 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
       isLive = false;
     };
   }, [loadReviewCommitDraft, mountId]);
+
+  useEffect(() => {
+    if (editKey !== null) {
+      void loadSetting(editKey);
+    }
+  }, [editKey, loadSetting]);
 
   useEffect(() => {
     if (projectId === null) {
@@ -183,6 +206,34 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
   const after = useMemo(
     () => reviewAfterCommits({ rows, items, prediction }),
     [items, prediction, rows],
+  );
+  const replies = useMemo(
+    () =>
+      reviewReplyPreviews({ rows, after }).flatMap((preview) => {
+        const entry = entries.find((candidate) => candidate.threadId === preview.threadId);
+        if (entry === undefined || entry.state === 'skipped') {
+          return [];
+        }
+        return [
+          {
+            ...preview,
+            text: (entry.row.thread.replyDraft ?? '').trim(),
+            isPosted: entry.row.thread.replyPostedAt !== null,
+          },
+        ];
+      }),
+    [after, entries, rows],
+  );
+  const isEditingPosted = isEditPostedReplyOn({ raw: rawEdit });
+  const setEditingPosted = useCallback(
+    (next: boolean): void => {
+      if (editKey !== null) {
+        void saveSetting(editKey, next ? EDIT_POSTED_REPLY_ON : EDIT_POSTED_REPLY_OFF).catch(
+          () => undefined,
+        );
+      }
+    },
+    [editKey, saveSetting],
   );
   const conflicts = predictedConflicts({ prediction });
   const replaced = replacedOnOrigin({ rows, items });
@@ -300,6 +351,9 @@ export const useReviewCommits = ({ sessionId, entries }: Params) => {
     choices,
     preset,
     after,
+    replies,
+    isEditingPosted,
+    setEditingPosted,
     prediction,
     isPredicting,
     conflicts,

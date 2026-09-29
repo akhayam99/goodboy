@@ -5,6 +5,7 @@ import { REVIEW_COMMITS_LABEL, commitCountLabel, rewriteNote } from '../../revie
 import { ReviewCommitsCheck } from './ReviewCommitsCheck';
 import { ReviewCommitsDone } from './ReviewCommitsDone';
 import { ReviewCommitsProgress } from './ReviewCommitsProgress';
+import { ReviewCommitsReplies } from './ReviewCommitsReplies';
 import type { ReviewCommitsModel } from './useReviewCommits';
 
 type Props = {
@@ -74,6 +75,7 @@ export const ReviewCommitsAfter = ({ model }: Props) => {
         })}
       </ol>
       <ReviewCommitsCheck model={model} />
+      <ReviewCommitsReplies model={model} />
       {stop !== null && (
         <Notice
           tone="danger"

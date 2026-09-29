@@ -34,7 +34,23 @@ export const REVIEW_COMMITS_LABEL = {
   foreignDraftBody: 'The Commits view leaves it alone until you replace it.',
   openDraft: 'Open it',
   replaceDraft: 'Replace it',
+  replies: 'Replies',
+  editPosted: 'Edit the posted reply',
+  postedLeft: 'Posted, left as it is',
+  posted: 'Posted',
+  goesOut: 'Goes out with the next push',
+  waitingForCheck: 'The new sha shows once the check is done',
 } as const;
+
+export const unpostedReplyLine = ({
+  from,
+  to,
+  isFolded,
+}: {
+  readonly from: string;
+  readonly to: string;
+  readonly isFolded: boolean;
+}): string => (isFolded ? `Fixed in ${from}, squashed into ${to}.` : `Fixed in ${to}.`);
 
 export const PRESET_LABEL: Record<ReviewCommitPreset, string> = {
   keep: 'Keep as they are',

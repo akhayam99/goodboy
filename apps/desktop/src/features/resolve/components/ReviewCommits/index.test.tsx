@@ -92,6 +92,19 @@ describe('Review commits view', () => {
     expect(useAppStore.getState().reviewCommitPresets[PROJECT_ID]).toBe('fold');
   });
 
+  it('shows the reply each resolve commit will carry once the shas move', async () => {
+    await mount();
+    await openCommits();
+    expect(screen.queryByRole('region', { name: 'Replies' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Fold each into its original' }));
+    await settle();
+
+    const replies = screen.getByRole('region', { name: 'Replies' });
+    expect(within(replies).getAllByRole('listitem').length).toBeGreaterThan(0);
+    expect(within(replies).getByText('for kenji-w on retryPolicy.ts:42')).toBeDefined();
+  });
+
   it('rewrites through the history engine with a push, then undoes from the backup', async () => {
     await mount();
     const seeded = useAppStore.getState();

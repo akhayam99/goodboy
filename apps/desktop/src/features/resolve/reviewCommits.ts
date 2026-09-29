@@ -308,6 +308,46 @@ export const reviewAfterCommits = ({
   });
 };
 
+export type ReviewReplyPreview = {
+  readonly threadId: string;
+  readonly author: string | null;
+  readonly location: string | null;
+  readonly from: string;
+  readonly to: string | null;
+  readonly isFolded: boolean;
+};
+
+export const reviewReplyPreviews = ({
+  rows,
+  after,
+}: {
+  readonly rows: ReadonlyArray<ReviewCommitRow>;
+  readonly after: ReadonlyArray<ReviewAfterCommit>;
+}): ReadonlyArray<ReviewReplyPreview> =>
+  after.flatMap((entry) => {
+    if (!entry.isChanged) {
+      return [];
+    }
+    return entry.threads.flatMap((thread): ReadonlyArray<ReviewReplyPreview> => {
+      const row = rows.find((candidate) =>
+        candidate.threads.some((linked) => linked.threadId === thread.threadId),
+      );
+      if (row === undefined) {
+        return [];
+      }
+      return [
+        {
+          threadId: thread.threadId,
+          author: thread.author,
+          location: thread.location,
+          from: row.shortSha,
+          to: entry.newSha === null ? null : entry.newSha.slice(0, SHORT),
+          isFolded: row.sha !== entry.sha,
+        },
+      ];
+    });
+  });
+
 type DraftShape = {
   readonly headSha: string;
   readonly items: ReadonlyArray<HistoryStep>;

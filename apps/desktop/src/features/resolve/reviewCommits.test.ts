@@ -9,6 +9,7 @@ import {
   reviewAfterCommits,
   reviewCommitRows,
   reviewPlanItems,
+  reviewReplyPreviews,
   type ReviewThreadCommits,
 } from './reviewCommits';
 
@@ -183,5 +184,47 @@ describe('reviewAfterCommits', () => {
       ['Add the retry policy', sha('e31b9f4'), ['7be41d0', 'c81e5aa', '9f2c1ab']],
     ]);
     expect(predictedConflicts({ prediction })).toEqual(['config.ts']);
+  });
+});
+
+describe('reviewReplyPreviews', () => {
+  const items = reviewPlanItems({
+    rows: ROWS,
+    choices: presetChoices({ rows: ROWS, preset: 'fold', prNumber: 318 }),
+  });
+  const prediction: HistoryPlanPrediction = {
+    isSupported: true,
+    head: sha('e31b9f4'),
+    isTreeEqual: true,
+    changedFiles: [],
+    steps: [
+      { sha: sha('3f9a2c1'), outcome: 'clean', files: [], newSha: sha('1111111') },
+      { sha: sha('d4e7b20'), outcome: 'clean', files: [], newSha: sha('a52d7c8') },
+      { sha: sha('7be41d0'), outcome: 'clean', files: [], newSha: sha('2222222') },
+      { sha: sha('c81e5aa'), outcome: 'clean', files: [], newSha: sha('3333333') },
+      { sha: sha('9f2c1ab'), outcome: 'clean', files: [], newSha: sha('e31b9f4') },
+    ],
+  };
+
+  it('says which sha each reply moves to and whether it was folded', () => {
+    const after = reviewAfterCommits({ rows: ROWS, items, prediction });
+    const previews = reviewReplyPreviews({ rows: ROWS, after });
+    const mara = previews.find((preview) => preview.threadId === 'mara');
+    expect(mara?.from).toBe('c81e5aa');
+    expect(mara?.to).toBe('e31b9f4');
+    expect(mara?.isFolded).toBe(true);
+  });
+
+  it('has no target sha until the check has run', () => {
+    const after = reviewAfterCommits({ rows: ROWS, items, prediction: null });
+    const previews = reviewReplyPreviews({ rows: ROWS, after });
+    expect(previews.length).toBeGreaterThan(0);
+    expect(previews.every((preview) => preview.to === null)).toBe(true);
+  });
+
+  it('shows nothing when the plan changes no commit', () => {
+    const kept = reviewPlanItems({ rows: ROWS, choices: {} });
+    const after = reviewAfterCommits({ rows: ROWS, items: kept, prediction: null });
+    expect(reviewReplyPreviews({ rows: ROWS, after })).toEqual([]);
   });
 });
