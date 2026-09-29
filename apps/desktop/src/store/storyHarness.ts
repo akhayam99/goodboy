@@ -58,6 +58,8 @@ const runAdhocScript: ReturnType<typeof vi.fn> = vi.fn(async () => 'run-adhoc');
 
 type PermissionsModule = typeof import('../features/permissions/permissions');
 
+type WorkflowsModule = typeof import('../features/workflows/workflows');
+
 type PlansModule = typeof import('../features/plans/plans');
 
 const cleanWorkingTree = {
@@ -178,10 +180,10 @@ export const storySpies = {
   invokeAgentInsert: vi.fn(),
   invokeAgentUpdateStatus: vi.fn(),
   invokeAgentSetVerbosity: vi.fn(async () => undefined),
-  invokeAgentMarkViewed: vi.fn(async () => undefined),
+  invokeAgentMarkViewed: vi.fn<WorkflowsModule['invokeAgentMarkViewed']>(async () => undefined),
   invokeAgentSetProviderSessionId: vi.fn(async () => undefined),
   invokeAgentSetDone: vi.fn(async () => undefined),
-  invokeWorkspacesWithUnread: vi.fn(async () => [] as ReadonlyArray<WorkspaceId>),
+  invokeWorkspacesWithUnread: vi.fn<WorkflowsModule['invokeWorkspacesWithUnread']>(async () => []),
   changeWorktreeBranch: vi.fn(async () => undefined),
   scanOrphanWorktrees: vi.fn(
     async () =>
@@ -314,8 +316,12 @@ export const storySpies = {
   updateSessionActiveProject: vi.fn(async () => undefined),
   updateSessionWriteDestination: vi.fn(async () => true),
   listWorktreesForSession: vi.fn(async () => [] as ReadonlyArray<never>),
-  getWorkspaceById: vi.fn(async (): Promise<Workspace | null> => null),
-  listProjectsForWorkspace: vi.fn(async () => [] as ReadonlyArray<Project>),
+  getWorkspaceById: vi.fn(
+    async (_params: { readonly id: WorkspaceId }): Promise<Workspace | null> => null,
+  ),
+  listProjectsForWorkspace: vi.fn(
+    async (_params: { readonly workspaceId: WorkspaceId }) => [] as ReadonlyArray<Project>,
+  ),
   upsertSessionExternalTask: vi.fn(async () => undefined),
   upsertContextSlot: vi.fn(async () => undefined),
   deleteSession: vi.fn(async () => undefined),

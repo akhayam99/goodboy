@@ -1,6 +1,8 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   STORE_IMPORT_TIMEOUT_MS,
+  buildStoryProject,
+  buildStoryWorkspace,
   importStore,
   resetStorySpies,
   storySpies,
@@ -59,48 +61,21 @@ const phaseRunUpdateStatusSpy = storySpies.invokeAgentUpdateStatus;
 
 async function* emptyStream(): AsyncIterable<TurnEvent> {}
 
-const OVERRIDES = {
-  defaultProviderId: null,
-  defaultWorkflowId: null,
-  defaultBranchPrefix: null,
-  parallelEnabled: null,
-  defaultVerbosity: null,
-  providerBindings: null,
-  taskModels: null,
-  roleModels: null,
-  parallelAgents: null,
-  providerPool: null,
-  attributionFooter: null,
-};
-
 const wireStoryDefaults = () => {
-  storySpies.getWorkspaceById.mockImplementation((async ({ id }: { id: WorkspaceId }) => ({
-    id,
-    name: 'Harborline',
-    slug: 'harborline',
-    overrides: OVERRIDES,
-    createdAt: '',
-    updatedAt: '',
-  })) as never);
-  storySpies.listProjectsForWorkspace.mockImplementation((async ({
-    workspaceId,
-  }: {
-    workspaceId: WorkspaceId;
-  }) => [
-    {
+  storySpies.getWorkspaceById.mockImplementation(async ({ id }) =>
+    buildStoryWorkspace({ id, name: 'Harborline', slug: 'harborline' }),
+  );
+  storySpies.listProjectsForWorkspace.mockImplementation(async ({ workspaceId }) => [
+    buildStoryProject({
       id: 'project-1' as ProjectId,
       workspaceId,
       name: 'ledger-core',
       rootPath: '/tmp',
-      kind: 'repo',
-      overrides: OVERRIDES,
-      createdAt: '',
-      updatedAt: '',
-    },
-  ]) as never);
-  storySpies.listWorkspaces.mockImplementation((async () => [
-    { id: 'ws-1', name: 'Harborline', rootPath: '/tmp', createdAt: '', updatedAt: '' },
-  ]) as never);
+    }),
+  ]);
+  storySpies.listWorkspaces.mockImplementation(async () => [
+    buildStoryWorkspace({ id: 'ws-1' as WorkspaceId, name: 'Harborline' }),
+  ]);
   storySpies.createWorktree.mockImplementation(async () => ({
     worktreePath: '/tmp/wt',
     branchName: 'nw/settle',
