@@ -51,8 +51,6 @@ const { store, summarize } = vi.hoisted(() => ({
     recordChatLink: vi.fn(async () => ({})),
     loadPhaseRunsForSession: vi.fn(async () => undefined),
     setAgentDraft: vi.fn(),
-    settings: {} as Record<string, string>,
-    cliRequirements: [] as ReadonlyArray<unknown>,
     loadSetting: vi.fn(async (_key: string) => null as string | null),
     saveSetting: vi.fn(async (_key: string, _value: string) => undefined),
     sessionPhaseRuns: {} as Record<string, ReadonlyArray<unknown>>,
