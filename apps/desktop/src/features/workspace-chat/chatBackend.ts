@@ -2,7 +2,9 @@ import type {
   Chat,
   ChatId,
   ChatMessage,
+  ChatSessionLink,
   ChatSummary,
+  EffortLevel,
   IsoDateTime,
   ModelKey,
   ProviderId,
@@ -34,6 +36,18 @@ export type SetArchivedParams = {
   readonly now: IsoDateTime;
 };
 
+export type DeleteChatsParams = {
+  readonly chatIds: ReadonlyArray<ChatId>;
+};
+
+export type InsertLinkParams = {
+  readonly link: ChatSessionLink;
+};
+
+export type ListLinksParams = {
+  readonly workspaceId: WorkspaceId;
+};
+
 export type SetPinnedParams = ChatRefParams & {
   readonly pinnedAt: IsoDateTime | null;
   readonly now: IsoDateTime;
@@ -47,6 +61,7 @@ export type RenameParams = ChatRefParams & {
 export type SetModelParams = ChatRefParams & {
   readonly provider: ProviderId;
   readonly model: ModelKey;
+  readonly effort: EffortLevel | null;
   readonly now: IsoDateTime;
 };
 
@@ -72,6 +87,9 @@ export type ChatBackend = {
   readonly insertMessage: (params: ChatMessageParams) => Promise<void>;
   readonly finishMessage: (params: ChatMessageParams) => Promise<void>;
   readonly setArchived: (params: SetArchivedParams) => Promise<void>;
+  readonly deleteChats: (params: DeleteChatsParams) => Promise<void>;
+  readonly insertLink: (params: InsertLinkParams) => Promise<void>;
+  readonly listLinks: (params: ListLinksParams) => Promise<ReadonlyArray<ChatSessionLink>>;
   readonly setPinned: (params: SetPinnedParams) => Promise<void>;
   readonly rename: (params: RenameParams) => Promise<void>;
   readonly setModel: (params: SetModelParams) => Promise<void>;

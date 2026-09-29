@@ -203,6 +203,15 @@ describe('RoutingPicker', () => {
     ).toBe(true);
   });
 
+  it('leaves effort out of the trigger and the popover when the caller hides it', () => {
+    render(<RoutingPicker {...baseProps} isEffortHidden />);
+    const trigger = screen.getByRole('button', { name: /routing/i });
+    expect(trigger.textContent).toContain('Opus 5');
+    expect(trigger.textContent).not.toContain('High');
+    fireEvent.click(trigger);
+    expect(screen.queryByRole('group', { name: 'Effort' })).toBeNull();
+  });
+
   it('resolves a model recommendation to a concrete model without saying auto', () => {
     render(
       <RoutingPicker {...baseProps} model="" recommendation={{ model: 'claude-sonnet-4-6' }} />,

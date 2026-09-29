@@ -16,7 +16,17 @@ export const archiveChats =
       if (unreadChatIds.length !== state.unreadChatIds.length) {
         writeUnreadChats({ chatIds: unreadChatIds });
       }
+      const archived = state.archivedChatsByWorkspace[workspaceId];
+      const moved = (state.chatsByWorkspace[workspaceId] ?? [])
+        .filter((chat) => chatIds.includes(chat.id))
+        .map((chat) => ({ ...chat, archivedAt: now, updatedAt: now }));
       return {
+        ...(archived !== undefined && {
+          archivedChatsByWorkspace: {
+            ...state.archivedChatsByWorkspace,
+            [workspaceId]: [...moved, ...archived],
+          },
+        }),
         chatsByWorkspace: {
           ...state.chatsByWorkspace,
           [workspaceId]: (state.chatsByWorkspace[workspaceId] ?? []).filter(
