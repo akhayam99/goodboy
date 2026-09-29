@@ -13,7 +13,7 @@ import type {
   SetReviewSelectionParams,
 } from './types';
 
-export { reviewFocusThreadId, reviewThreadId, reviewThreadIds } from './destination';
+export { reviewFocusThreadId } from './destination';
 export type { ReviewDestination } from './destination';
 export type { ReviewTargetOutcome, ReviewTargetReason } from './types';
 
