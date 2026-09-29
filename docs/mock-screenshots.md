@@ -230,8 +230,8 @@ clips it, draws the frame around it and writes
 `../goodboy-media` next to this repo or the folder `GOODBOY_MEDIA_DIR` names:
 
 ```bash
-node scripts/feature-shots.mjs --scene 'board-shell&brand=1' --probe '[role="region"]' --window 1280x720
-node scripts/feature-shots.mjs --scene 'board-shell&brand=1' --out board-stage --selector 'main' --window 1280x600
+pnpm features:shots --scene 'board-shell&brand=1' --probe '[role="region"]' --window 1280x720
+pnpm features:shots --scene 'board-shell&brand=1' --out board-stage --selector 'main' --window 1280x600
 ```
 
 - `--probe` prints the box, classes and text of the matching elements, so you
@@ -244,6 +244,11 @@ node scripts/feature-shots.mjs --scene 'board-shell&brand=1' --out board-stage -
   `width="<that width>"` on its `<img>`, or GitHub enlarges it.
 - `GOODBOY_SHOT_URL` or `--base` points at the dev server
   (default `http://localhost:5230`).
+- With several captures running against one dev server, a cold scene can take
+  more than the default 5 seconds and the file shows the "starting up" screen
+  (about 40 KB). Pass `--wait 30000`, capture one theme per run with
+  `--themes dark`, and look at every file before keeping it.
+- Put `%20` for spaces inside `--scene`, or Chrome never loads the page.
 
 `FEATURES.md` points at each file with its raw URL,
 `https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/<name>-dark.webp`.
