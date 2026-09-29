@@ -121,7 +121,7 @@ export const seedResolveDriftScene = (): void => {
             item: { ...fixed.item, deliveredAt: now - 30 * MINUTE_MS },
             thread: {
               ...fixed.thread,
-              stage: 'resolved',
+              stage: 'resolved' as const,
               replyPostedAt: now - 30 * MINUTE_MS,
             },
           }
