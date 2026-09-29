@@ -3,8 +3,10 @@ name: rust
 on:
   pull_request:
   push:
+    branches: [main]
     paths:
       - 'apps/desktop/src-tauri/**'
+      - 'rust-toolchain.toml'
       - '.github/workflows/rust.yml'
       - '.github/actions/tauri-linux-setup/**'
 
@@ -18,44 +20,27 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
       - name: detect rust changes
         id: changes
         env:
           EVENT: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.sha }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then
             echo "rust=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          files=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" 2>/dev/null || echo "__ERR__")
+          files=$(git diff --name-only HEAD^1 HEAD 2>/dev/null || echo "__ERR__")
           if [ "$files" = "__ERR__" ]; then
             echo "rust=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if printf '%s\n' "$files" | grep -qE '^(apps/desktop/src-tauri/|\.github/workflows/rust\.yml$|\.github/actions/tauri-linux-setup/)'; then
+          if printf '%s\n' "$files" | grep -qE '^(apps/desktop/src-tauri/|rust-toolchain\.toml$|\.github/workflows/rust\.yml$|\.github/actions/tauri-linux-setup/)'; then
             echo "rust=true" >> "$GITHUB_OUTPUT"
           else
             echo "rust=false" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: tauri linux setup
-        if: steps.changes.outputs.rust == 'true'
-        uses: ./.github/actions/tauri-linux-setup
-        with:
-          cache-key-prefix: cargo-check
-
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v4
-        if: steps.changes.outputs.rust == 'true'
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        if: steps.changes.outputs.rust == 'true'
-        with:
-          node-version: 22
-          cache: pnpm
 
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         if: steps.changes.outputs.rust == 'true'
@@ -63,25 +48,27 @@ jobs:
           toolchain: 1.98.1
           components: rustfmt, clippy
 
-      - name: install
-        if: steps.changes.outputs.rust == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: build frontend
-        if: steps.changes.outputs.rust == 'true'
-        run: pnpm turbo run build --filter=@goodboy/desktop
-
       - name: fmt
         if: steps.changes.outputs.rust == 'true'
         working-directory: apps/desktop/src-tauri
         run: cargo fmt --check
-        continue-on-error: true
+
+      - name: tauri linux setup
+        if: steps.changes.outputs.rust == 'true'
+        uses: ./.github/actions/tauri-linux-setup
+        with:
+          cache-key-prefix: cargo-check
+
+      - name: stub frontend dist
+        if: steps.changes.outputs.rust == 'true'
+        run: |
+          mkdir -p apps/desktop/dist
+          echo '<!doctype html>' > apps/desktop/dist/index.html
 
       - name: clippy
         if: steps.changes.outputs.rust == 'true'
         working-directory: apps/desktop/src-tauri
         run: cargo clippy --locked --all-targets -- -D warnings
-        continue-on-error: true
 
       - name: test
         if: steps.changes.outputs.rust == 'true'
