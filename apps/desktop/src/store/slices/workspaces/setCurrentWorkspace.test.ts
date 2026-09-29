@@ -11,6 +11,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import type { SessionWorktree } from '@goodboy/db';
+import { aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import type { AppStore } from '../../store';
 import type { GetFn, SetFn } from './types';
 
@@ -75,7 +76,7 @@ vi.mock('../project-mounts/verifyAvailableWorktrees', () => ({
 }));
 vi.mock('../transcripts/buffer', () => ({ clearPendingTurnEvents: vi.fn() }));
 
-import { listLiveRunIds } from '../../../features/chat/turn';
+import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
 import { reconcileLoadedSessions } from '../sessions/reconcileSessionRuns';
 import { setCurrentWorkspace } from './setCurrentWorkspace';
 
@@ -164,10 +165,14 @@ type Harness = {
   readonly get: GetFn;
 };
 
-const harness = (): Harness => {
+const harness = (initial: Partial<AppStore> = {}): Harness => {
   let state = {
     workspaces: [{ id: WORKSPACE_ID, lastAccessedAt: NOW }],
     sessions: [],
+    sessionPhaseRuns: {},
+    agentTurnState: {},
+    orchestratingWorkflowRuns: {},
+    stopWorkflowRunNow: vi.fn(async () => undefined),
     projects: [],
     currentWorkspaceId: null,
     currentSessionId: null,
@@ -175,6 +180,7 @@ const harness = (): Harness => {
     loadWorkspaceOverrides: vi.fn(),
     refreshUnreadWorkspaces: vi.fn(),
     setCurrentSession: vi.fn(async () => undefined),
+    ...initial,
   } as unknown as AppStore;
   const set: SetFn = (update) => {
     const patch = typeof update === 'function' ? update(state) : update;
@@ -253,5 +259,42 @@ describe('setCurrentWorkspace run recovery', () => {
       expect.objectContaining({ sessions: h.sessions, liveRunIds }),
     );
     expect(store.state.sessions.map((stored) => stored.state.kind)).toEqual(['idle']);
+  });
+});
+
+describe('setCurrentWorkspace stops all live work', () => {
+  it('cancels a blocked turn by its run id and stops a deciding workflow run', async () => {
+    const waiting = aSession({ workspaceId: WORKSPACE_ID });
+    const agent = anAgent({ sessionId: waiting.id });
+    const run = aWorkflowRun();
+    const deciding = aSession({ workspaceId: WORKSPACE_ID, workflowRuns: [run] });
+    const stopWorkflowRunNow = vi.fn(async () => undefined);
+    const store = harness({
+      sessions: [waiting, deciding],
+      sessionPhaseRuns: { [waiting.id]: [agent] },
+      agentTurnState: {
+        [agent.id]: { kind: 'blocked', runId: 'run-blocked' as ProviderRunId, blockedAt: NOW },
+      },
+      orchestratingWorkflowRuns: { [run.id]: true },
+      stopWorkflowRunNow,
+    });
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(cancelTurn).toHaveBeenCalledWith('run-blocked');
+    expect(stopWorkflowRunNow).toHaveBeenCalledWith(deciding.id, run.id);
+  });
+
+  it('stops nothing when nothing is live', async () => {
+    const stopWorkflowRunNow = vi.fn(async () => undefined);
+    const store = harness({
+      sessions: [aSession({ workspaceId: WORKSPACE_ID })],
+      stopWorkflowRunNow,
+    });
+
+    await setCurrentWorkspace(store.set, store.get)(WORKSPACE_ID);
+
+    expect(cancelTurn).not.toHaveBeenCalled();
+    expect(stopWorkflowRunNow).not.toHaveBeenCalled();
   });
 });

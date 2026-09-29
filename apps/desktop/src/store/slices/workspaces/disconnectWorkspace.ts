@@ -1,8 +1,8 @@
-import type { IsoDateTime, ProviderRunId, SessionId, WorkspaceId } from '@goodboy/types';
+import type { IsoDateTime, SessionId, WorkspaceId } from '@goodboy/types';
 import { disconnectWorkspaceAndProjects } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cancelTurn } from '../../../features/chat/turn';
 import { invokeTerminalClose } from '../../../features/terminal/terminal';
+import { stopLiveWork } from '../live-work/stopLiveWork';
 import { clearPendingTurnEvents } from '../transcripts/buffer';
 import type { GetFn, SetFn } from './types';
 
@@ -16,14 +16,7 @@ export const disconnectWorkspace = (set: SetFn, get: GetFn) => {
 
     const wasCurrentWorkspace = state.currentWorkspaceId === id;
     if (wasCurrentWorkspace) {
-      const runningSessions = state.sessions.filter((s) => s.state.kind === 'running');
-      await Promise.all(
-        runningSessions.map((s) =>
-          cancelTurn((s.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(
-            () => undefined,
-          ),
-        ),
-      );
+      await stopLiveWork({ get });
       const termSessions = state.sessions.filter(
         (s) => state.terminalSessions[s.id as SessionId] === 'open',
       );

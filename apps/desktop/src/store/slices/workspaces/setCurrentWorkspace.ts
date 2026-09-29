@@ -3,7 +3,6 @@ import type {
   IsoDateTime,
   MountId,
   ProjectId,
-  ProviderRunId,
   SessionExternalTask,
   Workflow,
   WorkspaceId,
@@ -23,7 +22,7 @@ import {
 } from '@goodboy/db';
 import type { SessionWorktree } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { cancelTurn, listLiveRunIds } from '../../../features/chat/turn';
+import { listLiveRunIds } from '../../../features/chat/turn';
 import { isMainWindow } from '../../../features/workspace/window';
 import { invokeBudgetAlertsList } from '../../../features/budget/budget';
 import { invokeSkillList } from '../../../features/skills/skills';
@@ -37,6 +36,7 @@ import {
   SETTING_LAST_SESSION_ID,
   SETTING_LAST_WORKSPACE_ID,
 } from '../../../features/settings/settings';
+import { stopLiveWork } from '../live-work/stopLiveWork';
 import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from '../budget';
 import {
   reattachableTurn,
@@ -58,12 +58,7 @@ type RepairedDestination = {
 
 export const setCurrentWorkspace = (set: SetFn, get: GetFn) => {
   return async (id: WorkspaceId | null) => {
-    const runningSessions = get().sessions.filter((s) => s.state.kind === 'running');
-    await Promise.all(
-      runningSessions.map((s) =>
-        cancelTurn((s.state as { kind: 'running'; runId: ProviderRunId }).runId).catch(() => {}),
-      ),
-    );
+    await stopLiveWork({ get });
 
     clearPendingTurnEvents();
     set({

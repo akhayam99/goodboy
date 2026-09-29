@@ -6,6 +6,7 @@ const liveWork = (partial: Partial<Parameters<typeof countLiveWork>[0]['liveWork
   runningAgentIds: [],
   blockedAgentIds: [],
   decidingRunIds: [],
+  decidingRuns: [],
   liveSessionIds: [],
   ...partial,
 });

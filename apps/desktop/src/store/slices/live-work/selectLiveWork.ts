@@ -13,10 +13,16 @@ export type SessionLiveWork = Readonly<{
   isDeciding: boolean;
 }>;
 
+export type DecidingRun = Readonly<{
+  sessionId: SessionId;
+  workflowRunId: WorkflowRunId;
+}>;
+
 export type LiveWork = Readonly<{
   runningAgentIds: ReadonlyArray<AgentId>;
   blockedAgentIds: ReadonlyArray<AgentId>;
   decidingRunIds: ReadonlyArray<WorkflowRunId>;
+  decidingRuns: ReadonlyArray<DecidingRun>;
   liveSessionIds: ReadonlyArray<SessionId>;
 }>;
 
@@ -65,14 +71,18 @@ export const selectLiveWork = ({ state }: LiveWorkParams): LiveWork => {
     }
   }
   const decidingRunIds: WorkflowRunId[] = [];
+  const decidingRuns: DecidingRun[] = [];
   const liveSessionIds: SessionId[] = [];
   for (const session of state.sessions) {
     const deciding = decidingRunIdsOf({ state, session });
     decidingRunIds.push(...deciding);
+    for (const workflowRunId of deciding) {
+      decidingRuns.push({ sessionId: session.id as SessionId, workflowRunId });
+    }
     const live = liveWorkOfSession({ state, session });
     if (live.isRunning || live.isBlocked || live.isDeciding) {
       liveSessionIds.push(session.id as SessionId);
     }
   }
-  return { runningAgentIds, blockedAgentIds, decidingRunIds, liveSessionIds };
+  return { runningAgentIds, blockedAgentIds, decidingRunIds, decidingRuns, liveSessionIds };
 };

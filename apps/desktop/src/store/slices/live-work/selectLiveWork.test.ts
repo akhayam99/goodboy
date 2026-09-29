@@ -48,6 +48,7 @@ describe('selectLiveWork', () => {
       runningAgentIds: [],
       blockedAgentIds: [],
       decidingRunIds: [],
+      decidingRuns: [],
       liveSessionIds: [],
     });
   });
@@ -89,6 +90,7 @@ describe('selectLiveWork', () => {
       state: stateOf({ sessions: [session], deciding: { [live.id]: true, [discarded.id]: true } }),
     });
     expect(result.decidingRunIds).toEqual([live.id]);
+    expect(result.decidingRuns).toEqual([{ sessionId: session.id, workflowRunId: live.id }]);
     expect(result.liveSessionIds).toEqual([session.id]);
   });
 
