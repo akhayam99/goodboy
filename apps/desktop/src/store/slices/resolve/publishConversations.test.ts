@@ -190,6 +190,41 @@ vi.mock('../../../features/worktree/worktree', () => {
         return raw === '' ? null : (raw.split(/\s+/)[0] ?? null);
       },
     ),
+    worktreeFetchOriginBranch: vi.fn(
+      async ({
+        worktreePath,
+        branch,
+      }: {
+        readonly worktreePath: string;
+        readonly branch: string;
+      }) => {
+        git(worktreePath, ['fetch', '--quiet', 'origin']);
+        return {
+          fetched: true,
+          error: null,
+          remoteHead: git(worktreePath, ['rev-parse', `origin/${branch}`]),
+        };
+      },
+    ),
+    worktreeFixOnOrigin: vi.fn(
+      async ({
+        worktreePath,
+        branch,
+        sha,
+      }: {
+        readonly worktreePath: string;
+        readonly branch: string;
+        readonly sha: string;
+      }) => {
+        try {
+          git(worktreePath, ['merge-base', '--is-ancestor', sha, `origin/${branch}`]);
+          return { onOrigin: true, landedAs: null };
+        } catch {
+          return { onOrigin: false, landedAs: null };
+        }
+      },
+    ),
+    worktreeOriginCommitsTouching: vi.fn(async () => []),
     worktreeWriterStatus: vi.fn(async ({ path }: { readonly path: string }) => ({
       ...freeLease({ path }),
       holder: h.leases.get(path) ?? null,
@@ -1635,5 +1670,92 @@ describe('publishConversations over a real git repository', () => {
 
     expect(preview.earlierCommits).toBeUndefined();
     expect(h.pushedShas).toEqual([null]);
+  });
+});
+
+describe('publishConversations with git state per thread', () => {
+  it('leaves a fix that is already on origin out of the push and still replies and resolves', async () => {
+    const fix = commit({
+      text: 'export const retry = () => 4;\n',
+      message: 'fix: handled by hand',
+    });
+    git(worktreePath, ['push', 'origin', 'feature/retry']);
+    const { actions, get } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+
+    expect(preview.blocker).toBeNull();
+    expect(preview.requiresPush).toBe(false);
+    expect(preview.commits).toEqual([]);
+    expect(preview.replies.map((reply) => reply.threadId)).toEqual(['PRRT_1']);
+    expect(get().sessionThreadGit[SESSION_ID]?.PRRT_1?.gitState).toBe('on_origin');
+
+    const pushSpy = vi.mocked((await import('../../../features/github/github')).gitPush);
+    pushSpy.mockClear();
+    const result = await actions.publishConversations({
+      sessionId: SESSION_ID,
+      publicationId: preview.publicationId ?? '',
+    });
+
+    expect(result).toMatchObject({ kind: 'done', pushed: false, replied: 1, resolved: 1 });
+    expect(pushSpy).not.toHaveBeenCalled();
+  });
+
+  it('pushes only the local fixes when another fix of the same run is already on origin', async () => {
+    const onOrigin = commit({ text: 'export const retry = () => 5;\n', message: 'fix: by hand' });
+    git(worktreePath, ['push', 'origin', 'feature/retry']);
+    const local = commit({ text: 'export const retry = () => 6;\n', message: 'fix: still local' });
+    const { actions } = makeStore();
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [onOrigin], reply: 'Fixed' });
+    await seedFixRow({ actions, threadId: 'PRRT_2', shas: [local], reply: 'Fixed too' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+
+    expect(preview.requiresPush).toBe(true);
+    expect(preview.commits.map((entry) => entry.sha)).toEqual([local]);
+    expect(preview.replies.map((reply) => reply.threadId).sort()).toEqual(['PRRT_1', 'PRRT_2']);
+  });
+
+  it('posts no reply under a reply the user already wrote by hand, and only resolves', async () => {
+    const fix = commit({ text: 'export const retry = () => 7;\n', message: 'fix: cap it' });
+    const { actions, store } = makeStore();
+    store.setState({
+      githubStatus: { user: 'Mquint' },
+      githubWorkspaceStatus: {},
+      sessionGithub: {
+        [SESSION_ID]: {
+          pr: { number: 248, url: PR_URL, headBranch: 'feature/retry' },
+          detail: {
+            comments: [
+              {
+                id: 'c1',
+                threadId: 'PRRT_1',
+                author: 'iokafor',
+                body: 'Please cap this',
+                createdAt: new Date(Date.now() - 3_600_000).toISOString(),
+                source: 'review',
+              },
+              {
+                id: 'c2',
+                threadId: 'PRRT_1',
+                author: 'mquint',
+                body: 'Done, thanks for the catch',
+                createdAt: new Date(Date.now() + 60_000).toISOString(),
+                source: 'review',
+              },
+            ],
+          },
+        },
+      },
+    } as never);
+    await seedFixRow({ actions, threadId: 'PRRT_1', shas: [fix], reply: 'Fixed' });
+
+    const preview = await actions.preparePublication({ sessionId: SESSION_ID });
+
+    expect(preview.replies).toEqual([]);
+    expect(preview.notes.map((note) => note.threadId)).toEqual(['PRRT_1']);
+    expect(preview.notes[0]?.closes).toBe(true);
+    expect(store.getState().sessionThreadGit[SESSION_ID]?.PRRT_1?.userReply?.commentId).toBe('c2');
   });
 });

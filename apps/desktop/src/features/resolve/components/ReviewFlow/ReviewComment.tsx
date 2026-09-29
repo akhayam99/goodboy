@@ -32,13 +32,16 @@ import {
   replyHeading,
   sharedFixLine,
 } from '../../reviewFlowCopy';
+import { REMOTE_LABEL } from '../../reviewRemote';
 import { selectResolveCandidate } from '../../selectResolveCandidate';
+import { handledByLine } from '../../../../store/slices/resolve/threadGitState';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { AgentLine } from './AgentLine';
 import { FailedRun } from './FailedRun';
 import { PreviousAttempts } from './PreviousAttempts';
 import { ProposedChange } from './ProposedChange';
+import { ThreadGitEvidence } from './ThreadGitEvidence';
 import type { ReviewEntry } from './useReviewEntries';
 
 type Props = ReviewCommentBinding & {
@@ -129,16 +132,25 @@ export const ReviewComment = ({
       }),
     [candidates, entries, row.item.id],
   );
-  const { reply, setReply } = useResolveItemDraft({ sessionId, threadId, proposal: row.proposal });
+  const { reply: draftReply, setReply } = useResolveItemDraft({
+    sessionId,
+    threadId,
+    proposal: row.proposal,
+  });
+  const remote = entry.remote;
+  const elsewhere = entry.facts?.elsewhere ?? null;
+  const reply =
+    remote === 'looks_fixed' && elsewhere !== null ? handledByLine({ fix: elsewhere }) : draftReply;
   const [replyText, setReplyText] = useState(reply);
   const note = row.reviewerNote;
   const author = note?.author ?? null;
   const verbs = verbsOf(actions);
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
-  const hasChange = candidate !== null;
+  const hasChange = candidate !== null && remote !== 'looks_fixed';
   const replyShown =
-    reply.trim() !== '' ||
-    (state !== 'new' && state !== 'drafting' && state !== 'needs' && state !== 'failed');
+    remote !== 'you_replied' &&
+    (reply.trim() !== '' ||
+      (state !== 'new' && state !== 'drafting' && state !== 'needs' && state !== 'failed'));
   const blocker = sharedCandidateBlocker({ members });
   const previous = useMemo(
     () => previousAttemptsOf({ attempts, threadId, activeAttemptId: row.thread.activeAttemptId }),
@@ -208,7 +220,9 @@ export const ReviewComment = ({
 
       {!isBrief && <PreviousAttempts attempts={previous} />}
 
-      {!isBrief && row.attempt !== null && (
+      {remote !== null && <ThreadGitEvidence sessionId={sessionId} entry={entry} />}
+
+      {!isBrief && row.attempt !== null && remote !== 'looks_fixed' && (
         <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
       )}
 
@@ -232,24 +246,27 @@ export const ReviewComment = ({
         />
       )}
 
-      {!isBrief && members.length > 0 && (state === 'ready' || state === 'edited') && (
-        <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
-          <p>{sharedFixLine({ count: members.length })}</p>
-          <ul className="flex min-w-0 flex-col">
-            {members.map((member) => (
-              <li key={member.threadId} className="min-w-0 list-none">
-                <button
-                  type="button"
-                  onClick={() => onSelect(member.threadId)}
-                  className="block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                >
-                  {member.title ?? RESOLVE_COMMENT_UNAVAILABLE}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {!isBrief &&
+        members.length > 0 &&
+        remote === null &&
+        (state === 'ready' || state === 'edited') && (
+          <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
+            <p>{sharedFixLine({ count: members.length })}</p>
+            <ul className="flex min-w-0 flex-col">
+              {members.map((member) => (
+                <li key={member.threadId} className="min-w-0 list-none">
+                  <button
+                    type="button"
+                    onClick={() => onSelect(member.threadId)}
+                    className="block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  >
+                    {member.title ?? RESOLVE_COMMENT_UNAVAILABLE}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       {blocker !== null && (
         <p className="text-secondary text-warning">
           {blocker === 'deferred' ? PARTIAL_ACCEPTANCE : PARTIAL_REFUSAL}
@@ -315,7 +332,7 @@ export const ReviewComment = ({
         </div>
       )}
 
-      {DECIDED_NOTE_STATES.has(state) && (
+      {DECIDED_NOTE_STATES.has(state) && remote === null && (
         <p className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-muted-foreground">
           <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
           {decidedNote({
@@ -442,6 +459,11 @@ export const ReviewComment = ({
                 </Tooltip>
               );
             })}
+            {remote === 'on_origin' && (
+              <span className="text-secondary text-faint-foreground">
+                {REMOTE_LABEL.nothingToPush}
+              </span>
+            )}
           </div>
         )
       )}

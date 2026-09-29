@@ -8,6 +8,8 @@ import type {
   ResolveQueueItem,
   ResolveQueueItemWithThread,
   ResolveThread,
+  ResolveThreadFacts,
+  ResolveThreadGitState,
   SessionId,
 } from '@goodboy/types';
 
@@ -65,6 +67,7 @@ export const createResolveQueryMocks = () => {
   const queueItems = new Map<string, ResolveQueueItem>();
   const batches = new Map<string, ResolveBatch>();
   const limits = new Map<SessionId, number>();
+  const gitStates = new Map<string, ResolveThreadGitState | null>();
   return {
     resetResolveQueryMocks: () => {
       threads.clear();
@@ -74,6 +77,7 @@ export const createResolveQueryMocks = () => {
       queueItems.clear();
       batches.clear();
       limits.clear();
+      gitStates.clear();
     },
     insertResolveBatch: vi.fn(async ({ batch }: BatchParams) => {
       batches.set(batch.id, batch);
@@ -94,6 +98,30 @@ export const createResolveQueryMocks = () => {
         attempts.set(id, { ...attempt, copyPath });
       }
     }),
+    listResolveThreadFacts: vi.fn(
+      async ({ sessionId }: SessionParams): Promise<ReadonlyArray<ResolveThreadFacts>> =>
+        [...threads.values()]
+          .filter((row) => row.sessionId === sessionId)
+          .map((row) => ({
+            threadId: row.threadId,
+            gitState: gitStates.get(row.threadId) ?? null,
+            verdict: null,
+            sourceSnapshot: null,
+            sourceKind: 'github' as const,
+            providerThreadId: null,
+          })),
+    ),
+    setResolveThreadGitState: vi.fn(
+      async ({
+        threadId,
+        gitState,
+      }: SessionParams & {
+        readonly threadId: string;
+        readonly gitState: ResolveThreadGitState | null;
+      }) => {
+        gitStates.set(threadId, gitState);
+      },
+    ),
     listResolveThreads: vi.fn(async ({ sessionId }: SessionParams) =>
       [...threads.values()].filter((row) => row.sessionId === sessionId),
     ),

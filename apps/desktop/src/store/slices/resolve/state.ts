@@ -11,6 +11,7 @@ import type {
   ResolveUncapturedWork,
   SessionId,
 } from '@goodboy/types';
+import type { ThreadGitFacts } from './threadGitState';
 
 export type ResolveCandidateWithItems = Readonly<{
   candidate: ResolveCandidate;
@@ -34,6 +35,10 @@ export type ResolveState = {
   >;
   readonly sessionResolveUncapturedWork: Readonly<Record<SessionId, ResolveUncapturedWork | null>>;
   readonly activePublicationPreview: Readonly<Record<SessionId, ResolvePublicationPreview | null>>;
+  readonly sessionThreadGit: Readonly<Record<SessionId, Readonly<Record<string, ThreadGitFacts>>>>;
+  readonly threadFixDismissals: Readonly<
+    Record<SessionId, Readonly<Record<string, ReadonlyArray<string>>>>
+  >;
 };
 
 export const resolveInitialState: ResolveState = {
@@ -47,4 +52,6 @@ export const resolveInitialState: ResolveState = {
   sessionResolvePublications: {},
   sessionResolveUncapturedWork: {},
   activePublicationPreview: {},
+  sessionThreadGit: {},
+  threadFixDismissals: {},
 };

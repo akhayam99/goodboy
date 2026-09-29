@@ -31,10 +31,12 @@ import { UNKNOWN_PUBLICATION_REPO, isPublicationTargetBusy } from './publication
 import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import { approvedPublicationScope } from './approvedPublicationScope';
+import { readCommitStory } from './commitStory';
 import { isLocalNoteThread } from './isLocalNoteThread';
 import { isolatedPushOf } from './isolatedPushOf';
 import { reconcileIntegratedCommits } from './reconcileIntegratedCommits';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
+import { refreshThreadGitState } from './refreshThreadGitState';
 import { selectPublishableThreads } from './selectPublishableThreads';
 import { sourceFingerprint } from './sourceFingerprint';
 import { threadOutcome } from './threadOutcome';
@@ -212,6 +214,8 @@ export const preparePublication = async ({
   const mount = selectActiveMount({ state: get(), sessionId });
   const repo = mount === null ? null : getSessionRepo({ get, sessionId, mountId: mount.mountId });
   await reconcileIntegratedCommits({ sessionId }).catch(() => undefined);
+  await refreshThreadGitState({ set, get, sessionId }).catch(() => undefined);
+  const threadGit = get().sessionThreadGit?.[sessionId] ?? {};
   const rows = await listResolveThreads({ db: tauriDatabase, sessionId });
   const scope = await approvedPublicationScope({ sessionId });
   const selection = selectPublishableThreads({
@@ -242,16 +246,22 @@ export const preparePublication = async ({
       const isRefused = scope.refusedThreadIds.has(row.threadId);
       const closure = isRefused ? { reply: row.replyDraft ?? '' } : closureOf({ row });
       const isNote = isLocalNoteThread({ row });
+      const hasHandReply = threadGit[row.threadId]?.userReply != null;
+      const story = await readCommitStory({ sessionId, threadId: row.threadId }).catch(() => null);
+      const commitStory =
+        story?.originalSha == null
+          ? null
+          : { originalSha: story.originalSha, isFolded: story.isFolded };
       return {
         row,
         body:
-          closure === null || isNote
+          closure === null || isNote || hasHandReply
             ? null
             : buildResolutionReplyBody({
                 closure,
                 prUrl: target.prUrl,
                 settings,
-                context: contextOf({ row }),
+                context: { ...contextOf({ row }), commitStory },
               }),
         closes: !isRefused && threadOutcome({ row }) !== null,
         fingerprint: isNote ? null : await sourceFingerprint({ comments, threadId: row.threadId }),
@@ -259,7 +269,9 @@ export const preparePublication = async ({
     }),
   );
   const shippable = publishable.filter((row) => !scope.refusedThreadIds.has(row.threadId));
-  const shas = fixShas({ rows: shippable });
+  const shas = fixShas({
+    rows: shippable.filter((row) => threadGit[row.threadId]?.gitState !== 'on_origin'),
+  });
   const requiresPush = shas.length > 0;
   const git =
     requiresPush && repo !== null

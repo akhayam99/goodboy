@@ -25,6 +25,8 @@ export const SESSION_EVICTION = [
   { key: 'resolveItemDrafts', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionResolveUncapturedWork', keyedBy: 'session', evictOn: 'archive' },
   { key: 'activePublicationPreview', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'sessionThreadGit', keyedBy: 'session', evictOn: 'archive' },
+  { key: 'threadFixDismissals', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionWorktrees', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionWorktreeRecords', keyedBy: 'session', evictOn: 'archive' },
   { key: 'sessionProjectMounts', keyedBy: 'session', evictOn: 'archive' },

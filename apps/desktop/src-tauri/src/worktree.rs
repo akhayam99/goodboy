@@ -389,7 +389,7 @@ fn worktree_integrate_candidate_blocking(
     Ok(IntegratedCandidate { sha: integrated })
 }
 
-fn landed_equivalent(
+pub(crate) fn landed_equivalent(
     cwd: &Path,
     expected: &str,
     candidate: &str,

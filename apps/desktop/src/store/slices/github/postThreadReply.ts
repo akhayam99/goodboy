@@ -2,7 +2,9 @@ import { addReviewThreadReply } from '@goodboy/core';
 import { upsertResolvePublicationThread } from '@goodboy/db';
 import type { ResolvePublicationThread, SessionId } from '@goodboy/types';
 import { tauriGhRunner } from '../../../features/github/github';
+import { threadFixSha } from '../../../features/resolve/threadFixSha';
 import { tauriDatabase } from '../../../shared/lib/db';
+import { recordPostedReply } from '../resolve/commitStory';
 import { sessionThreadGhOptions } from './sessionThreadGhOptions';
 import type { GetFn } from './types';
 
@@ -61,6 +63,13 @@ export const postThreadReply = async ({
     prNumber: pr?.number,
     patch: { replyPostedAt: postedAt, replyId: posted.id },
   });
+  const fixSha =
+    receipt?.disposition === 'fix' ? threadFixSha({ commitShas: receipt.commitShas }) : null;
+  if (fixSha !== null) {
+    await recordPostedReply({ sessionId, threadId, sha: fixSha, body: replyBody }).catch(
+      () => undefined,
+    );
+  }
   await upsertResolvePublicationThread({
     db: tauriDatabase,
     thread: {

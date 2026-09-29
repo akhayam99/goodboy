@@ -118,6 +118,14 @@ const T8 = 'PRRT_thread_typo';
 const T9 = 'PRRT_thread_retry_constant';
 
 export const EXPANDED_THREAD_ID = T1;
+export const THREAD_IDS = {
+  metrics: T2,
+  logRedact: T5,
+  timeoutConfig: T6,
+  typo: T8,
+  retryConstant: T9,
+} as const;
+export const RESOLVE_SCENE_PR = PR;
 
 const ITEM1_ID = 'mock-resolve-item-retry-backoff';
 const ITEM2_ID = 'mock-resolve-item-retry-metrics';
@@ -758,6 +766,20 @@ const FAKE_RETRY_DIFF = [
   ' };',
 ].join('\n');
 
+const FAKE_COMMIT_DIFF = [
+  'diff --git a/src/webhooks/metrics.ts b/src/webhooks/metrics.ts',
+  '--- a/src/webhooks/metrics.ts',
+  '+++ b/src/webhooks/metrics.ts',
+  '@@ -16,5 +16,7 @@ export const metrics = {',
+  '   record: (name: string, value: number) => emit(name, value),',
+  '-  gaveUp: () => undefined,',
+  '+  gaveUp: (reason: string) => {',
+  "+    emit('retry_backoff_exhausted', 1);",
+  "+    emit('retry_backoff_reason', reason);",
+  '+  },',
+  ' };',
+].join('\n');
+
 const payloadSql = ({ payload }: { readonly payload: InvokeArgs | undefined }): string => {
   if (payload === undefined || Array.isArray(payload)) {
     return '';
@@ -769,13 +791,22 @@ const payloadSql = ({ payload }: { readonly payload: InvokeArgs | undefined }): 
   return typeof sql === 'string' ? sql : '';
 };
 
-const installResolveMockIpc = (): void => {
+const installResolveMockIpc = ({
+  deliveredReplyBody,
+}: {
+  readonly deliveredReplyBody: string | null;
+}): void => {
   mockIPC((cmd, payload) => {
     if (cmd === 'worktree_diff_range') {
       return FAKE_RETRY_DIFF;
     }
+    if (cmd === 'worktree_diff_commit') {
+      return FAKE_COMMIT_DIFF;
+    }
     if (cmd === 'db_select' && payloadSql({ payload }).includes('resolve_publication_threads')) {
-      return PUBLICATION_THREAD_ROWS;
+      return deliveredReplyBody === null
+        ? PUBLICATION_THREAD_ROWS
+        : PUBLICATION_THREAD_ROWS.map((row) => ({ ...row, replyBody: deliveredReplyBody }));
     }
     return null;
   });
@@ -799,6 +830,7 @@ type SeedParams = {
   readonly expandedThreadId: string | null;
   readonly failure?: ResolveFailure;
   readonly selectable?: boolean;
+  readonly deliveredReplyBody?: string | null;
 };
 
 const CONNECTED_PROVIDERS: ReadonlyArray<ProviderDisplayInfo> = (
@@ -936,8 +968,9 @@ export const seedResolveScene = ({
   expandedThreadId,
   failure,
   selectable = false,
+  deliveredReplyBody = null,
 }: SeedParams): void => {
-  installResolveMockIpc();
+  installResolveMockIpc({ deliveredReplyBody });
   const failed = failure === undefined ? null : failureSeed({ failure });
 
   const candidatesWithItems: ReadonlyArray<ResolveCandidateWithItems> = [

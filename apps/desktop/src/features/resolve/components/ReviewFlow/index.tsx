@@ -43,6 +43,7 @@ import {
   matchesReviewStateFilter,
   type ReviewStateFilter,
 } from '../../reviewCommentState';
+import { replyOnlyLine } from '../../reviewRemote';
 import { ReviewEmptyState } from './ReviewEmptyState';
 import { ReviewComment } from './ReviewComment';
 import { ReviewHeaderActions } from './ReviewHeaderActions';
@@ -62,12 +63,12 @@ type Props = {
 };
 
 const COMMENT_KEYS: ReadonlyArray<readonly [ShortcutId, ReadonlyArray<string>]> = [
-  ['review.accept', ['reviewComment.accept']],
+  ['review.accept', ['reviewComment.accept', 'reviewComment.resolveOnly']],
   ['review.edit', ['reviewComment.answer', 'reviewComment.edit']],
-  ['review.reply', ['reviewComment.reply']],
+  ['review.reply', ['reviewComment.reply', 'reviewComment.replyAndResolve']],
   ['review.skip', ['reviewComment.skip']],
   ['review.undo', ['reviewComment.undo']],
-  ['review.fix', ['reviewComment.draft']],
+  ['review.fix', ['reviewComment.draft', 'reviewComment.fixAnyway']],
 ];
 
 type ReviewLaunch = {
@@ -129,6 +130,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   );
   const openDrawer = useAppStore((s) => s.openDrawer);
   const loadResolveSession = useAppStore((s) => s.loadResolveSession);
+  const refreshThreadGitState = useAppStore((s) => s.refreshThreadGitState);
   const refreshSessionPrDetail = useAppStore((s) => s.refreshSessionPrDetail);
   const reviewTarget = useAppStore((s) => s.reviewTargets[sessionId] ?? null);
   const consumeReviewTarget = useAppStore((s) => s.consumeReviewTarget);
@@ -157,6 +159,22 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
   useEffect(() => {
     void loadResolveSession({ sessionId });
   }, [loadResolveSession, sessionId]);
+
+  const hasComments = hasPr && github.detail !== null;
+  const gitKey = entries
+    .map((entry) => `${entry.threadId}:${entry.row.thread.commitShas?.join(',') ?? ''}`)
+    .join('|');
+
+  useEffect(() => {
+    if (!hasComments) {
+      return;
+    }
+    void refreshThreadGitState({ sessionId }).catch(() => undefined);
+  }, [gitKey, hasComments, refreshThreadGitState, sessionId]);
+
+  const replyOnlyCount = entries.filter(
+    (entry) => entry.remote === 'on_origin' && entry.group === 'open',
+  ).length;
 
   const focused =
     entries.find((entry) => entry.threadId === selectedThreadId) ??
@@ -503,6 +521,7 @@ export const ReviewFlow = ({ session, noPullRequestLine = null }: Props) => {
           sessionId={sessionId}
           modelPickerRequest={modelPickerRequest}
           busyActionId={isPushBusy ? 'review.push' : null}
+          replyOnlyLine={replyOnlyCount === 0 ? null : replyOnlyLine({ count: replyOnlyCount })}
         />
       }
       subheader={

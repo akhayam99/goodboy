@@ -5,6 +5,11 @@ import {
 } from '../../../features/resolve/replySettings';
 import { appendAttribution } from '../../../shared/utils/attribution';
 
+export type ReplyCommitStory = {
+  readonly originalSha: string;
+  readonly isFolded: boolean;
+};
+
 type Closure = { commitSha?: string; reason?: string; reply?: string };
 
 export type ReplyContext = {
@@ -12,6 +17,7 @@ export type ReplyContext = {
   readonly file?: string | null;
   readonly line?: number | null;
   readonly fixupOfSha?: string | null;
+  readonly commitStory?: ReplyCommitStory | null;
 };
 
 const commitUrlOf = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
@@ -19,10 +25,32 @@ const commitUrlOf = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: str
   return url !== null && url !== prUrl ? url : null;
 };
 
-const commitLink = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
+export const commitLink = ({
+  sha,
+  prUrl,
+}: {
+  readonly sha: string;
+  readonly prUrl: string | null;
+}) => {
   const short = `\`${sha.slice(0, 7)}\``;
   const url = commitUrlOf({ sha, prUrl });
   return url === null ? short : `[${short}](${url})`;
+};
+
+const commitStoryOf = ({
+  sha,
+  story,
+  prUrl,
+}: {
+  readonly sha: string;
+  readonly story: ReplyCommitStory | null | undefined;
+  readonly prUrl: string | null;
+}): string => {
+  const final = commitLink({ sha, prUrl });
+  if (!story?.isFolded || story.originalSha === sha) {
+    return final;
+  }
+  return `${commitLink({ sha: story.originalSha, prUrl })}, squashed into ${final}`;
 };
 
 type Params = {
@@ -54,7 +82,12 @@ export const buildResolutionReplyBody = ({
     if (sha.length > 0) {
       return renderReplyTemplate({
         template: settings.templateFixed,
-        vars: { ...vars, reason: reply, commit: commitLink({ sha, prUrl }) },
+        vars: {
+          ...vars,
+          reason: reply,
+          commit: commitLink({ sha, prUrl }),
+          commit_story: commitStoryOf({ sha, story: context.commitStory, prUrl }),
+        },
       });
     }
     if (reason.length > 0) {

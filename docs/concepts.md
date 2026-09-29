@@ -679,6 +679,24 @@ The state word carries the tone: Needs you is the only warning, Ready is neutral
 and the header shows one summary line instead of a chip per state. The `…`
 above the list filters the list by state.
 
+Review reads git after a fetch when it opens and again before every push, and
+keeps one git state per thread in `resolve_threads.git_state` (`local`,
+`on_origin`, `fixed_elsewhere`, `folded`, `missing`). A comment whose fix sha is
+already on `origin/<branch>` reads **Already on origin**: it offers
+`Reply and resolve`, the header Push does not count it (the header says how many
+more need only a reply) and `preparePublication` pushes only the local threads.
+A comment with no fix of ours whose commented line was changed by a commit on
+origin that Goodboy did not make, or whose fix `git cherry` finds under another
+sha, reads **Looks fixed**: it shows the commit and its author, `Reply and
+resolve` posts "Handled in <sha> by @<author>", `Fix anyway` puts the comment
+back in the normal flow. It is always a suggestion, never an automatic resolve.
+A reply the user wrote by hand after the draft, whatever its text, reads **You
+replied**: `Resolve only` posts nothing (`reconcileReplyOperation` recognises it
+too). **Fix went missing** is only detected here and shown as a fact line. The
+git facts live in `sessionThreadGit`, the per-thread computation in
+`store/slices/resolve/threadGitState.ts`, the git side in
+`src-tauri/src/thread_git.rs`.
+
 Each comment has four verbs, with single keys while the list has focus:
 `Accept` (A), `Edit` (E, `Answer` when the agent asked, `Redraft` when the
 draft is outdated, `Add a hint` when the run failed), `Reply` (R, a reply
@@ -781,12 +799,25 @@ How a reply reads is set in Settings, Workspace, **Review replies**:
   voice goes into the agent's prompt
 - **Templates**: When fixed and When not changing. Goodboy fills them in code,
   the agent writes only `{reason}`. The other variables are `{commit}`,
-  `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`. The defaults are the
-  reason, then `Fixed in {commit}.` or `Leaving this as is.`
+  `{commit_story}`, `{fixup_of}`, `{reviewer}`, `{file}` and `{line}`.
+  `{commit_story}` is the same sha as `{commit}`, plus `c81e5aa, squashed into
+e31b9f4` when a history rewrite folded the fix. Reply and page always read
+  the last commit of the thread after rewrites. The defaults are the
+  reason, then `Fixed in {commit_story}.` or `Leaving this as is.`
 - **Sign replies** is the attribution line switch, so one value signs
   everything Goodboy posts
 - **Resolve the thread after replying** (on by default) and **Commits** (new
   commit, or fixup of the commit that added the line)
+- **Edit the posted reply** (on by default, stored per workspace in the
+  `settings` table under `review.edit_posted_reply.<workspaceId>`, `0` = off).
+  After a history rewrite is pushed and a reply Goodboy posted names a sha that
+  moved, Goodboy edits that reply in place with `updateReviewComment`: it adds
+  `Update: c81e5aa was squashed into e31b9f4.` (or `is now`) above the
+  signature, once per sha change, and rewrites the delivery receipt body so the
+  Review page shows the same text as GitHub. Replies from people are never edited. The
+  per-thread history (first sha, folded or not, posted sha and body, update
+  lines) lives in the `settings` table under
+  `resolve.commit_story.<sessionId>.<threadId>`, so it needs no migration
 
 Goodboy saves a receipt for every step, and the outcome it reports is read from
 those receipts: a thread shows as resolved only after GitHub confirmed it. If a

@@ -13,6 +13,7 @@ import type {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { preparePublication } from './preparePublication';
 import { reconcileReplyOperation } from './reconcileReplyOperation';
+import { viewerLoginsOf } from './viewerLogins';
 import type { SessionParams, SliceParams } from './types';
 
 type Params = SliceParams & SessionParams;
@@ -83,6 +84,7 @@ export const retryPublication = async ({
       comments,
       observedAt,
       isObservationTrusted,
+      viewerLogins: viewerLoginsOf({ state: get() }),
     });
     if (verdict === 'ambiguous') {
       await upsertResolvePublicationThread({

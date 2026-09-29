@@ -2,9 +2,10 @@ import { Check } from 'lucide-react';
 import { Tooltip, WorkNode, cn, inlineMarkdownText } from '@goodboy/ui';
 import { REVIEW_LAUNCH_LABEL } from '../../reviewLaunchCopy';
 import { REVIEW_COMMENT_NODE } from '../../reviewCommentState';
+import { REMOTE_NODE } from '../../reviewRemote';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import { firstSentence } from './firstSentence';
-import { STATE_WORD_TONE } from './stateTone';
+import { REMOTE_WORD_TONE, STATE_WORD_TONE } from './stateTone';
 import type { ReviewEntry } from './useReviewEntries';
 
 export type RowSelection = {
@@ -54,7 +55,9 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
           )}
         >
           <WorkNode
-            state={REVIEW_COMMENT_NODE[entry.state]}
+            state={
+              entry.remote === null ? REVIEW_COMMENT_NODE[entry.state] : REMOTE_NODE[entry.remote]
+            }
             label={entry.word}
             mark={{ kind: 'dot' }}
           />
@@ -71,7 +74,9 @@ export const ReviewListRow = ({ entry, isSelected, onSelect, onFix, selection }:
             <span
               className={cn(
                 'ml-auto shrink-0 motion-safe:transition-opacity',
-                STATE_WORD_TONE[entry.state],
+                entry.remote === null
+                  ? STATE_WORD_TONE[entry.state]
+                  : REMOTE_WORD_TONE[entry.remote],
                 onFix !== null &&
                   'group-focus-within/review-row:opacity-0 group-hover/review-row:opacity-0',
               )}

@@ -13,20 +13,16 @@ export const useResolveDeliveryReceipts = ({
   publications,
 }: Params): ReadonlyArray<ResolvePublicationThread> => {
   const [receipts, setReceipts] = useState<ReadonlyArray<ResolvePublicationThread>>(EMPTY_RECEIPTS);
-  const publicationIds = publications.map((publication) => publication.id).join(',');
-
   useEffect(() => {
-    if (publicationIds === '') {
+    if (publications.length === 0) {
       setReceipts(EMPTY_RECEIPTS);
       return;
     }
     let cancelled = false;
     Promise.all(
-      publicationIds
-        .split(',')
-        .map((publicationId) =>
-          listResolvePublicationThreads({ db: tauriDatabase, publicationId }).catch(() => []),
-        ),
+      publications.map(({ id: publicationId }) =>
+        listResolvePublicationThreads({ db: tauriDatabase, publicationId }).catch(() => []),
+      ),
     )
       .then((groups) => {
         if (!cancelled) {
@@ -37,7 +33,7 @@ export const useResolveDeliveryReceipts = ({
     return () => {
       cancelled = true;
     };
-  }, [publicationIds]);
+  }, [publications]);
 
   return receipts;
 };

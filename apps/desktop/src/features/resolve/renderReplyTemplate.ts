@@ -1,6 +1,7 @@
 export const REPLY_TEMPLATE_VARIABLES = [
   'reason',
   'commit',
+  'commit_story',
   'fixup_of',
   'reviewer',
   'file',

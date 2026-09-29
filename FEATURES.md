@@ -432,6 +432,10 @@ Know why a draft failed and what to do next. The comment says why in plain words
 
 Click a resolve in Activity and its Brief holds the comment, the fix and the reply, with **Accept**, **Edit**, **Reply** and **Skip**. The header chip reads the comment state, such as **Ready** or **Accepted**, not **Done**. After you accept, **Push now** pushes exactly that fix, after a confirm right under the header. If earlier local commits would go with it, the confirm lists them first. A resolve that fixed several comments together shows **Open in Review (N)** instead, and Review opens on the first of them.
 
+### Fixes already on the branch
+
+Review looks at origin before it pushes. A comment whose fix you already pushed reads **Already on origin**, and one that someone else's commit seems to have fixed reads **Looks fixed** with the commit and its author. Both offer **Reply and resolve** and never push. If you already answered a thread yourself it reads **You replied** and offers **Resolve only**.
+
 ### Close on GitHub
 
 <picture>
@@ -443,7 +447,7 @@ Finish a review in one action. **Push 1** in the Review header opens a confirm r
 
 ### Review replies in your voice
 
-Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit.
+Get replies that sound like you, **Terse**, **Friendly**, **Formal** or **Like my replies**. **Like my replies** reads your last 20 review replies and writes a style note you can edit. When you squash or fold a fix, the reply names both commits, and a reply already posted gets an Update line, which you can turn off in Settings.
 
 ### Fixes on a branch that moved
 

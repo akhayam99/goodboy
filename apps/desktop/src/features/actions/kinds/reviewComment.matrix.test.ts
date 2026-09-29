@@ -16,6 +16,9 @@ const BASE: ReviewCommentFacts = {
   url: 'https://github.com/harborline/payments-api/pull/318#discussion_r1',
   reply: '',
   approval: 'none',
+  remote: null,
+  elsewhereSha: null,
+  prUrl: 'https://github.com/harborline/payments-api/pull/318',
 };
 
 const OPEN = ['reviewComment.openInDiff menu Open in diff'];
@@ -136,6 +139,50 @@ const MATRIX: ReadonlyArray<Row> = [
     name: 'resolved on GitHub',
     facts: { state: 'resolved', agentId: null },
     expected: [...OPEN, ...GITHUB, ...COPY],
+  },
+  {
+    name: 'accepted, fix already on origin',
+    facts: { state: 'accepted', approval: 'accepted', remote: 'on_origin' },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.replyAndResolve primary Reply and resolve',
+      'reviewComment.undo secondary Undo',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'draft ready, someone else already fixed it',
+    facts: { state: 'ready', remote: 'looks_fixed', elsewhereSha: '5d21a0e' },
+    expected: [
+      ...OPEN,
+      ...TRANSCRIPT,
+      ...GITHUB,
+      'reviewComment.openCommit secondary Open commit',
+      'reviewComment.replyAndResolve primary Reply and resolve',
+      'reviewComment.fixAnyway secondary Fix anyway',
+      'reviewComment.skip secondary Skip',
+      'reviewComment.resolveNoReply menu Resolve without a reply',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'not started, the user already replied by hand',
+    facts: { state: 'new', agentId: null, remote: 'you_replied' },
+    expected: [
+      ...OPEN,
+      ...GITHUB,
+      'reviewComment.resolveOnly primary Resolve only',
+      'reviewComment.skip secondary Skip',
+      'reviewComment.resolveNoReply menu Resolve without a reply',
+      ...COPY,
+    ],
+  },
+  {
+    name: 'accepted, the fix went missing',
+    facts: { state: 'accepted', approval: 'accepted', remote: 'missing' },
+    expected: [...OPEN, ...TRANSCRIPT, ...GITHUB, 'reviewComment.undo secondary Undo', ...COPY],
   },
   {
     name: 'a local note, not started',

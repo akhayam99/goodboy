@@ -18,6 +18,8 @@ import { openUrl } from '../../../shared/lib/editor';
 import { resolverPagePlace, sessionPlace } from '../../../store/slices/navigation/place';
 import { replyOf, reviewRowsOf, rowStateOf } from '../../resolve/reviewRows';
 import type { ReviewCommentState } from '../../resolve/reviewCommentState';
+import { REMOTE_LABEL, commitUrlOf, remoteOf } from '../../resolve/reviewRemote';
+import type { ThreadRemoteKind } from '../../../store/slices/resolve/threadGitState';
 import { requestReview } from '../../review/reviewRequest';
 import type { ActionEnv, ObjectKindDefinition, ReviewCommentActionTarget } from '../types';
 
@@ -34,6 +36,9 @@ export type ReviewCommentFacts = {
   readonly url: string | null;
   readonly reply: string;
   readonly approval: 'none' | 'accepted' | 'wont_fix' | 'deferred';
+  readonly remote: ThreadRemoteKind | null;
+  readonly elsewhereSha: string | null;
+  readonly prUrl: string | null;
 };
 
 export const OUTDATED_REASON = 'The comment changed since this draft. Redraft first.';
@@ -48,6 +53,9 @@ const UNDECIDED: ReadonlySet<ReviewCommentState> = new Set([
 ]);
 const DRAFTED: ReadonlySet<ReviewCommentState> = new Set(['ready', 'edited', 'outdated']);
 const DECIDED: ReadonlySet<ReviewCommentState> = new Set(['accepted', 'replied', 'skipped']);
+
+const hasOverlay = ({ facts }: { readonly facts: ReviewCommentFacts }): boolean =>
+  facts.remote !== null && facts.remote !== 'missing';
 
 const isRedraft = ({ state }: { readonly state: ReviewCommentState }): boolean =>
   state === 'outdated' || state === 'failed';
@@ -104,12 +112,14 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       return null;
     }
     const draft = state.resolveItemDrafts[target.sessionId]?.[target.threadId];
+    const rowState = rowStateOf({ state, sessionId: target.sessionId, row });
+    const gitFacts = state.sessionThreadGit?.[target.sessionId]?.[target.threadId] ?? null;
     return {
       sessionId: target.sessionId,
       threadId: target.threadId,
       itemId: row.item.id,
       revision: row.thread.revision,
-      state: rowStateOf({ state, sessionId: target.sessionId, row }),
+      state: rowState,
       isNote: row.thread.originKind === 'diff_comment',
       hasPr: state.sessionGithub[target.sessionId]?.pr != null,
       agentId: row.attempt?.agentId ?? null,
@@ -117,6 +127,9 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       url: row.commentThread?.head.url ?? null,
       reply: replyOf({ draft, row }),
       approval: row.item.approvalState,
+      remote: remoteOf({ state: rowState, facts: gitFacts }),
+      elsewhereSha: gitFacts?.elsewhere?.sha ?? null,
+      prUrl: state.sessionGithub[target.sessionId]?.pr?.url ?? null,
     };
   },
   actions: [
@@ -171,12 +184,77 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       run: ({ facts }) => (facts.url === null ? undefined : openUrl(facts.url)),
     },
     {
+      id: 'reviewComment.replyAndResolve',
+      label: REMOTE_LABEL.replyAndResolve,
+      icon: CircleCheck,
+      group: 'act',
+      shortcut: 'review.reply',
+      when: ({ facts }) => facts.remote === 'on_origin' || facts.remote === 'looks_fixed',
+      slot: () => 'primary',
+      run: ({ facts, env }) =>
+        env.getState().replyAndResolveThread({
+          sessionId: facts.sessionId,
+          threadId: facts.threadId,
+        }),
+    },
+    {
+      id: 'reviewComment.resolveOnly',
+      label: REMOTE_LABEL.resolveOnly,
+      icon: CircleCheck,
+      group: 'act',
+      shortcut: 'review.accept',
+      when: ({ facts }) => facts.remote === 'you_replied',
+      slot: () => 'primary',
+      run: ({ facts, env }) =>
+        env.getState().resolveThreadOnly({
+          sessionId: facts.sessionId,
+          threadId: facts.threadId,
+        }),
+    },
+    {
+      id: 'reviewComment.fixAnyway',
+      label: REMOTE_LABEL.fixAnyway,
+      icon: CONCEPT_ICONS.agents,
+      group: 'act',
+      shortcut: 'review.fix',
+      when: ({ facts }) => facts.remote === 'looks_fixed' && facts.elsewhereSha !== null,
+      slot: () => 'secondary',
+      run: ({ facts, env }) => {
+        if (facts.elsewhereSha === null) {
+          return;
+        }
+        env.getState().dismissThreadFix({
+          sessionId: facts.sessionId,
+          threadId: facts.threadId,
+          sha: facts.elsewhereSha,
+        });
+      },
+    },
+    {
+      id: 'reviewComment.openCommit',
+      label: REMOTE_LABEL.openCommit,
+      icon: ExternalLink,
+      group: 'open',
+      when: ({ facts }) =>
+        facts.remote === 'looks_fixed' &&
+        facts.elsewhereSha !== null &&
+        commitUrlOf({ prUrl: facts.prUrl, sha: facts.elsewhereSha }) !== null,
+      slot: () => 'secondary',
+      run: ({ facts }) => {
+        const url =
+          facts.elsewhereSha === null
+            ? null
+            : commitUrlOf({ prUrl: facts.prUrl, sha: facts.elsewhereSha });
+        return url === null ? undefined : openUrl(url);
+      },
+    },
+    {
       id: 'reviewComment.draft',
       label: 'Fix',
       icon: CONCEPT_ICONS.agents,
       group: 'act',
       shortcut: 'review.fix',
-      when: ({ facts }) => facts.state === 'new',
+      when: ({ facts }) => facts.state === 'new' && !hasOverlay({ facts }),
       slot: () => 'primary',
       run: ({ facts, env }) =>
         requestReview({
@@ -191,7 +269,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: MessageCircleQuestion,
       group: 'act',
       shortcut: 'review.edit',
-      when: ({ facts }) => facts.state === 'needs',
+      when: ({ facts }) => facts.state === 'needs' && !hasOverlay({ facts }),
       slot: () => 'primary',
       run: (params) => compose(params, 'answer'),
     },
@@ -201,7 +279,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: Check,
       group: 'act',
       shortcut: 'review.accept',
-      when: ({ facts }) => DRAFTED.has(facts.state),
+      when: ({ facts }) => DRAFTED.has(facts.state) && !hasOverlay({ facts }),
       blockedReason: ({ facts }) => (facts.state === 'outdated' ? OUTDATED_REASON : null),
       slot: ({ facts }) => (facts.state === 'outdated' ? 'secondary' : 'primary'),
       run: accept,
@@ -217,7 +295,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: RefreshCw,
       group: 'act',
       shortcut: 'review.edit',
-      when: ({ facts }) => DRAFTED.has(facts.state) || facts.state === 'failed',
+      when: ({ facts }) =>
+        (DRAFTED.has(facts.state) || facts.state === 'failed') && !hasOverlay({ facts }),
       slot: ({ facts }) => (isRedraft(facts) ? 'primary' : 'secondary'),
       run: (params) => compose(params, isRedraft(params.facts) ? 'redraft' : 'edit'),
     },
@@ -226,7 +305,8 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       label: 'Edit the reply',
       icon: TextCursorInput,
       group: 'act',
-      when: ({ facts }) => facts.state === 'ready' || facts.state === 'edited',
+      when: ({ facts }) =>
+        (facts.state === 'ready' || facts.state === 'edited') && !hasOverlay({ facts }),
       slot: () => 'hover',
       run: ({ facts, env }) =>
         requestReview({
@@ -241,7 +321,7 @@ export const REVIEW_COMMENT_KIND: ObjectKindDefinition<
       icon: CornerDownRight,
       group: 'act',
       shortcut: 'review.reply',
-      when: ({ facts }) => UNDECIDED.has(facts.state) && !facts.isNote,
+      when: ({ facts }) => UNDECIDED.has(facts.state) && !facts.isNote && !hasOverlay({ facts }),
       slot: () => 'secondary',
       run: (params) => compose(params, 'reply'),
     },

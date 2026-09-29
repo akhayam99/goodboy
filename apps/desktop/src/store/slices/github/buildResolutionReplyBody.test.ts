@@ -23,6 +23,34 @@ describe('buildResolutionReplyBody', () => {
     );
   });
 
+  it('names the sha a folded fix started from in the default template', () => {
+    expect(
+      buildResolutionReplyBody({
+        closure: { commitSha: 'e31b9f4aaa', reply: 'Stopped the retry loop.' },
+        prUrl: PR_URL,
+        settings: UNSIGNED,
+        context: { commitStory: { originalSha: 'c81e5aabbb', isFolded: true } },
+      }),
+    ).toBe(
+      'Stopped the retry loop.\n\nFixed in [`c81e5aa`](https://github.com/o/r/commit/c81e5aabbb), squashed into [`e31b9f4`](https://github.com/o/r/commit/e31b9f4aaa).',
+    );
+  });
+
+  it('shows the plain sha when the fix only moved or never changed', () => {
+    const plain =
+      'Stopped the retry loop.\n\nFixed in [`e31b9f4`](https://github.com/o/r/commit/e31b9f4aaa).';
+    const closure = { commitSha: 'e31b9f4aaa', reply: 'Stopped the retry loop.' };
+    expect(
+      buildResolutionReplyBody({
+        closure,
+        prUrl: PR_URL,
+        settings: UNSIGNED,
+        context: { commitStory: { originalSha: 'c81e5aabbb', isFolded: false } },
+      }),
+    ).toBe(plain);
+    expect(buildResolutionReplyBody({ closure, prUrl: PR_URL, settings: UNSIGNED })).toBe(plain);
+  });
+
   it('keeps the plain commit when the pr url is unknown', () => {
     expect(
       buildResolutionReplyBody({

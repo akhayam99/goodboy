@@ -5,6 +5,7 @@ import { applyHistoryPlan, pushWithLease } from '../../../features/history/histo
 import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
 import { historyTargetOf } from './historyTargetOf';
 import { identityChange } from './historyIdentity';
+import { editPostedReplies } from '../resolve/editPostedReplies';
 import { remoteForPush } from './remoteForPush';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
 import { setHistoryRun } from './setHistoryRun';
@@ -197,6 +198,7 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
           at: Date.now(),
         }).catch(() => undefined);
       }
+      await editPostedReplies({ set, get, sessionId }).catch(() => 0);
       const prNumber = get().mountGithub[mountId]?.pr?.number ?? null;
       await recordHistoryEvent({
         get,
