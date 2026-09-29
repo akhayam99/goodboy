@@ -1,3 +1,13 @@
+export {
+  BITBUCKET_NO_RESOLVE,
+  BITBUCKET_THREAD_PREFIX,
+  bitbucketCommentId,
+  bitbucketReviewSource,
+  bitbucketThreadId,
+  bitbucketThreadsOf,
+  type BitbucketReviewComment,
+  type BitbucketReviewTransport,
+} from './bitbucketReviewSource';
 export { commitLinkOf } from './commitLink';
 export { githubReviewSource } from './githubReviewSource';
 export {

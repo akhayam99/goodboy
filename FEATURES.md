@@ -417,7 +417,14 @@ Turn review comments into commits without writing the fix yourself. Review lists
 
 ### Review sources
 
-Read the comments of every request in the session from one place. The picker under the Review title lists each pull request and merge request of the session with its provider icon and open count, and **Notes on this machine** last. A session with two projects on two providers shows two entries, and picking one makes its project the active one. Draft, reply, resolve and push work the same on GitHub and GitLab. Where a provider cannot resolve a thread, the confirm says so and leaves the thread open after the reply.
+Read the comments of every request in the session from one place. The picker under the Review title lists each pull request and merge request of the session with its provider icon and open count, and **Notes on this machine** last. A session with two projects on two providers shows two entries, and picking one makes its project the active one. Draft, reply and push work the same everywhere. Where a provider cannot resolve a thread, the comment offers **Reply** and no resolve, and the push confirm says the thread stays open for the reviewer.
+
+| Source                 | Read comments   | Reply | Resolve thread            |
+| ---------------------- | --------------- | ----- | ------------------------- |
+| GitHub pull request    | Yes             | Yes   | Yes                       |
+| GitLab merge request   | Yes             | Yes   | Yes                       |
+| Bitbucket pull request | Inline comments | Yes   | No, the thread stays open |
+| Notes on this machine  | Yes             | No    | Close the note            |
 
 ### Comment states
 
@@ -451,7 +458,7 @@ When the commit of a fix is no longer on the branch or on origin, the comment re
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/review-push-confirm-light.webp" alt="The Review header of PR #318 with a confirm under it: Push 1 to hl/fix-duplicate-credit, 1 fix in 1 new commit, 1 reply, 1 thread resolved on GitHub, 2 comments need you first, with Cancel and Push buttons">
 </picture>
 
-Finish a review in one action. **Push 1** in the Review header opens a confirm right under it: **Push 1 to hl/fix-duplicate-credit?**, with the count of fixes, replies and threads it will resolve on GitHub, and a note when comments still need you. **Push** pushes the fixes, posts the replies and resolves the threads (on a GitLab merge request too). **Cancel** leaves everything as it was. After an interruption Goodboy looks for your reply in the thread before posting it again.
+Finish a review in one action. **Push 1** in the Review header opens a confirm right under it: **Push 1 to hl/fix-duplicate-credit?**, with the count of fixes, replies and threads it will resolve on GitHub, and a note when comments still need you. **Push** pushes the fixes, posts the replies and resolves the threads (on a GitLab merge request too, not on Bitbucket). **Cancel** leaves everything as it was. After an interruption Goodboy looks for your reply in the thread before posting it again.
 
 ### Review replies in your voice
 

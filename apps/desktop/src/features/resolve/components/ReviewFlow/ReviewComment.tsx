@@ -1,6 +1,6 @@
 import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
-import { REVIEW_SOURCE_LABEL } from '@goodboy/core';
+import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
 import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
@@ -116,6 +116,7 @@ export const ReviewComment = ({
   const isBrief = variant === 'brief';
   const { row, state, word, threadId } = entry;
   const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
+  const canResolve = REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
     [sessionId, threadId],
@@ -338,7 +339,7 @@ export const ReviewComment = ({
             meta={
               state === 'edited' ? (
                 <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.edited} />
-              ) : state === 'replied' && isResolveOnly({ row }) ? (
+              ) : state === 'replied' && canResolve && isResolveOnly({ row }) ? (
                 <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.resolveOnly} />
               ) : undefined
             }

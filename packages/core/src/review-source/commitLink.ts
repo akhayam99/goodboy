@@ -2,6 +2,7 @@ import type { ReviewSourceKind } from './types';
 
 const PULL_SUFFIX = /\/pull\/\d+(?:\/.*)?$/;
 const MR_SUFFIX = /\/-\/merge_requests\/\d+(?:\/.*)?$/;
+const BITBUCKET_SUFFIX = /\/pull-requests\/\d+(?:\/.*)?$/;
 
 type Params = Readonly<{
   kind: ReviewSourceKind;
@@ -31,6 +32,9 @@ export const commitLinkOf = ({ kind, url, sha }: Params): string | null => {
   }
   if (kind === 'gitlab') {
     return replaced({ url, suffix: MR_SUFFIX, path: `/-/commit/${sha}` });
+  }
+  if (kind === 'bitbucket') {
+    return replaced({ url, suffix: BITBUCKET_SUFFIX, path: `/commits/${sha}` });
   }
   return null;
 };

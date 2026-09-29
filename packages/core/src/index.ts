@@ -591,10 +591,16 @@ export {
 } from './github';
 
 export {
+  BITBUCKET_NO_RESOLVE,
+  BITBUCKET_THREAD_PREFIX,
   GITLAB_THREAD_PREFIX,
   LOCAL_NOTE_NO_REPLY,
   REVIEW_SOURCE_CAPABILITIES,
   REVIEW_SOURCE_LABEL,
+  bitbucketCommentId,
+  bitbucketReviewSource,
+  bitbucketThreadId,
+  bitbucketThreadsOf,
   commitLinkOf,
   githubReviewSource,
   gitlabDiscussionId,
@@ -603,6 +609,8 @@ export {
   gitlabThreadsOf,
   groupReviewComments,
   localReviewSource,
+  type BitbucketReviewComment,
+  type BitbucketReviewTransport,
   type GitlabReviewDiscussion,
   type GitlabReviewNote,
   type GitlabReviewTransport,

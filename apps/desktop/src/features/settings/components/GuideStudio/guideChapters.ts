@@ -298,7 +298,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Push',
-        desc: 'Push N in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm under the header.',
+        desc: 'Push N in the Review header pushes the fixes, posts the replies and resolves the threads where the provider allows it, after a confirm under the header.',
       },
       {
         term: 'Pull request page',

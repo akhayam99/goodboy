@@ -181,7 +181,7 @@ export const WorkspaceReviewRepliesSection = ({ workspaceId }: Props) => {
             </WorkspaceDefaultRow>
             <WorkspaceDefaultRow
               label="Resolve the thread after replying"
-              help="Off leaves it open for the reviewer to resolve."
+              help="Off leaves it open for the reviewer to resolve. Bitbucket threads always stay open."
             >
               <Switch
                 label={settings.resolveOnGithub ? 'On' : 'Off'}

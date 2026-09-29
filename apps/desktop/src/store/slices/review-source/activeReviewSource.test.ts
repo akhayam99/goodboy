@@ -9,6 +9,17 @@ const SESSION = 'session' as SessionId;
 const GITHUB_URL = 'https://example.invalid/harborline/payments-api/pull/318';
 const GITLAB_URL = 'https://example.invalid/harborline/notify-relay/-/merge_requests/57';
 
+const BITBUCKET_URL = 'https://example.invalid/northwind/storefront-web/pull-requests/12';
+
+const BITBUCKET_MOUNT = {
+  mountId: 'bbmount',
+  projectId: 'bbproject',
+  repo: { workspaceSlug: 'northwind', repoSlug: 'storefront-web' },
+  repository: 'northwind/storefront-web',
+  pr: { id: 12, state: 'OPEN', sourceBranch: 'nw/cart-total', webUrl: BITBUCKET_URL },
+  prs: [],
+};
+
 const MR: GitlabMergeRequest = {
   id: 1,
   iid: 57,
@@ -59,6 +70,8 @@ const stateWith = (overrides: Record<string, unknown> = {}) =>
     sessionGitlabMr: { [SESSION]: { mr: MR, fetchedAt: null, loading: false, error: null } },
     mountGithub: {},
     mountGitlabMr: {},
+    mountBitbucketPr: {},
+    sessionBitbucketPr: {},
     diffComments: {},
     reviewSourceThreads: {
       [SESSION]: {
@@ -123,16 +136,86 @@ const row = (overrides: Partial<ResolveThread>): ResolveThread =>
     ...overrides,
   }) as ResolveThread;
 
+describe('bitbucket as a review source', () => {
+  const bitbucketState = (overrides: Record<string, unknown> = {}) =>
+    stateWith({
+      sessionGithub: {},
+      sessionGitlabMr: {},
+      sessionBitbucketPr: { [SESSION]: { pr: BITBUCKET_MOUNT.pr } },
+      sessionProjectMounts: { [SESSION]: ['bbmount'] },
+      sessionMounts: {
+        [SESSION]: [
+          {
+            id: 'bbmount',
+            projectId: 'bbproject',
+            branch: 'nw/cart-total',
+            baseBranch: 'main',
+            repoRoot: '/repo',
+            worktreePath: null,
+            repoSlug: null,
+            revision: 1,
+          },
+        ],
+      },
+      mountBitbucketPr: { bbmount: BITBUCKET_MOUNT },
+      reviewSourceThreads: {
+        [SESSION]: {
+          [BITBUCKET_URL]: {
+            comments: [comment('bitbucket:4001'), comment('bitbucket:4002')],
+            fetchedAt: '2026-09-04T14:20:00.000Z',
+            loading: false,
+            error: null,
+          },
+        },
+      },
+      ...overrides,
+    });
+
+  it('lists the pull request with its open count', () => {
+    const entries = reviewSourceEntriesOf({ state: bitbucketState(), sessionId: SESSION });
+    expect(entries.map((entry) => [entry.kind, entry.label, entry.openCount])).toEqual([
+      ['bitbucket', 'storefront-web #12', 2],
+      ['local', 'Notes on this machine', 0],
+    ]);
+  });
+
+  it('reads the pull request comments and says it cannot resolve', () => {
+    const source = activeReviewSourceOf({ state: bitbucketState(), sessionId: SESSION });
+    expect(source?.kind).toBe('bitbucket');
+    expect(source?.prNumber).toBe(12);
+    expect(source?.repo).toBe('northwind/storefront-web');
+    expect(source?.headBranch).toBe('nw/cart-total');
+    expect(source?.comments).toHaveLength(2);
+    expect(source?.capabilities).toEqual({ canReply: true, canResolve: false });
+  });
+
+  it('leaves a merged pull request out of the picker', () => {
+    const state = bitbucketState({
+      mountBitbucketPr: {
+        bbmount: { ...BITBUCKET_MOUNT, pr: { ...BITBUCKET_MOUNT.pr, state: 'MERGED' } },
+      },
+    });
+    expect(reviewSourceEntriesOf({ state, sessionId: SESSION }).map((entry) => entry.kind)).toEqual(
+      ['local'],
+    );
+  });
+});
+
 describe('rowBelongsToSource', () => {
   it('keeps a row on the source it was created for', () => {
     const github = { kind: 'github', projectId: null, number: 318 } as const;
     const gitlab = { kind: 'gitlab', projectId: null, number: 57 } as const;
     const local = { kind: 'local', projectId: null, number: null } as const;
+    const bitbucket = { kind: 'bitbucket', projectId: null, number: 12 } as const;
     expect(rowBelongsToSource({ row: row({}), entry: github })).toBe(true);
     expect(rowBelongsToSource({ row: row({}), entry: gitlab })).toBe(false);
     expect(
       rowBelongsToSource({ row: row({ sourceKind: 'gitlab', prNumber: 57 }), entry: gitlab }),
     ).toBe(true);
+    expect(
+      rowBelongsToSource({ row: row({ sourceKind: 'bitbucket', prNumber: 12 }), entry: bitbucket }),
+    ).toBe(true);
+    expect(rowBelongsToSource({ row: row({}), entry: bitbucket })).toBe(false);
     expect(rowBelongsToSource({ row: row({ originKind: 'diff_comment' }), entry: local })).toBe(
       true,
     );

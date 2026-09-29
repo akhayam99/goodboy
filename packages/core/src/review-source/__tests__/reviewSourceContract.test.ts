@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GhResult, GhRunner } from '../../github/gh';
+import {
+  BITBUCKET_NO_RESOLVE,
+  bitbucketReviewSource,
+  type BitbucketReviewComment,
+  type BitbucketReviewTransport,
+} from '../bitbucketReviewSource';
 import { githubReviewSource } from '../githubReviewSource';
 import {
   gitlabReviewSource,
@@ -20,6 +26,7 @@ type Fake = Readonly<{
   providerThreadId: string;
   head: string;
   commitUrl: string;
+  canResolve: boolean;
   replyCalls: () => ReadonlyArray<string>;
   resolveCalls: () => ReadonlyArray<string>;
 }>;
@@ -106,6 +113,7 @@ const githubFake = (): Fake => {
     providerThreadId: 'PRT_1',
     head: 'abc1234',
     commitUrl: 'https://github.com/harborline/payments-api/commit/abc1234',
+    canResolve: true,
     replyCalls: () => threadIdsOf({ calls, mutation: 'addPullRequestReviewThreadReply' }),
     resolveCalls: () => threadIdsOf({ calls, mutation: 'resolveReviewThread' }),
   };
@@ -185,14 +193,59 @@ const gitlabFake = (): Fake => {
     providerThreadId: 'd41',
     head: 'def5678',
     commitUrl: 'https://gitlab.example.com/harborline/notify-relay/-/commit/def5678',
+    canResolve: true,
     replyCalls: () => replies,
     resolveCalls: () => resolves,
+  };
+};
+
+const bitbucketComment = (
+  overrides: Partial<BitbucketReviewComment> = {},
+): BitbucketReviewComment => ({
+  id: 4001,
+  body: 'Guard the empty cart before the total',
+  user: { nickname: 'ines', displayName: 'Ines Okafor', avatarUrl: null },
+  createdOn: '2026-01-02T10:00:00Z',
+  deleted: false,
+  parentId: null,
+  inline: { path: 'src/cart/total.ts', from: null, to: 33 },
+  webUrl: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12#comment-4001',
+  ...overrides,
+});
+
+const bitbucketFake = (): Fake => {
+  const replies: Array<string> = [];
+  const transport: BitbucketReviewTransport = {
+    listComments: async () => [
+      bitbucketComment(),
+      bitbucketComment({ id: 4002, parentId: 4001, inline: null, body: 'On it' }),
+      bitbucketComment({ id: 4003, inline: null, body: 'Looks good overall' }),
+    ],
+    replyToComment: async ({ parentCommentId }) => {
+      replies.push(String(parentCommentId));
+      return 4004;
+    },
+    readHeadSha: async () => '9a8b7c6',
+  };
+  return {
+    source: bitbucketReviewSource({
+      transport,
+      prUrl: 'https://bitbucket.org/northwind/storefront-web/pull-requests/12',
+    }),
+    openThreadId: 'bitbucket:4001',
+    providerThreadId: '4001',
+    head: '9a8b7c6',
+    commitUrl: 'https://bitbucket.org/northwind/storefront-web/commits/9a8b7c6',
+    canResolve: false,
+    replyCalls: () => replies,
+    resolveCalls: () => [],
   };
 };
 
 const SOURCES: ReadonlyArray<readonly [string, () => Fake]> = [
   ['github', githubFake],
   ['gitlab', gitlabFake],
+  ['bitbucket', bitbucketFake],
 ];
 
 describe.each(SOURCES)('review source contract on %s', (_name, build) => {
@@ -221,8 +274,15 @@ describe.each(SOURCES)('review source contract on %s', (_name, build) => {
     expect(fake.replyCalls()).toContain(fake.providerThreadId);
   });
 
-  it('resolves the provider thread', async () => {
+  it('resolves the provider thread only where the provider can', async () => {
     const fake = build();
+    if (!fake.canResolve) {
+      await expect(
+        fake.source.resolve({ providerThreadId: fake.providerThreadId }),
+      ).rejects.toThrow(BITBUCKET_NO_RESOLVE);
+      expect(fake.resolveCalls()).toEqual([]);
+      return;
+    }
     const result = await fake.source.resolve({ providerThreadId: fake.providerThreadId });
     expect(result.isResolved).toBe(true);
     expect(fake.resolveCalls()).toContain(fake.providerThreadId);
@@ -234,7 +294,8 @@ describe.each(SOURCES)('review source contract on %s', (_name, build) => {
     expect(fake.source.commitLink({ sha: fake.head })).toBe(fake.commitUrl);
   });
 
-  it('can reply and resolve', () => {
-    expect(build().source.capabilities).toEqual({ canReply: true, canResolve: true });
+  it('states what it can do', () => {
+    const fake = build();
+    expect(fake.source.capabilities).toEqual({ canReply: true, canResolve: fake.canResolve });
   });
 });
