@@ -877,6 +877,54 @@ const subagentGroupRows = ({
   ];
 };
 
+type SubagentRowsParams = {
+  readonly entry: TimelineAgentEntry;
+  readonly identity: RunIdentity | null;
+  readonly isMuted: boolean;
+  readonly familyId: string | null;
+  readonly laneId: string;
+  readonly showSubagents: boolean;
+  readonly isChildParentClosed: boolean;
+  readonly context: EmitContext;
+};
+
+const subagentRows = ({
+  entry,
+  identity,
+  isMuted,
+  familyId,
+  laneId,
+  showSubagents,
+  isChildParentClosed,
+  context,
+}: SubagentRowsParams): ReadonlyArray<DraftRow> => {
+  if (hasSubagentGroup({ entry, showSubagents, context })) {
+    return subagentGroupRows({
+      entry,
+      identity,
+      isMuted,
+      familyId,
+      parentLaneId: laneId,
+      isChildParentClosed,
+      context,
+    });
+  }
+  return entry.children.flatMap((child) =>
+    agentRows({
+      entry: child,
+      grade: 'step',
+      identity,
+      isMuted,
+      familyId,
+      groupId: laneId,
+      showSubagents,
+      readyAgentId: null,
+      isParentClosed: isChildParentClosed,
+      context,
+    }),
+  );
+};
+
 const agentRows = ({
   entry,
   grade,
@@ -909,36 +957,18 @@ const agentRows = ({
       originRowId: entry.id,
       shape: childLaneShape({ entry, parentState: rowState, groupId }),
     });
-    if (hasSubagentGroup({ entry, showSubagents, context })) {
-      nested.push(
-        ...subagentGroupRows({
-          entry,
-          identity,
-          isMuted,
-          familyId,
-          parentLaneId: childLaneId,
-          isChildParentClosed,
-          context,
-        }),
-      );
-    } else {
-      for (const child of entry.children) {
-        nested.push(
-          ...agentRows({
-            entry: child,
-            grade: 'step',
-            identity,
-            isMuted,
-            familyId,
-            groupId: childLaneId,
-            showSubagents,
-            readyAgentId: null,
-            isParentClosed: isChildParentClosed,
-            context,
-          }),
-        );
-      }
-    }
+    nested.push(
+      ...subagentRows({
+        entry,
+        identity,
+        isMuted,
+        familyId,
+        laneId: childLaneId,
+        showSubagents,
+        isChildParentClosed,
+        context,
+      }),
+    );
   }
   const isPending = entry.agent.status === 'pending' && !isSkippedUnderClosed;
   const origin: DraftRow = {
