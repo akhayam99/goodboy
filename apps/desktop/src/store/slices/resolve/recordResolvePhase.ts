@@ -8,6 +8,7 @@ import { outcomePatch } from './outcomePatch';
 import { projectResolveRows } from './projectResolveRows';
 import { threadOutcome } from './threadOutcome';
 import type { PhaseParams, SliceParams } from './types';
+import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 
 type Params = SliceParams & PhaseParams;
 
@@ -42,7 +43,7 @@ export const recordResolvePhase = async ({
           sessionId,
           threadId,
           agent,
-          prNumber: get().sessionGithub[sessionId]?.pr?.number,
+          prNumber: activeReviewSourceOf({ state: get(), sessionId })?.prNumber,
         });
       if ((attempt !== undefined && row.activeAttemptId !== attempt.id) || row.state === 'closed') {
         continue;

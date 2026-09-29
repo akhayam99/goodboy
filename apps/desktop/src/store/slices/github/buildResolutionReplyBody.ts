@@ -1,3 +1,4 @@
+import { commitLinkOf, type ReviewSourceKind } from '@goodboy/core';
 import { renderReplyTemplate } from '../../../features/resolve/renderReplyTemplate';
 import {
   REPLY_SETTINGS_DEFAULT,
@@ -14,20 +15,22 @@ export type ReplyContext = {
   readonly fixupOfSha?: string | null;
 };
 
-const commitUrlOf = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
-  const url = prUrl ? prUrl.replace(/\/pull\/\d+(?:\/.*)?$/, `/commit/${sha}`) : null;
-  return url !== null && url !== prUrl ? url : null;
+type LinkParams = {
+  readonly sha: string;
+  readonly prUrl: string | null;
+  readonly sourceKind: ReviewSourceKind;
 };
 
-const commitLink = ({ sha, prUrl }: { readonly sha: string; readonly prUrl: string | null }) => {
+const commitLink = ({ sha, prUrl, sourceKind }: LinkParams) => {
   const short = `\`${sha.slice(0, 7)}\``;
-  const url = commitUrlOf({ sha, prUrl });
+  const url = commitLinkOf({ kind: sourceKind, url: prUrl, sha });
   return url === null ? short : `[${short}](${url})`;
 };
 
 type Params = {
   readonly closure: Closure | undefined;
   readonly prUrl: string | null;
+  readonly sourceKind?: ReviewSourceKind;
   readonly settings?: ReplySettings;
   readonly context?: ReplyContext;
 };
@@ -35,6 +38,7 @@ type Params = {
 export const buildResolutionReplyBody = ({
   closure,
   prUrl,
+  sourceKind = 'github',
   settings = REPLY_SETTINGS_DEFAULT,
   context = {},
 }: Params): string | null => {
@@ -48,13 +52,13 @@ export const buildResolutionReplyBody = ({
     reviewer: context.reviewer ? `@${context.reviewer}` : '',
     file: context.file ?? '',
     line: context.line == null ? '' : String(context.line),
-    fixup_of: context.fixupOfSha ? commitLink({ sha: context.fixupOfSha, prUrl }) : '',
+    fixup_of: context.fixupOfSha ? commitLink({ sha: context.fixupOfSha, prUrl, sourceKind }) : '',
   };
   const body = (() => {
     if (sha.length > 0) {
       return renderReplyTemplate({
         template: settings.templateFixed,
-        vars: { ...vars, reason: reply, commit: commitLink({ sha, prUrl }) },
+        vars: { ...vars, reason: reply, commit: commitLink({ sha, prUrl, sourceKind }) },
       });
     }
     if (reason.length > 0) {

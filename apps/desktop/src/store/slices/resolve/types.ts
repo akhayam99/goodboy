@@ -10,6 +10,7 @@ import type {
   ResolveLaunchChoice,
   ResolvePublicationDrift,
   ResolvePublicationPreview,
+  ResolveSourceKind,
   ResolveThread,
   ResolveUncapturedWork,
   SessionId,
@@ -117,6 +118,7 @@ export type MaterializeParams = SessionParams & {
   readonly prNumber: number;
   readonly projectId: ProjectId | null;
   readonly comments: ReadonlyArray<PrComment>;
+  readonly sourceKind?: ResolveSourceKind;
 };
 
 export type EnsureReviewThreadResult = 'existing' | 'created' | 'missing' | 'closed' | 'cancelled';

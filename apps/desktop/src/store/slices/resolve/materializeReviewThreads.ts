@@ -22,6 +22,7 @@ export const materializeReviewThreads = async ({
   prNumber,
   projectId,
   comments,
+  sourceKind = 'github',
 }: Params): Promise<number> => {
   const threadIds = openReviewThreadIds({ comments });
   if (threadIds.length === 0 || prNumber <= 0) {
@@ -41,7 +42,8 @@ export const materializeReviewThreads = async ({
     if (previous !== undefined && (previous.prNumber !== prNumber || previous.state === 'closed')) {
       continue;
     }
-    const row = previous ?? createResolveThread({ sessionId, threadId, projectId, prNumber });
+    const row =
+      previous ?? createResolveThread({ sessionId, threadId, projectId, prNumber, sourceKind });
     if (previous === undefined && !(await saveResolveThread({ db, row, expectedRevision: null }))) {
       continue;
     }

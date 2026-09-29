@@ -8,6 +8,7 @@ import { createResolveThread } from './createResolveThread';
 import { threadOutcome } from './threadOutcome';
 import { projectResolveRows } from './projectResolveRows';
 import type { AttemptParams, SliceParams } from './types';
+import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 
 type Params = SliceParams & AttemptParams;
 
@@ -41,7 +42,7 @@ export const recordResolveAttempt = async ({
       sessionId,
       threadId: '',
       agent,
-      prNumber: get().sessionGithub[sessionId]?.pr?.number,
+      prNumber: activeReviewSourceOf({ state: get(), sessionId })?.prNumber,
     }).prNumber,
     threadIds: agentThreadIds(agent),
     provider,

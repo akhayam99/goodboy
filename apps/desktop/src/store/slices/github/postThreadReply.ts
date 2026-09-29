@@ -1,9 +1,9 @@
-import { addReviewThreadReply } from '@goodboy/core';
 import { upsertResolvePublicationThread } from '@goodboy/db';
 import type { ResolvePublicationThread, SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { sessionThreadGhOptions } from './sessionThreadGhOptions';
+import { providerThreadIdOf } from '../resolve/resolveThreadSource';
+import { activeReviewSourceOf } from '../review-source/activeReviewSource';
+import { reviewSourceFor } from '../review-source/reviewSourceFor';
 import type { GetFn } from './types';
 
 type Params = {
@@ -13,6 +13,15 @@ type Params = {
   readonly replyBody: string | null;
   readonly frozen: ResolvePublicationThread;
 };
+
+const fallbackRow = ({ threadId }: { readonly threadId: string }) => ({
+  threadId,
+  originKind: 'review_comment' as const,
+  sourceKind: undefined,
+  providerThreadId: null,
+  projectId: null,
+  prNumber: null,
+});
 
 export type PostedReply = { readonly posted: boolean; readonly replyId: string | null };
 
@@ -47,18 +56,16 @@ export const postThreadReply = async ({
     db: tauriDatabase,
     thread: { ...frozen, replyPhase: 'sending', replyAttemptedAt: attemptedAt },
   });
-  const pr = get().sessionGithub[sessionId]?.pr ?? null;
-  const posted = await addReviewThreadReply(
-    tauriGhRunner,
-    threadId,
-    replyBody,
-    sessionThreadGhOptions({ get, sessionId }),
-  );
+  const row = receipt ?? fallbackRow({ threadId });
+  const posted = await reviewSourceFor({ get, sessionId, row }).reply({
+    providerThreadId: providerThreadIdOf({ row }),
+    body: replyBody,
+  });
   const postedAt = Date.now();
   await get().updateResolveThread({
     sessionId,
     threadId,
-    prNumber: pr?.number,
+    prNumber: activeReviewSourceOf({ state: get(), sessionId })?.prNumber,
     patch: { replyPostedAt: postedAt, replyId: posted.id },
   });
   await upsertResolvePublicationThread({
