@@ -328,6 +328,15 @@ function stageInfoOf(state: StageInfoState, session: Session): SessionStageInfo 
 export const useSessionStageInfo = (session: Session): SessionStageInfo =>
   useAppStore(useShallow((s) => stageInfoOf(s, session)));
 
+export const useSessionStages = (
+  sessions: ReadonlyArray<Session>,
+): Readonly<Record<string, SessionStage>> =>
+  useAppStore(
+    useShallow((s) =>
+      Object.fromEntries(sessions.map((session) => [session.id, stageInfoOf(s, session).stage])),
+    ),
+  );
+
 export const useSessionPrFetchState = (sessionId: SessionId): SessionPrFetchState =>
   useAppStore((s) =>
     sessionPrFetchState({

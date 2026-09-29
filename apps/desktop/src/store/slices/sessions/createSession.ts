@@ -53,6 +53,7 @@ type ExternalTaskInput = {
 type Input = {
   workspaceId: WorkspaceId;
   projectId?: ProjectId;
+  additionalProjectIds?: ReadonlyArray<ProjectId>;
   projectReason?: string;
   goal: string;
   title?: string;
@@ -76,6 +77,7 @@ export const createSession = (set: SetFn, get: GetFn) => {
   return async ({
     workspaceId,
     projectId,
+    additionalProjectIds,
     projectReason,
     goal,
     title,
@@ -102,6 +104,9 @@ export const createSession = (set: SetFn, get: GetFn) => {
       throw new Error(`workspace not found: ${workspaceId}`);
     }
     const project = projectId !== undefined ? resolveSessionProject({ projects, projectId }) : null;
+    const extraProjects = Array.from(new Set(additionalProjectIds ?? []))
+      .filter((extraId) => extraId !== project?.id)
+      .map((extraId) => resolveSessionProject({ projects, projectId: extraId }));
 
     const trimmedPrefix = branchPrefix?.trim();
     const trimmedBranchSlug = branchSlug?.trim();
@@ -198,10 +203,11 @@ export const createSession = (set: SetFn, get: GetFn) => {
     set((state) => ({
       sessions:
         state.currentWorkspaceId === workspaceId ? [session, ...state.sessions] : state.sessions,
-      projects:
-        project == null || state.projects.some((candidate) => candidate.id === project.id)
-          ? state.projects
-          : [...state.projects, project],
+      projects: [...(project === null ? [] : [project]), ...extraProjects].reduce(
+        (known, candidate) =>
+          known.some((entry) => entry.id === candidate.id) ? known : [...known, candidate],
+        state.projects,
+      ),
       sessionWorktrees: { ...state.sessionWorktrees, [session.id]: [] },
       sessionProjectMounts: { ...state.sessionProjectMounts, [session.id]: [] },
       sessionBranches: { ...state.sessionBranches, [session.id]: '' },
@@ -216,6 +222,19 @@ export const createSession = (set: SetFn, get: GetFn) => {
               ? `adopted existing branch ${trimmedExisting}`
               : (projectReason ?? 'the session works in this project'),
           taskIdentifiers: (externalTasks ?? []).map((task) => task.identifier),
+        });
+      } catch (error) {
+        await discardUncreatedSession({ set, sessionId: session.id });
+        throw error;
+      }
+    }
+    for (const extra of extraProjects) {
+      try {
+        await get().ensureProjectMounted({
+          sessionId: session.id,
+          projectId: extra.id,
+          reason: projectReason ?? 'the session works in this project',
+          taskIdentifiers: [],
         });
       } catch (error) {
         await discardUncreatedSession({ set, sessionId: session.id });

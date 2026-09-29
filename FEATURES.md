@@ -744,7 +744,9 @@ Learn how Goodboy works in 18 short chapters that follow a task, with search and
 
 Ask about the workspace without starting a session. **Chat**, right of **Board**, opens a list of your chats next to one conversation. Each chat reads every project of the workspace and never changes a file: the answer streams in, **Read N files** lists what it opened, and the model is picked per chat, from Claude or Codex, the two providers that can be held to reading. Chats you have not used for seven days move to **Idle**, dimmed, and **Archive idle** clears them with an **Undo**. Nothing is archived for you.
 
-**Start work** turns a chat into work in a panel beside it: the chat's model drafts a title, a goal, what the chat established and the files it named, you edit any of it, then start a new session with that goal or send it into a session that is already running.
+**Start work** turns a chat into work in a panel beside it: the chat's model drafts a title, a goal, what the chat established and the files it named, you edit any of it, then start a new session with that goal or send it into a session that is already running. The **Project** field searches your projects and takes none, one or several; **Add to a session** lists sessions by Active and Recent, with their projects, stage and age.
+
+The top bar shows when a chat is working: a pulsing dot and "1 chat running" on **Chat**, and a still **New reply** dot in the notification color on it, and on the chat in the list, until you open the chat.
 
 ### Roles
 

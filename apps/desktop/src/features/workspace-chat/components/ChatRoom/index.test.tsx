@@ -19,6 +19,8 @@ const { store } = vi.hoisted(() => ({
       { id: 'project-ledger', workspaceId: 'ws-harborline', name: 'ledger-core' },
     ],
     sessions: [] as ReadonlyArray<unknown>,
+    stages: {} as Record<string, string>,
+    mounts: {} as Record<string, ReadonlyArray<{ readonly projectId: string }>>,
     providers: [
       { id: 'anthropic', connection: 'connected' },
       { id: 'opencode', connection: 'connected' },
@@ -30,7 +32,9 @@ const { store } = vi.hoisted(() => ({
     sendChatMessage: vi.fn(async () => undefined),
     stopChatReply: vi.fn(async () => undefined),
     setChatModel: vi.fn(async () => undefined),
-    createSession: vi.fn(async () => ({ session: { id: 'session-new' } })),
+    createSession: vi.fn(async (_input: Record<string, unknown>) => ({
+      session: { id: 'session-new' },
+    })),
     sendTurn: vi.fn(async () => undefined),
     navigate: vi.fn(),
   },
@@ -38,6 +42,11 @@ const { store } = vi.hoisted(() => ({
 
 vi.mock('../../../../store', () => ({
   sessionPlace: ({ sessionId }: { readonly sessionId: string }) => ({ at: 'session', sessionId }),
+  useSessionStages: (sessions: ReadonlyArray<{ readonly id: string }>) =>
+    Object.fromEntries(
+      sessions.map((session) => [session.id, store.stages[session.id] ?? 'building']),
+    ),
+  useProjectMountsForSessions: () => store.mounts,
   useAppStore: Object.assign(<T,>(selector: (state: typeof store) => T) => selector(store), {
     getState: () => store,
   }),
@@ -53,7 +62,7 @@ vi.mock('../../activeChatBackend', () => ({
         goal: 'Ask for consent again when the policy version changes.',
         know: ['Consent is step 4, in steps.ts:88.'],
         files: ['payments-api/src/questionnaire/steps.ts:88'],
-        project: 'payments-api',
+        projects: ['payments-api'],
       }),
   },
 }));
@@ -112,6 +121,9 @@ const messageOf = ({ role, content, status, reads = [] }: MessageSeed): ChatMess
 beforeEach(() => {
   store.chatMessages = {};
   store.chatStreams = {};
+  store.sessions = [];
+  store.stages = {};
+  store.mounts = {};
 });
 
 afterEach(() => {
@@ -146,6 +158,120 @@ describe('ChatRoom', () => {
       firstAgentKind: 'generic',
       kickoffPrompt: expect.stringContaining('What we know:\n- Consent is step 4, in steps.ts:88.'),
     });
+  });
+
+  it('picks several projects in the popover and starts the session in all of them', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    expect(screen.getByRole('button', { name: 'Remove payments-api' })).toBeDefined();
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Project' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search projects' }), {
+      target: { value: 'ledger' },
+    });
+    expect(screen.queryByRole('option', { name: /payments-api/ })).toBeNull();
+    fireEvent.click(screen.getByRole('option', { name: /ledger-core/ }));
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search projects' }), {
+      key: 'Escape',
+    });
+    expect(screen.getByRole('button', { name: 'Remove ledger-core' })).toBeDefined();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
+    });
+    expect(store.createSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectId: 'project-payments',
+        additionalProjectIds: ['project-ledger'],
+      }),
+    );
+  });
+
+  it('lays the project control full width under its label with the chips below', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+
+    const trigger = screen.getByRole('combobox', { name: 'Project' });
+    expect(trigger.className).toContain('w-full');
+    const field = trigger.closest('div.flex-col');
+    expect(field?.parentElement?.className).toContain('flex-col');
+    expect(field?.previousElementSibling?.textContent).toBe('Project');
+    const chip = screen.getByRole('button', { name: 'Remove payments-api' });
+    expect(trigger.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(chip.parentElement?.className).toContain('flex-wrap');
+  });
+
+  it('starts a session with no project once every chip is removed', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    fireEvent.click(screen.getByRole('button', { name: 'Remove payments-api' }));
+    expect(screen.getByRole('combobox', { name: 'Project' }).textContent).toContain('No project');
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start session' }));
+    });
+    expect(store.createSession).toHaveBeenCalledTimes(1);
+    const input = store.createSession.mock.calls[0]?.[0];
+    expect(input).not.toHaveProperty('projectId');
+    expect(input).not.toHaveProperty('additionalProjectIds');
+  });
+
+  it('adds to a session picked from grouped rows and hides the project control', async () => {
+    store.chatMessages = { [CHAT_ID]: ANSWERED };
+    store.sessions = [
+      {
+        id: 'session-refunds',
+        workspaceId: WORKSPACE_ID,
+        goal: 'Refund flow for storefront-web',
+        updatedAt: AT,
+      },
+      {
+        id: 'session-audit',
+        workspaceId: WORKSPACE_ID,
+        goal: 'Audit ledger-core postings',
+        updatedAt: AT,
+      },
+    ];
+    store.stages = { 'session-audit': 'done' };
+    store.mounts = { 'session-refunds': [{ projectId: 'project-payments' }] };
+    renderRoom({ chat: CHAT });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start work' }));
+    await screen.findByDisplayValue('Ask for consent again when the policy version changes.');
+    fireEvent.click(screen.getByRole('tab', { name: 'Add to a session' }));
+    expect(screen.queryByRole('combobox', { name: 'Project' })).toBeNull();
+    const primary = screen.getByRole('button', { name: 'Add to session' });
+    expect(primary.hasAttribute('disabled')).toBe(true);
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Session' }));
+    expect(screen.getByText('Active')).toBeDefined();
+    expect(screen.getByText('Recent')).toBeDefined();
+    const active = screen.getByRole('option', { name: /Refund flow/ });
+    expect(active.textContent).toContain('payments-api');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search sessions' }), {
+      target: { value: 'zzz' },
+    });
+    expect(screen.getByText('No sessions match')).toBeDefined();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search sessions' }), {
+      target: { value: 'audit' },
+    });
+    fireEvent.click(screen.getByRole('option', { name: /Audit ledger-core/ }));
+
+    expect(screen.getByRole('combobox', { name: 'Session' }).textContent).toContain(
+      'Audit ledger-core postings',
+    );
+    expect(screen.getByRole('button', { name: 'Add to session' }).hasAttribute('disabled')).toBe(
+      false,
+    );
   });
 
   it('sizes and tones Copy like the other quiet actions under an answer', () => {

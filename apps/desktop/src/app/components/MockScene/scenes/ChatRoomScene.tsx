@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { ChatId } from '@goodboy/types';
+import type { ChatId, ChatMessageId, ProviderRunId } from '@goodboy/types';
 import { ChatStudio } from '../../../../features/workspace-chat/components/ChatStudio';
 import { OPEN_COMMAND_PALETTE_EVENT } from '../../../../features/onboarding/openCommandPaletteEvent';
 import { PaletteOverlay } from '../../../../features/palette/components/PaletteOverlay';
@@ -8,6 +8,7 @@ import { useAppStore } from '../../../../store';
 import { StudioFrame as AppStudioFrame } from '../../StudioFrame';
 import { WORKSPACE_ID, seedBoardScene } from './BoardScene';
 import { sceneParam } from './audit/sceneParams';
+import { driveChatWork, isChatWorkStage } from './driveChatWork';
 import { seedStudioChrome } from './shellChrome';
 import { StudioFrame } from './StudioFrame';
 
@@ -35,8 +36,33 @@ const OPENCODE: ProviderDisplayInfo = {
   docsUrl: 'https://opencode.ai/docs',
 };
 
-const initialChatId = (): ChatId | null =>
-  sceneParam({ key: 'chat' }) === 'new' ? null : CONSENT_CHAT_ID;
+const chatIdOf = (key: string): ChatId => `mock-chat-${WORKSPACE_ID}-${key}` as ChatId;
+
+const initialChatId = (): ChatId | null => {
+  const key = sceneParam({ key: 'chat' });
+  if (key === 'new') {
+    return null;
+  }
+  return key === null ? CONSENT_CHAT_ID : chatIdOf(key);
+};
+
+const seedChatActivity = (): void => {
+  const activity = sceneParam({ key: 'activity' });
+  if (activity === 'running') {
+    useAppStore.setState({
+      chatStreams: {
+        [chatIdOf('release')]: {
+          runId: 'mock-run-release' as ProviderRunId,
+          messageId: 'mock-message-release' as ChatMessageId,
+          isStopping: false,
+        },
+      },
+    });
+  }
+  if (activity === 'unread') {
+    useAppStore.setState({ unreadChatIds: [chatIdOf('changes'), chatIdOf('rounding')] });
+  }
+};
 
 export const ChatRoomScene = () => {
   const [isReady, setIsReady] = useState(false);
@@ -55,9 +81,18 @@ export const ChatRoomScene = () => {
         rootPath: project.rootPath.replace(/^~/, '/mock'),
       })),
     }));
+    seedChatActivity();
     useAppStore.getState().openStudio({ studio: { kind: 'chat', chatId: initialChatId() } });
     setIsReady(true);
   }, []);
+
+  useEffect(() => {
+    const stage = sceneParam({ key: 'work' });
+    if (!isReady || !isChatWorkStage(stage)) {
+      return undefined;
+    }
+    return driveChatWork({ stage });
+  }, [isReady]);
 
   useEffect(() => {
     const open = () => setPaletteQuery('');

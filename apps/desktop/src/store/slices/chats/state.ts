@@ -18,6 +18,7 @@ export type ChatsState = {
   readonly chatMessages: Readonly<Record<ChatId, ReadonlyArray<ChatMessage>>>;
   readonly chatStreams: Readonly<Record<ChatId, ChatStream>>;
   readonly hasSettledChatStreams: boolean;
+  readonly unreadChatIds: ReadonlyArray<ChatId>;
 };
 
 export const chatsInitialState: ChatsState = {
@@ -25,4 +26,5 @@ export const chatsInitialState: ChatsState = {
   chatMessages: {},
   chatStreams: {},
   hasSettledChatStreams: false,
+  unreadChatIds: [],
 };

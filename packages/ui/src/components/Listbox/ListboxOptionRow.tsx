@@ -86,7 +86,7 @@ export const ListboxOptionRow = ({
           </span>
         </span>
       ) : null}
-      {!isMultiple && hasLeadingSlot ? (
+      {hasLeadingSlot ? (
         <span
           aria-hidden
           className={cn(

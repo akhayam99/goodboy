@@ -600,6 +600,7 @@ type AppActions = {
       title: string;
     }>;
     omitGoalSlot?: boolean;
+    additionalProjectIds?: ReadonlyArray<ProjectId>;
   }): Promise<{ session: Session }>;
   ensureProjectMounted(input: EnsureProjectMountedInput): Promise<EnsureProjectMountedResult>;
   detachProject(input: DetachProjectInput): Promise<ReadonlyArray<DetachProjectOutcome>>;

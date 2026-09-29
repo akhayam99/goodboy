@@ -188,6 +188,32 @@ describe('Listbox', () => {
     expect(screen.getByText('No option matches "relx"')).toBeDefined();
   });
 
+  it('keeps the search field flush: a divider below and no focus outline of its own', () => {
+    render(<SingleHarness options={BRANCHES} initial="main" />);
+    fireEvent.click(trigger());
+    const search = screen.getByRole('combobox', { name: 'Search' });
+    expect(search.className).toContain('focus-visible:outline-none!');
+    expect(search.parentElement?.className).toContain('border-b');
+    expect(search.className).not.toContain('border');
+  });
+
+  it('ties the popup width to the trigger when asked, and keeps the viewport gap', () => {
+    render(
+      <Listbox
+        ariaLabel="Theme"
+        options={THEMES}
+        value="system"
+        popupWidth="trigger"
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(trigger());
+    const popup = screen.getByRole('listbox').closest('[data-dropdown-portal] > div');
+    expect(popup?.className).not.toContain('w-max');
+    expect(popup instanceof HTMLElement ? popup.style.width : '').not.toBe('');
+    expect(popup instanceof HTMLElement ? popup.style.left : '').toBe('12px');
+  });
+
   it('offers to create the typed value when nothing matches exactly', () => {
     const onCreate = vi.fn();
     render(
@@ -209,6 +235,55 @@ describe('Listbox', () => {
     expect(screen.getByText('No branch matches "topic/new"')).toBeDefined();
     fireEvent.keyDown(search, { key: 'Enter' });
     expect(onCreate).toHaveBeenCalledWith('topic/new');
+  });
+
+  it('says its own sentence when nothing matches or nothing exists', () => {
+    const { rerender } = render(
+      <Listbox
+        ariaLabel="Session"
+        searchable
+        options={THEMES}
+        value={null}
+        onChange={vi.fn()}
+        noMatchLabel="No sessions match"
+      />,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Session' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Search' }), {
+      target: { value: 'zzz' },
+    });
+    expect(screen.getByText('No sessions match')).toBeDefined();
+    fireEvent.keyDown(screen.getByRole('combobox', { name: 'Search' }), { key: 'Escape' });
+
+    rerender(
+      <Listbox
+        ariaLabel="Session"
+        searchable
+        options={[]}
+        value={null}
+        onChange={vi.fn()}
+        emptyLabel="No sessions yet in this workspace"
+      />,
+    );
+    fireEvent.click(screen.getByRole('combobox', { name: 'Session' }));
+    expect(screen.getByText('No sessions yet in this workspace')).toBeDefined();
+  });
+
+  it('shows the row icon beside the checkbox when several values can be picked', () => {
+    render(
+      <Listbox
+        multiple
+        ariaLabel="Projects"
+        options={[
+          { value: 'ledger-core', label: 'ledger-core', leading: <i data-testid="icon" /> },
+        ]}
+        value={[]}
+        onChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('combobox', { name: 'Projects' }));
+    expect(within(screen.getByRole('option')).getByTestId('icon')).toBeDefined();
   });
 
   it('toggles several values and stays open', () => {

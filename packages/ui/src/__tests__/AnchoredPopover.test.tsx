@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { AnchoredPopover } from '../components/AnchoredPopover';
+import { PopoverPortalProvider } from '../PopoverPortalContext';
 import { useDropdown } from '../useDropdown';
 
 afterEach(cleanup);
@@ -53,6 +54,20 @@ describe('AnchoredPopover', () => {
     const portal = menu.closest('[data-dropdown-portal]');
     expect(portal).not.toBeNull();
     expect(portal?.parentElement).toBe(document.body);
+  });
+
+  it('portals into a layer provided by an enclosing overlay instead of the body', () => {
+    const layer = document.createElement('div');
+    document.body.append(layer);
+    render(
+      <PopoverPortalProvider value={layer}>
+        <Harness />
+      </PopoverPortalProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    const portal = screen.getByRole('menu').closest('[data-dropdown-portal]');
+    expect(portal?.parentElement).toBe(layer);
+    layer.remove();
   });
 
   it('applies the positioning bound to the popover surface itself', () => {

@@ -649,6 +649,11 @@ is a precedence chain (each layer must sit above the one below).
 | `--z-index-lightbox`         | 90    | the image lightbox, above everything z-indexed                                                 |
 | (native `<dialog>`)          | n/a   | the browser's top layer, above every z-indexed element                                         |
 
+A popover opened from inside the command palette does not need a higher token.
+`PopoverPortalProvider` gives `useDropdown` a portal target inside the
+palette's own layer, so the popover stacks at `z-popover` within the palette's
+`z-command-palette` context and renders above its panel.
+
 ## Primitives
 
 The register taxonomy, and the rule that all registers share one family, live
@@ -672,18 +677,29 @@ native `<select>`: the WebKit menu ignores theme, density and keyboard.
 - **Popover**: level 4 (`floating`, `shadow-lg`, `border`, `rounded-lg`),
   padding 4, at least the trigger's width and at most 360 by 320, scrolling in
   a `ScrollFade`. It opens below and flips above with `useDropdown`, entering
-  in 120ms (opacity and a 0.98 scale, `animate-popover-in`).
+  in 120ms (opacity and a 0.98 scale, `animate-popover-in`). It keeps 12px from
+  the viewport edge. `popupWidth="trigger"` fixes the width to the trigger's
+  (160px at least) so a long title truncates instead of widening the popover;
+  use it with an `isBlock` trigger in a drawer or a form. The 360 cap is a
+  `maxWidth` passed to `useDropdown`, because the inline `max-width` the hook
+  writes would beat a `max-w-*` class. Popovers stop above the status bar: the
+  hook subtracts `--dropdown-bottom-inset` (36px, set in `styles.css`) from the
+  room below the trigger, so a popover shrinks or flips instead of covering it.
 - **Option**: 32px on one line, or two lines with an 11/16 faint description;
   a 16px leading slot, `text-body`, meta on the right. The cursor, mouse or
   keyboard, is `bg-selected`; the current value is a check on the right and
   `text-row`. No primary tint. A blocked option stays visible in
   `disabled-foreground` and says why on its second line. A group label is a
   muted `Eyebrow`.
-- **Search** appears on its own above 8 options (or with `searchable`): a fuzzy
-  filter, the match underlined, a count ("3 of 41"), and an empty state in one
+- **Search** appears on its own above 8 options (or with `searchable`): a flush
+  row (search icon, no box, a hairline divider below, no focus ring of its own),
+  a fuzzy filter, the match underlined, a count ("3 of 41"), and an empty state in one
   sentence plus the `create` row when the caller can make the value.
-- **Multiple**: a checkbox in the leading slot, Enter toggles and stays open,
-  a footer with the count and Clear.
+- **Multiple**: a checkbox in the leading slot with the row icon beside it,
+  Enter toggles and stays open, a footer with the count and Clear.
+- **Empty copy**: `emptyLabel` and `noMatchLabel` replace the default "No
+  {noun}s yet" and "No {noun} matches" sentences when the list has its own
+  words ("No sessions match").
 - **Keyboard and ARIA**: the APG select-only combobox. Enter, Space and the
   arrows open on the current value; arrows, Home, End, PageUp and PageDown move;
   letters run typeahead; Enter chooses; Escape and a click outside close and

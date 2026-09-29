@@ -7,6 +7,7 @@ export { registerEscapeLayer } from './escape';
 export { useEscapeLayer } from './useEscapeLayer';
 export { useCopyLink } from './useCopyLink';
 export { useDropdown } from './useDropdown';
+export { PopoverPortalProvider } from './PopoverPortalContext';
 export type { DropdownController } from './useDropdown';
 export { PANE_RHYTHM } from './paneRhythm';
 export { TERMINAL_DIM } from './terminalDim';

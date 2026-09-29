@@ -23,6 +23,7 @@ export {
   useSessionSlots,
   useSessionSlotsLoad,
   useSessionStageInfo,
+  useSessionStages,
   useSessionViewPrefs,
   useSelectedProjectIds,
   useProjectFilteredSessions,

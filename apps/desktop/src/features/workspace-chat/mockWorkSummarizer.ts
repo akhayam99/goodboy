@@ -23,7 +23,7 @@ const CANNED: ReadonlyArray<CannedBrief> = [
         'payments-api/src/questionnaire/ConsentStep.tsx:14',
         'payments-api/src/api/consent.ts:31',
       ],
-      project: 'payments-api',
+      projects: ['payments-api'],
     },
   },
   {
@@ -37,7 +37,7 @@ const CANNED: ReadonlyArray<CannedBrief> = [
         'The queue already backs off between tries.',
       ],
       files: ['notify-relay/src/queue/worker.ts:52', 'notify-relay/src/http/client.ts:19'],
-      project: 'notify-relay',
+      projects: ['notify-relay', 'payments-api'],
     },
   },
 ];

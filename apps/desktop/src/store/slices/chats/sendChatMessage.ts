@@ -10,6 +10,7 @@ import { activeChatBackend } from '../../../features/workspace-chat/activeChatBa
 import type { ChatTurnOutcome } from '../../../features/workspace-chat/runChatTurn';
 import { chatTitleFromQuestion, NEW_CHAT_TITLE } from './chatTitleFromQuestion';
 import { findChat } from './findChat';
+import { isViewingChat } from './isViewingChat';
 import { patchChatMessage } from './patchChatMessage';
 import { patchChatSummary } from './patchChatSummary';
 import { planChatTurn } from './planChatTurn';
@@ -81,6 +82,9 @@ const finishReply = async ({ set, get, chatId, messageId, outcome }: FinishParam
       chatStreams: streams,
     };
   });
+  if (status !== 'stopped' && !isViewingChat({ state: get(), chatId })) {
+    get().markChatUnread({ chatId });
+  }
   await activeChatBackend.finishMessage({ message: finished });
 };
 

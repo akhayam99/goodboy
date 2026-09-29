@@ -24,7 +24,7 @@ const FAKE_SUMMARY = JSON.stringify({
   goal: 'Stop notify-relay from sending a message twice when a send fails.',
   know: ['worker.ts:52 sets maxAttempts: 2 on the job.'],
   files: ['notify-relay/src/queue/worker.ts:52'],
-  project: 'notify-relay',
+  projects: ['notify-relay'],
 });
 
 type MessageSeed = Pick<ChatMessage, 'role' | 'content'>;
@@ -77,7 +77,7 @@ describe('turn a chat into work', () => {
     const sessionId = await startWorkFromChat({
       workspaceId: WORKSPACE_ID,
       brief,
-      target: { kind: 'new', projectId: PROJECT_ID },
+      target: { kind: 'new', projectIds: [PROJECT_ID] },
       createSession,
       sendTurn,
     });
@@ -154,6 +154,62 @@ describe('turn a chat into work', () => {
       'Follow up on "Why does notify-relay retry twice?". Two layers retry the same failure.',
     );
     expect(brief.files).toEqual(['notify-relay/src/queue/worker.ts:52']);
-    expect(brief.project).toBe('notify-relay');
+    expect(brief.projects).toEqual(['notify-relay']);
+  });
+
+  it('drafts no project when the answer names no file of a project', async () => {
+    const backend = createMemoryChatBackend({
+      respond: async () => ({ status: 'done' }),
+      summarize: async () => '',
+    });
+
+    const brief = await summarizeChatForWork({
+      backend,
+      chat: CHAT,
+      messages: [
+        messageOf({ role: 'user', content: 'What is a good release cadence?' }),
+        messageOf({ role: 'assistant', content: 'Ship small changes every week.' }),
+      ],
+      projectNames: PROJECTS,
+    });
+
+    expect(brief.projects).toEqual([]);
+  });
+
+  it('starts a session with no project, one project or several', async () => {
+    const brief = await summarizeChatForWork({
+      backend: createMemoryChatBackend({
+        respond: async () => ({ status: 'done' }),
+        summarize: async () => FAKE_SUMMARY,
+      }),
+      chat: CHAT,
+      messages: MESSAGES,
+      projectNames: PROJECTS,
+    });
+    const createSession = vi.fn<AppStore['createSession']>(async () => ({
+      session: { id: 'session-new' as SessionId } as Session,
+    }));
+    const start = (projectIds: ReadonlyArray<ProjectId>) =>
+      startWorkFromChat({
+        workspaceId: WORKSPACE_ID,
+        brief,
+        target: { kind: 'new', projectIds },
+        createSession,
+        sendTurn: vi.fn<AppStore['sendTurn']>(),
+      });
+
+    await start([]);
+    await start([PROJECT_ID]);
+    await start([PROJECT_ID, 'project-payments-api' as ProjectId]);
+
+    const [none, one, many] = createSession.mock.calls.map(([input]) => input);
+    expect(none).not.toHaveProperty('projectId');
+    expect(none).not.toHaveProperty('additionalProjectIds');
+    expect(one).toMatchObject({ projectId: PROJECT_ID });
+    expect(one).not.toHaveProperty('additionalProjectIds');
+    expect(many).toMatchObject({
+      projectId: PROJECT_ID,
+      additionalProjectIds: ['project-payments-api'],
+    });
   });
 });
