@@ -1,5 +1,4 @@
 import { useId, useMemo, useState, type FormEvent } from 'react';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import {
   Button,
   Chip,
@@ -17,6 +16,7 @@ import { AlertTriangle, Folder, FolderGit2, FolderPlus, Layers, Plus, X } from '
 import { useAppStore } from '../../../../store';
 import { initRepo, validateGitRepo } from '../../../../shared/lib/repo';
 import { useChildRepoDetection } from '../../../../shared/hooks/useChildRepoDetection';
+import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
 import { useProjectAdoption } from '../../../../shared/hooks/useProjectAdoption';
 import { DetectedRepoList } from '../../../../shared/components/DetectedRepoList';
 import { ProjectAdoptionNotice } from '../../../../shared/components/ProjectAdoptionNotice';
@@ -124,10 +124,7 @@ export const WorkspaceLinkForm = ({ onComplete }: Props) => {
     onComplete({ mode, workspace });
   };
 
-  const pickDirectory = async (): Promise<string | null> => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    return typeof picked === 'string' && picked.length > 0 ? picked : null;
-  };
+  const pickDirectory = usePickFolder();
 
   const onPickProjectFolder = () =>
     run(async () => {

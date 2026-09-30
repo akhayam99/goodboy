@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import type { Project, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../store';
+import { usePickFolder } from '../usePickFolder';
 import type { ProjectAttachConflict } from '../../../store/slices/projects/addProject';
 import { initRepo } from '../../lib/repo';
 import { useChildRepoDetection } from '../useChildRepoDetection';
@@ -15,15 +15,8 @@ type Params = {
 
 const EMPTY_PROJECTS: ReadonlyArray<Project> = [];
 
-const pickFolder = async (): Promise<string | null> => {
-  const picked = await openDialog({ directory: true, multiple: false });
-  if (typeof picked !== 'string' || picked.length === 0) {
-    return null;
-  }
-  return picked;
-};
-
 export const useProjectLinking = ({ workspaceId, initialConflicts }: Params) => {
+  const pickFolder = usePickFolder();
   const projects = useAppStore((state) => state.projects ?? EMPTY_PROJECTS);
   const addProject = useAppStore((state) => state.addProject);
   const addProjects = useAppStore((state) => state.addProjects);

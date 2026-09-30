@@ -3,12 +3,12 @@ import { Star } from 'lucide-react';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { usePickFolder } from '../../../../shared/hooks/usePickFolder';
 import { ProjectLinkList } from '../../../../shared/components/ProjectLinkList';
 import { GoodboyIgnoreCard } from '../../../workspace/components/GoodboyIgnoreCard';
 import { GoodboyIgnoreField } from './GoodboyIgnoreField';
 import { SentryLinkedBadge } from '../../../integrations/sentry/SentryLinkedBadge';
 import { Button, Eyebrow, Notice } from '@goodboy/ui';
-import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { useProjectGitStatuses } from '../../../workspace/hooks/useProjectGitStatuses';
 import { LocateMovedProjects } from '../../../workspace/components/LocateMovedProjects';
 
@@ -31,9 +31,10 @@ export const WorkspaceProjectsSection = ({ workspaceId }: Props) => {
   const phase = useAppStore((state) => state.projectRelocationPhase);
   const owner = useAppStore((state) => state.projectRelocationWorkspaceId);
   const findMovedProjects = useAppStore((state) => state.findMovedProjects);
+  const pickFolder = usePickFolder();
   const chooseFolder = async (): Promise<void> => {
-    const picked = await openDialog({ directory: true, multiple: false });
-    if (typeof picked !== 'string' || picked.length === 0) {
+    const picked = await pickFolder();
+    if (picked === null) {
       return;
     }
     await findMovedProjects({ workspaceId, parent: picked });
