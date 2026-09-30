@@ -200,11 +200,7 @@ pub fn run() {
         .manage(frame_protocol::FrameStages::default())
         .setup(move |app| {
             use tauri::Manager;
-            app.handle().plugin(logging::plugin())?;
-            if let Ok(log_dir) = app.path().app_log_dir() {
-                logging::restrict_to_owner(&log_dir);
-            }
-            logging::flush_early();
+            logging::init(app.handle());
             query_bridge::start(app.handle().clone());
             std::thread::spawn(history::clean_stale_copies);
             #[cfg(target_os = "macos")]

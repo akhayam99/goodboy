@@ -1,8 +1,7 @@
 use std::fmt::Display;
 use std::path::Path;
 use std::sync::Mutex;
-use tauri::plugin::TauriPlugin;
-use tauri::Runtime;
+use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_log::{RotationStrategy, Target, TargetKind};
 
 pub(crate) const LOG_FILE_NAME: &str = "goodboy";
@@ -10,17 +9,93 @@ pub(crate) const MAX_LOG_FILE_BYTES: u128 = 512 * 1024;
 pub(crate) const KEPT_LOG_FILES: usize = 3;
 const MAX_DETAIL_CHARS: usize = 200;
 const MAX_EARLY_LINES: usize = 16;
+const BACKUP_SUFFIX: &str = ".log.bak";
 
-static EARLY: Mutex<Vec<String>> = Mutex::new(Vec::new());
+pub(crate) struct EarlyLines(Mutex<Vec<String>>);
 
-pub(crate) fn plugin<R: Runtime>() -> TauriPlugin<R> {
+impl EarlyLines {
+    pub(crate) const fn new() -> Self {
+        Self(Mutex::new(Vec::new()))
+    }
+
+    fn push(&self, line: String) {
+        let Ok(mut pending) = self.0.lock() else {
+            return;
+        };
+        if pending.len() < MAX_EARLY_LINES {
+            pending.push(line);
+        }
+    }
+
+    fn take(&self) -> Vec<String> {
+        match self.0.lock() {
+            Ok(mut pending) => std::mem::take(&mut *pending),
+            Err(_) => Vec::new(),
+        }
+    }
+}
+
+static EARLY: EarlyLines = EarlyLines::new();
+
+pub(crate) fn init<R: Runtime>(app: &AppHandle<R>) {
+    let dir = app.path().app_log_dir().ok();
+    if let Some(dir) = &dir {
+        sweep_backups(dir);
+    }
+    install(app, default_targets(), &EARLY);
+    if let Some(dir) = &dir {
+        restrict_to_owner(dir);
+    }
+    flush_early();
+}
+
+fn default_targets() -> Vec<Target> {
     let mut targets = vec![Target::new(TargetKind::LogDir {
         file_name: Some(LOG_FILE_NAME.to_string()),
     })];
     if cfg!(debug_assertions) {
         targets.push(Target::new(TargetKind::Stdout));
     }
-    builder(targets).build()
+    targets
+}
+
+fn install<R: Runtime>(app: &AppHandle<R>, targets: Vec<Target>, sink: &EarlyLines) {
+    let attached = builder(targets)
+        .split(app)
+        .map_err(|error| error.to_string())
+        .and_then(|(_, level, logger)| {
+            tauri_plugin_log::attach_logger(level, logger).map_err(|error| error.to_string())
+        });
+    if let Err(reason) = attached {
+        let line = format!(
+            "[goodboy] the log file is unavailable, logging is off: {}",
+            detail(&reason)
+        );
+        eprintln!("{line}");
+        sink.push(line);
+    }
+}
+
+pub(crate) fn sweep_backups(dir: &Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let mut backups: Vec<_> = entries
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| {
+                    name.starts_with(LOG_FILE_NAME) && name.ends_with(BACKUP_SUFFIX)
+                })
+        })
+        .collect();
+    backups.sort();
+    backups.pop();
+    for stale in backups {
+        let _ = std::fs::remove_file(stale);
+    }
 }
 
 fn builder(targets: Vec<Target>) -> tauri_plugin_log::Builder {
@@ -79,20 +154,11 @@ pub(crate) fn note_kill_failure(step: &str, result: std::io::Result<()>) {
 
 pub(crate) fn early(line: String) {
     eprintln!("{line}");
-    let Ok(mut pending) = EARLY.lock() else {
-        return;
-    };
-    if pending.len() < MAX_EARLY_LINES {
-        pending.push(line);
-    }
+    EARLY.push(line);
 }
 
-pub(crate) fn flush_early() {
-    let lines = match EARLY.lock() {
-        Ok(mut pending) => std::mem::take(&mut *pending),
-        Err(_) => return,
-    };
-    for line in lines {
+fn flush_early() {
+    for line in EARLY.take() {
         log::warn!("{line}");
     }
 }

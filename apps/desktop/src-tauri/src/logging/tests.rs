@@ -147,15 +147,67 @@ fn a_failure_detail_drops_credentials_extra_lines_and_length() {
 
 #[test]
 fn early_lines_are_kept_for_the_logger_and_capped() {
-    let _ = EARLY.lock().map(|mut pending| pending.clear());
+    let lines = EarlyLines::new();
     for index in 0..(MAX_EARLY_LINES + 5) {
-        early(format!("line {index}"));
+        lines.push(format!("line {index}"));
     }
 
-    let kept = EARLY.lock().unwrap().clone();
+    let kept = lines.take();
 
     assert_eq!(kept.len(), MAX_EARLY_LINES);
     assert_eq!(kept[0], "line 0");
-    flush_early();
-    assert!(EARLY.lock().unwrap().is_empty());
+    assert!(lines.take().is_empty());
+}
+
+#[test]
+fn an_unwritable_log_folder_turns_logging_off_without_failing_startup() {
+    let blocker = unique_directory("blocked");
+    fs::write(&blocker, "a file where the folder should be").unwrap();
+    let app = tauri::test::mock_app();
+    let targets = vec![Target::new(TargetKind::Folder {
+        path: blocker.clone(),
+        file_name: Some(LOG_FILE_NAME.to_string()),
+    })];
+    let sink = EarlyLines::new();
+
+    install(app.handle(), targets, &sink);
+
+    let reported = sink.take();
+    assert_eq!(reported.len(), 1);
+    assert!(reported[0].contains("logging is off"));
+    fs::remove_file(&blocker).unwrap();
+}
+
+#[test]
+fn stale_backup_files_are_swept_keeping_only_the_newest() {
+    let dir = unique_directory("backups");
+    fs::create_dir_all(&dir).unwrap();
+    for day in 1..=6 {
+        fs::write(
+            dir.join(format!("goodboy_2026-02-{day:02}_10-00-00.log.bak")),
+            "old",
+        )
+        .unwrap();
+    }
+    fs::write(dir.join("goodboy.log"), "active").unwrap();
+    fs::write(dir.join("goodboy_2026-02-01_10-00-00.log"), "archive").unwrap();
+    fs::write(dir.join("other.log.bak"), "not ours").unwrap();
+
+    sweep_backups(&dir);
+
+    let mut names: Vec<String> = folder_files(&dir)
+        .into_iter()
+        .map(|(name, _)| name)
+        .collect();
+    names.sort();
+    assert_eq!(
+        names,
+        vec![
+            "goodboy.log",
+            "goodboy_2026-02-01_10-00-00.log",
+            "goodboy_2026-02-06_10-00-00.log.bak",
+            "other.log.bak",
+        ]
+    );
+    fs::remove_dir_all(&dir).unwrap();
 }

@@ -156,8 +156,13 @@ anywhere; a debug build also prints to stdout.
 - **Level.** `info` and above. The frontend has no channel into the file: the
   `log` permission is not granted, so a window cannot write to it.
 - **Size.** A file rotates at 512 KiB. The plugin keeps the active file and
-  the 3 most recent dated archives (`goodboy_<date>_<time>.log`), and at most
-  one `.bak` when two rotations land in the same second. The folder stays
+  the 3 most recent dated archives (`goodboy_<date>_<time>.log`). When two
+  rotations land in the same second the plugin renames the older archive to
+  `.log.bak`, and its own cleanup never removes those. So `logging::init`
+  sweeps them at every start and keeps only the newest. That needs more than
+  512 KiB logged in one second, and the one message a stranger could trigger
+  on demand, a network peer that connects to the phone listener and fails the
+  handshake, is logged at `debug` and never reaches the file. Normal size:
   under about 2.5 MiB. `logging::tests` floods the logger and pins the cap.
 - **Access.** The folder is narrowed to the owner (`0700`) on macOS and Linux.
 - **Content.** Log a fixed label and a short reason, never a token, a prompt,
@@ -170,6 +175,10 @@ anywhere; a debug build also prints to stdout.
   `worktree prune`, `cherry-pick --abort` and the resets after it). A child that
   already exited is not reported. Other `let _ =` are still silent by design:
   event emits to a closed window and best-effort file cleanup.
+- **Logging never blocks startup.** `logging::init` builds the logger itself
+  and does not register the plugin. If the folder or file cannot be created or
+  opened (a `goodboy.log` owned by root after a `sudo` run, a read-only data
+  folder), it prints one line to stderr and the app starts with logging off.
 - **Before the logger exists.** `db::open` runs before the app, so its
   messages go through `logging::early`: printed to stderr at once, and written
   to the file when `setup` starts the logger (at most 16 lines).
