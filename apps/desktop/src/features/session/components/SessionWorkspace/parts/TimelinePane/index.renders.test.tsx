@@ -82,7 +82,7 @@ vi.mock('../../../../../workflows/useWorkflowAdvanceStates', () => {
   const states = new Map();
   return { useWorkflowAdvanceStates: () => states };
 });
-vi.mock('../../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 vi.mock('./ActivityFilterPanel', () => ({
