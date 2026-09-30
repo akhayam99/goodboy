@@ -15,6 +15,43 @@ Owns the turn pipeline. The frontend drives it from
 `apps/desktop/src-tauri/src/turn.rs`. Per-provider stream parsers live in
 `packages/core/src/providers/`.
 
+## How sendTurn is laid out
+
+`sendTurn.ts` holds `run`, which owns the cleanup that must happen whatever the
+turn does, and `runOnce`, which calls one file per phase in the slice
+(`apps/desktop/src/store/slices/turn/`). Each phase returns what the next ones
+read; a phase that can end the turn early (blocked over budget, lease denied,
+cancelled before the spawn) returns `turnDone` with the result, the others
+return `turnReady` with their values. Side effects run in the order below.
+
+1. `prepareTurn`: the mount and working directory, the agent, the slash skill,
+   the attachments and the workflow step the agent belongs to.
+2. `routeTurn`: provider, model, effort and credential, the over-budget gate and
+   the disconnected-provider gate.
+3. `leaseTurnWriter`: the captured-mount check and the resolver's worktree
+   writer lease.
+4. `startTurnRun`: run id, user message, provider run row, the cancel-before-spawn
+   claim (`claimTurnStart`), the agent row moving to `running`, session state.
+5. `buildTurnPrompt`: permission flags, context preamble, handoff layers, the
+   context-window warning.
+6. `buildTurnSpawn`: the resolve attempt, the guards, the system prompt, the
+   writable roots, the file-version capture, the handoff record, the span base.
+7. `readTurnStream`: one loop over the CLI events.
+8. `finalizeTurnStream`: span, run status, workflow completion, context refresh.
+9. `recoverTurnFailure`: failure class, cooldown, fallback rerun, usage-limit
+   retry, error state.
+10. `closeTurnCapture` (always) and `settleTurn`: assistant message, summary,
+    artifacts, nudges, drift, resolve phase, then the stored error is thrown.
+
+The phases share one `TurnProgress` object: the stream phase appends to it, and
+the finalize, recover and settle phases read it. It is a shared object, not a
+return value, because the failure path must see the text streamed before the
+throw. `run` releases the writer lease and drains the resolve queue, opens the
+mount continuation and drains the agent queue after `runOnce` returns or
+throws. Every provider run a turn opens is closed as `succeeded`, `failed` or
+`cancelled` on every one of these paths; `store.sqlite-turn.test.ts` holds that
+contract on a real database.
+
 ## Where a turn writes
 
 - A turn writes into the mount it was aimed at, else the session's active
@@ -393,6 +430,13 @@ in the activity rows and the trail, instead of "Blocked" or "Needs you"
 
 Whatever the outcome, a turn that forked a mount hands off to one continuation
 turn on the new mount once it ends.
+
+After the context refresh, a turn on a git mount mirrors the session's
+`git diff --numstat` against the same merge-base as the file-changes view into
+the `files_touched_numstat` context slot. The slot is not a `SLOT_KEYS` entry: it is
+desktop state that reaches the mobile client through the snapshot, next to the
+paths-only `files_touched` slot the client falls back to. A git failure never
+fails the turn.
 
 ## The session summarizer
 
