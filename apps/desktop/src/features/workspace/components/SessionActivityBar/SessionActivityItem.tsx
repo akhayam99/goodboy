@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { CostBadge } from '../../../../features/providers/components/CostBadge';
 import type { Session, SessionId } from '@goodboy/types';
 import {
@@ -33,21 +34,21 @@ type Props = {
   readonly isActive: boolean;
   readonly isDimmed?: boolean;
   readonly isSelected?: boolean;
-  readonly selectedIds: ReadonlyArray<SessionId>;
+  readonly getSelectedIds: () => ReadonlyArray<SessionId>;
   readonly onClearSelection: () => void;
   readonly onModifierClick: (id: SessionId, event: SelectionClickEvent) => void;
-  readonly onClick: () => void;
+  readonly onSelect: (id: SessionId) => void;
 };
 
-export const SessionActivityItem = ({
+const SessionActivityItemView = ({
   session,
   isActive,
   isDimmed = false,
   isSelected = false,
-  selectedIds,
+  getSelectedIds,
   onClearSelection,
   onModifierClick,
-  onClick,
+  onSelect,
 }: Props) => {
   const summary = useSessionSummary({ session });
   const tone = sessionTone({ stage: summary.stage, attention: summary.attention });
@@ -66,7 +67,11 @@ export const SessionActivityItem = ({
     target: { kind: 'session', sessionId },
     anchorKey,
     onBeforeOpen: () =>
-      sessionSelectionTarget({ sessionId, selectedIds, clearSelection: onClearSelection }),
+      sessionSelectionTarget({
+        sessionId,
+        selectedIds: getSelectedIds(),
+        clearSelection: onClearSelection,
+      }),
   });
 
   if (rename.editing) {
@@ -101,7 +106,7 @@ export const SessionActivityItem = ({
           onModifierClick(session.id as SessionId, event);
           return;
         }
-        onClick();
+        onSelect(sessionId);
       }}
       onContextMenu={menu.onContextMenu}
       onKeyDown={(event) => {
@@ -165,3 +170,5 @@ export const SessionActivityItem = ({
     </button>
   );
 };
+
+export const SessionActivityItem = memo(SessionActivityItemView);

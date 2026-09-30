@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import type { Session, SessionId, SessionStageInfo, WorkspaceId } from '@goodboy/types';
 
-const { state, viewPrefs, stageInfo, cost, store } = vi.hoisted(() => ({
+const { state, viewPrefs, stageInfo, stageInfoReads, cost, store } = vi.hoisted(() => ({
   cost: { current: 0 },
+  stageInfoReads: { current: 0 },
   store: {
     version: 0,
     listeners: new Set<() => void>(),
@@ -78,7 +79,10 @@ vi.mock('../../../../store', async () => {
     useSessionCost: () => cost.current,
     useNonResolverStandaloneAgents: () => [],
     useSessionHasUnread: () => false,
-    useSessionStageInfo: () => stageInfo.current,
+    useSessionStageInfo: () => {
+      stageInfoReads.current += 1;
+      return stageInfo.current;
+    },
     useSessionViewPrefs: () => viewPrefs.current,
     useSortedGroupedSessions: (_workspaceId: unknown, sessions: ReadonlyArray<unknown>) =>
       viewPrefs.current.group === 'stage'
@@ -619,5 +623,42 @@ describe('SessionActivityBar, row node', () => {
     ) as HTMLElement;
     expect(trailing.className).toContain('w-12');
     expect(trailing.firstElementChild?.className).toContain('group-hover/session-row:hidden');
+  });
+});
+
+describe('SessionActivityBar, row renders', () => {
+  const sessions = Array.from({ length: 12 }, (_, index) =>
+    makeSession(`a-${index}`, `session ${index}`),
+  );
+
+  const renderWith = ({ currentSessionId }: { readonly currentSessionId: SessionId | null }) => (
+    <SessionActivityBar
+      workspaceId={WS_ID}
+      sessions={sessions}
+      archivedSessions={[]}
+      currentSessionId={currentSessionId}
+      onSelectSession={onSelectSession}
+    />
+  );
+
+  const onSelectSession = vi.fn();
+
+  it('re-renders only the rows that gain or lose the current mark when the session changes', () => {
+    const view = render(renderWith({ currentSessionId: 'a-0' as SessionId }));
+    view.rerender(renderWith({ currentSessionId: 'a-0' as SessionId }));
+    stageInfoReads.current = 0;
+
+    view.rerender(renderWith({ currentSessionId: 'a-1' as SessionId }));
+
+    expect(stageInfoReads.current).toBe(2);
+  });
+
+  it('re-renders only the toggled row when one row joins the selection', () => {
+    render(renderWith({ currentSessionId: null }));
+    stageInfoReads.current = 0;
+
+    selectRow(3);
+
+    expect(stageInfoReads.current).toBe(1);
   });
 });
