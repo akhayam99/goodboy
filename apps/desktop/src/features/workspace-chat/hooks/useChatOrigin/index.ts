@@ -26,7 +26,7 @@ export const useChatOrigin = ({ session }: Params): ChatOrigin | null => {
     let found: ChatSessionLink | null = null;
     for (const links of Object.values(state.chatLinks)) {
       for (const candidate of links) {
-        if (candidate.sessionId === sessionId) {
+        if (candidate.sessionId === sessionId && candidate.kind === 'new') {
           found = found === null ? candidate : earlier(found, candidate);
         }
       }

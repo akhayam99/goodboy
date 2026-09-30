@@ -23,12 +23,12 @@ import { ChatOriginRow } from './ChatOriginRow';
 
 const SESSION = { id: 'session-consent', workspaceId: 'ws-harborline' } as unknown as Session;
 
-const linkOf = (chatId: string, sessionId: string, createdAt: string) => ({
+const linkOf = (chatId: string, sessionId: string, createdAt: string, kind = 'new') => ({
   id: `link-${chatId}-${sessionId}`,
   chatId,
   sessionId,
   messageId: null,
-  kind: 'new',
+  kind,
   createdAt,
 });
 
@@ -54,6 +54,25 @@ describe('ChatOriginRow', () => {
     render(<ChatOriginRow session={SESSION} />);
 
     expect(screen.queryByText(/From chat/)).toBeNull();
+  });
+
+  it('shows nothing for a session a chat was only added to', () => {
+    store.chatLinks = {
+      'chat-consent': [linkOf('chat-consent', 'session-consent', '2026-09-28T10:00:00Z', 'add')],
+    };
+    render(<ChatOriginRow session={SESSION} />);
+
+    expect(screen.queryByText(/From chat/)).toBeNull();
+  });
+
+  it('ignores a chat that was added later and names the one that started the session', () => {
+    store.chatLinks = {
+      'chat-other': [linkOf('chat-other', 'session-consent', '2026-09-28T09:00:00Z', 'add')],
+      'chat-consent': [linkOf('chat-consent', 'session-consent', '2026-09-28T10:00:00Z')],
+    };
+    render(<ChatOriginRow session={SESSION} />);
+
+    expect(screen.getByText('Where is the consent step defined?')).toBeDefined();
   });
 
   it('names the chat and opens it in the chat studio', () => {
