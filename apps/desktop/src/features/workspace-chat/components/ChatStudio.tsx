@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { StudioRailLayout } from '@goodboy/ui';
 import type { ChatId, ChatSummary, WorkspaceId } from '@goodboy/types';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
-import { StudioShell } from '../../../../shared/components/StudioShell';
-import { useAppStore } from '../../../../store';
-import { ChatList } from '../ChatList';
-import { ChatRoom } from '../ChatRoom';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
+import { StudioShell } from '../../../shared/components/StudioShell';
+import { useAppStore } from '../../../store';
+import { ChatList } from './ChatList';
+import { ChatRoom } from './ChatRoom';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

@@ -1,5 +1,5 @@
 import { cn, tintClasses, type Tone } from '@goodboy/ui';
-import type { WorkflowProgress } from '../../hooks/useSessionSummary/workflowProgress';
+import type { WorkflowProgress } from '../hooks/useSessionSummary/workflowProgress';
 
 type Props = {
   readonly progress: WorkflowProgress;

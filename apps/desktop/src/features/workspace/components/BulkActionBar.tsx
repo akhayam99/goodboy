@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Archive, RotateCcw, Trash2 } from 'lucide-react';
 import { Button, cn } from '@goodboy/ui';
 import type { Session } from '@goodboy/types';
-import { useSessionArchive } from '../../../session/hooks/useSessionArchive';
-import { BulkDeleteSessionsConfirm } from '../../../session/components/BulkDeleteSessionsConfirm';
+import { useSessionArchive } from '../../session/hooks/useSessionArchive';
+import { BulkDeleteSessionsConfirm } from '../../session/components/BulkDeleteSessionsConfirm';
 
 type BulkScope = 'active' | 'archived';
 

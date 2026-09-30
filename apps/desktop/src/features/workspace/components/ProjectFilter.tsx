@@ -8,8 +8,8 @@ import {
   useAppStore,
   useProjectMountsForSessions,
   useSelectedProjectIds,
-} from '../../../../store';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+} from '../../../store';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

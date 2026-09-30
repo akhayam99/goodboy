@@ -527,7 +527,7 @@
     "apps/desktop/src/features/workflows/components/WorkflowStudio/SavedStepsList/SavedStepRow.tsx": 1,
     "apps/desktop/src/features/workflows/components/WorkflowStudio/SavedStepsList/SavedStepSection.tsx": 1,
     "apps/desktop/src/features/workflows/components/WorkflowStudio/WorkflowList/WorkflowListRow.tsx": 1,
-    "apps/desktop/src/features/workspace/components/BulkActionBar/index.tsx": 1,
+    "apps/desktop/src/features/workspace/components/BulkActionBar.tsx": 1,
     "apps/desktop/src/features/workspace/components/ConvertWorkspaceDialog/index.tsx": 5,
     "apps/desktop/src/features/workspace/components/ProjectGitPill/InitGuide.tsx": 3,
     "apps/desktop/src/features/workspace/components/ProjectGitPill/ProjectGitPill.tsx": 1,

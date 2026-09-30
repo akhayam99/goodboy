@@ -1,10 +1,10 @@
 import { Chip, cn } from '@goodboy/ui';
 import type { Workspace } from '@goodboy/types';
-import { useAppStore, useWorkspaceHasUnread } from '../../../../store';
-import { formatSpan } from '../../../../shared/utils/time/formatSpan';
-import { workspaceAccent } from '../../color';
-import { linkedProjectsLabel } from '../../linkedProjectsLabel';
-import { useNow } from '../../../../shared/hooks/useNow';
+import { useAppStore, useWorkspaceHasUnread } from '../../../store';
+import { formatSpan } from '../../../shared/utils/time/formatSpan';
+import { workspaceAccent } from '../color';
+import { linkedProjectsLabel } from '../linkedProjectsLabel';
+import { useNow } from '../../../shared/hooks/useNow';
 
 type Props = {
   workspace: Workspace;
