@@ -15,6 +15,9 @@ import { LEDGER, LEDGER_COMMITS, LEDGER_GRAPH } from '../../testing/ledgerFixtur
 import { LEDGER_PRESET } from '../../testing/ledgerPreset';
 import { historyBackupRef } from '../../historyBackupRef';
 
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
+
 const BACKUP_REF = historyBackupRef({ branch: 'hl/ledger-export', atMs: Date.now() });
 
 const SESSION_ID = 'session-ledger' as SessionId;

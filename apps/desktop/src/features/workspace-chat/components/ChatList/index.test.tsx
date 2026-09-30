@@ -23,6 +23,9 @@ vi.mock('../../../../store', () => ({
 
 import { ChatList } from './index';
 
+vi.useFakeTimers({ toFake: ['Date'] });
+vi.setSystemTime(new Date(2026, 8, 30, 12, 0, 0));
+
 const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
