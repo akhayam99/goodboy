@@ -1,17 +1,14 @@
 import { useEscapeLayer } from '@goodboy/ui';
+import { isTextEntryTarget } from '../../../../shared/keyboard/isTypingTarget';
 
 type Params = {
   readonly isActive: boolean;
   readonly onEscape: () => void;
 };
 
-const isTextEntry = (target: Element | null): boolean =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
-
 export const useEscapeToList = ({ isActive, onEscape }: Params): void => {
   useEscapeLayer(() => {
-    if (isTextEntry(document.activeElement)) {
+    if (isTextEntryTarget(document.activeElement)) {
       return;
     }
     onEscape();

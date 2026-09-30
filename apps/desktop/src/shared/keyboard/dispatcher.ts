@@ -1,6 +1,7 @@
 import { currentPlatform } from '../platform';
 import { recordShortcut } from '../utils/actionRing';
 import { isTerminalFocused } from './isTerminalFocused';
+import { isTextEntryTarget, isTypingTarget } from './isTypingTarget';
 import { SHORTCUTS, platformCombo, type ShortcutEntry, type ShortcutId } from './registry';
 
 type Parsed = {
@@ -51,13 +52,6 @@ type Registration = {
 const registrations = new Map<ShortcutId, Registration>();
 let listening = false;
 
-const isEditableTarget = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
-
-const isTypingTarget = (target: EventTarget | null): boolean =>
-  isEditableTarget(target) || (target instanceof HTMLElement && target.tagName === 'SELECT');
-
 const isPlainKey = (entry: ShortcutEntry): boolean => {
   const parsed = parseCombo(platformCombo({ entry }));
   return !parsed.meta && !parsed.ctrl && !parsed.alt && !parsed.shift;
@@ -78,7 +72,7 @@ const typingWins = (event: KeyboardEvent): boolean => {
   if (event.getModifierState('AltGraph')) {
     return true;
   }
-  return event.altKey && isEditableTarget(event.target);
+  return event.altKey && isTextEntryTarget(event.target);
 };
 
 const onKeyDown = (event: KeyboardEvent): void => {
