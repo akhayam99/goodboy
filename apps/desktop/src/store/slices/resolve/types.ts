@@ -5,14 +5,18 @@ import type {
   PrComment,
   ProjectId,
   ResolveAttemptPhase,
+  ResolveBatch,
   ResolveCheckBreadth,
+  ResolveLaunchChoice,
   ResolvePublicationDrift,
   ResolvePublicationPreview,
+  ResolveSourceKind,
   ResolveThread,
   ResolveUncapturedWork,
   SessionId,
 } from '@goodboy/types';
 import type { PublishConversationsResult } from './publishConversations';
+import type { RecheckOutcome } from './recheckThread';
 import type { ResolveCandidateMode } from './resolveCandidateMode';
 import type { ResolveCheckPair } from './runResolveCheck';
 import type { GetFn, SetFn } from '../../slice-types';
@@ -41,10 +45,16 @@ export type AttemptParams = SessionParams & {
   readonly phase: 'queued' | 'running';
   readonly threadIds?: ReadonlyArray<string>;
   readonly candidateMode?: ResolveCandidateMode;
+  readonly batch?: ResolveAttemptBatch;
+};
+export type ResolveAttemptBatch = {
+  readonly batchId: string;
+  readonly launchChoice: ResolveLaunchChoice;
 };
 export type CandidateBeginParams = SessionParams & {
   readonly attemptId: string;
   readonly mountTarget: MountTargetSnapshot | null;
+  readonly baseSha?: string;
 };
 export type CandidateCaptureParams = SessionParams & {
   readonly attemptId: string;
@@ -84,12 +94,14 @@ export type UpdateParams = SessionParams & {
 export type ResolveUpdates = ReadonlyArray<Pick<UpdateParams, 'threadId' | 'revision' | 'patch'>>;
 export type ResolveUpdatesParams = { readonly rows: ReadonlyArray<ResolveThread> };
 export type BatchUpdateParams = SessionParams & {
+  readonly keepsDraft?: boolean;
   readonly updates: ResolveUpdates | ((params: ResolveUpdatesParams) => ResolveUpdates);
 };
 
 export type PreparePublicationParams = SessionParams & {
   readonly threadIds?: ReadonlyArray<string>;
   readonly scopeId?: string;
+  readonly isolated?: boolean;
   readonly drift?: ReadonlyArray<ResolvePublicationDrift>;
 };
 export type PublishParams = SessionParams & {
@@ -98,6 +110,11 @@ export type PublishParams = SessionParams & {
 };
 
 export type ThreadParams = SessionParams & { readonly threadId: string };
+export type SourceSnapshotsParams = SessionParams & {
+  readonly prNumber: number;
+  readonly comments: ReadonlyArray<PrComment>;
+};
+export type SettleSourceChangeParams = ThreadParams & { readonly keepDraft: boolean };
 
 export type EnsureReviewThreadParams = SessionParams & {
   readonly threadId: string;
@@ -109,6 +126,7 @@ export type MaterializeParams = SessionParams & {
   readonly prNumber: number;
   readonly projectId: ProjectId | null;
   readonly comments: ReadonlyArray<PrComment>;
+  readonly sourceKind?: ResolveSourceKind;
 };
 
 export type EnsureReviewThreadResult = 'existing' | 'created' | 'missing' | 'closed' | 'cancelled';
@@ -117,6 +135,23 @@ export type ResolveActions = {
   readonly acceptResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;
   readonly refuseResolveQueueItem: (params: ItemRevisionParams) => Promise<void>;
   readonly resolveWithoutReply: (params: ItemParams) => Promise<void>;
+  readonly answerItemWithoutFix: (
+    params: ItemParams & { readonly reply: string; readonly allowIntegrated?: boolean },
+  ) => Promise<void>;
+  readonly refreshThreadGitState: (params: SessionParams) => Promise<void>;
+  readonly dismissThreadFix: (params: ThreadParams & { readonly sha: string }) => void;
+  readonly replyAndResolveThread: (
+    params: ThreadParams & { readonly reply?: string },
+  ) => Promise<void>;
+  readonly recheckThread: (params: ThreadParams) => Promise<RecheckOutcome>;
+  readonly settleThreadRecheck: (
+    params: SessionParams & {
+      readonly agentId: AgentId;
+      readonly assistantText: string;
+      readonly didAgentDie?: boolean;
+    },
+  ) => Promise<void>;
+  readonly resolveThreadOnly: (params: ThreadParams) => Promise<void>;
   readonly deferResolveQueueItem: (params: ItemParams) => Promise<void>;
   readonly takeUpResolveQueueItem: (params: ItemParams) => Promise<void>;
   readonly reopenResolveQueueItem: (params: Omit<ItemRevisionParams, 'reply'>) => Promise<void>;
@@ -147,4 +182,13 @@ export type ResolveActions = {
   readonly materializeReviewThreads: (params: MaterializeParams) => Promise<number>;
   readonly syncNoteThreads: (params: SessionParams) => Promise<number>;
   readonly closeResolvedNote: (params: ThreadParams) => Promise<void>;
+  readonly createResolveBatch: (params: CreateBatchParams) => Promise<ResolveBatch>;
+  readonly setResolveParallelLimit: (params: ParallelLimitParams) => Promise<void>;
+  readonly syncSourceSnapshots: (params: SourceSnapshotsParams) => Promise<void>;
+  readonly settleResolveSourceChange: (params: SettleSourceChangeParams) => Promise<void>;
 };
+export type CreateBatchParams = SessionParams & {
+  readonly threadIds: ReadonlyArray<string>;
+  readonly launchChoice: ResolveLaunchChoice;
+};
+export type ParallelLimitParams = SessionParams & { readonly limit: number };

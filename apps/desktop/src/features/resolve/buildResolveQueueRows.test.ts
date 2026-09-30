@@ -114,6 +114,9 @@ const attempt: ResolveAttempt = {
   endedAt: null,
   error: null,
   createdAt: 1,
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 };
 
 describe('buildResolveQueueRows', () => {

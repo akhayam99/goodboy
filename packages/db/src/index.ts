@@ -67,6 +67,7 @@ export {
   reconnectProject,
   updateProjectKind,
   updateProjectAfterMerge,
+  updateProjectResolveCommitStyle,
   updateProjectBaseBranch,
   updateProjectStar,
   updateProjectDescription,
@@ -519,7 +520,22 @@ export {
   listActiveResolveAttempts,
   insertResolveAttempt,
   setResolveAttemptPhase,
+  setResolveAttemptCopyPath,
 } from './queries/resolve-attempt';
+export {
+  insertResolveBatch,
+  listResolveBatches,
+  getResolveParallelLimit,
+  setResolveParallelLimit,
+} from './queries/resolve-batch';
+export {
+  listResolveThreadFacts,
+  setResolveThreadGitState,
+  setResolveThreadVerdict,
+  setResolveThreadSourceSnapshot,
+  setResolveThreadSource,
+} from './queries/resolve-thread-facts';
+export { keepResolveDraftCurrent } from './queries/resolve-draft-current';
 export { hasResolveImport, commitResolveImport } from './queries/resolve-import';
 export {
   insertResolveCandidate,
@@ -563,10 +579,13 @@ export {
   updateStarredIssueSnapshots,
 } from './queries/starred-issue';
 export {
+  deleteChats,
   finishChatMessage,
   insertChat,
   insertChatMessage,
+  insertChatSessionLink,
   listChatMessages,
+  listChatSessionLinks,
   listChats,
   renameChat,
   setChatModel,

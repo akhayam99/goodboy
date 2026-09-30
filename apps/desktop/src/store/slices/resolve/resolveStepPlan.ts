@@ -6,14 +6,16 @@ type Params = {
   readonly threadId: string;
   readonly comments: ReadonlyArray<PrComment>;
   readonly shouldResolveOnGithub: boolean;
+  readonly canResolve?: boolean;
 };
 
 export const resolveStepPlan = ({
   threadId,
   comments,
   shouldResolveOnGithub,
+  canResolve: sourceCanResolve = true,
 }: Params): ResolveStepPlan => {
-  if (!shouldResolveOnGithub) {
+  if (!shouldResolveOnGithub || !sourceCanResolve) {
     return 'leave_open';
   }
   const canResolve = comments.find((comment) => comment.threadId === threadId)?.canResolve;

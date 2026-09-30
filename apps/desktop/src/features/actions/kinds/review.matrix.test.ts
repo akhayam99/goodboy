@@ -6,14 +6,13 @@ import { REVIEW_KIND, type ReviewFacts } from './review';
 const BASE: ReviewFacts = {
   sessionId: 'session' as SessionId,
   prNumber: 318,
+  sourceKind: 'github',
   open: 0,
-  fresh: 0,
   ready: 0,
   accepted: 0,
   failed: 0,
   pushed: 0,
   notes: 0,
-  freshThreadIds: [],
   isPushing: false,
   isLoading: false,
   isError: false,
@@ -28,10 +27,9 @@ type Row = {
 const MATRIX: ReadonlyArray<Row> = [
   {
     name: '3 open, mixed',
-    facts: { open: 3, fresh: 1, ready: 1, freshThreadIds: ['a'] },
+    facts: { open: 3, ready: 1 },
     expected: [
       'review.openPullRequest link Open PR #318',
-      'review.draftFixes secondary Draft a fix',
       'review.draftModel menu Model for drafts…',
     ],
   },
@@ -89,11 +87,8 @@ const MATRIX: ReadonlyArray<Row> = [
   },
   {
     name: 'no PR, 2 notes',
-    facts: { prNumber: null, open: 2, fresh: 2, freshThreadIds: ['a', 'b'] },
-    expected: [
-      'review.draftFixes primary Draft fixes for 2',
-      'review.draftModel menu Model for drafts…',
-    ],
+    facts: { prNumber: null, open: 2 },
+    expected: ['review.draftModel menu Model for drafts…'],
   },
   {
     name: 'PR with open notes',
@@ -115,11 +110,10 @@ const MATRIX: ReadonlyArray<Row> = [
     expected: ['review.openPullRequest link Open PR #318', 'review.retryLoad empty Try again'],
   },
   {
-    name: 'one drafting, 2 new',
-    facts: { open: 3, fresh: 2, freshThreadIds: ['a', 'b'] },
+    name: 'one drafting, 2 not started',
+    facts: { open: 3 },
     expected: [
       'review.openPullRequest link Open PR #318',
-      'review.draftFixes secondary Draft fixes for 2',
       'review.draftModel menu Model for drafts…',
     ],
   },

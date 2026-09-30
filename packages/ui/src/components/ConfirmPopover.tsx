@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, type ComponentProps, type ReactNode } from 'react';
 import { useDropdown } from '../useDropdown';
+import { useEscapeLayer } from '../useEscapeLayer';
 import { AnchoredPopover } from './AnchoredPopover';
 import { InlineConfirm } from './InlineConfirm';
 
@@ -98,6 +99,8 @@ export const ConfirmPopover = ({
     }
     onCancel?.();
   };
+
+  useEscapeLayer(cancel, open);
 
   const confirm = async () => {
     await onConfirm();

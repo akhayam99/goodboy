@@ -1896,7 +1896,7 @@ const REVIEW_COMMENT_STATES: ReadonlyArray<readonly [string, string, ReadonlyArr
     [
       'reviewComment.openInDiff',
       'reviewComment.openOnGithub',
-      'reviewComment.accept (The comment changed since this draft. Redraft first.)',
+      'reviewComment.keepDraft',
       'reviewComment.edit',
       ...COMMENT_DECIDE,
       'reviewComment.copyLink',
@@ -1918,7 +1918,6 @@ describe('review and comment menus in every state', () => {
   it('offers the Review layer actions for a pull request with a comment waiting', () => {
     expect(matrixOf({ kind: 'review', sessionId: REVIEW_SESSION })).toEqual([
       'review.openPullRequest',
-      'review.draftFixes',
       'review.push',
       'review.draftModel',
     ]);

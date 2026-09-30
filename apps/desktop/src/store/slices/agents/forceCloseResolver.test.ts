@@ -67,6 +67,9 @@ const heldAttempt = {
   endedAt: null,
   error: null,
   createdAt: 1,
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 } satisfies ResolveAttempt;
 
 const mountRow = ({ mountId, worktreePath }: { mountId: MountId; worktreePath: string }) => ({

@@ -54,4 +54,18 @@ describe('GhostActionButton', () => {
     );
     expect(screen.getByRole('button').className).toContain('info');
   });
+
+  it('keeps the label as the accessible name when it is visually hidden', () => {
+    render(
+      <GhostActionButton
+        icon={RefreshCw}
+        label="Interrupt"
+        labelClassName="sr-only"
+        onClick={vi.fn()}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: 'Interrupt' });
+    expect(button.querySelector('span')?.className).toContain('sr-only');
+  });
 });

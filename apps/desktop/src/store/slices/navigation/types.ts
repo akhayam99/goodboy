@@ -10,6 +10,8 @@ import type { StudioPlace } from './studio';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
+export type AgentPane = 'brief' | 'transcript';
+
 export type SessionTarget =
   | { readonly kind: 'artifact'; readonly artifactId: ArtifactId }
   | { readonly kind: 'run'; readonly runId: string }
@@ -22,7 +24,7 @@ export type SessionTarget =
       readonly page?: 'history' | null;
     }
   | { readonly kind: 'terminal'; readonly mountPath: string }
-  | { readonly kind: 'thread'; readonly threadId: string };
+  | { readonly kind: 'thread'; readonly threadId: string; readonly pane?: AgentPane };
 
 export type SessionView = {
   readonly lens: LensKind | null;
@@ -37,7 +39,13 @@ export type Place =
   | { readonly at: 'session'; readonly sessionId: SessionId; readonly view: SessionView };
 
 export type PlaceRequest =
-  Place | { readonly at: 'agent'; readonly sessionId: SessionId; readonly agentId: AgentId };
+  | Place
+  | {
+      readonly at: 'agent';
+      readonly sessionId: SessionId;
+      readonly agentId: AgentId;
+      readonly pane?: AgentPane;
+    };
 
 export type Focus = {
   readonly drawer: OpenDrawer | null;

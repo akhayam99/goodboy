@@ -1,4 +1,5 @@
-import type { Agent, ProjectId, ResolveThread, SessionId } from '@goodboy/types';
+import type { Agent, ProjectId, ResolveSourceKind, ResolveThread, SessionId } from '@goodboy/types';
+import { providerThreadIdOf, sourceKindOfThreadId } from './resolveThreadSource';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -9,6 +10,7 @@ type Params = {
   readonly diffCommentId?: string | null;
   readonly generation?: number;
   readonly reopenedFromThreadId?: string | null;
+  readonly sourceKind?: ResolveSourceKind;
 };
 
 export const createResolveThread = ({
@@ -20,8 +22,9 @@ export const createResolveThread = ({
   diffCommentId = null,
   generation = 0,
   reopenedFromThreadId = null,
+  sourceKind = sourceKindOfThreadId({ threadId }),
 }: Params): ResolveThread => {
-  const numberFromUrl = agent?.sourceCommentUrl?.match(/\/pull\/(\d+)/)?.[1];
+  const numberFromUrl = agent?.sourceCommentUrl?.match(/\/(?:pull|-\/merge_requests)\/(\d+)/)?.[1];
   const now = Date.now();
   return {
     id: crypto.randomUUID(),
@@ -51,5 +54,10 @@ export const createResolveThread = ({
     closedSource: null,
     createdAt: now,
     updatedAt: now,
+    sourceKind: diffCommentId === null ? sourceKind : 'local',
+    providerThreadId:
+      diffCommentId === null
+        ? providerThreadIdOf({ row: { threadId, providerThreadId: null } })
+        : null,
   };
 };

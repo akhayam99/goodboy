@@ -5,6 +5,8 @@ import { REPLY_TEMPLATE_FIXED_DEFAULT, REPLY_TEMPLATE_NO_CHANGE_DEFAULT } from '
 const VARS = {
   reason: 'Attempts are now capped at 6.',
   commit: '[`4f21c8b`](https://github.com/acme/payments-api/commit/4f21c8b)',
+  commit_story:
+    '`c81e5aa`, squashed into [`4f21c8b`](https://github.com/acme/payments-api/commit/4f21c8b)',
   fixup_of: '`3a1f9c2`',
   reviewer: '@cascadia-lead',
   file: 'src/webhooks/retryPolicy.ts',
@@ -14,8 +16,15 @@ const VARS = {
 describe('renderReplyTemplate', () => {
   it('fills the default fixed template', () => {
     expect(renderReplyTemplate({ template: REPLY_TEMPLATE_FIXED_DEFAULT, vars: VARS })).toBe(
-      'Attempts are now capped at 6.\n\nFixed in [`4f21c8b`](https://github.com/acme/payments-api/commit/4f21c8b).',
+      'Attempts are now capped at 6.\n\nFixed in `c81e5aa`, squashed into [`4f21c8b`](https://github.com/acme/payments-api/commit/4f21c8b).',
     );
+  });
+
+  it('fills the commit story variable', () => {
+    expect(
+      renderReplyTemplate({ template: 'Done in {commit_story}', vars: { commit_story: 'x, y' } }),
+    ).toBe('Done in x, y');
+    expect(replyTemplateProblems({ template: '{reason} {commit_story}' })).toEqual([]);
   });
 
   it('fills the default not changing template', () => {

@@ -4,13 +4,19 @@ export const REVIEW_TITLE = 'Review';
 
 export const REVIEW_FLOW_LABEL = {
   list: 'Comments',
+  listMenu: 'Filter comments',
+  noMatch: 'No comment in this state',
   comment: 'Comment',
   commentActions: 'Comment actions',
   reviewActions: 'Review actions',
+  sourcePicker: 'Review source',
   proposedChange: 'Proposed change',
+  fix: 'Fix',
   agentAsks: 'The agent asks',
   resolver: 'Resolver',
   edited: 'Edited',
+  commentEdited: 'Comment edited',
+  lineMoved: 'The line moved',
   resolveOnly: 'Resolve only',
   editReply: 'Edit the reply',
   saveReply: 'Save reply',
@@ -19,8 +25,31 @@ export const REVIEW_FLOW_LABEL = {
   previous: 'Previous comment',
   next: 'Next comment',
   noChangeCaptured: 'The agent changed no code for this comment.',
+  waitingForSlot: 'Waiting for a free slot',
   tooLarge: 'The change is too large to show here.',
 } as const;
+
+export const sourceChangeLine = ({
+  author,
+  time,
+}: {
+  readonly author: string | null;
+  readonly time: string;
+}): string => {
+  const by = author === null ? 'Edited' : `Edited by ${author}`;
+  return time === '' ? `${by}, after the draft.` : `${by}, seen at ${time}, after the draft.`;
+};
+
+export const newReplyLine = ({ authors }: { readonly authors: ReadonlyArray<string> }): string => {
+  const [first, second] = authors;
+  if (first === undefined) {
+    return 'New reply';
+  }
+  if (second === undefined) {
+    return `New reply from ${first}`;
+  }
+  return `New replies from ${authors.join(', ')}`;
+};
 
 export const replyHeading = ({ author }: { readonly author: string | null }): string =>
   author === null ? 'Reply' : `Reply to ${author}`;
@@ -51,12 +80,25 @@ export const COMPOSE_COPY: Record<
   },
 };
 
+export const composePlaceholder = ({
+  mode,
+  provider,
+}: {
+  readonly mode: ReviewComposeMode;
+  readonly provider: string;
+}): string =>
+  mode === 'reply'
+    ? `The reviewer reads this on ${provider} after the push`
+    : COMPOSE_COPY[mode].placeholder;
+
 export const decidedNote = ({
   state,
   sha,
+  provider = 'GitHub',
 }: {
   readonly state: 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved';
   readonly sha: string | null;
+  readonly provider?: string;
 }): string => {
   switch (state) {
     case 'accepted':
@@ -64,11 +106,11 @@ export const decidedNote = ({
     case 'replied':
       return 'Reply only. It goes out with the next push.';
     case 'skipped':
-      return 'Skipped. It stays open on GitHub and never blocks the push.';
+      return `Skipped. It stays open on ${provider} and never blocks the push.`;
     case 'pushed':
       return sha === null ? 'Pushed.' : `Pushed in ${sha.slice(0, 7)}.`;
     case 'resolved':
-      return 'Resolved on GitHub by someone else.';
+      return `Resolved on ${provider} by someone else.`;
     default: {
       const exhaustive: never = state;
       return exhaustive;
@@ -88,3 +130,23 @@ export const sharedFixLine = ({ count }: { readonly count: number }): string =>
   count === 1
     ? 'The same fix answers one more comment, accepted with this one:'
     : `The same fix answers ${count} more comments, accepted with this one:`;
+
+export const RESOLVER_BRIEF_COPY = {
+  pushNow: 'Push now',
+  openInReview: 'Open in Review',
+  openTranscript: 'Open transcript',
+} as const;
+
+export const batchChildNotice = ({ total }: { readonly total: number }): string => {
+  const others = total - 1;
+  return `This comment was fixed with ${others} ${others === 1 ? 'other' : 'others'}. Accept and push them together in Review.`;
+};
+
+export const RECHECK_LABEL = {
+  running: 'Re-checking',
+  looking: 'Looking for the change on the branch…',
+  result: 'Re-check result',
+  checked: 'Checked',
+  alreadyPosted: 'The reply is already on the pull request, so there is nothing to post.',
+  runsOn: ({ model }: { readonly model: string }): string => `Fix again runs on ${model}.`,
+} as const;

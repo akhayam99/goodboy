@@ -13,6 +13,7 @@ export type GhostActionButtonProps = {
   readonly isBusy?: boolean;
   readonly busyLabel?: string;
   readonly title?: string;
+  readonly labelClassName?: string;
   readonly ariaLabel?: string;
   readonly onClick: () => void;
 };
@@ -27,10 +28,14 @@ export const GhostActionButton = ({
   isBusy = false,
   busyLabel,
   title,
+  labelClassName,
   ariaLabel,
   onClick,
 }: GhostActionButtonProps) => {
   const tint = tintClasses(tone);
+  const text = isBusy ? (busyLabel ?? label) : label;
+  const labelContent =
+    labelClassName == null ? text : <span className={labelClassName}>{text}</span>;
 
   return (
     <button
@@ -54,7 +59,7 @@ export const GhostActionButton = ({
       ) : (
         <Icon size={14} aria-hidden />
       )}
-      {isBusy ? (busyLabel ?? label) : label}
+      {labelContent}
     </button>
   );
 };

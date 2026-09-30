@@ -4,6 +4,8 @@ import type { ExecutedAgentRouting } from './slices/turn/executedAgentRouting';
 import type { ResolveState } from './slices/resolve/state';
 import type { ProjectCheckoutUpdate } from './slices/projects/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
+import type { ReviewSelectionState } from './slices/review-selection/state';
+import type { ReviewSourceState } from './slices/review-source/state';
 import type { OrphanWorktree } from '../features/worktree/worktree';
 import type {
   StorageArtifact,
@@ -116,8 +118,9 @@ import type { SessionDraftState } from './slices/sessionDraft/state';
 import type { ContextDrawerSliceState } from './slices/contextDrawer/state';
 import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
-import type { NavigationSliceState } from './slices/navigation/types';
+import type { AgentPane, NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
+import type { ReviewCommitsState } from './slices/reviewCommits/state';
 import type { ProviderConnectMap, ProviderLifecycleMap } from './slices/providers';
 import type { ArtifactFilter } from '../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
@@ -256,6 +259,8 @@ export type PendingOrchestration = {
 type AppSliceState = ArtifactsState &
   ResolveState &
   ReviewNavigationState &
+  ReviewSelectionState &
+  ReviewSourceState &
   PrWritesState &
   SessionSyncState &
   IssueBriefsState &
@@ -266,6 +271,7 @@ type AppSliceState = ArtifactsState &
   SentryLinksState &
   UpdaterState &
   ChangelogState &
+  ReviewCommitsState &
   SlackThreadsSliceState &
   BugReportDraftState &
   SessionDraftState &
@@ -479,6 +485,7 @@ export type AppState = AppSliceState & {
   readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
+  readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
   readonly terminalSessions: Readonly<Record<SessionId, 'open' | 'closed'>>;
   readonly terminalTabs: Readonly<Record<SessionId, readonly TerminalTab[]>>;
   readonly activeTerminalTab: Readonly<Record<SessionId, TerminalTabId | null>>;

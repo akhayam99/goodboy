@@ -35,6 +35,31 @@ file holds those explanations. Everything below has been "fixed" at least once a
   also not the union the pull-request screens switch on. That one is
   `PullRequestProvider`, which already has `'bitbucket'`. So Bitbucket pull
   requests do not need a `RemoteHostKind` member to work.
+- `syncBranchWithRemote` (the `Sync and try again` of a push that failed on a
+  moved remote) has no Rust command of its own. It calls `history_rebase_plan`
+  with the branch itself as the base, which fetches `origin/<branch>` and
+  plans the rebase of the unpushed commits on it, then replays that plan in a
+  copy. A conflict discards the copy and stops. It must never start the
+  history rewriter the way `rebaseBranch` does, because the promise on screen
+  is that nothing is touched. A failed push counts as "remote moved" only when
+  the error matches `isRemoteMovedError`; `verifiedPush` builds its two
+  messages through the same module, so changing their wording elsewhere turns
+  the button off.
+- Review comments come from a `ReviewSource` (`packages/core/src/review-source/`),
+  never from `sessionGithub` alone. `activeReviewSourceOf` (review-source slice)
+  picks the source of the active mount: its comments, PR or MR number, url,
+  head branch and capabilities. Replies and resolves go through
+  `reviewSourceFor`, keyed by `resolve_threads.source_kind` and
+  `provider_thread_id`; a GitLab thread id is `gitlab:<discussionId>` and its
+  `pr_number` is the MR iid, and a Bitbucket thread id is `bitbucket:<rootCommentId>`
+  (one thread per inline root comment, replies go under the root). A publication is scoped to the rows of the picked
+  source (`approvedPublicationScope({ include })`), so pushing GitLab never
+  posts GitHub rows. `resolveStepPlan` leaves a thread open when the source
+  cannot resolve (`REVIEW_SOURCE_CAPABILITIES`, Bitbucket replies only). Wording
+  follows the same capabilities: where `canResolve` is false the comment has no
+  "Resolve without a reply" and the push confirm says the thread stays open.
+  Read `sessionGitlabMr` and `reviewSourceThreads` through the selectors, not
+  by hand: picking a source in another project calls `setSessionActiveMount`.
 - `resolve_threads` is the only verdict history. Migration `m140` moved every
   `pending_resolutions` row into it, and `m143` dropped that table. Nothing
   reads a separate queue any more. What the user sees comes from one column,
@@ -73,6 +98,26 @@ file holds those explanations. Everything below has been "fixed" at least once a
   `turnSettled.ts`) besides checking the lease and the live run ids. Markers
   that still arrive on an attempt failed as `interrupted` are recorded rather
   than dropped.
+- A resolver started through a batch (`startBatch`, `resolve_attempts.batch_id`
+  set) never writes the real branch. `drainResolveQueue` makes it a detached
+  copy at the branch head (`resolve_copy_prepare`, under the history copy
+  reservations with the slug `resolve-<attemptId>`) and hands `sendTurn` the
+  `resolveCopyPath`. That turn takes no worktree writer lease, gets the copy
+  and its git admin folder as writable roots, and cannot push. The writer
+  lease still guards the real branch for resolvers without a batch, and only
+  one of them runs at a time. Up to the session limit
+  (`resolve_session_settings.parallel_limit`, default 4) batch resolvers run
+  at once; the rest stay `queued`. When the turn ends, the work is captured
+  from the copy as a candidate (`refs/goodboy/candidates/<attemptId>`, shared
+  by every worktree of the repo) and the copy is deleted; the candidate row
+  keeps the real worktree path, so Accept cherry-picks onto the real branch.
+  A cherry-pick that no longer applies is aborted and the branch reset, the
+  candidate turns `stale` and the thread fails with
+  `failed:accept_conflict`, so a retry redoes it on top. Every drain releases
+  the copies of ended attempts, and app start removes every `resolve-` copy no
+  process holds. A copy is never reused across turns: a later turn of the same
+  agent without a copy (an operator message) runs on the real branch with the
+  lease.
 - `RoutingPicker.onModel(model)` carries only the model string, not the
   provider picked in the picker. A consumer that rebuilds a provider-model
   pair from values captured by an earlier render can save the old provider

@@ -3,7 +3,13 @@ import type { MountId, SessionId } from '@goodboy/types';
 import { selectActiveMountId } from '../project-mounts/selectors';
 import { sessionPlace } from '../navigation/place';
 import { setPullRequestMode } from './setPullRequestMode';
-import { REVIEW_HOME, reviewMountId, reviewPrNumber, reviewThreadId } from './destination';
+import {
+  REVIEW_HOME,
+  reviewMountId,
+  reviewPrNumber,
+  reviewThreadId,
+  reviewThreadIds,
+} from './destination';
 import type {
   GetFn,
   OpenReviewTargetParams,
@@ -57,6 +63,9 @@ export const openReviewTarget = async ({
     return unavailable('no_session');
   }
   const requestId = crypto.randomUUID();
+  if (destination.kind === 'threads') {
+    get().setReviewSelection({ sessionId, threadIds: reviewThreadIds({ destination }) });
+  }
   const base = {
     requestId,
     destination,

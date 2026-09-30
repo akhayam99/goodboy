@@ -1,4 +1,5 @@
 import type { Agent, AgentStoppedBy, OpenQuestion, Step, WorkflowRun } from '@goodboy/types';
+import type { ReviewCommentState } from '../resolve/reviewCommentState';
 import type { WorkflowAdvanceState } from '../workflows/advanceGate';
 import { isAgentClosedByUser } from '../session/agent-lifecycle';
 import { isWorkflowRunClosedByUser } from '../workflows/isWorkflowRunClosedByUser';
@@ -28,13 +29,16 @@ export type RowStateReason =
   | { readonly kind: 'skipped' }
   | { readonly kind: 'chained'; readonly afterTitle: string }
   | { readonly kind: 'awaitingFirstMessage' }
-  | { readonly kind: 'discarded' };
+  | { readonly kind: 'discarded' }
+  | { readonly kind: 'review'; readonly state: ReviewCommentState; readonly word: string };
 
 export type RowAsk =
   | { readonly kind: 'answer'; readonly question: OpenQuestion | null }
   | { readonly kind: 'runStep'; readonly step: Step; readonly agent: Agent }
   | { readonly kind: 'restartStep' }
-  | { readonly kind: 'continue'; readonly agent: Agent };
+  | { readonly kind: 'continue'; readonly agent: Agent }
+  | { readonly kind: 'reviewComment' }
+  | { readonly kind: 'groupChild' };
 
 export type RowState = {
   readonly phase: RowPhase;

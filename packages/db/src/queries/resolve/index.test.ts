@@ -327,6 +327,9 @@ describe('durable resolve rows', () => {
         endedAt: 2,
         error: null,
         createdAt: 1,
+        batchId: null,
+        copyPath: null,
+        launchChoice: null,
       },
     });
     await upsertResolveThread({
@@ -565,6 +568,9 @@ describe('resolve mount target', () => {
     endedAt: null,
     error: null,
     createdAt: 1,
+    batchId: null,
+    copyPath: null,
+    launchChoice: null,
   };
   const publication: ResolvePublication = {
     id: 'pub-target',

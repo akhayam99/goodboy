@@ -138,7 +138,7 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Chat',
-        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, and Start work turns an answer into a new session or a message to one that is running.',
+        desc: 'Chat, right of Board, answers a question about the whole workspace without a session. It only reads, on Claude or Codex, with the model and effort you pick for each chat. Start work drafts a brief, and Start session opens a new session with it, nothing running yet, or Add to a session leaves it in the message box of one you pick. Pin, archive and delete chats from their menu.',
       },
       {
         term: 'Start blank',
@@ -294,11 +294,23 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Review',
-        desc: 'The comments on the left, grouped as Open, Waiting for the push and Done, and the one you picked on the right. Draft fixes for N writes each fix as a local commit and drafts the reply, and you accept, edit or skip it.',
+        desc: 'The comments on the left, grouped as Open, Ready to push and Done, and the one you picked on the right. Fix writes each fix as a local commit and drafts the reply, and you accept, edit or skip it. Select several comments and Fix N separately starts one agent for each, up to four at a time.',
+      },
+      {
+        term: 'Review sources',
+        desc: 'The picker under the Review title lists each pull request or merge request of the session, on GitHub, GitLab or Bitbucket, and Notes on this machine. Bitbucket cannot resolve a thread, so its comments offer Reply.',
+      },
+      {
+        term: 'Commits view',
+        desc: 'V switches Review between Comments and Commits. Commits folds the resolve commits into their originals or into one commit before you push, with a preview and an Undo.',
+      },
+      {
+        term: 'What git says',
+        desc: 'A comment reads Already on origin or Looks fixed when the branch already holds its fix, and Fix went missing when the commit is gone. Re-check asks a read-only agent whether the fix is still needed.',
       },
       {
         term: 'Push',
-        desc: 'Push N in the Review header pushes the fixes, posts the replies and resolves the threads, after a confirm under the header.',
+        desc: 'Push N in the Review header pushes the fixes, posts the replies and resolves the threads where the provider allows it, after a confirm under the header.',
       },
       {
         term: 'Pull request page',

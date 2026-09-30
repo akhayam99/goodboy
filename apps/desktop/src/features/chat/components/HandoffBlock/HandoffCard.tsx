@@ -55,12 +55,14 @@ export const HandoffCard = ({ handoff, sessionId, at, initiallyOpen }: Props) =>
             {handoff.why === null ? null : (
               <span className="truncate text-label text-muted-foreground">Why: {handoff.why}</span>
             )}
-            <HandoffChips
-              sections={handoff.sections}
-              active={disclosure.active}
-              onToggleSection={disclosure.toggleChip}
-              onShowAll={disclosure.showAll}
-            />
+            {disclosure.open ? (
+              <HandoffChips
+                sections={handoff.sections}
+                active={disclosure.active}
+                onToggleSection={disclosure.toggleChip}
+                onShowAll={disclosure.showAll}
+              />
+            ) : null}
           </div>
         </div>
       }

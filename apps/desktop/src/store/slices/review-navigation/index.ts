@@ -11,7 +11,7 @@ import type {
   SetPullRequestModeParams,
 } from './types';
 
-export { reviewThreadId } from './destination';
+export { reviewFocusThreadId } from './destination';
 export type { ReviewDestination } from './destination';
 export type { ReviewTargetOutcome, ReviewTargetReason } from './types';
 

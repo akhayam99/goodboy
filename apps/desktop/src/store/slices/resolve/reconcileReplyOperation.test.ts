@@ -84,4 +84,57 @@ describe('reconcileReplyOperation', () => {
       }),
     ).toBe('ambiguous');
   });
+  describe('a reply the user wrote by hand', () => {
+    const handReply = (overrides: Partial<PrComment>): PrComment =>
+      ({
+        id: 'hand-1',
+        threadId: 'PRRT_1',
+        author: 'Mquint',
+        body: 'Done, thanks for the catch',
+        createdAt: new Date(ATTEMPTED_AT + 500).toISOString(),
+        source: 'review',
+        ...overrides,
+      }) as unknown as PrComment;
+    const head = {
+      id: 'head',
+      threadId: 'PRRT_1',
+      author: 'iokafor',
+      body: 'Please cap this',
+      createdAt: new Date(ATTEMPTED_AT - 5000).toISOString(),
+      source: 'review',
+    } as unknown as PrComment;
+
+    it('is recognised even when the text differs from the draft', () => {
+      expect(
+        reconcileReplyOperation({
+          thread,
+          comments: [head, handReply({})],
+          observedAt: ATTEMPTED_AT + 1000,
+          isObservationTrusted: true,
+          viewerLogins: new Set(['mquint']),
+        }),
+      ).toBe('posted');
+    });
+
+    it('is not mistaken for the reviewer or for an earlier reply', () => {
+      expect(
+        reconcileReplyOperation({
+          thread,
+          comments: [head, handReply({ author: 'iokafor' })],
+          observedAt: ATTEMPTED_AT + 1000,
+          isObservationTrusted: true,
+          viewerLogins: new Set(['mquint']),
+        }),
+      ).toBe('not_posted');
+      expect(
+        reconcileReplyOperation({
+          thread,
+          comments: [head, handReply({ createdAt: new Date(ATTEMPTED_AT - 100).toISOString() })],
+          observedAt: ATTEMPTED_AT + 1000,
+          isObservationTrusted: true,
+          viewerLogins: new Set(['mquint']),
+        }),
+      ).toBe('not_posted');
+    });
+  });
 });

@@ -73,7 +73,9 @@ instead of replacing it, and `cn` keeps them beside a surface class. `scrim` is 
 A selected row has one treatment everywhere: `bg-selected`, foreground text and
 medium weight, driven by `data-selected` (`selectedRow.ts`, used by
 `SelectableRow` and `RailCard isSelected`). `SegmentedTabs` follows it too: a
-hairline track, `bg-selected` on the active segment, no raised pill. No ring and no primary tint mark a
+hairline track, `bg-selected` on the active segment, no raised pill. It has
+three sizes: `xs` (28px strip, for a header row that also holds the title and
+actions), `sm` (36px) and `md`. No ring and no primary tint mark a
 selection; the focus ring stays the only ring, so focus and selection read
 apart, as in VS Code and Linear lists.
 
@@ -502,6 +504,14 @@ icon column), and sits on the canvas so the lane never shows through it.
 | `stopped`  | 1px `border`                            | small square, muted      |
 | `skipped`  | 1px `border-soft`                       | dash, faint              |
 | `marker`   | `ring-1` in the concept tone            | the concept glyph        |
+| `mixed`    | arcs per state, 2px, 1.5px gap          | how many children        |
+
+`mixed` is the node of a group row (a batch of resolves, or the subagents of an agent): the caller passes
+`parts` (a tone and a count each) and the ring is split into arcs whose length
+is proportional to the count, one tone per state, in the order given, with a
+1.5px gap between arcs (none for a single part). The centre carries the total
+as an index mark, so the node never speaks by colour alone. It keeps the same
+20px box as every other state.
 
 `approval` is a pending permission request without a decision yet: a tool
 call waiting on you, distinct from `question` (an open question waiting on
@@ -541,6 +551,25 @@ summarizer briefing the next step and a chat turn in flight are the machine
 working: they read as running, never as "Needs you". A run you stopped reads
 as `stopped`, an agent you closed as `closed`: finished is not the same as
 succeeded.
+
+A group row (a batch of resolves, or three or more subagents of one agent) is closed by default and draws the `mixed`
+node. Activity is newest first, so its children come out above it, on the
+group's own lane with the existing upward elbows, and fold back down into it.
+Each child fades in over 180ms from 6px below, staggered 24ms from the nearest
+one; folding takes 130ms with a 10ms stagger from the farthest. The group opens
+with a click, Enter, Space or the right arrow and closes with a second click or
+the left arrow. Reduced motion skips the animation and swaps the rows at once.
+A failed child never opens the group: its arc is `danger`, the summary says
+"1 failed" in `danger` text and the need-you count includes it. A subagent group
+sits on the lane of its parent agent, above the parent, at the start of its
+earliest subagent; its children explode upward on a lane nested in that one. A
+subagent that asks you a question counts the same way (`groupChild` ask).
+
+A resolver takes its row state from the comment it fixes, not from the agent:
+the `review` reason carries the Review state and its word (Ready for you,
+Drafting, Pushed, Draft failed), with Review's tone and node. A comment that
+needs you, has a ready fix or a failed draft sets the `reviewComment` ask, so
+the need-you count includes it and the row itself is not tinted.
 
 ### Work meta
 
@@ -833,7 +862,13 @@ There is no description line and no divider under the header: the text that
 teaches goes in the empty state, and the `ScrollFade` edge marks the seam.
 `icon` takes a concept glyph, `glyph` takes a brand mark. A detail that needs
 its own header row passes `HeaderBand` (also an `h1`) through the custom
-`header` slot. The session overview's `HeaderBand` holds the title, then one
+`header` slot. The agent detail passes `AgentHeader` instead: a 32px title row
+with the one-line title (full name on hover), the Brief and Transcript tabs
+(`SegmentedTabs` `xs`, 28px) and the actions (lifecycle button, Delete as an
+icon with an anchored `ConfirmPopover`, the overflow menu), then one 18px meta
+line with role, status, time and model. That is 70px with the 16px below, no
+separate tabs row, and the transcript under it starts 8px down (`ChatView`
+`topInset="tight"`). The session overview's `HeaderBand` holds the title, then one
 `Goal` line (an 11px faint label, the goal in muted text on one line with an
 ellipsis) only when the goal says more than the title, or `Add a goal` when
 there is none, then the chips, `Context` first. Goal, decisions and summary
@@ -1161,18 +1196,27 @@ conversation is the wrapped sheet, and "Turn into work" is the
 - **The conversation** is one `max-w-2xl` column. The question is a `bg-subtle`
   bubble on the right in `text-prose`; the answer is `Markdown` in
   `text-prose` with no bubble. Under it, in order: `Read N files` (a quiet
-  disclosure listing paths in `text-code`), then Copy (`CopyButton` with
-  `tone="faint"`) and "Start work from here", quiet `text-secondary` actions
-  in the same faint tone as the disclosure. A streaming answer with no text yet shows a pulsing `StatusDot` and
-  "Reading {workspace}", never a spinner.
-- **The header** holds the chat title as `text-heading`, three
-  `border-soft` chips (workspace and project count, Read-only, the model with
-  its provider glyph) that hide below `@3xl/chat`, and one secondary
-  `Start work` button.
+  disclosure listing paths in `text-code`), then one `h-7` row. Copy
+  (`CopyButton` with `tone="faint"`) and "Start work from here" sit on the
+  left, quiet `text-secondary` actions that show on hover or keyboard focus of
+  the answer (`group/answer`, `opacity-0` at rest so the row never shifts);
+  the model and effort that wrote the answer sit on the right as faint
+  `text-secondary` text, always visible. A saved session link is a
+  `bg-subtle` note in the thread under the answer it came from. A streaming
+  answer with no text yet shows a pulsing `StatusDot` and "Reading {workspace}",
+  never a spinner.
+- **The header** holds the chat title as `text-heading`, the linked-sessions
+  chip and one secondary `Start work` button. The chip is a `border-soft`
+  button with the sessions glyph, "N sessions" and a `StatusDot` in the tone
+  of the most urgent linked session (`STAGE_TONE`); it opens an anchored
+  popover listing each session with its stage dot, title, origin and an Open
+  button. It is absent while no live session is linked.
 - **The composer** is the only pinned row: a `bg-subtle` box with the
-  textarea, the model menu (provider glyph, never a sparkle), the Enter hint
-  from `@2xl/chat`, and a square send button that turns into Stop while an
-  answer streams.
+  textarea, the app `RoutingPicker` in its `pill` variant (chat providers
+  only, effort editable, a one-line footer for the providers that cannot
+  chat), the faint "Read-only · N projects" hint from `@2xl/chat`, and a
+  square send button that turns into Stop while an answer streams. The Enter
+  and Shift+Enter keys live in the send button's tooltip.
 
 ## Motion registry
 

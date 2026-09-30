@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ConfirmPopover } from '../components/ConfirmPopover';
+import { registerEscapeLayer } from '../escape';
 
 afterEach(cleanup);
 
@@ -141,5 +142,21 @@ describe('ConfirmPopover', () => {
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Start' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes Escape before an escape layer underneath it', () => {
+    const underneath = vi.fn();
+    const release = registerEscapeLayer(underneath);
+    render(<Harness onConfirm={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete run' }));
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(underneath).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(window, { key: 'Escape', code: 'Escape' });
+    expect(underneath).toHaveBeenCalledTimes(1);
+    release();
   });
 });

@@ -1,7 +1,7 @@
-import { useLayoutEffect, useRef } from 'react';
+import { Fragment, useLayoutEffect, useMemo, useRef } from 'react';
 import { ScrollFade } from '@goodboy/ui';
-import type { ChatMessage, ChatMessageId } from '@goodboy/types';
-import type { ChatHandoff } from '../../chatHandoff';
+import type { ChatMessage, ChatMessageId, SessionId } from '@goodboy/types';
+import type { ChatSessionEntry } from '../../chatSessionEntries';
 import { ChatAssistantMessage } from './ChatAssistantMessage';
 import { ChatHandoffNote } from './ChatHandoffNote';
 import { ChatUserMessage } from './ChatUserMessage';
@@ -10,21 +10,40 @@ type Props = {
   readonly messages: ReadonlyArray<ChatMessage>;
   readonly workspaceName: string;
   readonly onStartWork?: (messageId: ChatMessageId) => void;
-  readonly handoffs?: ReadonlyArray<ChatHandoff>;
-  readonly onOpenHandoff?: (handoff: ChatHandoff) => void;
+  readonly sessions: ReadonlyArray<ChatSessionEntry>;
+  readonly onOpenSession: (sessionId: SessionId) => void;
 };
 
-const NO_HANDOFFS: ReadonlyArray<ChatHandoff> = [];
-
 const STICK_PX = 48;
+
+type NotesParams = {
+  readonly messages: ReadonlyArray<ChatMessage>;
+  readonly sessions: ReadonlyArray<ChatSessionEntry>;
+};
+
+const notesByMessage = ({ messages, sessions }: NotesParams) => {
+  const known = new Set<string>(messages.map((message) => message.id));
+  const after = new Map<string, ChatSessionEntry[]>();
+  const trailing: ChatSessionEntry[] = [];
+  for (const entry of sessions) {
+    const messageId = entry.link.messageId;
+    if (messageId === null || !known.has(messageId)) {
+      trailing.push(entry);
+      continue;
+    }
+    after.set(messageId, [...(after.get(messageId) ?? []), entry]);
+  }
+  return { after, trailing };
+};
 
 export const ChatThread = ({
   messages,
   workspaceName,
   onStartWork,
-  handoffs = NO_HANDOFFS,
-  onOpenHandoff,
+  sessions,
+  onOpenSession,
 }: Props) => {
+  const notes = useMemo(() => notesByMessage({ messages, sessions }), [messages, sessions]);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const isPinnedRef = useRef(true);
 
@@ -34,7 +53,7 @@ export const ChatThread = ({
       return;
     }
     viewport.scrollTop = viewport.scrollHeight;
-  }, [messages, handoffs]);
+  }, [messages, sessions]);
 
   const onScroll = (): void => {
     const viewport = viewportRef.current;
@@ -52,25 +71,30 @@ export const ChatThread = ({
         className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-6 pb-5 pt-1.5 select-text"
       >
         {messages.map((message) => (
-          <li key={message.id} className="flex flex-col">
-            {message.role === 'user' ? (
-              <ChatUserMessage content={message.content} />
-            ) : (
-              <ChatAssistantMessage
-                message={message}
-                workspaceName={workspaceName}
-                {...(onStartWork !== undefined && { onStartWork })}
-              />
-            )}
-          </li>
-        ))}
-        {onOpenHandoff === undefined
-          ? null
-          : handoffs.map((handoff) => (
-              <li key={handoff.id} className="flex flex-col">
-                <ChatHandoffNote handoff={handoff} onOpen={onOpenHandoff} />
+          <Fragment key={message.id}>
+            <li className="flex flex-col">
+              {message.role === 'user' ? (
+                <ChatUserMessage content={message.content} />
+              ) : (
+                <ChatAssistantMessage
+                  message={message}
+                  workspaceName={workspaceName}
+                  {...(onStartWork !== undefined && { onStartWork })}
+                />
+              )}
+            </li>
+            {notes.after.get(message.id)?.map((entry) => (
+              <li key={entry.link.id} className="flex flex-col">
+                <ChatHandoffNote entry={entry} onOpen={onOpenSession} />
               </li>
             ))}
+          </Fragment>
+        ))}
+        {notes.trailing.map((entry) => (
+          <li key={entry.link.id} className="flex flex-col">
+            <ChatHandoffNote entry={entry} onOpen={onOpenSession} />
+          </li>
+        ))}
       </ol>
     </ScrollFade>
   );

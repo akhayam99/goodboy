@@ -259,7 +259,14 @@ export const SHORTCUTS = {
   'review.reply': { combo: 'KeyR', label: 'Reply', plane: 'app', group: 'review' },
   'review.skip': { combo: 'KeyS', label: 'Skip', plane: 'app', group: 'review' },
   'review.undo': { combo: 'KeyU', label: 'Undo', plane: 'app', group: 'review' },
-  'review.draft': { combo: 'KeyD', label: 'Draft fixes', plane: 'app', group: 'review' },
+  'review.fix': { combo: 'KeyF', label: 'Fix', plane: 'app', group: 'review' },
+  'review.select': { combo: 'KeyX', label: 'Select comment', plane: 'app', group: 'review' },
+  'review.view': {
+    combo: 'KeyV',
+    label: 'Comments or commits',
+    plane: 'app',
+    group: 'review',
+  },
 
   'zoom.in': { combo: 'cmd+Equal', label: 'Zoom in', plane: 'app', group: 'window' },
   'zoom.out': { combo: 'cmd+Minus', label: 'Zoom out', plane: 'app', group: 'window' },

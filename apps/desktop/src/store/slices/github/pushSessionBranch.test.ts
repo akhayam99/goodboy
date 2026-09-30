@@ -103,12 +103,13 @@ describe('pushSessionBranch', () => {
     });
 
     expect(result).toEqual({ ok: true });
-    expect(h.gitPush).toHaveBeenCalledWith(
-      '/worktrees/task-2',
-      'ak/sibling',
-      'workspace-1',
-      PROJECT_ID,
-    );
+    expect(h.gitPush).toHaveBeenCalledWith({
+      cwd: '/worktrees/task-2',
+      branch: 'ak/sibling',
+      workspaceId: 'workspace-1',
+      projectId: PROJECT_ID,
+      sha: undefined,
+    });
     expect(state.refreshSessionPr).toHaveBeenCalledWith(SESSION_ID, {
       mountId: SIBLING_MOUNT_ID,
       force: true,
@@ -139,6 +140,26 @@ describe('pushSessionBranch', () => {
       expect(after === null ? null : branchPushStateOf({ status: after })).toEqual({
         kind: 'in-sync',
       });
+    });
+  });
+
+  it('pushes exactly the sha it was given', async () => {
+    const state = makeState();
+
+    const result = await pushSessionBranch({
+      get: (() => state) as never,
+      sessionId: SESSION_ID,
+      mountId: SIBLING_MOUNT_ID,
+      sha: 'c81e5aa0f3',
+    });
+
+    expect(result).toEqual({ ok: true });
+    expect(h.gitPush).toHaveBeenCalledWith({
+      cwd: '/worktrees/task-2',
+      branch: 'ak/sibling',
+      workspaceId: 'workspace-1',
+      projectId: PROJECT_ID,
+      sha: 'c81e5aa0f3',
     });
   });
 

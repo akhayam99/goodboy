@@ -71,6 +71,8 @@ import { m209ResolveThreadGenerations } from './m209-resolve-thread-generations'
 import { m210SessionDecisionWhy } from './m210-session-decision-why';
 import { m211SearchIndex } from './m211-search-index';
 import { m212Chats } from './m212-chats';
+import { m213ResolveBatches } from './m213-resolve-batches';
+import { m214ChatModelsLinks } from './m214-chat-models-links';
 import { m001Initial } from './m001-initial';
 import { m002TelemetryKind } from './m002-telemetry-kind';
 import { m003SessionProvider } from './m003-session-provider';
@@ -429,4 +431,6 @@ export const migrations: ReadonlyArray<Migration> = [
   { version: 210, sql: m210SessionDecisionWhy },
   { version: 211, sql: m211SearchIndex },
   { version: 212, sql: m212Chats },
+  { version: 213, sql: m213ResolveBatches },
+  { version: 214, sql: m214ChatModelsLinks },
 ];

@@ -9,7 +9,7 @@ export const WorkspaceChat = () => (
       id="workspace-chat"
       eyebrow="Agents"
       heading="Ask about the code before any task"
-      body="No session, no brief, and if you really need it, a chat. Chat, next to Board, reads every project in the workspace and never changes a file. Pick Claude or Codex for each conversation, or type your question in ⌘K. When an answer turns into work, Start work drafts the brief for a new session."
+      body="No session, no brief, and if you really need it, a chat. Chat, next to Board, reads every project in the workspace and never changes a file. Pick Claude or Codex and an effort for each conversation, or type your question in ⌘K. When an answer turns into work, Start work drafts the brief and Start session opens a new session with it. The chat keeps a link to every session it started."
       link={{ href: `${SITE.featureGuide}#workspace-chat`, label: 'How the workspace chat works' }}
       figures={[WORKSPACE_CHAT]}
       isMirrored

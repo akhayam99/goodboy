@@ -1,3 +1,4 @@
+import type { AgentId } from '@goodboy/types';
 import { cancelPublication } from './cancelPublication';
 import { drainResolveQueue } from './drainResolveQueue';
 import { preparePublication } from './preparePublication';
@@ -25,6 +26,13 @@ import { materializeReviewThreads } from './materializeReviewThreads';
 import { syncNoteThreads } from './syncNoteThreads';
 import { closeResolvedNote } from './closeResolvedNote';
 import { resolveWithoutReply } from './resolveWithoutReply';
+import { createResolveBatch, setResolveParallelLimit } from './resolveBatches';
+import { settleItemAnswered } from './settleItemAnswered';
+import { dismissThreadFix, refreshThreadGitState } from './refreshThreadGitState';
+import { recheckThread, settleThreadRecheck } from './recheckThread';
+import { resolveThreadOnRemote } from './resolveThreadOnRemote';
+import { settleResolveSourceChange } from './settleResolveSourceChange';
+import { syncSourceSnapshots } from './syncSourceSnapshots';
 import { createKeyedQueue } from '../../../shared/utils/keyedQueue';
 import type {
   ResolveActions,
@@ -47,6 +55,10 @@ import type {
   CheckRunParams,
   EnsureReviewThreadParams,
   MaterializeParams,
+  CreateBatchParams,
+  ParallelLimitParams,
+  SettleSourceChangeParams,
+  SourceSnapshotsParams,
 } from './types';
 
 export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions => {
@@ -70,6 +82,29 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         sessionId: params.sessionId,
         run: () => resolveWithoutReply({ set, get, ...params }),
       }),
+    answerItemWithoutFix: (
+      params: ItemParams & { readonly reply: string; readonly allowIntegrated?: boolean },
+    ) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => settleItemAnswered({ set, get, ...params }),
+      }),
+    refreshThreadGitState: (params: SessionParams) =>
+      refreshThreadGitState({ set, get, ...params }),
+    dismissThreadFix: (params: ThreadParams & { readonly sha: string }) =>
+      dismissThreadFix({ set, get, ...params }),
+    replyAndResolveThread: (params: ThreadParams & { readonly reply?: string }) =>
+      resolveThreadOnRemote({ set, get, ...params, mode: 'reply' }),
+    recheckThread: (params: ThreadParams) => recheckThread({ set, get, ...params }),
+    settleThreadRecheck: (
+      params: SessionParams & {
+        readonly agentId: AgentId;
+        readonly assistantText: string;
+        readonly didAgentDie?: boolean;
+      },
+    ) => settleThreadRecheck({ set, get, ...params }),
+    resolveThreadOnly: (params: ThreadParams) =>
+      resolveThreadOnRemote({ set, get, ...params, mode: 'resolve_only' }),
     deferResolveQueueItem: (params: ItemParams) =>
       serialize({
         sessionId: params.sessionId,
@@ -159,6 +194,16 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
         sessionId: params.sessionId,
         run: () => closeResolvedNote({ set, get, ...params }),
       }),
+    syncSourceSnapshots: (params: SourceSnapshotsParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => syncSourceSnapshots({ set, ...params }),
+      }),
+    settleResolveSourceChange: (params: SettleSourceChangeParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => settleResolveSourceChange({ set, get, ...params }),
+      }),
     materializeReviewThreads: (params: MaterializeParams) =>
       serialize({
         sessionId: params.sessionId,
@@ -169,5 +214,12 @@ export const createResolveSlice = ({ set, get }: SliceParams): ResolveActions =>
     publishConversations: (params: PublishParams) => publishConversations({ set, get, ...params }),
     retryPublication: (params: SessionParams) => retryPublication({ set, get, ...params }),
     cancelPublication: (params: PublishParams) => cancelPublication({ set, get, ...params }),
+    createResolveBatch: (params: CreateBatchParams) =>
+      serialize({
+        sessionId: params.sessionId,
+        run: () => createResolveBatch({ set, get, ...params }),
+      }),
+    setResolveParallelLimit: (params: ParallelLimitParams) =>
+      setResolveParallelLimit({ set, get, ...params }),
   };
 };

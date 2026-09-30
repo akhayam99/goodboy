@@ -19,7 +19,7 @@ const canonicalAgent = ({
   readonly state: AppState;
   readonly request: Extract<PlaceRequest, { readonly at: 'agent' }>;
 }): CanonicalPlace => {
-  const { sessionId, agentId } = request;
+  const { sessionId, agentId, pane = null } = request;
   const home = agentHomeFor({ state, sessionId, agentId });
   if (home !== 'review') {
     return {
@@ -31,7 +31,7 @@ const canonicalAgent = ({
   if (threadId === null) {
     return { place: sessionPlace({ sessionId, lens: 'review', agentId }), drawer: null };
   }
-  return { place: resolverPagePlace({ sessionId, agentId, threadId }), drawer: null };
+  return { place: resolverPagePlace({ sessionId, agentId, threadId, pane }), drawer: null };
 };
 
 type PlaceParams = {

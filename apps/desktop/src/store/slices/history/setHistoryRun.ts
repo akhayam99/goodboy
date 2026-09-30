@@ -23,6 +23,7 @@ const EMPTY_RUN = {
   applied: null,
   identity: null,
   movedHead: null,
+  threadShas: [],
 } satisfies Omit<HistoryRun, 'sessionId' | 'mountId' | 'origin' | 'updatedAt'>;
 
 export const setHistoryRun = ({ set, sessionId, mountId, origin, patch }: Params): void => {

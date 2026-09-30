@@ -12,6 +12,7 @@ import type {
   ResolvePublicationPreview,
   ResolvePublicationThread,
   ResolveThread,
+  ResolveThreadGitState,
   WorktreeStatus,
 } from '@goodboy/types';
 import {
@@ -28,12 +29,18 @@ import { buildResolutionReplyBody, type ReplyContext } from '../github/buildReso
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { mountTargetOf } from './mountTarget';
 import { UNKNOWN_PUBLICATION_REPO, isPublicationTargetBusy } from './publicationLock';
+import { activeReviewSourceOf, selectedReviewEntryOf } from '../review-source/activeReviewSource';
+import { rowBelongsToSource } from '../review-source/rowBelongsToSource';
 import { publicationTarget } from './publicationTarget';
 import { loadPublicationsInto } from './publicationState';
 import { approvedPublicationScope } from './approvedPublicationScope';
+import { readCommitStory } from './commitStory';
+import { foldedReply } from '../../../features/resolve/commentVerdict';
 import { isLocalNoteThread } from './isLocalNoteThread';
+import { isolatedPushOf } from './isolatedPushOf';
 import { reconcileIntegratedCommits } from './reconcileIntegratedCommits';
 import { recoverUncapturedResolveWork } from './recoverUncapturedResolveWork';
+import { refreshThreadGitState } from './refreshThreadGitState';
 import { selectPublishableThreads } from './selectPublishableThreads';
 import { sourceFingerprint } from './sourceFingerprint';
 import { threadOutcome } from './threadOutcome';
@@ -59,6 +66,8 @@ type GitFacts = {
   readonly hasMovedRemote: boolean;
   readonly isWriterBusy: boolean;
 };
+
+const LEAVES_PUSH: ReadonlySet<ResolveThreadGitState> = new Set(['on_origin']);
 
 const closureOf = ({ row }: { readonly row: ResolveThread }) => {
   const outcome = threadOutcome({ row });
@@ -203,6 +212,7 @@ export const preparePublication = async ({
   sessionId,
   threadIds,
   scopeId,
+  isolated = false,
   drift = [],
 }: Params): Promise<ResolvePublicationPreview> => {
   const target = publicationTarget({ get, sessionId });
@@ -210,8 +220,18 @@ export const preparePublication = async ({
   const mount = selectActiveMount({ state: get(), sessionId });
   const repo = mount === null ? null : getSessionRepo({ get, sessionId, mountId: mount.mountId });
   await reconcileIntegratedCommits({ sessionId }).catch(() => undefined);
-  const rows = await listResolveThreads({ db: tauriDatabase, sessionId });
-  const scope = await approvedPublicationScope({ sessionId });
+  await refreshThreadGitState({ set, get, sessionId }).catch(() => undefined);
+  const threadGit = get().sessionThreadGit?.[sessionId] ?? {};
+  const entry = selectedReviewEntryOf({ state: get(), sessionId });
+  const include = ({ thread }: { readonly thread: ResolveThread }): boolean =>
+    rowBelongsToSource({ row: thread, entry });
+  const rows = (await listResolveThreads({ db: tauriDatabase, sessionId })).filter(
+    (row) => threadIds !== undefined || include({ thread: row }),
+  );
+  const scope = await approvedPublicationScope({
+    sessionId,
+    include: (thread) => threadIds !== undefined || include({ thread }),
+  });
   const selection = selectPublishableThreads({
     rows,
     ...(threadIds !== undefined && { threadIds }),
@@ -225,7 +245,8 @@ export const preparePublication = async ({
   }));
   const excluded = [...selection.excluded, ...invalidExclusions];
   const settings = sessionReplySettings({ state: get(), sessionId });
-  const comments: ReadonlyArray<PrComment> = get().sessionGithub[sessionId]?.detail?.comments ?? [];
+  const source = activeReviewSourceOf({ state: get(), sessionId });
+  const comments: ReadonlyArray<PrComment> = source?.comments ?? [];
   const contextOf = ({ row }: { readonly row: ResolveThread }): ReplyContext => {
     const head = comments.find((comment) => comment.threadId === row.threadId);
     return {
@@ -238,26 +259,45 @@ export const preparePublication = async ({
   const frozen: ReadonlyArray<FrozenReply> = await Promise.all(
     publishable.map(async (row) => {
       const isRefused = scope.refusedThreadIds.has(row.threadId);
-      const closure = isRefused ? { reply: row.replyDraft ?? '' } : closureOf({ row });
+      const folded = threadGit[row.threadId]?.folded ?? null;
+      const closure = isRefused
+        ? { reply: row.replyDraft ?? '' }
+        : folded === null
+          ? closureOf({ row })
+          : { reply: foldedReply({ sha: folded.sha, landedAs: folded.landedAs }) };
       const isNote = isLocalNoteThread({ row });
+      const hasHandReply = threadGit[row.threadId]?.userReply != null;
+      const story = await readCommitStory({ sessionId, threadId: row.threadId }).catch(() => null);
+      const commitStory =
+        story?.originalSha == null
+          ? null
+          : { originalSha: story.originalSha, isFolded: story.isFolded };
       return {
         row,
         body:
-          closure === null || isNote
+          closure === null || isNote || hasHandReply
             ? null
             : buildResolutionReplyBody({
                 closure,
                 prUrl: target.prUrl,
+                sourceKind: source?.kind ?? 'github',
                 settings,
-                context: contextOf({ row }),
+                context: { ...contextOf({ row }), commitStory },
               }),
         closes: !isRefused && threadOutcome({ row }) !== null,
         fingerprint: isNote ? null : await sourceFingerprint({ comments, threadId: row.threadId }),
       };
     }),
   );
-  const shippable = publishable.filter((row) => !scope.refusedThreadIds.has(row.threadId));
-  const shas = fixShas({ rows: shippable });
+  const shippable = publishable
+    .filter((row) => !scope.refusedThreadIds.has(row.threadId))
+    .map((row) => {
+      const folded = threadGit[row.threadId]?.folded ?? null;
+      return folded === null ? row : { ...row, commitShas: [folded.landedAs] };
+    });
+  const shas = fixShas({
+    rows: shippable.filter((row) => !LEAVES_PUSH.has(threadGit[row.threadId]?.gitState ?? 'local')),
+  });
   const requiresPush = shas.length > 0;
   const git =
     requiresPush && repo !== null
@@ -267,13 +307,24 @@ export const preparePublication = async ({
           shas,
         })
       : IDLE_GIT;
-  const outgoing = git.commits.filter((commit) => !commit.pushed);
+  const isolation =
+    isolated && requiresPush ? isolatedPushOf({ commits: git.commits, fixShas: shas }) : null;
+  const outgoing = isolation?.pushed ?? git.commits.filter((commit) => !commit.pushed);
+  const pushHead = isolation?.tip ?? git.localHead;
   const unapproved =
     requiresPush && repo !== null
       ? await unapprovedBranchCommits({
           worktreePath: repo.worktreePath,
           commits: outgoing,
-          scope,
+          scope: {
+            ...scope,
+            shas: new Set([
+              ...scope.shas,
+              ...shippable.flatMap((row) =>
+                threadGit[row.threadId]?.folded == null ? [] : (row.commitShas ?? []),
+              ),
+            ]),
+          },
         })
       : [];
   const isTargetBusy =
@@ -292,11 +343,11 @@ export const preparePublication = async ({
             requiresPush,
             hasWorktree: repo !== null,
             isTargetBusy,
-            headBranch: get().sessionGithub[sessionId]?.pr?.headBranch ?? null,
+            headBranch: source?.headBranch ?? null,
             unapprovedCount: unapproved.length,
             git,
           });
-  const commits = outgoing.map((commit) => ({
+  const commits = (isolation?.fixes ?? outgoing).map((commit) => ({
     ...commit,
     threadIds: shippable
       .filter((row) => row.commitShas?.includes(commit.sha) === true)
@@ -324,12 +375,13 @@ export const preparePublication = async ({
     repo: target.repo,
     prNumber: target.prNumber,
     branch: git.branch,
-    localHead: git.localHead,
+    localHead: pushHead,
     remoteHead: git.remoteHead,
     requiresPush,
     frozenAt,
     commits,
     unapproved,
+    ...(isolation !== null && { earlierCommits: isolation.earlier }),
     replies,
     notes,
     excluded,
@@ -349,7 +401,7 @@ export const preparePublication = async ({
     prNumber: target.prNumber,
     branch: git.branch,
     targetRef: git.branch === '' ? '' : `refs/heads/${git.branch}`,
-    localHead: git.localHead,
+    localHead: pushHead,
     remoteHead: git.remoteHead,
     commitShas: shas,
     candidateIds: scope.candidateIds,

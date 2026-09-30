@@ -28,6 +28,7 @@ const STAGE = {
 const USAGE = `usage: node scripts/feature-shots.mjs --scene <key&params> --out <name>
   [--selector <css>] [--clip x,y,w,h] [--window 1280x800] [--pad 24]
   [--scale 3] [--wait 5000] [--frame-pad 40] [--themes dark,light]
+  [--click "Text one,Text two"]
   [--base http://localhost:5230]
        node scripts/feature-shots.mjs --scene <key&params> --probe <css> [--window 1280x800]`;
 
@@ -56,6 +57,7 @@ const parseArgs = (argv) => {
     scale: Number(args.scale ?? 3),
     wait: Number(args.wait ?? 5000),
     framePad: Number(args['frame-pad'] ?? 40),
+    click: args.click ? args.click.split(',') : [],
     themes: (args.themes ?? THEMES.join(',')).split(','),
     base: args.base ?? process.env.GOODBOY_SHOT_URL ?? 'http://localhost:5230',
   };
@@ -151,6 +153,16 @@ function boxOf(selector) {
   return [rect.x, rect.y, rect.width, rect.height];
 }
 
+function clickText(text) {
+  const targets = [...this.querySelectorAll('button, [role="tab"], [role="menuitem"], a')];
+  const target = targets.find((element) => (element.textContent ?? '').trim().startsWith(text));
+  if (!target) {
+    return false;
+  }
+  target.click();
+  return true;
+}
+
 function describeMatches(selector) {
   return [...this.querySelectorAll(selector)].slice(0, 40).map((element) => {
     const rect = element.getBoundingClientRect();
@@ -175,6 +187,13 @@ const captureScene = async ({ send, options, theme }) => {
   const url = `${options.base}/?scene=${options.scene}&theme=${theme}`;
   await send('Page.navigate', { url });
   await sleep(options.wait);
+  for (const text of options.click) {
+    const isClicked = await callInPage({ send, pageFunction: clickText, argument: text });
+    if (isClicked !== true) {
+      throw new Error(`no button or tab reads "${text}" in ${url}`);
+    }
+    await sleep(600);
+  }
   let box;
   if (options.selector) {
     box = await callInPage({ send, pageFunction: boxOf, argument: options.selector });

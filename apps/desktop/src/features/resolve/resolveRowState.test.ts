@@ -67,6 +67,23 @@ describe('resolveRowState', () => {
     );
   });
 
+  it('flags a push that failed because the remote moved and stays plain about it', () => {
+    const state = resolveRowState({
+      ...base,
+      stage: 'failed',
+      failedStep: 'push',
+      pushError: 'hl/fix on the remote is at 8c1d2e4, not the 4f21c8b you reviewed',
+    });
+    expect(state.isRemoteMoved).toBe(true);
+    expect(state.sentence).toBe(
+      'Nothing was pushed. The branch on origin moved since you reviewed.',
+    );
+    expect(
+      resolveRowState({ ...base, stage: 'failed', failedStep: 'push', pushError: 'no network' })
+        .isRemoteMoved,
+    ).toBe(false);
+  });
+
   it('names the specific reason a run failed', () => {
     expect(
       resolveRowState({

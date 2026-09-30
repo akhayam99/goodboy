@@ -9,6 +9,7 @@ import {
   insertResolveQueueItem,
   listResolveCandidates,
   listResolveQueueItems,
+  listResolveThreads,
   migrate,
   upsertResolveThread,
   type Database,
@@ -23,7 +24,12 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { acceptResolveQueueItem } from './acceptResolveQueueItem';
+import {
+  ACCEPT_CONFLICT,
+  ACCEPT_CONFLICT_REASON,
+  acceptResolveQueueItem,
+} from './acceptResolveQueueItem';
+import { integrateWorktreeCandidate } from '../../../features/worktree/worktree';
 import { createResolveSlice } from './index';
 import { resolveInitialState } from './state';
 import type { GetFn, SetFn } from './types';
@@ -362,6 +368,9 @@ const makeAttempt = ({
   endedAt: createdAt + 1,
   error: 'interrupted',
   createdAt,
+  batchId: null,
+  copyPath: null,
+  launchChoice: null,
 });
 
 type StartParams = {
@@ -647,6 +656,42 @@ describe('resolve candidates keep the branch tip approved', () => {
       )?.item.approvalState,
     ).toBe('none');
     await expectNoAncestryLeak();
+  });
+
+  it('rolls a colliding fix back at accept and tells the comment to redo it on top', async () => {
+    const live = makeHarness();
+    const itemA = await seedItem({ threadId: 'thread-a' });
+    await live.actions.beginResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      mountTarget: mountTarget(),
+    });
+    agentWrites({ files: [['a.txt', 'a\n']], message: 'fix a' });
+    await live.actions.captureResolveCandidate({
+      sessionId: SESSION_ID,
+      attemptId: 'attempt-1',
+      threadIds: ['thread-a'],
+    });
+    const head = git(worktreePath, ['rev-parse', 'HEAD']);
+    vi.mocked(integrateWorktreeCandidate).mockRejectedValueOnce({
+      kind: 'git',
+      message: 'git failed: the fix no longer applies on the branch',
+    });
+
+    await expect(
+      live.actions.acceptResolveQueueItem({
+        sessionId: SESSION_ID,
+        itemId: itemA,
+        revision: 0,
+        reply: 'Reply for thread-a',
+      }),
+    ).rejects.toThrow(ACCEPT_CONFLICT);
+
+    expect(git(worktreePath, ['rev-parse', 'HEAD'])).toBe(head);
+    const [thread] = await listResolveThreads({ db, sessionId: SESSION_ID });
+    expect(thread?.stateReason).toBe(ACCEPT_CONFLICT_REASON);
+    const [candidate] = await listResolveCandidates({ db, sessionId: SESSION_ID });
+    expect(candidate?.state).toBe('stale');
   });
 
   it('recovers from a crash between the git operation and the database write', async () => {

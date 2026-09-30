@@ -282,7 +282,11 @@ const TRANSCRIPT: ReadonlyArray<TurnEvent> = [
   { kind: 'done', runId: IMPLEMENT_RUN, at: minutesAgo(41) },
 ];
 
-const CLICKS: ReadonlyArray<string> = ['Replaced and withdrawn', 'All', 'View as sent to Codex'];
+const CLICKS: ReadonlyArray<string> = [
+  'Replaced and withdrawn',
+  'sent by',
+  'View as sent to Codex',
+];
 const COLLAPSED_SECTIONS: ReadonlyArray<string> = ['Earlier steps', 'Plan', 'Role instructions'];
 
 export const BrandContextScene = () => {

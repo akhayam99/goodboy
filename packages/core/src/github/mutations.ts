@@ -13,6 +13,12 @@ const ADD_THREAD_REPLY_MUTATION = `mutation($threadId:ID!,$body:String!){
   }
 }`;
 
+const UPDATE_REVIEW_COMMENT_MUTATION = `mutation($commentId:ID!,$body:String!){
+  updatePullRequestReviewComment(input:{pullRequestReviewCommentId:$commentId,body:$body}){
+    pullRequestReviewComment{ id url }
+  }
+}`;
+
 type RawResolveReviewThreadResponse = {
   data?: {
     resolveReviewThread?: {
@@ -98,6 +104,47 @@ export const addReviewThreadReply = async (
   const comment = raw.data?.addPullRequestReviewThreadReply?.comment;
   if (!comment) {
     throw new GhCliError('addReviewThreadReply returned no comment', JSON.stringify(raw), 1);
+  }
+  return { id: comment.id, url: comment.url };
+};
+
+type RawUpdateReviewCommentResponse = {
+  data?: {
+    updatePullRequestReviewComment?: {
+      pullRequestReviewComment?: { id: string; url: string } | null;
+    } | null;
+  };
+  errors?: ReadonlyArray<{ message: string }>;
+};
+
+export const updateReviewComment = async (
+  runner: GhRunner,
+  commentId: string,
+  body: string,
+  opts: GhRunOptions = {},
+): Promise<PostedThreadReply> => {
+  const raw = await runJson<RawUpdateReviewCommentResponse>({
+    runner,
+    args: [
+      'api',
+      'graphql',
+      '-f',
+      `query=${UPDATE_REVIEW_COMMENT_MUTATION}`,
+      '-F',
+      `commentId=${commentId}`,
+      '-f',
+      `body=${body}`,
+    ],
+    opts,
+    shape: 'object',
+  });
+  if (raw.errors && raw.errors.length > 0) {
+    const first = raw.errors[0]?.message ?? 'unknown graphql error';
+    throw new GhCliError(`updateReviewComment failed: ${first}`, first, 1);
+  }
+  const comment = raw.data?.updatePullRequestReviewComment?.pullRequestReviewComment;
+  if (!comment) {
+    throw new GhCliError('updateReviewComment returned no comment', JSON.stringify(raw), 1);
   }
   return { id: comment.id, url: comment.url };
 };
