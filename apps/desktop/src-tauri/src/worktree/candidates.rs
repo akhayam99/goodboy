@@ -64,7 +64,7 @@ fn worktree_integrate_candidate_blocking(
     let journal = journal_path(path, &args.candidate_id)?;
     let picking = journal.with_extension("picking");
     if picking.exists() {
-        let _ = git(path, &["cherry-pick", "--abort"]);
+        crate::logging::note_failure("cherry-pick abort", git(path, &["cherry-pick", "--abort"]));
         std::fs::remove_file(&picking)?;
     }
     let actual = resolve_commit(path, "HEAD")?;
@@ -114,8 +114,11 @@ fn worktree_integrate_candidate_blocking(
     std::fs::write(&picking, format!("{candidate}\n"))?;
     let range = format!("{expected}..{candidate}");
     if git(path, &["cherry-pick", "--allow-empty", &range]).is_err() {
-        let _ = git(path, &["cherry-pick", "--abort"]);
-        let _ = git(path, &["reset", "--hard", "--quiet", &actual]);
+        crate::logging::note_failure("cherry-pick abort", git(path, &["cherry-pick", "--abort"]));
+        crate::logging::note_failure(
+            "candidate reset",
+            git(path, &["reset", "--hard", "--quiet", &actual]),
+        );
         std::fs::remove_file(&picking)?;
         return Err(WorktreeError::Git {
             message: "the fix no longer applies on the branch".to_string(),

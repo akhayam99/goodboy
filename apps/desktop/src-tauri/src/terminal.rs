@@ -80,7 +80,7 @@ pub fn shutdown(registry: &TerminalRegistry) {
         if let Some(leader_pid) = session.child.process_id() {
             terminate_pty_session(leader_pid);
         }
-        let _ = session.child.kill();
+        crate::logging::note_kill_failure("terminal session kill", session.child.kill());
     }
 }
 
@@ -375,7 +375,7 @@ pub async fn terminal_close(
                 if let Some(leader_pid) = session.child.process_id() {
                     terminate_pty_session(leader_pid);
                 }
-                let _ = session.child.kill();
+                crate::logging::note_kill_failure("terminal session kill", session.child.kill());
             }
         }
     }
@@ -461,7 +461,7 @@ mod tests {
         );
 
         terminate_pty_session(leader_pid);
-        let _ = child.kill();
+        crate::logging::note_kill_failure("terminal probe kill", child.kill());
         let _ = child.wait();
 
         let mut still_alive = true;

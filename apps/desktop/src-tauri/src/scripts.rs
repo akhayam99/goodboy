@@ -89,7 +89,7 @@ pub fn shutdown(registry: &ScriptRegistry) {
         if let Some(leader_pid) = run.child.process_id() {
             crate::terminal::terminate_pty_session(leader_pid);
         }
-        let _ = run.child.kill();
+        crate::logging::note_kill_failure("script kill", run.child.kill());
     }
 }
 
@@ -378,7 +378,7 @@ pub async fn workspace_script_cancel(
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
             if let Some(mut run) = guard.take() {
-                let _ = run.child.kill();
+                crate::logging::note_kill_failure("script kill", run.child.kill());
                 // Dropping `run.master` sends SIGHUP to the pty process group.
             }
         }

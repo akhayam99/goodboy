@@ -99,7 +99,10 @@ pub(crate) fn remove_worktree_folder_allowing(
                     WorktreeRemovalReason::OutsideWorktreeFolder,
                 ));
             }
-            let _ = run_git(repo_path, &["worktree", "prune"]);
+            crate::logging::note_failure(
+                "worktree prune",
+                run_git(repo_path, &["worktree", "prune"]),
+            );
             return Ok(WorktreeRemovalResult::Missing {
                 path: target.to_string_lossy().into_owned(),
             });
@@ -161,7 +164,7 @@ pub(crate) fn remove_worktree_folder_allowing(
         return Ok(kept_folder(&folder, WorktreeRemovalReason::NotRegistered));
     }
     std::fs::remove_dir_all(&folder)?;
-    let _ = run_git(repo_path, &["worktree", "prune"]);
+    crate::logging::note_failure("worktree prune", run_git(repo_path, &["worktree", "prune"]));
     Ok(WorktreeRemovalResult::Removed {
         path: folder.to_string_lossy().into_owned(),
     })

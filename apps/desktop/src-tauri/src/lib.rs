@@ -36,6 +36,7 @@ mod last_crash;
 mod linear;
 mod live_child;
 mod local_image;
+mod logging;
 mod path_env;
 mod permissions;
 mod planner;
@@ -129,7 +130,10 @@ pub fn run() {
         Ok(database) => Some(database),
         Err(error) => {
             boot_breadcrumb::record("error", Some("error"));
-            eprintln!("[goodboy] the local database could not be opened: {error}");
+            logging::early(format!(
+                "[goodboy] the local database could not be opened: {}",
+                logging::detail(&error)
+            ));
             None
         }
     };
@@ -196,6 +200,11 @@ pub fn run() {
         .manage(frame_protocol::FrameStages::default())
         .setup(move |app| {
             use tauri::Manager;
+            app.handle().plugin(logging::plugin())?;
+            if let Ok(log_dir) = app.path().app_log_dir() {
+                logging::restrict_to_owner(&log_dir);
+            }
+            logging::flush_early();
             query_bridge::start(app.handle().clone());
             std::thread::spawn(history::clean_stale_copies);
             #[cfg(target_os = "macos")]
@@ -203,13 +212,6 @@ pub fn run() {
             #[cfg(desktop)]
             app.handle()
                 .plugin(tauri_plugin_updater::Builder::new().build())?;
-            if cfg!(debug_assertions) {
-                app.handle().plugin(
-                    tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
-                        .build(),
-                )?;
-            }
             let windows = app.webview_windows();
             if !windows.is_empty() {
                 boot_breadcrumb::record("window-created", Some("ok"));

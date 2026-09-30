@@ -143,6 +143,37 @@ baseline names `config_export/apply.rs`.
   through one refresh entry point
   ([ADR 003](adr/003-provider-detection-leaves-the-boot-path.md)).
 
+### Logging
+
+Every build, debug and release, starts the log plugin first in `setup`
+(`src-tauri/src/logging.rs`), before the query bridge and anything else that
+can warn. It writes to one place: a local file, `goodboy.log`, in the system
+log folder of the app. That folder is `~/Library/Logs/com.goodboy.desktop/` on
+macOS, `~/.local/share/com.goodboy.desktop/logs/` on Linux and
+`%LOCALAPPDATA%\com.goodboy.desktop\logs\` on Windows. Nothing is sent
+anywhere; a debug build also prints to stdout.
+
+- **Level.** `info` and above. The frontend has no channel into the file: the
+  `log` permission is not granted, so a window cannot write to it.
+- **Size.** A file rotates at 512 KiB. The plugin keeps the active file and
+  the 3 most recent dated archives (`goodboy_<date>_<time>.log`), and at most
+  one `.bak` when two rotations land in the same second. The folder stays
+  under about 2.5 MiB. `logging::tests` floods the logger and pins the cap.
+- **Access.** The folder is narrowed to the owner (`0700`) on macOS and Linux.
+- **Content.** Log a fixed label and a short reason, never a token, a prompt,
+  a file's content or a command line. `logging::detail` is the one way to
+  print an error: it keeps the first line, hides credentials inside URLs and
+  cuts the text at 200 characters.
+- **Dropped errors.** `logging::note_failure` and `note_kill_failure` replace
+  `let _ =` in process teardown (killing a terminal, script, provider login or
+  live child) and in git cleanup (removing scratch and copy worktrees,
+  `worktree prune`, `cherry-pick --abort` and the resets after it). A child that
+  already exited is not reported. Other `let _ =` are still silent by design:
+  event emits to a closed window and best-effort file cleanup.
+- **Before the logger exists.** `db::open` runs before the app, so its
+  messages go through `logging::early`: printed to stderr at once, and written
+  to the file when `setup` starts the logger (at most 16 lines).
+
 ### Opening an artifact outside the app
 
 - **There is no reader window and no print window.** A plan, a report and a
@@ -425,6 +456,8 @@ Everything the app saves for itself lives in `~/.goodboy`.
 - `query/query-<pid>.sock`: the socket a running app uses for the query bridge, in its own owner-only folder (see [query-bridge.md](query-bridge.md)).
 - `history-copies/`: the temporary copies Rewrite history replays a plan in.
 - `boot-breadcrumbs.log`: how long each startup step took.
+
+The app log is not in `~/.goodboy`; it lives in the system log folder (see [Logging](#logging)).
 
 When a session works on a repository, it gets its own git worktree in the
 repository's `.goodboy/worktrees/` folder ([mounts.md](mounts.md)). A session
