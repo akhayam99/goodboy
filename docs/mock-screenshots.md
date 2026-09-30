@@ -37,7 +37,9 @@ import.meta.env.VITE_GOODBOY_MOCK === '1' && import.meta.env.MODE !== 'test'`.
   It then fails in a way that looks like a regression in the feature under
   test.
 - `main.tsx` checks it once, outside any component, when it decides what to
-  render at the root: `MOCK_ENABLED ? <MockScene /> : <App />`. `App.tsx`
+  render at the root: `MOCK_ENABLED ? <MockScene /> : <App />`. `MockScene`
+  loads through `lazy()` behind a `Suspense`, so the scenes and their seed
+  data are a separate chunk that a production build never fetches. `App.tsx`
   itself has no mock branch, so a hot-reload never has to reconcile a
   different hook count between the two.
 - `MockScene` (`apps/desktop/src/app/components/MockScene/`) reads a
