@@ -7,7 +7,7 @@ import {
   materializationGate,
   proposeMaterialization,
   runMaterializationBatch,
-} from '../../store/materializationGate';
+} from '../../store/slices/project-mounts/materializationGate';
 import { useAppStore } from '../../store/store';
 import { findMountById } from '../../store/slices/project-mounts/findMountById';
 import { recoverSoleMount } from '../../store/slices/project-mounts/recoverSoleMount';

@@ -21,7 +21,7 @@ vi.mock('../../../shared/lib/db', () => ({
 }));
 
 import { captureMaterializeRequestsFromTurn } from './turnHelpers';
-import { clearMaterializationBatch } from '../../materializationGate';
+import { clearMaterializationBatch } from '../project-mounts/materializationGate';
 import type { GetFn } from '../../slice-types';
 import {
   clearMountContinuations,

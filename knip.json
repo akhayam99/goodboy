@@ -136,7 +136,7 @@
         "src/shared/utils/attribution.ts": ["exports"],
         "src/shared/utils/compareIsoDesc.ts": ["exports"],
         "src/store/slices/turn/integrationsGuard.ts": ["exports"],
-        "src/store/materializationProposals.ts": ["types"],
+        "src/store/slices/project-mounts/materializationProposals.ts": ["types"],
         "src/store/sessionEviction.ts": ["exports"],
         "src/store/slices/artifactDrafts/types.ts": ["types"],
         "src/store/slices/artifacts/artifactScoutRun.ts": ["exports"],

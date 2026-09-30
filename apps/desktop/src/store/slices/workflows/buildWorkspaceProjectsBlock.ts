@@ -1,5 +1,5 @@
 import type { Project } from '@goodboy/types';
-import { starredProjectLines } from './starredProjectLines';
+import { starredProjectLines } from '../project-mounts/starredProjectLines';
 
 type Params = {
   readonly projects: ReadonlyArray<Project>;

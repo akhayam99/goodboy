@@ -63,7 +63,7 @@ import {
 } from './budgetBlock';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
 import { buildProfileGuard } from '../turn/profileGuard';
-import { buildWorkspaceProjectsBlock } from '../../buildWorkspaceProjectsBlock';
+import { buildWorkspaceProjectsBlock } from './buildWorkspaceProjectsBlock';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';

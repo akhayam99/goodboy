@@ -17,7 +17,7 @@ import {
   type SuggestionRebaseRequest,
 } from '../deriveNextSteps';
 import { eligibleReviewThreadCount } from '../eligibleThreads';
-import { toMountEvents } from '../../../store/materializationProposals';
+import { toMountEvents } from '../../../store/slices/project-mounts/materializationProposals';
 import { pendingAgentSignal } from '../pendingAgentSignal';
 import { useNextStepOutcomes } from '../useNextStepOutcomes';
 import { shouldDemote } from '../nextStepGates';

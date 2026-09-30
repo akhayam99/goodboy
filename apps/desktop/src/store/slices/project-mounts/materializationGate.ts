@@ -7,7 +7,7 @@ import type {
   SessionId,
 } from '@goodboy/types';
 import { pendingMountProposals } from './materializationProposals';
-import type { GetFn } from './slice-types';
+import type { GetFn } from '../../slice-types';
 
 const IMMEDIATE_MATERIALIZE_CAP = 2;
 const UNNAMED_FOOTPRINT_CAP = 2;

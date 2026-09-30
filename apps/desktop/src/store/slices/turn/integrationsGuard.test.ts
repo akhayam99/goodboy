@@ -10,7 +10,7 @@ import type {
   WorkspaceId,
 } from '@goodboy/types';
 import { QUERY_BRIDGE_VERBS, buildIntegrationsGuard } from './integrationsGuard';
-import { buildScopeGuard } from '../../scopeGuard';
+import { buildScopeGuard } from '../project-mounts/scopeGuard';
 
 const SESSION_SCOPED_PROVIDERS: ReadonlyArray<string> = ['project', 'mount', 'series'];
 

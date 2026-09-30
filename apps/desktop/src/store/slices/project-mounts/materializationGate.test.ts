@@ -15,7 +15,7 @@ import {
   proposeMaterialization,
   runMaterializationBatch,
 } from './materializationGate';
-import type { GetFn } from './slice-types';
+import type { GetFn } from '../../slice-types';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WEB_ID = 'p-web' as ProjectId;

@@ -14,7 +14,7 @@ import type {
 import {
   pendingMountEvents,
   type SuggestionMountEvent,
-} from '../../store/materializationProposals';
+} from '../../store/slices/project-mounts/materializationProposals';
 import type { BranchPushState } from '../../shared/lib/branchPushState';
 import type { PendingAgentSignal } from './pendingAgentSignal';
 import { isFresh, applyDismissals, dedupeByTargetKey, sortNextSteps } from './nextStepGates';

@@ -90,7 +90,7 @@ import {
   materializationGate,
   proposeMaterialization,
   runMaterializationBatch,
-} from '../../materializationGate';
+} from '../project-mounts/materializationGate';
 import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
 import { selectMountById } from '../project-mounts/selectors';
 import { mountContinuationRefusal, queueMountContinuation } from './mountContinuations';

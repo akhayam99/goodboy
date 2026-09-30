@@ -112,9 +112,9 @@ import { isQueryBridgeServing } from '../../../features/integrations/queryBridge
 import { buildIntegrationsGuard } from './integrationsGuard';
 import { buildProfileGuard } from './profileGuard';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
-import { buildScopeGuard } from '../../scopeGuard';
+import { buildScopeGuard } from '../project-mounts/scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from './sessionLanguage';
-import { clearMaterializationBatch } from '../../materializationGate';
+import { clearMaterializationBatch } from '../project-mounts/materializationGate';
 import { flushTurnEvents } from '../transcripts/buffer';
 import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
 import {
