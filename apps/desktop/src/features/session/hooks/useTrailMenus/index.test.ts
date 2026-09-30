@@ -3,15 +3,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { CrumbMenuAction, CrumbMenuModel, CrumbMenuRow } from '@goodboy/ui';
+import { Circle } from 'lucide-react';
 import type {
   Agent,
   AgentId,
+  ArtifactId,
   ResolveAttempt,
-  Session,
   SessionArtifact,
   SessionId,
+  StepId,
   Workflow,
+  WorkflowId,
+  WorkflowRunId,
+  WorkspaceId,
 } from '@goodboy/types';
+import { TEST_NOW, aSession, aWorkflowRun, anAgent } from '@goodboy/types/testing';
 import type { BreadcrumbCrumb } from '../../breadcrumbCrumb';
 
 const h = vi.hoisted(() => ({
@@ -84,19 +90,21 @@ vi.mock('@goodboy/ui', async (importOriginal) => ({
 }));
 
 import { lensDestinations } from '../../lens-destinations';
-import { createAgentEventName, useTrailMenus } from '.';
+import { createAgentEventName } from '../../createAgentEventName';
+import { useTrailMenus } from '.';
 
 const SESSION_ID = 'session-1' as SessionId;
-const session = { id: SESSION_ID, workspaceId: 'workspace-1', goal: 'Fix ledger' } as Session;
+const session = aSession({
+  id: SESSION_ID,
+  workspaceId: 'workspace-1' as WorkspaceId,
+  goal: 'Fix ledger',
+});
+const RUN_ID = 'run-1' as WorkflowRunId;
+const STEP_ONE_ID = 'step-1' as StepId;
+const STEP_TWO_ID = 'step-2' as StepId;
 
 const agent = (overrides: Partial<Agent> & Pick<Agent, 'id'>): Agent =>
-  ({
-    sessionId: SESSION_ID,
-    ordinal: 0,
-    name: overrides.id,
-    status: 'completed',
-    ...overrides,
-  }) as Agent;
+  anAgent({ sessionId: SESSION_ID, name: overrides.id, status: 'completed', ...overrides });
 
 const scout = agent({ id: 'agent-scout' as AgentId, name: 'scout one', ordinal: 0 });
 const implementer = agent({
@@ -111,16 +119,16 @@ const stepOne = agent({
   name: 'draft step',
   ordinal: 2,
   status: 'completed',
-  stepId: 'step-1' as never,
-  workflowRunId: 'run-1' as never,
+  stepId: STEP_ONE_ID,
+  workflowRunId: RUN_ID,
 });
 const stepTwo = agent({
   id: 'agent-step-2' as AgentId,
   name: 'review step',
   ordinal: 3,
   status: 'failed',
-  stepId: 'step-2' as never,
-  workflowRunId: 'run-1' as never,
+  stepId: STEP_TWO_ID,
+  workflowRunId: RUN_ID,
 });
 const child = agent({
   id: 'agent-child' as AgentId,
@@ -129,7 +137,7 @@ const child = agent({
   ordinal: 4,
   status: 'running',
   parentAgentId: stepOne.id,
-  workflowRunId: 'run-1' as never,
+  workflowRunId: RUN_ID,
 });
 const resolver = agent({
   id: 'agent-resolver' as AgentId,
@@ -139,16 +147,43 @@ const resolver = agent({
   status: 'running',
 });
 
-const workflow = {
-  id: 'workflow-1',
+const workflow: Workflow = {
+  id: 'workflow-1' as WorkflowId,
+  workspaceId: 'workspace-1' as WorkspaceId,
   name: 'refactor',
+  description: 'Refactor the ledger',
   steps: [
-    { id: 'step-1', name: 'Draft', ordinal: 0, role: 'Planner', deletedAt: null },
-    { id: 'step-2', name: 'Review', ordinal: 1, role: 'Reviewer', modelOverride: 'opus' },
+    {
+      id: STEP_ONE_ID,
+      workflowId: 'workflow-1' as WorkflowId,
+      ordinal: 0,
+      name: 'Draft',
+      role: 'planner',
+      promptPrefix: 'Draft',
+    },
+    {
+      id: STEP_TWO_ID,
+      workflowId: 'workflow-1' as WorkflowId,
+      ordinal: 1,
+      name: 'Review',
+      role: 'reviewer',
+      promptPrefix: 'Review',
+      modelOverride: 'opus',
+    },
   ],
-} as unknown as Workflow;
-const run = { id: 'run-1', workflowId: 'workflow-1', ordinal: 0, title: 'Refactor ledger' };
-const runTwo = { id: 'run-2', workflowId: 'workflow-1', ordinal: 1, title: null };
+  createdAt: TEST_NOW,
+  updatedAt: TEST_NOW,
+};
+const run = aWorkflowRun({
+  id: RUN_ID,
+  workflowId: workflow.id,
+  title: 'Refactor ledger',
+});
+const runTwo = aWorkflowRun({
+  id: 'run-2' as WorkflowRunId,
+  workflowId: workflow.id,
+  ordinal: 1,
+});
 
 const attempt = (overrides: Partial<ResolveAttempt> & Pick<ResolveAttempt, 'id'>) =>
   ({
@@ -199,14 +234,14 @@ const artifact = (overrides: Partial<SessionArtifact> & Pick<SessionArtifact, 'i
     kind: 'plan',
     title: overrides.id,
     revision: 2,
-    createdAt: '2026-09-29T10:00:00.000Z',
+    createdAt: TEST_NOW,
     updatedAt: '2026-09-30T10:00:00.000Z',
     status: 'active',
     agentId: null,
     ...overrides,
   }) as SessionArtifact;
 
-const crumb = (id: string): BreadcrumbCrumb => ({ id, label: id, icon: (() => null) as never });
+const crumb = (id: string): BreadcrumbCrumb => ({ id, label: id, icon: Circle });
 
 const reportError = vi.fn();
 const navigate = vi.fn();
@@ -718,9 +753,9 @@ describe('useTrailMenus artifact crumb', () => {
   beforeEach(() => {
     h.state.sessionArtifacts = {
       [SESSION_ID]: [
-        artifact({ id: 'artifact-1' as never, kind: 'plan', agentId: implementer.id }),
-        artifact({ id: 'artifact-2' as never, kind: 'report' }),
-        artifact({ id: 'artifact-3' as never, kind: 'plan', status: 'discarded' }),
+        artifact({ id: 'artifact-1' as ArtifactId, kind: 'plan', agentId: implementer.id }),
+        artifact({ id: 'artifact-2' as ArtifactId, kind: 'report' }),
+        artifact({ id: 'artifact-3' as ArtifactId, kind: 'plan', status: 'discarded' }),
       ],
     };
     h.state.focusedArtifactId = { [SESSION_ID]: 'artifact-1' };
@@ -829,14 +864,14 @@ describe('useTrailMenus agent crumbs', () => {
       kind: 'implementer',
       ordinal: 6,
       parentAgentId: stepOne.id,
-      workflowRunId: 'run-1' as never,
+      workflowRunId: RUN_ID,
     });
     const scoutSibling = agent({
       id: 'agent-scout-sibling' as AgentId,
       kind: 'scout',
       ordinal: 7,
       parentAgentId: stepOne.id,
-      workflowRunId: 'run-1' as never,
+      workflowRunId: RUN_ID,
     });
     h.state.sessionPhaseRuns = {
       [SESSION_ID]: [stepOne, stepTwo, child, sibling, scoutSibling],
@@ -885,7 +920,7 @@ describe('useTrailMenus agent crumbs', () => {
   });
 
   it('offers stop on a running step, asks to confirm and cancels the turn', () => {
-    const running = { ...stepTwo, status: 'running' } as Agent;
+    const running: Agent = { ...stepTwo, status: 'running' };
     h.state.sessionPhaseRuns = { [SESSION_ID]: [stepOne, running] };
     h.state.selectedAgentId = { [SESSION_ID]: running.id };
     h.attachedRuns = [{ run, workflow }];
@@ -937,7 +972,7 @@ describe('useTrailMenus agent crumbs', () => {
       kind: 'implementer',
       ordinal: 8,
       parentAgentId: child.id,
-      workflowRunId: 'run-1' as never,
+      workflowRunId: RUN_ID,
     });
     h.state.sessionPhaseRuns = { [SESSION_ID]: [stepOne, stepTwo, child, grandChild] };
     h.state.selectedAgentId = { [SESSION_ID]: grandChild.id };
