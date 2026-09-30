@@ -461,7 +461,7 @@ through `project_relocation_undo`.
 ### Backup and setup export
 
 Settings › App › Backup reads and writes a JSON bundle, schema version 3
-(`apps/desktop/src-tauri/src/config_export.rs`, mirrored in
+(`apps/desktop/src-tauri/src/config_export/mod.rs`, mirrored in
 `packages/types/src/config-bundle.ts`). What goes in is chosen per group
 (`ExportGroups`): workspaces, projects, folder paths, profile, workflows you
 made, workflows the orchestrator wrote, saved scripts, permission rules,

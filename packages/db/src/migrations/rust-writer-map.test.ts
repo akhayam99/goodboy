@@ -22,7 +22,7 @@ type Owner = 'ts' | 'rust';
 type WriteCounts = Readonly<Record<string, Readonly<Record<string, number>>>>;
 
 const RUST_WRITES_TO_TS_TABLES: WriteCounts = {
-  'config_export.rs': {
+  'config_export/mod.rs': {
     project_scripts: 1,
     projects: 2,
     settings: 1,
