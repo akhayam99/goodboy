@@ -150,10 +150,18 @@ Rules around slices:
 
 - `components/`, `hooks/`, `types/`: shared components, hooks and types, by the rules above.
 - `utils/`: pure functions and constants. No `invoke`, no store, no React, no browser storage.
-- `lib/`: code that touches the runtime boundary: Tauri wrappers (`invokeCommand`, `db`, `dbBoot`, `editor`, `reveal`), browser storage (`storage-keys`, `zoom`), theme and the feature flags. A pure function does not belong here: put it in `utils/`.
-- `keyboard/`: the shortcut registry, its dispatcher and `useShortcut`.
+- `lib/`: code that touches the runtime boundary: Tauri wrappers (`invokeCommand`, `db`, `dbBoot`, `editor`, `reveal`), the folder dialog (`pickFolder`), browser storage (`storage-keys`, `zoom`), theme and the feature flags. A pure function does not belong here: put it in `utils/`.
+- `keyboard/`: the shortcut registry, its dispatcher, `useShortcut` and `isTypingTarget`.
 - `platform/`: operating system detection.
 - `detail-fields/`: the field builders the record detail panes render, one file per tracker.
+
+Some jobs have one implementation, and a feature never rewrites them:
+
+- Copy text: `copyToClipboard` in `packages/ui` writes through the async clipboard, falls back to a selected textarea and rejects when both fail. `useCopyText` in `shared/hooks/` calls it and shows a "Copy failed" toast. A caller that has its own error surface (the bug report, artifact export, `useCopyLink`) catches the rejection and shows it there. Never call `navigator.clipboard` directly.
+- Pick a folder: `usePickFolder` in `shared/hooks/` wraps `pickFolder` in `shared/lib/` and reports a refused dialog through `reportError`. No component imports the dialog plugin for a folder.
+- Is the user typing: `isTypingTarget` in `shared/keyboard/` counts input, textarea, select and contentEditable. `isTextEntryTarget` is the same without select, for the few rules where a focused select must not count.
+- Saved preferences: `persistedPref({ key, parse, fallback })` in `shared/lib/storage-keys.ts` reads, validates and writes one local or session storage value, and never throws when storage is blocked. Its key comes from `STORAGE_KEYS` or `STORAGE_PREFIXES`, never a string literal in the feature.
+- A clock that keeps counting: `useNow`, see Shared utilities.
 
 No other `shared/` subfolder without adding it here. A folder that holds only a test file is not a folder: the test goes next to the code it covers.
 
