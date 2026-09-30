@@ -89,6 +89,7 @@ export const useSuggestionActions = ({
   );
   const roleModels = useSessionRoleModels({ sessionId });
   const spawnAgent = useAppStore((state) => state.spawnAgent);
+  const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
   const createResolveBatch = useAppStore((state) => state.createResolveBatch);
   const resolveStyle = useAppStore(
@@ -315,6 +316,19 @@ export const useSuggestionActions = ({
           failureTitle: "Couldn't open the sign-in",
           run: async () => {
             openProviderSignIn({ providerId: suggestion.payload.providerId });
+          },
+        },
+        onDismiss: null,
+      };
+    }
+    if (suggestion.kind === 'resume-agents') {
+      return {
+        primary: {
+          label: suggestion.payload.agentIds.length === 1 ? 'Resume' : 'Resume all',
+          isDisabled: false,
+          failureTitle: "Couldn't resume the stopped agents",
+          run: async () => {
+            await resumeStoppedAgents({ sessionId });
           },
         },
         onDismiss: null,

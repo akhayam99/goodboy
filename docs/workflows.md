@@ -539,7 +539,9 @@ An agent you stop (Interrupt, or Stop in the composer) is `stopped`, with
 `stopped` with `stopped_by = app`, and the next time its workspace loads it is
 resumed on its own when the exit was clean (see
 [turns.md](turns.md#surviving-a-reload-or-a-restart)). One it cannot resume
-reads "Stopped by restart" and offers Resume, which runs the same resume. A
+reads "Stopped by restart" and offers Resume, which runs the same resume. When
+the restart stopped any of the run's agents, the run shows one **Resume all**
+above its steps for all of them. A
 stopped agent is neither settled nor failed: its row, the run and the agent
 header say it was stopped and offer Continue, which sends "Continue from where
 you stopped." as a normal message. A resumed step completes like any other, so

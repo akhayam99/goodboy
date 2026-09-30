@@ -24,6 +24,7 @@ export const SUGGESTION_KINDS = [
   'approve-tool',
   'sign-in',
   'retry-agent',
+  'resume-agents',
   'fix-checks',
   'push-branch',
   'open-pr',
@@ -121,6 +122,10 @@ export type SessionSuggestion =
   | (SuggestionBase & {
       readonly kind: 'retry-agent';
       readonly payload: { readonly agentId: AgentId; readonly agentKind: AgentKind };
+    })
+  | (SuggestionBase & {
+      readonly kind: 'resume-agents';
+      readonly payload: { readonly agentIds: ReadonlyArray<AgentId> };
     })
   | (SuggestionBase & {
       readonly kind: 'fix-checks';

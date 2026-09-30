@@ -320,11 +320,12 @@ whether you clicked it on the board or in the session overview.
   whose **Answer the approval** opens the blocked agent. The approve-tool
   suggestion for that same agent stays out of Next steps; an approval the
   callout does not name (a second blocked agent) still shows there.
-- Seventeen suggestion kinds ship: the original six (answer open questions,
+- Eighteen suggestion kinds ship: the original six (answer open questions,
   continue a workflow's ready step, fix review conversations, rebase a
-  project, run a ready plan, add a proposed project) plus eleven more that
+  project, run a ready plan, add a proposed project) plus twelve more that
   landed on the same engine, not a second one: approve a pending permission,
-  sign back in after `auth_required`, retry
+  sign back in after `auth_required`, resume every agent a restart stopped
+  (one **Resume all**, band 0, standalone and workflow agents alike), retry
   the last standalone agent that failed, fix a pull request's failing checks,
   push unpushed commits on a clean worktree (counted against the branch's
   own copy on origin by `branchPushStateOf`; `Push the branch` with `Not

@@ -22,6 +22,10 @@ const { extractHandoffMock, showToast, state } = vi.hoisted(() => ({
     acceptSessionNudgeHandoff: vi.fn(async () => 'agent-accepted' as AgentId),
     navigate: vi.fn(),
     loadAgentTranscript: vi.fn(async () => undefined),
+    providers: [
+      { id: 'anthropic', connection: 'connected' },
+      { id: 'cursor', connection: 'connected' },
+    ],
   },
 }));
 
@@ -33,6 +37,27 @@ vi.mock('../../../../store', async () => ({
   ...(await import('../../../../store/slices/navigation/place')),
   EMPTY_ARRAY: [],
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
+}));
+
+vi.mock('../../../../store/slices/agents/selectKindRouting', () => ({
+  selectKindRouting: () => ({ provider: 'cursor', model: 'composer-2.5', effort: 'medium' }),
+}));
+vi.mock('../../../../shared/components/RoutingPicker', () => ({
+  RoutingPicker: ({
+    ariaLabel,
+    provider,
+    model,
+    onProvider,
+  }: {
+    readonly ariaLabel: string;
+    readonly provider: string;
+    readonly model: string;
+    readonly onProvider: (provider: string) => void;
+  }) => (
+    <button type="button" aria-label={ariaLabel} onClick={() => onProvider('anthropic')}>
+      {`${provider} ${model}`}
+    </button>
+  ),
 }));
 
 vi.mock('../../../../shared/components/Toast', () => ({
@@ -76,7 +101,7 @@ describe('HandoffChip', () => {
   });
 
   it('links a directly spawned agent to the source without stealing focus', () => {
-    extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: null });
+    extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: '' });
     render(
       <HandoffChip assistantText="x" sessionId={SESSION_ID} sourceAgentId={SOURCE_AGENT_ID} />,
     );
@@ -85,7 +110,37 @@ describe('HandoffChip', () => {
       kindOverride: 'implementer',
       parentAgentId: SOURCE_AGENT_ID,
       focus: 'none',
+      initialPrompt: 'Follow-up from the previous agent.\n\nWhat the previous agent found:\n\nx',
+      provider: 'cursor',
+      model: 'composer-2.5',
+      effort: 'medium',
     });
+  });
+
+  it('seeds the kickoff with the reason and starts on the routing the user picked', () => {
+    extractHandoffMock.mockReturnValue({ kind: 'debugger', reason: 'Router keeps a stale path' });
+    state.sessionPhaseRuns = {
+      'sess-1': [{ id: SOURCE_AGENT_ID, name: 'stash check', status: 'completed' } as Agent],
+    };
+    render(
+      <HandoffChip
+        assistantText={'The router is stale.\n<<handoff kind=debugger reason="x">>'}
+        sessionId={SESSION_ID}
+        sourceAgentId={SOURCE_AGENT_ID}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Debugger routing' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start debugger' }));
+
+    const args = (
+      state.spawnAgent.mock.calls[0] as ReadonlyArray<unknown> | undefined
+    )?.[1] as Record<string, unknown>;
+    expect(args.provider).toBe('anthropic');
+    expect(args.model).not.toBe('composer-2.5');
+    expect(args.initialPrompt).toBe(
+      'Follow-up from stash check: Router keeps a stale path\n\nWhat stash check found:\n\nThe router is stale.',
+    );
   });
 
   it('shows a matching child live status and removes the spawn action', () => {
@@ -114,7 +169,7 @@ describe('HandoffChip', () => {
   });
 
   it('disables the action while the spawned child is waiting to enter the store', () => {
-    extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: null });
+    extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: '' });
     state.spawnAgent = vi.fn(
       () =>
         new Promise<AgentId>(() => {
@@ -137,7 +192,7 @@ describe('HandoffChip', () => {
   });
 
   it('accepts the live nudge, reports it started, and opens the agent only from the toast', async () => {
-    extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: null });
+    extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: '' });
     state.sessionNudges = {
       'sess-1': {
         id: 'nudge-1',
@@ -151,7 +206,12 @@ describe('HandoffChip', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Start implementer' }));
 
-    await waitFor(() => expect(state.acceptSessionNudgeHandoff).toHaveBeenCalledWith('sess-1'));
+    await waitFor(() =>
+      expect(state.acceptSessionNudgeHandoff).toHaveBeenCalledWith('sess-1', {
+        routing: { provider: 'cursor', model: 'composer-2.5', effort: 'medium' },
+        initialPrompt: 'Follow-up from the previous agent.\n\nWhat the previous agent found:\n\nx',
+      }),
+    );
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
     expect(state.spawnAgent).not.toHaveBeenCalled();
     expect(state.navigate).not.toHaveBeenCalled();

@@ -14,6 +14,7 @@ import { buildScopeGuard } from '../project-mounts/scopeGuard';
 import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from './sessionLanguage';
 import { beginTurnFileVersionCapture } from '../file-versions/captureTurnFileVersions';
 import { applyHeuristicTitle } from './applyHeuristicTitle';
+import { isFanOutChild } from '../agents/isFanOutChild';
 import { resolveCandidateMode } from '../resolve/resolveCandidateMode';
 import { resumableResolveThreadIds } from '../resolve/resumableResolveThreadIds';
 import { selectWritableMounts } from '../project-mounts/selectors';
@@ -273,7 +274,14 @@ export const buildTurnSpawn = async ({ set, get, lease, ctx }: Params) => {
     }
   }
 
-  if (isFirstTurn && !agentRowEarly?.parentAgentId) {
+  const isChildOfFanOut =
+    agentRowEarly !== null &&
+    isFanOutChild({
+      agent: agentRowEarly,
+      runs: get().sessionPhaseRuns[sessionId] ?? [],
+      agentKindOverride: get().agentKindOverride,
+    });
+  if (isFirstTurn && !isChildOfFanOut) {
     void applyHeuristicTitle({ set, get, sessionId, agentId: activeAgentId, prompt: content });
   }
 
