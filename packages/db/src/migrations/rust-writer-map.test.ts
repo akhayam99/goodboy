@@ -10,6 +10,7 @@ const ARCHITECTURE_DOC = fileURLToPath(
 );
 
 const SEARCH_SHADOW_TABLES = /^search_index_(config|content|data|docsize|idx)$/;
+const RUST_TEST_FILE = /(?:^|\/)(?:tests|fixtures|[a-z_]+_tests)\.rs$/;
 const RUST_TEST_MODULE = /#\[cfg\(test\)\]\s*mod\s/;
 const MAP_ROW = /^\|\s*`([a-z_][a-z0-9_]*)`\s*\|\s*(ts|rust)\s*\|/;
 
@@ -22,7 +23,7 @@ type Owner = 'ts' | 'rust';
 type WriteCounts = Readonly<Record<string, Readonly<Record<string, number>>>>;
 
 const RUST_WRITES_TO_TS_TABLES: WriteCounts = {
-  'config_export/mod.rs': {
+  'config_export/apply.rs': {
     project_scripts: 1,
     projects: 2,
     settings: 1,
@@ -53,7 +54,7 @@ const rustFiles = (dir: string): ReadonlyArray<string> =>
     if (statSync(path).isDirectory()) {
       return rustFiles(path);
     }
-    return path.endsWith('.rs') ? [path] : [];
+    return path.endsWith('.rs') && !RUST_TEST_FILE.test(path) ? [path] : [];
   });
 
 export const productionRust = (source: string): string => {
