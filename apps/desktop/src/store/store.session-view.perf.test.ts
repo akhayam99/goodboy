@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import type { SessionGithubState } from './types';
-import { sortAndGroupSessions } from './slices/session-view';
+import { sortAndGroupSessions } from './slices/session-view/sortAndGroupSessions';
 
 const WS = 'ws-1' as WorkspaceId;
 const SESSION_COUNT = 2000;

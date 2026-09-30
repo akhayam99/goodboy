@@ -78,7 +78,8 @@ Each slice is a **package folder**:
 - `index.test.ts`: the test for the slice's public contract.
 - `state.ts`: the state keys the slice owns, their type and their initial value, both named after the slice.
 - One file per action.
-- One `select<Thing>.ts` per selector.
+- One `select<Thing>.ts` per pure selector.
+- `selectors.ts`: the slice's React selector hooks (`use*`), each reading the keys the slice owns in `state.ts`. A hook that reads several slices sits in the slice that owns its primary key. A slice whose `selectors.ts` already holds pure selectors that action files import keeps its hooks in `use<Thing>.ts` files instead (`project-mounts`), so the actions never import the store. Callers get the hooks through `store/index.ts`, which re-exports each one from its source file.
 - `types.ts`: types used only inside the slice. It re-exports `SetFn`/`GetFn` from `../../slice-types`.
 
 Rules around slices:

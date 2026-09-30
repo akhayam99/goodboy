@@ -19,11 +19,11 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
+import { useRunningHere } from '../../store/slices/live-work/selectors';
 import {
-  useRunningHere,
   useSessionStageInfo,
   useStageGroupedSessions,
-} from '../../store/selectors';
+} from '../../store/slices/session-view/selectors';
 import type { BitbucketPullRequest } from '../../features/integrations/bitbucket/client';
 import type { MountGithubState } from '../../store/types';
 import type { MountBitbucketPrState } from '../../store/slices/bitbucket-pr/state';

@@ -1,114 +1,62 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
+import { aProject, aSession, aWorkspace } from '@goodboy/types/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
-  Agent,
-  AgentId,
+  IsoDateTime,
   MountId,
   Session,
   SessionId,
-  StepId,
   Project,
   ProjectId,
-  TelemetryKind,
-  TelemetryRecord,
-  WorkflowRunId,
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
 
 type StoreState = Record<string, unknown>;
 
-const { store, changedFiles } = vi.hoisted(() => {
+const { store } = vi.hoisted(() => {
   const store: { state: StoreState } = { state: {} };
-  return { store, changedFiles: vi.fn() };
+  return { store };
 });
 
-vi.mock('./store', () => ({
+vi.mock('../../store', () => ({
   useAppStore: (selector: (state: StoreState) => unknown) => selector(store.state),
 }));
 
-vi.mock('../features/worktree/worktree', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../features/worktree/worktree')>()),
-  worktreeChangedFiles: changedFiles,
-}));
-
 import {
-  sumSessionCost,
-  useIsSessionCollectionLoaded,
-  useMountDiffStats,
-  useSessionPrFetchState,
   useSessionStageInfo,
   useSortedGroupedSessions,
   useStageGroupedSessions,
 } from './selectors';
 
-type Params = {
-  readonly kind: TelemetryKind;
-  readonly estimatedCostUsd: number;
-};
-
-const createRecord = ({ kind, estimatedCostUsd }: Params): TelemetryRecord =>
-  ({ kind, estimatedCostUsd }) as TelemetryRecord;
-
-type AgentParams = {
-  readonly id: AgentId;
-  readonly kind?: string;
-  readonly parentAgentId?: AgentId;
-  readonly workflowRunId?: WorkflowRunId;
-  readonly stepId?: StepId;
-  readonly lastFinishedAt?: string;
-};
-
-const createAgent = ({
-  id,
-  kind,
-  parentAgentId,
-  workflowRunId,
-  stepId,
-  lastFinishedAt = '2026-07-21T10:00:00.000Z',
-}: AgentParams): Agent =>
-  ({
-    id,
-    sessionId: SESSION_ID,
-    ordinal: 0,
-    name: 'agent',
-    status: 'completed',
-    kind,
-    parentAgentId,
-    workflowRunId,
-    stepId,
-    lastFinishedAt,
-    lastViewedAt: null,
-  }) as unknown as Agent;
-
 const SESSION_ID = 'session-1' as SessionId;
-const AGENT_ID = 'agent-1' as AgentId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;
 const PROJECT_ID = 'project-1' as ProjectId;
 const MOUNT_ID = 'mount-1' as MountId;
 
+const ACTIVITY_AT = '2026-07-27T10:00:00.000Z' as IsoDateTime;
+
 const createSession = (id: SessionId): Session =>
-  ({
+  aSession({
     id,
     workspaceId: WORKSPACE_ID,
     activeProjectId: PROJECT_ID,
     goal: 'ship the fix',
-    state: { kind: 'idle', lastActivityAt: '2026-07-27T10:00:00.000Z' },
-    createdAt: '2026-07-27T10:00:00.000Z',
-    updatedAt: '2026-07-27T10:00:00.000Z',
-    workflowRuns: [],
-  }) as unknown as Session;
+    state: { kind: 'idle', lastActivityAt: ACTIVITY_AT },
+    createdAt: ACTIVITY_AT,
+    updatedAt: ACTIVITY_AT,
+  });
 
-const createWorkspace = (): Workspace => ({ id: WORKSPACE_ID }) as unknown as Workspace;
+const createWorkspace = (): Workspace => aWorkspace({ id: WORKSPACE_ID });
 
 const createProject = (kind: Project['kind'] = 'repo'): Project =>
-  ({
+  aProject({
     id: PROJECT_ID,
     workspaceId: WORKSPACE_ID,
     rootPath: '/tmp/ws',
     name: 'project',
     kind,
-  }) as unknown as Project;
+  });
 
 const setProjectScope = ({ kind = 'repo' }: { readonly kind?: Project['kind'] } = {}): void => {
   store.state.workspaces = [createWorkspace()];
@@ -154,52 +102,6 @@ beforeEach(() => {
     sessionActiveProject: {},
     githubStatus: null,
   };
-  changedFiles.mockReset();
-});
-
-describe('useIsSessionCollectionLoaded', () => {
-  const COLLECTIONS = [
-    ['agents', 'sessionPhaseRuns'],
-    ['plans', 'sessionPlans'],
-    ['workflows', 'sessionWorkflows'],
-    ['reviewDrafts', 'reviewDrafts'],
-    ['externalTasks', 'sessionExternalTasks'],
-    ['openQuestions', 'sessionOpenQuestions'],
-    ['fileVersions', 'sessionFileVersions'],
-  ] as const;
-
-  it.each(COLLECTIONS)(
-    'reads %s as never loaded while its record has no key',
-    (collection, key) => {
-      store.state[key] = {};
-
-      const { result } = renderHook(() =>
-        useIsSessionCollectionLoaded({ sessionId: SESSION_ID, collection }),
-      );
-
-      expect(result.current).toBe(false);
-    },
-  );
-
-  it.each(COLLECTIONS)('reads %s as loaded once its key holds an empty list', (collection, key) => {
-    store.state[key] = { [SESSION_ID]: [] };
-
-    const { result } = renderHook(() =>
-      useIsSessionCollectionLoaded({ sessionId: SESSION_ID, collection }),
-    );
-
-    expect(result.current).toBe(true);
-  });
-
-  it('never reads one session as loaded because a sibling loaded', () => {
-    store.state.sessionWorkflows = { 'session-2': [] };
-
-    const { result } = renderHook(() =>
-      useIsSessionCollectionLoaded({ sessionId: SESSION_ID, collection: 'workflows' }),
-    );
-
-    expect(result.current).toBe(false);
-  });
 });
 
 describe('useSessionStageInfo pull request freshness', () => {
@@ -371,83 +273,6 @@ describe('useSessionStageInfo settled request state', () => {
   });
 });
 
-describe('useSessionPrFetchState', () => {
-  const fetchableSession = () => {
-    const session = createSession(SESSION_ID);
-    store.state.sessions = [session];
-    setProjectScope();
-    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
-    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
-    store.state.githubStatus = { available: true };
-    return session;
-  };
-
-  it('reports unknown while a fetchable session is still waiting on its first fetch', () => {
-    fetchableSession();
-
-    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
-
-    expect(result.current).toBe('unknown');
-  });
-
-  it('reports known once that session fetch has landed', () => {
-    fetchableSession();
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: '2026-08-04T10:00:00.000Z', failedAt: null },
-    };
-
-    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
-
-    expect(result.current).toBe('known');
-  });
-
-  it('reports unreachable once every attempt for that session failed', () => {
-    fetchableSession();
-    store.state.sessionGithub = {
-      [SESSION_ID]: { pr: null, fetchedAt: null, failedAt: '2026-08-04T10:00:00.000Z' },
-    };
-
-    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
-
-    expect(result.current).toBe('unreachable');
-  });
-
-  it('reports known for a folder project, which never gets a pull request fetched', () => {
-    const session = createSession(SESSION_ID);
-    store.state.sessions = [session];
-    setProjectScope({ kind: 'folder' });
-    store.state.sessionBranches = { [SESSION_ID]: 'ak/feat-thing' };
-    store.state.sessionWorktrees = { [SESSION_ID]: ['/tmp/ws-worktree'] };
-    store.state.githubStatus = { available: true };
-
-    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
-
-    expect(result.current).toBe('known');
-  });
-
-  it('reports known for a mount with no branch, which the sweep skips', () => {
-    fetchableSession();
-    setProjectScope({ kind: 'folder' });
-    store.state.sessionBranches = {};
-
-    const { result } = renderHook(() => useSessionPrFetchState(SESSION_ID));
-
-    expect(result.current).toBe('known');
-  });
-});
-
-describe('sumSessionCost', () => {
-  it('sums turn costs and skips summarizer costs', () => {
-    const records = [
-      createRecord({ kind: 'turn', estimatedCostUsd: 1.25 }),
-      createRecord({ kind: 'summarizer', estimatedCostUsd: 8 }),
-      createRecord({ kind: 'turn', estimatedCostUsd: 0.5 }),
-    ];
-
-    expect(sumSessionCost(records)).toBe(1.75);
-  });
-});
-
 describe('useSortedGroupedSessions', () => {
   it('derives stages with the default stage grouping', () => {
     store.state.workspaces = [createWorkspace()];
@@ -565,164 +390,6 @@ describe('useStageGroupedSessions', () => {
     rerender();
 
     expect(result.current).not.toBe(first);
-  });
-});
-
-describe('useMountDiffStats', () => {
-  const worktreeRow = ({
-    id,
-    worktreePath,
-  }: {
-    readonly id: string;
-    readonly worktreePath: string;
-  }) => ({ id, sessionId: SESSION_ID, worktreePath, branch: 'ak/feat', parallelIndex: 0 });
-
-  it('fetches nothing for a session with no worktrees', () => {
-    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
-
-    expect(result.current.size).toBe(0);
-    expect(changedFiles).not.toHaveBeenCalled();
-  });
-
-  it('keys one stat per worktree path', async () => {
-    store.state.sessionWorktreeRecords = {
-      [SESSION_ID]: [
-        worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' }),
-        worktreeRow({ id: 'wt-2', worktreePath: '/tmp/b' }),
-      ],
-    };
-    changedFiles.mockImplementation(({ worktreePath: path }: { worktreePath: string }) =>
-      Promise.resolve(
-        path === '/tmp/a'
-          ? { paths: ['x.ts'], additions: 2000, deletions: 200, numstat: '' }
-          : { paths: [], additions: 0, deletions: 0, numstat: '' },
-      ),
-    );
-
-    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
-
-    await waitFor(() => expect(result.current.size).toBe(2));
-    expect(result.current.get('/tmp/a')).toEqual({ additions: 2000, deletions: 200 });
-    expect(result.current.get('/tmp/b')).toEqual({ additions: 0, deletions: 0 });
-  });
-
-  it('swallows one failing path to zero instead of losing the whole map', async () => {
-    store.state.sessionWorktreeRecords = {
-      [SESSION_ID]: [
-        worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' }),
-        worktreeRow({ id: 'wt-2', worktreePath: '/tmp/gone' }),
-      ],
-    };
-    changedFiles.mockImplementation(({ worktreePath: path }: { worktreePath: string }) =>
-      path === '/tmp/gone'
-        ? Promise.reject(new Error('not a worktree'))
-        : Promise.resolve({ paths: ['x.ts'], additions: 3, deletions: 1, numstat: '' }),
-    );
-
-    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
-
-    await waitFor(() => expect(result.current.size).toBe(2));
-    expect(result.current.get('/tmp/a')).toEqual({ additions: 3, deletions: 1 });
-    expect(result.current.get('/tmp/gone')).toEqual({ additions: 0, deletions: 0 });
-  });
-
-  it('skips a worktree row that carries no path', async () => {
-    store.state.sessionWorktreeRecords = {
-      [SESSION_ID]: [
-        worktreeRow({ id: 'wt-1', worktreePath: '' }),
-        worktreeRow({ id: 'wt-2', worktreePath: '/tmp/b' }),
-      ],
-    };
-    changedFiles.mockResolvedValue({ paths: [], additions: 0, deletions: 0, numstat: '' });
-
-    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
-
-    await waitFor(() => expect(result.current.size).toBe(1));
-    expect(changedFiles).toHaveBeenCalledTimes(1);
-    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/b', baseBranch: null });
-  });
-
-  it('counts against the base branch the mount or its project picked', async () => {
-    store.state.projects = [{ id: 'project-1', baseBranch: 'develop' }];
-    store.state.sessionProjectMounts = {
-      [SESSION_ID]: [
-        { projectId: 'project-1', worktreePath: '/tmp/a', baseBranch: null },
-        { projectId: 'project-1', worktreePath: '/tmp/b', baseBranch: 'release/9' },
-        { projectId: 'project-2', worktreePath: '/tmp/c', baseBranch: null },
-      ],
-    };
-    store.state.sessionWorktreeRecords = {
-      [SESSION_ID]: [
-        worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' }),
-        worktreeRow({ id: 'wt-2', worktreePath: '/tmp/b' }),
-        worktreeRow({ id: 'wt-3', worktreePath: '/tmp/c' }),
-      ],
-    };
-    changedFiles.mockResolvedValue({ paths: [], additions: 1, deletions: 0, numstat: '' });
-
-    const { result } = renderHook(() => useMountDiffStats(SESSION_ID));
-
-    await waitFor(() => expect(result.current.size).toBe(3));
-    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/a', baseBranch: 'develop' });
-    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/b', baseBranch: 'release/9' });
-    expect(changedFiles).toHaveBeenCalledWith({ worktreePath: '/tmp/c', baseBranch: null });
-  });
-
-  it('refetches when the last turn finishes', async () => {
-    store.state.sessionWorktreeRecords = {
-      [SESSION_ID]: [worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' })],
-    };
-    changedFiles.mockResolvedValue({ paths: [], additions: 1, deletions: 0, numstat: '' });
-
-    const { rerender } = renderHook(() => useMountDiffStats(SESSION_ID));
-    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(1));
-
-    store.state.sessionPhaseRuns = {
-      [SESSION_ID]: [createAgent({ id: AGENT_ID, lastFinishedAt: '2026-08-22T10:00:00.000Z' })],
-    };
-    rerender();
-
-    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(2));
-  });
-
-  it('asks git once when several surfaces read the same mount at the same time', async () => {
-    store.state.sessionWorktreeRecords = {
-      [SESSION_ID]: [worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' })],
-    };
-    changedFiles.mockResolvedValue({ paths: [], additions: 4, deletions: 0, numstat: '' });
-
-    const { result } = renderHook(() => [
-      useMountDiffStats(SESSION_ID),
-      useMountDiffStats(SESSION_ID),
-      useMountDiffStats(SESSION_ID),
-    ]);
-
-    await waitFor(() => expect(result.current[0]?.get('/tmp/a')).toBeDefined());
-    expect(result.current[2]?.get('/tmp/a')).toEqual({ additions: 4, deletions: 0 });
-    expect(changedFiles).toHaveBeenCalledTimes(1);
-  });
-
-  it('refreshes when the window comes back into view', async () => {
-    store.state.sessionWorktreeRecords = {
-      [SESSION_ID]: [worktreeRow({ id: 'wt-1', worktreePath: '/tmp/a' })],
-    };
-    changedFiles.mockResolvedValue({ paths: [], additions: 1, deletions: 0, numstat: '' });
-
-    renderHook(() => useMountDiffStats(SESSION_ID));
-    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(1));
-
-    act(() => {
-      document.dispatchEvent(new Event('visibilitychange'));
-    });
-
-    await waitFor(() => expect(changedFiles).toHaveBeenCalledTimes(2));
-  });
-
-  it('returns an empty map without a session', () => {
-    const { result } = renderHook(() => useMountDiffStats(null));
-
-    expect(result.current.size).toBe(0);
-    expect(changedFiles).not.toHaveBeenCalled();
   });
 });
 

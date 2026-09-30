@@ -2,12 +2,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Session, SessionId, SessionStage, WorkspaceId } from '@goodboy/types';
 import type { SessionGithubState } from './types';
-import {
-  createSessionViewSlice,
-  deriveSessionStage,
-  sortAndGroupSessions,
-  type GroupedSessions,
-} from './slices/session-view';
+import { createSessionViewSlice } from './slices/session-view';
+import { deriveSessionStage } from './slices/session-view/deriveSessionStage';
+import { sortAndGroupSessions } from './slices/session-view/sortAndGroupSessions';
+import type { GroupedSessions } from './slices/session-view/types';
 import type { SessionViewPrefs } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../shared/lib/storage-keys';
 import { STAGE_ORDER } from './slices/session-view/types';

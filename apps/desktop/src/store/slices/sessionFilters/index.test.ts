@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { SessionProjectMount, WorkspaceId } from '@goodboy/types';
 import { STORAGE_PREFIXES } from '../../../shared/lib/storage-keys';
 import { useAppStore } from '../../store';
-import { NO_PROJECT_FILTER_ID, sessionMatchesProjectFilter } from './index';
+import { NO_PROJECT_FILTER_ID } from './index';
+import { sessionMatchesProjectFilter } from './sessionMatchesProjectFilter';
 
 const WORKSPACE_ID = 'workspace-filter-test' as WorkspaceId;
 
