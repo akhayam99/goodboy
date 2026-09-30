@@ -16,9 +16,9 @@ import { setSessionConfig } from './setSessionConfig';
 import { setSessionPermissionMode } from './setSessionPermissionMode';
 import { unarchiveTask } from './unarchiveTask';
 import { unlinkSessionExternalTask } from './unlinkSessionExternalTask';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createSessionsSlice = (set: SetFn, get: GetFn) => {
+export const createSessionsSlice = ({ set, get }: SliceDeps) => {
   return {
     evictSession: evictSession({ set, get }),
     renameTask: renameTask(set, get),

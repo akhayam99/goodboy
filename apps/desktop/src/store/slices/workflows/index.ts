@@ -36,9 +36,9 @@ import { setWorkflowRunAutoRun } from './setWorkflowRunAutoRun';
 import { setWorkflowRunSpendLimit } from './setWorkflowRunSpendLimit';
 import { startWorkflowRun } from './startWorkflowRun';
 import { stopWorkflowRunNow } from './stopWorkflowRunNow';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createWorkflowsSlice = (set: SetFn, get: GetFn) => {
+export const createWorkflowsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadPhaseTemplates: loadPhaseTemplates(set),
     copyWorkflowsFromWorkspaces: copyWorkflowsFromWorkspaces({ set }),

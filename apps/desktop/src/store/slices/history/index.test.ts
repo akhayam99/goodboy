@@ -144,7 +144,7 @@ const harness = ({ mount, project }: Bases = { mount: 'main', project: 'main' })
     state = { ...state, ...(next as object) };
   }) as unknown as SetFn;
   const get = (() => state) as unknown as GetFn;
-  const slice = createHistorySlice(set, get);
+  const slice = createHistorySlice({ set, get });
   state = { ...state, ...slice };
   return { slice, read: () => state as unknown as ReturnType<GetFn> };
 };

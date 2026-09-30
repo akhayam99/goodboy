@@ -58,7 +58,7 @@ const harness = ({ running = true }: { readonly running?: boolean } = {}): Harne
     Object.assign(state, patch);
   }) as SetFn;
   const get = (() => state) as unknown as GetFn;
-  const slice = createAgentQueueSlice(set, get);
+  const slice = createAgentQueueSlice({ set, get });
   const cancelCurrentTurn = vi.fn(async () => {
     state.agentTurnState = { [AGENT_ID]: { kind: 'idle' } };
   });

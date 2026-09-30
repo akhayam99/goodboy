@@ -11,9 +11,9 @@ import { resolveMountBranchMismatch } from './resolveMountBranchMismatch';
 import { setSessionActiveMount } from './setSessionActiveMount';
 import { switchMount } from './switchMount';
 import { unmountMount } from './unmountMount';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createProjectMountsSlice = (set: SetFn, get: GetFn) => {
+export const createProjectMountsSlice = ({ set, get }: SliceDeps) => {
   return {
     detachProject: detachProject(set, get),
     ensureProjectMounted: ensureProjectMounted(set, get),

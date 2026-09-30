@@ -1,8 +1,8 @@
 import { clearBugReportDraft } from './clearBugReportDraft';
 import { setBugReportDraft } from './setBugReportDraft';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createBugReportDraftSlice = (set: SetFn, get: GetFn) => {
+export const createBugReportDraftSlice = ({ set, get }: SliceDeps) => {
   return {
     setBugReportDraft: setBugReportDraft(set, get),
     clearBugReportDraft: clearBugReportDraft(set),

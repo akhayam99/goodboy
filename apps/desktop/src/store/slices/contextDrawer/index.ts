@@ -2,9 +2,9 @@ import { loadSessionContextSeen } from './loadSessionContextSeen';
 import { markSessionContextSeen } from './markSessionContextSeen';
 import { openContextDrawer } from './openContextDrawer';
 import { toggleContextDrawer } from './toggleContextDrawer';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createContextDrawerSlice = (set: SetFn, get: GetFn) => {
+export const createContextDrawerSlice = ({ set, get }: SliceDeps) => {
   return {
     openContextDrawer: openContextDrawer(set, get),
     toggleContextDrawer: toggleContextDrawer(get),

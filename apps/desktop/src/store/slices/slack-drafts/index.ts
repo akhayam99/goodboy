@@ -1,8 +1,8 @@
 import { decideSessionSlackDraft } from './decideSessionSlackDraft';
 import { loadSessionSlackDrafts } from './loadSessionSlackDrafts';
-import type { SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createSlackDraftsSlice = (set: SetFn) => {
+export const createSlackDraftsSlice = ({ set }: SliceDeps) => {
   return {
     loadSessionSlackDrafts: loadSessionSlackDrafts(set),
     decideSessionSlackDraft: decideSessionSlackDraft(set),

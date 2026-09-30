@@ -50,7 +50,7 @@ function harness(initial: Partial<FakeState>) {
     state = { ...state, ...(patch as Partial<FakeState>) };
   };
   const get = () => state as never;
-  const slice = createPresenceSlice(set as never, get);
+  const slice = createPresenceSlice({ set: set as never, get });
   state = { ...state, switchWorkspaceHere: slice.switchWorkspaceHere };
   return { slice, get: () => state };
 }

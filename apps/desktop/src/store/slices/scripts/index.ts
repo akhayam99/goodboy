@@ -7,9 +7,9 @@ import { refreshDiscoveredScripts } from './refreshDiscoveredScripts';
 import { runDiscoveredScript } from './runDiscoveredScript';
 import { runScript } from './runScript';
 import { saveScript } from './saveScript';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createScriptsSlice = (set: SetFn, get: GetFn) => {
+export const createScriptsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadScripts: loadScripts(set, get),
     saveScript: saveScript(get),

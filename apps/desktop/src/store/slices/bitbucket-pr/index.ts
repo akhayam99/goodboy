@@ -8,12 +8,12 @@ import { requestBitbucketPrChanges } from './requestBitbucketPrChanges';
 import { selectSessionBitbucketPr } from './selectSessionBitbucketPr';
 import { unapproveBitbucketPr } from './unapproveBitbucketPr';
 import { withdrawBitbucketPrChanges } from './withdrawBitbucketPrChanges';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 export { initialBitbucketPrState } from './state';
 export type { BitbucketPrWriteParams } from './types';
 
-export const createBitbucketPrSlice = (set: SetFn, get: GetFn) => ({
+export const createBitbucketPrSlice = ({ set, get }: SliceDeps) => ({
   refreshSessionBitbucketPr: refreshSessionBitbucketPr(set, get),
   selectSessionBitbucketPr: selectSessionBitbucketPr(set, get),
   approveBitbucketPr: approveBitbucketPr(set, get),

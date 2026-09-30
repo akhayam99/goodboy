@@ -6,9 +6,9 @@ import { navigate } from './navigate';
 import { restoreLocation } from './restoreLocation';
 import { amendStudio, closeStudio, openStudio } from './studioMoves';
 import { up } from './up';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createNavigationSlice = (set: SetFn, get: GetFn) => {
+export const createNavigationSlice = ({ set, get }: SliceDeps) => {
   return {
     navigate: navigate(set, get),
     back: back(set, get),

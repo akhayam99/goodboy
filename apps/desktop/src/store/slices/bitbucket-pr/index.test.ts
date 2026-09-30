@@ -165,10 +165,10 @@ const buildStore = ({
     state = { ...state, ...(next as TestState) };
   };
   const get = () => state as unknown as AppStore;
-  const slice = createBitbucketPrSlice(
-    set as Parameters<typeof createBitbucketPrSlice>[0],
-    get as Parameters<typeof createBitbucketPrSlice>[1],
-  );
+  const slice = createBitbucketPrSlice({
+    set: set as Parameters<typeof createBitbucketPrSlice>[0]['set'],
+    get: get as Parameters<typeof createBitbucketPrSlice>[0]['get'],
+  });
   Object.assign(state, slice);
   return { getState: () => state, slice };
 };

@@ -12,10 +12,11 @@ import { sendChatMessage } from './sendChatMessage';
 import { setChatModel } from './setChatModel';
 import { chatsInitialState } from './state';
 import { stopChatReply } from './stopChatReply';
-import type { ChatsSlice, GetFn, SetFn } from './types';
+import type { ChatsSlice } from './types';
 import { readUnreadChats } from './unreadStorage';
+import type { SliceDeps } from '../../slice-types';
 
-export const createChatsSlice = (set: SetFn, get: GetFn): ChatsSlice => ({
+export const createChatsSlice = ({ set, get }: SliceDeps): ChatsSlice => ({
   ...chatsInitialState,
   unreadChatIds: readUnreadChats(),
   loadChats: loadChats(set, get),

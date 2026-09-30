@@ -1,9 +1,9 @@
 import { addGoalAttachments } from './addGoalAttachments';
 import { loadGoalAttachments } from './loadGoalAttachments';
 import { removeGoalAttachment } from './removeGoalAttachment';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createAttachmentsSlice = (set: SetFn, get: GetFn) => {
+export const createAttachmentsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadGoalAttachments: loadGoalAttachments(set, get),
     addGoalAttachments: addGoalAttachments(set, get),

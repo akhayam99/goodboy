@@ -135,7 +135,7 @@ const makeSlice = () => {
     const patch = typeof updater === 'function' ? updater(state) : updater;
     Object.assign(state, patch);
   });
-  const slice = createMountCleanupSlice(set as never, (() => state) as never);
+  const slice = createMountCleanupSlice({ set: set as never, get: (() => state) as never });
   return { state, slice };
 };
 

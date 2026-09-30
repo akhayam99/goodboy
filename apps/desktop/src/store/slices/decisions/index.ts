@@ -2,9 +2,9 @@ import { applySessionDecisionOps } from './applySessionDecisionOps';
 import { consolidateSessionContext } from './consolidateSessionContext';
 import { loadSessionDecisions } from './loadSessionDecisions';
 import { noteDecisionChanges } from './noteDecisionChanges';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createDecisionsSlice = (set: SetFn, get: GetFn) => {
+export const createDecisionsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadSessionDecisions: loadSessionDecisions(set, get),
     applySessionDecisionOps: applySessionDecisionOps(set, get),

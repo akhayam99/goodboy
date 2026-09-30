@@ -5,9 +5,9 @@ import { removeQueuedMessage } from './removeQueuedMessage';
 import { sendAgentMessageNow } from './sendAgentMessageNow';
 import { sendQueuedNow } from './sendQueuedNow';
 import { takeQueuedMessage } from './takeQueuedMessage';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createAgentQueueSlice = (set: SetFn, get: GetFn) => {
+export const createAgentQueueSlice = ({ set, get }: SliceDeps) => {
   return {
     loadAgentQueues: loadAgentQueues(set, get),
     enqueueAgentMessage: enqueueAgentMessage(set, get),

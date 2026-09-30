@@ -47,7 +47,7 @@ const harness = () => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => ({ ...state, ...slice });
-  const slice = createContextDrawerSlice(set as never, get as never);
+  const slice = createContextDrawerSlice({ set: set as never, get: get as never });
   return { slice, getState: () => state };
 };
 

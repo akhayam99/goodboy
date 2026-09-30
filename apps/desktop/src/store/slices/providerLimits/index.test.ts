@@ -57,7 +57,7 @@ const harness = () => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => state;
-  const slice = createProviderLimitsSlice(set as never, get as never);
+  const slice = createProviderLimitsSlice({ set: set as never, get: get as never });
   state = { ...slice };
   return { slice, read: () => state };
 };

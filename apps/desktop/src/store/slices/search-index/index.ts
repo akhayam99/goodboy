@@ -10,7 +10,8 @@ import {
 import { tauriDatabase } from '../../../shared/lib/db';
 import { waitForIdle } from './scheduleIdle';
 import { searchIndexInitialState } from './state';
-import type { GetFn, SearchIndexSlice, SetFn } from './types';
+import type { GetFn, SearchIndexSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 const STATUS_EVERY_STEPS = 10;
 
@@ -31,7 +32,7 @@ const backfillUntilDone = async (get: GetFn): Promise<void> => {
   }
 };
 
-export const createSearchIndexSlice = (set: SetFn, get: GetFn): SearchIndexSlice => ({
+export const createSearchIndexSlice = ({ set, get }: SliceDeps): SearchIndexSlice => ({
   ...searchIndexInitialState,
   startViewFind: ({ query, target }) => {
     set({ viewFind: { query, target, startedAt: Date.now(), steps: 0 }, lastSearchText: query });

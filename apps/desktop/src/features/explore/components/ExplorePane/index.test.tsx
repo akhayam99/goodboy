@@ -79,7 +79,7 @@ vi.mock('../../../../store', async () => {
     currentSessionId: 'session-1',
     activeLens: { 'session-1': 'explore' },
     drawer: null,
-    ...createDrawerSlice(set as never, get as never),
+    ...createDrawerSlice({ set: set as never, get: get as never }),
   }));
   h.resetStore = () => store.setState({ drawer: null });
   return {

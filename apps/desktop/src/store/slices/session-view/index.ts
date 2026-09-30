@@ -25,7 +25,8 @@ import { openResolveDiff, setResolveQueueView } from './resolveSurface';
 import { setResolveItemDraft } from './resolveItemDrafts';
 import { beginSessionCreation, endSessionCreation } from './sessionCreation';
 import { revealActivityRow } from './revealActivityRow';
-import type { GetFn, SessionViewSlice, SetFn } from './types';
+import type { SessionViewSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 export { isPrReviewSession } from './isPrReviewSession';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
@@ -38,7 +39,7 @@ export type {
   SessionCreationId,
 } from './types';
 
-export const createSessionViewSlice = (set: SetFn, get: GetFn): SessionViewSlice => {
+export const createSessionViewSlice = ({ set, get }: SliceDeps): SessionViewSlice => {
   return {
     ...createInitialSessionViewState({}),
     setScriptsLensScope: ({ scope }) => set({ scriptsLensScope: scope }),

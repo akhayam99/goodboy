@@ -10,7 +10,8 @@ import { refreshStarredIssues as runRefresh } from '../../../features/integratio
 import { starredIssueOf, starKey } from '../../../features/integrations/starred/starredIssueOf';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { starredIssuesInitialState } from './state';
-import type { GetFn, SetFn, StarredIssuesSlice } from './types';
+import type { SetFn, StarredIssuesSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 const REFRESH_AFTER_MS = 5 * 60 * 1000;
 
@@ -19,7 +20,7 @@ const reload = async (set: SetFn, workspaceId: WorkspaceId): Promise<void> => {
   set((state) => ({ starredIssues: { ...state.starredIssues, [workspaceId]: issues } }));
 };
 
-export const createStarredIssuesSlice = (set: SetFn, get: GetFn): StarredIssuesSlice => ({
+export const createStarredIssuesSlice = ({ set, get }: SliceDeps): StarredIssuesSlice => ({
   ...starredIssuesInitialState,
   loadStarredIssues: async ({ workspaceId }) => {
     await reload(set, workspaceId);

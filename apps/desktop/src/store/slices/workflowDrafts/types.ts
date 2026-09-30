@@ -2,7 +2,7 @@ import type { ProviderId, SessionId, WorkflowId, EffortLevel, WorkspaceId } from
 import type { PlannerOutput } from '@goodboy/core';
 import type { WorkflowDraft } from '../../../features/workflows/engine';
 
-export type { SetFn, GetFn } from '../../slice-types';
+export type { SetFn } from '../../slice-types';
 
 export type Mode = 'preset' | 'custom' | 'dynamic';
 

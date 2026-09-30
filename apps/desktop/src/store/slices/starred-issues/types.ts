@@ -2,7 +2,7 @@ import type { SessionExternalTaskProvider, StarredIssue, WorkspaceId } from '@go
 import type { InboxRecord } from '../../../features/inbox/types';
 import type { StarredIssuesState } from './state';
 
-export type { GetFn, SetFn } from '../../slice-types';
+export type { SetFn } from '../../slice-types';
 
 type WorkspaceParams = {
   readonly workspaceId: WorkspaceId;

@@ -20,10 +20,10 @@ const buildSlice = (): { readonly actions: SliceState; readonly getState: () => 
     state = { ...state, ...patch };
   };
   const get = (): SliceState => state;
-  const actions = createSessionViewSlice(
-    set as Parameters<typeof createSessionViewSlice>[0],
-    get as Parameters<typeof createSessionViewSlice>[1],
-  );
+  const actions = createSessionViewSlice({
+    set: set as Parameters<typeof createSessionViewSlice>[0]['set'],
+    get: get as Parameters<typeof createSessionViewSlice>[0]['get'],
+  });
   state = {
     ...actions,
     selectedAgentId: {},

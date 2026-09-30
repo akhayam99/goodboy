@@ -16,11 +16,11 @@ import {
   startWireframeScouts,
   stopArtifactGeneration,
 } from './artifactScoutRun';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 export { artifactsInitialState } from './state';
 
-export const createArtifactsSlice = (set: SetFn, get: GetFn) => {
+export const createArtifactsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadSessionArtifacts: loadSessionArtifacts(set),
     updateArtifactSource: updateArtifactSource(set),

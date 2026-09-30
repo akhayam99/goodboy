@@ -34,7 +34,7 @@ function harness({ autoDownload = 'false' }: HarnessOptions = {}) {
     loadChangelogUpcoming,
     downloadUpdate: slice.downloadUpdate,
   });
-  const slice = createUpdaterSlice(set as never, get as never);
+  const slice = createUpdaterSlice({ set: set as never, get: get as never });
   return { slice, getState: () => state, reportError, loadSetting, loadChangelogUpcoming };
 }
 

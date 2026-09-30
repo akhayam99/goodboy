@@ -1,16 +1,12 @@
 import { getSelectedProjectIds } from './getSelectedProjectIds';
 import { setSelectedProjectIds } from './setSelectedProjectIds';
-import type { GetFn, SetFn, SessionFiltersSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
+import type { SessionFiltersSlice } from './types';
 
 export { NO_PROJECT_FILTER_ID } from './types';
 export type { SessionFiltersSlice } from './types';
 
-type Params = {
-  readonly set: SetFn;
-  readonly get: GetFn;
-};
-
-export const createSessionFiltersSlice = ({ set, get }: Params): SessionFiltersSlice => ({
+export const createSessionFiltersSlice = ({ set, get }: SliceDeps): SessionFiltersSlice => ({
   selectedProjectIds: {},
   getSelectedProjectIds: getSelectedProjectIds({ set, get }),
   setSelectedProjectIds: setSelectedProjectIds({ set }),

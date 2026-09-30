@@ -14,9 +14,9 @@ import { saveGoodboyIgnore } from './saveGoodboyIgnore';
 import { setProjectStarred } from './setProjectStarred';
 import { updateProjectAfterMerge } from './updateProjectAfterMerge';
 import { updateProjectBaseBranch } from './updateProjectBaseBranch';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createProjectsSlice = (set: SetFn, get: GetFn) => ({
+export const createProjectsSlice = ({ set, get }: SliceDeps) => ({
   addProject: addProject(set, get),
   addProjects: addProjects(set, get),
   adoptProject: adoptProject(set, get),

@@ -1,7 +1,6 @@
 import type { ProjectId, SearchHit, SearchQuery } from '@goodboy/types';
 import type { SearchIndexState } from './state';
-
-export type { GetFn, SetFn } from '../../slice-types';
+export type { GetFn } from '../../slice-types';
 
 type RunSearchParams = {
   readonly query: SearchQuery;

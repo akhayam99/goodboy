@@ -9,9 +9,9 @@ import { forgetIntegrationCredential } from './forgetIntegrationCredential';
 import { loadIntegrationCredentials } from './loadIntegrationCredentials';
 import { loadIntegrations } from './loadIntegrations';
 import { updateSlackConfig } from './updateSlackConfig';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createIntegrationsSlice = (set: SetFn, get: GetFn) => {
+export const createIntegrationsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadIntegrations: loadIntegrations(set),
     loadIntegrationCredentials: loadIntegrationCredentials(set),

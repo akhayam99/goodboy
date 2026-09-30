@@ -13,9 +13,9 @@ import { setAgentDraft } from './setAgentDraft';
 import { setAgentDone } from './setAgentDone';
 import { setAgentEffortOverride } from './setAgentEffortOverride';
 import { spawnAgent } from './spawnAgent';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createAgentsSlice = (set: SetFn, get: GetFn) => {
+export const createAgentsSlice = ({ set, get }: SliceDeps) => {
   return {
     setAgentEffortOverride: setAgentEffortOverride(set),
     setAgentDraft: setAgentDraft(set),

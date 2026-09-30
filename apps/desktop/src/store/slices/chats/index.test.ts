@@ -70,7 +70,7 @@ const harness = ({ projects, appStudio = null }: HarnessParams) => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => state;
-  const slice = createChatsSlice(set as never, get as never);
+  const slice = createChatsSlice({ set: set as never, get: get as never });
   state = {
     ...slice,
     projects: projects ?? [

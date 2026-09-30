@@ -5,9 +5,9 @@ import { setWorkflowStudioVisible } from './setWorkflowStudioVisible';
 import { setWorkflowStudioFocus } from './setWorkflowStudioFocus';
 import { startWorkflowGeneration } from './startWorkflowGeneration';
 import { undoWorkflowGeneration } from './undoWorkflowGeneration';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createWorkflowStudioSlice = (set: SetFn, get: GetFn) => ({
+export const createWorkflowStudioSlice = ({ set, get }: SliceDeps) => ({
   setWorkflowStudioDraft: setWorkflowStudioDraft(set),
   clearWorkflowStudioDraft: clearWorkflowStudioDraft(set),
   setWorkflowStudioVisible: setWorkflowStudioVisible(set),

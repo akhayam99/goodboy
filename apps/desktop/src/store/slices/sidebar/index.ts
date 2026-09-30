@@ -1,8 +1,8 @@
 import { refreshUnreadWorkspaces } from './refreshUnreadWorkspaces';
 import { setPanelSectionExpanded } from './setPanelSectionExpanded';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createSidebarSlice = (set: SetFn, get: GetFn) => {
+export const createSidebarSlice = ({ set, get }: SliceDeps) => {
   return {
     refreshUnreadWorkspaces: refreshUnreadWorkspaces(set),
     setPanelSectionExpanded: setPanelSectionExpanded(set, get),

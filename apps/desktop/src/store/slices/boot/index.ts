@@ -2,9 +2,9 @@ import { hydrate, retryHydrate } from './hydrate';
 import { loadDetectedEditors } from './loadDetectedEditors';
 import { quitApp } from './quitApp';
 import { restoreNewerDatabaseBackup } from './restoreNewerDatabaseBackup';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createBootSlice = (set: SetFn, get: GetFn) => {
+export const createBootSlice = ({ set, get }: SliceDeps) => {
   return {
     hydrate: hydrate(set, get),
     retryHydrate: retryHydrate(get),

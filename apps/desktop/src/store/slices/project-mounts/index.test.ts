@@ -244,7 +244,7 @@ const makeSlice = () => {
     const patch = typeof updater === 'function' ? updater(state) : updater;
     Object.assign(state, patch);
   });
-  const slice = createProjectMountsSlice(set as never, (() => state) as never);
+  const slice = createProjectMountsSlice({ set: set as never, get: (() => state) as never });
   return { state, slice };
 };
 

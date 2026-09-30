@@ -7,9 +7,9 @@ import { markNotificationRead } from './markNotificationRead';
 import { markNotificationsRead } from './markNotificationsRead';
 import { reportError } from './reportError';
 import { setNotificationScope } from './setNotificationScope';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createNotificationsSlice = (set: SetFn, get: GetFn) => {
+export const createNotificationsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadNotifications: loadNotifications(set, get),
     loadOlderNotifications: loadOlderNotifications(set, get),
