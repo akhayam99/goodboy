@@ -80,7 +80,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 import { seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import { ReportSheetHost } from '../../features/bug-report/components/ReportSheetHost';
 import { openReportSheet } from '../../features/bug-report/openReportSheet';

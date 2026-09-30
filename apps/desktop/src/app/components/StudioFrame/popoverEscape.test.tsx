@@ -21,7 +21,7 @@ vi.mock('../../../features/workflows/components/WorkflowsPanel/useWorkflowImport
   }),
 }));
 
-vi.mock('../Toast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
+vi.mock('../../../shared/components/Toast', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 
 afterEach(() => {
   cleanup();

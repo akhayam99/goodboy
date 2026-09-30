@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ToastProvider } from '../../../Toast';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import { SettingsStudio } from '../../../../../features/settings/components/SettingsStudio';
 import type { SettingsFocus } from '../../../../../features/settings/settingsFocus';
 import { SETTINGS_WORKSPACE, seedSettingsBase } from './settingsSeed';

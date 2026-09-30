@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import { editedStepKeys } from '../../../../session/components/WorkflowBuilderView/presetEdits';
 import type { WorkflowDraft } from '../../../engine';
 import { draftFromWorkflow, upsertArgsFromDraft, validateDraft } from '../../../engine';

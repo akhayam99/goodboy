@@ -12,7 +12,7 @@ import type {
 import { useAppStore, agentPlace } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
 import type { SessionCreationId } from '../../../../store/slices/session-view';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { taskModelAgentSpawnConfig } from '../../taskModelAgentSpawnConfig';
 import { useAutoLimitContext } from '../../../providers/hooks/useAutoLimitContext';
 import { projectById } from '../../../../store/slices/projects/projectIndex';

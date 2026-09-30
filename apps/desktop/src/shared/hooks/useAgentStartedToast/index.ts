@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore, agentPlace } from '../../../store';
-import { useToast } from '../../../app/components/Toast';
+import { useToast } from '../../components/Toast';
 
 type AnnounceParams = {
   readonly sessionId: SessionId;

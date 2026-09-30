@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, type RefObject } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, Session, Skill, Workflow } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../../../../store';
-import type { ShowToast } from '../../../../../../app/components/Toast';
+import type { ShowToast } from '../../../../../../shared/components/Toast';
 import {
   buildAgentActions,
   buildScriptActions,

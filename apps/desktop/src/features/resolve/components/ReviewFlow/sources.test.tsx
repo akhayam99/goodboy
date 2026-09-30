@@ -13,7 +13,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../../../store/storyHarness';
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { SESSION } from '../../../../app/components/MockScene/scenes/resolveSeed';
 import { seedResolveGitlabScene } from '../../../../app/components/MockScene/scenes/resolveGitlabSeed';
 import { ReviewFlow } from './index';

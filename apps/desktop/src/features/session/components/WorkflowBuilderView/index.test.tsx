@@ -91,7 +91,7 @@ vi.mock('../../../../store', () => {
   return { EMPTY_ARRAY: Object.freeze([]), useAppStore, useCurrentWorkspace, useSessionSlots };
 });
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 

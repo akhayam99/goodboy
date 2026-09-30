@@ -30,7 +30,7 @@ import {
 } from '../../store/storyHarness';
 import { sessionPlace } from '../../store/slices/navigation/place';
 import { seedSessionWithMounts } from '../helpers/seedSessionWithMounts';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 import { KeepAliveWorkSurface } from '../../app/components/KeepAliveWorkSurface';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import {

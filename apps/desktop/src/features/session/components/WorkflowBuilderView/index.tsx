@@ -75,7 +75,7 @@ import { useSavedSteps } from '../../../workflows/hooks/useSavedSteps';
 import { stepDraftFromSavedStep, type SavedStep } from '../../../workflows/savedSteps';
 import { parseSpendLimit } from '../../../budget/parseSpendLimit';
 import { DragGhost } from '../../../workflows/components/WorkflowStudio/DragGhost';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { StudioShell } from '../../../../shared/components/StudioShell';
 import {
   AttachmentChip,

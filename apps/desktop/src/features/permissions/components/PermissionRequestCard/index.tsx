@@ -18,7 +18,7 @@ import { formatRequestInput } from './formatRequestInput';
 import { modeCopyOf } from '../../modeCopy';
 import { PROVIDER_LABEL } from '../../../providers/providerLabel';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 

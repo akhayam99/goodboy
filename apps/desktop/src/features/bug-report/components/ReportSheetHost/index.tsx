@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { openUrl } from '../../../../shared/lib/editor';
 import { useShortcut } from '../../../../shared/keyboard/useShortcut';
 import { redactReport } from '../../../../shared/utils/redactReport';

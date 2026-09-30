@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ToastProvider } from '../Toast';
+import { ToastProvider } from '../../../shared/components/Toast';
 import { ObjectMenuProvider } from '../../../features/actions/components/ObjectMenuProvider';
 import { finish as finishOnboarding } from '../../../features/onboarding/onboarding-store';
 import { WorkspaceScene } from './scenes/WorkspaceScene';

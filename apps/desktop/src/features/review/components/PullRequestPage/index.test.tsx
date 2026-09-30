@@ -123,7 +123,7 @@ vi.mock('../../../github/components/PullRequest/CreatePrPanel', () => ({
     </div>
   ),
 }));
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 vi.mock('../../../../store/slices/worktrees/useSessionRepo', () => ({

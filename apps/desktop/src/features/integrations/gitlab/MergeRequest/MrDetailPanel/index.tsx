@@ -12,7 +12,7 @@ import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useAppStore } from '../../../../../store';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import {
   gitlabMergeMr,
   gitlabUpdateMrState,

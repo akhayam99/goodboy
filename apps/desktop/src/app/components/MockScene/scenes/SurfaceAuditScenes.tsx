@@ -14,7 +14,7 @@ import type {
   Workspace,
   WorkspaceId,
 } from '@goodboy/types';
-import { ToastProvider } from '../../Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { ScriptsPanel } from '../../../../features/scripts/components/ScriptsPanel';
 import { ReviewPane } from '../../../../features/review/components/ReviewPane';
 import { ArtifactStudio } from '../../../../features/artifacts/components/ArtifactStudio';

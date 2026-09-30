@@ -34,7 +34,7 @@ import { AgentHeaderActions } from '../../features/session/components/AgentHeade
 import type { ArtifactActionTarget, CommitActionTarget } from '../../features/actions/types';
 import { HistoryCommitRow } from '../../features/history/components/RewriteHistoryPage/HistoryCommitRow';
 import { PaletteOverlay } from '../../features/palette/components/PaletteOverlay';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 import type { RunnableScript } from '../../features/scripts/buildSessionScripts';
 import {
   AGENT,

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FocusEvent } from 'react';
 import { X } from 'lucide-react';
 import { Button, IconButton, Notice, cn, type NoticeTone } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { ICON_SIZE } from '../conceptIcons';
 import { toastDuration } from './toastTiming';
 import type { ToastItem, ToastKind } from './types';
 

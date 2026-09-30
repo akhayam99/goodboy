@@ -5,7 +5,7 @@ import type { Session, SessionId, TurnProviderOverride } from '@goodboy/types';
 import { resolveStoredModelSelection } from '@goodboy/core';
 import { useAppStore } from '../../../../store';
 import { RoutingIndicator } from '../RoutingIndicator';
-import { useToast, useToastLift } from '../../../../app/components/Toast';
+import { useToast, useToastLift } from '../../../../shared/components/Toast';
 import { QuickActionsPopover } from '../../../quick-actions';
 import { ProviderUsagePill } from '../ProviderUsagePill';
 import { RoutingPicker } from '../../../../shared/components/RoutingPicker';

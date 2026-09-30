@@ -177,7 +177,7 @@ vi.mock('../features/settings/components/SettingsStudio', () => ({
   ),
 }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
-vi.mock('../app/components/Toast', () => ({
+vi.mock('../shared/components/Toast', () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   useToast: () => ({ showToast: vi.fn() }),
 }));

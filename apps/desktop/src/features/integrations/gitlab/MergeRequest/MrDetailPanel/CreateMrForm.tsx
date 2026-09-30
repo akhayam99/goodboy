@@ -19,7 +19,7 @@ import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfig
 import { taskModelAgentSpawnConfig } from '../../../../session/taskModelAgentSpawnConfig';
 import { useAutoLimitContext } from '../../../../providers/hooks/useAutoLimitContext';
 import { useAppStore } from '../../../../../store';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import { useAgentStartedToast } from '../../../../../shared/hooks/useAgentStartedToast';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
 import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';

@@ -99,7 +99,7 @@ vi.mock('../../github', () => ({
   ghBaseBranches: h.ghBaseBranches,
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 

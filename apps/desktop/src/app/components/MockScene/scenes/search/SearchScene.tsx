@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PANE_RHYTHM } from '@goodboy/ui';
 import { useAppStore } from '../../../../../store';
-import { ToastProvider } from '../../../Toast';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import { PaletteOverlay } from '../../../../../features/palette/components/PaletteOverlay';
 import { FindInViewController } from '../../../../../features/search/findInView/FindInViewController';
 import { TranscriptFeed } from '../flow-audit/TranscriptFeed';

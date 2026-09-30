@@ -6,7 +6,7 @@ import {
   type ClipboardEvent as ReactClipboardEvent,
 } from 'react';
 import { isAllowedAttachment, resolveAttachmentMime } from '../../../attachment-kinds';
-import type { ShowToast } from '../../../../../app/components/Toast';
+import type { ShowToast } from '../../../../../shared/components/Toast';
 import { useFileDropTarget } from '../../../../../shared/hooks/useFileDropTarget';
 import { readDroppedAttachment } from '../../../../../shared/lib/readDroppedAttachment';
 import {

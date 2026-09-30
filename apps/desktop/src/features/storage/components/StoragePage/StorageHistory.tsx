@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FolderOpen, Trash2 } from 'lucide-react';
 import { Button, Eyebrow, InlineConfirm, cn, tintClasses } from '@goodboy/ui';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { formatBytes } from '../../../../shared/utils/formatBytes';

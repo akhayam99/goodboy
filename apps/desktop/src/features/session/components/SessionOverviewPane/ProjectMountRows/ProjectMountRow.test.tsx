@@ -79,7 +79,7 @@ vi.mock('./MountBranchDecision', () => ({
 vi.mock('../../../../worktree/useMountRemoteHostKind', () => ({
   useMountRemoteHostKind: () => remoteKind.current,
 }));
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 vi.mock('../../../../../shared/lib/editor', () => ({

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import type { SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, agentPlace } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { classifyAgent, type AgentKind } from '../../../session/agent-kind';
 import type { DiffLineTarget } from '../../components/DiffView/types';
 

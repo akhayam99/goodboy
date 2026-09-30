@@ -184,7 +184,7 @@ import { SkillsPanel } from '../../features/skills/components/SkillsPanel';
 import { QuickActionsPopover } from '../../features/quick-actions';
 import { TranscriptCard } from '../../features/chat/components/TranscriptCards';
 import { SessionOverviewLoading } from '../../features/session/components/SessionWorkspace/parts/SessionOverviewLoading';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 
 afterEach(cleanup);
 

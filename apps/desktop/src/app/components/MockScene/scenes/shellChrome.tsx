@@ -13,7 +13,7 @@ import { AppFooter } from '../../AppFooter';
 import { DrawerHost } from '../../DrawerHost';
 import { selectDrawerPanel } from '../../../../store/slices/drawer/selectDrawerPanel';
 import { AppTopBar } from '../../AppTopBar';
-import { ToastProvider } from '../../Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { SessionNavSidebar } from '../../../../features/session/components/SessionNavSidebar';
 import { CollapsedRail } from '../../../../features/session/components/SessionNavSidebar/parts/CollapsedRail';
 import { TrailBar } from '../../../../features/session/components/SessionWorkspace/parts/TrailBar';

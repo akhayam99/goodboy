@@ -14,7 +14,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 import { StorageChip } from '../../app/components/AppTopBar/StorageChip';
 import {
   SETTINGS_WORKSPACE,

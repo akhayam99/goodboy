@@ -127,7 +127,7 @@ vi.mock('./WorkspaceScopePanel', () => ({
   WorkspaceScopePanel: () => <div>Workspace settings content</div>,
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 

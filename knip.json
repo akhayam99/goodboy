@@ -18,7 +18,7 @@
         "src/app/components/BootSplash/index.tsx": ["exports"],
         "src/app/components/MockScene/index.tsx": ["exports"],
         "src/app/components/MockScene/scenes/activityRunSeed.ts": ["exports"],
-        "src/app/components/Toast/toastTiming.ts": ["exports"],
+        "src/shared/components/Toast/toastTiming.ts": ["exports"],
         "src/features/artifacts/artifact-status.ts": ["exports"],
         "src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": ["exports"],
         "src/features/artifacts/artifactQuestionContract.ts": ["exports"],

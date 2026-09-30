@@ -3,7 +3,7 @@ import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { isWatchingWorkflowLens } from '../../../../store/slices/workflows/isWatchingWorkflowLens';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 
 type StepStartedDetail = {
   readonly sessionId: SessionId;

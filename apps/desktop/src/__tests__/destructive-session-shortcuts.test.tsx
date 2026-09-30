@@ -79,7 +79,7 @@ vi.mock('../features/session/hooks/useSessionArchive', () => ({
 }));
 vi.mock('../features/settings/components/SettingsStudio', () => ({ SettingsStudio: () => null }));
 vi.mock('../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
-vi.mock('../app/components/Toast', () => ({
+vi.mock('../shared/components/Toast', () => ({
   ToastProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   useToast: () => ({ showToast: vi.fn() }),
 }));

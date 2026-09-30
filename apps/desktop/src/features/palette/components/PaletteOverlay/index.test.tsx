@@ -19,7 +19,7 @@ import {
   type StoryStore,
 } from '../../../../store/storyHarness';
 import { seedBoardScene } from '../../../../app/components/MockScene/scenes/BoardScene';
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { STORAGE_KEYS } from '../../../../shared/lib/storage-keys';
 import { agentPlace, sessionPlace } from '../../../../store/slices/navigation/place';
 import { holdPaletteScope } from '../../heldPaletteScope';

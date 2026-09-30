@@ -10,7 +10,7 @@ import {
   useCopyLink,
 } from '@goodboy/ui';
 import type { MountId, SessionId } from '@goodboy/types';
-import { useToast } from '../../../app/components/Toast';
+import { useToast } from '../../../shared/components/Toast';
 import { useAppStore, useSessionById } from '../../../store';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
 import { BranchCombobox } from '../BranchCombobox';

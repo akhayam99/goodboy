@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppShell } from '@goodboy/ui';
 import { AppFooter } from '../../AppFooter';
 import { AppTopBar } from '../../AppTopBar';
-import { ToastProvider } from '../../Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { StageBoard } from '../../../../features/workspace/components/StageBoard';
 import { useAppStore, useSessions } from '../../../../store';
 import { shellArrangement } from '../../../shellArrangement';
