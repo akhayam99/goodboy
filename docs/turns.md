@@ -132,6 +132,28 @@ record a live turn already wrote wins.
 
 ## What each agent is handed
 
+- An agent that ends a turn with a `<<handoff kind=... reason="...">>` marker
+  shows a "Suggested next" card under that message (`HandoffChip`). Its
+  routing picker starts on the target role's routing (`selectKindRouting`, the
+  same `kindRouting` that `spawnAgent` uses) and can be changed before Start.
+  Start, from the card or from the live nudge (`acceptSessionNudgeHandoff`),
+  seeds the new agent's first turn with the reason and what the source agent
+  wrote (`composeHandoffSeed`, `handoffSourceOutput`), passed as `seedPrompt`.
+  `spawnAgent` sends a first turn only when the kickoff is not empty, so a
+  started agent with no seed, plan or step prompt sits in Pending until you
+  type. A seed fills the kickoff only when no `initialPrompt` or step prompt
+  does, and unlike `initialPrompt` it does not stop an implementer from
+  fanning a clustered plan out.
+- A child of another agent counts as a fan-out child only by its shape
+  (`fanOutChildKind`): an implementer under an implementer is a cluster part, a
+  scout under a wireframe or report is an artifact scout, and a child of the
+  same kind as a parent whose role can fan out is a scout tree node. Any other
+  child, such as a planner started from a reviewer, settles on its own:
+  `completeResolvedAgent` never hands it to `advanceClusterImplementation`
+  (which marked it Blocked after its first turn), `sendTurn` adds no cluster
+  boundary, and its first turn still names it. A follow-up of the same kind as
+  its parent, for a role that fans out or for an implementer, looks the same
+  as a fan-out child and is still treated as one.
 - An agent's first turn stores one `agent_handoffs` row (m185), written once
   and never updated: who sent it (`HandoffSender`), the ask in one line, the
   why, `doneWhen`, one-line sections (ask, goal, earlier steps, plan, files,
@@ -264,6 +286,13 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   name (a crash, a force quit) or one whose provider is disconnected shows
   "Stopped by restart" with **Resume**, which runs the same resume
   (`continueStoppedAgent`). Nothing restarts on its own after a crash.
+  Past the agent itself, Next steps in the overview offers one **Resume all**
+  for every agent the restart stopped in the session, and a workflow run
+  shows the same action above its steps for its own agents
+  (`WorkflowResumeStrip`). Both run `resumeStoppedAgents`, which resumes each
+  `isStoppedByRestart` agent, never one you stopped and never a fan-out
+  container while a child is unfinished (the children are resumed instead), skips an agent a second click
+  is already resuming, and reports a failure only after trying the rest.
 
 ## Turn events
 

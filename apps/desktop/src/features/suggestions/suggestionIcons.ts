@@ -12,6 +12,7 @@ export const SUGGESTION_ICONS: Record<SuggestionKind, LucideIcon> = {
   'approve-tool': CONCEPT_ICONS.approval,
   'sign-in': CONCEPT_ICONS.signIn,
   'retry-agent': CONCEPT_ICONS.retry,
+  'resume-agents': CONCEPT_ICONS.retry,
   'fix-checks': CONCEPT_ICONS.errors,
   'push-branch': CONCEPT_ICONS.push,
   'open-pr': CONCEPT_ICONS.pr,

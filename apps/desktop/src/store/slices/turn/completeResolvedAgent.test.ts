@@ -674,6 +674,171 @@ describe('completeResolvedAgent', () => {
     expect(advance).toBeNull();
   });
 
+  it('settles a follow-up of another kind on its own instead of as a cluster part', async () => {
+    const { state, set, get } = createHarness({});
+    const advanceScoutTree = vi.fn(async () => undefined);
+    const advanceClusterImplementation = vi.fn(async () => undefined);
+    Object.assign(state, { advanceScoutTree, advanceClusterImplementation });
+    const reviewer: Agent = {
+      ...agent,
+      id: 'reviewer-1' as AgentId,
+      kind: 'reviewer',
+      name: 'review the diff',
+      status: 'completed',
+      sourceThreadIds: undefined,
+    };
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        reviewer,
+        {
+          ...agent,
+          kind: 'planner',
+          name: 'plan the fix',
+          parentAgentId: reviewer.id,
+          sourceThreadIds: undefined,
+        },
+      ],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: 'the plan stays the same, only the scope is narrower',
+      now: () => NOW,
+    });
+
+    expect(advanceScoutTree).not.toHaveBeenCalled();
+    expect(advanceClusterImplementation).not.toHaveBeenCalled();
+    expect(h.invokeAgentUpdateStatus).not.toHaveBeenCalledWith(
+      AGENT_ID,
+      expect.objectContaining({ status: 'blocked' }),
+    );
+  });
+
+  it('still hands a cluster part back to its implementer container', async () => {
+    const { state, set, get } = createHarness({});
+    const advanceClusterImplementation = vi.fn(async () => undefined);
+    Object.assign(state, { advanceClusterImplementation });
+    const container: Agent = {
+      ...agent,
+      id: 'container-1' as AgentId,
+      kind: 'implementer',
+      name: 'implement the plan',
+      sourceThreadIds: undefined,
+    };
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        container,
+        {
+          ...agent,
+          kind: 'implementer',
+          name: 'cluster one',
+          parentAgentId: container.id,
+          sourceThreadIds: undefined,
+        },
+      ],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: 'cluster work in progress',
+      now: () => NOW,
+    });
+
+    expect(advanceClusterImplementation).toHaveBeenCalledWith(
+      SESSION_ID,
+      AGENT_ID,
+      'cluster work in progress',
+      { didAgentDie: false },
+    );
+  });
+
+  it('still joins an artifact scout to its wireframe container', async () => {
+    const { state, set, get } = createHarness({});
+    const advanceScoutTree = vi.fn(async () => undefined);
+    const advanceClusterImplementation = vi.fn(async () => undefined);
+    Object.assign(state, { advanceScoutTree, advanceClusterImplementation });
+    const container: Agent = {
+      ...agent,
+      id: 'wireframe-1' as AgentId,
+      kind: 'wireframe',
+      name: 'wireframe the screen',
+      sourceThreadIds: undefined,
+    };
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        container,
+        {
+          ...agent,
+          kind: 'scout',
+          name: 'scout the layout',
+          parentAgentId: container.id,
+          sourceThreadIds: undefined,
+        },
+      ],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: 'the layout uses a sidebar',
+      now: () => NOW,
+    });
+
+    expect(advanceScoutTree).toHaveBeenCalledWith(
+      SESSION_ID,
+      AGENT_ID,
+      'the layout uses a sidebar',
+    );
+    expect(advanceClusterImplementation).not.toHaveBeenCalled();
+  });
+
+  it('settles a planner started from another planner on its own', async () => {
+    const { state, set, get } = createHarness({});
+    const advanceScoutTree = vi.fn(async () => undefined);
+    const advanceClusterImplementation = vi.fn(async () => undefined);
+    Object.assign(state, { advanceScoutTree, advanceClusterImplementation });
+    const source: Agent = {
+      ...agent,
+      id: 'planner-1' as AgentId,
+      kind: 'planner',
+      name: 'plan the crash fix',
+      status: 'completed',
+      sourceThreadIds: undefined,
+    };
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        source,
+        {
+          ...agent,
+          kind: 'planner',
+          name: 'plan the second fix',
+          parentAgentId: source.id,
+          sourceThreadIds: undefined,
+        },
+      ],
+    };
+
+    await completeResolvedAgent({
+      set,
+      get,
+      sessionId: SESSION_ID,
+      resolvedAgentId: AGENT_ID,
+      assistantText: 'the second fix follows the first',
+      now: () => NOW,
+    });
+
+    expect(advanceScoutTree).not.toHaveBeenCalled();
+    expect(advanceClusterImplementation).not.toHaveBeenCalled();
+  });
+
   it('leaves a thread the agent does not own out of its rows', async () => {
     const { state, set, get } = createHarness({});
     await completeResolvedAgent({

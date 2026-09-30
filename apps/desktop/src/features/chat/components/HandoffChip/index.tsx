@@ -2,11 +2,19 @@ import { useMemo, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@goodboy/ui';
-import type { AgentId, PlanId, SessionId, TurnState } from '@goodboy/types';
-import { extractHandoff } from '@goodboy/core';
+import type { AgentId, PlanId, ProviderId, SessionId, TurnState } from '@goodboy/types';
+import { clampEffortForModel, extractHandoff, getDefaultTurnModel } from '@goodboy/core';
 import { EMPTY_ARRAY, agentPlace, useAppStore } from '../../../../store';
-import { AGENT_KIND_META, KIND_TO_ROLE, ROLE_LABEL } from '../../../session/agent-kind';
+import {
+  AGENT_KIND_META,
+  KIND_TO_ROLE,
+  ROLE_LABEL,
+  type AgentKindRouting,
+} from '../../../session/agent-kind';
 import { agentStatusWord } from '../../../session/agentStatusWord';
+import { selectKindRouting } from '../../../../store/slices/agents/selectKindRouting';
+import { RoutingPicker } from '../../../../shared/components/RoutingPicker';
+import { composeHandoffSeed } from '../../utils/composeHandoffSeed';
 import { AgentStatusIcon } from '../../../session/components/AgentCard/AgentStatusIcon';
 import { TranscriptShell } from '../TranscriptShell';
 import { useAgentStartedToast } from '../../../../shared/hooks/useAgentStartedToast';
@@ -40,6 +48,23 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
       return states;
     }),
   );
+  const defaultRouting = useAppStore(
+    useShallow((s) =>
+      handoff == null ? null : selectKindRouting({ state: s, sessionId, kind: handoff.kind }),
+    ),
+  );
+  const sourceName = useAppStore((s) =>
+    sourceAgentId == null
+      ? null
+      : ((s.sessionPhaseRuns[sessionId] ?? EMPTY_ARRAY).find((run) => run.id === sourceAgentId)
+          ?.name ?? null),
+  );
+  const connectedProviders = useAppStore(
+    useShallow((s) =>
+      s.providers.filter((provider) => provider.connection === 'connected').map(({ id }) => id),
+    ),
+  );
+  const [pickedRouting, setPickedRouting] = useState<AgentKindRouting | null>(null);
   const spawnAgent = useAppStore((s) => s.spawnAgent);
   const acceptHandoff = useAppStore((s) => s.acceptSessionNudgeHandoff);
   const navigate = useAppStore((s) => s.navigate);
@@ -53,7 +78,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
       ? null
       : (spawnedChildren.find((child) => child.agent.kind === handoff.kind) ?? null);
 
-  if (handoff == null || session == null || sourceAgentId == null) {
+  if (handoff == null || session == null || sourceAgentId == null || defaultRouting == null) {
     return null;
   }
   if (hasActiveWorkflowRun({ workflowRuns: session.workflowRuns, agents: runs })) {
@@ -66,6 +91,19 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     sessionNudge?.kind === 'handoff-suggested' &&
     sessionNudge.agentId === sourceAgentId &&
     sessionNudge.targetKind === handoff.kind;
+  const routing = pickedRouting ?? defaultRouting;
+
+  const onProvider = (provider: ProviderId | '') => {
+    if (provider === '') {
+      return;
+    }
+    const model = getDefaultTurnModel({ id: provider });
+    setPickedRouting({
+      provider,
+      model,
+      effort: clampEffortForModel({ model, effort: routing.effort, provider }) ?? routing.effort,
+    });
+  };
 
   const onSpawn = () => {
     if (pendingRef.current) {
@@ -75,14 +113,28 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     setIsPending(true);
     void (async () => {
       try {
+        const seedPrompt = composeHandoffSeed({
+          sourceName: sourceName ?? 'the previous agent',
+          reason: handoff.reason,
+          output: assistantText,
+        });
         const agentId = isActiveNudge
-          ? await acceptHandoff(sessionId)
+          ? await acceptHandoff({ sessionId, routing, seedPrompt })
           : await spawnAgent(sessionId, {
               kindOverride: handoff.kind,
               ...(handoff.planId != null ? { triggeredPlanId: handoff.planId as PlanId } : {}),
               parentAgentId: sourceAgentId,
               focus: 'none',
+              seedPrompt,
+              provider: routing.provider,
+              model: routing.model,
+              effort: routing.effort,
             });
+        if (agentId == null) {
+          pendingRef.current = false;
+          setIsPending(false);
+          return;
+        }
         announceAgentStarted({
           sessionId,
           agentId,
@@ -137,6 +189,34 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
                 : `Start ${roleLabel.toLowerCase()}`}
             </span>
           </button>
+        ) : null}
+        {spawnedChild == null ? (
+          <RoutingPicker
+            variant="pill"
+            ariaLabel={`${roleLabel} routing`}
+            connectedProviders={connectedProviders}
+            provider={routing.provider}
+            model={routing.model}
+            effort={{
+              editable: true,
+              value: routing.effort,
+              onChange: (effort) => setPickedRouting({ ...routing, effort }),
+            }}
+            disabled={isPending}
+            onProvider={onProvider}
+            onModel={(model) =>
+              setPickedRouting({
+                ...routing,
+                model,
+                effort:
+                  clampEffortForModel({
+                    model,
+                    effort: routing.effort,
+                    provider: routing.provider,
+                  }) ?? routing.effort,
+              })
+            }
+          />
         ) : (
           <>
             <AgentStatusIcon status={spawnedChild.status} />

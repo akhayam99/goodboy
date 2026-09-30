@@ -388,6 +388,7 @@ const agent = (overrides: Partial<SuggestionAgent> = {}): SuggestionAgent => ({
   workflowRunId: null,
   ordinal: 1,
   pendingSignal: null,
+  isStoppedByRestart: false,
   ...overrides,
 });
 
@@ -456,6 +457,36 @@ describe('deriveNextSteps eleven new kinds', () => {
     const suggestion = suggestions.find((candidate) => candidate.kind === 'sign-in');
     expect(suggestion?.title).toBe('Sign in to Claude');
     expect(suggestion?.detail).toBe('Implementer stopped: signed out');
+  });
+
+  it('offers one resume for every agent the restart stopped, workflow steps included', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [
+        agent({ id: 'agent-1' as AgentId, status: 'stopped', isStoppedByRestart: true }),
+        agent({
+          id: 'agent-2' as AgentId,
+          status: 'stopped',
+          isStoppedByRestart: true,
+          workflowRunId: 'run-1' as WorkflowRunId,
+        }),
+        agent({ id: 'agent-3' as AgentId, status: 'stopped' }),
+      ],
+    });
+    const resume = suggestions.filter((candidate) => candidate.kind === 'resume-agents');
+    expect(resume).toHaveLength(1);
+    expect(resume[0]?.title).toBe('Resume 2 stopped agents');
+    expect(resume[0]?.payload).toEqual({ agentIds: ['agent-1', 'agent-2'] });
+  });
+
+  it('names the agent when the restart stopped only one', () => {
+    const suggestions = deriveNextSteps({
+      ...BASE_PARAMS,
+      agents: [agent({ status: 'stopped', isStoppedByRestart: true, label: 'Debugger' })],
+    });
+    expect(suggestions.find((candidate) => candidate.kind === 'resume-agents')?.title).toBe(
+      'Resume Debugger',
+    );
   });
 
   it('suggests retrying the last standalone agent when it failed', () => {

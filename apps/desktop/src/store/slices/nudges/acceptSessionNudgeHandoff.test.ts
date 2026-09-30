@@ -17,6 +17,8 @@ const SOURCE_AGENT_ID = 'agent-source' as AgentId;
 
 type FakeState = {
   sessionNudges: Record<string, unknown>;
+  sessionPhaseRuns?: Record<string, ReadonlyArray<unknown>>;
+  transcripts?: Record<string, ReadonlyArray<unknown>>;
   spawnAgent: ReturnType<typeof vi.fn>;
 };
 
@@ -30,6 +32,8 @@ const buildAccept = (state: FakeState) => {
 
 const buildState = (nudge: unknown): FakeState => ({
   sessionNudges: { [SESSION_ID]: nudge },
+  sessionPhaseRuns: {},
+  transcripts: {},
   spawnAgent: vi.fn(async () => 'agent-impl' as AgentId),
 });
 
@@ -46,7 +50,7 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       planId: PLAN_ID,
     });
 
-    const agentId = await buildAccept(state)(SESSION_ID);
+    const agentId = await buildAccept(state)({ sessionId: SESSION_ID });
 
     expect(state.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       triggeredPlanId: PLAN_ID,
@@ -65,7 +69,7 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       planId: null,
     });
 
-    await buildAccept(state)(SESSION_ID);
+    await buildAccept(state)({ sessionId: SESSION_ID });
 
     expect(state.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'implementer',
@@ -80,23 +84,57 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       kind: 'handoff-suggested',
       agentId: SOURCE_AGENT_ID,
       targetKind: 'reviewer',
+      reason: 'Check the diff',
       planId: null,
     });
 
-    const agentId = await buildAccept(state)(SESSION_ID);
+    const agentId = await buildAccept(state)({ sessionId: SESSION_ID });
 
     expect(state.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'reviewer',
       parentAgentId: SOURCE_AGENT_ID,
       focus: 'none',
+      seedPrompt: 'Follow-up from the previous agent: Check the diff',
     });
     expect(agentId).toBe('agent-impl');
+  });
+
+  it('seeds the handoff with the source summary and starts on the picked routing', async () => {
+    const state = buildState({
+      id: 'nudge-4',
+      kind: 'handoff-suggested',
+      agentId: SOURCE_AGENT_ID,
+      targetKind: 'debugger',
+      reason: 'Router keeps a stale path',
+      planId: null,
+    });
+    state.sessionPhaseRuns = {
+      [SESSION_ID]: [
+        { id: SOURCE_AGENT_ID, name: 'stash check', outputSummary: 'Pages reads a stale location' },
+      ],
+    };
+
+    await buildAccept(state)({
+      sessionId: SESSION_ID,
+      routing: { provider: 'anthropic', model: 'opus-5.5', effort: 'high' },
+    });
+
+    expect(state.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
+      kindOverride: 'debugger',
+      parentAgentId: SOURCE_AGENT_ID,
+      focus: 'none',
+      seedPrompt:
+        'Follow-up from stash check: Router keeps a stale path\n\nWhat stash check found:\n\nPages reads a stale location',
+      provider: 'anthropic',
+      model: 'opus-5.5',
+      effort: 'high',
+    });
   });
 
   it('hands back nothing when there is no nudge to accept', async () => {
     const state: FakeState = { sessionNudges: {}, spawnAgent: vi.fn(async () => 'x' as AgentId) };
 
-    const agentId = await buildAccept(state)(SESSION_ID);
+    const agentId = await buildAccept(state)({ sessionId: SESSION_ID });
 
     expect(agentId).toBeNull();
     expect(state.spawnAgent).not.toHaveBeenCalled();

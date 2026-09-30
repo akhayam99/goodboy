@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { Agent, PlanId, Session, SessionEvent, SessionProjectMount } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore, useSessionOpenQuestions, useSessionPlans } from '../../../store';
+import { isStoppedByRestart } from '../../../store/slices/turn/isStoppedByRestart';
 import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowModel';
 import { distanceAhead, distanceBehind, isWorkingTreeClean } from '../../../shared/lib/gitStatus';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
@@ -288,6 +289,7 @@ export const useSessionSuggestions = ({
           pendingSignal: pendingAgentSignal({
             events: blockedTranscripts[agent.id] ?? EMPTY_ARRAY,
           }),
+          isStoppedByRestart: isStoppedByRestart({ agent, runs: effectiveAgents }),
         };
       }) satisfies ReadonlyArray<SuggestionAgent>,
       mounts: withRebase

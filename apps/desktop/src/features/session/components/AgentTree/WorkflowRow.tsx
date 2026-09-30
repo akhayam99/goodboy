@@ -41,6 +41,7 @@ import { OrchestratorStrip } from '../../../workflows/components/OrchestratorStr
 import { RunSpendLimitPopover } from '../../../workflows/components/RunSpendLimitPopover';
 import { WorkflowRunSummary } from '../../../workflows/components/WorkflowRunSummary';
 import { WorkflowAddStep } from '../../../workflows/components/WorkflowAddStep';
+import { WorkflowResumeStrip } from './WorkflowResumeStrip';
 import { CreateReportCta } from '../../../reports/components/CreateReportCta';
 import { CreateWireframeCta } from '../../../wireframes/components/CreateWireframeCta';
 import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';
@@ -423,6 +424,9 @@ export const WorkflowRow = ({
                   costUsd={costUsd}
                   isOrchestrating={isOrchestrating}
                 />
+              )}
+              {!isDiscarded && (
+                <WorkflowResumeStrip sessionId={task.id} runId={run.id} agents={wfAgents} />
               )}
               <div className="flex min-w-0 flex-col gap-2">
                 {wfAgents.length > 0 ? (

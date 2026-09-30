@@ -18,6 +18,7 @@ import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } fro
 import { buildGoalAttachmentsBlock } from './turnHelpers';
 import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { fanOutChildKind } from '../agents/fanOutChildKind';
 import type { GetFn, WithInput } from './types';
 import type { PreparedTurn } from './prepareTurn';
 import type { RoutedTurn } from './routeTurn';
@@ -98,7 +99,13 @@ export const buildTurnPrompt = async ({ get, ctx }: Params) => {
     }),
   });
 
-  const isClusterChild = !!agentRowEarly?.parentAgentId && earlyAgentKind === 'implementer';
+  const isClusterChild =
+    agentRowEarly !== null &&
+    fanOutChildKind({
+      agent: agentRowEarly,
+      runs: get().sessionPhaseRuns[sessionId] ?? [],
+      agentKindOverride: get().agentKindOverride,
+    }) === 'cluster';
   const clusterBoundary = isClusterChild
     ? {
         marker: clusterBoundaryMarker(activeAgentId),

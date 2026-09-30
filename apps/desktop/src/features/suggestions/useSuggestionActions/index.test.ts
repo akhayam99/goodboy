@@ -49,6 +49,7 @@ const { storeState, spies } = vi.hoisted(() => {
   const mergePr = vi.fn(async () => undefined);
   const resolveMountCleanup = vi.fn(async () => undefined);
   const attachWorkflowToSession = vi.fn(async () => undefined);
+  const resumeStoppedAgents = vi.fn(async (_params: unknown) => 2);
   const announceAgentStarted = vi.fn();
   return {
     spies: {
@@ -71,6 +72,7 @@ const { storeState, spies } = vi.hoisted(() => {
       mergePr,
       resolveMountCleanup,
       attachWorkflowToSession,
+      resumeStoppedAgents,
       announceAgentStarted,
       worktreeStatuses: vi.fn(() => new Map<string, unknown>()),
       useRebaseBranch: vi.fn((_params: unknown) => ({
@@ -105,6 +107,7 @@ const { storeState, spies } = vi.hoisted(() => {
       mergePr,
       resolveMountCleanup,
       attachWorkflowToSession,
+      resumeStoppedAgents,
       requestOpenQuestionScroll: vi.fn(),
     },
   };
@@ -919,6 +922,12 @@ const EVERY_KIND = {
     kind: 'retry-agent',
     payload: { agentId: AGENT_ID, agentKind: 'debugger' },
   },
+  'resume-agents': {
+    ...suggestionBase,
+    id: 'resume-agents:session-1',
+    kind: 'resume-agents',
+    payload: { agentIds: [AGENT_ID, 'agent-2' as AgentId] },
+  },
   'fix-checks': {
     ...suggestionBase,
     id: 'fix-checks:mount-web',
@@ -1007,6 +1016,15 @@ describe('every suggestion kind', () => {
       }
     },
   );
+
+  it('resumes every agent the restart stopped in one action', async () => {
+    const actions = actionsFor({ suggestion: EVERY_KIND['resume-agents'] });
+
+    expect(actions.primary?.label).toBe('Resume all');
+    await actions.primary?.run();
+
+    expect(spies.resumeStoppedAgents).toHaveBeenCalledWith({ sessionId: SESSION_ID });
+  });
 
   it('hands a failed push back as a rejection so the row logs it once', async () => {
     spies.pushSessionBranch.mockResolvedValueOnce({ ok: false, error: 'rejected' } as never);

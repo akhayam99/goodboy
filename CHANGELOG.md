@@ -12,6 +12,27 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.15.1
+
+Suggested agents start briefed and on the model you pick, stopped agents resume in one action, and an agent handed work by another role no longer ends Blocked.
+
+### Improved
+
+#### Suggested agents start briefed
+<!-- gb area=agents pr=1948 -->
+
+A suggested agent now starts with the reason it was requested and what the previous agent wrote. Choose its provider, model and effort on the card before you press Start.
+
+#### Resume stopped agents together
+<!-- gb area=workflows pr=1948 -->
+
+When a restart stops agents, Next steps offers one Resume all for the session, and each workflow run offers Resume all for its own stopped agents.
+
+### Fixed
+
+- An agent started from a suggested card no longer waits for a first message that never comes. <!-- gb area=agents pr=1948 -->
+- An agent handed work by a different role now finishes on its own instead of being treated as a cluster part and marked Blocked. <!-- gb area=agents pr=1948 -->
+
 ## Goodboy v0.15.0
 
 Goodboy opens faster and redraws lists less, times and budget errors read the same everywhere, and switching workspace stops all live work.

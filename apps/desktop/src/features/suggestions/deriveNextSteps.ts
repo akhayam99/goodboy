@@ -42,6 +42,7 @@ export type SuggestionAgent = {
   readonly workflowRunId: WorkflowRunId | null;
   readonly ordinal: number;
   readonly pendingSignal: PendingAgentSignal | null;
+  readonly isStoppedByRestart: boolean;
 };
 
 export type SuggestionMount = {
@@ -288,6 +289,26 @@ export const deriveNextSteps = ({
         },
       });
     }
+  }
+  const stoppedByRestart = agents.filter((agent) => agent.isStoppedByRestart);
+  const firstStopped = stoppedByRestart[0];
+  if (firstStopped !== undefined) {
+    const isSingle = stoppedByRestart.length === 1;
+    const agentIds = stoppedByRestart.map((agent) => agent.id);
+    suggestions.push({
+      id: `resume-agents:${sessionId}`,
+      kind: 'resume-agents',
+      priority: 3,
+      band: 0,
+      title: isSingle
+        ? `Resume ${firstStopped.label}`
+        : `Resume ${stoppedByRestart.length} stopped agents`,
+      detail: 'Stopped when Goodboy closed. What they wrote is kept.',
+      sessionId,
+      targetKey: isSingle ? `agent:${firstStopped.id}` : null,
+      fingerprint: `resume-agents:${sessionId}:${[...agentIds].sort().join(',')}`,
+      payload: { agentIds },
+    });
   }
   const lastStandaloneAgent = [...agents]
     .filter((agent) => agent.workflowRunId === null)

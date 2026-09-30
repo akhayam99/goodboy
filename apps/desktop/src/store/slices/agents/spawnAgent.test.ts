@@ -495,6 +495,44 @@ describe('spawnAgent ad-hoc cluster fan-out', () => {
     expect(sendTurn.mock.calls[0]?.[0]?.content).toContain('fix the typo in README');
   });
 
+  it('keeps fanning out a clustered plan when a seed is passed', async () => {
+    const { sendTurn, spawn } = buildHarness([makePlan({ clusters: TWO_CLUSTERS })]);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'implementer',
+      seedPrompt: 'Follow-up from the planner.',
+    });
+
+    expect(fanOutClustersSpy).toHaveBeenCalledTimes(1);
+    expect(sendTurn).not.toHaveBeenCalled();
+  });
+
+  it('starts an agent with no plan or prompt on its seed', async () => {
+    const { sendTurn, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'debugger',
+      seedPrompt: 'Follow-up from the reviewer.',
+    });
+
+    expect(sendTurn).toHaveBeenCalledTimes(1);
+    expect(sendTurn.mock.calls[0]?.[0]?.content).toContain('Follow-up from the reviewer.');
+  });
+
+  it('lets an explicit prompt win over the seed', async () => {
+    const { sendTurn, spawn } = buildHarness([]);
+
+    await spawn(SESSION_ID, {
+      kindOverride: 'debugger',
+      initialPrompt: 'trace the crash',
+      seedPrompt: 'Follow-up from the reviewer.',
+    });
+
+    const content = sendTurn.mock.calls[0]?.[0]?.content ?? '';
+    expect(content).toContain('trace the crash');
+    expect(content).not.toContain('Follow-up from the reviewer.');
+  });
+
   it('persists a queued request instead of sending the resolver kickoff itself', async () => {
     const { drainResolveQueue, recordResolveAttempt, sendTurn, spawn } = buildHarness([]);
     const args = buildResolverAgentArgs({
