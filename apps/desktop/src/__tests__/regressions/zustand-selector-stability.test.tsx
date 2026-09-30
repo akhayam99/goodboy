@@ -4,7 +4,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import type { Session, SessionProjectMount, TelemetryRecord } from '@goodboy/types';
+import type {
+  ProjectId,
+  Session,
+  SessionId,
+  SessionProjectMount,
+  TelemetryRecord,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aProject, aSession } from '@goodboy/types/testing';
 
 vi.mock('../../store/store', async () => {
   const zustand = await import('zustand');
@@ -18,13 +26,15 @@ vi.mock('../../store/store', async () => {
       sessions: [],
       archivedSessions: {},
       projectScripts: {},
+      projects: [],
     })),
   };
 });
 
 import { useAppStore } from '../../store/store';
 import { useProjectFilteredSessions } from '../../store/slices/sessionFilters/selectors';
-import { useTelemetryForSessions } from '../../store/slices/sessions/selectors';
+import { useSessionById, useTelemetryForSessions } from '../../store/slices/sessions/selectors';
+import { selectProjectById } from '../../store/slices/projects/selectProjectById';
 import { useRunningScripts } from '../../features/scripts/hooks/useRunningScripts';
 
 const viewSession = { id: 'session-in-view' } as Session;
@@ -215,5 +225,62 @@ describe('whole-map store keys stay out of consumers that render a few sessions'
       }),
     );
     expect(result.current).toEqual([]);
+  });
+});
+
+describe('lookups by id hand back the row the store holds', () => {
+  const ledger = aSession({
+    id: 'session-ledger' as SessionId,
+    workspaceId: 'workspace-acme' as WorkspaceId,
+  });
+  const notify = aSession({
+    id: 'session-notify' as SessionId,
+    workspaceId: 'workspace-acme' as WorkspaceId,
+  });
+  const ledgerProject = aProject({ id: 'project-ledger' as ProjectId, name: 'ledger-core' });
+  const notifyProject = aProject({ id: 'project-notify' as ProjectId, name: 'notify-relay' });
+
+  it('keeps the same session and skips the render when another session is written', () => {
+    useAppStore.setState({ sessions: [ledger, notify], archivedSessions: {} });
+    const { counter, result } = renderCounted({ hook: () => useSessionById(ledger.id) });
+    expect(result.current).toBe(ledger);
+    const before = counter.renders;
+
+    act(() => useAppStore.setState({ sessions: [ledger, { ...notify, goal: 'retries' }] }));
+    expect(counter.renders).toBe(before);
+    expect(result.current).toBe(ledger);
+
+    act(() => useAppStore.setState({ projectScripts: {} }));
+    expect(counter.renders).toBe(before);
+  });
+
+  it('renders again with the new row when that session is replaced', () => {
+    useAppStore.setState({ sessions: [ledger, notify], archivedSessions: {} });
+    const { counter, result } = renderCounted({ hook: () => useSessionById(ledger.id) });
+    const before = counter.renders;
+    const renamed = { ...ledger, goal: 'ledger-core audit' };
+
+    act(() => useAppStore.setState({ sessions: [renamed, notify] }));
+
+    expect(counter.renders).toBeGreaterThan(before);
+    expect(result.current).toBe(renamed);
+  });
+
+  it('keeps the same project and skips the render when another project is written', () => {
+    useAppStore.setState({ projects: [ledgerProject, notifyProject] });
+    const { counter, result } = renderCounted({
+      hook: () => useAppStore((state) => selectProjectById(state, ledgerProject.id)),
+    });
+    expect(result.current).toBe(ledgerProject);
+    const before = counter.renders;
+
+    act(() =>
+      useAppStore.setState({
+        projects: [ledgerProject, { ...notifyProject, baseBranch: 'develop' }],
+      }),
+    );
+
+    expect(counter.renders).toBe(before);
+    expect(result.current).toBe(ledgerProject);
   });
 });
