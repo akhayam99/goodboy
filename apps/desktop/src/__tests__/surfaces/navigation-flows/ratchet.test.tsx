@@ -66,9 +66,8 @@ const STUDIO_KINDS = namesIn({
 
 const SETTINGS_SCOPES = namesIn({
   source:
-    /SettingsStudioScope =([^;]+);/.exec(
-      readSource('features/settings/components/SettingsStudio/types.ts'),
-    )?.[1] ?? '',
+    /SettingsStudioScope =([^;]+);/.exec(readSource('features/settings/settingsFocus.ts'))?.[1] ??
+    '',
   pattern: /'(\w+)'/g,
 });
 
