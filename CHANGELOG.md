@@ -12,6 +12,43 @@ file is in `.prettierignore`: the meta comment sits on the line right below
 each entry's heading, with no blank line, and a formatter would push it down
 onto its own paragraph.
 
+## Goodboy v0.15.0
+
+Goodboy opens faster and redraws lists less, times and budget errors read the same everywhere, and switching workspace stops all live work.
+
+This version updates your data in one direction. To go back to 0.14, restore the backup Goodboy made before updating.
+
+### Improved
+
+#### A faster app
+<!-- gb area=app pr=1942 -->
+
+Goodboy opens with a much smaller first load. The session list, inbox, diff files and timeline redraw less when something changes. Finding a session among hundreds is quicker, and new database indexes speed up the common lookups.
+
+Six slow commands no longer hold up the window while they run.
+
+#### One time format
+<!-- gb area=app pr=1942 -->
+
+Times read like "Sep 29" on a 24-hour clock everywhere in the app.
+
+#### Budget errors in one shape
+<!-- gb area=settings pr=1942 -->
+
+Budget errors now share one shape, so every screen that reports one reads the same.
+
+#### A local log in release builds
+<!-- gb area=app pr=1942 -->
+
+Release builds write a local log of what the app did, with credentials redacted.
+
+### Fixed
+
+- Switching or disconnecting a workspace now stops blocked and deciding work too, and the confirmation says "active" sessions. <!-- gb area=sessions pr=1942 -->
+- Copying a report that fails now shows an error instead of opening GitHub with nothing on the clipboard. <!-- gb area=app pr=1942 -->
+- The diff, the change counters and the ahead and behind distance follow the base branch you chose. <!-- gb area=sessions pr=1942 -->
+- Git calls time out after 30 minutes and network calls after 30 seconds. <!-- gb area=app pr=1942 -->
+
 ## Goodboy v0.14.0
 
 Fix review comments in parallel on GitHub, GitLab and Bitbucket, start and track sessions from a chat, and read an agent's header in two rows.
