@@ -1,5 +1,5 @@
 import { Button, Notice } from '@goodboy/ui';
-import type { WireframeImport } from '../../importWireframeJson';
+import type { WireframeImport } from '../importWireframeJson';
 
 type Props = {
   readonly pending: WireframeImport;

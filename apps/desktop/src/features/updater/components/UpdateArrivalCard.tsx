@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ArrowUpCircle } from 'lucide-react';
 import { Button, InlineConfirm } from '@goodboy/ui';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { useAppStore } from '../../../../store';
-import { useRunningAgentCount } from '../../hooks/useRunningAgentCount';
-import { useUpdateArrivalCard } from '../../hooks/useUpdateArrivalCard';
-import { arrivalBullets, arrivalLead, arrivalTitle } from '../../updateArrivalCopy';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { useAppStore } from '../../../store';
+import { useRunningAgentCount } from '../hooks/useRunningAgentCount';
+import { useUpdateArrivalCard } from '../hooks/useUpdateArrivalCard';
+import { arrivalBullets, arrivalLead, arrivalTitle } from '../updateArrivalCopy';
 
 type Props = {
   readonly onOpenChangelog: () => void;

@@ -1,6 +1,6 @@
-import { useCurrentSession } from '../../../../store';
-import { useSessionArchive } from '../../hooks/useSessionArchive';
-import { useShortcut } from '../../../../shared/keyboard/useShortcut';
+import { useCurrentSession } from '../../../store';
+import { useSessionArchive } from '../hooks/useSessionArchive';
+import { useShortcut } from '../../../shared/keyboard/useShortcut';
 
 export const SessionArchiveBridge = () => {
   const session = useCurrentSession();

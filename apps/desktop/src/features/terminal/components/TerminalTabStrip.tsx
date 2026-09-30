@@ -1,11 +1,7 @@
 import { Plus, X } from 'lucide-react';
 import { cn, ScrollFade, StatusDot, Tooltip, type Tone, tintClasses } from '@goodboy/ui';
-import type {
-  TerminalTab,
-  TerminalTabId,
-  TerminalTabStatus,
-} from '../../../../shared/types/terminal';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import type { TerminalTab, TerminalTabId, TerminalTabStatus } from '../../../shared/types/terminal';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly tabs: readonly TerminalTab[];

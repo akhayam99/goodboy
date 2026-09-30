@@ -1,6 +1,6 @@
 import { Clock } from 'lucide-react';
 import { Tooltip } from '@goodboy/ui';
-import type { RunTimeLeft } from '../../../session/timeline/runTimeLeft';
+import type { RunTimeLeft } from '../../session/timeline/runTimeLeft';
 
 type Props = {
   readonly timeLeft: RunTimeLeft;

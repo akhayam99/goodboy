@@ -1,7 +1,7 @@
 import { Button, Notice } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { openStorage } from '../../openStorage';
+import { useAppStore } from '../../../store';
+import { openStorage } from '../openStorage';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

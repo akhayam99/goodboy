@@ -2,20 +2,20 @@ import { ChevronDown } from 'lucide-react';
 import { clampEffortForModel } from '@goodboy/core';
 import { AnchoredPopover, PopoverBody, SelectableRow, cn, useDropdown } from '@goodboy/ui';
 import type { AgentEffort, Project, ProjectId, ProviderId } from '@goodboy/types';
-import { CONCEPT_ICONS } from '../../../../shared/components/conceptIcons';
-import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
-import { RoutingPickerBody } from '../../../../shared/components/RoutingPicker/RoutingPickerBody';
-import { PickerSection } from '../../../../shared/components/RoutingPicker/PickerSection';
-import { SUGGESTED_LABEL } from '../../../../shared/components/RoutingPicker/autoRecommendationCopy';
-import { AGENT_FORM_GRAMMAR } from '../../agent-form-grammar';
+import { CONCEPT_ICONS } from '../../../shared/components/conceptIcons';
+import { RoutingLabel } from '../../../shared/components/RoutingLabel';
+import { RoutingPickerBody } from '../../../shared/components/RoutingPicker/RoutingPickerBody';
+import { PickerSection } from '../../../shared/components/RoutingPicker/PickerSection';
+import { SUGGESTED_LABEL } from '../../../shared/components/RoutingPicker/autoRecommendationCopy';
+import { AGENT_FORM_GRAMMAR } from '../agent-form-grammar';
 import {
   agentKindPalette,
   AGENT_KIND_META,
   type AgentKind,
   type AgentKindRouting,
-} from '../../agent-kind';
-import { AgentKindGrid } from '../CreateAgentPopover/AgentKindGrid';
-import { projectById } from '../../../../store/slices/projects/projectIndex';
+} from '../agent-kind';
+import { AgentKindGrid } from './CreateAgentPopover/AgentKindGrid';
+import { projectById } from '../../../store/slices/projects/projectIndex';
 
 export type AgentStartRouting = AgentKindRouting | null;
 

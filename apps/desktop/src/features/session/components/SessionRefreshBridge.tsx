@@ -1,7 +1,7 @@
 import type { SessionId } from '@goodboy/types';
-import { useCurrentSession } from '../../../../store';
-import { useShortcut } from '../../../../shared/keyboard/useShortcut';
-import { useSessionRefresh } from '../../hooks/useSessionRefresh';
+import { useCurrentSession } from '../../../store';
+import { useShortcut } from '../../../shared/keyboard/useShortcut';
+import { useSessionRefresh } from '../hooks/useSessionRefresh';
 
 export const SessionRefreshBridge = () => {
   const session = useCurrentSession();

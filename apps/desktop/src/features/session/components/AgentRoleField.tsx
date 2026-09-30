@@ -1,5 +1,5 @@
 import { cn, Eyebrow } from '@goodboy/ui';
-import { AGENT_FORM_GRAMMAR, type AgentFormRole } from '../../agent-form-grammar';
+import { AGENT_FORM_GRAMMAR, type AgentFormRole } from '../agent-form-grammar';
 
 type Props = {
   readonly role: AgentFormRole;

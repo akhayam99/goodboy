@@ -1,6 +1,6 @@
 import { cn, tintClasses } from '@goodboy/ui';
 import type { WireframeArtifact } from '@goodboy/types';
-import { asWireframeFidelity, requestedWireframeFidelity } from '../../wireframeFidelity';
+import { asWireframeFidelity, requestedWireframeFidelity } from '../wireframeFidelity';
 
 type Props = {
   readonly artifact: WireframeArtifact;

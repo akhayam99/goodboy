@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { WorkflowOrigin } from '@goodboy/types';
 import { Tooltip, cn, tintClasses } from '@goodboy/ui';
 import type { Tone } from '@goodboy/ui';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 const LABEL: Record<WorkflowOrigin, string> = {
   library: 'Preset, shipped with Goodboy',

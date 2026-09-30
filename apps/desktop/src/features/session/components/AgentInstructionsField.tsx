@@ -1,5 +1,5 @@
 import { Textarea, cn, Eyebrow } from '@goodboy/ui';
-import { AGENT_FORM_GRAMMAR } from '../../agent-form-grammar';
+import { AGENT_FORM_GRAMMAR } from '../agent-form-grammar';
 
 type Props = {
   readonly value: string;
