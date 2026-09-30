@@ -36,7 +36,7 @@ pub(crate) fn predict(args: &HistoryPlanArgs) -> Result<PlanPrediction, Worktree
     predict_with(cwd, &resolved, &ordered, false)
 }
 
-pub(super) fn predict_with(
+fn predict_with(
     cwd: &Path,
     resolved: &ResolvedPlan,
     ordered: &[HistoryStep],
@@ -174,7 +174,7 @@ pub(super) fn predict_with(
     })
 }
 
-pub(super) fn prediction(sha: &str, outcome: StepOutcome) -> StepPrediction {
+fn prediction(sha: &str, outcome: StepOutcome) -> StepPrediction {
     StepPrediction {
         sha: sha.to_string(),
         outcome,
@@ -183,7 +183,7 @@ pub(super) fn prediction(sha: &str, outcome: StepOutcome) -> StepPrediction {
     }
 }
 
-pub(super) fn blocked(sha: &str) -> StepPrediction {
+fn blocked(sha: &str) -> StepPrediction {
     prediction(sha, StepOutcome::Blocked)
 }
 
@@ -193,3 +193,6 @@ pub async fn history_plan_predict(args: HistoryPlanArgs) -> Result<PlanPredictio
         .await
         .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
+
+#[cfg(test)]
+mod tests;

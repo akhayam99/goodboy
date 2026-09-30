@@ -4,7 +4,7 @@ use crate::worktree::{git, sanitize_slug, WorktreeError};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-pub(super) const BACKUP_PREFIX: &str = "refs/goodboy/backup";
+const BACKUP_PREFIX: &str = "refs/goodboy/backup";
 
 const BACKUP_KEEP_SECS: u64 = 30 * 24 * 60 * 60;
 
@@ -159,7 +159,7 @@ fn backup_spaces(cwd: &Path) -> Option<BackupSpaces> {
     Some(spaces)
 }
 
-pub(super) fn prune_backups_before(cwd: &Path, cutoff: u64) {
+fn prune_backups_before(cwd: &Path, cutoff: u64) {
     let Some(spaces) = backup_spaces(cwd) else {
         return;
     };
@@ -203,3 +203,6 @@ pub async fn history_backups_list(
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
+
+#[cfg(test)]
+mod tests;

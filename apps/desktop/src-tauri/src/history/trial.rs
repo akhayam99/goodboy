@@ -254,3 +254,6 @@ pub async fn history_plan_try(args: HistoryPlanArgs) -> Result<TrialResult, Work
     .await
     .map_err(|e| WorktreeError::Io(std::io::Error::other(e.to_string())))?
 }
+
+#[cfg(test)]
+mod tests;

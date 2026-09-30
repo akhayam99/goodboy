@@ -134,3 +134,6 @@ pub(super) fn check_trial(cwd: &Path, copy: Option<&Path>, input: &CheckInput<'_
         removed_files,
     }
 }
+
+#[cfg(test)]
+mod tests;

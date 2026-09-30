@@ -113,3 +113,6 @@ pub(crate) fn recover_journal(cwd: &Path) -> Result<Option<String>, WorktreeErro
         "the branch and the files no longer match either side of it.",
     )))
 }
+
+#[cfg(test)]
+mod tests;

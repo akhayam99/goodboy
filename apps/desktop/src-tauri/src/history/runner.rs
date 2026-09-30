@@ -4,7 +4,7 @@ use crate::worktree::WorktreeError;
 use std::path::Path;
 use std::sync::OnceLock;
 
-pub(super) const MERGE_TREE_BASE_MIN: (u32, u32) = (2, 40);
+const MERGE_TREE_BASE_MIN: (u32, u32) = (2, 40);
 
 const BATCHED_REPLAY_MIN: (u32, u32) = (2, 45);
 
@@ -41,7 +41,7 @@ pub(super) fn git_run(
     })
 }
 
-pub(super) fn parse_git_version(raw: &str) -> Option<(u32, u32)> {
+fn parse_git_version(raw: &str) -> Option<(u32, u32)> {
     let version = raw.trim().strip_prefix("git version ")?;
     let mut parts = version.split(|c: char| !c.is_ascii_digit());
     let major = parts.next()?.parse::<u32>().ok()?;
@@ -69,3 +69,6 @@ pub(super) fn supports_batched_replay() -> bool {
 pub fn history_git_supported() -> bool {
     supports_merge_tree_base()
 }
+
+#[cfg(test)]
+mod tests;

@@ -183,3 +183,6 @@ pub(crate) fn discard_copy(path: &str) {
     let held = take_held(&root);
     remove_reservation(&root, held);
 }
+
+#[cfg(test)]
+mod tests;
