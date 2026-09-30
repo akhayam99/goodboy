@@ -13,6 +13,7 @@ export const SourceChangeLine = ({
     <span aria-hidden className={cn('w-2 shrink-0', SIGN_TEXT[kind])}>
       {kind === 'add' ? '+' : '-'}
     </span>
+    <span className="sr-only">{kind === 'add' ? 'After: ' : 'Before: '}</span>
     <span className="min-w-0 whitespace-pre-wrap break-words text-foreground [overflow-wrap:anywhere]">
       {segments.map((segment, index) => (
         <span
