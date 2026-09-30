@@ -289,7 +289,19 @@ fn explore_list_blocking(
 }
 
 #[tauri::command]
-pub fn explore_read(session_dir: String, rel_path: String) -> Result<ExploreContent, ExploreError> {
+pub async fn explore_read(
+    session_dir: String,
+    rel_path: String,
+) -> Result<ExploreContent, ExploreError> {
+    tauri::async_runtime::spawn_blocking(move || explore_read_blocking(session_dir, rel_path))
+        .await
+        .map_err(|error| ExploreError::Io(std::io::Error::other(error.to_string())))?
+}
+
+fn explore_read_blocking(
+    session_dir: String,
+    rel_path: String,
+) -> Result<ExploreContent, ExploreError> {
     let path = resolve_path(&session_dir, &rel_path)?;
     let metadata = fs::metadata(&path)?;
     if !metadata.is_file() {
@@ -332,7 +344,7 @@ mod tests {
     use std::fs;
 
     use super::{
-        explore_list_blocking, explore_read, ExploreContent, ExploreError, TEXT_MAX_BYTES,
+        explore_list_blocking, explore_read_blocking, ExploreContent, ExploreError, TEXT_MAX_BYTES,
     };
 
     fn test_root(name: &str) -> std::path::PathBuf {
@@ -395,7 +407,7 @@ mod tests {
         fs::write(outside.join("secret.txt"), "secret").unwrap();
         std::os::unix::fs::symlink(outside.join("secret.txt"), root.join("linked.txt")).unwrap();
 
-        let result = explore_read(
+        let result = explore_read_blocking(
             root.to_string_lossy().into_owned(),
             "linked.txt".to_string(),
         );
@@ -412,7 +424,8 @@ mod tests {
         fs::write(root.join("large.txt"), vec![b'a'; TEXT_MAX_BYTES + 1]).unwrap();
 
         let content =
-            explore_read(root.to_string_lossy().into_owned(), "large.txt".to_string()).unwrap();
+            explore_read_blocking(root.to_string_lossy().into_owned(), "large.txt".to_string())
+                .unwrap();
 
         match content {
             ExploreContent::Text { text, truncated } => {
@@ -430,7 +443,7 @@ mod tests {
         fs::create_dir_all(&root).unwrap();
         fs::write(root.join("file.txt"), "text").unwrap();
 
-        let read = explore_read(root.to_string_lossy().into_owned(), String::new());
+        let read = explore_read_blocking(root.to_string_lossy().into_owned(), String::new());
         let list =
             explore_list_blocking(root.to_string_lossy().into_owned(), "file.txt".to_string());
 

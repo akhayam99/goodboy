@@ -73,6 +73,9 @@ mod workflows;
 mod worktree;
 mod worktree_writer;
 
+#[cfg(test)]
+mod command_threading;
+
 #[cfg(target_os = "macos")]
 mod fullscreen_escape;
 #[cfg(target_os = "macos")]

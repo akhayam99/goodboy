@@ -66,8 +66,10 @@ pub(super) fn supports_batched_replay() -> bool {
 }
 
 #[tauri::command]
-pub fn history_git_supported() -> bool {
-    supports_merge_tree_base()
+pub async fn history_git_supported() -> bool {
+    tauri::async_runtime::spawn_blocking(supports_merge_tree_base)
+        .await
+        .unwrap_or(false)
 }
 
 #[cfg(test)]
