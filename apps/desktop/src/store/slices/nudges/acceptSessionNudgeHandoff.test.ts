@@ -50,7 +50,7 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       planId: PLAN_ID,
     });
 
-    const agentId = await buildAccept(state)(SESSION_ID);
+    const agentId = await buildAccept(state)({ sessionId: SESSION_ID });
 
     expect(state.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       triggeredPlanId: PLAN_ID,
@@ -69,7 +69,7 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       planId: null,
     });
 
-    await buildAccept(state)(SESSION_ID);
+    await buildAccept(state)({ sessionId: SESSION_ID });
 
     expect(state.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'implementer',
@@ -88,7 +88,7 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       planId: null,
     });
 
-    const agentId = await buildAccept(state)(SESSION_ID);
+    const agentId = await buildAccept(state)({ sessionId: SESSION_ID });
 
     expect(state.spawnAgent).toHaveBeenCalledWith(SESSION_ID, {
       kindOverride: 'reviewer',
@@ -114,7 +114,8 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       ],
     };
 
-    await buildAccept(state)(SESSION_ID, {
+    await buildAccept(state)({
+      sessionId: SESSION_ID,
       routing: { provider: 'anthropic', model: 'opus-5.5', effort: 'high' },
     });
 
@@ -133,7 +134,7 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
   it('hands back nothing when there is no nudge to accept', async () => {
     const state: FakeState = { sessionNudges: {}, spawnAgent: vi.fn(async () => 'x' as AgentId) };
 
-    const agentId = await buildAccept(state)(SESSION_ID);
+    const agentId = await buildAccept(state)({ sessionId: SESSION_ID });
 
     expect(agentId).toBeNull();
     expect(state.spawnAgent).not.toHaveBeenCalled();

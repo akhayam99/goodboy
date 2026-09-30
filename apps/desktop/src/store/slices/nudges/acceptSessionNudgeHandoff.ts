@@ -5,16 +5,18 @@ import { handoffSourceOutput } from './handoffSourceOutput';
 import { recordOutcome } from './recordOutcome';
 import type { GetFn, SetFn } from './types';
 
-export type HandoffAcceptOptions = {
+export type HandoffAcceptParams = {
+  readonly sessionId: SessionId;
   readonly routing?: AgentKindRouting;
   readonly seedPrompt?: string;
 };
 
 export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
-  return async (
-    sessionId: SessionId,
-    options: HandoffAcceptOptions = {},
-  ): Promise<AgentId | null> => {
+  return async ({
+    sessionId,
+    routing: pickedRouting,
+    seedPrompt: pickedSeed,
+  }: HandoffAcceptParams): Promise<AgentId | null> => {
     const nudge = get().sessionNudges[sessionId] ?? null;
     if (!nudge) {
       return null;
@@ -24,12 +26,12 @@ export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
     }));
     await recordOutcome(nudge.id, 'accepted');
     const routing =
-      options.routing === undefined
+      pickedRouting === undefined
         ? {}
         : {
-            provider: options.routing.provider,
-            model: options.routing.model,
-            effort: options.routing.effort,
+            provider: pickedRouting.provider,
+            model: pickedRouting.model,
+            effort: pickedRouting.effort,
           };
     if (nudge.kind === 'plan-ready') {
       if (nudge.planId !== null) {
@@ -51,7 +53,7 @@ export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
     if (nudge.kind === 'handoff-suggested') {
       const source = handoffSourceOutput({ state: get(), sessionId, agentId: nudge.agentId });
       const seedPrompt =
-        options.seedPrompt ??
+        pickedSeed ??
         composeHandoffSeed({
           sourceName: source.name,
           reason: nudge.reason,

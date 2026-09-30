@@ -101,7 +101,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     setPickedRouting({
       provider,
       model,
-      effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+      effort: clampEffortForModel({ model, effort: routing.effort, provider }) ?? routing.effort,
     });
   };
 
@@ -119,7 +119,7 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
           output: assistantText,
         });
         const agentId = isActiveNudge
-          ? await acceptHandoff(sessionId, { routing, seedPrompt })
+          ? await acceptHandoff({ sessionId, routing, seedPrompt })
           : await spawnAgent(sessionId, {
               kindOverride: handoff.kind,
               ...(handoff.planId != null ? { triggeredPlanId: handoff.planId as PlanId } : {}),
@@ -208,7 +208,12 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
               setPickedRouting({
                 ...routing,
                 model,
-                effort: clampEffortForModel({ model, effort: routing.effort }) ?? routing.effort,
+                effort:
+                  clampEffortForModel({
+                    model,
+                    effort: routing.effort,
+                    provider: routing.provider,
+                  }) ?? routing.effort,
               })
             }
           />

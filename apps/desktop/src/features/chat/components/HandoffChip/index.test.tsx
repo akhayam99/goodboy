@@ -211,7 +211,8 @@ describe('HandoffChip', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start implementer' }));
 
     await waitFor(() =>
-      expect(state.acceptSessionNudgeHandoff).toHaveBeenCalledWith('sess-1', {
+      expect(state.acceptSessionNudgeHandoff).toHaveBeenCalledWith({
+        sessionId: 'sess-1',
         routing: { provider: 'cursor', model: 'composer-2.5', effort: 'medium' },
         seedPrompt: 'Follow-up from the previous agent.\n\nWhat the previous agent found:\n\nx',
       }),

@@ -123,7 +123,7 @@ export const useComposerSuggestions = ({
   };
 
   const onAcceptHandoff = async (targetSessionId: SessionId) => {
-    const agentId = await acceptSessionNudgeHandoff(targetSessionId);
+    const agentId = await acceptSessionNudgeHandoff({ sessionId: targetSessionId });
     announceAgentStarted({
       sessionId: targetSessionId,
       agentId,
