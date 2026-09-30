@@ -48,9 +48,18 @@ the finalize, recover and settle phases read it. It is a shared object, not a
 return value, because the failure path must see the text streamed before the
 throw. `run` releases the writer lease and drains the resolve queue, opens the
 mount continuation and drains the agent queue after `runOnce` returns or
-throws. Every provider run a turn opens is closed as `succeeded`, `failed` or
-`cancelled` on every one of these paths; `store.sqlite-turn.test.ts` holds that
-contract on a real database.
+throws.
+
+The provider run row is closed on these paths only: `succeeded` when the stream
+and its finalize step complete (`failed` with "cancelled by user" when a stop
+landed), `cancelled` when a stop lands before the spawn (`claimTurnStart`),
+`failed` when the step's agent cannot be resolved, and `failed` on any throw
+inside the stream or finalize step, including the run a fallback rerun
+replaces. A throw before the run row exists (the user message write) leaves no
+run. A throw between the run row and the stream (the agent status write, the
+session state write, the prompt and spawn phases) leaves the run `streaming`
+and the agent `running`; nothing in the turn closes them. `store.sqlite-turn.test.ts` holds the closed paths on a real
+database.
 
 ## Where a turn writes
 

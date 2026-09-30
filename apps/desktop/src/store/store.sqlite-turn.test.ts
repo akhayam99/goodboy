@@ -3,14 +3,19 @@ import { insertWorkspace } from '@goodboy/db';
 import type {
   AgentId,
   IsoDateTime,
+  MountId,
+  ProjectId,
   ProviderRunId,
   SessionId,
   TurnEvent,
   WorkspaceId,
 } from '@goodboy/types';
+import { faultingSqliteDatabase } from '../test/sqliteDb';
 import { summarizerQueues } from './slices/turn/turnHelpers';
-import { openTurnStartWindow } from './slices/turn/turnStartWindow';
+import { isTurnSettling } from './slices/turn/turnSettled';
+import { cancelTurnStartWindow, openTurnStartWindow } from './slices/turn/turnStartWindow';
 import {
+  buildStoryProject,
   buildStoryWorkspace,
   connectedAnthropicState,
   emptyTurnStream,
@@ -153,6 +158,11 @@ const openRuns = () =>
     sql: `SELECT id FROM provider_runs WHERE ${TURN_RUN} AND status_kind IN ('pending', 'streaming')`,
   });
 
+const cleanedUp = () => {
+  expect(cancelTurnStartWindow({ agentId })).toBe(false);
+  expect(isTurnSettling({ agentId, nowMs: Date.now() })).toBe(false);
+};
+
 const transcript = () => useAppStore.getState().transcripts[agentId] ?? [];
 
 beforeEach(async () => {
@@ -199,9 +209,11 @@ describe('sendTurn on sqlite: a turn that completes', () => {
     storySpies.runTurn.mockImplementation(({ runId }: RunArgs) =>
       streamOf({ events: [text({ runId, delta: 'Ledger reconciled.' })] })(),
     );
+    openTurnStartWindow({ agentId });
 
     await send();
 
+    cleanedUp();
     expect(await messages()).toEqual([
       { role: 'user', content: 'Reconcile the Harborline ledger export' },
       { role: 'assistant', content: 'Ledger reconciled.' },
@@ -256,6 +268,30 @@ describe('sendTurn on sqlite: cancel', () => {
     expect(storySpies.cancelTurn).not.toHaveBeenCalled();
     expect((await providerRuns()).map((run) => run.status_kind)).toEqual(['cancelled']);
     expect(await spans()).toEqual([]);
+    expect((await agentRows()).map((row) => row.status)).toEqual(['pending']);
+    expect(await openRuns()).toEqual([]);
+  });
+
+  it('landing while the run row is written still stops the turn before the spawn', async () => {
+    openTurnStartWindow({ agentId });
+    const execute = faultingSqliteDatabase.execute.bind(faultingSqliteDatabase);
+    const spy = vi
+      .spyOn(faultingSqliteDatabase, 'execute')
+      .mockImplementation(async (sql, params) => {
+        if (sql.includes('INSERT INTO provider_runs')) {
+          cancelTurnStartWindow({ agentId });
+        }
+        return execute(sql, params);
+      });
+
+    try {
+      await send();
+    } finally {
+      spy.mockRestore();
+    }
+
+    expect(storySpies.runTurn).not.toHaveBeenCalled();
+    expect((await providerRuns()).map((run) => run.status_kind)).toEqual(['cancelled']);
     expect((await agentRows()).map((row) => row.status)).toEqual(['pending']);
     expect(await openRuns()).toEqual([]);
   });
@@ -388,6 +424,12 @@ describe('sendTurn on sqlite: retry', () => {
     await send();
 
     expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    expect(storySpies.runTurn.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ provider: 'anthropic', model: 'claude-sonnet-5' }),
+    );
+    expect(storySpies.runTurn.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({ provider: 'anthropic', model: 'claude-haiku-4-5' }),
+    );
     const runs = await providerRuns();
     expect(runs.map((run) => run.status_kind)).toEqual(['failed', 'succeeded']);
     expect(runs[0]?.status_payload).toContain('rate limit');
@@ -401,6 +443,59 @@ describe('sendTurn on sqlite: retry', () => {
     ]);
     expect((await agentRows()).map((row) => row.status)).toEqual(['completed']);
     expect(await sessionState()).toBe('idle');
+    expect(await openRuns()).toEqual([]);
+  });
+
+  it('carries force and the saved attachments into the retry instead of dropping them', async () => {
+    storySpies.runTurn
+      .mockImplementationOnce(failingStream({ message: 'rate limit exceeded for this account' }))
+      .mockImplementationOnce(({ runId }: RunArgs) =>
+        streamOf({ events: [text({ runId, delta: 'Ledger reconciled.' })] })(),
+      );
+    const routing = await import('../features/providers/routing');
+
+    await useAppStore.getState().sendTurn({
+      sessionId,
+      agentId,
+      content: 'Read the Harborline spec',
+      force: true,
+      attachments: [
+        {
+          id: 'attachment-1',
+          fileName: 'spec.pdf',
+          mimeType: 'application/pdf',
+          dataBase64: 'ZmFrZQ==',
+        },
+      ],
+    });
+
+    const forced = (routing.resolveProviderForTurn as ReturnType<typeof vi.fn>).mock.calls.filter(
+      ([params]) => params.force === true,
+    );
+    expect(forced).toHaveLength(2);
+    expect(storySpies.writeAttachment).toHaveBeenCalledOnce();
+    expect(storySpies.runTurn.mock.calls[1]?.[0]?.prompt).toContain(
+      '.goodboy/attachments/spec.pdf',
+    );
+    expect((await messages()).map((row) => row.role)).toEqual(['user', 'assistant']);
+  });
+
+  it('counts the attempts, so an unreachable provider is retried once on the same model and no more', async () => {
+    const unreachable = failingStream({ message: 'connect ECONNREFUSED 127.0.0.1:443' });
+    storySpies.runTurn
+      .mockImplementationOnce(unreachable)
+      .mockImplementationOnce(unreachable)
+      .mockImplementationOnce(({ runId }: RunArgs) =>
+        streamOf({ events: [text({ runId, delta: 'Ledger reconciled.' })] })(),
+      );
+
+    await expect(send()).rejects.toThrow('ECONNREFUSED');
+
+    expect(storySpies.runTurn).toHaveBeenCalledTimes(2);
+    expect(storySpies.runTurn.mock.calls[1]?.[0]?.model).toBe(
+      storySpies.runTurn.mock.calls[0]?.[0]?.model,
+    );
+    expect((await providerRuns()).map((run) => run.status_kind)).toEqual(['failed', 'failed']);
     expect(await openRuns()).toEqual([]);
   });
 
@@ -470,6 +565,7 @@ describe('sendTurn on sqlite: cleanup after an error', () => {
         events: [text({ runId, delta: 'Half of the export' })],
       })(),
     );
+    openTurnStartWindow({ agentId });
 
     await expect(send()).rejects.toThrow('connection reset by peer');
 
@@ -487,6 +583,7 @@ describe('sendTurn on sqlite: cleanup after an error', () => {
     expect(await summarizerRuns()).toEqual([]);
     expect(storySpies.cancelTurn).not.toHaveBeenCalled();
     expect(await openRuns()).toEqual([]);
+    cleanedUp();
   });
 
   it('sends the next queued message once the failed turn has settled', async () => {
@@ -534,7 +631,178 @@ describe('sendTurn on sqlite: cleanup after an error', () => {
 
     await expect(send()).rejects.toThrow('disk full');
 
-    expect((await providerRuns()).map((run) => run.status_kind)).toEqual(['failed']);
+    const runs = await providerRuns();
+    expect(runs.map((run) => run.status_kind)).toEqual(['failed']);
+    expect(await spans()).toEqual([{ run_id: runs[0]?.id, end_reason: 'succeeded' }]);
     expect(await openRuns()).toEqual([]);
+  });
+});
+
+const FOLDER_PROJECT_ID = 'project-ledger-core' as ProjectId;
+const FOLDER_PATH = '/tmp/goodboy-root/sessions/ledger-core';
+const WORKTREE_PATH = '/tmp/goodboy-root/worktrees/ledger-core';
+
+const mountFixture = ({
+  projectId,
+  worktreePath,
+  branch,
+}: {
+  readonly projectId: ProjectId;
+  readonly worktreePath: string;
+  readonly branch: string;
+}) => ({
+  projectId,
+  mountName: 'ledger-core',
+  worktreePath,
+  repoRoot: '/tmp/goodboy-root/repos/ledger-core',
+  branch,
+  mountId: 'mount-ledger-core' as MountId,
+  sessionId,
+  lastWorktreePath: null,
+  baseBranch: null,
+  parallelIndex: 0,
+  isAttached: true,
+  diskState: 'present' as const,
+  revision: 0,
+});
+
+const runIdOf = (payload: unknown): unknown =>
+  typeof payload === 'object' && payload !== null && 'args' in payload
+    ? (payload.args as { readonly runId?: unknown }).runId
+    : undefined;
+
+const invokeCalls = (command: string) =>
+  storySpies.tauriInvoke.mock.calls.filter(([name]) => name === command);
+
+describe('sendTurn on sqlite: the file version capture of a folder session', () => {
+  beforeEach(() => {
+    stubStoryInvoke({
+      workspaces_with_unread: [],
+      file_versions_begin_snapshot: { manifest: [], skipped: [] },
+      file_versions_finalize_snapshot: { kept: [], skipped: [] },
+    });
+    useAppStore.setState({
+      projects: [
+        buildStoryProject({
+          id: FOLDER_PROJECT_ID,
+          workspaceId: WORKSPACE_ID,
+          name: 'ledger-core',
+          rootPath: FOLDER_PATH,
+          kind: 'folder',
+        }),
+      ],
+      sessionProjectMounts: {
+        [sessionId]: [
+          mountFixture({ projectId: FOLDER_PROJECT_ID, worktreePath: FOLDER_PATH, branch: '' }),
+        ],
+      },
+    });
+  });
+
+  it('is finalised for the failed run before the error reaches the caller', async () => {
+    storySpies.runTurn.mockImplementation(failingStream({ message: 'connection reset by peer' }));
+
+    await expect(send()).rejects.toThrow('connection reset by peer');
+
+    const runs = await providerRuns();
+    expect(invokeCalls('file_versions_begin_snapshot')).toHaveLength(1);
+    expect(invokeCalls('file_versions_finalize_snapshot')).toEqual([
+      [
+        'file_versions_finalize_snapshot',
+        { args: { sessionDir: FOLDER_PATH, sessionId, runId: runs[0]?.id, manifest: [] } },
+      ],
+    ]);
+  });
+
+  it('is finalised once per attempt when the failure reruns the turn', async () => {
+    storySpies.runTurn
+      .mockImplementationOnce(failingStream({ message: 'rate limit exceeded for this account' }))
+      .mockImplementationOnce(({ runId }: RunArgs) =>
+        streamOf({ events: [text({ runId, delta: 'Ledger reconciled.' })] })(),
+      );
+
+    await send();
+
+    const runs = await providerRuns();
+    expect(runs).toHaveLength(2);
+    expect(invokeCalls('file_versions_begin_snapshot')).toHaveLength(2);
+    expect(
+      invokeCalls('file_versions_finalize_snapshot').map(([, payload]) => runIdOf(payload)),
+    ).toEqual(runs.map((run) => run.id).reverse());
+  });
+});
+
+describe('sendTurn on sqlite: the writer lease of a resolver turn', () => {
+  const LEASE = {
+    path: WORKTREE_PATH,
+    holder: null,
+    token: 'lease-token-1',
+    runId: null,
+    isGranted: true,
+    hasExited: false,
+    waiting: [],
+  };
+
+  const drainResolveQueue = vi.fn(async () => undefined);
+
+  beforeEach(() => {
+    drainResolveQueue.mockClear();
+    stubStoryInvoke({ workspaces_with_unread: [] });
+    storySpies.acquireWorktreeWriter.mockResolvedValue(LEASE);
+    useAppStore.setState({
+      sessionProjectMounts: {
+        [sessionId]: [
+          mountFixture({
+            projectId: 'project-ledger-core' as ProjectId,
+            worktreePath: WORKTREE_PATH,
+            branch: 'goodboy/ledger-core',
+          }),
+        ],
+      },
+      agentKindOverride: { [agentId]: 'resolver' },
+      recordResolveAttempt: vi.fn(async () => 'attempt-1'),
+      recordResolvePhase: vi.fn(async () => undefined),
+      persistResolveTurn: vi.fn(async () => undefined),
+      drainResolveQueue,
+    });
+  });
+
+  it('is handed to the spawn and given back with the queue drained after a success', async () => {
+    storySpies.runTurn.mockImplementation(({ runId }: RunArgs) =>
+      streamOf({ events: [text({ runId, delta: 'Ledger reconciled.' })] })(),
+    );
+    openTurnStartWindow({ agentId });
+
+    await send();
+
+    expect(storySpies.runTurn.mock.calls[0]?.[0]?.writerLease).toEqual({
+      path: WORKTREE_PATH,
+      holder: agentId,
+      token: 'lease-token-1',
+    });
+    expect(storySpies.releaseWorktreeWriter).toHaveBeenCalledExactlyOnceWith({
+      path: WORKTREE_PATH,
+      holder: agentId,
+    });
+    expect(drainResolveQueue).toHaveBeenCalledExactlyOnceWith({
+      sessionId,
+      endedAttemptId: 'attempt-1',
+    });
+    cleanedUp();
+  });
+
+  it('is given back with the queue drained after the stream fails', async () => {
+    storySpies.runTurn.mockImplementation(failingStream({ message: 'connection reset by peer' }));
+    openTurnStartWindow({ agentId });
+
+    await expect(send()).rejects.toThrow('connection reset by peer');
+
+    expect(storySpies.releaseWorktreeWriter).toHaveBeenCalledExactlyOnceWith({
+      path: WORKTREE_PATH,
+      holder: agentId,
+    });
+    expect(drainResolveQueue).toHaveBeenCalledOnce();
+    expect(await openRuns()).toEqual([]);
+    cleanedUp();
   });
 });
