@@ -7,7 +7,7 @@ vi.mock('@tauri-apps/api/event', () => ({ listen: vi.fn(async () => () => undefi
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import type { Agent, AgentId, ResolveAttempt } from '@goodboy/types';
+import type { Agent, AgentId, MountId, ResolveAttempt } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -31,6 +31,7 @@ let restore: Partial<StoreState> = {};
 const SINGLE = 'agent-brief-single' as AgentId;
 const CHILD = 'agent-brief-child' as AgentId;
 const SIBLING = 'agent-brief-sibling' as AgentId;
+const CHILD_MOUNT = 'mount-brief-child' as MountId;
 const TYPO = 'PRRT_thread_typo';
 const CONSTANT = 'PRRT_thread_retry_constant';
 
@@ -39,11 +40,13 @@ const attemptOf = ({
   agentId,
   threadIds,
   batchId,
+  mountTarget = null,
 }: {
   readonly id: string;
   readonly agentId: AgentId;
   readonly threadIds: ReadonlyArray<string>;
   readonly batchId: string | null;
+  readonly mountTarget?: ResolveAttempt['mountTarget'];
 }): ResolveAttempt => ({
   id,
   sessionId: SESSION.id,
@@ -55,7 +58,7 @@ const attemptOf = ({
   effort: null,
   instructions: null,
   phase: 'finished',
-  mountTarget: null,
+  mountTarget,
   startedAt: 1,
   endedAt: 2,
   error: null,
@@ -76,7 +79,13 @@ const agentOf = (id: AgentId): Agent => ({
 
 const ATTEMPTS = [
   attemptOf({ id: 'a-single', agentId: SINGLE, threadIds: [EXPANDED_THREAD_ID], batchId: null }),
-  attemptOf({ id: 'a-child', agentId: CHILD, threadIds: [TYPO], batchId: 'batch-1' }),
+  attemptOf({
+    id: 'a-child',
+    agentId: CHILD,
+    threadIds: [TYPO],
+    batchId: 'batch-1',
+    mountTarget: { mountId: CHILD_MOUNT, mountRevision: 1, worktreePath: '/repo/child' },
+  }),
   attemptOf({ id: 'a-sibling', agentId: SIBLING, threadIds: [CONSTANT], batchId: 'batch-1' }),
 ];
 
@@ -367,7 +376,7 @@ describe('the resolver Brief', () => {
     await waitFor(() => expect(openReviewTarget).toHaveBeenCalledOnce());
     expect(openReviewTarget).toHaveBeenCalledWith({
       sessionId: SESSION.id,
-      destination: { kind: 'threads', threadIds: [TYPO, CONSTANT] },
+      destination: { kind: 'threads', mountId: CHILD_MOUNT, threadIds: [TYPO, CONSTANT] },
     });
   });
 });

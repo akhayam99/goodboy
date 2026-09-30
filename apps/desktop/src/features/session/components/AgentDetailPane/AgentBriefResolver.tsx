@@ -59,7 +59,14 @@ export const AgentBriefResolver = ({ session, agent, brief }: Props) => {
           size="sm"
           variant="primary"
           onClick={() =>
-            void openReview({ sessionId, destination: { kind: 'threads', threadIds: ordered } })
+            void openReview({
+              sessionId,
+              destination: {
+                kind: 'threads',
+                mountId: brief.attempt.mountTarget?.mountId ?? null,
+                threadIds: ordered,
+              },
+            })
           }
         >
           {`${RESOLVER_BRIEF_COPY.openInReview} (${total})`}

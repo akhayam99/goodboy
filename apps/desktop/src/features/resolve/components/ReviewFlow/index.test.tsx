@@ -565,7 +565,7 @@ describe('Review as one flow', () => {
     await act(async () => {
       await useAppStore.getState().openReviewTarget({
         sessionId: SESSION.id,
-        destination: { kind: 'threads', threadIds: selection },
+        destination: { kind: 'threads', mountId: null, threadIds: selection },
       });
     });
     await settle();
@@ -581,7 +581,11 @@ describe('Review as one flow', () => {
     await act(async () => {
       await useAppStore.getState().openReviewTarget({
         sessionId: SESSION.id,
-        destination: { kind: 'threads', threadIds: [EXPANDED_THREAD_ID, FAILED_THREAD_ID] },
+        destination: {
+          kind: 'threads',
+          mountId: null,
+          threadIds: [EXPANDED_THREAD_ID, FAILED_THREAD_ID],
+        },
       });
     });
     await settle();

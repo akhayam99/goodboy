@@ -415,6 +415,7 @@ describe('the review navigation target', () => {
 describe('a destination made of several threads', () => {
   const threads: ReviewDestination = {
     kind: 'threads',
+    mountId: null,
     threadIds: ['PRRT_1', 'PRRT_2', 'PRRT_1', 'PRRT_3'],
   };
 
@@ -434,6 +435,22 @@ describe('a destination made of several threads', () => {
       destination: threads,
     });
     expect(live.get().reviewSelection[SESSION_ID]).toEqual(['PRRT_1', 'PRRT_2', 'PRRT_3']);
+  });
+
+  it('switches to the mount of the batch before it opens the lens', async () => {
+    const live = createHarness();
+
+    const outcome = await live.actions.openReviewTarget({
+      sessionId: SESSION_ID,
+      destination: { ...threads, mountId: MOUNT_ID },
+    });
+
+    expect(outcome).toEqual({ kind: 'opened' });
+    expect(live.calls).toEqual(['mount', 'lens']);
+    expect(live.state.setSessionActiveMount).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      mountId: MOUNT_ID,
+    });
   });
 
   it('answers with the first thread that is present and none when nothing matches', () => {
