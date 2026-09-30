@@ -55,6 +55,7 @@ type SpawnArgs = {
   provider?: ProviderId;
   effort?: string;
   initialPrompt?: string;
+  seedPrompt?: string;
   triggeredPlanId?: PlanId;
   kindOverride?: AgentKind;
   sourceThreadId?: string;
@@ -207,7 +208,9 @@ const runSpawn = async ({ set, get, sessionId, session, args }: Params): Promise
       },
     });
   get().revealActivityRow(sessionId, `agent:${inserted.id}`);
-  const baseKickoff = stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
+  const explicitPrompt =
+    stepPromptPrefix.length > 0 ? stepPromptPrefix : (args.initialPrompt ?? '');
+  const baseKickoff = explicitPrompt.length > 0 ? explicitPrompt : (args.seedPrompt ?? '');
   const effectiveKind: AgentKind =
     args.kindOverride ?? (inserted.kind as AgentKind | undefined) ?? resolvedKind;
   const isImplementer = effectiveKind === 'implementer';

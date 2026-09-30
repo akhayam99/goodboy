@@ -289,7 +289,7 @@ export const useSessionSuggestions = ({
           pendingSignal: pendingAgentSignal({
             events: blockedTranscripts[agent.id] ?? EMPTY_ARRAY,
           }),
-          isStoppedByRestart: isStoppedByRestart({ agent }),
+          isStoppedByRestart: isStoppedByRestart({ agent, runs: effectiveAgents }),
         };
       }) satisfies ReadonlyArray<SuggestionAgent>,
       mounts: withRebase

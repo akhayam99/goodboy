@@ -7,7 +7,7 @@ import type { GetFn, SetFn } from './types';
 
 export type HandoffAcceptOptions = {
   readonly routing?: AgentKindRouting;
-  readonly initialPrompt?: string;
+  readonly seedPrompt?: string;
 };
 
 export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
@@ -50,8 +50,8 @@ export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
     }
     if (nudge.kind === 'handoff-suggested') {
       const source = handoffSourceOutput({ state: get(), sessionId, agentId: nudge.agentId });
-      const initialPrompt =
-        options.initialPrompt ??
+      const seedPrompt =
+        options.seedPrompt ??
         composeHandoffSeed({
           sourceName: source.name,
           reason: nudge.reason,
@@ -62,7 +62,7 @@ export const acceptSessionNudgeHandoff = (set: SetFn, get: GetFn) => {
         ...(nudge.planId !== null && { triggeredPlanId: nudge.planId }),
         parentAgentId: nudge.agentId,
         focus: 'none',
-        initialPrompt,
+        seedPrompt,
         ...routing,
       });
     }

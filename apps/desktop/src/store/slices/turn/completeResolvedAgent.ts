@@ -13,7 +13,7 @@ import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { summarizeWorkflowAgentOutput } from '../workflows/summarizeWorkflowAgentOutput';
 import { classifyAgent, KIND_TO_ROLE } from '../../../features/session/agent-kind';
 import { agentEmittingProvider } from '../workflowRouting/agentEmittingProvider';
-import { isFanOutChild } from '../agents/isFanOutChild';
+import { fanOutChildKind } from '../agents/fanOutChildKind';
 import { persistOrchestrationStop } from '../workflows/orchestrateNextStep';
 import {
   agentHasArtifact,
@@ -83,23 +83,24 @@ export const completeResolvedAgent = async ({
     agentId: resolvedAgentId,
   });
   const extractedFanOut = extractFanOut({ assistantText, emittingProvider });
-  const isChildOfFanOut =
-    ranAgent !== undefined &&
-    isFanOutChild({
-      agent: ranAgent,
-      runs: get().sessionPhaseRuns[sessionId] ?? [],
-      agentKindOverride: get().agentKindOverride,
-    });
+  const fanOutKind =
+    ranAgent === undefined
+      ? null
+      : fanOutChildKind({
+          agent: ranAgent,
+          runs: get().sessionPhaseRuns[sessionId] ?? [],
+          agentKindOverride: get().agentKindOverride,
+        });
   const isFanOutNode =
     capability.mode !== 'never' &&
-    (isChildOfFanOut || (extractedFanOut != null && extractedFanOut.length >= 2));
+    (fanOutKind === 'scout-tree' || (extractedFanOut != null && extractedFanOut.length >= 2));
 
   if (isFanOutNode) {
     await get().advanceScoutTree(sessionId, resolvedAgentId, assistantText);
     return null;
   }
 
-  if (isChildOfFanOut) {
+  if (fanOutKind === 'cluster') {
     await get().advanceClusterImplementation(sessionId, resolvedAgentId, assistantText, {
       didAgentDie,
     });

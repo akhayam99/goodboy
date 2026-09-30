@@ -16,7 +16,7 @@ const RESUME_KEY = 'resume-workflow-agents';
 export const WorkflowResumeStrip = ({ sessionId, runId, agents }: Props) => {
   const resumeStoppedAgents = useAppStore((state) => state.resumeStoppedAgents);
   const pending = usePendingAction({ sessionId });
-  const stoppedCount = agents.filter((agent) => isStoppedByRestart({ agent })).length;
+  const stoppedCount = agents.filter((agent) => isStoppedByRestart({ agent, runs: agents })).length;
   if (stoppedCount === 0) {
     return null;
   }

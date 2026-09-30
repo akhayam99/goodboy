@@ -94,7 +94,7 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       kindOverride: 'reviewer',
       parentAgentId: SOURCE_AGENT_ID,
       focus: 'none',
-      initialPrompt: 'Follow-up from the previous agent: Check the diff',
+      seedPrompt: 'Follow-up from the previous agent: Check the diff',
     });
     expect(agentId).toBe('agent-impl');
   });
@@ -122,7 +122,7 @@ describe('acceptSessionNudgeHandoff, spawning does not steal focus', () => {
       kindOverride: 'debugger',
       parentAgentId: SOURCE_AGENT_ID,
       focus: 'none',
-      initialPrompt:
+      seedPrompt:
         'Follow-up from stash check: Router keeps a stale path\n\nWhat stash check found:\n\nPages reads a stale location',
       provider: 'anthropic',
       model: 'opus-5.5',

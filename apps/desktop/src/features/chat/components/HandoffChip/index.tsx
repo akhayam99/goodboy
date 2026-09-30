@@ -113,19 +113,19 @@ export const HandoffChip = ({ assistantText, sessionId, sourceAgentId }: Props) 
     setIsPending(true);
     void (async () => {
       try {
-        const initialPrompt = composeHandoffSeed({
+        const seedPrompt = composeHandoffSeed({
           sourceName: sourceName ?? 'the previous agent',
           reason: handoff.reason,
           output: assistantText,
         });
         const agentId = isActiveNudge
-          ? await acceptHandoff(sessionId, { routing, initialPrompt })
+          ? await acceptHandoff(sessionId, { routing, seedPrompt })
           : await spawnAgent(sessionId, {
               kindOverride: handoff.kind,
               ...(handoff.planId != null ? { triggeredPlanId: handoff.planId as PlanId } : {}),
               parentAgentId: sourceAgentId,
               focus: 'none',
-              initialPrompt,
+              seedPrompt,
               provider: routing.provider,
               model: routing.model,
               effort: routing.effort,

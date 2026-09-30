@@ -114,7 +114,7 @@ describe('HandoffChip', () => {
       kindOverride: 'implementer',
       parentAgentId: SOURCE_AGENT_ID,
       focus: 'none',
-      initialPrompt: 'Follow-up from the previous agent.\n\nWhat the previous agent found:\n\nx',
+      seedPrompt: 'Follow-up from the previous agent.\n\nWhat the previous agent found:\n\nx',
       provider: 'cursor',
       model: 'composer-2.5',
       effort: 'medium',
@@ -142,7 +142,7 @@ describe('HandoffChip', () => {
     )?.[1] as Record<string, unknown>;
     expect(args.provider).toBe('anthropic');
     expect(args.model).not.toBe('composer-2.5');
-    expect(args.initialPrompt).toBe(
+    expect(args.seedPrompt).toBe(
       'Follow-up from stash check: Router keeps a stale path\n\nWhat stash check found:\n\nThe router is stale.',
     );
   });
@@ -213,7 +213,7 @@ describe('HandoffChip', () => {
     await waitFor(() =>
       expect(state.acceptSessionNudgeHandoff).toHaveBeenCalledWith('sess-1', {
         routing: { provider: 'cursor', model: 'composer-2.5', effort: 'medium' },
-        initialPrompt: 'Follow-up from the previous agent.\n\nWhat the previous agent found:\n\nx',
+        seedPrompt: 'Follow-up from the previous agent.\n\nWhat the previous agent found:\n\nx',
       }),
     );
     await waitFor(() => expect(showToast).toHaveBeenCalledOnce());
