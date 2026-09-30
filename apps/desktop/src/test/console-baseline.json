@@ -81,7 +81,7 @@
       "message": "[workflow] title suggestion failed: provider unavailable"
     },
     {
-      "file": "src/store/turn-helpers.artifact-capture.test.ts",
+      "file": "src/store/slices/turn/turnHelpers.artifact-capture.test.ts",
       "message": "[artifact-capture] artifact refresh failed for session session-#: artifact list unavailable"
     }
   ]

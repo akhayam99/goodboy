@@ -6,7 +6,7 @@ import {
 } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { SessionId, WorkflowRunId } from '@goodboy/types';
-import { composeStepBoundary } from '../../kickoff';
+import { composeStepBoundary } from '../turn/kickoff';
 import type { GetFn } from './types';
 
 type Params = {

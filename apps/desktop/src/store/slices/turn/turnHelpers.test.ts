@@ -16,18 +16,18 @@ import type {
 } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('../shared/lib/db', () => ({
+vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
-import { captureMaterializeRequestsFromTurn } from './turn-helpers';
-import { clearMaterializationBatch } from './materializationGate';
-import type { GetFn } from './slice-types';
+import { captureMaterializeRequestsFromTurn } from './turnHelpers';
+import { clearMaterializationBatch } from '../../materializationGate';
+import type { GetFn } from '../../slice-types';
 import {
   clearMountContinuations,
   pendingMountContinuations,
   takeMountContinuation,
-} from './slices/turn/mountContinuations';
+} from './mountContinuations';
 
 const SESSION_ID = 'session-1' as SessionId;
 const WORKSPACE_ID = 'workspace-1' as WorkspaceId;

@@ -20,7 +20,7 @@ import {
   captureArtifactsFromTurn,
   captureMaterializeRequestsFromTurn,
   enqueueSummarizer,
-} from '../../turn-helpers';
+} from './turnHelpers';
 import { selectWritableMounts } from '../project-mounts/selectors';
 import { flushTurnEvents } from '../transcripts/buffer';
 import { collectTouchedMounts } from './collectTouchedMounts';

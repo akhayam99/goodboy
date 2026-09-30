@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { enqueueContextConsolidation } from '../../turn-helpers';
+import { enqueueContextConsolidation } from '../turn/turnHelpers';
 import type { GetFn, SetFn } from './types';
 
 export type ConsolidateSessionContextParams = {

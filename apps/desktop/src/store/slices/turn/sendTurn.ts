@@ -99,7 +99,7 @@ import { slotsForKind } from '../../../features/providers/slot-routing';
 import { cursorMaxModeAdvisory } from '../../../shared/lib/cursorMaxModeAdvisory';
 import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from '../../preamble';
+import { buildContextPreamble, buildPriorTurnsBlock, getModelContextWindow } from './preamble';
 import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
 import { claimTurnStart, closeTurnStartWindow } from './turnStartWindow';
 import { markTurnActive, markTurnSettled } from './turnSettled';
@@ -109,11 +109,11 @@ import {
   MAX_UNATTENDED_TURNS_PER_AGENT,
 } from './workflowTurnBreaker';
 import { isQueryBridgeServing } from '../../../features/integrations/queryBridge';
-import { buildIntegrationsGuard } from '../../integrationsGuard';
-import { buildProfileGuard } from '../../profileGuard';
+import { buildIntegrationsGuard } from './integrationsGuard';
+import { buildProfileGuard } from './profileGuard';
 import { isQuestionDelegate } from '../../../features/context/questionDelegate';
 import { buildScopeGuard } from '../../scopeGuard';
-import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from '../../sessionLanguage';
+import { buildSessionLanguageGuard, resolveSessionLanguageGoal } from './sessionLanguage';
 import { clearMaterializationBatch } from '../../materializationGate';
 import { flushTurnEvents } from '../transcripts/buffer';
 import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
@@ -130,7 +130,7 @@ import {
   emitTurnNudges,
   enqueueSummarizer,
   toRelPath,
-} from '../../turn-helpers';
+} from './turnHelpers';
 import { applyHeuristicTitle } from './applyHeuristicTitle';
 import { clusterBoundaryMarker, composeClusterBoundary } from '../workflows/clusterImplementation';
 import { resolveWorktreePath } from '../resolve/resolveWorktreePath';

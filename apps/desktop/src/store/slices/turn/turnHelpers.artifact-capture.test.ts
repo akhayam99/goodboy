@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, ProviderRunId, SessionId } from '@goodboy/types';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
-vi.mock('../shared/lib/db', () => ({
+vi.mock('../../../shared/lib/db', () => ({
   tauriDatabase: { execute: vi.fn(), select: vi.fn() },
 }));
 
@@ -37,20 +37,20 @@ const { loadArtifactProvenance, appendArtifactProvenanceOmission, completeArtifa
     completeArtifactRun: vi.fn(async () => undefined),
   }));
 
-vi.mock('../features/artifacts/artifactProvenance', () => ({
+vi.mock('../../../features/artifacts/artifactProvenance', () => ({
   loadArtifactProvenance,
   appendArtifactProvenanceOmission,
   completeArtifactRun,
 }));
 
-vi.mock('../features/plans/plans', () => ({ upsertPlan, listPlansForSession }));
-vi.mock('../features/artifacts/artifacts', () => ({
+vi.mock('../../../features/plans/plans', () => ({ upsertPlan, listPlansForSession }));
+vi.mock('../../../features/artifacts/artifacts', () => ({
   createArtifact,
   listArtifactsForSession,
   updateArtifactSource,
 }));
 
-import { captureArtifactsFromTurn } from './turn-helpers';
+import { captureArtifactsFromTurn } from './turnHelpers';
 
 const SESSION_ID = 'session-1' as SessionId;
 const AGENT_ID = 'agent-1' as AgentId;

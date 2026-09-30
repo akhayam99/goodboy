@@ -44,7 +44,7 @@ vi.mock('../../../features/workflows/workflows', () => ({
   invokeAgentList: h.invokeAgentList,
   invokeAgentUpdateStatus: h.invokeAgentUpdateStatus,
 }));
-vi.mock('../../turn-helpers', () => ({
+vi.mock('./turnHelpers', () => ({
   captureArtifactsFromTurn: h.captureArtifactsFromTurn,
   captureMaterializeRequestsFromTurn: h.captureMaterializeRequestsFromTurn,
   enqueueSummarizer: h.enqueueSummarizer,

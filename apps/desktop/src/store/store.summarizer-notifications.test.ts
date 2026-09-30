@@ -113,7 +113,7 @@ describe('summarizer notifications', () => {
       usage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 0, estimatedCostUsd: 0 },
       model: 'claude-haiku-4-5',
     });
-    const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues } = await import('./slices/turn/turnHelpers');
 
     summarizerQueues.delete(SESSION_ID);
     useAppStore.setState({
@@ -183,7 +183,7 @@ describe('summarizer notifications', () => {
 
   it('failure notification body includes provider and error, carries retry action', async () => {
     summarizeSpy.mockRejectedValue(new Error('model overloaded'));
-    const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues } = await import('./slices/turn/turnHelpers');
 
     summarizerQueues.delete(SESSION_ID);
     useAppStore.setState({
@@ -258,7 +258,7 @@ describe('summarizer notifications', () => {
   it('retries a parse failure exactly once before surfacing it', async () => {
     const { SummarizerParseError } = await import('@goodboy/core');
     summarizeSpy.mockRejectedValue(new SummarizerParseError('not valid JSON', 'Sistema bloccato'));
-    const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues } = await import('./slices/turn/turnHelpers');
 
     summarizerQueues.delete(SESSION_ID);
     useAppStore.setState({
@@ -378,7 +378,7 @@ const seedSummarizerState = async ({ connected, cooldowns }: SeedParams) => {
 };
 
 const enqueue = async () => {
-  const { enqueueSummarizer, summarizerQueues } = await import('./turn-helpers');
+  const { enqueueSummarizer, summarizerQueues } = await import('./slices/turn/turnHelpers');
   summarizerQueues.delete(SESSION_ID);
   enqueueSummarizer({
     set: useAppStore.setState,

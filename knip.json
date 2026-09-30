@@ -135,7 +135,7 @@
         "src/shared/utils/actionRing.ts": ["exports"],
         "src/shared/utils/attribution.ts": ["exports"],
         "src/shared/utils/compareIsoDesc.ts": ["exports"],
-        "src/store/integrationsGuard.ts": ["exports"],
+        "src/store/slices/turn/integrationsGuard.ts": ["exports"],
         "src/store/materializationProposals.ts": ["types"],
         "src/store/sessionEviction.ts": ["exports"],
         "src/store/slices/artifactDrafts/types.ts": ["types"],
@@ -168,7 +168,7 @@
         "src/store/slices/workflows/clusterImplementation.ts": ["exports"],
         "src/store/slices/workflows/scoutTree.ts": ["exports"],
         "src/store/summarizeAgentOutput.ts": ["exports"],
-        "src/store/turn-helpers.ts": ["exports"]
+        "src/store/slices/turn/turnHelpers.ts": ["exports"]
       },
       "ignoreDependencies": ["tailwindcss"]
     },
