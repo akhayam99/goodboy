@@ -1,5 +1,5 @@
 import { openToolSettings } from '../../../integrations/openToolSettings';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { inlineMarkdownText, useEscapeLayer } from '@goodboy/ui';
 import type { SessionId, StarredIssue, WorkspaceId } from '@goodboy/types';
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
@@ -34,7 +34,6 @@ import { InboxList, type InboxLoadFailure } from './InboxList';
 import { InboxListHeader } from './InboxListHeader';
 import { InboxLookupGroup } from './InboxLookupGroup';
 import { InboxStarredGroup } from './InboxStarredGroup';
-import type { InboxRowStar } from './InboxRow';
 import { useInboxStars } from '../../useInboxStars';
 import { InboxStudioLayout } from './InboxStudioLayout';
 
@@ -247,10 +246,8 @@ export const InboxStudio = ({
     lookupRecords.find((record) => record.key === selectedKey) ??
     null;
 
-  const starOf = (record: InboxRecord): InboxRowStar | undefined =>
-    stars.canStar(record)
-      ? { isStarred: stars.isStarred(record), onToggle: () => void stars.toggle(record) }
-      : undefined;
+  const starOf = (record: InboxRecord): boolean | undefined =>
+    stars.canStar(record) ? stars.isStarred(record) : undefined;
 
   const toggleSelectedStar = (key: string | null): void => {
     const record = [...orderedRecords, ...lookupRecords].find((entry) => entry.key === key);
@@ -279,19 +276,23 @@ export const InboxStudio = ({
 
   useEscapeLayer(deselect, selectedRecord != null);
 
-  const selectKey = (key: string): void => {
+  const selectKey = useCallback((key: string): void => {
     setSelectedKey(key);
     requestAnimationFrame(() => {
       document
         .querySelector(`[data-inbox-key="${CSS.escape(key)}"]`)
         ?.scrollIntoView({ block: 'nearest' });
     });
-  };
+  }, []);
 
-  const activate = (key: string): void => {
+  const activate = useCallback((key: string): void => {
     setSelectedKey(key);
     setLaunchFocusRequest((current) => current + 1);
-  };
+  }, []);
+
+  const selectRecord = useCallback((record: InboxRecord) => selectKey(record.key), [selectKey]);
+
+  const activateRecord = useCallback((record: InboxRecord) => activate(record.key), [activate]);
 
   const openSelected = (key: string | null): void => {
     const url = orderedRecords.find((record) => record.key === key)?.url ?? '';
@@ -391,15 +392,16 @@ export const InboxStudio = ({
                 workspaceName={workspaceName}
                 selectedKey={selectedKey}
                 onSelect={(hit) => selectKey(hit.record.key)}
-                onActivate={(record) => activate(record.key)}
+                onActivate={activateRecord}
                 starOf={starOf}
+                onToggleStar={stars.toggle}
               />
               <InboxStarredGroup
                 rows={starredRows}
                 selectedKey={selectedKey}
                 unstarredCount={unstarredClosed.length}
-                onSelect={(record) => selectKey(record.key)}
-                onActivate={(record) => activate(record.key)}
+                onSelect={selectRecord}
+                onActivate={activateRecord}
                 onUnstar={(row) =>
                   void unstarIssue({
                     workspaceId,
@@ -419,8 +421,9 @@ export const InboxStudio = ({
                 failures={failures}
                 hasFiltersActive={hasFiltersActive}
                 selectedKey={selectedKey}
-                onSelect={(record) => selectKey(record.key)}
-                onActivate={(record) => activate(record.key)}
+                onSelect={selectRecord}
+                onActivate={activateRecord}
+                onToggleStar={stars.toggle}
                 onRetry={refetch}
                 onOpenSettings={openSettings}
                 onClearFilters={clearFilters}
