@@ -291,7 +291,7 @@ Rust owns every CLI process, so the webview can go away while a turn runs.
   shows the same action above its steps for its own agents
   (`WorkflowResumeStrip`). Both run `resumeStoppedAgents`, which resumes each
   `isStoppedByRestart` agent, never one you stopped and never a fan-out
-  container (its children are resumed instead), skips an agent a second click
+  container while a child is unfinished (the children are resumed instead), skips an agent a second click
   is already resuming, and reports a failure only after trying the rest.
 
 ## Turn events

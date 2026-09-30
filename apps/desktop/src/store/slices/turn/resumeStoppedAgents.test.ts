@@ -118,6 +118,27 @@ describe('resumeStoppedAgents', () => {
     expect(continueStoppedAgent).toHaveBeenCalledWith({ sessionId: SESSION_ID, agentId: 'child' });
   });
 
+  it('resumes a container whose children all finished before the restart', async () => {
+    const { get, continueStoppedAgent } = buildGet({
+      agents: [
+        anAgent({ id: 'container' as AgentId, status: 'stopped', stoppedBy: 'app' }),
+        anAgent({
+          id: 'child' as AgentId,
+          status: 'completed',
+          parentAgentId: 'container' as AgentId,
+        }),
+      ],
+    });
+
+    const count = await resumeStoppedAgents(get)({ sessionId: SESSION_ID });
+
+    expect(count).toBe(1);
+    expect(continueStoppedAgent).toHaveBeenCalledWith({
+      sessionId: SESSION_ID,
+      agentId: 'container',
+    });
+  });
+
   it('does not send a second resume to an agent already being resumed', async () => {
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => {
