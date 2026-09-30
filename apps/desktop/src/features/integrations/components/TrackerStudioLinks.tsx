@@ -1,6 +1,6 @@
-import { openToolSettings } from '../../openToolSettings';
+import { openToolSettings } from '../openToolSettings';
 import { Tooltip } from '@goodboy/ui';
-import { IntegrationGlyph } from '../IntegrationGlyph';
+import { IntegrationGlyph } from './IntegrationGlyph';
 
 export type TrackerProvider = 'linear' | 'github' | 'gitlab' | 'jira' | 'sentry';
 

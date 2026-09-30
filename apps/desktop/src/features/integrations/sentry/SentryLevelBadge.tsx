@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import { levelTone } from '../levelTone';
+import { levelTone } from './levelTone';
 
 type Props = {
   readonly level: string | null;

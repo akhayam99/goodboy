@@ -1,4 +1,4 @@
-import type { LinearIssueLabel } from '../client';
+import type { LinearIssueLabel } from './client';
 
 type Props = {
   readonly label: LinearIssueLabel;

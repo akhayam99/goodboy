@@ -1,7 +1,7 @@
 import { GitMerge } from 'lucide-react';
 import type { SessionId } from '@goodboy/types';
-import { MrDetailPanel } from '../MergeRequest/MrDetailPanel';
-import { StudioShell } from '../../../../shared/components/StudioShell';
+import { MrDetailPanel } from './MergeRequest/MrDetailPanel';
+import { StudioShell } from '../../../shared/components/StudioShell';
 
 type Props = {
   readonly sessionId: SessionId;

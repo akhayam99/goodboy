@@ -1,10 +1,10 @@
 import { cn } from '@goodboy/ui';
-import { HISTORY_ACTION_CLASSES } from '../../../historyActionClasses';
-import { historyAfterLayout } from '../../../historyAfterLayout';
-import { HISTORY_GRAPH } from '../../../historyGraphGeometry';
-import type { HistoryRowMark } from '../../../historyRowMarks';
-import type { RowPositions } from '../../../useRowPositions';
-import { HistoryLaneSvg, type LaneNode } from '../HistoryLaneSvg';
+import { HISTORY_ACTION_CLASSES } from '../../historyActionClasses';
+import { historyAfterLayout } from '../../historyAfterLayout';
+import { HISTORY_GRAPH } from '../../historyGraphGeometry';
+import type { HistoryRowMark } from '../../historyRowMarks';
+import type { RowPositions } from '../../useRowPositions';
+import { HistoryLaneSvg, type LaneNode } from './HistoryLaneSvg';
 
 type Props = {
   readonly keep: ReadonlyArray<string>;

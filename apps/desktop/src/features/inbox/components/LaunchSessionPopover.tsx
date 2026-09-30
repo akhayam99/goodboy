@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { Rocket } from 'lucide-react';
 import { AnchoredPopover, Button, KbdPill, useDropdown } from '@goodboy/ui';
 import type { WorkspaceId } from '@goodboy/types';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { LaunchSessionPanel } from '../../../integrations/components/LaunchSessionPanel';
-import type { LaunchMount } from '../../launchMountFor';
-import type { LaunchSpec } from '../../launchSpecFor';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
+import { LaunchSessionPanel } from '../../integrations/components/LaunchSessionPanel';
+import type { LaunchMount } from '../launchMountFor';
+import type { LaunchSpec } from '../launchSpecFor';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

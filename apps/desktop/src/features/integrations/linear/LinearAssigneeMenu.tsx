@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { UserRound, UserX } from 'lucide-react';
 import { MenuItems, formatError, type OverflowMenuItem } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { linearFetchTeamMembers, type LinearTeamMember } from '../client';
+import { linearFetchTeamMembers, type LinearTeamMember } from './client';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

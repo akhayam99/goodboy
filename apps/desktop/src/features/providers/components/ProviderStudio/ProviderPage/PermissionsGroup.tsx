@@ -2,9 +2,9 @@ import { modeSupportFor } from '@goodboy/core';
 import type { ClaudePermissionMode, ProviderId } from '@goodboy/types';
 import { BAND_ROW_CLASS, Band, cn, tintClasses, type Tone } from '@goodboy/ui';
 import { Check, EqualApproximately, X, type LucideIcon } from 'lucide-react';
-import { modeCopyOf } from '../../../../../permissions/modeCopy';
-import { ICON_SIZE } from '../../../../../../shared/components/conceptIcons';
-import { PROVIDER_LABEL } from '../../../../providerLabel';
+import { modeCopyOf } from '../../../../permissions/modeCopy';
+import { ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { PROVIDER_LABEL } from '../../../providerLabel';
 
 type Props = {
   readonly providerId: ProviderId;

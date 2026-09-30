@@ -3,8 +3,8 @@ import {
   IntegrationGlyph,
   integrationLabel,
   type IntegrationGlyphProvider,
-} from '../IntegrationGlyph';
-import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
+} from './IntegrationGlyph';
+import { ICON_SIZE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly provider: IntegrationGlyphProvider;

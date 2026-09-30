@@ -2,11 +2,11 @@ import { isApiProvider } from '@goodboy/core';
 import { useEffect } from 'react';
 import { Button, ScrollFade } from '@goodboy/ui';
 import { type ProviderId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { PROVIDER_LABEL } from '../../providerLabel';
-import { ProviderConnect } from '../ProviderConnect';
-import { isConnectRunning } from '../ProviderConnect/isConnectRunning';
-import { ProviderCredentialsSection } from '../ProviderStudio/ProviderCredentialsSection';
+import { useAppStore } from '../../../store';
+import { PROVIDER_LABEL } from '../providerLabel';
+import { ProviderConnect } from './ProviderConnect';
+import { isConnectRunning } from './ProviderConnect/isConnectRunning';
+import { ProviderCredentialsSection } from './ProviderStudio/ProviderCredentialsSection';
 
 type Props = {
   readonly providerId: ProviderId;

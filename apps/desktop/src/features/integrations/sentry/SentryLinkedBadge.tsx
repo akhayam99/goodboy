@@ -1,8 +1,8 @@
 import { useShallow } from 'zustand/react/shallow';
 import type { Project } from '@goodboy/types';
 import { Tooltip } from '@goodboy/ui';
-import { useAppStore } from '../../../../store';
-import { IntegrationGlyph } from '../../components/IntegrationGlyph';
+import { useAppStore } from '../../../store';
+import { IntegrationGlyph } from '../components/IntegrationGlyph';
 
 type Props = {
   readonly project: Project;

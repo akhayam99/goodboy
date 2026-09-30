@@ -1,6 +1,6 @@
-import { formatSpan } from '../../../../shared/utils/time/formatSpan';
-import type { SentryBreadcrumb } from '../client';
-import { useNow } from '../../../../shared/hooks/useNow';
+import { formatSpan } from '../../../shared/utils/time/formatSpan';
+import type { SentryBreadcrumb } from './client';
+import { useNow } from '../../../shared/hooks/useNow';
 
 type Props = {
   readonly breadcrumbs: ReadonlyArray<SentryBreadcrumb>;

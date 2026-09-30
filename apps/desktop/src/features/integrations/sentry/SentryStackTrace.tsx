@@ -1,6 +1,6 @@
 import { EmptyState, Skeleton, cn } from '@goodboy/ui';
-import type { SentryStackFrame } from '../client';
-import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../../shared/components/conceptIcons';
+import type { SentryStackFrame } from './client';
+import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 
 type Props = {
   readonly frames: ReadonlyArray<SentryStackFrame>;

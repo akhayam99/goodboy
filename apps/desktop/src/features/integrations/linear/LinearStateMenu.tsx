@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { MenuItems, formatError, type OverflowMenuItem } from '@goodboy/ui';
 import type { ProjectId, WorkspaceId } from '@goodboy/types';
-import { linearFetchTeamStates, type LinearWorkflowState } from '../client';
-import { INBOX_STATE_PRESENTATION } from '../../../../shared/components/StudioDetail/RecordState';
-import { linearStateCategory } from '../../../../shared/detail-fields/linearIssueFields';
+import { linearFetchTeamStates, type LinearWorkflowState } from './client';
+import { INBOX_STATE_PRESENTATION } from '../../../shared/components/StudioDetail/RecordState';
+import { linearStateCategory } from '../../../shared/detail-fields/linearIssueFields';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

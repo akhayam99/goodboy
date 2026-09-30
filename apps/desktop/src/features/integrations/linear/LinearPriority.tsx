@@ -1,5 +1,5 @@
 import { cn } from '@goodboy/ui';
-import { priorityTone } from '../priorityTone';
+import { priorityTone } from './priorityTone';
 
 type Props = {
   readonly priority: number | null | undefined;
