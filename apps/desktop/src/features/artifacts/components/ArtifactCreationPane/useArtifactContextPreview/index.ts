@@ -22,6 +22,7 @@ import { selectArtifactMountOptions } from '../../../artifactMountChoice';
 import { artifactEvidenceAgents } from '../../../artifactEvidenceAgents';
 import { sessionGoalText } from '../../../sessionGoalText';
 import type { GeneratedArtifactKind } from '../../../artifactCollection';
+import { sessionById } from '../../../../../store/slices/sessions/sessionIndex';
 
 export type ArtifactContextPreview = Readonly<{
   status: 'collecting' | 'ready';
@@ -66,7 +67,7 @@ const collect = async ({
   attachments,
   mountIds,
 }: CollectParams): Promise<ArtifactContextPreview | null> => {
-  const session = state.sessions?.find((entry) => entry.id === sessionId) ?? null;
+  const session = sessionById(state.sessions, sessionId) ?? null;
   if (session === null) {
     return null;
   }

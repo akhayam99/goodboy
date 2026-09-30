@@ -24,6 +24,11 @@ describe('findById', () => {
     expect(findById([], 'ledger-core')).toBeUndefined();
   });
 
+  it('returns undefined when the list itself is missing', () => {
+    expect(findById(undefined, 'ledger-core')).toBeUndefined();
+    expect(findById(null, 'ledger-core')).toBeUndefined();
+  });
+
   it('returns the first row when two rows share an id, like find does', () => {
     const later: Row = { id: 'ledger-core', name: 'later copy' };
     const rows = [ledger, notify, later];

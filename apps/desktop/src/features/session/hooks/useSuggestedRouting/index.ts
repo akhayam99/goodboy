@@ -5,6 +5,7 @@ import { useAppStore } from '../../../../store';
 import { selectResolvedSettings } from '../../../../store/slices/overrides/selectResolvedSettings';
 import { useSessionRoleModels } from '../../../../shared/hooks/useSessionRoleModels';
 import { suggestedRouting, type SuggestedRouting } from '../../suggestedRouting';
+import { sessionById } from '../../../../store/slices/sessions/sessionIndex';
 
 type Params = {
   readonly sessionId: SessionId;
@@ -36,7 +37,7 @@ export const useSuggestedRouting = ({ sessionId, role }: Params): SuggestedRouti
     ),
   );
   const workspaceName = useAppStore((state) => {
-    const workspaceId = state.sessions?.find((session) => session.id === sessionId)?.workspaceId;
+    const workspaceId = sessionById(state.sessions, sessionId)?.workspaceId;
     return state.workspaces?.find((workspace) => workspace.id === workspaceId)?.name ?? null;
   });
   const pool = providerPool.length === 0 ? connected : providerPool;

@@ -4,6 +4,8 @@ import type { ResolveStartStyle } from '../features/resolve/startResolve';
 import { isAttributionEnabled } from '../shared/utils/attribution';
 import { resolveSessionRepo } from './slices/worktrees/resolveSessionRepo';
 import type { AppState } from './types';
+import { sessionById } from './slices/sessions/sessionIndex';
+import { projectById } from './slices/projects/projectIndex';
 
 type Params = {
   readonly state: AppState;
@@ -11,9 +13,9 @@ type Params = {
 };
 
 export const sessionReplySettings = ({ state, sessionId }: Params): ReplySettings => {
-  const session = state.sessions?.find((candidate) => candidate.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   const projectId = state.sessionActiveProject?.[sessionId] ?? null;
-  const project = state.projects?.find((candidate) => candidate.id === projectId);
+  const project = projectById(state.projects, projectId);
   const workspace =
     session === undefined ? null : (state.workspaceOverrides?.[session.workspaceId] ?? null);
   return {

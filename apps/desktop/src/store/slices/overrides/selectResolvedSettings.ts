@@ -10,6 +10,8 @@ import type {
 } from '@goodboy/types';
 import { DEFAULT_BRANCH_PREFIX } from '../../../features/settings/settings';
 import type { AppStore } from '../../store';
+import { sessionById } from '../sessions/sessionIndex';
+import { projectById } from '../projects/projectIndex';
 
 export type SessionSettings = ResolvedSettings & {
   readonly defaultProviderOverride: ProviderId | null;
@@ -33,9 +35,7 @@ export const resolveScopedSettings = ({
 }: ScopeParams): SessionSettings => {
   const workspaceOverride = state.workspaceOverrides?.[workspaceId] ?? null;
   const projectOverride =
-    projectId === null
-      ? null
-      : (state.projects?.find((project) => project.id === projectId)?.overrides ?? null);
+    projectId === null ? null : (projectById(state.projects, projectId)?.overrides ?? null);
   const sessionOverride = sessionId === null ? null : (state.sessionOverrides?.[sessionId] ?? null);
   const resolved = resolveSettings({
     global: {
@@ -87,7 +87,7 @@ export const selectResolvedSettings = ({ state, sessionId }: Params): SessionSet
   if (sessionId === null) {
     return null;
   }
-  const session = state.sessions?.find((entry) => entry.id === sessionId);
+  const session = sessionById(state.sessions, sessionId);
   if (session === undefined) {
     return null;
   }

@@ -18,10 +18,10 @@ const positionsOf = (items: ReadonlyArray<Identified>): ReadonlyMap<string, numb
 };
 
 export const findById = <T extends Identified>(
-  items: ReadonlyArray<T>,
+  items: ReadonlyArray<T> | null | undefined,
   id: string | null | undefined,
 ): T | undefined => {
-  if (id === null || id === undefined) {
+  if (items === null || items === undefined || id === null || id === undefined) {
     return undefined;
   }
   const position = positionsOf(items).get(id);
