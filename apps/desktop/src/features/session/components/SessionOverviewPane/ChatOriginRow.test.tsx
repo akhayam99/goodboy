@@ -2,7 +2,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session } from '@goodboy/types';
+import type { SessionId, WorkspaceId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 
 const { store } = vi.hoisted(() => ({
   store: {
@@ -21,7 +22,10 @@ vi.mock('../../../../store', () => ({
 
 import { ChatOriginRow } from './ChatOriginRow';
 
-const SESSION = { id: 'session-consent', workspaceId: 'ws-harborline' } as unknown as Session;
+const SESSION = aSession({
+  id: 'session-consent' as SessionId,
+  workspaceId: 'ws-harborline' as WorkspaceId,
+});
 
 const linkOf = (chatId: string, sessionId: string, createdAt: string, kind = 'new') => ({
   id: `link-${chatId}-${sessionId}`,

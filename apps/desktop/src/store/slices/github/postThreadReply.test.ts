@@ -24,7 +24,7 @@ vi.mock('./sessionThreadGhOptions', () => ({ sessionThreadGhOptions: () => ({}) 
 
 import { readCommitStory } from '../resolve/commitStory';
 import { postThreadReply } from './postThreadReply';
-import type { GetFn } from './types';
+import { useAppStore } from '../../store';
 
 const SESSION = 'session-ledger' as SessionId;
 let db: Database;
@@ -84,11 +84,12 @@ const FROZEN: ResolvePublicationThread = {
 
 const post = ({ row }: { readonly row: ResolveThread }) =>
   postThreadReply({
-    get: (() => ({
+    get: () => ({
+      ...useAppStore.getInitialState(),
       sessionResolveThreads: { [SESSION]: [row] },
       sessionGithub: {},
-      updateResolveThread: vi.fn(async () => undefined),
-    })) as unknown as GetFn,
+      updateResolveThread: vi.fn(async () => true),
+    }),
     sessionId: SESSION,
     threadId: 'PRRT_1',
     replyBody: 'Fixed in `e31b9f4`.',

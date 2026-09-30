@@ -1,9 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import type { ResolveThread, SessionId } from '@goodboy/types';
+import type {
+  IsoDateTime,
+  MountId,
+  PrComment,
+  ProjectId,
+  ResolveThread,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
+import type { BitbucketPullRequest } from '../../../features/integrations/bitbucket/client';
 import type { GitlabMergeRequest } from '../../../features/integrations/gitlab/client';
+import { useAppStore, type AppStore } from '../../store';
+import type { MountBitbucketPrState } from '../bitbucket-pr/state';
 import { activeReviewSourceOf, selectedReviewEntryOf } from './activeReviewSource';
 import { reviewSourceEntriesOf } from './reviewSourceEntries';
 import { rowBelongsToSource } from './rowBelongsToSource';
+import type { ReviewSourceEntry } from './types';
 
 const SESSION = 'session' as SessionId;
 const GITHUB_URL = 'https://example.invalid/harborline/payments-api/pull/318';
@@ -11,13 +23,51 @@ const GITLAB_URL = 'https://example.invalid/harborline/notify-relay/-/merge_requ
 
 const BITBUCKET_URL = 'https://example.invalid/northwind/storefront-web/pull-requests/12';
 
-const BITBUCKET_MOUNT = {
-  mountId: 'bbmount',
-  projectId: 'bbproject',
-  repo: { workspaceSlug: 'northwind', repoSlug: 'storefront-web' },
+const BITBUCKET_MOUNT_ID = 'bbmount' as MountId;
+const BITBUCKET_PROJECT_ID = 'bbproject' as ProjectId;
+const WORKSPACE_ID = 'workspace' as WorkspaceId;
+const STAMP = '2026-09-04T14:20:00.000Z' as IsoDateTime;
+
+const BITBUCKET_PR: BitbucketPullRequest = {
+  id: 12,
+  title: 'Recompute the cart total',
+  description: '',
+  state: 'OPEN',
+  createdOn: STAMP,
+  updatedOn: STAMP,
+  sourceBranch: 'nw/cart-total',
+  sourceCommit: null,
+  destinationBranch: 'main',
+  destinationCommit: null,
+  author: null,
+  reviewers: [],
+  participants: [],
+  closeSourceBranch: false,
+  mergeCommit: null,
+  commentCount: 0,
+  taskCount: 0,
+  webUrl: BITBUCKET_URL,
+};
+
+const BITBUCKET_MOUNT: MountBitbucketPrState = {
+  mountId: BITBUCKET_MOUNT_ID,
+  projectId: BITBUCKET_PROJECT_ID,
+  revision: 1,
+  host: null,
+  repo: {
+    workspaceId: WORKSPACE_ID,
+    workspaceSlug: 'northwind',
+    repoSlug: 'storefront-web',
+    email: 'ops@northwind.example',
+  },
   repository: 'northwind/storefront-web',
-  pr: { id: 12, state: 'OPEN', sourceBranch: 'nw/cart-total', webUrl: BITBUCKET_URL },
+  branch: 'nw/cart-total',
+  pr: BITBUCKET_PR,
   prs: [],
+  links: [],
+  fetchedAt: null,
+  loading: false,
+  error: null,
 };
 
 const MR: GitlabMergeRequest = {
@@ -36,57 +86,79 @@ const MR: GitlabMergeRequest = {
   updatedAt: '2026-09-04T14:20:00.000Z',
 };
 
-const comment = (threadId: string) => ({
+const comment = (threadId: string): PrComment => ({
   id: threadId,
   author: 'theo-v',
   authorAvatarUrl: null,
   body: 'Cap it',
   createdAt: '2026-09-04T10:00:00.000Z',
   url: '',
-  source: 'review' as const,
+  source: 'review',
   path: 'src/a.ts',
   line: 1,
   resolved: false,
   threadId,
 });
 
-const stateWith = (overrides: Record<string, unknown> = {}) =>
-  ({
-    sessions: [],
-    projects: [],
-    sessionProjectMounts: {},
-    sessionMounts: undefined,
-    sessionActiveProject: {},
-    sessionActiveMount: {},
-    sessionGithub: {
-      [SESSION]: {
-        pr: { number: 318, url: GITHUB_URL, headBranch: 'hl/fix' },
-        detail: { comments: [comment('PRRT_1'), comment('PRRT_2')] },
-        detailLoading: false,
-        detailError: null,
-        detailFetchedAt: null,
+const stateWith = (overrides: Partial<AppStore> = {}): AppStore => ({
+  ...useAppStore.getInitialState(),
+  sessions: [],
+  projects: [],
+  sessionProjectMounts: {},
+  sessionActiveProject: {},
+  sessionActiveMount: {},
+  sessionGithub: {
+    [SESSION]: {
+      pr: {
+        number: 318,
+        title: 'Guard the settlement batch',
+        url: GITHUB_URL,
+        state: 'open',
+        mergeable: true,
+        checks: 'success',
+        baseBranch: 'main',
+        headBranch: 'hl/fix',
+        isDraft: false,
+        reviewDecision: null,
+        body: '',
+        updatedAt: STAMP,
+      },
+      linkedIssues: [],
+      fetchedAt: null,
+      failedAt: null,
+      loading: false,
+      error: null,
+      detail: {
+        prNumber: 318,
+        comments: [comment('PRRT_1'), comment('PRRT_2')],
+        reviews: [],
+        reviewRequests: [],
+        checks: [],
+      },
+      detailFetchedAt: null,
+      detailLoading: false,
+      detailError: null,
+    },
+  },
+  sessionGitlabMr: { [SESSION]: { mr: MR, fetchedAt: null, loading: false, error: null } },
+  mountGithub: {},
+  mountGitlabMr: {},
+  mountBitbucketPr: {},
+  sessionBitbucketPr: {},
+  diffComments: {},
+  reviewSourceThreads: {
+    [SESSION]: {
+      [GITLAB_URL]: {
+        comments: [comment('gitlab:d1')],
+        fetchedAt: STAMP,
+        loading: false,
+        error: null,
       },
     },
-    sessionGitlabMr: { [SESSION]: { mr: MR, fetchedAt: null, loading: false, error: null } },
-    mountGithub: {},
-    mountGitlabMr: {},
-    mountBitbucketPr: {},
-    sessionBitbucketPr: {},
-    diffComments: {},
-    reviewSourceThreads: {
-      [SESSION]: {
-        [GITLAB_URL]: {
-          comments: [comment('gitlab:d1')],
-          fetchedAt: '2026-09-04T14:20:00.000Z',
-          loading: false,
-          error: null,
-        },
-      },
-    },
-    reviewSourceKeys: {},
-    ...overrides,
-  }) as unknown as Parameters<typeof reviewSourceEntriesOf>[0]['state'] &
-    Parameters<typeof selectedReviewEntryOf>[0]['state'];
+  },
+  reviewSourceKeys: {},
+  ...overrides,
+});
 
 describe('review sources of a session', () => {
   it('lists the pull request, the merge request and the notes with open counts', () => {
@@ -137,32 +209,41 @@ const row = (overrides: Partial<ResolveThread>): ResolveThread =>
   }) as ResolveThread;
 
 describe('bitbucket as a review source', () => {
-  const bitbucketState = (overrides: Record<string, unknown> = {}) =>
+  const bitbucketState = (overrides: Partial<AppStore> = {}) =>
     stateWith({
       sessionGithub: {},
       sessionGitlabMr: {},
-      sessionBitbucketPr: { [SESSION]: { pr: BITBUCKET_MOUNT.pr } },
-      sessionProjectMounts: { [SESSION]: ['bbmount'] },
+      sessionBitbucketPr: {
+        [SESSION]: { pr: BITBUCKET_PR, fetchedAt: null, loading: false, error: null },
+      },
       sessionMounts: {
         [SESSION]: [
           {
-            id: 'bbmount',
-            projectId: 'bbproject',
+            id: BITBUCKET_MOUNT_ID,
+            sessionId: SESSION,
+            projectId: BITBUCKET_PROJECT_ID,
+            worktreePath: null,
+            lastWorktreePath: null,
             branch: 'nw/cart-total',
             baseBranch: 'main',
-            repoRoot: '/repo',
-            worktreePath: null,
+            parallelIndex: 0,
+            mountName: 'storefront-web',
             repoSlug: null,
+            isAttached: true,
+            diskState: 'present',
             revision: 1,
+            createdAt: STAMP,
+            updatedAt: STAMP,
+            repoRoot: '/repo',
           },
         ],
       },
-      mountBitbucketPr: { bbmount: BITBUCKET_MOUNT },
+      mountBitbucketPr: { [BITBUCKET_MOUNT_ID]: BITBUCKET_MOUNT },
       reviewSourceThreads: {
         [SESSION]: {
           [BITBUCKET_URL]: {
             comments: [comment('bitbucket:4001'), comment('bitbucket:4002')],
-            fetchedAt: '2026-09-04T14:20:00.000Z',
+            fetchedAt: STAMP,
             loading: false,
             error: null,
           },
@@ -192,7 +273,10 @@ describe('bitbucket as a review source', () => {
   it('leaves a merged pull request out of the picker', () => {
     const state = bitbucketState({
       mountBitbucketPr: {
-        bbmount: { ...BITBUCKET_MOUNT, pr: { ...BITBUCKET_MOUNT.pr, state: 'MERGED' } },
+        [BITBUCKET_MOUNT_ID]: {
+          ...BITBUCKET_MOUNT,
+          pr: { ...BITBUCKET_PR, state: 'MERGED' },
+        },
       },
     });
     expect(reviewSourceEntriesOf({ state, sessionId: SESSION }).map((entry) => entry.kind)).toEqual(
@@ -225,7 +309,11 @@ describe('rowBelongsToSource', () => {
   });
 
   it('separates two requests with the same number in different projects', () => {
-    const entry = { kind: 'github', projectId: 'p2', number: 318 } as never;
-    expect(rowBelongsToSource({ row: row({ projectId: 'p1' as never }), entry })).toBe(false);
+    const entry: Pick<ReviewSourceEntry, 'kind' | 'projectId' | 'number'> = {
+      kind: 'github',
+      projectId: 'p2' as ProjectId,
+      number: 318,
+    };
+    expect(rowBelongsToSource({ row: row({ projectId: 'p1' as ProjectId }), entry })).toBe(false);
   });
 });

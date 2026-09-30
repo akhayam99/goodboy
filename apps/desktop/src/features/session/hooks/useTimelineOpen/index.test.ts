@@ -2,7 +2,8 @@
 
 import { cleanup, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, IsoDateTime, SessionEventId, SessionId } from '@goodboy/types';
+import type { AgentId, IsoDateTime, SessionEventId, SessionId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import type { AgentKind } from '../../agent-kind';
 import type { TimelineAgentEntry, TimelineEventEntry } from '../../timeline/buildTimelineGroups';
 
@@ -52,7 +53,7 @@ describe('useTimelineOpen', () => {
     id: 'agent-1',
     at: null,
     ordinal: 0,
-    agent: { id: typedString<AgentId>({ value: 'agent-1' }) } as Agent,
+    agent: anAgent({ id: typedString<AgentId>({ value: 'agent-1' }) }),
     agentKind,
     isMissingArtifact: false,
     stepLabel: null,

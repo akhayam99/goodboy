@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
 
+import { useAppStore } from '../../store';
 import { readCommitStory } from '../resolve/commitStory';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
 import type { GetFn, SetFn } from './types';
@@ -62,12 +63,13 @@ const run = async ({
   readonly threads: ReadonlyArray<ResolveThread>;
   readonly map: ReadonlyArray<HistoryShaMove>;
 }) => {
-  const updateResolveThread = vi.fn(async () => undefined);
-  const get = (() => ({
+  const updateResolveThread = vi.fn(async () => true);
+  const get: GetFn = () => ({
+    ...useAppStore.getInitialState(),
     sessionResolveThreads: { [SESSION]: threads },
     updateResolveThread,
-  })) as unknown as GetFn;
-  const set = vi.fn() as unknown as SetFn;
+  });
+  const set: SetFn = vi.fn();
   await remapRewrittenCommits({ set, get, sessionId: SESSION, map });
   return updateResolveThread;
 };

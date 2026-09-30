@@ -51,12 +51,14 @@ vi.mock('@goodboy/db', async () => {
   const mocks = (await import('./testing/createResolveQueryMocks')).createResolveQueryMocks();
   return {
     ...mocks,
-    setResolvePublicationPhase: vi.fn(async (params: { readonly phase: string }) => {
-      if (h.failOnPhase !== null && params.phase === h.failOnPhase) {
-        throw new Error('the database is locked');
-      }
-      return mocks.setResolvePublicationPhase(params as never);
-    }),
+    setResolvePublicationPhase: vi.fn(
+      async (params: Parameters<typeof mocks.setResolvePublicationPhase>[0]) => {
+        if (h.failOnPhase !== null && params.phase === h.failOnPhase) {
+          throw new Error('the database is locked');
+        }
+        return mocks.setResolvePublicationPhase(params);
+      },
+    ),
     listWorktreesForSession: vi.fn(async () => []),
   };
 });

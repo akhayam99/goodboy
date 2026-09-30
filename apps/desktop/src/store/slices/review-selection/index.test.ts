@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { createStore } from 'zustand/vanilla';
 import type { SessionId } from '@goodboy/types';
+import { useAppStore, type AppStore } from '../../store';
 import { createReviewSelectionSlice } from './index';
-import type { ReviewSelectionSlice, SetFn } from './types';
 
 const SESSION_ID = 'session-1' as SessionId;
 const OTHER_ID = 'session-2' as SessionId;
 
 const harness = () => {
-  const store = createStore<ReviewSelectionSlice>((set) =>
-    createReviewSelectionSlice({ set: set as unknown as SetFn }),
-  );
+  const store = createStore<AppStore>((set) => ({
+    ...useAppStore.getInitialState(),
+    ...createReviewSelectionSlice({ set }),
+  }));
   return store;
 };
 

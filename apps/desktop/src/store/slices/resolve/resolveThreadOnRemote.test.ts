@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SessionId } from '@goodboy/types';
+import type { ResolvePublicationPreview, SessionId } from '@goodboy/types';
+import { useAppStore } from '../../store';
+import type { AppStore } from '../../store';
+import type { PublishConversationsResult } from './publishConversations';
 import { resolveThreadOnRemote } from './resolveThreadOnRemote';
 import type { ThreadGitFacts } from './threadGitState';
-import type { GetFn, SetFn } from './types';
+import type { GetFn } from './types';
 
 const h = vi.hoisted(() => ({ listQueue: vi.fn() }));
-vi.mock('@goodboy/db', () => ({ listResolveQueueItems: h.listQueue }));
+vi.mock('@goodboy/db', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@goodboy/db')>()),
+  listResolveQueueItems: h.listQueue,
+}));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 
 const sessionId = 'session' as SessionId;
@@ -22,6 +28,38 @@ const facts = (overrides: Partial<ThreadGitFacts>): ThreadGitFacts => ({
   ...overrides,
 });
 
+const PREVIEW: ResolvePublicationPreview = {
+  publicationId: 'pub',
+  repo: 'acme/payments-api',
+  prNumber: 318,
+  branch: 'hl/fix-duplicate-credit',
+  localHead: 'c81e5aaaaaa',
+  remoteHead: null,
+  requiresPush: false,
+  frozenAt: 1,
+  commits: [],
+  unapproved: [],
+  replies: [],
+  notes: [],
+  excluded: [],
+  drift: [],
+  blocker: null,
+};
+
+const DONE: PublishConversationsResult = {
+  kind: 'done',
+  pushed: false,
+  pushedHead: null,
+  total: 1,
+  replies: 1,
+  replied: 1,
+  closed: 1,
+  resolved: 1,
+  leftOpen: 0,
+  failed: 0,
+  error: null,
+};
+
 const run = async ({
   git,
   threadState,
@@ -34,16 +72,17 @@ const run = async ({
   h.listQueue.mockResolvedValue([
     { item: { id: 'item' }, thread: { threadId, state: threadState } },
   ]);
-  const answerItemWithoutFix = vi.fn(async () => undefined);
-  const state = {
+  const answerItemWithoutFix = vi.fn<AppStore['answerItemWithoutFix']>(async () => undefined);
+  const state: ReturnType<GetFn> = {
+    ...useAppStore.getInitialState(),
     sessionThreadGit: { [sessionId]: { [threadId]: git } },
     answerItemWithoutFix,
-    preparePublication: vi.fn(async () => ({ publicationId: 'pub', blocker: null })),
-    publishConversations: vi.fn(async () => ({ kind: 'done', failed: 0 })),
+    preparePublication: vi.fn<AppStore['preparePublication']>(async () => PREVIEW),
+    publishConversations: vi.fn<AppStore['publishConversations']>(async () => DONE),
   };
   await resolveThreadOnRemote({
-    set: (() => undefined) as unknown as SetFn,
-    get: (() => state) as unknown as GetFn,
+    set: () => undefined,
+    get: () => state,
     sessionId,
     threadId,
     mode: 'reply',

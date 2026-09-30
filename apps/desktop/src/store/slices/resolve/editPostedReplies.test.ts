@@ -8,13 +8,17 @@ import {
 } from '@goodboy/db';
 import { makeMigratedTestDatabase } from '@goodboy/db/test-helpers';
 import type { ResolvePublication, ResolveThread, SessionId, WorkspaceId } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 
 const h = vi.hoisted(() => ({
   execute: vi.fn(),
   select: vi.fn(),
   exec: vi.fn(),
   transaction: vi.fn(),
-  updateReviewComment: vi.fn(async () => ({ id: 'PRRC_1', url: 'u' })),
+  updateReviewComment: vi.fn(async (_runner: unknown, _commentId: string, _body: string) => ({
+    id: 'PRRC_1',
+    url: 'u',
+  })),
 }));
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: h }));
 vi.mock('../../../features/github/github', () => ({ tauriGhRunner: {} }));
@@ -24,6 +28,7 @@ vi.mock('@goodboy/core', async (importOriginal) => ({
 }));
 
 import { editPostedReplyKey } from '../../../features/resolve/editPostedReplySetting';
+import { useAppStore } from '../../store';
 import { editPostedReplies } from './editPostedReplies';
 import { readCommitStory, recordCommitMove, recordPostedReply } from './commitStory';
 import type { GetFn, SetFn } from './types';
@@ -35,7 +40,7 @@ const SIGNED = '*Written by Goodboy*';
 const POSTED = `Stopped the retry loop.\n\nFixed in [\`c81e5aa\`](https://github.com/acme/payments-api/commit/c81e5aa).\n\n${SIGNED}`;
 
 let db: Database;
-const set = vi.fn() as unknown as SetFn;
+const set: SetFn = vi.fn();
 
 const threadOf = ({
   commitShas,
@@ -73,14 +78,42 @@ const threadOf = ({
   updatedAt: 1,
 });
 
-const getWith = ({ thread }: { readonly thread: ResolveThread }) =>
-  (() => ({
-    sessions: [{ id: SESSION, workspaceId: WORKSPACE }],
+const getWith =
+  ({ thread }: { readonly thread: ResolveThread }) =>
+  (): ReturnType<GetFn> => ({
+    ...useAppStore.getInitialState(),
+    sessions: [aSession({ id: SESSION, workspaceId: WORKSPACE })],
     sessionResolveThreads: { [SESSION]: [thread] },
-    sessionGithub: { [SESSION]: { pr: { number: 318, url: PR_URL }, detail: null } },
+    sessionGithub: {
+      [SESSION]: {
+        pr: {
+          number: 318,
+          title: 'Stop the duplicate credit retry',
+          url: PR_URL,
+          state: 'open',
+          mergeable: true,
+          checks: 'success',
+          baseBranch: 'main',
+          headBranch: 'hl/fix-duplicate-credit',
+          isDraft: false,
+          reviewDecision: null,
+          body: '',
+          updatedAt: '2026-08-20T09:00:00.000Z',
+        },
+        linkedIssues: [],
+        fetchedAt: null,
+        failedAt: null,
+        loading: false,
+        error: null,
+        detail: null,
+        detailFetchedAt: null,
+        detailLoading: false,
+        detailError: null,
+      },
+    },
     sessionProjectMounts: {},
     projects: [],
-  })) as unknown as GetFn;
+  });
 
 const postThenRewrite = async ({ isFolded }: { readonly isFolded: boolean }) => {
   await recordPostedReply({ sessionId: SESSION, threadId: 'PRRT_1', sha: 'c81e5aa', body: POSTED });
@@ -169,9 +202,7 @@ describe('editPostedReplies', () => {
       get: getWith({ thread: threadOf({ commitShas: ['e31b9f4'] }) }),
       sessionId: SESSION,
     });
-    const sent = (
-      h.updateReviewComment.mock.calls as unknown as ReadonlyArray<ReadonlyArray<string>>
-    )[0]?.[2];
+    const sent = h.updateReviewComment.mock.calls[0]?.[2];
     const [receipt] = await listResolvePublicationThreads({ db, publicationId: 'publication-1' });
     expect(receipt?.replyBody).toBe(sent);
     expect(receipt?.replyBody).toContain('was squashed into');
@@ -185,9 +216,7 @@ describe('editPostedReplies', () => {
       get: getWith({ thread: threadOf({ commitShas: ['b77a301'] }) }),
       sessionId: SESSION,
     });
-    const calls = h.updateReviewComment.mock.calls as unknown as ReadonlyArray<
-      ReadonlyArray<string>
-    >;
+    const calls = h.updateReviewComment.mock.calls;
     expect(calls[0]?.[2]).toContain('is now');
     expect(calls[0]?.[2]).not.toContain('was squashed');
   });
@@ -210,9 +239,7 @@ describe('editPostedReplies', () => {
       get: getWith({ thread: threadOf({ commitShas: ['b77a301'] }) }),
       sessionId: SESSION,
     });
-    const calls = h.updateReviewComment.mock.calls as unknown as ReadonlyArray<
-      ReadonlyArray<string>
-    >;
+    const calls = h.updateReviewComment.mock.calls;
     expect(calls).toHaveLength(2);
     expect(calls[1]?.[2]).toContain('was squashed into');
     expect(calls[1]?.[2]).toContain('is now');

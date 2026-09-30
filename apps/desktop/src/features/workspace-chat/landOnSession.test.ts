@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import type { Agent, AgentId, IsoDateTime, SessionId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 import { draftAgentOf, landOnSession } from './landOnSession';
 
 const SESSION_ID = 'session-205' as SessionId;
@@ -7,14 +8,14 @@ const SESSION_ID = 'session-205' as SessionId;
 type AgentSeed = Pick<Agent, 'id' | 'ordinal'> & Partial<Agent>;
 
 const agentOf = ({ id, ordinal, ...rest }: AgentSeed): Agent =>
-  ({
+  anAgent({
     id,
     ordinal,
     sessionId: SESSION_ID,
     name: `Agent ${ordinal}`,
     status: 'completed',
     ...rest,
-  }) as Agent;
+  });
 
 const FIRST = agentOf({ id: 'agent-1' as AgentId, ordinal: 1 });
 const SECOND = agentOf({ id: 'agent-2' as AgentId, ordinal: 2 });
@@ -51,7 +52,7 @@ describe('draftAgentOf', () => {
     const deleted = agentOf({
       id: 'agent-3' as AgentId,
       ordinal: 3,
-      deletedAt: '2026-09-28T10:00:00.000Z' as Agent['deletedAt'],
+      deletedAt: '2026-09-28T10:00:00.000Z' as IsoDateTime,
     });
     const delegate = agentOf({
       id: 'agent-4' as AgentId,

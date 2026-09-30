@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { ResolveStage, SessionId } from '@goodboy/types';
 import type { ResolveQueueRow } from './buildResolveQueueRows';
+import type { ResolveProposalKind } from '../../store/slices/resolve/resolveProposalKind';
 import {
   REVIEW_COMMENT_GROUPS,
   REVIEW_COMMENT_GROUP_LABEL,
@@ -16,15 +18,72 @@ const rowAt = ({
   stage,
   proposalKind = 'fix',
 }: {
-  readonly stage: string;
-  readonly proposalKind?: string;
-}): ResolveQueueRow =>
-  ({
-    thread: { stage, revision: 1, replyDraft: null },
-    item: { candidateRevision: 1, approvalState: 'pending', deliveredAt: null },
-    proposalKind,
-    rowState: { failedStep: null },
-  }) as unknown as ResolveQueueRow;
+  readonly stage: ResolveStage;
+  readonly proposalKind?: ResolveProposalKind;
+}): ResolveQueueRow => ({
+  thread: {
+    id: 'thread-row-1',
+    sessionId: 'session-1' as SessionId,
+    projectId: null,
+    prNumber: 318,
+    threadId: 'PRRT_1',
+    originKind: 'review_comment',
+    diffCommentId: null,
+    state: 'open',
+    stage,
+    stateReason: null,
+    revision: 1,
+    generation: 1,
+    reopenedFromThreadId: null,
+    activeAttemptId: null,
+    disposition: null,
+    replyDraft: null,
+    commitShas: null,
+    fixupOfSha: null,
+    replacesSha: null,
+    question: null,
+    replyPostedAt: null,
+    replyId: null,
+    githubResolved: null,
+    closedAt: null,
+    closedSource: null,
+    createdAt: 1,
+    updatedAt: 1,
+  },
+  item: {
+    id: 'item-row-1',
+    sessionId: 'session-1' as SessionId,
+    threadId: 'PRRT_1',
+    generation: 1,
+    reopenedFromItemId: null,
+    candidateRevision: 1,
+    approvalState: 'none',
+    approvedRevision: null,
+    approvedReplyHash: null,
+    integratedSha: null,
+    deferredAt: null,
+    deliveredAt: null,
+    supersededAt: null,
+    createdAt: 1,
+    updatedAt: 1,
+  },
+  commentThread: null,
+  status: 'new',
+  rowState: {
+    state: 'new',
+    node: 'queued',
+    sentence: null,
+    action: null,
+    failedStep: null,
+    isRemoteMoved: false,
+  },
+  attempt: null,
+  reviewerNote: null,
+  proposal: null,
+  proposalKind,
+  coveredThreadIds: [],
+  delivery: null,
+});
 
 describe('review comment groups', () => {
   it('names the three groups Open, Ready to push and Done', () => {

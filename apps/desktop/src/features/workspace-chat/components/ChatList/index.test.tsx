@@ -9,8 +9,11 @@ import type {
   ChatSummary,
   IsoDateTime,
   Session,
+  SessionId,
   WorkspaceId,
 } from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
+import type { ActionEnv } from '../../../actions/types';
 
 const { store } = vi.hoisted(() => ({
   store: {
@@ -56,7 +59,16 @@ vi.mock('../../../actions/components/ObjectOverflowMenu', async () => {
       const [open, setOpen] = useState(false);
       const [confirming, setConfirming] = useState<string | null>(null);
       const actions = resolveActions({ definitions: CHAT_KIND.actions, facts: target.facts });
-      const env = { anchorKey, origin: 'overflow', getState: () => store } as never;
+      const env: ActionEnv = {
+        anchorKey,
+        origin: 'overflow',
+        getState: () => {
+          throw new Error('chat actions never read the store');
+        },
+        showToast: vi.fn(),
+        copyText: async () => undefined,
+        viewing: null,
+      };
       const run = (id: string) => {
         setOpen(false);
         setConfirming(null);
@@ -449,7 +461,11 @@ describe('ChatList', () => {
       createdAt: new Date().toISOString() as IsoDateTime,
     });
     const sessionOf = (id: string, goal: string, deletedAt?: string): Session =>
-      ({ id, goal, ...(deletedAt !== undefined && { deletedAt }) }) as unknown as Session;
+      aSession({
+        id: id as SessionId,
+        goal,
+        ...(deletedAt !== undefined && { deletedAt: deletedAt as IsoDateTime }),
+      });
 
     it('shows a session mark with the stage tone on a linked chat', () => {
       store.chatLinks = { 'chat-consent': [linkOf('consent', 's1')] };

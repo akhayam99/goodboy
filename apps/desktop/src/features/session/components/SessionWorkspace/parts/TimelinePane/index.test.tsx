@@ -3,7 +3,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { agentPlace, sessionPlace } from '../../../../../../store/slices/navigation/place';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { AgentId, ArtifactId, OpenQuestion, Session, SessionId } from '@goodboy/types';
+import type {
+  AgentId,
+  ArtifactId,
+  IsoDateTime,
+  OpenQuestion,
+  OpenQuestionId,
+  Session,
+  SessionId,
+  WorkspaceId,
+} from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 
 type Worktree = {
   readonly id: string;
@@ -117,12 +127,21 @@ import { useOpenQuestions } from '../../../../../context/components/QuestionsTab
 import { OverviewActions } from '../../../SessionOverviewPane/OverviewActions';
 import { DEFAULT_ACTIVITY_FILTER, writeActivityFilter } from '../../../../timeline/activityFilter';
 
-const SESSION = {
-  id: 'session-1',
-  workspaceId: 'ws-1',
+const SESSION: Session = aSession({
+  id: 'session-1' as SessionId,
+  workspaceId: 'ws-1' as WorkspaceId,
   goal: 'ship it',
-  workflowRuns: [],
-} as unknown as Session;
+});
+
+const aQuestion = (
+  overrides: Pick<OpenQuestion, 'id' | 'text' | 'userAnswer' | 'status' | 'createdAt'> &
+    Partial<OpenQuestion>,
+): OpenQuestion => ({
+  sessionId: 'session-1' as SessionId,
+  suggestedAnswers: [],
+  isBlocking: false,
+  ...overrides,
+});
 
 const WORKTREE: Worktree = {
   id: 'wt-1',
@@ -335,26 +354,22 @@ describe('TimelinePane unread affordance', () => {
 });
 
 describe('TimelinePane questions', () => {
-  const OPEN_QUESTION = {
-    id: 'question-open',
-    sessionId: 'session-1',
+  const OPEN_QUESTION = aQuestion({
+    id: 'question-open' as OpenQuestionId,
     text: 'Which database should we use?',
-    suggestedAnswers: [],
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-08-20T09:00:00.000Z',
-  } as unknown as OpenQuestion;
+    createdAt: '2026-08-20T09:00:00.000Z' as IsoDateTime,
+  });
 
-  const ANSWERED_QUESTION = {
-    id: 'question-answered',
-    sessionId: 'session-1',
+  const ANSWERED_QUESTION = aQuestion({
+    id: 'question-answered' as OpenQuestionId,
     text: 'Which cloud provider?',
-    suggestedAnswers: [],
     userAnswer: 'aws',
     status: 'answered',
-    createdAt: '2026-08-19T09:00:00.000Z',
-    answeredAt: '2026-08-19T10:00:00.000Z',
-  } as unknown as OpenQuestion;
+    createdAt: '2026-08-19T09:00:00.000Z' as IsoDateTime,
+    answeredAt: '2026-08-19T10:00:00.000Z' as IsoDateTime,
+  });
 
   it('loads the answered and dismissed caches on mount, alongside the open one', () => {
     render(<TimelinePane session={SESSION} actions={null} />);
@@ -465,16 +480,14 @@ describe('TimelinePane run waiting on an answer', () => {
     status: 'running',
     startedAt: '2026-08-20T10:31:00.000Z',
   };
-  const STEP_QUESTION = {
-    id: 'question-step',
-    sessionId: 'session-1',
-    createdByAgentId: 'agent-step',
+  const STEP_QUESTION = aQuestion({
+    id: 'question-step' as OpenQuestionId,
+    createdByAgentId: 'agent-step' as AgentId,
     text: 'Retry on 5xx only?',
-    suggestedAnswers: [],
     userAnswer: null,
     status: 'open',
-    createdAt: '2026-08-20T10:40:00.000Z',
-  } as unknown as OpenQuestion;
+    createdAt: '2026-08-20T10:40:00.000Z' as IsoDateTime,
+  });
 
   const runRow = () => screen.getByText('Retry failed checkout payments').closest('.group');
 

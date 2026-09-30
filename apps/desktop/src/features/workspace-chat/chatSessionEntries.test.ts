@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import type { ChatSessionLink, Session, SessionStage } from '@goodboy/types';
+import type {
+  ChatSessionLink,
+  IsoDateTime,
+  Session,
+  SessionId,
+  SessionStage,
+} from '@goodboy/types';
+import { aSession } from '@goodboy/types/testing';
 import { chatSessionEntries, mostUrgentStage } from './chatSessionEntries';
 
-const AT = '2026-09-28T10:00:00.000Z';
+const AT = '2026-09-28T10:00:00.000Z' as IsoDateTime;
 
 const sessionOf = (id: string, extra: Partial<Session> = {}): Session =>
-  ({ id, goal: id, createdAt: AT, updatedAt: AT, ...extra }) as Session;
+  aSession({ id: id as SessionId, goal: id, createdAt: AT, updatedAt: AT, ...extra });
 
 const linkOf = (id: string, sessionId: string): ChatSessionLink =>
   ({
@@ -21,7 +28,7 @@ describe('chatSessionEntries', () => {
   it('keeps links in order, tags each with its stage and drops deleted or missing sessions', () => {
     const entries = chatSessionEntries({
       links: [linkOf('a', 's1'), linkOf('b', 's2'), linkOf('c', 's3')],
-      sessions: [sessionOf('s1'), sessionOf('s2', { deletedAt: AT as Session['createdAt'] })],
+      sessions: [sessionOf('s1'), sessionOf('s2', { deletedAt: AT })],
       stages: { s1: 'review' },
     });
 

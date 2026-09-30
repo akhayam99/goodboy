@@ -10,7 +10,7 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import type { Agent } from '@goodboy/types';
+import type { Agent, ProviderRunId } from '@goodboy/types';
 import {
   STORE_IMPORT_TIMEOUT_MS,
   importStore,
@@ -131,7 +131,7 @@ describe('AgentHeaderActions', () => {
         turnStates: {
           [agent.id]: {
             kind: 'running',
-            runId: 'run-1' as never,
+            runId: 'run-1' as ProviderRunId,
             startedAt: FIXTURE_NOW,
           },
         },

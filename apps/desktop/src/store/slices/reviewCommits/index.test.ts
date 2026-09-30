@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MountId, Project, ProjectId } from '@goodboy/types';
+import { aProject, EMPTY_OVERRIDES } from '@goodboy/types/testing';
 
 const { getSettingMock, setSettingMock, updateStyleMock } = vi.hoisted(() => ({
   getSettingMock: vi.fn(async (_db: unknown, _key: string) => null as string | null),
@@ -7,15 +8,18 @@ const { getSettingMock, setSettingMock, updateStyleMock } = vi.hoisted(() => ({
   updateStyleMock: vi.fn(async (_params: unknown) => undefined),
 }));
 
-vi.mock('@goodboy/db', () => ({
-  getSetting: getSettingMock,
-  setSetting: setSettingMock,
-  updateProjectResolveCommitStyle: updateStyleMock,
-}));
+vi.mock('@goodboy/db', async () =>
+  (await import('../../../test/dbMock')).createDbMock({
+    getSetting: getSettingMock,
+    setSetting: setSettingMock,
+    updateProjectResolveCommitStyle: updateStyleMock,
+  }),
+);
 
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: { execute: vi.fn(), select: vi.fn() } }));
 
-import type { AppState } from '../../types';
+import { useAppStore, type AppStore } from '../../store';
+import type { GetFn, SetFn } from '../../slice-types';
 import { createReviewCommitsSlice } from './index';
 import { selectReviewCommitPreset } from './selectReviewCommitPreset';
 import { reviewCommitDraftKey, reviewCommitPresetKey } from './state';
@@ -23,22 +27,23 @@ import { reviewCommitDraftKey, reviewCommitPresetKey } from './state';
 const PROJECT_ID = 'project-payments-api' as ProjectId;
 
 const project = ({ fixup }: { readonly fixup: boolean }): Project =>
-  ({
+  aProject({
     id: PROJECT_ID,
-    overrides: { resolveCommitStyle: fixup ? 'fixup' : null },
-  }) as unknown as Project;
+    overrides: { ...EMPTY_OVERRIDES, resolveCommitStyle: fixup ? 'fixup' : null },
+  });
 
 const harness = ({ fixup }: { readonly fixup: boolean }) => {
-  let state = {
+  let state: AppStore = {
+    ...useAppStore.getInitialState(),
     reviewCommitPresets: {},
     reviewCommitDrafts: {},
     projects: [project({ fixup })],
-  } as unknown as AppState;
-  const set = (patch: Partial<AppState> | ((s: AppState) => Partial<AppState>)) => {
+  };
+  const set: SetFn = (patch) => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
-  const get = () => state as never;
-  const slice = createReviewCommitsSlice(set as never, get);
+  const get: GetFn = () => state;
+  const slice = createReviewCommitsSlice(set, get);
   return { slice, read: () => state };
 };
 

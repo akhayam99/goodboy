@@ -22,13 +22,19 @@ const thread: ResolvePublicationThread = {
   error: 'network timeout',
 };
 
-const commentOf = ({ id }: { readonly id: string }): PrComment =>
-  ({
-    id,
-    threadId: 'PRRT_1',
-    body: 'Already handled elsewhere',
-    source: 'review',
-  }) as unknown as PrComment;
+const aComment = (overrides: Partial<PrComment>): PrComment => ({
+  id: 'comment-1',
+  author: 'iokafor',
+  authorAvatarUrl: null,
+  body: 'Already handled elsewhere',
+  createdAt: new Date(ATTEMPTED_AT + 500).toISOString(),
+  url: 'https://github.com/acme/payments-api/pull/318#discussion_r1',
+  threadId: 'PRRT_1',
+  source: 'review',
+  ...overrides,
+});
+
+const commentOf = ({ id }: { readonly id: string }): PrComment => aComment({ id });
 
 describe('reconcileReplyOperation', () => {
   it('calls one matching reply posted', () => {
@@ -87,23 +93,18 @@ describe('reconcileReplyOperation', () => {
   });
   describe('a reply the user wrote by hand', () => {
     const handReply = (overrides: Partial<PrComment>): PrComment =>
-      ({
+      aComment({
         id: 'hand-1',
-        threadId: 'PRRT_1',
         author: 'Mquint',
         body: 'Done, thanks for the catch',
-        createdAt: new Date(ATTEMPTED_AT + 500).toISOString(),
-        source: 'review',
         ...overrides,
-      }) as unknown as PrComment;
-    const head = {
+      });
+    const head = aComment({
       id: 'head',
-      threadId: 'PRRT_1',
       author: 'iokafor',
       body: 'Please cap this',
       createdAt: new Date(ATTEMPTED_AT - 5000).toISOString(),
-      source: 'review',
-    } as unknown as PrComment;
+    });
 
     it('is recognised even when the text differs from the draft', () => {
       expect(
