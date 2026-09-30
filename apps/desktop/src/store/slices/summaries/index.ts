@@ -1,7 +1,7 @@
 import { loadArchivedSessions } from './loadArchivedSessions';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createSummariesSlice = (set: SetFn, _get: GetFn) => {
+export const createSummariesSlice = ({ set }: SliceDeps) => {
   return {
     loadArchivedSessions: loadArchivedSessions(set),
   };

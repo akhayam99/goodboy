@@ -5,9 +5,9 @@ import { openTerminal } from './openTerminal';
 import { reattachTerminalTabs } from './reattachTerminalTabs';
 import { setActiveTerminalTab } from './setActiveTerminalTab';
 import { setTerminalTabStatus } from './setTerminalTabStatus';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createTerminalSlice = (set: SetFn, get: GetFn) => {
+export const createTerminalSlice = ({ set, get }: SliceDeps) => {
   return {
     openTerminal: openTerminal(set),
     reattachTerminalTabs: reattachTerminalTabs(set),

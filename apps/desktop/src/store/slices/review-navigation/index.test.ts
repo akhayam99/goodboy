@@ -113,7 +113,7 @@ const createHarness = () => {
     sessionGithub: {},
     ...mocks,
     ...createReviewNavigationSlice({ set, get }),
-    ...createReviewSelectionSlice({ set }),
+    ...createReviewSelectionSlice({ set, get }),
   }));
   const actions = store.getState();
   const seePr = (sessionGithub: Record<SessionId, SessionGithubState>): void => {

@@ -1,8 +1,9 @@
 import { requestIssueBrief } from './requestIssueBrief';
 import { issueBriefsInitialState } from './state';
-import type { GetFn, IssueBriefsSlice, SetFn } from './types';
+import type { IssueBriefsSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createIssueBriefsSlice = (set: SetFn, get: GetFn): IssueBriefsSlice => ({
+export const createIssueBriefsSlice = ({ set, get }: SliceDeps): IssueBriefsSlice => ({
   ...issueBriefsInitialState,
   requestIssueBrief: requestIssueBrief(set, get),
 });

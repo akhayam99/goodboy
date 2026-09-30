@@ -17,11 +17,11 @@ import { restoreHistory } from './restoreHistory';
 import { settleHistoryRewriter } from './settleHistoryRewriter';
 import { startHistoryRewriter } from './startHistoryRewriter';
 import { syncBranchWithRemote } from './syncBranchWithRemote';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 export { historyInitialState } from './state';
 
-export const createHistorySlice = (set: SetFn, get: GetFn) => {
+export const createHistorySlice = ({ set, get }: SliceDeps) => {
   return {
     rebaseBranch: rebaseBranch(set, get),
     applyHistoryRewrite: applyHistoryRewrite(set, get),

@@ -1,5 +1,5 @@
 import type { AgentId, PlanWithCount, SessionId, WorkflowRunId } from '@goodboy/types';
-import { listPlansForSession as invokeListPlansForSession } from '../features/plans/plans';
+import { listPlansForSession as invokeListPlansForSession } from '../../../features/plans/plans';
 
 export const composePlanSection = ({ bodyMd }: { readonly bodyMd: string }): string =>
   `**Plan**\n${bodyMd}`;

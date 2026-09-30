@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { stripControlMarkers } from '@goodboy/core';
 import type { AgentId } from '@goodboy/types';
-import { useTranscript } from '../../../../store/transcript';
+import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { RECHECK_LABEL } from '../../reviewFlowCopy';
 

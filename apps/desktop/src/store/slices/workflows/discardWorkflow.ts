@@ -6,7 +6,7 @@ import {
 } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
-import { cancelledRunIds, deriveSessionState } from '../../session-mutators';
+import { cancelledRunIds, deriveSessionState } from '../sessions/sessionMutators';
 import { cancelTurnStartWindow } from '../turn/turnStartWindow';
 import type { GetFn, SetFn } from './types';
 

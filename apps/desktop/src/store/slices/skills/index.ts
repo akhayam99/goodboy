@@ -2,9 +2,9 @@ import { deleteSkill } from './deleteSkill';
 import { loadSkills } from './loadSkills';
 import { rescanSkills } from './rescanSkills';
 import { saveSkill } from './saveSkill';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createSkillsSlice = (set: SetFn, _get: GetFn) => {
+export const createSkillsSlice = ({ set }: SliceDeps) => {
   return {
     loadSkills: loadSkills(set),
     saveSkill: saveSkill(set),

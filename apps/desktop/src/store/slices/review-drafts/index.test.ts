@@ -177,7 +177,7 @@ const buildHarness = (initial: Record<string, unknown>): Harness => {
     const patch = typeof p === 'function' ? p(state) : p;
     state = { ...state, ...patch };
   };
-  return { slice: createReviewDraftsSlice(set, get), getState: get };
+  return { slice: createReviewDraftsSlice({ set, get }), getState: get };
 };
 
 describe('review-drafts slice', () => {

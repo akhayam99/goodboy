@@ -2,18 +2,14 @@ import { reviewSelectionInitialState } from './state';
 import type {
   ClearReviewSelectionParams,
   ReviewSelectionSlice,
-  SetFn,
   SetReviewSelectionParams,
   ToggleReviewSelectionParams,
 } from './types';
-
-type Params = {
-  readonly set: SetFn;
-};
+import type { SliceDeps } from '../../slice-types';
 
 const EMPTY: ReadonlyArray<string> = [];
 
-export const createReviewSelectionSlice = ({ set }: Params): ReviewSelectionSlice => ({
+export const createReviewSelectionSlice = ({ set }: SliceDeps): ReviewSelectionSlice => ({
   ...reviewSelectionInitialState,
   setReviewSelection: ({ sessionId, threadIds }: SetReviewSelectionParams) =>
     set((state) => {

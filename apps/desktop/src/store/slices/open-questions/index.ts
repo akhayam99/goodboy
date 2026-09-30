@@ -9,9 +9,9 @@ import { resolveQuestionDelegate } from './resolveQuestionDelegate';
 import { restoreDismissedOpenQuestion } from './restoreDismissedOpenQuestion';
 import { spawnQuestionDelegates } from './spawnQuestionDelegates';
 import { takeQuestionBack } from './takeQuestionBack';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createOpenQuestionsSlice = (set: SetFn, get: GetFn) => {
+export const createOpenQuestionsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadSessionOpenQuestions: loadSessionOpenQuestions(set),
     loadSessionAnsweredQuestions: loadSessionAnsweredQuestions(set),

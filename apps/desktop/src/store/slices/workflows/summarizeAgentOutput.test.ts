@@ -7,7 +7,7 @@ const { invokeSpy } = vi.hoisted(() => ({ invokeSpy: vi.fn() }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: invokeSpy }));
 
 import { SUMMARY_TIMEOUT_MS, summarizeAgentOutput } from './summarizeAgentOutput';
-import type { SetFn } from './slice-types';
+import type { SetFn } from '../../slice-types';
 
 const AGENT_ONE = 'agent-1' as AgentId;
 const AGENT_TWO = 'agent-2' as AgentId;

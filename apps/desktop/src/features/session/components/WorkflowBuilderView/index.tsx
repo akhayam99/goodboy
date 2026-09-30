@@ -40,8 +40,8 @@ import {
   polishWorkflowStep,
 } from '../../../workflows/workflows';
 import { EMPTY_ARRAY, useAppStore, useSessionSlots } from '../../../../store';
-import { buildProfileGuard } from '../../../../store/profileGuard';
-import { buildWorkspaceProjectsBlock } from '../../../../store/buildWorkspaceProjectsBlock';
+import { buildProfileGuard } from '../../../../store/slices/turn/profileGuard';
+import { buildWorkspaceProjectsBlock } from '../../../../store/slices/workflows/buildWorkspaceProjectsBlock';
 import { workflowStartGate } from './workflowStartGate';
 import { readLastWorkflowMode, writeLastWorkflowMode } from './lastWorkflowMode';
 import { editedStepKeys, stepsMatchPreset } from './presetEdits';

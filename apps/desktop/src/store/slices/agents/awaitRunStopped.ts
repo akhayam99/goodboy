@@ -1,5 +1,5 @@
 import type { ProviderRunId } from '@goodboy/types';
-import { listLiveRunIds } from '../features/chat/turn';
+import { listLiveRunIds } from '../../../features/chat/turn';
 
 const RUN_STOP_ATTEMPTS = 20;
 const RUN_STOP_INTERVAL_MS = 100;

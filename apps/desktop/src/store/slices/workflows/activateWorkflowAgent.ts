@@ -15,7 +15,7 @@ import {
   composeKickoff,
   composePlanSection,
   composeStepBoundary,
-} from '../../kickoff';
+} from '../turn/kickoff';
 import type { SpawnFocus } from '../session-view/spawnFocus';
 import {
   canFanOutClusters,

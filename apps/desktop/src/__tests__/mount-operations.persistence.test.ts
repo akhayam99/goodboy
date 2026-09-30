@@ -102,7 +102,10 @@ const makeSlice = () => {
     const patch = typeof updater === 'function' ? updater(state) : updater;
     Object.assign(state, patch);
   });
-  return { state, slice: createProjectMountsSlice(set as never, (() => state) as never) };
+  return {
+    state,
+    slice: createProjectMountsSlice({ set: set as never, get: (() => state) as never }),
+  };
 };
 
 let db: Database;

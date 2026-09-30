@@ -67,7 +67,7 @@ vi.mock('../../../features/plans/plans', () => ({
   listConsumptionsForPlan: hoisted.invokeListConsumptionsForPlan,
 }));
 
-vi.mock('../../summarizeAgentOutput', () => ({
+vi.mock('./summarizeAgentOutput', () => ({
   summarizeAgentOutput: hoisted.summarizeAgentOutput,
 }));
 

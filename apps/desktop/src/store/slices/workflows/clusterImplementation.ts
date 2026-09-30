@@ -17,7 +17,7 @@ import {
   type AgentInsertArgs,
 } from '../../../features/workflows/workflows';
 import { listConsumptionsForPlan as invokeListConsumptionsForPlan } from '../../../features/plans/plans';
-import { composeKickoff, composeUnitBoundary } from '../../kickoff';
+import { composeKickoff, composeUnitBoundary } from '../turn/kickoff';
 import { childRoutingBatch, type ChildRoutingFields } from './childRoutingBatch';
 import { revalidateChildRouting } from './revalidateChildRouting';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';

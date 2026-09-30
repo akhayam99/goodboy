@@ -27,7 +27,7 @@ import {
   importStore,
   type StoryStore,
 } from './storyHarness';
-import { cancelledRunIds } from './session-mutators';
+import { cancelledRunIds } from './slices/sessions/sessionMutators';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>

@@ -42,7 +42,7 @@ const harness = () => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => ({ ...state, ...slice });
-  const slice = createSessionDraftSlice(set as never, get as never);
+  const slice = createSessionDraftSlice({ set: set as never, get: get as never });
   return { slice, spies, getState: () => state, set };
 };
 

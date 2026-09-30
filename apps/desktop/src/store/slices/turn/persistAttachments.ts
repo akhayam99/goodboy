@@ -9,7 +9,7 @@ import type {
 import { formatError } from '@goodboy/ui';
 import { writeAttachment } from '../../../features/chat/turn';
 import { attachmentKindFor } from '../../../features/chat/attachment-kinds';
-import { buildAttachmentPromptBlock } from '../../turn-helpers';
+import { buildAttachmentPromptBlock } from './turnHelpers';
 import type { GetFn } from './types';
 
 type Params = {

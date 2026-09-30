@@ -1,8 +1,8 @@
 import { acceptSessionNudgeHandoff } from './acceptSessionNudgeHandoff';
 import { dismissSessionNudge } from './dismissSessionNudge';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createNudgesSlice = (set: SetFn, get: GetFn) => {
+export const createNudgesSlice = ({ set, get }: SliceDeps) => {
   return {
     dismissSessionNudge: dismissSessionNudge(set, get),
     acceptSessionNudgeHandoff: acceptSessionNudgeHandoff(set, get),

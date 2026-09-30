@@ -61,7 +61,7 @@ const harness = (): Harness => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get = () => state;
-  const slice = createDrawerSlice(set as never, get as never);
+  const slice = createDrawerSlice({ set: set as never, get: get as never });
   state = { ...state, ...slice };
   return {
     get,

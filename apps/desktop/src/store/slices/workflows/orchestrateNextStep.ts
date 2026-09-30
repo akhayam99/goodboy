@@ -62,8 +62,8 @@ import {
   type SpendLimitStop,
 } from './budgetBlock';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
-import { buildProfileGuard } from '../../profileGuard';
-import { buildWorkspaceProjectsBlock } from '../../buildWorkspaceProjectsBlock';
+import { buildProfileGuard } from '../turn/profileGuard';
+import { buildWorkspaceProjectsBlock } from './buildWorkspaceProjectsBlock';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import { preSpawnWorkflowAgents } from './preSpawnWorkflowAgents';
 import { consumeOrchestratorHints, formatOrchestratorHints } from './orchestratorHintQueue';

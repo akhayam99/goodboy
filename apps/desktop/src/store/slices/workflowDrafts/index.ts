@@ -1,8 +1,8 @@
 import { clearWorkflowDraft } from './clearWorkflowDraft';
 import { setWorkflowDraft } from './setWorkflowDraft';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createWorkflowDraftsSlice = (set: SetFn, _get: GetFn) => {
+export const createWorkflowDraftsSlice = ({ set }: SliceDeps) => {
   return {
     setWorkflowDraft: setWorkflowDraft(set),
     clearWorkflowDraft: clearWorkflowDraft(set),

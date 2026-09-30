@@ -1,4 +1,4 @@
-import { invokeCommand } from '../shared/lib/invokeCommand';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { formatError } from '@goodboy/ui';
 import {
   assessPlanReadiness,
@@ -54,49 +54,49 @@ import type {
   WireframeArtifactMetadata,
   WorkflowRunId,
 } from '@goodboy/types';
-import { tauriDatabase } from '../shared/lib/db';
+import { tauriDatabase } from '../../../shared/lib/db';
 import {
   appendArtifactProvenanceOmission,
   completeArtifactRun,
   loadArtifactProvenance,
-} from '../features/artifacts/artifactProvenance';
-import { recordArtifactAssumptions } from '../features/artifacts/recordArtifactAssumptions';
-import { reviseArtifactForAgent } from '../features/artifacts/reviseArtifactForAgent';
-import { capturedWireframeFidelity } from '../features/wireframes/capturedWireframeFidelity';
-import { requestedWireframeFidelity } from '../features/wireframes/wireframeFidelity';
-import type { AgentKind } from '../features/session/agent-kind';
-import { hasActiveWorkflowRun } from '../features/workflows/activeWorkflowRuns';
-import { kindReadsAttachment } from '../features/providers/attachment-routing';
-import { classifyProviderError } from '../features/chat/classifyProviderError';
+} from '../../../features/artifacts/artifactProvenance';
+import { recordArtifactAssumptions } from '../../../features/artifacts/recordArtifactAssumptions';
+import { reviseArtifactForAgent } from '../../../features/artifacts/reviseArtifactForAgent';
+import { capturedWireframeFidelity } from '../../../features/wireframes/capturedWireframeFidelity';
+import { requestedWireframeFidelity } from '../../../features/wireframes/wireframeFidelity';
+import type { AgentKind } from '../../../features/session/agent-kind';
+import { hasActiveWorkflowRun } from '../../../features/workflows/activeWorkflowRuns';
+import { kindReadsAttachment } from '../../../features/providers/attachment-routing';
+import { classifyProviderError } from '../../../features/chat/classifyProviderError';
 import {
   cooldownWindowEnd,
   providersCoolingDown,
   routeTaskModel,
   withFailureCooldown,
-} from '../features/providers/taskModelRouting';
+} from '../../../features/providers/taskModelRouting';
 import {
   listPlansForSession as invokeListPlansForSession,
   upsertPlan as invokeUpsertPlan,
-} from '../features/plans/plans';
+} from '../../../features/plans/plans';
 import {
   createArtifact as invokeCreateArtifact,
   listArtifactsForSession as invokeListArtifactsForSession,
-} from '../features/artifacts/artifacts';
-import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from './slices/budget';
-import type { SessionNudge } from './slices/nudges/state';
-import type { SetFn, GetFn } from './slice-types';
+} from '../../../features/artifacts/artifacts';
+import { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses } from '../budget';
+import type { SessionNudge } from '../nudges/state';
+import type { SetFn, GetFn } from '../../slice-types';
 import {
   deferredMaterializeNote,
   materializationGate,
   proposeMaterialization,
   runMaterializationBatch,
-} from './materializationGate';
-import { sessionAwaitsPullRequest } from './slices/github/sessionAwaitsPullRequest';
-import { selectMountById } from './slices/project-mounts/selectors';
-import { mountContinuationRefusal, queueMountContinuation } from './slices/turn/mountContinuations';
-import { selectResolvedSettings } from './slices/overrides/selectResolvedSettings';
-import { autoLimitContext } from './slices/providerLimits/autoLimitContext';
-import { resolveLimitedTaskModel } from './slices/providerLimits/resolveLimitedTaskModel';
+} from '../project-mounts/materializationGate';
+import { sessionAwaitsPullRequest } from '../github/sessionAwaitsPullRequest';
+import { selectMountById } from '../project-mounts/selectors';
+import { mountContinuationRefusal, queueMountContinuation } from './mountContinuations';
+import { selectResolvedSettings } from '../overrides/selectResolvedSettings';
+import { autoLimitContext } from '../providerLimits/autoLimitContext';
+import { resolveLimitedTaskModel } from '../providerLimits/resolveLimitedTaskModel';
 
 type AttachmentsBlockParams = {
   readonly scope: string;

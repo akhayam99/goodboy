@@ -43,7 +43,7 @@ const harness = ({ fixup }: { readonly fixup: boolean }) => {
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get: GetFn = () => state;
-  const slice = createReviewCommitsSlice(set, get);
+  const slice = createReviewCommitsSlice({ set, get });
   return { slice, read: () => state };
 };
 

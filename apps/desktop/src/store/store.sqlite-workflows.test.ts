@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { insertAgent, insertWorkspace } from '@goodboy/db';
-import { purgedAgentIds } from './session-mutators';
+import { purgedAgentIds } from './slices/sessions/sessionMutators';
 import type { AgentInsertArgs } from '../features/workflows/workflows';
 import type { AgentId, SessionId, StepId, Workflow, WorkflowId, WorkspaceId } from '@goodboy/types';
 import {

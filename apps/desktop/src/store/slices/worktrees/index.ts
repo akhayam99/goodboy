@@ -1,9 +1,9 @@
 import { changeSessionBranch } from './changeSessionBranch';
 import { reconcileOrphanWorktrees } from './reconcileOrphanWorktrees';
 import { reconcileSessionBranch } from './reconcileSessionBranch';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createWorktreesSlice = (set: SetFn, get: GetFn) => {
+export const createWorktreesSlice = ({ set, get }: SliceDeps) => {
   return {
     changeSessionBranch: changeSessionBranch(set, get),
     reconcileSessionBranch: reconcileSessionBranch(set, get),

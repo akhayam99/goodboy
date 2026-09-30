@@ -23,7 +23,7 @@ import {
   tidyRepoGoodboyDir,
 } from '../../../features/worktree/worktree';
 import { isBranchlessSession } from '../../../shared/utils/isBranchlessSession';
-import { awaitRunStopped } from '../../awaitRunStopped';
+import { awaitRunStopped } from '../agents/awaitRunStopped';
 import { purgeSessionFileVersions } from '../file-versions/persistFinalizedFileVersions';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { cleanupMountDirectory } from '../mount-cleanup';

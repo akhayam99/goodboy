@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { StatusDot, cn } from '@goodboy/ui';
 import type { AgentStatus, SessionId } from '@goodboy/types';
 import { useAppStore, useSessionOpenQuestions, agentPlace } from '../../../../store';
-import { useTranscript } from '../../../../store/transcript';
+import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { attachedQuestionsFor } from '../../timeline/attachedQuestions';
 import { AgentKindChip } from '../AgentKindChip';
 import { AgentStatusIcon } from '../AgentCard/AgentStatusIcon';

@@ -9,9 +9,10 @@ import { openStorageArtifact } from './openStorageArtifact';
 import { pruneArchivedTranscripts } from './pruneArchivedTranscripts';
 import { removeStorageFolders } from './removeStorageFolders';
 import { scanStorageRepository } from './scanStorageRepository';
-import type { GetFn, SetFn, StorageFocus, StorageScope } from './types';
+import type { StorageFocus, StorageScope } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createStorageSlice = (set: SetFn, get: GetFn) => {
+export const createStorageSlice = ({ set, get }: SliceDeps) => {
   return {
     loadStorage: loadStorage(set, get),
     loadStorageArtifacts: loadStorageArtifacts(set, get),

@@ -10,7 +10,7 @@ import {
 } from '../../../features/providers/taskModelRouting';
 import { modelLabel } from '../../../features/chat/utils/chat-constants';
 import { stepForAgent } from '../../../features/workflows/stepForAgent';
-import { summarizeAgentOutput, type SummarizeAgentOutputResult } from '../../summarizeAgentOutput';
+import { summarizeAgentOutput, type SummarizeAgentOutputResult } from './summarizeAgentOutput';
 import { getSessionRepo } from '../worktrees/getSessionRepo';
 import type { GetFn, SetFn } from './types';
 import { selectResolvedSettings } from '../overrides/selectResolvedSettings';

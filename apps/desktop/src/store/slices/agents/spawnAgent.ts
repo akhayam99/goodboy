@@ -28,7 +28,7 @@ import {
   resolveAgentKind,
   type AgentKind,
 } from '../../../features/session/agent-kind';
-import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../../kickoff';
+import { buildPlanKickoffSection, composeKickoff, composePlanSection } from '../turn/kickoff';
 import { requireMountTarget } from '../resolve/mountTarget';
 import {
   canFanOutClusters,

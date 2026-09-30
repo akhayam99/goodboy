@@ -4,7 +4,7 @@ import { updateSessionWorkflowStep } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { isWorkflowRunComplete } from '../../../features/workflows/isWorkflowRunComplete';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { composeStepBoundary } from '../../kickoff';
+import { composeStepBoundary } from '../turn/kickoff';
 import { resumeClusterChildren, unsettledClusterChildren } from './clusterImplementation';
 import { continueOrPause, resetContinueAttempts } from './autoContinue';
 import { holdForUserQuestion } from './holdForUserQuestion';

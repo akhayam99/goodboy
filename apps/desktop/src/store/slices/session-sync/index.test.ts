@@ -236,7 +236,7 @@ const harness = ({
   }) as unknown as SetFn;
   const get = (() => state) as unknown as GetFn;
   state.refreshSessionPr = refreshSessionPr(set, get);
-  Object.assign(state, createSessionSyncSlice(set, get));
+  Object.assign(state, createSessionSyncSlice({ set, get }));
   const slice = state as unknown as ReturnType<typeof createSessionSyncSlice> & {
     readonly sessionSyncing: Record<string, true>;
   };

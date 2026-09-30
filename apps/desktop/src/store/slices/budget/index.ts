@@ -10,12 +10,12 @@ import { refreshProviderSpendBreakdown } from './refreshProviderSpendBreakdown';
 import { saveBudgetRule } from './saveBudgetRule';
 import { setSessionBudget } from './setSessionBudget';
 import { clearSessionBudget } from './clearSessionBudget';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 export { buildProviderSpendBreakdown, loadCurrentProviderBudgetStatuses };
 export type { ProviderBudgetStatuses, ProviderSpendEntry } from './types';
 
-export const createBudgetSlice = (set: SetFn, _get: GetFn) => {
+export const createBudgetSlice = ({ set }: SliceDeps) => {
   return {
     loadBudgetRules: loadBudgetRules(set),
     saveBudgetRule: saveBudgetRule(set),

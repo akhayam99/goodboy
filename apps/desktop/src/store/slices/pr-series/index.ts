@@ -1,11 +1,11 @@
 import { createPrSeries } from './createPrSeries';
 import { loadPrSeries } from './loadPrSeries';
 import { setPrSeriesMember } from './setPrSeriesMember';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 export { prSeriesInitialState } from './state';
 
-export const createPrSeriesSlice = (set: SetFn, get: GetFn) => {
+export const createPrSeriesSlice = ({ set, get }: SliceDeps) => {
   return {
     createPrSeries: createPrSeries(set, get),
     setPrSeriesMember: setPrSeriesMember(set, get),

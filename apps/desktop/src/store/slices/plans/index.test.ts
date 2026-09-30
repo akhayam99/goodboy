@@ -124,8 +124,11 @@ type FakeState = {
 
 function buildSlice(state: FakeState) {
   const set = vi.fn();
-  const get = (() => state) as unknown as Parameters<typeof createPlansSlice>[1];
-  return createPlansSlice(set as unknown as Parameters<typeof createPlansSlice>[0], get);
+  const get = (() => state) as unknown as Parameters<typeof createPlansSlice>[0]['get'];
+  return createPlansSlice({
+    set: set as unknown as Parameters<typeof createPlansSlice>[0]['set'],
+    get,
+  });
 }
 
 function defaultState(overrides: Partial<FakeState> = {}): FakeState {

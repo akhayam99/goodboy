@@ -181,7 +181,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       )
       .mockResolvedValue(undefined);
 
-    const { summarizerQueues } = await import('./turn-helpers');
+    const { summarizerQueues } = await import('./slices/turn/turnHelpers');
     summarizerQueues.clear();
 
     useAppStore.setState({
@@ -257,7 +257,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('uses the configured summarizer task model when no override is provided', async () => {
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -331,7 +332,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('drops the session queue once it drains', async () => {
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -354,7 +356,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('summarizes in the worktree the turn wrote to, not the first of the session', async () => {
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -383,7 +386,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('uses the current workspace provider instead of the captured session provider', async () => {
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -428,7 +432,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('preserves an explicit codex variant for session summaries', async () => {
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -480,7 +485,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
       resolved = true;
     });
 
-    const { summarizerQueues: sq } = await import('./turn-helpers');
+    const { summarizerQueues: sq } = await import('./slices/turn/turnHelpers');
     sq.clear();
 
     const queue = {
@@ -532,7 +537,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
           resolveTelemetryList = resolve;
         }),
     );
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -588,7 +594,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('in-flight + multiple queued accumulates every turn instead of dropping all but the last', async () => {
-    const { summarizerQueues: sq, mergeQueuedSummarizerEntries } = await import('./turn-helpers');
+    const { summarizerQueues: sq, mergeQueuedSummarizerEntries } =
+      await import('./slices/turn/turnHelpers');
     sq.clear();
 
     const queue = {
@@ -623,7 +630,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('merges the queued turns into one pass instead of running one pass per turn', async () => {
-    const { mergeQueuedSummarizerEntries } = await import('./turn-helpers');
+    const { mergeQueuedSummarizerEntries } = await import('./slices/turn/turnHelpers');
 
     const merged = mergeQueuedSummarizerEntries([
       {
@@ -645,7 +652,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('drops the oldest turns behind a note once the merged text passes the budget', async () => {
-    const { mergeQueuedSummarizerEntries } = await import('./turn-helpers');
+    const { mergeQueuedSummarizerEntries } = await import('./slices/turn/turnHelpers');
 
     const big = 'x'.repeat(15_000);
     const merged = mergeQueuedSummarizerEntries([
@@ -669,7 +676,7 @@ describe('summarizer queue, coalescing and no-stack', () => {
   });
 
   it('queue inFlight=true while summarizer runs does not prevent subsequent queue entries', async () => {
-    const { summarizerQueues: sq } = await import('./turn-helpers');
+    const { summarizerQueues: sq } = await import('./slices/turn/turnHelpers');
     sq.clear();
 
     const queue = {
@@ -712,7 +719,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
       { key: 'goal', value: 'original goal', enabled: true },
       { key: 'open_questions', value: '- original question', enabled: true },
     ];
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -812,7 +820,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
         updatedAt: NOW,
       },
     ];
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -891,7 +900,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
       { key: 'goal', value: 'original goal', enabled: true },
       { key: 'open_questions', value: '- original question', enabled: true },
     ];
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -958,7 +968,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
           }),
       )
       .mockResolvedValue(undefined);
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -1009,7 +1020,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
       { key: 'goal', value: `${index}${'x'.repeat(561)}` },
     ]);
     dbSlots = [{ key: 'goal', value: 'original goal', enabled: true }];
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],
@@ -1062,7 +1074,8 @@ describe('summarizer queue, coalescing and no-stack', () => {
     const oversizeGoal = 'x'.repeat(561);
     summarizerUpserts = [{ key: 'goal', value: oversizeGoal }];
     dbSlots = [{ key: 'goal', value: oversizeGoal, enabled: true }];
-    const { enqueueSummarizer, summarizerQueues: queues } = await import('./turn-helpers');
+    const { enqueueSummarizer, summarizerQueues: queues } =
+      await import('./slices/turn/turnHelpers');
     queues.clear();
     useAppStore.setState({
       sessions: [buildSession()],

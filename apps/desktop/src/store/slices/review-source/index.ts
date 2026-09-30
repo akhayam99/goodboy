@@ -1,21 +1,15 @@
 import { refreshReviewSource } from './refreshReviewSource';
 import { selectReviewSource } from './selectReviewSource';
 import type {
-  GetFn,
   RefreshReviewSourceParams,
   ReviewSourceSlice,
   SelectReviewSourceParams,
-  SetFn,
 } from './types';
+import type { SliceDeps } from '../../slice-types';
 
 export { reviewSourceInitialState } from './state';
 
-type Params = {
-  readonly set: SetFn;
-  readonly get: GetFn;
-};
-
-export const createReviewSourceSlice = ({ set, get }: Params): ReviewSourceSlice => ({
+export const createReviewSourceSlice = ({ set, get }: SliceDeps): ReviewSourceSlice => ({
   selectReviewSource: (params: SelectReviewSourceParams) =>
     selectReviewSource({ set, get, ...params }),
   refreshReviewSource: (params: RefreshReviewSourceParams) =>

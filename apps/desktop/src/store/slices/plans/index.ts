@@ -5,9 +5,9 @@ import { restorePlan } from './restorePlan';
 import { runPlan } from './runPlan';
 import { setPlanStatus } from './setPlanStatus';
 import { updatePlanBody } from './updatePlanBody';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createPlansSlice = (set: SetFn, get: GetFn) => {
+export const createPlansSlice = ({ set, get }: SliceDeps) => {
   return {
     loadSessionPlans: loadSessionPlans(set),
     setPlanStatus: setPlanStatus(set),

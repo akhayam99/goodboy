@@ -3,9 +3,9 @@ import { deleteDiffComment } from './deleteDiffComment';
 import { loadDiffComments } from './loadDiffComments';
 import { reopenDiffComment } from './reopenDiffComment';
 import { resolveDiffComment } from './resolveDiffComment';
-import type { GetFn, SetFn } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createDiffCommentsSlice = (set: SetFn, get: GetFn) => {
+export const createDiffCommentsSlice = ({ set, get }: SliceDeps) => {
   return {
     loadDiffComments: loadDiffComments(set, get),
     addDiffComment: addDiffComment(set, get),

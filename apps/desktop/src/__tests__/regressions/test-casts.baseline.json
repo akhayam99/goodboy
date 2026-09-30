@@ -146,7 +146,7 @@
     "apps/desktop/src/shared/components/ProjectAdoptionNotice/index.test.tsx": 1,
     "apps/desktop/src/shared/hooks/useDragLasso/index.test.ts": 1,
     "apps/desktop/src/shared/utils/planConsumer.test.ts": 1,
-    "apps/desktop/src/store/materializationGate.test.ts": 1,
+    "apps/desktop/src/store/slices/project-mounts/materializationGate.test.ts": 1,
     "apps/desktop/src/store/slices/agentQueue/index.test.ts": 1,
     "apps/desktop/src/store/slices/agents/deleteAgent.test.ts": 2,
     "apps/desktop/src/store/slices/agents/forceCloseResolver.test.ts": 2,
@@ -268,8 +268,8 @@
     "apps/desktop/src/store/slices/workspaces/setCurrentWorkspace.test.ts": 1,
     "apps/desktop/src/store/store.plan-consumption-ordering.test.ts": 1,
     "apps/desktop/src/store/store.summarizer-notifications.test.ts": 2,
-    "apps/desktop/src/store/summarizeAgentOutput.test.ts": 2,
-    "apps/desktop/src/store/turn-helpers.test.ts": 1,
+    "apps/desktop/src/store/slices/workflows/summarizeAgentOutput.test.ts": 2,
+    "apps/desktop/src/store/slices/turn/turnHelpers.test.ts": 1,
     "packages/core/src/artifacts/grammar.test.ts": 1,
     "packages/core/src/context/extractors.test.ts": 1,
     "packages/db/src/queries/workflow.test.ts": 2,
@@ -490,7 +490,7 @@
     "apps/desktop/src/store/store.workflow-turn-breaker.test.ts": 2,
     "apps/desktop/src/store/store.workspace-switch.test.ts": 3,
     "apps/desktop/src/store/storyHarness.ts": 4,
-    "apps/desktop/src/store/turn-helpers.artifact-capture.test.ts": 1,
+    "apps/desktop/src/store/slices/turn/turnHelpers.artifact-capture.test.ts": 1,
     "apps/desktop/src/test/dbMock.test.ts": 3,
     "packages/core/src/artifacts/wireframe/validateWireframeDocument.test.ts": 32,
     "packages/core/src/orchestrator/client.provider-error.test.ts": 1,
@@ -617,7 +617,7 @@
     "apps/desktop/src/shared/utils/agentLastUpdate.test.ts": 1,
     "apps/desktop/src/shared/utils/planConsumer.test.ts": 1,
     "apps/desktop/src/shared/utils/spawnedChildren.test.ts": 1,
-    "apps/desktop/src/store/materializationGate.test.ts": 1,
+    "apps/desktop/src/store/slices/project-mounts/materializationGate.test.ts": 1,
     "apps/desktop/src/store/slices/agents/spawnAgent.test.ts": 4,
     "apps/desktop/src/store/slices/artifacts/artifactScoutRun.test.ts": 9,
     "apps/desktop/src/store/slices/github/selectSessionForPr.test.ts": 1,
@@ -653,6 +653,6 @@
     "apps/desktop/src/store/slices/workspaces/checkReconnectCandidate.test.ts": 3,
     "apps/desktop/src/store/slices/workspaces/reconnectMovedProject.test.ts": 1,
     "apps/desktop/src/store/storyHarness.ts": 1,
-    "apps/desktop/src/store/turn-helpers.test.ts": 2
+    "apps/desktop/src/store/slices/turn/turnHelpers.test.ts": 2
   }
 }

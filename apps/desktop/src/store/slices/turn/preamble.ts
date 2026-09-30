@@ -7,8 +7,8 @@ import {
   type SlotKey,
 } from '@goodboy/core';
 import type { ContextSlot, TurnEvent } from '@goodboy/types';
-import { contextWindowFor } from '../features/session/contextWindowFor';
-import { estimateTokens } from '../shared/utils/estimate-tokens';
+import { contextWindowFor } from '../../../features/session/contextWindowFor';
+import { estimateTokens } from '../../../shared/utils/estimate-tokens';
 
 const CONTEXT_MARKER_HINT =
   '## context handoff protocol (parsed into the shared context above, seen by every agent, never repeat what is already there)\n' +

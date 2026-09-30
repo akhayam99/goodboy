@@ -156,7 +156,7 @@ const harness = ({ mount, project }: Bases = { mount: 'main', project: 'main' })
     state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
   };
   const get: GetFn = () => state;
-  const slice = createHistorySlice(set, get);
+  const slice = createHistorySlice({ set, get });
   state = { ...state, ...slice };
   return { slice, read: get, seed: set, spawnAgent, sendTurn };
 };

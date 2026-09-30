@@ -8,9 +8,9 @@ const SESSION_ID = 'session-1' as SessionId;
 const OTHER_ID = 'session-2' as SessionId;
 
 const harness = () => {
-  const store = createStore<AppStore>((set) => ({
+  const store = createStore<AppStore>((set, get) => ({
     ...useAppStore.getInitialState(),
-    ...createReviewSelectionSlice({ set }),
+    ...createReviewSelectionSlice({ set, get }),
   }));
   return store;
 };

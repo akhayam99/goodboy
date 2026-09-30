@@ -1,6 +1,6 @@
 import type { SessionId } from '@goodboy/types';
-import { isAttributionEnabled } from '../shared/utils/attribution';
-import type { GetFn } from './slice-types';
+import { isAttributionEnabled } from '../../../shared/utils/attribution';
+import type { GetFn } from '../../slice-types';
 
 type Params = {
   readonly get: GetFn;

@@ -15,12 +15,12 @@ import { attachTurn } from '../../../features/chat/turn';
 import type { TurnCursor, TurnOwner } from '../../../features/chat/turnCursor';
 import { invokeAgentList, invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../../session-mutators';
+import { applyAgentTurnState, cancelledRunIds, purgedAgentIds } from '../sessions/sessionMutators';
 import {
   captureArtifactsFromTurn,
   captureMaterializeRequestsFromTurn,
   enqueueSummarizer,
-} from '../../turn-helpers';
+} from './turnHelpers';
 import { selectWritableMounts } from '../project-mounts/selectors';
 import { flushTurnEvents } from '../transcripts/buffer';
 import { collectTouchedMounts } from './collectTouchedMounts';

@@ -136,8 +136,8 @@ const makeStore = () =>
     selectAgent: async (sessionId: SessionId, agentId: AgentId) => {
       set((state) => ({ selectedAgentId: { ...state.selectedAgentId, [sessionId]: agentId } }));
     },
-    ...createNavigationSlice(set, get),
-    ...createDrawerSlice(set, get),
+    ...createNavigationSlice({ set, get }),
+    ...createDrawerSlice({ set, get }),
   }));
 
 const keyOf = (store: ReturnType<typeof makeStore>): string => {

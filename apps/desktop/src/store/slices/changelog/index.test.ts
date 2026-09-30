@@ -48,7 +48,10 @@ const harness = () => {
   const set = (p: Partial<ChangelogState> | ((s: ChangelogState) => Partial<ChangelogState>)) => {
     state = { ...state, ...(typeof p === 'function' ? p(state) : p) };
   };
-  const slice = createChangelogSlice(set as never, (() => ({ ...state, ...slice })) as never);
+  const slice = createChangelogSlice({
+    set: set as never,
+    get: (() => ({ ...state, ...slice })) as never,
+  });
   return { slice, getState: () => state };
 };
 

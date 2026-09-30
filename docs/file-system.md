@@ -80,12 +80,14 @@ Each slice is a **package folder**:
 - One file per action.
 - One `select<Thing>.ts` per pure selector.
 - `selectors.ts`: the slice's React selector hooks (`use*`), each reading the keys the slice owns in `state.ts`. A hook that reads several slices sits in the slice that owns its primary key. A slice whose `selectors.ts` already holds pure selectors that action files import keeps its hooks in `use<Thing>.ts` files instead (`project-mounts`), so the actions never import the store. Callers get the hooks through `store/index.ts`, which re-exports each one from its source file.
-- `types.ts`: types used only inside the slice. It re-exports `SetFn`/`GetFn` from `../../slice-types`.
+- `types.ts`: types used only inside the slice. It re-exports `SetFn`/`GetFn` from `../../slice-types` when its files use them.
+- Domain helpers only the slice's actions use sit in the slice as one file each, next to their test (`turn/turnHelpers.ts`, `turn/kickoff.ts`, `project-mounts/scopeGuard.ts`, `workflows/summarizeAgentOutput.ts`). The store root keeps `store.ts`, `types.ts`, `slice-types.ts`, `index.ts`, `sessionEviction.ts`, `sessionReplySettings.ts`, `mock-data.ts`, `storyHarness.ts` and the cross-slice `store.*.test.ts` files.
 
 Rules around slices:
 
 - `store/store.ts` only composes slices. No domain logic.
-- The shared `SetFn`/`GetFn` live in `store/slice-types.ts` (typed against `AppStore`).
+- The shared `SetFn`/`GetFn` and `SliceDeps` (`{ set, get }`) live in `store/slice-types.ts` (typed against `AppStore`).
+- Every slice factory takes one `SliceDeps` object: `createXSlice = ({ set, get }: SliceDeps) => ...`. A slice that reads no state destructures only `set`. `store.ts` calls each as `createXSlice({ set, get })`.
 - A slice's actions are typed by its factory: `AppStore` intersects `ReturnType<typeof createXSlice>`, so the slice is the single source and `store.ts` holds no hand-written action signatures. Do not pass `AppState`-typed `set`/`get` params between slice files: they make the factory type circular. Take `SetFn`/`GetFn`.
 - A slice's state is owned the same way: `AppState` (`store/types.ts`) intersects each slice's state type and `store.ts` spreads each slice's initial state. A new state key goes into its slice's `state.ts`, never inline in `types.ts` or `store.ts`.
 - A helper shared between files inside a slice is exported through the slice's `index.ts` only when code outside the slice needs it. Otherwise, import it straight from its source file.

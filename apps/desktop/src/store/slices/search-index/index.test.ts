@@ -40,7 +40,7 @@ const makeSlice = (): SliceHandle => {
     const next = typeof patch === 'function' ? patch(get()) : patch;
     state = { ...state, ...next };
   };
-  state = createSearchIndexSlice(set, get);
+  state = createSearchIndexSlice({ set, get });
   return { slice: () => get() };
 };
 

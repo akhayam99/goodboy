@@ -2,9 +2,10 @@ import { loadSessionTurnSpans } from './loadSessionTurnSpans';
 import { loadWorkspaceDurationHistory } from './loadWorkspaceDurationHistory';
 import { refreshTurnSpans } from './refreshTurnSpans';
 import { durationEstimatesInitialState } from './state';
-import type { DurationEstimatesSlice, GetFn, SetFn } from './types';
+import type { DurationEstimatesSlice } from './types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createDurationEstimatesSlice = (set: SetFn, get: GetFn): DurationEstimatesSlice => ({
+export const createDurationEstimatesSlice = ({ set, get }: SliceDeps): DurationEstimatesSlice => ({
   ...durationEstimatesInitialState,
   loadWorkspaceDurationHistory: loadWorkspaceDurationHistory(set),
   loadSessionTurnSpans: loadSessionTurnSpans(set),

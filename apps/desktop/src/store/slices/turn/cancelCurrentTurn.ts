@@ -3,7 +3,7 @@ import { updateSessionState } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { cancelTurn } from '../../../features/chat/turn';
 import { invokeAgentUpdateStatus } from '../../../features/workflows/workflows';
-import { applyAgentTurnState, cancelledRunIds } from '../../session-mutators';
+import { applyAgentTurnState, cancelledRunIds } from '../sessions/sessionMutators';
 import { cancelTurnStartWindow } from './turnStartWindow';
 import type { GetFn, SetFn } from './types';
 

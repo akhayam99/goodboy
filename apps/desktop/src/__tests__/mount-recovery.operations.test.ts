@@ -501,7 +501,7 @@ describe('raw checkout recovery', () => {
     const set = (updater: Partial<State> | ((current: State) => Partial<State>)) => {
       Object.assign(state, typeof updater === 'function' ? updater(state) : updater);
     };
-    const slice = createProjectMountsSlice(set as never, (() => state) as never);
+    const slice = createProjectMountsSlice({ set: set as never, get: (() => state) as never });
     return { state, set, slice };
   };
 

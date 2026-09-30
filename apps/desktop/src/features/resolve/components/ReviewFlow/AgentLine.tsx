@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { stripControlMarkers } from '@goodboy/core';
 import { WorkNode, cn } from '@goodboy/ui';
 import type { ResolveAttempt } from '@goodboy/types';
-import { useTranscript } from '../../../../store/transcript';
+import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { modelLabel } from '../../../chat/utils/chat-constants';
 import { useNow } from '../../../../shared/hooks/useNow';

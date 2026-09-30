@@ -3,7 +3,7 @@ import { purgeAgentForDelete, updateSessionState } from '@goodboy/db';
 import { removeQuestionsFromSlot } from '@goodboy/core';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { invokeAgentList } from '../../../features/workflows/workflows';
-import { deriveSessionState, purgedAgentIds } from '../../session-mutators';
+import { deriveSessionState, purgedAgentIds } from '../sessions/sessionMutators';
 import { dropPendingTurnEvents } from '../transcripts/buffer';
 import { stopAgentForDelete } from './stopAgentForDelete';
 import { releaseAgentFiles } from './releaseAgentFiles';

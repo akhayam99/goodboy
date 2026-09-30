@@ -17,7 +17,7 @@ vi.mock('@goodboy/db', async () =>
 vi.mock('../../../shared/lib/db', () => ({ tauriDatabase: {} }));
 vi.mock('../../../features/chat/turn', () => ({ cancelTurn }));
 vi.mock('../../../features/workflows/workflows', () => ({ invokeAgentUpdateStatus }));
-vi.mock('../../session-mutators', () => ({
+vi.mock('../sessions/sessionMutators', () => ({
   applyAgentTurnState,
   cancelledRunIds: new Set<string>(),
 }));

@@ -2,9 +2,9 @@ import { findMovedProjects } from './findMovedProjects';
 import { projectRelocationInitialState } from './state';
 import { relocateProjects } from './relocateProjects';
 import { undoRelocation } from './undoRelocation';
-import type { GetFn, SetFn } from '../../slice-types';
+import type { SliceDeps } from '../../slice-types';
 
-export const createProjectRelocationSlice = (set: SetFn, get: GetFn) => ({
+export const createProjectRelocationSlice = ({ set, get }: SliceDeps) => ({
   ...projectRelocationInitialState,
   findMovedProjects: findMovedProjects(set, get),
   relocateProjects: relocateProjects(set, get),

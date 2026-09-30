@@ -1,5 +1,5 @@
 import type { Project } from '@goodboy/types';
-import { starredProjectsFirst } from '../shared/utils/starredProjectsFirst';
+import { starredProjectsFirst } from '../../../shared/utils/starredProjectsFirst';
 
 const STARRED_FIRST_RULE = 'When a request names no project, look in starred projects first.';
 

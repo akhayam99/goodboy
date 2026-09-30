@@ -70,7 +70,7 @@ vi.mock('../../store/store', () => ({
 }));
 
 import { executeMaterializeRequest } from './projectMaterializeBridge';
-import { clearMaterializationBatch } from '../../store/materializationGate';
+import { clearMaterializationBatch } from '../../store/slices/project-mounts/materializationGate';
 
 type RequestParams = {
   readonly projectId: string;

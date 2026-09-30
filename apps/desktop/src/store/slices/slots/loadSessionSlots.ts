@@ -2,7 +2,7 @@ import type { SessionId } from '@goodboy/types';
 import { formatError } from '@goodboy/ui';
 import { countContextSlotHistoryForSession, listContextSlotsForSession } from '@goodboy/db';
 import { tauriDatabase } from '../../../shared/lib/db';
-import { EMPTY_LOADING } from '../../session-mutators';
+import { EMPTY_LOADING } from '../sessions/sessionMutators';
 import type { AppState } from '../../types';
 import type { SessionLoadingFlags } from '../sessions/state';
 import type { SetFn } from './types';

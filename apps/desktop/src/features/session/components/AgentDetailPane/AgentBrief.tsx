@@ -14,7 +14,7 @@ import {
   useSessionAnsweredQuestions,
   useSessionOpenQuestions,
 } from '../../../../store';
-import { useTranscript } from '../../../../store/transcript';
+import { useTranscript } from '../../../../store/slices/transcripts/selectors';
 import { selectSpawnedChildren } from '../../../../shared/utils/spawnedChildren';
 import { reduceTranscript } from '../../../chat/utils/transcript-items';
 import { isQuestionDelegate } from '../../../context/questionDelegate';

@@ -68,7 +68,7 @@ const harness = ({ prBody }: { readonly prBody: string }) => {
     state = { ...state, ...(next as object) };
   }) as unknown as SetFn;
   const get = (() => state) as unknown as GetFn;
-  const slice = createScribeSlice(set, get);
+  const slice = createScribeSlice({ set, get });
   state = { ...state, ...slice };
   return { slice, read: () => state as unknown as ReturnType<GetFn> };
 };

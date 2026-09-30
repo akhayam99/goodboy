@@ -342,7 +342,7 @@ Because of this check, the block does not appear on Windows, where nothing binds
 - `apps/desktop/src-tauri/src/query_bridge/mod.rs`: socket path, sweep of stale sockets, listener, `query_bridge_serving`, `apply_turn_env`
 - `apps/desktop/src-tauri/src/lib.rs`: runs the CLI before any window opens, and starts and stops the listener
 - `apps/desktop/src-tauri/src/turn.rs`: adds the bridge env to each turn Goodboy starts
-- `apps/desktop/src/store/integrationsGuard.ts`: `QUERY_BRIDGE_VERBS` and the `[integrations]` guard block, tested against `protocol.rs`
+- `apps/desktop/src/store/slices/turn/integrationsGuard.ts`: `QUERY_BRIDGE_VERBS` and the `[integrations]` guard block, tested against `protocol.rs`
 - `apps/desktop/src/features/integrations/queryBridge.ts`: `isQueryBridgeServing`
 - `apps/desktop/src/features/session/mountQueryBridge/`: frontend executor for mount and series commands
 - `apps/desktop/src/features/session/projectMaterializeBridge.ts`: frontend executor for `project materialize`

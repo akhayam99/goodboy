@@ -1,8 +1,8 @@
-import { invokeCommand } from '../shared/lib/invokeCommand';
+import { invokeCommand } from '../../../shared/lib/invokeCommand';
 import { formatError } from '@goodboy/ui';
 import { fallbackStepOutputSummary, summarizeStepOutput } from '@goodboy/core';
 import type { AgentId, TaskModelPreference } from '@goodboy/types';
-import type { SetFn } from './slice-types';
+import type { SetFn } from '../../slice-types';
 
 export const SUMMARY_TIMEOUT_MS = 90_000;
 
