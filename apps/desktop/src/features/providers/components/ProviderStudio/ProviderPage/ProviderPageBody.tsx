@@ -4,6 +4,7 @@ import { Button, EmptyState, OverflowMenu, type OverflowMenuItem, PaneShell } fr
 import type { LucideIcon } from 'lucide-react';
 import type { ProviderDisplayInfo } from '../../../providers';
 import { useAppStore } from '../../../../../store';
+import { useCopyText } from '../../../../../shared/hooks/useCopyText';
 import { PROVIDER_BRAND } from '../../provider-brand';
 import { ProviderConnect } from '../../ProviderConnect';
 import { CliUpdateNotice } from '../CliUpdateNotice';
@@ -54,6 +55,7 @@ export const ProviderPageBody = ({ info, autoConnect, autoUpdate, focusModels }:
   const connectProvider = useAppStore((s) => s.connectProvider);
   const logoutProvider = useAppStore((s) => s.logoutProvider);
   const refreshProviders = useAppStore((s) => s.refreshProviders);
+  const copyText = useCopyText();
   const planLabel = usePlanLabel({ providerId: id });
   const isApi = isApiProvider({ id });
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -109,7 +111,7 @@ export const ProviderPageBody = ({ info, autoConnect, autoUpdate, focusModels }:
       kind: 'item',
       key: 'copy',
       label: 'Copy CLI path',
-      onClick: () => void navigator.clipboard?.writeText(info.binary).catch(() => undefined),
+      onClick: () => void copyText({ text: info.binary }),
     },
   ];
 

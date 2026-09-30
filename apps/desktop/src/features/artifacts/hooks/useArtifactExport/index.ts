@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
-import { formatError } from '@goodboy/ui';
+import { copyToClipboard, formatError } from '@goodboy/ui';
 import type { SessionArtifact } from '@goodboy/types';
 import { exportArtifactToFile } from '../../artifactFile';
 import { artifactFileSlug } from './artifactFileSlug';
@@ -56,11 +56,7 @@ export const useArtifactExport = ({ artifact }: Params): ArtifactExport => {
 
   const copySource = useCallback(async () => {
     await run('copy', async () => {
-      const clipboard = globalThis.navigator?.clipboard ?? null;
-      if (clipboard === null) {
-        throw new Error('this system has no clipboard available');
-      }
-      await clipboard.writeText(contents);
+      await copyToClipboard({ text: contents });
       return { kind: 'copied' };
     });
   }, [contents, run]);

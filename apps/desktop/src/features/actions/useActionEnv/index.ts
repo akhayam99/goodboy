@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useAppStore } from '../../../store';
 import { useShowToast } from '../../../shared/components/Toast/useShowToast';
-import { copyText } from '../copyText';
+import { useCopyText } from '../../../shared/hooks/useCopyText';
 import type { ActionEnv, ActionOrigin, ActionViewing } from '../types';
 
 type Params = {
@@ -12,18 +12,19 @@ type Params = {
 
 export const useActionEnv = ({ origin, anchorKey = null, viewing = null }: Params): ActionEnv => {
   const showToast = useShowToast();
+  const copyText = useCopyText();
   const viewingKind = viewing?.kind ?? null;
   const viewingId = viewing?.id ?? null;
   return useMemo<ActionEnv>(
     () => ({
       getState: useAppStore.getState,
       showToast,
-      copyText: ({ text }) => copyText({ text, showToast }),
+      copyText,
       origin,
       anchorKey,
       viewing:
         viewingKind === null || viewingId === null ? null : { kind: viewingKind, id: viewingId },
     }),
-    [anchorKey, origin, showToast, viewingId, viewingKind],
+    [anchorKey, copyText, origin, showToast, viewingId, viewingKind],
   );
 };

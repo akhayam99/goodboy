@@ -263,6 +263,34 @@ describe('report sheet on the real store', () => {
     expect(decodeURIComponent(url)).toContain('It is on your clipboard');
   });
 
+  it('shows an error and does not open GitHub when the overflow cannot reach the clipboard', async () => {
+    bridge.mode = 'absent';
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: vi.fn(async () => Promise.reject(new Error('denied'))) },
+    });
+    mount();
+    act(() => {
+      openReportSheet();
+    });
+    const sheet = await screen.findByRole('dialog', { name: 'Report a bug' });
+    await within(sheet).findByText('Opens GitHub in your browser. You submit it there.');
+    fireEvent.change(within(sheet).getByRole('textbox', { name: /one line/i }), {
+      target: { value: 'Board columns jump' },
+    });
+    fireEvent.click(within(sheet).getByRole('button', { name: /add detail/i }));
+    fireEvent.change(within(sheet).getByRole('textbox', { name: 'Detail' }), {
+      target: { value: 'steps '.repeat(1200) },
+    });
+    fireEvent.click(within(sheet).getByRole('button', { name: /open on github/i }));
+
+    expect(
+      await within(sheet).findByText(/Could not copy the report to your clipboard/),
+    ).toBeDefined();
+    expect(bridge.calls.filter((call) => call.command === 'open_url')).toHaveLength(0);
+    expect(screen.queryByText('Finish on GitHub')).toBeNull();
+  });
+
   it('offers the open issue that matches and adds the report there as a comment', async () => {
     bridge.similar = JSON.stringify([
       {
