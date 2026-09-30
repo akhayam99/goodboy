@@ -108,6 +108,24 @@ name. A helper another file needs is `pub(super)`. Tests sit in a `tests.rs`
 beside the file they cover; the repository builders more than one group needs
 live in the test-only `fixtures.rs`.
 
+### Config export module
+
+Backup and setup export run in one Rust module,
+`apps/desktop/src-tauri/src/config_export/`. Each file owns one job: `bundle`
+holds the schema version and the bundle structs, `groups` the export groups
+and the preview structs, `export` builds a bundle from the database and lists
+the findings a writer can leave out, `file` writes the `0600` file, `validate`
+checks a bundle, `apply` writes an import in one transaction, `preview`
+matches a bundle to what exists, `convert` holds the time, slug and project
+helpers, `error` the error enum, and `commands` the four Tauri commands.
+`mod.rs` only declares the files and re-exports the commands, so lib.rs still
+registers `config_export::config_export_preview` and the others by name. A
+helper another file needs is `pub(super)`. Tests sit in a `tests.rs` beside the
+file they cover; the connection and project builders more than one group needs
+live in the test-only `fixtures.rs`, and `wire_shape_tests.rs` pins the json of
+every bundle struct. The writer map below counts Rust writes per file, so the
+baseline names `config_export/apply.rs`.
+
 ### Provider routing
 
 - The list of models is built into the app, not saved in the database. Each model's id, family, cost tier, effort levels, context window, routing weight and price are written in the provider catalogs under `packages/core/src/providers/`. Every model the app can run ships with the app. When the list changes, there is no row to edit and no migration to write.
@@ -461,7 +479,7 @@ through `project_relocation_undo`.
 ### Backup and setup export
 
 Settings › App › Backup reads and writes a JSON bundle, schema version 3
-(`apps/desktop/src-tauri/src/config_export.rs`, mirrored in
+(`apps/desktop/src-tauri/src/config_export/`, mirrored in
 `packages/types/src/config-bundle.ts`). What goes in is chosen per group
 (`ExportGroups`): workspaces, projects, folder paths, profile, workflows you
 made, workflows the orchestrator wrote, saved scripts, permission rules,
