@@ -88,7 +88,7 @@ pub fn shutdown(registry: &ProviderLifecycleRegistry) {
         if let Some(leader_pid) = run.child.process_id() {
             crate::terminal::terminate_pty_session(leader_pid);
         }
-        let _ = run.child.kill();
+        crate::logging::note_kill_failure("provider login kill", run.child.kill());
     }
 }
 
@@ -458,7 +458,7 @@ pub async fn provider_lifecycle_cancel(
     if let Some(slot) = slot {
         if let Ok(mut guard) = slot.lock() {
             if let Some(run) = guard.as_mut() {
-                let _ = run.child.kill();
+                crate::logging::note_kill_failure("provider login kill", run.child.kill());
             }
         }
     }

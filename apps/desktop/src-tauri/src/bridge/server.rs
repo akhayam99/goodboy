@@ -60,7 +60,7 @@ pub async fn serve(listener: TcpListener, ctx: Arc<ServerCtx>) {
                 let ctx = ctx.clone();
                 tokio::spawn(async move {
                     if let Err(e) = handle_conn(stream, ctx).await {
-                        log::warn!("[bridge] connection ended: {e}");
+                        log::debug!("[bridge] connection ended: {e}");
                     }
                 });
             }

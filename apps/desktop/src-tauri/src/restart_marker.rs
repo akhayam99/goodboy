@@ -40,7 +40,10 @@ pub fn persist(app: &tauri::AppHandle, run_ids: &[String]) {
         .map(|elapsed| elapsed.as_millis() as i64)
         .unwrap_or(0);
     if let Err(error) = record(&conn, run_ids, now_ms) {
-        eprintln!("[goodboy] could not record the interrupted runs: {error}");
+        log::warn!(
+            "[goodboy] could not record the interrupted runs: {}",
+            crate::logging::detail(&error)
+        );
     }
 }
 

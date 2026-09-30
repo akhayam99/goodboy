@@ -141,7 +141,10 @@ fn replay_in_copy(
             run
         };
         if commit.status != 0 {
-            let _ = git(copy, &["reset", "--hard", "--quiet", &tip]);
+            crate::logging::note_failure(
+                "trial reset",
+                git(copy, &["reset", "--hard", "--quiet", &tip]),
+            );
             return Ok(Replay {
                 head: tip,
                 map,

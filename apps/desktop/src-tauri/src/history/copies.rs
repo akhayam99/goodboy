@@ -61,7 +61,7 @@ pub(super) fn create_copy(
     let written = std::fs::write(root.join(RESERVATION_FILE), owner_text(&repo, None));
     let lock = open_lock(&root);
     if written.is_err() || lock.is_none() {
-        let _ = std::fs::remove_dir_all(&root);
+        crate::logging::note_failure("copy folder delete", std::fs::remove_dir_all(&root));
         return Err(plan_error("couldn't reserve the temporary copy"));
     }
     let guard = CopyGuard {
@@ -90,7 +90,10 @@ pub(super) fn create_copy(
             && recorded_admin_dir(&guard.root).as_deref() == Some(admin.as_path())
     });
     if !recorded {
-        let _ = git(cwd, &["worktree", "remove", "--force", &copy_text]);
+        crate::logging::note_failure(
+            "copy worktree remove",
+            git(cwd, &["worktree", "remove", "--force", &copy_text]),
+        );
     }
     added?;
     if !recorded {
