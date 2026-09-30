@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
-import type { PendingAttachment } from '../lib';
+import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
 
 const writeAttachmentSpy = vi.hoisted(() => vi.fn(async () => 'attachments/a.png'));
 const readAttachmentSpy = vi.hoisted(() => vi.fn(async () => 'data:image/png;base64,QUJD'));

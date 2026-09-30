@@ -6,7 +6,7 @@ import { tauriDatabase } from '../../../../../shared/lib/db';
 import type { AgentKind } from '../../../../session/agent-kind';
 import { hasActiveWorkflowRun } from '../../../../workflows/activeWorkflowRuns';
 import { detectScopeMismatch, type ScopeMismatch } from '../../../utils/scope-mismatch';
-import type { PendingAttachment } from '../lib';
+import type { PendingAttachment } from '../../../../attachments/pendingAttachment';
 
 export type ScopePending = {
   readonly content: string;

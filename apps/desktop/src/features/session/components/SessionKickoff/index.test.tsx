@@ -40,7 +40,7 @@ type BuilderKickoffStub = {
   readonly start: (run: (session: unknown) => Promise<void>) => Promise<void>;
 };
 
-vi.mock('../WorkflowBuilderView', () => ({
+vi.mock('../../../workflows/components/WorkflowBuilderView', () => ({
   WorkflowBuilderView: ({ kickoff }: { readonly kickoff: BuilderKickoffStub }) => (
     <div data-testid="workflow-builder">
       <textarea

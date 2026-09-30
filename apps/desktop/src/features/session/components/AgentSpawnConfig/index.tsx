@@ -7,7 +7,7 @@ import { useAppStore } from '../../../../store';
 import { AGENT_FORM_GRAMMAR, type AgentFormRole } from '../../agent-form-grammar';
 import { AgentInstructionsField } from '../AgentInstructionsField';
 import { AgentRoleField } from '../AgentRoleField';
-import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
+import type { AgentSpawnConfigValue } from '../../agentSpawnConfigValue';
 
 type Props = {
   readonly value: AgentSpawnConfigValue;

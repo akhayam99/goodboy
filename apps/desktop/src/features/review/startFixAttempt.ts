@@ -7,7 +7,7 @@ import {
   type ResolveModelChoice,
   type ResolverStyle,
 } from '../chat/spawn-from-comment';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import { chunkConversations } from './chunkConversations';
 import { modelChoiceOfLaunch } from '../resolve/launchChoice';
 import type { ResolveAttemptBatch } from '../../store/slices/resolve/types';

@@ -11,7 +11,7 @@ import { GitBranch } from 'lucide-react';
 import type { GitlabIntegrationBinding, SessionId, WorkspaceId } from '@goodboy/types';
 import { gitlabMergeRequestFields, resolveFacts } from '../../../../../shared/detail-fields';
 import { useAppStore } from '../../../../../store';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import {
   gitlabMergeMr,
   gitlabUpdateMrState,
@@ -26,7 +26,7 @@ import { CreateMrForm } from './CreateMrForm';
 import { MrApprovals } from './MrApprovals';
 import { mrDraftTitle } from './mrDraftTitle';
 import { gitlabMrStateKind } from '../../gitlabMrStateKind';
-import { PullRequestChip } from '../../../../github/components/PullRequestChip';
+import { PullRequestChip } from '../../../github/components/PullRequestChip';
 import { useConversationPane } from '../../../../../shared/components/Conversation/useConversationPane';
 import type { ConversationSource } from '../../../../../shared/components/Conversation/types';
 import { GITLAB_MR_CAPABILITIES, gitlabMrConversation } from '../../gitlabMrConversation';

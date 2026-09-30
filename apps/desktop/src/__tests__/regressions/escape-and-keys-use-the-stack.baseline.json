@@ -4,7 +4,7 @@
     "apps/desktop/src/features/context/components/QuestionsTab/CustomAnswerField/index.tsx": 1,
     "apps/desktop/src/features/context/components/QuestionsTab/QuestionCard/QuestionAnswerInput.tsx": 1,
     "apps/desktop/src/features/diff/components/DiffView/CommentComposer.tsx": 1,
-    "apps/desktop/src/features/github/components/PullRequest/PrOverview.tsx": 1,
+    "apps/desktop/src/features/integrations/github/components/PullRequest/PrOverview.tsx": 1,
     "apps/desktop/src/features/history/components/RewriteHistoryPage/RewordEditor.tsx": 1,
     "apps/desktop/src/features/inbox/components/InboxStudio/InboxListHeader.tsx": 1,
     "apps/desktop/src/features/onboarding/OnboardingWizard/WizardFrame.tsx": 1,

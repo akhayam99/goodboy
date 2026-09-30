@@ -16,7 +16,7 @@ import type { WorktreeFacts } from './kinds/worktree';
 import type { ScriptFacts } from './kinds/script';
 import type { ChatFacts } from './kinds/chat';
 import type { AppStore } from '../../store/store';
-import type { ShowToast } from '../../app/components/Toast';
+import type { ShowToast } from '../../shared/components/Toast';
 import type { ShortcutId } from '../../shared/keyboard/registry';
 import type { RemoteHostKind } from '../../shared/lib/remoteHost';
 

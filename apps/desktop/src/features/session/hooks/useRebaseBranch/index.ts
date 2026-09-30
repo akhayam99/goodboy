@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { AgentId, MountId, SessionId, WorktreeStatus } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { distanceBehind } from '../../../../shared/lib/gitStatus';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { isHistoryRunActive } from '../../../../store/slices/history/isHistoryRunActive';
 import { resolveMountBaseBranch } from '../../../../store/slices/project-mounts/selectors';
 

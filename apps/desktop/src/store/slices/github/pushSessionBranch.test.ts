@@ -19,7 +19,7 @@ const h = vi.hoisted(() => ({
   worktreeStatus: vi.fn<() => Promise<WorktreeStatus>>(),
 }));
 
-vi.mock('../../../features/github/github', () => ({ gitPush: h.gitPush }));
+vi.mock('../../../features/integrations/github/github', () => ({ gitPush: h.gitPush }));
 vi.mock('../../../features/worktree/worktree', () => ({ worktreeStatus: h.worktreeStatus }));
 
 import {
@@ -27,7 +27,7 @@ import {
   readWorktreeStatus,
   resetWorktreeStatusCache,
   worktreeStatusKey,
-} from '../../../features/session/hooks/useWorktreeStatuses/cache';
+} from '../worktreeStatuses/cache';
 import { branchPushStateOf } from '../../../shared/lib/branchPushState';
 import { pushSessionBranch } from './pushSessionBranch';
 import { useAppStore, type AppStore } from '../../store';

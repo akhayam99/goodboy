@@ -25,7 +25,7 @@ vi.mock('../../../integrations/hooks/useWorkspaceIssueLookup', () => ({
 
 import { useAppStore } from '../../../../store';
 import { bindTarget } from '../../../actions/registry';
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { SearchMode } from './index';
 
 const WORKSPACE = 'ws-harborline' as WorkspaceId;

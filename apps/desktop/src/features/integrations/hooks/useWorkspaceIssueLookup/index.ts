@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { detectRepoSlug } from '@goodboy/core';
 import type { WorkspaceId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { tauriGhRunner } from '../../../github/github';
+import { tauriGhRunner } from '../../github/github';
 import { classifyRemoteHost, projectPathFromRemoteUrl } from '../../../../shared/lib/remoteHost';
 import { worktreeRemoteUrl } from '../../../worktree/worktree';
 import { lookupIssueByCode, type LookupResult } from '../../issueCode/lookupIssueByCode';

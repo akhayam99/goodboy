@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SessionId, WorkspaceId } from '@goodboy/types';
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import type { BitbucketRepo } from '../client';
 import type { BitbucketPrGroup } from './useBitbucketPrs';
 

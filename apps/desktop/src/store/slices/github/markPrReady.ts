@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { prLifecycleFailureTitle } from '../../../features/review/prLifecycle';
 import { mountPrEventPayload } from './mountPrEventPayload';
 import { prWriteContext } from './prWriteContext';

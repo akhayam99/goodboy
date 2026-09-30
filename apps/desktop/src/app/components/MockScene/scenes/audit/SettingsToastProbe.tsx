@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useToast } from '../../../Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import { sceneParam } from './sceneParams';
 
 export const SettingsToastProbe = () => {

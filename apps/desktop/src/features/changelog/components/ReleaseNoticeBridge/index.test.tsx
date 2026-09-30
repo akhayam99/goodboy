@@ -9,7 +9,7 @@ vi.mock('../../hooks/useInstalledVersion', () => ({
   useInstalledVersion: () => installed.version,
 }));
 
-import { ToastProvider } from '../../../../app/components/Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import { ReleaseNoticeBridge } from './index';
 

@@ -5,7 +5,7 @@ import type {
   ResolveCommitStyle,
   SessionId,
 } from '@goodboy/types';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import type { PriorContext } from '../chat/spawn-from-comment';
 import type { AgentKindRouting } from '../session/agent-kind';
 import { contextWindowFor } from '../session/contextWindowFor';

@@ -133,7 +133,7 @@ vi.mock('../features/chat/turn', () => ({
   listLiveRunIds: vi.fn(async () => new Set<string>()),
 }));
 
-vi.mock('../features/github/github', () => ({
+vi.mock('../features/integrations/github/github', () => ({
   createTauriPrCacheStore: vi.fn(() => ({})),
   gitPush,
   tauriGhRunner,

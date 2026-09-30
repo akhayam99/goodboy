@@ -79,13 +79,13 @@ vi.mock('./MountBranchDecision', () => ({
 vi.mock('../../../../worktree/useMountRemoteHostKind', () => ({
   useMountRemoteHostKind: () => remoteKind.current,
 }));
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 vi.mock('../../../../../shared/lib/editor', () => ({
   openInEditor: vi.fn(async () => undefined),
 }));
-vi.mock('../../../hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../../../../../store/slices/worktreeStatuses/cache', () => ({
   ensure: vi.fn(async () => null),
   worktreeStatusKey: () => 'key',
 }));

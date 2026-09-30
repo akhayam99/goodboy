@@ -42,7 +42,7 @@ import {
   resetStoryStore,
   type StoryStore,
 } from '../../store/storyHarness';
-import { ToastProvider } from '../../app/components/Toast';
+import { ToastProvider } from '../../shared/components/Toast';
 import { WORKSPACE_ID, seedBoardScene } from '../../app/components/MockScene/scenes/BoardScene';
 import { attachLinkedSession } from '../../features/inbox/attachLinkedSession';
 import { InboxDetail } from '../../features/inbox/components/InboxStudio/InboxDetail';

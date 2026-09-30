@@ -72,7 +72,7 @@ vi.mock('../../features/settings/components/SettingsStudio', () => ({
   SettingsStudio: () => null,
 }));
 vi.mock('../../features/settings/components/GuideStudio', () => ({ GuideStudio: () => null }));
-vi.mock('../../app/components/Toast', () => ({ ToastProvider: () => null }));
+vi.mock('../../shared/components/Toast', () => ({ ToastProvider: () => null }));
 vi.mock('../../features/notifications/components/NotificationToastBridge', () => ({
   NotificationToastBridge: () => null,
 }));
@@ -97,7 +97,7 @@ vi.mock('../../features/workspace/window', () => ({
 vi.mock('../../features/workflows/components/WorkflowStudio', () => ({
   WorkflowStudio: () => null,
 }));
-vi.mock('../../features/github/github', () => ({ ghCommitDiff: vi.fn() }));
+vi.mock('../../features/integrations/github/github', () => ({ ghCommitDiff: vi.fn() }));
 vi.mock('../../features/worktree/worktree', () => ({ worktreeDiffCommit: vi.fn() }));
 vi.mock('../../features/onboarding/OnboardingWizard', () => ({ OnboardingWizard: () => null }));
 vi.mock('../../features/companion/components/CompanionStudio', () => ({
@@ -146,7 +146,9 @@ vi.mock('../../store', async () => {
     useWorkspaces: () => state.workspaces,
   };
 });
-vi.mock('../../features/github/hooks/useGithubPolling', () => ({ useGithubPolling: vi.fn() }));
+vi.mock('../../features/integrations/github/hooks/useGithubPolling', () => ({
+  useGithubPolling: vi.fn(),
+}));
 vi.mock('../../features/updater/hooks/useUpdaterPolling', () => ({ useUpdaterPolling: vi.fn() }));
 
 import { App } from '../../App';

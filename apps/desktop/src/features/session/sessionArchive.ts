@@ -1,5 +1,5 @@
 import type { Session, SessionId } from '@goodboy/types';
-import type { ShowToast } from '../../app/components/Toast';
+import type { ShowToast } from '../../shared/components/Toast';
 import type { AppStore } from '../../store/store';
 import {
   SESSION_ARCHIVED_TITLE,

@@ -129,7 +129,7 @@ vi.mock('../../../../context/components/ContextPanel/strips/BitbucketPrStrip', (
   ),
 }));
 
-vi.mock('../../../../github/github', () => ({
+vi.mock('../../../../integrations/github/github', () => ({
   ghStatus: h.ghStatus,
   ghSetToken: h.ghSetToken,
   ghClearToken: vi.fn(async () => undefined),

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { WorkflowBuilderView } from '../../../../../features/session/components/WorkflowBuilderView';
+import { WorkflowBuilderView } from '../../../../../features/workflows/components/WorkflowBuilderView';
 import { FLOW_SESSION, noop } from './fixtures';
 import { seedWorkflowBuilder } from './seeds';
 

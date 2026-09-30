@@ -1,8 +1,8 @@
 import type { SessionExternalTask, WorkspaceId } from '@goodboy/types';
 import { ErrorStrip, PaneShell } from '@goodboy/ui';
 import { RecordDetailSkeleton } from '../../../../../../shared/components/StudioDetail/RecordDetailSkeleton';
-import { GithubIssueDetail } from '../../../../../github/GithubIssueDetail';
-import { useGithubIssue } from '../../../../../github/useGithubIssue';
+import { GithubIssueDetail } from '../../../../../integrations/github/GithubIssueDetail';
+import { useGithubIssue } from '../../../../../integrations/github/useGithubIssue';
 
 type Props = {
   readonly workspaceId: WorkspaceId;

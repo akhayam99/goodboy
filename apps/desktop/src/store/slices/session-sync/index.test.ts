@@ -66,11 +66,11 @@ vi.mock('@goodboy/ui', () => ({
   formatError: (error: unknown) => (error instanceof Error ? error.message : String(error)),
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   tauriGhRunner: { run: h.ghRun },
 }));
 
-vi.mock('../../../features/session/hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../worktreeStatuses/cache', () => ({
   refreshWorktreeStatuses: h.refreshWorktreeStatuses,
 }));
 

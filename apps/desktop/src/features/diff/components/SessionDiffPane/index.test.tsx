@@ -118,11 +118,11 @@ vi.mock('../../../worktree/useMountRemoteHostKind', () => ({
   useMountRemoteHostKind: () => 'github',
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 
-vi.mock('../../../session/hooks/useWorktreeStatuses/cache', () => ({
+vi.mock('../../../../store/slices/worktreeStatuses/cache', () => ({
   ensure: vi.fn(async () => null),
   worktreeStatusKey: () => 'key',
 }));

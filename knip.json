@@ -18,7 +18,7 @@
         "src/app/components/BootSplash/index.tsx": ["exports"],
         "src/app/components/MockScene/index.tsx": ["exports"],
         "src/app/components/MockScene/scenes/activityRunSeed.ts": ["exports"],
-        "src/app/components/Toast/toastTiming.ts": ["exports"],
+        "src/shared/components/Toast/toastTiming.ts": ["exports"],
         "src/features/artifacts/artifact-status.ts": ["exports"],
         "src/features/artifacts/artifactMirror/artifactMirrorQueue.ts": ["exports"],
         "src/features/artifacts/artifactQuestionContract.ts": ["exports"],
@@ -42,9 +42,11 @@
         "src/features/diff/hooks/useDiffReviewThreads/index.tsx": ["exports"],
         "src/features/diff/hooks/useDiffTokens/index.ts": ["exports"],
         "src/features/diff/hooks/useFileJump/index.ts": ["exports"],
-        "src/features/github/components/PullRequest/useGithubIssues.ts": ["exports"],
-        "src/features/github/components/PullRequest/useGithubPrs/index.ts": ["exports"],
-        "src/features/github/prDraftAgent.ts": ["exports"],
+        "src/features/integrations/github/components/PullRequest/useGithubIssues.ts": ["exports"],
+        "src/features/integrations/github/components/PullRequest/useGithubPrs/index.ts": [
+          "exports"
+        ],
+        "src/features/integrations/github/prDraftAgent.ts": ["exports"],
         "src/features/history/historyEngine.ts": ["exports"],
         "src/features/history/historyGraphModel.ts": ["exports"],
         "src/features/history/useHistoryDrag/index.ts": ["exports"],
@@ -84,19 +86,17 @@
         "src/features/resolve/learnWorkspaceReplyStyle.ts": ["exports"],
         "src/features/session/agent-kind.ts": ["exports"],
         "src/features/session/agent-status.ts": ["exports"],
-        "src/features/session/components/SessionWorkspace/parts/resolvePullRequestProvider.ts": [
-          "types"
-        ],
+        "src/features/session/resolvePullRequestProvider.ts": ["types"],
         "src/features/session/components/SessionWorkspace/sessionBreadcrumb.ts": ["types"],
-        "src/features/session/components/WorkflowBuilderView/index.tsx": ["exports"],
-        "src/features/session/components/WorkflowBuilderView/parts/BuilderTitleField.tsx": [
+        "src/features/workflows/components/WorkflowBuilderView/index.tsx": ["exports"],
+        "src/features/workflows/components/WorkflowBuilderView/parts/BuilderTitleField.tsx": [
           "exports"
         ],
         "src/features/session/context/shareableContext.ts": ["exports"],
         "src/features/session/hooks/useRebaseAgent/index.ts": ["exports"],
         "src/features/session/hooks/useSessionFocusRecheck/index.ts": ["exports"],
         "src/features/session/hooks/useSessionRefresh/index.ts": ["exports"],
-        "src/features/session/hooks/useWorktreeStatuses/cache.ts": ["exports"],
+        "src/store/slices/worktreeStatuses/cache.ts": ["exports"],
         "src/features/session/lens-destinations.ts": ["types"],
         "src/features/session/mountQueryBridge/index.ts": ["exports"],
         "src/features/session/projectMaterializeBridge.ts": ["exports"],

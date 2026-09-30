@@ -3,7 +3,7 @@ import { AnchoredPopover, InlineConfirm, cn, useDropdown, type ConfirmRole } fro
 import type { SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../../store';
 import type { MountRowView } from '../../../../../store/slices/project-mounts/mountRowModel';
-import { useToast } from '../../../../../app/components/Toast';
+import { useToast } from '../../../../../shared/components/Toast';
 import { worktreeDetachAssessment } from '../../../../worktree/worktree';
 import {
   mountCleanupBlockers,

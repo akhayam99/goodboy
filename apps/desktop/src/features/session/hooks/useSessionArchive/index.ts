@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import type { Session } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { archiveSessions, restoreSessions } from '../../sessionArchive';
 
 type SessionsParams = {

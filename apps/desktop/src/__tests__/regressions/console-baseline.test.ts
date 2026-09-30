@@ -7,7 +7,7 @@ import { toEntryId, type ConsoleBaseline } from '../../test/consoleKey';
 
 const DESKTOP_ROOT = join(import.meta.dirname, '..', '..', '..');
 const BASELINE_CEILING = 21;
-const BASELINE_SHA256 = '0dc216ef17786b274f3ac3ba990b25879f7d5fba130115d34ea0aea56cf38c20';
+const BASELINE_SHA256 = 'a3c2a296cdf4128cc84202eb4f0a1ec5926ceec07fd6e86ea44f50f26fe3a597';
 
 const digest = (): string =>
   createHash('sha256').update(baseline.entries.map(toEntryId).sort().join('\n')).digest('hex');

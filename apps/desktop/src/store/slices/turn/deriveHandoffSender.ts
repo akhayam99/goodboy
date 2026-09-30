@@ -1,6 +1,6 @@
 import type { Agent, HandoffSender, OpenQuestionId, Step, WorkflowRun } from '@goodboy/types';
 import type { AgentKind } from '../../../features/session/agent-kind';
-import { agentFollowUpMoves } from '../../../features/session/components/AgentDetailPane/followUpMoves';
+import { agentFollowUpMoves } from '../../../features/session/followUpMoves';
 
 type Params = {
   readonly agent: Agent | null;

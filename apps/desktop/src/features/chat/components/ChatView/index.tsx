@@ -53,7 +53,7 @@ import { WorkflowAdvanceRow } from './parts/WorkflowAdvanceRow';
 import { QuestionWaitingPill } from './parts/QuestionWaitingPill';
 import { resolveSessionRepo } from '../../../../store/slices/worktrees/resolveSessionRepo';
 import { missingAttachmentsMessage, readRetryAttachments } from './readRetryAttachments';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 import { isReportedError } from '../../../../store/slices/notifications/reportedError';
 

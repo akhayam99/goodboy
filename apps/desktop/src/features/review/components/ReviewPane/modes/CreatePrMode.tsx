@@ -1,5 +1,5 @@
 import type { SessionId } from '@goodboy/types';
-import { CreatePrPanel } from '../../../../github/components/PullRequest/CreatePrPanel';
+import { CreatePrPanel } from '../../../../integrations/github/components/PullRequest/CreatePrPanel';
 
 type ClosedPr = { readonly number: number; readonly url: string };
 

@@ -7,7 +7,7 @@ import {
 import { CONCEPT_ICONS, CONCEPT_TONE } from '../../../shared/components/conceptIcons';
 import { SCOPE_ITEMS } from '../components/SettingsStudio/SettingsRail';
 import { APP_SECTIONS, type AppSection } from '../components/SettingsStudio/appSections';
-import type { SettingsScopeChange, SettingsStudioScope } from '../components/SettingsStudio/types';
+import type { SettingsScopeChange, SettingsStudioScope } from '../settingsFocus';
 
 type Params = {
   readonly scope: SettingsStudioScope;

@@ -8,7 +8,7 @@ import type {
   ResolveCommitStyle,
 } from '@goodboy/types';
 import type { AgentKind } from '../session/agent-kind';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import { prCommentLocation } from '../session/pr-comment-location';
 import { RESOLVER_KICKOFF_LABELS } from './utils/resolverKickoffLabels';
 

@@ -116,7 +116,7 @@ vi.mock('../../../../../workflows/useAdvanceWorkflowAgent', () => ({
 vi.mock('../../../../../workflows/useWorkflowAdvanceStates', () => ({
   useWorkflowAdvanceStates: () => new Map(),
 }));
-vi.mock('../../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 vi.mock('./ActivityFilterPanel', () => ({

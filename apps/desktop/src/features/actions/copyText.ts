@@ -1,4 +1,4 @@
-import type { ShowToast } from '../../app/components/Toast';
+import type { ShowToast } from '../../shared/components/Toast';
 
 type Params = {
   readonly text: string;

@@ -3,7 +3,7 @@ import { AppShell } from '@goodboy/ui';
 import { AppFooter } from '../../AppFooter';
 import type { FooterTarget } from '../../../hooks/useAppOverlays/overlayState';
 import { AppTopBar } from '../../AppTopBar';
-import { ToastProvider } from '../../Toast';
+import { ToastProvider } from '../../../../shared/components/Toast';
 import { shellArrangement } from '../../../shellArrangement';
 
 const noop = () => undefined;

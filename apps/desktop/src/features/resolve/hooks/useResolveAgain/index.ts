@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type { PrComment, ResolveAttempt, SessionId } from '@goodboy/types';
 import { EMPTY_ARRAY, useAppStore } from '../../../../store';
 import { sessionResolveStyle } from '../../../../store/sessionReplySettings';
-import { groupThreads } from '../../../github/comment-threads';
+import { groupThreads } from '../../../integrations/github/comment-threads';
 import { conversationSourceOf } from '../../notes/conversationSource';
 import { draftRoutingOf } from '../../draftRouting';
 import { retryBatchOf } from '../../launchChoice';

@@ -7,7 +7,7 @@ import {
 import { formatError } from '@goodboy/ui';
 import { markPrReviewDraftsPublished } from '@goodboy/db';
 import type { GitlabIntegrationBinding, PrReviewDraft, SessionId, Workspace } from '@goodboy/types';
-import { ghPrDiff, tauriGhRunner } from '../../../features/github/github';
+import { ghPrDiff, tauriGhRunner } from '../../../features/integrations/github/github';
 import {
   gitlabCreateMrDiscussion,
   gitlabCreateMrNote,

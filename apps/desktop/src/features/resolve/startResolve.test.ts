@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentId, BranchCommit, PrComment, PullRequestState, SessionId } from '@goodboy/types';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import type { SpawnAgentFn } from '../review/startFixAttempt';
 import type { BlameLineParams } from '../worktree/worktree';
 import { startResolve } from './startResolve';

@@ -1,4 +1,4 @@
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 
 const MAX_THREADS_PER_ATTEMPT = 12;
 

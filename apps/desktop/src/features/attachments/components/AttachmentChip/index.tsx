@@ -3,7 +3,7 @@ import { ImageOff, X } from 'lucide-react';
 import { IconButton, Skeleton } from '@goodboy/ui';
 import { attachmentKindFor, fileIconFor } from '../../../chat/attachment-kinds';
 import { ImageLightbox } from '../../../chat/components/ImageLightbox';
-import { dataUrlToBase64, type PendingAttachment } from '../../../chat/components/ChatInput/lib';
+import { dataUrlToBase64, type PendingAttachment } from '../../pendingAttachment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 export type AttachmentThumbnail =

@@ -6,7 +6,7 @@ import {
   type ReviewSource,
 } from '@goodboy/core';
 import type { ResolveThread, SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { bitbucketReviewTransport } from '../../../features/integrations/bitbucket/bitbucketReviewTransport';
 import { gitlabReviewTransport } from '../../../features/integrations/gitlab/gitlabReviewTransport';
 import { sessionThreadGhOptions } from '../github/sessionThreadGhOptions';

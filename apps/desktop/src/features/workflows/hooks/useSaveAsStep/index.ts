@@ -1,7 +1,7 @@
 import { formatError } from '@goodboy/ui';
 import { useState } from 'react';
 import type { StepDefId, WorkspaceId } from '@goodboy/types';
-import { useToast } from '../../../../app/components/Toast';
+import { useToast } from '../../../../shared/components/Toast';
 import { useAppStore } from '../../../../store';
 import type { StepDraft } from '../../engine';
 import { stepDefArgsFromDraft } from '../../savedSteps';

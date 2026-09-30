@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { BranchPair, HeaderBand } from '@goodboy/ui';
 import type { PullRequestState } from '@goodboy/types';
-import { PullRequestChip } from '../../../github/components/PullRequestChip';
+import { PullRequestChip } from '../../../integrations/github/components/PullRequestChip';
 
 type Props = {
   readonly pr: PullRequestState;

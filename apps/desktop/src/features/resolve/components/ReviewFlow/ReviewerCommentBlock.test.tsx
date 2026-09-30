@@ -2,7 +2,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
-import type { CommentThread } from '../../../github/comment-threads';
+import type { CommentThread } from '../../../integrations/github/comment-threads';
 import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 

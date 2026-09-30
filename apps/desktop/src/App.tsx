@@ -9,7 +9,7 @@ import { useAppShortcuts } from './app/hooks/useAppShortcuts';
 import { useAppOverlays } from './app/hooks/useAppOverlays';
 import { NoWorkspaceScreen } from './app/components/AppEmptyState';
 import { StageBoard } from './features/workspace/components/StageBoard';
-import { ToastProvider } from './app/components/Toast';
+import { ToastProvider } from './shared/components/Toast';
 import { ObjectMenuProvider } from './features/actions/components/ObjectMenuProvider';
 import { NotificationToastBridge } from './features/notifications/components/NotificationToastBridge';
 import { WorkflowFollowToastBridge } from './features/workflows/components/WorkflowFollowToastBridge';
@@ -46,7 +46,7 @@ import {
   useSessions,
   useWorkspaces,
 } from './store';
-import { useGithubPolling } from './features/github/hooks/useGithubPolling';
+import { useGithubPolling } from './features/integrations/github/hooks/useGithubPolling';
 import { useSessionFocusRecheck } from './features/session/hooks/useSessionFocusRecheck';
 import { useUpdaterPolling } from './features/updater/hooks/useUpdaterPolling';
 import { useConnectedIntegrations } from './features/integrations/hooks/useConnectedIntegrations';

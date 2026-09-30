@@ -103,7 +103,7 @@ vi.mock('../../../../features/providers/components/CostBadge', () => ({
   CostBadge: () => null,
 }));
 
-vi.mock('../../../../features/github/components/PullRequestChip', () => ({
+vi.mock('../../../integrations/github/components/PullRequestChip', () => ({
   pullRequestMeta: () => null,
 }));
 

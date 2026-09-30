@@ -6,7 +6,7 @@ import {
 } from '@goodboy/db';
 import { saveResolveThread } from './saveResolveThread';
 import type { PrComment } from '@goodboy/types';
-import { groupThreads } from '../../../features/github/comment-threads';
+import { groupThreads } from '../../../features/integrations/github/comment-threads';
 import { tauriDatabase } from '../../../shared/lib/db';
 import { createResolveThread } from './createResolveThread';
 import { loadResolveQueueItemsInto } from './loadResolveQueueItemsInto';

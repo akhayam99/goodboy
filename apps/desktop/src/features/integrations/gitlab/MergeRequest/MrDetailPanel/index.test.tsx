@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { SessionId, TaskModelPreferences, WorkspaceId } from '@goodboy/types';
-import type { AgentSpawnConfigValue } from '../../../../session/components/AgentSpawnConfig/AgentSpawnConfigValue';
+import type { AgentSpawnConfigValue } from '../../../../session/agentSpawnConfigValue';
 import type { GitlabMergeRequest } from '../../client';
 
 type SpawnAgent = (
@@ -87,7 +87,7 @@ vi.mock('../../../../../store', async () => ({
   }),
 }));
 
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: h.showToast }),
 }));
 

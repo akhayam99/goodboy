@@ -52,7 +52,7 @@ vi.mock('../../../../store', () => ({
   }),
 }));
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: toastMock }),
 }));
 

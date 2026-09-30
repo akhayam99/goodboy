@@ -33,7 +33,7 @@ vi.mock('@goodboy/core', async () => {
   };
 });
 
-vi.mock('../../../github/github', () => ({ tauriGhRunner: {} }));
+vi.mock('../../../integrations/github/github', () => ({ tauriGhRunner: {} }));
 
 import { ConvertWorkspaceDialog } from './index';
 import { chooseListboxValue } from '../../../../__tests__/helpers/listbox';

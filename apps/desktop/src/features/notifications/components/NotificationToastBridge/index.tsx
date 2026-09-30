@@ -3,7 +3,7 @@ import type { Notification, NotificationAction } from '@goodboy/db';
 import { formatError, inlineMarkdownText } from '@goodboy/ui';
 import type { Session, Workspace } from '@goodboy/types';
 import { agentPlace, sessionPlace, useAppStore } from '../../../../store';
-import { useToast, type ToastAction } from '../../../../app/components/Toast';
+import { useToast, type ToastAction } from '../../../../shared/components/Toast';
 import type { ImpactScope } from '../../../impact/lib';
 import { openImpactStudio } from '../../../impact/openImpactStudio';
 import { CLI_LABEL } from '../../../providers/cliLabel';

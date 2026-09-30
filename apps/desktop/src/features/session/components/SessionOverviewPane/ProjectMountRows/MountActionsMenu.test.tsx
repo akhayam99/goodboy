@@ -66,7 +66,7 @@ vi.mock('../../../../../store', () => ({
 
 vi.mock('zustand/react/shallow', () => ({ useShallow: <T,>(selector: T) => selector }));
 
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast }),
 }));
 

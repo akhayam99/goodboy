@@ -1,5 +1,5 @@
 import type { WorkspaceId } from '@goodboy/types';
-import { ghClearToken } from '../../../features/github/github';
+import { ghClearToken } from '../../../features/integrations/github/github';
 import { refreshEveryGithubConnection } from './refreshGithubConnection';
 import type { GetFn, SetFn } from './types';
 

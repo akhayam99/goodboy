@@ -1,7 +1,7 @@
 import type { AgentId, ResolveLaunchChoice, SessionId } from '@goodboy/types';
 import type { AppStore } from '../../store/store';
 import { sessionResolveStyle } from '../../store/sessionReplySettings';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import { reviewRowsOf } from './reviewRows';
 import { startResolve } from './startResolve';
 

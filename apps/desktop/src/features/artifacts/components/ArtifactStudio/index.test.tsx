@@ -93,7 +93,7 @@ vi.mock('../../../../store', async () => {
   };
 });
 
-vi.mock('../../../../app/components/Toast', () => ({
+vi.mock('../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast }),
 }));
 

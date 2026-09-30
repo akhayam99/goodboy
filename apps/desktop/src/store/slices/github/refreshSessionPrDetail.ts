@@ -1,7 +1,7 @@
 import { detectRepoSlug, fetchPrDetail } from '@goodboy/core';
 import { formatError } from '@goodboy/ui';
 import type { IsoDateTime, MountId, SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import { mountRevision, requestIdentityEquals } from '../project-mounts/mountRequests';
 import { applyMountGithub } from './mountGithub';
 import { githubRequestIdentity } from './mountPrLink';

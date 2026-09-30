@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { ProviderId } from '@goodboy/types';
-import type { AgentSpawnConfigValue } from './AgentSpawnConfigValue';
+import type { AgentSpawnConfigValue } from '../../agentSpawnConfigValue';
 
 const DEFAULT_CONFIG: AgentSpawnConfigValue = {
   provider: 'anthropic',

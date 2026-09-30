@@ -24,7 +24,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('@goodboy/core', () => ({ parseUnifiedDiff: () => [] }));
-vi.mock('../../../../github/github', () => ({ ghPrDiff: h.ghPrDiff }));
+vi.mock('../../../../integrations/github/github', () => ({ ghPrDiff: h.ghPrDiff }));
 vi.mock('../../../../integrations/gitlab/client', () => ({ gitlabMrDiff: h.gitlabMrDiff }));
 vi.mock('../../../../../store/slices/worktrees/resolveSessionRepo', () => ({
   resolveSessionRepo: () => ({

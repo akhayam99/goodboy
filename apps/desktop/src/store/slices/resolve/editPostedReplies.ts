@@ -6,7 +6,7 @@ import {
 } from '@goodboy/db';
 import { updateReviewComment } from '@goodboy/core';
 import type { SessionId } from '@goodboy/types';
-import { tauriGhRunner } from '../../../features/github/github';
+import { tauriGhRunner } from '../../../features/integrations/github/github';
 import {
   editPostedReplyKey,
   isEditPostedReplyOn,

@@ -59,7 +59,7 @@ vi.mock('@goodboy/core', async (importOriginal) => ({
   addPullRequestReview: addPullRequestReviewSpy,
 }));
 
-vi.mock('../../../features/github/github', () => ({
+vi.mock('../../../features/integrations/github/github', () => ({
   ghPrDiff: ghPrDiffSpy,
   tauriGhRunner: { run: vi.fn(async () => ({ stdout: '', stderr: '', exitCode: 0 })) },
 }));

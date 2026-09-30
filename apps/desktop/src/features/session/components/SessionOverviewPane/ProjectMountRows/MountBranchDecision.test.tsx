@@ -13,7 +13,7 @@ vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (state: typeof h.store) => T) => selector(h.store),
 }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: h.invoke }));
-vi.mock('../../../../../app/components/Toast', () => ({
+vi.mock('../../../../../shared/components/Toast', () => ({
   useToast: () => ({ showToast: vi.fn() }),
 }));
 

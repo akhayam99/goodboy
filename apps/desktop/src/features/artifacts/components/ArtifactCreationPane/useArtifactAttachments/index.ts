@@ -6,7 +6,7 @@ import {
   usePendingAttachments,
   type AttachmentDropNotices,
 } from '../../../../chat/components/ChatInput/hooks/usePendingAttachments';
-import { dataUrlToBase64 } from '../../../../chat/components/ChatInput/lib';
+import { dataUrlToBase64 } from '../../../../attachments/pendingAttachment';
 import { deleteAttachment, writeAttachment } from '../../../../chat/turn';
 import type { ArtifactAttachment } from '../../../artifactAttachments';
 

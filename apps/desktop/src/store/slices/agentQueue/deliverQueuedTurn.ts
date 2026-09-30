@@ -1,5 +1,5 @@
 import type { SessionId, UserTurnSentVia } from '@goodboy/types';
-import { toAttachmentInput } from '../../../features/chat/components/ChatInput/lib';
+import { toAttachmentInput } from '../../../features/attachments/pendingAttachment';
 import { isTranscriptOwnedTurnError } from '../../../features/chat/turn-errors';
 import type { AgentQueuedTurn, GetFn } from './types';
 

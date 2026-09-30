@@ -89,7 +89,7 @@ vi.mock('../../../features/integrations/jira/client', async () =>
 vi.mock('../../../features/integrations/slack/client', async () =>
   (await import('../../storyHarness')).slackClientModuleMock(),
 );
-vi.mock('../../../features/github/github', async () =>
+vi.mock('../../../features/integrations/github/github', async () =>
   (await import('../../storyHarness')).githubModuleMock(),
 );
 vi.mock('@goodboy/core', async (importOriginal) =>
@@ -100,9 +100,6 @@ vi.mock('../../../features/scripts/scripts', async () =>
 );
 vi.mock('../../../features/terminal/terminal', async () =>
   (await import('../../storyHarness')).terminalModuleMock(),
-);
-vi.mock('../../../features/context/components/QuestionsTab/useOpenQuestions', async () =>
-  (await import('../../storyHarness')).openQuestionsModuleMock(),
 );
 vi.mock('../../../features/settings/config-export', async () =>
   (await import('../../storyHarness')).configExportModuleMock(),

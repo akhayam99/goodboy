@@ -1,5 +1,5 @@
 import type { FixupTarget } from '../chat/spawn-from-comment';
-import type { CommentThread } from '../github/comment-threads';
+import type { CommentThread } from '../integrations/github/comment-threads';
 import { listBranchCommits, worktreeBlameLine } from '../worktree/worktree';
 
 type Params = {

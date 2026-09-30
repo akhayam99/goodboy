@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { mockIPC } from '@tauri-apps/api/mocks';
-import { ToastProvider } from '../../../Toast';
+import { ToastProvider } from '../../../../../shared/components/Toast';
 import { ReleaseNoticeBridge } from '../../../../../features/changelog/components/ReleaseNoticeBridge';
 import { UpdatePill } from '../../../../../features/updater/components/UpdatePill';
 import { useAppStore } from '../../../../../store';

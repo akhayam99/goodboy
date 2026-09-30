@@ -6,7 +6,7 @@ import type { InboxRecord } from '../../types';
 
 type TestFrame = { readonly primary: ReactNode; readonly onClose: (() => void) | null };
 
-vi.mock('../../../github/GithubIssueDetail', () => ({
+vi.mock('../../../integrations/github/GithubIssueDetail', () => ({
   GithubIssueDetail: ({ issue, frame }: { issue: { title: string }; frame: TestFrame }) => (
     <div data-testid="panel">
       github-issue:{issue.title}

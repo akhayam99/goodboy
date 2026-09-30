@@ -21,7 +21,7 @@ import {
 } from '@goodboy/core';
 import { Check, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../../../store';
-import { tauriGhRunner } from '../../../github/github';
+import { tauriGhRunner } from '../../../integrations/github/github';
 import { lastPathSegment } from '../WorkspaceLinkForm/lastPathSegment';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 

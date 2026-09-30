@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { GitBranch, GitFork, GitMerge, GitPullRequest } from 'lucide-react';
 import type { Session, SessionId } from '@goodboy/types';
-import { pullRequestMeta } from '../../../../github/components/PullRequestChip';
+import { pullRequestMeta } from '../../../../integrations/github/components/PullRequestChip';
 import { GitlabMrStrip } from '../../../../context/components/ContextPanel/strips/GitlabMrStrip';
 import { BitbucketPrStrip } from '../../../../context/components/ContextPanel/strips/BitbucketPrStrip';
 import { GithubPrStrip } from '../../../../context/components/ContextPanel/strips/GithubPrStrip';
-import { GithubConnectionEmptyState } from '../../../../github/components/GithubConnectionEmptyState';
+import { GithubConnectionEmptyState } from '../../../../integrations/github/components/GithubConnectionEmptyState';
 import { useGithubConnection } from '../../../../integrations/github/useGithubConnection';
 import { useRemoteHostKind } from '../../../../worktree/useRemoteHostKind';
 import { gitlabMrStateKind } from '../../../../integrations/gitlab/gitlabMrStateKind';
@@ -19,7 +19,7 @@ import {
   availableProviderCount,
   resolvePullRequestProvider,
   type PullRequestProvider,
-} from './resolvePullRequestProvider';
+} from '../../../resolvePullRequestProvider';
 
 const PROVIDER_TAB_OPTIONS: ReadonlyArray<{
   readonly value: PullRequestProvider;
