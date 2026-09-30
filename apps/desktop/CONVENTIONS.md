@@ -10,7 +10,7 @@ This app is the **only** layer that calls Tauri commands (`invoke`) and imports 
 
 ## Folder structure
 
-[docs/file-system.md](../../docs/file-system.md) owns the layout and decides where new code goes. Code reused across features moves to `shared/`. No deep imports from one feature into another.
+[docs/file-system.md](../../docs/file-system.md) owns the layout and decides where new code goes. Code reused across features moves to `shared/`. No deep imports from one feature into another: a ratchet test counts them and the count only falls (file-system.md, Boundaries between layers).
 
 The folder rule, stated once in [docs/file-system.md](../../docs/file-system.md) → The folder rule: a folder exists only when it holds more than its entry file. Components with a test or sub-files are `Name/index.tsx` folders, hooks are always `useFoo/index.ts` folders, and other modules are flat `name.ts` + `name.test.ts` pairs. `shared/utils/` holds pure functions and `shared/lib/` the runtime boundary (Tauri wrappers, storage, flags). Do not restate the rule in another doc.
 

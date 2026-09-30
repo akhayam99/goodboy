@@ -50,6 +50,13 @@ A feature is self-contained:
 - `components/<Name>/`: see Components below.
 - Assets (JSON, SVG) live next to the feature that owns them, never in `public/` or a global `src/data/`.
 
+### Boundaries between layers
+
+- **No public entry per feature.** A feature has no `index.ts` barrel: the "no barrel" rule in [AGENTS.md](../AGENTS.md) holds. Callers import the defining file.
+- **A feature never imports another feature's `components/` or `hooks/`.** Anything under `features/<other>/` whose path has a `components` or `hooks` segment counts, so `features/integrations/github/components/...` counts as well. Code two features need moves to `shared/`, or to a flat module of the feature that owns it. The count is a ratchet, not a wall: `__tests__/regressions/cross-feature-imports.test.ts` counts product-code imports per pair of features against `cross-feature-imports.baseline.json`. It fails when a pair grows, and it fails when a pair shrinks without the baseline shrinking with it, so a cleanup cannot be spent again. Delete a pair at 0.
+- **A feature does not import the shell.** `app/` is the top of the tree. The same test freezes the few product imports of `app/` (file by file), and they only go down. Toast is a service every feature calls, so it lives in `shared/components/Toast/`.
+- **The store imports no UI.** See Store slices below.
+
 ## App shell (`app/`)
 
 Only shell code that is global by nature goes here. `App.tsx`, `main.tsx` and `styles.css` sit at the `src/` root, not here. `AppShell` is a layout primitive in `@goodboy/ui`. A component drawn in only one feature's view belongs in that feature, not here. For breadcrumb IA and the layout of `AppTopBar` controls, see [navigation.md](navigation.md). Three folders, no others:
