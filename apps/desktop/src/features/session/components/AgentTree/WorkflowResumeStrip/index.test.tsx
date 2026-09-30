@@ -2,7 +2,8 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { Agent, AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import type { AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import { anAgent } from '@goodboy/types/testing';
 
 const { state } = vi.hoisted(() => ({
   state: {
@@ -11,7 +12,7 @@ const { state } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('../../../../store', () => ({
+vi.mock('../../../../../store', () => ({
   useAppStore: <T,>(selector: (s: typeof state) => T) => selector(state),
 }));
 
@@ -19,9 +20,6 @@ import { WorkflowResumeStrip } from './index';
 
 const SESSION_ID = 'sess-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
-
-const agentOf = (overrides: Partial<Agent>): Agent =>
-  ({ id: 'agent' as AgentId, status: 'stopped', stoppedBy: 'app', ...overrides }) as Agent;
 
 afterEach(cleanup);
 
@@ -31,7 +29,10 @@ describe('WorkflowResumeStrip', () => {
       <WorkflowResumeStrip
         sessionId={SESSION_ID}
         runId={RUN_ID}
-        agents={[agentOf({ stoppedBy: 'you' }), agentOf({ status: 'completed' })]}
+        agents={[
+          anAgent({ status: 'stopped', stoppedBy: 'you' }),
+          anAgent({ status: 'completed' }),
+        ]}
       />,
     );
     expect(container.firstChild).toBeNull();
@@ -42,7 +43,10 @@ describe('WorkflowResumeStrip', () => {
       <WorkflowResumeStrip
         sessionId={SESSION_ID}
         runId={RUN_ID}
-        agents={[agentOf({ id: 'a' as AgentId }), agentOf({ id: 'b' as AgentId })]}
+        agents={[
+          anAgent({ id: 'a' as AgentId, status: 'stopped', stoppedBy: 'app' }),
+          anAgent({ id: 'b' as AgentId, status: 'stopped', stoppedBy: 'app' }),
+        ]}
       />,
     );
 

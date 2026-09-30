@@ -1,37 +1,54 @@
 import { describe, expect, it, vi } from 'vitest';
+import type { Mock } from 'vitest';
 import type { Agent, AgentId, SessionId, WorkflowRunId } from '@goodboy/types';
+import { anAgent, TEST_NOW } from '@goodboy/types/testing';
+import { useAppStore, type AppStore } from '../../store';
 import { resumeStoppedAgents } from './resumeStoppedAgents';
-import type { GetFn } from './types';
 
 const SESSION_ID = 'sess-1' as SessionId;
 const RUN_ID = 'run-1' as WorkflowRunId;
 
-const agentOf = (overrides: Partial<Agent>): Agent =>
-  ({
-    id: 'agent' as AgentId,
-    status: 'stopped',
-    stoppedBy: 'app',
-    ...overrides,
-  }) as Agent;
+type BuildGetParams = {
+  readonly agents: ReadonlyArray<Agent>;
+  readonly continueStoppedAgent?: Mock<AppStore['continueStoppedAgent']>;
+};
 
-const buildGet = (agents: ReadonlyArray<Agent>, continueStoppedAgent = vi.fn(async () => {})) =>
-  ({
-    get: (() => ({
-      sessionPhaseRuns: { [SESSION_ID]: agents },
-      continueStoppedAgent,
-    })) as unknown as GetFn,
+const buildGet = ({
+  agents,
+  continueStoppedAgent = vi.fn<AppStore['continueStoppedAgent']>(async () => undefined),
+}: BuildGetParams) => {
+  const store = {
+    sessionPhaseRuns: { [SESSION_ID]: agents },
     continueStoppedAgent,
-  }) as const;
+  } satisfies Pick<AppStore, 'sessionPhaseRuns' | 'continueStoppedAgent'>;
+  const get = () => ({ ...useAppStore.getState(), ...store });
+  return {
+    get,
+    continueStoppedAgent,
+  } as const;
+};
 
 describe('resumeStoppedAgents', () => {
   it('resumes only the agents the restart stopped and never a user stop or a done agent', async () => {
-    const { get, continueStoppedAgent } = buildGet([
-      agentOf({ id: 'a' as AgentId }),
-      agentOf({ id: 'b' as AgentId, workflowRunId: RUN_ID }),
-      agentOf({ id: 'c' as AgentId, stoppedBy: 'you' }),
-      agentOf({ id: 'd' as AgentId, doneAt: '2026-09-29T10:00:00.000Z' as Agent['doneAt'] }),
-      agentOf({ id: 'e' as AgentId, status: 'running' }),
-    ]);
+    const { get, continueStoppedAgent } = buildGet({
+      agents: [
+        anAgent({ id: 'a' as AgentId, status: 'stopped', stoppedBy: 'app' }),
+        anAgent({
+          id: 'b' as AgentId,
+          status: 'stopped',
+          stoppedBy: 'app',
+          workflowRunId: RUN_ID,
+        }),
+        anAgent({ id: 'c' as AgentId, status: 'stopped', stoppedBy: 'you' }),
+        anAgent({
+          id: 'd' as AgentId,
+          status: 'stopped',
+          stoppedBy: 'app',
+          doneAt: TEST_NOW,
+        }),
+        anAgent({ id: 'e' as AgentId, status: 'running', stoppedBy: 'app' }),
+      ],
+    });
 
     const count = await resumeStoppedAgents(get)({ sessionId: SESSION_ID });
 
@@ -43,10 +60,17 @@ describe('resumeStoppedAgents', () => {
   });
 
   it('keeps to one workflow run when asked', async () => {
-    const { get, continueStoppedAgent } = buildGet([
-      agentOf({ id: 'a' as AgentId }),
-      agentOf({ id: 'b' as AgentId, workflowRunId: RUN_ID }),
-    ]);
+    const { get, continueStoppedAgent } = buildGet({
+      agents: [
+        anAgent({ id: 'a' as AgentId, status: 'stopped', stoppedBy: 'app' }),
+        anAgent({
+          id: 'b' as AgentId,
+          status: 'stopped',
+          stoppedBy: 'app',
+          workflowRunId: RUN_ID,
+        }),
+      ],
+    });
 
     await resumeStoppedAgents(get)({ sessionId: SESSION_ID, workflowRunId: RUN_ID });
 
@@ -60,10 +84,13 @@ describe('resumeStoppedAgents', () => {
         throw new Error('provider gone');
       }
     });
-    const { get } = buildGet(
-      [agentOf({ id: 'a' as AgentId }), agentOf({ id: 'b' as AgentId })],
-      continueStoppedAgent as never,
-    );
+    const { get } = buildGet({
+      agents: [
+        anAgent({ id: 'a' as AgentId, status: 'stopped', stoppedBy: 'app' }),
+        anAgent({ id: 'b' as AgentId, status: 'stopped', stoppedBy: 'app' }),
+      ],
+      continueStoppedAgent,
+    });
 
     await expect(resumeStoppedAgents(get)({ sessionId: SESSION_ID })).rejects.toThrow(
       'provider gone',

@@ -4,30 +4,34 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sessionPlace } from '../../../../store/slices/navigation/place';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { Agent, AgentId, SessionId } from '@goodboy/types';
+import { anAgent, aSession, aWorkflowRun } from '@goodboy/types/testing';
 
 type ToastAction = { readonly label: string; readonly onClick: () => void };
 
 type ToastOptions = { readonly title?: string; readonly action?: ToastAction };
 
-const { extractHandoffMock, showToast, state } = vi.hoisted(() => ({
-  extractHandoffMock: vi.fn<(text: string) => unknown>(() => null),
-  showToast:
-    vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
-  state: {
-    sessions: [{ id: 'sess-1', workflowRuns: [] as ReadonlyArray<string> }],
-    sessionNudges: {} as Record<string, unknown>,
-    sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
-    agentTurnState: {} as Record<string, unknown>,
-    spawnAgent: vi.fn(async () => 'agent-impl' as AgentId),
-    acceptSessionNudgeHandoff: vi.fn(async () => 'agent-accepted' as AgentId),
-    navigate: vi.fn(),
-    loadAgentTranscript: vi.fn(async () => undefined),
-    providers: [
-      { id: 'anthropic', connection: 'connected' },
-      { id: 'cursor', connection: 'connected' },
-    ],
-  },
-}));
+const { extractHandoffMock, showToast, state } = vi.hoisted(() => {
+  const sessions: ReturnType<typeof aSession>[] = [];
+  return {
+    extractHandoffMock: vi.fn<(text: string) => unknown>(() => null),
+    showToast:
+      vi.fn<(params: { readonly kind: string; readonly message: string } & ToastOptions) => void>(),
+    state: {
+      sessions,
+      sessionNudges: {} as Record<string, unknown>,
+      sessionPhaseRuns: {} as Record<string, ReadonlyArray<Agent>>,
+      agentTurnState: {} as Record<string, unknown>,
+      spawnAgent: vi.fn(async () => 'agent-impl' as AgentId),
+      acceptSessionNudgeHandoff: vi.fn(async () => 'agent-accepted' as AgentId),
+      navigate: vi.fn(),
+      loadAgentTranscript: vi.fn(async () => undefined),
+      providers: [
+        { id: 'anthropic', connection: 'connected' },
+        { id: 'cursor', connection: 'connected' },
+      ],
+    },
+  };
+});
 
 vi.mock('@goodboy/core', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@goodboy/core')>();
@@ -72,7 +76,7 @@ const SOURCE_AGENT_ID = 'agent-source' as AgentId;
 beforeEach(() => {
   extractHandoffMock.mockReset();
   showToast.mockClear();
-  state.sessions = [{ id: 'sess-1', workflowRuns: [] }];
+  state.sessions = [aSession({ id: SESSION_ID })];
   state.sessionNudges = {};
   state.sessionPhaseRuns = {};
   state.agentTurnState = {};
@@ -93,7 +97,7 @@ describe('HandoffChip', () => {
 
   it('renders nothing when the session belongs to a workflow', () => {
     extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: 'r' });
-    state.sessions = [{ id: 'sess-1', workflowRuns: ['w'] }];
+    state.sessions = [aSession({ id: SESSION_ID, workflowRuns: [aWorkflowRun()] })];
     const { container } = render(
       <HandoffChip assistantText="x" sessionId={SESSION_ID} sourceAgentId={SOURCE_AGENT_ID} />,
     );
@@ -120,7 +124,7 @@ describe('HandoffChip', () => {
   it('seeds the kickoff with the reason and starts on the routing the user picked', () => {
     extractHandoffMock.mockReturnValue({ kind: 'debugger', reason: 'Router keeps a stale path' });
     state.sessionPhaseRuns = {
-      'sess-1': [{ id: SOURCE_AGENT_ID, name: 'stash check', status: 'completed' } as Agent],
+      'sess-1': [anAgent({ id: SOURCE_AGENT_ID, name: 'stash check', status: 'completed' })],
     };
     render(
       <HandoffChip
@@ -147,7 +151,7 @@ describe('HandoffChip', () => {
     extractHandoffMock.mockReturnValue({ kind: 'implementer', reason: 'Build it' });
     state.sessionPhaseRuns = {
       'sess-1': [
-        {
+        anAgent({
           id: 'agent-impl' as AgentId,
           sessionId: SESSION_ID,
           ordinal: 1,
@@ -155,7 +159,7 @@ describe('HandoffChip', () => {
           status: 'running',
           kind: 'implementer',
           parentAgentId: SOURCE_AGENT_ID,
-        } as Agent,
+        }),
       ],
     };
 

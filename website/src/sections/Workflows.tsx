@@ -11,7 +11,7 @@ export const Workflows = () => (
     head={{
       eyebrow: 'Workflows',
       heading: 'Split a big goal into several steps',
-      lead: 'An orchestrator picks what runs next and waits for it to finish. Inside a step, several agents can work side by side.',
+      lead: 'An orchestrator picks what runs next and waits for it to finish. Inside a step, several agents can work side by side. After a restart, one Resume all starts the stopped agents again.',
     }}
   >
     <Frame figure={RUN_CANVAS} isCanvas />

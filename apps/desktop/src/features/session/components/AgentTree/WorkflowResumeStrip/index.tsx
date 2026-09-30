@@ -1,9 +1,9 @@
 import { Button } from '@goodboy/ui';
 import type { Agent, SessionId, WorkflowRunId } from '@goodboy/types';
-import { useAppStore } from '../../../../store';
-import { isStoppedByRestart } from '../../../../store/slices/turn/isStoppedByRestart';
-import { CONCEPT_ICONS, ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { usePendingAction } from '../../../../shared/hooks/usePendingAction';
+import { useAppStore } from '../../../../../store';
+import { isStoppedByRestart } from '../../../../../store/slices/turn/isStoppedByRestart';
+import { CONCEPT_ICONS, ICON_SIZE } from '../../../../../shared/components/conceptIcons';
+import { usePendingAction } from '../../../../../shared/hooks/usePendingAction';
 
 type Props = {
   readonly sessionId: SessionId;

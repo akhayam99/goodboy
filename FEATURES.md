@@ -644,7 +644,7 @@ Line work up behind work. **Starts** takes **Now**, **Manually** to keep the run
   <img src="https://raw.githubusercontent.com/akhayam99/goodboy-media/main/features/workflow-run-light.webp" alt="The Duplicate credit fix run on HBL-412: three scouts working in parallel under step 1, then a planner, two implementers and a tester, each on its own model, with Waiting on step 1 above the tree and $0.13 spent of the $12.00 spend limit">
 </picture>
 
-Follow a run as a tree with one pinned next action, and add steps to a live or finished run. Parallel scouts appear as branches under their step. Deleting a run deletes its agents and their open questions with it.
+Follow a run as a tree with one pinned next action, and add steps to a live or finished run. Parallel scouts appear as branches under their step. After a restart, one **Resume all** above the steps starts every stopped agent in that run. Deleting a run deletes its agents and their open questions with it.
 
 ### Hints to the orchestrator
 
@@ -1136,13 +1136,17 @@ Check exactly what an agent was told. The top of each chat shows the message it 
 
 Follow one agent's work in order. The plan, report and wireframe it writes show as chips under its text, and a **Resolve findings** group lists each review thread as **explained**, **closed** or **no change**. File edits group into **Operations** rows, and questions and permission cards appear in the flow where you answer them.
 
+### Agent suggests
+
+When an agent recommends another role, its transcript shows **Agent suggests** with the reason. Pick the provider, model and effort on the card, then press **Start**. The new agent starts with that reason and what the previous agent wrote.
+
 ### Queue or send now
 
 Keep talking while an agent works. **Enter** queues your message for its next turn, **⌘Enter** interrupts and sends it now, and the queue survives a restart.
 
 ### Stop and Continue
 
-Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you reload, restart or update Goodboy keeps going: a reload finds it still running, and after a restart it picks up where it stopped, with a note in its chat. One that cannot pick up says **Stopped by restart** and offers **Resume**.
+Stop an agent without losing its work. Stopping keeps what it wrote and offers **Continue**. An agent that was working when you reload, restart or update Goodboy keeps going: a reload finds it still running, and after a restart it picks up where it stopped, with a note in its chat. One that cannot pick up says **Stopped by restart** and offers **Resume**. When a restart stops several, **Resume all** in overview **Next steps**, or above a workflow's steps, brings them all back.
 
 ### Turn footer
 

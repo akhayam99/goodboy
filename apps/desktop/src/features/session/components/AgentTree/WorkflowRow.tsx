@@ -41,7 +41,7 @@ import { OrchestratorStrip } from '../../../workflows/components/OrchestratorStr
 import { RunSpendLimitPopover } from '../../../workflows/components/RunSpendLimitPopover';
 import { WorkflowRunSummary } from '../../../workflows/components/WorkflowRunSummary';
 import { WorkflowAddStep } from '../../../workflows/components/WorkflowAddStep';
-import { WorkflowResumeStrip } from '../../../workflows/components/WorkflowResumeStrip';
+import { WorkflowResumeStrip } from './WorkflowResumeStrip';
 import { CreateReportCta } from '../../../reports/components/CreateReportCta';
 import { CreateWireframeCta } from '../../../wireframes/components/CreateWireframeCta';
 import { WorkflowAutorunToggle } from '../../../workflows/components/WorkflowAutorunToggle';

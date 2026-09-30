@@ -195,7 +195,11 @@ export const GUIDE_CHAPTERS: ReadonlyArray<GuideChapter> = [
       },
       {
         term: 'Talking to an agent',
-        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working pick up where they stopped, and one that cannot reads Stopped by restart and offers Resume.',
+        desc: 'Enter queues your message for its next turn, and ⌘Enter interrupts and sends it now. Stop keeps what it wrote and offers Continue. After a restart or an update, agents that were working stay Stopped. Use Resume on one agent, Resume all in overview Next steps, or Resume all above a workflow run.',
+      },
+      {
+        term: 'Agent suggests',
+        desc: 'When an agent recommends another role, its transcript shows Agent suggests with the reason. Pick the provider, model and effort, then press Start. The new agent begins with that reason and what the previous agent wrote.',
       },
       {
         term: 'Workflows',

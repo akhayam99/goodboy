@@ -12,7 +12,7 @@ export const Sessions = () => (
     head={{
       eyebrow: 'Overview and activity',
       heading: 'One session for all your agents',
-      lead: 'Each one has a single job and starts from the same brief.',
+      lead: 'Each one has a single job and starts from the same brief. When one recommends the next, its reason and result travel with it.',
     }}
   >
     <Frame figure={RUN_AGENTS}>
