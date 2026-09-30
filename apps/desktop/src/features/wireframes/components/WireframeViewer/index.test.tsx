@@ -119,10 +119,11 @@ const openScreens = async () => {
   return waitFor(() => screen.getByTestId('wireframe-frame'));
 };
 
-const postFromFrame = ({ source, data }: { readonly source: unknown; readonly data: unknown }) =>
+const postFromFrame = ({ source, data }: { readonly source: unknown; readonly data: unknown }) => {
   act(() => {
     window.dispatchEvent(new MessageEvent('message', { data, source: source as Window }));
   });
+};
 
 beforeEach(() => {
   frame.staged = [];
@@ -184,7 +185,7 @@ describe('WireframeViewer', () => {
     const rail = screen.getByTestId('wireframe-screen-rail');
     const current = () => rail.querySelector('[aria-current="page"]')?.textContent ?? '';
     expect(current()).toContain('Settlement batches');
-    await postFromFrame({
+    postFromFrame({
       source: window,
       data: {
         channel: 'gbframe',
@@ -194,12 +195,12 @@ describe('WireframeViewer', () => {
       },
     });
     expect(current()).toContain('Settlement batches');
-    await postFromFrame({
+    postFromFrame({
       source: iframe.contentWindow,
       data: { channel: 'gbframe', type: 'navigated', path: '../escape.html', height: 900 },
     });
     expect(current()).toContain('Settlement batches');
-    await postFromFrame({
+    postFromFrame({
       source: iframe.contentWindow,
       data: {
         channel: 'gbframe',
@@ -252,7 +253,7 @@ describe('WireframeViewer', () => {
     const iframe = (await openScreens()) as HTMLIFrameElement;
     fireEvent.click(screen.getByTestId('wireframe-pick'));
     expect(screen.getByTestId('wireframe-pick').getAttribute('aria-pressed')).toBe('true');
-    await postFromFrame({
+    postFromFrame({
       source: iframe.contentWindow,
       data: { channel: 'gbframe', type: 'picked', nodeId: 'review', label: 'stage label' },
     });
