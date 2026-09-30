@@ -38,7 +38,7 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'rewrite page menu (backups, terminal), page chrome',
   'features/history/useHistoryRowActions/index.ts':
     'rewrite event rows in Activity: event verbs, not an object in the map',
-  'features/session/components/SessionWorkspace/parts/TimelinePane/index.tsx':
+  'features/session/components/SessionWorkspace/parts/TimelinePane/TimelineEntryRow.tsx':
     'hosts the rewrite event menu of useHistoryRowActions',
   'features/search/components/SearchMode/SearchHitActions.tsx':
     'search preview: lists the registry verbs of the hit through toMenuEntries',
