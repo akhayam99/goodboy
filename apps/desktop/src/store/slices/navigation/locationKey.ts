@@ -70,6 +70,9 @@ const sessionViewAddress = ({ view }: ViewParams): string => {
   }
   if (view.agentId !== null && view.target?.kind === 'thread') {
     parts.push('agent');
+    if (view.target.pane !== undefined) {
+      parts.push(view.target.pane);
+    }
   }
   if (view.agentId !== null && view.target?.kind !== 'thread') {
     parts.push('agent', view.agentId);

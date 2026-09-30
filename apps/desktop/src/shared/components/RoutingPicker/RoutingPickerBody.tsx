@@ -81,6 +81,7 @@ type Props = {
   readonly summary?: string;
   readonly availability?: 'run' | 'setup';
   readonly isInline?: boolean;
+  readonly isEffortHidden?: boolean;
   readonly focusRoot?: RefObject<HTMLElement | null>;
   readonly onConnectionInFlightChange?: (isInFlight: boolean) => void;
 };
@@ -104,6 +105,7 @@ export const RoutingPickerBody = ({
   summary,
   availability = 'run',
   isInline = true,
+  isEffortHidden = false,
   focusRoot,
   onConnectionInFlightChange,
 }: Props) => {
@@ -154,11 +156,12 @@ export const RoutingPickerBody = ({
     hidden: hiddenModels,
     currentKey: viewedModel.key,
   });
-  const axes = modelAxes({
+  const fullAxes = modelAxes({
     model: viewedModel,
     selection: viewedRouting.selection,
     catalog: shownCatalog,
   });
+  const axes = isEffortHidden ? { ...fullAxes, effort: null } : fullAxes;
   const cursorModels = MODEL_CATALOGS.cursor.map((entry) => entry.key);
   const maxModeModels = useCursorMaxModeModels({ models: cursorModels });
   const hasMaxModeAdvisory = viewProvider === 'cursor' && maxModeModels.has(viewedModel.key);

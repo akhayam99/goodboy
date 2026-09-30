@@ -1,19 +1,21 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useObjectMenuTrigger } from '../../../actions/useObjectMenuTrigger';
-import { HeaderBand, PageColumn, StudioDetailTabs } from '@goodboy/ui';
+import { PageColumn, SegmentedTabs } from '@goodboy/ui';
 import type { Agent, Session } from '@goodboy/types';
 import { ChatView } from '../../../chat/components/ChatView';
 import { PaneShell } from '../../../../shared/components/PaneShell';
 import { RoutingLabel } from '../../../../shared/components/RoutingLabel';
+import { TriggerSeparator } from '../../../../shared/components/RoutingPicker/TriggerSeparator';
 import { useAppStore, useExecutedAgentRouting } from '../../../../store';
 import { effectiveAgentStatus } from './agentNowState';
 import { agentOpenTab, isOpenAgentReveal, type AgentTab } from './agentOpenTab';
 import { classifyAgent } from '../../agent-kind';
 import { AgentKindChip } from '../AgentKindChip';
-import { AgentStatusBadge } from '../AgentTree/AgentStatusBadge';
+import { AgentHeaderStatus } from './AgentHeaderStatus';
 import { AgentHeaderActions } from '../AgentHeaderActions';
 import { useAgentDetailWorkTime } from '../../hooks/useAgentDetailWorkTime';
 import { AgentBrief } from './AgentBrief';
+import { AgentHeader } from './AgentHeader';
 import { AgentHeaderTime } from './AgentHeaderTime';
 import { AgentTitle } from './AgentTitle';
 import { AgentNextAction } from './AgentNextAction';
@@ -43,11 +45,14 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     (state) => state.sessionOpenQuestions[session.id] !== undefined,
   );
   const status = effectiveAgentStatus({ agent, turnState });
-  const openTab = agentOpenTab({ hasOpenQuestions });
+  const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
+  const kind = classifyAgent({ agent, override: kindOverride });
+  const requestedPane = useAppStore((state) => state.agentPane?.[session.id] ?? null);
+  const openTab =
+    requestedPane ?? agentOpenTab({ hasOpenQuestions, isResolver: kind === 'resolver' });
   const openTabRef = useRef(openTab);
   openTabRef.current = openTab;
   const [tab, setTab] = useState<AgentTab>(openTab);
-  const kindOverride = useAppStore((state) => state.agentKindOverride[agent.id] ?? null);
   const providerOverride = useAppStore(
     (state) => state.agentProviderOverride[agent.id] ?? agent.providerOverride ?? null,
   );
@@ -58,7 +63,6 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     (state) => state.agentEffortOverride[agent.id] ?? agent.effort ?? null,
   );
   const executed = useExecutedAgentRouting({ agent });
-  const kind = classifyAgent({ agent, override: kindOverride });
   const time = useAgentDetailWorkTime({
     session,
     agent,
@@ -69,7 +73,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
 
   useEffect(() => {
     setTab(openTabRef.current);
-  }, [agent.id, areQuestionsLoaded]);
+  }, [agent.id, areQuestionsLoaded, requestedPane]);
 
   useEffect(() => {
     const reveal = (event: Event) =>
@@ -105,7 +109,7 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
     <PaneShell
       scroll={isTranscript ? 'self' : 'body'}
       header={
-        <HeaderBand
+        <AgentHeader
           title={
             <span
               className="flex min-w-0"
@@ -118,17 +122,30 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
           meta={
             <>
               <AgentKindChip kind={kind} />
-              <AgentStatusBadge status={status} />
+              <AgentHeaderStatus
+                session={session}
+                agent={agent}
+                isResolver={kind === 'resolver'}
+                status={status}
+              />
               {time == null ? null : <AgentHeaderTime time={time} />}
+              <TriggerSeparator />
+              <RoutingLabel
+                provider={executed?.provider ?? providerOverride}
+                model={executed?.model ?? modelOverride}
+                effort={observedEffort ?? effortOverride}
+                planned={planned}
+                isEffortObserved={observedEffort != null}
+              />
             </>
           }
-          subtitle={
-            <RoutingLabel
-              provider={executed?.provider ?? providerOverride}
-              model={executed?.model ?? modelOverride}
-              effort={observedEffort ?? effortOverride}
-              planned={planned}
-              isEffortObserved={observedEffort != null}
+          tabs={
+            <SegmentedTabs
+              ariaLabel="Agent sections"
+              options={TABS}
+              value={tab}
+              onChange={setTab}
+              size="xs"
             />
           }
           actions={
@@ -141,14 +158,11 @@ export const AgentDetailPane = ({ session, agent, isChatActive, onBack, context 
           }
         />
       }
-      tabs={
-        <StudioDetailTabs ariaLabel="Agent sections" options={TABS} value={tab} onChange={setTab} />
-      }
     >
       {isTranscript ? (
         <>
           <PageColumn className="flex shrink-0 flex-col gap-3 pb-3 empty:hidden">{lead}</PageColumn>
-          <ChatView session={session} isActive={isChatActive} />
+          <ChatView session={session} isActive={isChatActive} topInset="tight" />
         </>
       ) : (
         <>

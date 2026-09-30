@@ -8,6 +8,7 @@ import { createResolveThread } from './createResolveThread';
 import { threadOutcome } from './threadOutcome';
 import { projectResolveRows } from './projectResolveRows';
 import type { AttemptParams, SliceParams } from './types';
+import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 
 type Params = SliceParams & AttemptParams;
 
@@ -24,6 +25,7 @@ export const recordResolveAttempt = async ({
   threadIds,
   mountTarget,
   candidateMode = 'propose',
+  batch,
 }: Params): Promise<string> => {
   const db = tauriDatabase;
   const attempts = await listResolveAttempts({ db, sessionId });
@@ -40,7 +42,7 @@ export const recordResolveAttempt = async ({
       sessionId,
       threadId: '',
       agent,
-      prNumber: get().sessionGithub[sessionId]?.pr?.number,
+      prNumber: activeReviewSourceOf({ state: get(), sessionId })?.prNumber,
     }).prNumber,
     threadIds: agentThreadIds(agent),
     provider,
@@ -53,6 +55,9 @@ export const recordResolveAttempt = async ({
     endedAt: null,
     error: null,
     createdAt: queued?.createdAt ?? now,
+    batchId: batch?.batchId ?? queued?.batchId ?? null,
+    copyPath: queued?.copyPath ?? null,
+    launchChoice: batch?.launchChoice ?? queued?.launchChoice ?? null,
   };
   await insertResolveAttempt({ db, attempt });
   if (phase === 'running' && candidateMode === 'propose') {

@@ -15,6 +15,7 @@ type Props = {
   readonly sessionId: SessionId;
   readonly modelPickerRequest: number;
   readonly busyActionId: string | null;
+  readonly replyOnlyLine: string | null;
 };
 
 const buttonsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<ResolvedAction> => [
@@ -22,7 +23,12 @@ const buttonsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<Resolv
   ...actions.filter((action) => action.slot === 'primary'),
 ];
 
-export const ReviewHeaderActions = ({ sessionId, modelPickerRequest, busyActionId }: Props) => {
+export const ReviewHeaderActions = ({
+  sessionId,
+  modelPickerRequest,
+  busyActionId,
+  replyOnlyLine,
+}: Props) => {
   const target = useMemo(() => ({ kind: 'review' as const, sessionId }), [sessionId]);
   const env = useActionEnv({ origin: 'button' });
   const { actions, run } = useObjectActions({ target, env });
@@ -50,6 +56,9 @@ export const ReviewHeaderActions = ({ sessionId, modelPickerRequest, busyActionI
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex items-center gap-2">
+        {replyOnlyLine !== null && (
+          <span className="mr-1 text-secondary text-faint-foreground">{replyOnlyLine}</span>
+        )}
         {buttons.map((action) => {
           const button = (
             <Button

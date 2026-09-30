@@ -33,7 +33,12 @@ export type ModelPrice = {
   readonly assumed?: true;
 };
 
-export type EffortLevel = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+export const EFFORT_LEVELS = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
+
+export type EffortLevel = (typeof EFFORT_LEVELS)[number];
+
+export const isEffortLevel = (value: string): value is EffortLevel =>
+  EFFORT_LEVELS.some((level) => level === value);
 
 export type ModelTier = 'turn' | 'cheap';
 

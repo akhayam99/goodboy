@@ -10,6 +10,7 @@ const state = vi.hoisted(() => ({
   agentModelOverride: {},
   agentEffortOverride: {},
   agentTurnState: {} as Record<string, { kind: string }>,
+  agentPane: {} as Record<string, 'brief' | 'transcript' | null>,
   sessionOpenQuestions: {} as Record<string, ReadonlyArray<{ createdByAgentId?: string }>>,
 }));
 
@@ -43,7 +44,14 @@ vi.mock('../../../chat/components/ChatView', () => ({
   ChatView: () => <div>Transcript body</div>,
 }));
 vi.mock('./AgentBrief', () => ({ AgentBrief: () => <div>Brief body</div> }));
-vi.mock('../AgentHeaderActions', () => ({ AgentHeaderActions: () => null }));
+vi.mock('./AgentHeaderStatus', () => ({
+  AgentHeaderStatus: ({ status }: { readonly status: string }) => (
+    <span>{status === 'running' ? 'Running' : status}</span>
+  ),
+}));
+vi.mock('../AgentHeaderActions', () => ({
+  AgentHeaderActions: () => <button type="button">More agent actions</button>,
+}));
 vi.mock('./AgentNextAction', () => ({
   AgentNextAction: () => <div>Next action strip</div>,
 }));
@@ -73,6 +81,7 @@ beforeEach(() => {
     agentModelOverride: {},
     agentEffortOverride: {},
     agentTurnState: {},
+    agentPane: {},
     sessionOpenQuestions: {},
   });
   executedRouting.value = null;
@@ -123,7 +132,7 @@ describe('AgentDetailPane', () => {
     expect(title.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('puts the role chip on the title line and the routing detail on its own line below', () => {
+  it('puts role, status, time and model on one meta line under the title', () => {
     render(
       <AgentDetailPane
         session={session}
@@ -133,16 +142,30 @@ describe('AgentDetailPane', () => {
       />,
     );
 
-    const role = screen.getByText('Implementer');
-    const status = screen.getByText('Running');
-    const header = screen.getByText('Model not chosen yet').closest('[data-slot="pane-header"]');
+    const meta = screen.getByTestId('agent-header-meta');
+    const title = screen.getByRole('heading', { level: 1 });
 
-    expect(role.compareDocumentPosition(status) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(
-      status.compareDocumentPosition(screen.getByText('Model not chosen yet')) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy();
-    expect(header).not.toBeNull();
+    expect(within(meta).getByText('Implementer')).toBeDefined();
+    expect(within(meta).getByText('Running')).toBeDefined();
+    expect(within(meta).getByText('Model not chosen yet')).toBeDefined();
+    expect(title.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps Brief and Transcript on the title row, before the actions', () => {
+    render(
+      <AgentDetailPane
+        session={session}
+        agent={{ ...agent, status: 'running' }}
+        isChatActive
+        onBack={() => undefined}
+      />,
+    );
+
+    const row = screen.getByTestId('agent-header-title-row');
+    const tabs = within(row).getByRole('tablist', { name: 'Agent sections' });
+    const more = within(row).getByRole('button', { name: 'More agent actions' });
+
+    expect(tabs.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('opens on the transcript while the agent is running', () => {
@@ -212,15 +235,49 @@ describe('AgentDetailPane', () => {
     expect(screen.getByText('Transcript body')).toBeDefined();
   });
 
-  it('gives a resolver the generic transcript pane so View work has a destination', () => {
+  it('opens a resolver on the brief and keeps the transcript one tab away', () => {
     const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
 
     render(
       <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
     );
 
+    expect(screen.getByText('Brief body')).toBeDefined();
+    fireEvent.click(screen.getByRole('tab', { name: 'Transcript' }));
     expect(screen.getByText('Transcript body')).toBeDefined();
-    fireEvent.click(screen.getByRole('tab', { name: 'Brief' }));
+  });
+
+  it('keeps a resolver on the brief when an agent open reveals the chat', () => {
+    const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
+
+    render(
+      <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
+    );
+    act(() => window.dispatchEvent(openAgentRevealEvent()));
+
+    expect(screen.getByText('Brief body')).toBeDefined();
+  });
+
+  it('opens the tab the address asks for over the default', () => {
+    const resolver = { ...agent, id: 'resolver-1' as AgentId, kind: 'resolver' } satisfies Agent;
+    state.agentPane = { [session.id]: 'transcript' };
+
+    render(
+      <AgentDetailPane session={session} agent={resolver} isChatActive onBack={() => undefined} />,
+    );
+
+    expect(screen.getByText('Transcript body')).toBeDefined();
+    act(() => window.dispatchEvent(openAgentRevealEvent()));
+    expect(screen.getByText('Transcript body')).toBeDefined();
+  });
+
+  it('opens a plain agent on the brief when the address asks for it', () => {
+    state.agentPane = { [session.id]: 'brief' };
+
+    render(
+      <AgentDetailPane session={session} agent={agent} isChatActive onBack={() => undefined} />,
+    );
+
     expect(screen.getByText('Brief body')).toBeDefined();
   });
 

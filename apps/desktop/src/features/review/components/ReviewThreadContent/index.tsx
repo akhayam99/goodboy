@@ -5,7 +5,7 @@ import { isBot } from '../../../github/comment-threads';
 import { ThreadBody } from '../../../github/components/PullRequest/ThreadBody';
 import { ThreadPathChip } from '../../../github/components/PullRequest/ThreadPathChip';
 import { ThreadReplies } from '../../../github/components/PullRequest/ThreadReplies';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
 
 type Props = {
@@ -30,7 +30,9 @@ export const ReviewThreadContent = ({ thread, onOpenUrl }: Props) => {
         <span className="min-w-0 truncate font-medium text-foreground">{head.author}</span>
         {isBot(head.author) && <Chip tone="info" size="xs" label="Bot" />}
         <span className="shrink-0 opacity-50">·</span>
-        <span className="shrink-0">{formatRelativeAge({ fromIso: head.createdAt })}</span>
+        <span className="shrink-0">
+          <RelativeTime iso={head.createdAt} />
+        </span>
         {isReview && head.resolved === false && <Chip tone="warning" size="xs" label="Open" />}
         {isReview && head.resolved === true && <Chip tone="success" size="xs" label="Resolved" />}
         {isNote && (

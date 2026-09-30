@@ -543,12 +543,13 @@ describe('story: a two-project session routes git work through the active mount'
     });
 
     expect(result.ok).toBe(true);
-    expect(gitPush).toHaveBeenCalledWith(
-      WEB_WORKTREE_PATH,
-      WEB_BRANCH,
-      WORKSPACE_ID,
-      WEB_PROJECT_ID,
-    );
+    expect(gitPush).toHaveBeenCalledWith({
+      cwd: WEB_WORKTREE_PATH,
+      branch: WEB_BRANCH,
+      workspaceId: WORKSPACE_ID,
+      projectId: WEB_PROJECT_ID,
+      sha: undefined,
+    });
   });
 
   it('pushes from the second mount when it is the explicit active mount', async () => {
@@ -561,12 +562,32 @@ describe('story: a two-project session routes git work through the active mount'
     });
 
     expect(gitPush).toHaveBeenCalledOnce();
-    expect(gitPush).toHaveBeenCalledWith(
-      WEB_WORKTREE_PATH,
-      WEB_BRANCH,
-      WORKSPACE_ID,
-      WEB_PROJECT_ID,
-    );
+    expect(gitPush).toHaveBeenCalledWith({
+      cwd: WEB_WORKTREE_PATH,
+      branch: WEB_BRANCH,
+      workspaceId: WORKSPACE_ID,
+      projectId: WEB_PROJECT_ID,
+      sha: undefined,
+    });
+  });
+
+  it('hands a scoped sha to the push', async () => {
+    const store = twoProjectStore(WEB_PROJECT_ID);
+
+    await pushSessionBranch({
+      get: (() => store) as never,
+      sessionId: SESSION_ID,
+      mountId: 'mount-web' as never,
+      sha: 'c81e5aa',
+    });
+
+    expect(gitPush).toHaveBeenCalledWith({
+      cwd: WEB_WORKTREE_PATH,
+      branch: WEB_BRANCH,
+      workspaceId: WORKSPACE_ID,
+      projectId: WEB_PROJECT_ID,
+      sha: 'c81e5aa',
+    });
   });
 
   it('resolves the pull request repo slug against the active mount repo root', async () => {

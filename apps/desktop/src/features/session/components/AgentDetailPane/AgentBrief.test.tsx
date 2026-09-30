@@ -195,13 +195,15 @@ describe('AgentBrief summary', () => {
     expect(screen.getByText('from the last reply')).toBeDefined();
   });
 
-  it('labels the excerpt it renders as unsummarized rather than as a summary', () => {
+  it('keeps the raw unsummarized marker out of the Latest band', () => {
     const agent = makeAgent({ outputSummary: '' });
     transcriptItems.items = [{ kind: 'assistant_text', text: 'here is the last reply' }];
 
     const { container } = render(<AgentBrief session={session} agent={agent} />);
 
-    expect(container.textContent).toContain('[unsummarized step output, carried whole]');
+    expect(container.textContent).not.toContain('unsummarized step output');
+    expect(container.textContent).toContain('here is the last reply');
+    expect(screen.getByText('from the last reply')).toBeDefined();
   });
 
   it('starts no provider work while rendering the excerpt', () => {
@@ -347,6 +349,18 @@ describe('AgentBrief type scale', () => {
 
     expect(line?.className).toContain('text-label');
     expect(line?.className).not.toContain('text-body');
+  });
+
+  it('shows the live line at the top of a running resolver brief', () => {
+    render(
+      <AgentBrief
+        session={session}
+        agent={makeAgent({ status: 'running', kind: 'resolver', name: 'resolve: ana on a.ts:4' })}
+      />,
+    );
+
+    expect(screen.getByText('Now')).toBeDefined();
+    expect(screen.getByText('thinking')).toBeDefined();
   });
 
   it('puts the time on the Now line and points at the transcript at twice the usual time', () => {

@@ -19,6 +19,7 @@ import { outcomePatch } from './outcomePatch';
 import { projectResolveRows } from './projectResolveRows';
 import { threadOutcome } from './threadOutcome';
 import type { SliceParams, TurnParams } from './types';
+import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 
 type Params = SliceParams & TurnParams;
 
@@ -91,7 +92,7 @@ export const persistResolveTurn = async ({
         threadId,
         agent,
         projectId: get().sessionActiveProject[sessionId] ?? null,
-        prNumber: get().sessionGithub[sessionId]?.pr?.number,
+        prNumber: activeReviewSourceOf({ state: get(), sessionId })?.prNumber,
       });
     const retained = threadOutcome({ row });
     const verdict =

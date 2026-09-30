@@ -4,6 +4,8 @@ import {
   isChatProvider,
   type ChatMessage,
   type ChatSummary,
+  type EffortLevel,
+  isEffortLevel,
   type ProviderRunId,
 } from '@goodboy/types';
 import { buildChatSystemPrompt } from '../../../features/workspace-chat/buildChatSystemPrompt';
@@ -19,7 +21,11 @@ import type { GetFn } from './types';
 export const NO_PROJECT_MESSAGE = 'Add a project to this workspace to ask about its code.';
 
 export type ChatTurnPlan =
-  | { readonly kind: 'ready'; readonly request: ChatTurnRequest }
+  | {
+      readonly kind: 'ready';
+      readonly request: ChatTurnRequest;
+      readonly effort: EffortLevel | null;
+    }
   | { readonly kind: 'blocked'; readonly error: string };
 
 type Params = {
@@ -67,6 +73,10 @@ export const planChatTurn = ({ state, chat, history, question, runId }: Params):
   if (model.kind === 'blocked') {
     return model;
   }
+  const resolvedEffort = model.args.effort;
+  const effort =
+    chat.effort ??
+    (resolvedEffort !== undefined && isEffortLevel(resolvedEffort) ? resolvedEffort : null);
   const workspace = state.workspaces.find((candidate) => candidate.id === chat.workspaceId);
   return {
     kind: 'ready',
@@ -75,7 +85,7 @@ export const planChatTurn = ({ state, chat, history, question, runId }: Params):
       chatId: chat.id,
       provider: chat.provider,
       model: model.args.model,
-      ...(model.args.effort !== undefined && { effort: model.args.effort }),
+      ...(effort !== null && { effort }),
       workingDir: folder.workingDir,
       prompt: buildChatTurnPrompt({ history, question }),
       systemPrompt: buildChatSystemPrompt({
@@ -87,5 +97,6 @@ export const planChatTurn = ({ state, chat, history, question, runId }: Params):
         })),
       }),
     },
+    effort,
   };
 };

@@ -49,3 +49,18 @@ export const appendAttribution = ({ body, isEnabled, syntax }: AppendAttribution
   }
   return `${trimmed}\n\n${footer}`;
 };
+
+type InsertBeforeAttributionParams = {
+  readonly body: string;
+  readonly text: string;
+};
+
+export const insertBeforeAttribution = ({ body, text }: InsertBeforeAttributionParams): string => {
+  const trimmed = body.replace(/\s+$/, '');
+  const footer = SIGNED_ENDINGS.find((ending) => trimmed.endsWith(`\n\n${ending}`));
+  if (footer === undefined) {
+    return `${trimmed}\n\n${text}`;
+  }
+  const head = trimmed.slice(0, trimmed.length - footer.length).replace(/\s+$/, '');
+  return `${head}\n\n${text}\n\n${footer}`;
+};

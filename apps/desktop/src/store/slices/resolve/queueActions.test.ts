@@ -17,7 +17,7 @@ import { createResolveSlice } from './index';
 import { EMPTY_REFUSAL_REPLY, REFUSAL_AFTER_INTEGRATION } from './refuseResolveQueueItem';
 import { resolveInitialState } from './state';
 import { threadOutcome } from './threadOutcome';
-import { RESOLVE_ONLY_AFTER_INTEGRATION } from './resolveWithoutReply';
+import { RESOLVE_ONLY_AFTER_INTEGRATION } from './settleItemAnswered';
 import type { GetFn, SetFn } from './types';
 
 const h = vi.hoisted(() => ({
@@ -307,6 +307,28 @@ describe('resolve queue actions', () => {
     expect([...(await approvedPublicationScope({ sessionId })).threadIds]).toEqual(['thread']);
     const [row] = await listResolveThreads({ db, sessionId });
     expect(row === undefined ? null : threadOutcome({ row })).toEqual({ kind: 'analyzed' });
+  });
+
+  it('settles a comment with the reply that names the commit that handled it', async () => {
+    const live = createHarness();
+    await live.actions.answerItemWithoutFix({
+      sessionId,
+      itemId: item.id,
+      reply: 'Handled in 5d21a0e by @tvarga.',
+    });
+    const [entry] = await listResolveQueueItems({ db, sessionId });
+    expect(entry?.item.approvalState).toBe('accepted');
+    expect(entry?.thread).toMatchObject({
+      stage: 'approved',
+      state: 'answered',
+      disposition: 'no_change',
+      replyDraft: 'Handled in 5d21a0e by @tvarga.',
+    });
+    const [row] = await listResolveThreads({ db, sessionId });
+    expect(row === undefined ? null : threadOutcome({ row })).toEqual({
+      kind: 'analyzed',
+      reply: 'Handled in 5d21a0e by @tvarga.',
+    });
   });
 
   it('will not resolve without a reply once the fix is on the branch', async () => {

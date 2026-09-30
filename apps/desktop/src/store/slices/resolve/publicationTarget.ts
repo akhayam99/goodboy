@@ -1,4 +1,5 @@
 import type { SessionId } from '@goodboy/types';
+import { activeReviewSourceOf } from '../review-source/activeReviewSource';
 import type { GetFn } from './types';
 
 export type PublicationTarget = Readonly<{
@@ -9,14 +10,11 @@ export type PublicationTarget = Readonly<{
 
 type Params = { readonly get: GetFn; readonly sessionId: SessionId };
 
-const REPO_FROM_URL = /^https?:\/\/[^/]+\/([^/]+\/[^/]+)\/pull\/\d+/;
-
 export const publicationTarget = ({ get, sessionId }: Params): PublicationTarget => {
-  const pr = get().sessionGithub[sessionId]?.pr ?? null;
-  const slug = pr === null ? null : (REPO_FROM_URL.exec(pr.url ?? '')?.[1] ?? null);
+  const source = activeReviewSourceOf({ state: get(), sessionId });
   return {
-    repo: slug,
-    prNumber: pr?.number ?? 0,
-    prUrl: pr?.url ?? null,
+    repo: source?.repo ?? null,
+    prNumber: source?.prNumber ?? 0,
+    prUrl: source?.url ?? null,
   };
 };

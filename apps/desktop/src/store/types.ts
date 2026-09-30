@@ -1,6 +1,8 @@
 import type { ArtifactsState } from './slices/artifacts/state';
 import type { ResolveState } from './slices/resolve/state';
 import type { ReviewNavigationState } from './slices/review-navigation/state';
+import type { ReviewSelectionState } from './slices/review-selection/state';
+import type { ReviewSourceState } from './slices/review-source/state';
 import type { MountCleanupState } from './slices/mount-cleanup/state';
 import type { HistoryState } from './slices/history/state';
 import type { ScribeState } from './slices/scribe/state';
@@ -33,6 +35,7 @@ import type { DecisionsSliceState } from './slices/decisions/state';
 import type { DrawerSliceState } from './slices/drawer/state';
 import type { NavigationSliceState } from './slices/navigation/types';
 import type { ChangelogState } from './slices/changelog/state';
+import type { ReviewCommitsState } from './slices/reviewCommits/state';
 import type { ResolveItemDraft } from '../features/resolve/resolveItemDraft';
 import type { ReviewSubmission } from './slices/review-drafts/reviewSubmission';
 import type { ResolveQueueView } from './slices/session-view';
@@ -109,6 +112,8 @@ type AppSliceState = ArtifactsState &
   BudgetSliceState &
   ResolveState &
   ReviewNavigationState &
+  ReviewSelectionState &
+  ReviewSourceState &
   PrWritesState &
   SessionSyncState &
   IssueBriefsState &
@@ -119,6 +124,7 @@ type AppSliceState = ArtifactsState &
   SentryLinksState &
   UpdaterState &
   ChangelogState &
+  ReviewCommitsState &
   SlackThreadsSliceState &
   BugReportDraftState &
   SessionDraftState &

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { GhResult, GhRunner } from '../gh';
 import { GhCliError } from '../gh';
-import { addReviewThreadReply, resolveReviewThread } from '../mutations';
+import { addReviewThreadReply, resolveReviewThread, updateReviewComment } from '../mutations';
 
 function jsonOk(data: unknown): GhResult {
   return { stdout: JSON.stringify(data), stderr: '', exitCode: 0 };
@@ -116,5 +116,50 @@ describe('addReviewThreadReply', () => {
       jsonOk({ data: { addPullRequestReviewThreadReply: { comment: null } } }),
     );
     await expect(addReviewThreadReply(runner, 'PRT_1', 'hi')).rejects.toBeInstanceOf(GhCliError);
+  });
+});
+
+describe('updateReviewComment', () => {
+  it('returns the edited comment id and url', async () => {
+    const runner = makeRunner(
+      jsonOk({
+        data: {
+          updatePullRequestReviewComment: {
+            pullRequestReviewComment: { id: 'PRRC_42', url: 'https://github.com/o/r/pull/9#r42' },
+          },
+        },
+      }),
+    );
+    const result = await updateReviewComment(runner, 'PRRC_42', 'Fixed in `e31b9f4`.');
+    expect(result).toEqual({ id: 'PRRC_42', url: 'https://github.com/o/r/pull/9#r42' });
+  });
+
+  it('passes the comment id and the whole new body as graphql variables', async () => {
+    const runner = makeRunner(
+      jsonOk({
+        data: {
+          updatePullRequestReviewComment: { pullRequestReviewComment: { id: 'PRRC_1', url: 'u' } },
+        },
+      }),
+    );
+    await updateReviewComment(runner, 'PRRC_1', 'line one\n\nUpdate: c81e5aa was squashed.');
+    const args = (runner.run as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0] as ReadonlyArray<string>;
+    expect(args).toEqual(expect.arrayContaining(['api', 'graphql', '-F', 'commentId=PRRC_1']));
+    expect(args.join(' ')).toContain('updatePullRequestReviewComment');
+    expect(args).toContain('body=line one\n\nUpdate: c81e5aa was squashed.');
+  });
+
+  it('throws GhCliError on graphql errors and on a missing payload', async () => {
+    await expect(
+      updateReviewComment(makeRunner(jsonOk({ errors: [{ message: 'denied' }] })), 'PRRC_1', 'x'),
+    ).rejects.toBeInstanceOf(GhCliError);
+    await expect(
+      updateReviewComment(
+        makeRunner(jsonOk({ data: { updatePullRequestReviewComment: null } })),
+        'PRRC_1',
+        'x',
+      ),
+    ).rejects.toBeInstanceOf(GhCliError);
   });
 });

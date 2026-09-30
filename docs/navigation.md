@@ -153,7 +153,8 @@ them. The navigation slice (`store/slices/navigation/`) owns both.
   studio open over that place, if any. Its `focus` is the page state: the open
   drawer, selection, scroll and revealed rows. `locationKey` prints the text
   form used by tests and logs: `board`, `s/{session}`, `s/{session}/review`,
-  `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`.
+  `s/{session}/workflows/{run}`, `s/{session}/agents/agent/{agent}`,
+  `s/{session}/review/t/{thread}/agent/brief`.
 - **One door.** Every move goes through `navigate({ to, mode })`, `back()`,
   `forward()`, `up()` or `amendFocus({ patch })`. `sessionPlace`,
   `agentPlace` and `BOARD_PLACE` build the `to`. The per-session keys the
@@ -655,6 +656,14 @@ covered.
   a new chat with the query as its first message; a query that reads like a
   question (ends with `?` or has four words or more) has it picked, a shorter
   one keeps the best match picked so Enter still jumps.
+  Start session in a chat's Turn into work panel creates the session and
+  navigates to `sessionPlace({ sessionId })`, the overview, as a new history
+  entry after the chat's own; Back returns to the same chat because
+  `captureLocation` keeps `appStudio`. Add to session navigates to that
+  session and, once its agents load, replaces the entry with the latest
+  top-level agent (`landOnSession.ts`) so the brief waits in that agent's
+  composer draft (`agentDraft`); a session without an agent opens on its
+  overview with nothing drafted.
 - Right: the storage chip, the Now chip (needs you, running, scripts, each
   only when above zero), today's spend and the bell. The storage chip
   (`StorageChip`) reads `Free 7 GB` in muted text only while at least 1 GB of
@@ -1166,10 +1175,20 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   [The right drawer](#the-right-drawer).
 - **Review is where the session's code is discussed; the pull request page is
   where it ships.** Review is one flow: the list of comments on the left in
-  three groups (Open, Waiting for the push, Done) and the focused comment on
-  the right, in the layer itself, never in a drawer. The header carries the
-  title, one quiet link to the pull request (`PR #528 ›`), the count of each
-  state, `Draft fixes for N` and `…`; nothing else of the pull request.
+  three groups (Open, Ready to push, Done) and the focused comment on
+  the right, in the layer itself, never in a drawer. A segmented control under
+  the header switches between two views, `Comments` and `Commits`, and `V`
+  toggles them from anywhere in the page outside a text field. `Commits` lists
+  the branch commits with their fold preview; a resolve commit's `for
+<reviewer> on <file:line>` line opens its comment back in `Comments`. The
+  header carries the title, one quiet link to the pull request (`PR #528 ›`),
+  one summary line (`9 open · 3 drafting · 2 ready to push · 4 done`, only the
+  non-zero parts), and `…`; nothing else of the pull request. A comment nobody
+  started shows `Fix` on hover (and `F`), which opens the launch strip under
+  the header; a checkbox on hover picks comments (`X` on the focused row, Cmd+A
+  for every comment nobody started, Esc clears) and the bar `N selected · Fix N
+separately` opens the same strip. Cmd+A is not in the shortcut table: the
+  system reserves it.
   "Resolve" names the area, never a button. Review exists with or without a
   pull request: without one it lists the session's notes under a
   `No pull request yet` line with `Open a pull request` (see Pull request
@@ -1212,7 +1231,23 @@ workspaceId })`, owns every row's subtitle and tone (it replaced three
   drafts the last thing it said). `…` → Agent transcript opens the resolver as
   a child page of Review (`s/{session}/review/t/{thread}/agent`), and so do a
   notification, the agent-started toast and the palette (`canonicalLocation`
-  maps the resolver to the first thread of its attempt). Back, or Up when
+  maps the resolver to the first thread of its attempt). A resolver opens on its
+  Brief, with Transcript one tab away; a click on a resolver row in Activity
+  says **Open brief**. The agent pane tab is part of the address: the thread
+  target carries `pane: 'brief' | 'transcript'`, `agentPlace({ sessionId,
+agentId, pane })` asks for either, and the address prints it as a last
+  segment (`.../agent/brief`). Without a `pane` the pane picks its own tab
+  (`agentOpenTab`: an open question or a resolver opens on Brief, any other
+  agent on Transcript). The key `agentPane` is written only by the navigation
+  slice, follows the page like the other targets, and comes back with Back and
+  a window restore. Tab clicks inside the pane stay local and do not rewrite
+  the address. The Brief of a resolver carries the comment, the fix and the
+  reply with the same verbs as Review (both use `useReviewCommentController`),
+  and **Push now** pushes only that fix. A resolver that belongs to a batch has
+  no verbs there, only **Open in Review (N)**, which calls `openReview` with
+  the destination `{ kind: 'threads', threadIds }`. That destination needs no
+  mount and no pull request: Review focuses the first thread of the set it
+  has, and the set stays in `reviewSelections[sessionId]`. Back, or Up when
   Review is the entry below, returns to Review with that comment focused, and
   Up from a page reached any other way opens Review on that comment. There are
   no return pills: the Diff and the resolver page come back through Back.

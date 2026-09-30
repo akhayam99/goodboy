@@ -47,6 +47,7 @@ export { learnReplyStyle, parseStyleNote, type ReplyStyleDeps } from './replySty
 export {
   addReviewThreadReply,
   resolveReviewThread,
+  updateReviewComment,
   type PostedThreadReply,
   type ResolvedThread,
 } from './mutations';

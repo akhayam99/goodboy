@@ -302,6 +302,56 @@ describe('navigation slice', () => {
     });
   });
 
+  it('carries the requested agent tab in the address of a resolver page', () => {
+    const store = makeStore();
+    store.setState({
+      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
+    } as never);
+    store.getState().navigate({
+      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'brief' }),
+    });
+
+    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent/brief`);
+    expect(store.getState().agentPane[S1]).toBe('brief');
+    expect(captureWindowLocation({ state: store.getState() })?.place).toEqual(
+      resolverPagePlace({
+        sessionId: S1,
+        agentId: RESOLVER,
+        threadId: 'gh:PRRT_42',
+        pane: 'brief',
+      }),
+    );
+  });
+
+  it('asks for the transcript and clears the tab when the page changes', () => {
+    const store = makeStore();
+    store.setState({
+      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
+    } as never);
+    store.getState().navigate({
+      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'transcript' }),
+    });
+    expect(store.getState().agentPane[S1]).toBe('transcript');
+
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    expect(store.getState().agentPane[S1]).toBeNull();
+  });
+
+  it('restores the requested tab on Back', () => {
+    const store = makeStore();
+    store.setState({
+      sessionResolveAttempts: { [S1]: [{ agentId: RESOLVER, threadIds: ['gh:PRRT_42'] }] },
+    } as never);
+    store.getState().navigate({
+      to: agentPlace({ sessionId: S1, agentId: RESOLVER, pane: 'brief' }),
+    });
+    store.getState().navigate({ to: sessionPlace({ sessionId: S1, lens: 'agents' }) });
+    store.getState().back();
+
+    expect(store.getState().agentPane[S1]).toBe('brief');
+    expect(keyOf(store)).toBe(`s/${S1}/review/t/gh:PRRT_42/agent/brief`);
+  });
+
   it('addresses the resolver page under its comment and goes back to the open comment', () => {
     const store = makeStore();
     const conversation = {

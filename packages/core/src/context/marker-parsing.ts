@@ -40,6 +40,7 @@ const HANDOFF_OPEN = '<<handoff';
 const COMMENT_ANALYSIS_OPEN = '<<comment-analysis';
 const COMMENT_RESOLVED_OPEN = '<<comment-resolved';
 const COMMENT_WONTFIX_OPEN = '<<comment-wontfix';
+const COMMENT_VERDICT_OPEN = '<<comment-verdict';
 const HISTORY_STEP_OPEN = '<<history-step';
 const HISTORY_DONE_OPEN = '<<history-done';
 const HISTORY_STUCK_OPEN = '<<history-stuck';
@@ -725,6 +726,51 @@ export const extractAllCommentWontfix = (
   return markers;
 };
 
+export type CommentVerdictKind = 'fixed-here' | 'not-relevant' | 'still-needed';
+
+export type ExtractedCommentVerdict = {
+  readonly threadId: string;
+  readonly kind: CommentVerdictKind;
+  readonly sha: string | null;
+  readonly evidence: string;
+};
+
+const COMMENT_VERDICT_KINDS: ReadonlyArray<CommentVerdictKind> = [
+  'fixed-here',
+  'not-relevant',
+  'still-needed',
+];
+const COMMIT_SHA_RE = /^[0-9a-f]{7,40}$/i;
+
+export const extractCommentVerdict = (assistantText: string): ExtractedCommentVerdict | null => {
+  let last: ExtractedCommentVerdict | null = null;
+  for (const inner of extractSelfClosingInner(assistantText, COMMENT_VERDICT_OPEN)) {
+    const attrs = parseHandoffAttrs(inner);
+    const threadId = (attrs.threadid ?? attrs.thread ?? '').trim();
+    const kind = COMMENT_VERDICT_KINDS.find(
+      (candidate) => candidate === (attrs.verdict ?? '').trim(),
+    );
+    const evidence = (attrs.evidence ?? attrs.reason ?? '').trim();
+    const rawSha = (attrs.sha ?? '').trim();
+    if (threadId.length === 0 || kind === undefined || evidence.length === 0) {
+      continue;
+    }
+    if (rawSha.length > 0 && !COMMIT_SHA_RE.test(rawSha)) {
+      continue;
+    }
+    if (kind === 'fixed-here' && rawSha.length === 0) {
+      continue;
+    }
+    last = {
+      threadId,
+      kind,
+      sha: kind === 'still-needed' || rawSha.length === 0 ? null : rawSha,
+      evidence,
+    };
+  }
+  return last;
+};
+
 export type ExtractedReviewComment = {
   readonly path: string;
   readonly line: number;
@@ -1118,7 +1164,7 @@ export const assessPlanReadiness = (input: PlanReadinessInput): PlanReadinessRes
 const BLOCK_MARKER_ALT =
   'plan|clusters|fan-out|scout-split|workflow|goal|ctx-decision|ctx-resolved|ctx-question|comment-reply|oq-answer|pr-title|pr-body|commit-message|changelog-entry';
 const SELF_MARKER_ALT =
-  'handoff|comment-analysis|comment-resolved|comment-wontfix|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
+  'handoff|comment-analysis|comment-resolved|comment-wontfix|comment-verdict|review-comment|cluster-done|step-done|scout-domains|history-step|history-done|history-stuck|materialize:';
 
 const CONTROL_BLOCK_STRIP_RE = new RegExp(
   `<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*?<<\\/(?:${BLOCK_MARKER_ALT})>>`,
@@ -1127,13 +1173,16 @@ const CONTROL_BLOCK_STRIP_RE = new RegExp(
 const CONTROL_SELF_STRIP_RE = new RegExp(`<<(?:${SELF_MARKER_ALT})\\s[^>]*?>>`, 'g');
 const CONTROL_OPEN_TAIL_RE = new RegExp(`<<(?:${BLOCK_MARKER_ALT})(?:\\s[^>]*)?>>[\\s\\S]*$`);
 const CONTROL_PARTIAL_TAIL_RE = /<<?\/?[a-z-]*:?(?:\s[^>]*)?$/;
+const UNSUMMARIZED_STEP_OUTPUT_RE = /\[unsummarized step output(?:, [a-z ]+)?\][ \t]*\n?/g;
 
 export const stripControlMarkers = (text: string): string => {
   CONTROL_BLOCK_STRIP_RE.lastIndex = 0;
   CONTROL_SELF_STRIP_RE.lastIndex = 0;
+  UNSUMMARIZED_STEP_OUTPUT_RE.lastIndex = 0;
   return text
     .replace(CONTROL_BLOCK_STRIP_RE, '')
     .replace(CONTROL_SELF_STRIP_RE, '')
+    .replace(UNSUMMARIZED_STEP_OUTPUT_RE, '')
     .replace(CONTROL_OPEN_TAIL_RE, '')
     .replace(CONTROL_PARTIAL_TAIL_RE, '')
     .replace(/\n{3,}/g, '\n\n')

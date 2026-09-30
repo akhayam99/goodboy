@@ -2,12 +2,14 @@ import { cn } from '../../cn';
 import { tintClasses, type Tone } from '../../tint';
 import { WorkNodeArc } from './WorkNodeArc';
 import { WorkNodeCenter } from './WorkNodeCenter';
+import { WorkNodeMixed } from './WorkNodeMixed';
 import {
   WORK_NODE_GLYPH_SIZE_FOR,
   WORK_NODE_RING,
   WORK_NODE_SCALE_FOR,
   WORK_NODE_SIZE_FOR,
   type WorkNodeMark,
+  type WorkNodeMixedPart,
   type WorkNodeSize,
   type WorkNodeState,
 } from './workNodeSpec';
@@ -21,12 +23,16 @@ type Props = {
   readonly hasUnread?: boolean;
   readonly progress?: number | null;
   readonly size?: WorkNodeSize;
+  readonly parts?: ReadonlyArray<WorkNodeMixedPart>;
 };
+
+const NO_PARTS: ReadonlyArray<WorkNodeMixedPart> = [];
 
 type RingParams = {
   readonly state: WorkNodeState;
   readonly progress: number | null;
   readonly size: WorkNodeSize;
+  readonly parts: ReadonlyArray<WorkNodeMixedPart>;
 };
 
 const isArcState = ({ state }: { readonly state: WorkNodeState }): boolean =>
@@ -38,9 +44,12 @@ const scaleDashArray = (dashArray: string, scale: number): string =>
     .map((token) => (Number(token) * scale).toFixed(2))
     .join(' ');
 
-const ringOf = ({ state, progress, size }: RingParams) => {
+const ringOf = ({ state, progress, size, parts }: RingParams) => {
   if (state === 'marker') {
     return null;
+  }
+  if (state === 'mixed') {
+    return <WorkNodeMixed parts={parts} size={size} />;
   }
   const nodeSize = WORK_NODE_SIZE_FOR[size];
   const center = nodeSize / 2;
@@ -80,6 +89,7 @@ export const WorkNode = ({
   hasUnread = false,
   progress = null,
   size = 'md',
+  parts = NO_PARTS,
 }: Props) => {
   const nodeSize = WORK_NODE_SIZE_FOR[size];
   const glyphSize = WORK_NODE_GLYPH_SIZE_FOR[size];
@@ -96,7 +106,7 @@ export const WorkNode = ({
       )}
       style={{ width: nodeSize, height: nodeSize }}
     >
-      {ringOf({ state, progress, size })}
+      {ringOf({ state, progress, size, parts })}
       <span
         aria-hidden
         data-testid="work-node-glyph"

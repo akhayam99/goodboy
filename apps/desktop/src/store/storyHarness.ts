@@ -148,6 +148,7 @@ const storyInvokeHandlers = {
 export const storySpies = {
   getSetting,
   setSetting: vi.fn(async () => undefined),
+  updateProjectResolveCommitStyle: vi.fn(async () => undefined),
   listWorkspaces: vi.fn(async () => [] as ReadonlyArray<Workspace>),
   listProviderCredentials: vi.fn(async () => []),
   updateSessionState: vi.fn(async () => undefined),
@@ -246,6 +247,7 @@ export const storySpies = {
   fetchLinkedIssues: vi.fn(async () => []),
   resolveReviewThread: vi.fn(async () => undefined),
   addReviewThreadReply: vi.fn(async () => ({ id: 'reply-id' })),
+  updateReviewComment: vi.fn(async () => ({ id: 'reply-id', url: 'url' })),
   invokeScriptRun,
   runAdhocScript,
   scanProjectScripts: vi.fn(
@@ -476,6 +478,7 @@ export const storyDbStubs = () => ({
   listActiveResolveAttempts: storySpies.listActiveResolveAttempts,
   getSetting: storySpies.getSetting,
   setSetting: storySpies.setSetting,
+  updateProjectResolveCommitStyle: storySpies.updateProjectResolveCommitStyle,
   getWorkspaceById: storySpies.getWorkspaceById,
   listWorkspaces: storySpies.listWorkspaces,
   listDisconnectedWorkspaces: vi.fn(async () => [] as ReadonlyArray<Workspace>),
@@ -826,6 +829,7 @@ export const coreModuleMock = async (importOriginal: () => Promise<Record<string
   fetchLinkedIssues: storySpies.fetchLinkedIssues,
   resolveReviewThread: storySpies.resolveReviewThread,
   addReviewThreadReply: storySpies.addReviewThreadReply,
+  updateReviewComment: storySpies.updateReviewComment,
   seedWorkflowLibrary: vi.fn(async () => undefined),
 });
 

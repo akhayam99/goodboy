@@ -67,6 +67,7 @@ export const WorkNodeCenter = ({
     case 'running':
       return markOf({ mark, tone: hasArc ? 'foreground' : 'running' });
     case 'marker':
+    case 'mixed':
       return markOf({ mark, tone: 'foreground' });
     case 'ready':
       return (

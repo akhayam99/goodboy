@@ -6,6 +6,7 @@ import type { MountDiffStat } from '../../../../../../store';
 import { formatClock } from '../../../../../../shared/utils/time/formatClock';
 import { useHoverMarkViewed } from '../../../../hooks/useHoverMarkViewed';
 import type { TimelineRowItem } from '../../../../timeline/buildTimelineStream';
+import { EXPLODE_IN_STAGGER_MS, EXPLODE_OUT_STAGGER_MS } from '../../../../timeline/explodeTiming';
 import type { TimelineOpenTarget } from '../../../../hooks/useTimelineOpen';
 import { railColumnX, type RailRow } from '../../../../../workTreeModel/railGeometry';
 import { TIMELINE_RHYTHM } from '../../../../../workTreeModel/timelineRhythm';
@@ -16,6 +17,12 @@ import { TIMELINE_GUTTER } from './timelineLayout';
 import { TimelineRail, type TimelineLaneControl, type TimelineLaneTarget } from './TimelineRail';
 import { TimelineRowLabel } from './TimelineRowLabel';
 import { TimelineRowMarker } from './TimelineRowMarker';
+
+export type TimelineRowExpansion = {
+  readonly isExpanded: boolean;
+  readonly controlsId: string | null;
+  readonly onSet?: (params: { readonly isExpanded: boolean }) => void;
+};
 
 export type TimelineRowAction = {
   readonly label: string;
@@ -42,8 +49,25 @@ type Props = {
   readonly isRevealed?: boolean;
   readonly detail?: ReactNode;
   readonly detailHeight?: number;
-  readonly expansion?: { readonly isExpanded: boolean; readonly controlsId: string } | null;
+  readonly expansion?: TimelineRowExpansion | null;
+  readonly explodePhase?: 'in' | 'out' | null;
   readonly contextMenu?: ObjectMenuTrigger;
+};
+
+const explodeDelayOf = ({
+  item,
+  explodePhase,
+}: {
+  readonly item: TimelineRowItem;
+  readonly explodePhase: 'in' | 'out' | null;
+}): string | undefined => {
+  if (item.explode === undefined || explodePhase === null) {
+    return undefined;
+  }
+  if (explodePhase === 'in') {
+    return `${item.explode.order * EXPLODE_IN_STAGGER_MS}ms`;
+  }
+  return `${(item.explode.total - 1 - item.explode.order) * EXPLODE_OUT_STAGGER_MS}ms`;
 };
 
 const agentIdOf = ({ item }: { readonly item: TimelineRowItem }): AgentId | null =>
@@ -68,6 +92,7 @@ export const TimelineStreamRow = ({
   detail = null,
   detailHeight = 0,
   expansion = null,
+  explodePhase = null,
   contextMenu,
 }: Props) => {
   const hover = useHoverMarkViewed({
@@ -77,9 +102,24 @@ export const TimelineStreamRow = ({
   });
   const boxHeight = TIMELINE_RHYTHM.grade[item.grade].height;
   const isWaiting =
-    item.rowState.phase === 'waiting' && rowStateTone({ state: item.rowState }) === 'warning';
+    item.rowState.phase === 'waiting' &&
+    item.rowState.ask?.kind !== 'reviewComment' &&
+    item.rowState.ask?.kind !== 'groupChild' &&
+    rowStateTone({ state: item.rowState }) === 'warning';
   const isLaneLit = runLane !== null && lanes?.hoveredLaneId === runLane.laneId;
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (expansion?.onSet !== undefined) {
+      if (event.key === 'ArrowRight' && !expansion.isExpanded) {
+        event.preventDefault();
+        expansion.onSet({ isExpanded: true });
+        return;
+      }
+      if (event.key === 'ArrowLeft' && expansion.isExpanded) {
+        event.preventDefault();
+        expansion.onSet({ isExpanded: false });
+        return;
+      }
+    }
     if (runLane === null) {
       return;
     }
@@ -121,8 +161,13 @@ export const TimelineStreamRow = ({
   return (
     <div
       data-row-id={item.id}
-      className="group flex min-w-0"
-      style={{ height: item.height }}
+      data-explode={explodePhase ?? undefined}
+      className={cn(
+        'group flex min-w-0',
+        explodePhase === 'in' && 'motion-safe:animate-explode-in',
+        explodePhase === 'out' && 'motion-safe:animate-explode-out',
+      )}
+      style={{ height: item.height, animationDelay: explodeDelayOf({ item, explodePhase }) }}
       onMouseEnter={hover.onMouseEnter}
       onMouseLeave={hover.onMouseLeave}
       onContextMenu={contextMenu?.onContextMenu}
@@ -173,7 +218,9 @@ export const TimelineStreamRow = ({
               aria-keyshortcuts={runLane === null ? undefined : 'Shift+Enter'}
               aria-expanded={expansion === null ? undefined : expansion.isExpanded}
               aria-controls={
-                expansion === null || !expansion.isExpanded ? undefined : expansion.controlsId
+                expansion === null || !expansion.isExpanded
+                  ? undefined
+                  : (expansion.controlsId ?? undefined)
               }
               className={contentClassName}
               style={{ height: boxHeight }}

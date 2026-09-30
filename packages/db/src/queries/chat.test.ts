@@ -4,15 +4,21 @@ import type {
   ChatId,
   ChatMessage,
   ChatMessageId,
+  ChatSessionLink,
+  ChatSessionLinkId,
   IsoDateTime,
+  SessionId,
   WorkspaceId,
 } from '@goodboy/types';
 import { makeMigratedTestDatabase } from '../test-helpers/test-db';
 import {
+  deleteChats,
   finishChatMessage,
   insertChat,
   insertChatMessage,
+  insertChatSessionLink,
   listChatMessages,
+  listChatSessionLinks,
   listChats,
   renameChat,
   setChatModel,
@@ -34,6 +40,7 @@ const chat = (patch: Partial<Chat>): Chat => ({
   title: 'Where is the consent step defined?',
   provider: 'anthropic',
   model: 'sonnet',
+  effort: null,
   pinnedAt: null,
   archivedAt: null,
   lastActivityAt: MONDAY,
@@ -50,8 +57,21 @@ const message = (patch: Partial<ChatMessage>): ChatMessage => ({
   status: 'done',
   reads: [],
   error: null,
+  provider: null,
+  model: null,
+  effort: null,
   createdAt: MONDAY,
   updatedAt: MONDAY,
+  ...patch,
+});
+
+const link = (patch: Partial<ChatSessionLink>): ChatSessionLink => ({
+  id: 'link-1' as ChatSessionLinkId,
+  chatId: CONSENT,
+  sessionId: 'session-1' as SessionId,
+  messageId: 'message-1' as ChatMessageId,
+  kind: 'new',
+  createdAt: MONDAY,
   ...patch,
 });
 
@@ -141,7 +161,14 @@ describe('chats', () => {
 
     await renameChat({ db, chatId: CONSENT, title: 'Consent step', now: TUESDAY });
     await setChatPinned({ db, chatId: CONSENT, pinnedAt: TUESDAY, now: TUESDAY });
-    await setChatModel({ db, chatId: CONSENT, provider: 'codex', model: 'gpt-6', now: TUESDAY });
+    await setChatModel({
+      db,
+      chatId: CONSENT,
+      provider: 'codex',
+      model: 'gpt-6',
+      effort: 'high',
+      now: TUESDAY,
+    });
 
     const [updated] = await listChats({ db, workspaceId: WORKSPACE });
     expect(updated).toMatchObject({
@@ -149,6 +176,7 @@ describe('chats', () => {
       pinnedAt: TUESDAY,
       provider: 'codex',
       model: 'gpt-6',
+      effort: 'high',
       lastActivityAt: MONDAY,
     });
   });
@@ -176,5 +204,141 @@ describe('chats', () => {
 
     expect(await listChats({ db, workspaceId: WORKSPACE, includeArchived: true })).toEqual([]);
     expect(await listChatMessages({ db, chatId: CONSENT })).toEqual([]);
+  });
+
+  it('stores the model and effort that produced each answer and lists the models used, oldest first', async () => {
+    const db = await seed();
+    await insertChat({ db, chat: chat({}) });
+    await insertChat({
+      db,
+      chat: chat({ id: RETRY, title: 'Why does notify-relay retry twice?' }),
+    });
+    const answer = (patch: Partial<ChatMessage>): ChatMessage =>
+      message({ role: 'assistant', content: 'Answer', ...patch });
+    await insertChatMessage({
+      db,
+      message: answer({
+        id: 'a1' as ChatMessageId,
+        provider: 'anthropic',
+        model: 'sonnet',
+        effort: 'medium',
+        createdAt: MONDAY,
+      }),
+    });
+    await insertChatMessage({
+      db,
+      message: answer({
+        id: 'a2' as ChatMessageId,
+        provider: 'codex',
+        model: 'gpt-6',
+        effort: 'high',
+        createdAt: TUESDAY,
+      }),
+    });
+    await insertChatMessage({
+      db,
+      message: answer({
+        id: 'a3' as ChatMessageId,
+        provider: 'anthropic',
+        model: 'sonnet',
+        effort: 'low',
+        createdAt: WEDNESDAY,
+      }),
+    });
+    await insertChatMessage({
+      db,
+      message: message({ id: 'q1' as ChatMessageId, createdAt: MONDAY }),
+    });
+
+    const chats = await listChats({ db, workspaceId: WORKSPACE });
+    expect(chats.find((entry) => entry.id === CONSENT)?.modelsUsed).toEqual([
+      { provider: 'anthropic', model: 'sonnet' },
+      { provider: 'codex', model: 'gpt-6' },
+    ]);
+    expect(chats.find((entry) => entry.id === RETRY)?.modelsUsed).toEqual([]);
+
+    await finishChatMessage({
+      db,
+      message: answer({
+        id: 'a3' as ChatMessageId,
+        provider: 'codex',
+        model: 'gpt-6',
+        effort: 'xhigh',
+        createdAt: WEDNESDAY,
+        updatedAt: WEDNESDAY,
+      }),
+    });
+    const stored = await listChatMessages({ db, chatId: CONSENT });
+    expect(stored.map((entry) => [entry.provider, entry.model, entry.effort])).toEqual([
+      ['anthropic', 'sonnet', 'medium'],
+      [null, null, null],
+      ['codex', 'gpt-6', 'high'],
+      ['codex', 'gpt-6', 'xhigh'],
+    ]);
+  });
+
+  it('deletes chats with their messages and links and leaves the sessions', async () => {
+    const db = await seed();
+    await db.execute(
+      "INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES ('session-1', 'harborline', 'Fix rounding', 'idle', 1, 1)",
+    );
+    await insertChat({ db, chat: chat({}) });
+    await insertChat({ db, chat: chat({ id: RETRY }) });
+    await insertChatMessage({ db, message: message({}) });
+    await insertChatSessionLink({ db, link: link({}) });
+
+    await deleteChats({ db, chatIds: [] });
+    expect(await listChats({ db, workspaceId: WORKSPACE })).toHaveLength(2);
+
+    await deleteChats({ db, chatIds: [CONSENT] });
+
+    expect((await listChats({ db, workspaceId: WORKSPACE })).map((entry) => entry.id)).toEqual([
+      RETRY,
+    ]);
+    expect(await listChatMessages({ db, chatId: CONSENT })).toEqual([]);
+    expect(await listChatSessionLinks({ db, workspaceId: WORKSPACE })).toEqual([]);
+    expect(await db.select('SELECT id FROM sessions')).toHaveLength(1);
+  });
+
+  it('saves chat to session links and lists them per workspace, oldest first', async () => {
+    const db = await seed();
+    await db.execute(
+      `INSERT INTO workspaces (id, name, slug, created_at, updated_at)
+       VALUES ('northwind', 'Northwind', 'northwind', 1, 1)`,
+    );
+    await db.execute(
+      `INSERT INTO sessions (id, workspace_id, goal, state_kind, created_at, updated_at) VALUES
+       ('session-1', 'harborline', 'Fix rounding', 'idle', 1, 1),
+       ('session-2', 'harborline', 'Consent again', 'idle', 1, 1),
+       ('session-3', 'northwind', 'Other', 'idle', 1, 1)`,
+    );
+    await insertChat({ db, chat: chat({}) });
+    await insertChat({
+      db,
+      chat: chat({ id: 'chat-other' as ChatId, workspaceId: 'northwind' as WorkspaceId }),
+    });
+    await insertChatSessionLink({
+      db,
+      link: link({
+        id: 'link-2' as ChatSessionLinkId,
+        sessionId: 'session-2' as SessionId,
+        createdAt: TUESDAY,
+      }),
+    });
+    await insertChatSessionLink({ db, link: link({}) });
+    await insertChatSessionLink({
+      db,
+      link: link({
+        id: 'link-3' as ChatSessionLinkId,
+        chatId: 'chat-other' as ChatId,
+        sessionId: 'session-3' as SessionId,
+      }),
+    });
+
+    const links = await listChatSessionLinks({ db, workspaceId: WORKSPACE });
+    expect(links.map((entry) => [entry.id, entry.sessionId, entry.kind, entry.messageId])).toEqual([
+      ['link-1', 'session-1', 'new', 'message-1'],
+      ['link-2', 'session-2', 'new', 'message-1'],
+    ]);
   });
 });

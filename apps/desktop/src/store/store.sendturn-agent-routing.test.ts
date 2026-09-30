@@ -2573,6 +2573,30 @@ describe('sendTurn, resolver config (provider pin + effort)', () => {
     );
   });
 
+  it('runs a batch resolver in its copy of the branch without leasing the real worktree', async () => {
+    const useAppStore = await seedResolverTurn();
+    const worktreeMod = await import('../features/worktree/worktree');
+    const acquire = worktreeMod.acquireWorktreeWriter as ReturnType<typeof vi.fn>;
+    acquire.mockClear();
+    runTurnSpy.mockReset();
+    runTurnSpy.mockImplementation(() => emptyStream());
+
+    await useAppStore.getState().sendTurn({
+      sessionId: SESSION_ID,
+      agentId: AGENT_A,
+      content: 'go',
+      resolveCopyPath: '/tmp/copies/attempt-1',
+    });
+
+    expect(acquire).not.toHaveBeenCalled();
+    const [args] = runTurnSpy.mock.calls.at(-1) ?? [];
+    expect(args).toEqual(
+      expect.objectContaining({ workingDir: '/tmp/copies/attempt-1', blocksPush: true }),
+    );
+    expect(args).not.toHaveProperty('writerLease');
+    expect(args).not.toHaveProperty('mountId');
+  });
+
   it('leaves the release to the queue when the caller already holds the lease', async () => {
     const useAppStore = await seedResolverTurn();
     const release = storySpies.releaseWorktreeWriter;

@@ -3,7 +3,7 @@ import {
   listResolveCandidates,
   listResolveQueueItems,
 } from '@goodboy/db';
-import type { ResolveQueueItemWithThread, SessionId } from '@goodboy/types';
+import type { ResolveQueueItemWithThread, ResolveThread, SessionId } from '@goodboy/types';
 import { tauriDatabase } from '../../../shared/lib/db';
 
 type ApprovedRange = Readonly<{
@@ -21,13 +21,19 @@ export type ApprovedPublicationScope = Readonly<{
   ranges: ReadonlyArray<ApprovedRange>;
 }>;
 
-type Params = { readonly sessionId: SessionId };
+type Params = {
+  readonly sessionId: SessionId;
+  readonly include?: (thread: ResolveThread) => boolean;
+};
 
 export const approvedPublicationScope = async ({
   sessionId,
+  include,
 }: Params): Promise<ApprovedPublicationScope> => {
   const db = tauriDatabase;
-  const entries = await listResolveQueueItems({ db, sessionId });
+  const entries = (await listResolveQueueItems({ db, sessionId })).filter(
+    ({ thread }) => include === undefined || include(thread),
+  );
   const isCurrent = ({ item, thread }: ResolveQueueItemWithThread): boolean =>
     item.approvedRevision === thread.revision &&
     item.candidateRevision === item.approvedRevision &&

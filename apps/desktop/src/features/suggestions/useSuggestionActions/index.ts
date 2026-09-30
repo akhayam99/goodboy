@@ -7,6 +7,7 @@ import { isMountCompleted } from '../../../store/slices/project-mounts/mountRowM
 import { distanceBehind } from '../../../shared/lib/gitStatus';
 import { useAgentStartedToast } from '../../../shared/hooks/useAgentStartedToast';
 import { useSessionRoleModels } from '../../../shared/hooks/useSessionRoleModels';
+import { launchChoiceOf } from '../../resolve/launchChoice';
 import { startResolve } from '../../resolve/startResolve';
 import { kindRouting } from '../../session/agent-kind';
 import { REBASE_FAILURE_TITLE, useRebaseBranch } from '../../session/hooks/useRebaseBranch';
@@ -88,6 +89,7 @@ export const useSuggestionActions = ({
   const roleModels = useSessionRoleModels({ sessionId });
   const spawnAgent = useAppStore((state) => state.spawnAgent);
   const setAgentConfig = useAppStore((state) => state.setAgentConfig);
+  const createResolveBatch = useAppStore((state) => state.createResolveBatch);
   const resolveStyle = useAppStore(
     useShallow((state) => sessionResolveStyle({ state, sessionId })),
   );
@@ -143,11 +145,23 @@ export const useSuggestionActions = ({
     if (pullRequest == null || unresolvedThreads.length === 0) {
       return;
     }
+    const launchChoice = launchChoiceOf({
+      routing: kindRouting({ kind: 'resolver', roleModels }),
+      commitStyle: resolveStyle.commitStyle,
+      hint: null,
+    });
+    const batch = await createResolveBatch({
+      sessionId,
+      threadIds: unresolvedThreads.flatMap((thread) =>
+        thread.head.threadId == null ? [] : [thread.head.threadId],
+      ),
+      launchChoice,
+    });
     await startResolve({
       sessionId,
       threads: unresolvedThreads,
       pr: pullRequest,
-      routing: kindRouting({ kind: 'resolver', roleModels }),
+      batch: { batchId: batch.id, launchChoice },
       style: resolveStyle,
       spawnAgent,
       setAgentConfig,

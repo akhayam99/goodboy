@@ -18,6 +18,7 @@ import {
 
 const { state, toastMock } = vi.hoisted(() => ({
   state: {
+    settings: {} as Record<string, string>,
     loadSetting: vi.fn(async () => null),
     saveSetting: vi.fn(async () => undefined),
     disconnectWorkspace: vi.fn(async () => undefined),

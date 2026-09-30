@@ -10,6 +10,7 @@ import {
   extractClustersFromMarker,
   extractCommentAnalysis,
   extractCommentResolved,
+  extractCommentVerdict,
   extractCommentWontfix,
   extractFanOut,
   extractFilesTouched,
@@ -450,6 +451,17 @@ describe('extractCommentAnalysis', () => {
     const text =
       'result\n<<comment-analysis threadId="PRRT_1" verdict="fix" summary="add the guard">>\ndone';
     expect(stripControlMarkers(text)).toBe('result\n\ndone');
+  });
+
+  it('strips the unsummarized step output marker in every form', () => {
+    expect(
+      stripControlMarkers('[unsummarized step output, carried whole]\nfixed the retry loop'),
+    ).toBe('fixed the retry loop');
+    expect(stripControlMarkers('[unsummarized step output, excerpt] fixed it')).toBe('fixed it');
+    expect(stripControlMarkers('[unsummarized step output, no output captured]')).toBe('');
+    expect(stripControlMarkers('[unsummarized step output, legacy excerpt]\nfixed it')).toBe(
+      'fixed it',
+    );
   });
 });
 
@@ -1272,5 +1284,69 @@ describe('marker parsing, ReDoS hardening', () => {
     expect(extractMarkers(dashes).questions[0]?.text).toBe('body');
     const fences = '<<clusters>>```' + '\t'.repeat(200_000) + '<</clusters>>';
     expect(extractClustersFromMarker({ assistantText: fences, emittingProvider: null })).toBeNull();
+  });
+});
+
+describe('extractCommentVerdict', () => {
+  it('reads a fixed-here verdict with its sha and evidence', () => {
+    const text =
+      'Line 3 now reads shouldRetry. <<comment-verdict threadId="PRRT_9" verdict="fixed-here" sha="e31b9f4" evidence="the fix was folded in during the rebase">>';
+    expect(extractCommentVerdict(text)).toEqual({
+      threadId: 'PRRT_9',
+      kind: 'fixed-here',
+      sha: 'e31b9f4',
+      evidence: 'the fix was folded in during the rebase',
+    });
+  });
+
+  it('reads not-relevant with the reason and an optional sha', () => {
+    const withSha = extractCommentVerdict(
+      '<<comment-verdict threadId="PRRT_9" verdict="not-relevant" sha="6b0e9f1" reason="config.ts was deleted">>',
+    );
+    expect(withSha).toEqual({
+      threadId: 'PRRT_9',
+      kind: 'not-relevant',
+      sha: '6b0e9f1',
+      evidence: 'config.ts was deleted',
+    });
+    const without = extractCommentVerdict(
+      '<<comment-verdict threadId="PRRT_9" verdict="not-relevant" evidence="the goal changed">>',
+    );
+    expect(without?.sha).toBeNull();
+  });
+
+  it('drops the sha of a still-needed verdict', () => {
+    const verdict = extractCommentVerdict(
+      '<<comment-verdict threadId="PRRT_9" verdict="still-needed" sha="e31b9f4" evidence="the line is back to the old text">>',
+    );
+    expect(verdict?.kind).toBe('still-needed');
+    expect(verdict?.sha).toBeNull();
+  });
+
+  it('refuses markers that lack a thread, a known verdict, evidence or a valid sha', () => {
+    expect(extractCommentVerdict('no marker here')).toBeNull();
+    expect(
+      extractCommentVerdict('<<comment-verdict verdict="still-needed" evidence="x">>'),
+    ).toBeNull();
+    expect(
+      extractCommentVerdict('<<comment-verdict threadId="t" verdict="maybe" evidence="x">>'),
+    ).toBeNull();
+    expect(
+      extractCommentVerdict('<<comment-verdict threadId="t" verdict="still-needed">>'),
+    ).toBeNull();
+    expect(
+      extractCommentVerdict('<<comment-verdict threadId="t" verdict="fixed-here" evidence="x">>'),
+    ).toBeNull();
+    expect(
+      extractCommentVerdict(
+        '<<comment-verdict threadId="t" verdict="fixed-here" sha="not a sha" evidence="x">>',
+      ),
+    ).toBeNull();
+  });
+
+  it('keeps the last valid verdict when the agent corrects itself', () => {
+    const text =
+      '<<comment-verdict threadId="t" verdict="still-needed" evidence="first">> then <<comment-verdict threadId="t" verdict="fixed-here" sha="abcdef1" evidence="second">>';
+    expect(extractCommentVerdict(text)?.evidence).toBe('second');
   });
 });

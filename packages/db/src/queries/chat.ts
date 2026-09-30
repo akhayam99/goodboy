@@ -1,16 +1,24 @@
 import {
   CHAT_MESSAGE_ROLES,
   CHAT_MESSAGE_STATUSES,
+  CHAT_SESSION_LINK_KINDS,
   PROVIDER_IDS,
+  isEffortLevel,
   type Chat,
   type ChatId,
   type ChatMessage,
   type ChatMessageId,
   type ChatMessageRole,
   type ChatMessageStatus,
+  type ChatModelUsed,
+  type ChatSessionLink,
+  type ChatSessionLinkId,
+  type ChatSessionLinkKind,
   type ChatSummary,
+  type EffortLevel,
   type IsoDateTime,
   type ProviderId,
+  type SessionId,
   type WorkspaceId,
 } from '@goodboy/types';
 import type { Database } from '../client';
@@ -24,6 +32,7 @@ type ChatRow = {
   readonly title: string;
   readonly provider: string;
   readonly model: string;
+  readonly effort: string | null;
   readonly pinnedAt: number | null;
   readonly archivedAt: number | null;
   readonly lastActivityAt: number;
@@ -40,18 +49,36 @@ type MessageRow = {
   readonly status: string;
   readonly reads: string | null;
   readonly error: string | null;
+  readonly provider: string | null;
+  readonly model: string | null;
+  readonly effort: string | null;
   readonly createdAt: number;
   readonly updatedAt: number;
 };
 
-const CHAT_COLUMNS = `c.id, c.workspace_id AS workspaceId, c.title, c.provider, c.model,
+type ModelUsedRow = {
+  readonly chatId: string;
+  readonly provider: string;
+  readonly model: string;
+};
+
+type LinkRow = {
+  readonly id: string;
+  readonly chatId: string;
+  readonly sessionId: string;
+  readonly messageId: string | null;
+  readonly kind: string;
+  readonly createdAt: number;
+};
+
+const CHAT_COLUMNS = `c.id, c.workspace_id AS workspaceId, c.title, c.provider, c.model, c.effort,
   c.pinned_at AS pinnedAt, c.archived_at AS archivedAt, c.last_activity_at AS lastActivityAt,
   c.created_at AS createdAt, c.updated_at AS updatedAt,
   (SELECT SUBSTR(m.content, 1, ${PREVIEW_LENGTH}) FROM chat_messages m
     WHERE m.chat_id = c.id AND m.role = 'assistant' AND m.content != ''
     ORDER BY m.created_at DESC, m.rowid DESC LIMIT 1) AS preview`;
 
-const MESSAGE_COLUMNS = `id, chat_id AS chatId, role, content, status, reads, error,
+const MESSAGE_COLUMNS = `id, chat_id AS chatId, role, content, status, reads, error, provider, model, effort,
   created_at AS createdAt, updated_at AS updatedAt`;
 
 const toIso = (ms: number): IsoDateTime => new Date(ms).toISOString() as IsoDateTime;
@@ -67,7 +94,18 @@ const isRole = (value: string): value is ChatMessageRole =>
 const isStatus = (value: string): value is ChatMessageStatus =>
   CHAT_MESSAGE_STATUSES.some((status) => status === value);
 
-const toSummary = (row: ChatRow): ChatSummary | null => {
+const toEffort = (value: string | null): EffortLevel | null =>
+  value !== null && isEffortLevel(value) ? value : null;
+
+const isLinkKind = (value: string): value is ChatSessionLinkKind =>
+  CHAT_SESSION_LINK_KINDS.some((kind) => kind === value);
+
+type ToSummaryParams = {
+  readonly row: ChatRow;
+  readonly modelsUsed: ReadonlyArray<ChatModelUsed>;
+};
+
+const toSummary = ({ row, modelsUsed }: ToSummaryParams): ChatSummary | null => {
   if (!isProviderId(row.provider)) {
     return null;
   }
@@ -77,12 +115,14 @@ const toSummary = (row: ChatRow): ChatSummary | null => {
     title: row.title,
     provider: row.provider,
     model: row.model,
+    effort: toEffort(row.effort),
     pinnedAt: row.pinnedAt === null ? null : toIso(row.pinnedAt),
     archivedAt: row.archivedAt === null ? null : toIso(row.archivedAt),
     lastActivityAt: toIso(row.lastActivityAt),
     createdAt: toIso(row.createdAt),
     updatedAt: toIso(row.updatedAt),
     preview: row.preview,
+    modelsUsed,
   };
 };
 
@@ -98,6 +138,9 @@ const toMessage = (row: MessageRow): ChatMessage | null => {
     status: row.status,
     reads: parseJsonColumn({ value: row.reads, isValid: isStringArray, fallback: [] }),
     error: row.error,
+    provider: row.provider !== null && isProviderId(row.provider) ? row.provider : null,
+    model: row.model,
+    effort: toEffort(row.effort),
     createdAt: toIso(row.createdAt),
     updatedAt: toIso(row.updatedAt),
   };
@@ -120,8 +163,27 @@ export const listChats = async ({
      ORDER BY c.last_activity_at DESC, c.id`,
     [workspaceId],
   );
+  const used = await db.select<ModelUsedRow>(
+    `SELECT m.chat_id AS chatId, m.provider, m.model
+     FROM chat_messages m JOIN chats c ON c.id = m.chat_id
+     WHERE c.workspace_id = ? AND m.role = 'assistant' AND m.provider IS NOT NULL
+       AND m.model IS NOT NULL
+     GROUP BY m.chat_id, m.provider, m.model
+     ORDER BY MIN(m.created_at), MIN(m.rowid)`,
+    [workspaceId],
+  );
+  const modelsByChat = new Map<string, ReadonlyArray<ChatModelUsed>>();
+  for (const entry of used) {
+    if (!isProviderId(entry.provider)) {
+      continue;
+    }
+    modelsByChat.set(entry.chatId, [
+      ...(modelsByChat.get(entry.chatId) ?? []),
+      { provider: entry.provider, model: entry.model },
+    ]);
+  }
   return rows.flatMap((row) => {
-    const summary = toSummary(row);
+    const summary = toSummary({ row, modelsUsed: modelsByChat.get(row.id) ?? [] });
     return summary === null ? [] : [summary];
   });
 };
@@ -138,15 +200,16 @@ type InsertChatParams = {
 
 export const insertChat = async ({ db, chat }: InsertChatParams): Promise<void> => {
   await db.execute(
-    `INSERT INTO chats (id, workspace_id, title, provider, model, pinned_at, archived_at,
+    `INSERT INTO chats (id, workspace_id, title, provider, model, effort, pinned_at, archived_at,
        last_activity_at, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       chat.id,
       chat.workspaceId,
       chat.title,
       chat.provider,
       chat.model,
+      chat.effort,
       chat.pinnedAt === null ? null : toMs(chat.pinnedAt),
       chat.archivedAt === null ? null : toMs(chat.archivedAt),
       toMs(chat.lastActivityAt),
@@ -172,6 +235,7 @@ export const renameChat = async ({ db, chatId, title, now }: RenameChatParams): 
 type SetChatModelParams = ChatParams & {
   readonly provider: ProviderId;
   readonly model: string;
+  readonly effort: EffortLevel | null;
   readonly now: IsoDateTime;
 };
 
@@ -180,14 +244,13 @@ export const setChatModel = async ({
   chatId,
   provider,
   model,
+  effort,
   now,
 }: SetChatModelParams): Promise<void> => {
-  await db.execute('UPDATE chats SET provider = ?, model = ?, updated_at = ? WHERE id = ?', [
-    provider,
-    model,
-    toMs(now),
-    chatId,
-  ]);
+  await db.execute(
+    'UPDATE chats SET provider = ?, model = ?, effort = ?, updated_at = ? WHERE id = ?',
+    [provider, model, effort, toMs(now), chatId],
+  );
 };
 
 type SetChatPinnedParams = ChatParams & {
@@ -232,6 +295,23 @@ export const setChatsArchived = async ({
   });
 };
 
+type DeleteChatsParams = {
+  readonly db: Database;
+  readonly chatIds: ReadonlyArray<ChatId>;
+};
+
+export const deleteChats = async ({ db, chatIds }: DeleteChatsParams): Promise<void> => {
+  if (chatIds.length === 0) {
+    return;
+  }
+  await db.transaction({
+    statements: chatIds.map((chatId) => ({
+      sql: 'DELETE FROM chats WHERE id = ?',
+      params: [chatId],
+    })),
+  });
+};
+
 export const listChatMessages = async ({
   db,
   chatId,
@@ -263,8 +343,8 @@ export const insertChatMessage = async ({
     statements: [
       {
         sql: `INSERT INTO chat_messages (id, chat_id, role, content, status, reads, error,
-                created_at, updated_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                provider, model, effort, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         params: [
           message.id,
           message.chatId,
@@ -273,6 +353,9 @@ export const insertChatMessage = async ({
           message.status,
           readsColumn(message.reads),
           message.error,
+          message.provider,
+          message.model,
+          message.effort,
           toMs(message.createdAt),
           toMs(message.updatedAt),
         ],
@@ -298,13 +381,17 @@ export const finishChatMessage = async ({
   await db.transaction({
     statements: [
       {
-        sql: `UPDATE chat_messages SET content = ?, status = ?, reads = ?, error = ?, updated_at = ?
+        sql: `UPDATE chat_messages SET content = ?, status = ?, reads = ?, error = ?, provider = ?,
+                model = ?, effort = ?, updated_at = ?
               WHERE id = ?`,
         params: [
           message.content,
           message.status,
           readsColumn(message.reads),
           message.error,
+          message.provider,
+          message.model,
+          message.effort,
           toMs(message.updatedAt),
           message.id,
         ],
@@ -332,4 +419,57 @@ export const settleStreamingChatMessages = async ({
     [toMs(now)],
   );
   return result.rowsAffected;
+};
+
+const toLink = (row: LinkRow): ChatSessionLink | null => {
+  if (!isLinkKind(row.kind)) {
+    return null;
+  }
+  return {
+    id: row.id as ChatSessionLinkId,
+    chatId: row.chatId as ChatId,
+    sessionId: row.sessionId as SessionId,
+    messageId: row.messageId === null ? null : (row.messageId as ChatMessageId),
+    kind: row.kind,
+    createdAt: toIso(row.createdAt),
+  };
+};
+
+type InsertChatSessionLinkParams = {
+  readonly db: Database;
+  readonly link: ChatSessionLink;
+};
+
+export const insertChatSessionLink = async ({
+  db,
+  link,
+}: InsertChatSessionLinkParams): Promise<void> => {
+  await db.execute(
+    `INSERT INTO chat_session_links (id, chat_id, session_id, message_id, kind, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [link.id, link.chatId, link.sessionId, link.messageId, link.kind, toMs(link.createdAt)],
+  );
+};
+
+type ListChatSessionLinksParams = {
+  readonly db: Database;
+  readonly workspaceId: WorkspaceId;
+};
+
+export const listChatSessionLinks = async ({
+  db,
+  workspaceId,
+}: ListChatSessionLinksParams): Promise<ReadonlyArray<ChatSessionLink>> => {
+  const rows = await db.select<LinkRow>(
+    `SELECT l.id, l.chat_id AS chatId, l.session_id AS sessionId, l.message_id AS messageId,
+       l.kind, l.created_at AS createdAt
+     FROM chat_session_links l JOIN chats c ON c.id = l.chat_id
+     WHERE c.workspace_id = ?
+     ORDER BY l.created_at ASC, l.rowid ASC`,
+    [workspaceId],
+  );
+  return rows.flatMap((row) => {
+    const link = toLink(row);
+    return link === null ? [] : [link];
+  });
 };

@@ -1,4 +1,5 @@
 import type { PrComment, ResolvePublicationThread } from '@goodboy/types';
+import { userReplyIn } from './userReplyIn';
 
 export type ReplyOperationVerdict = 'posted' | 'not_posted' | 'ambiguous';
 
@@ -7,6 +8,7 @@ type Params = {
   readonly comments: ReadonlyArray<PrComment>;
   readonly observedAt: number | null;
   readonly isObservationTrusted: boolean;
+  readonly viewerLogins?: ReadonlySet<string>;
 };
 
 export const reconcileReplyOperation = ({
@@ -14,6 +16,7 @@ export const reconcileReplyOperation = ({
   comments,
   observedAt,
   isObservationTrusted,
+  viewerLogins = new Set<string>(),
 }: Params): ReplyOperationVerdict => {
   if (thread.replyPostedAt !== null || thread.replyPhase === 'posted') {
     return 'posted';
@@ -36,5 +39,15 @@ export const reconcileReplyOperation = ({
   if (seen > 1) {
     return 'ambiguous';
   }
-  return seen === 1 ? 'posted' : 'not_posted';
+  if (seen === 1) {
+    return 'posted';
+  }
+  const handWritten = userReplyIn({
+    comments,
+    threadId: thread.threadId,
+    viewerLogins,
+    afterMs: thread.replyAttemptedAt ?? 0,
+    ownReplyId: thread.replyId,
+  });
+  return handWritten === null ? 'not_posted' : 'posted';
 };

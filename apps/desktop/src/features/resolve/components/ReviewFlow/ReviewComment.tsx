@@ -1,10 +1,11 @@
-import { useMemo, useState, type KeyboardEvent } from 'react';
-import { AlertCircle, Check } from 'lucide-react';
+import { useMemo, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Check } from 'lucide-react';
+import { REVIEW_SOURCE_CAPABILITIES, REVIEW_SOURCE_LABEL } from '@goodboy/core';
 import { Button, Chip, KbdPill, Markdown, SectionHeader, Textarea, Tooltip, cn } from '@goodboy/ui';
-import type { SessionId } from '@goodboy/types';
+import type { ResolveAttempt, SessionId } from '@goodboy/types';
 import { useAppStore } from '../../../../store';
 import { ICON_SIZE } from '../../../../shared/components/conceptIcons';
-import { formatRelativeAge } from '../../../../shared/utils/relativeDate';
+import { RelativeTime } from '../../../../shared/components/RelativeTime';
 import { shortcutGlyphs } from '../../../../shared/keyboard/registry';
 import {
   PARTIAL_ACCEPTANCE,
@@ -15,9 +16,11 @@ import { ObjectOverflowMenu } from '../../../actions/components/ObjectOverflowMe
 import { useActionEnv } from '../../../actions/useActionEnv';
 import { useObjectActions } from '../../../actions/useObjectActions';
 import type { ResolvedAction } from '../../../actions/types';
-import { OUTDATED_REASON } from '../../../actions/kinds/reviewComment';
-import type { ReviewComposeMode } from '../../../review/reviewRequest';
+import { modelLabel } from '../../../chat/utils/chat-constants';
+import { attemptNumberOf, previousAttemptsOf } from '../../attemptHistory';
 import { conversationSha } from '../../conversationAgentResult';
+import { FAILED_RUN_COPY, tryAgainLabel } from '../../failedRunCopy';
+import type { ReviewCommentBinding, ReviewCompose } from '../../hooks/useReviewCommentController';
 import { useResolveCandidateDiff } from '../../hooks/useResolveCandidateDiff';
 import { useResolveItemDraft } from '../../hooks/useResolveItemDraft';
 import { isResolveOnly } from '../../reviewCommentState';
@@ -25,42 +28,43 @@ import { RESOLVE_COMMENT_UNAVAILABLE } from '../../resolveQueueCopy';
 import {
   COMPOSE_COPY,
   REVIEW_FLOW_LABEL,
+  composePlaceholder,
   decidedNote,
   replyHeading,
   sharedFixLine,
 } from '../../reviewFlowCopy';
+import { REMOTE_LABEL } from '../../reviewRemote';
 import { selectResolveCandidate } from '../../selectResolveCandidate';
+import { handledByLine } from '../../../../store/slices/resolve/threadGitState';
+import { foldedReply, verdictReply } from '../../commentVerdict';
 import { sharedCandidateBlocker, sharedCandidateThreadIds } from '../../sharedCandidateThreadIds';
 import { ReviewerCommentBlock } from './ReviewerCommentBlock';
 import { AgentLine } from './AgentLine';
+import { FailedRun } from './FailedRun';
+import { PreviousAttempts } from './PreviousAttempts';
 import { ProposedChange } from './ProposedChange';
+import { ThreadGitEvidence } from './ThreadGitEvidence';
+import { NewReplyNote } from './NewReplyNote';
+import { SourceChangeCard } from './SourceChangeCard';
+import { ThreadRecheckLine } from './ThreadRecheckLine';
+import { ThreadVerdictCard } from './ThreadVerdictCard';
 import type { ReviewEntry } from './useReviewEntries';
 
-export type ReviewCompose = {
-  readonly threadId: string;
-  readonly mode: ReviewComposeMode;
-  readonly text: string;
-};
-
-type Props = {
+type Props = ReviewCommentBinding & {
   readonly sessionId: SessionId;
   readonly entry: ReviewEntry;
   readonly entries: ReadonlyArray<ReviewEntry>;
-  readonly compose: ReviewCompose | null;
-  readonly isEditingReply: boolean;
-  readonly isSubmitting: boolean;
-  readonly pendingActionId: string | null;
-  readonly error: string | null;
-  readonly onRun: (actionId: string) => void;
-  readonly onComposeChange: (text: string) => void;
-  readonly onComposeSubmit: () => void;
-  readonly onComposeCancel: () => void;
-  readonly onEditReply: () => void;
-  readonly onReplyDone: () => void;
   readonly onSelect: (threadId: string) => void;
+  readonly onTryAgain: () => void;
+  readonly onRetryDelivery: () => void;
+  readonly onSync: () => void;
+  readonly variant?: 'review' | 'brief';
+  readonly actionsPrefix?: ReactNode;
+  readonly actionsReplacement?: ReactNode;
 };
 
 const EMPTY_CANDIDATES: ReadonlyArray<ResolveCandidateWithItems> = [];
+const EMPTY_ATTEMPTS: ReadonlyArray<ResolveAttempt> = [];
 const DECIDED_NOTE_STATES = new Set(['accepted', 'replied', 'skipped', 'pushed', 'resolved']);
 
 const verbsOf = (actions: ReadonlyArray<ResolvedAction>): ReadonlyArray<ResolvedAction> => [
@@ -102,8 +106,17 @@ export const ReviewComment = ({
   onEditReply,
   onReplyDone,
   onSelect,
+  onTryAgain,
+  onRetryDelivery,
+  onSync,
+  variant = 'review',
+  actionsPrefix = null,
+  actionsReplacement = null,
 }: Props) => {
+  const isBrief = variant === 'brief';
   const { row, state, word, threadId } = entry;
+  const provider = REVIEW_SOURCE_LABEL[row.thread.sourceKind ?? 'github'];
+  const canResolve = REVIEW_SOURCE_CAPABILITIES[row.thread.sourceKind ?? 'github'].canResolve;
   const target = useMemo(
     () => ({ kind: 'reviewComment' as const, sessionId, threadId }),
     [sessionId, threadId],
@@ -111,6 +124,8 @@ export const ReviewComment = ({
   const env = useActionEnv({ origin: 'button' });
   const { actions } = useObjectActions({ target, env });
   const candidates = useAppStore((s) => s.sessionResolveCandidates[sessionId] ?? EMPTY_CANDIDATES);
+  const attempts = useAppStore((s) => s.sessionResolveAttempts[sessionId] ?? EMPTY_ATTEMPTS);
+  const pickedModel = useAppStore((s) => s.resolveQueueView[sessionId]?.lastRouting?.model ?? null);
   const candidate = useMemo(
     () => selectResolveCandidate({ candidates, itemId: row.item.id }),
     [candidates, row.item.id],
@@ -125,16 +140,75 @@ export const ReviewComment = ({
       }),
     [candidates, entries, row.item.id],
   );
-  const { reply, setReply } = useResolveItemDraft({ sessionId, threadId, proposal: row.proposal });
+  const { reply: draftReply, setReply } = useResolveItemDraft({
+    sessionId,
+    threadId,
+    proposal: row.proposal,
+  });
+  const remote = entry.remote;
+  const elsewhere = entry.facts?.elsewhere ?? null;
+  const verdict = entry.facts?.verdict ?? null;
+  const folded = entry.facts?.folded ?? null;
+  const editedReply = useAppStore((s) => s.resolveItemDrafts[sessionId]?.[threadId]?.reply ?? null);
+  const isPushedMissing = entry.facts?.missing?.wasPushed === true;
+  const isVerdictReply =
+    remote === 'missing' &&
+    !isPushedMissing &&
+    (verdict?.kind === 'fixed_elsewhere' || verdict?.kind === 'obsolete');
+  const remoteReply = (): string => {
+    if (folded !== null) {
+      return foldedReply({ sha: folded.sha, landedAs: folded.landedAs });
+    }
+    if (editedReply !== null && editedReply.trim() !== '') {
+      return editedReply;
+    }
+    return verdict === null ? '' : verdictReply({ verdict });
+  };
+  const reply =
+    remote === 'looks_fixed' && elsewhere !== null
+      ? handledByLine({ fix: elsewhere })
+      : remote === 'folded' || remote === 'missing'
+        ? remoteReply()
+        : draftReply;
   const [replyText, setReplyText] = useState(reply);
   const note = row.reviewerNote;
   const author = note?.author ?? null;
   const verbs = verbsOf(actions);
   const canEditReply = actions.some((action) => action.id === 'reviewComment.editReply');
-  const hasChange = candidate !== null;
+  const isOwnFixGone = remote === 'looks_fixed' || remote === 'missing' || remote === 'folded';
+  const hasChange = candidate !== null && !isOwnFixGone;
   const replyShown =
-    reply.trim() !== '' || (state !== 'new' && state !== 'drafting' && state !== 'needs');
+    remote !== 'you_replied' &&
+    (remote === 'missing'
+      ? isVerdictReply
+      : reply.trim() !== '' ||
+        (state !== 'new' && state !== 'drafting' && state !== 'needs' && state !== 'failed'));
   const blocker = sharedCandidateBlocker({ members });
+  const previous = useMemo(
+    () => previousAttemptsOf({ attempts, threadId, activeAttemptId: row.thread.activeAttemptId }),
+    [attempts, row.thread.activeAttemptId, threadId],
+  );
+  const attemptNumber =
+    row.attempt !== null && (state === 'failed' || previous.length > 0)
+      ? attemptNumberOf({ attempts, threadId, attemptId: row.attempt.id })
+      : null;
+  const isFailed = state === 'failed';
+  const composeCopy =
+    compose !== null && isFailed && compose.mode === 'redraft'
+      ? {
+          label: FAILED_RUN_COPY.hintLabel,
+          placeholder: 'Say what to change, in your own words',
+          submit: tryAgainLabel({
+            modelName: pickedModel === null ? null : modelLabel(pickedModel),
+            hasHint: compose.text.trim() !== '',
+          }),
+        }
+      : compose === null
+        ? null
+        : {
+            ...COMPOSE_COPY[compose.mode],
+            placeholder: composePlaceholder({ mode: compose.mode, provider }),
+          };
 
   const startEdit = (): void => {
     setReplyText(reply);
@@ -163,22 +237,52 @@ export const ReviewComment = ({
         {author !== null && <span className="shrink-0 text-label text-foreground">{author}</span>}
         {note !== null && (
           <span className="shrink-0 text-muted-foreground">
-            {formatRelativeAge({ fromIso: new Date(note.createdAtMs).toISOString() })}
+            <RelativeTime iso={new Date(note.createdAtMs).toISOString()} />
           </span>
         )}
         {note?.location != null && (
           <span className="min-w-0 truncate font-mono text-faint-foreground">{note.location}</span>
+        )}
+        {row.commentThread?.head.outdated === true && (
+          <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.lineMoved} />
         )}
         <span className="ml-auto flex shrink-0 items-center">
           <ObjectOverflowMenu target={target} label={REVIEW_FLOW_LABEL.commentActions} />
         </span>
       </header>
 
+      {isBrief && <SectionHeader label={REVIEW_FLOW_LABEL.comment} headingLevel={2} />}
       <div className="min-w-0 rounded-lg bg-subtle px-4 py-3">
         <ReviewerCommentBlock commentThread={row.commentThread} />
       </div>
 
-      {row.attempt !== null && <AgentLine attempt={row.attempt} state={state} word={word} />}
+      {!isBrief && <PreviousAttempts attempts={previous} />}
+
+      {remote !== null && <ThreadGitEvidence sessionId={sessionId} entry={entry} />}
+
+      {entry.newReplies.length > 0 && <NewReplyNote replies={entry.newReplies} />}
+
+      {state === 'outdated' && remote === null && entry.change !== null && (
+        <SourceChangeCard change={entry.change} />
+      )}
+
+      {remote === 'missing' && entry.isChecking && (
+        <ThreadRecheckLine sessionId={sessionId} agentId={entry.checkAgentId} />
+      )}
+
+      {remote === 'missing' && !entry.isChecking && verdict !== null && (
+        <ThreadVerdictCard sessionId={sessionId} verdict={verdict} isPushed={isPushedMissing} />
+      )}
+
+      {remote === 'missing' && !entry.isChecking && entry.checkError !== null && (
+        <p role="status" className="text-secondary text-warning">
+          {entry.checkError}
+        </p>
+      )}
+
+      {!isBrief && row.attempt !== null && !isOwnFixGone && (
+        <AgentLine attempt={row.attempt} state={state} word={word} attemptNumber={attemptNumber} />
+      )}
 
       {state === 'needs' && row.thread.question != null && row.thread.question !== '' && (
         <div className="flex min-w-0 flex-col gap-2">
@@ -192,27 +296,35 @@ export const ReviewComment = ({
       )}
 
       {hasChange && state !== 'drafting' && (
-        <ProposedChange files={diff.files} isLoading={diff.isLoading} error={diff.error} />
+        <ProposedChange
+          files={diff.files}
+          isLoading={diff.isLoading}
+          error={diff.error}
+          {...(isBrief && { heading: REVIEW_FLOW_LABEL.fix })}
+        />
       )}
 
-      {members.length > 0 && (state === 'ready' || state === 'edited') && (
-        <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
-          <p>{sharedFixLine({ count: members.length })}</p>
-          <ul className="flex min-w-0 flex-col">
-            {members.map((member) => (
-              <li key={member.threadId} className="min-w-0 list-none">
-                <button
-                  type="button"
-                  onClick={() => onSelect(member.threadId)}
-                  className="block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
-                >
-                  {member.title ?? RESOLVE_COMMENT_UNAVAILABLE}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {!isBrief &&
+        members.length > 0 &&
+        remote === null &&
+        (state === 'ready' || state === 'edited') && (
+          <div className="flex min-w-0 flex-col gap-1 text-secondary text-muted-foreground">
+            <p>{sharedFixLine({ count: members.length })}</p>
+            <ul className="flex min-w-0 flex-col">
+              {members.map((member) => (
+                <li key={member.threadId} className="min-w-0 list-none">
+                  <button
+                    type="button"
+                    onClick={() => onSelect(member.threadId)}
+                    className="block max-w-full truncate rounded-sm text-left text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring"
+                  >
+                    {member.title ?? RESOLVE_COMMENT_UNAVAILABLE}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       {blocker !== null && (
         <p className="text-secondary text-warning">
           {blocker === 'deferred' ? PARTIAL_ACCEPTANCE : PARTIAL_REFUSAL}
@@ -227,7 +339,7 @@ export const ReviewComment = ({
             meta={
               state === 'edited' ? (
                 <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.edited} />
-              ) : state === 'replied' && isResolveOnly({ row }) ? (
+              ) : state === 'replied' && canResolve && isResolveOnly({ row }) ? (
                 <Chip tone="neutral" size="3xs" label={REVIEW_FLOW_LABEL.resolveOnly} />
               ) : undefined
             }
@@ -278,44 +390,40 @@ export const ReviewComment = ({
         </div>
       )}
 
-      {DECIDED_NOTE_STATES.has(state) && (
+      {DECIDED_NOTE_STATES.has(state) && remote === null && (
         <p className="flex min-w-0 items-center gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-muted-foreground">
           <Check size={ICON_SIZE.control} aria-hidden className="shrink-0 text-success" />
           {decidedNote({
             state: state as 'accepted' | 'replied' | 'skipped' | 'pushed' | 'resolved',
             sha: conversationSha({ row }),
+            provider,
           })}
         </p>
       )}
 
-      {state === 'outdated' && (
-        <p className="flex min-w-0 items-start gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-foreground">
-          <AlertCircle
-            size={ICON_SIZE.control}
-            aria-hidden
-            className="mt-0.5 shrink-0 text-warning"
-          />
-          {OUTDATED_REASON}
-        </p>
+      {isFailed && (
+        <FailedRun
+          sessionId={sessionId}
+          target={target}
+          attempt={row.attempt}
+          rowState={row.rowState}
+          actions={actions}
+          isHintOpen={compose !== null && compose.mode === 'redraft'}
+          isBusy={isSubmitting || pendingActionId !== null}
+          onTryAgain={onTryAgain}
+          onAddHint={() => onRun('reviewComment.edit')}
+          onRetryDelivery={onRetryDelivery}
+          onSync={onSync}
+          onRun={onRun}
+        />
       )}
 
-      {state === 'failed' && row.rowState.sentence !== null && (
-        <p className="flex min-w-0 items-start gap-2 rounded-lg bg-subtle px-4 py-2.5 text-secondary text-foreground">
-          <AlertCircle
-            size={ICON_SIZE.control}
-            aria-hidden
-            className="mt-0.5 shrink-0 text-danger"
-          />
-          {row.rowState.sentence}
-        </p>
-      )}
-
-      {compose !== null ? (
+      {compose !== null && composeCopy !== null ? (
         <div className="flex min-w-0 flex-col gap-2">
-          <SectionHeader label={COMPOSE_COPY[compose.mode].label} headingLevel={2} />
+          <SectionHeader label={composeCopy.label} headingLevel={2} />
           <Textarea
-            aria-label={COMPOSE_COPY[compose.mode].label}
-            placeholder={COMPOSE_COPY[compose.mode].placeholder}
+            aria-label={composeCopy.label}
+            placeholder={composeCopy.placeholder}
             value={compose.text}
             autoFocus
             autoGrow
@@ -347,14 +455,18 @@ export const ReviewComment = ({
               disabled={isComposeBlocked({ compose })}
               onClick={onComposeSubmit}
             >
-              {COMPOSE_COPY[compose.mode].submit}
+              {composeCopy.submit}
             </Button>
           </div>
         </div>
+      ) : actionsReplacement !== null ? (
+        actionsReplacement
       ) : (
         !isEditingReply &&
-        verbs.length > 0 && (
+        !isFailed &&
+        (verbs.length > 0 || actionsPrefix !== null) && (
           <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {actionsPrefix}
             {verbs.map((action) => {
               const button = (
                 <Button
@@ -395,6 +507,11 @@ export const ReviewComment = ({
                 </Tooltip>
               );
             })}
+            {remote === 'on_origin' && (
+              <span className="text-secondary text-faint-foreground">
+                {REMOTE_LABEL.nothingToPush}
+              </span>
+            )}
           </div>
         )
       )}

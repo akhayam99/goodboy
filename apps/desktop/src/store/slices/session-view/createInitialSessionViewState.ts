@@ -11,6 +11,7 @@ export const createInitialSessionViewState = ({}: Params) => ({
   artifactCreation: {},
   focusedGithubIssueNumber: {},
   focusedExternalTask: {},
+  agentPane: {},
   sessionStudio: {},
   workflowExpand: {},
   focusedWorkflowRunId: {},

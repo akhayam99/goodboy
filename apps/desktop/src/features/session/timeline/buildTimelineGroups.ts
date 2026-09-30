@@ -17,6 +17,9 @@ import { isAgentMissingArtifact } from '../../artifacts/turnArtifactOutcome';
 import { attachedQuestionsFor } from './attachedQuestions';
 import { earliestEvidence, resolveAgentCreation, type AgentCreation } from './agentCreation';
 import { runIdentity, runIdentitySeed, type RunIdentity } from './runIdentity';
+import type { ResolveActivityFacts } from './resolveActivity';
+import type { ResolveBatchSummary } from './resolveBatchSummary';
+import type { SubagentGroupSummary } from './subagentGroups';
 
 type TimelineChain = {
   readonly identity: RunIdentity;
@@ -37,6 +40,29 @@ export type TimelineAgentEntry = {
   readonly answers: ReadonlyArray<TimelineAnswerEntry>;
   readonly hasDuration: boolean;
   readonly chain: TimelineChain | null;
+};
+
+export type TimelineResolveBatchEntry = {
+  readonly kind: 'resolveBatch';
+  readonly id: string;
+  readonly at: string | null;
+  readonly batchId: string;
+  readonly prNumber: number | null;
+  readonly children: ReadonlyArray<TimelineAgentEntry>;
+  readonly facts: ReadonlyArray<ResolveActivityFacts>;
+  readonly summary: ResolveBatchSummary;
+  readonly isExpanded: boolean;
+};
+
+export type TimelineSubagentGroupEntry = {
+  readonly kind: 'subagentGroup';
+  readonly id: string;
+  readonly at: string | null;
+  readonly parentId: string;
+  readonly children: ReadonlyArray<TimelineAgentEntry>;
+  readonly summary: SubagentGroupSummary;
+  readonly attentionKeys: ReadonlyArray<string>;
+  readonly isExpanded: boolean;
 };
 
 export type TimelinePlanEntry = {

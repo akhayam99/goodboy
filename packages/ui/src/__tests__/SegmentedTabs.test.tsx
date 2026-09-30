@@ -50,6 +50,24 @@ describe('SegmentedTabs', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('xs size draws the compact strip for a header row', () => {
+    render(
+      <SegmentedTabs
+        size="xs"
+        ariaLabel="view"
+        options={OPTIONS}
+        value="first"
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('tablist').className).toContain('p-0.5');
+    screen.getAllByRole('tab').forEach((tab) => {
+      expect(tab.className).toContain('py-0.5');
+      expect(tab.className).toContain('rounded-sm');
+    });
+  });
+
   it('sits the icon in the heading line, immediately before the label it names', () => {
     render(
       <SegmentedTabs

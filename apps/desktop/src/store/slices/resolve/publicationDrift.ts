@@ -6,7 +6,11 @@ import type {
   ResolvePublicationThread,
   ResolveThread,
 } from '@goodboy/types';
-import { worktreeRemoteHead, worktreeStatus } from '../../../features/worktree/worktree';
+import {
+  worktreeIsAncestor,
+  worktreeRemoteHead,
+  worktreeStatus,
+} from '../../../features/worktree/worktree';
 import type { ApprovedPublicationScope } from './approvedPublicationScope';
 import { sourceFingerprint } from './sourceFingerprint';
 
@@ -129,7 +133,16 @@ export const publicationDrift = async ({
       after: status.branch ?? 'none',
     });
   }
-  if (status !== null && (status.head ?? '') !== publication.localHead) {
+  const isHeadMoved = status !== null && (status.head ?? '') !== publication.localHead;
+  const isReviewedStillBelow =
+    isHeadMoved &&
+    publication.commitShas.includes(publication.localHead) &&
+    (await worktreeIsAncestor({
+      worktreePath,
+      sha: publication.localHead,
+      head: status.head ?? 'HEAD',
+    }).catch(() => false));
+  if (status !== null && isHeadMoved && !isReviewedStillBelow) {
     found.push({
       kind: 'branch_moved',
       threadId: null,

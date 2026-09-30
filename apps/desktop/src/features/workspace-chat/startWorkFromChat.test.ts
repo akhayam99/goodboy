@@ -14,6 +14,7 @@ import type { AppStore } from '../../store/store';
 import { createMemoryChatBackend } from './createMemoryChatBackend';
 import { startWorkFromChat } from './startWorkFromChat';
 import { summarizeChatForWork } from './summarizeChatForWork';
+import type { WorkBrief } from './workBrief';
 
 const WORKSPACE_ID = 'ws-harborline' as WorkspaceId;
 const PROJECT_ID = 'project-notify-relay' as ProjectId;
@@ -38,6 +39,9 @@ const messageOf = ({ role, content }: MessageSeed): ChatMessage => ({
   status: 'done',
   reads: [],
   error: null,
+  provider: null,
+  model: null,
+  effort: null,
   createdAt: AT,
   updatedAt: AT,
 });
@@ -51,6 +55,14 @@ const MESSAGES: ReadonlyArray<ChatMessage> = [
   }),
 ];
 
+const BRIEF: WorkBrief = {
+  title: 'Send notify-relay messages once on a failure',
+  goal: 'Stop notify-relay from sending a message twice when a send fails.',
+  know: ['worker.ts:52 sets maxAttempts: 2 on the job.'],
+  files: ['notify-relay/src/queue/worker.ts:52'],
+  projects: ['notify-relay'],
+};
+
 const CHAT = {
   title: 'Why does notify-relay retry twice?',
   provider: 'anthropic',
@@ -58,7 +70,7 @@ const CHAT = {
 } as const;
 
 describe('turn a chat into work', () => {
-  it('starts a session born with the summarized goal and prompt', async () => {
+  it('creates a session with the goal and no agent or kickoff', async () => {
     const summarize = vi.fn(async () => FAKE_SUMMARY);
     const backend = createMemoryChatBackend({
       respond: async () => ({ status: 'done' }),
@@ -73,17 +85,18 @@ describe('turn a chat into work', () => {
     const createSession = vi.fn(async () => ({
       session: { id: 'session-new' as SessionId } as Session,
     }));
-    const sendTurn = vi.fn<AppStore['sendTurn']>();
+    const setSessionConfig = vi.fn<AppStore['setSessionConfig']>();
 
-    const sessionId = await startWorkFromChat({
+    const started = await startWorkFromChat({
       workspaceId: WORKSPACE_ID,
       brief,
       target: { kind: 'new', projectIds: [PROJECT_ID] },
+      routing: null,
       createSession,
-      sendTurn,
+      setSessionConfig,
     });
 
-    expect(sessionId).toBe('session-new');
+    expect(started).toEqual({ sessionId: 'session-new', draft: null });
     expect(summarize).toHaveBeenCalledWith(
       expect.objectContaining({ provider: 'anthropic', model: 'sonnet-5' }),
     );
@@ -91,9 +104,7 @@ describe('turn a chat into work', () => {
       workspaceId: WORKSPACE_ID,
       projectId: PROJECT_ID,
       title: 'Send notify-relay messages once on a failure',
-      goal: 'Stop notify-relay from sending a message twice when a send fails.',
-      firstAgentKind: 'generic',
-      kickoffPrompt: [
+      goal: [
         'Stop notify-relay from sending a message twice when a send fails.',
         '',
         'What we know:',
@@ -103,36 +114,50 @@ describe('turn a chat into work', () => {
         '- notify-relay/src/queue/worker.ts:52',
       ].join('\n'),
     });
-    expect(sendTurn).not.toHaveBeenCalled();
+    expect(setSessionConfig).not.toHaveBeenCalled();
   });
 
-  it('sends the brief into an existing session instead', async () => {
-    const backend = createMemoryChatBackend({
-      respond: async () => ({ status: 'done' }),
-      summarize: async () => FAKE_SUMMARY,
-    });
-    const brief = await summarizeChatForWork({
-      backend,
-      chat: CHAT,
-      messages: MESSAGES,
-      projectNames: PROJECTS,
-    });
-    const sendTurn = vi.fn<AppStore['sendTurn']>();
+  it('sets the session default model and effort after creating it', async () => {
+    const createSession = vi.fn(async () => ({
+      session: { id: 'session-new' as SessionId } as Session,
+    }));
+    const setSessionConfig = vi.fn<AppStore['setSessionConfig']>();
 
     await startWorkFromChat({
       workspaceId: WORKSPACE_ID,
-      brief,
-      target: { kind: 'add', sessionId: 'session-205' as SessionId },
-      createSession: vi.fn(),
-      sendTurn,
+      brief: BRIEF,
+      target: { kind: 'new', projectIds: [] },
+      routing: { provider: 'anthropic', model: 'opus-5-5', effort: 'high' },
+      createSession,
+      setSessionConfig,
     });
 
-    expect(sendTurn).toHaveBeenCalledWith({
-      sessionId: 'session-205',
-      content: expect.stringMatching(
-        /^Send notify-relay messages once on a failure\n\nStop notify-relay/,
-      ),
+    expect(setSessionConfig).toHaveBeenCalledWith('session-new', {
+      providerOverride: 'anthropic',
+      modelOverride: 'opus-5-5',
+      effort: 'high',
     });
+  });
+
+  it('hands back the brief as a draft for an existing session and creates nothing', async () => {
+    const createSession = vi.fn<AppStore['createSession']>();
+    const setSessionConfig = vi.fn<AppStore['setSessionConfig']>();
+
+    const started = await startWorkFromChat({
+      workspaceId: WORKSPACE_ID,
+      brief: BRIEF,
+      target: { kind: 'add', sessionId: 'session-205' as SessionId },
+      routing: { provider: 'anthropic', model: 'opus-5-5', effort: 'high' },
+      createSession,
+      setSessionConfig,
+    });
+
+    expect(started.sessionId).toBe('session-205');
+    expect(started.draft).toMatch(
+      /^Send notify-relay messages once on a failure\n\nStop notify-relay/,
+    );
+    expect(createSession).not.toHaveBeenCalled();
+    expect(setSessionConfig).not.toHaveBeenCalled();
   });
 
   it('drafts the brief from the answer when the summary fails', async () => {
@@ -195,8 +220,9 @@ describe('turn a chat into work', () => {
         workspaceId: WORKSPACE_ID,
         brief,
         target: { kind: 'new', projectIds },
+        routing: null,
         createSession,
-        sendTurn: vi.fn<AppStore['sendTurn']>(),
+        setSessionConfig: vi.fn<AppStore['setSessionConfig']>(),
       });
 
     await start([]);

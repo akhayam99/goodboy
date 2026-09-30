@@ -12,6 +12,8 @@ const HAND_BUILT_MENU = /OverflowMenuItem|<OverflowMenu\b|<MenuItems\b|<MenuList
 const ALLOWED: Readonly<Record<string, string>> = {
   'features/artifacts/components/ArtifactList/ArtifactListOverflowMenu.tsx':
     'list header menu (open the artifacts folder), not an object in the map',
+  'features/resolve/components/ReviewFlow/ReviewListMenu.tsx':
+    'list filter menu (show comments by state), not an object in the map',
   'features/artifacts/components/ArtifactList/ArtifactNewMenu.tsx':
     'creation menu: picks the kind of artifact to create',
   'features/session/components/SessionOverviewPane/OverviewActions/index.tsx':
@@ -42,8 +44,6 @@ const ALLOWED: Readonly<Record<string, string>> = {
     'search preview: lists the registry verbs of the hit through toMenuEntries',
   'features/storage/components/StoragePage/ArtifactRowActions.tsx':
     'artifact files from deleted sessions: storage keep and delete',
-  'features/workspace-chat/components/ChatComposer/ChatModelMenu.tsx':
-    'property picker: sets the chat model from the composer chip that shows it',
 };
 
 const isSource = (path: string): boolean =>

@@ -80,12 +80,33 @@ export const restoreHistory = (set: SetFn, get: GetFn) => {
     if (moved.kind === 'blocked') {
       return stopWith({ reason: 'blocked', message: moved.reason, files: [], sha: null });
     }
+    if (run !== undefined && run.backupRef === backupRef) {
+      for (const shas of run.threadShas) {
+        await get()
+          .updateResolveThread({
+            sessionId,
+            threadId: shas.threadId,
+            patch: {
+              commitShas: shas.commitShas,
+              fixupOfSha: shas.fixupOfSha,
+              replacesSha: shas.replacesSha,
+            },
+          })
+          .catch(() => false);
+      }
+    }
     setHistoryRun({
       set,
       sessionId,
       mountId,
       origin,
-      patch: { phase: 'restored', backupRef: moved.backupRef, result: null, applied: null },
+      patch: {
+        phase: 'restored',
+        backupRef: moved.backupRef,
+        result: null,
+        applied: null,
+        threadShas: [],
+      },
     });
     await recordHistoryEvent({
       get,

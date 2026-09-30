@@ -2,6 +2,7 @@ import type { AgentId, ProjectId, SessionId } from './ids';
 import type { MountTargetSnapshot } from './mount';
 import type { AgentSourceKind } from './workflow';
 import type { BranchCommit } from './worktree';
+import type { ResolveCommitStyle } from './settings';
 
 export type ResolveThreadState =
   'open' | 'working' | 'needs_answer' | 'fixed' | 'answered' | 'failed' | 'publishing' | 'closed';
@@ -45,6 +46,8 @@ export type ResolveThread = Readonly<{
   closedSource: 'goodboy' | 'github' | null;
   createdAt: number;
   updatedAt: number;
+  sourceKind?: ResolveSourceKind;
+  providerThreadId?: string | null;
 }>;
 
 export type ResolveAttempt = Readonly<{
@@ -63,6 +66,67 @@ export type ResolveAttempt = Readonly<{
   endedAt: number | null;
   error: string | null;
   createdAt: number;
+  batchId: string | null;
+  copyPath: string | null;
+  launchChoice: ResolveLaunchChoice | null;
+}>;
+
+export type ResolveLaunchChoice = Readonly<{
+  provider: string | null;
+  model: string | null;
+  effort: string | null;
+  commitStyle: ResolveCommitStyle | null;
+  hint: string | null;
+}>;
+
+export type ResolveBatch = Readonly<{
+  id: string;
+  sessionId: SessionId;
+  threadIds: ReadonlyArray<string>;
+  launchChoice: ResolveLaunchChoice;
+  createdAt: number;
+}>;
+
+export const RESOLVE_PARALLEL_LIMIT_DEFAULT = 4;
+export const RESOLVE_PARALLEL_LIMIT_MAX = 16;
+
+export type ResolveThreadGitState =
+  'local' | 'on_origin' | 'fixed_elsewhere' | 'folded' | 'missing';
+
+export type ResolveSourceKind = 'github' | 'gitlab' | 'bitbucket' | 'local';
+
+export type ResolveVerdictKind = 'fixed_elsewhere' | 'obsolete' | 'refix';
+
+export type ResolveVerdict = Readonly<{
+  kind: ResolveVerdictKind;
+  evidence: string;
+  sha: string | null;
+  checkedAt: number;
+}>;
+
+export type ResolveSourceChange = Readonly<{
+  body: string;
+  author: string | null;
+  fingerprint: string;
+  seenAt: number;
+}>;
+
+export type ResolveSourceSnapshot = Readonly<{
+  body: string;
+  author: string | null;
+  fingerprint: string;
+  seenAt: number;
+  replyIds: ReadonlyArray<string>;
+  changed: ResolveSourceChange | null;
+}>;
+
+export type ResolveThreadFacts = Readonly<{
+  threadId: string;
+  gitState: ResolveThreadGitState | null;
+  verdict: ResolveVerdict | null;
+  sourceSnapshot: ResolveSourceSnapshot | null;
+  sourceKind: ResolveSourceKind;
+  providerThreadId: string | null;
 }>;
 
 export type ResolveQueueApprovalState = 'none' | 'accepted' | 'deferred' | 'wont_fix';
@@ -236,6 +300,7 @@ export type ResolvePublicationPreview = Readonly<{
   frozenAt: number;
   commits: ReadonlyArray<BranchCommit & { readonly threadIds: ReadonlyArray<string> }>;
   unapproved: ReadonlyArray<BranchCommit>;
+  earlierCommits?: ReadonlyArray<BranchCommit>;
   replies: ReadonlyArray<{
     readonly threadId: string;
     readonly body: string;

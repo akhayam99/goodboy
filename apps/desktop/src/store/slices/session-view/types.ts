@@ -22,6 +22,7 @@ import type {
 } from '../../../features/artifacts/artifactCollection';
 import type { ResolveItemDraft } from '../../../features/resolve/resolveItemDraft';
 import type { AgentKindRouting } from '../../../features/session/agent-kind';
+import type { AgentPane } from '../navigation/types';
 
 export type { SetFn, GetFn } from '../../slice-types';
 
@@ -162,6 +163,7 @@ type SessionViewSliceState = {
   readonly artifactCreation: Readonly<Record<SessionId, ArtifactCreationTarget | null>>;
   readonly focusedGithubIssueNumber: Readonly<Record<SessionId, number | null>>;
   readonly focusedExternalTask: Readonly<Record<SessionId, FocusedExternalTask | null>>;
+  readonly agentPane: Readonly<Record<SessionId, AgentPane | null>>;
   readonly sessionStudio: Readonly<Record<SessionId, SessionStudio | null>>;
   readonly workflowExpand: Readonly<Record<SessionId, Readonly<Record<string, boolean>>>>;
   readonly focusedWorkflowRunId: Readonly<Record<SessionId, string | null>>;

@@ -5,6 +5,7 @@ import { applyHistoryPlan, pushWithLease } from '../../../features/history/histo
 import { refreshWorktreeStatuses } from '../../../features/session/hooks/useWorktreeStatuses/cache';
 import { historyTargetOf } from './historyTargetOf';
 import { identityChange } from './historyIdentity';
+import { editPostedReplies } from '../resolve/editPostedReplies';
 import { remoteForPush } from './remoteForPush';
 import { remapRewrittenCommits } from './remapRewrittenCommits';
 import { setHistoryRun } from './setHistoryRun';
@@ -92,7 +93,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
       if (outcome.kind === 'blocked') {
         return stopWith({ reason: 'blocked', message: outcome.reason, files: [], sha: null });
       }
-      await remapRewrittenCommits({ set, get, sessionId, map: input.map });
+      const threadShas = await remapRewrittenCommits({ set, get, sessionId, map: input.map });
       await recordHistoryEvent({
         get,
         kind: 'history_rewritten',
@@ -130,6 +131,7 @@ export const applyHistoryRewrite = (set: SetFn, get: GetFn) => {
           copyPath: null,
           identity: input.identity,
           movedHead: outcome.head,
+          threadShas,
         },
       });
       break;
@@ -197,6 +199,7 @@ export const pushHistoryRewrite = (set: SetFn, get: GetFn) => {
           at: Date.now(),
         }).catch(() => undefined);
       }
+      await editPostedReplies({ set, get, sessionId }).catch(() => 0);
       const prNumber = get().mountGithub[mountId]?.pr?.number ?? null;
       await recordHistoryEvent({
         get,
