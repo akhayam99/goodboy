@@ -130,7 +130,6 @@
     "apps/desktop/src/features/worktree/worktree.ts": 3,
     "apps/desktop/src/shared/components/GenericTerminalPanel/terminal-theme.ts": 2,
     "apps/desktop/src/store/slices/session-view/storage.ts": 1,
-    "apps/desktop/src/store/slices/turn/sendTurn.ts": 13,
     "packages/core/src/artifacts/wireframe/validateWireframeDocument.ts": 1,
     "packages/db/src/migrations/m001-initial.ts": 1,
     "packages/db/src/migrations/m002-telemetry-kind.ts": 1,
