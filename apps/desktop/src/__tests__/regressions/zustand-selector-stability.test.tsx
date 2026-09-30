@@ -23,7 +23,8 @@ vi.mock('../../store/store', async () => {
 });
 
 import { useAppStore } from '../../store/store';
-import { useProjectFilteredSessions, useTelemetryForSessions } from '../../store/selectors';
+import { useProjectFilteredSessions } from '../../store/slices/sessionFilters/selectors';
+import { useTelemetryForSessions } from '../../store/slices/sessions/selectors';
 import { useRunningScripts } from '../../features/scripts/hooks/useRunningScripts';
 
 const viewSession = { id: 'session-in-view' } as Session;

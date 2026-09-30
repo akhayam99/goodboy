@@ -16,8 +16,8 @@ import type {
   SessionId,
   WorkspaceId,
 } from '@goodboy/types';
-import { agentHasUnread } from './selectors';
-import { deriveSessionStage } from './slices/session-view';
+import { agentHasUnread } from './slices/agents/agentHasUnread';
+import { deriveSessionStage } from './slices/session-view/deriveSessionStage';
 
 vi.mock('@tauri-apps/api/core', async () => (await import('./storyHarness')).tauriCoreModuleMock());
 vi.mock('@tauri-apps/api/event', async () =>

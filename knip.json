@@ -137,7 +137,6 @@
         "src/shared/utils/compareIsoDesc.ts": ["exports"],
         "src/store/integrationsGuard.ts": ["exports"],
         "src/store/materializationProposals.ts": ["types"],
-        "src/store/selectors.ts": ["exports"],
         "src/store/sessionEviction.ts": ["exports"],
         "src/store/slices/artifactDrafts/types.ts": ["types"],
         "src/store/slices/artifacts/artifactScoutRun.ts": ["exports"],

@@ -27,12 +27,9 @@ import { beginSessionCreation, endSessionCreation } from './sessionCreation';
 import { revealActivityRow } from './revealActivityRow';
 import type { GetFn, SessionViewSlice, SetFn } from './types';
 
-export { sortAndGroupSessions } from './sortAndGroupSessions';
-export { deriveSessionStage } from './deriveSessionStage';
-export { resolveSessionRequest } from './resolveSessionRequest';
 export { isPrReviewSession } from './isPrReviewSession';
 export { EMPTY_RESOLVE_QUEUE_VIEW } from './types';
-export type { GroupedSessions, SessionViewSlice } from './types';
+export type { SessionViewSlice } from './types';
 export type {
   SessionStudio,
   LensKind,

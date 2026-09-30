@@ -3,7 +3,6 @@ import { setSelectedProjectIds } from './setSelectedProjectIds';
 import type { GetFn, SetFn, SessionFiltersSlice } from './types';
 
 export { NO_PROJECT_FILTER_ID } from './types';
-export { sessionMatchesProjectFilter } from './sessionMatchesProjectFilter';
 export type { SessionFiltersSlice } from './types';
 
 type Params = {
